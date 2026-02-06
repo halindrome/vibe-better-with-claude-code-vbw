@@ -301,4 +301,247 @@ Verify that the expected documents exist in `.planning/codebase/`:
 
 If any document is missing, report which mapper failed and what document was not produced. Do not proceed to synthesis until all 7 documents exist.
 
-<!-- Steps 5-9: Synthesis, validation, META.md, output, security verification (added in Task 3) -->
+### Step 5: Synthesis -- produce INDEX.md and PATTERNS.md (CMAP-02)
+
+After all 4 mapper agents complete and all 7 documents are verified, the parent command (not a subagent) performs synthesis by reading all mapper outputs and producing two cross-referencing documents.
+
+**5a. Create INDEX.md**
+
+Read all 7 mapping documents from `.planning/codebase/`. Create `.planning/codebase/INDEX.md` containing:
+
+```markdown
+# Codebase Mapping Index
+
+## Documents
+
+### STACK.md
+**Covers:** Technology stack, frameworks, languages, build tools, runtimes
+**Key findings:**
+- {2-3 line summary of most important findings}
+**Cross-references:** DEPENDENCIES.md (version constraints), ARCHITECTURE.md (framework usage in modules), TESTING.md (test framework)
+
+### DEPENDENCIES.md
+**Covers:** Dependency graph, version constraints, vulnerability patterns
+**Key findings:**
+- {2-3 line summary}
+**Cross-references:** STACK.md (framework versions), CONCERNS.md (outdated dependencies)
+
+### ARCHITECTURE.md
+**Covers:** Code organization, layers, modules, API surface, data flow
+**Key findings:**
+- {2-3 line summary}
+**Cross-references:** STRUCTURE.md (directory layout), CONVENTIONS.md (naming patterns), STACK.md (framework architecture)
+
+### STRUCTURE.md
+**Covers:** Directory tree, file types, naming patterns, file organization
+**Key findings:**
+- {2-3 line summary}
+**Cross-references:** ARCHITECTURE.md (module boundaries), CONVENTIONS.md (naming rules)
+
+### CONVENTIONS.md
+**Covers:** Naming conventions, code style, idioms, documentation patterns
+**Key findings:**
+- {2-3 line summary}
+**Cross-references:** STRUCTURE.md (file naming), TESTING.md (test naming), CONCERNS.md (convention violations)
+
+### TESTING.md
+**Covers:** Test framework, coverage, test locations, testing patterns
+**Key findings:**
+- {2-3 line summary}
+**Cross-references:** STACK.md (test framework dependency), CONVENTIONS.md (test naming conventions), CONCERNS.md (coverage gaps)
+
+### CONCERNS.md
+**Covers:** Technical debt, complexity hotspots, risks, missing error handling
+**Key findings:**
+- {2-3 line summary}
+**Cross-references:** ARCHITECTURE.md (complexity in modules), DEPENDENCIES.md (vulnerable packages), CONVENTIONS.md (style violations)
+```
+
+Populate the key findings and cross-references by actually reading the mapper outputs -- do not use placeholder text.
+
+**5b. Create PATTERNS.md**
+
+Read all 7 mapping documents and extract recurring patterns that appear across multiple mapper outputs. Create `.planning/codebase/PATTERNS.md` containing:
+
+```markdown
+# Codebase Patterns
+
+Recurring patterns observed across multiple mapping documents.
+
+## Architectural Patterns
+- {Pattern name}: {description} (observed in: ARCHITECTURE.md, STRUCTURE.md)
+- Examples: MVC, event-driven, microservices, layered, hexagonal, serverless
+
+## Naming Conventions
+- {Pattern name}: {description} (observed in: CONVENTIONS.md, STRUCTURE.md)
+- Examples: camelCase files, PascalCase components, snake_case modules, kebab-case routes
+
+## Quality Patterns
+- {Pattern name}: {description} (observed in: TESTING.md, CONVENTIONS.md)
+- Examples: tests co-located with source, barrel exports, error boundary pattern, factory test helpers
+
+## Concern Patterns
+- {Pattern name}: {description} (observed in: CONCERNS.md, ARCHITECTURE.md)
+- Examples: inconsistent error handling in /api/, no input validation in controllers, TODO clusters in legacy modules
+
+## Dependency Patterns
+- {Pattern name}: {description} (observed in: DEPENDENCIES.md, STACK.md)
+- Examples: pinned major versions, workspace hoisting, shared utility packages
+```
+
+Populate with actual patterns extracted from mapper outputs.
+
+### Step 6: Cross-document validation (CMAP-03)
+
+After synthesis, validate consistency across mapper outputs. Check for contradictions:
+
+1. **Stack vs Architecture:** Compare STACK.md framework list against ARCHITECTURE.md module references. If STACK.md lists a framework that ARCHITECTURE.md doesn't reference in any module, flag it.
+2. **Conventions vs Structure:** Compare CONVENTIONS.md naming patterns against STRUCTURE.md actual file names. If conventions describe a pattern that structure contradicts, flag it.
+3. **Testing vs Stack:** Compare TESTING.md test framework against STACK.md dependencies. If TESTING.md references a test framework not in STACK.md's dependency list, flag it.
+4. **Concerns vs Architecture:** If CONCERNS.md flags complexity in a module that ARCHITECTURE.md describes as simple, flag the contradiction.
+
+Add a "Validation Notes" section at the end of INDEX.md:
+
+```markdown
+## Validation Notes
+
+{If no contradictions found:}
+No contradictions detected between mapper outputs.
+
+{If contradictions found:}
+### Warnings
+- ⚠ {Description of contradiction between Document A and Document B}
+- ⚠ {Description of contradiction}
+```
+
+### Step 7: Create META.md (CMAP-04)
+
+Write `.planning/codebase/META.md` for staleness tracking:
+
+```markdown
+---
+mapped_at: {ISO 8601 timestamp, e.g., 2026-02-06T15:30:00Z}
+git_hash: {current HEAD hash from git rev-parse HEAD, or "no-git" if not a git repo}
+file_count: {total source files scanned across all mappers}
+documents:
+  - STACK.md
+  - DEPENDENCIES.md
+  - ARCHITECTURE.md
+  - STRUCTURE.md
+  - CONVENTIONS.md
+  - TESTING.md
+  - CONCERNS.md
+  - INDEX.md
+  - PATTERNS.md
+mode: {full or incremental}
+monorepo: {true or false}
+packages: [{comma-separated list of package names if monorepo, empty list otherwise}]
+refresh_trigger: "Run /vbw:map --incremental when git diff shows >10 changed files since last mapping"
+---
+
+# Codebase Mapping Metadata
+
+Last mapped: {human-readable date}
+Mode: {full or incremental}
+Files scanned: {count}
+Documents produced: 9
+
+## Staleness Indicators
+
+- If more than 50 commits since mapping: consider full refresh
+- If more than 20% of files changed: full refresh recommended
+- If only config/dependency changes: incremental sufficient
+- Check with: `git rev-list {git_hash}..HEAD --count`
+
+## Refresh Commands
+
+- Full refresh: `/vbw:map`
+- Incremental refresh: `/vbw:map --incremental`
+- Single package: `/vbw:map --package=name`
+```
+
+### Step 8: Present mapping summary
+
+Display mapping completion using @${CLAUDE_PLUGIN_ROOT}/references/vbw-brand.md formatting.
+
+```
+╔══════════════════════════════════════════╗
+║  Codebase Mapped                         ║
+║  Mode: {full | incremental}              ║
+╚══════════════════════════════════════════╝
+```
+
+List all produced documents:
+```
+✓ STACK.md          -- Tech stack and frameworks
+✓ DEPENDENCIES.md   -- Dependency graph and versions
+✓ ARCHITECTURE.md   -- Code organization and data flow
+✓ STRUCTURE.md      -- Directory tree and file patterns
+✓ CONVENTIONS.md    -- Naming rules and code style
+✓ TESTING.md        -- Test framework and coverage
+✓ CONCERNS.md       -- Technical debt and risks
+✓ INDEX.md          -- Cross-referenced document index
+✓ PATTERNS.md       -- Recurring codebase patterns
+```
+
+Show key findings summary (3-5 bullet points extracted from INDEX.md):
+```
+Key Findings:
+  ◆ {Finding 1 from INDEX.md}
+  ◆ {Finding 2 from INDEX.md}
+  ◆ {Finding 3 from INDEX.md}
+```
+
+If incremental mode was used:
+```
+Incremental Refresh:
+  ◆ {N} files changed since last mapping
+  ◆ Documents updated: {list of affected documents}
+  ◆ Documents unchanged: {list of unaffected documents}
+```
+
+If validation found warnings:
+```
+⚠ Validation Notes:
+  ⚠ {Warning 1}
+  ⚠ {Warning 2}
+```
+
+Next steps:
+```
+➜ Next Up: Run /vbw:plan {next-phase} to plan with codebase context.
+```
+
+### Step 9: Post-mapping security verification (CMAP-10)
+
+After all documents are written and the summary is displayed, perform a post-mapping safety check.
+
+Search all produced mapping documents for common secret patterns:
+
+1. Read each `.planning/codebase/*.md` file
+2. Search for these patterns using Grep:
+   - `API_KEY=` or `api_key:` followed by an actual value (not a placeholder)
+   - `SECRET=` or `secret:` followed by an actual value
+   - `PASSWORD=` or `password:` followed by an actual value
+   - `PRIVATE_KEY` followed by actual key content (BEGIN PRIVATE KEY)
+   - `Bearer ` followed by an actual token (long alphanumeric string)
+   - Actual `.env` file contents (lines matching `KEY=value` patterns from env files)
+
+3. **If a match is found** that appears to reference actual secret file contents (not just documenting patterns like "error handling for missing API_KEY"):
+   - Log a warning: "⚠ Potential secret content detected in {document}. Review and redact if necessary."
+   - Do NOT automatically delete the document -- let the user review
+
+4. **If no matches found:**
+   - Log: "✓ Security check passed -- no secret content detected in mapping documents."
+
+This is a safety net, not the primary enforcement. The primary enforcement is the security exclusion list injected into every mapper prompt in Step 2.
+
+## Output Format
+
+Follow @${CLAUDE_PLUGIN_ROOT}/references/vbw-brand.md for all visual formatting:
+- Double-line box (╔═╗║╚═╝) for mapping completion banner
+- Checkmark (✓) for each produced document
+- Diamond (◆) for key findings
+- Warning (⚠) for validation notes and security concerns
+- Arrow (➜) for Next Up navigation
+- No ANSI color codes
