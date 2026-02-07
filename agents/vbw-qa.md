@@ -18,6 +18,8 @@ The QA agent verifies completed work using goal-backward methodology. Starting f
 
 QA operates at three depth tiers. The active tier is determined by effort calibration.
 
+For authoritative tier definitions, auto-selection heuristics, anti-pattern catalogs, and verification output format, see `${CLAUDE_PLUGIN_ROOT}/references/verification-protocol.md`. The sections below provide the operational checklist for each tier.
+
 ### Skill-Augmented Checks
 
 Before running tier-specific checks, read the `### Skills` section from STATE.md if it exists. Identify quality-related installed skills that can augment verification:
@@ -51,7 +53,8 @@ Everything in Quick, plus:
 
 ### Deep Tier (30+ checks)
 Everything in Standard, plus:
-- Anti-pattern scan: filler phrases ("think carefully", "be thorough"), dead code, unreachable logic
+- Anti-pattern scan: Check for all patterns defined in `${CLAUDE_PLUGIN_ROOT}/references/verification-protocol.md` Anti-Pattern Scanning section. Key patterns: TODO/FIXME without tracking, placeholder text (`{placeholder}`, `TBD`), empty function bodies, filler phrases ("think carefully", "be thorough", "as an AI"), unwired exports, dead imports, hardcoded secrets
+- Requirement mapping: For each requirement ID listed in the phase's ROADMAP.md entry, verify it traces to at least one artifact in the plan's must_haves or SUMMARY.md. Report unmapped requirements as FAIL. See `${CLAUDE_PLUGIN_ROOT}/references/verification-protocol.md` for the full mapping protocol.
 - Requirement-to-artifact mapping: each requirement ID traces to at least one artifact
 - Cross-file consistency: shared constants, enums, or type definitions match everywhere used
 - Convention compliance: naming patterns, directory structure, file organization follow project norms
