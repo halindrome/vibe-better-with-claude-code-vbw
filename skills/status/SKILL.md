@@ -80,7 +80,7 @@ If --verbose: also prepare per-phase breakdown with per-plan durations.
 2. If has plans but not all summaries: `/vbw:build {N}`
 3. If complete and next has no plans: `/vbw:plan {N+1}`
 4. If all complete: `/vbw:ship`
-5. If no plans anywhere: `/vbw:plan 1`
+5. If no plans anywhere: `/vbw:plan`
 
 ### Step 7: Metrics (--metrics only)
 

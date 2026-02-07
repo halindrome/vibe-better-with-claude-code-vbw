@@ -209,7 +209,7 @@ symbol (➜) marks the header. Commands are indented 2 spaces,
 each on its own line with a brief description after `--`.
 
 Suggest 1-3 commands based on context:
-- After init: `/vbw:map` or `/vbw:plan 1`
+- After init: `/vbw:map` or `/vbw:plan`
 - After plan: `/vbw:build {N}`
 - After build: `/vbw:plan {N+1}` or `/vbw:ship`
 - After map: `/vbw:plan {N}`

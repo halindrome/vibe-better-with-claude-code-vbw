@@ -94,7 +94,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/{name}/SKILL.md` and display: name, descripti
 ➜ Quick Start
   /vbw:init "My project" -- Set up your project
   /vbw:map -- Analyze codebase (brownfield) or skip (greenfield)
-  /vbw:plan -- Plan the next phase (auto-detects, or specify: /vbw:plan 1)
+  /vbw:plan -- Plan the next phase (auto-detects phase)
   /vbw:build -- Execute with Agent Teams (auto-detects phase)
   /vbw:qa -- Deep verify (auto-detects phase)
   /vbw:ship -- Archive and tag
