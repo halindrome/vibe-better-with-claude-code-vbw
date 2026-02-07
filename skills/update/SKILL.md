@@ -6,13 +6,6 @@ allowed-tools: Read, Bash, Glob
 
 # VBW Update $ARGUMENTS
 
-## Context
-
-Current version:
-```
-!`cat ${CLAUDE_PLUGIN_ROOT}/VERSION 2>/dev/null || echo "unknown"`
-```
-
 ## Steps
 
 ### Step 1: Read current version

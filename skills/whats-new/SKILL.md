@@ -6,13 +6,6 @@ allowed-tools: Read, Glob
 
 # VBW What's New $ARGUMENTS
 
-## Context
-
-Current version:
-```
-!`cat ${CLAUDE_PLUGIN_ROOT}/VERSION 2>/dev/null || echo "unknown"`
-```
-
 ## Guard
 
 1. **Missing changelog:** If `${CLAUDE_PLUGIN_ROOT}/CHANGELOG.md` does not exist, STOP: "No CHANGELOG.md found."
