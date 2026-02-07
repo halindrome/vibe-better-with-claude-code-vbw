@@ -42,13 +42,12 @@ For each discovered skill, record:
    ls ~/.claude/skills/find-skills/ 2>/dev/null
    ```
 2. If **installed**: mark `find_skills_available = true` for the session. Dynamic discovery (SKIL-07) can use it.
-3. If **not installed** and `skill_suggestions` is `true`: display a one-time suggestion:
+3. If **not installed** and `skill_suggestions` is `true`: display a brief note:
    ```
-   Skill registry search is available but not installed.
-   Install with: npx skills find find-skills
-   Or:           claude skill install find-skills
+   ○ Optional: Skills.sh registry not installed (curated mappings still work fine).
+     To enable dynamic skill search: npx skills find find-skills
    ```
-   Do not block on this. Continue with curated mappings only.
+   Do not block on this. Do not present it as an error or warning. Continue with curated mappings only.
 
 ## Stack Detection Protocol
 
