@@ -16,33 +16,31 @@ allowed-tools: Read, Glob
 
 Read `${CLAUDE_PLUGIN_ROOT}/VERSION` for `current_version`.
 
-### Step 2: Determine baseline
+### Step 2: Determine mode
 
-If $ARGUMENTS has a version string: use as `baseline_version`.
-Otherwise: use `current_version`.
+Read `${CLAUDE_PLUGIN_ROOT}/CHANGELOG.md`. Split by `## [` headings.
 
-### Step 3: Parse changelog
+- If $ARGUMENTS has a version string: show all entries **newer than** that version.
+- If no arguments: show the **current version's entry** (the entry matching `current_version`).
 
-Read `${CLAUDE_PLUGIN_ROOT}/CHANGELOG.md`. Split by `## [` headings. Collect entries newer than baseline.
+### Step 3: Display
 
-### Step 4: Display
-
-If new entries:
+If entries found:
 ```
 ╔═══════════════════════════════════════════╗
 ║  VBW Changelog                            ║
-║  Since {baseline_version}                 ║
+║  {If args: "Since {arg_version}" | If no args: "v{current_version}"}  ║
 ╚═══════════════════════════════════════════╝
 
 {changelog entries}
 
 ➜ Next Up
-  /vbw:update -- Update to latest version
+  /vbw:help -- View all commands
 ```
 
-If no new entries:
+If no matching entries:
 ```
-✓ You are on the latest version ({current_version}).
+✓ No changelog entry found for v{current_version}.
 
 ➜ Next Up
   /vbw:help -- View all commands

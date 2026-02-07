@@ -2,6 +2,13 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.0.24] - 2026-02-07
+
+### Fixed
+
+- `/vbw:whats-new` now shows the current version's changelog when called without arguments (was showing nothing because it looked for entries newer than current)
+- Agent activity indicator moved to Line 4 inline before GitHub link
+
 ## [1.0.23] - 2026-02-07
 
 ### Added
