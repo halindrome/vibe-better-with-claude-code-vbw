@@ -226,22 +226,24 @@ VBW operates on a simple loop that will feel familiar to anyone who's ever shipp
 VBW scaffolds a `.vbw-planning/` directory with your project definition, requirements, and roadmap. It detects your tech stack and suggests relevant Claude Code skills. Now you have structure. Your parents would be proud.
 
 ```
-/vbw:plan 1
+/vbw:plan
 ```
 
-The Lead agent researches your phase, breaks it into tasks grouped by execution wave, and self-reviews the plan. You get a `PLAN.md` with YAML frontmatter, task breakdown, and dependency mapping. It's like having a tech lead who doesn't sigh audibly when you ask questions.
+VBW auto-detects the next phase that needs planning. The Lead agent researches your phase, breaks it into tasks grouped by execution wave, and self-reviews the plan. You get a `PLAN.md` with YAML frontmatter, task breakdown, and dependency mapping. It's like having a tech lead who doesn't sigh audibly when you ask questions.
 
 ```
-/vbw:build 1
+/vbw:build
 ```
 
-An Agent Team of Dev teammates executes each task in parallel, making atomic commits. Hooks run continuous verification automatically. You get a `SUMMARY.md` with what was done, what deviated, and how many tokens were burned. Repeat for each phase until your roadmap is complete.
+Again, VBW knows which phase to build next. An Agent Team of Dev teammates executes each task in parallel, making atomic commits. Hooks run continuous verification automatically. You get a `SUMMARY.md` with what was done, what deviated, and how many tokens were burned. Repeat for each phase until your roadmap is complete.
 
 ```
 /vbw:ship
 ```
 
 Archives the milestone, tags the release, updates project docs. You shipped. With actual verification. Your future self won't want to set the codebase on fire. Probably.
+
+> You can always be explicit with `/vbw:plan 3`, `/vbw:build 2`, etc. Useful for re-running a phase, skipping ahead, or when working across multiple terminals.
 
 <br>
 
