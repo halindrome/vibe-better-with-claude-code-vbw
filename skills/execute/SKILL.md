@@ -63,6 +63,24 @@ Map effort to agent levels per `${CLAUDE_PLUGIN_ROOT}/references/effort-profiles
 3. Check `git log --oneline -20` for committed tasks matching this phase (crash recovery).
 4. Build list of remaining (uncompleted) plans. If `--plan=NN`, filter to that single plan.
 5. For partially-complete plans (SUMMARY.md with `status: partial`, or commits in git log but no SUMMARY.md): note the resume-from task number.
+6. **Crash recovery check:** If `.vbw-planning/.execution-state.json` exists with `"status": "running"`, a previous run crashed. Update its plan statuses to match current SUMMARY.md state before proceeding.
+7. **Write initial execution state** to `.vbw-planning/.execution-state.json`:
+
+```json
+{
+  "phase": {N},
+  "phase_name": "{slug}",
+  "status": "running",
+  "started_at": "{ISO 8601 timestamp}",
+  "wave": 1,
+  "total_waves": {max wave number from plans},
+  "plans": [
+    {"id": "{NN-MM}", "title": "{plan title}", "wave": {W}, "status": "pending|complete"}
+  ]
+}
+```
+
+Set already-completed plans (those with SUMMARY.md) to `"complete"`, all others to `"pending"`.
 
 ### Step 3: Create Agent Team and execute
 
@@ -76,6 +94,13 @@ Effort: {DEV_EFFORT}. Working directory: {pwd}.
 ```
 
 Spawn Dev teammates (one per plan within a wave, or one per plan if `--plan=NN`). Use wave ordering: all plans in wave 1 first, wait for completion, then wave 2, etc.
+
+**Update execution state at wave boundaries and plan completions:**
+- **Wave start:** Update `.vbw-planning/.execution-state.json` — set `"wave"` to current wave number, set plans in this wave to `"running"`.
+- **Plan completion:** Update the plan's status in the JSON to `"complete"` (or `"failed"` if it failed).
+- **Wave boundary:** After all plans in a wave finish, advance `"wave"` to the next wave number before spawning the next wave's agents.
+
+Use `jq` for atomic updates, e.g.: `jq '(.plans[] | select(.id == "03-01")).status = "complete"' .vbw-planning/.execution-state.json > tmp && mv tmp .vbw-planning/.execution-state.json`
 
 Hooks handle continuous verification:
 - PostToolUse validates SUMMARY.md structure on write
@@ -97,6 +122,8 @@ Persist results to `{phase-dir}/{phase}-VERIFICATION.md`.
 If `--skip-qa` or turbo: display "○ QA verification skipped ({reason})".
 
 ### Step 5: Update state and present summary
+
+**Mark execution complete:** Update `.vbw-planning/.execution-state.json` — set `"status"` to `"complete"`. The statusline will auto-delete the file on next refresh, returning to normal display.
 
 **Update STATE.md:** phase position, plan completion counts, effort used.
 **Update ROADMAP.md:** mark completed plans.

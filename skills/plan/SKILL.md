@@ -25,6 +25,11 @@ Phase directories:
 !`ls .vbw-planning/phases/ 2>/dev/null || echo "No phases directory"`
 ```
 
+Codebase map staleness:
+```
+!`bash -c 'for f in "$HOME"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/map-staleness.sh; do [ -f "$f" ] && exec bash "$f"; done; echo "status: no_script"'`
+```
+
 ## Phase Auto-Detection
 
 If `$ARGUMENTS` does not contain an integer phase number:
@@ -41,6 +46,17 @@ If `$ARGUMENTS` does not contain an integer phase number:
 2. **No roadmap:** If .vbw-planning/ROADMAP.md doesn't exist or still contains template placeholders, STOP: "No roadmap found. Run /vbw:new to define your project."
 3. **Phase not in roadmap:** If phase {N} doesn't exist in ROADMAP.md, STOP: "Phase {N} not found in roadmap."
 4. **Already planned:** If phase has PLAN.md files with SUMMARY.md files, WARN: "Phase {N} already has completed plans. Re-planning preserves existing plans with .bak extension."
+
+## Staleness Check
+
+Read the staleness data from the Context block above. This is advisory only — never block planning.
+
+- `status: stale` → Print: `⚠ Codebase map is {staleness} stale ({changed} files changed). Consider /vbw:map before planning.`
+- `status: no_map` → Print: `○ No codebase map. Run /vbw:map for better planning context.`
+- `status: fresh` → Print: `✓ Codebase map is fresh ({staleness} changed)`
+- `status: no_git` or `status: no_script` → Skip silently.
+
+Then continue to Step 1.
 
 ## Steps
 
@@ -64,6 +80,8 @@ Requirements: .vbw-planning/REQUIREMENTS.md
 State: .vbw-planning/STATE.md
 Project: .vbw-planning/PROJECT.md
 Patterns: .vbw-planning/patterns/PATTERNS.md (if exists)
+Codebase map: .vbw-planning/codebase/ (if exists)
+  Read INDEX.md, ARCHITECTURE.md, CONCERNS.md for codebase context.
 Effort: {level}
 Output: Write PLAN.md files to .vbw-planning/phases/{phase-dir}/
 ```

@@ -138,6 +138,27 @@ fi
 
 IFS='|' read -r PH TT EF BR PD PT PPD QA < "$VBW_CF"
 
+# --- Execution progress (cached 2s) ---
+
+EXEC_CF="${_CACHE}-exec"
+EXEC_STATUS="" EXEC_WAVE="" EXEC_TWAVES="" EXEC_DONE="" EXEC_TOTAL="" EXEC_CURRENT=""
+
+if [ -f ".vbw-planning/.execution-state.json" ]; then
+  if ! cache_fresh "$EXEC_CF" 2; then
+    IFS='|' read -r _ES _EW _ETW _ED _ET _EC <<< \
+      "$(jq -r '[
+        (.status // ""),
+        (.wave // 0),
+        (.total_waves // 0),
+        ([.plans[] | select(.status == "complete")] | length),
+        (.plans | length),
+        ([.plans[] | select(.status == "running")][0].title // "")
+      ] | join("|")' .vbw-planning/.execution-state.json 2>/dev/null)"
+    printf '%s\n' "${_ES:-}|${_EW:-0}|${_ETW:-0}|${_ED:-0}|${_ET:-0}|${_EC:-}" > "$EXEC_CF"
+  fi
+  IFS='|' read -r EXEC_STATUS EXEC_WAVE EXEC_TWAVES EXEC_DONE EXEC_TOTAL EXEC_CURRENT < "$EXEC_CF"
+fi
+
 # --- Usage limits (cached 60s) ---
 # API: https://api.anthropic.com/api/oauth/usage
 # Requires: Authorization: Bearer <token>, anthropic-beta: oauth-2025-04-20
@@ -292,7 +313,24 @@ CTX_USED=$((IN_TOK + CACHE_W + CACHE_R))
 
 # --- Line 1: VBW project state ---
 
-if [ -d ".vbw-planning" ]; then
+if [ "$EXEC_STATUS" = "running" ] && [ "${EXEC_TOTAL:-0}" -gt 0 ] 2>/dev/null; then
+  # Build progress mode
+  EXEC_PCT=$((EXEC_DONE * 100 / EXEC_TOTAL))
+  L1="${C}${B}[VBW]${X} Build: $(progress_bar "$EXEC_PCT" 8) ${EXEC_DONE}/${EXEC_TOTAL} plans"
+  [ "${EXEC_TWAVES:-0}" -gt 1 ] 2>/dev/null && L1="$L1 ${D}│${X} Wave ${EXEC_WAVE}/${EXEC_TWAVES}"
+  [ -n "$EXEC_CURRENT" ] && L1="$L1 ${D}│${X} ${C}◆${X} ${EXEC_CURRENT}"
+elif [ "$EXEC_STATUS" = "complete" ]; then
+  # Auto-cleanup: remove finished execution state
+  rm -f .vbw-planning/.execution-state.json "$EXEC_CF" 2>/dev/null
+  EXEC_STATUS=""
+  # Fall through to normal display
+  L1="${C}${B}[VBW]${X}"
+  [ "$TT" -gt 0 ] 2>/dev/null && L1="$L1 Phase ${PH}/${TT}" || L1="$L1 Phase ${PH:-?}"
+  [ "$PT" -gt 0 ] 2>/dev/null && L1="$L1 ${D}│${X} Plans: ${PD}/${PT} (${PPD} this phase)"
+  L1="$L1 ${D}│${X} Effort: $EF"
+  if [ "$QA" = "pass" ]; then L1="$L1 ${D}│${X} ${G}QA: pass${X}"
+  else L1="$L1 ${D}│${X} ${D}QA: --${X}"; fi
+elif [ -d ".vbw-planning" ]; then
   L1="${C}${B}[VBW]${X}"
   [ "$TT" -gt 0 ] 2>/dev/null && L1="$L1 Phase ${PH}/${TT}" || L1="$L1 Phase ${PH:-?}"
   [ "$PT" -gt 0 ] 2>/dev/null && L1="$L1 ${D}│${X} Plans: ${PD}/${PT} (${PPD} this phase)"
