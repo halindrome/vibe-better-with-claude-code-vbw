@@ -8,25 +8,20 @@ allowed-tools: Read, Glob
 
 ## Context
 
-Loaded version (may be stale if just updated):
+Current version:
 ```
 !`cat ${CLAUDE_PLUGIN_ROOT}/VERSION 2>/dev/null || echo "unknown"`
 ```
 
-Latest cached version:
-```
-!`ls -d ~/.claude/plugins/cache/vbw-marketplace/vbw/*/ 2>/dev/null | sort -V | tail -1 | xargs -I{} cat {}.claude-plugin/plugin.json 2>/dev/null | jq -r '.version // "unknown"'`
-```
-
 ## Guard
 
-1. **Missing changelog:** Find CHANGELOG.md in the latest cache directory first, then fall back to `${CLAUDE_PLUGIN_ROOT}/CHANGELOG.md`. If neither exists, STOP: "No CHANGELOG.md found."
+1. **Missing changelog:** If `${CLAUDE_PLUGIN_ROOT}/CHANGELOG.md` does not exist, STOP: "No CHANGELOG.md found."
 
 ## Steps
 
-### Step 1: Read versions
+### Step 1: Read version
 
-Detect the latest installed version by checking the newest directory in `~/.claude/plugins/cache/vbw-marketplace/vbw/`. Read its `.claude-plugin/plugin.json` for `current_version`. Fall back to `${CLAUDE_PLUGIN_ROOT}/VERSION` if the cache check fails.
+Read `${CLAUDE_PLUGIN_ROOT}/VERSION` for `current_version`.
 
 ### Step 2: Determine baseline
 
@@ -35,7 +30,7 @@ Otherwise: use `current_version`.
 
 ### Step 3: Parse changelog
 
-Read CHANGELOG.md from the latest cached version directory first, falling back to `${CLAUDE_PLUGIN_ROOT}/CHANGELOG.md`. Split by `## [` headings. Collect entries newer than baseline.
+Read `${CLAUDE_PLUGIN_ROOT}/CHANGELOG.md`. Split by `## [` headings. Collect entries newer than baseline.
 
 ### Step 4: Display
 

@@ -2,6 +2,31 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.0.20] - 2026-02-07
+
+### Added
+
+- Real-time statusline dashboard: context window bar, API usage limits (session/weekly/sonnet/extra), cost tracking, clickable GitHub link, agent team status
+- Manifesto section and Discord invite in README
+- Statusline screenshot showcase in README Features section
+
+### Changed
+
+- Renamed `/vbw:build` to `/vbw:execute` to avoid security filter collision with `build/` pattern
+- Moved directory scaffold into Step 0 of `/vbw:init` so all setup completes before user questions
+- Versioned cache filenames in statusline -- auto-clears stale caches on plugin update
+- Simplified `/vbw:whats-new` to read directly from plugin root instead of cache paths (fixes sandbox permission errors)
+- Improved `/vbw:update` messaging to clarify "since" version in whats-new suggestion
+
+### Fixed
+
+- Security filter no longer blocks `skills/build/SKILL.md` (resolved by rename to `skills/execute/`)
+- Usage limits API: added required `anthropic-beta: oauth-2025-04-20` header
+- Extra usage credits display: correctly converts cents to dollars
+- Statusline `utilization` field: removed erroneous x100 (API returns 0-100, not 0-1)
+- Weekly countdown now shows days when >= 24 hours
+- Removed hardcoded `/vbw:plan 1` references (auto-detection handles phase selection)
+
 ## [1.0.0] - 2026-02-07
 
 ### Added
