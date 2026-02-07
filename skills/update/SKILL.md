@@ -81,36 +81,28 @@ If both Bash approaches fail, display the commands for the user to run manually 
 ```
 STOP here.
 
-### Step 5: Verify and display
+### Step 5: Clean old cache versions
 
-Read `${CLAUDE_PLUGIN_ROOT}/VERSION` again for `new_version`.
+Remove all old cached versions except the latest. This prevents stale caches from being used:
+```bash
+ls -d ~/.claude/plugins/cache/vbw-marketplace/vbw/*/ 2>/dev/null | sort -V | head -n -1 | xargs rm -rf 2>/dev/null
+```
 
-If `new_version` differs from `old_version`:
+### Step 6: Display result
+
+**IMPORTANT:** Do NOT re-read `${CLAUDE_PLUGIN_ROOT}/VERSION` — it still points to the old version for this session. Use `remote_version` from Step 3 instead.
+
 ```
 ╔═══════════════════════════════════════════╗
 ║  VBW Updated                              ║
 ╚═══════════════════════════════════════════╝
 
-  ✓ Updated: v{old_version} -> v{new_version}
-
-  Restart Claude Code to apply changes.
-
-➜ Next Up
-  /vbw:whats-new {old_version} -- See what changed
-```
-
-If `new_version` equals `old_version` (update ran but VERSION didn't change — cache may need restart):
-```
-╔═══════════════════════════════════════════╗
-║  VBW Updated                              ║
-╚═══════════════════════════════════════════╝
-
-  ✓ Update applied (v{old_version} -> v{remote_version}).
+  ✓ Update applied (v{old_version} → v{remote_version}).
 
   Restart Claude Code to load the new version.
 
-➜ Next Up
-  /vbw:whats-new {old_version} -- See what changed
+➜ After restart
+  /vbw:whats-new {old_version} — See what changed
 ```
 
 ## Output Format

@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_URL="https://raw.githubusercontent.com/yidakee/vibe-better-with-claude-code-vbw/main/VERSION"
 
 FILES=(
   "$ROOT/VERSION"
@@ -10,28 +11,32 @@ FILES=(
   "$ROOT/marketplace.json"
 )
 
-CURRENT=$(cat "$ROOT/VERSION" | tr -d '[:space:]')
+LOCAL=$(cat "$ROOT/VERSION" | tr -d '[:space:]')
 
-# No argument — show current version and exit
-if [[ $# -eq 0 ]]; then
-  echo "Current version: $CURRENT"
-  exit 0
-fi
-
-NEW="$1"
-
-# Validate semver format
-if ! [[ "$NEW" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "Error: '$NEW' is not valid semver (expected X.Y.Z)" >&2
+# Fetch the authoritative version from GitHub
+REMOTE=$(curl -sf --max-time 5 "$REPO_URL" 2>/dev/null | tr -d '[:space:]')
+if [[ -z "$REMOTE" ]]; then
+  echo "Error: Could not fetch version from GitHub." >&2
   exit 1
 fi
 
-if [[ "$NEW" == "$CURRENT" ]]; then
-  echo "Version is already $CURRENT — nothing to do."
-  exit 0
+# Use whichever is higher as the base (protects against local being behind)
+BASE="$REMOTE"
+if [[ "$(printf '%s\n%s' "$LOCAL" "$REMOTE" | sort -V | tail -1)" == "$LOCAL" ]]; then
+  BASE="$LOCAL"
 fi
 
-echo "Bumping version: $CURRENT -> $NEW"
+# Auto-increment patch version
+MAJOR="${BASE%%.*}"
+REST="${BASE#*.}"
+MINOR="${REST%%.*}"
+PATCH="${REST#*.}"
+NEW="${MAJOR}.${MINOR}.$((PATCH + 1))"
+
+echo "GitHub version:  $REMOTE"
+echo "Local version:   $LOCAL"
+echo "Bumping to:      $NEW"
+echo ""
 
 # Update all files — bail on first failure
 printf '%s\n' "$NEW" > "$ROOT/VERSION"
@@ -45,8 +50,6 @@ jq --arg v "$NEW" '.plugins[0].version = $v' "$ROOT/.claude-plugin/marketplace.j
 jq --arg v "$NEW" '.plugins[0].version = $v' "$ROOT/marketplace.json" > "$ROOT/marketplace.json.tmp" \
   && mv "$ROOT/marketplace.json.tmp" "$ROOT/marketplace.json"
 
-# Summary
-echo ""
 echo "Updated 4 files:"
 for f in "${FILES[@]}"; do
   echo "  ${f#$ROOT/}"
