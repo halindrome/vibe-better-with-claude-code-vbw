@@ -119,11 +119,20 @@ For the "I'll just prompt carefully" crowd.
 
 ## Installation
 
+Add the marketplace and install:
+
 ```
-claude plugin install vbw
+/plugin marketplace add yidakee/vibe-better-with-claude-code-vbw
+/plugin install vbw@vbw-marketplace
 ```
 
-That's it. If that was too many steps, this plugin might actually be for you.
+That's it. Two commands. If that was too many steps, this plugin might actually be for you.
+
+To update later:
+
+```
+/plugin marketplace update
+```
 
 <br>
 
