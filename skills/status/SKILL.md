@@ -38,7 +38,7 @@ Active milestone:
 ## Guard
 
 1. **Not initialized:** If .vbw-planning/ doesn't exist, STOP: "Run /vbw:init first."
-2. **No roadmap:** If ROADMAP.md doesn't exist, STOP: "No roadmap found. Run /vbw:init to create one."
+2. **No roadmap:** If ROADMAP.md doesn't exist or still contains template placeholders, STOP: "No roadmap found. Run /vbw:new to define your project."
 
 ## Steps
 

@@ -18,11 +18,12 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/{name}/SKILL.md` and display: name, descripti
 
 ## Command Reference
 
-### Lifecycle (init -> plan -> build -> ship)
+### Lifecycle (init -> new -> plan -> build -> ship)
 
 | Status | Command        | Description                                          |
 |--------|----------------|------------------------------------------------------|
-| ✓      | /vbw:init      | Initialize project with .vbw-planning directory      |
+| ✓      | /vbw:init      | Set up environment and scaffold .vbw-planning directory |
+| ✓      | /vbw:new [desc]    | Define project — name, requirements, roadmap     |
 | ✓      | /vbw:plan [phase]  | Plan a phase via Lead agent (auto-detects phase) |
 | ✓      | /vbw:execute [phase] | Execute phase via Agent Teams (auto-detects phase)|
 | ✓      | /vbw:ship      | Archive milestone, tag repo, merge branch            |
@@ -92,7 +93,8 @@ Read `${CLAUDE_PLUGIN_ROOT}/skills/{name}/SKILL.md` and display: name, descripti
 ## Getting Started
 
 ➜ Quick Start
-  /vbw:init "My project" -- Set up your project
+  /vbw:init -- Set up environment and scaffold .vbw-planning
+  /vbw:new "My project" -- Define project, requirements, roadmap
   /vbw:map -- Analyze codebase (brownfield) or skip (greenfield)
   /vbw:plan -- Plan the next phase (auto-detects phase)
   /vbw:execute -- Execute with Agent Teams (auto-detects phase)

@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-summary.sh",
+            "command": "bash -c 'for f in \"$HOME\"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/validate-summary.sh; do [ -f \"$f\" ] && exec bash \"$f\"; done'",
             "timeout": 15
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-commit.sh",
+            "command": "bash -c 'for f in \"$HOME\"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/validate-commit.sh; do [ -f \"$f\" ] && exec bash \"$f\"; done'",
             "timeout": 10
           }
         ]
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/security-filter.sh",
+            "command": "bash -c 'for f in \"$HOME\"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/security-filter.sh; do [ -f \"$f\" ] && exec bash \"$f\"; done'",
             "timeout": 5
           }
         ]
@@ -40,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/validate-summary.sh",
+            "command": "bash -c 'for f in \"$HOME\"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/validate-summary.sh; do [ -f \"$f\" ] && exec bash \"$f\"; done'",
             "timeout": 15
           }
         ]
@@ -51,7 +51,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/qa-gate.sh",
+            "command": "bash -c 'for f in \"$HOME\"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/qa-gate.sh; do [ -f \"$f\" ] && exec bash \"$f\"; done'",
             "timeout": 30
           }
         ]
@@ -62,7 +62,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/task-verify.sh",
+            "command": "bash -c 'for f in \"$HOME\"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/task-verify.sh; do [ -f \"$f\" ] && exec bash \"$f\"; done'",
             "timeout": 15
           }
         ]
@@ -73,7 +73,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-start.sh",
+            "command": "bash -c 'for f in \"$HOME\"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/session-start.sh; do [ -f \"$f\" ] && exec bash \"$f\"; done'",
             "timeout": 10
           }
         ]
@@ -84,7 +84,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/compaction-instructions.sh",
+            "command": "bash -c 'for f in \"$HOME\"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/compaction-instructions.sh; do [ -f \"$f\" ] && exec bash \"$f\"; done'",
             "timeout": 10
           }
         ]

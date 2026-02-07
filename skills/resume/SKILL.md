@@ -37,7 +37,11 @@ Read STATE.md. Compare resume file's last completed plan against current SUMMARY
 
 Agent Teams awareness: previous team sessions are not resumable. Resume creates a NEW team from saved state. Completed tasks are detected via SUMMARY.md + `git log`, and only remaining tasks are assigned.
 
-### Step 4: Present resume context
+### Step 4: Check for unfilled templates
+
+If PROJECT.md contains the template placeholder `{project-description}`, the project was initialized but never defined. In this case, suggest `/vbw:new` as the next action instead of the resume file's instructions.
+
+### Step 5: Present resume context
 
 ```
 ╔═══════════════════════════════════════════╗
@@ -53,11 +57,14 @@ Agent Teams awareness: previous team sessions are not resumable. Resume creates 
 
   {If progress changed: "⚠ Progress changed since pause -- review /vbw:status"}
 
+  {If templates unfilled: "⚠ Project not yet defined -- templates still contain placeholders"}
+
   Phase Goal:
     {goal from resume file}
 
 ➜ Next Up
-  {specific next command from resume instructions}
+  {If templates unfilled: "/vbw:new -- Define your project (name, requirements, roadmap)"}
+  {Otherwise: specific next command from resume instructions}
 ```
 
 ## Output Format

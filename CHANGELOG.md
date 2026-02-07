@@ -2,6 +2,25 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.0.26] - 2026-02-07
+
+### Added
+
+- `/vbw:new` command: project definition flow (name, requirements, roadmap, CLAUDE.md) extracted from init
+- Windows/WSL disclaimer in README "What Is This" section
+
+### Changed
+
+- `/vbw:init` is now technical setup only: environment config (Agent Teams, statusline), directory scaffold, stack detection, skill discovery. No longer asks project questions — points to `/vbw:new` as next step
+- Guard clauses in `/vbw:plan`, `/vbw:status`, `/vbw:audit`, `/vbw:ship` updated to point to `/vbw:new` for missing roadmap
+- `/vbw:resume` now detects unfilled templates and suggests `/vbw:new` instead of re-running init
+- `/vbw:help` lifecycle flow updated: init -> new -> plan -> build -> ship
+- README flow diagram, tutorial, and commands table updated for two-step setup
+
+### Fixed
+
+- All hook commands in hooks.json used `${CLAUDE_PLUGIN_ROOT}` which is not available as an env var in hook execution — replaced with glob-based path discovery pattern. This fixes "PreToolUse:Read hook error" on every Read/Glob/Grep call
+
 ## [1.0.25] - 2026-02-07
 
 ### Changed

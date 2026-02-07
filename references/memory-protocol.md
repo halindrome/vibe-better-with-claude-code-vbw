@@ -1,6 +1,6 @@
 # Memory Protocol
 
-Single source of truth for VBW's persistent memory system. Referenced by commands that generate or update memory artifacts (init, plan, build, ship).
+Single source of truth for VBW's persistent memory system. Referenced by commands that generate or update memory artifacts (new, plan, build, ship).
 
 VBW manages three memory subsystems: CLAUDE.md (machine-facing context), pattern learning (phase retrospectives), and memory lifecycle (cleanup and validation).
 
@@ -59,7 +59,7 @@ Run /vbw:help for all commands.
 
 | Command | Trigger |
 |---------|---------|
-| /vbw:init | Creates CLAUDE.md for the first time |
+| /vbw:new | Creates CLAUDE.md for the first time |
 | /vbw:plan | Updates after planning completes (new phase context) |
 | /vbw:execute | Updates after phase build completes (new decisions, patterns) |
 | /vbw:ship | Regenerates to reflect shipped state (milestone archived) |

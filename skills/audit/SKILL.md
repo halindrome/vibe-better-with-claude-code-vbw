@@ -18,7 +18,7 @@ Active milestone:
 ## Guard
 
 1. **Not initialized:** If .vbw-planning/ doesn't exist, STOP: "Run /vbw:init first."
-2. **No roadmap:** If neither ACTIVE nor ROADMAP.md exists, STOP: "No milestones configured. Run /vbw:init or /vbw:milestone first."
+2. **No roadmap:** If neither ACTIVE nor ROADMAP.md exists, STOP: "No milestones configured. Run /vbw:new or /vbw:milestone first."
 
 ## Steps
 

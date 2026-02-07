@@ -39,7 +39,9 @@ Whether you're a seasoned engineer who wants to push the boundaries of what AI-a
 
 ## What Is This
 
-VBW is a Claude Code plugin that bolts an actual development lifecycle onto your vibe coding sessions. It gives you 25 slash commands and 6 AI agents that handle planning, building, verifying, and shipping your code, so what you produce has at least a fighting chance of surviving a code review.
+> **Platform:** macOS and Linux only. Windows is not supported natively — all hooks, scripts, and context blocks require bash. If you're on Windows, run Claude Code inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
+
+VBW is a Claude Code plugin that bolts an actual development lifecycle onto your vibe coding sessions. It gives you 26 slash commands and 6 AI agents that handle planning, building, verifying, and shipping your code, so what you produce has at least a fighting chance of surviving a code review.
 
 You describe what you want. VBW breaks it into phases. Agents plan, write, and verify the code. Commits are atomic. Verification is goal-backward. State persists across sessions. It's the entire software development lifecycle, except you replaced the engineering team with a plugin and a prayer.
 
@@ -103,7 +105,7 @@ Agent Teams ship with seven known limitations. VBW solves them. The eighth... th
 
 VBW integrates with [Skills.sh](https://skills.sh), the open-source skill registry for AI agents with 20+ supported platforms and thousands of community-contributed skills:
 
-- **Automatic stack detection.** `/vbw:init` scans your project, identifies your tech stack (Next.js, Django, Prisma, Tailwind, etc.), and recommends relevant skills from a curated mapping.
+- **Automatic stack detection.** `/vbw:init` scans your project during setup, identifies your tech stack (Next.js, Django, Prisma, Tailwind, etc.), and recommends relevant skills from a curated mapping.
 
 - **Dynamic registry search.** For stacks not covered by curated mappings, VBW falls back to the Skills.sh registry via the `find-skills` meta-skill. Results are cached locally with a 7-day TTL -- no repeated network calls.
 
@@ -205,9 +207,16 @@ VBW operates on a simple loop that will feel familiar to anyone who's ever shipp
                                    ▼
                     ┌───────────────────────────────┐
                     │  /vbw:init                    │
+                    │  Sets up environment          │
                     │  Scaffolds .vbw-planning/ dir │
                     │  Detects your stack           │
                     │  Suggests skills you need     │
+                    └──────────────┬────────────────┘
+                                   │
+                                   ▼
+                    ┌───────────────────────────────┐
+                    │  /vbw:new                     │
+                    │  Defines your project         │
                     │  Creates PROJECT.md,          │
                     │  REQUIREMENTS.md, ROADMAP.md  │
                     └──────────────┬────────────────┘
@@ -281,10 +290,16 @@ VBW operates on a simple loop that will feel familiar to anyone who's ever shipp
 ### Starting a brand new project
 
 ```
-/vbw:init Build me a million dollar SaaS, make no mistakes.
+/vbw:init
 ```
 
-VBW scaffolds a `.vbw-planning/` directory with your project definition, requirements, and roadmap. It detects your tech stack and suggests relevant Claude Code skills. Now you have structure. Your parents would be proud.
+VBW sets up your environment (Agent Teams, statusline) and scaffolds a `.vbw-planning/` directory with template files. It detects your tech stack and suggests relevant Claude Code skills.
+
+```
+/vbw:new Build me a million dollar SaaS, make no mistakes.
+```
+
+VBW asks about your project, gathers requirements, and creates a phased roadmap. Now you have structure. Your parents would be proud.
 
 ```
 /vbw:plan
@@ -319,11 +334,11 @@ Archives the milestone, tags the release, updates project docs. You shipped. Wit
 ### Picking up an existing codebase
 
 ```
-/vbw:init "Modernize this legacy Django monolith before it gains sentience"
-/vbw:map
+/vbw:init
+/vbw:new "Modernize this legacy Django monolith before it gains sentience"
 ```
 
-`/vbw:map` creates an Agent Team with 4 Scout teammates that analyze your codebase across tech stack, architecture, code quality, and concerns. They produce synthesis documents (`INDEX.md`, `PATTERNS.md`) that feed into every subsequent planning session. Think of it as a full-body scan. Results may be upsetting.
+`/vbw:new` detects the existing codebase and auto-launches `/vbw:map`, which creates an Agent Team with 4 Scout teammates that analyze your codebase across tech stack, architecture, code quality, and concerns. They produce synthesis documents (`INDEX.md`, `PATTERNS.md`) that feed into every subsequent planning session. Think of it as a full-body scan. Results may be upsetting.
 
 Then proceed with `/vbw:plan`, `/vbw:execute`, `/vbw:qa`, `/vbw:ship` as above.
 
@@ -341,7 +356,8 @@ These are the commands you'll use every day. This is the job now.
 
 | Command | Description |
 | :--- | :--- |
-| `/vbw:init` | Initialize a project. Scaffolds `.vbw-planning/` with PROJECT.md, REQUIREMENTS.md, ROADMAP.md, and STATE.md. Detects your tech stack and suggests Claude Code skills. Works for both new and existing codebases. |
+| `/vbw:init` | Set up environment and scaffold `.vbw-planning/` directory with templates and config. Configures Agent Teams and statusline. Detects your tech stack and suggests Claude Code skills. |
+| `/vbw:new [desc]` | Define your project. Asks for name, requirements, creates a phased roadmap, initializes state, and generates CLAUDE.md. Auto-launches `/vbw:map` for existing codebases. |
 | `/vbw:plan [phase]` | Plan a phase. The Lead agent researches context, decomposes work into tasks grouped by wave, and self-reviews the plan. Produces PLAN.md files with YAML frontmatter. Accepts `--effort` flag (thorough/balanced/fast/turbo). Phase is auto-detected when omitted. |
 | `/vbw:execute [phase]` | Execute a planned phase. Creates an Agent Team with Dev teammates for parallel execution. Atomic commits per task. Continuous QA via hooks. Produces SUMMARY.md. Resumes from last checkpoint if interrupted. Phase is auto-detected when omitted. |
 | `/vbw:ship` | Complete a milestone. Runs audit, archives state to `.vbw-planning/milestones/`, tags the git release, merges milestone branch (if any), and updates project docs. The one command that means you actually finished something. |
@@ -487,7 +503,7 @@ Not every task deserves the same level of scrutiny. Most of yours don't. VBW pro
 ```
 .claude-plugin/    Plugin manifest (plugin.json)
 agents/            6 agent definitions with native tool permissions
-skills/            25 slash commands (skills/*/SKILL.md)
+skills/            26 slash commands (skills/*/SKILL.md)
 config/            Default settings and stack-to-skill mappings
 hooks/             Plugin hooks for continuous verification
 scripts/           Hook handler scripts (security, validation, QA gates)

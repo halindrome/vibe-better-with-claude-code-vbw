@@ -38,7 +38,7 @@ If `$ARGUMENTS` does not contain an integer phase number:
 ## Guard
 
 1. **Not initialized:** If .vbw-planning/ doesn't exist, STOP: "Run /vbw:init first."
-2. **No roadmap:** If .vbw-planning/ROADMAP.md doesn't exist, STOP: "No roadmap found. Run /vbw:init to create one."
+2. **No roadmap:** If .vbw-planning/ROADMAP.md doesn't exist or still contains template placeholders, STOP: "No roadmap found. Run /vbw:new to define your project."
 3. **Phase not in roadmap:** If phase {N} doesn't exist in ROADMAP.md, STOP: "Phase {N} not found in roadmap."
 4. **Already planned:** If phase has PLAN.md files with SUMMARY.md files, WARN: "Phase {N} already has completed plans. Re-planning preserves existing plans with .bak extension."
 
