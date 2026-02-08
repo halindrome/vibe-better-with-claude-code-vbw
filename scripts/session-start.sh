@@ -63,12 +63,14 @@ fi
 
 # --- Clean old cache versions (keep only latest) ---
 CACHE_DIR="$HOME/.claude/plugins/cache/vbw-marketplace/vbw"
-if [ -d "$CACHE_DIR" ]; then
+VBW_CLEANUP_LOCK="/tmp/vbw-cache-cleanup-lock"
+if [ -d "$CACHE_DIR" ] && mkdir "$VBW_CLEANUP_LOCK" 2>/dev/null; then
   VERSIONS=$(ls -d "$CACHE_DIR"/*/ 2>/dev/null | sort -V)
   COUNT=$(echo "$VERSIONS" | wc -l | tr -d ' ')
   if [ "$COUNT" -gt 1 ]; then
     echo "$VERSIONS" | head -n $((COUNT - 1)) | xargs rm -rf 2>/dev/null
   fi
+  rmdir "$VBW_CLEANUP_LOCK" 2>/dev/null
 fi
 
 # --- Cache integrity check (nuke if critical files missing) ---
