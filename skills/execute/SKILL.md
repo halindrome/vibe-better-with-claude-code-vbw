@@ -84,7 +84,23 @@ Set already-completed plans (those with SUMMARY.md) to `"complete"`, all others 
 
 ### Step 3: Create Agent Team and execute
 
-Create a build team. For each uncompleted plan, use TaskCreate to create a task with thin context:
+Create a build team.
+
+**Delegation directive (all effort levels except Turbo):**
+
+You are the team LEAD, not a developer. Your role is to orchestrate, not implement.
+
+- NEVER implement plan tasks yourself -- delegate ALL implementation to Dev teammates via TaskCreate and task assignment
+- NEVER use Write or Edit to modify source code files, test files, or configuration files that are part of a plan's `files_modified` list
+- Your Write/Edit usage is LIMITED to state tracking files only: `.vbw-planning/STATE.md`, `.vbw-planning/ROADMAP.md`, `.vbw-planning/.execution-state.json`, and SUMMARY.md files
+- If a Dev teammate fails or gets stuck, help by providing guidance via SendMessage -- do not take over implementation
+- If all Dev teammates are unavailable, create a new Dev teammate rather than implementing yourself
+
+This is instruction-enforced (not platform-enforced). The platform cannot prevent the lead from using Write/Edit on source files. This directive exists as a defensive guardrail to maintain the separation between orchestration and implementation roles.
+
+At Turbo effort, no team is created -- Dev executes directly without a lead.
+
+For each uncompleted plan, use TaskCreate to create a task with thin context:
 
 ```
 For each uncompleted plan, use TaskCreate:
