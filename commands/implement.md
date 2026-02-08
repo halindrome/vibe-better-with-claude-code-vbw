@@ -70,7 +70,7 @@ Check the phase directory for existing `*-PLAN.md` files.
 
 > This step is skipped entirely if plans already exist (Step 2 detected them).
 
-Reference the full planning protocol from `@${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md`.
+Reference the full planning protocol from `@${CLAUDE_PLUGIN_ROOT}/commands/plan.md`.
 
 Execute the planning flow:
 1. Parse effort and resolve context (same as `/vbw:plan` Steps 1-2).
@@ -89,7 +89,7 @@ Execute the planning flow:
 
 ### Step 4: Execution Phase
 
-Reference the full execution protocol from `@${CLAUDE_PLUGIN_ROOT}/skills/execute/SKILL.md`.
+Reference the full execution protocol from `@${CLAUDE_PLUGIN_ROOT}/commands/execute.md`.
 
 Execute the build flow:
 1. Parse effort and load plans (same as `/vbw:execute` Steps 1-2).

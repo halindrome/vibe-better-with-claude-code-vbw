@@ -1,6 +1,6 @@
 # VBW Phase Auto-Detection Protocol
 
-Single source of truth for detecting the target phase when the user omits the phase number from a command. Referenced by `${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md`, `${CLAUDE_PLUGIN_ROOT}/skills/execute/SKILL.md`, `${CLAUDE_PLUGIN_ROOT}/skills/qa/SKILL.md`, `${CLAUDE_PLUGIN_ROOT}/skills/discuss/SKILL.md`, `${CLAUDE_PLUGIN_ROOT}/skills/assumptions/SKILL.md`, `${CLAUDE_PLUGIN_ROOT}/skills/implement/SKILL.md`.
+Single source of truth for detecting the target phase when the user omits the phase number from a command. Referenced by `${CLAUDE_PLUGIN_ROOT}/commands/plan.md`, `${CLAUDE_PLUGIN_ROOT}/commands/execute.md`, `${CLAUDE_PLUGIN_ROOT}/commands/qa.md`, `${CLAUDE_PLUGIN_ROOT}/commands/discuss.md`, `${CLAUDE_PLUGIN_ROOT}/commands/assumptions.md`, `${CLAUDE_PLUGIN_ROOT}/commands/implement.md`.
 
 ## Overview
 

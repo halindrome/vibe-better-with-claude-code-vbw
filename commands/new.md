@@ -131,7 +131,7 @@ If BROWNFIELD=true AND `.vbw-planning/codebase/` does NOT exist (no prior map):
   ⚠ Existing codebase detected ({file-count} source files)
   ➜ Auto-launching /vbw:map to analyze your codebase...
 ```
-Then immediately invoke `/vbw:map` by following `@${CLAUDE_PLUGIN_ROOT}/skills/map/SKILL.md`.
+Then immediately invoke `/vbw:map` by following `@${CLAUDE_PLUGIN_ROOT}/commands/map.md`.
 
 If `.vbw-planning/codebase/` already exists, skip — display "✓ Codebase map already exists" and move to summary.
 

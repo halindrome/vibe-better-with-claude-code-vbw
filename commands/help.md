@@ -15,7 +15,7 @@ Show all VBW commands grouped by lifecycle stage. Mark all commands with ✓.
 
 ### With argument: Display detailed command help
 
-Read `${CLAUDE_PLUGIN_ROOT}/skills/{name}/SKILL.md` and display: name, description, usage, arguments, related commands.
+Read `${CLAUDE_PLUGIN_ROOT}/commands/{name}.md` and display: name, description, usage, arguments, related commands.
 
 ## Command Reference
 

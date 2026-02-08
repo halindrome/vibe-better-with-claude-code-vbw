@@ -179,4 +179,4 @@ Each agent type consumes the capability map differently. Detailed protocols live
 | `auto_install_skills` | boolean | `false` | Controls whether suggested skills are auto-installed. When true, runs the install command automatically. When false, displays suggestions for user to act on. |
 | `skill_cache` | object | `{}` | Cache of Skills.sh registry search results. Keyed by query string. Each entry contains `results` array and `cached_at` timestamp. Entries older than 7 days are re-queried. Managed automatically by SKIL-07; not user-editable. |
 
-`skill_suggestions` and `auto_install_skills` are defined in `config/defaults.json` and documented in `skills/config/SKILL.md` Settings Reference. `skill_cache` is runtime-managed and not present in defaults.
+`skill_suggestions` and `auto_install_skills` are defined in `config/defaults.json` and documented in `commands/config.md` Settings Reference. `skill_cache` is runtime-managed and not present in defaults.

@@ -531,7 +531,7 @@ Not every task deserves the same level of scrutiny. Most of yours don't. VBW pro
 ```
 .claude-plugin/    Plugin manifest (plugin.json)
 agents/            6 agent definitions with native tool permissions
-skills/            28 slash commands (skills/*/SKILL.md)
+commands/          28 slash commands (commands/*.md)
 config/            Default settings and stack-to-skill mappings
 hooks/             Plugin hooks for continuous verification
 scripts/           Hook handler scripts (security, validation, QA gates)

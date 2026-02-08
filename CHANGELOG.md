@@ -2,6 +2,19 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.0.47] - 2026-02-08
+
+### Changed
+
+- Migrated all 28 slash commands from `skills/*/SKILL.md` to `commands/*.md` — autocomplete now shows `/vbw:help` instead of `/help (vbw)`
+- Updated `@` references in implement, new, and help commands to point to `commands/` paths
+- Updated path references in `references/verification-protocol.md`, `references/phase-detection.md`, and `references/skill-discovery.md`
+- Updated project structure in README.md and CONTRIBUTING.md
+
+### Removed
+
+- `skills/` directory (replaced by `commands/`)
+
 ## [1.0.46] - 2026-02-08
 
 ### Fixed
