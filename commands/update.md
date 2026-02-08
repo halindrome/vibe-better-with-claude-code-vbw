@@ -102,6 +102,36 @@ if [ -d "$VBW_CACHE_CMD" ]; then
 fi
 ```
 
+### Step 5.5: Ensure VBW statusline
+
+Read `~/.claude/settings.json` and check the `statusLine` field (may be a string or object with `.command`). Extract the command value.
+
+**If it already contains `vbw-statusline`:** skip — VBW statusline is installed.
+
+**If it does NOT contain `vbw-statusline`** (empty, missing, or belongs to another tool): update it to:
+```json
+{"type": "command", "command": "bash -c 'f=$(ls -1 \"$HOME\"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/vbw-statusline.sh 2>/dev/null | sort -V | tail -1) && [ -f \"$f\" ] && exec bash \"$f\"'"}
+```
+
+Use jq to write:
+```bash
+SETTINGS="$HOME/.claude/settings.json"
+SL_CMD=$(jq -r '.statusLine.command // .statusLine // ""' "$SETTINGS" 2>/dev/null)
+if ! echo "$SL_CMD" | grep -q 'vbw-statusline'; then
+  CORRECT_CMD="bash -c 'f=\$(ls -1 \"\$HOME\"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/vbw-statusline.sh 2>/dev/null | sort -V | tail -1) && [ -f \"\$f\" ] && exec bash \"\$f\"'"
+  cp "$SETTINGS" "${SETTINGS}.bak"
+  if jq --arg cmd "$CORRECT_CMD" '.statusLine = {"type": "command", "command": $cmd}' "$SETTINGS" > "${SETTINGS}.tmp"; then
+    mv "${SETTINGS}.tmp" "$SETTINGS"
+  else
+    cp "${SETTINGS}.bak" "$SETTINGS"
+    rm -f "${SETTINGS}.tmp"
+  fi
+  rm -f "${SETTINGS}.bak"
+fi
+```
+
+Display `✓ Statusline restored (restart to activate)` if it was changed, or skip silently if already correct.
+
 ### Step 6: Verify update
 
 Read the newly cached VERSION to confirm the update landed correctly:
