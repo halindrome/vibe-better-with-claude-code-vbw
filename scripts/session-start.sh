@@ -99,7 +99,12 @@ if [ -d "$MKT_DIR/.git" ] && [ -d "$CACHE_DIR" ]; then
   MKT_VER=$(jq -r '.version // "0"' "$MKT_DIR/.claude-plugin/plugin.json" 2>/dev/null)
   CACHE_VER=$(jq -r '.version // "0"' "$(ls -d "$CACHE_DIR"/*/.claude-plugin/plugin.json 2>/dev/null | sort -V | tail -1)" 2>/dev/null)
   if [ "$MKT_VER" != "$CACHE_VER" ] && [ -n "$CACHE_VER" ] && [ "$CACHE_VER" != "0" ]; then
-    (cd "$MKT_DIR" && git fetch origin --quiet 2>/dev/null && git reset --hard origin/main --quiet 2>/dev/null) &
+    (cd "$MKT_DIR" && git fetch origin --quiet 2>/dev/null && \
+      if git diff --quiet 2>/dev/null; then
+        git reset --hard origin/main --quiet 2>/dev/null
+      else
+        echo "VBW: marketplace checkout has local modifications — skipping reset" >&2
+      fi) &
   fi
   # Content staleness: compare command counts between marketplace and cache
   # Only compare commands/ dir (both locations have the same structure for this dir)
