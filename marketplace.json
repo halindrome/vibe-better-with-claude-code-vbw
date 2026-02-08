@@ -2,7 +2,10 @@
   "name": "vbw-marketplace",
   "owner": {
     "name": "Tiago Serôdio",
-    "url": "https://github.com/yidakee"
+    "email": "t.serodio@gmail.com"
+  },
+  "metadata": {
+    "description": "Vibe Better With Claude Code — development lifecycle plugin"
   },
   "plugins": [
     {
@@ -10,7 +13,7 @@
       "source": "./",
       "description": "Development lifecycle plugin — 29 commands, 6 agents, continuous verification",
       "version": "1.0.59",
-      "category": "development",
+      "license": "MIT",
       "keywords": [
         "vibe-coding",
         "project-management",
@@ -18,7 +21,8 @@
         "verification",
         "development",
         "lifecycle"
-      ]
+      ],
+      "category": "development"
     }
   ]
 }
