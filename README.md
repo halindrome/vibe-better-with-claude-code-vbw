@@ -414,16 +414,18 @@ Phase numbers are optional -- when omitted, VBW auto-detects the next phase base
 
 ## The Agents
 
-VBW uses 6 specialized agents, each with native tool permissions enforced via YAML frontmatter. They can't do what they shouldn't, which is more than can be said for most interns.
+VBW uses 6 specialized agents, each with native tool permissions enforced via YAML frontmatter. Three layers of control -- `tools` (what they can use), `disallowedTools` (what's platform-denied), and `permissionMode` (how they interact with the session) -- mean they can't do what they shouldn't, which is more than can be said for most interns.
 
-| Agent | Role | Tools |
-| :--- | :--- | :--- |
-| **Scout** | Research and information gathering. Reads everything, writes nothing. The responsible one. | Read, Grep, Glob, WebSearch, WebFetch |
-| **Architect** | Creates roadmaps, derives success criteria, designs phase structure. Writes plans, not code. | Read, Write, Grep, Glob |
-| **Lead** | Merges research + planning + self-review in one session. The one who actually makes decisions. | Read, Write, Grep, Glob, Task |
-| **Dev** | Writes code, makes commits, builds things. Full tool access. Handle with care. | Full access |
-| **QA** | Goal-backward verification. Reads everything, trusts nothing. Cannot modify code. | Read, Grep, Glob, Bash |
-| **Debugger** | Scientific method bug investigation. One issue per session to prevent scope creep. | Full access |
+| Agent | Role | Tools | Denied | Mode |
+| :--- | :--- | :--- | :--- | :--- |
+| **Scout** | Research and information gathering. The responsible one. | Read, Grep, Glob, WebSearch, WebFetch | Write, Edit, NotebookEdit, Bash | `plan` |
+| **Architect** | Creates roadmaps and phase structure. Writes plans, not code. | Read, Glob, Grep, Write | Edit, WebFetch, Bash | `acceptEdits` |
+| **Lead** | Merges research + planning + self-review. The one who actually makes decisions. | Read, Glob, Grep, Write, Bash, WebFetch, Task | Edit | `acceptEdits` |
+| **Dev** | Writes code, makes commits, builds things. Handle with care. | Full access | -- | `acceptEdits` |
+| **QA** | Goal-backward verification. Trusts nothing. Can run commands but cannot write files. | Read, Grep, Glob, Bash | Write, Edit, NotebookEdit | `plan` |
+| **Debugger** | Scientific method bug investigation. One issue, one session. | Full access | -- | `acceptEdits` |
+
+**Denied** = `disallowedTools` -- platform-enforced denial. These tools are blocked by Claude Code itself, not by instructions an agent might ignore during compaction. **Mode** = `permissionMode` -- `plan` means read-only exploration (Scout, QA), `acceptEdits` means the agent can propose and apply changes.
 
 <br>
 
