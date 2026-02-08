@@ -11,13 +11,40 @@ FILES=(
   "$ROOT/marketplace.json"
 )
 
-LOCAL=$(cat "$ROOT/VERSION" | tr -d '[:space:]')
+# --verify: check all 4 version files are in sync without bumping
+if [[ "${1:-}" == "--verify" ]]; then
+  V_FILE=$(tr -d '[:space:]' < "$ROOT/VERSION")
+  V_PLUGIN=$(jq -r '.version' "$ROOT/.claude-plugin/plugin.json")
+  V_MKT_PLUGIN=$(jq -r '.plugins[0].version' "$ROOT/.claude-plugin/marketplace.json")
+  V_MKT_ROOT=$(jq -r '.plugins[0].version' "$ROOT/marketplace.json")
 
-# Fetch the authoritative version from GitHub
-REMOTE=$(curl -sf --max-time 5 "$REPO_URL" 2>/dev/null | tr -d '[:space:]')
+  echo "Version sync check:"
+  echo "  VERSION                         $V_FILE"
+  echo "  .claude-plugin/plugin.json      $V_PLUGIN"
+  echo "  .claude-plugin/marketplace.json $V_MKT_PLUGIN"
+  echo "  marketplace.json                $V_MKT_ROOT"
+
+  if [[ "$V_FILE" != "$V_PLUGIN" || "$V_FILE" != "$V_MKT_PLUGIN" || "$V_FILE" != "$V_MKT_ROOT" ]]; then
+    echo ""
+    echo "MISMATCH DETECTED — the following files differ:" >&2
+    [[ "$V_FILE" != "$V_PLUGIN" ]]     && echo "  .claude-plugin/plugin.json ($V_PLUGIN != $V_FILE)" >&2
+    [[ "$V_FILE" != "$V_MKT_PLUGIN" ]] && echo "  .claude-plugin/marketplace.json ($V_MKT_PLUGIN != $V_FILE)" >&2
+    [[ "$V_FILE" != "$V_MKT_ROOT" ]]   && echo "  marketplace.json ($V_MKT_ROOT != $V_FILE)" >&2
+    exit 1
+  fi
+
+  echo ""
+  echo "All 4 version files are in sync ($V_FILE)."
+  exit 0
+fi
+
+LOCAL=$(tr -d '[:space:]' < "$ROOT/VERSION")
+
+# Fetch the authoritative version from GitHub (graceful fallback on failure)
+REMOTE=$(curl -sf --max-time 5 "$REPO_URL" 2>/dev/null | tr -d '[:space:]' || true)
 if [[ -z "$REMOTE" ]]; then
-  echo "Error: Could not fetch version from GitHub." >&2
-  exit 1
+  echo "Warning: Could not fetch version from GitHub. Using local VERSION as baseline." >&2
+  REMOTE="$LOCAL"
 fi
 
 # Use whichever is higher as the base (protects against local being behind)
