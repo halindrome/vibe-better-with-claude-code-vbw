@@ -1,4 +1,5 @@
 ---
+name: resume
 description: Restore context from a previous paused session.
 argument-hint:
 allowed-tools: Read, Bash, Glob

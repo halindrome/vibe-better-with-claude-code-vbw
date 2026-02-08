@@ -1,4 +1,5 @@
 ---
+name: debug
 description: Investigate a bug using the Debugger agent's scientific method protocol.
 argument-hint: "<bug description or error message>"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch

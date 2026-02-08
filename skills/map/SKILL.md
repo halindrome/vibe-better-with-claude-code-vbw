@@ -1,4 +1,5 @@
 ---
+name: map
 description: Analyze existing codebase with parallel Scout teammates to produce structured mapping documents.
 argument-hint: [--incremental] [--package=name]
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
@@ -57,39 +58,39 @@ If monorepo: enumerate packages. If `--package=name`: scope mapping to that pack
 
 ### Step 3: Create mapping team with 4 Scout teammates
 
-Create an Agent Team with 4 Scout teammates. Each gets a task in the shared task list with thin context:
+Create an Agent Team with 4 Scout teammates. Use TaskCreate to create a task for each Scout with thin context:
 
 **Scout 1 -- Tech Stack:**
 ```
-Map tech stack. Write STACK.md and DEPENDENCIES.md to .vbw-planning/codebase/.
+Analyze tech stack and dependencies. Send structured findings to the lead via SendMessage with domain summary for STACK.md and DEPENDENCIES.md.
 Mode: {MAPPING_MODE}. {If incremental: "Changed files: {list}"}
 {If monorepo: "Packages: {list}"}
 ```
 
 **Scout 2 -- Architecture:**
 ```
-Map architecture. Write ARCHITECTURE.md and STRUCTURE.md to .vbw-planning/codebase/.
+Analyze architecture and project structure. Send structured findings to the lead via SendMessage with domain summary for ARCHITECTURE.md and STRUCTURE.md.
 Mode: {MAPPING_MODE}. {If incremental: "Changed files: {list}"}
 {If monorepo: "Packages: {list}"}
 ```
 
 **Scout 3 -- Quality:**
 ```
-Map quality signals. Write CONVENTIONS.md and TESTING.md to .vbw-planning/codebase/.
+Analyze quality signals, conventions, and testing. Send structured findings to the lead via SendMessage with domain summary for CONVENTIONS.md and TESTING.md.
 Mode: {MAPPING_MODE}. {If incremental: "Changed files: {list}"}
 {If monorepo: "Packages: {list}"}
 ```
 
 **Scout 4 -- Concerns:**
 ```
-Map concerns. Write CONCERNS.md to .vbw-planning/codebase/.
+Analyze concerns, technical debt, and risks. Send structured findings to the lead via SendMessage with domain summary for CONCERNS.md.
 Mode: {MAPPING_MODE}. {If incremental: "Changed files: {list}"}
 {If monorepo: "Packages: {list}"}
 ```
 
 Security enforcement is handled by the PreToolUse hook -- no inline exclusion lists needed.
 
-Wait for all teammates to complete. Verify all 7 documents exist.
+Wait for all teammates to send their findings.
 
 **Scout communication protocol (effort-gated):**
 
@@ -102,6 +103,17 @@ Instruct Scout teammates to use SendMessage for cross-cutting discovery sharing 
 - At **Fast** effort: instruct Scouts to report blockers only via SendMessage (e.g., if a Scout cannot access expected files or encounters an empty project area that prevents mapping).
 
 Use targeted `message` (not `broadcast`). Scout domains are independent; most findings stay within domain.
+
+### Step 3.5: Write mapping documents from Scout reports
+
+After receiving all Scout findings via SendMessage, write the 7 individual mapping documents to `.vbw-planning/codebase/`:
+
+- **STACK.md** and **DEPENDENCIES.md** -- from Scout 1 (Tech Stack) findings
+- **ARCHITECTURE.md** and **STRUCTURE.md** -- from Scout 2 (Architecture) findings
+- **CONVENTIONS.md** and **TESTING.md** -- from Scout 3 (Quality) findings
+- **CONCERNS.md** -- from Scout 4 (Concerns) findings
+
+Write each document using the structured data received from Scouts. Verify all 7 documents exist before proceeding.
 
 ### Step 4: Synthesize INDEX.md and PATTERNS.md
 

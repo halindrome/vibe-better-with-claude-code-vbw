@@ -1,4 +1,5 @@
 ---
+name: qa
 description: Run deep verification on completed phase work using the QA agent.
 argument-hint: [phase-number] [--tier=quick|standard|deep] [--effort=thorough|balanced|fast|turbo]
 allowed-tools: Read, Write, Bash, Glob, Grep

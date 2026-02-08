@@ -1,4 +1,6 @@
 ---
+name: init
+disable-model-invocation: true
 description: Set up environment and scaffold .vbw-planning directory with templates and config.
 argument-hint:
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep

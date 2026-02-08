@@ -1,20 +1,23 @@
 {
   "name": "vbw-marketplace",
   "owner": {
-    "name": "Tiago Serôdio - https://github.com/yidakee"
+    "name": "Tiago Serôdio",
+    "url": "https://github.com/yidakee"
   },
   "plugins": [
     {
       "name": "vbw",
       "source": "./",
-      "description": "Vibe Better With Claude Code - You're not an engineer anymore. You're a prompt jockey with commit access. At least do it properly.",
-      "version": "1.0.34",
-      "category": "productivity",
-      "tags": [
-        "development",
-        "lifecycle",
+      "description": "Development lifecycle plugin — 27 commands, 6 agents, continuous verification",
+      "version": "1.0.35",
+      "category": "development",
+      "keywords": [
+        "vibe-coding",
+        "project-management",
+        "agent-teams",
         "verification",
-        "agents"
+        "development",
+        "lifecycle"
       ]
     }
   ]

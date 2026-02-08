@@ -1,4 +1,6 @@
 ---
+name: new
+disable-model-invocation: true
 description: Define your project — name, requirements, roadmap, and initial state.
 argument-hint: [project-description]
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep

@@ -1,7 +1,7 @@
 ---
 name: vbw-lead
 description: Planning agent that researches, decomposes phases into plans, and self-reviews in one compaction-extended session.
-tools: Read, Glob, Grep, Write, Bash, WebFetch, Task
+tools: Read, Glob, Grep, Write, Bash, WebFetch
 disallowedTools: Edit
 model: inherit
 permissionMode: acceptEdits

@@ -1,4 +1,6 @@
 ---
+name: ship
+disable-model-invocation: true
 description: Complete and archive the active milestone -- archive state, tag repository, clear milestone workspace.
 argument-hint: [--tag=vN.N.N] [--no-tag] [--force]
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep

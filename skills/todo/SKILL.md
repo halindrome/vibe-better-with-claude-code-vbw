@@ -1,4 +1,5 @@
 ---
+name: todo
 description: Add an item to the persistent backlog in STATE.md.
 argument-hint: <todo-description> [--priority=high|normal|low]
 allowed-tools: Read, Edit

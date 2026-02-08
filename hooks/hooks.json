@@ -35,17 +35,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Read|Glob|Grep",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'for f in \"$HOME\"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/security-filter.sh; do [ -f \"$f\" ] && exec bash \"$f\"; done'",
-            "timeout": 5
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
+        "matcher": "Read|Glob|Grep|Write|Edit",
         "hooks": [
           {
             "type": "command",
@@ -77,6 +67,7 @@
     ],
     "SubagentStop": [
       {
+        "matcher": "vbw-lead|vbw-dev|vbw-qa|vbw-scout|vbw-debugger|vbw-architect",
         "hooks": [
           {
             "type": "command",

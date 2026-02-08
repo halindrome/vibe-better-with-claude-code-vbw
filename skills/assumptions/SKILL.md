@@ -1,4 +1,5 @@
 ---
+name: assumptions
 description: Surface Claude's implicit assumptions about a phase before planning begins.
 argument-hint: [phase-number]
 allowed-tools: Read, Glob, Grep, Bash

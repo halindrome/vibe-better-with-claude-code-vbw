@@ -1,4 +1,6 @@
 ---
+name: switch
+disable-model-invocation: true
 description: Switch the active milestone context for all subsequent VBW commands.
 argument-hint: <milestone-name>
 allowed-tools: Read, Write, Bash, Glob, Grep

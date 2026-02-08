@@ -1,4 +1,5 @@
 ---
+name: plan
 description: Plan a phase by spawning the Lead agent for research, decomposition, and self-review.
 argument-hint: [phase-number] [--effort=thorough|balanced|fast|turbo]
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch

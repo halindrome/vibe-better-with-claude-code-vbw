@@ -1,4 +1,6 @@
 ---
+name: execute
+disable-model-invocation: true
 description: Execute a planned phase through Agent Teams with parallel Dev teammates.
 argument-hint: [phase-number] [--effort=thorough|balanced|fast|turbo] [--skip-qa] [--plan=NN]
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
@@ -97,6 +99,8 @@ You are the team LEAD, not a developer. Your role is to orchestrate, not impleme
 - If all Dev teammates are unavailable, create a new Dev teammate rather than implementing yourself
 
 This is instruction-enforced (not platform-enforced). The platform cannot prevent the lead from using Write/Edit on source files. This directive exists as a defensive guardrail to maintain the separation between orchestration and implementation roles.
+
+Note: Anthropic's `delegate` permissionMode cannot be applied here because the lead is the main session, not a spawned agent. Skill frontmatter cannot change the main session's permissionMode at runtime.
 
 At Turbo effort, no team is created -- Dev executes directly without a lead.
 

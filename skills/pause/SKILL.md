@@ -1,4 +1,5 @@
 ---
+name: pause
 description: Save current session context for later resumption.
 argument-hint: [notes]
 allowed-tools: Read, Write, Glob, Grep

@@ -41,7 +41,7 @@ Whether you're a seasoned engineer who wants to push the boundaries of what AI-a
 
 > **Platform:** macOS and Linux only. Windows is not supported natively — all hooks, scripts, and context blocks require bash. If you're on Windows, run Claude Code inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
 
-VBW is a Claude Code plugin that bolts an actual development lifecycle onto your vibe coding sessions. It gives you 26 slash commands and 6 AI agents that handle planning, building, verifying, and shipping your code, so what you produce has at least a fighting chance of surviving a code review.
+VBW is a Claude Code plugin that bolts an actual development lifecycle onto your vibe coding sessions. It gives you 27 slash commands and 6 AI agents that handle planning, building, verifying, and shipping your code, so what you produce has at least a fighting chance of surviving a code review.
 
 You describe what you want. VBW breaks it into phases. Agents plan, write, and verify the code. Commits are atomic. Verification is goal-backward. State persists across sessions. It's the entire software development lifecycle, except you replaced the engineering team with a plugin and a prayer.
 
@@ -420,7 +420,7 @@ VBW uses 6 specialized agents, each with native tool permissions enforced via YA
 | :--- | :--- | :--- | :--- | :--- |
 | **Scout** | Research and information gathering. The responsible one. | Read, Grep, Glob, WebSearch, WebFetch | Write, Edit, NotebookEdit, Bash | `plan` |
 | **Architect** | Creates roadmaps and phase structure. Writes plans, not code. | Read, Glob, Grep, Write | Edit, WebFetch, Bash | `acceptEdits` |
-| **Lead** | Merges research + planning + self-review. The one who actually makes decisions. | Read, Glob, Grep, Write, Bash, WebFetch, Task | Edit | `acceptEdits` |
+| **Lead** | Merges research + planning + self-review. The one who actually makes decisions. | Read, Glob, Grep, Write, Bash, WebFetch | Edit | `acceptEdits` |
 | **Dev** | Writes code, makes commits, builds things. Handle with care. | Full access | -- | `acceptEdits` |
 | **QA** | Goal-backward verification. Trusts nothing. Can run commands but cannot write files. | Read, Grep, Glob, Bash | Write, Edit, NotebookEdit | `plan` |
 | **Debugger** | Scientific method bug investigation. One issue, one session. | Full access | -- | `acceptEdits` |
@@ -480,7 +480,7 @@ Here's when each one shows up to work:
   │  QA ───────────── Read + Bash. Can verify, can't write. The auditor.          │
   │  Architect ─────── Edit/Bash blocked by platform. Write limited to plans      │
   │                    by instruction. Writes roadmaps, not code. Mostly.         │
-  │  Lead ─────────── Read, Write, Bash, WebFetch, Task. The middle manager.     │
+  │  Lead ─────────── Read, Write, Bash, WebFetch. The middle manager.            │
   │  Dev, Debugger ─── Full access. The ones you actually worry about.            │
   │                                                                               │
   │  Platform-enforced: tools / disallowedTools (cannot be overridden)            │
@@ -520,7 +520,7 @@ Not every task deserves the same level of scrutiny. Most of yours don't. VBW pro
 ```
 .claude-plugin/    Plugin manifest (plugin.json)
 agents/            6 agent definitions with native tool permissions
-skills/            26 slash commands (skills/*/SKILL.md)
+skills/            27 slash commands (skills/*/SKILL.md)
 config/            Default settings and stack-to-skill mappings
 hooks/             Plugin hooks for continuous verification
 scripts/           Hook handler scripts (security, validation, QA gates)

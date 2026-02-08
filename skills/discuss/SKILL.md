@@ -1,4 +1,5 @@
 ---
+name: discuss
 description: Gather phase context through structured questions before planning.
 argument-hint: [phase-number]
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep

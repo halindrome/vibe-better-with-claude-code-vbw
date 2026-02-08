@@ -1,4 +1,5 @@
 ---
+name: update
 description: Update VBW to the latest version with automatic cache refresh.
 argument-hint: "[--check]"
 allowed-tools: Read, Bash, Glob

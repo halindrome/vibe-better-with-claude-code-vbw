@@ -1,4 +1,6 @@
 ---
+name: milestone
+disable-model-invocation: true
 description: Start a new milestone cycle with isolated state and phase numbering.
 argument-hint: <milestone-name> [--branch]
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep

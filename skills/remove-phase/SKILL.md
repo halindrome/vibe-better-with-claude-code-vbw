@@ -1,4 +1,6 @@
 ---
+name: remove-phase
+disable-model-invocation: true
 description: Remove a future phase from the active milestone's roadmap and renumber subsequent phases.
 argument-hint: <phase-number>
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
