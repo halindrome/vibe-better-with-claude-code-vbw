@@ -95,6 +95,21 @@ Effort: {DEV_EFFORT}. Working directory: {pwd}.
 
 Spawn Dev teammates (one per plan within a wave, or one per plan if `--plan=NN`). Use wave ordering: all plans in wave 1 first, wait for completion, then wave 2, etc.
 
+**Teammate communication protocol (effort-gated):**
+
+Instruct Dev teammates to use SendMessage for coordination based on the active effort level:
+
+- At **Thorough** or **Balanced** effort:
+  - **Blockers:** If a task is blocked by a dependency not yet available (e.g., a prior wave's output hasn't landed), message the lead with the blocker description so the lead can prioritize or reassign.
+  - **Cross-cutting findings:** If implementing a task reveals something that affects another teammate's work (e.g., a shared interface changed, a dependency version conflict, a schema migration ordering issue), message the affected teammate directly.
+- At **Thorough** effort only, additionally:
+  - **Progress updates:** After completing each task, message the lead with a brief status update (task name, commit hash, any concerns).
+  - **Design debates:** If a task's approach has architectural implications that could affect other plans, message the lead to discuss before implementing.
+- At **Fast** effort: instruct teammates to report blockers only via SendMessage. No cross-cutting findings, progress updates, or design debates.
+- At **Turbo** effort: no Agent Team exists, so no messaging directives apply.
+
+Use targeted `message` (not `broadcast`) for most communication. Reserve `broadcast` only for critical blocking issues affecting all teammates (e.g., a shared dependency is broken and all work should pause).
+
 **Update execution state at wave boundaries and plan completions:**
 - **Wave start:** Update `.vbw-planning/.execution-state.json` — set `"wave"` to current wave number, set plans in this wave to `"running"`.
 - **Plan completion:** Update the plan's status in the JSON to `"complete"` (or `"failed"` if it failed).
@@ -122,6 +137,17 @@ Persist results to `{phase-dir}/{phase}-VERIFICATION.md`.
 If `--skip-qa` or turbo: display "○ QA verification skipped ({reason})".
 
 ### Step 5: Update state and present summary
+
+**Shutdown and cleanup (all effort levels except Turbo):**
+
+After all teammates have completed their tasks (or after all waves have finished):
+
+1. Send a shutdown request to each teammate.
+2. Wait for each teammate to respond with shutdown approval.
+3. If a teammate rejects shutdown (still finishing work), wait for it to complete and re-request.
+4. Once ALL teammates have shut down, run TeamDelete to clean up the team and its shared task list.
+
+This prevents orphaned teammates and dangling task lists. Do not proceed to state updates until TeamDelete has succeeded.
 
 **Mark execution complete:** Update `.vbw-planning/.execution-state.json` — set `"status"` to `"complete"`. The statusline will auto-delete the file on next refresh, returning to normal display.
 
