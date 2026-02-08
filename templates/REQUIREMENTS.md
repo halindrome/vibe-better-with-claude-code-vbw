@@ -38,9 +38,4 @@ Core value: {core-value-one-liner}
 
 ## Traceability
 
-<!-- Map each requirement to its implementing phase and current status -->
-
-| REQ-ID | Description | Phase | Status |
-|--------|-------------|-------|--------|
-| REQ-01 | {short-desc} | {phase-N} | {pending/in-progress/complete} |
-| REQ-02 | {short-desc} | {phase-N} | {pending/in-progress/complete} |
+Requirement-to-phase mapping is tracked in ROADMAP.md.

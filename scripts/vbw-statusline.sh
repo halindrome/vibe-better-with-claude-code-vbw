@@ -26,27 +26,6 @@ fi
 
 # --- Helpers ---
 
-# Single awk call for all formatting: mode tok|cost|dur, value
-fmt() {
-  awk -v mode="$1" -v val="$2" 'BEGIN {
-    v = val + 0
-    if (mode == "tok") {
-      if (v >= 1000000)      printf "%.1fM", v/1000000
-      else if (v >= 1000)    printf "%.1fK", v/1000
-      else                   printf "%d", v
-    } else if (mode == "cost") {
-      if (v >= 100)       printf "$%.0f", v
-      else if (v >= 10)   printf "$%.1f", v
-      else                printf "$%.2f", v
-    } else if (mode == "dur") {
-      s = int(v / 1000)
-      if (s >= 3600) { h=int(s/3600); m=int((s%3600)/60); printf "%dh %dm", h, m }
-      else if (s >= 60) { m=int(s/60); r=s%60; printf "%dm %ds", m, r }
-      else printf "%ds", s
-    }
-  }'
-}
-
 # Check if a cache file is still fresh (within TTL seconds)
 cache_fresh() {
   local cf="$1" ttl="$2"
@@ -106,20 +85,61 @@ MODEL=${MODEL:-Claude}; VER=${VER:-?}
 
 NOW=$(date +%s)
 
+# Used tokens = input + cache_write + cache_read (per official docs)
+CTX_USED=$((IN_TOK + CACHE_W + CACHE_R))
+
+# --- Batch format all values in a single awk call ---
+IFS='|' read -r CTX_USED_FMT CTX_SIZE_FMT IN_TOK_FMT OUT_TOK_FMT \
+               CACHE_W_FMT CACHE_R_FMT COST_FMT DUR_FMT API_DUR_FMT <<< \
+  "$(awk -v ctx_used="$CTX_USED" -v ctx_size="$CTX_SIZE" \
+        -v in_tok="$IN_TOK" -v out_tok="$OUT_TOK" \
+        -v cache_w="$CACHE_W" -v cache_r="$CACHE_R" \
+        -v cost="$COST" -v dur_ms="$DUR_MS" -v api_ms="$API_MS" \
+  'BEGIN {
+    # tok formatter
+    split(ctx_used " " ctx_size " " in_tok " " out_tok " " cache_w " " cache_r, tok_vals)
+    for (i = 1; i <= 6; i++) {
+      v = tok_vals[i] + 0
+      if (v >= 1000000)      tok_out[i] = sprintf("%.1fM", v/1000000)
+      else if (v >= 1000)    tok_out[i] = sprintf("%.1fK", v/1000)
+      else                   tok_out[i] = sprintf("%d", v)
+    }
+    # cost formatter
+    c = cost + 0
+    if (c >= 100)       cost_fmt = sprintf("$%.0f", c)
+    else if (c >= 10)   cost_fmt = sprintf("$%.1f", c)
+    else                cost_fmt = sprintf("$%.2f", c)
+    # dur formatter
+    s = int(dur_ms / 1000)
+    if (s >= 3600) { h=int(s/3600); m=int((s%3600)/60); dur_fmt = sprintf("%dh %dm", h, m) }
+    else if (s >= 60) { m=int(s/60); r=s%60; dur_fmt = sprintf("%dm %ds", m, r) }
+    else dur_fmt = sprintf("%ds", s)
+    # api dur formatter
+    s2 = int(api_ms / 1000)
+    if (s2 >= 3600) { h=int(s2/3600); m=int((s2%3600)/60); api_fmt = sprintf("%dh %dm", h, m) }
+    else if (s2 >= 60) { m=int(s2/60); r=s2%60; api_fmt = sprintf("%dm %ds", m, r) }
+    else api_fmt = sprintf("%ds", s2)
+
+    printf "%s|%s|%s|%s|%s|%s|%s|%s|%s", tok_out[1], tok_out[2], tok_out[3], tok_out[4], tok_out[5], tok_out[6], cost_fmt, dur_fmt, api_fmt
+  }')"
+
 # --- VBW state (cached 5s) ---
 
 VBW_CF="${_CACHE}-sl"
 
 if ! cache_fresh "$VBW_CF" 5; then
   PH=""; TT=""; EF="balanced"; BR=""
-  PD=0; PT=0; PPD=0; QA="--"
+  PD=0; PT=0; PPD=0; QA="--"; GH_URL=""
   if [ -f ".vbw-planning/STATE.md" ]; then
     PH=$(grep -m1 "^Phase:" .vbw-planning/STATE.md | grep -oE '[0-9]+' | head -1)
     TT=$(grep -m1 "^Phase:" .vbw-planning/STATE.md | grep -oE '[0-9]+' | tail -1)
   fi
   [ -f ".vbw-planning/config.json" ] && \
     EF=$(jq -r '.effort // "balanced"' .vbw-planning/config.json 2>/dev/null)
-  git rev-parse --git-dir >/dev/null 2>&1 && BR=$(git branch --show-current 2>/dev/null)
+  if git rev-parse --git-dir >/dev/null 2>&1; then
+    BR=$(git branch --show-current 2>/dev/null)
+    GH_URL=$(git remote get-url origin 2>/dev/null | sed 's|git@github.com:|https://github.com/|' | sed 's|\.git$||')
+  fi
 
   # Plan counting
   if [ -d ".vbw-planning/phases" ]; then
@@ -133,10 +153,10 @@ if ! cache_fresh "$VBW_CF" 5; then
     fi
   fi
 
-  printf '%s\n' "${PH:-0}|${TT:-0}|${EF}|${BR}|${PD}|${PT}|${PPD}|${QA}" > "$VBW_CF"
+  printf '%s\n' "${PH:-0}|${TT:-0}|${EF}|${BR}|${PD}|${PT}|${PPD}|${QA}|${GH_URL}" > "$VBW_CF"
 fi
 
-IFS='|' read -r PH TT EF BR PD PT PPD QA < "$VBW_CF"
+IFS='|' read -r PH TT EF BR PD PT PPD QA GH_URL < "$VBW_CF"
 
 # --- Execution progress (cached 2s) ---
 
@@ -265,33 +285,22 @@ else
   USAGE_LINE="${D}Limits: N/A (using API key)${X}"
 fi
 
-# --- GitHub link (cached 30s) ---
+# --- GitHub link (from VBW state cache) ---
 
-GH_CF="${_CACHE}-gh"
 GH_LINK=""
-
-if ! cache_fresh "$GH_CF" 30; then
-  GH_URL=""
-  if git rev-parse --git-dir >/dev/null 2>&1; then
-    GH_URL=$(git remote get-url origin 2>/dev/null | sed 's|git@github.com:|https://github.com/|' | sed 's|\.git$||')
-  fi
-  printf '%s\n' "$GH_URL" > "$GH_CF"
-fi
-
-GH_URL=$(cat "$GH_CF" 2>/dev/null)
 if [ -n "$GH_URL" ]; then
   GH_NAME=$(basename "$GH_URL")
   # OSC 8 clickable link: \e]8;;URL\a TEXT \e]8;;\a
   GH_LINK="\033]8;;${GH_URL}\a${GH_NAME}\033]8;;\a"
 fi
 
-# --- Agent activity (cached 3s) ---
+# --- Agent activity (cached 10s) ---
 # Detect running agents by counting claude processes for this user
 
 AGENT_CF="${_CACHE}-agents"
 AGENT_LINE=""
 
-if ! cache_fresh "$AGENT_CF" 3; then
+if ! cache_fresh "$AGENT_CF" 10; then
   AGENT_DATA=""
   AGENT_N=$(( $(pgrep -u "$_UID" -cf "claude" 2>/dev/null || echo 1) - 1 ))
   if [ "$AGENT_N" -gt 0 ] 2>/dev/null; then
@@ -308,8 +317,6 @@ AGENT_LINE=$(cat "$AGENT_CF" 2>/dev/null)
 FL=$((PCT * 20 / 100)); EM=$((20 - FL))
 CTX_BAR=""; [ "$FL" -gt 0 ] && CTX_BAR=$(printf "%${FL}s" | tr ' ' '▓')
 [ "$EM" -gt 0 ] && CTX_BAR="${CTX_BAR}$(printf "%${EM}s" | tr ' ' '░')"
-# Used tokens = input + cache_write + cache_read (per official docs)
-CTX_USED=$((IN_TOK + CACHE_W + CACHE_R))
 
 # --- Line 1: VBW project state ---
 
@@ -347,9 +354,9 @@ fi
 
 # --- Line 2: context window ---
 
-L2="Context: ${BC}${CTX_BAR}${X} ${BC}${PCT}%${X} $(fmt tok "$CTX_USED")/$(fmt tok "$CTX_SIZE")"
-L2="$L2 ${D}│${X} Tokens: $(fmt tok "$IN_TOK") in  $(fmt tok "$OUT_TOK") out"
-L2="$L2 ${D}│${X} Cache: $(fmt tok "$CACHE_W") write  $(fmt tok "$CACHE_R") read"
+L2="Context: ${BC}${CTX_BAR}${X} ${BC}${PCT}%${X} ${CTX_USED_FMT}/${CTX_SIZE_FMT}"
+L2="$L2 ${D}│${X} Tokens: ${IN_TOK_FMT} in  ${OUT_TOK_FMT} out"
+L2="$L2 ${D}│${X} Cache: ${CACHE_W_FMT} write  ${CACHE_R_FMT} read"
 
 # --- Line 3: usage limits ---
 
@@ -358,8 +365,8 @@ L3="$USAGE_LINE"
 # --- Line 4: session economy + GitHub ---
 
 L4="Model: ${D}${MODEL}${X}"
-L4="$L4 ${D}│${X} Cost: ${Y}$(fmt cost "$COST")${X}"
-L4="$L4 ${D}│${X} Time: $(fmt dur "$DUR_MS") (API: $(fmt dur "$API_MS"))"
+L4="$L4 ${D}│${X} Cost: ${Y}${COST_FMT}${X}"
+L4="$L4 ${D}│${X} Time: ${DUR_FMT} (API: ${API_DUR_FMT})"
 L4="$L4 ${D}│${X} Diff: ${G}+${ADDED}${X} ${R}-${REMOVED}${X}"
 [ -n "$AGENT_LINE" ] && L4="$L4 ${D}│${X} ${AGENT_LINE}"
 [ -n "$GH_LINK" ] && L4="$L4 ${D}│${X} ${GH_LINK}"

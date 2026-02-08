@@ -4,10 +4,8 @@ phase: {phase-id}
 plan: {plan-number}
 title: {plan-title}
 status: {complete|partial|failed}
-tokens_consumed: {number}
 deviations:
   - "{deviation-description}"
-compaction_count: {number}
 duration: {time-string}
 completed: {YYYY-MM-DD}
 subsystem: {category}
@@ -16,10 +14,8 @@ tags:
 dependency_graph:
   requires: [{prior-phases}]
   provides: [{what-was-delivered}]
-  affects: [{future-phases}]
 tech_stack:
   added: [{new-libraries}]
-  patterns: [{architectural-patterns}]
 key_files:
   created: [{file-paths}]
   modified: [{file-paths}]

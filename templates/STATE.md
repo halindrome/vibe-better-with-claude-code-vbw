@@ -19,23 +19,6 @@ Last activity: {date} -- {description}
 
 Progress: [{progress-bar}] {percentage}%
 
-## Performance Metrics
-
-**Velocity:**
-- Total plans completed: {number}
-- Average duration: {time}
-- Total execution time: {hours} hours
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| {N} | {completed}/{total} | {time} | {avg} |
-
-**Recent Trend:**
-- Last 5 plans: {durations}
-- Trend: {improving/stable/degrading}
-
 ## Accumulated Context
 
 ### Decisions

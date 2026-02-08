@@ -14,10 +14,12 @@ The `effort` field in `config/defaults.json` sets the global default. Per-invoca
 
 | Profile  | ID      | Model  | Lead | Architect | Dev    | QA     | Scout  | Debugger | Plan Approval |
 |----------|---------|--------|------|-----------|--------|--------|--------|----------|---------------|
-| Thorough | EFRT-01 | Opus   | max  | max       | high   | high   | high   | high     | required      |
-| Balanced | EFRT-02 | Opus   | high | high      | medium | medium | medium | medium   | off           |
+| Thorough | EFRT-01 | Opus   | max  | max       | high   | high   | high*  | high     | required      |
+| Balanced | EFRT-02 | Opus   | high | high      | medium | medium | medium*| medium   | off           |
 | Fast     | EFRT-03 | Sonnet | high | medium    | medium | low    | low    | medium   | off           |
 | Turbo    | EFRT-04 | Sonnet | skip | skip      | low    | skip   | skip   | low      | off           |
+
+\* Scout uses inherited model (Opus) at Thorough/Balanced and Haiku at Fast/Turbo.
 
 ## Profile Details
 
@@ -26,7 +28,7 @@ The `effort` field in `config/defaults.json` sets the global default. Per-invoca
 **Model:** Opus
 **Use when:** Critical features, complex architecture, production-impacting changes.
 
-- **Scout (high):** Broad research across multiple sources. Cross-reference findings between web and codebase. Explore adjacent topics for context. Multiple URLs per finding.
+- **Scout (high, inherited model):** Broad research across multiple sources. Cross-reference findings between web and codebase. Explore adjacent topics for context. Multiple URLs per finding. Runs on the session model (Opus) for maximum research quality.
 - **Architect (max):** Comprehensive scope analysis. Detailed success criteria with multiple verification paths. Full requirement mapping with traceability matrix. Explicit dependency justification for every phase ordering decision.
 - **Lead (max):** Exhaustive research across all sources including WebFetch for external docs. Detailed task decomposition with comprehensive action descriptions. Thorough self-review checking all eight criteria (coverage, DAG, file conflicts, completeness, feasibility, context refs, concerns, skills). Full goal-backward must_haves derivation for every plan.
 - **Dev (high):** Spawned with `plan_mode_required` -- proposes implementation approach in read-only plan mode, waits for lead approval before writing code. Once approved: careful implementation with thorough inline verification. Complete error handling and edge case exploration. Comprehensive commit messages with detailed change descriptions. Run all verify checks plus supplementary validation.
@@ -38,7 +40,7 @@ The `effort` field in `config/defaults.json` sets the global default. Per-invoca
 **Model:** Opus
 **Use when:** Standard development work, most phases. The recommended default.
 
-- **Scout (medium):** Targeted research using primary sources. One source per finding is sufficient. No adjacent topic exploration.
+- **Scout (medium, inherited model):** Targeted research using primary sources. One source per finding is sufficient. No adjacent topic exploration. Runs on the session model (Opus) for reliable research.
 - **Architect (high):** Complete scope coverage. Clear success criteria. Full requirement-to-phase mapping. Standard dependency justification.
 - **Lead (high):** Solid research using primary sources (STATE.md, ROADMAP.md, REQUIREMENTS.md, CONCERNS.md). Clear decomposition with sufficient task detail. Self-review checking coverage and feasibility. Goal-backward must_haves for critical paths.
 - **Dev (medium):** Focused implementation addressing the task action directly. Standard verification (run verify checks as written). Concise commit messages. No edge case exploration beyond what the plan specifies.

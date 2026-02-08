@@ -9,7 +9,7 @@
       "name": "vbw",
       "source": "./",
       "description": "Development lifecycle plugin — 27 commands, 6 agents, continuous verification",
-      "version": "1.0.36",
+      "version": "1.0.37",
       "category": "development",
       "keywords": [
         "vibe-coding",

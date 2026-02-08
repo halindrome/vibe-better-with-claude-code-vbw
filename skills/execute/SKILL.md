@@ -51,12 +51,12 @@ Phase directories:
 
 Map effort to agent levels per `${CLAUDE_PLUGIN_ROOT}/references/effort-profiles.md`:
 
-| Profile  | DEV_EFFORT | QA_EFFORT | PLAN_APPROVAL |
-|----------|------------|-----------|---------------|
-| Thorough | high       | high      | required      |
-| Balanced | medium     | medium    | off           |
-| Fast     | medium     | low       | off           |
-| Turbo    | low        | skip      | off           |
+| Profile  | DEV_EFFORT | QA_EFFORT | PLAN_APPROVAL | QA_TIMING  |
+|----------|------------|-----------|---------------|------------|
+| Thorough | high       | high      | required      | per-wave   |
+| Balanced | medium     | medium    | off           | per-wave   |
+| Fast     | medium     | low       | off           | post-build |
+| Turbo    | low        | skip      | off           | skip       |
 
 ### Step 2: Load plans and detect resume state
 
@@ -119,21 +119,24 @@ TaskCreate:
   activeForm: "Executing {NN-MM}"
 
 After creating all tasks, wire dependencies using TaskUpdate:
-  - Group tasks by wave number (from plan frontmatter)
-  - For each task in wave N (where N > 1):
-    TaskUpdate(taskId, addBlockedBy: [all task IDs from wave N-1])
+  - Read the `depends_on` field from each plan's YAML frontmatter
+  - For each plan with `depends_on` entries, find the task IDs of those dependency plans and wire them:
+    TaskUpdate(taskId, addBlockedBy: [task IDs of plans listed in depends_on])
+  - Plans with no `depends_on` (or empty list) start immediately with no blockedBy
 
-Example for 3 plans across 2 waves:
-  Task A (wave 1, plan 04-01) -- no blockedBy
-  Task B (wave 1, plan 04-02) -- no blockedBy
-  Task C (wave 2, plan 04-03) -- blockedBy: [Task A ID, Task B ID]
+Example for 3 plans:
+  Task A (plan 04-01, depends_on: []) -- no blockedBy
+  Task B (plan 04-02, depends_on: []) -- no blockedBy
+  Task C (plan 04-03, depends_on: [04-01]) -- blockedBy: [Task A ID]
 ```
 
 Spawn Dev teammates and assign tasks. The platform enforces execution ordering via task dependencies:
-- Wave 1 tasks have no blockedBy -- they start immediately when teammates are spawned
-- Wave N tasks are blockedBy all wave N-1 tasks -- the platform holds them until dependencies complete
-- Teammates are spawned for all plans, but wave N teammates will idle until their tasks unblock
-- If `--plan=NN`: create a single task with no dependencies (ignore wave grouping)
+- Tasks are blockedBy their specific dependencies from the plan's `depends_on` frontmatter field
+- Plans with no `depends_on` start immediately when teammates are spawned
+- Plans with `depends_on` entries are held until those specific dependency tasks complete
+- Teammates are spawned for all plans, but dependent teammates will idle until their tasks unblock
+- Wave tracking in `.execution-state.json` is informational (for display/logging), not controlling
+- If `--plan=NN`: create a single task with no dependencies (ignore dependency wiring)
 
 **Plan approval gate (effort-gated):**
 When PLAN_APPROVAL is `required` (Thorough effort only):
@@ -174,7 +177,35 @@ Hooks handle continuous verification:
 
 ### Step 4: Post-build QA (optional)
 
-If `--skip-qa` NOT set AND effort != turbo: spawn QA as a subagent with thin context:
+If `--skip-qa` or turbo: display "○ QA verification skipped ({reason})".
+
+**Per-wave QA (Thorough and Balanced effort, QA_TIMING = per-wave):**
+
+After each wave's plans complete, spawn a QA subagent concurrently with the next wave's Dev work:
+
+```
+Verify completed wave {W} plans for phase {N}. Tier: {QA tier from effort}.
+Plans: {paths to completed wave's PLAN.md files}.
+Summaries: {paths to completed wave's SUMMARY.md files}.
+```
+
+- QA receives only the completed plans' PLAN.md + SUMMARY.md files, not the entire phase
+- QA runs concurrently with Dev teammates executing the next wave's plans
+- After the final wave completes, spawn a final QA pass covering cross-wave integration:
+
+```
+Final integration verification for phase {N}. Tier: {QA tier from effort}.
+Plans: {paths to ALL PLAN.md files}. Summaries: {paths to ALL SUMMARY.md files}.
+Phase success criteria: {from ROADMAP.md}.
+Focus on cross-plan integration, shared interfaces, and overall phase coherence.
+```
+
+Persist per-wave results to `{phase-dir}/{phase}-VERIFICATION-wave{W}.md`.
+Persist final integration results to `{phase-dir}/{phase}-VERIFICATION.md`.
+
+**Post-build QA (Fast effort, QA_TIMING = post-build):**
+
+Spawn QA as a subagent after ALL plans complete:
 
 ```
 Verify phase {N}. Tier: {QA tier from effort}.
@@ -183,8 +214,6 @@ Phase success criteria: {from ROADMAP.md}.
 ```
 
 Persist results to `{phase-dir}/{phase}-VERIFICATION.md`.
-
-If `--skip-qa` or turbo: display "○ QA verification skipped ({reason})".
 
 ### Step 5: Update state and present summary
 

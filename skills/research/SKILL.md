@@ -43,6 +43,11 @@ Return structured findings.
 
 For parallel: spawn up to 4 Task calls simultaneously.
 
+**Scout model selection (effort-gated):**
+
+- At **Fast** or **Turbo** effort: include `Model: haiku` in each Scout's task description for cost efficiency.
+- At **Thorough** or **Balanced** effort: do not specify a model override -- Scouts inherit the session model (Opus) via their `model: inherit` agent config.
+
 ### Step 4: Synthesize
 
 Single Scout: present directly.

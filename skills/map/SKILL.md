@@ -90,6 +90,11 @@ Mode: {MAPPING_MODE}. {If incremental: "Changed files: {list}"}
 
 Security enforcement is handled by the PreToolUse hook -- no inline exclusion lists needed.
 
+**Scout model selection (effort-gated):**
+
+- At **Fast** or **Turbo** effort: include `Model: haiku` in each Scout's task description for cost efficiency.
+- At **Thorough** or **Balanced** effort: do not specify a model override -- Scouts inherit the session model (Opus) via their `model: inherit` agent config.
+
 Wait for all teammates to send their findings.
 
 **Scout communication protocol (effort-gated):**
