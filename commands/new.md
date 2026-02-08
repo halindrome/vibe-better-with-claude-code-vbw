@@ -124,18 +124,7 @@ Follow `${CLAUDE_PLUGIN_ROOT}/references/memory-protocol.md`. Write CLAUDE.md at
 
 Keep under 200 lines.
 
-### Step 6: Brownfield auto-map
-
-If BROWNFIELD=true AND `.vbw-planning/codebase/` does NOT exist (no prior map):
-```
-  ⚠ Existing codebase detected ({file-count} source files)
-  ➜ Auto-launching /vbw:map to analyze your codebase...
-```
-Then immediately invoke `/vbw:map` by following `@${CLAUDE_PLUGIN_ROOT}/commands/map.md`.
-
-If `.vbw-planning/codebase/` already exists, skip — display "✓ Codebase map already exists" and move to summary.
-
-### Step 7: Present summary
+### Step 6: Present summary
 
 ```
 ╔══════════════════════════════════════════╗
@@ -150,13 +139,11 @@ If `.vbw-planning/codebase/` already exists, skip — display "✓ Codebase map 
   ✓ CLAUDE.md
 ```
 
-If greenfield:
 ```
 ➜ Next Up
-  /vbw:plan -- Plan your first phase
+  /vbw:discuss -- Gather context before planning
+  /vbw:implement -- Plan and execute your first phase
 ```
-
-If brownfield and map was launched, the map skill handles its own next-up.
 
 ## Output Format
 

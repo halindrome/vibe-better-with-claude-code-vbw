@@ -2,6 +2,15 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.0.56] - 2026-02-08
+
+### Changed
+
+- **Brownfield init auto-chains** — `/vbw:init` now auto-chains to `/vbw:map` then `/vbw:new` when an existing codebase is detected. Previously init stopped at "Next Up: /vbw:new" and the user had to run each command separately.
+- **`/vbw:new` Next Up offers discuss and implement** — after project definition, the Next Up block now suggests `/vbw:discuss` and `/vbw:implement` instead of `/vbw:plan`. Reflects the actual user flow: gather context or jump straight to building.
+- **Removed brownfield auto-map from `/vbw:new`** — codebase mapping for brownfield projects is now handled by init's auto-chain (init → map → new), eliminating the duplicate brownfield detection in new's Step 6.
+- **README flow chart updated** — shows the greenfield/brownfield split at init, with brownfield auto-chaining through map and new. Tutorial and command table updated to match.
+
 ## [1.0.55] - 2026-02-08
 
 ### Changed

@@ -211,84 +211,87 @@ VBW operates on a simple loop that will feel familiar to anyone who's ever shipp
                     │  (dangerous, but continue)  │
                     └──────────────┬──────────────┘
                                    │
-                                   ▼
-                    ┌───────────────────────────────┐
-                    │  /vbw:init                    │
-                    │  Sets up environment          │
-                    │  Scaffolds .vbw-planning/ dir │
-                    │  Detects your stack           │
-                    │  Suggests skills you need     │
-                    └──────────────┬────────────────┘
-                                   │
-                                   ▼
-                    ┌───────────────────────────────┐
-                    │  /vbw:new                     │
-                    │  Defines your project         │
-                    │  Creates PROJECT.md,          │
-                    │  REQUIREMENTS.md, ROADMAP.md  │
-                    └──────────────┬────────────────┘
-                                   │
-          ┌────────────────────────┼────────────────────────┐
-          │ New project            │                        │ Existing codebase
-          │                        │                        │
-          ▼                        │                        ▼
-┌──────────────────┐               │             ┌──────────────────┐
-│ /vbw:discuss     │               │             │ /vbw:map         │
-│ Clarify goals    │               │             │ 4 parallel agents│
-│ before planning  │               │             │ analyze your code│
-│ (optional)       │               │             │ Outputs INDEX.md │
-└────────┬─────────┘               │             │ and PATTERNS.md  │
-         │                         │             └────────┬─────────┘
-         └─────────────────────────┼──────────────────────┘
-                                   │
-                                   │
                     ┌──────────────┴──────────────┐
-                    │                             │
-                    ▼                             ▼
-     ┌──────────────────────────┐  ┌──────────────────────────────┐
-     │  /vbw:implement [phase]  │  │  /vbw:plan [phase]           │
-     │  Plan + execute in one   │  │  Lead agent: researches,     │
-     │  step (the shortcut)     │  │  decomposes into tasks,      │
-     │  Auto-detects what the   │  │  self-reviews the plan       │
-     │  phase needs             │  │  Outputs: PLAN.md per wave   │
-     └──────────────┬───────────┘  └──────────────┬───────────────┘
-                    │                              │
-                    │                              ▼
-                    │              ┌──────────────────────────────┐
-                    │              │  /vbw:execute [phase]        │
-                    │              │  Agent Team: Dev teammates   │
-                    │              │  Per-plan dependency wiring  │
-                    │              │  Hooks verify continuously   │
-                    │              │  Outputs: SUMMARY.md         │
-                    │              └──────────────┬───────────────┘
-                    │                              │
-                    └──────────────┬───────────────┘
-                                   │
-                                   ▼
-                    ┌──────────────────────────────┐
-                    │  /vbw:qa [phase]             │
-                    │  Three-tier verification     │
-                    │  (Quick / Standard / Deep)   │
-                    │  Goal-backward methodology   │
-                    │  Outputs: VERIFICATION.md    │
-                    └──────────────┬───────────────┘
-                                   │
-                          ┌────────┴────────┐
-                          │  More phases?   │
-                          └────────┬────────┘
-                         yes │          │ no
-                             │          │
-                    ┌────────┘          └────────┐
-                    │                            │
-                    ▼                            ▼
-         ┌──────────────────┐        ┌──────────────────┐
-         │ Loop back to     │        │ /vbw:ship        │
-         │ /vbw:implement   │        │ Audits milestone │
-         │ for next phase   │        │ Archives state   │
-         └──────────────────┘        │ Tags the release │
-                                     │ You actually     │
-                                     │ shipped something│
-                                     └──────────────────┘
+                    │ Greenfield?   │  Brownfield? │
+                    └──────┬───────┴──────┬───────┘
+                           │              │
+              ┌────────────┘              └────────────┐
+              │                                        │
+              ▼                                        ▼
+┌───────────────────────┐               ┌───────────────────────┐
+│  /vbw:init            │               │  /vbw:init            │
+│  Environment setup    │               │  Environment setup    │
+│  Scaffold + skills    │               │  Scaffold + skills    │
+└──────────┬────────────┘               │                       │
+           │                            │  ⚠ Codebase detected  │
+           │                            │  Auto-chains:         │
+           ▼                            │    → /vbw:map         │
+┌───────────────────────┐               │    → /vbw:new         │
+│  /vbw:new             │               └──────────┬────────────┘
+│  Define project       │                          │
+│  Requirements,        │                          │
+│  roadmap, CLAUDE.md   │                          │
+└──────────┬────────────┘                          │
+           │                                       │
+           └───────────────────┬───────────────────┘
+                               │
+                               │ Project defined
+                               │
+              ┌────────────────┴────────────────┐
+              │                                 │
+              ▼                                 ▼
+┌──────────────────────┐         ┌──────────────────────────────┐
+│ /vbw:discuss         │         │ /vbw:implement [phase]       │
+│ Gather context       │────────▶│ Plan + execute in one step   │
+│ before planning      │         │ Auto-detects what the        │
+│ (optional)           │         │ phase needs                  │
+└──────────────────────┘         └──────────────┬───────────────┘
+                                                │
+              ┌─────────────────────────────────┘
+              │
+              │ Or separately:
+              │
+              ▼
+┌──────────────────────────────┐
+│  /vbw:plan [phase]           │
+│  Lead agent: researches,     │
+│  decomposes, self-reviews    │
+│  Outputs: PLAN.md per wave   │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│  /vbw:execute [phase]        │
+│  Agent Team: Dev teammates   │
+│  Per-plan dependency wiring  │
+│  Hooks verify continuously   │
+│  Outputs: SUMMARY.md         │
+└──────────────┬───────────────┘
+               │
+               ▼
+┌──────────────────────────────┐
+│  /vbw:qa [phase]             │
+│  Three-tier verification     │
+│  Goal-backward methodology   │
+│  Outputs: VERIFICATION.md    │
+└──────────────┬───────────────┘
+               │
+      ┌────────┴────────┐
+      │  More phases?   │
+      └────────┬────────┘
+     yes │          │ no
+         │          │
+┌────────┘          └────────┐
+│                            │
+▼                            ▼
+┌──────────────────┐  ┌──────────────────┐
+│ Loop back to     │  │ /vbw:ship        │
+│ /vbw:implement   │  │ Audits milestone │
+│ for next phase   │  │ Archives state   │
+└──────────────────┘  │ Tags the release │
+                      │ You actually     │
+                      │ shipped something│
+                      └──────────────────┘
 ```
 
 <br>
@@ -343,10 +346,9 @@ Archives the milestone, tags the release, updates project docs. You shipped. Wit
 
 ```
 /vbw:init
-/vbw:new "Modernize this legacy Django monolith before it gains sentience"
 ```
 
-`/vbw:new` detects the existing codebase and auto-launches `/vbw:map`, which creates an Agent Team with 4 Scout teammates that analyze your codebase across tech stack, architecture, code quality, and concerns. They produce synthesis documents (`INDEX.md`, `PATTERNS.md`) that feed into every subsequent planning session. Think of it as a full-body scan. Results may be upsetting.
+VBW detects the existing codebase and auto-chains everything: `/vbw:map` launches 4 Scout teammates to analyze your code across tech stack, architecture, quality, and concerns. Then `/vbw:new` runs automatically with the mapping results, so you define your project with full codebase awareness. One command, three workflows, zero manual sequencing. Think of it as a full-body scan followed by a treatment plan. Results may be upsetting.
 
 Then proceed with `/vbw:implement` (or `/vbw:plan` + `/vbw:execute` separately), `/vbw:qa`, `/vbw:ship` as above.
 
@@ -364,8 +366,8 @@ These are the commands you'll use every day. This is the job now.
 
 | Command | Description |
 | :--- | :--- |
-| `/vbw:init` | Set up environment and scaffold `.vbw-planning/` directory with templates and config. Configures Agent Teams and statusline. Detects your tech stack and suggests Claude Code skills. |
-| `/vbw:new [desc]` | Define your project. Asks for name, requirements, creates a phased roadmap, initializes state, and generates CLAUDE.md. Auto-launches `/vbw:map` for existing codebases. |
+| `/vbw:init` | Set up environment and scaffold `.vbw-planning/` directory with templates and config. Configures Agent Teams and statusline. Detects your tech stack and suggests Claude Code skills. For existing codebases, auto-chains to `/vbw:map` then `/vbw:new`. |
+| `/vbw:new [desc]` | Define your project. Asks for name, requirements, creates a phased roadmap, initializes state, and generates CLAUDE.md. |
 | `/vbw:plan [phase]` | Plan a phase. The Lead agent researches context, decomposes work into tasks grouped by wave, and self-reviews the plan. Produces PLAN.md files with YAML frontmatter. Accepts `--effort` flag (thorough/balanced/fast/turbo). Phase is auto-detected when omitted. |
 | `/vbw:execute [phase]` | Execute a planned phase. Creates an Agent Team with Dev teammates for parallel execution with per-plan dependency wiring. At Thorough effort, Devs enter plan-approval mode before writing code. Atomic commits per task. Continuous QA via hooks. Produces SUMMARY.md. Resumes from last checkpoint if interrupted. Phase is auto-detected when omitted. |
 | `/vbw:implement [phase]` | Plan and execute in one command. Auto-detects whether a phase needs planning, execution, or both. Skips the intermediate "Planned" state. Shortcut for `/vbw:plan` then `/vbw:execute`. |

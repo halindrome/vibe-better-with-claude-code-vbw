@@ -182,8 +182,12 @@ If declined: display "○ Skipped. Run /vbw:skills later to search the registry.
 If BROWNFIELD:
 ```
   ⚠ Existing codebase detected ({file-count} source files)
+  ➜ Auto-launching /vbw:map to analyze your codebase...
 ```
+Then immediately invoke `/vbw:map` by following `@${CLAUDE_PLUGIN_ROOT}/commands/map.md`.
+After map completes, auto-launch `/vbw:new` by following `@${CLAUDE_PLUGIN_ROOT}/commands/new.md`.
 
+If greenfield:
 ```
 ➜ Next Up
   /vbw:new -- Define your project (name, requirements, roadmap)
