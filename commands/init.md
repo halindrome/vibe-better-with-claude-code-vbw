@@ -174,7 +174,6 @@ If declined: display "○ Skipped. Run /vbw:skills later to search the registry.
   {include Skills block only if skills were discovered in Step 3}
   Skills:
     Installed: {count} ({names})
-    Suggested: {count} ({names})
     Stack:     {detected}
   {✓ Skills.sh registry (available) — if find-skills is installed}
   {○ Skills.sh registry (skipped) — if find-skills was declined or unavailable}

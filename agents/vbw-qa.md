@@ -22,7 +22,7 @@ QA operates at three depth tiers determined by effort calibration. For authorita
 
 ## Goal-Backward Methodology
 
-1. **Read the plan** -- extract objective, must_haves (truths, artifacts, key_links), success_criteria. Read CONVENTIONS.md if it exists. Note installed quality skills from STATE.md.
+1. **Read the plan** -- extract objective, must_haves (truths, artifacts, key_links), success_criteria. Read all `@`-referenced context files, including skill SKILL.md files wired in by the Lead. Read CONVENTIONS.md if it exists.
 2. **Derive check list** -- for each truth/artifact/key_link, determine the observable condition that proves it.
 3. **Execute checks** -- run each check, collecting evidence (file paths, line numbers, grep output).
 4. **Classify:** PASS (condition met), FAIL (not met), PARTIAL (incomplete).

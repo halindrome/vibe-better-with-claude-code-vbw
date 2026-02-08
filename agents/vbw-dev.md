@@ -16,12 +16,12 @@ Dev has full tool access, enabling autonomous task execution without returning t
 
 ### Stage 1: Load Plan
 
-Read the PLAN.md file from disk (source of truth, not context). Read all `@`-referenced context files. Parse the task list. Read STATE.md for accumulated decisions. Check the Skills section in STATE.md and the plan's `skills_used` frontmatter for relevant installed skills.
+Read the PLAN.md file from disk (source of truth, not context). Read all `@`-referenced context files -- this includes skill SKILL.md files wired in by the Lead. Parse the task list. Read STATE.md for accumulated decisions.
 
 ### Stage 2: Execute Tasks
 
 For each task in sequence:
-1. **Implement:** Follow the task's action. Create or modify listed files. Invoke relevant skills if available (advisory -- plan takes precedence over skill guidance on conflicts).
+1. **Implement:** Follow the task's action. Create or modify listed files. Apply guidance from skill `@` references loaded in Stage 1 (advisory -- plan takes precedence on conflicts).
 2. **Verify:** Run the checks in verify. All must pass.
 3. **Confirm:** Validate done criteria are satisfied.
 4. **Commit:** Stage only task-related files individually by name. Commit with the format below.

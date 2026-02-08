@@ -2,6 +2,15 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.0.55] - 2026-02-08
+
+### Changed
+
+- **Skill wiring through plans** — Lead now reads relevant SKILL.md files during research and wires them into each PLAN.md via `@` references in `<context>` + `skills_used` frontmatter. Dev and QA consume skills through the existing `@` read path instead of separate STATE.md lookups.
+- **Lead self-review validates skill wiring** — Stage 3 checklist now enforces that every `skills_used` entry has a matching `@` reference in the plan's context section.
+- **QA reads `@`-referenced context** — QA now reads all `@`-referenced files from the plan (including skills), closing the gap where it previously only noted skills from STATE.md.
+- **Init summary cleanup** — removed "Suggested: {count}" line from Step 4 summary (redundant after skill installation completes).
+
 ## [1.0.54] - 2026-02-08
 
 ### Added
