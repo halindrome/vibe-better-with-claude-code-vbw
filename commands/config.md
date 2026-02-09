@@ -107,7 +107,7 @@ These mappings are referenced by hooks/hooks.json to invoke skills at the right 
 | Setting              | Type    | Values                       | Default  |
 |----------------------|---------|------------------------------|----------|
 | effort               | string  | thorough/balanced/fast/turbo                    | balanced |
-| autonomy             | string  | cautious/standard/confident/dangerously-vibe    | dangerously-vibe |
+| autonomy             | string  | cautious/standard/confident/dangerously-vibe    | standard |
 | auto_commit          | boolean | true/false                                       | true     |
 | verification_tier    | string  | quick/standard/deep          | standard |
 | skill_suggestions    | boolean | true/false                   | true     |
