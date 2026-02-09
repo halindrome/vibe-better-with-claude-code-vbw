@@ -2,6 +2,14 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.0.96] - 2026-02-09
+
+### Fixed
+
+- **`/vbw:update`** -- version display now uses the actual cached version after install, not the GitHub CDN estimate. Fixes misleading "Updating to vX.Y.Z" and false version mismatch warnings when CDN lags behind the marketplace.
+
+---
+
 ## [1.0.95] - 2026-02-09
 
 ### Fixed
