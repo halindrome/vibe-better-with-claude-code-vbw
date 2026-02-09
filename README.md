@@ -288,49 +288,62 @@ VBW operates on a simple loop that will feel familiar to anyone who's ever shipp
 
 ## Quick Tutorial
 
+You only need to remember two commands. Seriously. VBW auto-detects where your project is and does the right thing. No decision trees, no memorizing workflows. Just init, then implement until it's done.
+
 ### Starting a brand new project
 
 ```
 /vbw:init
 ```
 
-VBW sets up your environment (Agent Teams, statusline) and scaffolds a `.vbw-planning/` directory with template files. It detects your tech stack and suggests relevant Claude Code skills.
+Run this once. VBW sets up your environment — Agent Teams, statusline, git hooks — and scaffolds a `.vbw-planning/` directory. It detects your tech stack and suggests relevant Claude Code skills. You answer a few questions, and you're ready to build.
 
 ```
 /vbw:implement
 ```
 
-VBW auto-detects project state and does the right thing. Fresh project? It runs bootstrap -- asks about your project, gathers requirements, and creates a phased roadmap. Phases ready? It handles planning and execution in one step. The Lead agent plans, Dev teammates build in parallel with per-plan dependency wiring, and hooks verify continuously. You get `PLAN.md` + `SUMMARY.md` without switching commands.
+This is the one command. Run it, and VBW figures out what to do next:
 
-Want more control? Use `/vbw:plan` and `/vbw:execute` separately instead.
+- **No project defined?** It asks about your project, gathers requirements, and creates a phased roadmap.
+- **Phases ready but not planned?** The Lead agent researches, decomposes, and produces plans.
+- **Plans ready but not built?** Dev teammates execute in parallel with atomic commits and continuous verification.
+- **Everything built?** It tells you and suggests wrapping up.
+
+You don't need to know which state your project is in. VBW knows. Just keep running `/vbw:implement` and it handles the rest — planning, building, verifying — one phase at a time. Or if you're feeling brave, set your autonomy to `dangerously-vibe` and it'll loop through every remaining phase without stopping.
 
 ```
-/vbw:status
+/vbw:implement
 ```
 
-At any point, check where you stand. Shows phase progress, completion bars, velocity metrics, and suggests what to do next. Add `--metrics` for a token consumption breakdown per agent. Think of it as the project dashboard you never bothered to set up manually.
-
-Repeat `/vbw:implement` for each phase until your roadmap is complete.
+Yes, the same command again. When Phase 1 finishes, run it again for Phase 2. And again for Phase 3. Each invocation picks up where the last one left off. State persists in `.vbw-planning/` across sessions, so you can close your terminal, come back tomorrow, and `/vbw:implement` still knows exactly where you are.
 
 ```
 /vbw:archive
 ```
 
-Archives the completed work, tags the release, updates project docs. You shipped. With actual verification. Your future self won't want to set the codebase on fire. Probably.
+When all phases are built, archive the work. VBW runs a completion audit, archives state to `.vbw-planning/milestones/`, tags the git release, and updates project docs. You shipped. With actual verification. Your future self won't want to set the codebase on fire. Probably.
 
-> You can always be explicit with `/vbw:plan 3`, `/vbw:execute 2`, etc. Useful for re-running a phase, skipping ahead, or when working across multiple terminals.
+```
+/vbw:release
+```
 
-<br>
+Ready to publish? This bumps the version, finalizes the changelog, commits, and pushes — all in one step. Supports `--dry-run` if you want to preview first, `--major` or `--minor` for non-patch bumps.
+
+That's it. `init` → `implement` (repeat) → `archive` → `release`. Four commands for an entire development lifecycle.
 
 ### Picking up an existing codebase
+
+Same flow, one difference:
 
 ```
 /vbw:init
 ```
 
-VBW detects the existing codebase and auto-chains everything: `/vbw:map` launches 4 Scout teammates to analyze your code across tech stack, architecture, quality, and concerns. Then skill discovery runs informed by the map data — so skill suggestions are based on what's actually in your codebase, not just which manifest files exist. Finally `/vbw:implement` runs automatically with full codebase awareness. One command, four workflows, zero manual sequencing. Think of it as a full-body scan followed by a treatment plan. Results may be upsetting.
+VBW detects the existing codebase and auto-chains everything: `/vbw:map` launches 4 Scout teammates to analyze your code across tech stack, architecture, quality, and concerns. Skill suggestions are based on what's actually in your codebase, not just which manifest files exist. Then `/vbw:implement` runs automatically with full codebase awareness. One command, four workflows, zero manual sequencing.
 
-Then proceed with `/vbw:implement` (or `/vbw:plan` + `/vbw:execute` separately), `/vbw:qa`, `/vbw:archive` as above.
+From there, it's the same loop: `/vbw:implement` until done, `/vbw:archive`, `/vbw:release`.
+
+> **For advanced users:** The [full command reference](#commands) below has 27 commands for granular control — `/vbw:plan` and `/vbw:execute` to separate planning from building, `/vbw:qa` for on-demand verification, `/vbw:debug` for systematic bug investigation, `/vbw:discuss` for pre-planning context gathering, and more. But you never *need* them. `/vbw:implement` handles the entire lifecycle on its own.
 
 <br>
 
