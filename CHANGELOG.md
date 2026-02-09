@@ -7,12 +7,21 @@ All notable changes to VBW will be documented in this file.
 ### Added
 
 - **Frontmatter description validation hook** — new `validate-frontmatter.sh` PostToolUse hook catches multi-line and empty `description` fields in markdown frontmatter at write time, preventing silent breakage of plugin command/skill discovery. Non-blocking (warning only).
+- **Automatic git hook installation** — new `scripts/install-hooks.sh` is idempotent, warns without overwriting user-managed hooks, and is called automatically by `/vbw:init` (Step 1.5) and silently by `session-start.sh` when the pre-push hook is missing. `CONTRIBUTING.md` updated to reference the script instead of manual `ln -sf` commands.
+- **Execution state capture in pause/resume** — `/vbw:pause` now saves in-flight execution state (active phase, plan statuses, progress) into RESUME.md. `/vbw:resume` reconciles stale state by checking which plans completed (via SUMMARY.md) during the pause gap.
+- **Orphaned execution state reconciliation** — `session-start.sh` detects orphaned execution state (status=running from a crashed session), reconciles against SUMMARY.md files, and auto-completes phases where all plans finished.
+
+### Changed
+
+- **`CONTRIBUTING.md` hook setup** — replaced manual `ln -sf` symlink instructions with `bash scripts/install-hooks.sh`. Added note that VBW users get hooks auto-installed.
 
 ### Fixed
 
 - **jq dependency detection at all entry points** — `session-start.sh` now warns that all 17 quality gates are disabled when jq is missing. `detect-stack.sh` exits with a JSON error before any jq-dependent logic. `/vbw:init` has a pre-flight check with platform-specific install instructions (brew/apt).
 - **Version sync enforcement at commit and push time** — `validate-commit.sh` now runs `bump-version.sh --verify` and warns (non-blocking) when the 4 version files diverge. `pre-push-hook.sh` runs the same check but blocks the push (exit 1) when files are out of sync.
 - **jq guard in validate-commit.sh** — hook exits 0 silently when jq is missing instead of producing confusing error output.
+- **Atomic file operations in hooks** — `session-stop.sh` writes session log via temp file + append (prevents partial JSON lines). `vbw-statusline.sh` suppresses errors on all 6 cache write paths. `qa-gate.sh` handles empty git repos gracefully.
+- **Unsafe temp file path in execute command** — replaced bare `> tmp && mv tmp` with properly-pathed `.vbw-planning/.execution-state.json.tmp` in the jq atomic write example.
 
 ## [1.0.69] - 2026-02-09
 
