@@ -6,6 +6,8 @@ Reusable protocol fragments referenced across multiple skills.
 
 If `.vbw-planning/` doesn't exist, STOP: "Run /vbw:init first."
 
+**Exception:** `/vbw:implement` handles the uninitialized state via its state machine. When `.vbw-planning/` exists but `PROJECT.md` is missing or contains template placeholders, implement routes to its Bootstrap flow (State 1) rather than stopping. Other commands continue to use this guard as-is.
+
 ## Milestone Resolution
 
 Check for `.vbw-planning/ACTIVE` file to resolve the active milestone. If ACTIVE exists, read its contents for the milestone identifier and scope all phase paths accordingly.
