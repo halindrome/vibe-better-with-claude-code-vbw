@@ -2,6 +2,14 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.0.82] - 2026-02-09
+
+### Fixed
+
+- **`/vbw:update` false "already up to date"** — Step 1 now reads the cached plugin version (`~/.claude/plugins/cache/`) instead of `${CLAUDE_PLUGIN_ROOT}/VERSION`, which resolves to the source repo in dev sessions and falsely matches the remote.
+
+---
+
 ## [1.0.80] - 2026-02-09
 
 ### Added

@@ -9,9 +9,17 @@ allowed-tools: Read, Bash, Glob
 
 ## Steps
 
-### Step 1: Read current version
+### Step 1: Read current INSTALLED version
 
-Read `${CLAUDE_PLUGIN_ROOT}/VERSION`. Store as `old_version`.
+Read the **cached** version — this is what the user actually has installed, regardless of whether the session is running from a source repo or the cache:
+
+```bash
+cat ~/.claude/plugins/cache/vbw-marketplace/vbw/*/VERSION 2>/dev/null | sort -V | tail -1
+```
+
+Store the result as `old_version`. If empty (no cache exists), fall back to reading `${CLAUDE_PLUGIN_ROOT}/VERSION`.
+
+**CRITICAL:** Do NOT read `${CLAUDE_PLUGIN_ROOT}/VERSION` as the primary source. In a dev session, `${CLAUDE_PLUGIN_ROOT}` resolves to the source repo (which may be ahead of the installed version), causing the update to falsely report "already up to date."
 
 ### Step 2: Handle --check
 
