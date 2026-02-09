@@ -12,19 +12,9 @@ disable-model-invocation: true
 
 Working directory: `!`pwd``
 
-Project existence:
+Pre-computed state (via phase-detect.sh):
 ```
-!`head -20 .vbw-planning/PROJECT.md 2>/dev/null || echo "NO_PROJECT"`
-```
-
-Phase directories:
-```
-!`ls .vbw-planning/phases/ 2>/dev/null || echo "NO_PHASES"`
-```
-
-Active milestone:
-```
-!`cat .vbw-planning/ACTIVE 2>/dev/null || echo "NO_ACTIVE_MILESTONE"`
+!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase-detect.sh 2>/dev/null || echo "phase_detect_error=true"`
 ```
 
 Config:
@@ -32,36 +22,19 @@ Config:
 !`cat .vbw-planning/config.json 2>/dev/null || echo "No config found"`
 ```
 
-Codebase map staleness:
-```
-!`if [ -f .vbw-planning/codebase/META.md ]; then head -5 .vbw-planning/codebase/META.md; else echo "No codebase map"; fi`
-```
-
-Project files (brownfield detection):
-```
-!`ls package.json pyproject.toml Cargo.toml go.mod *.sln Gemfile build.gradle pom.xml 2>/dev/null || echo "No detected project files"`
-```
-
-Existing state:
-```
-!`ls -la .vbw-planning 2>/dev/null || echo "No .vbw-planning directory"`
-```
-
 ## State Detection
 
-Evaluate project state in this order. The FIRST matching condition determines the route.
+Evaluate project state using the phase-detect.sh output keys. The FIRST matching condition determines the route.
 
-| # | Condition | Route |
-|---|-----------|-------|
-| 1 | `.vbw-planning/` does not exist | Run /vbw:init first (preserve existing guard) |
-| 2 | `.vbw-planning/PROJECT.md` does not exist OR contains template placeholder `{project-description}` | State 1: Bootstrap |
-| 3 | No phase directories exist in the resolved phases path (empty or missing) | State 2: Scoping |
-| 4 | Phase directories exist and at least one has no `*-PLAN.md` files OR has plans without matching `*-SUMMARY.md` | State 3-4: Plan + Execute (existing behavior) |
-| 5 | All phase directories have all plans with matching `*-SUMMARY.md` files | State 5: Completion |
+| # | Condition (from phase-detect.sh output) | Route |
+|---|----------------------------------------|-------|
+| 1 | `planning_dir_exists=false` | Run /vbw:init first (preserve existing guard) |
+| 2 | `project_exists=false` | State 1: Bootstrap |
+| 3 | `phase_count=0` | State 2: Scoping |
+| 4 | `next_phase_state=needs_plan_and_execute` or `next_phase_state=needs_execute` | State 3-4: Plan + Execute (use `next_phase` and `next_phase_slug` for target phase) |
+| 5 | `next_phase_state=all_done` | State 5: Completion |
 
-For conditions 3-5, resolve the phases directory first:
-- If `.vbw-planning/ACTIVE` exists, read its contents for the milestone slug and use `.vbw-planning/{slug}/phases/`
-- Otherwise use `.vbw-planning/phases/`
+The phases directory is already resolved by phase-detect.sh (see `phases_dir` and `active_milestone` keys). No manual directory resolution needed.
 
 ## State 1: Bootstrap (No Project Defined)
 

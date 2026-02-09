@@ -21,10 +21,7 @@ Roadmap:
 !`head -50 .vbw-planning/ROADMAP.md 2>/dev/null || echo "No roadmap found"`
 ```
 
-Config:
-```
-!`cat .vbw-planning/config.json 2>/dev/null || echo "No config found"`
-```
+Config: Pre-injected by SessionStart hook (effort, autonomy, verification_tier). Read .vbw-planning/config.json only if --verbose flag is set.
 
 Phase directories:
 ```
@@ -57,7 +54,7 @@ Otherwise: use .vbw-planning/ defaults.
 
 **From STATE.md:** Project name, current phase, velocity metrics.
 **From ROADMAP.md:** All phases with names, status markers, plan counts.
-**From config.json:** Effort profile.
+**From SessionStart injection:** Effort profile, autonomy level. If --verbose, read .vbw-planning/config.json for full config display.
 **From phase directories:** Glob for `*-PLAN.md` and `*-SUMMARY.md` per phase. Count for real-time completion data.
 
 If an Agent Teams build is active, read the shared task list for live teammate status.

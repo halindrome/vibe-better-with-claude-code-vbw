@@ -17,10 +17,7 @@ Current state:
 !`head -40 .vbw-planning/STATE.md 2>/dev/null || echo "No state found"`
 ```
 
-Config:
-```
-!`cat .vbw-planning/config.json 2>/dev/null || echo "No config found"`
-```
+Config: Pre-injected by SessionStart hook (effort, autonomy, verification_tier). Override with --effort flag.
 
 Phase directories:
 ```
