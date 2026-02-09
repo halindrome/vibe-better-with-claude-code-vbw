@@ -136,7 +136,9 @@ if [ -d "$VBW_CACHE_CMD" ]; then
 fi
 
 # --- Auto-install git hooks if missing ---
-if [ ! -f ".git/hooks/pre-push" ] && [ -f "$SCRIPT_DIR/install-hooks.sh" ]; then
+# Check the user's project (via git), not the plugin directory
+PROJECT_GIT_DIR=$(git rev-parse --show-toplevel 2>/dev/null) || PROJECT_GIT_DIR=""
+if [ -n "$PROJECT_GIT_DIR" ] && [ ! -f "$PROJECT_GIT_DIR/.git/hooks/pre-push" ] && [ -f "$SCRIPT_DIR/install-hooks.sh" ]; then
   (bash "$SCRIPT_DIR/install-hooks.sh" 2>/dev/null) || true
 fi
 

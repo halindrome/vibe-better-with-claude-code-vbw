@@ -1,12 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 # Git pre-push hook: enforce version bump before push
-# Install: ln -sf ../../scripts/pre-push-hook.sh .git/hooks/pre-push
+# Delegated from .git/hooks/pre-push wrapper installed by install-hooks.sh
 # Bypass:  git push --no-verify
 
 # Version sync check: ensure all 4 version files are consistent
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# Use git to find the repo root — works regardless of how this script is invoked
+# (symlink, direct call, or delegated from the hook wrapper).
+ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || ROOT=""
+if [ -z "$ROOT" ]; then
+  echo "WARNING: pre-push hook could not determine repo root — skipping version check" >&2
+  exit 0
+fi
 
 if [ -f "$ROOT/scripts/bump-version.sh" ]; then
   VERIFY_OUTPUT=$(bash "$ROOT/scripts/bump-version.sh" --verify 2>&1) || {
