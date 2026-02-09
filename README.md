@@ -603,6 +603,7 @@ Four platform features. Zero faith in the developer. As it should be.
 ## Requirements
 
 - **Claude Code** with **Opus 4.6+** model
+- **jq** -- the only external dependency. Install via `brew install jq` (macOS) or `apt install jq` (Linux). VBW checks for jq during `/vbw:init` and session start, and warns clearly if it's missing.
 - **Agent Teams** enabled (`/vbw:init` will offer to set this up for you)
 - A project directory (new or existing)
 - The willingness to let an AI manage your development lifecycle
