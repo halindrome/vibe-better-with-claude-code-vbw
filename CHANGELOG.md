@@ -2,7 +2,11 @@
 
 All notable changes to VBW will be documented in this file.
 
-## [1.0.88] - 2026-02-09
+## [1.0.89] - 2026-02-09
+
+### Fixed
+
+- **`hooks.json` invalid event types** -- `PostCompact` (not a valid Claude Code event) replaced with `SessionStart` matcher `"compact"`. `NotificationReceived` renamed to `Notification`. Fixes fresh install validation error on newer Claude Code versions.
 
 ### Added
 
