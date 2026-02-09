@@ -82,7 +82,7 @@ Most Claude Code plugins were built for the subagent era, one main session spawn
 
 - **Agent Teams for real parallelism.** `/vbw:execute` creates a team of Dev teammates that execute tasks concurrently, each in their own context window. `/vbw:map` runs 4 Scout teammates in parallel to analyze your codebase. This isn't "spawn a subagent and wait" -- it's coordinated teamwork with a shared task list and direct inter-agent communication.
 
-- **Native hooks for continuous verification.** 18 hooks across 11 event types run automatically -- validating SUMMARY.md structure, checking commit format, validating frontmatter descriptions, gating task completion, blocking sensitive file access, enforcing plan file boundaries, managing session lifecycle, tracking session metrics, pre-flight prompt validation, and post-compaction context verification. No more spawning a QA agent after every task. The platform enforces it, not the prompt.
+- **Native hooks for continuous verification.** 18 hooks across 10 event types run automatically -- validating SUMMARY.md structure, checking commit format, validating frontmatter descriptions, gating task completion, blocking sensitive file access, enforcing plan file boundaries, managing session lifecycle, tracking session metrics, pre-flight prompt validation, and post-compaction context verification. No more spawning a QA agent after every task. The platform enforces it, not the prompt.
 
 - **Platform-enforced tool permissions.** Each agent has `tools`/`disallowedTools` in their YAML frontmatter -- 4 of 6 agents have platform-enforced deny lists. Scout and QA literally cannot write files. Sensitive file access (`.env`, credentials) is intercepted by the `security-filter` hook. `disallowedTools` is enforced by Claude Code itself, not by instructions an agent might ignore during compaction.
 
@@ -475,7 +475,7 @@ Here's when each one shows up to work:
   │(subagt)  │   (scope creep is for amateurs)                         │ verify
   └──────────┘                                                         │
                                                                        ▼
-  HOOKS (11 event types, 18 handlers)                              VERIFICATION.md
+  HOOKS (10 event types, 18 handlers)                              VERIFICATION.md
   ┌───────────────────────────────────────────────────────────────────────────────┐
   │  Verification                                                                 │
   │    PostToolUse ──── Validates SUMMARY.md on write, checks commit format,      │
@@ -618,7 +618,7 @@ VBW leverages four Opus 4.6 features that make the whole thing work:
 
 **Agent Teams** -- `/vbw:execute`, `/vbw:implement`, and `/vbw:map` create teams of parallel agents. Dev teammates execute tasks concurrently with per-plan dependency wiring (platform-enforced via TaskCreate blockedBy). At Thorough effort, Devs enter plan-approval mode before writing code. Scout teammates communicate via structured JSON schemas for reliable cross-agent handoff. The session acts as team lead.
 
-**Native Hooks** -- 18 hooks across 11 event types provide continuous verification without agent overhead. PostToolUse validates SUMMARY.md structure, commit format, frontmatter descriptions, and auto-updates execution state. TeammateIdle gates task completion via structural checks. TaskCompleted verifies task-related commits via keyword matching. SubagentStop validates completion artifacts. PreToolUse blocks sensitive file access and enforces plan boundaries. SessionStart detects project state and checks map staleness. PreCompact preserves agent-specific context. SessionStart (compact matcher) verifies critical context survived. Stop logs session metrics. UserPromptSubmit runs pre-flight validation. Notification logs teammate communication. No more spawning QA agents after every wave.
+**Native Hooks** -- 18 hooks across 10 event types provide continuous verification without agent overhead. PostToolUse validates SUMMARY.md structure, commit format, frontmatter descriptions, and auto-updates execution state. TeammateIdle gates task completion via structural checks. TaskCompleted verifies task-related commits via keyword matching. SubagentStop validates completion artifacts. PreToolUse blocks sensitive file access and enforces plan boundaries. SessionStart detects project state and checks map staleness. PreCompact preserves agent-specific context. SessionStart (compact matcher) verifies critical context survived. Stop logs session metrics. UserPromptSubmit runs pre-flight validation. Notification logs teammate communication. No more spawning QA agents after every wave.
 
 **Tool Permissions** -- Each agent has native `tools`/`disallowedTools` in their YAML frontmatter. Scout and QA literally cannot write files. It's enforced by the platform, not by instructions that an agent might ignore.
 
