@@ -118,6 +118,15 @@ Create `.vbw-planning/phases/` directory.
 
 Ensure config.json includes `"agent_teams": true`.
 
+### Step 1.5: Install git hooks
+
+1. Check if this is a git repository by running `git rev-parse --git-dir` via Bash.
+2. If yes, run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/install-hooks.sh` via Bash and capture stderr output.
+3. Display the result based on the output:
+   - If output contains "Installed": `✓ Git hooks installed (pre-push)`
+   - If output contains "already installed": `✓ Git hooks (already installed)`
+   - If the git check failed (not a git repo): `○ Git hooks skipped (not a git repository)`
+
 ### Step 2: Brownfield detection + discovery
 
 **2a. Brownfield detection and file count:**
