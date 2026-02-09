@@ -2,6 +2,16 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.0.87] - 2026-02-09
+
+### Fixed
+
+- **`install-hooks.sh` resolves .git from project root** -- scripts used `dirname "$0"` to find `.git`, which resolves to the plugin cache directory (`~/.claude/plugins/cache/...`) for marketplace users instead of the user's project. Now uses `git rev-parse --show-toplevel`. Also replaces symlink-based hook install with a standalone wrapper script that delegates to the latest cached plugin version via `sort -V | tail -1`.
+- **`pre-push-hook.sh` uses git for repo root** -- replaced `dirname "$0"` + relative path navigation (`../../`) with `git rev-parse --show-toplevel`. Works regardless of invocation method (symlink, direct call, or delegated from hook wrapper).
+- **`session-start.sh` hook install guard** -- auto-install check now uses `git rev-parse --show-toplevel` to find the project's `.git/hooks/` instead of checking relative to `$PWD`.
+
+---
+
 ## [1.0.86] - 2026-02-09
 
 ### Fixed
