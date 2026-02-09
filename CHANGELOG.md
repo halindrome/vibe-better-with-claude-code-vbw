@@ -2,6 +2,15 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.0.86] - 2026-02-09
+
+### Fixed
+
+- **`/vbw:release` GitHub auth** — `gh release create` now extracts `GH_TOKEN` from the git remote URL when `gh auth` is not configured, instead of failing silently.
+- **Statusline layout** — moved Diff (`+N -M`) from Line 4 to Line 1 after repo:branch. Added `Files:` and `Commits:` labels to the staged/modified and ahead-of-upstream indicators.
+
+---
+
 ## [1.0.84] - 2026-02-09
 
 ### Changed
