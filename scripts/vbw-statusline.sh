@@ -5,6 +5,7 @@
 # Line 3: Session: ██████████████████░░  6% ~2h13m │ Weekly: ███████░░░░░░░░░░░░░ 35% ~2d 23h │ Extra: ████████████████████ 96% $578/$600
 # Line 4: Model: Opus │ Time: 12m 34s (API: 23s) │ VBW 1.0.67 │ CC 1.0.11
 # Line 5: Team: build-team │ researcher ◆ │ tester ○ │ dev-1 ✓ │ Tasks: 3/5  (conditional)
+# Cache files: {prefix}-fast (5s), {prefix}-slow (60s), {prefix}-cost (per-render), {prefix}-ok (permanent)
 
 input=$(cat)
 
@@ -64,9 +65,13 @@ progress_bar() {
 fmt_tok() {
   local v=$1
   if [ "$v" -ge 1000000 ]; then
-    printf "%d.%dM" $((v / 1000000)) $(( (v % 1000000) / 100000 ))
+    local d=$((v / 1000000)) r=$(( (v % 1000000 + 50000) / 100000 ))
+    [ "$r" -ge 10 ] && d=$((d + 1)) && r=0
+    printf "%d.%dM" "$d" "$r"
   elif [ "$v" -ge 1000 ]; then
-    printf "%d.%dK" $((v / 1000)) $(( (v % 1000) / 100 ))
+    local d=$((v / 1000)) r=$(( (v % 1000 + 50) / 100 ))
+    [ "$r" -ge 10 ] && d=$((d + 1)) && r=0
+    printf "%d.%dK" "$d" "$r"
   else
     printf "%d" "$v"
   fi
