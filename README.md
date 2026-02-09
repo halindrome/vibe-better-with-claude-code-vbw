@@ -426,7 +426,7 @@ Phase numbers are optional -- when omitted, VBW auto-detects the next phase base
 | `/vbw:insert-phase` | Insert an urgent phase between existing ones with automatic renumbering. For when production is on fire. |
 | `/vbw:remove-phase` | Remove a future phase and renumber. Refuses to delete phases containing completed work, because even VBW has principles. |
 | `/vbw:whats-new` | View changelog entries since your installed version. |
-| `/vbw:update` | Update VBW to the latest version. |
+| `/vbw:update` | Update VBW to the latest version with automatic cache refresh. |
 | `/vbw:uninstall` | Clean removal of VBW -- statusline, settings, and project data. For when you want to go back to prompting manually like it's 2024. |
 
 <br>
