@@ -6,11 +6,11 @@ Analysis of current model assignments across all VBW agent roles, evaluating whe
 
 | Agent Role | Current Assignment | Token Pattern | Quality Sensitivity | Recommended | Change? |
 |------------|-------------------|---------------|---------------------|-------------|---------|
-| Scout      | Haiku (hardcoded) | Low           | Low                 | Haiku       | No      |
+| Scout      | Haiku (frontmatter) | Low           | Low                 | Haiku       | No      |
 | Architect  | Inherit (Opus/Sonnet) | High     | High                | Inherit     | No      |
 | Lead       | Inherit (Opus/Sonnet) | Highest  | Critical            | Inherit     | No      |
 | Dev        | Inherit (Opus/Sonnet) | High     | Tier-dependent      | Inherit     | No      |
-| QA         | Inherit (Opus/Sonnet) | Medium   | Tier-dependent      | Inherit     | No      |
+| QA         | Sonnet (frontmatter) | Medium   | Tier-dependent      | Sonnet      | No      |
 | Debugger   | Inherit (Opus/Sonnet) | Medium-High | High for complex bugs | Inherit | No      |
 
 **Verdict: CONFIRM CURRENT ASSIGNMENTS -- no changes required.**
@@ -23,7 +23,7 @@ Source: `references/effort-profiles.md`
 
 ### Model Selection Architecture
 
-Agent frontmatter uses `model: inherit` for all agents except Scout. This defers model selection to the effort profile level, which maps to concrete models:
+Agent frontmatter uses `model: inherit` for Lead, Dev, Debugger, and Architect. Scout uses `model: haiku` and QA uses `model: sonnet` (both hardcoded in frontmatter). For inherit agents, model selection defers to the effort profile level, which maps to concrete models:
 
 - **Thorough / Balanced profiles:** Opus (maximum capability)
 - **Fast / Turbo profiles:** Sonnet (cost-reduced, still capable)
@@ -32,11 +32,11 @@ Agent frontmatter uses `model: inherit` for all agents except Scout. This defers
 
 | Agent     | Frontmatter Model | Thorough | Balanced | Fast   | Turbo  |
 |-----------|-------------------|----------|----------|--------|--------|
-| Scout     | haiku (hardcoded) | Haiku    | Haiku    | Haiku  | skip   |
+| Scout     | haiku (frontmatter) | Haiku    | Haiku    | Haiku  | skip   |
 | Architect | inherit           | Opus     | Opus     | Sonnet | skip   |
 | Lead      | inherit           | Opus     | Opus     | Sonnet | skip   |
 | Dev       | inherit           | Opus     | Opus     | Sonnet | Sonnet |
-| QA        | inherit           | Opus     | Opus     | Sonnet | skip   |
+| QA        | sonnet (frontmatter) | Sonnet   | Sonnet   | Sonnet | skip   |
 | Debugger  | inherit           | Opus     | Opus     | Sonnet | Sonnet |
 
 At Turbo, only Dev and Debugger are spawned. All other roles are skipped.

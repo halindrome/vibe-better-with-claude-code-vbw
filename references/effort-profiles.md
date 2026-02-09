@@ -12,12 +12,12 @@ The `effort` field in `config/defaults.json` sets the global default. Per-invoca
 
 | Profile  | ID      | Model  | Lead | Architect | Dev    | QA     | Scout  | Debugger | Plan Approval |
 |----------|---------|--------|------|-----------|--------|--------|--------|----------|---------------|
-| Thorough | EFRT-01 | Opus   | max  | max       | high   | high   | high*  | high     | required      |
-| Balanced | EFRT-02 | Opus   | high | high      | medium | medium | medium*| medium   | off           |
+| Thorough | EFRT-01 | Opus   | max  | max       | high   | high   | high   | high     | required      |
+| Balanced | EFRT-02 | Opus   | high | high      | medium | medium | medium | medium   | off           |
 | Fast     | EFRT-03 | Sonnet | high | medium    | medium | low    | low    | medium   | off           |
 | Turbo    | EFRT-04 | Sonnet | skip | skip      | low    | skip   | skip   | low      | off           |
 
-\* Scout uses inherited model (Opus) at Thorough/Balanced and Haiku at Fast/Turbo.
+\* Scout is hardcoded to Haiku in agent frontmatter (model: haiku). QA is hardcoded to Sonnet (model: sonnet). All other agents use model: inherit (Opus at Thorough/Balanced, Sonnet at Fast/Turbo).
 
 ## Profile Details
 
