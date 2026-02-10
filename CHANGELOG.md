@@ -7,6 +7,7 @@ All notable changes to VBW will be documented in this file.
 ### Fixed
 
 - **`hooks`** -- `state-updater.sh` now updates ROADMAP.md progress table and phase checkboxes when PLAN.md or SUMMARY.md files are written. Previously only STATE.md was updated, leaving ROADMAP.md permanently stale after bootstrap.
+- **`hooks`** -- `pre-push-hook.sh` restored to actual validation logic. Commit `da97928` accidentally replaced it with the `.git/hooks/pre-push` delegator wrapper, causing infinite recursion that hung every `git push`.
 
 ---
 
