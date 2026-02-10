@@ -43,6 +43,7 @@ Read .vbw-planning/config.json. Display current settings as a summary table, the
   max_tasks_per_plan   5            Max tasks per plan
   agent_teams          true         Use Agent Teams for parallel builds
   branch_per_milestone false        Auto-create git branch per milestone
+  plain_summary        true         Show plain-language "What happened" after builds
 
   Skill-Hook Mappings:
     {skill-name} -> {hook-event} on {matcher}
@@ -114,6 +115,7 @@ These mappings are referenced by hooks/hooks.json to invoke skills at the right 
 | max_tasks_per_plan   | number  | 1-7                          | 5        |
 | agent_teams          | boolean | true/false                   | true     |
 | branch_per_milestone | boolean | true/false                   | false    |
+| plain_summary        | boolean | true/false                   | true     |
 
 ## Output Format
 

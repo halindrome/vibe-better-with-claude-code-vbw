@@ -257,6 +257,21 @@ Display using `${CLAUDE_PLUGIN_ROOT}/references/vbw-brand-essentials.md`:
   QA:         {PASS|PARTIAL|FAIL|skipped}
 
 ```
+
+**"What happened" plain-language summary (NRW-02):**
+
+Check config `plain_summary`. If `true` (default), append a "What happened" block between QA and Next Up:
+
+```
+  What happened:
+    {2-4 sentences in plain English summarizing what was built, any
+    deviations, and the QA outcome. No jargon — no plan IDs, wave
+    numbers, or frontmatter references. Write as if explaining to
+    someone who has never seen VBW.}
+```
+
+Source the summary from SUMMARY.md files (task descriptions, deviations) and the QA result. Keep it under 4 sentences. If `plain_summary` is `false`, skip this block entirely.
+
 Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh execute {qa-result}` and display the output. Pass the QA result (pass/fail/partial/skipped) as the second argument.
 
 ## Output Format

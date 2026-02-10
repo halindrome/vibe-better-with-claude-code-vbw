@@ -7,5 +7,6 @@
   "auto_install_skills": false,
   "visual_format": "unicode",
   "compaction_trigger": 130000,
-  "max_tasks_per_plan": 5
+  "max_tasks_per_plan": 5,
+  "plain_summary": true
 }
