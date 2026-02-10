@@ -180,6 +180,7 @@ For the "I'll just prompt carefully" crowd.
 | Implicit cross-phase dependencies | Explicit `cross_phase_deps` in plans, validated before execution |
 | Raw agent names in cost tracking | Workflow categories (Build/Plan/Verify) with efficiency insights |
 | Hook failure blocks your session | Universal hook wrapper -- errors logged, session always continues |
+| Install plugin, stare at blank screen | Branded welcome with single call to action on first run |
 
 <br>
 
