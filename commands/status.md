@@ -42,9 +42,9 @@ Active milestone:
 
 1. **Parse args:** --verbose shows per-plan detail within each phase
 2. **Resolve milestone:** If .vbw-planning/ACTIVE exists, use milestone-scoped paths. Gather milestone list (all dirs with ROADMAP.md). Else use defaults.
-3. **Read data:**
-   - STATE.md: project name, current phase, velocity
-   - ROADMAP.md: phases, status markers, plan counts
+3. **Read data:** (STATE.md and ROADMAP.md use compact format -- flat fields, no verbose prose)
+   - STATE.md: project name, current phase (flat `Phase:`, `Plans:`, `Progress:` lines), velocity
+   - ROADMAP.md: phases, status markers, plan counts (compact per-phase fields, Progress table)
    - SessionStart injection: effort, autonomy. If --verbose, read config.json
    - Phase dirs: glob `*-PLAN.md` and `*-SUMMARY.md` per phase for completion data
    - If Agent Teams build active: read shared task list for teammate status
