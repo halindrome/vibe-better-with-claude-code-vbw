@@ -32,4 +32,17 @@ if echo "$FILE_PATH" | grep -qF '.planning/' && ! echo "$FILE_PATH" | grep -qF '
   exit 2
 fi
 
+# Block .vbw-planning/ when GSD isolation is enabled and no VBW markers present.
+# .gsd-isolation = opt-in flag created during /vbw:init consent flow.
+# .active-agent = VBW subagent is running (managed by agent-start.sh / agent-stop.sh).
+# .vbw-session = VBW command is active (managed by prompt-preflight.sh / session-stop.sh).
+if echo "$FILE_PATH" | grep -qF '.vbw-planning/'; then
+  if [ -f ".vbw-planning/.gsd-isolation" ]; then
+    if [ ! -f ".vbw-planning/.active-agent" ] && [ ! -f ".vbw-planning/.vbw-session" ]; then
+      echo "Blocked: .vbw-planning/ is isolated from non-VBW access ($FILE_PATH)" >&2
+      exit 2
+    fi
+  fi
+fi
+
 exit 0
