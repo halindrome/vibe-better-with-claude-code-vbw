@@ -55,7 +55,11 @@ Phases directory already resolved by phase-detect.sh (`phases_dir`, `active_mile
 - **B3: ROADMAP.md** — Suggest 3-5 phases based on requirements. If `.vbw-planning/codebase/` exists, read INDEX.md, PATTERNS.md, ARCHITECTURE.md, CONCERNS.md. Each phase: name, goal, mapped reqs, success criteria. Write immediately. Create phase dirs.
 - **B4: STATE.md** — Update: project name, Phase 1 position, today's date, empty decisions, 0%.
 - **B5: Brownfield summary** — If BROWNFIELD=true AND no codebase/: count files by ext, check tests/CI/Docker/monorepo, add Codebase Profile to STATE.md.
-- **B6: CLAUDE.md** — Follow `${CLAUDE_PLUGIN_ROOT}/references/memory-protocol.md`. Write at project root.
+- **B6: CLAUDE.md** — Generate and write CLAUDE.md at project root. Protocol:
+  - **Structure:** `# {project-name}` + `**Core value:** {one-liner}` + sections: Active Context (phase/status/next action), Key Decisions (5-10 most impactful from STATE.md), Installed Skills (from STATE.md), Project Conventions (from conventions.json if non-empty), Learned Patterns (3-5 from patterns/PATTERNS.md if exists), VBW Commands (/vbw:status + /vbw:help).
+  - **Rules:** Max 200 lines. Core value + Active Context mandatory; other sections omit if empty. Regenerate (not append) on each update. Key Decisions: newest first. No CLAUDE.md if no .vbw-planning/.
+  - **Updated by:** /vbw:implement (create), /vbw:plan (phase context), /vbw:execute (decisions/patterns), /vbw:archive (archived state), /vbw:teach (conventions).
+  - **Pattern learning:** After phase build, append entry to .vbw-planning/patterns/PATTERNS.md (what worked, what failed, timing, deviations).
 - **B7: Transition** — Display "Bootstrap complete. Transitioning to scoping..." Re-evaluate state, route to next match.
 
 ## State 2: Scoping (No Phases)
