@@ -63,7 +63,7 @@ Do NOT read all four profile files -- only the active one.
 
 ### Step 2: Load plans and detect resume state
 
-1. Glob for `*-PLAN.md` in the phase directory. Read each plan's YAML frontmatter (plan, title, wave, depends_on, autonomous, files_modified).
+1. Glob for `*-PLAN.md` in the phase directory. Read each plan's YAML frontmatter (plan, title, wave, depends_on, cross_phase_deps, autonomous, files_modified).
 2. Check for existing SUMMARY.md files -- these plans are already complete.
 3. Check `git log --oneline -20` for committed tasks matching this phase (crash recovery).
 4. Build list of remaining (uncompleted) plans. If `--plan=NN`, filter to that single plan.
@@ -86,6 +86,25 @@ Do NOT read all four profile files -- only the active one.
 ```
 
 Set already-completed plans (those with SUMMARY.md) to `"complete"`, all others to `"pending"`.
+
+8. **Cross-phase dependency validation (PWR-04):** For each uncompleted plan that has `cross_phase_deps` in its frontmatter, validate that every dependency is satisfied:
+   - Resolve the referenced phase directory (e.g., phase 2 → `.vbw-planning/phases/02-*/`)
+   - Find the referenced plan's SUMMARY.md (e.g., plan `02-03` → `02-03-SUMMARY.md`)
+   - Check that the SUMMARY.md exists and has `status: complete`
+   - If the artifact path is specified, verify the file exists on disk
+
+   If any dependency is unsatisfied, STOP with a clear error:
+   ```
+   Cross-phase dependency not met.
+
+   Plan {current-plan-id} depends on Phase {dep-phase}, Plan {dep-plan} ({reason}).
+   That plan's status: {failed|missing|not yet built}.
+
+   Fix: Run /vbw:implement {dep-phase} to build the dependency first.
+   ```
+
+   If all dependencies are satisfied, display: `✓ Cross-phase dependencies verified`
+   If no plans have `cross_phase_deps`, skip this step silently.
 
 ### Step 3: Create Agent Team and execute
 

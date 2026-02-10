@@ -175,6 +175,7 @@ Verify:
 - Each has valid YAML frontmatter (phase, plan, title, wave, depends_on, must_haves)
 - Each has tasks with name, files, action, verify, done
 - Wave assignments have no circular dependencies
+- If `cross_phase_deps` is present, each entry has phase, plan, artifact, and reason fields, and the referenced phase number is lower than the current phase
 
 If validation fails, report issues to user.
 

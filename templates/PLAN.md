@@ -6,6 +6,11 @@ title: {plan-title}
 type: execute
 wave: {wave-number}
 depends_on: [{dependency-list}]
+cross_phase_deps:
+  - phase: {N}
+    plan: "{NN-MM}"
+    artifact: "{file-path}"
+    reason: "{why-this-dependency-exists}"
 autonomous: {true|false}
 effort_override: {thorough|balanced|fast|turbo}
 skills_used:

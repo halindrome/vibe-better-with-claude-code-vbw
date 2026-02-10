@@ -35,6 +35,7 @@ Break the phase into 3-5 plans. Each PLAN.md is executable by a single Dev sessi
 
 Key principles:
 - **Dependency ordering:** Plans form waves. Wave 1 has no intra-phase deps. Express deps in `depends_on` frontmatter.
+- **Cross-phase dependencies:** When a plan depends on artifacts produced by a prior phase (files, APIs, schemas), declare them in `cross_phase_deps` frontmatter. Each entry names the source phase, plan, artifact path, and reason. The execute command validates these before starting -- missing or failed dependencies produce a clear error instead of a mystery failure mid-build.
 - **Context budget:** 3-5 tasks per plan. More risks context exhaustion.
 - **File coherence:** Group tasks modifying related files into the same plan.
 - **Atomicity:** Each task = one commit. Each plan = one SUMMARY.md. Failed plans re-executable without affecting others.
@@ -51,7 +52,7 @@ Display after each plan is written: `  ✓ Plan {NN}: {title} ({N} tasks, wave {
 
 Display: `◆ Lead: Self-reviewing plans...`
 
-After writing all plans, review against: requirements coverage, no circular deps, no same-wave file conflicts, union of success criteria achieves phase goals, feasibility (3-5 tasks per plan), context references present, concern alignment, skill `@` references present for every `skills_used` entry, must_haves testability (each truth references a specific file path, command output, or grep-able string -- not a subjective judgment). Fix issues inline.
+After writing all plans, review against: requirements coverage, no circular deps, no same-wave file conflicts, union of success criteria achieves phase goals, feasibility (3-5 tasks per plan), context references present, concern alignment, skill `@` references present for every `skills_used` entry, must_haves testability (each truth references a specific file path, command output, or grep-able string -- not a subjective judgment), cross_phase_deps reference only earlier phases and include artifact paths that exist or will exist after the dependency builds. Fix issues inline.
 
 When invoked as a standalone review pass, read all PLAN.md files from the phase directory and apply this checklist. No research stage needed -- skip Stage 1 and Stage 2, begin directly at this stage.
 
