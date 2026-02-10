@@ -1,228 +1,113 @@
 # VBW Verification Protocol
 
-Single source of truth for VBW's verification pipeline. Referenced by `${CLAUDE_PLUGIN_ROOT}/agents/vbw-qa.md` and commands (`${CLAUDE_PLUGIN_ROOT}/commands/qa.md`, `${CLAUDE_PLUGIN_ROOT}/commands/execute.md`).
+Authoritative spec for VBW's verification pipeline. QA agent is read-only; parent command persists results to `VERIFICATION.md`.
 
-## 1. Overview
+## 1. Contexts
 
-The verification protocol defines how VBW validates completed work. Verification runs in two contexts:
-
-- **Post-build:** Automatically after `/vbw:execute` completes a phase (unless `--skip-qa` or turbo mode)
-- **Standalone:** Via `/vbw:qa <phase>` for independent verification of any completed phase
-
-The QA agent (`${CLAUDE_PLUGIN_ROOT}/agents/vbw-qa.md`) executes verification. It is strictly read-only -- it returns structured findings as text output. The parent command persists results to `VERIFICATION.md`.
-
-This document is the authoritative specification. The QA agent's inline tier descriptions are derived from this reference.
+- **Post-build:** Auto after `/vbw:execute` (unless `--skip-qa` or turbo)
+- **Standalone:** `/vbw:qa <phase>`
 
 ## 2. Three-Tier Verification (VRFY-01)
 
-Verification operates at three depth tiers, each building on the previous.
+### Quick (5-10 checks)
+- Artifact existence: each `must_haves.artifacts` path exists
+- Frontmatter validity: YAML parses, required fields present
+- Key string presence: each `contains` value found via grep
+- No placeholder text: no `{placeholder}`, `TBD`, `Phase N` stubs
 
-### Quick Tier (5-10 checks)
+### Standard (15-25 checks)
+Quick, plus:
+- Content structure: expected sections/headings present
+- Key link verification: each `must_haves.key_links` confirmed via grep
+- Import/export chain: referenced files exist, cross-refs resolve
+- Frontmatter cross-consistency: field values align across related artifacts
+- Line count thresholds: files meet minimum size for type
+- Convention compliance: check against `CONVENTIONS.md` if it exists (see S5)
+- Skill-augmented checks: domain-specific checks from installed quality skills
 
-**Purpose:** Fast existence and sanity validation.
-
-**Checks:**
-- **Artifact existence:** Each file in `must_haves.artifacts` exists at its declared path
-- **Frontmatter validity:** YAML parses without error, required fields present
-- **Key string presence:** Each `contains` value from `must_haves.artifacts` appears in its artifact (verified via grep)
-- **No placeholder text:** No `{placeholder}`, `TBD`, or `Phase N` stub markers remain in output files
-
-**Used for:** Turbo-adjacent speed, low-risk phases, quick spot-checks.
-
-### Standard Tier (15-25 checks)
-
-**Purpose:** Structural and relational validation covering most phases.
-
-Everything in Quick, plus:
-- **Content structure:** Expected sections, headings, and organizational patterns present
-- **Key link verification:** Each `must_haves.key_links` connection confirmed via grep (from-file references to-file)
-- **Import/export chain:** Referenced files exist and cross-references resolve
-- **Frontmatter cross-consistency:** Field values align across related artifacts (e.g., phase IDs match)
-- **Line count thresholds:** Files meet minimum size expectations for their type
-- **Convention compliance:** If `.vbw-planning/codebase/CONVENTIONS.md` exists, check new/modified files against established conventions (see Section 5)
-- **Skill-augmented checks:** If quality-related skills are installed (per STATE.md Skills section), run additional domain-specific checks (e.g., security-audit, a11y-check)
-
-**Used for:** Most phases, the recommended default tier.
-
-### Deep Tier (30+ checks)
-
-**Purpose:** Exhaustive validation for critical phases and pre-ship verification.
-
-Everything in Standard, plus:
-- **Anti-pattern scan:** Detect filler phrases, dead code, placeholder remnants, hardcoded secrets (see Section 6)
-- **Requirement-to-artifact mapping:** Each requirement ID from ROADMAP.md traces to at least one artifact (see Section 7)
-- **Cross-file consistency:** Shared constants, enums, or type definitions match everywhere they are used
-- **Detailed convention verification:** Systematic comparison against CONVENTIONS.md -- every new file checked, every modified file verified for convention violations
-- **Skill-augmented deep checks:** Thorough domain-specific verification for installed quality skills (security scanning, accessibility auditing, test coverage analysis)
-- **Completeness audit:** No partial implementations, no TODO/FIXME without tracking
-
-**Used for:** Critical phases, pre-ship verification, phases with >15 requirements.
+### Deep (30+ checks)
+Standard, plus:
+- Anti-pattern scan (see S6)
+- Requirement-to-artifact mapping (see S7)
+- Cross-file consistency: shared constants/enums/types match everywhere
+- Detailed convention verification: every new/modified file checked
+- Skill-augmented deep checks: thorough domain-specific verification
+- Completeness audit: no partial implementations, no untracked TODO/FIXME
 
 ## 3. Auto-Selection Heuristic (VRFY-01)
 
-When no explicit tier is specified, VBW auto-selects based on context signals:
+| Signal | Tier |
+|--------|------|
+| `--effort=turbo` / `QA_EFFORT=skip` | Skipped |
+| `--effort=fast` / `QA_EFFORT=low` | Quick |
+| `--effort=balanced` / `QA_EFFORT=medium` | Standard |
+| `--effort=thorough` / `QA_EFFORT=high` | Deep |
+| Standalone `/vbw:qa` (no flag) | Standard |
+| >15 requirements or last phase before ship | Deep (override) |
 
-| Signal | Selected Tier |
-|--------|---------------|
-| `--effort=turbo` or `QA_EFFORT=skip` | No QA (skipped entirely) |
-| `--effort=fast` or `QA_EFFORT=low` | Quick |
-| `--effort=balanced` or `QA_EFFORT=medium` | Standard |
-| `--effort=thorough` or `QA_EFFORT=high` | Deep |
-| Standalone `/vbw:qa` with no effort flag | Standard (default) |
-| Phase has >15 requirements | Deep (override) |
-| Phase is the last before ship | Deep (override) |
-
-**Override precedence:** Explicit `--tier` flag > context overrides > effort-based selection > default.
-
-If both `--tier` and `--effort` are provided, `--tier` takes precedence (it is the more specific instruction).
+Precedence: explicit `--tier` > context overrides > effort-based > default.
 
 ## 4. Goal-Backward Methodology (VRFY-02)
 
-Verification follows a goal-backward approach: start from desired outcomes, derive testable conditions, then verify each condition against actual artifacts.
+Start from desired outcomes, derive testable conditions, verify against artifacts. Catches code that exists but doesn't fulfill its purpose.
 
-### Verification Sequence
-
-1. **State the goal:** Extract the objective from the plan and the phase success criteria from ROADMAP.md. These define what "done" looks like.
-
-2. **Derive observable truths:** From `must_haves.truths` in the plan frontmatter. Each truth is a statement that must be verifiably true in the completed codebase.
-
+1. **State goal:** Extract objective from plan + phase success criteria from ROADMAP.md
+2. **Derive truths:** From `must_haves.truths` -- each must be verifiably true in codebase
 3. **Verify at three levels:**
-
-   **Truth checks:** For each truth in `must_haves.truths`, determine what observable condition proves it. Execute the check (grep, file read, pattern match) and classify as PASS/FAIL/PARTIAL with evidence.
-
-   **Artifact checks:** For each artifact in `must_haves.artifacts`, verify:
-   - File exists at the declared `path`
-   - File contains each required `contains` string
-   - File provides the declared `provides` capability
-
-   **Key link checks:** For each link in `must_haves.key_links`, verify:
-   - The `from` file references the `to` file
-   - The connection matches the declared `pattern` (via grep)
-   - The relationship described in `via` is confirmed
-
-4. **Classify and report:** Each check receives PASS, FAIL, or PARTIAL status with specific evidence (file paths, line numbers, grep output).
-
-### Why Goal-Backward
-
-Traditional verification asks "did we write the code?" Goal-backward verification asks "does the code achieve the stated goal?" This catches issues where code exists but doesn't fulfill its purpose -- misnamed exports, unwired features, partial implementations that pass existence checks but fail behavioral ones.
+   - **Truth checks:** Observable condition per truth. Execute (grep/read/match). PASS/FAIL/PARTIAL with evidence
+   - **Artifact checks:** File exists at `path`, contains each `contains` string, provides declared capability
+   - **Key link checks:** `from` file references `to` file, pattern matches `via`
+4. **Classify:** Each check gets PASS/FAIL/PARTIAL with file paths, line numbers, grep output
 
 ## 5. Convention Verification (VRFY-06)
 
-When `.vbw-planning/codebase/CONVENTIONS.md` exists, QA checks new and modified code against documented conventions.
+Active when `.vbw-planning/codebase/CONVENTIONS.md` exists. Silently skipped otherwise.
 
-### Convention Categories
+| Tier | Behavior |
+|------|----------|
+| Quick | Skipped |
+| Standard | Spot-check naming patterns + file placement for new files |
+| Deep | Systematic: every new file vs naming, every modified file vs conventions, code patterns vs documented idioms |
 
-- **Naming patterns:** File names, function names, variable names follow detected project patterns (e.g., camelCase, kebab-case, PascalCase)
-- **File placement:** Tests live in test directories, components in component directories, utilities in utility directories -- matching the project's established layout
-- **Import ordering:** Imports follow project conventions if documented (e.g., external before internal, sorted alphabetically)
-- **Export patterns:** Default vs named exports, barrel file usage, re-export conventions match established patterns
-
-### Verification Behavior by Tier
-
-- **Quick tier:** Convention checks are skipped (too slow for quick validation)
-- **Standard tier:** Spot-check conventions -- verify naming patterns and file placement for new files
-- **Deep tier:** Systematic comparison -- every new file checked against naming conventions, every modified file verified for convention violations, code patterns checked against documented idioms (error handling style, async patterns)
-
-### When CONVENTIONS.md Does Not Exist
-
-Convention verification is silently skipped. No warning is emitted -- convention documentation is optional. QA proceeds with all other checks.
+Categories: naming patterns, file placement, import ordering, export patterns.
 
 ## 6. Anti-Pattern Scanning (VRFY-07)
 
-Anti-pattern scanning detects common quality issues in completed work. Active at Standard tier (limited) and Deep tier (full).
-
-### Anti-Pattern Definitions
-
 | Anti-Pattern | Detection | Severity | Tier |
 |---|---|---|---|
-| TODO/FIXME without tracking | `grep -rn "TODO\|FIXME"` in source files, not linked to a tracking system | WARN | Deep |
-| Placeholder text | Presence of `{placeholder}`, `TBD`, `Phase N` stubs, `lorem ipsum` in output files | FAIL | Standard+ |
-| Empty function bodies | Functions or methods with no implementation (empty body or only a comment) | FAIL | Deep |
-| Filler phrases | Presence of "think carefully", "be thorough", "as an AI", "I'll help you" in agent/reference files | FAIL | Standard+ |
-| Unwired code | Exported functions or components never imported elsewhere in the codebase | WARN | Deep |
-| Dead imports | Import statements for symbols not used in the importing file | WARN | Deep |
-| Hardcoded secrets | Patterns matching API keys (`sk-`, `pk_`, `AKIA`), tokens, passwords in source files | FAIL | Standard+ |
+| TODO/FIXME without tracking | `grep -rn "TODO\|FIXME"` not linked to tracker | WARN | Deep |
+| Placeholder text | `{placeholder}`, `TBD`, `Phase N` stubs, `lorem ipsum` | FAIL | Standard+ |
+| Empty function bodies | Functions with no implementation | FAIL | Deep |
+| Filler phrases | "think carefully", "be thorough", "as an AI" in agent/ref files | FAIL | Standard+ |
+| Unwired code | Exported symbols never imported elsewhere | WARN | Deep |
+| Dead imports | Imported symbols never used | WARN | Deep |
+| Hardcoded secrets | `sk-`, `pk_`, `AKIA`, `ghp_`, `glpat-`, password/secret patterns | FAIL | Standard+ |
 
-### Severity Definitions
+Severities: FAIL = must fix before ship. WARN = review, may be intentional.
 
-- **FAIL:** Must be fixed before shipping. Indicates a quality or security issue.
-- **WARN:** Should be reviewed. May be intentional (e.g., a TODO for a future phase) but warrants acknowledgment.
+Notes: placeholder detection excludes template files; filler detection applies to agent/ref/command files only; secret detection uses pattern matching (known prefixes + common patterns).
 
-### Detection Notes
+## 7. Requirement Mapping (VRFY-08)
 
-- Placeholder text detection excludes template files (`${CLAUDE_PLUGIN_ROOT}/templates/`) where `{placeholder}` syntax is intentional
-- Filler phrase detection applies to agent definitions, reference documents, and command files -- not to user-facing templates
-- Hardcoded secret detection uses pattern matching, not entropy analysis. Known key prefixes (`sk-`, `pk_`, `AKIA`, `ghp_`, `glpat-`) and common patterns (`password\s*=\s*["']`, `secret\s*=\s*["']`) are scanned
-- Dead import detection is language-aware when possible (JS/TS `import` statements, Python `import`/`from` statements)
+Deep tier only. Traces requirement IDs to implementing artifacts.
 
-## 7. Requirement Mapping Verification (VRFY-08)
+1. **Extract** requirement IDs from phase section of ROADMAP.md
+2. **Trace** each ID to PLAN.md files (must_haves, task descriptions, success criteria) and SUMMARY.md files (accomplishments, commits, files modified)
+3. **Classify:** Mapped (plan+summary) = OK. Planned only (plan, no summary) = WARN. Unmapped (neither) = FAIL
 
-Requirement mapping traces each requirement ID to its implementing artifacts. Active at Deep tier only.
+Scope: current phase only. Cross-phase requirements noted but not flagged.
 
-### Verification Sequence
+## 8. Continuous Verification Hooks (VRFY-03, VRFY-04, VRFY-05)
 
-1. **Read phase requirements:** Extract requirement IDs from the phase section of ROADMAP.md (e.g., `VRFY-01`, `CMD-08`)
+Protocol instructions in agent definitions (not JS hooks or event handlers).
 
-2. **Trace to plans:** For each requirement ID, search all PLAN.md files in the phase directory for the ID in `must_haves`, task descriptions, or success criteria
+- **VRFY-03 Post-Write (Dev):** Run linter/type-checker on modified files if configured. Fix before committing. Advisory.
+- **VRFY-04 Post-Commit (Dev):** Verify commit format `{type}({scope}): {description}`. Check only task-related files staged. Self-check protocol.
+- **VRFY-05 OnStop (Execute):** Verify SUMMARY.md exists with required frontmatter (`phase`, `plan`, `status`, `completed`) and standard sections (Accomplishments, Task Commits, Files Created/Modified, Deviations). Report issues.
 
-3. **Trace to artifacts:** For each requirement ID, search all SUMMARY.md files for evidence that the requirement was implemented (mentioned in accomplishments, task commits, or files created/modified)
+## 9. Output Format
 
-4. **Report coverage:**
-   - **Mapped:** Requirement ID found in both a plan and a summary -- implementation evidence exists
-   - **Planned only:** Requirement ID found in a plan but not in any summary -- planned but not yet verified as complete
-   - **Unmapped:** Requirement ID not found in any plan or summary -- missing from the phase entirely
-
-5. **Classify:** Unmapped requirements are reported as FAIL. Planned-only requirements are reported as WARN (may indicate incomplete work).
-
-### Scope
-
-Requirement mapping only checks within the current phase. Cross-phase requirements (where a requirement is partially addressed across multiple phases) are noted but not flagged as failures.
-
-## 8. Continuous Verification Hooks Protocol (VRFY-03, VRFY-04, VRFY-05)
-
-These are protocol instructions embedded in agent definitions -- NOT JavaScript hooks or Claude Code event handlers. They define verification behaviors that agents follow as part of their standard operating procedure.
-
-### Post-Write/Edit Verification (VRFY-03)
-
-**Where:** Protocol instruction in `${CLAUDE_PLUGIN_ROOT}/agents/vbw-dev.md`
-
-**Trigger:** After Dev creates or edits a source file
-
-**Behavior:**
-- If the project has a linter configured (ESLint, Prettier, Ruff, etc.), run the linter on the modified file
-- If the project has a type checker configured (TypeScript, mypy, etc.), run the type checker
-- If either reports errors, fix before committing
-- This is advisory -- the Dev agent follows this protocol as part of careful implementation, not as an automated enforcement mechanism
-
-### Post-Commit Verification (VRFY-04)
-
-**Where:** Protocol instruction in `${CLAUDE_PLUGIN_ROOT}/agents/vbw-dev.md`
-
-**Trigger:** After Dev creates a commit
-
-**Behavior:**
-- Verify the commit message follows the format: `{type}({scope}): {description}`
-- Check that only task-related files are staged (no stray files from other tasks)
-- If format is wrong, amend the commit (only for format issues, not content changes)
-- This is a self-check protocol, not an automated git hook
-
-### OnStop / Summary Validation (VRFY-05)
-
-**Where:** Protocol instruction in `${CLAUDE_PLUGIN_ROOT}/commands/execute.md`
-
-**Trigger:** When build completes a plan
-
-**Behavior:**
-- Verify the SUMMARY.md exists for the completed plan
-- Verify SUMMARY.md has required frontmatter fields: `phase`, `plan`, `status`, `completed`
-- Verify SUMMARY.md has the standard sections: Accomplishments, Task Commits, Files Created/Modified, Deviations from Plan
-- If validation fails, the build command reports the issue rather than silently continuing
-
-## 9. Verification Output Format
-
-The standard output format for VERIFICATION.md files. QA returns this structure as text; the parent command adds YAML frontmatter and persists to disk.
-
-### YAML Frontmatter
+### Frontmatter
 
 ```yaml
 ---
@@ -236,63 +121,26 @@ date: {YYYY-MM-DD}
 ---
 ```
 
-### Document Structure
+### Structure
 
 ```markdown
 # Verification: Phase {N}
-
 ## Must-Have Checks
-
 | # | Truth/Condition | Status | Evidence |
-|---|-----------------|--------|----------|
-| 1 | {condition from must_haves.truths} | PASS/FAIL/PARTIAL | {specific evidence} |
-
 ## Artifact Checks
-
 | Artifact | Exists | Contains | Status |
-|----------|--------|----------|--------|
-| {path} | yes/no | {required content} | PASS/FAIL |
-
 ## Key Link Checks
-
 | From | To | Via | Status |
-|------|-----|-----|--------|
-| {source} | {target} | {relationship} | PASS/FAIL |
-
-## Anti-Pattern Scan (standard+ tiers)
-
+## Anti-Pattern Scan (standard+)
 | Pattern | Found | Location | Severity |
-|---------|-------|----------|----------|
-| {name} | yes/no | {file:line if found} | WARN/FAIL |
-
-## Requirement Mapping (deep tier only)
-
-| Requirement | Plan Reference | Artifact Evidence | Status |
-|-------------|----------------|-------------------|--------|
-| {REQ-ID} | {plan file} | {summary evidence} | Mapped/Planned Only/Unmapped |
-
-## Convention Compliance (standard+ tiers, if CONVENTIONS.md exists)
-
+## Requirement Mapping (deep only)
+| Requirement | Plan Ref | Artifact Evidence | Status |
+## Convention Compliance (standard+, if CONVENTIONS.md)
 | Convention | File | Status | Detail |
-|------------|------|--------|--------|
-| {convention name} | {file path} | PASS/FAIL | {specific finding} |
-
-## Skill-Augmented Checks (if quality skills installed)
-
+## Skill-Augmented Checks (if quality skills)
 | Skill | Check | Status | Evidence |
-|-------|-------|--------|----------|
-| {skill-name} | {what was checked} | PASS/FAIL | {evidence} |
-
 ## Summary
-
-Tier: {quick|standard|deep}
-Result: {PASS|FAIL|PARTIAL}
-Passed: {N}/{total}
-Failed: {list of failed check descriptions}
+Tier: / Result: / Passed: N/total / Failed: [list]
 ```
 
-### Result Classification
-
-- **PASS:** All checks pass. No FAIL results. WARNs are acceptable.
-- **PARTIAL:** Some checks pass, some fail, but core functionality is verified. At least one FAIL exists but it is non-blocking.
-- **FAIL:** Critical checks fail. Core functionality or security is compromised. Must be fixed before proceeding.
+Result classification: PASS = all pass (WARNs OK). PARTIAL = some fail but core verified. FAIL = critical checks fail.
