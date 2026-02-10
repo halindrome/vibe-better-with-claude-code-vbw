@@ -4,7 +4,7 @@
 # Line 2: Context: ▓▓▓▓▓▓▓▓░░░░░░░░░░░░ 42% 84.0K/200K │ Tokens: 15.2K in  1.2K out │ Cache: 5.0K write  2.0K read
 # Line 3: Session: ██████████████████░░  6% ~2h13m │ Weekly: ███████░░░░░░░░░░░░░ 35% ~2d 23h │ Extra: ████████████████████ 96% $578/$600
 # Line 4: Model: Opus │ Cost: $1.53 │ Time: 12m 34s (API: 23s) │ VBW 1.0.67 │ CC 1.0.11
-# Line 5: Economy: Dev $0.82 (70%) │ Lead $0.15 (13%) │ QA $0.12 (10%) │ Other $0.08 (7%) │ Cache: 85% hit │ $0.005/line  (conditional: cost > $0)
+# Line 5: Economy: Build $0.82 (70%) │ Plan $0.15 (13%) │ Verify $0.12 (10%) │ Cache: 85% hit │ $0.005/line │ QA heavy — try balanced  (conditional: cost > $0)
 # Line 6: Team: build-team │ researcher ◆ │ tester ○ │ dev-1 ✓ │ Tasks: 3/5  (conditional, future)
 # Cache files: {prefix}-fast (5s), {prefix}-slow (60s), {prefix}-cost (per-render), {prefix}-ok (permanent)
 
@@ -447,76 +447,47 @@ else
   L4="$L4 ${D}│${X} ${D}VBW ${_VER:-?}${X} ${D}│${X} ${D}CC ${VER}${X}"
 fi
 
-# --- Line 5: Economy (per-agent cost attribution) ---
+# --- Line 5: Economy (workflow cost breakdown, PWR-05) ---
 
 L5=""
 if [ -f "$LEDGER_FILE" ] && jq empty "$LEDGER_FILE" 2>/dev/null; then
-  # Read ledger entries as "agent cents" pairs, sorted by cents descending
-  ECON_ENTRIES=$(jq -r 'to_entries | sort_by(-.value) | .[] | "\(.key) \(.value)"' "$LEDGER_FILE" 2>/dev/null)
-  ECON_TOTAL_CENTS=0
-  ECON_COUNT=0
-  ECON_TOP=""
-  ECON_OTHER_CENTS=0
+  # Aggregate agents into workflow categories via single jq call
+  # Categories: build (dev), plan (lead, architect), verify (qa), other (rest)
+  IFS='|' read -r CAT_BUILD CAT_PLAN CAT_VERIFY CAT_OTHER ECON_TOTAL_CENTS <<< \
+    "$(jq -r '
+      def grp: if . == "dev" then "build"
+        elif . == "lead" or . == "architect" then "plan"
+        elif . == "qa" then "verify"
+        else "other" end;
+      to_entries | reduce .[] as $e (
+        {"build":0,"plan":0,"verify":0,"other":0};
+        .[$e.key | grp] += $e.value
+      ) | [.build, .plan, .verify, .other, (.build + .plan + .verify + .other)] | join("|")
+    ' "$LEDGER_FILE" 2>/dev/null)"
 
-  # First pass: compute total
-  while IFS=' ' read -r _ea _ec; do
-    [ -z "$_ea" ] && continue
-    ECON_TOTAL_CENTS=$(( ECON_TOTAL_CENTS + _ec ))
-  done <<< "$ECON_ENTRIES"
+  ECON_TOTAL_CENTS=${ECON_TOTAL_CENTS:-0}
 
   if [ "$ECON_TOTAL_CENTS" -gt 0 ]; then
-    # Agent color function
-    _agent_color() {
-      case "$1" in
-        dev)       printf '\033[32m' ;;  # Green
-        lead)      printf '\033[36m' ;;  # Cyan
-        qa)        printf '\033[33m' ;;  # Yellow
-        scout)     printf '\033[34m' ;;  # Blue
-        debugger)  printf '\033[31m' ;;  # Red
-        architect) printf '\033[35m' ;;  # Magenta
-        *)         printf '\033[2m'  ;;  # Dim (other)
-      esac
+    # Build a category display entry (modifies ECON_PARTS in caller scope)
+    _build_cat() {
+      local label="$1" cents="$2" color="$3"
+      [ "${cents:-0}" -eq 0 ] && return
+      local d=$((cents / 100)) f=$((cents % 100))
+      local cost_str=$(printf "\$%d.%02d" "$d" "$f")
+      local pct_str=""
+      [ "$ECON_TOTAL_CENTS" -gt 5 ] && pct_str=" ($((cents * 100 / ECON_TOTAL_CENTS))%)"
+      if [ -z "$ECON_PARTS" ]; then
+        ECON_PARTS="${color}${label}${X} ${cost_str}${pct_str}"
+      else
+        ECON_PARTS="$ECON_PARTS ${D}│${X} ${color}${label}${X} ${cost_str}${pct_str}"
+      fi
     }
 
-    # Second pass: build top-4 display, group rest into Other
-    while IFS=' ' read -r _ea _ec; do
-      [ -z "$_ea" ] && continue
-      ECON_COUNT=$((ECON_COUNT + 1))
-      if [ "$ECON_COUNT" -le 4 ]; then
-        _ac=$(_agent_color "$_ea")
-        # Format agent cost as dollars
-        _ad=$(( _ec / 100 )); _af=$(( _ec % 100 ))
-        _cost_str=$(printf "\$%d.%02d" "$_ad" "$_af")
-        # Percentage (only when total > $0.05 = 5 cents)
-        _pct_str=""
-        if [ "$ECON_TOTAL_CENTS" -gt 5 ]; then
-          _pct=$(( _ec * 100 / ECON_TOTAL_CENTS ))
-          _pct_str=" (${_pct}%)"
-        fi
-        # Capitalize first letter of agent name for display
-        _display_name="$(echo "${_ea:0:1}" | tr '[:lower:]' '[:upper:]')${_ea:1}"
-        _entry="${_ac}${_display_name}${X} ${_cost_str}${_pct_str}"
-        if [ -z "$ECON_TOP" ]; then
-          ECON_TOP="$_entry"
-        else
-          ECON_TOP="$ECON_TOP ${D}│${X} $_entry"
-        fi
-      else
-        ECON_OTHER_CENTS=$(( ECON_OTHER_CENTS + _ec ))
-      fi
-    done <<< "$ECON_ENTRIES"
-
-    # Append grouped "Other" if any overflow agents
-    if [ "$ECON_OTHER_CENTS" -gt 0 ]; then
-      _ad=$(( ECON_OTHER_CENTS / 100 )); _af=$(( ECON_OTHER_CENTS % 100 ))
-      _cost_str=$(printf "\$%d.%02d" "$_ad" "$_af")
-      _pct_str=""
-      if [ "$ECON_TOTAL_CENTS" -gt 5 ]; then
-        _pct=$(( ECON_OTHER_CENTS * 100 / ECON_TOTAL_CENTS ))
-        _pct_str=" (${_pct}%)"
-      fi
-      ECON_TOP="$ECON_TOP ${D}│${X} ${D}Other${X} ${_cost_str}${_pct_str}"
-    fi
+    ECON_PARTS=""
+    _build_cat "Build" "${CAT_BUILD:-0}" "$G"
+    _build_cat "Plan" "${CAT_PLAN:-0}" "$C"
+    _build_cat "Verify" "${CAT_VERIFY:-0}" "$Y"
+    _build_cat "Other" "${CAT_OTHER:-0}" "$D"
 
     # Cache hit rate
     TOTAL_INPUT=$((IN_TOK + CACHE_W + CACHE_R))
@@ -524,7 +495,6 @@ if [ -f "$LEDGER_FILE" ] && jq empty "$LEDGER_FILE" 2>/dev/null; then
     if [ "$TOTAL_INPUT" -gt 0 ]; then
       CACHE_HIT_PCT=$(( CACHE_R * 100 / TOTAL_INPUT ))
     fi
-    # Color cache hit: green if >= 70, yellow if >= 40, red otherwise
     if [ "$CACHE_HIT_PCT" -ge 70 ]; then CACHE_COLOR="$G"
     elif [ "$CACHE_HIT_PCT" -ge 40 ]; then CACHE_COLOR="$Y"
     else CACHE_COLOR="$R"
@@ -534,16 +504,29 @@ if [ -f "$LEDGER_FILE" ] && jq empty "$LEDGER_FILE" 2>/dev/null; then
     TOTAL_LINES=$((ADDED + REMOVED))
     CPL_STR=""
     if [ "$TOTAL_LINES" -gt 0 ]; then
-      # Cost per line in millicents for precision: total_cents * 10 / lines
       CPL_TENTHS=$(( ECON_TOTAL_CENTS * 10 / TOTAL_LINES ))
       CPL_D=$(( CPL_TENTHS / 1000 ))
       CPL_F=$(( CPL_TENTHS % 1000 ))
       CPL_STR=$(printf "\$%d.%03d/line" "$CPL_D" "$CPL_F")
     fi
 
-    L5="Economy: ${ECON_TOP}"
-    L5="$L5 ${D}│${X} Prompt Cache: ${CACHE_COLOR}${CACHE_HIT_PCT}% hit${X}"
+    # Efficiency insight — one brief actionable hint (PWR-05 intelligence)
+    INSIGHT=""
+    if [ "$CACHE_HIT_PCT" -lt 40 ] && [ "$ECON_TOTAL_CENTS" -gt 50 ]; then
+      INSIGHT="${R}↓ cache efficiency${X}"
+    elif [ "${CAT_VERIFY:-0}" -gt 0 ] && [ "$ECON_TOTAL_CENTS" -gt 20 ]; then
+      _vp=$((CAT_VERIFY * 100 / ECON_TOTAL_CENTS))
+      [ "$_vp" -gt 35 ] && INSIGHT="${Y}QA heavy — try balanced${X}"
+    fi
+    if [ -z "$INSIGHT" ] && [ "${CAT_PLAN:-0}" -gt 0 ] && [ "$ECON_TOTAL_CENTS" -gt 20 ]; then
+      _pp=$((CAT_PLAN * 100 / ECON_TOTAL_CENTS))
+      [ "$_pp" -gt 40 ] && INSIGHT="${Y}Plan heavy — try fast${X}"
+    fi
+
+    L5="Economy: ${ECON_PARTS}"
+    L5="$L5 ${D}│${X} Cache: ${CACHE_COLOR}${CACHE_HIT_PCT}% hit${X}"
     [ -n "$CPL_STR" ] && L5="$L5 ${D}│${X} ${CPL_STR}"
+    [ -n "$INSIGHT" ] && L5="$L5 ${D}│${X} ${INSIGHT}"
   fi
 fi
 
