@@ -33,6 +33,11 @@ Codebase map staleness:
 !`bash -c 'f=$(ls -1 "$HOME"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/map-staleness.sh 2>/dev/null | sort -V | tail -1); [ -f "$f" ] && exec bash "$f" || echo "status: no_script"'`
 ```
 
+Phase state:
+```
+!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase-detect.sh 2>/dev/null || echo "phase_detect_error=true"`
+```
+
 ## Mode Detection
 
 Resolve phases dir: if `.vbw-planning/ACTIVE` exists, use `.vbw-planning/{milestone-slug}/phases/`; else `.vbw-planning/phases/`.
@@ -64,11 +69,10 @@ Steps:
 ### Phase Auto-Detection
 
 If $ARGUMENTS has no integer phase number:
-1. Read `${CLAUDE_PLUGIN_ROOT}/references/phase-detection.md`
-2. Resolve phases dir (check .vbw-planning/ACTIVE for milestone)
-3. Scan dirs numerically. Find first with NO `*-PLAN.md` files
-4. Found: announce "Auto-detected Phase {N} ({slug})" and proceed
-5. All planned: STOP "All phases are planned. Specify a phase to re-plan: `/vbw:plan N`"
+1. Phase detection is pre-computed in Context above. Use `next_phase`, `next_phase_slug`, and `next_phase_state` directly.
+2. If `next_phase_state` is `needs_plan_and_execute`, use `next_phase` and `next_phase_slug`.
+3. Found: announce "Auto-detected Phase {N} ({slug})" and proceed
+4. All planned: STOP "All phases are planned. Specify a phase to re-plan: `/vbw:plan N`"
 
 ### Guard
 

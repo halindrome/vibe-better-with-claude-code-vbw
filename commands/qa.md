@@ -23,10 +23,15 @@ Phase directories:
 !`ls .vbw-planning/phases/ 2>/dev/null || echo "No phases directory"`
 ```
 
+Phase state:
+```
+!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase-detect.sh 2>/dev/null || echo "phase_detect_error=true"`
+```
+
 ## Guard
 
 - Not initialized (no .vbw-planning/ dir): STOP "Run /vbw:init first."
-- **Auto-detect phase** (no explicit number): Read `${CLAUDE_PLUGIN_ROOT}/references/phase-detection.md`. Resolve phases dir (check .vbw-planning/ACTIVE). Scan numerically for first phase with `*-SUMMARY.md` but no `*-VERIFICATION.md`. Found: announce "Auto-detected Phase {N} ({slug})". All verified: STOP "All phases verified. Specify: `/vbw:qa N`"
+- **Auto-detect phase** (no explicit number): Phase detection is pre-computed in Context above. Use `next_phase` and `next_phase_slug` for the target phase. To find the first phase needing QA: scan phase dirs for first with `*-SUMMARY.md` but no `*-VERIFICATION.md` (phase-detect.sh provides the base phase state; QA-specific detection requires this additional check). Found: announce "Auto-detected Phase {N} ({slug})". All verified: STOP "All phases verified. Specify: `/vbw:qa N`"
 - Phase not built (no SUMMARYs): STOP "Phase {N} has no completed plans. Run /vbw:execute {N} first."
 
 Note: Continuous verification handled by hooks. This command is for deep, on-demand verification only.

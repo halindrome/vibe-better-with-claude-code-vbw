@@ -16,10 +16,15 @@ Roadmap:
 !`head -50 .vbw-planning/ROADMAP.md 2>/dev/null || echo "No roadmap found"`
 ```
 
+Phase state:
+```
+!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase-detect.sh 2>/dev/null || echo "phase_detect_error=true"`
+```
+
 ## Guard
 
 - Not initialized (no .vbw-planning/ dir): STOP "Run /vbw:init first."
-- **Phase resolution** (no explicit number): Read `${CLAUDE_PLUGIN_ROOT}/references/phase-detection.md`, Planning Commands algorithm. Resolve phases dir (check .vbw-planning/ACTIVE). Scan numerically for first phase with NO `*-PLAN.md`. Found: announce "Auto-detected Phase {N} ({slug})". All planned: STOP "All phases planned. Specify: `/vbw:discuss N`"
+- **Phase resolution** (no explicit number): Phase detection is pre-computed in Context above. Scan numerically for first phase with NO `*-PLAN.md`. Found: announce "Auto-detected Phase {N} ({slug})". All planned: STOP "All phases planned. Specify: `/vbw:discuss N`"
 - Phase not in roadmap: STOP "Phase {N} not found."
 
 ## Steps

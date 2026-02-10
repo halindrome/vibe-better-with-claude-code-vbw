@@ -24,12 +24,17 @@ Phase directories:
 !`ls .vbw-planning/phases/ 2>/dev/null || echo "No phases directory"`
 ```
 
+Phase state:
+```
+!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase-detect.sh 2>/dev/null || echo "phase_detect_error=true"`
+```
+
 ## Guard
 
 1. **Not initialized** (no .vbw-planning/ dir): STOP "Run /vbw:init first."
 2. **Auto-detect phase (if omitted):** If no integer phase in $ARGUMENTS:
-   - Read `${CLAUDE_PLUGIN_ROOT}/references/phase-detection.md`, follow **Resolve Phases Directory**
-   - Scan phase dirs numerically. First phase with `*-PLAN.md` but missing `*-SUMMARY.md` = target
+   - Phase detection is pre-computed in Context above. Use `next_phase`, `next_phase_slug`, and `next_phase_state` directly.
+   - First phase where `next_phase_state` is `needs_execute` is the target.
    - Found: "Auto-detected Phase {N} ({slug}) -- planned, not yet built"
    - All built: STOP "All planned phases are built. Specify a phase to rebuild: `/vbw:execute N`"
 3. **Phase not planned:** No PLAN.md in phase dir → STOP: "Phase {N} has no plans. Run /vbw:plan {N} first."

@@ -97,7 +97,7 @@ Display "Scoping complete. {N} phases created. Transitioning to planning..." Re-
 
 ## States 3-4: Plan + Execute
 
-**Auto-detect phase** (if no integer in $ARGUMENTS): Read `${CLAUDE_PLUGIN_ROOT}/references/phase-detection.md`, follow **Implement Command** dual-condition detection. Announce: "Auto-detected Phase {N} ({slug}) -- {needs plan + execute | planned, needs execute}"
+**Auto-detect phase** (if no integer in $ARGUMENTS): Phase detection is pre-computed in Context above. Use `next_phase`, `next_phase_slug`, and `next_phase_state` directly. Announce: "Auto-detected Phase {N} ({slug}) -- {needs plan + execute | planned, needs execute}"
 
 **Parse arguments:** Phase number (optional), --effort (optional), --skip-qa (optional).
 
