@@ -7,6 +7,15 @@
 #
 # Output: Formatted ➜ Next Up block with 2-3 contextual suggestions.
 # Called by commands during their output step.
+#
+# Context detection (all from disk, no extra args needed):
+#   - Phase state: next unplanned/unbuilt phase, all-done
+#   - Plan count: number of PLAN.md files in active phase
+#   - Effort level: from config.json
+#   - Deviations: summed from SUMMARY.md frontmatter in active phase
+#   - Failing plans: SUMMARY.md files with status != complete
+#   - Map staleness: percentage from META.md git hash comparison
+#   - Phase name: human-readable slug from directory name
 
 set -eo pipefail
 
@@ -23,6 +32,16 @@ next_unbuilt=""
 all_done=false
 last_qa_result=""
 map_exists=false
+
+# Contextual state (ADP-03)
+effort="balanced"
+active_phase_dir=""
+active_phase_num=""
+active_phase_name=""
+active_phase_plans=0
+deviation_count=0
+failing_plan_ids=""
+map_staleness=-1
 
 if [ -d "$PLANNING_DIR" ]; then
   has_planning=true
@@ -41,22 +60,51 @@ if [ -d "$PLANNING_DIR" ]; then
     has_project=true
   fi
 
+  # Read effort from config
+  if [ -f "$PLANNING_DIR/config.json" ] && command -v jq >/dev/null 2>&1; then
+    e=$(jq -r '.effort // "balanced"' "$PLANNING_DIR/config.json" 2>/dev/null)
+    [ -n "$e" ] && [ "$e" != "null" ] && effort="$e"
+  fi
+
   # Scan phases
   if [ -d "$PHASES_DIR" ]; then
     for dir in "$PHASES_DIR"/*/; do
       [ -d "$dir" ] || continue
       phase_count=$((phase_count + 1))
       phase_num=$(basename "$dir" | sed 's/[^0-9].*//')
+      phase_slug=$(basename "$dir" | sed 's/^[0-9]*-//')
 
       plans=$(find "$dir" -maxdepth 1 -name '*-PLAN.md' 2>/dev/null | wc -l | tr -d ' ')
       summaries=$(find "$dir" -maxdepth 1 -name '*-SUMMARY.md' 2>/dev/null | wc -l | tr -d ' ')
 
       if [ "$plans" -eq 0 ] && [ -z "$next_unplanned" ]; then
         next_unplanned="$phase_num"
+        active_phase_dir="$dir"
+        active_phase_num="$phase_num"
+        active_phase_name="$phase_slug"
+        active_phase_plans=0
       elif [ "$plans" -gt 0 ] && [ "$summaries" -lt "$plans" ] && [ -z "$next_unbuilt" ]; then
         next_unbuilt="$phase_num"
+        active_phase_dir="$dir"
+        active_phase_num="$phase_num"
+        active_phase_name="$phase_slug"
+        active_phase_plans="$plans"
       fi
+
+      # Track the last phase as fallback active phase
+      last_phase_dir="$dir"
+      last_phase_num="$phase_num"
+      last_phase_name="$phase_slug"
+      last_phase_plans="$plans"
     done
+
+    # If no unplanned/unbuilt, use the last phase (most recently completed)
+    if [ -z "$active_phase_dir" ] && [ -n "$last_phase_dir" ]; then
+      active_phase_dir="$last_phase_dir"
+      active_phase_num="$last_phase_num"
+      active_phase_name="$last_phase_name"
+      active_phase_plans="$last_phase_plans"
+    fi
 
     # All done if phases exist and nothing is unplanned/unbuilt
     if [ "$phase_count" -gt 0 ] && [ -z "$next_unplanned" ] && [ -z "$next_unbuilt" ]; then
@@ -68,18 +116,58 @@ if [ -d "$PLANNING_DIR" ]; then
       [ -d "$dir" ] || continue
       for vf in "$dir"/*-VERIFICATION.md; do
         [ -f "$vf" ] || continue
-        r=$(grep -m1 '^result:' "$vf" 2>/dev/null | sed 's/result:[[:space:]]*//' | tr '[:upper:]' '[:lower:]')
+        r=$(grep -m1 '^result:' "$vf" 2>/dev/null | sed 's/result:[[:space:]]*//' | tr '[:upper:]' '[:lower:]' || true)
         [ -n "$r" ] && last_qa_result="$r"
       done
     done
+
+    # Count deviations and find failing plans in active phase
+    if [ -n "$active_phase_dir" ] && [ -d "$active_phase_dir" ]; then
+      for sf in "$active_phase_dir"/*-SUMMARY.md; do
+        [ -f "$sf" ] || continue
+        # Extract deviations count from frontmatter
+        d=$(grep -m1 '^deviations:' "$sf" 2>/dev/null | sed 's/deviations:[[:space:]]*//' || true)
+        case "$d" in
+          0|"[]"|"") ;;  # zero deviations
+          [0-9]*) deviation_count=$((deviation_count + d)) ;;
+          *) deviation_count=$((deviation_count + 1)) ;;  # non-empty, non-numeric = at least 1
+        esac
+        # Check for failed/partial status
+        s=$(grep -m1 '^status:' "$sf" 2>/dev/null | sed 's/status:[[:space:]]*//' | tr '[:upper:]' '[:lower:]' || true)
+        if [ "$s" = "failed" ] || [ "$s" = "partial" ]; then
+          plan_id=$(basename "$sf" | sed 's/-SUMMARY.md//')
+          failing_plan_ids="${failing_plan_ids:+$failing_plan_ids }$plan_id"
+        fi
+      done
+    fi
   fi
 
-  # Check map
-  [ -d "$PLANNING_DIR/codebase" ] && map_exists=true
+  # Check map staleness (not just existence)
+  if [ -d "$PLANNING_DIR/codebase" ]; then
+    map_exists=true
+    META="$PLANNING_DIR/codebase/META.md"
+    if [ -f "$META" ] && git rev-parse --git-dir >/dev/null 2>&1; then
+      git_hash=$(grep '^git_hash:' "$META" 2>/dev/null | awk '{print $2}' || true)
+      file_count=$(grep '^file_count:' "$META" 2>/dev/null | awk '{print $2}' || true)
+      if [ -n "$git_hash" ] && [ -n "$file_count" ] && [ "$file_count" -gt 0 ] 2>/dev/null; then
+        if git cat-file -e "$git_hash" 2>/dev/null; then
+          changed=$(git diff --name-only "$git_hash"..HEAD 2>/dev/null | wc -l | tr -d ' ')
+          map_staleness=$((changed * 100 / file_count))
+        else
+          map_staleness=100
+        fi
+      fi
+    fi
+  fi
 fi
 
 # Use explicit result if provided, fall back to detected QA result
 effective_result="${RESULT:-$last_qa_result}"
+
+# Format phase name for display (replace hyphens with spaces)
+fmt_phase_name() {
+  echo "$1" | tr '-' ' '
+}
 
 # --- Output ---
 echo "➜ Next Up"
@@ -96,21 +184,49 @@ case "$CMD" in
   implement|execute)
     case "$effective_result" in
       fail)
-        suggest "/vbw:fix -- Fix the failing checks"
+        if [ -n "$failing_plan_ids" ]; then
+          first_fail=$(echo "$failing_plan_ids" | awk '{print $1}')
+          suggest "/vbw:fix -- Fix plan $first_fail (failed verification)"
+        else
+          suggest "/vbw:fix -- Fix the failing checks"
+        fi
         suggest "/vbw:qa -- Re-run verification after fixing"
         ;;
       partial)
-        suggest "/vbw:fix -- Address partial failures"
+        if [ -n "$failing_plan_ids" ]; then
+          first_fail=$(echo "$failing_plan_ids" | awk '{print $1}')
+          suggest "/vbw:fix -- Fix plan $first_fail (partial failure)"
+        else
+          suggest "/vbw:fix -- Address partial failures"
+        fi
         if [ "$all_done" != true ]; then
           suggest "/vbw:implement -- Continue to next phase"
         fi
         ;;
       *)
         if [ "$all_done" = true ]; then
-          suggest "/vbw:archive -- Archive completed work"
-          suggest "/vbw:qa -- Run final verification"
+          if [ "$deviation_count" -eq 0 ]; then
+            suggest "/vbw:archive -- All phases complete, zero deviations"
+          else
+            suggest "/vbw:archive -- Archive completed work ($deviation_count deviation(s) logged)"
+            suggest "/vbw:qa -- Review before archiving"
+          fi
         elif [ -n "$next_unbuilt" ] || [ -n "$next_unplanned" ]; then
-          suggest "/vbw:implement -- Continue to next phase"
+          target="${next_unbuilt:-$next_unplanned}"
+          if [ -n "$active_phase_name" ] && [ "$target" != "$active_phase_num" ]; then
+            # Next phase is different from active — show its name
+            for dir in "$PHASES_DIR"/*/; do
+              [ -d "$dir" ] || continue
+              pn=$(basename "$dir" | sed 's/[^0-9].*//')
+              if [ "$pn" = "$target" ]; then
+                tname=$(basename "$dir" | sed 's/^[0-9]*-//')
+                suggest "/vbw:implement -- Continue to Phase $target: $(fmt_phase_name "$tname")"
+                break
+              fi
+            done
+          else
+            suggest "/vbw:implement -- Continue to next phase"
+          fi
         fi
         if [ "$RESULT" = "skipped" ]; then
           suggest "/vbw:qa -- Verify completed work"
@@ -120,23 +236,54 @@ case "$CMD" in
     ;;
 
   plan)
-    suggest "/vbw:implement -- Execute the planned phase"
+    if [ "$active_phase_plans" -gt 0 ]; then
+      suggest "/vbw:implement -- Execute $active_phase_plans plans ($effort effort)"
+    else
+      suggest "/vbw:implement -- Execute the planned phase"
+    fi
     ;;
 
   qa)
     case "$effective_result" in
       pass)
         if [ "$all_done" = true ]; then
-          suggest "/vbw:archive -- Archive completed work"
+          if [ "$deviation_count" -eq 0 ]; then
+            suggest "/vbw:archive -- All phases complete, zero deviations"
+          else
+            suggest "/vbw:archive -- Archive completed work ($deviation_count deviation(s) logged)"
+          fi
         else
-          suggest "/vbw:implement -- Continue to next phase"
+          target="${next_unbuilt:-$next_unplanned}"
+          if [ -n "$target" ]; then
+            for dir in "$PHASES_DIR"/*/; do
+              [ -d "$dir" ] || continue
+              pn=$(basename "$dir" | sed 's/[^0-9].*//')
+              if [ "$pn" = "$target" ]; then
+                tname=$(basename "$dir" | sed 's/^[0-9]*-//')
+                suggest "/vbw:implement -- Continue to Phase $target: $(fmt_phase_name "$tname")"
+                break
+              fi
+            done
+          else
+            suggest "/vbw:implement -- Continue to next phase"
+          fi
         fi
         ;;
       fail)
-        suggest "/vbw:fix -- Fix the failing checks"
+        if [ -n "$failing_plan_ids" ]; then
+          first_fail=$(echo "$failing_plan_ids" | awk '{print $1}')
+          suggest "/vbw:fix -- Fix plan $first_fail (failed QA)"
+        else
+          suggest "/vbw:fix -- Fix the failing checks"
+        fi
         ;;
       partial)
-        suggest "/vbw:fix -- Address partial failures"
+        if [ -n "$failing_plan_ids" ]; then
+          first_fail=$(echo "$failing_plan_ids" | awk '{print $1}')
+          suggest "/vbw:fix -- Fix plan $first_fail (partial failure)"
+        else
+          suggest "/vbw:fix -- Address partial failures"
+        fi
         suggest "/vbw:implement -- Continue despite warnings"
         ;;
       *)
@@ -169,9 +316,22 @@ case "$CMD" in
 
   status)
     if [ "$all_done" = true ]; then
-      suggest "/vbw:archive -- Archive completed work"
+      if [ "$deviation_count" -eq 0 ]; then
+        suggest "/vbw:archive -- All phases complete, zero deviations"
+      else
+        suggest "/vbw:archive -- Archive completed work"
+      fi
     elif [ -n "$next_unbuilt" ] || [ -n "$next_unplanned" ]; then
-      suggest "/vbw:implement -- Continue building"
+      target="${next_unbuilt:-$next_unplanned}"
+      for dir in "$PHASES_DIR"/*/; do
+        [ -d "$dir" ] || continue
+        pn=$(basename "$dir" | sed 's/[^0-9].*//')
+        if [ "$pn" = "$target" ]; then
+          tname=$(basename "$dir" | sed 's/^[0-9]*-//')
+          suggest "/vbw:implement -- Continue Phase $target: $(fmt_phase_name "$tname")"
+          break
+        fi
+      done
     else
       suggest "/vbw:implement -- Start building"
     fi
@@ -207,8 +367,12 @@ esac
 case "$CMD" in
   map|init|help|update|whats-new|uninstall) ;;
   *)
-    if [ "$has_project" = true ] && [ "$map_exists" = false ] && [ "$phase_count" -gt 0 ]; then
-      suggest "/vbw:map -- Map your codebase for better planning"
+    if [ "$has_project" = true ] && [ "$phase_count" -gt 0 ]; then
+      if [ "$map_exists" = false ]; then
+        suggest "/vbw:map -- Map your codebase for better planning"
+      elif [ "$map_staleness" -gt 30 ]; then
+        suggest "/vbw:map --incremental -- Codebase map is ${map_staleness}% stale"
+      fi
     fi
     ;;
 esac
