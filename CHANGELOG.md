@@ -2,6 +2,15 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.10.4] - 2026-02-10
+
+### Changed
+
+- **`statusline`** -- removed Cost field from Line 4. Moved Prompt Cache from usage line (L3) back to context line (L2) after Tokens field.
+- **`README`** -- promoted "What You Get Versus Raw Claude Code" comparison table from subsection to top-level section, moved above Project Structure for better visibility.
+
+---
+
 ## [1.10.3] - 2026-02-10
 
 ### Changed
