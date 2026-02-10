@@ -1,7 +1,7 @@
 ---
 name: implement
 description: "The one command. Detects project state and routes to bootstrap, scoping, planning, execution, or completion."
-argument-hint: "[phase-number] [--effort turbo|fast|balanced|thorough] [--skip-qa]"
+argument-hint: "[phase-number] [--effort=thorough|balanced|fast|turbo] [--skip-qa]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
 disable-model-invocation: true
 ---
