@@ -9,6 +9,10 @@ if ! command -v jq &>/dev/null; then
 fi
 
 PLANNING_DIR=".vbw-planning"
+
+# Clean compaction marker at session start (fresh-session guarantee, REQ-15)
+rm -f "$PLANNING_DIR/.compaction-marker" 2>/dev/null
+
 UPDATE_MSG=""
 
 # --- First-run welcome (DXP-03) ---
