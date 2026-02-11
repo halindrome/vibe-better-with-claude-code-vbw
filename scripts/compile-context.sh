@@ -92,6 +92,55 @@ case "$ROLE" in
       fi
     } > "${PHASE_DIR}/.context-lead.md"
     ;;
+
+  dev)
+    {
+      echo "## Phase ${PHASE} Context"
+      echo ""
+      echo "### Goal"
+      echo "$PHASE_GOAL"
+      if [ -f "$PLANNING_DIR/conventions.json" ] && command -v jq &>/dev/null; then
+        CONVENTIONS=$(jq -r '.conventions[] | "- [\(.tag)] \(.rule)"' "$PLANNING_DIR/conventions.json" 2>/dev/null) || true
+        if [ -n "$CONVENTIONS" ]; then
+          echo ""
+          echo "### Conventions"
+          echo "$CONVENTIONS"
+        fi
+      fi
+    } > "${PHASE_DIR}/.context-dev.md"
+    ;;
+
+  qa)
+    {
+      echo "## Phase ${PHASE} Verification Context"
+      echo ""
+      echo "### Goal"
+      echo "$PHASE_GOAL"
+      echo ""
+      echo "### Success Criteria"
+      echo "$PHASE_SUCCESS"
+      echo ""
+      echo "### Requirements to Verify"
+      if [ -n "$REQ_PATTERN" ] && [ -f "$PLANNING_DIR/REQUIREMENTS.md" ]; then
+        grep -E "($REQ_PATTERN)" "$PLANNING_DIR/REQUIREMENTS.md" 2>/dev/null || echo "No matching requirements found"
+      else
+        echo "No matching requirements found"
+      fi
+      if [ -f "$PLANNING_DIR/conventions.json" ] && command -v jq &>/dev/null; then
+        CONVENTIONS=$(jq -r '.conventions[] | "- [\(.tag)] \(.rule)"' "$PLANNING_DIR/conventions.json" 2>/dev/null) || true
+        if [ -n "$CONVENTIONS" ]; then
+          echo ""
+          echo "### Conventions to Check"
+          echo "$CONVENTIONS"
+        fi
+      fi
+    } > "${PHASE_DIR}/.context-qa.md"
+    ;;
+
+  *)
+    echo "Unknown role: $ROLE. Valid roles: lead, dev, qa" >&2
+    exit 1
+    ;;
 esac
 
 echo "${PHASE_DIR}/.context-${ROLE}.md"
