@@ -26,6 +26,12 @@ if [ -f "$ROOT/scripts/bump-version.sh" ]; then
   }
 fi
 
+# This repository does not use the VBW VERSION + bump-version.sh workflow.
+# If those files are absent, skip the VBW hook so pushes aren't blocked.
+if [ ! -f "$ROOT/VERSION" ] && [ ! -f "$ROOT/scripts/bump-version.sh" ]; then
+  exit 0
+fi
+
 while read -r local_ref local_sha remote_ref remote_sha; do
   # Skip tag pushes and deletes
   [[ "$local_sha" == "0000000000000000000000000000000000000000" ]] && continue
