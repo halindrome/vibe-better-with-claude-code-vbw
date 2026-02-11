@@ -2,6 +2,14 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.10.12] - 2026-02-11
+
+### Fixed
+
+- **`init`** -- preserve existing `CLAUDE.md` in brownfield projects. `/vbw:init` Step 3.5 was blindly overwriting the user's root `CLAUDE.md`. Now reads first — if it exists, appends VBW sections to the end instead of clobbering. Same brownfield-awareness added to `/vbw:vibe` Bootstrap B6 and Archive Step 8.
+
+---
+
 ## [1.10.11] - 2026-02-11
 
 ### Fixed
