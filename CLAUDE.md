@@ -6,10 +6,10 @@ A Claude Code plugin that adds structured development workflows — planning, ex
 
 ## Active Context
 
-**Work:** Intelligent Discovery Questions (3 phases)
-**Phase:** 1 of 3 — Discovery Protocol & Config
+**Work:** Vibe Command (3 phases)
+**Phase:** 1 of 3 — Create + Wire
 **Status:** Ready for planning
-**Next action:** /vbw:implement to plan and build Phase 1
+**Next action:** /vbw:vibe to plan and build Phase 1
 
 ## VBW Rules
 
@@ -17,7 +17,7 @@ A Claude Code plugin that adds structured development workflows — planning, ex
 - **Commit format:** `{type}({scope}): {description}` — types: feat, fix, test, refactor, perf, docs, style, chore.
 - **One commit per task.** Each task in a plan gets exactly one atomic commit.
 - **Never commit secrets.** Do not stage .env, .pem, .key, credentials, or token files.
-- **Plan before building.** Use /vbw:plan before /vbw:execute. Plans are the source of truth.
+- **Plan before building.** Use /vbw:vibe for all lifecycle actions. Plans are the source of truth.
 - **Do not fabricate content.** Only use what the user explicitly states in project-defining flows.
 - **Do not bump version or push until asked.** Never run `scripts/bump-version.sh` or `git push` unless the user explicitly requests it. Commit locally and wait.
 
@@ -25,11 +25,11 @@ A Claude Code plugin that adds structured development workflows — planning, ex
 
 | Decision | Date | Rationale |
 |----------|------|-----------|
-| Discovery questions always run (deep at bootstrap, light at phases) | 2026-02-10 | Users need guidance at every stage, not just first time |
-| Profile controls question depth | 2026-02-10 | yolo=skip, prototype=1-2, default=3-5, production=thorough |
-| Mixed format: scenarios then checklists | 2026-02-10 | Broad scenarios surface unknowns, checklists catch specifics |
+| Hard delete old commands (no aliases, no deprecation) | 2026-02-11 | Zero technical debt; CHANGELOG documents the change |
+| Single vibe.md (~300 lines) with inline mode logic | 2026-02-11 | One file = one truth; execute-protocol.md is the only extraction |
+| NL parsing via prompt instructions, not code | 2026-02-11 | Zero maintenance; model improvements are free |
+| Confirmation gates mandatory (except --yolo) | 2026-02-11 | NL misinterpretation risk → always confirm before acting |
 | Per-project memory only | 2026-02-10 | Get basics right first, cross-project learning deferred |
-| 3-phase roadmap: protocol → bootstrap → phase-level | 2026-02-10 | Foundation first, then wire into each integration point |
 
 ## Installed Skills
 
