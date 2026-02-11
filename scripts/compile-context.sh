@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# compile-context.sh <phase-number> <role> [phases-dir]
+# compile-context.sh <phase-number> <role> [phases-dir] [plan-path]
 # Produces .context-{role}.md in the phase directory with role-specific context.
 # Exit 0 on success, exit 1 when phase directory not found.
 
@@ -14,6 +14,7 @@ PHASE="$1"
 ROLE="$2"
 PHASES_DIR="${3:-.vbw-planning/phases}"
 PLANNING_DIR=".vbw-planning"
+PLAN_PATH="${4:-}"
 
 # Strip leading zeros for ROADMAP matching (ROADMAP uses "Phase 2:", not "Phase 02:")
 PHASE_NUM=$(echo "$PHASE" | sed 's/^0*//')
@@ -105,6 +106,23 @@ case "$ROLE" in
           echo ""
           echo "### Conventions"
           echo "$CONVENTIONS"
+        fi
+      fi
+      # --- Skill bundling (REQ-12) ---
+      if [ -n "$PLAN_PATH" ] && [ -f "$PLAN_PATH" ]; then
+        SKILLS=$(sed -n '/^---$/,/^---$/p' "$PLAN_PATH" | grep 'skills_used:' | sed 's/skills_used: *\[//' | sed 's/\]//' | tr ',' '\n' | sed 's/^ *//;s/ *$//;s/^"//;s/"$//' | grep -v '^$' || true)
+        if [ -n "$SKILLS" ]; then
+          echo ""
+          echo "### Skills Reference"
+          echo ""
+          while IFS= read -r skill; do
+            SKILL_FILE="$HOME/.claude/skills/${skill}/SKILL.md"
+            if [ -f "$SKILL_FILE" ]; then
+              echo "#### ${skill}"
+              cat "$SKILL_FILE"
+              echo ""
+            fi
+          done <<< "$SKILLS"
         fi
       fi
     } > "${PHASE_DIR}/.context-dev.md"
