@@ -36,7 +36,7 @@ Active milestone:
 ## Guard
 
 - Not initialized (no .vbw-planning/ dir): STOP "Run /vbw:init first."
-- No ROADMAP.md or has template placeholders: STOP "No roadmap found. Run /vbw:implement to set up your project."
+- No ROADMAP.md or has template placeholders: STOP "No roadmap found. Run /vbw:vibe to set up your project."
 
 ## Steps
 
@@ -51,7 +51,7 @@ Active milestone:
    - Cost ledger: if `.vbw-planning/.cost-ledger.json` exists, read with jq. Extract per-agent costs. Compute total. Only display economy if total > 0.
 4. **Compute progress:** Per phase: count PLANs (total) vs SUMMARYs (done). Pct = done/total * 100. Status: ✓ (100%), ◆ (1-99%), ○ (0%).
 5. **Compute velocity:** Total plans done, avg duration, total time. If --verbose: per-phase breakdown.
-6. **Next action:** Find first incomplete phase. Has plans but not all summaries: `/vbw:execute {N}`. Complete + next unplanned: `/vbw:plan {N+1}`. All complete: `/vbw:archive`. No plans anywhere: `/vbw:plan`.
+6. **Next action:** Find first incomplete phase. Has plans but not all summaries: `/vbw:vibe` (auto-executes). Complete + next unplanned: `/vbw:vibe` (auto-plans). All complete: `/vbw:vibe --archive`. No plans anywhere: `/vbw:vibe`.
 
 ## Display
 

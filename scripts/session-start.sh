@@ -21,7 +21,7 @@ WELCOME_MSG=""
 if [ ! -f "$VBW_MARKER" ]; then
   mkdir -p "$HOME/.claude" 2>/dev/null
   touch "$VBW_MARKER" 2>/dev/null
-  WELCOME_MSG="FIRST RUN -- Display this welcome to the user verbatim: Welcome to VBW -- Vibe Better with Claude Code. You're not an engineer anymore. You're a prompt jockey with commit access. At least do it properly. Quick start: /vbw:implement -- describe your project and VBW handles the rest. Type /vbw:help for the full story. --- "
+  WELCOME_MSG="FIRST RUN -- Display this welcome to the user verbatim: Welcome to VBW -- Vibe Better with Claude Code. You're not an engineer anymore. You're a prompt jockey with commit access. At least do it properly. Quick start: /vbw:vibe -- describe your project and VBW handles the rest. Type /vbw:help for the full story. --- "
 fi
 
 # --- Update check (once per day, fail-silent) ---
@@ -257,7 +257,7 @@ NEXT_ACTION=""
 if [ ! -f "$PLANNING_DIR/PROJECT.md" ]; then
   NEXT_ACTION="/vbw:init"
 elif [ ! -d "$PHASES_DIR" ] || [ -z "$(ls -d "$PHASES_DIR"/*/ 2>/dev/null)" ]; then
-  NEXT_ACTION="/vbw:implement (needs scoping)"
+  NEXT_ACTION="/vbw:vibe (needs scoping)"
 else
   # Check execution state for interrupted builds
   EXEC_STATE="$PLANNING_DIR/.execution-state.json"
@@ -274,7 +274,7 @@ else
   done
 
   if [ "$exec_running" = true ]; then
-    NEXT_ACTION="/vbw:implement (build interrupted, will resume)"
+    NEXT_ACTION="/vbw:vibe (build interrupted, will resume)"
   else
     # Find next phase needing work
     all_done=true
@@ -286,19 +286,19 @@ else
       if [ "${plan_count:-0}" -eq 0 ]; then
         # Phase has no plans yet — needs planning
         pnum=$(echo "$pname" | sed 's/-.*//')
-        NEXT_ACTION="/vbw:implement (Phase $pnum needs planning)"
+        NEXT_ACTION="/vbw:vibe (Phase $pnum needs planning)"
         all_done=false
         break
       elif [ "${summary_count:-0}" -lt "${plan_count:-0}" ]; then
         # Phase has plans but not all executed
         pnum=$(echo "$pname" | sed 's/-.*//')
-        NEXT_ACTION="/vbw:implement (Phase $pnum planned, needs execution)"
+        NEXT_ACTION="/vbw:vibe (Phase $pnum planned, needs execution)"
         all_done=false
         break
       fi
     done
     if [ "$all_done" = true ]; then
-      NEXT_ACTION="/vbw:archive"
+      NEXT_ACTION="/vbw:vibe --archive"
     fi
   fi
 fi

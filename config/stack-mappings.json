@@ -1,6 +1,6 @@
 {
   "_description": "Maps detected project stack to recommended Claude Code skills",
-  "_usage": "Used by /vbw:init and /vbw:plan to suggest relevant skills",
+  "_usage": "Used by /vbw:init and /vbw:vibe to suggest relevant skills",
   "frameworks": {
     "next": {
       "detect": ["next.config.js", "next.config.mjs", "next.config.ts"],

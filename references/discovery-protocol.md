@@ -1,6 +1,6 @@
 # Discovery Protocol (DISC-01)
 
-Intelligent questioning system that helps users define what they want to build. Runs during `/vbw:implement` at bootstrap and before each phase. Questions are non-developer friendly, scenario-based, and profile-gated.
+Intelligent questioning system that helps users define what they want to build. Runs during `/vbw:vibe` at bootstrap and before each phase. Questions are non-developer friendly, scenario-based, and profile-gated.
 
 ## Profile Depth Mapping
 
@@ -31,7 +31,7 @@ Flow:
 
 ### Phase Discovery (implement States 3-4, before planning)
 
-Lighter round scoped to the specific phase about to be planned. Skipped if phase already has a CONTEXT.md from `/vbw:discuss`.
+Lighter round scoped to the specific phase about to be planned. Skipped if phase already has a CONTEXT.md from `/vbw:vibe --discuss`.
 
 **Input:** Phase goal, requirements, and success criteria from ROADMAP.md
 **Output:** Phase context injected into Lead agent prompt
@@ -152,8 +152,8 @@ When `false`, implement proceeds directly to requirements gathering (bootstrap) 
 
 | Command | Mode | When |
 |---------|------|------|
-| implement State 1, B2 | Bootstrap | After project description, before REQUIREMENTS.md |
-| implement States 3-4 | Phase | Before planning, after phase auto-detection |
-| discuss | N/A | Separate command, not gated by discovery_questions |
+| vibe bootstrap mode | Bootstrap | After project description, before REQUIREMENTS.md |
+| vibe plan mode | Phase | Before planning, after phase auto-detection |
+| vibe --discuss | N/A | Explicit discuss mode, not gated by discovery_questions |
 
-`/vbw:discuss` remains independent — it's a manual deep-dive the user triggers explicitly. Discovery is the automatic layer.
+`/vbw:vibe --discuss` remains independent — it's a manual deep-dive the user triggers explicitly. Discovery is the automatic layer.

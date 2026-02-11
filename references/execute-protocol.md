@@ -23,7 +23,7 @@ Set completed plans (with SUMMARY.md) to `"complete"`, others to `"pending"`.
 8. **Cross-phase deps (PWR-04):** For each plan with `cross_phase_deps`:
    - Verify referenced plan's SUMMARY.md exists with `status: complete`
    - If artifact path specified, verify file exists
-   - Unsatisfied → STOP: "Cross-phase dependency not met. Plan {id} depends on Phase {P}, Plan {plan} ({reason}). Status: {failed|missing|not built}. Fix: Run /vbw:implement {P}"
+   - Unsatisfied → STOP: "Cross-phase dependency not met. Plan {id} depends on Phase {P}, Plan {plan} ({reason}). Status: {failed|missing|not built}. Fix: Run /vbw:vibe {P}"
    - All satisfied: `✓ Cross-phase dependencies verified`
    - No cross_phase_deps: skip silently
 

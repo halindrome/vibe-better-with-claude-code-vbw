@@ -16,7 +16,7 @@ Active milestone: `!`cat .vbw-planning/ACTIVE 2>/dev/null || echo "No active mil
 ## Guard
 
 1. **Not initialized** (no .vbw-planning/ dir): STOP "Run /vbw:init first."
-2. **No roadmap:** ROADMAP.md missing → STOP: "No roadmap found. Run /vbw:implement."
+2. **No roadmap:** ROADMAP.md missing → STOP: "No roadmap found. Run /vbw:vibe."
 
 ## Steps
 

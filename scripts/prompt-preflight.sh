@@ -20,8 +20,8 @@ fi
 
 WARNING=""
 
-# Check: /vbw:execute when no PLAN.md exists
-if echo "$PROMPT" | grep -q '/vbw:execute'; then
+# Check: /vbw:vibe --execute when no PLAN.md exists
+if echo "$PROMPT" | grep -q '/vbw:vibe.*--execute'; then
   CURRENT_PHASE=""
   if [ -f "$PLANNING_DIR/STATE.md" ]; then
     CURRENT_PHASE=$(grep -m1 "^## Current Phase" "$PLANNING_DIR/STATE.md" | sed 's/.*Phase[: ]*//' | tr -d ' ')
@@ -31,29 +31,13 @@ if echo "$PROMPT" | grep -q '/vbw:execute'; then
     PHASE_DIR="$PLANNING_DIR/phases/$CURRENT_PHASE"
     PLAN_COUNT=$(find "$PHASE_DIR" -name "PLAN.md" -o -name "*-PLAN.md" 2>/dev/null | wc -l | tr -d ' ')
     if [ "$PLAN_COUNT" -eq 0 ]; then
-      WARNING="No PLAN.md for phase $CURRENT_PHASE. Run /vbw:plan first."
+      WARNING="No PLAN.md for phase $CURRENT_PHASE. Run /vbw:vibe to plan first."
     fi
   fi
 fi
 
-# Check: /vbw:plan when phase already has plans (warn, not block)
-if echo "$PROMPT" | grep -q '/vbw:plan'; then
-  CURRENT_PHASE=""
-  if [ -f "$PLANNING_DIR/STATE.md" ]; then
-    CURRENT_PHASE=$(grep -m1 "^## Current Phase" "$PLANNING_DIR/STATE.md" | sed 's/.*Phase[: ]*//' | tr -d ' ')
-  fi
-
-  if [ -n "$CURRENT_PHASE" ]; then
-    PHASE_DIR="$PLANNING_DIR/phases/$CURRENT_PHASE"
-    PLAN_COUNT=$(find "$PHASE_DIR" -name "PLAN.md" -o -name "*-PLAN.md" 2>/dev/null | wc -l | tr -d ' ')
-    if [ "$PLAN_COUNT" -gt 0 ]; then
-      WARNING="Phase $CURRENT_PHASE already has $PLAN_COUNT plan(s). Re-planning adds more."
-    fi
-  fi
-fi
-
-# Check: /vbw:ship with incomplete phases
-if echo "$PROMPT" | grep -q '/vbw:ship'; then
+# Check: /vbw:vibe --archive with incomplete phases
+if echo "$PROMPT" | grep -q '/vbw:vibe.*--archive'; then
   if [ -f "$PLANNING_DIR/STATE.md" ]; then
     INCOMPLETE=$(grep -c "status:.*incomplete\|status:.*in.progress\|status:.*pending" "$PLANNING_DIR/STATE.md" 2>/dev/null || echo 0)
     if [ "$INCOMPLETE" -gt 0 ]; then

@@ -35,8 +35,8 @@ Parallel: up to 4 simultaneous Tasks. Model: fast/turbo → `Model: haiku`; thor
 5. **Persist:** Ask "Save findings? (y/n)". If yes: write to .vbw-planning/phases/{phase-dir}/RESEARCH.md or .vbw-planning/RESEARCH.md.
 ```
 ➜ Next Up
-  /vbw:plan {N} -- Plan using research findings
-  /vbw:discuss {N} -- Discuss phase approach
+  /vbw:vibe --plan {N} -- Plan using research findings
+  /vbw:vibe --discuss {N} -- Discuss phase approach
 ```
 
 ## Output Format

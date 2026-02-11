@@ -30,7 +30,7 @@ Skills:
 
 ## Guard
 
-1. **Already initialized:** If .vbw-planning/config.json exists, STOP: "VBW is already initialized. Use /vbw:config to modify settings or /vbw:implement to start building."
+1. **Already initialized:** If .vbw-planning/config.json exists, STOP: "VBW is already initialized. Use /vbw:config to modify settings or /vbw:vibe to start building."
 2. **jq required:** `command -v jq` via Bash. If missing, STOP: "VBW requires jq. Install: macOS `brew install jq`, Linux `apt install jq`, Manual: https://jqlang.github.io/jq/download/ — then re-run /vbw:init." Do NOT proceed without jq.
 3. **Brownfield detection:** Check for existing source files (stop at first match):
    - Git repo: `git ls-files --error-unmatch . 2>/dev/null | head -5` — any output = BROWNFIELD=true
@@ -132,7 +132,7 @@ Set GSD_ISOLATION_ENABLED=true for Step 3.5.
 **2c. Codebase mapping (adaptive):**
 - Greenfield (BROWNFIELD=false): skip. Display: `○ Greenfield — skipping codebase mapping`
 - SOURCE_FILE_COUNT < 200: run map **inline** — read `${CLAUDE_PLUGIN_ROOT}/commands/map.md` and follow directly
-- SOURCE_FILE_COUNT >= 200: run map **in background** — display: `◆ Codebase mapping started in background ({SOURCE_FILE_COUNT} files)`
+- SOURCE_FILE_COUNT >= 200: run map **inline** (blocking) — display: `◆ Codebase mapping started ({SOURCE_FILE_COUNT} files)`. **Do NOT run in background.** The map MUST complete before proceeding to Step 3.
 
 **2d. find-skills bootstrap:** Check `find_skills_available` from detect-stack JSON.
 - `true`: display "✓ Skills.sh registry — available"
@@ -142,7 +142,7 @@ Set GSD_ISOLATION_ENABLED=true for Step 3.5.
 
 ### Step 3: Convergence — augment and search
 
-**3a.** If map ran in background, wait for completion. Display `◆ Waiting for codebase mapping...` then `✓ Codebase mapped ({document-count} documents)`. If inline or skipped: proceed immediately.
+**3a.** Verify mapping completed. Display `✓ Codebase mapped ({document-count} documents)`. If skipped (greenfield): proceed immediately.
 
 **3b.** If `.vbw-planning/codebase/STACK.md` exists, read it and merge additional stack components into detected_stack[].
 
@@ -166,7 +166,7 @@ If greenfield: write `{"conventions": []}`. Display: `○ Conventions — none y
 
 ### Step 3.5: Generate bootstrap CLAUDE.md
 
-Write `CLAUDE.md` at project root (auto-loaded every session). /vbw:implement regenerates later with project content.
+Write `CLAUDE.md` at project root (auto-loaded every session). /vbw:vibe regenerates later with project content.
 
 Template — write this verbatim, substituting `{...}` placeholders:
 ```markdown
@@ -177,11 +177,11 @@ This project uses VBW (Vibe Better with Claude Code) for structured development.
 - **Commit format:** `{type}({scope}): {description}` — types: feat, fix, test, refactor, perf, docs, style, chore.
 - **One commit per task.** Each task in a plan gets exactly one atomic commit.
 - **Never commit secrets.** Do not stage .env, .pem, .key, credentials, or token files.
-- **Plan before building.** Use /vbw:plan before /vbw:execute. Plans are the source of truth.
+- **Plan before building.** Use /vbw:vibe for all lifecycle actions. Plans are the source of truth.
 - **Do not fabricate content.** Only use what the user explicitly states in project-defining flows.
 ## State
 - Planning directory: `.vbw-planning/`
-- Project not yet defined — run /vbw:implement to set up project identity and roadmap.
+- Project not yet defined — run /vbw:vibe to set up project identity and roadmap.
 ## Installed Skills
 {list from STATE.md Skills section, or "None"}
 ## Project Conventions
@@ -200,7 +200,7 @@ Keep under 200 lines. Add `✓ CLAUDE.md` to summary.
 
 ### Step 4: Present summary
 
-Display Phase Banner then file checklist (✓ for each created file), conditional lines for GSD isolation, statusline, codebase mapping, conventions, skills. Then auto-launch `/vbw:implement` by reading `${CLAUDE_PLUGIN_ROOT}/commands/implement.md` and following it. If greenfield, run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh init` and display output.
+Display Phase Banner then file checklist (✓ for each created file), conditional lines for GSD isolation, statusline, codebase mapping, conventions, skills. Then auto-launch `/vbw:vibe` by reading `${CLAUDE_PLUGIN_ROOT}/commands/vibe.md` and following it. If greenfield, run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh init` and display output.
 
 ## Output Format
 

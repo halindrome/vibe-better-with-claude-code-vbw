@@ -4,7 +4,7 @@ Authoritative spec for VBW's verification pipeline. QA agent is read-only; paren
 
 ## 1. Contexts
 
-- **Post-build:** Auto after `/vbw:execute` (unless `--skip-qa` or turbo)
+- **Post-build:** Auto after `/vbw:vibe` execute mode (unless `--skip-qa` or turbo)
 - **Standalone:** `/vbw:qa <phase>`
 
 ## 2. Three-Tier Verification (VRFY-01)

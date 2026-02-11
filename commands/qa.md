@@ -32,7 +32,7 @@ Phase state:
 
 - Not initialized (no .vbw-planning/ dir): STOP "Run /vbw:init first."
 - **Auto-detect phase** (no explicit number): Phase detection is pre-computed in Context above. Use `next_phase` and `next_phase_slug` for the target phase. To find the first phase needing QA: scan phase dirs for first with `*-SUMMARY.md` but no `*-VERIFICATION.md` (phase-detect.sh provides the base phase state; QA-specific detection requires this additional check). Found: announce "Auto-detected Phase {N} ({slug})". All verified: STOP "All phases verified. Specify: `/vbw:qa N`"
-- Phase not built (no SUMMARYs): STOP "Phase {N} has no completed plans. Run /vbw:execute {N} first."
+- Phase not built (no SUMMARYs): STOP "Phase {N} has no completed plans. Run /vbw:vibe first."
 
 Note: Continuous verification handled by hooks. This command is for deep, on-demand verification only.
 
