@@ -25,7 +25,7 @@
 
 ## VBW Token Efficiency vs Stock Opus 4.6 Agent Teams
 
-VBW wraps Claude Code's native Agent Teams with 18 optimization mechanisms across 8 architectural layers -- shell pre-computation, model routing, context diet, deterministic context routing, compaction resilience, scope enforcement, structured coordination, and effort scaling. Aggressive content compression (v1.10.2) cut every instruction file by 50%+, and the Context Compiler (v1.10.7) routes only role-relevant content to each agent via pre-compiled context files. The result: same coordination capability, ~86% fewer tokens burned on overhead.
+VBW wraps Claude Code's native Agent Teams with 18 optimization mechanisms across 8 architectural layers, shell pre-computation, model routing, context diet, deterministic context routing, compaction resilience, scope enforcement, structured coordination, and effort scaling. Aggressive content compression (v1.10.2) cut every instruction file by 50%+, and the Context Compiler (v1.10.7) routes only role-relevant content to each agent via pre-compiled context files. The result: same coordination capability, ~86% fewer tokens burned on overhead.
 
 Stock teams load all command descriptions into every request, run every agent on Opus, coordinate via expensive message round-trips, and let each agent independently discover project state by reading the same files. VBW replaces all of that with 3,065 lines of bash that execute at zero model token cost, hardcoded model routing (Scout on Haiku, QA on Sonnet), disk-based coordination, pre-computed state injection, deterministic context compilation, and terse compressed instructions across all 20 commands, 6 agents, and 10 reference files.
 
@@ -582,6 +582,71 @@ Autonomy interacts with effort profiles. At `cautious`, plan approval expands to
 | "Already complete" warning | Confirm | Confirm | Skip | Skip |
 | Plan approval (Thorough) | Required | Required | Off | Off |
 | Plan approval (Balanced) | Required | Off | Off | Off |
+
+<br>
+
+## Cost Optimization
+
+VBW spawns specialized agents for planning, development, and verification. Model profiles let you control which Claude model each agent uses, trading cost for quality based on your needs.
+
+### Three Preset Profiles
+
+| Profile | Use Case | Lead | Dev | QA | Scout | Est. Cost/Phase |
+| :--- | :--- | :--- | :--- | :--- | :--- | ---: |
+| **Quality** | Production work, architecture decisions | opus | opus | sonnet | haiku | ~$2.80 |
+| **Balanced** | Standard development (default) | sonnet | sonnet | sonnet | haiku | ~$1.40 |
+| **Budget** | Prototyping, tight budgets | sonnet | sonnet | haiku | haiku | ~$0.70 |
+
+*Debugger and Architect follow the same model as Lead. Estimates based on typical 3-plan phase.*
+
+**Balanced is the default.** It gives you solid planning and verification at 50% the cost of Quality. Most projects never need to change it.
+
+**Quality** uses Opus for Lead, Dev, Debugger, and Architect -- maximum reasoning depth for critical work. QA stays on Sonnet (verification doesn't need Opus), Scout on Haiku (research throughput).
+
+**Budget** keeps Dev and core agents on Sonnet (quality baseline) but drops QA to Haiku. Good for exploratory work where you're iterating fast and verification can be lighter.
+
+### Switching Profiles
+
+```bash
+/vbw:config model_profile quality
+/vbw:config model_profile balanced
+/vbw:config model_profile budget
+```
+
+Each switch shows before/after cost impact. Changes apply to the next phase.
+
+### Per-Agent Overrides
+
+Need Opus for one agent without switching the whole profile?
+
+```bash
+/vbw:config model_override dev opus
+/vbw:config model_override qa sonnet
+```
+
+Common patterns:
+- Budget profile + Dev override to Opus for complex implementation tasks
+- Balanced profile + Lead override to Opus for strategic planning phases
+- Quality profile + QA override to Haiku when verification is straightforward
+
+### Effort vs Model
+
+**Model profile** controls which Claude model agents use (cost).
+**Effort** controls how deeply agents think (workflow depth).
+
+They're independent. You can run Thorough effort on Budget profile (deep workflow, cheap models) or Fast effort on Quality profile (quick workflow, expensive models). Most users match them:
+- `thorough` effort + `quality` profile
+- `balanced` effort + `balanced` profile
+- `fast` effort + `budget` profile
+
+Switch both at once with work profiles:
+
+```bash
+/vbw:profile production   → thorough + quality
+/vbw:profile prototype    → fast + budget
+```
+
+See **[Model Profiles Reference](references/model-profiles.md)** for preset definitions, cost breakdown, and implementation details.
 
 <br>
 

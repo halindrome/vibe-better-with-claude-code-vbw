@@ -2,6 +2,19 @@
 
 **Model:** Sonnet | **Use when:** Quick fixes, config changes, obvious tasks, low-stakes edits.
 
+## Effort vs Model Profile
+
+**Effort controls:** Planning depth, verification thoroughness, research scope (workflow behavior)
+**Model profile controls:** Which Claude model each agent uses (cost optimization)
+
+These are independent settings. You can run Thorough effort on Budget profile (deep workflow, cheap models) or Fast effort on Quality profile (quick workflow, expensive models). Most users: match them (balanced+balanced, thorough+quality, fast+budget).
+
+Configure via:
+- Effort: `/vbw:config effort <level>` or `/vbw:vibe --effort=<level>`
+- Model: `/vbw:config model_profile <profile>`
+
+See: @references/model-profiles.md for model profile details.
+
 ## Matrix Row
 
 | Agent | Level | Notes |

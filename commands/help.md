@@ -20,7 +20,7 @@ allowed-tools: Read, Glob
 **Quick Actions:** ✓ fix (quick fix) · ✓ debug (investigation) · ✓ todo (backlog)
 **Session:** ✓ pause (save notes) · ✓ resume (restore context)
 **Codebase:** ✓ map (Scout analysis) · ✓ research (standalone)
-**Config:** ✓ skills (community skills) · ✓ config (settings) · ✓ help (this) · ✓ whats-new (changelog) · ✓ update (version) · ✓ uninstall (removal)
+**Config:** ✓ skills (community skills) · ✓ config (settings, model profiles) · ✓ help (this) · ✓ whats-new (changelog) · ✓ update (version) · ✓ uninstall (removal)
 
 ## Architecture
 
@@ -28,9 +28,20 @@ allowed-tools: Read, Glob
 - Continuous verification via PostToolUse, TaskCompleted, TeammateIdle hooks. /vbw:qa is on-demand.
 - /vbw:config maps skills to hook events (skill-hook wiring).
 
+## Model Profiles
+
+Control which Claude model each agent uses (cost optimization):
+- `/vbw:config model_profile quality` -- Opus for Lead/Dev/Debugger/Architect, Sonnet for QA, Haiku for Scout (~$2.80/phase)
+- `/vbw:config model_profile balanced` -- Sonnet for most, Haiku for Scout (~$1.40/phase, default)
+- `/vbw:config model_profile budget` -- Sonnet for critical agents, Haiku for QA/Scout (~$0.70/phase)
+- `/vbw:config model_override dev opus` -- Override single agent without changing profile
+
+See: @references/model-profiles.md for full preset definitions and cost comparison.
+
 ## Getting Started
 
 ➜ /vbw:init -> /vbw:vibe -> /vbw:vibe --archive
+Optional: /vbw:config model_profile <quality|balanced|budget> to optimize cost
 `/vbw:help <command>` for details.
 
 ## Output Format
