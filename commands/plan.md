@@ -95,7 +95,26 @@ From Context block above (advisory only, never block):
 2. **Turbo shortcut:** If effort=turbo, skip Lead. Read phase reqs from ROADMAP.md. Create single lightweight PLAN.md. Skip to step 5.
 3. **Spawn Lead:** Display `◆ Planning Phase {N}: {phase-name} / Effort: {level} / Spawning Lead agent...`
 
+**Context compilation (REQ-11):** If `config_context_compiler=true` from Context block above, before spawning Lead run:
+`bash ${CLAUDE_PLUGIN_ROOT}/scripts/compile-context.sh {phase} lead {phases_dir}`
+This produces `{phase-dir}/.context-lead.md` with filtered requirements, phase goal, success criteria, and active decisions.
+If compilation fails (non-zero exit), proceed without it — Lead reads files directly (graceful degradation).
+
 Spawn vbw-lead as subagent via Task tool:
+
+**If context_compiler=true AND .context-lead.md was produced:**
+```
+Plan phase {N}: {phase-name}.
+Phase context: {phase-dir}/.context-lead.md (compiled — phase goal, mapped requirements, success criteria, active decisions)
+Project: .vbw-planning/PROJECT.md
+Patterns: .vbw-planning/patterns/PATTERNS.md (if exists)
+Codebase map: .vbw-planning/codebase/ (if exists)
+  Read INDEX.md, ARCHITECTURE.md, CONCERNS.md for codebase context.
+Effort: {level}
+Output: Write PLAN.md files to .vbw-planning/phases/{phase-dir}/
+```
+
+**If context_compiler=false OR compilation failed:**
 ```
 Plan phase {N}: {phase-name}.
 Roadmap: .vbw-planning/ROADMAP.md
