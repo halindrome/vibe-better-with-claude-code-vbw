@@ -2,7 +2,7 @@
 
 All notable changes to VBW will be documented in this file.
 
-## [Unreleased]
+## [1.10.15] - 2026-02-11
 
 ### Added
 
