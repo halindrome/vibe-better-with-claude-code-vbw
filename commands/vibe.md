@@ -175,7 +175,18 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
 2. **Phase Discovery (if applicable):** Skip if already planned, phase dir has `{phase}-CONTEXT.md`, or DISCOVERY_DEPTH=skip. Otherwise: read `${CLAUDE_PLUGIN_ROOT}/references/discovery-protocol.md` Phase Discovery mode. Generate phase-scoped questions (quick=1, standard=1-2, thorough=2-3). Skip categories already in `discovery.json.answered[]`. Present via AskUserQuestion. Append to `discovery.json`. Write `{phase}-CONTEXT.md`.
 3. **Context compilation:** If `config_context_compiler=true`, run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/compile-context.sh {phase} lead {phases_dir}`. Include `.context-lead.md` in Lead agent context if produced.
 4. **Turbo shortcut:** If effort=turbo, skip Lead. Read phase reqs from ROADMAP.md, create single lightweight PLAN.md inline.
-5. **Other efforts:** Spawn vbw-lead as subagent via Task tool with compiled context (or full file list as fallback). Display `◆ Spawning Lead agent...` -> `✓ Lead agent complete`.
+5. **Other efforts:**
+   - Resolve Lead model:
+     ```bash
+     LEAD_MODEL=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh lead .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json)
+     if [ $? -ne 0 ]; then
+       echo "$LEAD_MODEL" >&2
+       exit 1
+     fi
+     ```
+   - Spawn vbw-lead as subagent via Task tool with compiled context (or full file list as fallback).
+   - **CRITICAL:** Add `model: "${LEAD_MODEL}"` parameter to the Task tool invocation.
+   - Display `◆ Spawning Lead agent...` -> `✓ Lead agent complete`.
 6. **Validate output:** Verify PLAN.md has valid frontmatter (phase, plan, title, wave, depends_on, must_haves) and tasks. Check wave deps acyclic.
 7. **Present:** Update STATE.md (phase position, plan count, status=Planned). Display Phase Banner with plan list, effort level.
 8. **Cautious gate (autonomy=cautious only):** STOP after planning. Ask "Plans ready. Execute Phase {N}?" Other levels: auto-chain.
