@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# compile-context.sh <phase-number> <role> [phases-dir]
+# Produces .context-{role}.md in the phase directory with role-specific context.
+# Exit 0 on success, exit 1 when phase directory not found.
+
+if [ $# -lt 2 ]; then
+  echo "Usage: compile-context.sh <phase-number> <role> [phases-dir]" >&2
+  exit 1
+fi
+
+PHASE="$1"
+ROLE="$2"
+PHASES_DIR="${3:-.vbw-planning/phases}"
+PLANNING_DIR=".vbw-planning"
+
+# Strip leading zeros for ROADMAP matching (ROADMAP uses "Phase 2:", not "Phase 02:")
+PHASE_NUM=$(echo "$PHASE" | sed 's/^0*//')
+if [ -z "$PHASE_NUM" ]; then PHASE_NUM="0"; fi
+
+# --- Find phase directory ---
+PHASE_DIR=$(find "$PHASES_DIR" -maxdepth 1 -type d -name "${PHASE}-*" 2>/dev/null | head -1)
+if [ -z "$PHASE_DIR" ]; then
+  echo "Phase ${PHASE} directory not found" >&2
+  exit 1
+fi
+
+# --- Extract phase metadata from ROADMAP.md ---
+ROADMAP="$PLANNING_DIR/ROADMAP.md"
+
+PHASE_SECTION=""
+PHASE_GOAL="Not available"
+PHASE_REQS="Not available"
+PHASE_SUCCESS="Not available"
+
+if [ -f "$ROADMAP" ]; then
+  PHASE_SECTION=$(sed -n "/^### Phase ${PHASE_NUM}:/,/^### Phase [0-9]/p" "$ROADMAP" 2>/dev/null | sed '$d') || true
+  if [ -n "$PHASE_SECTION" ]; then
+    PHASE_GOAL=$(echo "$PHASE_SECTION" | grep '^\*\*Goal:\*\*' 2>/dev/null | sed 's/\*\*Goal:\*\* *//' ) || PHASE_GOAL="Not available"
+    PHASE_REQS=$(echo "$PHASE_SECTION" | grep '^\*\*Reqs:\*\*' 2>/dev/null | sed 's/\*\*Reqs:\*\* *//' ) || PHASE_REQS="Not available"
+    PHASE_SUCCESS=$(echo "$PHASE_SECTION" | grep '^\*\*Success:\*\*' 2>/dev/null | sed 's/\*\*Success:\*\* *//' ) || PHASE_SUCCESS="Not available"
+  fi
+fi
+
+# --- Build REQ grep pattern from comma-separated REQ IDs ---
+REQ_PATTERN=""
+if [ "$PHASE_REQS" != "Not available" ] && [ -n "$PHASE_REQS" ]; then
+  REQ_PATTERN=$(echo "$PHASE_REQS" | tr ',' '\n' | sed 's/^ *//' | sed 's/ *$//' | paste -sd '|' -) || true
+fi
+
+# --- Role-specific output ---
+case "$ROLE" in
+  lead)
+    {
+      echo "## Phase ${PHASE} Context (Compiled)"
+      echo ""
+      echo "### Goal"
+      echo "$PHASE_GOAL"
+      echo ""
+      echo "### Success Criteria"
+      echo "$PHASE_SUCCESS"
+      echo ""
+      echo "### Requirements (${PHASE_REQS})"
+      if [ -n "$REQ_PATTERN" ] && [ -f "$PLANNING_DIR/REQUIREMENTS.md" ]; then
+        grep -E "($REQ_PATTERN)" "$PLANNING_DIR/REQUIREMENTS.md" 2>/dev/null || echo "No matching requirements found"
+      else
+        echo "No matching requirements found"
+      fi
+      echo ""
+      # Count total reqs for awareness
+      TOTAL_REQS=$(grep -c '^\- \[' "$PLANNING_DIR/REQUIREMENTS.md" 2>/dev/null || echo "0")
+      MATCHED_REQS=0
+      if [ "$PHASE_REQS" != "Not available" ] && [ -n "$PHASE_REQS" ]; then
+        MATCHED_REQS=$(echo "$PHASE_REQS" | tr ',' '\n' | wc -l | tr -d ' ')
+      fi
+      OTHERS=$((TOTAL_REQS - MATCHED_REQS))
+      if [ "$OTHERS" -gt 0 ]; then
+        echo "(${OTHERS} other requirements exist for other phases -- not shown)"
+      fi
+      echo ""
+      echo "### Active Decisions"
+      if [ -f "$PLANNING_DIR/STATE.md" ]; then
+        DECISIONS=$(sed -n '/^## Decisions/,/^## [A-Z]/p' "$PLANNING_DIR/STATE.md" 2>/dev/null | sed '$d' | tail -n +2) || true
+        if [ -n "$DECISIONS" ]; then
+          echo "$DECISIONS"
+        else
+          echo "None"
+        fi
+      else
+        echo "None"
+      fi
+    } > "${PHASE_DIR}/.context-lead.md"
+    ;;
+esac
+
+echo "${PHASE_DIR}/.context-${ROLE}.md"
