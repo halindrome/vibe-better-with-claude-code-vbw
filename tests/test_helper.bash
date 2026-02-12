@@ -30,7 +30,11 @@ create_test_config() {
   "model_overrides": {},
   "agent_teams": true,
   "max_tasks_per_plan": 5,
-  "context_compiler": true
+  "context_compiler": true,
+  "v3_delta_context": false,
+  "v3_context_cache": false,
+  "v3_plan_research_persist": false,
+  "v3_metrics": false
 }
 CONF
 }
