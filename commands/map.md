@@ -51,7 +51,11 @@ Display: `◆ Sizing: {SOURCE_FILE_COUNT} source files → {tier} mode`
 
 ### Step 2: Detect monorepo
 
-Check lerna.json, pnpm-workspace.yaml, packages/ or apps/ with sub-package.json, root workspaces field. If monorepo + --package: scope to that package.
+**JS/Node patterns:** Check lerna.json, pnpm-workspace.yaml, packages/ or apps/ with sub-package.json, root workspaces field.
+
+**Multi-component detection:** Count distinct build system roots at different paths. Build system markers: package.json, Cargo.toml, go.mod, pyproject.toml, build.gradle, pom.xml, *.xcodeproj, Podfile, pubspec.yaml. If 2+ markers found at different directory levels (not just root), treat as monorepo.
+
+If monorepo + --package: scope to that package.
 
 ### Step 3: Execute mapping (tier-branched)
 
