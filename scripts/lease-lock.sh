@@ -24,9 +24,11 @@ LOCK_FILE="${LOCKS_DIR}/${TASK_ID}.lock"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Check feature flag — falls back to lock-lite check if lease flag is off
+HARD_GATES=false
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   LEASE_ENABLED=$(jq -r '.v3_lease_locks // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
   LOCK_ENABLED=$(jq -r '.v3_lock_lite // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  HARD_GATES=$(jq -r '.v2_hard_gates // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
   [ "$LEASE_ENABLED" != "true" ] && [ "$LOCK_ENABLED" != "true" ] && exit 0
 fi
 
@@ -99,6 +101,7 @@ case "$ACTION" in
     fi
 
     # Check for conflicts
+    ACQUIRE_CONFLICTS=0
     for EXISTING_LOCK in "$LOCKS_DIR"/*.lock; do
       [ ! -f "$EXISTING_LOCK" ] && continue
       [ "$EXISTING_LOCK" = "$LOCK_FILE" ] && continue
@@ -112,10 +115,17 @@ case "$ACTION" in
           [ -z "$existing_file" ] && continue
           if [ "$CLAIMED_FILE" = "$existing_file" ]; then
             emit_conflict "$EXISTING_TASK" "$CLAIMED_FILE"
+            ACQUIRE_CONFLICTS=$((ACQUIRE_CONFLICTS + 1))
           fi
         done <<< "$EXISTING_FILES"
       done
     done
+
+    # Hard enforcement: exit non-zero on conflict when v2_hard_gates=true (REQ-04)
+    if [ "$ACQUIRE_CONFLICTS" -gt 0 ] && [ "$HARD_GATES" = "true" ]; then
+      echo "conflict_blocked"
+      exit 1
+    fi
 
     # Write lock file with TTL
     TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "unknown")
@@ -192,13 +202,26 @@ case "$ACTION" in
 
     if [ "$CONFLICTS" -gt 0 ]; then
       echo "conflicts:${CONFLICTS}"
+      # Hard enforcement: exit non-zero on conflict when v2_hard_gates=true (REQ-04)
+      if [ "$HARD_GATES" = "true" ]; then
+        exit 1
+      fi
     else
       echo "clear"
     fi
     ;;
 
+  query)
+    # Read-only lock inspection — no cleanup, no modifications (REQ-04)
+    if [ -f "$LOCK_FILE" ]; then
+      cat "$LOCK_FILE"
+    else
+      echo "no_lock"
+    fi
+    ;;
+
   *)
-    echo "Unknown action: $ACTION. Valid: acquire, renew, release, check" >&2
+    echo "Unknown action: $ACTION. Valid: acquire, renew, release, check, query" >&2
     ;;
 esac
 
