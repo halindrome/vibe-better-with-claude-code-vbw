@@ -2,11 +2,15 @@
 
 All notable changes to VBW will be documented in this file.
 
-## [Unreleased]
+## [1.10.16] - 2026-02-12
 
 ### Added
 
 - **`config`** -- interactive granular model configuration. Second menu in `/vbw:config` Model Profile flow offers "Use preset profile" or "Configure each agent individually". Individual path presents 6 agent questions across 2 rounds (4+2 split), writes model_overrides to config.json, and displays before/after cost estimate. Status display marks overridden agents with asterisk (*). Feature implemented in commits 1ac752b through 91da54f (Phase 1, Plan 01-01).
+- **`init`** -- GSD project detection and import. Step 0.5 detects existing `.planning/` directory before scaffold, prompts for import consent, copies to `.vbw-planning/gsd-archive/` (preserves original), generates INDEX.json with phase metadata and quick paths. Enables seamless migration from GSD to VBW with zero-risk import.
+- **`scripts`** -- generate-gsd-index.sh for lightweight JSON index generation (<5s performance). Creates INDEX.json with imported_at, gsd_version, phases_total, phases_complete, milestones, quick_paths, and phases array for fast agent reference without full archive scan.
+- **`help`** -- GSD Import section documenting detection flow during /vbw:init, archive structure (.planning/ → gsd-archive/), INDEX.json generation, and isolation options.
+- **`docs`** -- migration-gsd-to-vbw.md comprehensive migration guide (273 lines, 9 sections) covering import process, archive structure, version control best practices, INDEX.json format, usage patterns, GSD isolation, migration strategies (full/incremental/archive-only), troubleshooting scenarios, and FAQ.
 
 ---
 
