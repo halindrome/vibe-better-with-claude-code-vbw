@@ -320,6 +320,8 @@ echo "✓ Model override: $AGENT ➜ $MODEL"
 | v3_context_cache | boolean | true/false | false |
 | v3_plan_research_persist | boolean | true/false | false |
 | v3_metrics | boolean | true/false | false |
+| v3_contract_lite | boolean | true/false | false |
+| v3_lock_lite | boolean | true/false | false |
 
 ## Output Format
 

@@ -34,7 +34,9 @@ create_test_config() {
   "v3_delta_context": false,
   "v3_context_cache": false,
   "v3_plan_research_persist": false,
-  "v3_metrics": false
+  "v3_metrics": false,
+  "v3_contract_lite": false,
+  "v3_lock_lite": false
 }
 CONF
 }
