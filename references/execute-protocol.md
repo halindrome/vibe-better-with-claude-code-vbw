@@ -29,12 +29,24 @@ Set completed plans (with SUMMARY.md) to `"complete"`, others to `"pending"`.
 
 ### Step 3: Create Agent Team and execute
 
+**V3 Smart Routing (REQ-15):** If `v3_smart_routing=true` in config:
+- Before creating agent teams, assess each plan:
+  ```bash
+  RISK=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/assess-plan-risk.sh {plan_path} 2>/dev/null || echo "medium")
+  TASK_COUNT=$(grep -c '^### Task [0-9]' {plan_path} 2>/dev/null || echo "0")
+  ```
+- If `RISK=low` AND `TASK_COUNT<=3` AND effort is not `thorough`: force turbo execution for this plan (no team, direct implementation). Log routing decision:
+  `bash ${CLAUDE_PLUGIN_ROOT}/scripts/collect-metrics.sh smart_route {phase} {plan} risk=$RISK tasks=$TASK_COUNT routed=turbo 2>/dev/null || true`
+- Otherwise: proceed with normal team delegation. Log:
+  `bash ${CLAUDE_PLUGIN_ROOT}/scripts/collect-metrics.sh smart_route {phase} {plan} risk=$RISK tasks=$TASK_COUNT routed=team 2>/dev/null || true`
+- On script error: fall back to configured effort level.
+
 **Delegation directive (all except Turbo):**
 You are the team LEAD. NEVER implement tasks yourself.
 - Delegate ALL implementation to Dev teammates via TaskCreate
 - NEVER Write/Edit files in a plan's `files_modified` — only state files: STATE.md, ROADMAP.md, .execution-state.json, SUMMARY.md
 - If Dev fails: guidance via SendMessage, not takeover. If all Devs unavailable: create new Dev.
-- At Turbo: no team — Dev executes directly.
+- At Turbo (or smart-routed to turbo): no team — Dev executes directly.
 
 **Context compilation (REQ-11):** If `config_context_compiler=true` from Context block above, before creating Dev tasks run:
 `bash ${CLAUDE_PLUGIN_ROOT}/scripts/compile-context.sh {phase} dev {phases_dir} {plan_path}`
