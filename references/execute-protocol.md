@@ -20,7 +20,21 @@ Loaded on demand by /vbw:vibe Execute mode. Not a user-facing command.
 ```
 Set completed plans (with SUMMARY.md) to `"complete"`, others to `"pending"`.
 
-8. **Cross-phase deps (PWR-04):** For each plan with `cross_phase_deps`:
+8. **V3 Event Log (REQ-16):** If `v3_event_log=true` in config:
+   - Log phase start: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh phase_start {phase} 2>/dev/null || true`
+
+9. **V3 Snapshot Resume (REQ-18):** If `v3_snapshot_resume=true` in config:
+   - On crash recovery (execution-state.json exists with `"status": "running"`): attempt restore:
+     `SNAPSHOT=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/snapshot-resume.sh restore {phase} 2>/dev/null || echo "")`
+   - If snapshot found, log: `✓ Snapshot found: ${SNAPSHOT}` — use snapshot's `recent_commits` to cross-reference git log for more reliable resume-from detection.
+
+10. **V3 Schema Validation (REQ-17):** If `v3_schema_validation=true` in config:
+   - Validate each PLAN.md frontmatter before execution:
+     `VALID=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-schema.sh plan {plan_path} 2>/dev/null || echo "valid")`
+   - If `invalid`: log warning `⚠ Plan {NN-MM} schema: ${VALID}` — continue execution (advisory only).
+   - Log to metrics: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/collect-metrics.sh schema_check {phase} {plan} result=$VALID 2>/dev/null || true`
+
+11. **Cross-phase deps (PWR-04):** For each plan with `cross_phase_deps`:
    - Verify referenced plan's SUMMARY.md exists with `status: complete`
    - If artifact path specified, verify file exists
    - Unsatisfied → STOP: "Cross-phase dependency not met. Plan {id} depends on Phase {P}, Plan {plan} ({reason}). Status: {failed|missing|not built}. Fix: Run /vbw:vibe {P}"
@@ -132,6 +146,19 @@ Use targeted `message` not `broadcast`. Reserve broadcast for critical blocking 
 
 Hooks handle continuous verification: PostToolUse validates SUMMARY.md, TaskCompleted verifies commits, TeammateIdle runs quality gate.
 
+**V3 Event Log — plan lifecycle (REQ-16):** If `v3_event_log=true` in config:
+- At plan start: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh plan_start {phase} {plan} 2>/dev/null || true`
+- At agent spawn: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh agent_spawn {phase} {plan} role=dev model=$DEV_MODEL 2>/dev/null || true`
+- At agent shutdown: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh agent_shutdown {phase} {plan} role=dev 2>/dev/null || true`
+- At plan complete: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh plan_end {phase} {plan} status=complete 2>/dev/null || true`
+- At plan failure: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh plan_end {phase} {plan} status=failed 2>/dev/null || true`
+- On error: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh error {phase} {plan} message={error_summary} 2>/dev/null || true`
+
+**V3 Snapshot — per-plan checkpoint (REQ-18):** If `v3_snapshot_resume=true` in config:
+- After each plan completes (SUMMARY.md verified):
+  `bash ${CLAUDE_PLUGIN_ROOT}/scripts/snapshot-resume.sh save {phase} 2>/dev/null || true`
+- This captures execution state + recent git context for crash recovery.
+
 **V3 Metrics instrumentation (REQ-09):** If `v3_metrics=true` in config:
 - At phase start: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/collect-metrics.sh execute_phase_start {phase} plan_count={N} effort={effort}`
 - At each plan completion: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/collect-metrics.sh execute_plan_complete {phase} {plan} task_count={N} commit_count={N}`
@@ -166,7 +193,10 @@ When a Dev teammate reports plan completion (task marked completed):
 1. **Check:** Verify `{phase_dir}/{plan_id}-SUMMARY.md` exists and contains commit hashes, task statuses, and files modified.
 2. **If missing or incomplete:** Send the Dev a message: "Write {plan_id}-SUMMARY.md using the template at templates/SUMMARY.md. Include commit hashes, tasks completed, files modified, and any deviations." Wait for confirmation before proceeding.
 3. **If Dev is unavailable:** Write it yourself from `git log --oneline` and the PLAN.md.
-4. **Only after SUMMARY.md is verified:** Update plan status to `"complete"` in .execution-state.json and proceed.
+4. **V3 Schema Validation — SUMMARY.md (REQ-17):** If `v3_schema_validation=true` in config:
+   - Validate SUMMARY.md frontmatter: `VALID=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-schema.sh summary {summary_path} 2>/dev/null || echo "valid")`
+   - If `invalid`: log warning `⚠ Summary {plan_id} schema: ${VALID}` — advisory only.
+5. **Only after SUMMARY.md is verified:** Update plan status to `"complete"` in .execution-state.json and proceed.
 
 ### Step 4: Post-build QA (optional)
 
@@ -191,6 +221,9 @@ Display: `◆ Spawning QA agent (${QA_MODEL})...`
 ### Step 5: Update state and present summary
 
 **Shutdown:** Send shutdown to each teammate, wait for approval, re-request if rejected, then TeamDelete. Wait for TeamDelete before state updates.
+
+**V3 Event Log — phase end (REQ-16):** If `v3_event_log=true` in config:
+- `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh phase_end {phase} plans_completed={N} total_tasks={N} 2>/dev/null || true`
 
 **Mark complete:** Set .execution-state.json `"status"` to `"complete"` (statusline auto-deletes on next refresh).
 **Update STATE.md:** phase position, plan completion counts, effort used.
