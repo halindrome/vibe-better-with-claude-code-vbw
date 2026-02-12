@@ -62,10 +62,18 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 
 V3_DELTA_ENABLED=false
+V3_METRICS_ENABLED=false
+START_TIME=""
 
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   V3_CACHE_ENABLED=$(jq -r '.v3_context_cache // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
   V3_DELTA_ENABLED=$(jq -r '.v3_delta_context // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  V3_METRICS_ENABLED=$(jq -r '.v3_metrics // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+fi
+
+# Record start time for metrics
+if [ "$V3_METRICS_ENABLED" = "true" ]; then
+  START_TIME=$(date +%s 2>/dev/null || echo "0")
 fi
 
 if [ "$V3_CACHE_ENABLED" = "true" ] && [ -f "${SCRIPT_DIR}/cache-context.sh" ]; then
@@ -77,6 +85,9 @@ if [ "$V3_CACHE_ENABLED" = "true" ] && [ -f "${SCRIPT_DIR}/cache-context.sh" ]; 
     CACHED_PATH=$(echo "$CACHE_RESULT" | cut -d' ' -f3)
     OUTPUT_PATH="${PHASE_DIR}/.context-${ROLE}.md"
     if cp "$CACHED_PATH" "$OUTPUT_PATH" 2>/dev/null; then
+      if [ "$V3_METRICS_ENABLED" = "true" ] && [ -f "${SCRIPT_DIR}/collect-metrics.sh" ]; then
+        bash "${SCRIPT_DIR}/collect-metrics.sh" cache_hit "$PHASE" "role=${ROLE}" 2>/dev/null || true
+      fi
       echo "$OUTPUT_PATH"
       exit 0
     else
@@ -293,6 +304,17 @@ if [ "$V3_CACHE_ENABLED" = "true" ] && [ -n "$CACHE_HASH" ] && [ "$CACHE_HASH" !
   else
     echo "V3 fallback: could not create cache dir" >&2
   fi
+fi
+
+# --- V3: Emit compile_context metric ---
+if [ "$V3_METRICS_ENABLED" = "true" ] && [ -f "${SCRIPT_DIR}/collect-metrics.sh" ]; then
+  END_TIME=$(date +%s 2>/dev/null || echo "0")
+  DURATION_MS=$(( (END_TIME - ${START_TIME:-0}) * 1000 ))
+  DELTA_COUNT=0
+  if [ "$V3_DELTA_ENABLED" = "true" ] && [ -f "${SCRIPT_DIR}/delta-files.sh" ]; then
+    DELTA_COUNT=$(bash "${SCRIPT_DIR}/delta-files.sh" "$PHASE_DIR" "$PLAN_PATH" 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+  fi
+  bash "${SCRIPT_DIR}/collect-metrics.sh" compile_context "$PHASE" "role=${ROLE}" "duration_ms=${DURATION_MS}" "delta_files=${DELTA_COUNT}" "cache=miss" 2>/dev/null || true
 fi
 
 echo "${PHASE_DIR}/.context-${ROLE}.md"
