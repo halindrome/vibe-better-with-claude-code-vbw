@@ -61,8 +61,11 @@ CACHE_HASH=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 
+V3_DELTA_ENABLED=false
+
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   V3_CACHE_ENABLED=$(jq -r '.v3_context_cache // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  V3_DELTA_ENABLED=$(jq -r '.v3_delta_context // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
 fi
 
 if [ "$V3_CACHE_ENABLED" = "true" ] && [ -f "${SCRIPT_DIR}/cache-context.sh" ]; then
@@ -164,6 +167,23 @@ case "$ROLE" in
               echo ""
             fi
           done <<< "$SKILLS"
+        fi
+      fi
+      # --- V3: Delta context (REQ-06) ---
+      if [ "$V3_DELTA_ENABLED" = "true" ] && [ -f "${SCRIPT_DIR}/delta-files.sh" ]; then
+        DELTA_FILES=$(bash "${SCRIPT_DIR}/delta-files.sh" "$PHASE_DIR" "$PLAN_PATH" 2>/dev/null || true)
+        if [ -n "$DELTA_FILES" ]; then
+          echo ""
+          echo "### Changed Files (Delta)"
+          echo "$DELTA_FILES" | while IFS= read -r f; do
+            echo "- \`$f\`"
+          done
+        fi
+        # Include active plan content for focused context
+        if [ -n "$PLAN_PATH" ] && [ -f "$PLAN_PATH" ]; then
+          echo ""
+          echo "### Active Plan"
+          cat "$PLAN_PATH"
         fi
       fi
       # --- V3: Include RESEARCH.md if present ---
