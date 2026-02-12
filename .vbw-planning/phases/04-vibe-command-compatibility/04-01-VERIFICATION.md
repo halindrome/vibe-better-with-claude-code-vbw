@@ -67,27 +67,54 @@ All script calls use `${CLAUDE_PLUGIN_ROOT}` for plugin cache resolution. No har
 ### Guard Checks
 
 **Init Redirect (lines 86-88):**
-```
+```markdown
+### Mode: Init Redirect
+
 If `planning_dir_exists=false`: display "Run /vbw:init first to set up your project." STOP.
 ```
-Verified: Command stops if `.vbw-planning/` does not exist, preventing invalid state.
+**Verification:** Command stops if `.vbw-planning/` does not exist, preventing invalid state. This is evaluated in the state detection table (Priority 1, line 71).
 
 **Bootstrap Guard (line 92):**
-```
+```markdown
+### Mode: Bootstrap
+
 **Guard:** `.vbw-planning/` exists but no PROJECT.md.
 ```
-Verified: Bootstrap mode only runs when `.vbw-planning/` exists but PROJECT.md is missing, preventing re-bootstrapping.
+**Verification:** Bootstrap mode only runs when `.vbw-planning/` directory exists but PROJECT.md is missing. This prevents re-bootstrapping after project is already defined. Evaluated in state detection table (Priority 2, line 72).
+
+### Guard Evaluation Flow
+
+State detection evaluates guards in priority order (lines 68-76):
+
+1. **Priority 1 (Init Redirect):** `planning_dir_exists=false` → STOP with message
+2. **Priority 2 (Bootstrap):** `project_exists=false` → Bootstrap mode
+3. **Priority 3 (Scope):** `phase_count=0` → Scope mode
+4. **Priority 4-6:** Plan/Execute/Archive modes based on phase state
+
+If Priority 1 fails (no `.vbw-planning/`), execution stops. If Priority 2 fails (PROJECT.md exists), routing continues to Priority 3+.
 
 ### Independence from init.md
 
 Bootstrap mode (B1-B6) has no dependencies on init.md having run first:
-- All context comes from config.json (active_profile, discovery_questions)
-- Scripts are called with explicit arguments, no shared state
-- Guard ensures valid starting state (.vbw-planning/ exists)
+- **State source:** All context comes from config.json (active_profile, discovery_questions) and phase-detect.sh output
+- **Script arguments:** Scripts are called with explicit arguments (NAME, DESCRIPTION, etc.), no shared state with init.md
+- **Guards:** Init Redirect guard ensures `.vbw-planning/` exists before Bootstrap can run. This is the only prerequisite.
+- **Standalone invocation:** User can run `/vbw:init` to scaffold `.vbw-planning/`, then run `/vbw:vibe` for Bootstrap flow. No coupling to init.md execution order.
 
 ### Skip Logic
 
-If PROJECT.md already exists, the state detection table (line 72) routes to Scope mode or Plan mode, not Bootstrap. Bootstrap mode is only triggered when `project_exists=false`.
+**Re-bootstrap prevention:**
+If PROJECT.md already exists, the state detection table routes past Bootstrap mode:
+- `project_exists=false` check (line 72) evaluates to false
+- Routing continues to Priority 3 (Scope) or later modes
+- Bootstrap mode is never entered
+
+**Transition after Bootstrap:**
+B7 (line 149) re-evaluates state after Bootstrap completes:
+```markdown
+**B7: Transition** -- Display "Bootstrap complete. Transitioning to scoping..." Re-evaluate state, route to next match.
+```
+This triggers fresh state detection, routing to Scope mode (since PROJECT.md now exists but `phase_count=0`).
 
 ## Config Settings Compliance
 
