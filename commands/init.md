@@ -125,9 +125,9 @@ Create `.vbw-planning/phases/`. Ensure config.json includes `"agent_teams": true
 
 ### Step 1.7: GSD isolation (conditional)
 
-**1.7a. Detection:** `[ -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/commands/gsd" ] || [ -d ".planning" ]`
-- Neither true: GSD_DETECTED=false, display nothing, skip to Step 2
-- Either true: GSD_DETECTED=true, proceed to 1.7b
+**1.7a. Detection:** `[ -d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/commands/gsd" ] || [ -d ".planning" ] || [ -d ".vbw-planning/gsd-archive" ]`
+- None true: GSD_DETECTED=false, display nothing, skip to Step 2
+- Any true: GSD_DETECTED=true, proceed to 1.7b
 
 **1.7b. Consent:** AskUserQuestion: "GSD detected. Enable plugin isolation?\n\nThis adds a PreToolUse hook that prevents GSD commands and agents from\nreading or writing files in .vbw-planning/. VBW commands are unaffected."
 Options: "Enable (Recommended)" / "Skip". If declined: "○ GSD isolation skipped", skip to Step 2.
