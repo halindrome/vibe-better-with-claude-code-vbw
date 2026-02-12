@@ -123,7 +123,7 @@ if [ -d "$MKT_DIR/.git" ] && [ -d "$CACHE_DIR" ]; then
   if [ "$MKT_VER" != "$CACHE_VER" ] && [ -n "$CACHE_VER" ] && [ "$CACHE_VER" != "0" ]; then
     (cd "$MKT_DIR" && git fetch origin --quiet 2>/dev/null && \
       if git diff --quiet 2>/dev/null; then
-        git reset --hard origin/main --quiet 2>/dev/null
+        git merge --ff-only origin/main --quiet 2>/dev/null
       else
         echo "VBW: marketplace checkout has local modifications — skipping reset" >&2
       fi) &
