@@ -42,6 +42,26 @@ if [ -d "$PLANNING_DIR" ] && [ -f "$PLANNING_DIR/config.json" ]; then
   fi
 fi
 
+# --- Flag dependency validation (REQ-01) ---
+FLAG_WARNINGS=""
+if [ -d "$PLANNING_DIR" ] && [ -f "$PLANNING_DIR/config.json" ]; then
+  _v2_hard_gates=$(jq -r '.v2_hard_gates // false' "$PLANNING_DIR/config.json" 2>/dev/null)
+  _v2_hard_contracts=$(jq -r '.v2_hard_contracts // false' "$PLANNING_DIR/config.json" 2>/dev/null)
+  _v3_event_recovery=$(jq -r '.v3_event_recovery // false' "$PLANNING_DIR/config.json" 2>/dev/null)
+  _v3_event_log=$(jq -r '.v3_event_log // false' "$PLANNING_DIR/config.json" 2>/dev/null)
+  _v2_two_phase=$(jq -r '.v2_two_phase_completion // false' "$PLANNING_DIR/config.json" 2>/dev/null)
+
+  if [ "$_v2_hard_gates" = "true" ] && [ "$_v2_hard_contracts" != "true" ]; then
+    FLAG_WARNINGS="${FLAG_WARNINGS} WARNING: v2_hard_gates requires v2_hard_contracts -- enable v2_hard_contracts first or contract_compliance gate will fail."
+  fi
+  if [ "$_v3_event_recovery" = "true" ] && [ "$_v3_event_log" != "true" ]; then
+    FLAG_WARNINGS="${FLAG_WARNINGS} WARNING: v3_event_recovery requires v3_event_log -- enable v3_event_log first or event recovery will find no events."
+  fi
+  if [ "$_v2_two_phase" = "true" ] && [ "$_v3_event_log" != "true" ]; then
+    FLAG_WARNINGS="${FLAG_WARNINGS} WARNING: v2_two_phase_completion requires v3_event_log -- enable v3_event_log first or completion events will be lost."
+  fi
+fi
+
 # Clean compaction marker at session start (fresh-session guarantee, REQ-15)
 rm -f "$PLANNING_DIR/.compaction-marker" 2>/dev/null
 
@@ -340,9 +360,9 @@ CTX="$CTX Progress: ${progress_pct}%."
 CTX="$CTX Config: effort=${config_effort}, autonomy=${config_autonomy}, auto_commit=${config_auto_commit}, verification=${config_verification}, agent_teams=${config_agent_teams}, max_tasks=${config_max_tasks}."
 CTX="$CTX Next: ${NEXT_ACTION}."
 
-jq -n --arg ctx "$CTX" --arg update "$UPDATE_MSG" --arg welcome "$WELCOME_MSG" '{
+jq -n --arg ctx "$CTX" --arg update "$UPDATE_MSG" --arg welcome "$WELCOME_MSG" --arg flags "${FLAG_WARNINGS:-}" '{
   "hookSpecificOutput": {
-    "additionalContext": ($welcome + $ctx + $update)
+    "additionalContext": ($welcome + $ctx + $update + $flags)
   }
 }'
 
