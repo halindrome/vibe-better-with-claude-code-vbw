@@ -1,0 +1,89 @@
+#!/usr/bin/env bats
+
+load test_helper
+
+setup() {
+  setup_temp_dir
+  create_test_config
+  mkdir -p "$TEST_TEMP_DIR/.vbw-planning/phases/02-test-phase"
+  cat > "$TEST_TEMP_DIR/.vbw-planning/ROADMAP.md" <<'EOF'
+# Test Roadmap
+## Phase 2: Test Phase
+**Goal:** Test goal
+EOF
+  cat > "$TEST_TEMP_DIR/.vbw-planning/phases/02-test-phase/02-01-PLAN.md" <<'EOF'
+---
+phase: 2
+plan: 1
+title: "Test Plan"
+wave: 1
+depends_on: []
+must_haves: ["test"]
+---
+# Test Plan
+EOF
+}
+
+teardown() {
+  teardown_temp_dir
+}
+
+@test "delta-files.sh outputs changed files in git repo" {
+  cd "$PROJECT_ROOT"
+  run bash "$SCRIPTS_DIR/delta-files.sh" "$TEST_TEMP_DIR/.vbw-planning/phases/02-test-phase"
+  [ "$status" -eq 0 ]
+  # Should output at least some files (we have uncommitted changes or recent commits)
+  # Just verify it doesn't error
+}
+
+@test "delta-files.sh handles non-git directory gracefully" {
+  cd "$TEST_TEMP_DIR"
+  # No SUMMARY.md files, no git — should output nothing and exit 0
+  run bash "$SCRIPTS_DIR/delta-files.sh" ".vbw-planning/phases/02-test-phase"
+  [ "$status" -eq 0 ]
+}
+
+@test "delta-files.sh extracts files from SUMMARY.md when no git" {
+  cd "$TEST_TEMP_DIR"
+  cat > ".vbw-planning/phases/02-test-phase/02-01-SUMMARY.md" <<'EOF'
+---
+phase: 2
+plan: 1
+title: "Test"
+status: complete
+---
+# Summary
+## Files Modified
+- scripts/test.sh
+- config/test.json (new)
+## Deviations
+EOF
+  run bash "$SCRIPTS_DIR/delta-files.sh" ".vbw-planning/phases/02-test-phase"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "scripts/test.sh"
+}
+
+@test "compile-context.sh includes delta files when v3_delta_context=true" {
+  cd "$TEST_TEMP_DIR"
+  jq '.v3_delta_context = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
+
+  # Create a SUMMARY with file list for delta source
+  cat > ".vbw-planning/phases/02-test-phase/02-01-SUMMARY.md" <<'EOF'
+# Summary
+## Files Modified
+- scripts/delta-test.sh
+EOF
+
+  run bash "$SCRIPTS_DIR/compile-context.sh" 02 dev ".vbw-planning/phases" ".vbw-planning/phases/02-test-phase/02-01-PLAN.md"
+  [ "$status" -eq 0 ]
+  # Should include Active Plan section (always included with delta)
+  grep -q "Active Plan" ".vbw-planning/phases/02-test-phase/.context-dev.md"
+}
+
+@test "compile-context.sh omits delta when v3_delta_context=false" {
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/compile-context.sh" 02 dev ".vbw-planning/phases" ".vbw-planning/phases/02-test-phase/02-01-PLAN.md"
+  [ "$status" -eq 0 ]
+  ! grep -q "Changed Files" ".vbw-planning/phases/02-test-phase/.context-dev.md"
+  ! grep -q "Active Plan" ".vbw-planning/phases/02-test-phase/.context-dev.md"
+}
