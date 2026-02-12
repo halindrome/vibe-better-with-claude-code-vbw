@@ -1,12 +1,15 @@
 ---
 name: init
 disable-model-invocation: true
-description: Set up environment and scaffold .vbw-planning directory with templates and config.
+description: Set up environment, scaffold .vbw-planning, detect project context, and bootstrap project-defining files.
 argument-hint:
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
 # VBW Init
+
+<!-- Full init flow: Steps 0-4 handle environment/scaffold/hooks/mapping/summary -->
+<!-- Steps 5-8 handle auto-bootstrap: detect scenario, run inference (brownfield/GSD), confirm with user, generate project files -->
 
 ## Context
 
@@ -38,6 +41,9 @@ Skills:
    - All file types count (shell, config, markdown, C++, Rust, CSS, etc.)
 
 ## Steps
+
+<!-- Steps 0-4: Infrastructure setup (environment, scaffold, hooks, mapping, summary) -->
+<!-- Steps 5-8: Auto-bootstrap (scenario detection, inference, bootstrap execution, completion) -->
 
 ### Step 0: Environment setup (settings.json)
 
@@ -273,6 +279,10 @@ Then show conditional lines for GSD isolation, statusline, codebase mapping, con
 
 ### Step 5: Scenario detection
 
+<!-- Scenario detection: uses BROWNFIELD flag (Guard), gsd-archive (Step 0.5), codebase/ (Step 2c) -->
+<!-- Order matters: check GSD_MIGRATION first since GSD projects may also be brownfield -->
+<!-- HYBRID is an edge case fallback — should not occur after Step 2c mapping completes -->
+
 Display transition message: `◆ Infrastructure complete. Defining project...`
 
 Detect the initialization scenario based on flags set in earlier steps:
@@ -301,6 +311,11 @@ Display the detected scenario:
 No user interaction in this step. Proceed immediately to Step 6.
 
 ### Step 6: Inference & confirmation
+
+<!-- Inference scripts: infer-project-context.sh outputs {name, tech_stack, architecture, purpose, features} -->
+<!-- Each field has {value, source} for attribution. Null value = not detected but still displayed (REQ-03) -->
+<!-- infer-gsd-summary.sh outputs {latest_milestone, recent_phases, key_decisions, current_work} -->
+<!-- Confirmation UX: 3 options prevent NL misinterpretation; field picker for targeted corrections -->
 
 Run inference scripts based on the detected scenario, display results, and confirm with the user. Always show inferred data even if fields are null (REQ-03).
 
@@ -362,6 +377,14 @@ Write the final confirmed/corrected data to `.vbw-planning/inference.json` for S
 
 ### Step 7: Bootstrap execution
 
+<!-- Bootstrap scripts expect specific argument formats — see each script's usage header -->
+<!-- bootstrap-project.sh: OUTPUT_PATH NAME DESCRIPTION -->
+<!-- bootstrap-requirements.sh: OUTPUT_PATH DISCOVERY_JSON_PATH (discovery.json: {answered[], inferred[]}) -->
+<!-- bootstrap-roadmap.sh: OUTPUT_PATH PROJECT_NAME PHASES_JSON (phases.json: [{name, goal, requirements[], success_criteria[]}]) -->
+<!-- bootstrap-state.sh: OUTPUT_PATH PROJECT_NAME MILESTONE_NAME PHASE_COUNT -->
+<!-- bootstrap-claude.sh: OUTPUT_PATH PROJECT_NAME CORE_VALUE [EXISTING_PATH] -->
+<!-- Temporary JSON files (discovery.json, phases.json, inference.json) are cleaned up in 7g -->
+
 Generate all project-defining files using confirmed data from Step 6 or discovery questions.
 
 Display: `◆ Generating project files...`
@@ -420,6 +443,9 @@ If SKIP_INFERENCE=false (confirmed/corrected inference data):
 - These are intermediate build artifacts, not project state
 
 ### Step 8: Completion summary
+
+<!-- Final summary replaces old Step 4 auto-launch of /vbw:vibe -->
+<!-- User now has full project-defining files and can run /vbw:vibe when ready -->
 
 Display a Phase Banner (double-line box per @${CLAUDE_PLUGIN_ROOT}/references/vbw-brand-essentials.md) with the title "VBW Initialization Complete".
 
