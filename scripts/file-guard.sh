@@ -74,6 +74,7 @@ if [ "$V2_HARD" = "true" ]; then
             while IFS= read -r forbidden; do
               [ -z "$forbidden" ] && continue
               NORM_FORBIDDEN="${forbidden#./}"
+              NORM_FORBIDDEN="${NORM_FORBIDDEN%/}"
               if [ "$NORM_TARGET" = "$NORM_FORBIDDEN" ] || [[ "$NORM_TARGET" == "$NORM_FORBIDDEN"/* ]]; then
                 echo "Blocked: $NORM_TARGET is a forbidden path in contract (${CONTRACT_FILE})" >&2
                 exit 2

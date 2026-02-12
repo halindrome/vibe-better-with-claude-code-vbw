@@ -101,6 +101,7 @@ case "$MODE" in
         while IFS= read -r forbidden; do
           [ -z "$forbidden" ] && continue
           NORM_FORBIDDEN="${forbidden#./}"
+          NORM_FORBIDDEN="${NORM_FORBIDDEN%/}"
           # Exact match or prefix match (directory patterns)
           if [ "$NORM_FILE" = "$NORM_FORBIDDEN" ] || [[ "$NORM_FILE" == "$NORM_FORBIDDEN"/* ]]; then
             emit_violation "forbidden_path" "${NORM_FILE} matches forbidden path ${NORM_FORBIDDEN}"
