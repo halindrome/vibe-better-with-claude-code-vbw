@@ -81,6 +81,23 @@ if [ "$V2_HARD" = "true" ]; then
               fi
             done <<< "$FORBIDDEN"
           fi
+          # Check allowed_paths — file must be in contract scope
+          ALLOWED=$(jq -r '.allowed_paths[]' "$CONTRACT_FILE" 2>/dev/null) || ALLOWED=""
+          if [ -n "$ALLOWED" ]; then
+            IN_SCOPE=false
+            while IFS= read -r allowed; do
+              [ -z "$allowed" ] && continue
+              NORM_ALLOWED="${allowed#./}"
+              if [ "$NORM_TARGET" = "$NORM_ALLOWED" ]; then
+                IN_SCOPE=true
+                break
+              fi
+            done <<< "$ALLOWED"
+            if [ "$IN_SCOPE" = "false" ]; then
+              echo "Blocked: $NORM_TARGET not in contract allowed_paths (${CONTRACT_FILE})" >&2
+              exit 2
+            fi
+          fi
         fi
         break
       fi

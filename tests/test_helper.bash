@@ -47,7 +47,8 @@ create_test_config() {
   "v3_monorepo_routing": false,
   "v2_hard_contracts": false,
   "v2_hard_gates": false,
-  "v2_typed_protocol": false
+  "v2_typed_protocol": false,
+  "v2_role_isolation": false
 }
 CONF
 }

@@ -25,6 +25,11 @@ if [ -d "$PLANNING_DIR" ] && [ -f "$PLANNING_DIR/config.json" ]; then
     TMP=$(mktemp)
     jq '. + {v2_typed_protocol: false}' "$PLANNING_DIR/config.json" > "$TMP" && mv "$TMP" "$PLANNING_DIR/config.json"
   fi
+  # V2 role isolation flag migration
+  if ! jq -e '.v2_role_isolation' "$PLANNING_DIR/config.json" >/dev/null 2>&1; then
+    TMP=$(mktemp)
+    jq '. + {v2_role_isolation: false}' "$PLANNING_DIR/config.json" > "$TMP" && mv "$TMP" "$PLANNING_DIR/config.json"
+  fi
 fi
 
 # Clean compaction marker at session start (fresh-session guarantee, REQ-15)
