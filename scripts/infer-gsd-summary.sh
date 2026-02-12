@@ -87,13 +87,77 @@ if [[ -f "$INDEX_FILE" ]]; then
   fi
 fi
 
+# --- Extract key decisions from STATE.md ---
+KEY_DECISIONS="[]"
+STATE_FILE="$GSD_ARCHIVE_DIR/STATE.md"
+
+if [[ -f "$STATE_FILE" ]]; then
+  in_decisions=false
+  while IFS= read -r line; do
+    # Detect Key Decisions / Decisions section header
+    if [[ "$line" =~ ^##[[:space:]]+(Key[[:space:]]+)?Decisions ]]; then
+      in_decisions=true
+      continue
+    fi
+    # Stop at next section header
+    if [[ "$in_decisions" == true ]] && [[ "$line" =~ ^## ]]; then
+      break
+    fi
+    if [[ "$in_decisions" == true ]]; then
+      # Parse table rows: | Decision | Date | Rationale |
+      if [[ "$line" =~ ^\|[[:space:]]*[^|-] ]] && [[ ! "$line" =~ ^\|[[:space:]]*Decision ]]; then
+        decision=$(echo "$line" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $2); print $2}')
+        if [[ -n "$decision" ]] && [[ "$decision" != "_(No decisions yet)_" ]]; then
+          KEY_DECISIONS=$(echo "$KEY_DECISIONS" | jq --arg d "$decision" '. + [$d]')
+        fi
+      fi
+      # Parse bullet items: - Decision text
+      if [[ "$line" =~ ^[[:space:]]*-[[:space:]]+(.+)$ ]]; then
+        decision="${BASH_REMATCH[1]}"
+        if [[ -n "$decision" ]]; then
+          KEY_DECISIONS=$(echo "$KEY_DECISIONS" | jq --arg d "$decision" '. + [$d]')
+        fi
+      fi
+    fi
+  done < "$STATE_FILE"
+fi
+
+# --- Extract current work status ---
+CURRENT_WORK="null"
+
+if [[ -f "$INDEX_FILE" ]]; then
+  # Find first in_progress phase from INDEX.json
+  current_phase=$(jq -r '.phases[] | select(.status == "in_progress") | "\(.num)-\(.slug)"' "$INDEX_FILE" 2>/dev/null | head -1 || true)
+  if [[ -n "$current_phase" ]]; then
+    CURRENT_WORK=$(jq -n --arg phase "$current_phase" --arg status "in_progress" \
+      '{"phase": $phase, "status": $status}')
+  fi
+fi
+
+# If no in_progress phase found in INDEX.json, try STATE.md
+if [[ "$CURRENT_WORK" == "null" ]] && [[ -f "$STATE_FILE" ]]; then
+  # Look for Current Phase field: **Current Phase:** Phase N
+  current_line=$(grep -E '^\*\*Current Phase:\*\*' "$STATE_FILE" 2>/dev/null | head -1 || true)
+  if [[ -n "$current_line" ]]; then
+    phase_name=$(echo "$current_line" | sed 's/\*\*Current Phase:\*\*[[:space:]]*//')
+    status_line=$(grep -E '^\*\*Status:\*\*' "$STATE_FILE" 2>/dev/null | head -1 || true)
+    phase_status=$(echo "$status_line" | sed 's/\*\*Status:\*\*[[:space:]]*//')
+    if [[ -n "$phase_name" ]]; then
+      CURRENT_WORK=$(jq -n --arg phase "$phase_name" --arg status "${phase_status:-unknown}" \
+        '{"phase": $phase, "status": $status}')
+    fi
+  fi
+fi
+
 # --- Build output ---
 jq -n \
   --argjson latest_milestone "$LATEST_MILESTONE" \
   --argjson recent_phases "$RECENT_PHASES" \
+  --argjson key_decisions "$KEY_DECISIONS" \
+  --argjson current_work "$CURRENT_WORK" \
   '{
     "latest_milestone": $latest_milestone,
     "recent_phases": $recent_phases,
-    "key_decisions": [],
-    "current_work": null
+    "key_decisions": $key_decisions,
+    "current_work": $current_work
   }'
