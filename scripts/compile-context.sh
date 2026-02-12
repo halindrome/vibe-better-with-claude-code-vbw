@@ -20,8 +20,12 @@ PLAN_PATH="${4:-}"
 PHASE_NUM=$(echo "$PHASE" | sed 's/^0*//')
 if [ -z "$PHASE_NUM" ]; then PHASE_NUM="0"; fi
 
-# --- Find phase directory ---
+# --- Find phase directory (tolerate both padded and unpadded input) ---
 PHASE_DIR=$(find "$PHASES_DIR" -maxdepth 1 -type d -name "${PHASE}-*" 2>/dev/null | head -1)
+if [ -z "$PHASE_DIR" ]; then
+  PADDED=$(printf "%02d" "$PHASE_NUM")
+  PHASE_DIR=$(find "$PHASES_DIR" -maxdepth 1 -type d -name "${PADDED}-*" 2>/dev/null | head -1)
+fi
 if [ -z "$PHASE_DIR" ]; then
   echo "Phase ${PHASE} directory not found" >&2
   exit 1
