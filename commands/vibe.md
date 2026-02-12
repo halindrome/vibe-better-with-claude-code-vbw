@@ -118,14 +118,17 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
   If `discovery_questions=false`: force depth=skip. Store DISCOVERY_DEPTH for B2.
 
 - **B2: REQUIREMENTS.md (Discovery)** -- Behavior depends on DISCOVERY_DEPTH:
-  - **If skip:** Ask 2 minimal static questions via AskUserQuestion: (1) "What are the must-have features?" (2) "Who will use this?" Write REQUIREMENTS.md with REQ-IDs. Create `.vbw-planning/discovery.json` with `{"answered":[],"inferred":[]}`.
+  - **If skip:** Ask 2 minimal static questions via AskUserQuestion: (1) "What are the must-have features?" (2) "Who will use this?" Create `.vbw-planning/discovery.json` with `{"answered":[],"inferred":[]}`.
   - **If quick/standard/thorough:** Read `${CLAUDE_PLUGIN_ROOT}/references/discovery-protocol.md`. Follow Bootstrap Discovery flow:
     1. Analyze user's description for domain, scale, users, complexity signals
     2. Round 1 -- Scenarios: Generate scenario questions per protocol. Present as AskUserQuestion with descriptive options. Count: quick=1, standard=2, thorough=3-4
     3. Round 2 -- Checklists: Based on Round 1 answers, generate targeted pick-many questions with `multiSelect: true`. Count: quick=1, standard=1-2, thorough=2-3
-    4. Synthesize into REQUIREMENTS.md with REQ-IDs (questions=friendly, requirements=precise)
-    5. Store in `.vbw-planning/discovery.json` with `answered[]` and `inferred[]`
+    4. Synthesize answers into `.vbw-planning/discovery.json` with `answered[]` and `inferred[]` (questions=friendly, requirements=precise)
   - **Wording rules (all depths):** No jargon. Plain language. Concrete situations. Cause and effect. Assume user is not a developer.
+  - **After discovery (all depths):** Call:
+    ```
+    bash ${CLAUDE_PLUGIN_ROOT}/scripts/bootstrap/bootstrap-requirements.sh .vbw-planning/REQUIREMENTS.md .vbw-planning/discovery.json
+    ```
 
 - **B3: ROADMAP.md** -- Suggest 3-5 phases from requirements. If `.vbw-planning/codebase/` exists, read INDEX.md, PATTERNS.md, ARCHITECTURE.md, CONCERNS.md. Each phase: name, goal, mapped reqs, success criteria. Write immediately. Create phase dirs.
 - **B4: STATE.md** -- Update: project name, Phase 1, today's date, empty decisions, 0%.
