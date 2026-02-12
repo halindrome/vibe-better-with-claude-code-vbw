@@ -17,9 +17,12 @@ if ! echo "$COMMAND" | grep -q "git commit"; then
 fi
 
 # Extract commit message from -m flag (POSIX-compatible, no GNU-only flags)
-# Heredoc-style commits can't be parsed from a single line — skip validation
+# Heredoc-style commits: extract first non-blank line as commit subject
 if echo "$COMMAND" | grep -q 'cat <<'; then
-  exit 0
+  MSG=$(printf '%s\n' "$COMMAND" | sed '1,/cat <</d' | sed '/^[[:space:]]*$/d' | head -1 | sed 's/^[[:space:]]*//')
+  if [ -z "$MSG" ]; then
+    exit 0  # Can't parse heredoc, fail-open
+  fi
 fi
 MSG=$(echo "$COMMAND" | sed -n 's/.*-m[[:space:]]*"\([^"]*\)".*/\1/p')
 [ -z "$MSG" ] && MSG=$(echo "$COMMAND" | sed -n "s/.*-m[[:space:]]*'\\([^']*\\)'.*/\\1/p")
