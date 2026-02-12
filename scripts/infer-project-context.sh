@@ -80,21 +80,45 @@ if [[ -f "$STACK_FILE" ]]; then
   # Extract languages from the Languages table and technologies from Key Technologies
   stack_items=()
 
-  # Parse Languages table: lines matching "| Language |" pattern (skip header/separator)
+  # Parse Languages table: lines matching "| Name | ..." pattern (skip header/separator)
+  in_languages=false
   while IFS= read -r line; do
-    lang=$(echo "$line" | sed 's/^| *//' | sed 's/ *|.*//')
-    if [[ -n "$lang" && "$lang" != "Language" && "$lang" != "-"* ]]; then
-      stack_items+=("$lang")
+    if [[ "$line" == "## Languages" ]]; then
+      in_languages=true
+      continue
     fi
-  done < <(grep -E '^\| ' "$STACK_FILE" | grep -v '^\| Language' | grep -v '^\|--' || true)
+    if $in_languages; then
+      if [[ "$line" == "##"* ]]; then
+        break
+      fi
+      if [[ "$line" == "| "* && "$line" != "| Language"* && "$line" != "|--"* && "$line" != "|-"* ]]; then
+        lang=$(echo "$line" | sed 's/^| *//' | sed 's/ *|.*//')
+        if [[ -n "$lang" ]]; then
+          stack_items+=("$lang")
+        fi
+      fi
+    fi
+  done < "$STACK_FILE"
 
-  # Parse Key Technologies: lines starting with "- **name**"
+  # Parse Key Technologies section only (not Model Routing or other sections)
+  in_key_tech=false
   while IFS= read -r line; do
-    tech=$(echo "$line" | sed 's/^- \*\*//' | sed 's/\*\*.*//')
-    if [[ -n "$tech" ]]; then
-      stack_items+=("$tech")
+    if [[ "$line" == "## Key Technologies" ]]; then
+      in_key_tech=true
+      continue
     fi
-  done < <(grep -E '^- \*\*' "$STACK_FILE" | grep -v '^- \*\*Claude Code Plugin' | grep -v '^- \*\*Runtime:' | grep -v '^- \*\*Config:' | grep -v '^- \*\*Plugin system:' | grep -v '^- \*\*Distribution:' | grep -v '^- \*\*Configuration:' | grep -v '^- \*\*Per-agent' | grep -v '^- \*\*Explicit' || true)
+    if $in_key_tech; then
+      if [[ "$line" == "##"* ]]; then
+        break
+      fi
+      if [[ "$line" == "- "* ]]; then
+        tech=$(echo "$line" | sed 's/^- \*\*//' | sed 's/\*\*.*//')
+        if [[ -n "$tech" ]]; then
+          stack_items+=("$tech")
+        fi
+      fi
+    fi
+  done < "$STACK_FILE"
 
   if [[ ${#stack_items[@]} -gt 0 ]]; then
     STACK_JSON=$(printf '%s\n' "${stack_items[@]}" | jq -R . | jq -s '{value: ., source: "STACK.md"}')
@@ -204,5 +228,20 @@ if [[ -f "$INDEX_FILE" ]]; then
 else
   FEATURES_JSON='{"value": null, "source": null}'
 fi
+
+# --- Combine all fields into final JSON output ---
+jq -n \
+  --argjson name "$NAME_JSON" \
+  --argjson tech_stack "$STACK_JSON" \
+  --argjson architecture "$ARCH_JSON" \
+  --argjson purpose "$PURPOSE_JSON" \
+  --argjson features "$FEATURES_JSON" \
+  '{
+    name: $name,
+    tech_stack: $tech_stack,
+    architecture: $architecture,
+    purpose: $purpose,
+    features: $features
+  }'
 
 exit 0
