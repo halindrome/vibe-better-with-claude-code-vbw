@@ -48,12 +48,52 @@ if [[ -f "$INDEX_FILE" ]]; then
   fi
 fi
 
+# --- Extract last 2-3 completed phases with task/commit counts ---
+RECENT_PHASES="[]"
+
+if [[ -f "$INDEX_FILE" ]]; then
+  # Get completed phases from INDEX.json, take last 3
+  completed_phases=$(jq '[.phases[] | select(.status == "complete")] | .[-3:]' "$INDEX_FILE" 2>/dev/null || echo "[]")
+
+  if [[ "$completed_phases" != "[]" ]]; then
+    # Try to enrich with task/commit counts from ROADMAP.md progress table
+    ROADMAP_FILE="$GSD_ARCHIVE_DIR/ROADMAP.md"
+    roadmap_data="{}"
+
+    if [[ -f "$ROADMAP_FILE" ]]; then
+      # Parse progress table: | Phase | Status | Plans | Tasks | Commits |
+      while IFS='|' read -r _ phase_col _ _ tasks_col commits_col _; do
+        phase_num=$(echo "$phase_col" | tr -d ' ')
+        tasks=$(echo "$tasks_col" | tr -d ' ')
+        commits=$(echo "$commits_col" | tr -d ' ')
+        # Only process numeric rows
+        if [[ "$phase_num" =~ ^[0-9]+$ ]]; then
+          roadmap_data=$(jq -n --argjson existing "$roadmap_data" \
+            --arg key "$phase_num" \
+            --argjson tasks "${tasks:-0}" \
+            --argjson commits "${commits:-0}" \
+            '$existing + {($key): {"tasks": $tasks, "commits": $commits}}')
+        fi
+      done < <(grep -E '^\|[[:space:]]*[0-9]+' "$ROADMAP_FILE" 2>/dev/null || true)
+    fi
+
+    # Build recent_phases array with enriched data
+    RECENT_PHASES=$(echo "$completed_phases" | jq --argjson roadmap "$roadmap_data" '
+      [.[] | {
+        "name": "\(.num)-\(.slug)",
+        "tasks": ($roadmap[(.num | tostring)].tasks // .plans),
+        "commits": ($roadmap[(.num | tostring)].commits // 0)
+      }]')
+  fi
+fi
+
 # --- Build output ---
 jq -n \
   --argjson latest_milestone "$LATEST_MILESTONE" \
+  --argjson recent_phases "$RECENT_PHASES" \
   '{
     "latest_milestone": $latest_milestone,
-    "recent_phases": [],
+    "recent_phases": $recent_phases,
     "key_decisions": [],
     "current_work": null
   }'
