@@ -121,3 +121,19 @@ teardown() {
   [ "$status" -eq 0 ]
   ! grep -q "Research Findings" ".vbw-planning/phases/02-test-phase/.context-lead.md"
 }
+
+@test "compile-context.sh cache hit preserves metadata" {
+  jq '.v3_context_cache = true' "$TEST_TEMP_DIR/.vbw-planning/config.json" > "$TEST_TEMP_DIR/.vbw-planning/config.tmp" && mv "$TEST_TEMP_DIR/.vbw-planning/config.tmp" "$TEST_TEMP_DIR/.vbw-planning/config.json"
+
+  cd "$TEST_TEMP_DIR"
+  # First run: cache miss, compiles fresh
+  run bash "$SCRIPTS_DIR/compile-context.sh" 02 lead ".vbw-planning/phases" ".vbw-planning/phases/02-test-phase/02-01-PLAN.md"
+  [ "$status" -eq 0 ]
+  grep -q "Test goal" ".vbw-planning/phases/02-test-phase/.context-lead.md"
+
+  # Second run: cache hit, served from cache
+  run bash "$SCRIPTS_DIR/compile-context.sh" 02 lead ".vbw-planning/phases" ".vbw-planning/phases/02-test-phase/02-01-PLAN.md"
+  [ "$status" -eq 0 ]
+  # Cached output must still contain actual ROADMAP metadata, not "Not available"
+  grep -q "Test goal" ".vbw-planning/phases/02-test-phase/.context-lead.md"
+}
