@@ -58,6 +58,7 @@ if [ "$V2_HARD" = "true" ]; then
   CONTRACT_DIR="$PROJECT_ROOT/.vbw-planning/.contracts"
   if [ -d "$CONTRACT_DIR" ]; then
     # Find active contract: match the first plan without a SUMMARY
+    # zsh compat: if no PLAN files exist, glob literal fails -f test and is skipped
     for PLAN_FILE in "$PHASES_DIR"/*/*-PLAN.md; do
       [ ! -f "$PLAN_FILE" ] && continue
       SUMMARY_FILE="${PLAN_FILE%-PLAN.md}-SUMMARY.md"
@@ -138,6 +139,7 @@ fi
 
 # --- Original file-guard: check files_modified from active plan ---
 ACTIVE_PLAN=""
+# zsh compat: if no PLAN files exist, glob literal fails -f test and is skipped
 for PLAN_FILE in "$PHASES_DIR"/*/*-PLAN.md; do
   [ ! -f "$PLAN_FILE" ] && continue
   SUMMARY_FILE="${PLAN_FILE%-PLAN.md}-SUMMARY.md"

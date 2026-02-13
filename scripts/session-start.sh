@@ -175,8 +175,9 @@ if [ -d "$MKT_DIR/.git" ] && [ -d "$CACHE_DIR" ]; then
   if [ -d "$MKT_DIR/commands" ] && [ -d "$CACHE_DIR" ]; then
     LATEST_VER=$(ls -d "$CACHE_DIR"/*/ 2>/dev/null | sort -V | tail -1)
     if [ -n "$LATEST_VER" ] && [ -d "${LATEST_VER}commands" ]; then
-      MKT_CMD_COUNT=$(ls "$MKT_DIR/commands/"*.md 2>/dev/null | wc -l | tr -d ' ')
-      CACHE_CMD_COUNT=$(ls "${LATEST_VER}commands/"*.md 2>/dev/null | wc -l | tr -d ' ')
+      # zsh compat: bare globs error before ls runs in zsh (nomatch). Use ls dir | grep.
+      MKT_CMD_COUNT=$(ls -1 "$MKT_DIR/commands/" 2>/dev/null | grep '\.md$' | wc -l | tr -d ' ')
+      CACHE_CMD_COUNT=$(ls -1 "${LATEST_VER}commands/" 2>/dev/null | grep '\.md$' | wc -l | tr -d ' ')
       if [ "${MKT_CMD_COUNT:-0}" -ne "${CACHE_CMD_COUNT:-0}" ]; then
         echo "VBW cache stale — marketplace has ${MKT_CMD_COUNT} commands, cache has ${CACHE_CMD_COUNT}" >&2
         rm -rf "$CACHE_DIR"
@@ -210,7 +211,8 @@ if [ -f "$EXEC_STATE" ]; then
     fi
     if [ -n "$PHASE_DIR" ] && [ -d "$PHASE_DIR" ]; then
       PLAN_COUNT=$(jq -r '.plans | length' "$EXEC_STATE" 2>/dev/null)
-      SUMMARY_COUNT=$(ls "$PHASE_DIR"/*-SUMMARY.md 2>/dev/null | wc -l | tr -d ' ')
+      # zsh compat: use ls dir | grep to avoid bare glob expansion errors
+      SUMMARY_COUNT=$(ls -1 "$PHASE_DIR" 2>/dev/null | grep '\-SUMMARY\.md$' | wc -l | tr -d ' ')
       if [ "${SUMMARY_COUNT:-0}" -ge "${PLAN_COUNT:-1}" ] && [ "${PLAN_COUNT:-0}" -gt 0 ]; then
         # All plans have SUMMARY.md — build finished after crash
         jq '.status = "complete"' "$EXEC_STATE" > "$PLANNING_DIR/.execution-state.json.tmp" && mv "$PLANNING_DIR/.execution-state.json.tmp" "$EXEC_STATE"
@@ -330,8 +332,9 @@ else
     next_phase=""
     for pdir in $(ls -d "$PHASES_DIR"/*/ 2>/dev/null | sort); do
       pname=$(basename "$pdir")
-      plan_count=$(ls "$pdir"/*-PLAN.md 2>/dev/null | wc -l | tr -d ' ')
-      summary_count=$(ls "$pdir"/*-SUMMARY.md 2>/dev/null | wc -l | tr -d ' ')
+      # zsh compat: use ls dir | grep to avoid bare glob expansion errors
+      plan_count=$(ls -1 "$pdir" 2>/dev/null | grep '\-PLAN\.md$' | wc -l | tr -d ' ')
+      summary_count=$(ls -1 "$pdir" 2>/dev/null | grep '\-SUMMARY\.md$' | wc -l | tr -d ' ')
       if [ "${plan_count:-0}" -eq 0 ]; then
         # Phase has no plans yet — needs planning
         pnum=$(echo "$pname" | sed 's/-.*//')

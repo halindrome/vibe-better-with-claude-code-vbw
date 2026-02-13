@@ -52,6 +52,7 @@ case "$ACTION" in
     fi
 
     # Check for conflicts before acquiring
+    # zsh compat: if no .lock files exist, glob literal fails -f test and is skipped
     for EXISTING_LOCK in "$LOCKS_DIR"/*.lock; do
       [ ! -f "$EXISTING_LOCK" ] && continue
       [ "$EXISTING_LOCK" = "$LOCK_FILE" ] && continue
@@ -96,6 +97,7 @@ case "$ACTION" in
     [ ! -d "$LOCKS_DIR" ] && exit 0
 
     CONFLICTS=0
+    # zsh compat: if no .lock files exist, glob literal fails -f test and is skipped
     for EXISTING_LOCK in "$LOCKS_DIR"/*.lock; do
       [ ! -f "$EXISTING_LOCK" ] && continue
       [ "$EXISTING_LOCK" = "$LOCK_FILE" ] && continue

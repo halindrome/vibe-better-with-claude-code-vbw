@@ -48,10 +48,12 @@ case "$ACTION" in
       > "$SNAPSHOT_FILE" 2>/dev/null || exit 0
 
     # Prune: keep max 10 snapshots per phase
-    SNAP_COUNT=$(ls -1 "${SNAPSHOTS_DIR}/${PHASE}-"*.json 2>/dev/null | wc -l | tr -d ' ')
+    # zsh compat: use ls dir | grep to avoid bare glob expansion errors
+    SNAP_COUNT=$(ls -1 "${SNAPSHOTS_DIR}/" 2>/dev/null | grep "^${PHASE}-.*\.json$" | wc -l | tr -d ' ')
     if [ "$SNAP_COUNT" -gt 10 ] 2>/dev/null; then
       PRUNE_COUNT=$((SNAP_COUNT - 10))
-      ls -1t "${SNAPSHOTS_DIR}/${PHASE}-"*.json 2>/dev/null | tail -n "$PRUNE_COUNT" | while IFS= read -r old; do
+      ls -1t "${SNAPSHOTS_DIR}/" 2>/dev/null | grep "^${PHASE}-.*\.json$" | tail -n "$PRUNE_COUNT" | while IFS= read -r old; do
+        old="${SNAPSHOTS_DIR}/${old}"
         rm -f "$old" 2>/dev/null || true
       done
     fi
@@ -63,9 +65,10 @@ case "$ACTION" in
     [ ! -d "$SNAPSHOTS_DIR" ] && exit 0
 
     # Find latest snapshot for this phase
-    LATEST=$(ls -1t "${SNAPSHOTS_DIR}/${PHASE}-"*.json 2>/dev/null | head -1)
-    if [ -n "$LATEST" ] && [ -f "$LATEST" ]; then
-      echo "$LATEST"
+    # zsh compat: use ls dir | grep to avoid bare glob expansion errors
+    LATEST_NAME=$(ls -1t "${SNAPSHOTS_DIR}/" 2>/dev/null | grep "^${PHASE}-.*\.json$" | head -1)
+    if [ -n "$LATEST_NAME" ] && [ -f "${SNAPSHOTS_DIR}/${LATEST_NAME}" ]; then
+      echo "${SNAPSHOTS_DIR}/${LATEST_NAME}"
     fi
     ;;
 
