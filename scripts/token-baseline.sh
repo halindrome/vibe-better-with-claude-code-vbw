@@ -335,15 +335,22 @@ build_report() {
   echo "| Role | Total Lines | Budget Max | Utilization |"
   echo "|------|-------------|-----------|-------------|"
 
-  local budget_roles
+  local budget_roles has_budget_data=false
   budget_roles=$(echo "$measurement" | jq -r '.budget_utilization | keys[]' 2>/dev/null || echo "")
   for role in $budget_roles; do
     local r_t r_m r_p
     r_t=$(echo "$measurement" | jq -r --arg r "$role" '.budget_utilization[$r].total_lines // 0' 2>/dev/null)
     r_m=$(echo "$measurement" | jq -r --arg r "$role" '.budget_utilization[$r].max_lines // 0' 2>/dev/null)
     r_p=$(echo "$measurement" | jq -r --arg r "$role" '.budget_utilization[$r].utilization_pct // 0' 2>/dev/null)
-    echo "| ${role} | ${r_t} | ${r_m} | ${r_p}% |"
+    # Only show roles with actual usage data
+    if [ "$r_t" -gt 0 ] 2>/dev/null || [ "$r_m" -gt 0 ] 2>/dev/null; then
+      echo "| ${role} | ${r_t} | ${r_m} | ${r_p}% |"
+      has_budget_data=true
+    fi
   done
+  if [ "$has_budget_data" = "false" ]; then
+    echo "| (no overage data) | - | - | - |"
+  fi
   echo ""
 
   # Comparison section
