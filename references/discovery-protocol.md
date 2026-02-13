@@ -106,6 +106,60 @@ Each phase type has 3-5 specific question templates focused on domain-relevant c
 
 All questions build CONTEXT.md sections: User Vision, Essential Features, Technical Preferences, Boundaries, Acceptance Criteria, Decisions Made.
 
+#### Scope Creep Guardrails
+
+After each user answer in Discuss mode, the system analyzes feature mentions and compares them against other phases' goals and requirements from ROADMAP.md. When a mentioned feature appears to fit better in a different phase, the system offers to defer it rather than expanding current phase scope.
+
+**Detection Method:**
+- Parse user's answer for feature keywords and capability mentions
+- Compare against ROADMAP.md phase goals and requirements for ALL phases
+- Trigger when feature mention maps to a different phase's domain
+
+**Redirect Pattern:**
+When out-of-scope mention detected, present AskUserQuestion:
+```
+[Feature X] sounds like a new capability — that could be its own phase. Want me to note it for later?
+```
+
+**Options:**
+- "Note it for later — add to Deferred Ideas" (captures feature to CONTEXT.md, conversation continues)
+- "Include in this phase — it's part of the scope" (no capture, feature stays in current discussion)
+
+**Deferred Ideas Capture:**
+Appended to CONTEXT.md in a new "Deferred Ideas" section (added after Decisions Made section):
+
+```markdown
+## Deferred Ideas
+
+Features mentioned during discussion that may fit better in other phases:
+
+- **Dashboard analytics** — suggested for Phase 4: Reporting and Analytics. Status: noted for later planning.
+- **Email notifications** — suggested for Phase 5: Notifications. Status: noted for later planning.
+```
+
+**discovery.json Recording:**
+Deferred ideas recorded with:
+```json
+{
+  "question": "[Generated question that revealed the mention]",
+  "answer": "[User's original answer containing the mention]",
+  "category": "deferred_idea",
+  "phase": "03",
+  "date": "2026-02-13",
+  "deferred": {
+    "mention": "Dashboard analytics",
+    "suggested_phase": "Phase 4: Reporting and Analytics",
+    "matched_keyword": "analytics",
+    "user_decision": "deferred"
+  }
+}
+```
+
+**Style:**
+- Gentle and non-blocking: single mention per feature, conversation continues immediately
+- No judgment: framed as "could be its own phase" not "out of scope"
+- User has final say: "Include in this phase" option always available
+
 ### Thread-Following Questions
 
 Round 2+ questions build on previous answers rather than following a fixed script:
