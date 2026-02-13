@@ -15,7 +15,8 @@ if [[ "${1:-}" == "--keep-latest" ]]; then
   KEEP_LATEST=true
 fi
 
-CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+# shellcheck source=resolve-claude-dir.sh
+. "$(dirname "$0")/resolve-claude-dir.sh"
 PLUGIN_CACHE_DIR="$CLAUDE_DIR/plugins/cache/vbw-marketplace/vbw"
 UID_TAG="$(id -u)"
 

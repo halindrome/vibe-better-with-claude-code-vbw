@@ -18,7 +18,8 @@ SCRIPT="$1"; shift
 VBW_DEBUG="${VBW_DEBUG:-0}"
 
 # Resolve from plugin cache (version-sorted, latest wins)
-CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+# shellcheck source=resolve-claude-dir.sh
+. "$(dirname "$0")/resolve-claude-dir.sh"
 CACHE="$CLAUDE_DIR/plugins/cache/vbw-marketplace/vbw"
 TARGET=$(ls -1 "$CACHE"/*/scripts/"$SCRIPT" 2>/dev/null \
   | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)
