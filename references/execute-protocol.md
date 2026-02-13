@@ -325,6 +325,10 @@ If `--skip-qa` or turbo: "○ QA verification skipped ({reason})"
 **Tier resolution:** When `v3_validation_gates=true`: use `qa_tier` from gate policy resolved in Step 3.
 When `v3_validation_gates=false` (default): map effort to tier: turbo=skip (already handled), fast=quick, balanced=standard, thorough=deep. Override: if >15 requirements or last phase before ship, force Deep.
 
+**Control Plane QA context:** If `${CLAUDE_PLUGIN_ROOT}/scripts/control-plane.sh` exists:
+  `bash ${CLAUDE_PLUGIN_ROOT}/scripts/control-plane.sh compile {phase} 0 0 --role=qa --phase-dir={phase-dir} 2>/dev/null || true`
+Otherwise, fall through to direct compile-context.sh call below.
+
 **Context compilation:** If `config_context_compiler=true`, before spawning QA run:
 `bash ${CLAUDE_PLUGIN_ROOT}/scripts/compile-context.sh {phase} qa {phases_dir}`
 This produces `{phase-dir}/.context-qa.md` with phase goal, success criteria, requirements to verify, and conventions.
@@ -341,6 +345,8 @@ Display: `◆ Spawning QA agent (${QA_MODEL})...`
 ### Step 5: Update state and present summary
 
 **Shutdown:** Send shutdown to each teammate, wait for approval, re-request if rejected, then TeamDelete. Wait for TeamDelete before state updates.
+
+**Control Plane cleanup:** Lock and token state cleanup already handled by existing V3 Lock-Lite and Token Budget cleanup blocks.
 
 **V3 Event Log — phase end (REQ-16):** If `v3_event_log=true` in config:
 - `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh phase_end {phase} plans_completed={N} total_tasks={N} 2>/dev/null || true`
