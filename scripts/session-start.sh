@@ -267,10 +267,20 @@ if [ -d "$MKT_DIR/.git" ] && [ -d "$CACHE_DIR" ]; then
   fi
 fi
 
-# --- Clean stale global commands (CLAUDE_PLUGIN_ROOT not available there) ---
+# --- Sync global commands mirror for vbw: prefix in autocomplete ---
 VBW_GLOBAL_CMD="$CLAUDE_DIR/commands/vbw"
-if [ -d "$VBW_GLOBAL_CMD" ]; then
-  rm -rf "$VBW_GLOBAL_CMD" 2>/dev/null
+CACHED_VER=$(ls -d "$CACHE_DIR"/*/ 2>/dev/null | sort -V | tail -1)
+if [ -n "$CACHED_VER" ] && [ -d "${CACHED_VER}commands" ]; then
+  mkdir -p "$VBW_GLOBAL_CMD"
+  # Remove stale commands not in cache, then copy fresh
+  if [ -d "$VBW_GLOBAL_CMD" ]; then
+    for f in "$VBW_GLOBAL_CMD"/*.md; do
+      [ -f "$f" ] || continue
+      base=$(basename "$f")
+      [ -f "${CACHED_VER}commands/$base" ] || rm -f "$f"
+    done
+  fi
+  cp "${CACHED_VER}commands/"*.md "$VBW_GLOBAL_CMD/" 2>/dev/null
 fi
 
 # --- Auto-install git hooks if missing ---
