@@ -178,6 +178,61 @@ Detect these patterns:
 
 The goal: convert vague intent into testable, actionable requirements.
 
+## Pitfall Warnings
+
+After domain research, surface 2-3 most relevant pitfalls as proactive warnings during the question flow.
+
+### When Pitfalls Appear
+
+Pitfall warnings are injected during Round 3 (after table stakes checklist, before differentiator question). Only appear if:
+- Domain research completed successfully (RESEARCH_AVAILABLE=true)
+- At least one pitfall scores relevance > 0 based on prior answers
+
+### Relevance Scoring
+
+Each pitfall from domain-research.md ## Common Pitfalls is scored based on project context:
+
+| Pitfall Mentions | User Context | Relevance Boost |
+|------------------|--------------|-----------------|
+| "scale", "performance" | Thousands of users mentioned | +2 |
+| "offline", "sync" | Offline access selected in table stakes | +2 |
+| "auth", "security" | User accounts or login mentioned | +2 |
+| "data", "privacy" | Data-heavy features identified | +2 |
+| "integration", "API" | Third-party tools mentioned | +2 |
+
+Top 2-3 pitfalls by score are presented. If all score 0, pitfall warnings are skipped.
+
+### Presentation Format
+
+```
+⚠ [Pitfall Title]
+[Brief explanation from research, 1-2 sentences]
+
+How should we handle this?
+  A) Address it now — add requirement
+  B) Note for later — add to phase planning
+  C) Skip — not relevant to my project
+```
+
+Decisions recorded to discovery.json:
+- "Address now" → Must-have requirement with tier "risk_mitigation"
+- "Note for later" → Should-have requirement with tier "risk_mitigation"
+- "Skip" → no action
+
+### Example
+
+For a recipe app where user selected offline access:
+
+```
+⚠ Offline sync conflicts
+When users edit recipes offline on multiple devices, conflicts happen on sync. Most apps handle this poorly, leading to data loss.
+
+How should we handle this?
+  A) Address it now — define conflict resolution strategy
+  B) Note for later — we'll tackle this during sync feature planning
+  C) Skip — single device only, no conflicts
+```
+
 ## Question Categories
 
 Use these to ensure coverage. Not every category applies to every project — select based on the user's description.
