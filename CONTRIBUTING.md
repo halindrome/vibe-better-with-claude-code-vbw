@@ -19,7 +19,7 @@ bash scripts/install-hooks.sh
 claude --plugin-dir .
 ```
 
-The pre-push hook is required — it prevents pushing without a version bump (see Version Management below). All `/vbw:*` commands will be available. Restart Claude Code to pick up changes.
+The pre-push hook checks version file consistency (see Version Management below). All `/vbw:*` commands will be available. Restart Claude Code to pick up changes.
 
 ## Project Structure
 
@@ -84,39 +84,31 @@ VBW keeps the version in sync across four files:
 | `.claude-plugin/marketplace.json` | `.plugins[0].version` |
 | `marketplace.json` | `.plugins[0].version` |
 
-All four **must** match at all times. Use the bump script to increment:
+All four **must** match at all times.
 
-```bash
-scripts/bump-version.sh
-```
+**Version bumping and changelog generation happen automatically** via [release-please](https://github.com/googleapis/release-please-action). When PRs are merged to `main`, release-please parses the conventional commit messages and opens a Release PR that bumps versions across all 4 files and updates `CHANGELOG.md`. Merging the Release PR creates a GitHub Release.
 
-This fetches the latest remote version from GitHub, picks the higher of remote/local, increments the patch number, and writes to all four files. If the network is unavailable, it falls back to the local `VERSION` file as the baseline.
+Contributors do not need to touch version files or the changelog. Just use conventional commit messages (e.g., `fix(hooks): ...`, `feat(commands): ...`) and release-please handles the rest.
 
-To verify that all four files are in sync without bumping:
+To verify that all four files are in sync locally:
 
 ```bash
 scripts/bump-version.sh --verify
 ```
 
-This exits `0` if all versions match and `1` with a diff report if they diverge. Useful in CI or as a pre-commit check.
+This exits `0` if all versions match and `1` with a diff report if they diverge.
 
 ### Push Workflow
 
-A git pre-push hook enforces that every push includes a version bump. Without it, users' caches go stale silently (session-start.sh uses version comparison to detect updates).
+A git pre-push hook enforces that all 4 version files are **consistent** (same value). It does **not** require a version bump — release-please handles that via its Release PR.
 
 ```bash
-# 1. Work freely, commit as needed
+# Work freely, commit as needed, push without version bumps
 git commit -m "feat(commands): add new feature"
-git commit -m "fix(hooks): handle edge case"
-
-# 2. Bump once before pushing
-bash scripts/bump-version.sh
-git add VERSION .claude-plugin/plugin.json .claude-plugin/marketplace.json marketplace.json
-git commit -m "chore: bump version to X.Y.Z"
 git push
 ```
 
-If you forget, the hook blocks the push and tells you what to do. Use `git push --no-verify` to bypass in rare cases (e.g. docs-only changes to non-plugin files).
+The hook only blocks pushes if the 4 version files have mismatched values. Use `git push --no-verify` to bypass in rare cases.
 
 **Install the hook after cloning:**
 
