@@ -47,6 +47,65 @@ Flow:
 3. Generate 1-3 phase-scoped questions (fewer than bootstrap)
 4. Store answers, pass as context to planning step
 
+### Phase Discussion (Discuss Mode)
+
+Explicit deep-dive mode triggered by `/vbw:vibe --discuss`, separate from automatic Phase Discovery. Detects phase type from ROADMAP.md phase goal and requirements text, then generates domain-specific questions tailored to what the phase builds.
+
+**Input:** Phase number (from $ARGUMENTS or auto-detected current phase)
+**Output:** `{phase}-CONTEXT.md` with domain-typed discussion content, updated discovery.json with phase type metadata
+
+#### Phase Type Detection
+
+Discuss mode identifies what KIND of thing the phase builds using keyword matching on ROADMAP.md phase goal and requirements text. Five supported types:
+
+**UI (User Interface):**
+- Keywords: design, interface, layout, frontend, screens, components, responsive, page, view, form, dashboard
+- Detection: minimum 2 keyword matches required
+- Question domains: layout structure, UI states, user interactions, responsiveness
+
+**API (Application Programming Interface):**
+- Keywords: endpoint, service, backend, response, error handling, auth, versioning, route, REST, request
+- Detection: minimum 2 keyword matches required
+- Question domains: response format, error handling, authentication, versioning, rate limits
+
+**CLI (Command-Line Interface):**
+- Keywords: command, flags, arguments, output format, terminal, console, prompt, stdin, stdout
+- Detection: minimum 2 keyword matches required
+- Question domains: command structure, output format, error messages, help system, piping
+
+**Data (Data/Schema):**
+- Keywords: schema, database, migration, storage, persistence, retention, model, query, index
+- Detection: minimum 2 keyword matches required
+- Question domains: data model, relationships, migrations, retention policies, constraints
+
+**Integration (Third-Party Integration):**
+- Keywords: third-party, external service, sync, webhook, connection, protocol, import, export
+- Detection: minimum 2 keyword matches required
+- Question domains: protocol/format, authentication, error recovery, data flow, dependency handling
+
+**Mixed-Type Handling:**
+- 0 types detected (no keywords matched): use generic fallback questions
+- 1 type detected (single type scored ≥2 matches): auto-select that type
+- 2+ types detected (multiple types scored ≥2 matches): present AskUserQuestion with detected types as options, user chooses focus
+
+#### Domain-Typed Questions
+
+Each phase type has 3-5 specific question templates focused on domain-relevant concerns. All questions follow Wording Guidelines (plain language, no jargon, concrete situations). Questions use AskUserQuestion tool with 2-4 options per question.
+
+**Question domains per type:**
+- **UI:** Layout structure (pages/flows/components), state management (what changes when user acts), error states (what user sees on failure), responsiveness (mobile/tablet/desktop), user interactions (clicks/forms/navigation)
+- **API:** Response format (what data gets returned), error handling (failure scenarios), authentication (access control), versioning (handling changes), rate limits or pagination (scale)
+- **CLI:** Command structure (subcommands/flags), output format (human vs machine-readable), error messages (what users see), help system (documentation), piping/composition (stdin/stdout)
+- **Data:** Data model (entities/fields), relationships (how data connects), migrations (schema changes), retention (data lifecycle), constraints and validation (data rules)
+- **Integration:** Protocol and format (communication method), authentication (API keys/OAuth/tokens), error recovery (retry/fallback), data flow (import/export/sync), dependency handling (external service failures)
+
+**Generic fallback (when no type detected):**
+- Essential features question
+- Technical preferences question
+- Boundaries question
+
+All questions build CONTEXT.md sections: User Vision, Essential Features, Technical Preferences, Boundaries, Acceptance Criteria, Decisions Made.
+
 ### Thread-Following Questions
 
 Round 2+ questions build on previous answers rather than following a fixed script:
