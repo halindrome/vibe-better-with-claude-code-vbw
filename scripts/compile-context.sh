@@ -16,6 +16,38 @@ PHASES_DIR="${3:-.vbw-planning/phases}"
 PLANNING_DIR=".vbw-planning"
 PLAN_PATH="${4:-}"
 
+# --- Update context index entry (REQ-04) ---
+# Writes/updates an entry in .vbw-planning/.cache/context-index.json
+# Fail-silent: index is a non-critical debugging/introspection tool
+update_context_index() {
+  local cache_key="$1" context_path="$2" role="$3" phase="$4"
+  local index_path="${PLANNING_DIR}/.cache/context-index.json"
+  local timestamp
+  timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "unknown")
+
+  mkdir -p "$(dirname "$index_path")" 2>/dev/null || return 0
+
+  # Create index file if it doesn't exist
+  if [ ! -f "$index_path" ]; then
+    echo '{"entries":{}}' > "$index_path" 2>/dev/null || return 0
+  fi
+
+  # Upsert entry using jq (atomic via temp file)
+  local tmp
+  tmp=$(mktemp 2>/dev/null) || return 0
+  if jq --arg key "$cache_key" \
+       --arg path "$context_path" \
+       --arg role "$role" \
+       --arg phase "$phase" \
+       --arg ts "$timestamp" \
+       '.entries[$key] = {path: $path, role: $role, phase: $phase, timestamp: $ts}' \
+       "$index_path" > "$tmp" 2>/dev/null; then
+    mv "$tmp" "$index_path" 2>/dev/null || rm -f "$tmp"
+  else
+    rm -f "$tmp"
+  fi
+}
+
 # Strip leading zeros for ROADMAP matching (ROADMAP uses "Phase 2:", not "Phase 02:")
 PHASE_NUM=$(echo "$PHASE" | sed 's/^0*//')
 if [ -z "$PHASE_NUM" ]; then PHASE_NUM="0"; fi
