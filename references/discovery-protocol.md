@@ -23,12 +23,16 @@ Replaces static requirements questions. Triggered when project has no REQUIREMEN
 **Output:** Populated REQUIREMENTS.md with REQ-IDs, `.vbw-planning/domain-research.md` (if research conducted), updated discovery.json
 
 Flow:
-1. Analyze the user's description for: domain, scale, users, complexity signals
-2. **Domain Research (if not skip depth):** Spawn Scout agent to research domain. Produce `.vbw-planning/domain-research.md` with 4 sections: Table Stakes, Common Pitfalls, Architecture Patterns, Competitor Landscape. Display brief 3-5 line summary to user. On timeout/failure, log warning and proceed with flag RESEARCH_AVAILABLE=false.
-3. Generate scenario questions (Round 1) — reference research findings if available
-4. Based on answers, generate targeted checklist questions (Round 2)
-5. Synthesize all answers into REQUIREMENTS.md, integrating research where relevant
-6. Store answered questions and research summary in `.vbw-planning/discovery.json`
+1. Analyze user's description for: domain, scale, users, complexity signals
+2. **Domain Research (if not skip depth):** Spawn Scout to research domain, produce domain-research.md. On success: read findings. On failure: set RESEARCH_AVAILABLE=false.
+3. **Round-based questioning loop:**
+   - Initialize ROUND=1, continue until user chooses to stop
+   - Round 1: Generate scenario questions (research-informed if available)
+   - Round 2+: Generate checklist questions building on previous round answers
+   - After each round: present keep-exploring gate
+   - Soft nudge wording appears at round 3+
+4. Synthesize all answers into REQUIREMENTS.md, integrating research where relevant
+5. Store answered questions and research summary in `.vbw-planning/discovery.json`
 
 ### Phase Discovery (implement States 3-4, before planning)
 
@@ -42,6 +46,17 @@ Flow:
 2. Check `.vbw-planning/discovery.json` — skip questions already answered
 3. Generate 1-3 phase-scoped questions (fewer than bootstrap)
 4. Store answers, pass as context to planning step
+
+### Thread-Following Questions
+
+Round 2+ questions build on previous answers rather than following a fixed script:
+
+- **If prior answer was vague:** Generate concrete follow-up (see Vague Answer Handling)
+- **If prior answer revealed complexity:** Ask edge case questions
+- **If prior answer mentioned integration:** Ask about auth, error handling, data flow
+- **If prior answer suggested scale:** Ask about performance, caching, limits
+
+Check `discovery.json.answered[]` before generating questions to avoid duplicates. Each answer records its round number for thread analysis.
 
 ## Mixed Question Format
 
