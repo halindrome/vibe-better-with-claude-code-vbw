@@ -28,7 +28,7 @@ Check `VERSION` in repo root. FAIL if missing.
 FAIL if mismatch detected.
 
 ### 4. Plugin cache present
-Check `~/.claude/plugins/cache/vbw-marketplace/vbw/` exists and has at least one version directory. FAIL if empty or missing.
+Check `${CLAUDE_CONFIG_DIR:-~/.claude}/plugins/cache/vbw-marketplace/vbw/` exists and has at least one version directory. FAIL if empty or missing.
 
 ### 5. hooks.json valid
 Parse `hooks/hooks.json` with `jq empty`. FAIL if parse error.
