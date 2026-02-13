@@ -2,6 +2,13 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- **`update`** -- prefix all `claude plugin` commands with `unset CLAUDECODE &&` to prevent "cannot be launched inside another Claude Code session" error when running `/vbw:update` from within an active session.
+- **`statusline`** -- remove misleading agent count that counted all system-wide `claude` processes instead of VBW-managed agents.
+
 ## [1.20.0] - 2026-02-13
 
 ### Added

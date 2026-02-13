@@ -45,15 +45,17 @@ Removes CLAUDE_DIR/plugins/cache/vbw-marketplace/vbw/, CLAUDE_DIR/commands/vbw/,
 
 Same version: "Refreshing VBW v{old_version} cache..." Different: "Updating VBW v{old_version}..."
 
-**CRITICAL: Refresh marketplace FIRST** (stale checkout → plugin update re-caches old code):
+**CRITICAL: All `claude plugin` commands MUST be prefixed with `unset CLAUDECODE &&`** — without this, Claude Code detects the parent session's env var and blocks with "cannot be launched inside another Claude Code session."
+
+**Refresh marketplace FIRST** (stale checkout → plugin update re-caches old code):
 ```bash
-claude plugin marketplace update vbw-marketplace 2>&1
+unset CLAUDECODE && claude plugin marketplace update vbw-marketplace 2>&1
 ```
 If fails: "⚠ Marketplace refresh failed — trying update anyway..."
 
 Try in order (stop at first success):
-- **A) Platform update:** `claude plugin update vbw@vbw-marketplace 2>&1`
-- **B) Reinstall:** `claude plugin uninstall vbw@vbw-marketplace 2>&1 && claude plugin install vbw@vbw-marketplace 2>&1`
+- **A) Platform update:** `unset CLAUDECODE && claude plugin update vbw@vbw-marketplace 2>&1`
+- **B) Reinstall:** `unset CLAUDECODE && claude plugin uninstall vbw@vbw-marketplace 2>&1 && unset CLAUDECODE && claude plugin install vbw@vbw-marketplace 2>&1`
 - **C) Manual fallback:** display commands for user to run manually, STOP.
 
 **Clean stale global commands** (after A or B succeeds):

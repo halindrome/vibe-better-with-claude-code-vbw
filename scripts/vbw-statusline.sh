@@ -183,13 +183,7 @@ if ! cache_fresh "$FAST_CF" 5; then
       ] | join("|")' .vbw-planning/.execution-state.json 2>/dev/null)"
   fi
 
-  AGENT_DATA=""
-  # Count Claude processes owned by this user, subtract 1 for the main session.
-  # Use ps + grep to avoid pgrep -c portability issues (counts all "claude" matches).
-  AGENT_N=$(( $(ps -u "$_UID" -o comm= 2>/dev/null | grep -c '^claude' 2>/dev/null || echo 1) - 1 ))
-  if [ "$AGENT_N" -gt 0 ] 2>/dev/null; then
-    AGENT_DATA="${AGENT_N}"
-  fi
+  AGENT_DATA="0"
 
   printf '%s\n' "${PH:-0}|${TT:-0}|${EF}|${MP}|${BR}|${PD}|${PT}|${PPD}|${QA}|${GH_URL}|${GIT_STAGED:-0}|${GIT_MODIFIED:-0}|${GIT_AHEAD:-0}|${EXEC_STATUS:-}|${EXEC_WAVE:-0}|${EXEC_TWAVES:-0}|${EXEC_DONE:-0}|${EXEC_TOTAL:-0}|${EXEC_CURRENT:-}|${AGENT_DATA:-0}" > "$FAST_CF" 2>/dev/null
 fi
@@ -201,9 +195,6 @@ if [ -O "$FAST_CF" ]; then
 fi
 
 AGENT_LINE=""
-if [ "${AGENT_N:-0}" -gt 0 ] 2>/dev/null; then
-  AGENT_LINE="${C}◆${X} ${AGENT_N} agent$([ "$AGENT_N" -gt 1 ] && echo s) working"
-fi
 
 # --- Slow cache (60s TTL): usage limits + update check ---
 SLOW_CF="${_CACHE}-slow"
