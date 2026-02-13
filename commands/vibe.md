@@ -449,7 +449,28 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
 
    Single redirect per detected feature. Non-blocking: continue to next question after user responds.
 
-6. Write `.vbw-planning/phases/{phase-dir}/{phase}-CONTEXT.md` with sections: User Vision, Essential Features, Technical Preferences, Boundaries, Acceptance Criteria, Decisions Made, Deferred Ideas (append-only section for scope creep captures).
+6. Write `.vbw-planning/phases/{phase-dir}/{phase}-CONTEXT.md` with sections: User Vision, Essential Features, Technical Preferences, Boundaries, Acceptance Criteria, Decisions Made, Deferred Ideas.
+
+   **Deferred Ideas section (optional, append-only):**
+   If deferred ideas were captured during scope creep detection (Step 5a user chose "Note it for later"), append this section after Decisions Made:
+
+   ```markdown
+   ## Deferred Ideas
+
+   Features mentioned during discussion that may fit better in other phases:
+
+   - **[Feature name/description]** — suggested for Phase [N]: [phase name]. Status: noted for later planning.
+   - **[Another feature]** — suggested for Phase [M]: [other phase name]. Status: noted for later planning.
+   ```
+
+   Format for each deferred idea:
+   - **Feature description**: User's original mention text (the exact words from their answer)
+   - **Suggested phase**: "Phase [N]: [phase name]" (from scope detection step, the phase where keyword matched)
+   - **Status**: Always "noted for later planning" initially
+
+   If NO deferred ideas were captured during discussion: omit this section entirely (backward compatible — existing CONTEXT.md files without Deferred Ideas section remain valid).
+
+   This section enables tracking of out-of-scope ideas without blocking the current phase's planning.
 
 7. Update `.vbw-planning/discovery.json`: append each question+answer to `answered[]` with extended schema including phase type metadata:
    ```json
