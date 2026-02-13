@@ -16,7 +16,7 @@ META.md:
 ```
 !`cat .vbw-planning/codebase/META.md 2>/dev/null || echo "No META.md found"`
 ```
-Project files: `!`ls package.json pyproject.toml Cargo.toml go.mod *.sln Gemfile build.gradle pom.xml 2>/dev/null || echo "No standard project files found"``
+Project files: `!`ls package.json pyproject.toml Cargo.toml go.mod Gemfile build.gradle pom.xml 2>/dev/null || echo "No standard project files found"``
 Git HEAD: `!`git rev-parse HEAD 2>/dev/null || echo "no-git"``
 Agent Teams: `!`echo "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-0}"``
 
@@ -51,7 +51,12 @@ Display: `◆ Sizing: {SOURCE_FILE_COUNT} source files → {tier} mode`
 
 ### Step 2: Detect monorepo
 
-Check lerna.json, pnpm-workspace.yaml, packages/ or apps/ with sub-package.json, root workspaces field. If monorepo + --package: scope to that package.
+Use broad, language-agnostic heuristics:
+- JS workspace markers: `lerna.json`, `pnpm-workspace.yaml`, root `workspaces` field
+- Conventional package roots: `packages/` or `apps/` containing sub-project manifests
+- Distinct build-system roots at different paths (for example sibling roots containing `package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`, `*.xcodeproj`, `*.xcworkspace`, `*.sln`, `*.csproj`, `build.gradle`, or `pom.xml`)
+
+If ≥2 independent component roots are detected, treat as monorepo. If monorepo + --package: scope to that package.
 
 ### Step 3: Execute mapping (tier-branched)
 
@@ -86,7 +91,7 @@ Security: PreToolUse hook handles enforcement. **Scout model:** same as duo.
 **Scout communication (effort-gated):**
 
 | Effort | Messages |
-|--------|----------|
+| ------ | -------- |
 | Thorough | Cross-cutting findings + contradiction flags for INDEX.md Validation Notes |
 | Balanced | Cross-cutting findings only |
 | Fast | Blockers only |
