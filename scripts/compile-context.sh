@@ -5,6 +5,9 @@ set -euo pipefail
 # Produces .context-{role}.md in the phase directory with role-specific context.
 # Exit 0 on success, exit 1 when phase directory not found.
 
+# shellcheck source=resolve-claude-dir.sh
+. "$(dirname "$0")/resolve-claude-dir.sh"
+
 if [ $# -lt 2 ]; then
   echo "Usage: compile-context.sh <phase-number> <role> [phases-dir]" >&2
   exit 1
@@ -204,7 +207,7 @@ case "$ROLE" in
           echo "### Skills Reference"
           echo ""
           while IFS= read -r skill; do
-            SKILL_FILE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/${skill}/SKILL.md"
+            SKILL_FILE="$CLAUDE_DIR/skills/${skill}/SKILL.md"
             if [ -f "$SKILL_FILE" ]; then
               echo "#### ${skill}"
               cat "$SKILL_FILE"

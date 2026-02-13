@@ -17,7 +17,8 @@ TASK_ID=$(echo "$INPUT" | jq -r '.task_id // .task.id // ""' 2>/dev/null) || exi
 [ -z "$TASK_ID" ] && exit 0
 
 # Check if any team task list exists (we're in a team context)
-CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+# shellcheck source=resolve-claude-dir.sh
+. "$(dirname "$0")/resolve-claude-dir.sh"
 TEAM_TASKS=""
 for d in "$CLAUDE_DIR"/tasks/*/; do
   [ -d "$d" ] && TEAM_TASKS="$d" && break

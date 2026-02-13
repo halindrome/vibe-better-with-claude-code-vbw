@@ -27,7 +27,8 @@ fi
 INSTALLED_GLOBAL=""
 INSTALLED_PROJECT=""
 INSTALLED_AGENTS=""
-CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+# shellcheck source=resolve-claude-dir.sh
+. "$(dirname "$0")/resolve-claude-dir.sh"
 if [ -d "$CLAUDE_DIR/skills" ]; then
   INSTALLED_GLOBAL=$(ls -1 "$CLAUDE_DIR/skills/" 2>/dev/null | tr '\n' ',' | sed 's/,$//')
 fi
