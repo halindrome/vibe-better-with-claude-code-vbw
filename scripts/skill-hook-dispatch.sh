@@ -4,6 +4,9 @@ set -u
 # Reads config.json skill_hooks at runtime and invokes matching skill scripts
 # Fail-open design: exit 0 on any error, never block legitimate work
 
+# shellcheck source=resolve-claude-dir.sh
+. "$(dirname "$0")/resolve-claude-dir.sh"
+
 EVENT_TYPE="${1:-}"
 [ -z "$EVENT_TYPE" ] && exit 0
 
@@ -49,7 +52,7 @@ for SKILL_NAME in $(echo "$SKILL_HOOKS" | jq -r 'keys[]' 2>/dev/null); do
   fi
 
   # Find and invoke the skill's hook script from plugin cache (latest version)
-  SCRIPT=$(ls -1 "$HOME"/.claude/plugins/cache/vbw-marketplace/vbw/*/scripts/"${SKILL_NAME}-hook.sh" 2>/dev/null | sort -V | tail -1)
+  SCRIPT=$(ls -1 "$CLAUDE_DIR"/plugins/cache/vbw-marketplace/vbw/*/scripts/"${SKILL_NAME}-hook.sh" 2>/dev/null | sort -V | tail -1)
   if [ -f "$SCRIPT" ]; then
     echo "$INPUT" | bash "$SCRIPT" 2>/dev/null || true
   fi

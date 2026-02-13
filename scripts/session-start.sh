@@ -9,7 +9,8 @@ if ! command -v jq &>/dev/null; then
 fi
 
 PLANNING_DIR=".vbw-planning"
-CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+# shellcheck source=resolve-claude-dir.sh
+. "$(dirname "$0")/resolve-claude-dir.sh"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Auto-migrate config if .vbw-planning exists
