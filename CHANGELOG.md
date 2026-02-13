@@ -2,6 +2,17 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.20.4] - 2026-02-13
+
+### Fixed
+
+- **`shellcheck`** -- resolved all shellcheck warnings across scripts. Removed unused variables, quoted command substitutions, added targeted disables for intentional patterns (ls|grep for zsh compat, git `@{u}` syntax, read-consumed vars).
+- **`ci`** -- bats tests now pass on GitHub Actions Ubuntu runner. Added git user config for phase-detect tests, fixed cross-platform `stat` flag order (GNU first, BSD fallback) in resolve-agent-model.
+- **`scripts`** -- added executable bit to 6 scripts missing chmod +x: generate-incidents.sh, lease-lock.sh, recover-state.sh, research-warn.sh, route-monorepo.sh, smart-route.sh.
+- **`testing`** -- corrected command name expectation in verify-commands-contract.sh. Test now accepts both bare names (`map`) and prefixed names (`vbw:map`) since the plugin system auto-prefixes.
+
+---
+
 ## [1.20.3] - 2026-02-13
 
 ### Changed
