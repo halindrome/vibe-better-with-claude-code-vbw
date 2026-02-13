@@ -89,8 +89,6 @@ case "$MODE" in
       FORBIDDEN=$(jq -r '.forbidden_paths[]' "$CONTRACT_PATH" 2>/dev/null) || FORBIDDEN=""
     fi
 
-    VIOLATION_FOUND=false
-
     for FILE in "$@"; do
       [ -z "$FILE" ] && continue
       # Normalize: strip leading ./
@@ -105,7 +103,6 @@ case "$MODE" in
           # Exact match or prefix match (directory patterns)
           if [ "$NORM_FILE" = "$NORM_FORBIDDEN" ] || [[ "$NORM_FILE" == "$NORM_FORBIDDEN"/* ]]; then
             emit_violation "forbidden_path" "${NORM_FILE} matches forbidden path ${NORM_FORBIDDEN}"
-            VIOLATION_FOUND=true
             [ "$V2_HARD" = "true" ] && exit 2
           fi
         done <<< "$FORBIDDEN"
@@ -124,7 +121,6 @@ case "$MODE" in
 
       if [ "$FOUND" = "false" ]; then
         emit_violation "out_of_scope" "${NORM_FILE} not in allowed_paths"
-        VIOLATION_FOUND=true
         [ "$V2_HARD" = "true" ] && exit 2
       fi
     done

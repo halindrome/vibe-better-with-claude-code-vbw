@@ -30,6 +30,7 @@ VERIFY_OUTPUT=$(bash "$ROOT/scripts/bump-version.sh" --verify 2>&1) || {
   exit 1
 }
 
+# shellcheck disable=SC2034
 while read -r local_ref local_sha remote_ref remote_sha; do
   # Skip tag pushes and deletes
   [[ "$local_sha" == "0000000000000000000000000000000000000000" ]] && continue

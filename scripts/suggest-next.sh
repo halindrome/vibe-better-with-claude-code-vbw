@@ -24,7 +24,6 @@ RESULT="${2:-}"
 PLANNING_DIR=".vbw-planning"
 
 # --- State detection ---
-has_planning=false
 has_project=false
 phase_count=0
 next_unplanned=""
@@ -44,7 +43,6 @@ failing_plan_ids=""
 map_staleness=-1
 
 if [ -d "$PLANNING_DIR" ]; then
-  has_planning=true
 
   # Resolve phases directory (milestone-aware)
   PHASES_DIR="$PLANNING_DIR/phases"

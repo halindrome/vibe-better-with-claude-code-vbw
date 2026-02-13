@@ -49,9 +49,11 @@ case "$ACTION" in
 
     # Prune: keep max 10 snapshots per phase
     # zsh compat: use ls dir | grep to avoid bare glob expansion errors
+    # shellcheck disable=SC2010
     SNAP_COUNT=$(ls -1 "${SNAPSHOTS_DIR}/" 2>/dev/null | grep "^${PHASE}-.*\.json$" | wc -l | tr -d ' ')
     if [ "$SNAP_COUNT" -gt 10 ] 2>/dev/null; then
       PRUNE_COUNT=$((SNAP_COUNT - 10))
+      # shellcheck disable=SC2010
       ls -1t "${SNAPSHOTS_DIR}/" 2>/dev/null | grep "^${PHASE}-.*\.json$" | tail -n "$PRUNE_COUNT" | while IFS= read -r old; do
         old="${SNAPSHOTS_DIR}/${old}"
         rm -f "$old" 2>/dev/null || true
@@ -66,6 +68,7 @@ case "$ACTION" in
 
     # Find latest snapshot for this phase
     # zsh compat: use ls dir | grep to avoid bare glob expansion errors
+    # shellcheck disable=SC2010
     LATEST_NAME=$(ls -1t "${SNAPSHOTS_DIR}/" 2>/dev/null | grep "^${PHASE}-.*\.json$" | head -1)
     if [ -n "$LATEST_NAME" ] && [ -f "${SNAPSHOTS_DIR}/${LATEST_NAME}" ]; then
       echo "${SNAPSHOTS_DIR}/${LATEST_NAME}"

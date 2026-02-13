@@ -123,7 +123,6 @@ IN_TOK_FMT=$(fmt_tok "$IN_TOK")
 OUT_TOK_FMT=$(fmt_tok "$OUT_TOK")
 CACHE_W_FMT=$(fmt_tok "$CACHE_W")
 CACHE_R_FMT=$(fmt_tok "$CACHE_R")
-COST_FMT=$(fmt_cost "$COST")
 DUR_FMT=$(fmt_dur "$DUR_MS")
 API_DUR_FMT=$(fmt_dur "$API_MS")
 TOTAL_INPUT=$((IN_TOK + CACHE_W + CACHE_R))
@@ -158,6 +157,7 @@ if ! cache_fresh "$FAST_CF" 5; then
     GH_URL=$(git remote get-url origin 2>/dev/null | sed 's|git@github.com:|https://github.com/|' | sed 's|\.git$||' | sed 's|https://[^@]*@|https://|')
     GIT_STAGED=$(git diff --cached --numstat 2>/dev/null | wc -l | tr -d ' ')
     GIT_MODIFIED=$(git diff --numstat 2>/dev/null | wc -l | tr -d ' ')
+    # shellcheck disable=SC1083
     GIT_AHEAD=$(git rev-list --count @{u}..HEAD 2>/dev/null || echo 0)
   fi
   if [ -d ".vbw-planning/phases" ]; then
@@ -189,6 +189,7 @@ if ! cache_fresh "$FAST_CF" 5; then
 fi
 
 if [ -O "$FAST_CF" ]; then
+  # shellcheck disable=SC2034
   IFS='|' read -r PH TT EF MP BR PD PT PPD QA GH_URL GIT_STAGED GIT_MODIFIED GIT_AHEAD \
                   EXEC_STATUS EXEC_WAVE EXEC_TWAVES EXEC_DONE EXEC_TOTAL EXEC_CURRENT \
                   AGENT_N < "$FAST_CF"

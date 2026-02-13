@@ -7,8 +7,8 @@ set -u
 # Only apply to VBW contexts
 [ ! -d ".vbw-planning" ] && exit 0
 
-# Read stdin to get task context
-INPUT=$(cat 2>/dev/null) || exit 0
+# Read stdin to consume task context
+cat >/dev/null 2>&1 || exit 0
 
 # Structural Check 1: SUMMARY.md completeness
 # Count plans vs summaries — if a phase has more plans than summaries

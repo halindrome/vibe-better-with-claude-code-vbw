@@ -257,7 +257,9 @@ if [ -d "$MKT_DIR/.git" ] && [ -d "$CACHE_DIR" ]; then
     LATEST_VER=$(ls -d "$CACHE_DIR"/*/ 2>/dev/null | sort -V | tail -1)
     if [ -n "$LATEST_VER" ] && [ -d "${LATEST_VER}commands" ]; then
       # zsh compat: bare globs error before ls runs in zsh (nomatch). Use ls dir | grep.
+      # shellcheck disable=SC2010
       MKT_CMD_COUNT=$(ls -1 "$MKT_DIR/commands/" 2>/dev/null | grep '\.md$' | wc -l | tr -d ' ')
+      # shellcheck disable=SC2010
       CACHE_CMD_COUNT=$(ls -1 "${LATEST_VER}commands/" 2>/dev/null | grep '\.md$' | wc -l | tr -d ' ')
       if [ "${MKT_CMD_COUNT:-0}" -ne "${CACHE_CMD_COUNT:-0}" ]; then
         echo "VBW cache stale — marketplace has ${MKT_CMD_COUNT} commands, cache has ${CACHE_CMD_COUNT}" >&2
@@ -294,7 +296,6 @@ EXEC_STATE="$PLANNING_DIR/.execution-state.json"
 if [ -f "$EXEC_STATE" ]; then
   EXEC_STATUS=$(jq -r '.status // ""' "$EXEC_STATE" 2>/dev/null)
   if [ "$EXEC_STATUS" = "running" ]; then
-    PHASE_NAME=$(jq -r '.phase_name // ""' "$EXEC_STATE" 2>/dev/null)
     PHASE_NUM=$(jq -r '.phase // ""' "$EXEC_STATE" 2>/dev/null)
     PHASE_DIR=""
     if [ -n "$PHASE_NUM" ]; then
@@ -303,6 +304,7 @@ if [ -f "$EXEC_STATE" ]; then
     if [ -n "$PHASE_DIR" ] && [ -d "$PHASE_DIR" ]; then
       PLAN_COUNT=$(jq -r '.plans | length' "$EXEC_STATE" 2>/dev/null)
       # zsh compat: use ls dir | grep to avoid bare glob expansion errors
+      # shellcheck disable=SC2010
       SUMMARY_COUNT=$(ls -1 "$PHASE_DIR" 2>/dev/null | grep '\-SUMMARY\.md$' | wc -l | tr -d ' ')
       if [ "${SUMMARY_COUNT:-0}" -ge "${PLAN_COUNT:-1}" ] && [ "${PLAN_COUNT:-0}" -gt 0 ]; then
         # All plans have SUMMARY.md — build finished after crash
@@ -420,11 +422,12 @@ else
   else
     # Find next phase needing work
     all_done=true
-    next_phase=""
     for pdir in $(ls -d "$PHASES_DIR"/*/ 2>/dev/null | sort); do
       pname=$(basename "$pdir")
       # zsh compat: use ls dir | grep to avoid bare glob expansion errors
+      # shellcheck disable=SC2010
       plan_count=$(ls -1 "$pdir" 2>/dev/null | grep '\-PLAN\.md$' | wc -l | tr -d ' ')
+      # shellcheck disable=SC2010
       summary_count=$(ls -1 "$pdir" 2>/dev/null | grep '\-SUMMARY\.md$' | wc -l | tr -d ' ')
       if [ "${plan_count:-0}" -eq 0 ]; then
         # Phase has no plans yet — needs planning

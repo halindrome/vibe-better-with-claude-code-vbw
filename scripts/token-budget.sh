@@ -45,7 +45,6 @@ fi
 
 # Optional contract metadata for per-task budgets
 CONTRACT_PATH="${1:-}"
-TASK_NUMBER="${2:-}"
 
 # If flag disabled, pass through
 if [ "$ENABLED" != "true" ]; then
@@ -196,7 +195,6 @@ fi
 if [ "$ENABLED" = "true" ]; then
   # Read escalation config
   REDUCTION_PCT=$(jq -r '.escalation.reduction_percent // 15' "$BUDGETS_PATH" 2>/dev/null) || REDUCTION_PCT=15
-  MIN_BUDGET_FLOOR=$(jq -r '.escalation.min_budget_floor // 100' "$BUDGETS_PATH" 2>/dev/null) || MIN_BUDGET_FLOOR=100
 
   # Compute new remaining budget percentage
   OLD_REMAINING_PCT=100

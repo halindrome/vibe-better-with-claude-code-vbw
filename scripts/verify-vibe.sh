@@ -14,7 +14,6 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 VIBE="$ROOT/commands/vibe.md"
 PROTOCOL="$ROOT/references/execute-protocol.md"
 COMMANDS_DIR="$ROOT/commands"
-CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 README="$ROOT/README.md"
 CLAUDE_MD="$ROOT/CLAUDE.md"
 HELP="$ROOT/commands/help.md"
@@ -162,6 +161,7 @@ for cmd in "${ABSORBED[@]}"; do
 done
 
 # REQ-18: Exact file count
+# shellcheck disable=SC2010
 CMD_COUNT=$(ls "$COMMANDS_DIR" | grep -c '\.md$')
 check "REQ-18" "commands/ has exactly 20 .md files (found $CMD_COUNT)" test "$CMD_COUNT" -eq 20
 
