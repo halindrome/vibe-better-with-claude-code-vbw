@@ -8,6 +8,10 @@ allowed-tools: Read, Bash, Glob
 
 # VBW Update $ARGUMENTS
 
+## Context
+
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
+
 **Resolve config directory:** `CLAUDE_DIR` = env var `CLAUDE_CONFIG_DIR` if set, otherwise `~/.claude`. Use for all config paths below.
 
 ## Steps

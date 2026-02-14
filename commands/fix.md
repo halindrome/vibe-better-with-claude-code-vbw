@@ -10,6 +10,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
 ## Context
 
 Working directory: `!`pwd``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
 Config: Pre-injected by SessionStart hook.
 
 ## Guard

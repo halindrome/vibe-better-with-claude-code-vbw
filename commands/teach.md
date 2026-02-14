@@ -11,6 +11,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ## Context
 
 Working directory: `!`pwd``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
 Conventions:
 ```
 !`cat .vbw-planning/conventions.json 2>/dev/null || echo "No conventions found"`

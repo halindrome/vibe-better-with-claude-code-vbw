@@ -10,6 +10,8 @@ allowed-tools: Read, Write, Edit, Bash, Glob
 
 ## Context
 
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
+
 Config:
 ```
 !`cat .vbw-planning/config.json 2>/dev/null || echo "No config found -- run /vbw:init first"`

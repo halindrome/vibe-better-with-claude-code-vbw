@@ -8,6 +8,10 @@ allowed-tools: Read, Glob
 
 # VBW What's New $ARGUMENTS
 
+## Context
+
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
+
 ## Guard
 
 1. **Missing changelog:** `${CLAUDE_PLUGIN_ROOT}/CHANGELOG.md` missing → STOP: "No CHANGELOG.md found."

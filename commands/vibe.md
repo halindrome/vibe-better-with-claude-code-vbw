@@ -11,6 +11,7 @@ disable-model-invocation: true
 ## Context
 
 Working directory: `!`pwd``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
 
 Pre-computed state (via phase-detect.sh):
 ```

@@ -14,6 +14,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ## Context
 
 Working directory: `!`pwd``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
 
 Existing state:
 ```
