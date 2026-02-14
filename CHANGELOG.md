@@ -2,6 +2,14 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.21.2] - 2026-02-14
+
+### Fixed
+
+- **`/vbw:config`** — Feature flags (`v3_*`, `v2_*`) now displayed in config output. Previously these flags existed in `config.json` but were invisible to users — the only way to discover or toggle them was manual JSON editing. Now shown as a dedicated "Feature Flags" section with descriptions and toggle hint. (Reported by @dpearson2699)
+
+---
+
 ## [1.21.1] - 2026-02-14
 
 ### Fixed

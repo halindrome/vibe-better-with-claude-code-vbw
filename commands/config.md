@@ -54,6 +54,39 @@ if [ "$(jq -r '.model_overrides.architect // ""' .vbw-planning/config.json)" != 
 echo "  Lead: $LEAD_DISPLAY | Dev: $DEV_DISPLAY | QA: $QA_DISPLAY | Scout: $SCOUT_DISPLAY | Debugger: $DEBUGGER_DISPLAY | Architect: $ARCHITECT_DISPLAY"
 ```
 
+After the Model Profile section, display Feature Flags section. Read all keys from config.json that start with `v3_` or `v2_`. Display as a compact table:
+
+```
+Feature Flags:
+  v3_plan_research_persist: true    Scout writes RESEARCH.md during planning
+  v3_delta_context: true            Incremental context compilation
+  v3_context_cache: true            Cache compiled context between runs
+  v3_metrics: true                  Track execution metrics
+  v3_contract_lite: true            Lightweight agent contracts
+  v3_lock_lite: true                Lightweight file locks
+  v3_validation_gates: true         Pre/post validation checks
+  v3_smart_routing: true            Intelligent agent routing
+  v3_event_log: true                Event logging for debugging
+  v3_schema_validation: true        Validate planning file schemas
+  v3_snapshot_resume: true          Resume from snapshots
+  v3_lease_locks: true              Time-limited file locks
+  v3_event_recovery: true           Recover from event failures
+  v3_monorepo_routing: true         Monorepo-aware agent routing
+  v2_hard_contracts: true           Strict agent contracts
+  v2_hard_gates: true               Strict validation gates
+  v2_typed_protocol: true           Typed agent protocol messages
+  v2_role_isolation: true           Agent role isolation
+  v2_two_phase_completion: true     Two-phase task completion
+  v2_token_budgets: true            Agent token budget tracking
+```
+
+Only show flags that exist in config.json. Read dynamically:
+```bash
+jq -r 'to_entries[] | select(.key | startswith("v3_") or startswith("v2_")) | "\(.key): \(.value)"' .vbw-planning/config.json
+```
+
+Display hint after flags: `Toggle with: /vbw:config <flag> true|false`
+
 **Step 2:** AskUserQuestion with up to 5 commonly changed settings (mark current values):
 - Effort: thorough | balanced | fast | turbo
 - Autonomy: cautious | standard | confident | pure-vibe
