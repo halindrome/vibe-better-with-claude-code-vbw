@@ -12,11 +12,19 @@ D='\033[2m' B='\033[1m' X='\033[0m'
 _UID=$(id -u)
 _OS=$(uname)
 _VER=$(cat "$(dirname "$0")/../VERSION" 2>/dev/null | tr -d '[:space:]')
-_CACHE="/tmp/vbw-${_VER:-0}-${_UID}"
+_REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")
+if command -v md5sum &>/dev/null; then
+  _REPO_HASH=$(echo "$_REPO_ROOT" | md5sum | cut -c1-8)
+elif command -v md5 &>/dev/null; then
+  _REPO_HASH=$(echo "$_REPO_ROOT" | md5 -q | cut -c1-8)
+else
+  _REPO_HASH=$(printf '%s' "$_REPO_ROOT" | cksum | cut -d' ' -f1)
+fi
+_CACHE="/tmp/vbw-${_VER:-0}-${_UID}-${_REPO_HASH}"
 
 # Clean stale caches from previous versions on first run
 if ! [ -f "${_CACHE}-ok" ] || ! [ -O "${_CACHE}-ok" ]; then
-  rm -f /tmp/vbw-*-"${_UID}"-* /tmp/vbw-sl-cache-"${_UID}" /tmp/vbw-usage-cache-"${_UID}" /tmp/vbw-gh-cache-"${_UID}" /tmp/vbw-team-cache-"${_UID}" 2>/dev/null
+  rm -f /tmp/vbw-*-"${_UID}"-* /tmp/vbw-sl-cache-"${_UID}" /tmp/vbw-usage-cache-"${_UID}" /tmp/vbw-gh-cache-"${_UID}" /tmp/vbw-team-cache-"${_UID}" /tmp/vbw-*-"${_UID}" 2>/dev/null
   touch "${_CACHE}-ok"
 fi
 
@@ -387,14 +395,19 @@ fi
 
 # --- GitHub link (OSC 8 clickable) ---
 GH_LINK=""
+REPO_LABEL=""
 if [ -n "$GH_URL" ]; then
   GH_NAME=$(basename "$GH_URL")
+  REPO_LABEL="$GH_NAME"
   if [ -n "$BR" ]; then
     GH_BRANCH_URL="${GH_URL}/tree/${BR}"
     GH_LINK="\033]8;;${GH_BRANCH_URL}\a${GH_NAME}:${BR}\033]8;;\a"
   else
     GH_LINK="\033]8;;${GH_URL}\a${GH_NAME}\033]8;;\a"
   fi
+else
+  # No remote — use directory name as repo label
+  REPO_LABEL=$(basename "$_REPO_ROOT")
 fi
 
 [ "$PCT" -ge 90 ] && BC="$R" || { [ "$PCT" -ge 70 ] && BC="$Y" || BC="$G"; }
@@ -432,6 +445,8 @@ fi
 if [ -n "$BR" ]; then
   if [ -n "$GH_LINK" ]; then
     L1="$L1 ${D}│${X} ${GH_LINK}"
+  elif [ -n "$REPO_LABEL" ]; then
+    L1="$L1 ${D}│${X} ${REPO_LABEL}:${BR}"
   else
     L1="$L1 ${D}│${X} $BR"
   fi
