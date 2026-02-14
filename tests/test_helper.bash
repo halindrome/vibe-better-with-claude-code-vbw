@@ -31,7 +31,7 @@ create_test_config() {
   "discovery_questions": true,
   "visual_format": "unicode",
   "max_tasks_per_plan": 5,
-  "agent_teams": true,
+  "prefer_teams": "always",
   "branch_per_milestone": false,
   "plain_summary": true,
   "active_profile": "default",
