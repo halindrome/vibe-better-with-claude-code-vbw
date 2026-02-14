@@ -83,6 +83,7 @@ if [ -d "$PLANNING_DIR" ] && [ -f "$PLANNING_DIR/config.json" ]; then
     ' "$PLANNING_DIR/config.json" > "$TMP" 2>/dev/null; then
       mv "$TMP" "$PLANNING_DIR/config.json"
     else
+      echo "WARNING: Config migration failed (jq error). Config may be missing flags." >&2
       rm -f "$TMP"
     fi
   fi
