@@ -56,6 +56,25 @@ teardown() {
   [ "$count" -gt 0 ]
 }
 
+@test "hooks.json all commands include CLAUDE_PLUGIN_ROOT fallback" {
+  # Every hook command that resolves hook-wrapper.sh via cache should also
+  # include the CLAUDE_PLUGIN_ROOT fallback for --plugin-dir installs.
+  # Use jq to count commands containing each pattern independently.
+  local cmd_count fallback_count
+  cmd_count=$(jq '[.hooks[][] | .hooks[]? | .command | select(contains("hook-wrapper.sh"))] | length' "$PROJECT_ROOT/hooks/hooks.json")
+  fallback_count=$(jq '[.hooks[][] | .hooks[]? | .command | select(contains("CLAUDE_PLUGIN_ROOT"))] | length' "$PROJECT_ROOT/hooks/hooks.json")
+  [ "$cmd_count" -gt 0 ]
+  [ "$cmd_count" -eq "$fallback_count" ]
+}
+
+@test "hooks.json no commands use old cache-only pattern" {
+  # Old pattern: ') && [ -f "$w" ] && exec bash' (no fallback)
+  # New pattern: '); [ ! -f "$w" ] && w=...; [ -f "$w" ] && exec bash'
+  local old_count
+  old_count=$(grep -c ') && \[ -f' "$PROJECT_ROOT/hooks/hooks.json" || true)
+  [ "$old_count" -eq 0 ]
+}
+
 @test "hooks.json is valid JSON" {
   jq empty "$PROJECT_ROOT/hooks/hooks.json"
 }
@@ -90,6 +109,10 @@ teardown() {
 
 @test "hook-wrapper.sh sources resolve-claude-dir.sh" {
   grep -q 'resolve-claude-dir.sh' "$SCRIPTS_DIR/hook-wrapper.sh"
+}
+
+@test "hook-wrapper.sh includes CLAUDE_PLUGIN_ROOT fallback" {
+  grep -q 'CLAUDE_PLUGIN_ROOT' "$SCRIPTS_DIR/hook-wrapper.sh"
 }
 
 # --- install-hooks.sh tests ---

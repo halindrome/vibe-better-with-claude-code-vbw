@@ -188,6 +188,55 @@ MOCK
   [ "$status" -eq 0 ]
 }
 
+# --- hook-wrapper.sh CLAUDE_PLUGIN_ROOT fallback ---
+
+@test "hook-wrapper: falls back to CLAUDE_PLUGIN_ROOT when cache is empty" {
+  cd "$TEST_TEMP_DIR"
+  # Set up: no cache, but CLAUDE_PLUGIN_ROOT points to real scripts
+  mkdir -p "$TEST_TEMP_DIR/fake-plugin/scripts"
+  cp "$SCRIPTS_DIR/hook-wrapper.sh" "$TEST_TEMP_DIR/fake-plugin/scripts/"
+  cp "$SCRIPTS_DIR/resolve-claude-dir.sh" "$TEST_TEMP_DIR/fake-plugin/scripts/"
+  cat > "$TEST_TEMP_DIR/fake-plugin/scripts/mock-ok.sh" <<'MOCK'
+#!/bin/bash
+echo "OK from plugin root"
+exit 0
+MOCK
+  chmod +x "$TEST_TEMP_DIR/fake-plugin/scripts/mock-ok.sh"
+
+  # HOME points to empty dir (no cache), CLAUDE_PLUGIN_ROOT points to fake plugin
+  run bash -c "export HOME='$TEST_TEMP_DIR/empty-home'; export CLAUDE_PLUGIN_ROOT='$TEST_TEMP_DIR/fake-plugin'; bash '$TEST_TEMP_DIR/fake-plugin/scripts/hook-wrapper.sh' mock-ok.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"OK from plugin root"* ]]
+}
+
+@test "hook-wrapper: prefers cache over CLAUDE_PLUGIN_ROOT when both exist" {
+  cd "$TEST_TEMP_DIR"
+  # Set up cache with a script
+  mkdir -p "$TEST_TEMP_DIR/.claude/plugins/cache/vbw-marketplace/vbw/1.0.0/scripts"
+  cp "$SCRIPTS_DIR/hook-wrapper.sh" "$TEST_TEMP_DIR/.claude/plugins/cache/vbw-marketplace/vbw/1.0.0/scripts/"
+  cp "$SCRIPTS_DIR/resolve-claude-dir.sh" "$TEST_TEMP_DIR/.claude/plugins/cache/vbw-marketplace/vbw/1.0.0/scripts/"
+  cat > "$TEST_TEMP_DIR/.claude/plugins/cache/vbw-marketplace/vbw/1.0.0/scripts/mock-source.sh" <<'MOCK'
+#!/bin/bash
+echo "FROM_CACHE"
+exit 0
+MOCK
+  chmod +x "$TEST_TEMP_DIR/.claude/plugins/cache/vbw-marketplace/vbw/1.0.0/scripts/mock-source.sh"
+
+  # Also set up CLAUDE_PLUGIN_ROOT with a different script
+  mkdir -p "$TEST_TEMP_DIR/fake-plugin/scripts"
+  cat > "$TEST_TEMP_DIR/fake-plugin/scripts/mock-source.sh" <<'MOCK'
+#!/bin/bash
+echo "FROM_PLUGIN_ROOT"
+exit 0
+MOCK
+  chmod +x "$TEST_TEMP_DIR/fake-plugin/scripts/mock-source.sh"
+
+  # Cache should win
+  run bash -c "export HOME='$TEST_TEMP_DIR'; export CLAUDE_PLUGIN_ROOT='$TEST_TEMP_DIR/fake-plugin'; bash '$TEST_TEMP_DIR/.claude/plugins/cache/vbw-marketplace/vbw/1.0.0/scripts/hook-wrapper.sh' mock-source.sh"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"FROM_CACHE"* ]]
+}
+
 # --- security-filter.sh integration (exit 2 should block) ---
 
 @test "security-filter: blocks .env file with exit 2" {
