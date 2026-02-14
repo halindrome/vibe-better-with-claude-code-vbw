@@ -2,6 +2,28 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.20.9] - 2026-02-14
+
+### Community Contributions
+
+- **PR #35** (@dpearson2699) — Security filter bypass fix: `hook-wrapper.sh` exit code 2 passthrough
+- **PR #32** (@dpearson2699) — Progress dashboard fix: `state-updater.sh` milestone-aware path resolution
+
+### Fixed
+
+- **`hook-wrapper.sh`** — exit code 2 (Claude Code's "block tool call" signal) was silently converted to exit 0, disabling the security filter for `.env`, `.pem`, `.key` files. Now passes exit 2 through correctly. (Thanks @dpearson2699)
+- **`session-start.sh`** — compaction-marker check prevents error output during compaction cycles. (Thanks @dpearson2699)
+- **`map-staleness.sh`** — compaction-marker skip and `_diag()` stderr helper for hook mode. (Thanks @dpearson2699)
+- **`post-compact.sh`** — `.compaction-marker` added to cleanup. (Thanks @dpearson2699)
+- **`state-updater.sh`** — three bugs fixed: missing `.execution-state.json` no longer skips STATE.md/ROADMAP.md updates; reads `.plans[]` (current schema) instead of only `.phases{}` (old schema); `planning_root_from_phase_dir()` resolves milestone-aware paths instead of hardcoded `.vbw-planning/`. (Thanks @dpearson2699)
+
+### Testing
+
+- **14 new tests** in `tests/sessionstart-compact-hooks.bats` for compaction marker, hook wrapper exit codes, and session start behavior. (Thanks @dpearson2699)
+- **4 new tests** in `tests/state-updater.bats` for milestone-aware path resolution and schema support. (Thanks @dpearson2699)
+
+---
+
 ## [1.20.8] - 2026-02-14
 
 ### Added
