@@ -86,9 +86,15 @@ VBW keeps the version in sync across four files:
 
 All four **must** match at all times.
 
-**Version bumping and changelog generation happen automatically** via [release-please](https://github.com/googleapis/release-please-action). When PRs are merged to `main`, release-please parses the conventional commit messages and opens a Release PR that bumps versions across all 4 files and updates `CHANGELOG.md`. Merging the Release PR creates a GitHub Release.
+**Version bumping happens at merge time.** When a PR is merged to `main`, the maintainer bumps the version across all 4 files using the bump script and commits the result. Contributors do not need to bump versions in their branches.
 
-Contributors do not need to touch version files or the changelog. Just use conventional commit messages (e.g., `fix(hooks): ...`, `feat(commands): ...`) and release-please handles the rest.
+To bump the version (maintainer only):
+
+```bash
+bash scripts/bump-version.sh
+git add VERSION .claude-plugin/plugin.json .claude-plugin/marketplace.json marketplace.json
+git commit -m "chore: bump version to $(cat VERSION)"
+```
 
 To verify that all four files are in sync locally:
 
@@ -100,10 +106,10 @@ This exits `0` if all versions match and `1` with a diff report if they diverge.
 
 ### Push Workflow
 
-A git pre-push hook enforces that all 4 version files are **consistent** (same value). It does **not** require a version bump — release-please handles that via its Release PR.
+A git pre-push hook enforces that all 4 version files are **consistent** (same value). It does **not** require a version bump — that happens at merge time.
 
 ```bash
-# Work freely, commit as needed, push without version bumps
+# Work freely, commit as needed
 git commit -m "feat(commands): add new feature"
 git push
 ```
