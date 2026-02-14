@@ -15,6 +15,18 @@ run_migration() {
   local config_file="$TEST_TEMP_DIR/.vbw-planning/config.json"
   local EXPECTED_FLAG_COUNT=23
 
+  # First, handle model_profile migration (separate from flag migration)
+  if ! jq -e 'has("model_profile")' "$config_file" >/dev/null 2>&1; then
+    TMP=$(mktemp)
+    jq '. + {model_profile: "quality", model_overrides: {}}' "$config_file" > "$TMP" && mv "$TMP" "$config_file"
+  fi
+
+  # Handle prefer_teams migration (separate from flag migration)
+  if ! jq -e 'has("prefer_teams")' "$config_file" >/dev/null 2>&1; then
+    TMP=$(mktemp)
+    jq '. + {prefer_teams: "always"}' "$config_file" > "$TMP" && mv "$TMP" "$config_file"
+  fi
+
   # Check if migration is needed
   CURRENT_FLAG_COUNT=$(jq '[
     has("context_compiler"), has("v3_delta_context"), has("v3_context_cache"),
@@ -51,8 +63,7 @@ run_migration() {
       (if has("v2_typed_protocol") then {} else {v2_typed_protocol: false} end) +
       (if has("v2_role_isolation") then {} else {v2_role_isolation: false} end) +
       (if has("v2_two_phase_completion") then {} else {v2_two_phase_completion: false} end) +
-      (if has("v2_token_budgets") then {} else {v2_token_budgets: false} end) +
-      (if has("prefer_teams") then {} else {prefer_teams: "always"} end)
+      (if has("v2_token_budgets") then {} else {v2_token_budgets: false} end)
     ' "$config_file" > "$TMP" 2>/dev/null; then
       mv "$TMP" "$config_file"
       return 0
@@ -219,4 +230,44 @@ EOF
   fi
 
   [ "$DEFAULTS_COUNT" = "$SCRIPT_COUNT" ]
+}
+
+@test "migration adds missing prefer_teams with default value" {
+  # Create config without prefer_teams
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "autonomy": "standard"
+}
+EOF
+
+  run_migration
+
+  # Verify prefer_teams was added with "always" default
+  run jq -r '.prefer_teams' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "always" ]
+}
+
+@test "migration preserves existing prefer_teams value" {
+  # Create config with prefer_teams set to "never"
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "prefer_teams": "never"
+}
+EOF
+
+  run_migration
+
+  # Verify prefer_teams value was NOT overwritten
+  run jq -r '.prefer_teams' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "never" ]
+}
+
+@test "EXPECTED_FLAG_COUNT is 23 after prefer_teams addition" {
+  # Verify session-start.sh has EXPECTED_FLAG_COUNT=23
+  SCRIPT_COUNT=$(grep 'EXPECTED_FLAG_COUNT=' "$SCRIPTS_DIR/session-start.sh" | grep -oE '[0-9]+' | head -1)
+  [ "$SCRIPT_COUNT" = "23" ]
 }
