@@ -55,9 +55,18 @@ fi
 # .gsd-isolation = opt-in flag created during /vbw:init consent flow.
 # .active-agent = VBW subagent is running (managed by agent-start.sh / agent-stop.sh).
 # .vbw-session = VBW command is active (managed by prompt-preflight.sh / session-stop.sh).
+#
+# Resolve markers from the target file's project root (derived from FILE_PATH)
+# rather than CWD, so the check works even if the hook runs with a different CWD.
 if echo "$FILE_PATH" | grep -qF '.vbw-planning/'; then
-  if [ -f ".vbw-planning/.gsd-isolation" ]; then
-    if [ ! -f ".vbw-planning/.active-agent" ] && [ ! -f ".vbw-planning/.vbw-session" ]; then
+  # Derive project root from FILE_PATH
+  VBW_ROOT="${FILE_PATH%%/.vbw-planning/*}"
+  # Fall back to CWD-relative paths if derivation yields empty or relative path
+  if [ -z "$VBW_ROOT" ] || [ "$VBW_ROOT" = "$FILE_PATH" ]; then
+    VBW_ROOT="."
+  fi
+  if [ -f "$VBW_ROOT/.vbw-planning/.gsd-isolation" ]; then
+    if [ ! -f "$VBW_ROOT/.vbw-planning/.active-agent" ] && [ ! -f "$VBW_ROOT/.vbw-planning/.vbw-session" ]; then
       echo "Blocked: .vbw-planning/ is isolated from non-VBW access ($FILE_PATH)" >&2
       exit 2
     fi

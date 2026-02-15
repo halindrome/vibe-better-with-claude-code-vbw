@@ -10,12 +10,23 @@ PROMPT=$(echo "$INPUT" | jq -r '.prompt // .content // ""' 2>/dev/null)
 [ -z "$PROMPT" ] && exit 0
 
 # GSD Isolation: manage .vbw-session marker
+# Create marker when a VBW command is detected. Detection covers:
+#   1. Raw slash command input: /vbw:vibe, /vbw:status, etc.
+#   2. Expanded command content: YAML frontmatter with "name: vbw:" (Claude Code
+#      may pass rendered markdown instead of raw user input).
+# Only REMOVE the marker when an explicit non-VBW slash command is detected
+# (starts with / but not /vbw:). Plain text follow-ups (e.g., "yes", "ok")
+# must NOT clear the marker — they're continuations of the VBW flow.
+# Final cleanup happens in session-stop.sh.
 if [ -f "$PLANNING_DIR/.gsd-isolation" ]; then
   if echo "$PROMPT" | grep -qi '^/vbw:'; then
     echo "session" > "$PLANNING_DIR/.vbw-session"
-  else
+  elif echo "$PROMPT" | grep -qi 'name:[[:space:]]*vbw:'; then
+    echo "session" > "$PLANNING_DIR/.vbw-session"
+  elif echo "$PROMPT" | grep -q '^/' && ! echo "$PROMPT" | grep -qi '^/vbw:'; then
     rm -f "$PLANNING_DIR/.vbw-session"
   fi
+  # Plain text prompts: leave marker unchanged (continuation of active flow)
 fi
 
 WARNING=""
