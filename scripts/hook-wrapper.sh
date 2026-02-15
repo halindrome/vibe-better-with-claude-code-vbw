@@ -6,7 +6,8 @@
 #
 # Usage: hook-wrapper.sh <script-name.sh> [extra-args...]
 #
-# - Resolves the target script from the VBW plugin cache
+# - Resolves the target script from the VBW plugin cache (prod)
+#   or CLAUDE_PLUGIN_ROOT (local dev via --plugin-dir)
 # - Passes through stdin (hook JSON context) and extra arguments
 # - Logs failures to .vbw-planning/.hook-errors.log
 # - Always exits 0
@@ -23,6 +24,11 @@ VBW_DEBUG="${VBW_DEBUG:-0}"
 CACHE="$CLAUDE_DIR/plugins/cache/vbw-marketplace/vbw"
 TARGET=$(ls -1 "$CACHE"/*/scripts/"$SCRIPT" 2>/dev/null \
   | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)
+
+# Fallback to CLAUDE_PLUGIN_ROOT for --plugin-dir installs (local dev)
+if [ -z "$TARGET" ] || [ ! -f "$TARGET" ]; then
+  TARGET="${CLAUDE_PLUGIN_ROOT:+$CLAUDE_PLUGIN_ROOT/scripts/$SCRIPT}"
+fi
 [ -z "$TARGET" ] || [ ! -f "$TARGET" ] && exit 0
 
 [ "$VBW_DEBUG" = "1" ] && echo "[VBW DEBUG] hook-wrapper: $SCRIPT → $TARGET" >&2
