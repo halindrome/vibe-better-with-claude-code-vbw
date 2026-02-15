@@ -58,7 +58,8 @@ is_expanded_vbw_prompt() {
 # Only REMOVE the marker when an explicit non-VBW slash command is detected
 # (starts with / but not /vbw:). Plain text follow-ups (e.g., "yes", "ok")
 # must NOT clear the marker — they're continuations of the VBW flow.
-# Final cleanup happens in session-stop.sh.
+# Marker intentionally persists across Stop events; explicit non-VBW slash
+# commands clear it. Stale markers are ignored by security-filter.sh after 24h.
 if [ -f "$PLANNING_DIR/.gsd-isolation" ]; then
   if echo "$PROMPT" | grep -qi '^/vbw:'; then
     echo "session" > "$PLANNING_DIR/.vbw-session"

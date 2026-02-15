@@ -359,7 +359,7 @@ load test_helper
   teardown_temp_dir
 }
 
-@test "session-stop removes session and agent markers even without cost ledger" {
+@test "session-stop preserves .vbw-session and removes transient agent markers" {
   setup_temp_dir
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning"
   echo "session" > "$TEST_TEMP_DIR/.vbw-planning/.vbw-session"
@@ -367,9 +367,43 @@ load test_helper
   echo "2" > "$TEST_TEMP_DIR/.vbw-planning/.active-agent-count"
   run bash -c "cd '$TEST_TEMP_DIR' && echo '{}' | bash '$SCRIPTS_DIR/session-stop.sh'"
   [ "$status" -eq 0 ]
-  [ ! -f "$TEST_TEMP_DIR/.vbw-planning/.vbw-session" ]
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/.vbw-session" ]
   [ ! -f "$TEST_TEMP_DIR/.vbw-planning/.active-agent" ]
   [ ! -f "$TEST_TEMP_DIR/.vbw-planning/.active-agent-count" ]
+  teardown_temp_dir
+}
+
+@test "vbw session marker survives Stop, allows plain-text follow-up write, then /gsd clears it" {
+  setup_temp_dir
+  mkdir -p "$TEST_TEMP_DIR/.vbw-planning/milestones/default/phases/05-migration-preview-completeness"
+  touch "$TEST_TEMP_DIR/.vbw-planning/.gsd-isolation"
+
+  # Start VBW flow
+  run bash -c "cd '$TEST_TEMP_DIR' && echo '{\"prompt\":\"/vbw:verify 5\"}' | bash '$SCRIPTS_DIR/prompt-preflight.sh'"
+  [ "$status" -eq 0 ]
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/.vbw-session" ]
+
+  # Session Stop between turns should not clear .vbw-session
+  run bash -c "cd '$TEST_TEMP_DIR' && echo '{}' | bash '$SCRIPTS_DIR/session-stop.sh'"
+  [ "$status" -eq 0 ]
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/.vbw-session" ]
+
+  # Plain-text follow-up should keep marker and allow .vbw-planning write
+  run bash -c "cd '$TEST_TEMP_DIR' && echo '{\"prompt\":\"it says 16 positions to move\"}' | bash '$SCRIPTS_DIR/prompt-preflight.sh'"
+  [ "$status" -eq 0 ]
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/.vbw-session" ]
+
+  INPUT='{"tool_input":{"file_path":"'"$TEST_TEMP_DIR"'/.vbw-planning/milestones/default/phases/05-migration-preview-completeness/05-UAT.md"}}'
+  run bash -c "cd '$TEST_TEMP_DIR' && echo '$INPUT' | bash '$SCRIPTS_DIR/security-filter.sh'"
+  [ "$status" -eq 0 ]
+
+  # Explicit non-VBW slash command should clear marker and re-enable block
+  run bash -c "cd '$TEST_TEMP_DIR' && echo '{\"prompt\":\"/gsd:status\"}' | bash '$SCRIPTS_DIR/prompt-preflight.sh'"
+  [ "$status" -eq 0 ]
+  [ ! -f "$TEST_TEMP_DIR/.vbw-planning/.vbw-session" ]
+
+  run bash -c "cd '$TEST_TEMP_DIR' && echo '$INPUT' | bash '$SCRIPTS_DIR/security-filter.sh'"
+  [ "$status" -eq 2 ]
   teardown_temp_dir
 }
 
