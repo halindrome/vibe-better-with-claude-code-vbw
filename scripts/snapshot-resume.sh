@@ -33,7 +33,14 @@ case "$ACTION" in
     TS=$(date -u +"%Y%m%dT%H%M%S" 2>/dev/null || echo "unknown")
     SNAPSHOT_FILE="${SNAPSHOTS_DIR}/${PHASE}-${TS}.json"
 
-    # Build snapshot: execution state + git log + timestamp
+    # Optional agent metadata
+    AGENT_ROLE="${4:-}"
+    if [ -z "$AGENT_ROLE" ]; then
+      AGENT_ROLE=$(cat .vbw-planning/.active-agent 2>/dev/null || echo "unknown")
+    fi
+    TRIGGER="${5:-unknown}"
+
+    # Build snapshot: execution state + git log + timestamp + metadata
     GIT_LOG=$(git log --oneline -5 2>/dev/null || echo "no git")
     GIT_LOG_JSON=$(echo "$GIT_LOG" | jq -R '.' | jq -s '.' 2>/dev/null) || GIT_LOG_JSON="[]"
 
@@ -44,7 +51,9 @@ case "$ACTION" in
       --argjson phase "$PHASE" \
       --argjson execution_state "$EXEC_STATE" \
       --argjson recent_commits "$GIT_LOG_JSON" \
-      '{snapshot_ts: $snapshot_ts, phase: $phase, execution_state: $execution_state, recent_commits: $recent_commits}' \
+      --arg agent_role "$AGENT_ROLE" \
+      --arg trigger "$TRIGGER" \
+      '{snapshot_ts: $snapshot_ts, phase: $phase, execution_state: $execution_state, recent_commits: $recent_commits, agent_role: $agent_role, compaction_trigger: $trigger}' \
       > "$SNAPSHOT_FILE" 2>/dev/null || exit 0
 
     # Prune: keep max 10 snapshots per phase
