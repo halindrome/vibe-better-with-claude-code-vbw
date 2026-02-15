@@ -9,18 +9,131 @@ PLANNING_DIR=".vbw-planning"
 
 AGENT_TYPE=$(echo "$INPUT" | jq -r '.agent_type // .agent_name // .name // ""' 2>/dev/null)
 
-# Normalize: strip "vbw:" prefix if present (e.g., "vbw:vbw-scout" → "vbw-scout")
-AGENT_TYPE="${AGENT_TYPE#vbw:}"
+normalize_agent_role() {
+  local value="$1"
+  local lower
+
+  lower=$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')
+  lower="${lower#@}"
+  lower="${lower#vbw:}"
+
+  case "$lower" in
+    vbw-lead|vbw-lead-[0-9]*|lead|lead-[0-9]*|team-lead|team-lead-[0-9]*)
+      printf 'lead'
+      return 0
+      ;;
+    vbw-dev|vbw-dev-[0-9]*|dev|dev-[0-9]*|team-dev|team-dev-[0-9]*)
+      printf 'dev'
+      return 0
+      ;;
+    vbw-qa|vbw-qa-[0-9]*|qa|qa-[0-9]*|team-qa|team-qa-[0-9]*)
+      printf 'qa'
+      return 0
+      ;;
+    vbw-scout|vbw-scout-[0-9]*|scout|scout-[0-9]*|team-scout|team-scout-[0-9]*)
+      printf 'scout'
+      return 0
+      ;;
+    vbw-debugger|vbw-debugger-[0-9]*|debugger|debugger-[0-9]*|team-debugger|team-debugger-[0-9]*)
+      printf 'debugger'
+      return 0
+      ;;
+    vbw-architect|vbw-architect-[0-9]*|architect|architect-[0-9]*|team-architect|team-architect-[0-9]*)
+      printf 'architect'
+      return 0
+      ;;
+  esac
+
+  return 1
+}
+
+is_explicit_vbw_agent() {
+  local value="$1"
+  local lower
+  lower=$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')
+  echo "$lower" | grep -qE '^@?vbw:|^@?vbw-'
+}
+
+ROLE=""
+if ROLE=$(normalize_agent_role "$AGENT_TYPE"); then
+  :
+else
+  ROLE=""
+fi
 
 # Only track VBW agents; maintain reference count for concurrent agents
 COUNT_FILE="$PLANNING_DIR/.active-agent-count"
-case "$AGENT_TYPE" in
-  vbw-lead|vbw-dev|vbw-qa|vbw-scout|vbw-debugger|vbw-architect)
-    echo "${AGENT_TYPE#vbw-}" > "$PLANNING_DIR/.active-agent"
-    COUNT=$(cat "$COUNT_FILE" 2>/dev/null | tr -d '[:space:]')
-    COUNT=${COUNT:-0}
-    echo $((COUNT + 1)) > "$COUNT_FILE"
-    ;;
-esac
+LOCK_DIR="$PLANNING_DIR/.active-agent-count.lock"
+
+acquire_lock() {
+  local attempts=0
+  local max_attempts=100
+  local now lock_mtime age
+  while [ "$attempts" -lt "$max_attempts" ]; do
+    if mkdir "$LOCK_DIR" 2>/dev/null; then
+      return 0
+    fi
+
+    attempts=$((attempts + 1))
+
+    # Stale lock guard: if lock persists for >5s, clear and retry.
+    if [ "$attempts" -eq 50 ] && [ -d "$LOCK_DIR" ]; then
+      now=$(date +%s)
+      if [ "$(uname)" = "Darwin" ]; then
+        lock_mtime=$(stat -f %m "$LOCK_DIR" 2>/dev/null || echo 0)
+      else
+        lock_mtime=$(stat -c %Y "$LOCK_DIR" 2>/dev/null || echo 0)
+      fi
+      age=$((now - lock_mtime))
+      if [ "$age" -gt 5 ]; then
+        rmdir "$LOCK_DIR" 2>/dev/null || true
+      fi
+    fi
+
+    sleep 0.01
+  done
+  # Could not acquire lock — proceed without it (best-effort).
+  return 1
+}
+
+release_lock() {
+  rmdir "$LOCK_DIR" 2>/dev/null || true
+}
+
+read_count() {
+  local raw
+  raw=$(cat "$COUNT_FILE" 2>/dev/null | tr -d '[:space:]')
+  if echo "$raw" | grep -Eq '^[0-9]+$'; then
+    printf '%s' "$raw"
+  else
+    printf '0'
+  fi
+}
+
+update_agent_markers() {
+  local count
+  count=$(read_count)
+
+  echo "$ROLE" > "$PLANNING_DIR/.active-agent"
+  echo $((count + 1)) > "$COUNT_FILE"
+}
+
+if [ -n "$ROLE" ]; then
+  # Accept non-prefixed role aliases only when a VBW context is already active.
+  if is_explicit_vbw_agent "$AGENT_TYPE" \
+    || [ -f "$PLANNING_DIR/.vbw-session" ] \
+    || [ -f "$PLANNING_DIR/.active-agent" ] \
+    || [ -f "$COUNT_FILE" ]; then
+    if acquire_lock; then
+      trap 'release_lock' EXIT INT TERM
+      update_agent_markers
+      release_lock
+      trap - EXIT INT TERM
+    else
+      # Lock unavailable — proceed best-effort without lock.
+      update_agent_markers
+    fi
+  fi
+fi
 
 exit 0
