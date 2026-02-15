@@ -58,6 +58,13 @@ if [ -z "$TASK_SUBJECT" ]; then
   exit 0
 fi
 
+# Role-only task subjects are coordination/bookkeeping labels, not implementation
+# tasks. Don't block completion on commit-keyword matching for these.
+TASK_SUBJECT_CANON=$(echo "$TASK_SUBJECT" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+if echo "$TASK_SUBJECT_CANON" | grep -qE '^@?(team-)?(vbw-)?(lead|dev|qa|scout|debugger|architect)(-[0-9]+)?$'; then
+  exit 0
+fi
+
 # Extract keywords from task subject (words > 3 chars, lowercased, max 8)
 # Filter out common stop words that cause false positive matches
 STOP_WORDS="^(that|this|with|from|have|been|will|would|should|could|their|them|then|than|when|what|which|where|were|some|each|into|also|more|over|only|does|make|like|just|most|well|very|much|such|even)$"
