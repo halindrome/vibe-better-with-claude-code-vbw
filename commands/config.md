@@ -74,38 +74,43 @@ if [ "$(jq -r '.model_overrides.architect // ""' .vbw-planning/config.json)" != 
 echo "  Lead: $LEAD_DISPLAY | Dev: $DEV_DISPLAY | QA: $QA_DISPLAY | Scout: $SCOUT_DISPLAY | Debugger: $DEBUGGER_DISPLAY | Architect: $ARCHITECT_DISPLAY"
 ```
 
-After the Model Profile section, display Feature Flags section. Read all keys from config.json that start with `v3_` or `v2_`. Display as a compact table:
+After the Model Profile section, display Feature Flags section. Read all keys from config.json that start with `v3_` or `v2_`.
 
-```
-Feature Flags:
-  v3_plan_research_persist: true    Scout writes RESEARCH.md during planning
-  v3_delta_context: true            Incremental context compilation
-  v3_context_cache: true            Cache compiled context between runs
-  v3_metrics: true                  Track execution metrics
-  v3_contract_lite: true            Lightweight agent contracts
-  v3_lock_lite: true                Lightweight file locks
-  v3_validation_gates: true         Pre/post validation checks
-  v3_smart_routing: true            Intelligent agent routing
-  v3_event_log: true                Event logging for debugging
-  v3_schema_validation: true        Validate planning file schemas
-  v3_snapshot_resume: true          Resume from snapshots
-  v3_lease_locks: true              Time-limited file locks
-  v3_event_recovery: true           Recover from event failures
-  v3_monorepo_routing: true         Monorepo-aware agent routing
-  v2_hard_contracts: true           Strict agent contracts
-  v2_hard_gates: true               Strict validation gates
-  v2_typed_protocol: true           Typed agent protocol messages
-  v2_role_isolation: true           Agent role isolation
-  v2_two_phase_completion: true     Two-phase task completion
-  v2_token_budgets: true            Agent token budget tracking
-```
+Render feature flags in the same single-line box style as the settings table with 4 columns:
+- Flag (human-friendly name, no `v2_`/`v3_` prefix)
+- Value
+- Key (internal key, exact config name)
+- Description
+
+Use this label/description mapping:
+
+- Delta context (`v3_delta_context`): Incremental context compilation
+- Context cache (`v3_context_cache`): Cache compiled context between runs
+- Plan research persist (`v3_plan_research_persist`): Scout writes RESEARCH.md during planning
+- Metrics (`v3_metrics`): Track execution metrics
+- Contract lite (`v3_contract_lite`): Lightweight agent contracts
+- Lock lite (`v3_lock_lite`): Lightweight file locks
+- Validation gates (`v3_validation_gates`): Pre/post validation checks
+- Smart routing (`v3_smart_routing`): Intelligent agent routing
+- Event log (`v3_event_log`): Event logging for debugging
+- Schema validation (`v3_schema_validation`): Validate planning file schemas
+- Snapshot resume (`v3_snapshot_resume`): Resume from snapshots
+- Lease locks (`v3_lease_locks`): Time-limited file locks
+- Event recovery (`v3_event_recovery`): Recover from event failures
+- Monorepo routing (`v3_monorepo_routing`): Monorepo-aware agent routing
+- Hard contracts (`v2_hard_contracts`): Strict agent contracts
+- Hard gates (`v2_hard_gates`): Strict validation gates
+- Typed protocol (`v2_typed_protocol`): Typed agent protocol messages
+- Role isolation (`v2_role_isolation`): Agent role isolation
+- Two-phase completion (`v2_two_phase_completion`): Two-phase task completion
+- Token budgets (`v2_token_budgets`): Agent token budget tracking
 
 Only show flags that exist in config.json. Read dynamically:
 ```bash
-jq -r 'to_entries[] | select(.key | startswith("v3_") or startswith("v2_")) | "\(.key): \(.value)"' .vbw-planning/config.json
+jq -r 'to_entries[] | select(.key | startswith("v3_") or startswith("v2_")) | "\(.key)\t\(.value)"' .vbw-planning/config.json
 ```
 
-Display hint after flags: `Toggle with: /vbw:config <flag> true|false`
+Display hint after flags: `Toggle with: /vbw:config <key> true|false`
 
 **Step 2:** AskUserQuestion with up to 5 commonly changed settings (mark current values):
 - Effort: thorough | balanced | fast | turbo

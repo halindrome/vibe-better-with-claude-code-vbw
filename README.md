@@ -132,6 +132,7 @@ Think of it as project management for the post-dignity era of software developme
 - [The Agents](#the-agents)
 - [Effort Profiles](#effort-profiles)
 - [Autonomy Levels](#autonomy-levels)
+- [Feature Flags Reference](#feature-flags-reference)
 - [Project Structure](#project-structure)
 - [Requirements](#requirements)
 - [Contributing](#contributing)
@@ -611,6 +612,53 @@ Autonomy interacts with effort profiles. At `cautious`, plan approval expands to
 | "Already complete" warning | Confirm | Confirm | Skip | Skip |
 | Plan approval (Thorough) | Required | Required | Off | Off |
 | Plan approval (Balanced) | Required | Off | Off | Off |
+
+<br>
+
+## Feature Flags Reference
+
+These are advanced runtime controls surfaced in `/vbw:config`. They are off by default and intended for staged rollout, diagnostics, and protocol hardening.
+
+Toggle any flag with:
+
+```bash
+/vbw:config <flag_key> true
+/vbw:config <flag_key> false
+```
+
+### V3 runtime flags
+
+- `v3_delta_context` — Enable incremental context compilation (changed-file delta/slices).
+- `v3_context_cache` — Cache compiled context between runs.
+- `v3_plan_research_persist` — Persist Scout planning research to `RESEARCH.md`.
+- `v3_metrics` — Track execution/coordination metrics.
+- `v3_contract_lite` — Use lightweight agent contracts (advisory/fail-open mode).
+- `v3_lock_lite` — Use lightweight file-locking for task ownership.
+- `v3_validation_gates` — Enable pre/post validation gate checks.
+- `v3_smart_routing` — Enable complexity-aware agent routing.
+- `v3_event_log` — Emit event log entries for lifecycle/debugging.
+- `v3_schema_validation` — Validate planning file schemas.
+- `v3_snapshot_resume` — Enable snapshot-based resume checkpoints.
+- `v3_lease_locks` — Use time-limited lease locks (takes precedence over `v3_lock_lite`).
+- `v3_event_recovery` — Recover state from event logs after failures.
+- `v3_monorepo_routing` — Enable monorepo-aware routing logic.
+
+### V2 protocol-hardening flags
+
+- `v2_hard_contracts` — Enforce strict contracts (hard-fail on violations).
+- `v2_hard_gates` — Enforce strict validation gates.
+- `v2_typed_protocol` — Enforce typed event/message protocol.
+- `v2_role_isolation` — Enforce stronger role/file isolation constraints.
+- `v2_two_phase_completion` — Require artifact registration before task completion.
+- `v2_token_budgets` — Enforce token-budget checks/truncation behavior.
+
+### Flag dependencies
+
+- `v3_event_recovery` requires `v3_event_log=true`.
+- `v2_hard_gates` requires `v2_hard_contracts=true`.
+- `v2_two_phase_completion` requires `v3_event_log=true`.
+
+For implementation details, see `references/execute-protocol.md` and script-level checks in `scripts/session-start.sh`.
 
 <br>
 
