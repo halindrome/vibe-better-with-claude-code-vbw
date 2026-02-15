@@ -231,10 +231,10 @@ case "$ACTION" in
     log_action "cleanup started"
 
     # Collect counts before cleanup
-    local teams_count=$(scan_stale_teams | wc -l | tr -d ' ')
-    local orphan_count=$(scan_orphaned_processes | wc -l | tr -d ' ')
-    local pid_count=$(scan_dangling_pids | wc -l | tr -d ' ')
-    local marker_count=$(scan_stale_markers | wc -l | tr -d ' ')
+    teams_count=$(scan_stale_teams | wc -l | tr -d ' ')
+    orphan_count=$(scan_orphaned_processes | wc -l | tr -d ' ')
+    pid_count=$(scan_dangling_pids | wc -l | tr -d ' ')
+    marker_count=$(scan_stale_markers | wc -l | tr -d ' ')
 
     cleanup_stale_teams
     cleanup_orphaned_processes
