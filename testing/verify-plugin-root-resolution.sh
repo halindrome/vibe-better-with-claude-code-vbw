@@ -54,10 +54,13 @@ for file in "$COMMANDS_DIR"/*.md; do
   # Count lines with CLAUDE_PLUGIN_ROOT that are NOT in any safe context.
   # A line is safe if it matches: !` backtick expression, @ file reference, or the preamble itself.
   # We pipeline grep to filter out safe lines, then count what remains.
+  # The preamble may be the simple form (echo ${CLAUDE_PLUGIN_ROOT}) or the
+  # dual-fallback form (echo ${CLAUDE_PLUGIN_ROOT:-$(ls ...)}).
   unsafe_count=$(grep 'CLAUDE_PLUGIN_ROOT' "$file" \
     | grep -v '!`[^`]*CLAUDE_PLUGIN_ROOT' \
     | grep -v '@${CLAUDE_PLUGIN_ROOT}' \
-    | grep -vc '`!`echo \${CLAUDE_PLUGIN_ROOT}`' || true)
+    | grep -v 'Plugin root:' \
+    | grep -vc '`!`echo \${CLAUDE_PLUGIN_ROOT' || true)
 
   # If no unsafe references, no preamble needed
   if [ "$unsafe_count" -eq 0 ]; then
@@ -65,8 +68,8 @@ for file in "$COMMANDS_DIR"/*.md; do
     continue
   fi
 
-  # There are unsafe references — check for the preamble
-  if grep -q '!`echo \${CLAUDE_PLUGIN_ROOT}`' "$file"; then
+  # There are unsafe references — check for the preamble (simple or dual-fallback form)
+  if grep -q 'Plugin root:.*!`echo \${CLAUDE_PLUGIN_ROOT' "$file"; then
     pass "$base: has Plugin root preamble ($unsafe_count model-executed refs resolved)"
   else
     fail "$base: $unsafe_count CLAUDE_PLUGIN_ROOT refs in model-executed context but no Plugin root preamble"
