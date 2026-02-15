@@ -23,10 +23,10 @@ CONFIG_PATH="$2"
 EFFORT_INPUT="${3:-}"
 
 case "$AGENT" in
-  lead|dev|qa|scout|debugger|architect)
+  lead|dev|qa|scout|debugger|architect|docs)
     ;;
   *)
-    echo "Invalid agent name '$AGENT'. Valid: lead, dev, qa, scout, debugger, architect" >&2
+    echo "Invalid agent name '$AGENT'. Valid: lead, dev, qa, scout, debugger, architect, docs" >&2
     exit 1
     ;;
 esac
@@ -39,6 +39,7 @@ default_base_turns() {
     debugger) echo 80 ;;
     lead) echo 50 ;;
     dev) echo 75 ;;
+    docs) echo 30 ;;
   esac
 }
 
