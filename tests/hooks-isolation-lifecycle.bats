@@ -469,6 +469,74 @@ load test_helper
   teardown_temp_dir
 }
 
+@test "task-verify allows [analysis-only] tag in task_subject" {
+  setup_temp_dir
+  cd "$TEST_TEMP_DIR"
+  git init -q
+  git config user.email "test@test.com"
+  git config user.name "Test"
+  mkdir -p .vbw-planning
+  # Seed commit is old (no recent commits match)
+  echo "hello" > file.txt
+  git add file.txt
+  git commit -q -m "chore(test): seed commit"
+  # Task subject with [analysis-only] tag should be allowed even without matching commit
+  run bash -c "echo '{\"task_subject\":\"Hypothesis 1: race condition in sync [analysis-only]\"}' | bash '$SCRIPTS_DIR/task-verify.sh'"
+  [ "$status" -eq 0 ]
+  teardown_temp_dir
+}
+
+@test "task-verify allows [analysis-only] tag in task_description fallback" {
+  setup_temp_dir
+  cd "$TEST_TEMP_DIR"
+  git init -q
+  git config user.email "test@test.com"
+  git config user.name "Test"
+  mkdir -p .vbw-planning
+  echo "hello" > file.txt
+  git add file.txt
+  git commit -q -m "chore(test): seed commit"
+  # Tag in description (subject empty) should also be allowed
+  run bash -c "echo '{\"task_description\":\"Investigate memory leak [analysis-only]\"}' | bash '$SCRIPTS_DIR/task-verify.sh'"
+  [ "$status" -eq 0 ]
+  teardown_temp_dir
+}
+
+@test "task-verify still blocks normal tasks without matching commit" {
+  setup_temp_dir
+  cd "$TEST_TEMP_DIR"
+  git init -q
+  git config user.email "test@test.com"
+  git config user.name "Test"
+  mkdir -p .vbw-planning
+  echo "hello" > file.txt
+  git add file.txt
+  git commit -q -m "chore(test): seed commit"
+  # Normal task without [analysis-only] and no matching commit should block
+  run bash -c "echo '{\"task_subject\":\"Implement caching layer for database queries\"}' | bash '$SCRIPTS_DIR/task-verify.sh'"
+  [ "$status" -eq 2 ]
+  teardown_temp_dir
+}
+
+@test "task-verify allows [analysis-only] even with no recent commits" {
+  setup_temp_dir
+  cd "$TEST_TEMP_DIR"
+  git init -q
+  git config user.email "test@test.com"
+  git config user.name "Test"
+  mkdir -p .vbw-planning
+  # Seed commit with a backdated timestamp (well outside 2-hour window)
+  echo "hello" > file.txt
+  git add file.txt
+  GIT_AUTHOR_DATE="2020-01-01T00:00:00" GIT_COMMITTER_DATE="2020-01-01T00:00:00" \
+    git commit -q -m "chore(test): ancient seed commit"
+  # Without the fix, this would exit 2 ("No recent commits found") before
+  # reaching the [analysis-only] check
+  run bash -c "echo '{\"task_subject\":\"Hypothesis 2: deadlock in worker pool [analysis-only]\"}' | bash '$SCRIPTS_DIR/task-verify.sh'"
+  [ "$status" -eq 0 ]
+  teardown_temp_dir
+}
+
 @test "hooks matcher includes prefixed VBW agent names" {
   run bash -c "grep -q 'vbw:vbw-scout' '$PROJECT_ROOT/hooks/hooks.json'"
   [ "$status" -eq 0 ]
