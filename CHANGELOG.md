@@ -2,6 +2,15 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.21.7] - 2026-02-15
+
+### Added
+
+- **`planning_tracking` + `auto_push` config** — Control how VBW planning artifacts are tracked in git. Three modes: `manual` (default), `ignore` (auto-gitignore `.vbw-planning/`), `commit` (auto-commit at lifecycle boundaries: bootstrap, plan, execute, archive). Push behavior: `never`/`after_phase`/`always`. New `scripts/planning-git.sh` with sync-ignore, commit-boundary, and push-after-phase subcommands. `/vbw:init` asks preference during setup. (PR #59, @dpearson2699)
+- **Contributors section in README** — Added [@dpearson2699](https://github.com/dpearson2699), [@halindrome](https://github.com/halindrome), and [@navin-moorthy](https://github.com/navin-moorthy).
+
+---
+
 ## [1.21.6] - 2026-02-15
 
 ### Fixed
