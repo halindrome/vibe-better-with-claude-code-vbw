@@ -10,69 +10,9 @@ teardown() {
   teardown_temp_dir
 }
 
-# Helper: Run the migration logic extracted from session-start.sh
+# Helper: Run the shared migration script
 run_migration() {
-  local config_file="$TEST_TEMP_DIR/.vbw-planning/config.json"
-  local EXPECTED_FLAG_COUNT=23
-
-  # First, handle model_profile migration (separate from flag migration)
-  if ! jq -e 'has("model_profile")' "$config_file" >/dev/null 2>&1; then
-    TMP=$(mktemp)
-    jq '. + {model_profile: "quality", model_overrides: {}}' "$config_file" > "$TMP" && mv "$TMP" "$config_file"
-  fi
-
-  # Handle prefer_teams migration (separate from flag migration)
-  if ! jq -e 'has("prefer_teams")' "$config_file" >/dev/null 2>&1; then
-    TMP=$(mktemp)
-    jq '. + {prefer_teams: "always"}' "$config_file" > "$TMP" && mv "$TMP" "$config_file"
-  fi
-
-  # Check if migration is needed
-  CURRENT_FLAG_COUNT=$(jq '[
-    has("context_compiler"), has("v3_delta_context"), has("v3_context_cache"),
-    has("v3_plan_research_persist"), has("v3_metrics"), has("v3_contract_lite"),
-    has("v3_lock_lite"), has("v3_validation_gates"), has("v3_smart_routing"),
-    has("v3_event_log"), has("v3_schema_validation"), has("v3_snapshot_resume"),
-    has("v3_lease_locks"), has("v3_event_recovery"), has("v3_monorepo_routing"),
-    has("v2_hard_contracts"), has("v2_hard_gates"), has("v2_typed_protocol"),
-    has("v2_role_isolation"), has("v2_two_phase_completion"), has("v2_token_budgets"),
-    has("model_overrides"), has("prefer_teams")
-  ] | map(select(.)) | length' "$config_file" 2>/dev/null)
-
-  if [ "${CURRENT_FLAG_COUNT:-0}" -lt "$EXPECTED_FLAG_COUNT" ]; then
-    TMP=$(mktemp)
-    if jq '
-      . +
-      (if has("context_compiler") then {} else {context_compiler: true} end) +
-      (if has("v3_delta_context") then {} else {v3_delta_context: false} end) +
-      (if has("v3_context_cache") then {} else {v3_context_cache: false} end) +
-      (if has("v3_plan_research_persist") then {} else {v3_plan_research_persist: false} end) +
-      (if has("v3_metrics") then {} else {v3_metrics: false} end) +
-      (if has("v3_contract_lite") then {} else {v3_contract_lite: false} end) +
-      (if has("v3_lock_lite") then {} else {v3_lock_lite: false} end) +
-      (if has("v3_validation_gates") then {} else {v3_validation_gates: false} end) +
-      (if has("v3_smart_routing") then {} else {v3_smart_routing: false} end) +
-      (if has("v3_event_log") then {} else {v3_event_log: false} end) +
-      (if has("v3_schema_validation") then {} else {v3_schema_validation: false} end) +
-      (if has("v3_snapshot_resume") then {} else {v3_snapshot_resume: false} end) +
-      (if has("v3_lease_locks") then {} else {v3_lease_locks: false} end) +
-      (if has("v3_event_recovery") then {} else {v3_event_recovery: false} end) +
-      (if has("v3_monorepo_routing") then {} else {v3_monorepo_routing: false} end) +
-      (if has("v2_hard_contracts") then {} else {v2_hard_contracts: false} end) +
-      (if has("v2_hard_gates") then {} else {v2_hard_gates: false} end) +
-      (if has("v2_typed_protocol") then {} else {v2_typed_protocol: false} end) +
-      (if has("v2_role_isolation") then {} else {v2_role_isolation: false} end) +
-      (if has("v2_two_phase_completion") then {} else {v2_two_phase_completion: false} end) +
-      (if has("v2_token_budgets") then {} else {v2_token_budgets: false} end)
-    ' "$config_file" > "$TMP" 2>/dev/null; then
-      mv "$TMP" "$config_file"
-      return 0
-    else
-      rm -f "$TMP"
-      return 1
-    fi
-  fi
-  return 0
+  bash "$SCRIPTS_DIR/migrate-config.sh" "$TEST_TEMP_DIR/.vbw-planning/config.json"
 }
 
 @test "migration handles empty config" {
@@ -156,13 +96,13 @@ EOF
   # Create config with all flags present
   create_test_config
 
-  # Record original content
-  BEFORE=$(cat "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  # Record normalized content
+  BEFORE=$(jq -S . "$TEST_TEMP_DIR/.vbw-planning/config.json")
 
   run_migration
 
   # Verify no changes (idempotent when all flags present)
-  AFTER=$(cat "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  AFTER=$(jq -S . "$TEST_TEMP_DIR/.vbw-planning/config.json")
   [ "$BEFORE" = "$AFTER" ]
 }
 
@@ -264,6 +204,135 @@ EOF
   run jq -r '.prefer_teams' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "never" ]
+}
+
+@test "migration adds missing agent_max_turns defaults" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced"
+}
+EOF
+
+  run_migration
+
+  run jq -r '.agent_max_turns.scout' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "15" ]
+
+  run jq -r '.agent_max_turns.debugger' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "80" ]
+}
+
+@test "migration preserves existing agent_max_turns values" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "agent_max_turns": {
+    "debugger": 120,
+    "dev": 90
+  }
+}
+EOF
+
+  run_migration
+
+  run jq -r '.agent_max_turns.debugger' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "120" ]
+
+  run jq -r '.agent_max_turns.dev' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "90" ]
+}
+
+@test "migration renames agent_teams to prefer_teams and removes stale key" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "agent_teams": true
+}
+EOF
+
+  run_migration
+
+  run jq -r '.prefer_teams' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "always" ]
+
+  run jq -r 'has("agent_teams")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "false" ]
+}
+
+@test "migration removes stale agent_teams when prefer_teams already exists" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "prefer_teams": "when_parallel",
+  "agent_teams": false
+}
+EOF
+
+  run_migration
+
+  run jq -r '.prefer_teams' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "when_parallel" ]
+
+  run jq -r 'has("agent_teams")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "false" ]
+}
+
+@test "migration maps agent_teams false to prefer_teams auto" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "agent_teams": false
+}
+EOF
+
+  run_migration
+
+  run jq -r '.prefer_teams' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "auto" ]
+}
+
+@test "migration backfills all missing defaults keys" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced"
+}
+EOF
+
+  run jq -s '.[0] as $d | .[1] as $c | [$d | keys[] | select($c[.] == null)] | length' "$CONFIG_DIR/defaults.json" "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  BEFORE_MISSING="$output"
+  [ "$BEFORE_MISSING" -gt 0 ]
+
+  run_migration
+
+  run jq -s '.[0] as $d | .[1] as $c | [$d | keys[] | select($c[.] == null)] | length' "$CONFIG_DIR/defaults.json" "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "0" ]
+}
+
+@test "migration --print-added returns number of inserted defaults" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced"
+}
+EOF
+
+  run jq -s '.[0] as $d | .[1] as $c | [$d | keys[] | select($c[.] == null)] | length' "$CONFIG_DIR/defaults.json" "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  EXPECTED_ADDED="$output"
+
+  run bash "$SCRIPTS_DIR/migrate-config.sh" --print-added "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$EXPECTED_ADDED" ]
 }
 
 @test "EXPECTED_FLAG_COUNT is 23 after prefer_teams addition" {

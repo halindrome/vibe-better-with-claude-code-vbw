@@ -2,6 +2,18 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.21.6] - 2026-02-15
+
+### Fixed
+
+- **`scripts/migrate-config.sh`** — Brownfield config migration extracted into shared script. SessionStart hook and `/vbw:config` both run migration, ensuring missing v2/v3 flags are backfilled even when hooks didn't fire. Legacy `agent_teams` key renamed to `prefer_teams` and cleaned up. (PR #57, @dpearson2699)
+
+### Added
+
+- **`scripts/migrate-config.sh --print-added`** — Generic defaults merge from `config/defaults.json`. Future config keys auto-backfill without code changes. `/vbw:config` now shows a notice when settings were added. (PR #58, @dpearson2699)
+
+---
+
 ## [1.21.5] - 2026-02-15
 
 ### Fixed

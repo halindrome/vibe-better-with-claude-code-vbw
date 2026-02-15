@@ -139,9 +139,13 @@ If compilation fails, proceed without it — Dev reads files directly.
 ```bash
 DEV_MODEL=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh dev .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json)
 if [ $? -ne 0 ]; then echo "$DEV_MODEL" >&2; exit 1; fi
+DEV_MAX_TURNS=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh dev .vbw-planning/config.json "{effort}")
+if [ $? -ne 0 ]; then echo "$DEV_MAX_TURNS" >&2; exit 1; fi
 
 QA_MODEL=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh qa .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json)
 if [ $? -ne 0 ]; then echo "$QA_MODEL" >&2; exit 1; fi
+QA_MAX_TURNS=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh qa .vbw-planning/config.json "{effort}")
+if [ $? -ne 0 ]; then echo "$QA_MAX_TURNS" >&2; exit 1; fi
 ```
 
 For each uncompleted plan, TaskCreate:
@@ -159,7 +163,7 @@ activeForm: "Executing {NN-MM}"
 
 Display: `◆ Spawning Dev teammate (${DEV_MODEL})...`
 
-**CRITICAL:** Pass `model: "${DEV_MODEL}"` parameter to the Task tool invocation when spawning Dev teammates.
+**CRITICAL:** Pass `model: "${DEV_MODEL}"` and `maxTurns: ${DEV_MAX_TURNS}` parameters to the Task tool invocation when spawning Dev teammates.
 **CRITICAL:** When team was created (2+ plans), pass `team_name: "vbw-phase-{NN}"` and `name: "dev-{MM}"` parameters to each Task tool invocation. This enables colored agent labels and status bar entries.
 
 Wire dependencies via TaskUpdate: read `depends_on` from each plan's frontmatter, add `addBlockedBy: [task IDs of dependency plans]`. Plans with empty depends_on start immediately.
@@ -359,7 +363,7 @@ Display: `◆ Spawning QA agent (${QA_MODEL})...`
 
 **Post-build QA (Fast, QA_TIMING=post-build):** Spawn QA after ALL plans complete. Include in task description: "Phase context: {phase-dir}/.context-qa.md (if compiled). Model: ${QA_MODEL}. Your verification tier is {tier}. Run {5-10|15-25|30+} checks per the tier definitions in your agent protocol." Persist to `{phase-dir}/{phase}-VERIFICATION.md`.
 
-**CRITICAL:** Pass `model: "${QA_MODEL}"` parameter to the Task tool invocation when spawning QA agents.
+**CRITICAL:** Pass `model: "${QA_MODEL}"` and `maxTurns: ${QA_MAX_TURNS}` parameters to the Task tool invocation when spawning QA agents.
 **CRITICAL:** When team was created (2+ plans), pass `team_name: "vbw-phase-{NN}"` and `name: "qa"` (or `name: "qa-wave{W}"` for per-wave QA) parameters to each QA Task tool invocation.
 
 ### Step 4.5: Human acceptance testing (UAT)

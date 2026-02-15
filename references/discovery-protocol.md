@@ -42,9 +42,9 @@ Bootstrap Discovery follows an eight-step flow: domain research → round-based 
 
 **Process:**
 1. Extract domain from project description (e.g., "recipe app" → "recipe management", "e-commerce site" → "e-commerce")
-2. Resolve Scout agent model via `resolve-agent-model.sh`
+2. Resolve Scout agent model via `resolve-agent-model.sh` and turn budget via `resolve-agent-max-turns.sh` (using configured effort profile)
 3. Spawn Scout agent via Task tool with prompt: "Research the {domain} domain and write `.vbw-planning/domain-research.md` with four sections: ## Table Stakes (features every {domain} app has), ## Common Pitfalls (what projects get wrong), ## Architecture Patterns (how similar apps are structured), ## Competitor Landscape (existing products). Use WebSearch. Be concise (2-3 bullets per section)."
-4. Set 120-second timeout for research task
+4. Pass `maxTurns: ${SCOUT_MAX_TURNS}` and set 120-second timeout for research task
 
 **On Success:**
 - Read domain-research.md

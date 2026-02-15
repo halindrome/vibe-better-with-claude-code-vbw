@@ -38,6 +38,14 @@ create_test_config() {
   "custom_profiles": {},
   "model_profile": "quality",
   "model_overrides": {},
+  "agent_max_turns": {
+    "scout": 15,
+    "qa": 25,
+    "architect": 30,
+    "debugger": 80,
+    "lead": 50,
+    "dev": 75
+  },
   "context_compiler": true,
   "v3_delta_context": false,
   "v3_context_cache": false,

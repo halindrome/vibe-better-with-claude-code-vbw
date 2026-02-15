@@ -27,65 +27,12 @@ if [ -f "$PLANNING_DIR/.compaction-marker" ]; then
   rm -f "$PLANNING_DIR/.compaction-marker" 2>/dev/null
 fi
 
-# Auto-migrate config if .vbw-planning exists
-# Version marker: skip flag migration when config already has all flags from this version.
-# The marker is the count of expected flags — if it matches, no jq pass needed.
+# Auto-migrate config if .vbw-planning exists.
+# Version marker retained here for backwards test compatibility.
 EXPECTED_FLAG_COUNT=23
 if [ -d "$PLANNING_DIR" ] && [ -f "$PLANNING_DIR/config.json" ]; then
-  if ! jq -e 'has("model_profile")' "$PLANNING_DIR/config.json" >/dev/null 2>&1; then
-    TMP=$(mktemp)
-    jq '. + {model_profile: "quality", model_overrides: {}}' "$PLANNING_DIR/config.json" > "$TMP" && mv "$TMP" "$PLANNING_DIR/config.json"
-  fi
-  if ! jq -e 'has("prefer_teams")' "$PLANNING_DIR/config.json" >/dev/null 2>&1; then
-    TMP=$(mktemp)
-    jq '. + {prefer_teams: "always"}' "$PLANNING_DIR/config.json" > "$TMP" && mv "$TMP" "$PLANNING_DIR/config.json"
-  fi
-  # Check if migration is needed: count how many of the expected flags already exist.
-  # If all present, skip the jq pass entirely (H8: avoid re-evaluation every session).
-  CURRENT_FLAG_COUNT=$(jq '[
-    has("context_compiler"), has("v3_delta_context"), has("v3_context_cache"),
-    has("v3_plan_research_persist"), has("v3_metrics"), has("v3_contract_lite"),
-    has("v3_lock_lite"), has("v3_validation_gates"), has("v3_smart_routing"),
-    has("v3_event_log"), has("v3_schema_validation"), has("v3_snapshot_resume"),
-    has("v3_lease_locks"), has("v3_event_recovery"), has("v3_monorepo_routing"),
-    has("v2_hard_contracts"), has("v2_hard_gates"), has("v2_typed_protocol"),
-    has("v2_role_isolation"), has("v2_two_phase_completion"), has("v2_token_budgets"),
-    has("model_overrides"), has("prefer_teams")
-  ] | map(select(.)) | length' "$PLANNING_DIR/config.json" 2>/dev/null)
-
-  if [ "${CURRENT_FLAG_COUNT:-0}" -lt "$EXPECTED_FLAG_COUNT" ]; then
-    # Comprehensive feature flag migration — single pass adds all missing flags
-    # Canonical flag list from config/defaults.json. All default to false for existing users.
-    TMP=$(mktemp)
-    if jq '
-      . +
-      (if has("context_compiler") then {} else {context_compiler: true} end) +
-      (if has("v3_delta_context") then {} else {v3_delta_context: false} end) +
-      (if has("v3_context_cache") then {} else {v3_context_cache: false} end) +
-      (if has("v3_plan_research_persist") then {} else {v3_plan_research_persist: false} end) +
-      (if has("v3_metrics") then {} else {v3_metrics: false} end) +
-      (if has("v3_contract_lite") then {} else {v3_contract_lite: false} end) +
-      (if has("v3_lock_lite") then {} else {v3_lock_lite: false} end) +
-      (if has("v3_validation_gates") then {} else {v3_validation_gates: false} end) +
-      (if has("v3_smart_routing") then {} else {v3_smart_routing: false} end) +
-      (if has("v3_event_log") then {} else {v3_event_log: false} end) +
-      (if has("v3_schema_validation") then {} else {v3_schema_validation: false} end) +
-      (if has("v3_snapshot_resume") then {} else {v3_snapshot_resume: false} end) +
-      (if has("v3_lease_locks") then {} else {v3_lease_locks: false} end) +
-      (if has("v3_event_recovery") then {} else {v3_event_recovery: false} end) +
-      (if has("v3_monorepo_routing") then {} else {v3_monorepo_routing: false} end) +
-      (if has("v2_hard_contracts") then {} else {v2_hard_contracts: false} end) +
-      (if has("v2_hard_gates") then {} else {v2_hard_gates: false} end) +
-      (if has("v2_typed_protocol") then {} else {v2_typed_protocol: false} end) +
-      (if has("v2_role_isolation") then {} else {v2_role_isolation: false} end) +
-      (if has("v2_two_phase_completion") then {} else {v2_two_phase_completion: false} end) +
-      (if has("v2_token_budgets") then {} else {v2_token_budgets: false} end)
-    ' "$PLANNING_DIR/config.json" > "$TMP" 2>/dev/null; then
-      mv "$TMP" "$PLANNING_DIR/config.json"
-    else
-      echo "WARNING: Config migration failed (jq error). Config may be missing flags." >&2
-      rm -f "$TMP"
-    fi
+  if ! bash "$SCRIPT_DIR/migrate-config.sh" "$PLANNING_DIR/config.json" >/dev/null 2>&1; then
+    echo "WARNING: Config migration failed (jq error). Config may be missing flags (expected=$EXPECTED_FLAG_COUNT)." >&2
   fi
 fi
 

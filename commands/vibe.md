@@ -123,9 +123,9 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
 - **B2: REQUIREMENTS.md (Discovery)** -- Behavior depends on DISCOVERY_DEPTH:
   - **B2.1: Domain Research (if not skip):** If DISCOVERY_DEPTH != skip:
     1. Extract domain from user's project description (the $NAME or $DESCRIPTION from B1)
-    2. Resolve Scout model via `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh scout .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json`
+   2. Resolve Scout model via `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh scout .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json` and Scout max turns via `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh scout .vbw-planning/config.json "$(jq -r '.effort // \"balanced\"' .vbw-planning/config.json 2>/dev/null)"`
     3. Spawn Scout agent via Task tool with prompt: "Research the {domain} domain and write `.vbw-planning/domain-research.md` with four sections: ## Table Stakes (features every {domain} app has), ## Common Pitfalls (what projects get wrong), ## Architecture Patterns (how similar apps are structured), ## Competitor Landscape (existing products). Use WebSearch. Be concise (2-3 bullets per section)."
-    4. Set `model: "${SCOUT_MODEL}"` and `timeout: 120000` in Task tool invocation
+   4. Set `model: "${SCOUT_MODEL}"`, `maxTurns: ${SCOUT_MAX_TURNS}`, and `timeout: 120000` in Task tool invocation
     5. On success: Read domain-research.md. Extract brief summary (3-5 lines max): (1) Pick 1-2 most surprising table stakes from ## Table Stakes, (2) Pick 1 high-impact pitfall from ## Common Pitfalls, (3) Mention 1 competitor pattern from ## Competitor Landscape. Use plain language (no jargon). Format as narrative, not bullet list. Example: "Most recipe apps need offline access, ingredient scaling, and meal planning — users expect these out of the box. A common mistake is over-complicating the recipe format, which confuses users. Apps like Paprika prioritize speed over features." Display to user: "◆ Domain Research: {brief summary}\n\n✓ Research complete. Now let's explore your specific needs..."
     6. On failure: Log warning "⚠ Domain research timed out, proceeding with general questions". Display to user: "⚠ Domain research took longer than expected — skipping to questions. (You can re-run `/vbw:vibe` later if you want domain-specific insights.)" Set RESEARCH_AVAILABLE=false, continue to Round 1
     7. Store RESEARCH_AVAILABLE flag for Round 1 context
@@ -593,8 +593,9 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
    - **If missing:** Spawn Scout agent to research the phase goal, requirements, and relevant codebase patterns. Scout writes `{phase}-RESEARCH.md` with sections: `## Findings`, `## Relevant Patterns`, `## Risks`, `## Recommendations`. Resolve Scout model:
      ```bash
      SCOUT_MODEL=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh scout .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json)
+   SCOUT_MAX_TURNS=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh scout .vbw-planning/config.json "{effort}")
      ```
-     Pass `model: "${SCOUT_MODEL}"` to the Task tool.
+   Pass `model: "${SCOUT_MODEL}"` and `maxTurns: ${SCOUT_MAX_TURNS}` to the Task tool.
    - **If exists:** Include it in Lead's context for incremental refresh. Lead may update RESEARCH.md if new information emerges.
    - **On failure:** Log warning, continue planning without research. Do not block.
    - If `v3_plan_research_persist=false` or effort=turbo: skip entirely.
@@ -604,6 +605,7 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
    - Resolve Lead model:
      ```bash
      LEAD_MODEL=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh lead .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json)
+       LEAD_MAX_TURNS=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh lead .vbw-planning/config.json "{effort}")
      if [ $? -ne 0 ]; then
        echo "$LEAD_MODEL" >&2
        exit 1
@@ -627,7 +629,7 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
      When team should NOT be created (Lead-only with when_parallel/auto):
      - Spawn vbw-lead as subagent via Task tool without team (single agent, no team overhead).
    - Spawn vbw-lead as subagent via Task tool with compiled context (or full file list as fallback).
-   - **CRITICAL:** Add `model: "${LEAD_MODEL}"` parameter to the Task tool invocation.
+   - **CRITICAL:** Add `model: "${LEAD_MODEL}"` and `maxTurns: ${LEAD_MAX_TURNS}` parameters to the Task tool invocation.
    - Display `◆ Spawning Lead agent...` -> `✓ Lead agent complete`.
 7. **Validate output:** Verify PLAN.md has valid frontmatter (phase, plan, title, wave, depends_on, must_haves) and tasks. Check wave deps acyclic.
 8. **Present:** Update STATE.md (phase position, plan count, status=Planned). Resolve model profile:

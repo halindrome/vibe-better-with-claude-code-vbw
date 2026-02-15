@@ -24,7 +24,7 @@ Recent commits:
 
 ## Steps
 
-1. **Parse + effort:** Entire $ARGUMENTS = bug description. Map effort: thorough=high, balanced/fast=medium, turbo=low. Read `${CLAUDE_PLUGIN_ROOT}/references/effort-profile-{profile}.md`.
+1. **Parse + effort:** Entire $ARGUMENTS = bug description. Map effort: thorough=high, balanced/fast=medium, turbo=low. Keep effort profile as `EFFORT_PROFILE` (thorough|balanced|fast|turbo). Read `${CLAUDE_PLUGIN_ROOT}/references/effort-profile-{profile}.md`.
 
 2. **Classify ambiguity:** 2+ signals = ambiguous: "intermittent/sometimes/random/unclear/inconsistent/flaky/sporadic/nondeterministic" keywords, multiple root cause areas, generic/missing error, previous reverted fixes in git log. Overrides: `--competing`/`--parallel` = always ambiguous; `--serial` = never.
 
@@ -46,11 +46,13 @@ Decision tree:
   ```bash
   DEBUGGER_MODEL=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh debugger .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json)
   if [ $? -ne 0 ]; then echo "$DEBUGGER_MODEL" >&2; exit 1; fi
+  DEBUGGER_MAX_TURNS=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh debugger .vbw-planning/config.json "$EFFORT_PROFILE")
+  if [ $? -ne 0 ]; then echo "$DEBUGGER_MAX_TURNS" >&2; exit 1; fi
   ```
 - Display: `◆ Spawning Debugger (${DEBUGGER_MODEL})...`
 - Create Agent Team "debug-{timestamp}" via TeamCreate
 - Create 3 tasks via TaskCreate, each with: bug report, ONE hypothesis only (no cross-contamination), working dir, instruction to report via `debugger_report` schema (see `${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md`)
-- Spawn 3 vbw-debugger teammates, one task each. **Add `model: "${DEBUGGER_MODEL}"` parameter to each Task spawn.**
+- Spawn 3 vbw-debugger teammates, one task each. **Add `model: "${DEBUGGER_MODEL}"` and `maxTurns: ${DEBUGGER_MAX_TURNS}` parameters to each Task spawn.**
 - Wait for completion. Synthesize: strongest evidence + highest confidence wins. Multiple confirmed = contributing factors.
 - Winning hypothesis with fix: apply + commit `fix({scope}): {description}`
 - Shutdown: send shutdown to each teammate, wait for approval, re-request if rejected, then TeamDelete.
@@ -60,9 +62,11 @@ Decision tree:
   ```bash
   DEBUGGER_MODEL=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh debugger .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json)
   if [ $? -ne 0 ]; then echo "$DEBUGGER_MODEL" >&2; exit 1; fi
+  DEBUGGER_MAX_TURNS=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh debugger .vbw-planning/config.json "$EFFORT_PROFILE")
+  if [ $? -ne 0 ]; then echo "$DEBUGGER_MAX_TURNS" >&2; exit 1; fi
   ```
 - Display: `◆ Spawning Debugger (${DEBUGGER_MODEL})...`
-- Spawn vbw-debugger as subagent via Task tool. **Add `model: "${DEBUGGER_MODEL}"` parameter.**
+- Spawn vbw-debugger as subagent via Task tool. **Add `model: "${DEBUGGER_MODEL}"` and `maxTurns: ${DEBUGGER_MAX_TURNS}` parameters.**
 ```
 Bug investigation. Effort: {DEBUGGER_EFFORT}.
 Bug report: {description}.

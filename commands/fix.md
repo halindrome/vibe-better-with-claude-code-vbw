@@ -25,8 +25,9 @@ Config: Pre-injected by SessionStart hook.
 3. **Spawn Dev:** Resolve model first:
 ```bash
 DEV_MODEL=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh dev .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json)
+DEV_MAX_TURNS=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh dev .vbw-planning/config.json turbo)
 ```
-Spawn vbw-dev as subagent via Task tool with `model: "${DEV_MODEL}"`:
+Spawn vbw-dev as subagent via Task tool with `model: "${DEV_MODEL}"` and `maxTurns: ${DEV_MAX_TURNS}`:
 ```
 Quick fix (Turbo mode). Effort: low.
 Task: {fix description}.

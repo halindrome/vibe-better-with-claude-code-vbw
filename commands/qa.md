@@ -39,16 +39,18 @@ Note: Continuous verification handled by hooks. This command is for deep, on-dem
 
 ## Steps
 
-1. **Resolve tier:** Priority: --tier flag > --effort flag > config default > Standard. Effort mapping: turbo=skip (exit "QA skipped in turbo mode"), fast=quick, balanced=standard, thorough=deep. Read `${CLAUDE_PLUGIN_ROOT}/references/effort-profile-{profile}.md`. Context overrides: >15 requirements or last phase before ship → Deep.
+1. **Resolve tier:** Priority: --tier flag > --effort flag > config default > Standard. Keep effort profile as `QA_EFFORT_PROFILE` (thorough|balanced|fast|turbo). Effort mapping: turbo=skip (exit "QA skipped in turbo mode"), fast=quick, balanced=standard, thorough=deep. Read `${CLAUDE_PLUGIN_ROOT}/references/effort-profile-{profile}.md`. Context overrides: >15 requirements or last phase before ship → Deep.
 2. **Resolve milestone:** If .vbw-planning/ACTIVE exists, use milestone-scoped paths.
 3. **Spawn QA:**
    - Resolve QA model:
      ```bash
      QA_MODEL=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh qa .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json)
      if [ $? -ne 0 ]; then echo "$QA_MODEL" >&2; exit 1; fi
+       QA_MAX_TURNS=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh qa .vbw-planning/config.json "$QA_EFFORT_PROFILE")
+       if [ $? -ne 0 ]; then echo "$QA_MAX_TURNS" >&2; exit 1; fi
      ```
    - Display: `◆ Spawning QA agent (${QA_MODEL})...`
-   - Spawn vbw-qa as subagent via Task tool. **Add `model: "${QA_MODEL}"` parameter.**
+     - Spawn vbw-qa as subagent via Task tool. **Add `model: "${QA_MODEL}"` and `maxTurns: ${QA_MAX_TURNS}` parameters.**
 ```
 Verify phase {N}. Tier: {ACTIVE_TIER}.
 Plans: {paths to PLAN.md files}
