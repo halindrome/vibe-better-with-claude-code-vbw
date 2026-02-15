@@ -4,6 +4,7 @@
 #   - .hook-errors.log (hook and cleanup logs)
 #   - .watchdog-pid (tmux watchdog PID)
 #   - .watchdog.log (tmux watchdog logs)
+#   - .snapshots/ — agent state snapshots (covered by .vbw-planning/ exclusion)
 .vbw-planning/
 .planning/
 
