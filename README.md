@@ -515,8 +515,8 @@ Here's when each one shows up to work:
   │    PostToolUse ──── Validates SUMMARY.md on write, checks commit format,      │
   │                     validates frontmatter descriptions, dispatches skill      │
   │                     hooks, updates execution state                            │
-  │    SubagentStart ── Writes active agent marker for cost attribution           │
-  │    SubagentStop ─── Validates SUMMARY.md structure on subagent completion     │
+  │    SubagentStart ── Writes agent marker (role normalization, concurrency-safe)│
+  │    SubagentStop ─── Validates SUMMARY.md, cleans markers, corruption recovery│
   │    TeammateIdle ─── Tiered SUMMARY.md gate (1-plan grace, 2+ gap blocks)     │
   │    TaskCompleted ── Verifies task-related commit via keyword matching         │
   │                                                                               │
