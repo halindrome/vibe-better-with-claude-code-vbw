@@ -362,6 +362,38 @@ if [ -d "$PLANNING_DIR" ]; then
   cleanup_orphaned_agents || true
 fi
 
+# --- tmux Detach Watchdog ---
+# Launch watchdog when in tmux to cleanup orphaned agents on detach.
+# Watchdog runs in background and monitors for session detachment.
+if [ -n "${TMUX:-}" ] && [ -d "$PLANNING_DIR" ]; then
+  WATCHDOG_PID_FILE="$PLANNING_DIR/.watchdog-pid"
+
+  # Check if watchdog already running
+  EXISTING_WATCHDOG=""
+  if [ -f "$WATCHDOG_PID_FILE" ]; then
+    EXISTING_WATCHDOG=$(cat "$WATCHDOG_PID_FILE" 2>/dev/null || true)
+    # Validate it's still alive
+    if [ -n "$EXISTING_WATCHDOG" ] && ! kill -0 "$EXISTING_WATCHDOG" 2>/dev/null; then
+      EXISTING_WATCHDOG=""  # Dead, will respawn
+      rm -f "$WATCHDOG_PID_FILE" 2>/dev/null || true
+    fi
+  fi
+
+  # Spawn watchdog if not running
+  if [ -z "$EXISTING_WATCHDOG" ] && [ -f "$SCRIPT_DIR/tmux-watchdog.sh" ]; then
+    # Extract session name from $TMUX
+    SESSION=$(tmux display-message -p '#S' 2>/dev/null || true)
+    if [ -n "$SESSION" ]; then
+      # Launch in background, disown to survive session-start exit
+      bash "$SCRIPT_DIR/tmux-watchdog.sh" "$SESSION" >/dev/null 2>&1 &
+      WATCHDOG_PID=$!
+      echo "$WATCHDOG_PID" > "$WATCHDOG_PID_FILE"
+      # Disown to prevent job control messages
+      disown "$WATCHDOG_PID" 2>/dev/null || true
+    fi
+  fi
+fi
+
 # --- Project state ---
 
 if [ ! -d "$PLANNING_DIR" ]; then
