@@ -392,7 +392,7 @@ Merges 10 pull requests from **[@dpearson2699](https://github.com/dpearson2699)*
 
 ### Tests
 
-- **86 new tests** across 5 new test files: phase0-bugfix-scripts.bats (10), phase0-bugfix-verify.bats (16), token-budgets.bats (12), context-index.bats (6), control-plane.bats (18), rollout-stage.bats (10), token-baseline.bats (10). Plus 4 context metadata tests. Test suite: 237 → 323 (zero regressions).
+- **86 new tests** across 5 new test files: hooks-isolation-lifecycle.bats (10), phase0-bugfix-verify.bats (16), token-budgets.bats (12), context-index.bats (6), control-plane.bats (18), rollout-stage.bats (10), token-baseline.bats (10). Plus 4 context metadata tests. Test suite: 237 → 323 (zero regressions).
 
 ---
 

@@ -98,7 +98,7 @@
     ],
     "SubagentStart": [
       {
-        "matcher": "vbw-lead|vbw-dev|vbw-qa|vbw-scout|vbw-debugger|vbw-architect",
+        "matcher": "vbw-lead|vbw-dev|vbw-qa|vbw-scout|vbw-debugger|vbw-architect|vbw:vbw-lead|vbw:vbw-dev|vbw:vbw-qa|vbw:vbw-scout|vbw:vbw-debugger|vbw:vbw-architect|lead|dev|qa|scout|debugger|architect|team-lead|team-dev|team-qa|team-scout|team-debugger|team-architect",
         "hooks": [
           {
             "type": "command",
@@ -110,7 +110,7 @@
     ],
     "SubagentStop": [
       {
-        "matcher": "vbw-lead|vbw-dev|vbw-qa|vbw-scout|vbw-debugger|vbw-architect",
+        "matcher": "vbw-lead|vbw-dev|vbw-qa|vbw-scout|vbw-debugger|vbw-architect|vbw:vbw-lead|vbw:vbw-dev|vbw:vbw-qa|vbw:vbw-scout|vbw:vbw-debugger|vbw:vbw-architect|lead|dev|qa|scout|debugger|architect|team-lead|team-dev|team-qa|team-scout|team-debugger|team-architect",
         "hooks": [
           {
             "type": "command",
@@ -120,7 +120,7 @@
         ]
       },
       {
-        "matcher": "vbw-lead|vbw-dev|vbw-qa|vbw-scout|vbw-debugger|vbw-architect",
+        "matcher": "vbw-lead|vbw-dev|vbw-qa|vbw-scout|vbw-debugger|vbw-architect|vbw:vbw-lead|vbw:vbw-dev|vbw:vbw-qa|vbw:vbw-scout|vbw:vbw-debugger|vbw:vbw-architect|lead|dev|qa|scout|debugger|architect|team-lead|team-dev|team-qa|team-scout|team-debugger|team-architect",
         "hooks": [
           {
             "type": "command",
@@ -132,7 +132,7 @@
     ],
     "TeammateIdle": [
       {
-        "matcher": "vbw-lead|vbw-dev|vbw-qa|vbw-scout|vbw-debugger|vbw-architect",
+        "matcher": "vbw-lead|vbw-dev|vbw-qa|vbw-scout|vbw-debugger|vbw-architect|vbw:vbw-lead|vbw:vbw-dev|vbw:vbw-qa|vbw:vbw-scout|vbw:vbw-debugger|vbw:vbw-architect|lead|dev|qa|scout|debugger|architect|team-lead|team-dev|team-qa|team-scout|team-debugger|team-architect",
         "hooks": [
           {
             "type": "command",
@@ -144,7 +144,7 @@
     ],
     "TaskCompleted": [
       {
-        "matcher": "vbw-lead|vbw-dev|vbw-qa|vbw-scout|vbw-debugger|vbw-architect",
+        "matcher": "vbw-lead|vbw-dev|vbw-qa|vbw-scout|vbw-debugger|vbw-architect|vbw:vbw-lead|vbw:vbw-dev|vbw:vbw-qa|vbw:vbw-scout|vbw:vbw-debugger|vbw:vbw-architect|lead|dev|qa|scout|debugger|architect|team-lead|team-dev|team-qa|team-scout|team-debugger|team-architect",
         "hooks": [
           {
             "type": "command",

@@ -100,7 +100,8 @@ Displays before/after cost impact estimate.
 
 ## Implementation Notes
 - Model resolution: `scripts/resolve-agent-model.sh` reads config, applies profile preset, merges overrides
-- Task tool integration: All agent-spawning commands pass explicit `model` parameter
+- Turn-budget resolution: `scripts/resolve-agent-max-turns.sh` reads config `agent_max_turns` and scales by effort. Set a value to `false` or `0` to give that agent unlimited turns (the `maxTurns` parameter is omitted from the Task tool call)
+- Task tool integration: All agent-spawning commands pass explicit `model` and `maxTurns` parameters (unless maxTurns resolves to 0, in which case it is omitted)
 - Turbo effort bypasses model logic (no agents spawned, direct execution)
 - Model names: `opus` = Claude Opus 4.6, `sonnet` = Claude Sonnet 4.5, `haiku` = Claude Haiku 3.5
 

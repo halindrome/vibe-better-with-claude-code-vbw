@@ -9,14 +9,60 @@ INPUT=$(cat)
 PROMPT=$(echo "$INPUT" | jq -r '.prompt // .content // ""' 2>/dev/null)
 [ -z "$PROMPT" ] && exit 0
 
+is_expanded_vbw_prompt() {
+  local prompt="$1"
+  local frontmatter
+
+  # Require YAML frontmatter at the top of the prompt (first non-empty line is ---)
+  if ! printf '%s\n' "$prompt" | awk '
+    BEGIN { saw = 0 }
+    /^[[:space:]]*$/ { next }
+    {
+      saw = 1
+      if ($0 ~ /^[[:space:]]*---[[:space:]]*$/) {
+        exit 0
+      }
+      exit 1
+    }
+    END {
+      if (!saw) {
+        exit 1
+      }
+    }
+  '; then
+    return 1
+  fi
+
+  frontmatter=$(printf '%s\n' "$prompt" | awk '
+    BEGIN { in_frontmatter = 0 }
+    /^[[:space:]]*---[[:space:]]*$/ {
+      if (in_frontmatter == 0) {
+        in_frontmatter = 1
+        next
+      }
+      if (in_frontmatter == 1) {
+        exit
+      }
+    }
+    in_frontmatter == 1 { print }
+  ')
+
+  [ -n "$frontmatter" ] && printf '%s\n' "$frontmatter" | grep -qiE '^[[:space:]]*name:[[:space:]]*vbw:'
+}
+
 # GSD Isolation: create .vbw-session marker on VBW command invocation.
+# Detection covers raw slash commands (/vbw:*) and expanded command content
+# (YAML frontmatter with "name: vbw:").
 # Only CREATE the marker here; removal is handled by session-stop.sh at session end.
 # Deleting on non-/vbw: prompts caused false blocks mid-workflow when users send
 # follow-up messages (plan approvals, answers) that don't start with /vbw:.
 if [ -f "$PLANNING_DIR/.gsd-isolation" ]; then
   if echo "$PROMPT" | grep -qi '^/vbw:'; then
     echo "session" > "$PLANNING_DIR/.vbw-session"
+  elif is_expanded_vbw_prompt "$PROMPT"; then
+    echo "session" > "$PLANNING_DIR/.vbw-session"
   fi
+  # Plain text prompts: leave marker unchanged (continuation of active flow)
 fi
 
 WARNING=""

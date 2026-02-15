@@ -521,8 +521,8 @@ Here's when each one shows up to work:
   │    PostToolUse ──── Validates SUMMARY.md on write, checks commit format,      │
   │                     validates frontmatter descriptions, dispatches skill      │
   │                     hooks, updates execution state                            │
-  │    SubagentStart ── Writes active agent marker for cost attribution           │
-  │    SubagentStop ─── Validates SUMMARY.md structure on subagent completion     │
+  │    SubagentStart ── Writes agent marker (role normalization, concurrency-safe)│
+  │    SubagentStop ─── Validates SUMMARY.md, cleans markers, corruption recovery│
   │    TeammateIdle ─── Tiered SUMMARY.md gate (1-plan grace, 2+ gap blocks)     │
   │    TaskCompleted ── Verifies task-related commit via keyword matching         │
   │                                                                               │
@@ -868,6 +868,40 @@ Common patterns:
 - Budget profile + Dev override to Opus for complex implementation tasks
 - Balanced profile + Lead override to Opus for strategic planning phases
 - Quality profile + QA override to Haiku when verification is straightforward
+
+### Agent Turn Limits
+
+Each agent has a default turn budget that scales with your effort level (thorough = 1.5×, balanced = 1×, fast = 0.8×, turbo = 0.6×). Defaults:
+
+| Agent | Base Turns |
+| :--- | ---: |
+| Scout | 15 |
+| QA | 25 |
+| Architect | 30 |
+| Lead | 50 |
+| Dev | 75 |
+| Debugger | 80 |
+
+Override per-agent in `.vbw-planning/config.json`:
+
+```json
+{
+  "agent_max_turns": {
+    "dev": 100,
+    "debugger": 120
+  }
+}
+```
+
+Set a value to `false` or `0` to give an agent unlimited turns (no turn cap is enforced):
+
+```json
+{
+  "agent_max_turns": {
+    "dev": false
+  }
+}
+```
 
 ### Effort vs Model
 

@@ -44,8 +44,22 @@ is_marker_fresh() {
   [ "$age" -lt 86400 ]
 }
 
+derive_project_root() {
+  local path="$1"
+  local marker_dir="$2"
+  local root
+
+  root="${path%%/$marker_dir/*}"
+  if [ -z "$root" ] || [ "$root" = "$path" ]; then
+    root="."
+  fi
+
+  printf '%s' "$root"
+}
+
 if echo "$FILE_PATH" | grep -qF '.planning/' && ! echo "$FILE_PATH" | grep -qF '.vbw-planning/'; then
-  if is_marker_fresh ".vbw-planning/.active-agent" || is_marker_fresh ".vbw-planning/.vbw-session"; then
+  GSD_ROOT=$(derive_project_root "$FILE_PATH" ".planning")
+  if is_marker_fresh "$GSD_ROOT/.vbw-planning/.active-agent" || is_marker_fresh "$GSD_ROOT/.vbw-planning/.vbw-session"; then
     echo "Blocked: .planning/ is managed by GSD, not VBW ($FILE_PATH)" >&2
     exit 2
   fi

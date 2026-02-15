@@ -244,6 +244,46 @@ EOF
   [ "$output" = "never" ]
 }
 
+@test "migration adds missing agent_max_turns defaults" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced"
+}
+EOF
+
+  run_migration
+
+  run jq -r '.agent_max_turns.scout' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "15" ]
+
+  run jq -r '.agent_max_turns.debugger' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "80" ]
+}
+
+@test "migration preserves existing agent_max_turns values" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "agent_max_turns": {
+    "debugger": 120,
+    "dev": 90
+  }
+}
+EOF
+
+  run_migration
+
+  run jq -r '.agent_max_turns.debugger' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "120" ]
+
+  run jq -r '.agent_max_turns.dev' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "90" ]
+}
+
 @test "migration renames agent_teams to prefer_teams and removes stale key" {
   cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
 {

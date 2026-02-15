@@ -47,10 +47,15 @@ if [ -f "$PLANNING_DIR/.cost-ledger.json" ]; then
       '{timestamp: $ts, type: "cost_summary", costs: $costs}' \
       >> "$PLANNING_DIR/.session-log.jsonl" 2>/dev/null
   fi
-  rm -f "$PLANNING_DIR/.cost-ledger.json" "$PLANNING_DIR/.active-agent" 2>/dev/null
+  rm -f "$PLANNING_DIR/.cost-ledger.json" 2>/dev/null
 fi
 
-# Clean up GSD isolation session marker (if it exists)
-rm -f "$PLANNING_DIR/.vbw-session" 2>/dev/null
+# Clean up transient agent markers and stale lock dir.
+# Keep .vbw-session so plain-text follow-ups in an active VBW flow remain
+# unblocked across assistant turns. .vbw-session is cleared by explicit
+# non-VBW slash commands in prompt-preflight.sh (and stale markers are ignored
+# by security-filter.sh after 24h).
+rmdir "$PLANNING_DIR/.active-agent-count.lock" 2>/dev/null || true
+rm -f "$PLANNING_DIR/.active-agent" "$PLANNING_DIR/.active-agent-count" 2>/dev/null
 
 exit 0
