@@ -96,13 +96,13 @@ EOF
   # Create config with all flags present
   create_test_config
 
-  # Record original content
-  BEFORE=$(cat "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  # Record normalized content
+  BEFORE=$(jq -S . "$TEST_TEMP_DIR/.vbw-planning/config.json")
 
   run_migration
 
   # Verify no changes (idempotent when all flags present)
-  AFTER=$(cat "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  AFTER=$(jq -S . "$TEST_TEMP_DIR/.vbw-planning/config.json")
   [ "$BEFORE" = "$AFTER" ]
 }
 
@@ -243,6 +243,56 @@ EOF
   run jq -r 'has("agent_teams")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "false" ]
+}
+
+@test "migration maps agent_teams false to prefer_teams auto" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "agent_teams": false
+}
+EOF
+
+  run_migration
+
+  run jq -r '.prefer_teams' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "auto" ]
+}
+
+@test "migration backfills all missing defaults keys" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced"
+}
+EOF
+
+  run jq -s '.[0] as $d | .[1] as $c | [$d | keys[] | select($c[.] == null)] | length' "$CONFIG_DIR/defaults.json" "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  BEFORE_MISSING="$output"
+  [ "$BEFORE_MISSING" -gt 0 ]
+
+  run_migration
+
+  run jq -s '.[0] as $d | .[1] as $c | [$d | keys[] | select($c[.] == null)] | length' "$CONFIG_DIR/defaults.json" "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "0" ]
+}
+
+@test "migration --print-added returns number of inserted defaults" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced"
+}
+EOF
+
+  run jq -s '.[0] as $d | .[1] as $c | [$d | keys[] | select($c[.] == null)] | length' "$CONFIG_DIR/defaults.json" "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  EXPECTED_ADDED="$output"
+
+  run bash "$SCRIPTS_DIR/migrate-config.sh" --print-added "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "$EXPECTED_ADDED" ]
 }
 
 @test "EXPECTED_FLAG_COUNT is 23 after prefer_teams addition" {

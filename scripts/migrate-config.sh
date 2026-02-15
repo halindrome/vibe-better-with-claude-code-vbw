@@ -10,15 +10,36 @@ set -u
 #   0 = success (including no-op when config file missing)
 #   1 = malformed config or migration failure
 
+PRINT_ADDED=false
+if [ "${1:-}" = "--print-added" ]; then
+  PRINT_ADDED=true
+  shift
+fi
+
 if ! command -v jq &>/dev/null; then
   echo "ERROR: jq not found; cannot migrate config." >&2
   exit 1
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+DEFAULTS_FILE="$SCRIPT_DIR/../config/defaults.json"
 CONFIG_FILE="${1:-.vbw-planning/config.json}"
+
+if [ ! -f "$DEFAULTS_FILE" ]; then
+  echo "ERROR: defaults.json not found: $DEFAULTS_FILE" >&2
+  exit 1
+fi
+
+if ! jq empty "$DEFAULTS_FILE" >/dev/null 2>&1; then
+  echo "ERROR: defaults.json is malformed: $DEFAULTS_FILE" >&2
+  exit 1
+fi
 
 # No project initialized yet — nothing to migrate.
 if [ ! -f "$CONFIG_FILE" ]; then
+  if [ "$PRINT_ADDED" = true ]; then
+    echo "0"
+  fi
   exit 0
 fi
 
@@ -28,8 +49,11 @@ if ! jq empty "$CONFIG_FILE" >/dev/null 2>&1; then
   exit 1
 fi
 
-# Version marker: number of expected migrated keys.
-EXPECTED_FLAG_COUNT=23
+missing_defaults_count() {
+  jq -s '.[0] as $d | .[1] as $c | [$d | keys[] | select($c[.] == null)] | length' "$DEFAULTS_FILE" "$CONFIG_FILE" 2>/dev/null
+}
+
+MISSING_BEFORE=$(missing_defaults_count)
 
 apply_update() {
   local filter="$1"
@@ -48,7 +72,7 @@ apply_update() {
 #   true  -> "always"
 #   false -> "auto"
 if jq -e 'has("agent_teams") and (has("prefer_teams") | not)' "$CONFIG_FILE" >/dev/null 2>&1; then
-  if ! apply_update '. + {prefer_teams: (if (.agent_teams // true) == true then "always" else "auto" end)} | del(.agent_teams)'; then
+  if ! apply_update '. + {prefer_teams: (if .agent_teams == true then "always" else "auto" end)} | del(.agent_teams)'; then
     echo "ERROR: Config migration failed while renaming agent_teams." >&2
     exit 1
   fi
@@ -82,48 +106,26 @@ if ! jq -e 'has("prefer_teams")' "$CONFIG_FILE" >/dev/null 2>&1; then
   fi
 fi
 
-# Check if migration is needed: count how many expected keys already exist.
-CURRENT_FLAG_COUNT=$(jq '[
-  has("context_compiler"), has("v3_delta_context"), has("v3_context_cache"),
-  has("v3_plan_research_persist"), has("v3_metrics"), has("v3_contract_lite"),
-  has("v3_lock_lite"), has("v3_validation_gates"), has("v3_smart_routing"),
-  has("v3_event_log"), has("v3_schema_validation"), has("v3_snapshot_resume"),
-  has("v3_lease_locks"), has("v3_event_recovery"), has("v3_monorepo_routing"),
-  has("v2_hard_contracts"), has("v2_hard_gates"), has("v2_typed_protocol"),
-  has("v2_role_isolation"), has("v2_two_phase_completion"), has("v2_token_budgets"),
-  has("model_overrides"), has("prefer_teams")
-] | map(select(.)) | length' "$CONFIG_FILE" 2>/dev/null)
 
-if [ "${CURRENT_FLAG_COUNT:-0}" -lt "$EXPECTED_FLAG_COUNT" ]; then
-  if ! apply_update '
-    . +
-    (if has("context_compiler") then {} else {context_compiler: true} end) +
-    (if has("v3_delta_context") then {} else {v3_delta_context: false} end) +
-    (if has("v3_context_cache") then {} else {v3_context_cache: false} end) +
-    (if has("v3_plan_research_persist") then {} else {v3_plan_research_persist: false} end) +
-    (if has("v3_metrics") then {} else {v3_metrics: false} end) +
-    (if has("v3_contract_lite") then {} else {v3_contract_lite: false} end) +
-    (if has("v3_lock_lite") then {} else {v3_lock_lite: false} end) +
-    (if has("v3_validation_gates") then {} else {v3_validation_gates: false} end) +
-    (if has("v3_smart_routing") then {} else {v3_smart_routing: false} end) +
-    (if has("v3_event_log") then {} else {v3_event_log: false} end) +
-    (if has("v3_schema_validation") then {} else {v3_schema_validation: false} end) +
-    (if has("v3_snapshot_resume") then {} else {v3_snapshot_resume: false} end) +
-    (if has("v3_lease_locks") then {} else {v3_lease_locks: false} end) +
-    (if has("v3_event_recovery") then {} else {v3_event_recovery: false} end) +
-    (if has("v3_monorepo_routing") then {} else {v3_monorepo_routing: false} end) +
-    (if has("v2_hard_contracts") then {} else {v2_hard_contracts: false} end) +
-    (if has("v2_hard_gates") then {} else {v2_hard_gates: false} end) +
-    (if has("v2_typed_protocol") then {} else {v2_typed_protocol: false} end) +
-    (if has("v2_role_isolation") then {} else {v2_role_isolation: false} end) +
-    (if has("v2_two_phase_completion") then {} else {v2_two_phase_completion: false} end) +
-    (if has("v2_token_budgets") then {} else {v2_token_budgets: false} end) +
-    (if has("model_overrides") then {} else {model_overrides: {}} end) +
-    (if has("prefer_teams") then {} else {prefer_teams: "always"} end)
-  '; then
-    echo "ERROR: Config migration failed while backfilling feature flags." >&2
-    exit 1
-  fi
+# Generic brownfield merge: add any keys missing from defaults.json.
+# Existing project values always win.
+TMP=$(mktemp)
+if jq --slurpfile defaults "$DEFAULTS_FILE" '$defaults[0] + .' "$CONFIG_FILE" > "$TMP" 2>/dev/null; then
+  mv "$TMP" "$CONFIG_FILE"
+else
+  rm -f "$TMP"
+  echo "ERROR: Config migration failed while merging defaults.json." >&2
+  exit 1
+fi
+
+MISSING_AFTER=$(missing_defaults_count)
+ADDED_COUNT=$((MISSING_BEFORE - MISSING_AFTER))
+if [ "$ADDED_COUNT" -lt 0 ]; then
+  ADDED_COUNT=0
+fi
+
+if [ "$PRINT_ADDED" = true ]; then
+  echo "$ADDED_COUNT"
 fi
 
 exit 0
