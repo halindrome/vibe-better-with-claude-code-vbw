@@ -2,6 +2,30 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.21.11] - 2026-02-15
+
+### Added
+
+- **`help`** -- Dynamic help output from command frontmatter. Added `category:` field to all 22 commands and `scripts/help-output.sh` that reads frontmatter to generate grouped, formatted help. Zero tokens, zero drift.
+- **`tmux`** -- PID tracking utility for agent process registration and cleanup on SubagentStop.
+- **`tmux`** -- Watchdog script for tmux detach detection, launched on session start.
+- **`tmux`** -- SIGHUP trap fallback in hook-wrapper for tmux disconnect resilience.
+- **`tmux`** -- Forced in-process mode auto-patch when tmux is detected.
+- **`session`** -- Orphan claude process cleanup on SessionStart.
+- **`session`** -- Stale team cleanup script with paired tasks directory cleanup, integrated into SessionStart.
+- **`compaction`** -- Pre-compact agent state snapshots with agent metadata, restore in post-compact hook.
+- **`doctor`** -- Runtime health checks: cleanup preview, --cleanup flag, cleanup logging with summary counts.
+
+### Fixed
+
+- **`doctor`** -- Remove `local` keyword from top-level case block (bash compatibility).
+
+### Documentation
+
+- **`gitignore`** -- Runtime files (snapshots, watchdog, doctor logs) documented in .gitignore.
+
+---
+
 ## [1.21.10] - 2026-02-15
 
 ### Fixed
