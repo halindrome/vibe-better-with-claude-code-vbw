@@ -10,6 +10,7 @@ allowed-tools: Read, Write, Bash, Glob, Grep, WebFetch
 ## Context
 
 Working directory: `!`pwd``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
 
 Current project:
 ```

@@ -8,6 +8,10 @@ allowed-tools: Read, Glob
 
 # VBW Help $ARGUMENTS
 
+## Context
+
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
+
 ## Behavior
 
 **No args:** Show all commands grouped by stage (mark all ✓).

@@ -2,6 +2,21 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.21.4] - 2026-02-15
+
+### Fixed
+
+- **`statusline-cache-isolation.bats`** — CI runners now have git identity configured in test setup(), fixing "Author identity unknown" failures on GitHub Actions. Default branch detection is now dynamic instead of hardcoding "main". Statusline also renders repo label on detached HEAD. (PR #46, @dpearson2699)
+- **`commands/*.md`** — 15 commands now include `Plugin root: !` backtick preamble so `${CLAUDE_PLUGIN_ROOT}` resolves correctly in model-executed Bash blocks. Previously the variable expanded to empty string, silently breaking all path references. Regression test added. (PR #50, @dpearson2699)
+- **`research-persistence.bats`** — Tests now use tracked `templates/RESEARCH.md` as fixture instead of gitignored `.vbw-planning/` runtime state. CI no longer depends on local development artifacts existing at repo root. (PR #56, @dpearson2699)
+
+### Added
+
+- **`.github/CODEOWNERS`** — `* @yidakee` ensures all PRs auto-request code owner review.
+- **Branch protection** — main branch now requires passing CI and PR review before merge.
+
+---
+
 ## [1.21.3] - 2026-02-14
 
 ### Fixed

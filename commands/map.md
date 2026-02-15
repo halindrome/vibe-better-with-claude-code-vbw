@@ -11,6 +11,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
 ## Context
 
 Working directory: `!`pwd``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
 Existing mapping: `!`ls .vbw-planning/codebase/ 2>/dev/null || echo "No codebase mapping found"``
 META.md:
 ```

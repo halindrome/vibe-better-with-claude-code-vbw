@@ -11,6 +11,7 @@ allowed-tools: Read, Bash, Glob
 ## Context
 
 Working directory: `!`pwd``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
 Active milestone: `!`cat .vbw-planning/ACTIVE 2>/dev/null || echo "No active milestone (single-milestone mode)"``
 
 ## Guard
