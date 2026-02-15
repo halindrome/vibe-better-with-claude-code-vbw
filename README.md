@@ -658,6 +658,40 @@ Common patterns:
 - Balanced profile + Lead override to Opus for strategic planning phases
 - Quality profile + QA override to Haiku when verification is straightforward
 
+### Agent Turn Limits
+
+Each agent has a default turn budget that scales with your effort level (thorough = 1.5×, balanced = 1×, fast = 0.8×, turbo = 0.6×). Defaults:
+
+| Agent | Base Turns |
+| :--- | ---: |
+| Scout | 15 |
+| QA | 25 |
+| Architect | 30 |
+| Lead | 50 |
+| Dev | 75 |
+| Debugger | 80 |
+
+Override per-agent in `.vbw-planning/config.json`:
+
+```json
+{
+  "agent_max_turns": {
+    "dev": 100,
+    "debugger": 120
+  }
+}
+```
+
+Set a value to `false` or `0` to give an agent unlimited turns (no turn cap is enforced):
+
+```json
+{
+  "agent_max_turns": {
+    "dev": false
+  }
+}
+```
+
 ### Effort vs Model
 
 **Model profile** controls which Claude model agents use (cost).
