@@ -28,13 +28,18 @@ If no .vbw-planning/ dir: STOP "Run /vbw:init first." (check `.vbw-planning/conf
 Before any read/write behavior below, run:
 
 ```bash
-if ! bash ${CLAUDE_PLUGIN_ROOT}/scripts/migrate-config.sh .vbw-planning/config.json; then
+MIGRATED_COUNT=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/migrate-config.sh --print-added .vbw-planning/config.json 2>/dev/null)
+if [ $? -ne 0 ] || [ -z "${MIGRATED_COUNT:-}" ]; then
   echo "⚠ Config migration failed (invalid JSON). Fix .vbw-planning/config.json, then retry /vbw:config"
   exit 0
 fi
+
+if [ "$MIGRATED_COUNT" -gt 0 ]; then
+  echo "✓ Added $MIGRATED_COUNT new settings from defaults (run /vbw:config to see them)"
+fi
 ```
 
-This backfills missing v2/v3 flags, ensures `model_overrides` + `prefer_teams` exist, and migrates legacy `agent_teams` to `prefer_teams` (then removes stale `agent_teams`).
+This backfills all missing keys from `config/defaults.json` (without overwriting existing values), and migrates legacy `agent_teams` to `prefer_teams` (then removes stale `agent_teams`).
 
 ### No arguments: Interactive configuration
 
