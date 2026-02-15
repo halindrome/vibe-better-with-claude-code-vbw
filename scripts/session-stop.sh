@@ -50,7 +50,8 @@ if [ -f "$PLANNING_DIR/.cost-ledger.json" ]; then
   rm -f "$PLANNING_DIR/.cost-ledger.json" 2>/dev/null
 fi
 
-# Clean up GSD isolation session marker and agent markers (always, not just with cost ledger)
+# Clean up GSD isolation session marker, agent markers, and stale lock dir (always, not just with cost ledger)
+rmdir "$PLANNING_DIR/.active-agent-count.lock" 2>/dev/null || true
 rm -f "$PLANNING_DIR/.vbw-session" "$PLANNING_DIR/.active-agent" "$PLANNING_DIR/.active-agent-count" 2>/dev/null
 
 exit 0

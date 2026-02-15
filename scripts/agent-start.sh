@@ -114,8 +114,10 @@ update_agent_markers() {
   local count
   count=$(read_count)
 
-  echo "$ROLE" > "$PLANNING_DIR/.active-agent"
+  # Write count first: if crash between writes, an elevated count is safer
+  # than a missing count (agent-stop recovery handles both cases).
   echo $((count + 1)) > "$COUNT_FILE"
+  echo "$ROLE" > "$PLANNING_DIR/.active-agent"
 }
 
 if [ -n "$ROLE" ]; then

@@ -387,6 +387,50 @@ load test_helper
   teardown_temp_dir
 }
 
+@test "security-filter falls back to CWD for relative FILE_PATH" {
+  setup_temp_dir
+  mkdir -p "$TEST_TEMP_DIR/.vbw-planning"
+  touch "$TEST_TEMP_DIR/.vbw-planning/.gsd-isolation"
+  echo "session" > "$TEST_TEMP_DIR/.vbw-planning/.vbw-session"
+  # Relative path — derive_project_root falls back to ".", CWD-relative marker check
+  INPUT='{"tool_input":{"file_path":".vbw-planning/STATE.md"}}'
+  run bash -c "cd '$TEST_TEMP_DIR' && echo '$INPUT' | bash '$SCRIPTS_DIR/security-filter.sh'"
+  teardown_temp_dir
+  [ "$status" -eq 0 ]
+}
+
+@test "security-filter blocks relative FILE_PATH without markers" {
+  setup_temp_dir
+  mkdir -p "$TEST_TEMP_DIR/.vbw-planning"
+  touch "$TEST_TEMP_DIR/.vbw-planning/.gsd-isolation"
+  # No markers — should block
+  INPUT='{"tool_input":{"file_path":".vbw-planning/STATE.md"}}'
+  run bash -c "cd '$TEST_TEMP_DIR' && echo '$INPUT' | bash '$SCRIPTS_DIR/security-filter.sh'"
+  teardown_temp_dir
+  [ "$status" -eq 2 ]
+}
+
+@test "prompt-preflight does NOT delete .vbw-session when prompt is a file path" {
+  setup_temp_dir
+  mkdir -p "$TEST_TEMP_DIR/.vbw-planning"
+  touch "$TEST_TEMP_DIR/.vbw-planning/.gsd-isolation"
+  echo "session" > "$TEST_TEMP_DIR/.vbw-planning/.vbw-session"
+  INPUT='{"prompt":"/home/user/project/file.txt"}'
+  run bash -c "cd '$TEST_TEMP_DIR' && echo '$INPUT' | bash '$SCRIPTS_DIR/prompt-preflight.sh'"
+  [ "$status" -eq 0 ]
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/.vbw-session" ]
+  teardown_temp_dir
+}
+
+@test "session-stop cleans up stale lock directory" {
+  setup_temp_dir
+  mkdir -p "$TEST_TEMP_DIR/.vbw-planning/.active-agent-count.lock"
+  run bash -c "cd '$TEST_TEMP_DIR' && echo '{}' | bash '$SCRIPTS_DIR/session-stop.sh'"
+  [ "$status" -eq 0 ]
+  [ ! -d "$TEST_TEMP_DIR/.vbw-planning/.active-agent-count.lock" ]
+  teardown_temp_dir
+}
+
 @test "hooks matcher includes prefixed VBW agent names" {
   run bash -c "grep -q 'vbw:vbw-scout' '$PROJECT_ROOT/hooks/hooks.json'"
   [ "$status" -eq 0 ]

@@ -64,7 +64,7 @@ if [ -f "$PLANNING_DIR/.gsd-isolation" ]; then
     echo "session" > "$PLANNING_DIR/.vbw-session"
   elif is_expanded_vbw_prompt "$PROMPT"; then
     echo "session" > "$PLANNING_DIR/.vbw-session"
-  elif echo "$PROMPT" | grep -q '^/' && ! echo "$PROMPT" | grep -qi '^/vbw:'; then
+  elif printf '%s\n' "$PROMPT" | head -1 | grep -qE '^/[a-zA-Z][a-zA-Z0-9_:-]*(\s|$)' && ! echo "$PROMPT" | grep -qi '^/vbw:'; then
     rm -f "$PLANNING_DIR/.vbw-session"
   fi
   # Plain text prompts: leave marker unchanged (continuation of active flow)
