@@ -2,6 +2,12 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.21.17] - 2026-02-15
+
+### Fixed
+
+- **`planning-git`** -- Add 24 missing transient runtime artifacts to `ensure_transient_ignore()` — session tracking, metrics, caching, events, snapshots, logging, watchdog, and codebase mapping files are now excluded from `planning_tracking=commit` commits. Contributed by [@dpearson2699](https://github.com/dpearson2699) (#69, fixes #66).
+
 ## [1.21.16] - 2026-02-15
 
 ### Added
