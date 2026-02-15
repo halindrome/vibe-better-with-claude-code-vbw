@@ -137,15 +137,16 @@ load test_helper
   [ "$status" -eq 0 ]
 }
 
-@test "security-filter blocks when target repo has isolation but no markers" {
+@test "security-filter allows .vbw-planning write even without markers (self-blocking removed)" {
   setup_temp_dir
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning"
   touch "$TEST_TEMP_DIR/.vbw-planning/.gsd-isolation"
-  # No .active-agent, no .vbw-session
+  # No .active-agent, no .vbw-session — still allowed since v1.21.13
+  # Self-blocking caused false blocks (orchestrator after team deletion, agents before markers set)
   INPUT='{"tool_input":{"file_path":"'"$TEST_TEMP_DIR"'/.vbw-planning/STATE.md"}}'
   run bash -c "cd '$TEST_TEMP_DIR' && echo '$INPUT' | bash '$SCRIPTS_DIR/security-filter.sh'"
   teardown_temp_dir
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
 }
 
 @test "agent-start handles vbw: prefixed agent_type" {
@@ -222,17 +223,18 @@ load test_helper
   teardown_temp_dir
 }
 
-@test "prompt-preflight removes .vbw-session on non-VBW slash command" {
+@test "prompt-preflight preserves .vbw-session on non-VBW slash command" {
   setup_temp_dir
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning"
   touch "$TEST_TEMP_DIR/.vbw-planning/.gsd-isolation"
   echo "session" > "$TEST_TEMP_DIR/.vbw-planning/.vbw-session"
-  # Non-VBW slash command
+  # Non-VBW slash command — marker persists since v1.21.13
+  # Removal caused false blocks when users sent follow-up messages
   INPUT='{"prompt":"/gsd:status"}'
   run bash -c "cd '$TEST_TEMP_DIR' && echo '$INPUT' | bash '$SCRIPTS_DIR/prompt-preflight.sh'"
   [ "$status" -eq 0 ]
-  # Marker should be removed
-  [ ! -f "$TEST_TEMP_DIR/.vbw-planning/.vbw-session" ]
+  # Marker should still exist (removal handled by session-stop.sh)
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/.vbw-session" ]
   teardown_temp_dir
 }
 
@@ -347,15 +349,16 @@ load test_helper
   teardown_temp_dir
 }
 
-@test "security-filter ignores stale .vbw-session marker for .vbw-planning writes" {
+@test "security-filter allows .vbw-planning writes regardless of marker staleness" {
   setup_temp_dir
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning"
   touch "$TEST_TEMP_DIR/.vbw-planning/.gsd-isolation"
   echo "session" > "$TEST_TEMP_DIR/.vbw-planning/.vbw-session"
   touch -t 202401010101 "$TEST_TEMP_DIR/.vbw-planning/.vbw-session"
+  # Self-blocking removed in v1.21.13 — stale markers no longer matter
   INPUT='{"tool_input":{"file_path":"'"$TEST_TEMP_DIR"'/.vbw-planning/STATE.md"}}'
   run bash -c "cd '$TEST_TEMP_DIR' && echo '$INPUT' | bash '$SCRIPTS_DIR/security-filter.sh'"
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
   teardown_temp_dir
 }
 
@@ -373,7 +376,7 @@ load test_helper
   teardown_temp_dir
 }
 
-@test "vbw session marker survives Stop, allows plain-text follow-up write, then /gsd clears it" {
+@test "vbw session marker survives Stop and non-VBW slash commands" {
   setup_temp_dir
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning/milestones/default/phases/05-migration-preview-completeness"
   touch "$TEST_TEMP_DIR/.vbw-planning/.gsd-isolation"
@@ -397,13 +400,14 @@ load test_helper
   run bash -c "cd '$TEST_TEMP_DIR' && echo '$INPUT' | bash '$SCRIPTS_DIR/security-filter.sh'"
   [ "$status" -eq 0 ]
 
-  # Explicit non-VBW slash command should clear marker and re-enable block
+  # Non-VBW slash command should NOT clear marker (removal handled by session-stop.sh)
   run bash -c "cd '$TEST_TEMP_DIR' && echo '{\"prompt\":\"/gsd:status\"}' | bash '$SCRIPTS_DIR/prompt-preflight.sh'"
   [ "$status" -eq 0 ]
-  [ ! -f "$TEST_TEMP_DIR/.vbw-planning/.vbw-session" ]
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/.vbw-session" ]
 
+  # .vbw-planning writes still allowed (self-blocking removed in v1.21.13)
   run bash -c "cd '$TEST_TEMP_DIR' && echo '$INPUT' | bash '$SCRIPTS_DIR/security-filter.sh'"
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
   teardown_temp_dir
 }
 
@@ -433,15 +437,15 @@ load test_helper
   [ "$status" -eq 0 ]
 }
 
-@test "security-filter blocks relative FILE_PATH without markers" {
+@test "security-filter allows relative .vbw-planning FILE_PATH without markers" {
   setup_temp_dir
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning"
   touch "$TEST_TEMP_DIR/.vbw-planning/.gsd-isolation"
-  # No markers — should block
+  # No markers — still allowed since self-blocking removed in v1.21.13
   INPUT='{"tool_input":{"file_path":".vbw-planning/STATE.md"}}'
   run bash -c "cd '$TEST_TEMP_DIR' && echo '$INPUT' | bash '$SCRIPTS_DIR/security-filter.sh'"
   teardown_temp_dir
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
 }
 
 @test "prompt-preflight does NOT delete .vbw-session when prompt is a file path" {

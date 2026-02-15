@@ -1,5 +1,6 @@
 ---
 name: vbw:vibe
+category: lifecycle
 description: "The one command. Detects state, parses intent, routes to any lifecycle mode -- bootstrap, scope, plan, execute, verify, discuss, archive, and more."
 argument-hint: "[intent or flags] [--plan] [--execute] [--verify] [--discuss] [--assumptions] [--scope] [--add] [--insert] [--remove] [--archive] [--yolo] [--effort=level] [--skip-qa] [--skip-audit] [--plan=NN] [N]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
@@ -11,11 +12,11 @@ disable-model-invocation: true
 ## Context
 
 Working directory: `!`pwd``
-Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}``
 
 Pre-computed state (via phase-detect.sh):
 ```
-!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase-detect.sh 2>/dev/null || echo "phase_detect_error=true"`
+!`bash ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}/scripts/phase-detect.sh 2>/dev/null || echo "phase_detect_error=true"`
 ```
 
 Config:
@@ -629,7 +630,12 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
      - Create team via TeamCreate: `team_name="vbw-plan-{NN}"`, `description="Planning Phase {N}: {phase-name}"`
      - Spawn Scout (if spawned in step 3) with `team_name: "vbw-plan-{NN}"`, `name: "scout"` parameters on the Task tool invocation.
      - Spawn Lead with `team_name: "vbw-plan-{NN}"`, `name: "lead"` parameters on the Task tool invocation.
-     - After both complete: send shutdown to each teammate, then TeamDelete team "vbw-plan-{NN}".
+     - **HARD GATE — Shutdown before proceeding:** After all team agents complete their work, you MUST shut down the team BEFORE validating output, presenting results, or asking the user anything. This is blocking:
+       1. Send `shutdown_request` to each teammate (lead, scout) via SendMessage
+       2. Wait for each `shutdown_response` (approve=true). If rejected, re-request.
+       3. Call TeamDelete for team "vbw-plan-{NN}"
+       4. Only THEN proceed to step 7
+       Failure to shut down leaves agents running, consuming API credits in the background (visible as hanging panes in tmux).
 
      When team should NOT be created (Lead-only with when_parallel/auto):
      - Spawn vbw-lead as subagent via Task tool without team (single agent, no team overhead).

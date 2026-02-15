@@ -1,5 +1,6 @@
 ---
 name: vbw:status
+category: monitoring
 description: Display project progress dashboard with phase status, velocity metrics, and next action.
 argument-hint: [--verbose] [--metrics]
 allowed-tools: Read, Glob, Grep, Bash
@@ -10,7 +11,7 @@ allowed-tools: Read, Glob, Grep, Bash
 ## Context
 
 Working directory: `!`pwd``
-Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}``
 
 Current state:
 ```

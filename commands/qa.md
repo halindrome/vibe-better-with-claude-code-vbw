@@ -1,5 +1,6 @@
 ---
 name: vbw:qa
+category: monitoring
 description: Run deep verification on completed phase work using the QA agent.
 argument-hint: [phase-number] [--tier=quick|standard|deep] [--effort=thorough|balanced|fast|turbo]
 allowed-tools: Read, Write, Bash, Glob, Grep
@@ -10,7 +11,7 @@ allowed-tools: Read, Write, Bash, Glob, Grep
 ## Context
 
 Working directory: `!`pwd``
-Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}``
 
 Current state:
 ```
@@ -26,7 +27,7 @@ Phase directories:
 
 Phase state:
 ```
-!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/phase-detect.sh 2>/dev/null || echo "phase_detect_error=true"`
+!`bash ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}/scripts/phase-detect.sh 2>/dev/null || echo "phase_detect_error=true"`
 ```
 
 ## Guard

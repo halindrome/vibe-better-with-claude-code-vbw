@@ -15,6 +15,52 @@
 SCRIPT="$1"; shift
 [ -z "$SCRIPT" ] && exit 0
 
+# --- SIGHUP trap for terminal force-close ---
+# Cleanup orphaned agents on unexpected terminal termination.
+# This is a backup for tmux watchdog — handles direct terminal force-close.
+cleanup_on_sighup() {
+  PLANNING_DIR=".vbw-planning"
+  if [ ! -d "$PLANNING_DIR" ]; then
+    exit 1
+  fi
+
+  # Resolve agent-pid-tracker.sh from cache
+  # shellcheck source=resolve-claude-dir.sh
+  . "$(dirname "$0")/resolve-claude-dir.sh" 2>/dev/null || true
+  CACHE="${CLAUDE_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}/plugins/cache/vbw-marketplace/vbw"
+  TRACKER=$(ls -1 "$CACHE"/*/scripts/agent-pid-tracker.sh 2>/dev/null \
+    | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)
+
+  if [ -z "$TRACKER" ] || [ ! -f "$TRACKER" ]; then
+    exit 1
+  fi
+
+  # Log SIGHUP trigger
+  LOG="$PLANNING_DIR/.hook-errors.log"
+  TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date +"%s")
+  echo "[$TS] SIGHUP received, cleaning up agent PIDs" >> "$LOG" 2>/dev/null || true
+
+  # Get active PIDs and terminate with escalation
+  PIDS=$(bash "$TRACKER" list 2>/dev/null || true)
+  if [ -n "$PIDS" ]; then
+    for pid in $PIDS; do
+      kill -TERM "$pid" 2>/dev/null || true
+    done
+
+    # Wait 3s for graceful shutdown, then SIGKILL survivors
+    sleep 3
+    for pid in $PIDS; do
+      if kill -0 "$pid" 2>/dev/null; then
+        kill -KILL "$pid" 2>/dev/null || true
+      fi
+    done
+  fi
+
+  exit 1
+}
+
+trap cleanup_on_sighup SIGHUP
+
 # Debug mode: VBW_DEBUG=1 enables verbose hook tracing to stderr
 VBW_DEBUG="${VBW_DEBUG:-0}"
 

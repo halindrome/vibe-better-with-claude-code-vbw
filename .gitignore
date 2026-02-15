@@ -1,4 +1,10 @@
 # Planning docs (local-only)
+# Note: .vbw-planning/ exclusion covers all runtime files inside:
+#   - .agent-pids (tmux agent tracking)
+#   - .hook-errors.log (hook and cleanup logs, doctor-cleanup.sh runtime logs)
+#   - .watchdog-pid (tmux watchdog PID)
+#   - .watchdog.log (tmux watchdog logs)
+#   - .snapshots/ — agent state snapshots (covered by .vbw-planning/ exclusion)
 .vbw-planning/
 .planning/
 

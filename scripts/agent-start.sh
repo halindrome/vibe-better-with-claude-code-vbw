@@ -135,6 +135,16 @@ if [ -n "$ROLE" ]; then
       # Lock unavailable — proceed best-effort without lock.
       update_agent_markers
     fi
+
+    # Register agent PID for tmux cleanup
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    AGENT_PID=$(echo "$INPUT" | jq -r '.pid // ""' 2>/dev/null)
+    if [ -z "$AGENT_PID" ]; then
+      AGENT_PID="$PPID"
+    fi
+    if [ -n "$AGENT_PID" ] && [ -f "$SCRIPT_DIR/agent-pid-tracker.sh" ]; then
+      bash "$SCRIPT_DIR/agent-pid-tracker.sh" register "$AGENT_PID" 2>/dev/null || true
+    fi
   fi
 fi
 

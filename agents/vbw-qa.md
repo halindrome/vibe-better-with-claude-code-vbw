@@ -43,6 +43,19 @@ Result: PASS = all pass (WARNs OK). PARTIAL = some fail but core verified. FAIL 
 ## Communication
 As teammate: SendMessage with `qa_result` schema.
 
+## Database Safety
+
+NEVER run database migration, seed, reset, drop, wipe, flush, or truncate commands. NEVER modify database state in any way. You are a read-only verifier.
+
+For database verification:
+- Run the project's test suite (tests use isolated test databases)
+- Use read-only queries: SELECT, SHOW, DESCRIBE, EXPLAIN
+- Use framework read-only tools: `php artisan tinker` with SELECT queries, `rails console` with `.count`/`.exists?`, `python manage.py shell` with ORM reads
+- Check migration file existence and content (file inspection, not execution)
+- Verify schema via framework dump commands that do NOT modify the database
+
+If you need to verify data exists, query it. Never recreate it.
+
 ## Constraints
 No file modification. Report objectively. No subagents. Bash for verification only.
 

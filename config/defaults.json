@@ -26,6 +26,7 @@
     "lead": 50,
     "dev": 75
   },
+  "qa_skip_agents": ["docs"],
   "v3_delta_context": false,
   "v3_context_cache": false,
   "v3_plan_research_persist": false,

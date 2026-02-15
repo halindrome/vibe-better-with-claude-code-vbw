@@ -229,6 +229,37 @@ case "$GATE_TYPE" in
     fi
     ;;
 
+  forbidden_commands)
+    # Check if any recently executed commands match forbidden_commands patterns
+    if [ ! -f "$CONTRACT_PATH" ]; then
+      emit_result "pass" "no contract, fail-open"
+      exit 0
+    fi
+
+    FORBIDDEN_COUNT=$(jq -r '.forbidden_commands | length // 0' "$CONTRACT_PATH" 2>/dev/null) || FORBIDDEN_COUNT=0
+    if [ "$FORBIDDEN_COUNT" -eq 0 ]; then
+      emit_result "pass" "no forbidden commands defined"
+      exit 0
+    fi
+
+    # Check event log for bash_guard_block events in current plan
+    EVENT_LOG="${PLANNING_DIR}/.event-log.jsonl"
+    if [ ! -f "$EVENT_LOG" ]; then
+      emit_result "pass" "no event log, fail-open"
+      exit 0
+    fi
+
+    # Look for bash_guard_block events (any blocked destructive command is a violation)
+    VIOLATIONS=$(grep '"bash_guard_block"' "$EVENT_LOG" 2>/dev/null | tail -5)
+    if [ -n "$VIOLATIONS" ]; then
+      PREVIEW=$(echo "$VIOLATIONS" | jq -r '.command_preview // "unknown"' 2>/dev/null | head -1)
+      emit_result "fail" "destructive command attempted: ${PREVIEW}"
+      exit 2
+    fi
+
+    emit_result "pass" "no forbidden command violations"
+    ;;
+
   *)
     emit_result "fail" "unknown gate type: ${GATE_TYPE}"
     exit 2

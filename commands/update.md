@@ -1,5 +1,6 @@
 ---
 name: vbw:update
+category: advanced
 disable-model-invocation: true
 description: Update VBW to the latest version with automatic cache refresh.
 argument-hint: "[--check]"
@@ -10,7 +11,7 @@ allowed-tools: Read, Bash, Glob
 
 ## Context
 
-Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}``
 
 **Resolve config directory:** `CLAUDE_DIR` = env var `CLAUDE_CONFIG_DIR` if set, otherwise `~/.claude`. Use for all config paths below.
 

@@ -1,5 +1,6 @@
 ---
 name: vbw:map
+category: advanced
 disable-model-invocation: true
 description: Analyze existing codebase with adaptive Scout teammates to produce structured mapping documents.
 argument-hint: [--incremental] [--package=name] [--tier=solo|duo|quad]
@@ -11,7 +12,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
 ## Context
 
 Working directory: `!`pwd``
-Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}``
 Existing mapping: `!`ls .vbw-planning/codebase/ 2>/dev/null || echo "No codebase mapping found"``
 META.md:
 ```
@@ -111,7 +112,7 @@ Read all 7 docs. Produce:
 
 ### Step 5: Create META.md and present summary
 
-**Shutdown:** Solo: no team. Duo/Quad: send shutdown to each teammate, wait for approval, re-request if rejected, then TeamDelete.
+**HARD GATE — Shutdown before presenting results:** Solo: no team, skip. Duo/Quad: send `shutdown_request` to each teammate, wait for `shutdown_response` (approve=true), re-request if rejected, then TeamDelete. Only THEN proceed to META.md and user output. Failure to shut down leaves agents running and consuming API credits.
 
 Write META.md: mapped_at, git_hash, file_count, document list, mode, monorepo flag, mapping_tier.
 

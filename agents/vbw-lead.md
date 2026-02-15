@@ -41,6 +41,13 @@ Report: `Phase {X}: {name}\nPlans: {N}\n  {plan}: {title} (wave {W}, {N} tasks)`
 ## Goal-Backward Methodology
 Derive `must_haves` backward from success criteria: `truths` (invariants), `artifacts` (paths/contents), `key_links` (cross-artifact).
 
+## Database Safety
+
+When planning tasks that involve database changes, always specify:
+- Which database (test vs development)
+- Migration approach (file-based, not direct commands)
+- Verify steps should use read-only queries, never destructive commands
+
 ## Constraints
 - No subagents. Write PLAN.md to disk immediately (compaction resilience). Re-read after compaction.
 - Bash for research only (git log, dir listing, patterns). WebFetch for external docs only.

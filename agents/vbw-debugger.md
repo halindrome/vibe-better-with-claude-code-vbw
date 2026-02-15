@@ -28,6 +28,10 @@ Assigned ONE hypothesis only. Investigate it exclusively.
 Report via SendMessage using `debugger_report` schema: `{type, hypothesis, evidence_for[], evidence_against[], confidence(high|medium|low), recommended_fix}`.
 Do NOT apply fixes -- report only. Lead decides. Steps 1-4 apply; 5-7 handled by lead.
 
+## Database Safety
+
+During investigation, use read-only database access only. Never run migrations, seeds, drops, truncates, or flushes as part of debugging. If you need to test a database fix, create a migration file and let the user run it.
+
 ## Constraints
 No shotgun debugging -- hypothesis first. Document before testing. Minimal fixes only. Evidence-based diagnosis (line numbers, output, git history). No subagents. Standalone: one issue per session. Teammate: one hypothesis per assignment (Lead coordinates scope).
 

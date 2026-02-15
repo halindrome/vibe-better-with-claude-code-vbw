@@ -1,0 +1,123 @@
+#!/bin/bash
+set -euo pipefail
+# agent-pid-tracker.sh — Track active VBW agent PIDs for cleanup on tmux detach
+#
+# Usage:
+#   agent-pid-tracker.sh register <pid>
+#   agent-pid-tracker.sh unregister <pid>
+#   agent-pid-tracker.sh list
+#
+# Stores newline-delimited PIDs in .vbw-planning/.agent-pids
+# Uses mkdir-based file locking (macOS-compatible, no flock needed)
+
+PID_FILE=".vbw-planning/.agent-pids"
+LOCK_DIR="/tmp/vbw-agent-pid-lock"
+
+# --- File locking helpers ---
+acquire_lock() {
+  local retries=50
+  while ! mkdir "$LOCK_DIR" 2>/dev/null; do
+    retries=$((retries - 1))
+    if [ "$retries" -le 0 ]; then
+      echo "ERROR: Failed to acquire lock after 50 attempts" >&2
+      return 1
+    fi
+    sleep 0.1
+  done
+  return 0
+}
+
+release_lock() {
+  rmdir "$LOCK_DIR" 2>/dev/null || true
+}
+
+# --- Subcommands ---
+cmd_register() {
+  local pid="$1"
+  # Validate PID format (numeric)
+  if ! echo "$pid" | grep -qE '^[0-9]+$'; then
+    echo "ERROR: Invalid PID format: $pid" >&2
+    return 1
+  fi
+
+  acquire_lock || return 1
+  trap release_lock EXIT
+
+  # Create .vbw-planning if missing
+  mkdir -p "$(dirname "$PID_FILE")"
+
+  # Append PID if not already present
+  if [ -f "$PID_FILE" ]; then
+    if grep -q "^${pid}$" "$PID_FILE" 2>/dev/null; then
+      return 0  # Already registered
+    fi
+  fi
+
+  echo "$pid" >> "$PID_FILE"
+  release_lock
+  trap - EXIT
+}
+
+cmd_unregister() {
+  local pid="$1"
+  # Validate PID format
+  if ! echo "$pid" | grep -qE '^[0-9]+$'; then
+    echo "ERROR: Invalid PID format: $pid" >&2
+    return 1
+  fi
+
+  acquire_lock || return 1
+  trap release_lock EXIT
+
+  if [ ! -f "$PID_FILE" ]; then
+    release_lock
+    trap - EXIT
+    return 0
+  fi
+
+  # Remove the PID line
+  grep -v "^${pid}$" "$PID_FILE" > "${PID_FILE}.tmp" 2>/dev/null || true
+  mv "${PID_FILE}.tmp" "$PID_FILE"
+
+  release_lock
+  trap - EXIT
+}
+
+cmd_list() {
+  if [ ! -f "$PID_FILE" ]; then
+    return 0
+  fi
+
+  # Filter out dead PIDs (kill -0 checks existence without signaling)
+  while IFS= read -r pid; do
+    [ -z "$pid" ] && continue
+    # Validate numeric
+    if ! echo "$pid" | grep -qE '^[0-9]+$'; then
+      continue
+    fi
+    # Check if process exists
+    if kill -0 "$pid" 2>/dev/null; then
+      echo "$pid"
+    fi
+  done < "$PID_FILE"
+}
+
+# --- Main ---
+CMD="${1:-}"
+case "$CMD" in
+  register)
+    [ -z "${2:-}" ] && { echo "Usage: $0 register <pid>" >&2; exit 1; }
+    cmd_register "$2"
+    ;;
+  unregister)
+    [ -z "${2:-}" ] && { echo "Usage: $0 unregister <pid>" >&2; exit 1; }
+    cmd_unregister "$2"
+    ;;
+  list)
+    cmd_list
+    ;;
+  *)
+    echo "Usage: $0 {register|unregister|list} [pid]" >&2
+    exit 1
+    ;;
+esac

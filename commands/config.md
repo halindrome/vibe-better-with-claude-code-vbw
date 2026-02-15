@@ -1,5 +1,6 @@
 ---
 name: vbw:config
+category: supporting
 disable-model-invocation: true
 description: View and modify VBW configuration including effort profile, verification tier, and skill-hook wiring.
 argument-hint: [setting value]
@@ -10,7 +11,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob
 
 ## Context
 
-Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}``
 
 Config:
 ```
@@ -388,7 +389,7 @@ Note: `auto_commit` controls source-task commits during Execute mode. Planning a
 | custom_profiles | object | user-defined profiles | {} |
 | model_profile | string | quality/balanced/budget | quality |
 | model_overrides | object | agent-to-model map | {} |
-| agent_max_turns | object | per-agent turns (number), 0/false disables | scout=15, qa=25, architect=30, debugger=80, lead=50, dev=75 |
+| agent_max_turns | object | per-agent turns (number), 0/false = unlimited | scout=15, qa=25, architect=30, debugger=80, lead=50, dev=75 |
 | context_compiler | boolean | true/false | true |
 | v3_delta_context | boolean | true/false | false |
 | v3_context_cache | boolean | true/false | false |
@@ -410,6 +411,31 @@ Note: `auto_commit` controls source-task commits during Execute mode. Planning a
 | v2_role_isolation | boolean | true/false | false |
 | v2_two_phase_completion | boolean | true/false | false |
 | v2_token_budgets | boolean | true/false | false |
+
+### agent_max_turns
+
+Controls how many turns each agent gets before the Task tool stops. Values are scaled by the current effort level (thorough = 1.5×, balanced = 1×, fast = 0.8×, turbo = 0.6×).
+
+Set a per-agent value to `false` or `0` to give that agent unlimited turns (no `maxTurns` parameter is passed to the Task tool):
+
+```json
+{
+  "agent_max_turns": {
+    "dev": false,
+    "debugger": 0
+  }
+}
+```
+
+You can also provide per-effort overrides using an object instead of a number:
+
+```json
+{
+  "agent_max_turns": {
+    "dev": { "thorough": 120, "balanced": 75, "fast": 50, "turbo": false }
+  }
+}
+```
 
 ## Output Format
 

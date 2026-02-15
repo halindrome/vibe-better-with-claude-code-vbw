@@ -5,7 +5,7 @@
 # applies per-agent overrides, and returns the final model string.
 #
 # Usage: resolve-agent-model.sh <agent-name> <config-path> <profiles-path>
-#   agent-name: lead|dev|qa|scout|debugger|architect
+#   agent-name: lead|dev|qa|scout|debugger|architect|docs
 #   config-path: path to .vbw-planning/config.json
 #   profiles-path: path to config/model-profiles.json
 #
@@ -41,11 +41,11 @@ fi
 
 # Validate agent name
 case "$AGENT" in
-  lead|dev|qa|scout|debugger|architect)
+  lead|dev|qa|scout|debugger|architect|docs)
     # Valid agent
     ;;
   *)
-    echo "Invalid agent name '$AGENT'. Valid: lead, dev, qa, scout, debugger, architect" >&2
+    echo "Invalid agent name '$AGENT'. Valid: lead, dev, qa, scout, debugger, architect, docs" >&2
     exit 1
     ;;
 esac

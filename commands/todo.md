@@ -1,5 +1,6 @@
 ---
 name: vbw:todo
+category: supporting
 disable-model-invocation: true
 description: Add an item to the persistent backlog in STATE.md.
 argument-hint: <todo-description> [--priority=high|normal|low]

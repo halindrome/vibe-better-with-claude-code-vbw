@@ -345,6 +345,17 @@ When a Dev teammate reports plan completion (task marked completed):
 
 If `--skip-qa` or turbo: "○ QA verification skipped ({reason})"
 
+**Auto-skip for certain agents:** Check if the current agent type is in `qa_skip_agents` config array (default: `["docs"]`):
+```bash
+AGENT_TYPE=$(jq -r '.current_agent_type // "dev"' .vbw-planning/config.json 2>/dev/null)
+QA_SKIP_AGENTS=$(jq -r '.qa_skip_agents // []' .vbw-planning/config.json 2>/dev/null)
+if echo "$QA_SKIP_AGENTS" | jq -e --arg agent "$AGENT_TYPE" 'contains([$agent])' >/dev/null 2>&1; then
+  echo "○ QA verification skipped (agent: $AGENT_TYPE)"
+  # Skip to Step 4.5 (UAT)
+fi
+```
+When the agent type is in the skip list, QA is skipped automatically without needing `--skip-qa` flag. Docs-only changes don't need formal QA.
+
 **Tier resolution:** When `v3_validation_gates=true`: use `qa_tier` from gate policy resolved in Step 3.
 When `v3_validation_gates=false` (default): map effort to tier: turbo=skip (already handled), fast=quick, balanced=standard, thorough=deep. Override: if >15 requirements or last phase before ship, force Deep.
 
@@ -394,7 +405,12 @@ Note: "Run inline" means the execute-protocol agent runs the verify protocol dir
 
 ### Step 5: Update state and present summary
 
-**Shutdown:** If team was created (based on prefer_teams decision): send shutdown to each teammate, wait for approval, re-request if rejected, then TeamDelete team "vbw-phase-{NN}". Wait for TeamDelete before state updates. If no team: skip shutdown sequence.
+**HARD GATE — Shutdown before ANY output or state updates:** If team was created (based on prefer_teams decision), you MUST shut down the team BEFORE updating state, presenting results, or asking the user anything. This is blocking and non-negotiable:
+1. Send `shutdown_request` via SendMessage to EVERY teammate (each dev-{MM}, qa) — do not skip any
+2. Wait for each `shutdown_response` with `approve: true`. If a teammate rejects, re-request immediately.
+3. Call TeamDelete for team "vbw-phase-{NN}"
+4. Only THEN proceed to state updates and user-facing output below
+Failure to shut down leaves agents running in the background, consuming API credits (visible as hanging panes in tmux, invisible but still costly without tmux). If no team was created: skip shutdown sequence.
 
 **Control Plane cleanup:** Lock and token state cleanup already handled by existing V3 Lock-Lite and Token Budget cleanup blocks.
 

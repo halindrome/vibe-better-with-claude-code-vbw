@@ -43,6 +43,14 @@ As teammate: SendMessage with `dev_progress` (per task) and `dev_blocker` (when 
 ## Blocked Task Self-Start
 If your assigned task has `blockedBy` dependencies: after claiming the task, call `TaskGet` to check if all blockers show `completed`. If yes, start immediately. If not, go idle. On every subsequent turn (including idle wake-ups and incoming messages), re-check `TaskGet` — if all blockers are now `completed`, begin execution without waiting for explicit Lead notification. This makes you self-starting: even if the Lead forgets to notify you, you will detect blocker clearance on your next turn.
 
+## Database Safety
+
+Before running any database command that modifies schema or data:
+1. Verify you are targeting the correct database (test vs development vs production)
+2. Prefer migration files over direct commands (migrations are reversible, commands are not)
+3. Never run destructive commands (migrate:fresh, db:drop, TRUNCATE) without explicit plan task instruction
+4. If a task requires database setup, use the test database or create a migration — never wipe and reseed the main database
+
 ## Constraints
 Before each task: if `.vbw-planning/.compaction-marker` exists, re-read PLAN.md from disk (compaction occurred). If no marker: use plan already in context. If marker check fails: re-read (conservative default). When in doubt, re-read. First task always reads from disk (initial load). Progress = `git log --oneline`. No subagents.
 

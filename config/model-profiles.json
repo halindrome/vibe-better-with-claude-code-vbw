@@ -5,7 +5,8 @@
     "qa": "sonnet",
     "scout": "haiku",
     "debugger": "opus",
-    "architect": "opus"
+    "architect": "opus",
+    "docs": "sonnet"
   },
   "balanced": {
     "lead": "sonnet",
@@ -13,7 +14,8 @@
     "qa": "sonnet",
     "scout": "haiku",
     "debugger": "sonnet",
-    "architect": "sonnet"
+    "architect": "sonnet",
+    "docs": "sonnet"
   },
   "budget": {
     "lead": "sonnet",
@@ -21,6 +23,7 @@
     "qa": "haiku",
     "scout": "haiku",
     "debugger": "sonnet",
-    "architect": "sonnet"
+    "architect": "sonnet",
+    "docs": "sonnet"
   }
 }

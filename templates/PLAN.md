@@ -10,6 +10,7 @@ autonomous: {true|false}
 effort_override: {thorough|balanced|fast|turbo}
 skills_used: [{skill}]
 files_modified: [{path}]
+forbidden_commands: []
 must_haves:
   truths: ["{invariant}"]
   artifacts: [{path: "{file}", provides: "{what}", contains: "{string}"}]

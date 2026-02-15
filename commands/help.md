@@ -1,77 +1,37 @@
 ---
 name: vbw:help
+category: supporting
 disable-model-invocation: true
 description: Display all available VBW commands with descriptions and usage examples.
 argument-hint: [command-name]
-allowed-tools: Read, Glob
+allowed-tools: Read, Glob, Bash
 ---
 
 # VBW Help $ARGUMENTS
 
 ## Context
 
-Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}``
 
 ## Behavior
 
-**No args:** Show all commands grouped by stage (mark all ✓).
-**With arg:** Read `${CLAUDE_PLUGIN_ROOT}/commands/{name}.md`, display: name, description, usage, args, related.
+### No args: Display all commands
 
-## Commands
+Run the help output script and display the result exactly as-is (pre-formatted terminal output):
 
-**Lifecycle:** ✓ init (scaffold) · ✓ vibe (smart router -- plan, execute, discuss, archive, and more)
-**Monitoring:** ✓ status (dashboard) · ✓ qa (deep verify)
-**Quick Actions:** ✓ fix (quick fix) · ✓ debug (investigation) · ✓ todo (backlog)
-**Session:** ✓ pause (save notes) · ✓ resume (restore context)
-**Codebase:** ✓ map (Scout analysis) · ✓ research (standalone)
-**Config:** ✓ skills (community skills) · ✓ config (settings, model profiles) · ✓ help (this) · ✓ whats-new (changelog) · ✓ update (version) · ✓ uninstall (removal)
+```
+!`bash ${CLAUDE_PLUGIN_ROOT}/scripts/help-output.sh`
+```
 
-## Architecture
+Display the output above verbatim. Do not reformat, summarize, or add commentary. The script dynamically reads all command files and generates grouped output.
 
-- /vbw:vibe --execute creates Dev team for parallel plans. /vbw:map creates Scout team. Session IS the lead.
-- Continuous verification via PostToolUse, TaskCompleted, TeammateIdle hooks. /vbw:qa is on-demand.
-- /vbw:config maps skills to hook events (skill-hook wiring).
+### With arg: Display specific command details
 
-## Model Profiles
+Read `${CLAUDE_PLUGIN_ROOT}/commands/{name}.md` (strip `vbw:` prefix if present). Display:
+- **Name** and **description** from frontmatter
+- **Category** from frontmatter
+- **Usage:** `/vbw:{name} {argument-hint}`
+- **Arguments:** list from argument-hint with brief explanation
+- **Related:** suggest 1-2 related commands based on category
 
-Control which Claude model each agent uses (cost optimization):
-- `/vbw:config model_profile quality` -- Opus for Lead/Dev/Debugger/Architect, Sonnet for QA, Haiku for Scout (~$2.80/phase)
-- `/vbw:config model_profile balanced` -- Sonnet for most, Haiku for Scout (~$1.40/phase)
-- `/vbw:config model_profile budget` -- Sonnet for critical agents, Haiku for QA/Scout (~$0.70/phase)
-- `/vbw:config model_override dev opus` -- Override single agent without changing profile
-- Interactive mode: Select "Model Profile" → "Configure each agent individually" to set models per-agent (6 questions across 2 rounds). Status display marks overridden agents with asterisk (*).
-
-See: @references/model-profiles.md for full preset definitions and cost comparison.
-
-## Getting Started
-
-➜ /vbw:init -> /vbw:vibe -> /vbw:vibe --archive
-Optional: /vbw:config model_profile <quality|balanced|budget> to optimize cost
-`/vbw:help <command>` for details.
-
-## GSD Import
-
-Migrating from GSD? VBW automatically detects existing GSD projects during initialization.
-
-**During /vbw:init:**
-- Detects `.planning/` directory (GSD's planning folder)
-- Prompts: "GSD project detected. Import work history?"
-- If approved: copies `.planning/` to `.vbw-planning/gsd-archive/` (original preserved)
-- Generates INDEX.json with phase metadata, milestones, and quick paths
-- Continues with normal VBW initialization
-
-**What's archived:**
-- All GSD planning files (ROADMAP, PROJECT, phases, summaries, plans)
-- Lightweight JSON index for fast agent reference
-- Original `.planning/` remains untouched (continues working with GSD if needed)
-
-**After import:**
-- VBW agents can reference archived GSD files when needed
-- Index provides quick lookup: phases completed, milestones, key file paths
-- GSD isolation can be enabled to prevent cross-contamination
-
-See: /vbw:init for the import flow, docs/migration-gsd-to-vbw.md for detailed migration guide.
-
-## Output Format
-
-Follow @${CLAUDE_PLUGIN_ROOT}/references/vbw-brand-essentials.md — double-line box, ✓ available, ➜ Getting Started, no ANSI.
+If command not found: "⚠ Unknown command: {name}. Run /vbw:help for all commands."

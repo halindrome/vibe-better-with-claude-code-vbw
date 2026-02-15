@@ -1,10 +1,12 @@
 #!/bin/bash
 set -u
-# SubagentStop hook: Decrement active agent count
+# SubagentStop hook: Decrement active agent count and unregister PID
 # Uses reference counting so concurrent agents (e.g., Scout + Lead) don't
 # delete the marker while siblings are still running.
+# Unregisters agent PID from tmux watchdog tracking.
 # Final cleanup happens in session-stop.sh.
 
+INPUT=$(cat)
 PLANNING_DIR=".vbw-planning"
 COUNT_FILE="$PLANNING_DIR/.active-agent-count"
 LOCK_DIR="$PLANNING_DIR/.active-agent-count.lock"
@@ -84,6 +86,13 @@ if acquire_lock; then
 else
   # Lock unavailable — proceed best-effort without lock.
   decrement_or_cleanup
+fi
+
+# Unregister agent PID
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+AGENT_PID=$(echo "$INPUT" | jq -r '.pid // ""' 2>/dev/null)
+if [ -n "$AGENT_PID" ] && [ -f "$SCRIPT_DIR/agent-pid-tracker.sh" ]; then
+  bash "$SCRIPT_DIR/agent-pid-tracker.sh" unregister "$AGENT_PID" 2>/dev/null || true
 fi
 
 exit 0

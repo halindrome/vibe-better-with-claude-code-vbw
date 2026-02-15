@@ -1,5 +1,6 @@
 ---
 name: vbw:debug
+category: supporting
 description: Investigate a bug using the Debugger agent's scientific method protocol.
 argument-hint: "<bug description or error message>"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
@@ -10,7 +11,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
 ## Context
 
 Working directory: `!`pwd``
-Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT}``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}``
 
 Recent commits:
 ```
@@ -55,7 +56,7 @@ Decision tree:
 - Spawn 3 vbw-debugger teammates, one task each. **Add `model: "${DEBUGGER_MODEL}"` and `maxTurns: ${DEBUGGER_MAX_TURNS}` parameters to each Task spawn.**
 - Wait for completion. Synthesize: strongest evidence + highest confidence wins. Multiple confirmed = contributing factors.
 - Winning hypothesis with fix: apply + commit `fix({scope}): {description}`
-- Shutdown: send shutdown to each teammate, wait for approval, re-request if rejected, then TeamDelete.
+- **HARD GATE — Shutdown before presenting results:** Send `shutdown_request` to each teammate, wait for `shutdown_response` (approve=true), re-request if rejected, then TeamDelete. Only THEN present results to user. Failure to shut down leaves agents running and consuming API credits.
 
 **Path B: Standard** (all other cases):
 - Resolve Debugger model:

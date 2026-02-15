@@ -2,6 +2,81 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.21.15] - 2026-02-15
+
+### Added
+
+- **`agents`** -- New docs agent (vbw-docs) for documentation tasks with Sonnet as default model across all profiles, plus `qa_skip_agents` config to auto-skip QA for documentation work.
+
+## [1.21.14] - 2026-02-15
+
+### Fixed
+
+- **`prompt-preflight`** -- Stop deleting `.vbw-session` marker on non-`/vbw:` prompts. The marker was being removed mid-workflow when users sent follow-up messages (plan approvals, answers), causing `security-filter.sh` to block Write/Edit calls to `.vbw-planning/`. Cleanup now only happens at session end via `session-stop.sh`.
+- **`hook-wrapper`** -- Add `CLAUDE_CONFIG_DIR` fallback in SIGHUP handler. Previously used bare `$HOME/.claude` without respecting custom config directory.
+- **`shellcheck`** -- Fix SC2155 warnings (declare and assign separately) in `tmux-watchdog.sh`, `session-start.sh`, `clean-stale-teams.sh`, `doctor-cleanup.sh`. Fix SC2034 unused variable in `doctor-cleanup.sh`.
+- **`security-filter`** -- Remove `.vbw-planning/` self-blocking. The marker-based isolation (`.gsd-isolation` + `.active-agent` + `.vbw-session`) caused false blocks in too many scenarios: orchestrator after team deletion, agents before markers set, Read calls before prompt-preflight runs. GSD isolation is enforced by CLAUDE.md instructions + `.planning/` block (VBW→GSD direction).
+
+## [1.21.11] - 2026-02-15
+
+### Added
+
+- **`help`** -- Dynamic help output from command frontmatter. Added `category:` field to all 22 commands and `scripts/help-output.sh` that reads frontmatter to generate grouped, formatted help. Zero tokens, zero drift.
+- **`tmux`** -- PID tracking utility for agent process registration and cleanup on SubagentStop.
+- **`tmux`** -- Watchdog script for tmux detach detection, launched on session start.
+- **`tmux`** -- SIGHUP trap fallback in hook-wrapper for tmux disconnect resilience.
+- **`tmux`** -- Forced in-process mode auto-patch when tmux is detected.
+- **`session`** -- Orphan claude process cleanup on SessionStart.
+- **`session`** -- Stale team cleanup script with paired tasks directory cleanup, integrated into SessionStart.
+- **`compaction`** -- Pre-compact agent state snapshots with agent metadata, restore in post-compact hook.
+- **`doctor`** -- Runtime health checks: cleanup preview, --cleanup flag, cleanup logging with summary counts.
+
+### Fixed
+
+- **`doctor`** -- Remove `local` keyword from top-level case block (bash compatibility).
+
+### Documentation
+
+- **`gitignore`** -- Runtime files (snapshots, watchdog, doctor logs) documented in .gitignore.
+
+---
+
+## [1.21.10] - 2026-02-15
+
+### Fixed
+
+- **`commands`** -- Plugin root preamble dual-fallback. When `CLAUDE_PLUGIN_ROOT` is empty (observed in some marketplace installs), the backtick preamble now resolves via the plugin cache using the same `sort -V | tail -1` pattern established by PR #54 for hooks. Zero regression when `CLAUDE_PLUGIN_ROOT` is set — the fallback never fires. 15 command preambles + 4 backtick bash calls updated. Extends PR #50's preamble architecture with PR #54's dual-fallback philosophy.
+- **`testing`** -- `verify-plugin-root-resolution.sh` updated to recognize both simple and dual-fallback preamble forms.
+
+---
+
+## [1.21.9] - 2026-02-15
+
+### Added
+
+- **`security`** -- Database safety guard. PreToolUse hook (`bash-guard.sh`) intercepts every Bash command and blocks 40+ destructive patterns across Laravel, Rails, Django, Prisma, Knex, Sequelize, TypeORM, Drizzle, Diesel, SQLx, Ecto, raw SQL clients, Redis, MongoDB, and Docker volumes. Fires on all agents with Bash access (Dev, QA, Lead, Debugger). Override with `VBW_ALLOW_DESTRUCTIVE=1` or `bash_guard=false` config.
+- **`security`** -- `config/destructive-commands.txt` blocklist file, extensible per-project via `.vbw-planning/destructive-commands.local.txt`.
+- **`agents`** -- `## Database Safety` prompt sections added to vbw-qa, vbw-dev, vbw-debugger, and vbw-lead agents.
+- **`contracts`** -- `forbidden_commands` gate type in `hard-gate.sh` for per-plan command restrictions.
+- **`templates`** -- `forbidden_commands: []` field added to PLAN.md template.
+- **`docs`** -- `docs/database-safety-guard.md` — full design document with flowchart, pattern table, override guide, and architecture decisions.
+- **`readme`** -- Database safety guard in Features section, Settings Reference (`bash_guard`), Security hook diagram updated.
+
+---
+
+## [1.21.8] - 2026-02-15
+
+### Added
+
+- **`readme`** -- Feature Flags Reference documenting all 20 v2/v3 flags with descriptions, dependencies, and toggle instructions. Settings Reference for all config keys. Planning & Git section for `planning_tracking` and `auto_push`. (PR #62, @dpearson2699)
+- **`readme`** -- Contributors section now uses [contrib.rocks](https://contrib.rocks/) auto-updating image.
+
+### Changed
+
+- **`config`** -- `/vbw:config` feature flags display uses human-friendly labels instead of raw `v2_`/`v3_` prefixed keys. (PR #62, @dpearson2699)
+
+---
+
 ## [1.21.7] - 2026-02-15
 
 ### Added

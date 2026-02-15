@@ -36,6 +36,7 @@ create_test_config() {
   "prefer_teams": "always",
   "branch_per_milestone": false,
   "plain_summary": true,
+  "qa_skip_agents": ["docs"],
   "active_profile": "default",
   "custom_profiles": {},
   "model_profile": "quality",

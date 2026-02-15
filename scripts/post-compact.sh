@@ -43,10 +43,31 @@ case "$ROLE" in
     ;;
 esac
 
-jq -n --arg role "${ROLE:-unknown}" --arg files "$FILES" '{
+# --- Restore agent state snapshot ---
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SNAPSHOT_CONTEXT=""
+if [ -f ".vbw-planning/.execution-state.json" ] && [ -f "$SCRIPT_DIR/snapshot-resume.sh" ]; then
+  SNAP_PHASE=$(jq -r '.phase // ""' ".vbw-planning/.execution-state.json" 2>/dev/null)
+  if [ -n "$SNAP_PHASE" ]; then
+    SNAP_PATH=$(bash "$SCRIPT_DIR/snapshot-resume.sh" restore "$SNAP_PHASE" 2>/dev/null) || SNAP_PATH=""
+    if [ -n "$SNAP_PATH" ] && [ -f "$SNAP_PATH" ]; then
+      SNAP_PLAN=$(jq -r '.execution_state.current_plan // "unknown"' "$SNAP_PATH" 2>/dev/null)
+      SNAP_STATUS=$(jq -r '.execution_state.status // "unknown"' "$SNAP_PATH" 2>/dev/null)
+      SNAP_COMMITS=$(jq -r '.recent_commits | join(", ")' "$SNAP_PATH" 2>/dev/null) || SNAP_COMMITS=""
+      SNAPSHOT_CONTEXT=" Pre-compaction state: phase=${SNAP_PHASE}, plan=${SNAP_PLAN}, status=${SNAP_STATUS}."
+      if [ -n "$SNAP_COMMITS" ]; then
+        SNAPSHOT_CONTEXT="${SNAPSHOT_CONTEXT} Recent commits: ${SNAP_COMMITS}."
+      fi
+      TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date +"%Y-%m-%d %H:%M:%S")
+      echo "[$TIMESTAMP] Snapshot restored: $SNAP_PATH phase=$SNAP_PHASE" >> ".vbw-planning/.hook-errors.log" 2>/dev/null || true
+    fi
+  fi
+fi
+
+jq -n --arg role "${ROLE:-unknown}" --arg files "$FILES" --arg snap "${SNAPSHOT_CONTEXT:-}" '{
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": ("Context was compacted. Agent role: " + $role + ". Re-read these key files from disk: " + $files)
+    "additionalContext": ("Context was compacted. Agent role: " + $role + ". Re-read these key files from disk: " + $files + $snap)
   }
 }'
 
