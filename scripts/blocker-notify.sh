@@ -62,6 +62,7 @@ done
 if [ -n "$UNBLOCKED" ]; then
   jq -n --arg ctx "$UNBLOCKED" '{
     "hookSpecificOutput": {
+      "hookEventName": "TaskCompleted",
       "additionalContext": ("BLOCKER CLEARED: " + $ctx + "Send each unblocked agent a message to proceed.")
     }
   }'

@@ -25,6 +25,10 @@ echo "Running plugin root resolution checks..."
 bash "$ROOT/testing/verify-plugin-root-resolution.sh"
 
 echo ""
+echo "Running hook hookEventName checks..."
+bash "$ROOT/testing/verify-hook-event-name.sh"
+
+echo ""
 if [ "${RUN_VIBE_VERIFY:-0}" = "1" ]; then
   echo "Running vibe consolidation checks..."
   bash "$ROOT/scripts/verify-vibe.sh"

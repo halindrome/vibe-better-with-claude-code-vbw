@@ -4,7 +4,7 @@ set -u
 
 # --- Dependency check ---
 if ! command -v jq &>/dev/null; then
-  echo '{"hookSpecificOutput":{"additionalContext":"VBW: jq not found. Install: brew install jq (macOS) / apt install jq (Linux). All 17 VBW quality gates are disabled until jq is installed -- no commit validation, no security filtering, no file guarding."}}'
+  echo '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"VBW: jq not found. Install: brew install jq (macOS) / apt install jq (Linux). All 17 VBW quality gates are disabled until jq is installed -- no commit validation, no security filtering, no file guarding."}}'
   exit 0
 fi
 
@@ -20,10 +20,16 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 if [ -f "$PLANNING_DIR/.compaction-marker" ]; then
   _cm_ts=$(cat "$PLANNING_DIR/.compaction-marker" 2>/dev/null || echo 0)
   _cm_now=$(date +%s 2>/dev/null || echo 0)
-  if [ $((_cm_now - _cm_ts)) -lt 60 ]; then
-    exit 0
+  # Validate timestamp is numeric; treat non-numeric/empty as stale
+  if [[ "$_cm_ts" =~ ^[0-9]+$ ]]; then
+    _cm_age=$((_cm_now - _cm_ts))
+    # Fresh marker (0-59s old): skip session-start, post-compact handles it
+    # Negative age (future-dated clock skew) or >= 60s: treat as stale
+    if [ "$_cm_age" -ge 0 ] && [ "$_cm_age" -lt 60 ]; then
+      exit 0
+    fi
   fi
-  # Stale marker from crashed compaction — clean up and continue
+  # Stale, future-dated, or corrupted marker — clean up and continue
   rm -f "$PLANNING_DIR/.compaction-marker" 2>/dev/null
 fi
 
@@ -447,6 +453,7 @@ fi
 if [ ! -d "$PLANNING_DIR" ]; then
   jq -n --arg update "$UPDATE_MSG" --arg welcome "$WELCOME_MSG" '{
     "hookSpecificOutput": {
+      "hookEventName": "SessionStart",
       "additionalContext": ($welcome + "No .vbw-planning/ directory found. Run /vbw:init to set up the project." + $update)
     }
   }'
@@ -587,6 +594,7 @@ CTX="$CTX Next: ${NEXT_ACTION}."
 
 jq -n --arg ctx "$CTX" --arg update "$UPDATE_MSG" --arg welcome "$WELCOME_MSG" --arg flags "${FLAG_WARNINGS:-}" '{
   "hookSpecificOutput": {
+    "hookEventName": "SessionStart",
     "additionalContext": ($welcome + $ctx + $update + $flags)
   }
 }'
