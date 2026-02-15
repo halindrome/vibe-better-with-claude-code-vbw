@@ -23,6 +23,19 @@ If no .vbw-planning/ dir: STOP "Run /vbw:init first." (check `.vbw-planning/conf
 
 ## Behavior
 
+### Step 0 (always): migrate brownfield config first
+
+Before any read/write behavior below, run:
+
+```bash
+if ! bash ${CLAUDE_PLUGIN_ROOT}/scripts/migrate-config.sh .vbw-planning/config.json; then
+  echo "⚠ Config migration failed (invalid JSON). Fix .vbw-planning/config.json, then retry /vbw:config"
+  exit 0
+fi
+```
+
+This backfills missing v2/v3 flags, ensures `model_overrides` + `prefer_teams` exist, and migrates legacy `agent_teams` to `prefer_teams` (then removes stale `agent_teams`).
+
 ### No arguments: Interactive configuration
 
 **Step 1:** Display current settings in single-line box table (setting, value, description) + skill-hook mappings.
