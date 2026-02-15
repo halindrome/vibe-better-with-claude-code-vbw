@@ -2,6 +2,18 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.21.16] - 2026-02-15
+
+### Added
+
+- **`max-turns`** -- Agent turn-budget resolver with effort-based scaling (thorough=1.5x, balanced=1x, fast=0.8x, turbo=0.6x), per-agent defaults, and config override support. Contributed by [@dpearson2699](https://github.com/dpearson2699) (#64).
+
+### Fixed
+
+- **`hooks`** -- Prevent false isolation blocks by tightening SubagentStart/Stop/TeammateIdle/TaskCompleted matchers from 6 to 24 patterns for correct VBW agent detection. Contributed by [@dpearson2699](https://github.com/dpearson2699) (#64).
+- **`compact`** -- Role-matched snapshot restore prefers snapshots from the same agent role after compaction, with fallback to latest. Task-level resume hints from event log provide in-progress task and resume candidate context. Contributed by [@Solvely-Colin](https://github.com/Solvely-Colin) (#65).
+- **`agents`** -- Add docs agent to max-turns resolver and fix missing EOF newline in resolve-agent-max-turns.sh.
+
 ## [1.21.15] - 2026-02-15
 
 ### Added
