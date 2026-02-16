@@ -21,7 +21,7 @@ Active milestone: `!`cat .vbw-planning/ACTIVE 2>/dev/null || echo "No active mil
 
 1. **Resolve STATE.md path:** If the active milestone above is blank/empty or says "No active milestone", use `.vbw-planning/STATE.md`. Otherwise treat the value as the milestone slug (trim whitespace; slugs are kebab-case — reject values containing `/` or other path separators) and use `.vbw-planning/milestones/{slug}/STATE.md`. If the resolved STATE.md does not exist, STOP: "STATE.md not found at {path}. Run /vbw:init or check .vbw-planning/ACTIVE."
 
-2. **Read todos:** Read the resolved STATE.md. Extract all lines under `### Pending Todos` (stop at the next `##` or `###` heading or end of file). If the section contains only "None." or is empty, display:
+2. **Read todos:** Read the resolved STATE.md. Find the `### Pending Todos` subsection and extract all lines under it (stop at the next `##` or `###` heading or end of file). If `### Pending Todos` does not exist, fall back to `## Todos` and extract lines directly under it (same stop rules). If the section contains only "None." or is empty (or neither heading exists), display:
    ```
    No pending todos.
 
@@ -29,7 +29,13 @@ Active milestone: `!`cat .vbw-planning/ACTIVE 2>/dev/null || echo "No active mil
    ```
    Exit.
 
-3. **Parse and filter:** Each todo line starts with `- `. Extract: text, priority tag (`[HIGH]`, `[low]`, or plain for normal), and date from `(added YYYY-MM-DD)`. If arguments contain a priority filter (e.g., `/vbw:list-todos high`), show only matching priority items.
+3. **Parse and filter:** Each todo line starts with `- `. Extract: text, priority tag (`[HIGH]`, `[low]`, or plain for normal), and date from `(added YYYY-MM-DD)`. If arguments contain a priority filter (e.g., `/vbw:list-todos high`), match case-insensitively and show only matching priority items. If filtering yields zero results, display:
+   ```
+   No {priority}-priority todos found.
+
+   ➜ Next Up: /vbw:list-todos to see all
+   ```
+   Exit.
 
 4. **Display list:** Show numbered list with priority and age:
    ```
