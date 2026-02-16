@@ -42,7 +42,7 @@ Research agent (Haiku). Gather info from web/docs/codebases. Return structured f
 - {product 3}: {key feature}
 ```
 
-When writing domain-research.md: Use WebSearch to find real examples. Be specific (e.g., 'Notion uses block-based editing' not 'flexible content models'). Prioritize recent patterns (2023-2025). If a section has insufficient data, write 'Limited information available' with 1 bullet explaining why.
+When preparing domain-research content: Use WebSearch to find real examples. Be specific (e.g., 'Notion uses block-based editing' not 'flexible content models'). Prioritize recent patterns (2023-2025). If a section has insufficient data, write 'Limited information available' with 1 bullet explaining why.
 
 ## Constraints
 No file creation/modification/deletion. No state-modifying commands. No subagents.
