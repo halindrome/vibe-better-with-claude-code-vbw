@@ -21,7 +21,7 @@ Active milestone: `!`cat .vbw-planning/ACTIVE 2>/dev/null || echo "No active mil
 
 ## Steps
 
-1. **Resolve context:** If the active milestone above is blank/empty or says "No active milestone", use `.vbw-planning/STATE.md`. Otherwise treat the value as the milestone slug and use `.vbw-planning/milestones/{slug}/STATE.md`. If the resolved STATE.md does not exist, STOP: "STATE.md not found at {path}. Run /vbw:init or check .vbw-planning/ACTIVE."
+1. **Resolve context:** If the active milestone above is blank/empty or says "No active milestone", use `.vbw-planning/STATE.md`. Otherwise treat the value as the milestone slug (trim whitespace; slugs are kebab-case — reject values containing `/` or other path separators) and use `.vbw-planning/milestones/{slug}/STATE.md`. If the resolved STATE.md does not exist, STOP: "STATE.md not found at {path}. Run /vbw:init or check .vbw-planning/ACTIVE."
 2. **Parse args:** Description (non-flag text), --priority (default: normal). Format: high=`[HIGH]`, normal=plain, low=`[low]`. Append `(added {YYYY-MM-DD})`.
 3. **Add to STATE.md:** Find `## Todos` section (or `### Pending Todos` for legacy format). If `### Pending Todos` is missing, create it under `## Todos`. Replace "None." / placeholder or append after last item.
 4. **Confirm:** Display ✓ + formatted item + Next Up (/vbw:status).
