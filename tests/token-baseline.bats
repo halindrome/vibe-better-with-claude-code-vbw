@@ -55,7 +55,7 @@ teardown() {
   run bash scripts/token-baseline.sh measure
   [ "$status" -eq 0 ]
 
-  total_truncated=$(echo "$output" | jq '.totals.truncated_lines')
+  total_truncated=$(echo "$output" | jq '.totals.truncated_chars')
   [ "$total_truncated" -eq 180 ]
 }
 
@@ -82,7 +82,7 @@ teardown() {
   # Create baseline with known values
   mkdir -p .vbw-planning/.baselines
   cat > .vbw-planning/.baselines/token-baseline.json <<'JSON'
-{"timestamp":"2026-02-10T00:00:00Z","phases":{"1":{"overages":3,"truncated_lines":200,"tasks":10,"escalations":1,"overages_per_task":0.3}},"totals":{"overages":3,"truncated_lines":200,"tasks":10,"escalations":1,"overages_per_task":0.3},"budget_utilization":{}}
+{"timestamp":"2026-02-10T00:00:00Z","phases":{"1":{"overages":3,"truncated_chars":200,"tasks":10,"escalations":1,"overages_per_task":0.3}},"totals":{"overages":3,"truncated_chars":200,"tasks":10,"escalations":1,"overages_per_task":0.3},"budget_utilization":{}}
 JSON
 
   # Create current data with fewer overages (better)
@@ -125,7 +125,7 @@ JSON
   cd "$TEST_TEMP_DIR"
   mkdir -p .vbw-planning/.baselines
   cat > .vbw-planning/.baselines/token-baseline.json <<'JSON'
-{"timestamp":"2026-02-10T00:00:00Z","phases":{"1":{"overages":5,"truncated_lines":300,"tasks":10,"escalations":2,"overages_per_task":0.5}},"totals":{"overages":5,"truncated_lines":300,"tasks":10,"escalations":2,"overages_per_task":0.5},"budget_utilization":{}}
+{"timestamp":"2026-02-10T00:00:00Z","phases":{"1":{"overages":5,"truncated_chars":300,"tasks":10,"escalations":2,"overages_per_task":0.5}},"totals":{"overages":5,"truncated_chars":300,"tasks":10,"escalations":2,"overages_per_task":0.5},"budget_utilization":{}}
 JSON
 
   echo '{"ts":"2026-02-13T10:00:00Z","event_id":"e1","event":"task_started","phase":1}' >> .vbw-planning/.events/event-log.jsonl

@@ -77,3 +77,6 @@ Before each task: if `.vbw-planning/.compaction-marker` exists, re-read PLAN.md 
 ## Effort
 
 Follow effort level in task description (max|high|medium|low). After compaction (marker appears), re-read PLAN.md and context files from disk.
+
+## Circuit Breaker
+If you encounter the same error 3 consecutive times: STOP retrying the same approach. Try ONE alternative approach. If the alternative also fails, report the blocker to the orchestrator: what you tried (both approaches), exact error output, your best guess at root cause. Never attempt a 4th retry of the same failing operation.

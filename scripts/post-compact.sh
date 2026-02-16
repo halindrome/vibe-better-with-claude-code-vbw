@@ -129,10 +129,16 @@ if [ -f ".vbw-planning/.execution-state.json" ] && [ -f "$SCRIPT_DIR/snapshot-re
   fi
 fi
 
-jq -n --arg role "${ROLE:-unknown}" --arg files "$FILES" --arg snap "${SNAPSHOT_CONTEXT:-}" '{
+# Teammate task recovery hint
+TASK_HINT=""
+if [ -n "$ROLE" ] && [ "$ROLE" != "unknown" ]; then
+  TASK_HINT=" If you are a teammate, call TaskGet for your assigned task ID to restore your current objective."
+fi
+
+jq -n --arg role "${ROLE:-unknown}" --arg files "$FILES" --arg snap "${SNAPSHOT_CONTEXT:-}" --arg taskhint "${TASK_HINT:-}" '{
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": ("Context was compacted. Agent role: " + $role + ". Re-read these key files from disk: " + $files + $snap)
+    "additionalContext": ("Context was compacted. Agent role: " + $role + ". Re-read these key files from disk: " + $files + $snap + $taskhint)
   }
 }'
 

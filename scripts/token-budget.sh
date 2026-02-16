@@ -2,12 +2,12 @@
 set -u
 
 # token-budget.sh <role> [file] [contract-path] [task-number]
-# Enforces token/line budgets on context content.
+# Enforces character-based budgets on context content.
 #
 # Budget resolution order (v2_token_budgets=true):
 #   1. Per-task: contract metadata -> complexity score -> tier multiplier -> role base * multiplier
-#   2. Per-role: token-budgets.json .budgets[role].max_lines
-#   3. No budget (pass through): role not in budgets or max_lines=0
+#   2. Per-role: token-budgets.json .budgets[role].max_chars
+#   3. No budget (pass through): role not in budgets or max_chars=0
 #
 # Input: file path as arg, or stdin if no file.
 # Output: truncated content within budget (stdout).
@@ -88,9 +88,9 @@ compute_task_budget() {
     | .[0].multiplier // 1.0
   ' "$budgets_path" 2>/dev/null) || multiplier="1.0"
 
-  # Get base role budget
+  # Get base role budget (chars)
   local base_budget
-  base_budget=$(jq -r --arg r "$role" '.budgets[$r].max_lines // 0' "$budgets_path" 2>/dev/null) || base_budget=0
+  base_budget=$(jq -r --arg r "$role" '.budgets[$r].max_chars // 0' "$budgets_path" 2>/dev/null) || base_budget=0
   [ "$base_budget" -eq 0 ] 2>/dev/null && return 1
 
   # Compute task budget (integer arithmetic via awk for float multiply)
@@ -102,80 +102,54 @@ compute_task_budget() {
 }
 
 # Load budget: per-task from contract, or per-role fallback
-MAX_LINES=0
+MAX_CHARS=0
 BUDGET_SOURCE="role"
 if [ -n "$CONTRACT_PATH" ] && [ -f "$CONTRACT_PATH" ] && [ -f "$BUDGETS_PATH" ]; then
   TASK_BUDGET=$(compute_task_budget "$CONTRACT_PATH" "$ROLE" "$BUDGETS_PATH" 2>/dev/null) || TASK_BUDGET=""
   if [ -n "$TASK_BUDGET" ] && [ "$TASK_BUDGET" -gt 0 ] 2>/dev/null; then
-    MAX_LINES="$TASK_BUDGET"
+    MAX_CHARS="$TASK_BUDGET"
     BUDGET_SOURCE="task"
   fi
 fi
 
 # Fallback to per-role budget
-if [ "$MAX_LINES" -eq 0 ] && [ -f "$BUDGETS_PATH" ]; then
-  MAX_LINES=$(jq -r --arg r "$ROLE" '.budgets[$r].max_lines // 0' "$BUDGETS_PATH" 2>/dev/null || echo "0")
+if [ "$MAX_CHARS" -eq 0 ] && [ -f "$BUDGETS_PATH" ]; then
+  MAX_CHARS=$(jq -r --arg r "$ROLE" '.budgets[$r].max_chars // 0' "$BUDGETS_PATH" 2>/dev/null || echo "0")
 fi
 
 # No budget defined — pass through
-if [ "$MAX_LINES" -eq 0 ] || [ "$MAX_LINES" = "0" ]; then
+if [ "$MAX_CHARS" -eq 0 ] || [ "$MAX_CHARS" = "0" ]; then
   echo "$CONTENT"
   exit 0
 fi
 
-# Extract phase/plan numbers from contract path for escalation tracking
-PHASE_NUM="0"
-PLAN_NUM="0"
-if [ -n "$CONTRACT_PATH" ]; then
-  # Parse from filename pattern: {phase}-{plan}.json
-  CONTRACT_BASENAME=$(basename "$CONTRACT_PATH" .json 2>/dev/null) || CONTRACT_BASENAME=""
-  if [[ "$CONTRACT_BASENAME" =~ ^([0-9]+)-([0-9]+)$ ]]; then
-    PHASE_NUM="${BASH_REMATCH[1]}"
-    PLAN_NUM="${BASH_REMATCH[2]}"
-  else
-    # Try reading from contract JSON
-    PHASE_NUM=$(jq -r '.phase // 0' "$CONTRACT_PATH" 2>/dev/null) || PHASE_NUM="0"
-    PLAN_NUM=$(jq -r '.plan // 0' "$CONTRACT_PATH" 2>/dev/null) || PLAN_NUM="0"
-  fi
-fi
+# Count characters
+CHAR_COUNT=${#CONTENT}
 
-# Apply accumulated budget reduction from prior overages in this plan
-TOKEN_STATE_DIR="${PLANNING_DIR}/.token-state"
-TOKEN_STATE_FILE="${TOKEN_STATE_DIR}/${PHASE_NUM}-${PLAN_NUM}.json"
-if [ "$ENABLED" = "true" ] && [ -n "$CONTRACT_PATH" ] && [ -f "$TOKEN_STATE_FILE" ]; then
-  REMAINING_PCT=$(jq -r '.remaining_budget_pct // 100' "$TOKEN_STATE_FILE" 2>/dev/null) || REMAINING_PCT=100
-  if [ "$REMAINING_PCT" -lt 100 ] 2>/dev/null; then
-    MIN_FLOOR=$(jq -r '.escalation.min_budget_floor // 100' "$BUDGETS_PATH" 2>/dev/null) || MIN_FLOOR=100
-    REDUCED_MAX=$(awk "BEGIN {printf \"%.0f\", $MAX_LINES * $REMAINING_PCT / 100}") || REDUCED_MAX="$MAX_LINES"
-    if [ "$REDUCED_MAX" -lt "$MIN_FLOOR" ] 2>/dev/null; then
-      REDUCED_MAX="$MIN_FLOOR"
-    fi
-    MAX_LINES="$REDUCED_MAX"
-  fi
-fi
-
-# Count lines
-LINE_COUNT=$(echo "$CONTENT" | wc -l | tr -d ' ')
-
-if [ "$LINE_COUNT" -le "$MAX_LINES" ]; then
+if [ "$CHAR_COUNT" -le "$MAX_CHARS" ]; then
   # Within budget
   echo "$CONTENT"
   exit 0
 fi
 
-# Truncate (tail strategy: keep last N lines for most recent context)
-STRATEGY=$(jq -r '.truncation_strategy // "tail"' "$BUDGETS_PATH" 2>/dev/null || echo "tail")
-OVERAGE=$((LINE_COUNT - MAX_LINES))
+# Truncate using head strategy (preserve goal/criteria at the top)
+STRATEGY=$(jq -r '.truncation_strategy // "head"' "$BUDGETS_PATH" 2>/dev/null || echo "head")
+OVERAGE=$((CHAR_COUNT - MAX_CHARS))
 
 case "$STRATEGY" in
-  tail)
-    echo "$CONTENT" | tail -n "$MAX_LINES"
-    ;;
   head)
-    echo "$CONTENT" | head -n "$MAX_LINES"
+    # Keep first MAX_CHARS characters (preserves goal/criteria)
+    printf '%s' "$CONTENT" | head -c "$MAX_CHARS"
+    echo
+    ;;
+  tail)
+    # Keep last MAX_CHARS characters
+    printf '%s' "$CONTENT" | tail -c "$MAX_CHARS"
+    echo
     ;;
   *)
-    echo "$CONTENT" | tail -n "$MAX_LINES"
+    printf '%s' "$CONTENT" | head -c "$MAX_CHARS"
+    echo
     ;;
 esac
 
@@ -187,49 +161,9 @@ fi
 
 if [ "$METRICS_ENABLED" = "true" ] && [ -f "${SCRIPT_DIR}/collect-metrics.sh" ]; then
   bash "${SCRIPT_DIR}/collect-metrics.sh" token_overage 0 \
-    "role=${ROLE}" "lines_total=${LINE_COUNT}" "lines_max=${MAX_LINES}" \
-    "lines_truncated=${OVERAGE}" "budget_source=${BUDGET_SOURCE}" 2>/dev/null || true
+    "role=${ROLE}" "chars_total=${CHAR_COUNT}" "chars_max=${MAX_CHARS}" \
+    "chars_truncated=${OVERAGE}" "budget_source=${BUDGET_SOURCE}" 2>/dev/null || true
 fi
 
-# Escalation: advisory budget reduction and event emission on overage
-if [ "$ENABLED" = "true" ]; then
-  # Read escalation config
-  REDUCTION_PCT=$(jq -r '.escalation.reduction_percent // 15' "$BUDGETS_PATH" 2>/dev/null) || REDUCTION_PCT=15
-
-  # Compute new remaining budget percentage
-  OLD_REMAINING_PCT=100
-  OLD_OVERAGES=0
-  if [ -n "$CONTRACT_PATH" ] && [ -f "$TOKEN_STATE_FILE" ]; then
-    OLD_REMAINING_PCT=$(jq -r '.remaining_budget_pct // 100' "$TOKEN_STATE_FILE" 2>/dev/null) || OLD_REMAINING_PCT=100
-    OLD_OVERAGES=$(jq -r '.overages // 0' "$TOKEN_STATE_FILE" 2>/dev/null) || OLD_OVERAGES=0
-  fi
-  NEW_PCT=$((OLD_REMAINING_PCT - REDUCTION_PCT))
-  [ "$NEW_PCT" -lt 0 ] 2>/dev/null && NEW_PCT=0
-  NEW_OVERAGES=$((OLD_OVERAGES + 1))
-
-  # Emit stderr warning (enhanced from truncation notice)
-  echo "[token-budget] ESCALATION: ${ROLE} exceeded budget by ${OVERAGE} lines (${LINE_COUNT} -> ${MAX_LINES}). Remaining budget reduced to ${NEW_PCT}% for subsequent tasks." >&2
-
-  # Write/update budget reduction sidecar (only when contract path is provided — per-role mode skips state tracking)
-  if [ -n "$CONTRACT_PATH" ]; then
-    mkdir -p "$TOKEN_STATE_DIR" 2>/dev/null || true
-    jq -n \
-      --argjson phase "$PHASE_NUM" \
-      --argjson plan "$PLAN_NUM" \
-      --argjson overages "$NEW_OVERAGES" \
-      --argjson remaining "$NEW_PCT" \
-      --arg role "$ROLE" \
-      --argjson overage "$OVERAGE" \
-      '{phase: $phase, plan: $plan, overages: $overages, remaining_budget_pct: $remaining, last_role: $role, last_overage: $overage}' \
-      > "$TOKEN_STATE_FILE" 2>/dev/null || true
-  fi
-
-  # Emit token_cap_escalated event via log-event.sh
-  if [ -f "${SCRIPT_DIR}/log-event.sh" ]; then
-    bash "${SCRIPT_DIR}/log-event.sh" token_cap_escalated "${PHASE_NUM}" "${PLAN_NUM}" \
-      "role=${ROLE}" "overage=${OVERAGE}" "remaining_pct=${NEW_PCT}" "budget_source=${BUDGET_SOURCE}" 2>/dev/null || true
-  fi
-fi
-
-# Output truncation notice to stderr (basic notice for non-escalation logging)
-echo "[token-budget] ${ROLE}: truncated ${OVERAGE} lines (${LINE_COUNT} -> ${MAX_LINES})" >&2
+# Output truncation notice to stderr
+echo "[token-budget] ${ROLE}: truncated ${OVERAGE} chars (${CHAR_COUNT} -> ${MAX_CHARS})" >&2

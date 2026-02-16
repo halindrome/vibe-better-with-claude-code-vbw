@@ -183,45 +183,25 @@ if [ -f "$SETTINGS_FILE" ]; then
   fi
 fi
 
-# --- tmux Forced In-Process Mode ---
-# tmux split-pane mode is broken — auto-patch to in-process when in tmux.
-# Only patch if teammateMode is "auto" or "tmux" (respects explicit "in-process" or "split-pane").
-# One-time warning via marker file, persistent logging to .hook-errors.log.
+# --- tmux Forced In-Process Removal ---
+# Previous workaround forced in-process mode in tmux. Claude Code now supports
+# tmux split-pane mode natively ("auto" uses split panes inside tmux).
+# Restore "auto" if we previously patched it to "in-process".
 if [ -f "$SETTINGS_FILE" ]; then
   CURRENT_MODE=$(jq -r '.teammateMode // "auto"' "$SETTINGS_FILE" 2>/dev/null)
-  if [ -n "${TMUX:-}" ] && [ -n "$CURRENT_MODE" ]; then
-    # Detect if we need to patch (in tmux + mode is auto/tmux)
-    NEEDS_PATCH=false
-    if [ "$CURRENT_MODE" = "auto" ] || [ "$CURRENT_MODE" = "tmux" ]; then
-      NEEDS_PATCH=true
-    fi
-
-    if [ "$NEEDS_PATCH" = true ]; then
-      # Attempt patch with backup/rollback
-      cp "$SETTINGS_FILE" "${SETTINGS_FILE}.bak"
-      if jq '.teammateMode = "in-process"' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp"; then
-        mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
-        rm -f "${SETTINGS_FILE}.bak"
-
-        # Log the patch
-        TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date +"%Y-%m-%d %H:%M:%S")
-        echo "[$TIMESTAMP] tmux mode patch: $CURRENT_MODE -> in-process (success)" >> "$PLANNING_DIR/.hook-errors.log" 2>/dev/null || true
-
-        # Show warning once via marker file
-        MARKER="$PLANNING_DIR/.tmux-mode-patched"
-        if [ ! -f "$MARKER" ]; then
-          UPDATE_MSG="${UPDATE_MSG} tmux detected: settings.json auto-patched to use in-process mode (split-pane mode is broken). Takes effect on next session start."
-          echo "$TIMESTAMP" > "$MARKER" 2>/dev/null || true
-        fi
-      else
-        # Rollback on jq error
-        cp "${SETTINGS_FILE}.bak" "$SETTINGS_FILE" 2>/dev/null || true
-        rm -f "${SETTINGS_FILE}.tmp" "${SETTINGS_FILE}.bak"
-        TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date +"%Y-%m-%d %H:%M:%S")
-        echo "[$TIMESTAMP] tmux mode patch: $CURRENT_MODE -> in-process (failed: jq error)" >> "$PLANNING_DIR/.hook-errors.log" 2>/dev/null || true
-      fi
+  if [ "$CURRENT_MODE" = "in-process" ]; then
+    # Restore to "auto" so tmux gets split panes, non-tmux gets inline
+    cp "$SETTINGS_FILE" "${SETTINGS_FILE}.bak"
+    if jq '.teammateMode = "auto"' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp"; then
+      mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
+      rm -f "${SETTINGS_FILE}.bak"
+    else
+      cp "${SETTINGS_FILE}.bak" "$SETTINGS_FILE" 2>/dev/null || true
+      rm -f "${SETTINGS_FILE}.tmp" "${SETTINGS_FILE}.bak"
     fi
   fi
+  # Clean up stale marker from old workaround
+  rm -f "$PLANNING_DIR/.tmux-mode-patched" 2>/dev/null || true
 fi
 
 # --- Clean old cache versions (keep only latest) ---

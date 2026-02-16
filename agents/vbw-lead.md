@@ -22,16 +22,18 @@ Display: `✓ Lead: Research complete -- {N} files read, context loaded`
 ### Stage 2: Decompose
 Display: `◆ Lead: Decomposing phase into plans...`
 Break phase into 3-5 plans, each executable by one Dev session.
-1. Plans form waves. Wave 1 = no deps. Use `depends_on`/`cross_phase_deps` frontmatter.
-2. 3-5 tasks/plan. Group related files. Each task = one commit, each plan = one SUMMARY.md.
-3. Reference CONCERNS.md in must_haves. Embed REQ-IDs in task descriptions.
-4. Wire skills: add SKILL.md as `@` ref in `<context>`, list in `skills_used`.
-5. Populate: frontmatter, must_haves (goal-backward), objective, context (@-refs + rationale), tasks, verification, success criteria.
+1. **Maximize wave parallelism.** Each plan is assigned to a separate Dev agent. Plans in the same wave run simultaneously. Design plans so the maximum number can run in wave 1 (no deps). Only add `depends_on` when there is a real data/file dependency — not just logical ordering preference.
+2. **Minimize file overlap between same-wave plans.** Two plans in the same wave must NOT modify the same files — this causes merge conflicts when agents work in parallel. If two concerns touch the same file, put them in the same plan or sequence them across waves.
+3. **Right-size for agents.** 3-5 tasks/plan. Group related files so each Dev agent has a coherent, self-contained unit of work. Each task = one commit, each plan = one SUMMARY.md.
+4. **Wave structure summary.** After decomposing, verify: Wave 1 should contain 2+ plans when possible. Single-plan waves waste parallelism. If wave 1 has only 1 plan, re-examine whether dependencies are real or assumed.
+5. Reference CONCERNS.md in must_haves. Embed REQ-IDs in task descriptions.
+6. Wire skills: add SKILL.md as `@` ref in `<context>`, list in `skills_used`.
+7. Populate: frontmatter, must_haves (goal-backward), objective, context (@-refs + rationale), tasks, verification, success criteria.
 Display: `  ✓ Plan {NN}: {title} ({N} tasks, wave {W})`
 
 ### Stage 3: Self-Review
 Display: `◆ Lead: Self-reviewing plans...`
-Check: requirements coverage, no circular deps, no same-wave file conflicts, success criteria union = phase goals, 3-5 tasks/plan, context refs present, skill `@` refs match `skills_used`, must_haves testable (specific file/command/grep), cross_phase_deps ref only earlier phases. Fix inline. Standalone review: skip to here.
+Check: requirements coverage, no circular deps, **no same-wave file conflicts** (critical — same-wave plans modify disjoint file sets), success criteria union = phase goals, 3-5 tasks/plan, context refs present, skill `@` refs match `skills_used`, must_haves testable (specific file/command/grep), cross_phase_deps ref only earlier phases, **wave 1 has 2+ plans when phase has 3+ plans** (maximize parallelism). Fix inline. Standalone review: skip to here.
 Display: `✓ Lead: Self-review complete -- {issues found and fixed | no issues found}`
 
 ### Stage 4: Output
@@ -59,3 +61,6 @@ When planning tasks that involve database changes, always specify:
 
 ## Effort
 Follow effort level in task description (max|high|medium|low). Re-read files after compaction.
+
+## Circuit Breaker
+If you encounter the same error 3 consecutive times: STOP retrying the same approach. Try ONE alternative approach. If the alternative also fails, report the blocker to the orchestrator: what you tried (both approaches), exact error output, your best guess at root cause. Never attempt a 4th retry of the same failing operation.

@@ -1,11 +1,11 @@
 {
   "budgets": {
-    "scout": { "max_lines": 200, "description": "Low fixed budget per query batch" },
-    "lead": { "max_lines": 500, "description": "Medium budget, only on plan/replan events" },
-    "dev": { "max_lines": 800, "description": "Per-task budget tied to contract complexity" },
-    "qa": { "max_lines": 600, "description": "Tiered budget by risk class" },
-    "debugger": { "max_lines": 800, "description": "Same as dev for investigation" },
-    "architect": { "max_lines": 500, "description": "Same as lead for planning" }
+    "scout": { "max_chars": 8000, "description": "Low fixed budget per query batch" },
+    "lead": { "max_chars": 20000, "description": "Medium budget, only on plan/replan events" },
+    "dev": { "max_chars": 32000, "description": "Per-task budget tied to contract complexity" },
+    "qa": { "max_chars": 24000, "description": "Tiered budget by risk class" },
+    "debugger": { "max_chars": 32000, "description": "Same as dev for investigation" },
+    "architect": { "max_chars": 20000, "description": "Same as lead for planning" }
   },
   "task_complexity": {
     "must_haves_weight": 1,
@@ -19,10 +19,6 @@
     ],
     "per_task_budget_enabled": true
   },
-  "escalation": {
-    "reduction_percent": 15,
-    "min_budget_floor": 100
-  },
-  "truncation_strategy": "tail",
+  "truncation_strategy": "head",
   "overage_action": "truncate_and_log"
 }

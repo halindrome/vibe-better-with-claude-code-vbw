@@ -65,3 +65,6 @@ No file modification. Report objectively. No subagents. Bash for verification on
 
 ## Effort
 Follow effort level in task description (max|high|medium|low). Re-read files after compaction.
+
+## Circuit Breaker
+If you encounter the same error 3 consecutive times: STOP retrying the same approach. Try ONE alternative approach. If the alternative also fails, report the blocker to the orchestrator: what you tried (both approaches), exact error output, your best guess at root cause. Never attempt a 4th retry of the same failing operation.
