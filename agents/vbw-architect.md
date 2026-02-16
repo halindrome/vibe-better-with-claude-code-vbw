@@ -14,6 +14,8 @@ Requirements-to-roadmap agent. Read input + codebase, produce planning artifacts
 
 ## Core Protocol
 
+**Bootstrap:** If `.vbw-planning/codebase/META.md` exists (e.g., re-planning after initial milestone), read `ARCHITECTURE.md` and `STACK.md` from `.vbw-planning/codebase/` to bootstrap understanding of the existing system before scoping.
+
 **Requirements:** Read all input. ID reqs/constraints/out-of-scope. Unique IDs (AGNT-01). Priority by deps + emphasis.
 **Phases:** Group reqs into testable phases. 2-4 plans/phase, 3-5 tasks/plan. Cross-phase deps explicit.
 **Criteria:** Per phase, observable testable conditions via goal-backward. No subjective measures.

@@ -134,6 +134,61 @@ elif [ "$V3_CACHE_ENABLED" = "true" ]; then
   echo "V3 fallback: cache-context.sh not found, skipping cache" >&2
 fi
 
+# --- Codebase mapping hint helper ---
+# Usage: emit_codebase_mapping_hint <priority_files...>
+# Emits a "Codebase Map Available" section listing available mapping docs
+# and guidance to read priority files first. Only emits if META.md exists
+# and at least one of the scanned files exists.
+emit_codebase_mapping_hint() {
+  local priority_files=("$@")
+  if [ ! -f "$PLANNING_DIR/codebase/META.md" ]; then
+    return
+  fi
+
+  # Scan for all key mapping files
+  local MAP_FILES=""
+  for doc in ARCHITECTURE CONCERNS PATTERNS DEPENDENCIES STRUCTURE CONVENTIONS TESTING STACK; do
+    if [ -f "$PLANNING_DIR/codebase/${doc}.md" ]; then
+      MAP_FILES="${MAP_FILES} ${doc}"
+    fi
+  done
+
+  if [ -z "$MAP_FILES" ]; then
+    return
+  fi
+
+  echo ""
+  echo "### Codebase Map Available"
+  echo "Codebase mapping exists in \`.vbw-planning/codebase/\`. Key files:"
+  for doc in $MAP_FILES; do
+    echo "- \`${doc}.md\`"
+  done
+  echo ""
+
+  # Build guidance from priority files that exist
+  local GUIDANCE_FILES=""
+  for pfile in "${priority_files[@]}"; do
+    if [ -f "$PLANNING_DIR/codebase/${pfile}.md" ]; then
+      if [ -z "$GUIDANCE_FILES" ]; then
+        GUIDANCE_FILES="${pfile}.md"
+      else
+        GUIDANCE_FILES="${GUIDANCE_FILES}, ${pfile}.md"
+      fi
+    fi
+  done
+  # Convert to natural language: "A and B" for 2 items, "A, B, and C" for 3+
+  local comma_count
+  comma_count=$(echo "$GUIDANCE_FILES" | tr -cd ',' | wc -c | tr -d ' ')
+  if [ "$comma_count" -eq 1 ]; then
+    GUIDANCE_FILES=$(echo "$GUIDANCE_FILES" | sed 's/, / and /')
+  elif [ "$comma_count" -gt 1 ]; then
+    GUIDANCE_FILES=$(echo "$GUIDANCE_FILES" | sed 's/\(.*\), /\1, and /')
+  fi
+  if [ -n "$GUIDANCE_FILES" ]; then
+    echo "Read ${GUIDANCE_FILES} first to bootstrap codebase understanding."
+  fi
+}
+
 # --- Role-specific output ---
 case "$ROLE" in
   lead)
@@ -175,6 +230,8 @@ case "$ROLE" in
       else
         echo "None"
       fi
+      # --- Codebase mapping hint (issue #80) ---
+      emit_codebase_mapping_hint ARCHITECTURE CONCERNS STRUCTURE
       # --- V3: Include RESEARCH.md if present ---
       RESEARCH_FILE=$(find "$PHASE_DIR" -maxdepth 1 -name "*-RESEARCH.md" -print -quit 2>/dev/null || true)
       if [ -n "$RESEARCH_FILE" ] && [ -f "$RESEARCH_FILE" ]; then
@@ -216,6 +273,8 @@ case "$ROLE" in
           done <<< "$SKILLS"
         fi
       fi
+      # --- Codebase mapping hint (issue #78) ---
+      emit_codebase_mapping_hint CONVENTIONS PATTERNS STRUCTURE DEPENDENCIES
       # --- V3: Delta context (REQ-06) ---
       if [ "$V3_DELTA_ENABLED" = "true" ] && [ -f "${SCRIPT_DIR}/delta-files.sh" ]; then
         DELTA_FILES=$(bash "${SCRIPT_DIR}/delta-files.sh" "$PHASE_DIR" "$PLAN_PATH" 2>/dev/null || true)
@@ -289,6 +348,8 @@ case "$ROLE" in
           echo "$CONVENTIONS"
         fi
       fi
+      # --- Codebase mapping hint (issue #79) ---
+      emit_codebase_mapping_hint TESTING CONCERNS ARCHITECTURE
     } > "${PHASE_DIR}/.context-qa.md"
     ;;
 
@@ -367,41 +428,7 @@ case "$ROLE" in
         fi
       fi
       # --- Codebase mapping hint (issue #75) ---
-      if [ -f "$PLANNING_DIR/codebase/META.md" ]; then
-        MAP_FILES=""
-        for doc in ARCHITECTURE CONCERNS PATTERNS DEPENDENCIES STRUCTURE CONVENTIONS; do
-          if [ -f "$PLANNING_DIR/codebase/${doc}.md" ]; then
-            MAP_FILES="${MAP_FILES} ${doc}"
-          fi
-        done
-        if [ -n "$MAP_FILES" ]; then
-          echo ""
-          echo "### Codebase Map Available"
-          echo "Codebase mapping exists in \`.vbw-planning/codebase/\`. Key files:"
-          for doc in $MAP_FILES; do
-            echo "- \`${doc}.md\`"
-          done
-          echo ""
-          # Build guidance based on which priority files exist
-          GUIDANCE_FILES=""
-          for pfile in ARCHITECTURE CONCERNS PATTERNS DEPENDENCIES; do
-            if [ -f "$PLANNING_DIR/codebase/${pfile}.md" ]; then
-              if [ -z "$GUIDANCE_FILES" ]; then
-                GUIDANCE_FILES="${pfile}.md"
-              else
-                GUIDANCE_FILES="${GUIDANCE_FILES}, ${pfile}.md"
-              fi
-            fi
-          done
-          # Convert last comma to " and" for natural language
-          if echo "$GUIDANCE_FILES" | grep -q ','; then
-            GUIDANCE_FILES=$(echo "$GUIDANCE_FILES" | sed 's/\(.*\), /\1, and /')
-          fi
-          if [ -n "$GUIDANCE_FILES" ]; then
-            echo "Read ${GUIDANCE_FILES} first to bootstrap codebase understanding before investigating."
-          fi
-        fi
-      fi
+      emit_codebase_mapping_hint ARCHITECTURE CONCERNS PATTERNS DEPENDENCIES
       # --- V3: Include RESEARCH.md if present ---
       RESEARCH_FILE=$(find "$PHASE_DIR" -maxdepth 1 -name "*-RESEARCH.md" -print -quit 2>/dev/null || true)
       if [ -n "$RESEARCH_FILE" ] && [ -f "$RESEARCH_FILE" ]; then
@@ -468,6 +495,8 @@ case "$ROLE" in
           echo "$CONVENTIONS"
         fi
       fi
+      # --- Codebase mapping hint (issue #81) ---
+      emit_codebase_mapping_hint ARCHITECTURE STACK
       # --- V3: Include RESEARCH.md if present ---
       RESEARCH_FILE=$(find "$PHASE_DIR" -maxdepth 1 -name "*-RESEARCH.md" -print -quit 2>/dev/null || true)
       if [ -n "$RESEARCH_FILE" ] && [ -f "$RESEARCH_FILE" ]; then

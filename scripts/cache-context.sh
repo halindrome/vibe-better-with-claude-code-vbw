@@ -39,8 +39,8 @@ if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null
   HASH_INPUT="${HASH_INPUT}:changed=${CHANGED_SUM}"
 fi
 
-# Codebase mapping fingerprint (debugger context includes mapping hints)
-if [ "$ROLE" = "debugger" ] && [ -d ".vbw-planning/codebase" ]; then
+# Codebase mapping fingerprint (roles with mapping hints need cache invalidation)
+if [[ "$ROLE" =~ ^(debugger|dev|qa|lead|architect)$ ]] && [ -d ".vbw-planning/codebase" ]; then
   MAP_SUM=$(ls -la .vbw-planning/codebase/*.md 2>/dev/null | shasum -a 256 2>/dev/null | cut -d' ' -f1 || echo "nomap")
   HASH_INPUT="${HASH_INPUT}:codebase=${MAP_SUM}"
 fi

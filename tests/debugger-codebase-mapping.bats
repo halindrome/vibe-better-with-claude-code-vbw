@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
 
-# Tests for issue #75: Debugger agent should reference codebase mapping before investigating
+# Tests for codebase mapping awareness across agents
+# Original: issue #75 (debugger), expanded: #78 (dev), #79 (qa), #80 (lead), #81 (architect)
 
 load test_helper
 
@@ -38,6 +39,86 @@ teardown() {
 
 @test "debugger agent references DEPENDENCIES.md" {
   grep -q 'DEPENDENCIES.md' "$PROJECT_ROOT/agents/vbw-debugger.md"
+}
+
+# =============================================================================
+# Agent definition: dev references codebase mapping
+# =============================================================================
+
+@test "dev agent references codebase mapping in execution protocol" {
+  grep -q '.vbw-planning/codebase/' "$PROJECT_ROOT/agents/vbw-dev.md"
+}
+
+@test "dev agent references CONVENTIONS.md" {
+  grep -q 'CONVENTIONS.md' "$PROJECT_ROOT/agents/vbw-dev.md"
+}
+
+@test "dev agent references PATTERNS.md" {
+  grep -q 'PATTERNS.md' "$PROJECT_ROOT/agents/vbw-dev.md"
+}
+
+@test "dev agent references STRUCTURE.md" {
+  grep -q 'STRUCTURE.md' "$PROJECT_ROOT/agents/vbw-dev.md"
+}
+
+@test "dev agent references DEPENDENCIES.md" {
+  grep -q 'DEPENDENCIES.md' "$PROJECT_ROOT/agents/vbw-dev.md"
+}
+
+# =============================================================================
+# Agent definition: qa references codebase mapping
+# =============================================================================
+
+@test "qa agent references codebase mapping in verification protocol" {
+  grep -q '.vbw-planning/codebase/' "$PROJECT_ROOT/agents/vbw-qa.md"
+}
+
+@test "qa agent references TESTING.md" {
+  grep -q 'TESTING.md' "$PROJECT_ROOT/agents/vbw-qa.md"
+}
+
+@test "qa agent references CONCERNS.md" {
+  grep -q 'CONCERNS.md' "$PROJECT_ROOT/agents/vbw-qa.md"
+}
+
+@test "qa agent references ARCHITECTURE.md" {
+  grep -q 'ARCHITECTURE.md' "$PROJECT_ROOT/agents/vbw-qa.md"
+}
+
+# =============================================================================
+# Agent definition: lead references codebase mapping
+# =============================================================================
+
+@test "lead agent references codebase mapping in research stage" {
+  grep -q '.vbw-planning/codebase/' "$PROJECT_ROOT/agents/vbw-lead.md"
+}
+
+@test "lead agent references ARCHITECTURE.md" {
+  grep -q 'ARCHITECTURE.md' "$PROJECT_ROOT/agents/vbw-lead.md"
+}
+
+@test "lead agent references CONCERNS.md" {
+  grep -q 'CONCERNS.md' "$PROJECT_ROOT/agents/vbw-lead.md"
+}
+
+@test "lead agent references STRUCTURE.md" {
+  grep -q 'STRUCTURE.md' "$PROJECT_ROOT/agents/vbw-lead.md"
+}
+
+# =============================================================================
+# Agent definition: architect references codebase mapping
+# =============================================================================
+
+@test "architect agent references codebase mapping in core protocol" {
+  grep -q '.vbw-planning/codebase/' "$PROJECT_ROOT/agents/vbw-architect.md"
+}
+
+@test "architect agent references ARCHITECTURE.md" {
+  grep -q 'ARCHITECTURE.md' "$PROJECT_ROOT/agents/vbw-architect.md"
+}
+
+@test "architect agent references STACK.md" {
+  grep -q 'STACK.md' "$PROJECT_ROOT/agents/vbw-architect.md"
 }
 
 # =============================================================================
@@ -187,6 +268,146 @@ STATE
   grep -q "DEPENDENCIES.md" ".vbw-planning/phases/01-test/.context-debugger.md"
 }
 
+# =============================================================================
+# Compiled context: codebase mapping hint in dev context
+# =============================================================================
+
+@test "compile-context.sh dev context includes codebase mapping hint when mapping exists" {
+  setup_debugger_context
+  cd "$TEST_TEMP_DIR"
+
+  mkdir -p .vbw-planning/codebase
+  echo "# Meta" > .vbw-planning/codebase/META.md
+  echo "# Conventions" > .vbw-planning/codebase/CONVENTIONS.md
+  echo "# Patterns" > .vbw-planning/codebase/PATTERNS.md
+
+  run bash "$SCRIPTS_DIR/compile-context.sh" "01" "dev" ".vbw-planning/phases"
+  [ "$status" -eq 0 ]
+  grep -q "Codebase Map" ".vbw-planning/phases/01-test/.context-dev.md"
+}
+
+@test "compile-context.sh dev guidance references conventions and patterns" {
+  setup_debugger_context
+  cd "$TEST_TEMP_DIR"
+
+  mkdir -p .vbw-planning/codebase
+  echo "# Meta" > .vbw-planning/codebase/META.md
+  echo "# Conventions" > .vbw-planning/codebase/CONVENTIONS.md
+  echo "# Patterns" > .vbw-planning/codebase/PATTERNS.md
+  echo "# Structure" > .vbw-planning/codebase/STRUCTURE.md
+  echo "# Dependencies" > .vbw-planning/codebase/DEPENDENCIES.md
+
+  run bash "$SCRIPTS_DIR/compile-context.sh" "01" "dev" ".vbw-planning/phases"
+  [ "$status" -eq 0 ]
+  grep -q "CONVENTIONS.md" ".vbw-planning/phases/01-test/.context-dev.md"
+  grep -q "PATTERNS.md" ".vbw-planning/phases/01-test/.context-dev.md"
+  grep -q "STRUCTURE.md" ".vbw-planning/phases/01-test/.context-dev.md"
+  grep -q "DEPENDENCIES.md" ".vbw-planning/phases/01-test/.context-dev.md"
+}
+
+# =============================================================================
+# Compiled context: codebase mapping hint in qa context
+# =============================================================================
+
+@test "compile-context.sh qa context includes codebase mapping hint when mapping exists" {
+  setup_debugger_context
+  cd "$TEST_TEMP_DIR"
+
+  mkdir -p .vbw-planning/codebase
+  echo "# Meta" > .vbw-planning/codebase/META.md
+  echo "# Testing" > .vbw-planning/codebase/TESTING.md
+  echo "# Concerns" > .vbw-planning/codebase/CONCERNS.md
+
+  run bash "$SCRIPTS_DIR/compile-context.sh" "01" "qa" ".vbw-planning/phases"
+  [ "$status" -eq 0 ]
+  grep -q "Codebase Map" ".vbw-planning/phases/01-test/.context-qa.md"
+}
+
+@test "compile-context.sh qa guidance references testing and concerns" {
+  setup_debugger_context
+  cd "$TEST_TEMP_DIR"
+
+  mkdir -p .vbw-planning/codebase
+  echo "# Meta" > .vbw-planning/codebase/META.md
+  echo "# Testing" > .vbw-planning/codebase/TESTING.md
+  echo "# Concerns" > .vbw-planning/codebase/CONCERNS.md
+  echo "# Architecture" > .vbw-planning/codebase/ARCHITECTURE.md
+
+  run bash "$SCRIPTS_DIR/compile-context.sh" "01" "qa" ".vbw-planning/phases"
+  [ "$status" -eq 0 ]
+  grep -q "TESTING.md" ".vbw-planning/phases/01-test/.context-qa.md"
+  grep -q "CONCERNS.md" ".vbw-planning/phases/01-test/.context-qa.md"
+  grep -q "ARCHITECTURE.md" ".vbw-planning/phases/01-test/.context-qa.md"
+}
+
+# =============================================================================
+# Compiled context: codebase mapping hint in lead context
+# =============================================================================
+
+@test "compile-context.sh lead context includes codebase mapping hint when mapping exists" {
+  setup_debugger_context
+  cd "$TEST_TEMP_DIR"
+
+  mkdir -p .vbw-planning/codebase
+  echo "# Meta" > .vbw-planning/codebase/META.md
+  echo "# Architecture" > .vbw-planning/codebase/ARCHITECTURE.md
+  echo "# Concerns" > .vbw-planning/codebase/CONCERNS.md
+
+  run bash "$SCRIPTS_DIR/compile-context.sh" "01" "lead" ".vbw-planning/phases"
+  [ "$status" -eq 0 ]
+  grep -q "Codebase Map" ".vbw-planning/phases/01-test/.context-lead.md"
+}
+
+@test "compile-context.sh lead guidance references architecture and concerns" {
+  setup_debugger_context
+  cd "$TEST_TEMP_DIR"
+
+  mkdir -p .vbw-planning/codebase
+  echo "# Meta" > .vbw-planning/codebase/META.md
+  echo "# Architecture" > .vbw-planning/codebase/ARCHITECTURE.md
+  echo "# Concerns" > .vbw-planning/codebase/CONCERNS.md
+  echo "# Structure" > .vbw-planning/codebase/STRUCTURE.md
+
+  run bash "$SCRIPTS_DIR/compile-context.sh" "01" "lead" ".vbw-planning/phases"
+  [ "$status" -eq 0 ]
+  grep -q "ARCHITECTURE.md" ".vbw-planning/phases/01-test/.context-lead.md"
+  grep -q "CONCERNS.md" ".vbw-planning/phases/01-test/.context-lead.md"
+  grep -q "STRUCTURE.md" ".vbw-planning/phases/01-test/.context-lead.md"
+}
+
+# =============================================================================
+# Compiled context: codebase mapping hint in architect context
+# =============================================================================
+
+@test "compile-context.sh architect context includes codebase mapping hint when mapping exists" {
+  setup_debugger_context
+  cd "$TEST_TEMP_DIR"
+
+  mkdir -p .vbw-planning/codebase
+  echo "# Meta" > .vbw-planning/codebase/META.md
+  echo "# Architecture" > .vbw-planning/codebase/ARCHITECTURE.md
+  echo "# Stack" > .vbw-planning/codebase/STACK.md
+
+  run bash "$SCRIPTS_DIR/compile-context.sh" "01" "architect" ".vbw-planning/phases"
+  [ "$status" -eq 0 ]
+  grep -q "Codebase Map" ".vbw-planning/phases/01-test/.context-architect.md"
+}
+
+@test "compile-context.sh architect guidance references architecture and stack" {
+  setup_debugger_context
+  cd "$TEST_TEMP_DIR"
+
+  mkdir -p .vbw-planning/codebase
+  echo "# Meta" > .vbw-planning/codebase/META.md
+  echo "# Architecture" > .vbw-planning/codebase/ARCHITECTURE.md
+  echo "# Stack" > .vbw-planning/codebase/STACK.md
+
+  run bash "$SCRIPTS_DIR/compile-context.sh" "01" "architect" ".vbw-planning/phases"
+  [ "$status" -eq 0 ]
+  grep -q "ARCHITECTURE.md" ".vbw-planning/phases/01-test/.context-architect.md"
+  grep -q "STACK.md" ".vbw-planning/phases/01-test/.context-architect.md"
+}
+
 @test "compile-context.sh debugger omits map section when META.md exists but no key files" {
   setup_debugger_context
   cd "$TEST_TEMP_DIR"
@@ -227,24 +448,42 @@ STATE
   [ "$HASH1" != "$HASH2" ]
 }
 
-@test "cache-context.sh non-debugger hash unaffected by codebase mapping" {
+@test "cache-context.sh non-mapping role hash unaffected by codebase mapping" {
   cd "$TEST_TEMP_DIR"
 
   mkdir -p .vbw-planning/codebase
   echo "# Meta" > .vbw-planning/codebase/META.md
   echo "# Architecture" > .vbw-planning/codebase/ARCHITECTURE.md
 
-  run bash "$SCRIPTS_DIR/cache-context.sh" 01 dev "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  run bash "$SCRIPTS_DIR/cache-context.sh" 01 scout "$TEST_TEMP_DIR/.vbw-planning/config.json"
   HASH1=$(echo "$output" | cut -d' ' -f2)
 
   # Remove mapping file
   rm .vbw-planning/codebase/ARCHITECTURE.md
 
+  run bash "$SCRIPTS_DIR/cache-context.sh" 01 scout "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  HASH2=$(echo "$output" | cut -d' ' -f2)
+
+  # Scout hash should be unchanged — codebase mapping only affects dev/qa/lead/architect/debugger
+  [ "$HASH1" = "$HASH2" ]
+}
+
+@test "cache-context.sh dev hash changes when codebase mapping files change" {
+  cd "$TEST_TEMP_DIR"
+
+  mkdir -p .vbw-planning/codebase
+  echo "# Meta" > .vbw-planning/codebase/META.md
+  echo "# Conventions" > .vbw-planning/codebase/CONVENTIONS.md
+
+  run bash "$SCRIPTS_DIR/cache-context.sh" 01 dev "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  HASH1=$(echo "$output" | cut -d' ' -f2)
+
+  rm .vbw-planning/codebase/CONVENTIONS.md
+
   run bash "$SCRIPTS_DIR/cache-context.sh" 01 dev "$TEST_TEMP_DIR/.vbw-planning/config.json"
   HASH2=$(echo "$output" | cut -d' ' -f2)
 
-  # Dev hash should be unchanged — codebase mapping only affects debugger
-  [ "$HASH1" = "$HASH2" ]
+  [ "$HASH1" != "$HASH2" ]
 }
 
 # =============================================================================
@@ -269,10 +508,10 @@ STATE
 }
 
 # =============================================================================
-# Role isolation: other roles omit codebase mapping
+# Role isolation: scout omits codebase mapping
 # =============================================================================
 
-@test "compile-context.sh other roles omit codebase mapping even when present" {
+@test "compile-context.sh scout omits codebase mapping even when present" {
   setup_debugger_context
   cd "$TEST_TEMP_DIR"
 
@@ -281,7 +520,24 @@ STATE
   echo "# Architecture" > .vbw-planning/codebase/ARCHITECTURE.md
   echo "# Concerns" > .vbw-planning/codebase/CONCERNS.md
 
-  for role in lead dev qa scout architect; do
+  run bash "$SCRIPTS_DIR/compile-context.sh" "01" "scout" ".vbw-planning/phases"
+  [ "$status" -eq 0 ]
+  run grep "Codebase Map" ".vbw-planning/phases/01-test/.context-scout.md"
+  [ "$status" -eq 1 ]
+}
+
+# =============================================================================
+# All roles omit mapping when META.md missing
+# =============================================================================
+
+@test "compile-context.sh all roles omit codebase mapping when META.md missing" {
+  setup_debugger_context
+  cd "$TEST_TEMP_DIR"
+
+  mkdir -p .vbw-planning/codebase
+  echo "# Architecture" > .vbw-planning/codebase/ARCHITECTURE.md
+
+  for role in dev qa lead architect debugger scout; do
     run bash "$SCRIPTS_DIR/compile-context.sh" "01" "$role" ".vbw-planning/phases"
     [ "$status" -eq 0 ]
     run grep "Codebase Map" ".vbw-planning/phases/01-test/.context-${role}.md"
