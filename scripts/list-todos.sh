@@ -45,8 +45,15 @@ resolve_state_path() {
   fi
 
   if [ ! -f "$state_path" ]; then
-    echo '{"status":"error","message":"STATE.md not found at '"$state_path"'. Run /vbw:init or check .vbw-planning/ACTIVE."}'
-    return 1
+    # Fallback: no ACTIVE and no root STATE.md — check milestones/ for archived state
+    local latest_milestone
+    latest_milestone=$(ls -1d "$PLANNING_DIR"/milestones/*/STATE.md 2>/dev/null | head -1)
+    if [ -n "$latest_milestone" ]; then
+      state_path="$latest_milestone"
+    else
+      echo '{"status":"error","message":"STATE.md not found at '"$state_path"'. Run /vbw:init or check .vbw-planning/ACTIVE."}'
+      return 1
+    fi
   fi
 
   echo "$state_path"
