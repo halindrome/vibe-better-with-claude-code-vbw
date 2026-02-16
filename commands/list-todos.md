@@ -35,20 +35,29 @@ Active milestone: `!`cat .vbw-planning/ACTIVE 2>/dev/null || echo "No active mil
 
 4. **Handle selection:** Wait for user to reply with a number. If invalid: "Invalid selection. Reply with a number (1-N) or `q` to exit."
 
-5. **Show selected todo:** Display the full `text` from the matching `items` entry. Use the `section` and `state_path` values from the script output for edit operations.
+5. **Show selected todo:** Display the full `text` from the matching `items` entry.
 
 6. **Offer actions:** Use AskUserQuestion:
    - header: "Action"
    - question: "What would you like to do with this todo?"
    - options:
-     - "Work on it now" — remove from todos, begin working
-     - "Remove it" — remove from todos (completed or no longer needed)
-     - "Go back" — return to list
+     - "/vbw:fix — Quick fix, one commit, no ceremony"
+     - "/vbw:debug — Investigate with scientific method"
+     - "/vbw:vibe — Full lifecycle (plan → execute → verify)"
+     - "/vbw:research — Research only, no code changes"
+     - "Remove — Delete from todo list"
+     - "Back — Return to list"
 
-7. **Execute action:** Remove/edit within whichever section the script reported (the `section` field — either `## Todos` or `### Pending Todos` for legacy STATE.md).
-   - **Work on it now:** Remove the `line` value from the section in STATE.md. If no todos remain, replace with "None." Log the removed todo to `## Recent Activity` with format `- {YYYY-MM-DD}: Completed todo: {text}`. Confirm: "✓ Removed todo — ready to work." Then present the todo context and ask how to proceed.
-   - **Remove it:** Remove the `line` value from the section in STATE.md. If no todos remain, replace with "None." Log the removed todo to `## Recent Activity` with format `- {YYYY-MM-DD}: Removed todo: {text}`. Confirm: "✓ Todo removed." Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh list-todos` and display.
-   - **Go back:** Return to step 3.
+7. **Execute action:** Use the `section` and `state_path` values from the script output for edit operations.
+   - **/vbw:fix, /vbw:debug, /vbw:vibe, /vbw:research:** Remove the `line` value from the todo section in STATE.md. If no todos remain, replace with "None." Log to `## Recent Activity` with format `- {YYYY-MM-DD}: Picked up todo via /vbw:{command}: {text}`. Then display:
+     ```text
+     ✓ Todo picked up.
+
+     ➜ Run: /vbw:{command} {todo text}
+     ```
+     Do NOT execute the command. STOP after displaying the suggested command.
+   - **Remove:** Remove the `line` value from the todo section in STATE.md. If no todos remain, replace with "None." Log to `## Recent Activity` with format `- {YYYY-MM-DD}: Removed todo: {text}`. Confirm: "✓ Todo removed." Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh list-todos` and display.
+   - **Back:** Return to step 3.
 
 ## Output Format
 
