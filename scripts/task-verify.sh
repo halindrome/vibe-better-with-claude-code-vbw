@@ -19,6 +19,21 @@ if [ -n "$INPUT" ]; then
   fi
 fi
 
+# Analysis-only tasks (e.g., debugger hypothesis investigation) explicitly
+# opt out of the commit requirement via an [analysis-only] tag.
+# Checked early — before commit fetching — so these never hit the "no recent
+# commits" block even when no code changes exist in the repo.
+if echo "$TASK_SUBJECT" | grep -qi '\[analysis-only\]'; then
+  exit 0
+fi
+
+# Role-only task subjects are coordination/bookkeeping labels, not implementation
+# tasks. Don't block completion on commit-keyword matching for these.
+TASK_SUBJECT_CANON=$(echo "$TASK_SUBJECT" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+if echo "$TASK_SUBJECT_CANON" | grep -qE '^@?(team-)?(vbw-)?(lead|dev|qa|scout|debugger|architect)(-[0-9]+)?$'; then
+  exit 0
+fi
+
 # Get recent commits (last 20, within 2 hours)
 NOW=$(date +%s 2>/dev/null) || exit 0
 # Configurable commit recency window (default: 2 hours)
@@ -55,13 +70,6 @@ fi
 
 # If no task context available, fall back to original behavior (any recent commit = pass)
 if [ -z "$TASK_SUBJECT" ]; then
-  exit 0
-fi
-
-# Role-only task subjects are coordination/bookkeeping labels, not implementation
-# tasks. Don't block completion on commit-keyword matching for these.
-TASK_SUBJECT_CANON=$(echo "$TASK_SUBJECT" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
-if echo "$TASK_SUBJECT_CANON" | grep -qE '^@?(team-)?(vbw-)?(lead|dev|qa|scout|debugger|architect)(-[0-9]+)?$'; then
   exit 0
 fi
 
