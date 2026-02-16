@@ -204,6 +204,14 @@ cmd_stop() {
     }'
 }
 
+cmd_cleanup() {
+  # Remove entire health tracking directory
+  if [ -d "$HEALTH_DIR" ]; then
+    rm -rf "$HEALTH_DIR"
+  fi
+  exit 0
+}
+
 CMD="${1:-}"
 
 case "$CMD" in
@@ -217,7 +225,7 @@ case "$CMD" in
     cmd_stop
     ;;
   cleanup)
-    exit 0
+    cmd_cleanup
     ;;
   *)
     echo "Usage: $0 {start|idle|stop|cleanup}" >&2
