@@ -52,7 +52,7 @@ Decision tree:
   ```
 - Display: `◆ Spawning Debugger (${DEBUGGER_MODEL})...`
 - Create Agent Team "debug-{timestamp}" via TeamCreate
-- Create 3 tasks via TaskCreate, each with: bug report, ONE hypothesis only (no cross-contamination), working dir, instruction to report via `debugger_report` schema (see `${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md`)
+- Create 3 tasks via TaskCreate, each with: bug report, ONE hypothesis only (no cross-contamination), working dir, codebase bootstrap instruction ("If `.vbw-planning/codebase/` exists, read ARCHITECTURE.md and CONCERNS.md first to bootstrap codebase understanding before investigating"), instruction to report via `debugger_report` schema (see `${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md`)
 - Spawn 3 vbw-debugger teammates, one task each. **Add `model: "${DEBUGGER_MODEL}"` and `maxTurns: ${DEBUGGER_MAX_TURNS}` parameters to each Task spawn.**
 - Wait for completion. Synthesize: strongest evidence + highest confidence wins. Multiple confirmed = contributing factors.
 - Winning hypothesis with fix: apply + commit `fix({scope}): {description}`
@@ -72,7 +72,8 @@ Decision tree:
 Bug investigation. Effort: {DEBUGGER_EFFORT}.
 Bug report: {description}.
 Working directory: {pwd}.
-Follow protocol: reproduce, hypothesize, gather evidence, diagnose, fix, verify, document.
+If `.vbw-planning/codebase/` exists, read ARCHITECTURE.md and CONCERNS.md first to bootstrap codebase understanding before investigating.
+Follow protocol: bootstrap (if codebase mapping exists), reproduce, hypothesize, gather evidence, diagnose, fix, verify, document.
 If you apply a fix, commit with: fix({scope}): {description}.
 ```
 

@@ -230,6 +230,31 @@ STATE
   [ "$HASH1" = "$HASH2" ]
 }
 
+# =============================================================================
+# debug.md command: prompt includes codebase bootstrap instruction
+# =============================================================================
+
+@test "debug.md Path B prompt includes codebase bootstrap instruction" {
+  # The Path B prompt template block must include codebase bootstrap
+  grep -A20 'Path B.*Standard' "$PROJECT_ROOT/commands/debug.md" | grep -q '.vbw-planning/codebase/'
+}
+
+@test "debug.md Path B prompt mentions .vbw-planning/codebase/" {
+  # The prompt template must tell the debugger to check for codebase mapping
+  grep -q '.vbw-planning/codebase/' "$PROJECT_ROOT/commands/debug.md"
+}
+
+@test "debug.md Path A task prompt includes codebase bootstrap instruction" {
+  # Path A creates 3 tasks — each task prompt should mention codebase bootstrap
+  grep -q '.vbw-planning/codebase/' "$PROJECT_ROOT/commands/debug.md"
+  # Both Path A and Path B sections should reference it
+  grep -A20 'Create.*tasks via TaskCreate' "$PROJECT_ROOT/commands/debug.md" | grep -q '.vbw-planning/codebase/'
+}
+
+# =============================================================================
+# Role isolation: other roles omit codebase mapping
+# =============================================================================
+
 @test "compile-context.sh other roles omit codebase mapping even when present" {
   setup_debugger_context
   cd "$TEST_TEMP_DIR"
