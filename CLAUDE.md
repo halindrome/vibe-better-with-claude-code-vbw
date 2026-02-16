@@ -19,6 +19,7 @@ A Claude Code plugin that adds structured development workflows — planning, ex
 - **Plan before building.** Use /vbw:vibe for all lifecycle actions. Plans are the source of truth.
 - **Do not fabricate content.** Only use what the user explicitly states in project-defining flows.
 - **Do not bump version or push until asked.** Never run `scripts/bump-version.sh` or `git push` unless the user explicitly requests it, except when `.vbw-planning/config.json` intentionally sets `auto_push` to `always` or `after_phase`.
+- **NEVER take work from open or draft PRs.** Before starting any feature, fix, or refactor, run `gh pr list --state open` and check if any open/draft PR already touches the same area. If a PR exists that overlaps with what you're about to do — even if it's draft, half-finished, or failing CI — STOP and tell the user: "There's an open PR (#M) by @author that overlaps with this work. Proceed anyway?" Do NOT read the PR's diff, copy its approach, or integrate its changes without explicit user approval. Contributors' in-progress work belongs to them. This also applies when resolving GitHub issues — check `gh pr list --search "issue_number"` first.
 
 ## Key Decisions
 

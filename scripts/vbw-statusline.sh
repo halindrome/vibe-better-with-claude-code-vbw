@@ -55,8 +55,8 @@ progress_bar() {
   else color="$G"
   fi
   local bar=""
-  [ "$filled" -gt 0 ] && bar=$(printf "%${filled}s" | tr ' ' '█')
-  [ "$empty" -gt 0 ] && bar="${bar}$(printf "%${empty}s" | tr ' ' '░')"
+  [ "$filled" -gt 0 ] && bar=$(printf "%${filled}s" | sed 's/ /█/g')
+  [ "$empty" -gt 0 ] && bar="${bar}$(printf "%${empty}s" | sed 's/ /░/g')"
   printf '%b%s%b' "$color" "$bar" "$X"
 }
 
@@ -412,8 +412,8 @@ fi
 
 [ "$PCT" -ge 90 ] && BC="$R" || { [ "$PCT" -ge 70 ] && BC="$Y" || BC="$G"; }
 FL=$((PCT * 20 / 100)); EM=$((20 - FL))
-CTX_BAR=""; [ "$FL" -gt 0 ] && CTX_BAR=$(printf "%${FL}s" | tr ' ' '▓')
-[ "$EM" -gt 0 ] && CTX_BAR="${CTX_BAR}$(printf "%${EM}s" | tr ' ' '░')"
+CTX_BAR=""; [ "$FL" -gt 0 ] && CTX_BAR=$(printf "%${FL}s" | sed 's/ /▓/g')
+[ "$EM" -gt 0 ] && CTX_BAR="${CTX_BAR}$(printf "%${EM}s" | sed 's/ /░/g')"
 
 if [ "$EXEC_STATUS" = "running" ] && [ "${EXEC_TOTAL:-0}" -gt 0 ] 2>/dev/null; then
   EXEC_PCT=$((EXEC_DONE * 100 / EXEC_TOTAL))
