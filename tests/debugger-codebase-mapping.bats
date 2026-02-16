@@ -32,6 +32,14 @@ teardown() {
   grep -q 'CONCERNS.md' "$PROJECT_ROOT/agents/vbw-debugger.md"
 }
 
+@test "debugger agent references PATTERNS.md" {
+  grep -q 'PATTERNS.md' "$PROJECT_ROOT/agents/vbw-debugger.md"
+}
+
+@test "debugger agent references DEPENDENCIES.md" {
+  grep -q 'DEPENDENCIES.md' "$PROJECT_ROOT/agents/vbw-debugger.md"
+}
+
 # =============================================================================
 # Compiled context: codebase mapping hint in debugger context
 # =============================================================================
@@ -99,12 +107,16 @@ STATE
   echo "# Meta" > .vbw-planning/codebase/META.md
   echo "# Architecture" > .vbw-planning/codebase/ARCHITECTURE.md
   echo "# Concerns" > .vbw-planning/codebase/CONCERNS.md
+  echo "# Patterns" > .vbw-planning/codebase/PATTERNS.md
+  echo "# Dependencies" > .vbw-planning/codebase/DEPENDENCIES.md
   echo "# Structure" > .vbw-planning/codebase/STRUCTURE.md
 
   run bash "$SCRIPTS_DIR/compile-context.sh" "01" "debugger" ".vbw-planning/phases"
   [ "$status" -eq 0 ]
   grep -q "ARCHITECTURE.md" ".vbw-planning/phases/01-test/.context-debugger.md"
   grep -q "CONCERNS.md" ".vbw-planning/phases/01-test/.context-debugger.md"
+  grep -q "PATTERNS.md" ".vbw-planning/phases/01-test/.context-debugger.md"
+  grep -q "DEPENDENCIES.md" ".vbw-planning/phases/01-test/.context-debugger.md"
 }
 
 @test "compile-context.sh debugger context omits codebase mapping when no mapping exists" {
@@ -142,7 +154,7 @@ STATE
   setup_debugger_context
   cd "$TEST_TEMP_DIR"
 
-  # Only META.md + ARCHITECTURE.md (no CONCERNS.md)
+  # Only META.md + ARCHITECTURE.md (no CONCERNS, PATTERNS, DEPENDENCIES)
   mkdir -p .vbw-planning/codebase
   echo "# Meta" > .vbw-planning/codebase/META.md
   echo "# Architecture" > .vbw-planning/codebase/ARCHITECTURE.md
@@ -156,7 +168,7 @@ STATE
   [ "$status" -eq 1 ]
 }
 
-@test "compile-context.sh debugger guidance mentions both when both exist" {
+@test "compile-context.sh debugger guidance mentions all four when all exist" {
   setup_debugger_context
   cd "$TEST_TEMP_DIR"
 
@@ -164,10 +176,15 @@ STATE
   echo "# Meta" > .vbw-planning/codebase/META.md
   echo "# Architecture" > .vbw-planning/codebase/ARCHITECTURE.md
   echo "# Concerns" > .vbw-planning/codebase/CONCERNS.md
+  echo "# Patterns" > .vbw-planning/codebase/PATTERNS.md
+  echo "# Dependencies" > .vbw-planning/codebase/DEPENDENCIES.md
 
   run bash "$SCRIPTS_DIR/compile-context.sh" "01" "debugger" ".vbw-planning/phases"
   [ "$status" -eq 0 ]
-  grep -q "ARCHITECTURE.md and CONCERNS.md" ".vbw-planning/phases/01-test/.context-debugger.md"
+  grep -q "ARCHITECTURE.md" ".vbw-planning/phases/01-test/.context-debugger.md"
+  grep -q "CONCERNS.md" ".vbw-planning/phases/01-test/.context-debugger.md"
+  grep -q "PATTERNS.md" ".vbw-planning/phases/01-test/.context-debugger.md"
+  grep -q "DEPENDENCIES.md" ".vbw-planning/phases/01-test/.context-debugger.md"
 }
 
 @test "compile-context.sh debugger omits map section when META.md exists but no key files" {

@@ -369,7 +369,7 @@ case "$ROLE" in
       # --- Codebase mapping hint (issue #75) ---
       if [ -f "$PLANNING_DIR/codebase/META.md" ]; then
         MAP_FILES=""
-        for doc in ARCHITECTURE CONCERNS STRUCTURE CONVENTIONS PATTERNS; do
+        for doc in ARCHITECTURE CONCERNS PATTERNS DEPENDENCIES STRUCTURE CONVENTIONS; do
           if [ -f "$PLANNING_DIR/codebase/${doc}.md" ]; then
             MAP_FILES="${MAP_FILES} ${doc}"
           fi
@@ -384,9 +384,18 @@ case "$ROLE" in
           echo ""
           # Build guidance based on which priority files exist
           GUIDANCE_FILES=""
-          [ -f "$PLANNING_DIR/codebase/ARCHITECTURE.md" ] && GUIDANCE_FILES="ARCHITECTURE.md"
-          if [ -f "$PLANNING_DIR/codebase/CONCERNS.md" ]; then
-            [ -n "$GUIDANCE_FILES" ] && GUIDANCE_FILES="${GUIDANCE_FILES} and CONCERNS.md" || GUIDANCE_FILES="CONCERNS.md"
+          for pfile in ARCHITECTURE CONCERNS PATTERNS DEPENDENCIES; do
+            if [ -f "$PLANNING_DIR/codebase/${pfile}.md" ]; then
+              if [ -z "$GUIDANCE_FILES" ]; then
+                GUIDANCE_FILES="${pfile}.md"
+              else
+                GUIDANCE_FILES="${GUIDANCE_FILES}, ${pfile}.md"
+              fi
+            fi
+          done
+          # Convert last comma to " and" for natural language
+          if echo "$GUIDANCE_FILES" | grep -q ','; then
+            GUIDANCE_FILES=$(echo "$GUIDANCE_FILES" | sed 's/\(.*\), /\1, and /')
           fi
           if [ -n "$GUIDANCE_FILES" ]; then
             echo "Read ${GUIDANCE_FILES} first to bootstrap codebase understanding before investigating."
