@@ -459,7 +459,18 @@ Display per @${CLAUDE_PLUGIN_ROOT}/references/vbw-brand-essentials.md:
 
 **"What happened" (NRW-02):** If config `plain_summary` is true (default), append 2-4 plain-English sentences between QA and Next Up. No jargon. Source from SUMMARY.md files + QA result. If false, skip.
 
+**Discovered Issues:** If any Dev or QA agent reported pre-existing failures, out-of-scope bugs, or issues unrelated to this phase's work, list them in the summary output between "What happened" and Next Up:
+```text
+  Discovered Issues:
+    ⚠ {issue-1}
+    ⚠ {issue-2}
+  Suggest: /vbw:todo <description> to track
+```
+This is **display-only**. Do NOT edit STATE.md, do NOT add todos, do NOT invoke /vbw:todo, and do NOT enter an interactive loop. The user decides whether to track these. If no discovered issues: omit the section entirely.
+
 Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh execute {qa-result}` and display output.
+
+**STOP.** Execute mode is complete. Return control to the user. Do NOT take further actions — no file edits, no additional commits, no interactive prompts, no improvised follow-up work. The user will decide what to do next based on the summary and suggest-next output.
 
 ## Output Format
 
