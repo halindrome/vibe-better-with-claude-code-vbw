@@ -79,6 +79,8 @@ If no $ARGUMENTS, evaluate phase-detect.sh output. First match determines mode:
 | 5 | `next_phase_state=needs_execute` | Execute | "Phase {N} is planned. Execute it?" |
 | 6 | `next_phase_state=all_done` | Archive | "All phases complete. Run audit and archive?" |
 
+**all_done + natural language:** If $ARGUMENTS describe new work (bug, feature, task) and state is `all_done`, route to Add Phase mode instead of Archive. Add Phase handles codebase context loading and research internally — do NOT spawn an Explore agent or do ad-hoc research before entering the mode.
+
 ### Confirmation Gate
 
 Every mode triggers confirmation via AskUserQuestion before executing, with contextual options (recommended action + alternatives).
@@ -125,9 +127,9 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
   - **B2.1: Domain Research (if not skip):** If DISCOVERY_DEPTH != skip:
     1. Extract domain from user's project description (the $NAME or $DESCRIPTION from B1)
    2. Resolve Scout model via `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh scout .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json` and Scout max turns via `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh scout .vbw-planning/config.json "$(jq -r '.effort // \"balanced\"' .vbw-planning/config.json 2>/dev/null)"`
-    3. Spawn Scout agent via Task tool with prompt: "Research the {domain} domain and write `.vbw-planning/domain-research.md` with four sections: ## Table Stakes (features every {domain} app has), ## Common Pitfalls (what projects get wrong), ## Architecture Patterns (how similar apps are structured), ## Competitor Landscape (existing products). Use WebSearch. Be concise (2-3 bullets per section)."
+    3. Spawn Scout agent via Task tool with prompt: "Research the {domain} domain. Return your findings as structured markdown with four sections: ## Table Stakes (features every {domain} app has), ## Common Pitfalls (what projects get wrong), ## Architecture Patterns (how similar apps are structured), ## Competitor Landscape (existing products). Use WebSearch. Be concise (2-3 bullets per section). Do NOT attempt to write files — return findings in your response."
    4. Set `model: "${SCOUT_MODEL}"`, `maxTurns: ${SCOUT_MAX_TURNS}`, and `timeout: 120000` in Task tool invocation
-    5. On success: Read domain-research.md. Extract brief summary (3-5 lines max). Display to user: "◆ Domain Research: {brief summary}\n\n✓ Research complete. Now let's explore your specific needs..."
+    5. On success: Write Scout's returned findings to `.vbw-planning/domain-research.md`. Extract brief summary (3-5 lines max). Display to user: "◆ Domain Research: {brief summary}\n\n✓ Research complete. Now let's explore your specific needs..."
     6. On failure: Log warning "⚠ Domain research timed out, proceeding with general questions". Set RESEARCH_AVAILABLE=false, continue.
   - **B2.2: Discussion Engine** -- Read `${CLAUDE_PLUGIN_ROOT}/references/discussion-engine.md` and follow its protocol.
     - Context for the engine: "This is a new project. No phases yet." Use project description + domain research (if available) as input.
@@ -208,7 +210,7 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
 2. **Phase context:** If `{phase-dir}/{phase}-CONTEXT.md` exists, include it in Lead agent context. If not, proceed without — users who want context run `/vbw:discuss N` first.
 3. **Research persistence (REQ-08):** If `v3_plan_research_persist=true` in config AND effort != turbo:
    - Check for `{phase-dir}/{phase}-RESEARCH.md`.
-   - **If missing:** Spawn Scout agent to research the phase goal, requirements, and relevant codebase patterns. Scout writes `{phase}-RESEARCH.md` with sections: `## Findings`, `## Relevant Patterns`, `## Risks`, `## Recommendations`. Resolve Scout model:
+   - **If missing:** Spawn Scout agent to research the phase goal, requirements, and relevant codebase patterns. Scout returns structured findings with sections: `## Findings`, `## Relevant Patterns`, `## Risks`, `## Recommendations`. The **orchestrator** (not Scout) writes the returned findings to `{phase-dir}/{phase}-RESEARCH.md`. Scout has `disallowedTools: Write` (platform-enforced) and cannot write files. Resolve Scout model:
      ```bash
      SCOUT_MODEL=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh scout .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json)
    SCOUT_MAX_TURNS=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh scout .vbw-planning/config.json "{effort}")
@@ -310,11 +312,19 @@ Missing name: STOP "Usage: `/vbw:vibe --add <phase-name>`"
 
 **Steps:**
 1. Resolve context: ACTIVE -> milestone-scoped paths, otherwise defaults.
-2. Parse args: phase name (first non-flag arg), --goal (optional), slug (lowercase hyphenated).
-3. Next number: highest in ROADMAP.md + 1, zero-padded.
-4. Update ROADMAP.md: append phase list entry, append Phase Details section, add progress row.
+2. **Codebase context:** If `.vbw-planning/codebase/` exists, read INDEX.md + ARCHITECTURE.md + CONCERNS.md. Use this to inform phase goal scoping and identify relevant modules/services.
+3. Parse args: phase name (first non-flag arg), --goal (optional), slug (lowercase hyphenated).
+4. Next number: highest in ROADMAP.md + 1, zero-padded.
 5. Create dir: `mkdir -p {PHASES_DIR}/{NN}-{slug}/`
-6. Present: Phase Banner with milestone, position, goal. Checklist for roadmap update + dir creation. Next Up: `/vbw:vibe --discuss` or `/vbw:vibe --plan`.
+6. **Problem research (conditional):** If $ARGUMENTS contain a problem description (bug report, feature request, multi-sentence intent) rather than just a bare phase name:
+   - Resolve Scout model: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh scout .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json`
+   - Resolve Scout max turns: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh scout .vbw-planning/config.json "$(jq -r '.effort // "balanced"' .vbw-planning/config.json 2>/dev/null)"`
+   - Spawn Scout agent to research the problem in the codebase. Scout returns structured findings with sections: `## Findings`, `## Relevant Patterns`, `## Risks`, `## Recommendations`. Scout has `disallowedTools: Write` and cannot write files — the **orchestrator** writes the returned findings to `{phase-dir}/{NN}-RESEARCH.md`.
+   - Use Scout findings to write an informed phase goal and success criteria in ROADMAP.md.
+   - On failure: log warning, write phase goal from $ARGUMENTS alone. Do not block.
+   - **This eliminates duplicate research** — Plan mode step 3 checks for existing RESEARCH.md and skips Scout if found.
+7. Update ROADMAP.md: append phase list entry, append Phase Details section (using Scout findings if available), add progress row.
+8. Present: Phase Banner with milestone, position, goal. Checklist for roadmap update + dir creation. Next Up: `/vbw:vibe --discuss` or `/vbw:vibe --plan`.
 
 ### Mode: Insert Phase
 
@@ -325,12 +335,14 @@ Inserting before completed phase: WARN + confirm.
 
 **Steps:**
 1. Resolve context: ACTIVE -> milestone-scoped paths, otherwise defaults.
-2. Parse args: position (int), phase name, --goal (optional), slug (lowercase hyphenated).
-3. Identify renumbering: all phases >= position shift up by 1.
-4. Renumber dirs in REVERSE order: rename dir {NN}-{slug} -> {NN+1}-{slug}, rename internal PLAN/SUMMARY files, update `phase:` frontmatter, update `depends_on` references.
-5. Update ROADMAP.md: insert new phase entry + details at position, renumber subsequent entries/headers/cross-refs, update progress table.
+2. **Codebase context:** If `.vbw-planning/codebase/` exists, read INDEX.md + ARCHITECTURE.md + CONCERNS.md. Use this to inform phase goal scoping and identify relevant modules/services.
+3. Parse args: position (int), phase name, --goal (optional), slug (lowercase hyphenated).
+4. Identify renumbering: all phases >= position shift up by 1.
+5. Renumber dirs in REVERSE order: rename dir {NN}-{slug} -> {NN+1}-{slug}, rename internal PLAN/SUMMARY files, update `phase:` frontmatter, update `depends_on` references.
 6. Create dir: `mkdir -p {PHASES_DIR}/{NN}-{slug}/`
-7. Present: Phase Banner with renumber count, phase changes, file checklist, Next Up.
+7. **Problem research (conditional):** Same as Add Phase step 6 — if $ARGUMENTS contain a problem description, spawn Scout to research the codebase. Scout returns findings; the **orchestrator** writes `{phase-dir}/{NN}-RESEARCH.md`. This prevents Plan mode from duplicating the research.
+8. Update ROADMAP.md: insert new phase entry + details at position (using Scout findings if available), renumber subsequent entries/headers/cross-refs, update progress table.
+9. Present: Phase Banner with renumber count, phase changes, file checklist, Next Up.
 
 ### Mode: Remove Phase
 

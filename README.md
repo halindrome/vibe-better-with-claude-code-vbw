@@ -778,7 +778,7 @@ Toggle any flag with:
 
 - **`v3_context_cache`** — Caches the compiled context index (`context-index.json`) between runs so `compile-context.sh` can skip recomputation when project files haven't changed. In large codebases (thousands of files), this avoids redundant shell work on every agent invocation. Has no effect if you're actively changing lots of files between runs — the cache invalidates and rebuilds anyway.
 
-- **`v3_plan_research_persist`** — During planning, Scout writes its research findings to a `RESEARCH.md` file in the phase directory. This makes planning decisions traceable — you can see *what Scout found* that informed the Lead's plan. Skipped when effort is set to `turbo` (which bypasses Scout entirely). Enable this if you want an audit trail of why plans look the way they do.
+- **`v3_plan_research_persist`** — During planning, Scout researches the phase and returns structured findings. The orchestrating command writes these to a `RESEARCH.md` file in the phase directory (Scout has `disallowedTools: Write` and cannot write files itself). This makes planning decisions traceable — you can see *what Scout found* that informed the Lead's plan. Skipped when effort is set to `turbo` (which bypasses Scout entirely). Enable this if you want an audit trail of why plans look the way they do.
 
 - **`v3_metrics`** — Instruments planning and execution with metric collection (timing, token usage, agent invocation counts). Data is written to `.vbw-planning/` and can be viewed with `/vbw:status --metrics`. Useful for understanding where time and tokens are spent. No effect on agent behavior — purely observational.
 
