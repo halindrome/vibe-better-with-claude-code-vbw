@@ -112,7 +112,10 @@ relative_age() {
 
   days=$(( (now - then_ts) / 86400 ))
 
-  if [ "$days" -eq 0 ]; then
+  if [ "$days" -lt 0 ]; then
+    echo ""
+    return
+  elif [ "$days" -eq 0 ]; then
     echo "today"
   elif [ "$days" -eq 1 ]; then
     echo "1d ago"
@@ -193,7 +196,10 @@ main() {
   local num=0
   while IFS= read -r line; do
     [ -z "$line" ] && continue
-    num=$((num + 1))
+    # Skip empty/whitespace-only todo lines (bare "- " with no text)
+    local stripped="${line#- }"
+    stripped="${stripped#"${stripped%%[![:space:]]*}"}"
+    [ -z "$stripped" ] && continue
     local parsed
     parsed=$(parse_todo_line "$line")
 
@@ -208,6 +214,8 @@ main() {
       continue
     fi
 
+    # num tracks filtered position (matches display numbering)
+    num=$((num + 1))
     items_json=$(echo "$items_json" | jq --argjson n "$num" \
       --arg l "$line" --arg t "$text" --arg p "$pri" \
       --arg d "$date_val" --arg a "$age" \

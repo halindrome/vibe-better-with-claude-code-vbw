@@ -79,14 +79,23 @@ if [ -d "$PLANNING_DIR" ] && [ ! -f "$PLANNING_DIR/.todo-flat-migrated" ]; then
     done
   fi
 
+  _todo_migrate_ok=true
   for _sf in $_todo_state_files; do
     if grep -q '^### Pending Todos$' "$_sf" 2>/dev/null; then
       # Remove the ### Pending Todos heading — items stay under ## Todos
-      grep -v '^### Pending Todos$' "$_sf" > "${_sf}.tmp" && mv "${_sf}.tmp" "$_sf"
+      if grep -v '^### Pending Todos$' "$_sf" > "${_sf}.tmp" 2>/dev/null && mv "${_sf}.tmp" "$_sf" 2>/dev/null; then
+        : # success
+      else
+        rm -f "${_sf}.tmp" 2>/dev/null || true
+        _todo_migrate_ok=false
+      fi
     fi
   done
 
-  echo "1" > "$PLANNING_DIR/.todo-flat-migrated" 2>/dev/null || true
+  # Only write marker if all files migrated successfully
+  if [ "$_todo_migrate_ok" = true ]; then
+    echo "1" > "$PLANNING_DIR/.todo-flat-migrated" 2>/dev/null || true
+  fi
 fi
 
 # --- Session-level config cache (performance optimization, REQ-01 #9) ---
