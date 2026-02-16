@@ -11,8 +11,46 @@ set -u
 HEALTH_DIR=".vbw-planning/.agent-health"
 
 orphan_recovery() {
-  # Stub for now, will implement in Task 4
-  echo "ORPHAN_RECOVERY_CALLED"
+  local role="$1"
+  local pid="$2"
+  local tasks_dir="$HOME/.claude/tasks"
+  local advisory=""
+  local task_file task_owner task_status task_id
+
+  # Find team directory (assumes single team for now)
+  # If multiple teams exist, we'll scan all of them
+  if [ ! -d "$tasks_dir" ]; then
+    echo "AGENT HEALTH: Orphan recovery — no tasks directory found"
+    return
+  fi
+
+  # Scan all team directories
+  for team_dir in "$tasks_dir"/*; do
+    [ ! -d "$team_dir" ] && continue
+
+    # Scan task JSON files
+    for task_file in "$team_dir"/*.json; do
+      [ ! -f "$task_file" ] && continue
+
+      # Extract task metadata
+      task_owner=$(jq -r '.owner // ""' "$task_file" 2>/dev/null)
+      task_status=$(jq -r '.status // ""' "$task_file" 2>/dev/null)
+      task_id=$(jq -r '.id // ""' "$task_file" 2>/dev/null)
+
+      # Check if this task is owned by the dead agent and is in_progress
+      if [ "$task_owner" = "$role" ] && [ "$task_status" = "in_progress" ]; then
+        # Clear owner field
+        jq '.owner = ""' "$task_file" > "${task_file}.tmp" && mv "${task_file}.tmp" "$task_file"
+        advisory="AGENT HEALTH: Orphan recovery — cleared ownership of task $task_id (owner $role PID $pid is dead)"
+      fi
+    done
+  done
+
+  if [ -z "$advisory" ]; then
+    advisory="AGENT HEALTH: Orphan recovery — agent $role PID $pid is dead (no orphaned tasks found)"
+  fi
+
+  echo "$advisory"
 }
 
 cmd_start() {
