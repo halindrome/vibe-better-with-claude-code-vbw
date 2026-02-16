@@ -2,7 +2,7 @@
 
 All notable changes to VBW will be documented in this file.
 
-## [1.21.24] - 2026-02-16
+## [1.21.26] - 2026-02-16
 
 ### Added
 
@@ -17,6 +17,7 @@ All notable changes to VBW will be documented in this file.
 
 - **`vibe`** -- Bootstrap B2 now delegates to the discussion engine instead of 6-round rigid questioning. Plan mode no longer auto-asks 1-3 questions; users run `/vbw:discuss` explicitly if they want context. Discuss mode replaced with a 5-line engine delegation.
 - **`bootstrap-requirements`** -- Removed tier-based annotation (table_stakes/differentiators/anti_features) and research cross-referencing. Reads simplified `discovery.json` schema directly.
+- **`readme`** -- Updated all counts (31k lines, 81 scripts, 23 commands, 7 agents, 461 tests). Added `/vbw:discuss` command, Docs agent, agent health monitoring, discussion engine references.
 
 ### Removed
 
@@ -26,6 +27,7 @@ All notable changes to VBW will be documented in this file.
 
 - **`teams`** -- Remove stale tmux forced in-process workaround, restore split-pane mode.
 - **`token-budget`** -- Switch from line-based to character-based budgets, default to head truncation, remove cross-task escalation.
+- **`ci`** -- Add executable bit to `agent-health.sh`. Remove unused variables in `token-baseline.sh` (SC2034). Use `CLAUDE_CONFIG_DIR` fallback in `agent-health.sh`.
 
 ## [1.21.18] - 2026-02-16
 
