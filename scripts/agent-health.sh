@@ -13,7 +13,7 @@ HEALTH_DIR=".vbw-planning/.agent-health"
 orphan_recovery() {
   local role="$1"
   local pid="$2"
-  local tasks_dir="$HOME/.claude/tasks"
+  local tasks_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/tasks"
   local advisory=""
   local task_file task_owner task_status task_id
 

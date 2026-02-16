@@ -311,14 +311,14 @@ build_report() {
 
   local phase_keys
   phase_keys=$(echo "$measurement" | jq -r '.phases | keys[] | tonumber' 2>/dev/null | sort -n || echo "")
-  local t_ov t_tr t_ta t_es t_opt
+  local t_ov t_tr t_ta t_opt
   t_ov=$(echo "$measurement" | jq -r '.totals.overages // 0' 2>/dev/null)
   t_tr=$(echo "$measurement" | jq -r '.totals.truncated_chars // .totals.truncated_lines // 0' 2>/dev/null)
   t_ta=$(echo "$measurement" | jq -r '.totals.tasks // 0' 2>/dev/null)
   t_opt=$(echo "$measurement" | jq -r '.totals.overages_per_task // 0' 2>/dev/null)
 
   for pk in $phase_keys; do
-    local p_ov p_tr p_ta p_es p_opt
+    local p_ov p_tr p_ta p_opt
     p_ov=$(echo "$measurement" | jq -r --arg p "$pk" '.phases[$p].overages // 0' 2>/dev/null)
     p_tr=$(echo "$measurement" | jq -r --arg p "$pk" '.phases[$p].truncated_chars // .phases[$p].truncated_lines // 0' 2>/dev/null)
     p_ta=$(echo "$measurement" | jq -r --arg p "$pk" '.phases[$p].tasks // 0' 2>/dev/null)
