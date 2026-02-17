@@ -383,17 +383,24 @@ FAIL -> STOP with remediation suggestions. WARN -> proceed with warnings.
 1. Resolve context: ACTIVE -> milestone-scoped paths. No ACTIVE -> SLUG="default", root paths.
 2. Parse args: --tag=vN.N.N (custom tag), --no-tag (skip), --force (skip audit).
 3. Compute summary: from ROADMAP (phases), SUMMARY.md files (tasks/commits/deviations), REQUIREMENTS.md (satisfied count).
-4. Archive: `mkdir -p .vbw-planning/milestones/`. Move roadmap, state, phases to milestones/{SLUG}/. Write SHIPPED.md. Delete stale RESUME.md.
-5. Planning commit boundary (conditional):
+4. **Rolling summary (conditional):** If `v3_rolling_summary=true` in config:
+   ```bash
+   bash ${CLAUDE_PLUGIN_ROOT}/scripts/compile-rolling-summary.sh \
+     .vbw-planning/phases .vbw-planning/ROLLING-CONTEXT.md 2>/dev/null || true
+   ```
+   Compiles final rolling context before artifacts move to milestones/. Fail-open.
+   When `v3_rolling_summary=false`: skip.
+5. Archive: `mkdir -p .vbw-planning/milestones/`. Move roadmap, state, phases to milestones/{SLUG}/. Write SHIPPED.md. Delete stale RESUME.md.
+6. Planning commit boundary (conditional):
    ```bash
    bash ${CLAUDE_PLUGIN_ROOT}/scripts/planning-git.sh commit-boundary "archive milestone {SLUG}" .vbw-planning/config.json
    ```
    Run this BEFORE branch merge/tag so shipped planning state is committed.
-6. Git branch merge: if `milestone/{SLUG}` branch exists, merge --no-ff. Conflict -> abort, warn. No branch -> skip.
-7. Git tag: unless --no-tag, `git tag -a {tag} -m "Shipped milestone: {name}"`. Default: `milestone/{SLUG}`.
-8. Update ACTIVE: remaining milestones -> set ACTIVE to first. None -> remove ACTIVE.
-9. Regenerate CLAUDE.md: update Active Context, remove shipped refs. Preserve non-VBW content — only replace VBW-managed sections, keep user's own sections intact.
-10. Present: Phase Banner with metrics (phases, tasks, commits, requirements, deviations), archive path, tag, branch status, memory status. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh vibe`.
+7. Git branch merge: if `milestone/{SLUG}` branch exists, merge --no-ff. Conflict -> abort, warn. No branch -> skip.
+8. Git tag: unless --no-tag, `git tag -a {tag} -m "Shipped milestone: {name}"`. Default: `milestone/{SLUG}`.
+9. Update ACTIVE: remaining milestones -> set ACTIVE to first. None -> remove ACTIVE.
+10. Regenerate CLAUDE.md: update Active Context, remove shipped refs. Preserve non-VBW content — only replace VBW-managed sections, keep user's own sections intact.
+11. Present: Phase Banner with metrics (phases, tasks, commits, requirements, deviations), archive path, tag, branch status, memory status. Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh vibe`.
 
 ### Pure-Vibe Phase Loop
 
