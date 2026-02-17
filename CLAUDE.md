@@ -1,4 +1,4 @@
-# VBW — Vibe Better with Claude Code
+# VBW
 
 A Claude Code plugin that adds structured development workflows — planning, execution, and verification — using specialized agent teams.
 
@@ -7,7 +7,7 @@ A Claude Code plugin that adds structured development workflows — planning, ex
 ## Active Context
 
 **Work:** No active milestone
-**Last shipped:** tmux Agent Teams Resilience — 6 phases, 33 tasks, 26 commits, 0 deviations
+**Last shipped:** Event Log Correlation IDs — 1 phase, 5 tasks, 3 commits, 0 deviations
 **Next action:** Run /vbw:vibe to start a new milestone
 
 ## VBW Rules
@@ -26,6 +26,8 @@ A Claude Code plugin that adds structured development workflows — planning, ex
 
 | Decision | Date | Rationale |
 |----------|------|-----------|
+| Auto-read correlation_id in log-event.sh | 2026-02-17 | Zero caller changes — all 5 shell callers get correlation_id for free |
+| VBW_CORRELATION_ID env var fallback | 2026-02-17 | Edge-case access when execution-state.json temporarily unavailable |
 
 ## Installed Skills
 

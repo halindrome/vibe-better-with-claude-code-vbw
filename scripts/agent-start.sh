@@ -145,6 +145,25 @@ if [ -n "$ROLE" ]; then
     if [ -n "$AGENT_PID" ] && [ -f "$SCRIPT_DIR/agent-pid-tracker.sh" ]; then
       bash "$SCRIPT_DIR/agent-pid-tracker.sh" register "$AGENT_PID" 2>/dev/null || true
     fi
+
+    # Record tmux pane for auto-close on stop
+    if [ -n "${TMUX:-}" ] && [ -n "$AGENT_PID" ]; then
+      PANE_MAP="$PLANNING_DIR/.agent-panes"
+      # Walk agent PID's parent chain to find which tmux pane owns it
+      PANE_LIST=$(tmux list-panes -a -F '#{pane_pid} #{pane_id}' 2>/dev/null) || PANE_LIST=""
+      if [ -n "$PANE_LIST" ]; then
+        _pid="$AGENT_PID"
+        _found=""
+        while [ -n "$_pid" ] && [ "$_pid" != "0" ] && [ "$_pid" != "1" ]; do
+          _found=$(echo "$PANE_LIST" | awk -v p="$_pid" '$1 == p { print $2; exit }')
+          if [ -n "$_found" ]; then break; fi
+          _pid=$(ps -o ppid= -p "$_pid" 2>/dev/null | tr -d ' ')
+        done
+        if [ -n "$_found" ]; then
+          echo "$AGENT_PID $_found" >> "$PANE_MAP"
+        fi
+      fi
+    fi
   fi
 fi
 

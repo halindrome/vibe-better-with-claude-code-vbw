@@ -95,4 +95,17 @@ if [ -n "$AGENT_PID" ] && [ -f "$SCRIPT_DIR/agent-pid-tracker.sh" ]; then
   bash "$SCRIPT_DIR/agent-pid-tracker.sh" unregister "$AGENT_PID" 2>/dev/null || true
 fi
 
+# Auto-close tmux pane if recorded at start
+PANE_MAP="$PLANNING_DIR/.agent-panes"
+if [ -n "${TMUX:-}" ] && [ -n "$AGENT_PID" ] && [ -f "$PANE_MAP" ]; then
+  PANE_ID=$(awk -v p="$AGENT_PID" '$1 == p { print $2; exit }' "$PANE_MAP" 2>/dev/null)
+  if [ -n "$PANE_ID" ]; then
+    # Remove entry from map
+    grep -v "^${AGENT_PID} " "$PANE_MAP" > "${PANE_MAP}.tmp" 2>/dev/null || true
+    mv "${PANE_MAP}.tmp" "$PANE_MAP" 2>/dev/null || true
+    # Kill pane (delay briefly so agent process exits cleanly first)
+    (sleep 1 && tmux kill-pane -t "$PANE_ID" 2>/dev/null || true) &
+  fi
+fi
+
 exit 0

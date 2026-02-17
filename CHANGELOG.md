@@ -2,6 +2,21 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.21.30] - 2026-02-17
+
+### Added
+
+- **`rolling-summary`** -- New `scripts/compile-rolling-summary.sh` compiles prior SUMMARY.md files into a condensed `ROLLING-CONTEXT.md` (<200 lines). Integrated into `compile-context.sh` and `cache-context.sh` hash. Feature-flagged via `v3_rolling_summary` config. Archive and execute modes call it automatically.
+- **`correlation-id`** -- `scripts/log-event.sh` auto-resolves `correlation_id` from `VBW_CORRELATION_ID` env var or `.execution-state.json`. Execute protocol generates UUID at phase start. Zero caller changes required — all shell callers get correlation threading for free.
+
+### Changed
+
+- **`readme`** -- Updated token efficiency section with v1.21.30 analysis (17% per-request reduction). Consolidated comparison table. Linked all 5 analysis reports. Fixed agent count (6→7). Trimmed Manifesto section.
+- **`statusline`** -- Halved progress bar widths for compact display.
+- **`agent-start`** -- Added tmux pane detection for PID→pane_id tracking.
+- **`agent-stop`** -- Added tmux pane auto-close on agent stop.
+- **`session-stop`** -- Added `.agent-panes` to cleanup list.
+
 ## [1.21.29] - 2026-02-17
 
 ### Added
