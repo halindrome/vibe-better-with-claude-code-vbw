@@ -158,11 +158,11 @@ teardown() {
   sed -n '/## `shutdown_request`/,/## `/p' "$PROJECT_ROOT/references/handoff-schemas.md" | grep -q '"reason"'
 }
 
-@test "handoff-schemas.md shutdown_response payload has request_id and approve fields" {
+@test "handoff-schemas.md shutdown_response payload has request_id and approved fields" {
   local section
   section=$(sed -n '/## `shutdown_response`/,/## /p' "$PROJECT_ROOT/references/handoff-schemas.md")
   echo "$section" | grep -q '"request_id"'
-  echo "$section" | grep -q '"approve"'
+  echo "$section" | grep -q '"approved"'
 }
 
 @test "handoff-schemas.md shutdown_response payload has final_status field" {
@@ -200,8 +200,8 @@ teardown() {
     "$CONFIG_DIR/schemas/message-schemas.json"
 }
 
-@test "message-schemas.json shutdown_response payload requires request_id, approve, final_status" {
-  jq -e '.schemas.shutdown_response.payload_required | (index("request_id") != null and index("approve") != null and index("final_status") != null)' \
+@test "message-schemas.json shutdown_response payload requires request_id, approved, final_status" {
+  jq -e '.schemas.shutdown_response.payload_required | (index("request_id") != null and index("approved") != null and index("final_status") != null)' \
     "$CONFIG_DIR/schemas/message-schemas.json"
 }
 
@@ -281,7 +281,7 @@ teardown() {
 
 @test "validate-message: shutdown_response from dev passes" {
   cd "$TEST_TEMP_DIR"
-  MSG='{"id":"shut-resp-001","type":"shutdown_response","phase":1,"task":"","author_role":"dev","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approve":true,"final_status":"complete"}}'
+  MSG='{"id":"shut-resp-001","type":"shutdown_response","phase":1,"task":"","author_role":"dev","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approved":true,"final_status":"complete"}}'
   run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.valid == true'
@@ -289,7 +289,7 @@ teardown() {
 
 @test "validate-message: shutdown_response from qa passes" {
   cd "$TEST_TEMP_DIR"
-  MSG='{"id":"shut-resp-002","type":"shutdown_response","phase":1,"task":"","author_role":"qa","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approve":true,"final_status":"idle"}}'
+  MSG='{"id":"shut-resp-002","type":"shutdown_response","phase":1,"task":"","author_role":"qa","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approved":true,"final_status":"idle"}}'
   run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.valid == true'
@@ -297,7 +297,7 @@ teardown() {
 
 @test "validate-message: shutdown_response from scout passes" {
   cd "$TEST_TEMP_DIR"
-  MSG='{"id":"shut-resp-003","type":"shutdown_response","phase":1,"task":"","author_role":"scout","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approve":true,"final_status":"idle"}}'
+  MSG='{"id":"shut-resp-003","type":"shutdown_response","phase":1,"task":"","author_role":"scout","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approved":true,"final_status":"idle"}}'
   run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.valid == true'
@@ -305,7 +305,7 @@ teardown() {
 
 @test "validate-message: shutdown_response from debugger passes" {
   cd "$TEST_TEMP_DIR"
-  MSG='{"id":"shut-resp-004","type":"shutdown_response","phase":1,"task":"","author_role":"debugger","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approve":true,"final_status":"in_progress"}}'
+  MSG='{"id":"shut-resp-004","type":"shutdown_response","phase":1,"task":"","author_role":"debugger","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approved":true,"final_status":"in_progress"}}'
   run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.valid == true'
@@ -313,7 +313,7 @@ teardown() {
 
 @test "validate-message: shutdown_response from lead passes" {
   cd "$TEST_TEMP_DIR"
-  MSG='{"id":"shut-resp-005","type":"shutdown_response","phase":1,"task":"","author_role":"lead","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approve":true,"final_status":"complete"}}'
+  MSG='{"id":"shut-resp-005","type":"shutdown_response","phase":1,"task":"","author_role":"lead","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approved":true,"final_status":"complete"}}'
   run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.valid == true'
@@ -321,7 +321,7 @@ teardown() {
 
 @test "validate-message: shutdown_response from docs passes" {
   cd "$TEST_TEMP_DIR"
-  MSG='{"id":"shut-resp-006","type":"shutdown_response","phase":1,"task":"","author_role":"docs","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approve":true,"final_status":"idle"}}'
+  MSG='{"id":"shut-resp-006","type":"shutdown_response","phase":1,"task":"","author_role":"docs","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approved":true,"final_status":"idle"}}'
   run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.valid == true'
@@ -329,13 +329,13 @@ teardown() {
 
 @test "validate-message: shutdown_response missing request_id rejected" {
   cd "$TEST_TEMP_DIR"
-  MSG='{"id":"shut-resp-bad","type":"shutdown_response","phase":1,"task":"","author_role":"dev","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"approve":true,"final_status":"complete"}}'
+  MSG='{"id":"shut-resp-bad","type":"shutdown_response","phase":1,"task":"","author_role":"dev","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"approved":true,"final_status":"complete"}}'
   run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
   [ "$status" -eq 2 ]
   [[ "$output" == *"missing payload field"* ]]
 }
 
-@test "validate-message: shutdown_response missing approve rejected" {
+@test "validate-message: shutdown_response missing approved rejected" {
   cd "$TEST_TEMP_DIR"
   MSG='{"id":"shut-resp-bad2","type":"shutdown_response","phase":1,"task":"","author_role":"dev","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","final_status":"complete"}}'
   run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
@@ -345,7 +345,7 @@ teardown() {
 
 @test "validate-message: shutdown_response missing final_status rejected" {
   cd "$TEST_TEMP_DIR"
-  MSG='{"id":"shut-resp-bad3","type":"shutdown_response","phase":1,"task":"","author_role":"dev","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approve":true}}'
+  MSG='{"id":"shut-resp-bad3","type":"shutdown_response","phase":1,"task":"","author_role":"dev","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approved":true}}'
   run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
   [ "$status" -eq 2 ]
   [[ "$output" == *"missing payload field"* ]]
@@ -365,7 +365,7 @@ teardown() {
 
 @test "validate-message: shutdown_response targeted to lead passes receive check" {
   cd "$TEST_TEMP_DIR"
-  MSG='{"id":"shut-t2","type":"shutdown_response","phase":1,"task":"","author_role":"dev","target_role":"lead","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approve":true,"final_status":"complete"}}'
+  MSG='{"id":"shut-t2","type":"shutdown_response","phase":1,"task":"","author_role":"dev","target_role":"lead","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approved":true,"final_status":"complete"}}'
   run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.valid == true'
@@ -418,7 +418,7 @@ teardown() {
 
 @test "validate-message: shutdown_response from architect rejected" {
   cd "$TEST_TEMP_DIR"
-  MSG='{"id":"shut-arch-2","type":"shutdown_response","phase":1,"task":"","author_role":"architect","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approve":true,"final_status":"idle"}}'
+  MSG='{"id":"shut-arch-2","type":"shutdown_response","phase":1,"task":"","author_role":"architect","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approved":true,"final_status":"idle"}}'
   run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
   [ "$status" -eq 2 ]
   [[ "$output" == *"not authorized"* ]]
@@ -427,4 +427,43 @@ teardown() {
 @test "architect agent documents shutdown exemption" {
   grep -q '## Shutdown Handling' "$PROJECT_ROOT/agents/vbw-architect.md"
   sed -n '/^## Shutdown Handling$/,/^## /p' "$PROJECT_ROOT/agents/vbw-architect.md" | grep -qi 'planning-only'
+}
+
+# =============================================================================
+# Architect ordering: Shutdown Handling between Effort and Circuit Breaker
+# =============================================================================
+
+@test "architect shutdown handling section order: after Effort, before Circuit Breaker" {
+  local file="$PROJECT_ROOT/agents/vbw-architect.md"
+  local effort_line shutdown_line breaker_line
+  effort_line=$(grep -n '^## Effort' "$file" | head -1 | cut -d: -f1)
+  shutdown_line=$(grep -n '^## Shutdown Handling' "$file" | head -1 | cut -d: -f1)
+  breaker_line=$(grep -n '^## Circuit Breaker' "$file" | head -1 | cut -d: -f1)
+  [ -n "$effort_line" ] && [ -n "$shutdown_line" ] && [ -n "$breaker_line" ]
+  [ "$effort_line" -lt "$shutdown_line" ]
+  [ "$shutdown_line" -lt "$breaker_line" ]
+}
+
+# =============================================================================
+# Rejection path: approved=false is a valid response
+# =============================================================================
+
+@test "validate-message: shutdown_response with approved=false passes" {
+  cd "$TEST_TEMP_DIR"
+  MSG='{"id":"shut-resp-reject","type":"shutdown_response","phase":1,"task":"","author_role":"dev","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approved":false,"final_status":"in_progress"}}'
+  run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.valid == true'
+}
+
+# =============================================================================
+# Optional field: pending_work passes through correctly
+# =============================================================================
+
+@test "validate-message: shutdown_response with pending_work passes" {
+  cd "$TEST_TEMP_DIR"
+  MSG='{"id":"shut-resp-pw","type":"shutdown_response","phase":1,"task":"","author_role":"debugger","timestamp":"2026-02-12T10:30:05Z","schema_version":"2.0","confidence":"high","payload":{"request_id":"shut-001","approved":true,"final_status":"in_progress","pending_work":"Investigating hypothesis 2: race condition in auth module"}}'
+  run bash "$SCRIPTS_DIR/validate-message.sh" "$MSG"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.valid == true'
 }

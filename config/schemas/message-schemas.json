@@ -52,7 +52,7 @@
     },
     "shutdown_response": {
       "allowed_roles": ["dev", "qa", "scout", "lead", "debugger", "docs"],
-      "payload_required": ["request_id", "approve", "final_status"],
+      "payload_required": ["request_id", "approved", "final_status"],
       "payload_optional": ["pending_work"],
       "description": "Acknowledgment from teammate that it will terminate"
     }

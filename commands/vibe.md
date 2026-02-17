@@ -245,8 +245,8 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
      - Spawn Scout (if spawned in step 3) with `team_name: "vbw-plan-{NN}"`, `name: "scout"` parameters on the Task tool invocation.
      - Spawn Lead with `team_name: "vbw-plan-{NN}"`, `name: "lead"` parameters on the Task tool invocation.
      - **HARD GATE — Shutdown before proceeding:** After all team agents complete their work, you MUST shut down the team BEFORE validating output, presenting results, or asking the user anything. This is blocking:
-       1. Send `shutdown_request` to each teammate (lead, scout) via SendMessage
-       2. Wait for each `shutdown_response` (approve=true). If rejected, re-request.
+       1. Send `shutdown_request` to all active teammates via SendMessage
+       2. Wait for each `shutdown_response` (approved=true). If rejected, re-request.
        3. Call TeamDelete for team "vbw-plan-{NN}"
        4. Only THEN proceed to step 7
        Failure to shut down leaves agents running, consuming API credits in the background (visible as hanging panes in tmux).

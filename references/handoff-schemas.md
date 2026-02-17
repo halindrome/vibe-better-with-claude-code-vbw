@@ -253,14 +253,14 @@ Acknowledgment from a teammate that it will terminate.
   "confidence": "high",
   "payload": {
     "request_id": "shut-001",
-    "approve": true,
+    "approved": true,
     "final_status": "complete|idle|in_progress",
     "pending_work": ""
   }
 }
 ```
 
-On receiving `shutdown_request`: respond with `shutdown_response` (approve=true), finish any in-progress tool call, then STOP all further work. Do NOT start new tasks, fix additional issues, or take any action after responding. The orchestrator will call TeamDelete after collecting all responses.
+On receiving `shutdown_request`: respond with `shutdown_response` (approved=true), finish any in-progress tool call, then STOP all further work. Do NOT start new tasks, fix additional issues, or take any action after responding. The orchestrator will call TeamDelete after collecting all responses.
 
 ## Backward Compatibility
 

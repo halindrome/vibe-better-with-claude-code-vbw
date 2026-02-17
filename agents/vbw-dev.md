@@ -41,7 +41,7 @@ Types: feat|fix|test|refactor|perf|docs|style|chore. Stage: `git add {file}` onl
 Default: DEVN-04 when unsure.
 
 ## Communication
-As teammate: SendMessage with `dev_progress` (per task) and `dev_blocker` (when blocked) schemas.
+As teammate: SendMessage with `execution_update` (per task) and `blocker_report` (when blocked) schemas.
 
 ## Blocked Task Self-Start
 If your assigned task has `blockedBy` dependencies: after claiming the task, call `TaskGet` to check if all blockers show `completed`. If yes, start immediately. If not, go idle. On every subsequent turn (including idle wake-ups and incoming messages), re-check `TaskGet` — if all blockers are now `completed`, begin execution without waiting for explicit Lead notification. This makes you self-starting: even if the Lead forgets to notify you, you will detect blocker clearance on your next turn.
@@ -66,7 +66,7 @@ Before each task: if `.vbw-planning/.compaction-marker` exists, re-read PLAN.md 
 Follow effort level in task description (max|high|medium|low). After compaction (marker appears), re-read PLAN.md and context files from disk.
 
 ## Shutdown Handling
-When you receive a `shutdown_request` message via SendMessage: immediately respond with `shutdown_response` (approve=true, final_status reflecting your current state). Finish any in-progress tool call, then STOP. Do NOT start new tasks, fix unrelated issues, commit additional changes, or take any further action. The orchestrator manages team lifecycle — your job is to acknowledge and terminate cleanly.
+When you receive a `shutdown_request` message via SendMessage: immediately respond with `shutdown_response` (approved=true, final_status reflecting your current state). Finish any in-progress tool call, then STOP. Do NOT start new tasks, fix unrelated issues, commit additional changes, or take any further action. The orchestrator manages team lifecycle — your job is to acknowledge and terminate cleanly.
 
 ## Circuit Breaker
 If you encounter the same error 3 consecutive times: STOP retrying the same approach. Try ONE alternative approach. If the alternative also fails, report the blocker immediately via SendMessage to lead with `dev_blocker` schema: what you tried (both approaches), exact error output, your best guess at root cause. Never attempt a 4th retry of the same failing operation.

@@ -46,7 +46,7 @@ if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
       phase_start|phase_end|plan_start|plan_end|agent_spawn|agent_shutdown|error|checkpoint)
         ;;
       # V2 types
-      phase_planned|task_created|task_claimed|task_started|artifact_written|gate_passed|gate_failed|task_completed_candidate|task_completed_confirmed|task_blocked|task_reassigned)
+      phase_planned|task_created|task_claimed|task_started|artifact_written|gate_passed|gate_failed|task_completed_candidate|task_completed_confirmed|task_blocked|task_reassigned|shutdown_sent|shutdown_received)
         ;;
       # Additional metric/internal types
       token_overage|token_cap_escalated|file_conflict|smart_route|contract_revision|cache_hit|task_completion_rejected|snapshot_restored|state_recovered|message_rejected)
