@@ -25,8 +25,8 @@ The pre-push hook checks version file consistency (see Version Management below)
 
 ```
 .claude-plugin/    Plugin manifest (plugin.json)
-agents/            6 agent definitions with native tool permissions
-commands/          20 slash commands (commands/*.md)
+agents/            7 agent definitions with native tool permissions
+commands/          24 slash commands (commands/*.md)
 config/            Default settings and stack-to-skill mappings
 hooks/             Plugin hooks (hooks.json)
 scripts/           Hook handler scripts

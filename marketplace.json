@@ -11,7 +11,7 @@
     {
       "name": "vbw",
       "source": "./",
-      "description": "Development lifecycle plugin — 21 commands, 6 agents, continuous verification",
+      "description": "Development lifecycle plugin — 24 commands, 7 agents, continuous verification",
       "version": "1.21.28",
       "license": "MIT",
       "keywords": [

@@ -25,7 +25,7 @@
 
 ## VBW Token Efficiency vs Stock Opus 4.6 Agent Teams
 
-VBW wraps Claude Code's native Agent Teams with optimization mechanisms across multiple architectural layers. The codebase has grown to ~33,000 lines across 86 scripts, 23 commands, 7 agents, and 11 reference files — yet per-request overhead keeps *decreasing* because every new capability is shell-only. Scripts handle state computation, protocol enforcement, config migration, security filtering, and session lifecycle as bash subprocesses at zero model token cost. Vibe consolidation replaced 10 commands with a single `/vbw:vibe`, and 480 automated tests validate the entire stack.
+VBW wraps Claude Code's native Agent Teams with optimization mechanisms across multiple architectural layers. The codebase has grown to ~33,000 lines across 86 scripts, 24 commands, 7 agents, and 11 reference files — yet per-request overhead keeps *decreasing* because every new capability is shell-only. Scripts handle state computation, protocol enforcement, config migration, security filtering, and session lifecycle as bash subprocesses at zero model token cost. Vibe consolidation replaced 10 commands with a single `/vbw:vibe`, and 480 automated tests validate the entire stack.
 
 Stock teams load all command descriptions into every request, run every agent on Opus, coordinate via expensive message round-trips, and let each agent independently discover project state by reading the same files. VBW replaces all of that with shell pre-computation, deterministic context routing via `compile-context.sh`, configurable model profiles (Scout on Haiku, QA on Sonnet), disk-based coordination, pre-computed state injection, feature-flagged shell hooks, and terse compressed instructions.
 
@@ -39,7 +39,7 @@ Stock teams load all command descriptions into every request, run every agent on
 | Agent model cost per phase | $2.78 | $1.40 | **50%** |
 | **Total coordination overhead** | **87,100 tokens** | **13,100 tokens** | **85%** |
 
-The five highest-impact optimizations: `compile-context.sh` (470 lines, 6 roles) produces role-specific context files so each agent loads only what its role needs — Lead gets filtered requirements, Dev gets phase goal + conventions + delta files, QA gets verification targets, Scout/Debugger/Architect get scoped research context; `disable-model-invocation` on 17 of 23 commands removes ~9,000 tokens from every API request; vibe consolidation replaced 10 active commands with 1 (`vibe.md`), cutting per-request overhead by 915 tokens; model routing sends Scout to Haiku (60x cheaper than Opus) and QA to Sonnet (5x cheaper), with 3 preset profiles (Quality/Balanced/Budget) and per-agent overrides; and 81 shell scripts handle state computation, protocol enforcement, security filtering, and session lifecycle at zero model token cost.
+The five highest-impact optimizations: `compile-context.sh` (470 lines, 6 roles) produces role-specific context files so each agent loads only what its role needs — Lead gets filtered requirements, Dev gets phase goal + conventions + delta files, QA gets verification targets, Scout/Debugger/Architect get scoped research context; `disable-model-invocation` on 17 of 24 commands removes ~9,000 tokens from every API request; vibe consolidation replaced 10 active commands with 1 (`vibe.md`), cutting per-request overhead by 915 tokens; model routing sends Scout to Haiku (60x cheaper than Opus) and QA to Sonnet (5x cheaper), with 3 preset profiles (Quality/Balanced/Budget) and per-agent overrides; and 81 shell scripts handle state computation, protocol enforcement, security filtering, and session lifecycle at zero model token cost.
 
 **What this means for your bill:**
 
@@ -81,7 +81,7 @@ For the "I'll just prompt carefully" crowd.
 | Raw agent names in cost tracking | Workflow categories (Build/Plan/Verify) with efficiency insights |
 | Hook failure blocks your session | Universal hook wrapper -- errors logged, session always continues |
 | Install plugin, stare at blank screen | Branded welcome with single call to action on first run |
-| Memorize flags for each command | Consistent argument hints on all 23 commands with discoverable flags |
+| Memorize flags for each command | Consistent argument hints on all 24 commands with discoverable flags |
 | Change 3-4 settings to switch work mode | Work profiles: one command to switch between prototype, production, and yolo modes |
 | Conventions live as free text in CLAUDE.md | Structured conventions auto-detected from codebase, conflict-checked, QA-verified |
 
@@ -174,7 +174,7 @@ Agent Teams are [experimental with known limitations](https://code.claude.com/do
 
 - **Task status lag.** Teammates sometimes forget to mark tasks complete. VBW's `TaskCompleted` hook verifies task-related commits exist via keyword matching. The `TeammateIdle` hook runs a tiered SUMMARY.md gate — all summaries present passes immediately, conventional commit format only grants a 1-plan grace period, and 2+ missing summaries block regardless.
 
-- **Shutdown coordination.** Claude Code's platform handles teammate cleanup when sessions end. VBW's hooks ensure verification runs before teammates go idle.
+- **Shutdown coordination.** VBW defines `shutdown_request`/`shutdown_response` schemas in the typed communication protocol. After phase work completes, the orchestrator sends `shutdown_request` to every teammate, waits for acknowledgment, then calls `TeamDelete`. All 6 team-participating agents (Dev, QA, Scout, Lead, Debugger, Docs) have explicit shutdown handlers — respond, finish in-progress work, stop. No lingering agents consuming API credits in tmux panes.
 
 - **File conflicts.** Plans decompose work into tasks with explicit file ownership. Dev teammates operate on disjoint file sets by design, enforced at runtime by the `file-guard.sh` hook that blocks writes to files not declared in the active plan.
 
@@ -406,7 +406,7 @@ Closed your terminal? Switched branches? Came back after a weekend of pretending
 >
 > **If you accidentally `/clear`**, run `/vbw:resume` immediately. It restores project context from ground truth files in `.vbw-planning/` — state, roadmap, plans, summaries — and tells you exactly where to pick up.
 
-> **For advanced users:** The [full command reference](#commands) below has 23 commands for granular control — `/vbw:vibe` with flags for explicit mode selection (`--plan`, `--execute`, `--discuss`, `--assumptions`), `/vbw:discuss` for standalone phase discussions, `/vbw:qa` for on-demand verification, `/vbw:debug` for systematic bug investigation, and more. But you never *need* the flags. `/vbw:vibe` with no arguments handles the entire lifecycle on its own.
+> **For advanced users:** The [full command reference](#commands) below has 24 commands for granular control — `/vbw:vibe` with flags for explicit mode selection (`--plan`, `--execute`, `--discuss`, `--assumptions`), `/vbw:discuss` for standalone phase discussions, `/vbw:qa` for on-demand verification, `/vbw:debug` for systematic bug investigation, and more. But you never *need* the flags. `/vbw:vibe` with no arguments handles the entire lifecycle on its own.
 
 <br>
 
@@ -446,6 +446,7 @@ These are the commands you'll use every day. This is the job now.
 | `/vbw:fix` | Quick task in Turbo mode. One commit, no ceremony. For when the fix is obvious and you don't need seven agents to add a missing comma. |
 | `/vbw:debug` | Systematic bug investigation via the Debugger agent. At Thorough effort with ambiguous bugs, spawns 3 parallel debugger teammates for competing hypothesis investigation. Hypothesis, evidence, root cause, fix. Like the scientific method, except it actually finds things. |
 | `/vbw:todo` | Add an item to a persistent backlog that survives across sessions. For all those "we should really..." thoughts that usually die in a terminal tab. |
+| `/vbw:list-todos` | Browse pending todos, filter by priority, and pick one to act on. Computes ages, formats a numbered list, and offers routing to `/vbw:fix`, `/vbw:debug`, `/vbw:vibe`, or `/vbw:research`. |
 | `/vbw:pause` | Save session notes for next time. State auto-persists in `.vbw-planning/` -- pause just lets you leave a sticky note for future you. |
 | `/vbw:resume` | Restore project context from `.vbw-planning/` ground truth. Reads state, roadmap, plans, and summaries directly -- no prior `/vbw:pause` needed. |
 | `/vbw:skills` | Browse and install community skills from skills.sh based on your project's tech stack. Detects your stack, suggests relevant skills, and installs them with one command. |
@@ -936,7 +937,7 @@ See **[Model Profiles Reference](references/model-profiles.md)** for preset defi
 ```
 .claude-plugin/    Plugin manifest (plugin.json)
 agents/            7 agent definitions with native tool permissions
-commands/          23 slash commands (commands/*.md)
+commands/          24 slash commands (commands/*.md)
 config/            Default settings and stack-to-skill mappings
 hooks/             Plugin hooks for continuous verification
 scripts/           Hook handler scripts (security, validation, QA gates)
