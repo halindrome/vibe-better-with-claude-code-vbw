@@ -59,6 +59,7 @@ if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   fi
 fi
 
+# Resolve correlation_id: env var override → execution-state.json → "" (empty, always present)
 CORRELATION_ID="${VBW_CORRELATION_ID:-}"
 
 EXEC_STATE="${PLANNING_DIR}/.execution-state.json"
@@ -118,4 +119,4 @@ if [ -n "$DATA_PAIRS" ]; then
   DATA_FIELD=",\"data\":{${DATA_PAIRS}}"
 fi
 
-echo "{\"ts\":\"${TS}\",\"event_id\":\"${EVENT_ID}\",\"event\":\"${EVENT_TYPE}\",\"phase\":${PHASE}${PLAN_FIELD}${DATA_FIELD}}" >> "$EVENTS_FILE" 2>/dev/null || true
+echo "{\"ts\":\"${TS}\",\"event_id\":\"${EVENT_ID}\",\"correlation_id\":\"${CORRELATION_ID}\",\"event\":\"${EVENT_TYPE}\",\"phase\":${PHASE}${PLAN_FIELD}${DATA_FIELD}}" >> "$EVENTS_FILE" 2>/dev/null || true
