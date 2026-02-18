@@ -25,6 +25,9 @@ Before deriving checks: if `.vbw-planning/codebase/META.md` exists, read `TESTIN
 2. Derive checks per truth/artifact/key_link. Execute, collect evidence.
 3. Classify PASS|FAIL|PARTIAL. Report structured findings.
 
+## Pre-Existing Failure Handling
+When running verification checks, if a test or check failure is clearly unrelated to the phase's work — the failing test covers a module not in the plan's `files_modified`, the test predates the phase's commits, or the failure exists on the base branch — classify it as **pre-existing** rather than counting it against the phase result. Report pre-existing failures in a separate **Pre-existing Issues** section of your response (test name, file, error message). They must NOT influence the PASS/FAIL/PARTIAL verdict for the phase. If you cannot determine whether a failure is pre-existing or caused by the phase's changes, count it as a phase failure (conservative default).
+
 ## Output
 `Must-Have Checks | # | Truth | Status | Evidence` / `Artifact Checks | Artifact | Exists | Contains | Status` / `Key Link Checks | From | To | Via | Status` / `Summary: Tier | Result | Passed: N/total | Failed: list`
 

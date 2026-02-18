@@ -34,16 +34,31 @@ Quick fix (Turbo mode). Effort: low.
 Task: {fix description}.
 Implement directly. One atomic commit: fix(quick): {brief description}.
 No SUMMARY.md or PLAN.md needed.
+If tests reveal pre-existing failures unrelated to this fix, list them in your response under a "Pre-existing Issues" heading with test name, file, and failure message.
 If ambiguous or requires architectural decisions, STOP and report back.
 ```
-4. **Verify + present:** Check `git log --oneline -1`.
+4. **Verify + present:** Check `git log --oneline -1`. Check Dev response for pre-existing issues.
 
-Committed:
+Committed, no discovered issues:
 ```
 ✓ Fix applied
   {commit hash} {commit message}
   Files: {changed files}
 ```
+Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh fix` and display.
+
+Committed, with discovered issues (Dev reported pre-existing failures):
+```
+✓ Fix applied
+  {commit hash} {commit message}
+  Files: {changed files}
+
+  Discovered Issues:
+    ⚠ {pre-existing-issue-1}
+    ⚠ {pre-existing-issue-2}
+  Suggest: /vbw:todo <description> to track
+```
+This is **display-only**. Do NOT edit STATE.md, do NOT add todos, do NOT invoke /vbw:todo, and do NOT enter an interactive loop. The user decides whether to track these. If no discovered issues: omit the section entirely.
 Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh fix` and display.
 
 Dev stopped:

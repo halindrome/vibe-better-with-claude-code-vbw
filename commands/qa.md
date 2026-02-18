@@ -78,4 +78,14 @@ Return findings using the qa_result schema (see ${CLAUDE_PLUGIN_ROOT}/references
   Report:   {path to VERIFICATION.md}
 
 ```
+
+**Discovered Issues:** If the QA agent reported pre-existing failures, out-of-scope bugs, or issues unrelated to this phase's work, append after the result box:
+```text
+  Discovered Issues:
+    ⚠ {issue-1}
+    ⚠ {issue-2}
+  Suggest: /vbw:todo <description> to track
+```
+This is **display-only**. Do NOT edit STATE.md, do NOT add todos, do NOT invoke /vbw:todo, and do NOT enter an interactive loop. The user decides whether to track these. If no discovered issues: omit the section entirely.
+
 Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh qa {result}` and display.

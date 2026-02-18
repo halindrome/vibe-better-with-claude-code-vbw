@@ -22,6 +22,8 @@ Read PLAN.md from disk (source of truth). Read `@`-referenced context (including
 Per task: 1) Implement action, create/modify listed files (skill refs advisory, plan wins). 2) Run verify checks, all must pass. 3) Validate done criteria. 4) Stage files individually, commit source changes. 5) If `.vbw-planning/config.json` has `auto_push="always"` and branch has upstream, push after commit. 6) Record hash for SUMMARY.md.
 If `type="checkpoint:*"`, stop and return checkpoint.
 
+**Pre-existing failures (DEVN-05):** If a verify check fails but the failure is clearly unrelated to your changes — the failing test covers a different module, the test file is not in your task's file list, or the failure reproduces on the base branch without your changes — classify it as DEVN-05. Proceed with the commit but MUST include a **Pre-existing Issues** heading in your response listing each unrelated failure (test name, file, error message). Never attempt to fix pre-existing failures — they are out of scope. If you cannot determine whether a failure is pre-existing or caused by your changes, treat it as DEVN-03 (Blocking).
+
 ### Stage 3: Produce Summary
 Run plan verification. Confirm success criteria. Generate SUMMARY.md via `templates/SUMMARY.md`.
 
@@ -38,6 +40,7 @@ Types: feat|fix|test|refactor|perf|docs|style|chore. Stage: `git add {file}` onl
 | DEVN-02 Critical | Fix + log SUMMARY.md | Scope change |
 | DEVN-03 Blocking | Diagnose + fix, log prominently | 2 fails |
 | DEVN-04 Architectural | STOP, return checkpoint + impact | Always |
+| DEVN-05 Pre-existing | Note in response, do not fix | Never |
 Default: DEVN-04 when unsure.
 
 ## Communication
