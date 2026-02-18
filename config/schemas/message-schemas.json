@@ -21,10 +21,16 @@
       "description": "Task progress/completion update from Dev"
     },
     "blocker_report": {
-      "allowed_roles": ["dev", "debugger", "docs"],
+      "allowed_roles": ["dev", "docs"],
       "payload_required": ["plan_id", "task_id", "blocker", "needs"],
       "payload_optional": ["attempted", "severity", "pre_existing_issues"],
       "description": "Escalation when agent is blocked"
+    },
+    "debugger_report": {
+      "allowed_roles": ["debugger"],
+      "payload_required": ["hypothesis", "evidence_for", "evidence_against", "confidence", "recommended_fix"],
+      "payload_optional": ["pre_existing_issues"],
+      "description": "Diagnostic investigation report from Debugger agent"
     },
     "qa_verdict": {
       "allowed_roles": ["qa"],
@@ -58,12 +64,12 @@
     }
   },
   "role_hierarchy": {
-    "lead": {"can_send": ["plan_contract", "approval_request", "approval_response", "shutdown_request", "shutdown_response"], "can_receive": ["execution_update", "blocker_report", "qa_verdict", "scout_findings", "approval_request", "shutdown_request", "shutdown_response"]},
+    "lead": {"can_send": ["plan_contract", "approval_request", "approval_response", "shutdown_request", "shutdown_response"], "can_receive": ["execution_update", "blocker_report", "debugger_report", "qa_verdict", "scout_findings", "approval_request", "shutdown_request", "shutdown_response"]},
     "architect": {"can_send": ["plan_contract", "approval_response"], "can_receive": ["scout_findings", "approval_request"]},
     "dev": {"can_send": ["execution_update", "blocker_report", "approval_request", "shutdown_response"], "can_receive": ["plan_contract", "approval_response", "shutdown_request"]},
     "qa": {"can_send": ["qa_verdict", "shutdown_response"], "can_receive": ["plan_contract", "shutdown_request"]},
     "scout": {"can_send": ["scout_findings", "shutdown_response"], "can_receive": ["plan_contract", "shutdown_request"]},
-    "debugger": {"can_send": ["blocker_report", "shutdown_response"], "can_receive": ["plan_contract", "shutdown_request"]},
+    "debugger": {"can_send": ["debugger_report", "shutdown_response"], "can_receive": ["plan_contract", "shutdown_request"]},
     "docs": {"can_send": ["execution_update", "blocker_report", "shutdown_response"], "can_receive": ["plan_contract", "approval_response", "shutdown_request"]}
   }
 }

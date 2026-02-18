@@ -128,12 +128,12 @@ load test_helper
   sed -n '/Pre-Existing Failure Handling/,/^##/p' "$PROJECT_ROOT/agents/vbw-debugger.md" | grep -qi 'do not.*fix pre-existing'
 }
 
-@test "debugger agent mentions pre_existing_issues in blocker_report" {
+@test "debugger agent mentions pre_existing_issues in debugger_report" {
   sed -n '/Pre-Existing Failure Handling/,/^##/p' "$PROJECT_ROOT/agents/vbw-debugger.md" | grep -q 'pre_existing_issues'
 }
 
-@test "debugger agent references blocker_report not debugger_report for schema" {
-  sed -n '/Pre-Existing Failure Handling/,/^##/p' "$PROJECT_ROOT/agents/vbw-debugger.md" | grep -q 'blocker_report'
+@test "debugger agent references debugger_report schema" {
+  sed -n '/Pre-Existing Failure Handling/,/^##/p' "$PROJECT_ROOT/agents/vbw-debugger.md" | grep -q 'debugger_report'
 }
 
 @test "debugger agent Step 7 output includes pre-existing issues" {
@@ -142,16 +142,23 @@ load test_helper
 }
 
 # =============================================================================
-# Handoff schema: no debugger_report ghost type
+# Handoff schema: debugger_report is a proper schema type
 # =============================================================================
 
-@test "handoff schema blocker_report section does not invent debugger_report type" {
-  # The blocker_report section must not use 'debugger_report' as if it were a schema type
-  ! sed -n '/blocker_report.*Dev.Debugger/,/^## `/p' "$PROJECT_ROOT/references/handoff-schemas.md" | grep -q '`debugger_report` variant'
+@test "handoff schema has dedicated debugger_report section" {
+  grep -q '## `debugger_report`' "$PROJECT_ROOT/references/handoff-schemas.md"
 }
 
-@test "handoff schema blocker_report debugger paragraph references blocker_report type" {
-  sed -n '/blocker_report.*Dev.Debugger/,/^## `/p' "$PROJECT_ROOT/references/handoff-schemas.md" | grep -q '"type": "blocker_report"'
+@test "handoff schema debugger_report uses correct type in JSON" {
+  sed -n '/## .debugger_report/,/^## /p' "$PROJECT_ROOT/references/handoff-schemas.md" | grep -q '"type": "debugger_report"'
+}
+
+@test "handoff schema blocker_report section does not mention debugger" {
+  # Extract blocker_report section up to but not including the debugger_report heading
+  local section
+  section=$(sed -n '/## .blocker_report/,/^## .debugger_report/{ /^## .debugger_report/d; p; }' "$PROJECT_ROOT/references/handoff-schemas.md")
+  run grep -qi 'debugger' <<< "$section"
+  [ "$status" -ne 0 ]
 }
 
 # =============================================================================
@@ -254,8 +261,8 @@ load test_helper
   sed -n '/Pre-Existing Issue Aggregation/,/^##/p' "$PROJECT_ROOT/agents/vbw-lead.md" | grep -qi 'de-duplicate'
 }
 
-@test "lead agent aggregation mentions blocker_report" {
-  sed -n '/Pre-Existing Issue Aggregation/,/^##/p' "$PROJECT_ROOT/agents/vbw-lead.md" | grep -q 'blocker_report'
+@test "lead agent aggregation mentions debugger_report" {
+  sed -n '/Pre-Existing Issue Aggregation/,/^##/p' "$PROJECT_ROOT/agents/vbw-lead.md" | grep -q 'debugger_report'
 }
 
 @test "lead agent aggregation specifies JSON output format" {
@@ -274,12 +281,37 @@ load test_helper
 # Debug command: schema naming consistency
 # =============================================================================
 
-@test "debug command Path A uses blocker_report not debugger_report" {
-  sed -n '/Path A/,/Path B/p' "$PROJECT_ROOT/commands/debug.md" | grep -q 'blocker_report'
+@test "debug command Path A uses debugger_report schema" {
+  sed -n '/Path A/,/Path B/p' "$PROJECT_ROOT/commands/debug.md" | grep -q 'debugger_report'
 }
 
-@test "debug command Path A does not reference debugger_report schema" {
-  ! sed -n '/Path A/,/Path B/p' "$PROJECT_ROOT/commands/debug.md" | grep -q 'debugger_report'
+@test "debug command Path A does not reference blocker_report for debugger" {
+  ! sed -n '/Path A/,/Path B/p' "$PROJECT_ROOT/commands/debug.md" | grep -q 'blocker_report'
+}
+
+@test "json schema has dedicated debugger_report type" {
+  jq -e '.schemas.debugger_report' "$PROJECT_ROOT/config/schemas/message-schemas.json" > /dev/null
+}
+
+@test "json schema debugger_report requires hypothesis and evidence fields" {
+  jq -r '.schemas.debugger_report.payload_required[]' "$PROJECT_ROOT/config/schemas/message-schemas.json" | grep -q 'hypothesis'
+  jq -r '.schemas.debugger_report.payload_required[]' "$PROJECT_ROOT/config/schemas/message-schemas.json" | grep -q 'evidence_for'
+}
+
+@test "json schema debugger_report payload_optional includes pre_existing_issues" {
+  jq -r '.schemas.debugger_report.payload_optional[]' "$PROJECT_ROOT/config/schemas/message-schemas.json" | grep -q 'pre_existing_issues'
+}
+
+@test "json schema blocker_report does not list debugger as allowed role" {
+  ! jq -r '.schemas.blocker_report.allowed_roles[]' "$PROJECT_ROOT/config/schemas/message-schemas.json" | grep -q 'debugger'
+}
+
+@test "json schema debugger can send debugger_report" {
+  jq -r '.role_hierarchy.debugger.can_send[]' "$PROJECT_ROOT/config/schemas/message-schemas.json" | grep -q 'debugger_report'
+}
+
+@test "json schema lead can receive debugger_report" {
+  jq -r '.role_hierarchy.lead.can_receive[]' "$PROJECT_ROOT/config/schemas/message-schemas.json" | grep -q 'debugger_report'
 }
 
 # =============================================================================
