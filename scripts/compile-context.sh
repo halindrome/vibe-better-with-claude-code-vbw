@@ -238,7 +238,7 @@ case "$ROLE" in
       echo ""
       echo "### Active Decisions"
       if [ -f "$PLANNING_DIR/STATE.md" ]; then
-        DECISIONS=$(sed -n '/^## Decisions/,/^## [A-Z]/p' "$PLANNING_DIR/STATE.md" 2>/dev/null | sed '$d' | tail -n +2) || true
+        DECISIONS=$(sed -n '/^## Key Decisions/,/^## [A-Z]/p' "$PLANNING_DIR/STATE.md" 2>/dev/null | sed '$d' | tail -n +2) || true
         if [ -n "$DECISIONS" ]; then
           echo "$DECISIONS"
         else

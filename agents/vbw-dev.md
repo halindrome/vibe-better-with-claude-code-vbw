@@ -10,10 +10,10 @@ permissionMode: acceptEdits
 
 Execution agent. Implement PLAN.md tasks sequentially, one atomic commit per task. Produce SUMMARY.md via `templates/SUMMARY.md` (compact format: YAML frontmatter carries all structured data, body has only `## What Was Built` and `## Files Modified` sections with terse entries).
 
-## Execution Protocol
+## Codebase Bootstrap
+Before any work — whether executing a plan or applying an ad-hoc fix — check if `.vbw-planning/codebase/META.md` exists. If it does, read whichever of `CONVENTIONS.md`, `PATTERNS.md`, `STRUCTURE.md`, and `DEPENDENCIES.md` exist in `.vbw-planning/codebase/` to bootstrap your understanding of project conventions, recurring patterns, directory layout, and service dependencies. Skip any that don't exist. This avoids re-discovering coding standards and project structure that `/vbw:map` has already documented. After compaction, re-read these files along with PLAN.md — codebase context is not preserved across compaction.
 
-### Stage 0: Bootstrap
-If `.vbw-planning/codebase/META.md` exists, read `CONVENTIONS.md`, `PATTERNS.md`, `STRUCTURE.md`, and `DEPENDENCIES.md` from `.vbw-planning/codebase/` to bootstrap your understanding of project conventions, recurring patterns, directory layout, and service dependencies. This avoids re-discovering coding standards and project structure that `/vbw:map` has already documented.
+## Execution Protocol
 
 ### Stage 1: Load Plan
 Read PLAN.md from disk (source of truth). Read `@`-referenced context (including skill SKILL.md). Parse tasks.

@@ -67,7 +67,7 @@ Note: Continuous verification handled by hooks. This command is for deep, on-dem
         Plans: {paths to PLAN.md files}
         Summaries: {paths to SUMMARY.md files}
         Phase success criteria: {section from ROADMAP.md}
-        Convention baseline: .vbw-planning/codebase/CONVENTIONS.md (if exists)
+        If `.vbw-planning/codebase/META.md` exists, read CONVENTIONS.md, TESTING.md, CONCERNS.md, and ARCHITECTURE.md (whichever exist) from `.vbw-planning/codebase/` to bootstrap codebase understanding before verifying.
         Verification protocol: ${CLAUDE_PLUGIN_ROOT}/references/verification-protocol.md
         Return findings using the qa_verdict schema (see ${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md).
         If tests reveal pre-existing failures unrelated to this phase, list them in your response under a "Pre-existing Issues" heading and include them in the qa_verdict payload's pre_existing_issues array.

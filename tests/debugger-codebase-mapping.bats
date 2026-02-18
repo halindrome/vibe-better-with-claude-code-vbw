@@ -544,3 +544,238 @@ STATE
     [ "$status" -eq 1 ]
   done
 }
+
+# =============================================================================
+# fix.md command: prompt includes codebase bootstrap instruction (#96)
+# =============================================================================
+
+@test "fix.md spawn prompt includes codebase bootstrap instruction" {
+  grep -q '.vbw-planning/codebase/' "$PROJECT_ROOT/commands/fix.md"
+}
+
+@test "fix.md spawn prompt mentions CONVENTIONS.md or PATTERNS.md" {
+  grep -qE 'CONVENTIONS|PATTERNS|STRUCTURE|DEPENDENCIES' "$PROJECT_ROOT/commands/fix.md"
+}
+
+@test "fix.md spawn prompt gates on META.md not just directory existence" {
+  grep -q 'META.md' "$PROJECT_ROOT/commands/fix.md"
+}
+
+# =============================================================================
+# vbw-dev.md: codebase bootstrap is standalone, not nested in Execution Protocol (#96)
+# =============================================================================
+
+@test "dev agent has standalone Codebase Bootstrap section" {
+  # Codebase Bootstrap should be a top-level ## section, not ### inside Execution Protocol
+  grep -q '^## Codebase Bootstrap' "$PROJECT_ROOT/agents/vbw-dev.md"
+}
+
+@test "dev agent codebase bootstrap qualifies files with existence check" {
+  grep -q 'whichever.*exist\|Skip any' "$PROJECT_ROOT/agents/vbw-dev.md"
+}
+
+@test "dev agent codebase bootstrap mentions compaction re-read" {
+  grep -q 'compaction.*re-read\|re-read.*compaction' "$PROJECT_ROOT/agents/vbw-dev.md"
+}
+
+# =============================================================================
+# compaction-instructions.sh: dev role mentions codebase mapping (#96)
+# =============================================================================
+
+@test "compaction-instructions.sh dev priorities include codebase mapping re-read" {
+  # The dev case in compaction-instructions.sh should mention codebase mapping
+  sed -n '/*dev*/,/;;/p' "$PROJECT_ROOT/scripts/compaction-instructions.sh" | grep -q 'codebase'
+}
+
+# =============================================================================
+# execute-protocol.md: dev spawn prompt includes codebase bootstrap (#96)
+# =============================================================================
+
+@test "execute-protocol.md dev spawn prompt includes codebase bootstrap" {
+  grep -q '.vbw-planning/codebase/' "$PROJECT_ROOT/references/execute-protocol.md"
+}
+
+@test "execute-protocol.md dev spawn prompt gates on META.md" {
+  grep -q 'META.md' "$PROJECT_ROOT/references/execute-protocol.md"
+}
+
+# =============================================================================
+# compaction-instructions.sh: all mapping-aware roles mention codebase (#96)
+# =============================================================================
+
+@test "compaction-instructions.sh debugger priorities include codebase mapping re-read" {
+  sed -n '/*debugger*/,/;;/p' "$PROJECT_ROOT/scripts/compaction-instructions.sh" | grep -q 'codebase'
+}
+
+@test "compaction-instructions.sh lead priorities include codebase mapping re-read" {
+  sed -n '/*lead*/,/;;/p' "$PROJECT_ROOT/scripts/compaction-instructions.sh" | grep -q 'codebase'
+}
+
+@test "compaction-instructions.sh architect priorities include codebase mapping re-read" {
+  sed -n '/*architect*/,/;;/p' "$PROJECT_ROOT/scripts/compaction-instructions.sh" | grep -q 'codebase'
+}
+
+@test "compaction-instructions.sh qa priorities include codebase mapping re-read" {
+  sed -n '/*qa*/,/;;/p' "$PROJECT_ROOT/scripts/compaction-instructions.sh" | grep -q 'codebase'
+}
+
+# =============================================================================
+# debug.md command: gates on META.md, includes "whichever exist" qualifier (#96)
+# =============================================================================
+
+@test "debug.md Path A gates on META.md not just directory existence" {
+  grep -A5 'Create.*tasks via TaskCreate' "$PROJECT_ROOT/commands/debug.md" | grep -q 'META.md'
+}
+
+@test "debug.md Path B gates on META.md not just directory existence" {
+  grep -A20 'Path B.*Standard' "$PROJECT_ROOT/commands/debug.md" | grep -q 'META.md'
+}
+
+@test "debug.md includes whichever exist qualifier in spawn prompts" {
+  grep -q 'whichever exist' "$PROJECT_ROOT/commands/debug.md"
+}
+
+# =============================================================================
+# qa.md command: spawn prompt includes full codebase bootstrap (#96)
+# =============================================================================
+
+@test "qa.md spawn prompt includes codebase bootstrap instruction" {
+  grep -q 'META.md' "$PROJECT_ROOT/commands/qa.md"
+}
+
+@test "qa.md spawn prompt references TESTING.md and CONCERNS.md" {
+  grep -q 'TESTING.md' "$PROJECT_ROOT/commands/qa.md" &&
+  grep -q 'CONCERNS.md' "$PROJECT_ROOT/commands/qa.md"
+}
+
+# =============================================================================
+# execute-protocol.md: QA spawn prompts include codebase bootstrap (#96)
+# =============================================================================
+
+@test "execute-protocol.md per-wave QA prompt includes codebase bootstrap" {
+  grep -A5 'Per-wave QA' "$PROJECT_ROOT/references/execute-protocol.md" | grep -q 'META.md'
+}
+
+@test "execute-protocol.md post-build QA prompt includes codebase bootstrap" {
+  grep -A5 'Post-build QA' "$PROJECT_ROOT/references/execute-protocol.md" | grep -q 'META.md'
+}
+
+# =============================================================================
+# Agent definitions: "whichever exist" qualifier in bootstrap (#96 round 4)
+# =============================================================================
+
+@test "debugger agent bootstrap qualifies files with existence check" {
+  grep -qE 'whichever.*exist|Skip any' "$PROJECT_ROOT/agents/vbw-debugger.md"
+}
+
+@test "qa agent bootstrap qualifies files with existence check" {
+  grep -qE 'whichever.*exist|Skip any' "$PROJECT_ROOT/agents/vbw-qa.md"
+}
+
+@test "lead agent bootstrap qualifies files with existence check" {
+  grep -qE 'whichever.*exist|Skip any' "$PROJECT_ROOT/agents/vbw-lead.md"
+}
+
+@test "architect agent bootstrap qualifies files with existence check" {
+  grep -qE 'whichever.*exist|Skip any' "$PROJECT_ROOT/agents/vbw-architect.md"
+}
+
+# =============================================================================
+# compaction-instructions.sh: default case does NOT include codebase (#96 round 4)
+# =============================================================================
+
+@test "compaction-instructions.sh default case does NOT include codebase mapping" {
+  # The wildcard *) case should not mention codebase — only named roles get it
+  # Feed an unknown agent name and verify no codebase reference in output
+  echo '{"agent_name":"unknown-agent","matcher":"auto"}' | \
+    bash "$PROJECT_ROOT/scripts/compaction-instructions.sh" > "$TEST_TEMP_DIR/compaction-output.json"
+  ! grep -q 'codebase' "$TEST_TEMP_DIR/compaction-output.json"
+}
+
+@test "compaction-instructions.sh docs agent does NOT include codebase mapping" {
+  echo '{"agent_name":"vbw-docs","matcher":"auto"}' | \
+    bash "$PROJECT_ROOT/scripts/compaction-instructions.sh" > "$TEST_TEMP_DIR/compaction-output.json"
+  ! grep -q 'codebase' "$TEST_TEMP_DIR/compaction-output.json"
+}
+
+# =============================================================================
+# compaction-instructions.sh: output uses full META.md path and "whichever exist" (#96 QA round 4)
+# =============================================================================
+
+@test "compaction-instructions.sh dev output uses full .vbw-planning/codebase/META.md path" {
+  echo '{"agent_name":"vbw-dev","matcher":"auto"}' | \
+    bash "$PROJECT_ROOT/scripts/compaction-instructions.sh" > "$TEST_TEMP_DIR/compaction-output.json"
+  grep -q '.vbw-planning/codebase/META.md' "$TEST_TEMP_DIR/compaction-output.json"
+}
+
+@test "compaction-instructions.sh dev output includes whichever exist qualifier" {
+  echo '{"agent_name":"vbw-dev","matcher":"auto"}' | \
+    bash "$PROJECT_ROOT/scripts/compaction-instructions.sh" > "$TEST_TEMP_DIR/compaction-output.json"
+  grep -q 'whichever exist' "$TEST_TEMP_DIR/compaction-output.json"
+}
+
+@test "compaction-instructions.sh qa output uses full META.md path and whichever exist" {
+  echo '{"agent_name":"vbw-qa","matcher":"auto"}' | \
+    bash "$PROJECT_ROOT/scripts/compaction-instructions.sh" > "$TEST_TEMP_DIR/compaction-output.json"
+  grep -q '.vbw-planning/codebase/META.md' "$TEST_TEMP_DIR/compaction-output.json"
+  grep -q 'whichever exist' "$TEST_TEMP_DIR/compaction-output.json"
+}
+
+@test "compaction-instructions.sh debugger output uses full META.md path and whichever exist" {
+  echo '{"agent_name":"vbw-debugger","matcher":"auto"}' | \
+    bash "$PROJECT_ROOT/scripts/compaction-instructions.sh" > "$TEST_TEMP_DIR/compaction-output.json"
+  grep -q '.vbw-planning/codebase/META.md' "$TEST_TEMP_DIR/compaction-output.json"
+  grep -q 'whichever exist' "$TEST_TEMP_DIR/compaction-output.json"
+}
+
+@test "compaction-instructions.sh lead output uses full META.md path and whichever exist" {
+  echo '{"agent_name":"vbw-lead","matcher":"auto"}' | \
+    bash "$PROJECT_ROOT/scripts/compaction-instructions.sh" > "$TEST_TEMP_DIR/compaction-output.json"
+  grep -q '.vbw-planning/codebase/META.md' "$TEST_TEMP_DIR/compaction-output.json"
+  grep -q 'whichever exist' "$TEST_TEMP_DIR/compaction-output.json"
+}
+
+@test "compaction-instructions.sh architect output uses full META.md path and whichever exist" {
+  echo '{"agent_name":"vbw-architect","matcher":"auto"}' | \
+    bash "$PROJECT_ROOT/scripts/compaction-instructions.sh" > "$TEST_TEMP_DIR/compaction-output.json"
+  grep -q '.vbw-planning/codebase/META.md' "$TEST_TEMP_DIR/compaction-output.json"
+  grep -q 'whichever exist' "$TEST_TEMP_DIR/compaction-output.json"
+}
+
+# =============================================================================
+# vibe.md: gates on META.md not directory existence (#96 QA round 4)
+# =============================================================================
+
+@test "vibe.md bootstrap codebase constraint gates on META.md" {
+  grep -q 'META.md' "$PROJECT_ROOT/commands/vibe.md"
+}
+
+@test "vibe.md does not gate codebase reads on bare directory existence" {
+  # Every line referencing .vbw-planning/codebase/ should also mention META.md
+  while IFS= read -r line; do
+    echo "$line" | grep -q 'META.md' || {
+      # Allow "from .vbw-planning/codebase/" (trailing path in read instructions)
+      echo "$line" | grep -q 'from.*\.vbw-planning/codebase/' && continue
+      echo "FAIL: line missing META.md gate: $line"
+      return 1
+    }
+  done < <(grep '.vbw-planning/codebase/' "$PROJECT_ROOT/commands/vibe.md")
+}
+
+# =============================================================================
+# compile-context.sh: docs role excluded from codebase mapping (#96 QA round 4)
+# =============================================================================
+
+@test "compile-context.sh docs role is not a valid role (no codebase mapping possible)" {
+  setup_debugger_context
+  cd "$TEST_TEMP_DIR"
+
+  mkdir -p .vbw-planning/codebase
+  echo "# Meta" > .vbw-planning/codebase/META.md
+  echo "# Architecture" > .vbw-planning/codebase/ARCHITECTURE.md
+  echo "# Concerns" > .vbw-planning/codebase/CONCERNS.md
+
+  # docs is not a valid compile-context.sh role — it should exit non-zero
+  run bash "$SCRIPTS_DIR/compile-context.sh" "01" "docs" ".vbw-planning/phases"
+  [ "$status" -ne 0 ]
+}

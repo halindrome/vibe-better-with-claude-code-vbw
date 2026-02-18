@@ -35,6 +35,7 @@ Config: Pre-injected by SessionStart hook.
     ```text
     Quick fix (Turbo mode). Effort: low.
     Task: {fix description}.
+    If `.vbw-planning/codebase/META.md` exists, read CONVENTIONS.md, PATTERNS.md, STRUCTURE.md, and DEPENDENCIES.md (whichever exist) from `.vbw-planning/codebase/` to bootstrap codebase understanding before implementing.
     Implement directly. One atomic commit: fix(quick): {brief description}.
     No SUMMARY.md or PLAN.md needed.
     If tests reveal pre-existing failures unrelated to this fix, list them in your response under a "Pre-existing Issues" heading with test name, file, and failure message.

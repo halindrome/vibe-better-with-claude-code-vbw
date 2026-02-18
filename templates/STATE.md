@@ -8,8 +8,11 @@ Plans: {done}/{total}
 Progress: {N}%
 Status: {ready|active|complete}
 
-## Decisions
-- {decision}
+## Key Decisions
+
+| Decision | Date | Rationale |
+|----------|------|-----------|
+| _(No decisions yet)_ | | |
 
 ## Todos
 {todos-or-none}
