@@ -544,3 +544,45 @@ STATE
     [ "$status" -eq 1 ]
   done
 }
+
+# =============================================================================
+# fix.md command: prompt includes codebase bootstrap instruction (#96)
+# =============================================================================
+
+@test "fix.md spawn prompt includes codebase bootstrap instruction" {
+  grep -q '.vbw-planning/codebase/' "$PROJECT_ROOT/commands/fix.md"
+}
+
+@test "fix.md spawn prompt mentions CONVENTIONS.md or PATTERNS.md" {
+  grep -qE 'CONVENTIONS|PATTERNS|STRUCTURE|DEPENDENCIES' "$PROJECT_ROOT/commands/fix.md"
+}
+
+@test "fix.md spawn prompt gates on META.md not just directory existence" {
+  grep -q 'META.md' "$PROJECT_ROOT/commands/fix.md"
+}
+
+# =============================================================================
+# vbw-dev.md: codebase bootstrap is standalone, not nested in Execution Protocol (#96)
+# =============================================================================
+
+@test "dev agent has standalone Codebase Bootstrap section" {
+  # Codebase Bootstrap should be a top-level ## section, not ### inside Execution Protocol
+  grep -q '^## Codebase Bootstrap' "$PROJECT_ROOT/agents/vbw-dev.md"
+}
+
+@test "dev agent codebase bootstrap qualifies files with existence check" {
+  grep -q 'whichever.*exist\|Skip any' "$PROJECT_ROOT/agents/vbw-dev.md"
+}
+
+@test "dev agent codebase bootstrap mentions compaction re-read" {
+  grep -q 'compaction.*re-read\|re-read.*compaction' "$PROJECT_ROOT/agents/vbw-dev.md"
+}
+
+# =============================================================================
+# compaction-instructions.sh: dev role mentions codebase mapping (#96)
+# =============================================================================
+
+@test "compaction-instructions.sh dev priorities include codebase mapping re-read" {
+  # The dev case in compaction-instructions.sh should mention codebase mapping
+  sed -n '/*dev*/,/;;/p' "$PROJECT_ROOT/scripts/compaction-instructions.sh" | grep -q 'codebase'
+}

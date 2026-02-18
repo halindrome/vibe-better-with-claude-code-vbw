@@ -12,7 +12,7 @@ case "$AGENT_NAME" in
     PRIORITIES="Preserve research findings, URLs, confidence assessments"
     ;;
   *dev*)
-    PRIORITIES="Preserve commit hashes, file paths modified, deviation decisions, current task number"
+    PRIORITIES="Preserve commit hashes, file paths modified, deviation decisions, current task number. After compaction, re-read .vbw-planning/codebase/ mapping files (CONVENTIONS.md, PATTERNS.md, STRUCTURE.md, DEPENDENCIES.md) if META.md exists"
     ;;
   *qa*)
     PRIORITIES="Preserve pass/fail status, gap descriptions, verification results"
