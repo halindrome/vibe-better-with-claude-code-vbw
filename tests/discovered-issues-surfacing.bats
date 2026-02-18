@@ -127,7 +127,21 @@ load test_helper
 }
 
 @test "debugger agent Step 7 output includes pre-existing issues" {
-  grep '7\.' "$PROJECT_ROOT/agents/vbw-debugger.md" | grep -q 'pre-existing'
+  # Match the Investigation Protocol step 7 line specifically
+  sed -n '/Investigation Protocol/,/^##/p' "$PROJECT_ROOT/agents/vbw-debugger.md" | grep '7\.' | grep -q 'pre-existing'
+}
+
+# =============================================================================
+# Handoff schema: no debugger_report ghost type
+# =============================================================================
+
+@test "handoff schema blocker_report section does not invent debugger_report type" {
+  # The blocker_report section must not use 'debugger_report' as if it were a schema type
+  ! sed -n '/blocker_report.*Dev.Debugger/,/^## `/p' "$PROJECT_ROOT/references/handoff-schemas.md" | grep -q '`debugger_report` variant'
+}
+
+@test "handoff schema blocker_report debugger paragraph references blocker_report type" {
+  sed -n '/blocker_report.*Dev.Debugger/,/^## `/p' "$PROJECT_ROOT/references/handoff-schemas.md" | grep -q '"type": "blocker_report"'
 }
 
 # =============================================================================
@@ -230,6 +244,10 @@ load test_helper
   sed -n '/Pre-Existing Issue Aggregation/,/^##/p' "$PROJECT_ROOT/agents/vbw-lead.md" | grep -qi 'de-duplicate'
 }
 
+@test "lead agent aggregation mentions blocker_report" {
+  sed -n '/Pre-Existing Issue Aggregation/,/^##/p' "$PROJECT_ROOT/agents/vbw-lead.md" | grep -q 'blocker_report'
+}
+
 # =============================================================================
 # Debug command: schema naming consistency
 # =============================================================================
@@ -282,6 +300,38 @@ load test_helper
 
 @test "qa command discovered issues is display-only" {
   grep -q 'display-only' "$PROJECT_ROOT/commands/qa.md"
+}
+
+@test "qa command spawn prompt reinforces pre-existing reporting" {
+  sed -n '/Spawn QA/,/QA agent reads/p' "$PROJECT_ROOT/commands/qa.md" | grep -qi 'pre-existing'
+}
+
+# =============================================================================
+# Dev agent: Circuit Breaker schema naming
+# =============================================================================
+
+@test "dev agent Circuit Breaker references blocker_report not dev_blocker" {
+  sed -n '/Circuit Breaker/,/$/p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q 'blocker_report'
+}
+
+@test "dev agent Circuit Breaker does not reference non-existent dev_blocker schema" {
+  ! sed -n '/Circuit Breaker/,/$/p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q 'dev_blocker'
+}
+
+# =============================================================================
+# Execute-protocol: de-duplication for Discovered Issues
+# =============================================================================
+
+@test "execute-protocol discovered issues has de-duplication instruction" {
+  sed -n '/Discovered Issues/,/display-only/p' "$PROJECT_ROOT/references/execute-protocol.md" | grep -qi 'de-duplicate'
+}
+
+# =============================================================================
+# Verify command: discovered issues scoped to user-reported
+# =============================================================================
+
+@test "verify command discovered issues scoped to user-reported issues" {
+  grep -A2 'Discovered Issues' "$PROJECT_ROOT/commands/verify.md" | grep -qi 'user.*reported'
 }
 
 # =============================================================================

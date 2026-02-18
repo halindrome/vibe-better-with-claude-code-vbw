@@ -70,6 +70,7 @@ Note: Continuous verification handled by hooks. This command is for deep, on-dem
         Convention baseline: .vbw-planning/codebase/CONVENTIONS.md (if exists)
         Verification protocol: ${CLAUDE_PLUGIN_ROOT}/references/verification-protocol.md
         Return findings using the qa_verdict schema (see ${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md).
+        If tests reveal pre-existing failures unrelated to this phase, list them in your response under a "Pre-existing Issues" heading and include them in the qa_verdict payload's pre_existing_issues array.
         ```
 
     - QA agent reads all files itself.

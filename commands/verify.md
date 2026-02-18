@@ -135,7 +135,7 @@ Issue recorded (severity: {level}). Suggest /vbw:fix after UAT.
 
 ```
 
-**Discovered Issues:** If the verification process revealed pre-existing test failures, out-of-scope bugs, or issues unrelated to this phase's work, append after the result box:
+**Discovered Issues:** If the user reported failures or bugs during CHECKPOINT responses that are clearly unrelated to this phase's work (e.g., "this other test was already broken"), append after the result box:
 ```text
   Discovered Issues:
     ⚠ {issue-1}

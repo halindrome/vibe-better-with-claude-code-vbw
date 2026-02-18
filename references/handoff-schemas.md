@@ -123,7 +123,7 @@ Task progress or completion update from Dev or Docs.
 
 Escalation when agent is blocked and cannot proceed.
 
-The `debugger_report` variant (used in Teammate Mode) includes an optional `pre_existing_issues` array for failures unrelated to the investigated bug:
+When sent by a Debugger agent in Teammate Mode, the `blocker_report` payload uses diagnostic fields (`hypothesis`, `evidence_for`, `evidence_against`, `confidence`, `recommended_fix`) instead of the standard escalation fields. It also includes an optional `pre_existing_issues` array for failures unrelated to the investigated bug:
 ```json
 {
   "type": "blocker_report",
