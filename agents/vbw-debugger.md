@@ -33,6 +33,9 @@ Do NOT apply fixes -- report only. Lead decides. Steps 1-4 apply; 5-7 handled by
 
 During investigation, use read-only database access only. Never run migrations, seeds, drops, truncates, or flushes as part of debugging. If you need to test a database fix, create a migration file and let the user run it.
 
+## Pre-Existing Failure Handling
+During investigation, if a test or check failure is clearly unrelated to the bug under investigation — the failing test covers a different module, the test predates the bug report's timeline, or the failure reproduces independently — classify it as **pre-existing**. Do NOT investigate or fix pre-existing failures. Report them in a separate **Pre-existing Issues** section of your response (test name, file, error message). In teammate mode, include pre-existing issues in your `debugger_report` payload's `pre_existing_issues` array. If you cannot determine whether a failure is related to the bug or pre-existing, treat it as related (conservative default).
+
 ## Constraints
 No shotgun debugging -- hypothesis first. Document before testing. Minimal fixes only. Evidence-based diagnosis (line numbers, output, git history). No subagents. Standalone: one issue per session. Teammate: one hypothesis per assignment (Lead coordinates scope).
 

@@ -22,11 +22,12 @@ load test_helper
 }
 
 @test "dev agent pre-existing guidance requires Pre-existing Issues heading" {
-  grep -A5 'Pre-existing failures (DEVN-05)' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q 'Pre-existing Issues'
+  # Find the DEVN-05 paragraph block and check for the heading reference
+  sed -n '/Pre-existing failures (DEVN-05)/,/^$/p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q 'Pre-existing Issues'
 }
 
 @test "dev agent pre-existing guidance says never fix them" {
-  grep -A5 'Pre-existing failures (DEVN-05)' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -qi 'never.*fix pre-existing'
+  sed -n '/Pre-existing failures (DEVN-05)/,/^$/p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -qi 'never.*fix pre-existing'
 }
 
 # =============================================================================
@@ -55,7 +56,6 @@ load test_helper
 }
 
 @test "fix command discovered issues is display-only" {
-  grep -A3 'Discovered Issues' "$PROJECT_ROOT/commands/fix.md" | head -10
   grep -q 'display-only' "$PROJECT_ROOT/commands/fix.md"
 }
 
@@ -89,6 +89,42 @@ load test_helper
   grep -q 'display-only' "$PROJECT_ROOT/commands/debug.md"
 }
 
+@test "debug command Path A has de-duplication instruction" {
+  sed -n '/Path A/,/Path B/p' "$PROJECT_ROOT/commands/debug.md" | grep -qi 'de-duplicate'
+}
+
+# =============================================================================
+# Debugger agent: pre-existing failure handling
+# =============================================================================
+
+@test "debugger agent has pre-existing failure handling section" {
+  grep -q 'Pre-Existing Failure Handling' "$PROJECT_ROOT/agents/vbw-debugger.md"
+}
+
+@test "debugger agent classifies unrelated failures as pre-existing" {
+  sed -n '/Pre-Existing Failure Handling/,/^##/p' "$PROJECT_ROOT/agents/vbw-debugger.md" | grep -qi 'pre-existing'
+}
+
+@test "debugger agent does not fix pre-existing failures" {
+  sed -n '/Pre-Existing Failure Handling/,/^##/p' "$PROJECT_ROOT/agents/vbw-debugger.md" | grep -qi 'do not.*fix pre-existing'
+}
+
+@test "debugger agent mentions pre_existing_issues in debugger_report" {
+  sed -n '/Pre-Existing Failure Handling/,/^##/p' "$PROJECT_ROOT/agents/vbw-debugger.md" | grep -q 'pre_existing_issues'
+}
+
+# =============================================================================
+# Debugger report schema: pre_existing_issues field
+# =============================================================================
+
+@test "handoff schema documents pre_existing_issues field" {
+  grep -q 'pre_existing_issues' "$PROJECT_ROOT/references/handoff-schemas.md"
+}
+
+@test "handoff schema pre_existing_issues has test/file/error structure" {
+  grep -A2 'pre_existing_issues' "$PROJECT_ROOT/references/handoff-schemas.md" | grep -q '"test"'
+}
+
 # =============================================================================
 # QA agent: pre-existing failure baseline awareness
 # =============================================================================
@@ -102,11 +138,11 @@ load test_helper
 }
 
 @test "qa agent pre-existing failures do not influence verdict" {
-  grep -A8 'Pre-Existing Failure Handling' "$PROJECT_ROOT/agents/vbw-qa.md" | grep -qi 'NOT influence.*PASS.*FAIL.*PARTIAL'
+  sed -n '/Pre-Existing Failure Handling/,/^##/p' "$PROJECT_ROOT/agents/vbw-qa.md" | grep -qi 'NOT influence.*PASS.*FAIL.*PARTIAL'
 }
 
 @test "qa agent requires Pre-existing Issues heading in response" {
-  grep -A8 'Pre-Existing Failure Handling' "$PROJECT_ROOT/agents/vbw-qa.md" | grep -q 'Pre-existing Issues'
+  sed -n '/Pre-Existing Failure Handling/,/^##/p' "$PROJECT_ROOT/agents/vbw-qa.md" | grep -q 'Pre-existing Issues'
 }
 
 # =============================================================================
@@ -138,18 +174,25 @@ load test_helper
 }
 
 @test "all discovered issues sections use display-only constraint" {
-  # Every file with "Discovered Issues:" must also say "display-only"
+  local failed=""
   for file in commands/fix.md commands/debug.md commands/qa.md references/execute-protocol.md; do
     if grep -q 'Discovered Issues' "$PROJECT_ROOT/$file"; then
-      grep -q 'display-only' "$PROJECT_ROOT/$file"
+      if ! grep -q 'display-only' "$PROJECT_ROOT/$file"; then
+        failed="${failed} ${file}"
+      fi
     fi
   done
+  [ -z "$failed" ] || { echo "Missing display-only in:$failed"; return 1; }
 }
 
 @test "all discovered issues sections suggest /vbw:todo" {
+  local failed=""
   for file in commands/fix.md commands/debug.md commands/qa.md references/execute-protocol.md; do
     if grep -q 'Discovered Issues' "$PROJECT_ROOT/$file"; then
-      grep -q '/vbw:todo' "$PROJECT_ROOT/$file"
+      if ! grep -q '/vbw:todo' "$PROJECT_ROOT/$file"; then
+        failed="${failed} ${file}"
+      fi
     fi
   done
+  [ -z "$failed" ] || { echo "Missing /vbw:todo in:$failed"; return 1; }
 }
