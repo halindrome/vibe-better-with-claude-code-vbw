@@ -59,7 +59,7 @@ Recent commits:
     - Create 3 tasks via TaskCreate, each with: bug report, ONE hypothesis only (no cross-contamination), working dir, codebase bootstrap instruction ("If `.vbw-planning/codebase/` exists, read ARCHITECTURE.md, CONCERNS.md, PATTERNS.md, and DEPENDENCIES.md first to bootstrap codebase understanding before investigating"), instruction to report via `debugger_report` schema (see `${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md`), instruction: "If investigation reveals pre-existing failures unrelated to this bug, list them in your response under a 'Pre-existing Issues' heading with test name, file, and failure message." **Include `[analysis-only]` in each task subject** (e.g., "Hypothesis 1: race condition in sync handler [analysis-only]") so the TaskCompleted hook skips the commit-verification gate for report-only tasks.
     - Spawn 3 vbw-debugger teammates, one task each. **Add `model: "${DEBUGGER_MODEL}"` and `maxTurns: ${DEBUGGER_MAX_TURNS}` parameters to each Task spawn.**
     - Wait for completion. Synthesize: strongest evidence + highest confidence wins. Multiple confirmed = contributing factors.
-    - Collect pre-existing issues from all debugger responses. De-duplicate by test name and file — if multiple debuggers report the same pre-existing failure, include it only once.
+    - Collect pre-existing issues from all debugger responses. De-duplicate by test name and file (keep first error message when the same test+file pair has different messages) — if multiple debuggers report the same pre-existing failure, include it only once.
     - Winning hypothesis with fix: apply + commit `fix({scope}): {description}`
     - **HARD GATE — Shutdown before presenting results:** Send `shutdown_request` to each teammate, wait for `shutdown_response` (approved=true), re-request if rejected, then TeamDelete. Only THEN present results to user. Failure to shut down leaves agents running and consuming API credits.
 
@@ -100,10 +100,10 @@ Recent commits:
 **Discovered Issues:** If the Debugger reported pre-existing failures, out-of-scope bugs, or issues unrelated to the investigated bug, append after the result box:
 ```text
   Discovered Issues:
-    ⚠ {issue-1}
-    ⚠ {issue-2}
+    ⚠ testName (path/to/file): error message
+    ⚠ testName (path/to/file): error message
   Suggest: /vbw:todo <description> to track
 ```
-This is **display-only**. Do NOT edit STATE.md, do NOT add todos, do NOT invoke /vbw:todo, and do NOT enter an interactive loop. The user decides whether to track these. If no discovered issues: omit the section entirely.
+This is **display-only**. Do NOT edit STATE.md, do NOT add todos, do NOT invoke /vbw:todo, and do NOT enter an interactive loop. The user decides whether to track these. If no discovered issues: omit the section entirely. After displaying discovered issues, STOP. Do not take further action.
 
 ➜ Next: /vbw:status -- View project status

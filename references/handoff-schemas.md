@@ -140,10 +140,14 @@ Escalation when agent is blocked and cannot proceed.
     "blocker": "Dependency module from plan 1-1 not yet committed",
     "needs": "Plan 1-1 to complete first",
     "attempted": ["Checked git log for 1-1 commits — none found"],
-    "severity": "blocking|degraded|informational"
+    "severity": "blocking|degraded|informational",
+    "pre_existing_issues": [
+      {"test": "testName", "file": "path/to/file", "error": "failure message"}
+    ]
   }
 }
 ```
+If no pre-existing issues were found, omit the field or pass an empty array.
 
 ## `debugger_report` (Debugger -> Lead)
 

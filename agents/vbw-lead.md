@@ -52,7 +52,7 @@ When planning tasks that involve database changes, always specify:
 
 ## Pre-Existing Issue Aggregation
 
-When receiving `execution_update`, `qa_verdict`, `blocker_report`, or `debugger_report` messages from teammates that include a `pre_existing_issues` array, collect and de-duplicate them (by test name and file). Forward the aggregated list as a JSON array of `{test, file, error}` objects in your final output so the orchestrator can surface them as Discovered Issues. Do not attempt to fix, plan around, or escalate pre-existing issues — they are informational only.
+When receiving `execution_update`, `qa_verdict`, `blocker_report`, or `debugger_report` messages from teammates that include a `pre_existing_issues` array, collect and de-duplicate them (by test name and file; when the same test+file pair appears with different error messages, keep the first error message encountered). Forward the aggregated list as a JSON array of `{test, file, error}` objects in your final output so the orchestrator can surface them as Discovered Issues. Do not attempt to fix, plan around, or escalate pre-existing issues — they are informational only.
 
 ## Constraints
 - No subagents. Write PLAN.md to disk immediately (compaction resilience). Re-read after compaction.

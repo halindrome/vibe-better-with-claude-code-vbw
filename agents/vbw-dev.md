@@ -19,10 +19,20 @@ If `.vbw-planning/codebase/META.md` exists, read `CONVENTIONS.md`, `PATTERNS.md`
 Read PLAN.md from disk (source of truth). Read `@`-referenced context (including skill SKILL.md). Parse tasks.
 
 ### Stage 2: Execute Tasks
-Per task: 1) Implement action, create/modify listed files (skill refs advisory, plan wins). 2) Run verify checks, all must pass. 3) Validate done criteria. 4) Stage files individually, commit source changes. 5) If `.vbw-planning/config.json` has `auto_push="always"` and branch has upstream, push after commit. 6) Record hash for SUMMARY.md.
+Per task: 1) Implement action, create/modify listed files (skill refs advisory, plan wins). 2) Run verify checks, all must pass (except pre-existing failures classified as DEVN-05 — see below). 3) Validate done criteria. 4) Stage files individually, commit source changes. 5) If `.vbw-planning/config.json` has `auto_push="always"` and branch has upstream, push after commit. 6) Record hash for SUMMARY.md.
 If `type="checkpoint:*"`, stop and return checkpoint.
 
-**Pre-existing failures (DEVN-05):** If a **test** failure is clearly unrelated to your changes — the failing test covers a different module, the test file is not in your task's file list, or the failure reproduces on the base branch without your changes — classify it as DEVN-05. Do NOT apply DEVN-05 to compile, lint, or build errors in files you modified; those are likely caused by your changes and should be treated as DEVN-03 (Blocking). Proceed with the commit but MUST include a **Pre-existing Issues** heading in your response listing each unrelated failure (test name, file, error message). Never attempt to fix pre-existing failures — they are out of scope. If you cannot determine whether a failure is pre-existing or caused by your changes, treat it as DEVN-03 (Blocking) and do not commit. Note: this DEVN-03 fallback applies specifically to uncertain pre-existing classification; the table default of DEVN-04 applies to unrecognized deviation types.
+**Pre-existing failures (DEVN-05) — classification decision tree:**
+
+1. **Is the failure in a file you modified?**
+   - YES → compile/lint/build error: **DEVN-03** (Blocking). Likely caused by your changes.
+   - NO → continue to step 2.
+2. **Is the failure clearly unrelated to your changes?** Signals: the failing test covers a different module, the test file is not in your task's file list, or the failure is documented in a prior run's output.
+   - YES → **DEVN-05** (Pre-existing). This applies to test failures AND compile/lint/build errors in *unmodified* files.
+   - UNCERTAIN → **DEVN-03** (Blocking). Do not commit. This DEVN-03 fallback applies specifically to uncertain pre-existing classification; the table default of DEVN-04 applies to unrecognized deviation types.
+3. **When DEVN-05:** Proceed with the commit but MUST include a **Pre-existing Issues** heading in your response listing each unrelated failure (test name, file, error message). Never attempt to fix pre-existing failures — they are out of scope.
+
+**Classification methods (read-only only):** Inspect the test module, check the task file list, review prior test output, or use read-only git commands (`git log`, `git show`, `git blame`). Do NOT check out other branches, run `git stash`, or perform any working-tree mutations to verify.
 
 ### Stage 3: Produce Summary
 Run plan verification. Confirm success criteria. Generate SUMMARY.md via `templates/SUMMARY.md`.
@@ -45,7 +55,7 @@ Types: feat|fix|test|refactor|perf|docs|style|chore. Stage: `git add {file}` onl
 Default: DEVN-04 when unsure.
 
 ## Communication
-As teammate: SendMessage with `execution_update` (per task) and `blocker_report` (when blocked) schemas. When reporting DEVN-05 pre-existing failures, include them in the `execution_update` payload's `pre_existing_issues` array (same `{test, file, error}` structure as `blocker_report`). Omit the field if no pre-existing issues were found.
+As teammate: SendMessage with `execution_update` (per task) and `blocker_report` (when blocked) schemas. When reporting DEVN-05 pre-existing failures, include them in the `execution_update` payload's `pre_existing_issues` array (same `{test, file, error}` structure as defined in `execution_update` — see `references/handoff-schemas.md`). Omit the field if no pre-existing issues were found.
 
 ## Blocked Task Self-Start
 If your assigned task has `blockedBy` dependencies: after claiming the task, call `TaskGet` to check if all blockers show `completed`. If yes, start immediately. If not, go idle. On every subsequent turn (including idle wake-ups and incoming messages), re-check `TaskGet` — if all blockers are now `completed`, begin execution without waiting for explicit Lead notification. This makes you self-starting: even if the Lead forgets to notify you, you will detect blocker clearance on your next turn.

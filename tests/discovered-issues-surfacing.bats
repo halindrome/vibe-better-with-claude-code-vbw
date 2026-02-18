@@ -22,17 +22,17 @@ load test_helper
 }
 
 @test "dev agent pre-existing guidance requires Pre-existing Issues heading" {
-  # Find the DEVN-05 paragraph block and check for the heading reference
-  sed -n '/Pre-existing failures (DEVN-05)/,/^$/p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q 'Pre-existing Issues'
+  # Find the DEVN-05 section (multi-paragraph) up to the next heading
+  sed -n '/Pre-existing failures (DEVN-05)/,/^### /p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q 'Pre-existing Issues'
 }
 
 @test "dev agent pre-existing guidance says never fix them" {
-  sed -n '/Pre-existing failures (DEVN-05)/,/^$/p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -qi 'never.*fix pre-existing'
+  sed -n '/Pre-existing failures (DEVN-05)/,/^### /p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -qiE 'never.*(fix|attempt).*pre-existing|do not fix pre-existing'
 }
 
 @test "dev agent DEVN-05 uncertainty fallback disambiguates from table default" {
-  # The DEVN-05 paragraph must clarify DEVN-03 fallback vs DEVN-04 table default
-  sed -n '/Pre-existing failures (DEVN-05)/,/^$/p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q 'DEVN-04'
+  # The DEVN-05 section must clarify DEVN-03 fallback vs DEVN-04 table default
+  sed -n '/Pre-existing failures (DEVN-05)/,/^### /p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q 'DEVN-04'
 }
 
 @test "dev agent deviation table has all 5 DEVN codes" {
@@ -210,11 +210,40 @@ load test_helper
 # =============================================================================
 
 @test "dev agent DEVN-05 specifies test failures not build errors" {
-  sed -n '/Pre-existing failures (DEVN-05)/,/^$/p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q 'test.*failure'
+  sed -n '/Pre-existing failures (DEVN-05)/,/^### /p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q 'test.*failure'
 }
 
-@test "dev agent DEVN-05 excludes compile/lint/build errors" {
-  sed -n '/Pre-existing failures (DEVN-05)/,/^$/p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -qi 'compile.*lint.*build'
+@test "dev agent DEVN-05 distinguishes modified vs unmodified file errors" {
+  sed -n '/Pre-existing failures (DEVN-05)/,/^### /p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -qi 'compile.*lint.*build'
+}
+
+@test "dev agent DEVN-05 covers unmodified file errors" {
+  sed -n '/Pre-existing failures (DEVN-05)/,/^### /p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -qi 'unmodified.*files'
+}
+
+@test "dev agent DEVN-05 uses decision tree format" {
+  # Verify the structured numbered steps exist
+  sed -n '/Pre-existing failures (DEVN-05)/,/^### /p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q '1\. \*\*Is the failure'
+  sed -n '/Pre-existing failures (DEVN-05)/,/^### /p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q '2\. \*\*Is the failure'
+  sed -n '/Pre-existing failures (DEVN-05)/,/^### /p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q '3\. \*\*When DEVN-05'
+}
+
+@test "dev agent DEVN-05 read-only methods include git commands" {
+  sed -n '/Pre-existing failures (DEVN-05)/,/^### /p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -qi 'git log.*git show.*git blame'
+}
+
+@test "dev agent Stage 2 cross-references DEVN-05 exception" {
+  sed -n '/### Stage 2/,/### Stage 3/p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -qi 'except.*pre-existing.*DEVN-05'
+}
+
+@test "dev agent DEVN-05 prohibits working-tree mutations for classification" {
+  sed -n '/Pre-existing failures (DEVN-05)/,/^### /p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -qi 'do NOT check out other branches'
+}
+
+@test "dev agent Communication references execution_update not blocker_report for pre_existing_issues" {
+  sed -n '/## Communication/,/^##/p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q 'execution_update'
+  # Should NOT reference blocker_report as the structure source
+  ! sed -n '/## Communication/,/^##/p' "$PROJECT_ROOT/agents/vbw-dev.md" | grep -q 'same.*structure as.*blocker_report'
 }
 
 # =============================================================================
@@ -259,6 +288,22 @@ load test_helper
 
 @test "lead agent aggregation mentions de-duplicate" {
   sed -n '/Pre-Existing Issue Aggregation/,/^##/p' "$PROJECT_ROOT/agents/vbw-lead.md" | grep -qi 'de-duplicate'
+}
+
+@test "lead agent aggregation specifies merge strategy for duplicate errors" {
+  sed -n '/Pre-Existing Issue Aggregation/,/^##/p' "$PROJECT_ROOT/agents/vbw-lead.md" | grep -qi 'first.*error.*message'
+}
+
+@test "debug command Path A dedup specifies merge strategy" {
+  sed -n '/Path A/,/Path B/p' "$PROJECT_ROOT/commands/debug.md" | grep -qi 'first error message'
+}
+
+@test "execute-protocol discovered issues specifies merge strategy" {
+  sed -n '/Discovered Issues/,/display-only/p' "$PROJECT_ROOT/references/execute-protocol.md" | grep -qi 'first.*error.*message'
+}
+
+@test "execute-protocol discovered issues caps list size" {
+  sed -n '/Discovered Issues/,/display-only/p' "$PROJECT_ROOT/references/execute-protocol.md" | grep -qi 'cap.*20'
 }
 
 @test "lead agent aggregation mentions debugger_report" {
@@ -438,4 +483,52 @@ load test_helper
     fi
   done
   [ -z "$failed" ] || { echo "Missing /vbw:todo in:$failed"; return 1; }
+}
+
+# =============================================================================
+# Blocker report: pre_existing_issues documented in reference
+# =============================================================================
+
+@test "handoff schema blocker_report example includes pre_existing_issues" {
+  sed -n '/## .blocker_report/,/^## .debugger_report/p' "$PROJECT_ROOT/references/handoff-schemas.md" | grep -q 'pre_existing_issues'
+}
+
+# =============================================================================
+# Bullet format consistency across entry points
+# =============================================================================
+
+@test "all discovered issues sections specify testName format" {
+  local failed=""
+  for file in commands/fix.md commands/debug.md commands/qa.md references/execute-protocol.md; do
+    if grep -q 'Discovered Issues' "$PROJECT_ROOT/$file"; then
+      if ! grep -q 'testName.*path/to/file.*error' "$PROJECT_ROOT/$file"; then
+        failed="${failed} ${file}"
+      fi
+    fi
+  done
+  [ -z "$failed" ] || { echo "Missing testName format in:$failed"; return 1; }
+}
+
+# =============================================================================
+# Display-only STOP constraint
+# =============================================================================
+
+@test "all discovered issues sections include STOP after display" {
+  local failed=""
+  for file in commands/fix.md commands/debug.md commands/qa.md commands/verify.md; do
+    if grep -q 'Discovered Issues' "$PROJECT_ROOT/$file"; then
+      if ! grep -qi 'STOP.*Do not take further action' "$PROJECT_ROOT/$file"; then
+        failed="${failed} ${file}"
+      fi
+    fi
+  done
+  [ -z "$failed" ] || { echo "Missing STOP constraint in:$failed"; return 1; }
+}
+
+# =============================================================================
+# Debugger standalone: structured pre-existing format
+# =============================================================================
+
+@test "debugger agent standalone Step 7 specifies structured pre-existing format" {
+  sed -n '/Investigation Protocol/,/^##/p' "$PROJECT_ROOT/agents/vbw-debugger.md" | grep '7\.' | grep -q 'test, file, error'
 }
