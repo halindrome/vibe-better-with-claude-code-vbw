@@ -110,4 +110,16 @@ if [ "$MATCH_COUNT" -ge "$MIN_MATCHES" ]; then
 fi
 
 echo "No recent commit found matching task: '$TASK_SUBJECT' (matched $MATCH_COUNT/$KEYWORD_COUNT keywords, needed $MIN_MATCHES)" >&2
+
+# Circuit breaker: if this same subject has already been blocked once, allow it
+# on the second attempt. This prevents infinite hook loops where the agent
+# responds to the block, triggering another turn, which triggers the hook again.
+SEEN_FILE=".vbw-planning/.task-verify-seen"
+SUBJECT_HASH=$(printf '%s' "$TASK_SUBJECT" | md5 2>/dev/null || printf '%s' "$TASK_SUBJECT" | md5sum 2>/dev/null | cut -d' ' -f1 || echo "fallback")
+if [ -f "$SEEN_FILE" ] && grep -qF "$SUBJECT_HASH" "$SEEN_FILE" 2>/dev/null; then
+  echo "Circuit breaker: allowing repeat-blocked task (same subject blocked before)" >&2
+  exit 0
+fi
+# Record this subject as blocked
+echo "$SUBJECT_HASH" >> "$SEEN_FILE" 2>/dev/null || true
 exit 2

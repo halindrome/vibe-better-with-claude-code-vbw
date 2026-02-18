@@ -82,6 +82,7 @@ EOF
     '.active-agent-count'
     '.active-agent-count.lock/'
     '.agent-pids'
+    '.task-verify-seen'
     '.metrics/'
     '.cost-ledger.json'
     '.cache/'
