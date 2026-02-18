@@ -69,13 +69,13 @@ Note: Continuous verification handled by hooks. This command is for deep, on-dem
         Phase success criteria: {section from ROADMAP.md}
         Convention baseline: .vbw-planning/codebase/CONVENTIONS.md (if exists)
         Verification protocol: ${CLAUDE_PLUGIN_ROOT}/references/verification-protocol.md
-        Return findings using the qa_result schema (see ${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md).
+        Return findings using the qa_verdict schema (see ${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md).
         ```
 
     - QA agent reads all files itself.
 
 4. **Persist:**
-  Parse QA output as JSON (`qa_result` schema).
+  Parse QA output as JSON (`qa_verdict` schema).
   Fallback: extract from markdown.
   Write `{phase-dir}/{phase}-VERIFICATION.md` with frontmatter: phase, tier,
   result (PASS|FAIL|PARTIAL), passed, failed, total, date.

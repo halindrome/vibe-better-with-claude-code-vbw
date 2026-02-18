@@ -159,8 +159,14 @@ load test_helper
 }
 
 # =============================================================================
-# QA command: discovered issues output
+# QA command: discovered issues output + schema consistency
 # =============================================================================
+
+@test "qa command references qa_verdict schema not qa_result" {
+  # qa_verdict is the canonical schema name; qa_result was a historical mismatch
+  ! grep -q 'qa_result' "$PROJECT_ROOT/commands/qa.md"
+  grep -q 'qa_verdict' "$PROJECT_ROOT/commands/qa.md"
+}
 
 @test "qa command has discovered issues output section" {
   grep -q 'Discovered Issues' "$PROJECT_ROOT/commands/qa.md"
