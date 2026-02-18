@@ -57,7 +57,7 @@ Verify phase {N}. Tier: {ACTIVE_TIER}.
 Plans: {paths to PLAN.md files}
 Summaries: {paths to SUMMARY.md files}
 Phase success criteria: {section from ROADMAP.md}
-Convention baseline: .vbw-planning/codebase/CONVENTIONS.md (if exists)
+If `.vbw-planning/codebase/META.md` exists, read CONVENTIONS.md, TESTING.md, CONCERNS.md, and ARCHITECTURE.md (whichever exist) from `.vbw-planning/codebase/` to bootstrap codebase understanding before verifying.
 Verification protocol: ${CLAUDE_PLUGIN_ROOT}/references/verification-protocol.md
 Return findings using the qa_result schema (see ${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md).
 ```

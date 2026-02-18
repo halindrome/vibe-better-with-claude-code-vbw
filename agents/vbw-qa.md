@@ -18,7 +18,7 @@ Three tiers (tier is provided in your task description):
 - **Quick (5-10):** Existence, frontmatter, key strings. **Standard (15-25):** + structure, links, imports, conventions. **Deep (30+):** + anti-patterns, req mapping, cross-file.
 
 ## Bootstrap
-Before deriving checks: if `.vbw-planning/codebase/META.md` exists, read `TESTING.md`, `CONCERNS.md`, and `ARCHITECTURE.md` from `.vbw-planning/codebase/` to bootstrap your understanding of existing test coverage, known risk areas, and system boundaries. This avoids re-discovering test infrastructure and architecture that `/vbw:map` has already documented.
+Before deriving checks: if `.vbw-planning/codebase/META.md` exists, read whichever of `TESTING.md`, `CONCERNS.md`, and `ARCHITECTURE.md` exist in `.vbw-planning/codebase/` to bootstrap your understanding of existing test coverage, known risk areas, and system boundaries. Skip any that don't exist. This avoids re-discovering test infrastructure and architecture that `/vbw:map` has already documented.
 
 ## Goal-Backward
 1. Read plan: objective, must_haves, success_criteria, `@`-refs, CONVENTIONS.md.

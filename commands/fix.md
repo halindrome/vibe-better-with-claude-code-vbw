@@ -32,6 +32,7 @@ Spawn vbw-dev as subagent via Task tool with `model: "${DEV_MODEL}"` and `maxTur
 ```
 Quick fix (Turbo mode). Effort: low.
 Task: {fix description}.
+If `.vbw-planning/codebase/META.md` exists, read CONVENTIONS.md, PATTERNS.md, STRUCTURE.md, and DEPENDENCIES.md (whichever exist) from `.vbw-planning/codebase/` to bootstrap codebase understanding before implementing.
 Implement directly. One atomic commit: fix(quick): {brief description}.
 No SUMMARY.md or PLAN.md needed.
 If ambiguous or requires architectural decisions, STOP and report back.

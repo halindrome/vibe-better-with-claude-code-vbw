@@ -103,7 +103,7 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
 - No silent assumptions -- ask follow-ups for gaps.
 - Phases come from the user, not you.
 
-**Constraints:** Do NOT explore/scan codebase (that's /vbw:map). Use existing `.vbw-planning/codebase/` if present.
+**Constraints:** Do NOT explore/scan codebase (that's /vbw:map). Use existing `.vbw-planning/codebase/` if `.vbw-planning/codebase/META.md` exists.
 
 **Brownfield detection:** `git ls-files` or Glob check for existing code.
 
@@ -144,7 +144,7 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
     bash ${CLAUDE_PLUGIN_ROOT}/scripts/bootstrap/bootstrap-requirements.sh .vbw-planning/REQUIREMENTS.md .vbw-planning/discovery.json .vbw-planning/domain-research.md
     ```
 
-- **B3: ROADMAP.md** -- Suggest 3-5 phases from requirements. If `.vbw-planning/codebase/` exists, read INDEX.md, PATTERNS.md, ARCHITECTURE.md, CONCERNS.md. Each phase: name, goal, mapped reqs, success criteria. Write phases JSON to temp file, then call:
+- **B3: ROADMAP.md** -- Suggest 3-5 phases from requirements. If `.vbw-planning/codebase/META.md` exists, read PATTERNS.md, ARCHITECTURE.md, and CONCERNS.md (whichever exist) from `.vbw-planning/codebase/`. Each phase: name, goal, mapped reqs, success criteria. Write phases JSON to temp file, then call:
   ```
   bash ${CLAUDE_PLUGIN_ROOT}/scripts/bootstrap/bootstrap-roadmap.sh .vbw-planning/ROADMAP.md "$PROJECT_NAME" /tmp/vbw-phases.json
   ```
@@ -172,7 +172,7 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
 **Guard:** PROJECT.md exists but `phase_count=0`.
 
 **Steps:**
-1. Load context: PROJECT.md, REQUIREMENTS.md. If `.vbw-planning/codebase/` exists, read INDEX.md + ARCHITECTURE.md.
+1. Load context: PROJECT.md, REQUIREMENTS.md. If `.vbw-planning/codebase/META.md` exists, read ARCHITECTURE.md and CONCERNS.md (whichever exist) from `.vbw-planning/codebase/`.
 2. If $ARGUMENTS (excl. flags) provided, use as scope. Else ask: "What do you want to build?" Show uncovered requirements as suggestions.
 3. Decompose into 3-5 phases (name, goal, success criteria). Each independently plannable. Map REQ-IDs.
 4. Write ROADMAP.md. Create `.vbw-planning/phases/{NN}-{slug}/` dirs.
@@ -314,7 +314,7 @@ Missing name: STOP "Usage: `/vbw:vibe --add <phase-name>`"
 
 **Steps:**
 1. Resolve context: ACTIVE -> milestone-scoped paths, otherwise defaults.
-2. **Codebase context:** If `.vbw-planning/codebase/` exists, read INDEX.md + ARCHITECTURE.md + CONCERNS.md. Use this to inform phase goal scoping and identify relevant modules/services.
+2. **Codebase context:** If `.vbw-planning/codebase/META.md` exists, read ARCHITECTURE.md and CONCERNS.md (whichever exist) from `.vbw-planning/codebase/`. Use this to inform phase goal scoping and identify relevant modules/services.
 3. Parse args: phase name (first non-flag arg), --goal (optional), slug (lowercase hyphenated).
 4. Next number: highest in ROADMAP.md + 1, zero-padded.
 5. Create dir: `mkdir -p {PHASES_DIR}/{NN}-{slug}/`
@@ -337,7 +337,7 @@ Inserting before completed phase: WARN + confirm.
 
 **Steps:**
 1. Resolve context: ACTIVE -> milestone-scoped paths, otherwise defaults.
-2. **Codebase context:** If `.vbw-planning/codebase/` exists, read INDEX.md + ARCHITECTURE.md + CONCERNS.md. Use this to inform phase goal scoping and identify relevant modules/services.
+2. **Codebase context:** If `.vbw-planning/codebase/META.md` exists, read ARCHITECTURE.md and CONCERNS.md (whichever exist) from `.vbw-planning/codebase/`. Use this to inform phase goal scoping and identify relevant modules/services.
 3. Parse args: position (int), phase name, --goal (optional), slug (lowercase hyphenated).
 4. Identify renumbering: all phases >= position shift up by 1.
 5. Renumber dirs in REVERSE order: rename dir {NN}-{slug} -> {NN+1}-{slug}, rename internal PLAN/SUMMARY files, update `phase:` frontmatter, update `depends_on` references.

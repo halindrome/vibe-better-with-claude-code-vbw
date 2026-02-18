@@ -52,7 +52,7 @@ Decision tree:
   ```
 - Display: `◆ Spawning Debugger (${DEBUGGER_MODEL})...`
 - Create Agent Team "debug-{timestamp}" via TeamCreate
-- Create 3 tasks via TaskCreate, each with: bug report, ONE hypothesis only (no cross-contamination), working dir, codebase bootstrap instruction ("If `.vbw-planning/codebase/` exists, read ARCHITECTURE.md, CONCERNS.md, PATTERNS.md, and DEPENDENCIES.md first to bootstrap codebase understanding before investigating"), instruction to report via `debugger_report` schema (see `${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md`). **Include `[analysis-only]` in each task subject** (e.g., "Hypothesis 1: race condition in sync handler [analysis-only]") so the TaskCompleted hook skips the commit-verification gate for report-only tasks.
+- Create 3 tasks via TaskCreate, each with: bug report, ONE hypothesis only (no cross-contamination), working dir, codebase bootstrap instruction ("If `.vbw-planning/codebase/META.md` exists, read ARCHITECTURE.md, CONCERNS.md, PATTERNS.md, and DEPENDENCIES.md (whichever exist) from `.vbw-planning/codebase/` to bootstrap codebase understanding before investigating"), instruction to report via `debugger_report` schema (see `${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md`). **Include `[analysis-only]` in each task subject** (e.g., "Hypothesis 1: race condition in sync handler [analysis-only]") so the TaskCompleted hook skips the commit-verification gate for report-only tasks.
 - Spawn 3 vbw-debugger teammates, one task each. **Add `model: "${DEBUGGER_MODEL}"` and `maxTurns: ${DEBUGGER_MAX_TURNS}` parameters to each Task spawn.**
 - Wait for completion. Synthesize: strongest evidence + highest confidence wins. Multiple confirmed = contributing factors.
 - Winning hypothesis with fix: apply + commit `fix({scope}): {description}`
@@ -72,7 +72,7 @@ Decision tree:
 Bug investigation. Effort: {DEBUGGER_EFFORT}.
 Bug report: {description}.
 Working directory: {pwd}.
-If `.vbw-planning/codebase/` exists, read ARCHITECTURE.md, CONCERNS.md, PATTERNS.md, and DEPENDENCIES.md first to bootstrap codebase understanding before investigating.
+If `.vbw-planning/codebase/META.md` exists, read ARCHITECTURE.md, CONCERNS.md, PATTERNS.md, and DEPENDENCIES.md (whichever exist) from `.vbw-planning/codebase/` to bootstrap codebase understanding before investigating.
 Follow protocol: bootstrap (if codebase mapping exists), reproduce, hypothesize, gather evidence, diagnose, fix, verify, document.
 If you apply a fix, commit with: fix({scope}): {description}.
 ```
