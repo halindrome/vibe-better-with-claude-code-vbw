@@ -71,18 +71,17 @@ teardown() {
 }
 
 @test "lease-lock: exits 0 when both flags disabled" {
+  # OBSOLETE: v3_lease_locks and v3_lock_lite graduated (always on)
+  # Test retained for backwards compatibility — now tests unconditional behavior
   cd "$TEST_TEMP_DIR"
-  jq '.v3_lease_locks = false | .v3_lock_lite = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
-    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   run bash "$SCRIPTS_DIR/lease-lock.sh" acquire test-task file1.sh
   [ "$status" -eq 0 ]
-  [ -z "$output" ]
+  [[ "$output" == *"acquired"* ]]
 }
 
 @test "lease-lock: exits non-zero on conflict when v2_hard_gates=true" {
+  # v2_hard_gates and v3_lease_locks graduated (always on)
   cd "$TEST_TEMP_DIR"
-  jq '.v3_lease_locks = true | .v2_hard_gates = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
-    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   bash "$SCRIPTS_DIR/lease-lock.sh" acquire other-task file1.sh >/dev/null 2>&1
   run bash "$SCRIPTS_DIR/lease-lock.sh" acquire new-task file1.sh
   [ "$status" -eq 1 ]
@@ -90,13 +89,13 @@ teardown() {
 }
 
 @test "lease-lock: exits 0 on conflict when v2_hard_gates=false" {
+  # OBSOLETE: v2_hard_gates graduated (always true) — conflicts now always block
+  # Test renamed but behavior changed: now expects exit 1 on conflict
   cd "$TEST_TEMP_DIR"
-  jq '.v3_lease_locks = true | .v2_hard_gates = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
-    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   bash "$SCRIPTS_DIR/lease-lock.sh" acquire other-task file1.sh >/dev/null 2>&1
   run bash "$SCRIPTS_DIR/lease-lock.sh" acquire new-task file1.sh
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"acquired"* ]]
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"conflict_blocked"* ]]
 }
 
 @test "lease-lock: query returns lock info" {

@@ -35,7 +35,7 @@ fi
 
 # Auto-migrate config if .vbw-planning exists.
 # Version marker retained here for backwards test compatibility.
-EXPECTED_FLAG_COUNT=23
+EXPECTED_FLAG_COUNT=22
 if [ -d "$PLANNING_DIR" ] && [ -f "$PLANNING_DIR/config.json" ]; then
   if ! bash "$SCRIPT_DIR/migrate-config.sh" "$PLANNING_DIR/config.json" >/dev/null 2>&1; then
     echo "WARNING: Config migration failed (jq error). Config may be missing flags (expected=$EXPECTED_FLAG_COUNT)." >&2
@@ -116,25 +116,7 @@ if [ -d "$PLANNING_DIR" ] && [ -f "$PLANNING_DIR/config.json" ] && command -v jq
     "VBW_AUTONOMY=\(.autonomy // "standard")",
     "VBW_PLANNING_TRACKING=\(.planning_tracking // "manual")",
     "VBW_AUTO_PUSH=\(.auto_push // "never")",
-    "VBW_CONTEXT_COMPILER=\(if .context_compiler == null then true else .context_compiler end)",
-    "VBW_V3_DELTA_CONTEXT=\(.v3_delta_context // false)",
-    "VBW_V3_CONTEXT_CACHE=\(.v3_context_cache // false)",
-    "VBW_V3_PLAN_RESEARCH_PERSIST=\(.v3_plan_research_persist // false)",
-    "VBW_V3_METRICS=\(.v3_metrics // false)",
-    "VBW_V3_CONTRACT_LITE=\(.v3_contract_lite // false)",
-    "VBW_V3_LOCK_LITE=\(.v3_lock_lite // false)",
-    "VBW_V3_VALIDATION_GATES=\(.v3_validation_gates // false)",
-    "VBW_V3_SMART_ROUTING=\(.v3_smart_routing // false)",
-    "VBW_V3_SCHEMA_VALIDATION=\(.v3_schema_validation // false)",
-    "VBW_V3_SNAPSHOT_RESUME=\(.v3_snapshot_resume // false)",
-    "VBW_V3_LEASE_LOCKS=\(.v3_lease_locks // false)",
-    "VBW_V3_MONOREPO_ROUTING=\(.v3_monorepo_routing // false)",
-    "VBW_V2_HARD_CONTRACTS=\(.v2_hard_contracts // false)",
-    "VBW_V2_HARD_GATES=\(.v2_hard_gates // false)",
-    "VBW_V2_TYPED_PROTOCOL=\(.v2_typed_protocol // false)",
-    "VBW_V2_ROLE_ISOLATION=\(.v2_role_isolation // false)",
-    "VBW_V2_TWO_PHASE_COMPLETION=\(.v2_two_phase_completion // false)",
-    "VBW_V2_TOKEN_BUDGETS=\(.v2_token_budgets // false)"
+    "VBW_CONTEXT_COMPILER=\(if .context_compiler == null then true else .context_compiler end)"
   ' "$PLANNING_DIR/config.json" > "$VBW_CONFIG_CACHE" 2>/dev/null || true
 fi
 

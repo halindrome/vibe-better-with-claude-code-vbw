@@ -39,10 +39,12 @@ teardown() {
 }
 
 @test "context-index.json not created when v3_context_cache=false" {
+  # OBSOLETE: v3_context_cache graduated (always on)
+  # Test retained but now expects context-index to be created
   cd "$TEST_TEMP_DIR"
   run bash "$SCRIPTS_DIR/compile-context.sh" 02 dev ".vbw-planning/phases" ".vbw-planning/phases/02-test-phase/02-01-PLAN.md"
   [ "$status" -eq 0 ]
-  [ ! -f "$TEST_TEMP_DIR/.vbw-planning/.cache/context-index.json" ]
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/.cache/context-index.json" ]
 }
 
 @test "context-index.json created on cache miss when v3_context_cache=true" {

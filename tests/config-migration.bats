@@ -64,28 +64,28 @@ EOF
 
   run_migration
 
-  # Verify all 23 flags exist
+  # Verify all 22 flags exist (graduated flags removed, only v2_token_budgets remains)
   run jq '[
-    has("context_compiler"), has("v3_delta_context"), has("v3_context_cache"),
-    has("v3_plan_research_persist"), has("v3_metrics"), has("v3_contract_lite"),
-    has("v3_lock_lite"), has("v3_validation_gates"), has("v3_smart_routing"),
-    has("v3_event_log"), has("v3_schema_validation"), has("v3_snapshot_resume"),
-    has("v3_lease_locks"), has("v3_event_recovery"), has("v3_monorepo_routing"),
-    has("v2_hard_contracts"), has("v2_hard_gates"), has("v2_typed_protocol"),
-    has("v2_role_isolation"), has("v2_two_phase_completion"), has("v2_token_budgets"),
+    has("context_compiler"), has("v2_token_budgets"),
     has("model_overrides"), has("prefer_teams")
   ] | map(select(.)) | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "23" ]
+  [ "$output" = "4" ]
+
+  # Verify full defaults count = 22
+  run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "22" ]
 
   # Verify existing values were preserved
   run jq -r '.context_compiler' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "false" ]
 
-  run jq -r '.v3_delta_context' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  # v3_delta_context was graduated and removed from config
+  run jq -r 'has("v3_delta_context")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "true" ]
+  [ "$output" = "false" ]
 
   run jq -r '.v2_hard_contracts' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
@@ -125,19 +125,10 @@ EOF
   # Both runs should produce identical result
   [ "$AFTER_FIRST" = "$AFTER_SECOND" ]
 
-  # Verify flag count is correct
-  run jq '[
-    has("context_compiler"), has("v3_delta_context"), has("v3_context_cache"),
-    has("v3_plan_research_persist"), has("v3_metrics"), has("v3_contract_lite"),
-    has("v3_lock_lite"), has("v3_validation_gates"), has("v3_smart_routing"),
-    has("v3_event_log"), has("v3_schema_validation"), has("v3_snapshot_resume"),
-    has("v3_lease_locks"), has("v3_event_recovery"), has("v3_monorepo_routing"),
-    has("v2_hard_contracts"), has("v2_hard_gates"), has("v2_typed_protocol"),
-    has("v2_role_isolation"), has("v2_two_phase_completion"), has("v2_token_budgets"),
-    has("model_overrides"), has("prefer_teams")
-  ] | map(select(.)) | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  # Verify flag count is correct (22 total, graduated flags removed)
+  run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "23" ]
+  [ "$output" = "22" ]
 }
 
 @test "migration detects malformed JSON" {

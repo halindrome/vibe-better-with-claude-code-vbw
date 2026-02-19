@@ -39,15 +39,17 @@ teardown() {
 }
 
 @test "generate-contract.sh exits 0 when v3_contract_lite=false" {
+  # OBSOLETE: v3_contract_lite graduated (always on)
+  # Test retained but now expects contracts to be generated
   cd "$TEST_TEMP_DIR"
   run bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/03-test-phase/03-01-PLAN.md"
   [ "$status" -eq 0 ]
-  [ ! -d ".vbw-planning/.contracts" ]
+  [ -f ".vbw-planning/.contracts/3-1.json" ]
 }
 
 @test "generate-contract.sh creates contract JSON when flag=true" {
+  # v3_contract_lite graduated (always on) — no need to set flag
   cd "$TEST_TEMP_DIR"
-  jq '.v3_contract_lite = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
 
   run bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/03-test-phase/03-01-PLAN.md"
   [ "$status" -eq 0 ]
