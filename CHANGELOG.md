@@ -12,6 +12,8 @@ All notable changes to VBW will be documented in this file.
 - **`agent-restrictions`** -- Native `Task(agent_type)` spawn restrictions added to all 7 agents. Lead can only spawn Dev. Debugger can only spawn Debugger (competing hypotheses). Dev, architect, docs cannot spawn agents. Scout and QA already lacked Task capability.
 - **`cc-version-table`** -- Claude Code version requirements table added to README with minimum versions for key features (hooks, teams, classifier, memory).
 - **`token-analysis`** -- v1.30.0 token analysis document covering CC Alignment impact: 85 scripts, 56 test files, 838 BATS tests. Per-request +12% (enforcement content), 73% reduction vs stock teams.
+- **`worktree-isolation`** — Git worktree-per-plan isolation for Dev agents
+  (6 scripts, opt-in via `worktree_isolation` config, default "off").
 
 ### Changed
 
@@ -24,6 +26,10 @@ All notable changes to VBW will be documented in this file.
 ### Deprecated
 
 - **`file-guard`** -- `scripts/file-guard.sh` marked as worktree-deprecation candidate with header comment.
+
+### Removed
+
+- **`lock-lite`** — Deprecated script removed (replaced by lease-lock.sh).
 
 ## [1.21.31] - 2026-02-19
 
