@@ -1,6 +1,20 @@
 #!/bin/bash
 set -u
 # file-guard.sh — PreToolUse guard for undeclared file modifications
+#
+# DEPRECATION CANDIDATE (Priority 2, Future Milestone)
+# =====================================================
+# This script enforces file access control at the PreToolUse hook level.
+# It is VBW's substitute for git-level isolation in the current shared-directory
+# execution model.
+#
+# When worktree-per-plan ships (align_versions.md section 2.3), git provides
+# isolation by construction and this guard becomes unnecessary. At that point,
+# file-guard can be made optional ("strict mode" for belt-and-suspenders users)
+# or fully deprecated.
+#
+# For now: remains active, no functional changes.
+#
 # Blocks Write/Edit to files not declared in active plan's files_modified.
 # V2 enhancement: also checks forbidden_paths from active contract when v2_hard_contracts=true.
 # Fail-open design: exit 0 on any error, exit 2 only on definitive violations

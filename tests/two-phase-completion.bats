@@ -69,13 +69,12 @@ CONTRACT
   [[ "$output" == *"task_completion_rejected"* ]]
 }
 
-@test "two-phase: skips when flag disabled" {
+@test "two-phase: always active (v2_two_phase_completion graduated)" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_two_phase_completion = false' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
-    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
-  run bash "$SCRIPTS_DIR/two-phase-complete.sh" "1-1-T1" 1 1 "any" "any"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"v2_two_phase_completion=false"* ]]
+  # v2_two_phase_completion flag graduated - two-phase completion is now always active
+  # Missing contract should now return error (not skip)
+  run bash "$SCRIPTS_DIR/two-phase-complete.sh" "1-1-T1" 1 1 "nonexistent.json" "evidence"
+  [ "$status" -eq 2 ]
 }
 
 @test "two-phase: missing contract returns error" {
@@ -175,9 +174,9 @@ CONTRACT
 
 # --- Config flag ---
 
-@test "defaults.json includes v2_two_phase_completion flag" {
-  run jq '.v2_two_phase_completion' "$CONFIG_DIR/defaults.json"
-  [ "$output" = "false" ]
+@test "defaults.json: v2_two_phase_completion flag graduated (removed from defaults)" {
+  run jq '.v2_two_phase_completion // "removed"' "$CONFIG_DIR/defaults.json"
+  [ "$output" = '"removed"' ]
 }
 
 # --- Execute protocol integration ---
