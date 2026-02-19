@@ -24,10 +24,18 @@ set -euo pipefail
 PLANNING_DIR=".vbw-planning"
 FILTER="${1:-}"
 
-# --- Resolve milestone-scoped STATE.md ---
+# --- Resolve STATE.md for todos (project-level data lives at root) ---
 resolve_state_path() {
   local state_path="$PLANNING_DIR/STATE.md"
 
+  # Project-level todos always live at root STATE.md.
+  # If root exists, use it regardless of ACTIVE milestone.
+  if [ -f "$state_path" ]; then
+    echo "$state_path"
+    return 0
+  fi
+
+  # Fallback: ACTIVE milestone (pre-migration compatibility)
   if [ -f "$PLANNING_DIR/ACTIVE" ]; then
     local slug
     slug=$(tr -d '[:space:]' < "$PLANNING_DIR/ACTIVE" 2>/dev/null)
@@ -39,24 +47,24 @@ resolve_state_path() {
       fi
       local milestone_state="$PLANNING_DIR/milestones/$slug/STATE.md"
       if [ -f "$milestone_state" ]; then
-        state_path="$milestone_state"
+        echo "$milestone_state"
+        return 0
       fi
     fi
   fi
 
-  if [ ! -f "$state_path" ]; then
-    # Fallback: no ACTIVE and no root STATE.md — check milestones/ for archived state
-    local latest_milestone
-    latest_milestone=$(ls -1d "$PLANNING_DIR"/milestones/*/STATE.md 2>/dev/null | head -1)
-    if [ -n "$latest_milestone" ]; then
-      state_path="$latest_milestone"
-    else
-      echo '{"status":"error","message":"STATE.md not found at '"$state_path"'. Run /vbw:init or check .vbw-planning/ACTIVE."}'
-      return 1
-    fi
+  # Fallback: no root and no ACTIVE — check milestones/ for archived state
+  local latest_milestone=""
+  for f in "$PLANNING_DIR"/milestones/*/STATE.md; do
+    [ -f "$f" ] && latest_milestone="$f" && break
+  done
+  if [ -n "$latest_milestone" ]; then
+    echo "$latest_milestone"
+    return 0
   fi
 
-  echo "$state_path"
+  echo '{"status":"error","message":"STATE.md not found at '"$state_path"'. Run /vbw:init or check .vbw-planning/ACTIVE."}'
+  return 1
 }
 
 # --- Extract todo lines from a section ---

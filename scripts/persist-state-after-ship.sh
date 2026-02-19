@@ -19,9 +19,8 @@ set -euo pipefail
 #   ## Codebase Profile
 #
 # Milestone-level sections (excluded):
-#   ## Current Phase
-#   ## Activity Log
-#   ## Phase Status
+#   ## Current Phase / ## Phase Status
+#   ## Activity Log / ## Recent Activity
 #
 # Exit codes:
 #   0 = success
@@ -44,24 +43,26 @@ fi
 mkdir -p "$(dirname "$OUTPUT_PATH")"
 
 # Sections to preserve (project-level, survive across milestones)
-# Uses awk to extract each section by ## heading, stopping at the next ## heading
+# Uses awk to extract each section by ## heading, stopping at the next ## heading.
+# Handles trailing whitespace on headings and only extracts the first occurrence.
 extract_section() {
   local file="$1"
   local heading="$2"
   awk -v h="$heading" '
-    $0 == "## " h { found=1; print; next }
-    found && /^## / { found=0 }
+    BEGIN { pat = "^## " h "[[:space:]]*$" }
+    $0 ~ pat && !done { found=1; print; next }
+    found && /^## / { found=0; done=1 }
     found { print }
   ' "$file"
 }
 
-# Special: Decisions section may contain ### Skills subsection
-# We need to capture ## Decisions through the end of ### Skills (if present)
+# Decisions section may use "## Decisions" (template) or "## Key Decisions"
+# (bootstrap-state.sh). Handle both, including ### Skills subsection.
 extract_decisions_with_skills() {
   local file="$1"
   awk '
-    /^## Decisions/ { found=1; print; next }
-    found && /^## / { found=0 }
+    /^## (Key )?Decisions[[:space:]]*$/ && !done { found=1; print; next }
+    found && /^## / { found=0; done=1 }
     found { print }
   ' "$file"
 }

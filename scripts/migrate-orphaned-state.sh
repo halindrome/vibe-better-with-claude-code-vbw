@@ -37,8 +37,11 @@ if [[ -f "$PLANNING_DIR/ACTIVE" ]]; then
   exit 0
 fi
 
-# Find the latest archived STATE.md (by directory sort order, last = latest)
-latest_state=$(ls -1d "$PLANNING_DIR"/milestones/*/STATE.md 2>/dev/null | tail -1)
+# Find the latest archived STATE.md (glob loop avoids pipefail on empty match)
+latest_state=""
+for f in "$PLANNING_DIR"/milestones/*/STATE.md; do
+  [ -f "$f" ] && latest_state="$f"
+done
 
 if [[ -z "$latest_state" ]]; then
   exit 0

@@ -24,6 +24,23 @@ STARTED=$(date +%Y-%m-%d)
 # Ensure parent directory exists
 mkdir -p "$(dirname "$OUTPUT_PATH")"
 
+# Preserve existing project-level sections if output file already exists
+# (e.g., carried forward from a prior milestone by persist-state-after-ship.sh)
+EXISTING_TODOS=""
+EXISTING_DECISIONS=""
+if [[ -f "$OUTPUT_PATH" ]]; then
+  EXISTING_TODOS=$(awk '
+    /^## Todos[[:space:]]*$/ { found=1; next }
+    found && /^## / { exit }
+    found { print }
+  ' "$OUTPUT_PATH")
+  EXISTING_DECISIONS=$(awk '
+    /^## (Key )?Decisions[[:space:]]*$/ { found=1; next }
+    found && /^## / { exit }
+    found { print }
+  ' "$OUTPUT_PATH")
+fi
+
 {
   echo "# VBW State"
   echo ""
@@ -46,12 +63,20 @@ mkdir -p "$(dirname "$OUTPUT_PATH")"
 
   echo ""
   echo "## Key Decisions"
-  echo "| Decision | Date | Rationale |"
-  echo "|----------|------|-----------|"
-  echo "| _(No decisions yet)_ | | |"
+  if [[ -n "$EXISTING_DECISIONS" ]]; then
+    echo "$EXISTING_DECISIONS"
+  else
+    echo "| Decision | Date | Rationale |"
+    echo "|----------|------|-----------|"
+    echo "| _(No decisions yet)_ | | |"
+  fi
   echo ""
   echo "## Todos"
-  echo "None."
+  if [[ -n "$EXISTING_TODOS" ]]; then
+    echo "$EXISTING_TODOS"
+  else
+    echo "None."
+  fi
   echo ""
   echo "## Recent Activity"
   echo "- ${STARTED}: Created ${MILESTONE_NAME} milestone (${PHASE_COUNT} phases)"

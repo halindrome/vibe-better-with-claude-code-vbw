@@ -287,3 +287,196 @@ EOF
   # Should use the latest milestone's STATE.md (by directory sort order)
   grep -q "## Todos" .vbw-planning/STATE.md
 }
+
+# --- Finding 11: Additional edge-case coverage ---
+
+# Finding 1/10: "## Key Decisions" heading variant (bootstrap-state.sh uses this)
+@test "persist script handles '## Key Decisions' heading" {
+  cd "$TEST_TEMP_DIR"
+  mkdir -p .vbw-planning/milestones/m1
+  cat > ".vbw-planning/milestones/m1/STATE.md" <<'EOF'
+# State
+
+**Project:** Key Dec Project
+
+## Current Phase
+Phase: 1 of 1
+Status: complete
+
+## Key Decisions
+| Decision | Date | Rationale |
+|----------|------|-----------|
+| Use REST over GraphQL | 2026-02-14 | Simpler for MVP |
+
+## Todos
+- Write changelog (added 2026-02-14)
+
+## Blockers
+None
+
+## Activity Log
+- 2026-02-14: Phase 1 built
+EOF
+
+  run bash "$SCRIPTS_DIR/persist-state-after-ship.sh" \
+    .vbw-planning/milestones/m1/STATE.md .vbw-planning/STATE.md "Key Dec Project"
+  [ "$status" -eq 0 ]
+
+  [ -f .vbw-planning/STATE.md ]
+  # Should preserve either Decisions or Key Decisions heading
+  grep -q "Decisions" .vbw-planning/STATE.md
+  grep -q "Use REST over GraphQL" .vbw-planning/STATE.md
+  # Should still have todos
+  grep -q "Write changelog" .vbw-planning/STATE.md
+  # Should NOT have milestone sections
+  ! grep -q "## Current Phase" .vbw-planning/STATE.md
+  ! grep -q "## Activity Log" .vbw-planning/STATE.md
+}
+
+# Finding 3: Trailing whitespace on headings
+@test "persist script handles trailing whitespace on section headings" {
+  cd "$TEST_TEMP_DIR"
+  mkdir -p .vbw-planning/milestones/m1
+  # Create STATE.md with trailing spaces/tabs on headings
+  printf '# State\n\n**Project:** Whitespace Project\n\n## Current Phase\nPhase: 1 of 1\nStatus: complete\n\n## Todos \t \n- Trailing space todo (added 2026-02-14)\n\n## Blockers  \nNone\n\n## Activity Log\n- 2026-02-14: Done\n' \
+    > ".vbw-planning/milestones/m1/STATE.md"
+
+  run bash "$SCRIPTS_DIR/persist-state-after-ship.sh" \
+    .vbw-planning/milestones/m1/STATE.md .vbw-planning/STATE.md "Whitespace Project"
+  [ "$status" -eq 0 ]
+
+  [ -f .vbw-planning/STATE.md ]
+  grep -q "Trailing space todo" .vbw-planning/STATE.md
+  grep -q "## Blockers" .vbw-planning/STATE.md
+}
+
+# Finding 5: migrate-orphaned-state.sh with milestones dir but no STATE.md files inside
+@test "migration exits cleanly when milestones dir exists but contains no STATE.md" {
+  cd "$TEST_TEMP_DIR"
+  mkdir -p .vbw-planning/milestones/empty-milestone
+  # No STATE.md inside the milestone dir
+
+  run bash "$SCRIPTS_DIR/migrate-orphaned-state.sh" .vbw-planning
+  [ "$status" -eq 0 ]
+
+  # Should not create root STATE.md
+  [ ! -f .vbw-planning/STATE.md ]
+}
+
+# Finding 7: bootstrap-state.sh preserves existing Todos across re-bootstrap
+@test "bootstrap preserves existing todos from prior milestone" {
+  cd "$TEST_TEMP_DIR"
+  # Simulate a persisted root STATE.md with carried-forward todos
+  cat > "$TEST_TEMP_DIR/.vbw-planning/STATE.md" <<'EOF'
+# State
+
+**Project:** Carry Forward
+
+## Decisions
+- Use SwiftUI
+
+## Todos
+- Fix auth regression (added 2026-02-10)
+- [HIGH] API migration (added 2026-02-11)
+
+## Blockers
+None
+EOF
+
+  # Bootstrap a new milestone — should carry forward existing todos
+  run bash "$SCRIPTS_DIR/bootstrap/bootstrap-state.sh" \
+    "$TEST_TEMP_DIR/.vbw-planning/STATE.md" "Carry Forward" "New Milestone" 2
+  [ "$status" -eq 0 ]
+
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/STATE.md" ]
+  # Existing todos should survive
+  grep -q "Fix auth regression" "$TEST_TEMP_DIR/.vbw-planning/STATE.md"
+  grep -q "API migration" "$TEST_TEMP_DIR/.vbw-planning/STATE.md"
+  # New milestone metadata should be present
+  grep -q "New Milestone" "$TEST_TEMP_DIR/.vbw-planning/STATE.md"
+  grep -q "Phase 1" "$TEST_TEMP_DIR/.vbw-planning/STATE.md"
+}
+
+# Finding 7: bootstrap-state.sh preserves existing Key Decisions
+@test "bootstrap preserves existing decisions from prior milestone" {
+  cd "$TEST_TEMP_DIR"
+  cat > "$TEST_TEMP_DIR/.vbw-planning/STATE.md" <<'EOF'
+# State
+
+**Project:** Decisions Test
+
+## Key Decisions
+| Decision | Date | Rationale |
+|----------|------|-----------|
+| REST API | 2026-02-10 | Simpler |
+
+## Todos
+None.
+
+## Blockers
+None
+EOF
+
+  run bash "$SCRIPTS_DIR/bootstrap/bootstrap-state.sh" \
+    "$TEST_TEMP_DIR/.vbw-planning/STATE.md" "Decisions Test" "Milestone 2" 3
+  [ "$status" -eq 0 ]
+
+  # Existing decisions should survive (under whatever heading bootstrap uses)
+  grep -q "REST API" "$TEST_TEMP_DIR/.vbw-planning/STATE.md"
+  grep -q "Simpler" "$TEST_TEMP_DIR/.vbw-planning/STATE.md"
+}
+
+# Finding 7: fresh bootstrap (no prior STATE.md) uses defaults
+@test "bootstrap creates default todos and decisions when no prior state exists" {
+  cd "$TEST_TEMP_DIR"
+  # No existing STATE.md
+
+  run bash "$SCRIPTS_DIR/bootstrap/bootstrap-state.sh" \
+    "$TEST_TEMP_DIR/.vbw-planning/STATE.md" "Fresh Project" "First Milestone" 2
+  [ "$status" -eq 0 ]
+
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/STATE.md" ]
+  grep -q "## Key Decisions" "$TEST_TEMP_DIR/.vbw-planning/STATE.md"
+  grep -q "No decisions yet" "$TEST_TEMP_DIR/.vbw-planning/STATE.md"
+  grep -q "## Todos" "$TEST_TEMP_DIR/.vbw-planning/STATE.md"
+  grep -q "None." "$TEST_TEMP_DIR/.vbw-planning/STATE.md"
+}
+
+# Finding 6: list-todos prefers root STATE.md even when ACTIVE points elsewhere
+@test "list-todos reads from root STATE.md when both root and ACTIVE exist" {
+  cd "$TEST_TEMP_DIR"
+  # Root STATE.md with project-level todos
+  cat > ".vbw-planning/STATE.md" <<'EOF'
+# State
+
+**Project:** Split Brain Test
+
+## Todos
+- Root todo item (added 2026-02-15)
+
+## Blockers
+None
+EOF
+
+  # ACTIVE milestone with different todos
+  mkdir -p .vbw-planning/milestones/m2
+  cat > ".vbw-planning/milestones/m2/STATE.md" <<'EOF'
+# State
+
+**Project:** Split Brain Test
+
+## Todos
+- Milestone-scoped todo (added 2026-02-16)
+
+## Blockers
+None
+EOF
+  echo "m2" > .vbw-planning/ACTIVE
+
+  run bash "$SCRIPTS_DIR/list-todos.sh"
+  [ "$status" -eq 0 ]
+
+  # Should find the root todo, not the milestone one
+  echo "$output" | grep -q "Root todo item"
+  ! echo "$output" | grep -q "Milestone-scoped todo"
+}
