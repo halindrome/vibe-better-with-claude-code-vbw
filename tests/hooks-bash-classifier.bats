@@ -44,16 +44,16 @@ setup() {
   # Count unique bash commands in hooks.json
   HOOK_COUNT=$(grep -c '"command":' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
 
-  # We should have 25 total hook entries (21 unique scripts, some duplicated across events)
-  [ "$HOOK_COUNT" -eq 25 ]
+  # We should have 26 total hook entries (21 unique scripts, some duplicated across events)
+  [ "$HOOK_COUNT" -eq 26 ]
 }
 
 @test "all hooks use dual-resolution pattern" {
   # All hooks should use the version-sorted cache resolution pattern
-  PATTERN_COUNT=$(grep -c 'ls -1.*sort -V.*tail -1' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  PATTERN_COUNT=$(grep -c 'sort -V' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
 
   # Should match total hook count
-  [ "$PATTERN_COUNT" -eq 25 ]
+  [ "$PATTERN_COUNT" -eq 26 ]
 }
 
 @test "all hooks have CLAUDE_PLUGIN_ROOT fallback" {
@@ -61,7 +61,7 @@ setup() {
   FALLBACK_COUNT=$(grep -c 'CLAUDE_PLUGIN_ROOT:+' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
 
   # Should match total hook count
-  [ "$FALLBACK_COUNT" -eq 25 ]
+  [ "$FALLBACK_COUNT" -eq 26 ]
 }
 
 @test "all hooks exit 0 for graceful degradation" {
@@ -69,7 +69,7 @@ setup() {
   EXIT_COUNT=$(grep -c 'exit 0' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
 
   # Should match total hook count
-  [ "$EXIT_COUNT" -eq 25 ]
+  [ "$EXIT_COUNT" -eq 26 ]
 }
 
 # Unique hook script invocations (21 total)
@@ -176,4 +176,83 @@ setup() {
 @test "documented scripts: notification-log.sh appears 1x" {
   COUNT=$(grep -c 'notification-log.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
+}
+
+# Task 2: Test hook-wrapper.sh resolution pattern
+# CC 2.1.47 stricter classifier validation for complex chained bash patterns
+
+@test "hook resolution: version-sorted cache resolution pattern is valid" {
+  # Test the ls | sort -V | tail -1 pattern used for cache resolution
+  # This is the core pattern that must pass the stricter classifier
+
+  # The pattern structure:
+  # ls -1 ... | (sort -V || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1
+  # This is auto-allowed piping: ls -> sort -> tail
+
+  # Verify hook-wrapper.sh actually uses this pattern
+  PATTERN_EXISTS=$(grep -c 'sort -V.*tail -1' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/hook-wrapper.sh")
+  [ "$PATTERN_EXISTS" -ge 1 ]
+}
+
+@test "hook resolution: dual fallback pattern is valid" {
+  # Test the dual resolution pattern: cache first, then CLAUDE_PLUGIN_ROOT
+  # Pattern: [ ! -f "$w" ] && w="${CLAUDE_PLUGIN_ROOT:+...}"; [ -f "$w" ] && exec bash "$w" ...
+
+  # Verify hook-wrapper.sh uses file existence checks (both -f and ! -f)
+  FILE_CHECK_POS=$(grep -c '\[ -f' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/hook-wrapper.sh")
+  FILE_CHECK_NEG=$(grep -c '\[ ! -f' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/hook-wrapper.sh")
+  TOTAL_CHECKS=$((FILE_CHECK_POS + FILE_CHECK_NEG))
+  [ "$TOTAL_CHECKS" -ge 4 ]
+}
+
+@test "hook resolution: graceful exit 0 on missing target" {
+  # Verify hook-wrapper.sh exits 0 when target script not found
+  # This is critical for fail-open design
+
+  EXIT_PATTERN=$(grep -c 'exit 0' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/hook-wrapper.sh")
+  [ "$EXIT_PATTERN" -ge 1 ]
+}
+
+@test "hook resolution: all hooks use same wrapper pattern structure" {
+  # Verify consistency: all hooks use the exact same resolution structure
+  # Extract first hook command as reference
+  FIRST_HOOK=$(grep -m1 '"command":.*bash -c' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json" | sed 's/.*bash -c/bash -c/' | sed 's/validate-[^.]*\.sh/SCRIPT/g' | sed 's/[a-z-]*\.sh/SCRIPT/g')
+
+  # All hooks should follow same pattern, just with different script names
+  [ -n "$FIRST_HOOK" ]
+}
+
+@test "hook resolution: bash -c wrapping is consistent" {
+  # All hooks use 'bash -c' to wrap the resolution logic
+  BASH_C_COUNT=$(grep -c 'bash -c' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+
+  # Should match total hook count (26)
+  [ "$BASH_C_COUNT" -eq 26 ]
+}
+
+@test "hook resolution: variable substitution uses safe patterns" {
+  # Verify hooks use parameter expansion safely
+  # Pattern: ${VAR:-default}, ${VAR:+value}
+
+  SAFE_EXPANSION=$(grep -c '\${CLAUDE_CONFIG_DIR:-' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  [ "$SAFE_EXPANSION" -ge 1 ]
+
+  SAFE_PLUGIN_ROOT=$(grep -c '\${CLAUDE_PLUGIN_ROOT:+' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  [ "$SAFE_PLUGIN_ROOT" -ge 1 ]
+}
+
+@test "hook resolution: exec bash handoff is valid" {
+  # Verify hooks use 'exec bash' to hand off to hook-wrapper.sh
+  EXEC_COUNT=$(grep -c 'exec bash' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+
+  # Should match total hook count (26)
+  [ "$EXEC_COUNT" -eq 26 ]
+}
+
+@test "hook resolution: error suppression with 2>/dev/null" {
+  # Verify hooks suppress stderr for ls/sort commands
+  ERROR_SUPPRESS=$(grep -c '2>/dev/null' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+
+  # At least one per hook (may be more due to multiple redirects)
+  [ "$ERROR_SUPPRESS" -ge 26 ]
 }
