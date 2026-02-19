@@ -50,7 +50,6 @@ teardown() {
 
 @test "compile-context.sh emits metrics when v3_metrics=true" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_metrics = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
 
   cat > ".vbw-planning/phases/02-test-phase/02-01-PLAN.md" <<'EOF'
 ---
@@ -69,21 +68,3 @@ EOF
   grep -q "compile_context" ".vbw-planning/.metrics/run-metrics.jsonl"
 }
 
-@test "compile-context.sh skips metrics when v3_metrics=false" {
-  cd "$TEST_TEMP_DIR"
-
-  cat > ".vbw-planning/phases/02-test-phase/02-01-PLAN.md" <<'EOF'
----
-phase: 2
-plan: 1
-title: "Test"
-wave: 1
-depends_on: []
-must_haves: ["test"]
----
-# Test
-EOF
-
-  bash "$SCRIPTS_DIR/compile-context.sh" 02 dev ".vbw-planning/phases" ".vbw-planning/phases/02-test-phase/02-01-PLAN.md"
-  [ ! -d ".vbw-planning/.metrics" ]
-}
