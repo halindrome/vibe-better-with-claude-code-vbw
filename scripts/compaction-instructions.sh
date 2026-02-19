@@ -22,6 +22,15 @@ case "$AGENT_NAME" in
     ;;
   *dev*)
     PRIORITIES="Preserve commit hashes, file paths modified, deviation decisions, current task number. After compaction, if .vbw-planning/codebase/META.md exists, re-read CONVENTIONS.md, PATTERNS.md, STRUCTURE.md, and DEPENDENCIES.md (whichever exist) from .vbw-planning/codebase/"
+    # Inject worktree path if agent has a mapping
+    AGENT_NAME_SHORT=$(echo "$AGENT_NAME" | sed 's/.*vbw-//')
+    WORKTREE_MAP_FILE=".vbw-planning/.agent-worktrees/${AGENT_NAME_SHORT}.json"
+    if [ -f "$WORKTREE_MAP_FILE" ]; then
+      WORKTREE_PATH=$(jq -r '.worktree_path // ""' "$WORKTREE_MAP_FILE" 2>/dev/null) || WORKTREE_PATH=""
+      if [ -n "$WORKTREE_PATH" ]; then
+        PRIORITIES="$PRIORITIES CRITICAL: Your working directory is ${WORKTREE_PATH}. All file operations MUST use this path."
+      fi
+    fi
     ;;
   *qa*)
     PRIORITIES="Preserve pass/fail status, gap descriptions, verification results. After compaction, if .vbw-planning/codebase/META.md exists, re-read TESTING.md, CONCERNS.md, and ARCHITECTURE.md (whichever exist) from .vbw-planning/codebase/"
