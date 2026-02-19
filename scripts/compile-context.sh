@@ -91,7 +91,7 @@ if [ "$PHASE_REQS" != "Not available" ] && [ -n "$PHASE_REQS" ]; then
 fi
 
 # --- V3: Context cache check (REQ-07) ---
-V3_CACHE_ENABLED=false
+V3_CACHE_ENABLED=true
 CACHE_HASH=""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
@@ -101,7 +101,6 @@ V3_METRICS_ENABLED=false
 START_TIME=""
 
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V3_CACHE_ENABLED=$(jq -r '.v3_context_cache // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
   V3_DELTA_ENABLED=$(jq -r '.v3_delta_context // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
   V3_METRICS_ENABLED=$(jq -r '.v3_metrics // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
 fi

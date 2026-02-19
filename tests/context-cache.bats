@@ -85,12 +85,12 @@ teardown() {
   [ "$HASH1" != "$HASH2" ]
 }
 
-@test "compile-context.sh skips cache when v3_context_cache=false" {
+@test "compile-context.sh always uses cache (v3_context_cache graduated)" {
   cd "$TEST_TEMP_DIR"
   run bash "$SCRIPTS_DIR/compile-context.sh" 02 dev ".vbw-planning/phases" ".vbw-planning/phases/02-test-phase/02-01-PLAN.md"
   [ "$status" -eq 0 ]
-  # No cache dir should be created
-  [ ! -d "$TEST_TEMP_DIR/.vbw-planning/.cache" ]
+  # Cache dir should always be created now that flag is graduated
+  [ -d "$TEST_TEMP_DIR/.vbw-planning/.cache" ]
 }
 
 @test "compile-context.sh uses cache when v3_context_cache=true" {
