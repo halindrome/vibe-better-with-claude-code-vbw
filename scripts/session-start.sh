@@ -98,6 +98,13 @@ if [ -d "$PLANNING_DIR" ] && [ ! -f "$PLANNING_DIR/.todo-flat-migrated" ]; then
   fi
 fi
 
+# --- Migrate orphaned STATE.md for brownfield post-ship repos (one-time) ---
+# If a project shipped a milestone before this fix, STATE.md lives only in
+# milestones/{slug}/ with no root copy. Recover project-level sections.
+if [ -d "$PLANNING_DIR" ] && [ ! -f "$PLANNING_DIR/STATE.md" ] && [ ! -f "$PLANNING_DIR/ACTIVE" ]; then
+  bash "$SCRIPT_DIR/migrate-orphaned-state.sh" "$PLANNING_DIR" 2>/dev/null || true
+fi
+
 # --- Session-level config cache (performance optimization, REQ-01 #9) ---
 # Write commonly-read config flags to a flat file for fast sourcing.
 # Invalidation: overwritten every session start. Scripts can opt-in:
