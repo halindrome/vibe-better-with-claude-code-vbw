@@ -26,27 +26,26 @@ EOF
 
   run_migration
 
-  # Verify all 23 flags were added
+  # Verify graduated flags are NOT present
+  run jq -r 'has("v3_delta_context") or has("v3_context_cache") or has("v3_plan_research_persist") or has("v3_metrics") or has("v3_smart_routing") or has("v3_event_log") or has("v3_schema_validation") or has("v3_snapshot_resume")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "false" ]
+
+  # Verify still-live flags are present
   run jq '[
-    has("context_compiler"), has("v3_delta_context"), has("v3_context_cache"),
-    has("v3_plan_research_persist"), has("v3_metrics"), has("v3_contract_lite"),
-    has("v3_lock_lite"), has("v3_validation_gates"), has("v3_smart_routing"),
-    has("v3_event_log"), has("v3_schema_validation"), has("v3_snapshot_resume"),
-    has("v3_lease_locks"), has("v3_event_recovery"), has("v3_monorepo_routing"),
-    has("v2_hard_contracts"), has("v2_hard_gates"), has("v2_typed_protocol"),
-    has("v2_role_isolation"), has("v2_two_phase_completion"), has("v2_token_budgets"),
+    has("context_compiler"), has("v2_token_budgets"),
     has("model_overrides"), has("prefer_teams")
   ] | map(select(.)) | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "23" ]
+  [ "$output" = "4" ]
 
   # Verify context_compiler defaults to true
   run jq -r '.context_compiler' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "true" ]
 
-  # Verify v3 flags default to false
-  run jq -r '.v3_delta_context' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  # Verify v2_token_budgets defaults to false
+  run jq -r '.v2_token_budgets' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "false" ]
 }
@@ -148,16 +147,15 @@ EOF
 }
 
 @test "EXPECTED_FLAG_COUNT matches defaults.json" {
-  # Count actual v3/v2 flags in defaults.json
-  # Flags: v3_*, v2_*, context_compiler, model_overrides, prefer_teams
-  DEFAULTS_COUNT=$(jq '[keys[] | select(startswith("v3_") or startswith("v2_") or . == "context_compiler" or . == "model_overrides" or . == "prefer_teams")] | length' "$CONFIG_DIR/defaults.json")
+  # Count all keys in defaults.json (these are the keys migrate-config adds to a fresh config)
+  DEFAULTS_COUNT=$(jq 'keys | length' "$CONFIG_DIR/defaults.json")
 
   # Extract EXPECTED_FLAG_COUNT from session-start.sh
   SCRIPT_COUNT=$(grep 'EXPECTED_FLAG_COUNT=' "$SCRIPTS_DIR/session-start.sh" | grep -oE '[0-9]+' | head -1)
 
   # Debug output for test failure
   if [ "$DEFAULTS_COUNT" != "$SCRIPT_COUNT" ]; then
-    echo "MISMATCH: defaults.json has $DEFAULTS_COUNT flags, session-start.sh expects $SCRIPT_COUNT"
+    echo "MISMATCH: defaults.json has $DEFAULTS_COUNT keys, session-start.sh expects $SCRIPT_COUNT"
   fi
 
   [ "$DEFAULTS_COUNT" = "$SCRIPT_COUNT" ]
@@ -364,8 +362,8 @@ EOF
   [ "$output" = "$EXPECTED_ADDED" ]
 }
 
-@test "EXPECTED_FLAG_COUNT is 23 after prefer_teams addition" {
-  # Verify session-start.sh has EXPECTED_FLAG_COUNT=23
+@test "EXPECTED_FLAG_COUNT is 22 after flag graduation" {
+  # Verify session-start.sh has EXPECTED_FLAG_COUNT=22 (updated from 23 after v3 flag graduation)
   SCRIPT_COUNT=$(grep 'EXPECTED_FLAG_COUNT=' "$SCRIPTS_DIR/session-start.sh" | grep -oE '[0-9]+' | head -1)
-  [ "$SCRIPT_COUNT" = "23" ]
+  [ "$SCRIPT_COUNT" = "22" ]
 }
