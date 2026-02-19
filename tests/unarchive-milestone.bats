@@ -194,3 +194,31 @@ EOF
     ".vbw-planning/milestones/nonexistent" ".vbw-planning"
   [ "$status" -eq 1 ]
 }
+
+@test "merges table-formatted decisions with list-formatted decisions" {
+  create_archived_milestone "foundation"
+
+  # Root state with table-formatted decisions
+  cat > ".vbw-planning/STATE.md" <<'EOF'
+# VBW State
+
+**Project:** Test Project
+
+## Key Decisions
+| Use REST API for backend | 2026-02-15 | Performance requirements |
+| Add caching layer | 2026-02-16 | Reduce latency |
+
+## Todos
+None.
+EOF
+
+  run bash "$SCRIPTS_DIR/unarchive-milestone.sh" \
+    ".vbw-planning/milestones/foundation" ".vbw-planning"
+  [ "$status" -eq 0 ]
+
+  # Table-format "Add caching layer" from root should survive merge
+  grep -q 'caching layer' ".vbw-planning/STATE.md"
+
+  # List-format "PostgreSQL for data store" from archive should survive
+  grep -q 'PostgreSQL for data store' ".vbw-planning/STATE.md"
+}

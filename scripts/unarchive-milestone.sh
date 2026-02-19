@@ -27,7 +27,7 @@ fi
 
 # --- Extract section items from STATE.md ---
 # Usage: extract_section_items FILE SECTION_HEADER
-# Returns one item per line (with leading "- ")
+# Returns one item per line (list items "- " and table rows "| ")
 extract_section_items() {
   local file="$1" header="$2"
   [ -f "$file" ] || return 0
@@ -35,13 +35,15 @@ extract_section_items() {
     $0 == hdr { found=1; next }
     found && /^## / { exit }
     found && /^- / { print }
+    found && /^\| / && !/^\| *[-:]/ && !/^\| *Decision/ { print }
   ' "$file"
 }
 
 # --- Normalize a line for dedup comparison ---
-# Strips leading "- ", priority tags, date tags, and extra whitespace
+# Strips leading "- ", "| ", priority tags, date tags, table cell delimiters, and extra whitespace
 normalize_item() {
-  echo "$1" | sed 's/^- //' | sed 's/^\[HIGH\] //' | sed 's/^\[low\] //' | \
+  echo "$1" | sed 's/^- //' | sed 's/^| //' | sed 's/ |$//g' | sed 's/ | / /g' | \
+    sed 's/^\[HIGH\] //' | sed 's/^\[low\] //' | \
     sed 's/ *(added [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\})$//' | \
     sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]'
 }

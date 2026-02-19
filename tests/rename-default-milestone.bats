@@ -68,3 +68,31 @@ EOF
   # Should still rename (fallback slug)
   [ ! -d ".vbw-planning/milestones/default" ]
 }
+
+@test "handles collision when derived slug already exists" {
+  mkdir -p .vbw-planning/milestones/default/phases/01-setup
+  cat > .vbw-planning/milestones/default/SHIPPED.md <<'EOF'
+# Shipped
+
+## Phases
+- Phase 1: Setup
+EOF
+
+  # Pre-create destination with same derived slug to force collision
+  mkdir -p .vbw-planning/milestones/setup
+
+  run bash "$SCRIPTS_DIR/rename-default-milestone.sh" ".vbw-planning"
+  [ "$status" -eq 0 ]
+
+  # default/ should be gone
+  [ ! -d ".vbw-planning/milestones/default" ]
+
+  # Original collision target should still be a directory (not overwritten)
+  [ -d ".vbw-planning/milestones/setup" ]
+
+  # A suffixed variant should exist (setup-1, setup-2, etc.)
+  local suffixed
+  suffixed=$(ls -d .vbw-planning/milestones/setup-* 2>/dev/null | head -1)
+  [ -n "$suffixed" ]
+  [ -d "$suffixed/phases/01-setup" ]
+}
