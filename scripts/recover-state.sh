@@ -19,12 +19,6 @@ PLANNING_DIR=".vbw-planning"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 EVENTS_FILE="${PLANNING_DIR}/.events/event-log.jsonl"
 
-# Check feature flag
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r '.v3_event_recovery // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  [ "$ENABLED" != "true" ] && { echo "{}"; exit 0; }
-fi
-
 # Need jq for JSON processing
 command -v jq &>/dev/null || { echo "{}"; exit 0; }
 

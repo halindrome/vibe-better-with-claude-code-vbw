@@ -128,7 +128,6 @@ if [ -d "$PLANNING_DIR" ] && [ -f "$PLANNING_DIR/config.json" ] && command -v jq
     "VBW_V3_SCHEMA_VALIDATION=\(.v3_schema_validation // false)",
     "VBW_V3_SNAPSHOT_RESUME=\(.v3_snapshot_resume // false)",
     "VBW_V3_LEASE_LOCKS=\(.v3_lease_locks // false)",
-    "VBW_V3_EVENT_RECOVERY=\(.v3_event_recovery // false)",
     "VBW_V3_MONOREPO_ROUTING=\(.v3_monorepo_routing // false)",
     "VBW_V2_HARD_CONTRACTS=\(.v2_hard_contracts // false)",
     "VBW_V2_HARD_GATES=\(.v2_hard_gates // false)",
