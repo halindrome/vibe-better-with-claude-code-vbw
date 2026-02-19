@@ -404,6 +404,12 @@ if [ -d "$PLANNING_DIR" ] && [ -f "$SCRIPT_DIR/clean-stale-teams.sh" ]; then
   bash "$SCRIPT_DIR/clean-stale-teams.sh" 2>/dev/null || true
 fi
 
+# --- Stale .agent-last-words Cleanup ---
+# Remove crash recovery files older than 7 days to prevent accumulation
+if [ -d "$PLANNING_DIR/.agent-last-words" ]; then
+  find "$PLANNING_DIR/.agent-last-words" -name "*.txt" -type f -mtime +7 -delete 2>/dev/null || true
+fi
+
 # --- tmux Detach Watchdog ---
 # Launch watchdog when in tmux to cleanup orphaned agents on detach.
 # Watchdog runs in background and monitors for session detachment.
