@@ -23,14 +23,8 @@ LOCKS_DIR="${PLANNING_DIR}/.locks"
 LOCK_FILE="${LOCKS_DIR}/${TASK_ID}.lock"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Check feature flag — falls back to lock-lite check if lease flag is off
-HARD_GATES=false
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  LEASE_ENABLED=$(jq -r '.v3_lease_locks // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  LOCK_ENABLED=$(jq -r '.v3_lock_lite // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  HARD_GATES=$(jq -r '.v2_hard_gates // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  [ "$LEASE_ENABLED" != "true" ] && [ "$LOCK_ENABLED" != "true" ] && exit 0
-fi
+# v2_hard_gates graduated (always true)
+HARD_GATES=true
 
 # Parse --ttl=N from args, collect remaining as files
 DEFAULT_TTL=300

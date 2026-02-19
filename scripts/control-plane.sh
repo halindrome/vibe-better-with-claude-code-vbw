@@ -65,18 +65,14 @@ done
 
 # --- Config / flag resolution ---
 V3_CONTRACT_LITE=false
-V3_LOCK_LITE=false
-V3_LEASE_LOCKS=false
 CONTEXT_COMPILER=false
 
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   V3_CONTRACT_LITE=$(jq -r '.v3_contract_lite // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  V3_LOCK_LITE=$(jq -r '.v3_lock_lite // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  V3_LEASE_LOCKS=$(jq -r '.v3_lease_locks // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
   CONTEXT_COMPILER=$(jq -r 'if .context_compiler == null then true else .context_compiler end' "$CONFIG_PATH" 2>/dev/null || echo "true")
 fi
 
-# V2 hard contracts and gates are now always enabled (graduated)
+# V2 hard contracts and gates, and v3_lease_locks are now always enabled (graduated)
 V2_HARD_CONTRACTS=true
 V2_HARD_GATES=true
 
@@ -86,16 +82,16 @@ V2_TOKEN_BUDGETS=true
 
 # --- No-op check (REQ-C1) ---
 # If all flags relevant to the chosen action are false, exit 0 immediately.
-# Note: v2_hard_contracts and v2_hard_gates are now always-on (graduated)
+# Note: v2_hard_contracts, v2_hard_gates, and v3_lease_locks are now always-on (graduated)
 check_noop() {
   case "$ACTION" in
     pre-task)
-      # Contract and gates are always-on, so only check locking
-      [ "$V3_LOCK_LITE" != "true" ] && [ "$V3_LEASE_LOCKS" != "true" ] && return 1
+      # Contract, gates, and locking are always-on
+      return 1
       ;;
     post-task)
-      # Gates are always-on, so only check locking
-      [ "$V3_LOCK_LITE" != "true" ] && [ "$V3_LEASE_LOCKS" != "true" ] && return 1
+      # Gates and locking are always-on
+      return 1
       ;;
     compile)
       [ "$CONTEXT_COMPILER" != "true" ] && return 0
@@ -162,37 +158,21 @@ step_contract() {
 }
 
 step_lease_acquire() {
-  if [ "$V3_LEASE_LOCKS" != "true" ] && [ "$V3_LOCK_LITE" != "true" ]; then
-    record_step "lease_acquire" "skip" "no lock flags enabled"
-    return 0
-  fi
   local tid="${TASK_ID:-${PHASE}-${PLAN}-T${TASK}}"
   local files_args=""
   if [ -n "$CLAIMED_FILES" ]; then
     files_args=$(echo "$CLAIMED_FILES" | tr ',' ' ')
   fi
   local result
-  if [ "$V3_LEASE_LOCKS" = "true" ]; then
-    result=$(bash "$SCRIPT_DIR/lease-lock.sh" acquire "$tid" --ttl=300 $files_args 2>/dev/null) || {
-      record_step "lease_acquire" "fail" "lease-lock.sh error"
-      echo "control-plane: lease acquisition failed" >&2
-      return 0
-    }
-  else
-    result=$(bash "$SCRIPT_DIR/lock-lite.sh" acquire "$tid" $files_args 2>/dev/null) || {
-      record_step "lease_acquire" "fail" "lock-lite.sh error"
-      echo "control-plane: lock acquisition failed" >&2
-      return 0
-    }
-  fi
+  result=$(bash "$SCRIPT_DIR/lease-lock.sh" acquire "$tid" --ttl=300 $files_args 2>/dev/null) || {
+    record_step "lease_acquire" "fail" "lease-lock.sh error"
+    echo "control-plane: lease acquisition failed" >&2
+    return 0
+  }
   if [ "$result" = "conflict_blocked" ]; then
     # Retry once after 2s delay (per plan: auto-repair on lease conflict)
     sleep 2
-    if [ "$V3_LEASE_LOCKS" = "true" ]; then
-      result=$(bash "$SCRIPT_DIR/lease-lock.sh" acquire "$tid" --ttl=300 $files_args 2>/dev/null) || result="error"
-    else
-      result=$(bash "$SCRIPT_DIR/lock-lite.sh" acquire "$tid" $files_args 2>/dev/null) || result="error"
-    fi
+    result=$(bash "$SCRIPT_DIR/lease-lock.sh" acquire "$tid" --ttl=300 $files_args 2>/dev/null) || result="error"
     if [ "$result" = "conflict_blocked" ] || [ "$result" = "error" ]; then
       record_step "lease_acquire" "fail" "conflict blocked after retry"
       return 1
@@ -235,17 +215,9 @@ step_gate() {
 }
 
 step_lease_release() {
-  if [ "$V3_LEASE_LOCKS" != "true" ] && [ "$V3_LOCK_LITE" != "true" ]; then
-    record_step "lease_release" "skip" "no lock flags enabled"
-    return 0
-  fi
   local tid="${TASK_ID:-${PHASE}-${PLAN}-T${TASK}}"
   local result
-  if [ "$V3_LEASE_LOCKS" = "true" ]; then
-    result=$(bash "$SCRIPT_DIR/lease-lock.sh" release "$tid" 2>/dev/null) || result="error"
-  else
-    result=$(bash "$SCRIPT_DIR/lock-lite.sh" release "$tid" 2>/dev/null) || result="error"
-  fi
+  result=$(bash "$SCRIPT_DIR/lease-lock.sh" release "$tid" 2>/dev/null) || result="error"
   record_step "lease_release" "pass" "$result"
   return 0
 }

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -u
 
+# DEPRECATED: Replaced by lease-lock.sh. Use v3_lease_locks (now unconditional).
+# This script remains for backwards compatibility but is no longer actively used.
+#
 # lock-lite.sh <action> <task-id> [claimed-files...]
 # Lightweight file ownership locks for multi-agent conflict prevention.
 # action: acquire (create lock), release (remove lock), check (detect conflicts)
@@ -21,12 +24,6 @@ CONFIG_PATH="${PLANNING_DIR}/config.json"
 LOCKS_DIR="${PLANNING_DIR}/.locks"
 LOCK_FILE="${LOCKS_DIR}/${TASK_ID}.lock"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Check feature flag
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r '.v3_lock_lite // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  [ "$ENABLED" != "true" ] && exit 0
-fi
 
 emit_conflict() {
   local conflicting_task="$1"
