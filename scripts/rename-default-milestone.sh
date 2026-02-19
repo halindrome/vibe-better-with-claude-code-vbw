@@ -25,26 +25,51 @@ if [[ ! -d "$DEFAULT_DIR" ]]; then
   exit 0
 fi
 
+# --- Normalize text to kebab-case slug ---
+normalize_slug() {
+  echo "$1" | tr '[:upper:]' '[:lower:]' | \
+    sed 's/[^a-z0-9 -]//g' | \
+    sed 's/  */ /g' | \
+    tr ' ' '-' | \
+    sed 's/--*/-/g' | \
+    sed 's/^-//;s/-$//'
+}
+
 # --- Derive slug from SHIPPED.md ---
 derive_slug() {
   local shipped="$DEFAULT_DIR/SHIPPED.md"
   local slug=""
 
   if [[ -f "$shipped" ]]; then
-    # Try 1: Extract phase names from "## Phases" section
-    local phases
-    phases=$(awk '/^## Phases/ { found=1; next } found && /^## / { exit } found && /^- / { gsub(/^- (Phase [0-9]+: )?/, ""); print }' "$shipped" | head -3)
-    if [[ -n "$phases" ]]; then
-      # Join phase names with hyphens
-      slug=$(echo "$phases" | tr '\n' '-' | sed 's/-$//')
+    # Try 1: Use milestone name from title (e.g., "# SHIPPED: My Milestone")
+    local title_name
+    title_name=$(sed -n 's/^# SHIPPED: *//p' "$shipped" | head -1)
+    if [[ -n "$title_name" && "$title_name" != "Default Milestone" ]]; then
+      slug=$(normalize_slug "$title_name")
     fi
 
-    # Try 2: Extract from "## What Changed" first line
+    # Try 2: Extract phase names from "## Phases" section
+    # Handles both bulleted (- Phase N: Name) and numbered (N. **Name** — desc) formats
     if [[ -z "$slug" ]]; then
-      local what_changed
-      what_changed=$(awk '/^## What Changed/ { found=1; next } found && /^## / { exit } found && /^[^[:space:]]/ { print; exit }' "$shipped")
-      if [[ -n "$what_changed" ]]; then
-        slug="$what_changed"
+      local phases
+      phases=$(awk '
+        /^## Phases/ { found=1; next }
+        found && /^## / { exit }
+        found && /^[-*] / {
+          sub(/^[-*] +(Phase [0-9]+: )?/, "")
+          sub(/ [—–-] .*/, "")
+          if (length > 0) print
+        }
+        found && /^[0-9]+\. / {
+          sub(/^[0-9]+\. +/, "")
+          gsub(/\*\*/, "")
+          sub(/ [—–-] .*/, "")
+          if (length > 0) print
+        }
+      ' "$shipped" | head -2)
+      if [[ -n "$phases" ]]; then
+        slug=$(echo "$phases" | tr '\n' ' ' | sed 's/ $//')
+        slug=$(normalize_slug "$slug")
       fi
     fi
   fi
@@ -52,9 +77,10 @@ derive_slug() {
   # Try 3: Derive from phase directory names
   if [[ -z "$slug" && -d "$DEFAULT_DIR/phases" ]]; then
     local phase_dirs
-    phase_dirs=$(ls -1 "$DEFAULT_DIR/phases/" 2>/dev/null | head -3 | sed 's/^[0-9]*-//')
+    phase_dirs=$(ls -1 "$DEFAULT_DIR/phases/" 2>/dev/null | head -2 | sed 's/^[0-9]*-//')
     if [[ -n "$phase_dirs" ]]; then
-      slug=$(echo "$phase_dirs" | tr '\n' '-' | sed 's/-$//')
+      slug=$(echo "$phase_dirs" | tr '\n' ' ' | sed 's/ $//')
+      slug=$(normalize_slug "$slug")
     fi
   fi
 
@@ -63,23 +89,33 @@ derive_slug() {
     slug="milestone-$(date +%Y%m%d)"
   fi
 
-  # Normalize to kebab-case slug
-  echo "$slug" | tr '[:upper:]' '[:lower:]' | \
-    sed 's/[^a-z0-9 -]//g' | \
-    sed 's/  */ /g' | \
-    tr ' ' '-' | \
-    sed 's/--*/-/g' | \
-    sed 's/^-//;s/-$//' | \
-    head -c 60
+  # Truncate slug portion to 50 chars
+  echo "$slug" | head -c 50 | sed 's/-$//'
 }
 
-new_slug=$(derive_slug)
+# --- Determine milestone number prefix ---
+milestone_number() {
+  local count=0
+  if [[ -d "$PLANNING_DIR/milestones" ]]; then
+    local d
+    for d in "$PLANNING_DIR/milestones"/*/; do
+      [[ -d "$d" ]] || continue
+      [[ "$(basename "$d")" == "default" ]] && continue
+      count=$((count + 1))
+    done
+  fi
+  printf "%02d" $((count + 1))
+}
+
+slug_name=$(derive_slug)
+ms_num=$(milestone_number)
 
 # Guard against empty slug
-if [[ -z "$new_slug" ]]; then
-  new_slug="milestone-$(date +%Y%m%d)"
+if [[ -z "$slug_name" ]]; then
+  slug_name="milestone-$(date +%Y%m%d)"
 fi
 
+new_slug="${ms_num}-${slug_name}"
 new_dir="$PLANNING_DIR/milestones/$new_slug"
 
 # Guard against collision — loop with counter to guarantee unique name

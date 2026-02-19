@@ -556,7 +556,12 @@ NEXT_ACTION=""
 if [ ! -f "$PLANNING_DIR/PROJECT.md" ]; then
   NEXT_ACTION="/vbw:init"
 elif [ ! -d "$PHASES_DIR" ] || [ -z "$(ls -d "$PHASES_DIR"/*/ 2>/dev/null)" ]; then
-  NEXT_ACTION="/vbw:vibe (needs scoping)"
+  # No root phases — check if milestones were shipped (post-archive state)
+  if [ "$has_shipped" = "true" ]; then
+    NEXT_ACTION="/vbw:vibe (all milestones shipped, start next milestone)"
+  else
+    NEXT_ACTION="/vbw:vibe (needs scoping)"
+  fi
 else
   # Check execution state for interrupted builds
   EXEC_STATE="$PLANNING_DIR/.execution-state.json"
