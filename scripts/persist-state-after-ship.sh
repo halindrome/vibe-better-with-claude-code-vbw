@@ -44,25 +44,28 @@ mkdir -p "$(dirname "$OUTPUT_PATH")"
 
 # Sections to preserve (project-level, survive across milestones)
 # Uses awk to extract each section by ## heading, stopping at the next ## heading.
-# Handles trailing whitespace on headings and only extracts the first occurrence.
+# Case-insensitive matching. Collects content from ALL matching headings
+# (prints heading once, merges body lines) to handle duplicate sections.
 extract_section() {
   local file="$1"
   local heading="$2"
   awk -v h="$heading" '
-    BEGIN { pat = "^## " h "[[:space:]]*$" }
-    $0 ~ pat && !done { found=1; print; next }
-    found && /^## / { found=0; done=1 }
+    BEGIN { pat = tolower(h) }
+    { low = tolower($0) }
+    low ~ ("^## " pat "[[:space:]]*$") { found=1; if (!hdr) { print $0; hdr=1 }; next }
+    found && /^## / { found=0 }
     found { print }
   ' "$file"
 }
 
 # Decisions section may use "## Decisions" (template) or "## Key Decisions"
-# (bootstrap-state.sh). Handle both, including ### Skills subsection.
+# (bootstrap-state.sh). Case-insensitive. Merges all matching occurrences.
 extract_decisions_with_skills() {
   local file="$1"
   awk '
-    /^## (Key )?Decisions[[:space:]]*$/ && !done { found=1; print; next }
-    found && /^## / { found=0; done=1 }
+    { low = tolower($0) }
+    low ~ /^## (key )?decisions[[:space:]]*$/ { found=1; if (!hdr) { print $0; hdr=1 }; next }
+    found && /^## / { found=0 }
     found { print }
   ' "$file"
 }

@@ -30,13 +30,15 @@ EXISTING_TODOS=""
 EXISTING_DECISIONS=""
 if [[ -f "$OUTPUT_PATH" ]]; then
   EXISTING_TODOS=$(awk '
-    /^## Todos[[:space:]]*$/ { found=1; next }
-    found && /^## / { exit }
+    { low = tolower($0) }
+    low ~ /^## todos[[:space:]]*$/ { found=1; next }
+    found && /^## / { found=0 }
     found { print }
   ' "$OUTPUT_PATH")
   EXISTING_DECISIONS=$(awk '
-    /^## (Key )?Decisions[[:space:]]*$/ { found=1; next }
-    found && /^## / { exit }
+    { low = tolower($0) }
+    low ~ /^## (key )?decisions[[:space:]]*$/ { found=1; next }
+    found && /^## / { found=0 }
     found { print }
   ' "$OUTPUT_PATH")
 fi

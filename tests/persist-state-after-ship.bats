@@ -518,3 +518,67 @@ EOF
   grep -q "No decisions yet" .vbw-planning/STATE.md
   grep -q "None\." .vbw-planning/STATE.md
 }
+
+# Duplicate ## Todos — second group's items should be merged into output
+@test "persist script merges content from duplicate section headings" {
+  cd "$TEST_TEMP_DIR"
+  mkdir -p .vbw-planning/milestones/m1
+  cat > ".vbw-planning/milestones/m1/STATE.md" <<'EOF'
+# State
+
+**Project:** Dup Headings
+
+## Decisions
+- decision one
+
+## Todos
+
+## Blockers
+None
+
+## Todos
+- second section todo (added 2026-02-18)
+
+## Activity Log
+- done
+EOF
+
+  run bash "$SCRIPTS_DIR/persist-state-after-ship.sh" \
+    .vbw-planning/milestones/m1/STATE.md .vbw-planning/STATE.md "Dup Headings"
+  [ "$status" -eq 0 ]
+
+  [ -f .vbw-planning/STATE.md ]
+  # Should preserve the todo from the second ## Todos section
+  grep -q "second section todo" .vbw-planning/STATE.md
+}
+
+# Case-insensitive heading matching
+@test "persist script extracts sections with non-standard casing" {
+  cd "$TEST_TEMP_DIR"
+  mkdir -p .vbw-planning/milestones/m1
+  cat > ".vbw-planning/milestones/m1/STATE.md" <<'EOF'
+# State
+
+**Project:** Casing Test
+
+## decisions
+- lowercase heading decision
+
+## TODOS
+- uppercase todo (added 2026-02-18)
+
+## blockers
+None
+
+## Activity Log
+- done
+EOF
+
+  run bash "$SCRIPTS_DIR/persist-state-after-ship.sh" \
+    .vbw-planning/milestones/m1/STATE.md .vbw-planning/STATE.md "Casing Test"
+  [ "$status" -eq 0 ]
+
+  [ -f .vbw-planning/STATE.md ]
+  grep -q "lowercase heading decision" .vbw-planning/STATE.md
+  grep -q "uppercase todo" .vbw-planning/STATE.md
+}
