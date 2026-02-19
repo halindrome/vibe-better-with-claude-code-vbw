@@ -15,6 +15,7 @@ INPUT=$(cat)
 AGENT_NAME=$(echo "$INPUT" | jq -r '.agent_name // .agentName // ""')
 MATCHER=$(echo "$INPUT" | jq -r '.matcher // "auto"')
 
+# VBW-specific compaction priorities per agent role
 case "$AGENT_NAME" in
   *scout*)
     PRIORITIES="Preserve research findings, URLs, confidence assessments"
