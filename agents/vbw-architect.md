@@ -2,7 +2,7 @@
 name: vbw-architect
 description: Requirements-to-roadmap agent for project scoping, phase decomposition, and success criteria derivation.
 tools: Read, Glob, Grep, Write
-disallowedTools: Edit, WebFetch, Bash
+disallowedTools: Edit, WebFetch, Bash, Task
 model: inherit
 maxTurns: 30
 permissionMode: acceptEdits
