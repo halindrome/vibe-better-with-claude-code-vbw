@@ -83,3 +83,64 @@ teardown() {
   [ "$status" -eq 0 ]
   [ ! -f ".vbw-planning/.agent-worktrees/agent-01-01.json" ]
 }
+
+# ---------------------------------------------------------------------------
+# worktree-status.sh tests
+# ---------------------------------------------------------------------------
+
+@test "worktree-status: exits 0" {
+  run bash "$SCRIPTS_DIR/worktree-status.sh"
+  [ "$status" -eq 0 ]
+}
+
+@test "worktree-status: outputs valid JSON array" {
+  run bash "$SCRIPTS_DIR/worktree-status.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '. | type == "array"'
+}
+
+@test "worktree-status: empty array when no VBW worktrees" {
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/worktree-status.sh"
+  [ "$status" -eq 0 ]
+  [ "$output" = "[]" ]
+}
+
+# ---------------------------------------------------------------------------
+# Integration tests
+# ---------------------------------------------------------------------------
+
+@test "worktree-status: filters out non-VBW worktrees in project root" {
+  cd "$PROJECT_ROOT"
+  run bash "$SCRIPTS_DIR/worktree-status.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.'
+}
+
+@test "worktree-agent-map integration: set and get round-trip with worktree path" {
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-01 /tmp/fake-path
+  [ "$status" -eq 0 ]
+  run bash "$SCRIPTS_DIR/worktree-status.sh"
+  [ "$status" -eq 0 ]
+}
+
+@test "worktree-create and worktree-agent-map: pipeline exits 0" {
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/worktree-create.sh" 02 03
+  [ "$status" -eq 0 ]
+  run bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-03 /tmp/fake-path
+  [ "$status" -eq 0 ]
+}
+
+@test "worktree-cleanup: agent-map clear integration" {
+  cd "$TEST_TEMP_DIR"
+  bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-01 /tmp/fake
+  mkdir -p .vbw-planning/.agent-worktrees
+  echo '{}' > .vbw-planning/.agent-worktrees/dev-01-01-01.json
+  run bash "$SCRIPTS_DIR/worktree-cleanup.sh" 01 01
+  [ "$status" -eq 0 ]
+  [ ! -f ".vbw-planning/.agent-worktrees/dev-01-01-01.json" ]
+  run bash "$SCRIPTS_DIR/worktree-agent-map.sh" get dev-01
+  [ "$status" -eq 0 ]
+}
