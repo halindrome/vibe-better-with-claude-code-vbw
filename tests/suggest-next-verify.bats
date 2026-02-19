@@ -207,3 +207,37 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"/vbw:vibe -- Continue UAT remediation for Phase 11"* ]]
 }
+
+@test "suggest-next verify issues_found no-arg with all-complete UATs shows fix not remediation" {
+  cd "$TEST_TEMP_DIR"
+  # Two phases fully executed with UATs that passed (status: complete)
+  for p in 03 04; do
+    case $p in 03) s=ui;; 04) s=api;; esac
+    local dir="$TEST_TEMP_DIR/.vbw-planning/phases/${p}-${s}"
+    mkdir -p "$dir"
+    printf -- '---\nphase: %s\nplan: %s-01\n---\n' "$p" "$p" > "${dir}/${p}-01-PLAN.md"
+    printf -- '---\nstatus: complete\ndeviations: 0\n---\n' > "${dir}/${p}-01-SUMMARY.md"
+    printf -- '---\nphase: %s\nstatus: complete\n---\nAll passed.\n' "$p" > "${dir}/${p}-UAT.md"
+  done
+
+  run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/vbw:fix"* ]]
+  [[ "$output" != *"remediation"* ]]
+}
+
+@test "suggest-next verify issues_found no-arg with no UAT files shows fix not remediation" {
+  cd "$TEST_TEMP_DIR"
+  # Single phase fully executed, no UAT file
+  local dir="$TEST_TEMP_DIR/.vbw-planning/phases/03-ui"
+  mkdir -p "$dir"
+  printf -- '---\nphase: 03\nplan: 03-01\n---\n' > "${dir}/03-01-PLAN.md"
+  printf -- '---\nstatus: complete\ndeviations: 0\n---\n' > "${dir}/03-01-SUMMARY.md"
+
+  run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/vbw:fix"* ]]
+  [[ "$output" != *"remediation"* ]]
+}

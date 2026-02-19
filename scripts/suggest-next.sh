@@ -82,7 +82,7 @@ if [ -d "$PLANNING_DIR" ]; then
   # Scan phases
   if [ -d "$PHASES_DIR" ]; then
     # Sort phase dirs numerically (prevents 100 sorting before 11)
-    phase_dirs_sorted=$(ls -d "$PHASES_DIR"/*/ 2>/dev/null | sort -V)
+    phase_dirs_sorted=$(ls -d "$PHASES_DIR"/*/ 2>/dev/null | (sort -V 2>/dev/null || sort -n))
     for dir in $phase_dirs_sorted; do
       [ -d "$dir" ] || continue
       phase_count=$((phase_count + 1))
@@ -213,7 +213,7 @@ if [ "$CMD" = "verify" ] && [ "$effective_result" = "issues_found" ] && [ -d "${
     done
   else
     # No phase arg — find the first phase with UAT issues (numeric order, matching phase-detect.sh)
-    for dir in $(ls -d "$PHASES_DIR"/*/ 2>/dev/null | sort -V); do
+    for dir in $(ls -d "$PHASES_DIR"/*/ 2>/dev/null | (sort -V 2>/dev/null || sort -n)); do
       [ -d "$dir" ] || continue
       _uat=$(ls -1 "$dir"*-UAT.md 2>/dev/null | sort | tail -1 || true)
       if [ -f "$_uat" ]; then
@@ -226,12 +226,8 @@ if [ "$CMD" = "verify" ] && [ "$effective_result" = "issues_found" ] && [ -d "${
         fi
       fi
     done
-    # Final fallback if no UAT with issues found
-    if [ -z "$verify_target_phase_dir" ] && [ -n "$active_phase_dir" ] && [ -d "$active_phase_dir" ]; then
-      verify_target_phase_dir="$active_phase_dir"
-      verify_target_phase=$(echo "$active_phase_num" | sed 's/^0*//')
-      [ -z "$verify_target_phase" ] && verify_target_phase="0"
-    fi
+    # No fallback — if no phase has issues_found, leave verify_target_phase empty
+    # so the output section can show generic guidance instead of false remediation.
   fi
 
   if [ -n "$verify_target_phase_dir" ]; then
@@ -249,8 +245,12 @@ if [ "$CMD" = "verify" ] && [ "$effective_result" = "issues_found" ] && [ -d "${
       uat_major_or_higher=true
     fi
   else
-    # If UAT file isn't locatable, choose safer escalation over blind quick-fix routing.
-    uat_major_or_higher=true
+    # If UAT file isn't locatable but a target was identified, choose safer escalation.
+    # If no target was identified at all (no-arg scan found nothing), leave uat_major_or_higher=false
+    # so the output shows generic fix guidance rather than false remediation.
+    if [ -n "$verify_target_phase_dir" ]; then
+      uat_major_or_higher=true
+    fi
   fi
 fi
 
