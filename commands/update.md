@@ -87,7 +87,9 @@ Use NEW_CACHED as authoritative version. If empty or equals old_version when it 
 
 ### Step 7: Display result
 
-Use NEW_CACHED for all display. Same version = "VBW Cache Refreshed" banner. Different = "VBW Updated" banner with old→new + "Restart Claude Code" + "/vbw:whats-new" suggestion.
+Use NEW_CACHED for all display. Same version = "VBW Cache Refreshed" banner + "Changes active immediately". Different = "VBW Updated" banner with old→new + "Changes active immediately" + "/vbw:whats-new" suggestion.
+
+**Edge case:** If Step 6 verification failed (NEW_CACHED empty/unchanged when upgrade expected): keep restart suggestion as diagnostic fallback.
 
 ## Output Format
 
