@@ -1,9 +1,15 @@
 #!/bin/bash
 set -u
-# PreCompact hook: Inject agent-specific summarization priorities
-# Reads agent context and returns additionalContext for compaction
+# PreCompact hook: Inject VBW-specific compaction priorities
 #
-# Note: Plan mode is preserved natively by Claude Code 2.1.47+ (no workaround needed)
+# CC 2.1.47+ handles natively:
+#   - Plan mode preservation
+#   - Basic conversation flow retention
+#
+# VBW adds:
+#   - Agent-specific codebase re-read instructions
+#   - Execution state snapshots for crash recovery
+#   - Compaction markers for Dev re-read guards
 
 INPUT=$(cat)
 AGENT_NAME=$(echo "$INPUT" | jq -r '.agent_name // .agentName // ""')
