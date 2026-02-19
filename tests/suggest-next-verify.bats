@@ -90,3 +90,83 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"/vbw:vibe -- Continue UAT remediation for Phase 05"* ]]
 }
+
+@test "suggest-next verify issues_found detects bold-markdown severity format" {
+  cd "$TEST_TEMP_DIR"
+  local phase_dir="$TEST_TEMP_DIR/.vbw-planning/phases/06-bold-fmt"
+  mkdir -p "$phase_dir"
+  cat > "$phase_dir/06-01-PLAN.md" <<'EOF'
+---
+phase: 06
+plan: 06-01
+title: Sample plan
+---
+EOF
+  cat > "$phase_dir/06-01-SUMMARY.md" <<'EOF'
+---
+status: complete
+deviations: 0
+---
+Done.
+EOF
+  cat > "$phase_dir/06-UAT.md" <<'EOF'
+---
+phase: 06
+status: issues_found
+---
+
+## Tests
+
+### P01-T1: sample
+
+- **Result:** issue
+- **Issue:** sample issue
+  - **Severity:** critical
+EOF
+
+  run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found 06
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/vbw:vibe -- Continue UAT remediation for Phase 06"* ]]
+  [[ "$output" != *"/vbw:fix"* ]]
+}
+
+@test "suggest-next verify issues_found detects bare-text minor severity" {
+  cd "$TEST_TEMP_DIR"
+  local phase_dir="$TEST_TEMP_DIR/.vbw-planning/phases/07-bare-fmt"
+  mkdir -p "$phase_dir"
+  cat > "$phase_dir/07-01-PLAN.md" <<'EOF'
+---
+phase: 07
+plan: 07-01
+title: Sample plan
+---
+EOF
+  cat > "$phase_dir/07-01-SUMMARY.md" <<'EOF'
+---
+status: complete
+deviations: 0
+---
+Done.
+EOF
+  cat > "$phase_dir/07-UAT.md" <<'EOF'
+---
+phase: 07
+status: issues_found
+---
+
+## Tests
+
+### P01-T1: sample
+
+- **Result:** issue
+- **Issue:** typo in label
+Severity: minor
+EOF
+
+  run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found 07
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/vbw:fix -- Fix the issues found during UAT"* ]]
+  [[ "$output" != *"/vbw:vibe -- Continue UAT remediation"* ]]
+}

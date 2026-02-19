@@ -214,9 +214,9 @@ if [ "$CMD" = "verify" ] && [ "$effective_result" = "issues_found" ] && [ -d "${
   fi
 
   if [ -f "$verify_target_uat" ]; then
-    uat_critical=$(grep -Eci '^[[:space:]]*-[[:space:]]*Severity:[[:space:]]*critical([[:space:]]|$)' "$verify_target_uat" || true)
-    uat_major=$(grep -Eci '^[[:space:]]*-[[:space:]]*Severity:[[:space:]]*major([[:space:]]|$)' "$verify_target_uat" || true)
-    uat_minor=$(grep -Eci '^[[:space:]]*-[[:space:]]*Severity:[[:space:]]*minor([[:space:]]|$)' "$verify_target_uat" || true)
+    uat_critical=$(grep -Eci 'severity:\**[[:space:]]*\**[[:space:]]*critical' "$verify_target_uat" || true)
+    uat_major=$(grep -Eci 'severity:\**[[:space:]]*\**[[:space:]]*major' "$verify_target_uat" || true)
+    uat_minor=$(grep -Eci 'severity:\**[[:space:]]*\**[[:space:]]*minor' "$verify_target_uat" || true)
     tagged_severities=$((uat_critical + uat_major + uat_minor))
 
     # Brownfield-safe default: older UAT formats may omit severity lines.

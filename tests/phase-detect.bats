@@ -132,3 +132,49 @@ EOF
   echo "$output" | grep -q "next_phase_state=needs_uat_remediation"
   echo "$output" | grep -q "uat_issues_major_or_higher=false"
 }
+
+@test "detects bold-markdown severity format as major" {
+  mkdir -p .vbw-planning/phases/01-test/
+  touch .vbw-planning/phases/01-test/01-01-PLAN.md
+  touch .vbw-planning/phases/01-test/01-01-SUMMARY.md
+  cat > .vbw-planning/phases/01-test/01-UAT.md <<'EOF'
+---
+phase: 01
+status: issues_found
+---
+
+## Tests
+
+### P01-T1: sample
+
+- **Result:** issue
+- **Issue:** sample
+  - **Severity:** major
+EOF
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "next_phase_state=needs_uat_remediation"
+  echo "$output" | grep -q "uat_issues_major_or_higher=true"
+}
+
+@test "re-verified UAT with status complete clears remediation state" {
+  mkdir -p .vbw-planning/phases/01-test/
+  touch .vbw-planning/phases/01-test/01-01-PLAN.md
+  touch .vbw-planning/phases/01-test/01-01-SUMMARY.md
+
+  # UAT was re-run after fixes; now passes
+  cat > .vbw-planning/phases/01-test/01-UAT.md <<'EOF'
+---
+phase: 01
+status: complete
+---
+
+All tests passed.
+EOF
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "uat_issues_phase=none"
+  echo "$output" | grep -q "next_phase_state=all_done"
+}

@@ -110,9 +110,9 @@ if [ -d "$PHASES_DIR" ]; then
           UAT_ISSUES_PHASE="$NUM"
           UAT_ISSUES_SLUG="$DIRNAME"
 
-          UAT_CRITICAL=$(grep -Eci '^[[:space:]]*-[[:space:]]*Severity:[[:space:]]*critical([[:space:]]|$)' "$UAT_FILE" || true)
-          UAT_MAJOR=$(grep -Eci '^[[:space:]]*-[[:space:]]*Severity:[[:space:]]*major([[:space:]]|$)' "$UAT_FILE" || true)
-          UAT_MINOR=$(grep -Eci '^[[:space:]]*-[[:space:]]*Severity:[[:space:]]*minor([[:space:]]|$)' "$UAT_FILE" || true)
+          UAT_CRITICAL=$(grep -Eci 'severity:\**[[:space:]]*\**[[:space:]]*critical' "$UAT_FILE" || true)
+          UAT_MAJOR=$(grep -Eci 'severity:\**[[:space:]]*\**[[:space:]]*major' "$UAT_FILE" || true)
+          UAT_MINOR=$(grep -Eci 'severity:\**[[:space:]]*\**[[:space:]]*minor' "$UAT_FILE" || true)
           UAT_TAGGED=$((UAT_CRITICAL + UAT_MAJOR + UAT_MINOR))
 
           # Brownfield-safe: if severity is absent, treat as major+ to avoid accidental quick-fix routing.

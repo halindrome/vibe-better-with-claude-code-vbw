@@ -207,19 +207,44 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
 
 **Guard:** Initialized, target phase has `*-UAT.md` with `status: issues_found`.
 
+**Chain state tracking:** This mode uses `${CLAUDE_PLUGIN_ROOT}/scripts/uat-remediation-state.sh` to persist the current stage of the remediation chain on disk. This ensures correct resumption after compaction or session restart — the chain does NOT rely on prompt memory alone.
+
 **Steps:**
-1. Resolve target phase from pre-computed state (`next_phase`, `next_phase_slug`) when `next_phase_state=needs_uat_remediation`.
+1. Resolve target phase from pre-computed state (`next_phase`, `next_phase_slug`) when `next_phase_state=needs_uat_remediation`. Set `PHASE_DIR` to the resolved phase directory path.
 2. Read latest `{phase}-UAT.md` in the target phase directory. Extract all issues (`Pxx-Ty` entries) with description and severity.
 3. Treat the UAT report as source-of-truth scope. Do NOT ask the user to restate issues already recorded in UAT.
-4. If `uat_issues_major_or_higher=true`:
-   - Route into Discuss mode first for the same phase, using UAT issues as the discussion agenda.
-   - Capture/merge decisions into `{phase}-CONTEXT.md` (create if missing), with explicit references to each UAT issue (`Pxx-Ty`).
-   - Then route into Plan mode for the same phase, with UAT issues + discuss decisions as required planning inputs.
-   - After planning, continue through normal Execute flow for that phase (respecting autonomy confirmation rules).
-5. If `uat_issues_major_or_higher=false` (minor-only issues):
-   - Route to a quick-fix implementation path for the same phase using the extracted UAT issue list as task input (equivalent to `/vbw:fix`, but without requiring the user to invoke it manually).
-   - After changes, suggest `verify --resume`.
-6. Present a remediation summary with: phase, issue count, severity mix, and chosen path (`discuss -> plan -> execute` or quick-fix).
+4. **Read or initialize remediation stage:**
+   ```bash
+   STAGE=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/uat-remediation-state.sh get "$PHASE_DIR")
+   ```
+   - If `STAGE=none`: initialize based on severity:
+     ```bash
+     STAGE=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/uat-remediation-state.sh init "$PHASE_DIR" "major")
+     # or "minor" when uat_issues_major_or_higher=false
+     ```
+   - If `STAGE=done`: UAT remediation already completed for this phase. Display "Remediation already completed. Run `/vbw:verify --resume` to re-test." STOP.
+   - Otherwise: resume at the persisted stage (handles compaction recovery).
+5. **Execute the current stage** based on `STAGE`:
+   - `discuss`: Route into Discuss mode for the same phase, using UAT issues as the discussion agenda. Capture/merge decisions into `{phase}-CONTEXT.md` (create if missing), with explicit references to each UAT issue (`Pxx-Ty`). After discuss completes, advance:
+     ```bash
+     bash ${CLAUDE_PLUGIN_ROOT}/scripts/uat-remediation-state.sh advance "$PHASE_DIR"
+     ```
+     Then continue to the next stage (`plan`).
+   - `plan`: Route into Plan mode for the same phase, with UAT issues + discuss decisions as required planning inputs. After planning completes, advance:
+     ```bash
+     bash ${CLAUDE_PLUGIN_ROOT}/scripts/uat-remediation-state.sh advance "$PHASE_DIR"
+     ```
+     Then continue to the next stage (`execute`), respecting autonomy confirmation rules.
+   - `execute`: Continue through normal Execute flow for that phase. After execution completes, advance:
+     ```bash
+     bash ${CLAUDE_PLUGIN_ROOT}/scripts/uat-remediation-state.sh advance "$PHASE_DIR"
+     ```
+   - `fix` (minor-only path): Route to a quick-fix implementation path for the same phase using the extracted UAT issue list as task input (equivalent to `/vbw:fix`, but without requiring the user to invoke it manually). After changes, advance:
+     ```bash
+     bash ${CLAUDE_PLUGIN_ROOT}/scripts/uat-remediation-state.sh advance "$PHASE_DIR"
+     ```
+     Suggest `/vbw:verify --resume`.
+6. Present a remediation summary with: phase, issue count, severity mix, current stage, and chosen path (`discuss -> plan -> execute` or quick-fix).
 
 ### Mode: Plan
 
