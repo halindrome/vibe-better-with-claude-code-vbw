@@ -64,7 +64,7 @@ EOF
   run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found 08
 
   [ "$status" -eq 0 ]
-  [[ "$output" == *"/vbw:vibe -- Continue UAT remediation for Phase 08"* ]]
+  [[ "$output" == *"/vbw:vibe -- Continue UAT remediation for Phase 8"* ]]
   [[ "$output" == *"/vbw:verify --resume -- Continue testing after changes"* ]]
   [[ "$output" != *"/vbw:fix -- Fix the issues found during UAT"* ]]
 }
@@ -78,7 +78,7 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"/vbw:fix -- Fix the issues found during UAT"* ]]
   [[ "$output" == *"/vbw:verify --resume -- Continue testing after fix"* ]]
-  [[ "$output" != *"/vbw:vibe -- Continue UAT remediation for Phase 03"* ]]
+  [[ "$output" != *"/vbw:vibe -- Continue UAT remediation for Phase 3"* ]]
 }
 
 @test "suggest-next verify issues_found defaults to escalation when severity is absent" {
@@ -88,7 +88,7 @@ EOF
   run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found 05
 
   [ "$status" -eq 0 ]
-  [[ "$output" == *"/vbw:vibe -- Continue UAT remediation for Phase 05"* ]]
+  [[ "$output" == *"/vbw:vibe -- Continue UAT remediation for Phase 5"* ]]
 }
 
 @test "suggest-next verify issues_found detects bold-markdown severity format" {
@@ -127,7 +127,7 @@ EOF
   run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found 06
 
   [ "$status" -eq 0 ]
-  [[ "$output" == *"/vbw:vibe -- Continue UAT remediation for Phase 06"* ]]
+  [[ "$output" == *"/vbw:vibe -- Continue UAT remediation for Phase 6"* ]]
   [[ "$output" != *"/vbw:fix"* ]]
 }
 
@@ -169,4 +169,28 @@ EOF
   [ "$status" -eq 0 ]
   [[ "$output" == *"/vbw:fix -- Fix the issues found during UAT"* ]]
   [[ "$output" != *"/vbw:vibe -- Continue UAT remediation"* ]]
+}
+
+@test "suggest-next verify issues_found handles unpadded phase number" {
+  cd "$TEST_TEMP_DIR"
+  create_phase_with_uat "03" "ui-polish" "minor"
+
+  # Pass unpadded "3" instead of "03"
+  run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found 3
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/vbw:fix -- Fix the issues found during UAT"* ]]
+  [[ "$output" != *"/vbw:vibe -- Continue UAT remediation"* ]]
+}
+
+@test "suggest-next verify issues_found unpadded phase escalates major correctly" {
+  cd "$TEST_TEMP_DIR"
+  create_phase_with_uat "08" "api-layer" "major"
+
+  # Pass unpadded "8" instead of "08"
+  run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found 8
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/vbw:vibe -- Continue UAT remediation"* ]]
+  [[ "$output" != *"/vbw:fix"* ]]
 }

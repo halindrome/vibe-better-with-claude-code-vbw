@@ -193,10 +193,15 @@ if [ "$CMD" = "verify" ] && [ "$effective_result" = "issues_found" ] && [ -d "${
   verify_target_phase="$TARGET_PHASE_ARG"
   [ -z "$verify_target_phase" ] && verify_target_phase="$active_phase_num"
 
+  # Normalize: strip leading zeros for comparison (user may pass "3" for phase "03")
+  verify_target_phase=$(echo "$verify_target_phase" | sed 's/^0*//')
+  [ -z "$verify_target_phase" ] && verify_target_phase="0"
+
   if [ -n "$verify_target_phase" ]; then
     for dir in "$PHASES_DIR"/*/; do
       [ -d "$dir" ] || continue
-      pn=$(basename "$dir" | sed 's/[^0-9].*//')
+      pn=$(basename "$dir" | sed 's/[^0-9].*//' | sed 's/^0*//')
+      [ -z "$pn" ] && pn="0"
       if [ "$pn" = "$verify_target_phase" ]; then
         verify_target_phase_dir="$dir"
         break

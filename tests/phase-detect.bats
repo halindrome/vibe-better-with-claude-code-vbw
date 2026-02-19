@@ -178,3 +178,21 @@ EOF
   echo "$output" | grep -q "uat_issues_phase=none"
   echo "$output" | grep -q "next_phase_state=all_done"
 }
+
+@test "orphan UAT without PLAN or SUMMARY is ignored" {
+  mkdir -p .vbw-planning/phases/01-test/
+  # No PLAN or SUMMARY — just an orphan UAT file
+  cat > .vbw-planning/phases/01-test/01-UAT.md <<'EOF'
+---
+phase: 01
+status: issues_found
+---
+  - Severity: major
+EOF
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "uat_issues_phase=none"
+  # Should route to needs_plan_and_execute, not needs_uat_remediation
+  echo "$output" | grep -q "next_phase_state=needs_plan_and_execute"
+}

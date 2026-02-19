@@ -99,9 +99,17 @@ if [ -d "$PHASES_DIR" ]; then
     NEXT_PHASE_STATE="no_phases"
   else
     # Priority override: unresolved UAT issues should route first for no-arg /vbw:vibe.
+    # Guard: only consider phases that have at least one PLAN and one SUMMARY (i.e., executed).
     for DIR in $PHASE_DIRS; do
       DIRNAME=$(basename "$DIR")
       NUM=$(echo "$DIRNAME" | sed 's/^\([0-9]*\).*/\1/')
+
+      # Skip phases without execution artifacts — a UAT file in a never-executed phase is orphaned/stale.
+      DIR_PLANS=$(ls "$DIR"*-PLAN.md 2>/dev/null | wc -l | tr -d ' ')
+      DIR_SUMMARIES=$(ls "$DIR"*-SUMMARY.md 2>/dev/null | wc -l | tr -d ' ')
+      if [ "$DIR_PLANS" -eq 0 ] || [ "$DIR_SUMMARIES" -eq 0 ]; then
+        continue
+      fi
 
       UAT_FILE=$(ls "$DIR"*-UAT.md 2>/dev/null | sort | tail -1 || true)
       if [ -f "$UAT_FILE" ]; then
