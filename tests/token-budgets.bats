@@ -8,7 +8,7 @@ setup() {
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning/.metrics"
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning/.events"
   # Enable flags
-  jq '.v2_token_budgets = true | .v3_metrics = true | .v3_event_log = true' \
+  jq '.v2_token_budgets = true' \
     "$TEST_TEMP_DIR/.vbw-planning/config.json" > "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" \
     && mv "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" "$TEST_TEMP_DIR/.vbw-planning/config.json"
   # Copy token budgets config
