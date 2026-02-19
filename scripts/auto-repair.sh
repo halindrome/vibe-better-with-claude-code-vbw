@@ -31,12 +31,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 MAX_RETRIES=2
 
-# Check feature flag
-V2_HARD=false
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V2_HARD=$(jq -r '.v2_hard_gates // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-fi
-[ "$V2_HARD" != "true" ] && { echo '{"repaired":false,"attempts":0,"gate":"'$GATE_TYPE'","reason":"v2_hard_gates=false"}'; exit 0; }
+# v2_hard_gates is now always enabled (graduated)
+V2_HARD=true
 
 # Determine if gate is repairable
 REPAIRABLE=false
