@@ -15,11 +15,16 @@ All notable changes to VBW will be documented in this file.
 
 - **`bootstrap`** -- Codebase mapping bootstrap across all agents now uses META.md gating and "whichever exist" qualification to avoid wasted tool calls. Compaction re-reads codebase files. (PR #99 by @dpearson2699)
 - **`bootstrap`** -- Key Decisions section removed from CLAUDE.md template. Existing decision rows migrated to STATE.md. Deprecated section handling added. (PR #93 by @dpearson2699)
+- **`requirements`** -- Added minimum Claude Code version table to README documenting CC 2.1.47+ requirement for agent teams model routing and plan mode native support.
 
 ### Fixed
 
 - **`help`** -- CLAUDE_CONFIG_DIR fallback added to backtick expansion in help.md for non-standard config paths. (PR #101 by @halindrome)
 - **`hooks`** -- Circuit breaker added to `task-verify.sh` preventing infinite loop when failed verification re-triggers itself. Expanded stop words in session-stop.sh. (PR #95 by @dpearson2699)
+
+### Compatibility
+
+- **Agent Teams Model Routing** -- Requires Claude Code >= 2.1.47. Earlier versions had silently broken model routing for team teammates, causing all agents to use the default model instead of role-specific model profiles. If you experience agents using incorrect models (e.g., all agents using Sonnet when configured for Opus/Haiku), upgrade to Claude Code 2.1.47 or later.
 
 ## [1.21.30] - 2026-02-17
 
