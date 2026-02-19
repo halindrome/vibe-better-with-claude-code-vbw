@@ -10,6 +10,8 @@ All notable changes to VBW will be documented in this file.
 - **`bash-classifier-tests`** -- 55 new BATS tests validating all 26 VBW hook bash patterns against CC 2.1.47 stricter permission classifier. Tests cover hook-wrapper.sh resolution, individual script invocations, bash-guard.sh pattern matching, and end-to-end integration. All patterns confirmed classifier-safe with zero changes needed to hooks.json.
 - **`agent-memory`** -- Native `memory` frontmatter added to all 7 agents. Core agents (lead, dev, qa, debugger, architect) use `memory: project` for cross-session learning. Ephemeral agents (scout, docs) use `memory: local`.
 - **`agent-restrictions`** -- Native `Task(agent_type)` spawn restrictions added to all 7 agents. Lead can only spawn Dev. Debugger can only spawn Debugger (competing hypotheses). Dev, architect, docs cannot spawn agents. Scout and QA already lacked Task capability.
+- **`cc-version-table`** -- Claude Code version requirements table added to README with minimum versions for key features (hooks, teams, classifier, memory).
+- **`token-analysis`** -- v1.30.0 token analysis document covering CC Alignment impact: 85 scripts, 56 test files, 838 BATS tests. Per-request +12% (enforcement content), 73% reduction vs stock teams.
 
 ### Changed
 

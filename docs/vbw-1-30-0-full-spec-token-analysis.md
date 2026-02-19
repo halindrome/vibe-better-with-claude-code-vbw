@@ -4,7 +4,7 @@
 **Version:** v1.30.0
 **Baseline:** v1.21.30
 **Scope:** CC Alignment v1 milestone — 44 commits across 4 phases, aligning VBW with Claude Code 2.1.32–2.1.47
-**Method:** 44 commits, 85 scripts, 56 test files (11,347 lines), 821 bats tests
+**Method:** 44 commits, 85 scripts, 56 test files (11,347 lines), 838 bats tests
 **Verdict:** Per-request overhead **grew 12%** from v1.21.30 as active commands gained CC Alignment enforcement content. Per-phase resilience improved: 20 feature flags graduated, 7 agents hardened with spawn restrictions + memory scoping. Shell infrastructure grew 48% at **zero model token cost**. Overall coordination overhead vs stock teams: **~77%** reduction (unchanged).
 
 ---
