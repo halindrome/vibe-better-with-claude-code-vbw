@@ -109,27 +109,12 @@ for file in "$COMMANDS_DIR"/*.md; do
   body="$(awk '/^---$/{d++; next} d>=2' "$file")"
   body_no_context="$(printf '%s\n' "$body" | awk '/^## Context$/{skip=1; next} /^## /{skip=0} !skip')"
 
-  # Check if the command body (outside Context) references milestone-scoped paths
-  if ! printf '%s\n' "$body_no_context" | grep -qi 'milestone[-_ ]scoped\|milestone.*ACTIVE\|ACTIVE.*milestone'; then
-    continue
-  fi
-
-  # This command is milestone-aware — check for mitigation
-  has_context_interp=false
-  if grep -q 'cat \.vbw-planning/ACTIVE' "$file" 2>/dev/null; then
-    has_context_interp=true
-  fi
-
-  has_bash=false
-  FRONTMATTER="$(extract_frontmatter "$file")"
-  if printf '%s\n' "$FRONTMATTER" | grep '^allowed-tools:' | grep -qw 'Bash'; then
-    has_bash=true
-  fi
-
-  if $has_context_interp || $has_bash; then
-    pass "$base: milestone-aware command has ACTIVE context or Bash access"
+  # ACTIVE-file milestone indirection was removed (architecture simplification).
+  # Commands should NOT reference .vbw-planning/ACTIVE anymore.
+  if printf '%s\n' "$body_no_context" | grep -qi '\.vbw-planning/ACTIVE'; then
+    fail "$base: references .vbw-planning/ACTIVE — milestone indirection was removed"
   else
-    fail "$base: milestone-aware command has NO way to read .vbw-planning/ACTIVE (needs context interpolation or Bash in allowed-tools)"
+    pass "$base: no stale ACTIVE file references"
   fi
 done
 

@@ -246,6 +246,59 @@ EOF
   echo "$output" | grep -q "next_phase_state=all_done"
 }
 
+@test "outputs has_shipped_milestones=true when shipped milestone exists" {
+  mkdir -p .vbw-planning/phases
+  mkdir -p .vbw-planning/milestones/foundation
+  echo "# Shipped" > .vbw-planning/milestones/foundation/SHIPPED.md
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "has_shipped_milestones=true"
+}
+
+@test "outputs has_shipped_milestones=false when no shipped milestones" {
+  mkdir -p .vbw-planning/phases
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "has_shipped_milestones=false"
+}
+
+@test "outputs needs_milestone_rename=true when milestones/default/ exists" {
+  mkdir -p .vbw-planning/milestones/default
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "needs_milestone_rename=true"
+}
+
+@test "outputs needs_milestone_rename=false when no milestones/default/" {
+  mkdir -p .vbw-planning/phases
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "needs_milestone_rename=false"
+}
+
+@test "does not output active_milestone (removed)" {
+  mkdir -p .vbw-planning/phases
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  ! echo "$output" | grep -q "active_milestone="
+}
+
+@test "ignores ACTIVE file (always uses root phases)" {
+  mkdir -p .vbw-planning/phases/01-root-phase/
+  mkdir -p .vbw-planning/milestones/old/phases/01-milestone-phase/
+  echo "old" > .vbw-planning/ACTIVE
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "phase_count=1"
+  echo "$output" | grep -q "phases_dir=.vbw-planning/phases"
+}
+
 @test "phase directories sort numerically not lexicographically" {
   mkdir -p .vbw-planning/phases/11-eleven/
   mkdir -p .vbw-planning/phases/100-hundred/

@@ -29,31 +29,12 @@ resolve_state_path() {
   local state_path="$PLANNING_DIR/STATE.md"
 
   # Project-level todos always live at root STATE.md.
-  # If root exists, use it regardless of ACTIVE milestone.
   if [ -f "$state_path" ]; then
     echo "$state_path"
     return 0
   fi
 
-  # Fallback: ACTIVE milestone (pre-migration compatibility)
-  if [ -f "$PLANNING_DIR/ACTIVE" ]; then
-    local slug
-    slug=$(tr -d '[:space:]' < "$PLANNING_DIR/ACTIVE" 2>/dev/null)
-    if [ -n "$slug" ]; then
-      # Reject path separators
-      if [[ "$slug" == */* || "$slug" == *\\* ]]; then
-        echo '{"status":"error","message":"Invalid milestone slug (contains path separator): '"$slug"'"}'
-        return 1
-      fi
-      local milestone_state="$PLANNING_DIR/milestones/$slug/STATE.md"
-      if [ -f "$milestone_state" ]; then
-        echo "$milestone_state"
-        return 0
-      fi
-    fi
-  fi
-
-  # Fallback: no root and no ACTIVE — use most-recently-modified archived STATE.md
+  # Fallback: no root — use most-recently-modified archived STATE.md
   local latest_milestone=""
   local latest_mtime=0
   for f in "$PLANNING_DIR"/milestones/*/STATE.md; do
@@ -70,7 +51,7 @@ resolve_state_path() {
     return 0
   fi
 
-  echo '{"status":"error","message":"STATE.md not found at '"$state_path"'. Run /vbw:init or check .vbw-planning/ACTIVE."}'
+  echo '{"status":"error","message":"STATE.md not found at '"$state_path"'. Run /vbw:init to set up your project."}'
   return 1
 }
 

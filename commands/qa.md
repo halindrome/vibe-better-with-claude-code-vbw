@@ -47,8 +47,7 @@ Note: Continuous verification handled by hooks. This command is for deep, on-dem
   Read `${CLAUDE_PLUGIN_ROOT}/references/effort-profile-{profile}.md`.
   Context overrides: >15 requirements or last phase before ship → Deep.
 
-2. **Resolve milestone:** If `.vbw-planning/ACTIVE` exists, use
-  milestone-scoped paths.
+2. **Resolve phase:** Use `.vbw-planning/phases/` for phase directories.
 
 3. **Spawn QA:**
     - Resolve QA model:

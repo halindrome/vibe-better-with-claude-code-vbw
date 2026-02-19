@@ -9,13 +9,12 @@ set -euo pipefail
 # Called by session-start.sh during startup. Detects the orphaned state:
 #   - .vbw-planning/ exists
 #   - No root STATE.md
-#   - No ACTIVE file (milestone is fully shipped)
 #   - At least one milestones/*/STATE.md exists
 #
 # When detected, calls persist-state-after-ship.sh on the latest archived
 # STATE.md to reconstruct a root STATE.md with project-level sections.
 #
-# Idempotent: no-ops if root STATE.md already exists or ACTIVE is set.
+# Idempotent: no-ops if root STATE.md already exists.
 #
 # Exit codes: always 0 (fail-open for session-start)
 
@@ -29,11 +28,6 @@ fi
 
 # Guard: if root STATE.md exists, nothing to do
 if [[ -f "$PLANNING_DIR/STATE.md" ]]; then
-  exit 0
-fi
-
-# Guard: if ACTIVE file exists, the milestone is live — don't create root state
-if [[ -f "$PLANNING_DIR/ACTIVE" ]]; then
   exit 0
 fi
 

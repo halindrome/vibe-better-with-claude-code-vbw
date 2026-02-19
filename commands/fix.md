@@ -20,8 +20,7 @@ Config: Pre-injected by SessionStart hook.
 ## Steps
 1. **Parse:** Entire $ARGUMENTS (minus flags) = fix description.
 
-2. **Milestone:** If `.vbw-planning/ACTIVE` exists, use milestone-scoped
-   `STATE_PATH`. Else `.vbw-planning/STATE.md`.
+2. **State:** Use `.vbw-planning/STATE.md`.
 
 3. **Spawn Dev:** Resolve model first:
     ```bash

@@ -19,7 +19,6 @@ if [ -d "$PLANNING_DIR" ]; then
 else
   echo "planning_dir_exists=false"
   echo "project_exists=false"
-  echo "active_milestone=none"
   echo "phases_dir=none"
   echo "phase_count=0"
   echo "next_phase=none"
@@ -30,6 +29,8 @@ else
   echo "uat_issues_phase=none"
   echo "uat_issues_slug=none"
   echo "uat_issues_major_or_higher=false"
+  echo "has_shipped_milestones=false"
+  echo "needs_milestone_rename=false"
   echo "config_effort=balanced"
   echo "config_autonomy=standard"
   echo "config_auto_commit=true"
@@ -54,27 +55,21 @@ if [ -f "$PLANNING_DIR/PROJECT.md" ]; then
 fi
 echo "project_exists=$PROJECT_EXISTS"
 
-# --- Active milestone resolution ---
-ACTIVE_MILESTONE="none"
-ACTIVE_MILESTONE_ERROR=false
+# --- Root-canonical phases (no ACTIVE indirection) ---
 PHASES_DIR="$PLANNING_DIR/phases"
-
-if [ -f "$PLANNING_DIR/ACTIVE" ]; then
-  SLUG=$(cat "$PLANNING_DIR/ACTIVE" 2>/dev/null | tr -d '[:space:]')
-  if [ -n "$SLUG" ]; then
-    CANDIDATE="$PLANNING_DIR/milestones/$SLUG/phases"
-    if [ -d "$CANDIDATE" ]; then
-      ACTIVE_MILESTONE="$SLUG"
-      PHASES_DIR="$CANDIDATE"
-    else
-      ACTIVE_MILESTONE_ERROR=true
-      # Fall back to default phases dir
-    fi
-  fi
-fi
-echo "active_milestone=$ACTIVE_MILESTONE"
-echo "active_milestone_error=$ACTIVE_MILESTONE_ERROR"
 echo "phases_dir=$PHASES_DIR"
+
+# --- Shipped milestones detection ---
+HAS_SHIPPED_MILESTONES=false
+NEEDS_MILESTONE_RENAME=false
+if [ -d "$PLANNING_DIR/milestones" ]; then
+  for _shipped in "$PLANNING_DIR"/milestones/*/SHIPPED.md; do
+    [ -f "$_shipped" ] && HAS_SHIPPED_MILESTONES=true && break
+  done
+  [ -d "$PLANNING_DIR/milestones/default" ] && NEEDS_MILESTONE_RENAME=true
+fi
+echo "has_shipped_milestones=$HAS_SHIPPED_MILESTONES"
+echo "needs_milestone_rename=$NEEDS_MILESTONE_RENAME"
 
 # --- Phase scanning ---
 PHASE_COUNT=0

@@ -98,10 +98,23 @@ if [ -d "$PLANNING_DIR" ] && [ ! -f "$PLANNING_DIR/.todo-flat-migrated" ]; then
   fi
 fi
 
+# --- Remove stale ACTIVE file (one-time, architecture simplification) ---
+# ACTIVE milestone indirection has been removed. Root paths are canonical.
+# Delete any leftover ACTIVE file so nothing reads it.
+if [ -d "$PLANNING_DIR" ] && [ -f "$PLANNING_DIR/ACTIVE" ]; then
+  rm -f "$PLANNING_DIR/ACTIVE" 2>/dev/null || true
+fi
+
+# --- Rename milestones/default/ to meaningful slug (one-time) ---
+# Old archive created milestones/default/. Rename to descriptive slug.
+if [ -d "$PLANNING_DIR/milestones/default" ] && [ -f "$SCRIPT_DIR/rename-default-milestone.sh" ]; then
+  bash "$SCRIPT_DIR/rename-default-milestone.sh" "$PLANNING_DIR" 2>/dev/null || true
+fi
+
 # --- Migrate orphaned STATE.md for brownfield post-ship repos (one-time) ---
 # If a project shipped a milestone before this fix, STATE.md lives only in
 # milestones/{slug}/ with no root copy. Recover project-level sections.
-if [ -d "$PLANNING_DIR" ] && [ ! -f "$PLANNING_DIR/STATE.md" ] && [ ! -f "$PLANNING_DIR/ACTIVE" ]; then
+if [ -d "$PLANNING_DIR" ] && [ ! -f "$PLANNING_DIR/STATE.md" ]; then
   bash "$SCRIPT_DIR/migrate-orphaned-state.sh" "$PLANNING_DIR" 2>/dev/null || true
 fi
 
@@ -481,23 +494,9 @@ if [ ! -d "$PLANNING_DIR" ]; then
   exit 0
 fi
 
-# --- Resolve ACTIVE milestone ---
-MILESTONE_SLUG="none"
-if [ -f "$PLANNING_DIR/ACTIVE" ]; then
-  MILESTONE_SLUG=$(cat "$PLANNING_DIR/ACTIVE" 2>/dev/null | tr -d '[:space:]')
-  MILESTONE_DIR="$PLANNING_DIR/milestones/$MILESTONE_SLUG"
-  if [ ! -d "$MILESTONE_DIR" ]; then
-    # ACTIVE points to nonexistent directory — fall back
-    MILESTONE_SLUG="none"
-    MILESTONE_DIR="$PLANNING_DIR"
-    PHASES_DIR="$PLANNING_DIR/phases"
-  else
-    PHASES_DIR="$MILESTONE_DIR/phases"
-  fi
-else
-  MILESTONE_DIR="$PLANNING_DIR"
-  PHASES_DIR="$PLANNING_DIR/phases"
-fi
+# --- Root-canonical paths (no ACTIVE indirection) ---
+MILESTONE_DIR="$PLANNING_DIR"
+PHASES_DIR="$PLANNING_DIR/phases"
 
 # --- Parse config ---
 CONFIG_FILE="$PLANNING_DIR/config.json"
@@ -607,7 +606,14 @@ fi
 
 # --- Build additionalContext ---
 CTX="VBW project detected."
-CTX="$CTX Milestone: ${MILESTONE_SLUG}."
+# Check for shipped milestones
+has_shipped="false"
+if [ -d "$PLANNING_DIR/milestones" ]; then
+  for _ms in "$PLANNING_DIR"/milestones/*/; do
+    [ -f "${_ms}SHIPPED.md" ] && has_shipped="true" && break
+  done
+fi
+CTX="$CTX Shipped milestones: ${has_shipped}."
 CTX="$CTX Phase: ${phase_pos}/${phase_total} (${phase_name}) -- ${phase_status}."
 CTX="$CTX Progress: ${progress_pct}%."
 CTX="$CTX Config: effort=${config_effort}, autonomy=${config_autonomy}, auto_commit=${config_auto_commit}, planning_tracking=${config_planning_tracking}, auto_push=${config_auto_push}, verification=${config_verification}, prefer_teams=${config_prefer_teams}, max_tasks=${config_max_tasks}."

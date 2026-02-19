@@ -52,14 +52,8 @@ verify_target_uat=""
 
 if [ -d "$PLANNING_DIR" ]; then
 
-  # Resolve phases directory (milestone-aware)
+  # Root-canonical phases directory (no ACTIVE indirection)
   PHASES_DIR="$PLANNING_DIR/phases"
-  if [ -f "$PLANNING_DIR/ACTIVE" ]; then
-    ACTIVE=$(tr -d '[:space:]' < "$PLANNING_DIR/ACTIVE")
-    if [ -d "$PLANNING_DIR/milestones/$ACTIVE/phases" ]; then
-      PHASES_DIR="$PLANNING_DIR/milestones/$ACTIVE/phases"
-    fi
-  fi
 
   # Check PROJECT.md exists and isn't template
   if [ -f "$PLANNING_DIR/PROJECT.md" ] && ! grep -q '{project-name}' "$PLANNING_DIR/PROJECT.md" 2>/dev/null; then
