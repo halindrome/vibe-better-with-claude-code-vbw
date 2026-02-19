@@ -159,7 +159,7 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
   ```
   bash ${CLAUDE_PLUGIN_ROOT}/scripts/bootstrap/bootstrap-claude.sh CLAUDE.md "$PROJECT_NAME" "$CORE_VALUE" [CLAUDE.md]
   ```
-  Script handles: new file generation (heading + core value + VBW sections), existing file preservation (replaces only VBW-managed sections: Active Context, VBW Rules, Key Decisions, Installed Skills, Project Conventions, Commands, Plugin Isolation; preserves all other content). Omit the fourth argument if no existing CLAUDE.md. Max 200 lines.
+  Script handles: new file generation (heading + core value + VBW sections), existing file preservation (replaces only VBW-managed sections: Active Context, VBW Rules, Installed Skills, Project Conventions, Commands, Plugin Isolation; preserves all other content). Omit the fourth argument if no existing CLAUDE.md. Max 200 lines.
 - **B7: Planning commit boundary (conditional)** -- Run:
    ```bash
    bash ${CLAUDE_PLUGIN_ROOT}/scripts/planning-git.sh commit-boundary "bootstrap project files" .vbw-planning/config.json
