@@ -19,12 +19,6 @@ PLANNING_DIR=".vbw-planning"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 SNAPSHOTS_DIR="${PLANNING_DIR}/.snapshots"
 
-# Check feature flag
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r '.v3_snapshot_resume // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  [ "$ENABLED" != "true" ] && exit 0
-fi
-
 case "$ACTION" in
   save)
     STATE_PATH="${3:-.vbw-planning/.execution-state.json}"
