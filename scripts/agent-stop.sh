@@ -127,6 +127,15 @@ if [ -n "$LAST_MESSAGE" ] && [ -n "$AGENT_PID" ]; then
   fi
 fi
 
+# Log agent shutdown event with last_message metadata
+if [ -n "$AGENT_PID" ] && [ -f "$SCRIPT_DIR/log-event.sh" ]; then
+  LAST_MSG_LEN=$(echo -n "$LAST_MESSAGE" | wc -c | tr -d ' ')
+  bash "$SCRIPT_DIR/log-event.sh" agent_shutdown \
+    "pid=$AGENT_PID" \
+    "last_message_length=$LAST_MSG_LEN" \
+    2>/dev/null || true
+fi
+
 # Auto-close tmux pane if recorded at start
 PANE_MAP="$PLANNING_DIR/.agent-panes"
 if [ -n "${TMUX:-}" ] && [ -n "$AGENT_PID" ] && [ -f "$PANE_MAP" ]; then
