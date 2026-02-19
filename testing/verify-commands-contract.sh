@@ -123,7 +123,8 @@ echo "=== Stale ACTIVE Reference Verification (scripts + references) ==="
 
 # Scan scripts and references for any runtime usage of .vbw-planning/ACTIVE
 # (session-start.sh is allowed — it only deletes the stale file)
-for scan_dir in "$ROOT/scripts" "$ROOT/references"; do
+for scan_dir in "$ROOT/scripts" "$ROOT/references" "$ROOT/agents" "$ROOT/templates"; do
+  [ -d "$scan_dir" ] || continue
   dir_label="$(basename "$scan_dir")"
   while IFS= read -r -d '' scan_file; do
     scan_base="$(basename "$scan_file")"
@@ -139,7 +140,7 @@ for scan_dir in "$ROOT/scripts" "$ROOT/references"; do
     else
       pass "$dir_label/$scan_base: no stale ACTIVE file references"
     fi
-  done < <(find "$scan_dir" -maxdepth 1 -type f \( -name '*.sh' -o -name '*.md' \) -print0 2>/dev/null)
+  done < <(find "$scan_dir" -maxdepth 2 -type f \( -name '*.sh' -o -name '*.md' \) -print0 2>/dev/null)
 done
 
 echo ""

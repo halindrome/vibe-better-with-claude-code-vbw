@@ -43,7 +43,7 @@ extract_section_items() {
 # Strips leading "- ", "| ", priority tags, date tags, table cell delimiters, and extra whitespace
 normalize_item() {
   echo "$1" | sed 's/^- //' | sed 's/^| //' | sed 's/ |$//g' | sed 's/ | / /g' | \
-    sed 's/^\[HIGH\] //' | sed 's/^\[low\] //' | \
+    sed 's/^\[[^]]*\] //' | \
     sed 's/ *(added [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\})$//' | \
     sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]'
 }
@@ -145,8 +145,15 @@ merged_decisions=$(merge_items "$archived_decisions" "$root_decisions")
 # --- Move files back to root ---
 # Move phases
 if [ -d "$MILESTONE_DIR/phases" ]; then
-  # Remove any empty root phases dir
-  rm -rf "$PLANNING_DIR/phases" 2>/dev/null || true
+  if [ -d "$PLANNING_DIR/phases" ]; then
+    # Abort if root phases/ contains any files (active work would be destroyed)
+    if [ -n "$(find "$PLANNING_DIR/phases" -type f 2>/dev/null)" ]; then
+      echo "Error: root phases/ directory contains files — aborting to prevent data loss" >&2
+      echo "  Back up or remove $PLANNING_DIR/phases/ before unarchiving." >&2
+      exit 1
+    fi
+    rm -rf "$PLANNING_DIR/phases"
+  fi
   mv "$MILESTONE_DIR/phases" "$PLANNING_DIR/phases"
 fi
 

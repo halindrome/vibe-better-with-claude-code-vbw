@@ -222,3 +222,51 @@ EOF
   # List-format "PostgreSQL for data store" from archive should survive
   grep -q 'PostgreSQL for data store' ".vbw-planning/STATE.md"
 }
+
+@test "aborts when root phases/ has active work" {
+  create_archived_milestone "foundation"
+  mkdir -p ".vbw-planning/phases/01-current"
+  echo "# Active plan" > ".vbw-planning/phases/01-current/PLAN.md"
+
+  run bash "$SCRIPTS_DIR/unarchive-milestone.sh" \
+    ".vbw-planning/milestones/foundation" ".vbw-planning"
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"root phases/ directory contains files"* ]]
+
+  # Root phases should be untouched
+  [ -f ".vbw-planning/phases/01-current/PLAN.md" ]
+
+  # Archived milestone should still exist
+  [ -d ".vbw-planning/milestones/foundation/phases" ]
+}
+
+@test "dedups todos with varied priority tag formats" {
+  create_archived_milestone "foundation"
+
+  # Root state with same todo but different priority tag casing/format
+  cat > ".vbw-planning/STATE.md" <<'EOF'
+# VBW State
+
+**Project:** Test Project
+
+## Todos
+- [high] Add monitoring dashboard
+- [MEDIUM] Write integration tests
+
+## Key Decisions
+None.
+EOF
+
+  run bash "$SCRIPTS_DIR/unarchive-milestone.sh" \
+    ".vbw-planning/milestones/foundation" ".vbw-planning"
+  [ "$status" -eq 0 ]
+
+  # "[HIGH] Add monitoring dashboard" (archive) and "[high] Add monitoring dashboard" (root)
+  # should dedup to one copy
+  local count
+  count=$(grep -c -i 'add monitoring dashboard' ".vbw-planning/STATE.md")
+  [ "$count" -eq 1 ]
+
+  # "[MEDIUM] Write integration tests" (root-only) should survive
+  grep -q 'integration tests' ".vbw-planning/STATE.md"
+}

@@ -84,15 +84,15 @@ new_dir="$PLANNING_DIR/milestones/$new_slug"
 
 # Guard against collision — loop with counter to guarantee unique name
 if [[ -d "$new_dir" ]]; then
-  local_attempt=1
-  while [[ -d "${new_dir}-${local_attempt}" ]]; do
-    local_attempt=$((local_attempt + 1))
-    if [[ $local_attempt -gt 10 ]]; then
+  suffix=1
+  while [[ -d "${new_dir}-${suffix}" ]]; do
+    suffix=$((suffix + 1))
+    if [[ $suffix -gt 10 ]]; then
       echo "Error: cannot find unique name for milestone dir (tried $new_slug through $new_slug-10)" >&2
       exit 1
     fi
   done
-  new_dir="${new_dir}-${local_attempt}"
+  new_dir="${new_dir}-${suffix}"
 fi
 
 mv "$DEFAULT_DIR" "$new_dir"
