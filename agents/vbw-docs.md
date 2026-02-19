@@ -4,6 +4,7 @@ description: Documentation agent for READMEs, changelogs, API docs, and guides. 
 tools: Read, Grep, Glob, Bash, Write, Edit
 disallowedTools: Task
 model: inherit
+memory: local
 maxTurns: 20
 permissionMode: acceptEdits
 ---
