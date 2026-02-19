@@ -58,7 +58,6 @@ teardown() {
 
 @test "generate-contract.sh contract has correct must_haves" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_contract_lite = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
 
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/03-test-phase/03-01-PLAN.md"
 
@@ -71,7 +70,6 @@ teardown() {
 
 @test "generate-contract.sh contract has allowed_paths from task Files" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_contract_lite = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
 
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/03-test-phase/03-01-PLAN.md"
 
@@ -87,7 +85,6 @@ teardown() {
 
 @test "generate-contract.sh contract has correct task_count" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_contract_lite = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
 
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/03-test-phase/03-01-PLAN.md"
 
@@ -95,15 +92,8 @@ teardown() {
   [ "$output" = "2" ]
 }
 
-@test "validate-contract.sh exits 0 when v3_contract_lite=false" {
-  cd "$TEST_TEMP_DIR"
-  run bash "$SCRIPTS_DIR/validate-contract.sh" start "nonexistent.json" 1
-  [ "$status" -eq 0 ]
-}
-
 @test "validate-contract.sh start mode passes for valid task" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_contract_lite = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
 
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/03-test-phase/03-01-PLAN.md"
 
@@ -113,8 +103,6 @@ teardown() {
 
 @test "validate-contract.sh start mode logs violation for out-of-range task" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_contract_lite = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
-  jq '.v3_metrics = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
 
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/03-test-phase/03-01-PLAN.md"
 
@@ -128,7 +116,6 @@ teardown() {
 
 @test "validate-contract.sh end mode passes for in-scope files" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_contract_lite = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
 
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/03-test-phase/03-01-PLAN.md"
 
@@ -138,8 +125,6 @@ teardown() {
 
 @test "validate-contract.sh end mode logs violation for out-of-scope files" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_contract_lite = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
-  jq '.v3_metrics = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
 
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/03-test-phase/03-01-PLAN.md"
 
