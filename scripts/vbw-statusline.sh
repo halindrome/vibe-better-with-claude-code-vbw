@@ -264,6 +264,9 @@ if ! cache_fresh "$SLOW_CF" 60; then
     fi
   fi
 
+  HIDE_LIMITS=$(jq -r '.statusline_hide_limits // false' .vbw-planning/config.json 2>/dev/null)
+  HIDE_LIMITS_API=$(jq -r '.statusline_hide_limits_for_api_key // false' .vbw-planning/config.json 2>/dev/null)
+
   FIVE_PCT=0; FIVE_EPOCH=0; WEEK_PCT=0; WEEK_EPOCH=0; SONNET_PCT=-1
   EXTRA_ENABLED=0; EXTRA_PCT=-1; EXTRA_USED_C=0; EXTRA_LIMIT_C=0; FETCH_OK="noauth"
 
@@ -310,13 +313,13 @@ if ! cache_fresh "$SLOW_CF" 60; then
     [ "$NEWEST" = "$REMOTE_VER" ] && UPDATE_AVAIL="$REMOTE_VER"
   fi
 
-  printf '%s\n' "${FIVE_PCT:-0}|${FIVE_EPOCH:-0}|${WEEK_PCT:-0}|${WEEK_EPOCH:-0}|${SONNET_PCT:--1}|${EXTRA_ENABLED:-0}|${EXTRA_PCT:--1}|${EXTRA_USED_C:-0}|${EXTRA_LIMIT_C:-0}|${FETCH_OK}|${UPDATE_AVAIL:-}|${AUTH_METHOD:-}" > "$SLOW_CF" 2>/dev/null
+  printf '%s\n' "${FIVE_PCT:-0}|${FIVE_EPOCH:-0}|${WEEK_PCT:-0}|${WEEK_EPOCH:-0}|${SONNET_PCT:--1}|${EXTRA_ENABLED:-0}|${EXTRA_PCT:--1}|${EXTRA_USED_C:-0}|${EXTRA_LIMIT_C:-0}|${FETCH_OK}|${UPDATE_AVAIL:-}|${AUTH_METHOD:-}|${HIDE_LIMITS:-false}|${HIDE_LIMITS_API:-false}" > "$SLOW_CF" 2>/dev/null
 fi
 
 if [ -O "$SLOW_CF" ]; then
   IFS='|' read -r FIVE_PCT FIVE_EPOCH WEEK_PCT WEEK_EPOCH SONNET_PCT \
                   EXTRA_ENABLED EXTRA_PCT EXTRA_USED_C EXTRA_LIMIT_C \
-                  FETCH_OK UPDATE_AVAIL AUTH_METHOD < "$SLOW_CF"
+                  FETCH_OK UPDATE_AVAIL AUTH_METHOD HIDE_LIMITS HIDE_LIMITS_API < "$SLOW_CF"
 fi
 
 # --- Cost cache: delta attribution per render ---
@@ -396,6 +399,13 @@ elif [ "$AUTH_METHOD" = "claude.ai" ]; then
   USAGE_LINE="${D}Limits: keychain access denied (allow Terminal in Keychain Access.app or set VBW_OAUTH_TOKEN)${X}"
 else
   USAGE_LINE="${D}Limits: N/A (using API key)${X}"
+fi
+
+# --- Hide-limits suppression ---
+if [ "$HIDE_LIMITS" = "true" ]; then
+  USAGE_LINE=""
+elif [ "$HIDE_LIMITS_API" = "true" ] && [ "$FETCH_OK" != "ok" ] && [ "$FETCH_OK" != "auth" ] && [ "$FETCH_OK" != "fail" ] && [ "$AUTH_METHOD" != "claude.ai" ]; then
+  USAGE_LINE=""
 fi
 
 # --- GitHub link (OSC 8 clickable) ---
