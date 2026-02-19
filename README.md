@@ -941,6 +941,17 @@ Your AI-managed project now has more structure than most startups that raised a 
 
 That last one is the real barrier to entry.
 
+### Version Requirements
+
+| Feature | Minimum Claude Code Version | Reason |
+|---------|------------------------------|--------|
+| Baseline VBW | 2.1.32+ | Core plugin system, hooks, agent teams |
+| Agent Teams Model Routing | 2.1.47+ | Fixed silently broken model routing for team teammates |
+| Plan Mode Native Support | 2.1.47+ | Compaction workarounds removed, native plan mode context |
+| Stricter Bash Permissions | 2.1.47+ | Enhanced permission classifier for piped commands |
+
+**Recommended:** Claude Code 2.1.47 or later for full VBW feature compatibility.
+
 <br>
 
 ---
