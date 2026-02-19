@@ -430,6 +430,22 @@ Note: "Run inline" means the execute-protocol agent runs the verify protocol dir
 6. Only THEN proceed to state updates and user-facing output below
 Failure to shut down leaves agents running in the background, consuming API credits (visible as hanging panes in tmux, invisible but still costly without tmux). If no team was created: skip shutdown sequence.
 
+**Worktree merge and cleanup (post-TeamDelete):** If `worktree_isolation` is not `"off"` in config:
+For each plan that has a `worktree_path` entry in execution-state.json (completed or failed):
+1. **Copy SUMMARY.md** from worktree to phase dir (ensure it is present in the main working tree before merge changes branch context):
+   `cp "{worktree_path}/.vbw-planning/phases/{phase-dir}/{plan_id}-SUMMARY.md" ".vbw-planning/phases/{phase-dir}/{plan_id}-SUMMARY.md" 2>/dev/null || true`
+2. **Merge worktree branch:**
+   `MERGE_RESULT=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/worktree-merge.sh "{worktree_path}" 2>/dev/null || echo "conflict")`
+3. **If `MERGE_RESULT=clean`:**
+   - `bash ${CLAUDE_PLUGIN_ROOT}/scripts/worktree-cleanup.sh {phase} {plan} 2>/dev/null || true`
+   - `bash ${CLAUDE_PLUGIN_ROOT}/scripts/worktree-agent-map.sh clear "dev-{plan}" 2>/dev/null || true`
+4. **If `MERGE_RESULT=conflict`:**
+   - Log deviation in `{plan_id}-SUMMARY.md`: append "DEVIATION: worktree merge conflict — manual resolution required before cleanup."
+   - Display: `⚠ Worktree merge conflict for plan {plan_id}. Resolve conflicts in {worktree_path}, then run: git worktree remove {worktree_path} --force`
+   - Skip worktree-cleanup.sh — leave worktree in place for manual resolution.
+All worktree operations are fail-open: script errors are suppressed (2>/dev/null || true). Merge failures are surfaced as warnings, not blockers.
+When `worktree_isolation="off"`: skip this block silently.
+
 **Post-shutdown verification:** After TeamDelete, there must be ZERO active teammates. If the Pure-Vibe loop or auto-chain will re-enter Plan mode next, confirm no prior agents linger before spawning new ones. This gate survives compaction — if you lost context about whether shutdown happened, assume it did NOT and send `shutdown_request` to any teammates that may still exist before proceeding.
 
 **Control Plane cleanup:** Lock and token state cleanup already handled by existing V3 Lock-Lite and Token Budget cleanup blocks.
