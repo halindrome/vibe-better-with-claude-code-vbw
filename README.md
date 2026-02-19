@@ -140,7 +140,7 @@ Agent Teams are [experimental with known limitations](https://code.claude.com/do
 
 - **File conflicts.** Plans decompose work into tasks with explicit file ownership. Dev teammates operate on disjoint file sets by design, enforced at runtime by the `file-guard.sh` hook that blocks writes to files not declared in the active plan.
 
-- **Worktree isolation (opt-in).** Enable `worktree_isolation` in config to give each Dev agent its own git worktree — physical filesystem isolation, not just file-list enforcement. Six scripts handle the full lifecycle: create, merge, cleanup, status, targeting, and agent mapping. Default is `"off"`; set to `"on"` for multi-plan phases where agents touch overlapping directories.
+- **Worktree isolation (on by default).** Each Dev agent gets its own git worktree — physical filesystem isolation, not just file-list enforcement. Six scripts handle the full lifecycle: create, merge, cleanup, status, targeting, and agent mapping. Enabled by default; set `worktree_isolation` to `"off"` in config to disable.
 
 Agent Teams ship with seven known limitations. VBW addresses all of them. The eighth... that you're using AI to write software doesn't need a fix. It needs an intervention.
 

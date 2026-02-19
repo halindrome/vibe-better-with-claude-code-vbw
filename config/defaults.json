@@ -28,5 +28,5 @@
   },
   "qa_skip_agents": ["docs"],
   "v2_token_budgets": false,
-  "worktree_isolation": "off"
+  "worktree_isolation": "on"
 }

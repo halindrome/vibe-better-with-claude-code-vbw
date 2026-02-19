@@ -13,7 +13,7 @@ All notable changes to VBW will be documented in this file.
 - **`cc-version-table`** -- Claude Code version requirements table added to README with minimum versions for key features (hooks, teams, classifier, memory).
 - **`token-analysis`** -- v1.30.0 token analysis document covering CC Alignment + Worktree Isolation impact: 85 scripts, 57 test files, 825 BATS tests. Per-request +12% (enforcement content), 73% reduction vs stock teams.
 - **`worktree-isolation`** — Git worktree-per-plan isolation for Dev agents
-  (6 scripts, opt-in via `worktree_isolation` config, default "off").
+  (6 scripts, enabled by default via `worktree_isolation` config, set `"off"` to disable).
 
 ### Changed
 
