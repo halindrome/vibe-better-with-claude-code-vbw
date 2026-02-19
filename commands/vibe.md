@@ -391,6 +391,12 @@ FAIL -> STOP with remediation suggestions. WARN -> proceed with warnings.
    Compiles final rolling context before artifacts move to milestones/. Fail-open.
    When `v3_rolling_summary=false`: skip.
 5. Archive: `mkdir -p .vbw-planning/milestones/`. Move roadmap, state, phases to milestones/{SLUG}/. Write SHIPPED.md. Delete stale RESUME.md.
+5b. **Persist project-level state:** After archiving, run:
+   ```bash
+   bash ${CLAUDE_PLUGIN_ROOT}/scripts/persist-state-after-ship.sh \
+     .vbw-planning/milestones/{SLUG}/STATE.md .vbw-planning/STATE.md "{PROJECT_NAME}"
+   ```
+   This extracts project-level sections (Todos, Decisions, Skills, Blockers, Codebase Profile) from the archived STATE.md and writes a fresh root STATE.md. Milestone-specific sections (Current Phase, Activity Log, Phase Status) stay in the archive only. Fail-open: if the script fails, warn but continue.
 6. Planning commit boundary (conditional):
    ```bash
    bash ${CLAUDE_PLUGIN_ROOT}/scripts/planning-git.sh commit-boundary "archive milestone {SLUG}" .vbw-planning/config.json
