@@ -1,6 +1,7 @@
 #!/usr/bin/env bats
-# Tests for statusline_hide_limits and statusline_hide_limits_for_api_key config switches.
-# Verifies L3 (usage/limits line) suppression behavior.
+# Tests for statusline_hide_limits, statusline_hide_limits_for_api_key, and
+# statusline_hide_agent_in_tmux config switches.
+# Verifies L3 (usage/limits) and L1 (build status) suppression behavior.
 
 load test_helper
 
@@ -125,4 +126,43 @@ JSON
   local l3
   l3=$(echo "$output" | sed -n '3p')
   [ -n "$l3" ]
+}
+
+# --- statusline_hide_agent_in_tmux: true inside tmux suppresses Build: in L1 ---
+
+@test "statusline_hide_agent_in_tmux true in tmux: L1 does not contain Build:" {
+  local repo="$TEST_TEMP_DIR/repo-hide-agent-tmux"
+  mkdir -p "$repo/.vbw-planning"
+  git -C "$repo" init -q
+  git -C "$repo" commit --allow-empty -m "test(init): seed" -q
+  cat > "$repo/.vbw-planning/config.json" <<'JSON'
+{
+  "effort": "balanced",
+  "statusline_hide_agent_in_tmux": true
+}
+JSON
+  # Create a fake execution-state.json with running status
+  cat > "$repo/.vbw-planning/.execution-state.json" <<'JSON'
+{
+  "status": "running",
+  "wave": 1,
+  "total_waves": 1,
+  "plans": [
+    {"title": "test-plan", "status": "running"},
+    {"title": "other-plan", "status": "pending"}
+  ]
+}
+JSON
+
+  cd "$repo"
+  export TMUX="mock"
+  local output
+  output=$(echo '{}' | bash "$STATUSLINE" 2>&1)
+  unset TMUX
+  cd "$PROJECT_ROOT"
+
+  local l1
+  l1=$(echo "$output" | sed -n '1p')
+  # L1 should NOT contain "Build:" — it should fall through to standard VBW state
+  ! echo "$l1" | grep -q "Build:"
 }
