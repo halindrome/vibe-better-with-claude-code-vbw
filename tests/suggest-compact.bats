@@ -2,9 +2,41 @@
 
 load test_helper
 
+# Create mock plugin files with controlled byte sizes for deterministic tests.
+# This isolates tests from real reference file size changes.
+#
+# Mode costs (CHARS_PER_TOKEN=5, BASELINE_OVERHEAD=1500, buffer=15%):
+#   execute  — 45500B fixed → EST_COST=10600 → NEEDED=12190
+#   plan     —  4500B fixed → EST_COST=2400  → NEEDED=2760
+#   verify   —  1500B fixed → EST_COST=1800  → NEEDED=2070
+#   qa       — 15000B fixed → EST_COST=4500  → NEEDED=5175
+#   discuss  —  5000B fixed → EST_COST=2500  → NEEDED=2875
+#   unknown  — 30000B fixed → EST_COST=7500  → NEEDED=8625
+create_mock_plugin() {
+  local d="$TEST_TEMP_DIR/mock-plugin"
+  mkdir -p "$d/references" "$d/agents" "$d/templates"
+  printf '%*s' 25000 '' > "$d/references/execute-protocol.md"
+  printf '%*s' 5000  '' > "$d/references/handoff-schemas.md"
+  printf '%*s' 1000  '' > "$d/references/vbw-brand-essentials.md"
+  printf '%*s' 1000  '' > "$d/references/effort-profile-balanced.md"
+  printf '%*s' 1000  '' > "$d/references/effort-profile-thorough.md"
+  printf '%*s' 1000  '' > "$d/references/effort-profile-fast.md"
+  printf '%*s' 1000  '' > "$d/references/effort-profile-turbo.md"
+  printf '%*s' 5000  '' > "$d/agents/vbw-dev.md"
+  printf '%*s' 3000  '' > "$d/agents/vbw-qa.md"
+  printf '%*s' 5000  '' > "$d/references/verification-protocol.md"
+  printf '%*s' 500   '' > "$d/templates/SUMMARY.md"
+  printf '%*s' 4000  '' > "$d/agents/vbw-lead.md"
+  printf '%*s' 500   '' > "$d/templates/PLAN.md"
+  printf '%*s' 500   '' > "$d/templates/UAT.md"
+  printf '%*s' 5000  '' > "$d/references/discussion-engine.md"
+  export CLAUDE_PLUGIN_ROOT="$d"
+}
+
 setup() {
   setup_temp_dir
   create_test_config
+  create_mock_plugin
   cd "$TEST_TEMP_DIR"
 }
 
@@ -13,7 +45,7 @@ teardown() {
 }
 
 # =============================================================================
-# suggest-compact.sh: no output when no cached usage file
+# No output when preconditions not met
 # =============================================================================
 
 @test "suggest-compact: silent when no .context-usage file" {
@@ -23,7 +55,7 @@ teardown() {
 }
 
 # =============================================================================
-# suggest-compact.sh: no output when context is well below threshold
+# No output when context is well below threshold
 # =============================================================================
 
 @test "suggest-compact: silent when context at 30% (200K window)" {
@@ -41,49 +73,49 @@ teardown() {
 }
 
 @test "suggest-compact: silent when context at 70% for light command" {
+  # 70% of 200K = 60K remaining; discuss NEEDED=2875 — plenty of room
   echo "70|200000" > .vbw-planning/.context-usage
   run bash "$SCRIPTS_DIR/suggest-compact.sh" discuss
   [ "$status" -eq 0 ]
-  # 70% of 200K = 60K remaining, discuss needs ~6K + 15% = ~6.9K — fine
   [ -z "$output" ]
 }
 
 # =============================================================================
-# suggest-compact.sh: warning when context is near capacity
+# Warning when context is near capacity
 # =============================================================================
 
-@test "suggest-compact: warns when context at 90% for execute mode" {
-  echo "90|200000" > .vbw-planning/.context-usage
+@test "suggest-compact: warns when context at 95% for execute mode" {
+  # 95% of 200K = 10K remaining; execute NEEDED=12190 → warns
+  echo "95|200000" > .vbw-planning/.context-usage
   run bash "$SCRIPTS_DIR/suggest-compact.sh" execute
   [ "$status" -eq 0 ]
-  # 90% of 200K = 20K remaining, execute needs ~25K + 15% = ~28.75K — should warn
   [[ "$output" == *"PRE-FLIGHT CONTEXT GUARD"* ]]
-  [[ "$output" == *"90%"* ]]
+  [[ "$output" == *"95%"* ]]
   [[ "$output" == *"execute"* ]]
 }
 
-@test "suggest-compact: warns when context at 96% for any mode" {
-  echo "96|200000" > .vbw-planning/.context-usage
-  run bash "$SCRIPTS_DIR/suggest-compact.sh" qa
+@test "suggest-compact: warns when context at 99% for any mode" {
+  # 99% of 200K = 2K remaining; even lightest mode (verify NEEDED=2070) warns
+  echo "99|200000" > .vbw-planning/.context-usage
+  run bash "$SCRIPTS_DIR/suggest-compact.sh" verify
   [ "$status" -eq 0 ]
-  # 96% = 8K remaining, qa needs ~8K + 15% = ~9.2K — should warn
   [[ "$output" == *"PRE-FLIGHT CONTEXT GUARD"* ]]
 }
 
-@test "suggest-compact: warns when context at 86% for heavy execute mode" {
-  echo "86|200000" > .vbw-planning/.context-usage
+@test "suggest-compact: warns when context at 94% for execute mode" {
+  # 94% → 12K remaining; execute NEEDED=12190 → barely warns (12000 < 12190)
+  echo "94|200000" > .vbw-planning/.context-usage
   run bash "$SCRIPTS_DIR/suggest-compact.sh" execute
   [ "$status" -eq 0 ]
-  # 86% = 28K remaining, execute needs ~25K + 15% = 28.75K — should warn
   [[ "$output" == *"PRE-FLIGHT CONTEXT GUARD"* ]]
 }
 
 # =============================================================================
-# suggest-compact.sh: autonomy-dependent messaging
+# Autonomy-dependent messaging
 # =============================================================================
 
 @test "suggest-compact: recommends /compact for standard autonomy" {
-  echo "92|200000" > .vbw-planning/.context-usage
+  echo "95|200000" > .vbw-planning/.context-usage
   run bash "$SCRIPTS_DIR/suggest-compact.sh" execute
   [ "$status" -eq 0 ]
   [[ "$output" == *"RECOMMENDED"* ]]
@@ -91,8 +123,7 @@ teardown() {
 }
 
 @test "suggest-compact: auto-triggers for confident autonomy" {
-  echo "92|200000" > .vbw-planning/.context-usage
-  # Set autonomy to confident
+  echo "95|200000" > .vbw-planning/.context-usage
   jq '.autonomy = "confident"' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
     && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   run bash "$SCRIPTS_DIR/suggest-compact.sh" execute
@@ -102,7 +133,7 @@ teardown() {
 }
 
 @test "suggest-compact: auto-triggers for pure-vibe autonomy" {
-  echo "92|200000" > .vbw-planning/.context-usage
+  echo "95|200000" > .vbw-planning/.context-usage
   jq '.autonomy = "pure-vibe"' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
     && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   run bash "$SCRIPTS_DIR/suggest-compact.sh" execute
@@ -112,14 +143,14 @@ teardown() {
 }
 
 # =============================================================================
-# suggest-compact.sh: mode-specific cost thresholds
+# Mode-specific cost thresholds (dynamic calculation)
 # =============================================================================
 
-@test "suggest-compact: plan mode warns at lower threshold than execute" {
-  # At 88% with 200K: 24K remaining
-  # execute needs 25K+15%=28.75K -> warn
-  # plan needs 12K+15%=13.8K -> NO warn (24K > 13.8K)
-  echo "88|200000" > .vbw-planning/.context-usage
+@test "suggest-compact: plan mode has lower cost than execute" {
+  # 94% → 12K remaining
+  # execute NEEDED=12190 → warns (12000 < 12190)
+  # plan NEEDED=2760 → OK (12000 > 2760)
+  echo "94|200000" > .vbw-planning/.context-usage
   run bash "$SCRIPTS_DIR/suggest-compact.sh" plan
   [ "$status" -eq 0 ]
   [ -z "$output" ]
@@ -130,10 +161,10 @@ teardown() {
 }
 
 @test "suggest-compact: verify is lighter than execute" {
-  # At 90%: 20K remaining
-  # verify needs 10K+15%=11.5K -> NO warn
-  # execute needs 25K+15%=28.75K -> warn
-  echo "90|200000" > .vbw-planning/.context-usage
+  # 94% → 12K remaining
+  # verify NEEDED=2070 → OK
+  # execute NEEDED=12190 → warns
+  echo "94|200000" > .vbw-planning/.context-usage
   run bash "$SCRIPTS_DIR/suggest-compact.sh" verify
   [ "$status" -eq 0 ]
   [ -z "$output" ]
@@ -144,12 +175,44 @@ teardown() {
 }
 
 # =============================================================================
-# suggest-compact.sh: compaction_threshold config integration
+# Dynamic cost: variable files affect estimates
+# =============================================================================
+
+@test "suggest-compact: phase plans increase execute cost" {
+  # At 93% without plans: remaining=14000, execute NEEDED=12190 → OK
+  echo "93|200000" > .vbw-planning/.context-usage
+  run bash "$SCRIPTS_DIR/suggest-compact.sh" execute
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+
+  # Add a 15000-byte plan → TOTAL_BYTES=60500, EST_COST=13600, NEEDED=15640
+  # 14000 < 15640 → warns
+  mkdir -p .vbw-planning/phases/01-setup
+  printf '%*s' 15000 '' > .vbw-planning/phases/01-setup/01-PLAN.md
+  run bash "$SCRIPTS_DIR/suggest-compact.sh" execute
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PRE-FLIGHT CONTEXT GUARD"* ]]
+}
+
+@test "suggest-compact: state files contribute to cost" {
+  # Base QA: NEEDED=5175. At 97% remaining=6000 → OK (6000 > 5175)
+  # With STATE.md(5000) + ROADMAP.md(5000): EST_COST=6500, NEEDED=7475
+  # 6000 < 7475 → warns
+  printf '%*s' 5000 '' > .vbw-planning/STATE.md
+  printf '%*s' 5000 '' > .vbw-planning/ROADMAP.md
+  echo "97|200000" > .vbw-planning/.context-usage
+  run bash "$SCRIPTS_DIR/suggest-compact.sh" qa
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"PRE-FLIGHT CONTEXT GUARD"* ]]
+}
+
+# =============================================================================
+# compaction_threshold config integration
 # =============================================================================
 
 @test "suggest-compact: respects compaction_threshold from config" {
-  # 60% of 200K = 120K used, + 25K execute = 145K projected
-  # threshold 130000 -> warn because 145K > 130K
+  # 60% of 200K = 120K used; execute EST_COST=10600; projected=130600
+  # threshold 130000 → 130600 > 130K → warns
   echo "60|200000" > .vbw-planning/.context-usage
   jq '.compaction_threshold = 130000' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
     && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
@@ -159,8 +222,8 @@ teardown() {
 }
 
 @test "suggest-compact: no warn when below compaction_threshold" {
-  # 40% of 200K = 80K used, + 6K discuss = 86K projected
-  # threshold 130000 -> fine (86K < 130K)
+  # 40% of 200K = 80K used; discuss EST_COST=2500; projected=82500
+  # threshold 130000 → 82500 < 130K → OK
   echo "40|200000" > .vbw-planning/.context-usage
   jq '.compaction_threshold = 130000' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
     && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
@@ -170,7 +233,7 @@ teardown() {
 }
 
 # =============================================================================
-# suggest-compact.sh: robust handling of edge cases
+# Edge cases
 # =============================================================================
 
 @test "suggest-compact: handles corrupt .context-usage gracefully" {
@@ -196,29 +259,29 @@ teardown() {
 
 @test "suggest-compact: handles missing config.json gracefully" {
   rm -f .vbw-planning/config.json
-  echo "92|200000" > .vbw-planning/.context-usage
+  echo "95|200000" > .vbw-planning/.context-usage
   run bash "$SCRIPTS_DIR/suggest-compact.sh" execute
   [ "$status" -eq 0 ]
   [[ "$output" == *"PRE-FLIGHT CONTEXT GUARD"* ]]
 }
 
 @test "suggest-compact: defaults to execute mode when no mode given" {
-  echo "92|200000" > .vbw-planning/.context-usage
+  echo "95|200000" > .vbw-planning/.context-usage
   run bash "$SCRIPTS_DIR/suggest-compact.sh"
   [ "$status" -eq 0 ]
   [[ "$output" == *"execute"* ]]
 }
 
 @test "suggest-compact: unknown mode uses fallback cost" {
-  echo "95|200000" > .vbw-planning/.context-usage
+  # unknown: NEEDED=8625. 96% → 8000 remaining → warns (8000 < 8625)
+  echo "96|200000" > .vbw-planning/.context-usage
   run bash "$SCRIPTS_DIR/suggest-compact.sh" unknown_mode
   [ "$status" -eq 0 ]
-  # 95%: 10K remaining, unknown needs 10K+15%=11.5K -> warn
   [[ "$output" == *"PRE-FLIGHT CONTEXT GUARD"* ]]
 }
 
 # =============================================================================
-# suggest-compact.sh: 100% usage edge case
+# 100% usage edge case
 # =============================================================================
 
 @test "suggest-compact: warns at 100% usage" {
@@ -226,6 +289,18 @@ teardown() {
   run bash "$SCRIPTS_DIR/suggest-compact.sh" discuss
   [ "$status" -eq 0 ]
   [[ "$output" == *"PRE-FLIGHT CONTEXT GUARD"* ]]
+}
+
+# =============================================================================
+# Output includes dynamic cost details
+# =============================================================================
+
+@test "suggest-compact: output shows byte breakdown" {
+  echo "95|200000" > .vbw-planning/.context-usage
+  run bash "$SCRIPTS_DIR/suggest-compact.sh" execute
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"B fixed"* ]]
+  [[ "$output" == *"project files"* ]]
 }
 
 # =============================================================================
