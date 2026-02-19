@@ -80,3 +80,55 @@ teardown() {
   echo "$output" | grep -q "config_effort=balanced"
   echo "$output" | grep -q "config_autonomy=standard"
 }
+
+@test "detects unresolved UAT issues as next-phase remediation" {
+  mkdir -p .vbw-planning/phases/01-test/
+  touch .vbw-planning/phases/01-test/01-01-PLAN.md
+  touch .vbw-planning/phases/01-test/01-01-SUMMARY.md
+  cat > .vbw-planning/phases/01-test/01-UAT.md <<'EOF'
+---
+phase: 01
+status: issues_found
+---
+
+## Tests
+
+### P01-T1: sample
+
+- **Result:** issue
+- **Issue:** sample
+  - Severity: major
+EOF
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "next_phase_state=needs_uat_remediation"
+  echo "$output" | grep -q "next_phase=01"
+  echo "$output" | grep -q "uat_issues_phase=01"
+  echo "$output" | grep -q "uat_issues_major_or_higher=true"
+}
+
+@test "minor-only UAT issues set major-or-higher flag false" {
+  mkdir -p .vbw-planning/phases/01-test/
+  touch .vbw-planning/phases/01-test/01-01-PLAN.md
+  touch .vbw-planning/phases/01-test/01-01-SUMMARY.md
+  cat > .vbw-planning/phases/01-test/01-UAT.md <<'EOF'
+---
+phase: 01
+status: issues_found
+---
+
+## Tests
+
+### P01-T1: sample
+
+- **Result:** issue
+- **Issue:** sample
+  - Severity: minor
+EOF
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "next_phase_state=needs_uat_remediation"
+  echo "$output" | grep -q "uat_issues_major_or_higher=false"
+}
