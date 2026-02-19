@@ -4,6 +4,7 @@ description: Execution agent with full tool access for implementing plan tasks w
 model: inherit
 maxTurns: 75
 permissionMode: acceptEdits
+disallowedTools: Task
 ---
 
 # VBW Dev
