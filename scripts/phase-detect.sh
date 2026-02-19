@@ -107,13 +107,13 @@ if [ -d "$PHASES_DIR" ]; then
 
       # Skip phases without execution artifacts — a UAT file in a never-executed phase is orphaned/stale.
       # Also skip mid-execution phases (SUMMARY < PLAN) — UAT from a prior run is stale until re-execution completes.
-      DIR_PLANS=$(ls "$DIR"*-PLAN.md 2>/dev/null | wc -l | tr -d ' ')
-      DIR_SUMMARIES=$(ls "$DIR"*-SUMMARY.md 2>/dev/null | wc -l | tr -d ' ')
+      DIR_PLANS=$(ls "$DIR"[0-9]*-PLAN.md 2>/dev/null | wc -l | tr -d ' ')
+      DIR_SUMMARIES=$(ls "$DIR"[0-9]*-SUMMARY.md 2>/dev/null | wc -l | tr -d ' ')
       if [ "$DIR_PLANS" -eq 0 ] || [ "$DIR_SUMMARIES" -lt "$DIR_PLANS" ]; then
         continue
       fi
 
-      UAT_FILE=$(ls "$DIR"*-UAT.md 2>/dev/null | sort | tail -1 || true)
+      UAT_FILE=$(ls "$DIR"[0-9]*-UAT.md 2>/dev/null | sort | tail -1 || true)
       if [ -f "$UAT_FILE" ]; then
         UAT_STATUS=$(grep -m1 '^status:' "$UAT_FILE" 2>/dev/null | sed 's/status:[[:space:]]*//' | tr '[:upper:]' '[:lower:]' || true)
         if [ "$UAT_STATUS" = "issues_found" ]; then
@@ -139,8 +139,8 @@ if [ -d "$PHASES_DIR" ]; then
       NEXT_PHASE="$UAT_ISSUES_PHASE"
       NEXT_PHASE_SLUG="$UAT_ISSUES_SLUG"
       NEXT_PHASE_STATE="needs_uat_remediation"
-      NEXT_PHASE_PLANS=$(ls "$TARGET_DIR"*-PLAN.md 2>/dev/null | wc -l | tr -d ' ')
-      NEXT_PHASE_SUMMARIES=$(ls "$TARGET_DIR"*-SUMMARY.md 2>/dev/null | wc -l | tr -d ' ')
+      NEXT_PHASE_PLANS=$(ls "$TARGET_DIR"[0-9]*-PLAN.md 2>/dev/null | wc -l | tr -d ' ')
+      NEXT_PHASE_SUMMARIES=$(ls "$TARGET_DIR"[0-9]*-SUMMARY.md 2>/dev/null | wc -l | tr -d ' ')
     else
       ALL_DONE=true
       for DIR in $PHASE_DIRS; do
@@ -149,8 +149,8 @@ if [ -d "$PHASES_DIR" ]; then
         NUM=$(echo "$DIRNAME" | sed 's/^\([0-9]*\).*/\1/')
 
         # Count PLAN and SUMMARY files
-        P_COUNT=$(ls "$DIR"*-PLAN.md 2>/dev/null | wc -l | tr -d ' ')
-        S_COUNT=$(ls "$DIR"*-SUMMARY.md 2>/dev/null | wc -l | tr -d ' ')
+        P_COUNT=$(ls "$DIR"[0-9]*-PLAN.md 2>/dev/null | wc -l | tr -d ' ')
+        S_COUNT=$(ls "$DIR"[0-9]*-SUMMARY.md 2>/dev/null | wc -l | tr -d ' ')
 
         if [ "$P_COUNT" -eq 0 ]; then
           # Needs plan and execute

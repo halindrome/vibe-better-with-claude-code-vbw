@@ -242,6 +242,41 @@ EOF
   [[ "$output" != *"remediation"* ]]
 }
 
+@test "suggest-next verify issues_found no-arg ignores non-canonical PLAN files in execution guard" {
+  cd "$TEST_TEMP_DIR"
+  local dir="$TEST_TEMP_DIR/.vbw-planning/phases/03-ui"
+  mkdir -p "$dir"
+  # Non-canonical PLAN file — should NOT satisfy the execution guard
+  touch "${dir}/not-a-PLAN.md"
+  printf -- '---\nstatus: complete\ndeviations: 0\n---\n' > "${dir}/not-a-SUMMARY.md"
+  printf -- '---\nphase: 03\nstatus: issues_found\n---\nSeverity: major\n' > "${dir}/03-UAT.md"
+
+  run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found
+
+  [ "$status" -eq 0 ]
+  # Execution guard should reject this phase (0 canonical plans)
+  [[ "$output" != *"remediation"* ]]
+  [[ "$output" == *"/vbw:fix"* ]]
+}
+
+@test "suggest-next verify issues_found no-arg ignores dotfile PLAN artifacts" {
+  cd "$TEST_TEMP_DIR"
+  local dir="$TEST_TEMP_DIR/.vbw-planning/phases/03-ui"
+  mkdir -p "$dir"
+  # Only canonical artifacts
+  printf -- '---\nphase: 03\nplan: 03-01\n---\n' > "${dir}/03-01-PLAN.md"
+  printf -- '---\nstatus: complete\ndeviations: 0\n---\n' > "${dir}/03-01-SUMMARY.md"
+  # Dotfile — must NOT count (matching ls behavior in phase-detect.sh)
+  touch "${dir}/.03-02-PLAN.md"
+  printf -- '---\nphase: 03\nstatus: issues_found\n---\nSeverity: major\n' > "${dir}/03-UAT.md"
+
+  run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found
+
+  [ "$status" -eq 0 ]
+  # 1 canonical plan, 1 summary → execution guard passes → remediation triggered
+  [[ "$output" == *"/vbw:vibe -- Continue UAT remediation for Phase 3"* ]]
+}
+
 @test "suggest-next verify issues_found no-arg skips orphan UAT without execution artifacts" {
   cd "$TEST_TEMP_DIR"
   # Phase with UAT file but no PLAN/SUMMARY (orphan) — should be skipped

@@ -219,6 +219,33 @@ EOF
   echo "$output" | grep -q "next_phase_summaries=1"
 }
 
+@test "non-canonical PLAN files are not counted as plan artifacts" {
+  mkdir -p .vbw-planning/phases/01-test/
+  # Canonical PLAN file
+  touch .vbw-planning/phases/01-test/01-01-PLAN.md
+  # Non-canonical — should NOT count
+  touch .vbw-planning/phases/01-test/not-a-PLAN.md
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  # Only 1 canonical plan, 0 summaries → needs_execute (not needs_plan_and_execute)
+  echo "$output" | grep -q "next_phase_state=needs_execute"
+  echo "$output" | grep -q "next_phase_plans=1"
+}
+
+@test "dotfile PLAN files are not counted as plan artifacts" {
+  mkdir -p .vbw-planning/phases/01-test/
+  touch .vbw-planning/phases/01-test/01-01-PLAN.md
+  touch .vbw-planning/phases/01-test/01-01-SUMMARY.md
+  # Dotfile — should NOT count (ls glob ignores dotfiles)
+  touch ".vbw-planning/phases/01-test/.01-02-PLAN.md"
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  # 1 plan, 1 summary → all_done (dotfile plan not counted)
+  echo "$output" | grep -q "next_phase_state=all_done"
+}
+
 @test "phase directories sort numerically not lexicographically" {
   mkdir -p .vbw-planning/phases/11-eleven/
   mkdir -p .vbw-planning/phases/100-hundred/

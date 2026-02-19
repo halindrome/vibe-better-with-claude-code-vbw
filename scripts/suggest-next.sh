@@ -90,8 +90,8 @@ if [ -d "$PLANNING_DIR" ]; then
       phase_num=$(basename "$dir" | sed 's/[^0-9].*//')
       phase_slug=$(basename "$dir" | sed 's/^[0-9]*-//')
 
-      plans=$(find "$dir" -maxdepth 1 -name '*-PLAN.md' 2>/dev/null | wc -l | tr -d ' ')
-      summaries=$(find "$dir" -maxdepth 1 -name '*-SUMMARY.md' 2>/dev/null | wc -l | tr -d ' ')
+      plans=$(find "$dir" -maxdepth 1 ! -name '.*' -name '[0-9]*-PLAN.md' 2>/dev/null | wc -l | tr -d ' ')
+      summaries=$(find "$dir" -maxdepth 1 ! -name '.*' -name '[0-9]*-SUMMARY.md' 2>/dev/null | wc -l | tr -d ' ')
 
       if [ "$plans" -eq 0 ] && [ -z "$next_unplanned" ]; then
         next_unplanned="$phase_num"
@@ -217,12 +217,12 @@ if [ "$CMD" = "verify" ] && [ "$effective_result" = "issues_found" ] && [ -d "${
     for dir in $(ls -d "$PHASES_DIR"/*/ 2>/dev/null | (sort -V 2>/dev/null || awk -F/ '{n=$(NF-1); gsub(/[^0-9].*/,"",n); print (n+0)"\t"$0}' | sort -n | cut -f2-)); do
       [ -d "$dir" ] || continue
       # Guard: skip phases without execution artifacts (matching phase-detect.sh)
-      _plans=$(find "$dir" -maxdepth 1 -name '*-PLAN.md' 2>/dev/null | wc -l | tr -d ' ')
-      _summaries=$(find "$dir" -maxdepth 1 -name '*-SUMMARY.md' 2>/dev/null | wc -l | tr -d ' ')
+      _plans=$(find "$dir" -maxdepth 1 ! -name '.*' -name '[0-9]*-PLAN.md' 2>/dev/null | wc -l | tr -d ' ')
+      _summaries=$(find "$dir" -maxdepth 1 ! -name '.*' -name '[0-9]*-SUMMARY.md' 2>/dev/null | wc -l | tr -d ' ')
       if [ "$_plans" -eq 0 ] || [ "$_summaries" -lt "$_plans" ]; then
         continue
       fi
-      _uat=$(ls -1 "$dir"*-UAT.md 2>/dev/null | sort | tail -1 || true)
+      _uat=$(ls -1 "$dir"[0-9]*-UAT.md 2>/dev/null | sort | tail -1 || true)
       if [ -f "$_uat" ]; then
         _us=$(grep -m1 '^status:' "$_uat" 2>/dev/null | sed 's/status:[[:space:]]*//' | tr '[:upper:]' '[:lower:]' || true)
         if [ "$_us" = "issues_found" ]; then
@@ -238,7 +238,7 @@ if [ "$CMD" = "verify" ] && [ "$effective_result" = "issues_found" ] && [ -d "${
   fi
 
   if [ -n "$verify_target_phase_dir" ]; then
-    verify_target_uat=$(ls -1 "$verify_target_phase_dir"/*-UAT.md 2>/dev/null | sort | tail -1 || true)
+    verify_target_uat=$(ls -1 "$verify_target_phase_dir"/[0-9]*-UAT.md 2>/dev/null | sort | tail -1 || true)
   fi
 
   if [ -f "$verify_target_uat" ]; then
