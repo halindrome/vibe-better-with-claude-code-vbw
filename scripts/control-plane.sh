@@ -68,19 +68,21 @@ V3_CONTRACT_LITE=false
 V3_LOCK_LITE=false
 V3_LEASE_LOCKS=false
 CONTEXT_COMPILER=false
-V2_TOKEN_BUDGETS=false
 
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   V3_CONTRACT_LITE=$(jq -r '.v3_contract_lite // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
   V3_LOCK_LITE=$(jq -r '.v3_lock_lite // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
   V3_LEASE_LOCKS=$(jq -r '.v3_lease_locks // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
   CONTEXT_COMPILER=$(jq -r 'if .context_compiler == null then true else .context_compiler end' "$CONFIG_PATH" 2>/dev/null || echo "true")
-  V2_TOKEN_BUDGETS=$(jq -r '.v2_token_budgets // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
 fi
 
 # V2 hard contracts and gates are now always enabled (graduated)
 V2_HARD_CONTRACTS=true
 V2_HARD_GATES=true
+
+# v2_token_budgets flag removed - budget enforcement is now config-driven
+# (always call token-budget.sh, which will pass through if no budgets defined)
+V2_TOKEN_BUDGETS=true
 
 # --- No-op check (REQ-C1) ---
 # If all flags relevant to the chosen action are false, exit 0 immediately.
@@ -273,10 +275,8 @@ step_context() {
 }
 
 step_token_budget() {
-  if [ "$V2_TOKEN_BUDGETS" != "true" ]; then
-    record_step "token_budget" "skip" "v2_token_budgets=false"
-    return 0
-  fi
+  # v2_token_budgets flag removed - always attempt budget enforcement
+  # token-budget.sh will pass through if no budget definitions exist
   if [ -z "$CONTEXT_PATH_OUT" ] || [ ! -f "$CONTEXT_PATH_OUT" ]; then
     record_step "token_budget" "skip" "no context file"
     return 0

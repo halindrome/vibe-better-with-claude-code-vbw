@@ -19,12 +19,6 @@ CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUDGETS_PATH="${SCRIPT_DIR}/../config/token-budgets.json"
 
-# Check feature flag
-ENABLED=false
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r '.v2_token_budgets // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-fi
-
 if [ $# -lt 1 ]; then
   # No role — pass through
   cat 2>/dev/null
@@ -46,8 +40,9 @@ fi
 # Optional contract metadata for per-task budgets
 CONTRACT_PATH="${1:-}"
 
-# If flag disabled, pass through
-if [ "$ENABLED" != "true" ]; then
+# Budget enforcement is now config-driven (not flag-gated)
+# If no budget definitions exist, pass through
+if [ ! -f "$BUDGETS_PATH" ]; then
   echo "$CONTENT"
   exit 0
 fi
