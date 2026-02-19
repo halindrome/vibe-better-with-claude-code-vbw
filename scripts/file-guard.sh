@@ -80,7 +80,8 @@ if true; then
               fi
             done <<< "$FORBIDDEN"
           fi
-          # Check allowed_paths — file must be in contract scope
+          # Check allowed_paths — file must be in contract scope (only if allowed_paths is specified)
+          # Note: allowed_paths is optional; if empty, fall through to plan files_modified check
           ALLOWED=$(jq -r '.allowed_paths[]' "$CONTRACT_FILE" 2>/dev/null) || ALLOWED=""
           if [ -n "$ALLOWED" ]; then
             IN_SCOPE=false
