@@ -43,21 +43,10 @@ verification_checks:
 PLAN
 }
 
-enable_v2_contracts() {
-  jq '.v2_hard_contracts = true' "$TEST_TEMP_DIR/.vbw-planning/config.json" > "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" \
-    && mv "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" "$TEST_TEMP_DIR/.vbw-planning/config.json"
-}
-
-enable_v3_lite() {
-  jq '.v3_contract_lite = true' "$TEST_TEMP_DIR/.vbw-planning/config.json" > "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" \
-    && mv "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" "$TEST_TEMP_DIR/.vbw-planning/config.json"
-}
-
 # --- generate-contract.sh tests ---
 
 @test "generate-contract: v2 hard emits all 11 fields + hash" {
   create_plan_file
-  enable_v2_contracts
   cd "$TEST_TEMP_DIR"
   run bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md"
   [ "$status" -eq 0 ]
@@ -83,7 +72,6 @@ enable_v3_lite() {
 
 @test "generate-contract: v3 lite emits 5 fields only" {
   create_plan_file
-  enable_v3_lite
   cd "$TEST_TEMP_DIR"
   run bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md"
   [ "$status" -eq 0 ]
@@ -100,7 +88,6 @@ enable_v3_lite() {
 
 @test "generate-contract: contract hash is deterministic" {
   create_plan_file
-  enable_v2_contracts
   cd "$TEST_TEMP_DIR"
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md" >/dev/null
   HASH1=$(jq -r '.contract_hash' ".vbw-planning/.contracts/1-1.json")
@@ -110,19 +97,10 @@ enable_v3_lite() {
   [ "$HASH1" = "$HASH2" ]
 }
 
-@test "generate-contract: no flags enabled exits silently" {
-  create_plan_file
-  cd "$TEST_TEMP_DIR"
-  run bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md"
-  [ "$status" -eq 0 ]
-  [ ! -f ".vbw-planning/.contracts/1-1.json" ]
-}
-
 # --- validate-contract.sh tests ---
 
 @test "validate-contract: hash mismatch hard stop" {
   create_plan_file
-  enable_v2_contracts
   cd "$TEST_TEMP_DIR"
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md" >/dev/null
   CONTRACT=".vbw-planning/.contracts/1-1.json"
@@ -135,7 +113,6 @@ enable_v3_lite() {
 
 @test "validate-contract: valid hash passes" {
   create_plan_file
-  enable_v2_contracts
   cd "$TEST_TEMP_DIR"
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md" >/dev/null
   CONTRACT=".vbw-planning/.contracts/1-1.json"
@@ -145,7 +122,6 @@ enable_v3_lite() {
 
 @test "validate-contract: forbidden path hard stop" {
   create_plan_file
-  enable_v2_contracts
   cd "$TEST_TEMP_DIR"
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md" >/dev/null
   CONTRACT=".vbw-planning/.contracts/1-1.json"
@@ -156,7 +132,6 @@ enable_v3_lite() {
 
 @test "validate-contract: forbidden path subdir hard stop" {
   create_plan_file
-  enable_v2_contracts
   cd "$TEST_TEMP_DIR"
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md" >/dev/null
   CONTRACT=".vbw-planning/.contracts/1-1.json"
@@ -167,7 +142,6 @@ enable_v3_lite() {
 
 @test "validate-contract: out of scope file hard stop" {
   create_plan_file
-  enable_v2_contracts
   cd "$TEST_TEMP_DIR"
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md" >/dev/null
   CONTRACT=".vbw-planning/.contracts/1-1.json"
@@ -178,7 +152,6 @@ enable_v3_lite() {
 
 @test "validate-contract: v3 lite advisory only" {
   create_plan_file
-  enable_v3_lite
   cd "$TEST_TEMP_DIR"
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md" >/dev/null
   CONTRACT=".vbw-planning/.contracts/1-1.json"
@@ -191,10 +164,6 @@ enable_v3_lite() {
 
 @test "contract-revision: detects scope change and archives old" {
   create_plan_file
-  enable_v2_contracts
-  # Enable event log for revision events
-  jq '.v3_event_log = true' "$TEST_TEMP_DIR/.vbw-planning/config.json" > "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" \
-    && mv "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" "$TEST_TEMP_DIR/.vbw-planning/config.json"
   cd "$TEST_TEMP_DIR"
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md" >/dev/null
   CONTRACT=".vbw-planning/.contracts/1-1.json"
@@ -219,7 +188,6 @@ EXTRA
 
 @test "contract-revision: no change returns no_change" {
   create_plan_file
-  enable_v2_contracts
   cd "$TEST_TEMP_DIR"
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md" >/dev/null
   CONTRACT=".vbw-planning/.contracts/1-1.json"
