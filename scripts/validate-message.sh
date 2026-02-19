@@ -13,13 +13,8 @@ PLANNING_DIR=".vbw-planning"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Check feature flag
-V2_TYPED=false
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V2_TYPED=$(jq -r '.v2_typed_protocol // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-fi
-
-[ "$V2_TYPED" != "true" ] && { echo '{"valid":true,"errors":[],"reason":"v2_typed_protocol=false"}'; exit 0; }
+# v2_typed_protocol is now always enabled (graduated)
+V2_TYPED=true
 
 # Read message
 MSG=""
