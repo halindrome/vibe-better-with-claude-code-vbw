@@ -96,6 +96,37 @@ if [ -n "$AGENT_PID" ] && [ -f "$SCRIPT_DIR/agent-pid-tracker.sh" ]; then
   bash "$SCRIPT_DIR/agent-pid-tracker.sh" unregister "$AGENT_PID" 2>/dev/null || true
 fi
 
+# Capture last_assistant_message for crash recovery (REQ-07)
+# If agent exited without SUMMARY.md, preserve final output for debugging
+if [ -n "$LAST_MESSAGE" ] && [ -n "$AGENT_PID" ]; then
+  # Detect current phase from execution state
+  EXEC_STATE="$PLANNING_DIR/.execution-state.json"
+  if [ -f "$EXEC_STATE" ]; then
+    PHASE_NUM=$(jq -r '.phase // ""' "$EXEC_STATE" 2>/dev/null)
+    if [ -n "$PHASE_NUM" ]; then
+      PHASE_DIR=$(ls -d "$PLANNING_DIR/phases/${PHASE_NUM}-"* 2>/dev/null | head -1)
+      if [ -n "$PHASE_DIR" ] && [ -d "$PHASE_DIR" ]; then
+        # Check if any SUMMARY.md exists for this phase
+        SUMMARY_COUNT=$(ls -1 "$PHASE_DIR" 2>/dev/null | grep -c '\-SUMMARY\.md$' 2>/dev/null || echo 0)
+        if [ "$SUMMARY_COUNT" -eq 0 ]; then
+          # No SUMMARY.md found — write last words for crash recovery
+          LAST_WORDS_DIR="$PLANNING_DIR/.agent-last-words"
+          mkdir -p "$LAST_WORDS_DIR" 2>/dev/null || true
+          TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date)
+          {
+            echo "# Agent Last Words (Crash Recovery)"
+            echo "Timestamp: $TIMESTAMP"
+            echo "Agent PID: $AGENT_PID"
+            echo "Phase: $PHASE_NUM"
+            echo ""
+            echo "$LAST_MESSAGE"
+          } > "$LAST_WORDS_DIR/${AGENT_PID}.txt" 2>/dev/null || true
+        fi
+      fi
+    fi
+  fi
+fi
+
 # Auto-close tmux pane if recorded at start
 PANE_MAP="$PLANNING_DIR/.agent-panes"
 if [ -n "${TMUX:-}" ] && [ -n "$AGENT_PID" ] && [ -f "$PANE_MAP" ]; then
