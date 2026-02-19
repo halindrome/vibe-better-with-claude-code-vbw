@@ -105,35 +105,29 @@ if true; then
 fi
 
 # --- V2 role isolation: check agent role against path rules ---
-V2_ROLE_ISO=false
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V2_ROLE_ISO=$(jq -r '.v2_role_isolation // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+# v2_role_isolation is now always enabled (graduated)
+AGENT_ROLE="${VBW_AGENT_ROLE:-}"
+if [ -n "$AGENT_ROLE" ]; then
+  case "$AGENT_ROLE" in
+    lead|architect|qa)
+      # Planning roles can only write to .vbw-planning/ (already exempted above, so reaching here means non-planning path)
+      echo "Blocked: role '${AGENT_ROLE}' cannot write outside .vbw-planning/" >&2
+      exit 2
+      ;;
+    scout)
+      # Scout is read-only — block all non-planning writes
+      echo "Blocked: role 'scout' is read-only" >&2
+      exit 2
+      ;;
+    dev|debugger)
+      # Dev/debugger allowed — contract allowed_paths enforced above
+      ;;
+    *)
+      # Unknown role — fail-open
+      ;;
+  esac
 fi
-
-if [ "$V2_ROLE_ISO" = "true" ]; then
-  AGENT_ROLE="${VBW_AGENT_ROLE:-}"
-  if [ -n "$AGENT_ROLE" ]; then
-    case "$AGENT_ROLE" in
-      lead|architect|qa)
-        # Planning roles can only write to .vbw-planning/ (already exempted above, so reaching here means non-planning path)
-        echo "Blocked: role '${AGENT_ROLE}' cannot write outside .vbw-planning/ (v2_role_isolation)" >&2
-        exit 2
-        ;;
-      scout)
-        # Scout is read-only — block all non-planning writes
-        echo "Blocked: role 'scout' is read-only (v2_role_isolation)" >&2
-        exit 2
-        ;;
-      dev|debugger)
-        # Dev/debugger allowed — contract allowed_paths enforced above
-        ;;
-      *)
-        # Unknown role — fail-open
-        ;;
-    esac
-  fi
-  # No role set — fail-open
-fi
+# No role set — fail-open
 
 # --- Original file-guard: check files_modified from active plan ---
 ACTIVE_PLAN=""
