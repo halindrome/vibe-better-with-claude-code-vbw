@@ -49,6 +49,7 @@ ensure_transient_ignore() {
 .active-agent-count
 .active-agent-count.lock/
 .agent-pids
+.task-verify-seen
 
 # Metrics & cost tracking
 .metrics/

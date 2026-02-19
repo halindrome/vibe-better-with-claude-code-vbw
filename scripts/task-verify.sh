@@ -75,7 +75,7 @@ fi
 
 # Extract keywords from task subject (words > 3 chars, lowercased, max 8)
 # Filter out common stop words that cause false positive matches
-STOP_WORDS="^(that|this|with|from|have|been|will|would|should|could|their|them|then|than|when|what|which|where|were|some|each|into|also|more|over|only|does|make|like|just|most|well|very|much|such|even)$"
+STOP_WORDS="^(that|this|with|from|have|been|will|would|should|could|their|them|then|than|when|what|which|where|were|some|each|into|also|more|over|only|does|make|like|just|most|well|very|much|such|even|execute|implement|create|update|wire|build|task|plan)$"
 KEYWORDS=$(echo "$TASK_SUBJECT" | tr '[:upper:]' '[:lower:]' | tr -cs '[:alnum:]' '\n' | while read -r word; do
   [ ${#word} -gt 3 ] && echo "$word"
 done | grep -Ev "$STOP_WORDS" | head -8)
@@ -110,4 +110,16 @@ if [ "$MATCH_COUNT" -ge "$MIN_MATCHES" ]; then
 fi
 
 echo "No recent commit found matching task: '$TASK_SUBJECT' (matched $MATCH_COUNT/$KEYWORD_COUNT keywords, needed $MIN_MATCHES)" >&2
+
+# Circuit breaker: if this same subject has already been blocked once, allow it
+# on the second attempt. This prevents infinite hook loops where the agent
+# responds to the block, triggering another turn, which triggers the hook again.
+SEEN_FILE=".vbw-planning/.task-verify-seen"
+SUBJECT_HASH=$(printf '%s' "$TASK_SUBJECT" | md5 2>/dev/null || printf '%s' "$TASK_SUBJECT" | md5sum 2>/dev/null | cut -d' ' -f1 || printf '%s' "$TASK_SUBJECT" | cksum 2>/dev/null | cut -d' ' -f1 || echo "${#TASK_SUBJECT}-${TASK_SUBJECT%% *}")
+if [ -f "$SEEN_FILE" ] && grep -qFx "$SUBJECT_HASH" "$SEEN_FILE" 2>/dev/null; then
+  echo "Circuit breaker: allowing repeat-blocked task (same subject blocked before)" >&2
+  exit 0
+fi
+# Record this subject as blocked
+echo "$SUBJECT_HASH" >> "$SEEN_FILE" 2>/dev/null || true
 exit 2
