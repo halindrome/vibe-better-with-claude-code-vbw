@@ -241,3 +241,27 @@ EOF
   [[ "$output" == *"/vbw:fix"* ]]
   [[ "$output" != *"remediation"* ]]
 }
+
+@test "suggest-next verify issues_found no-arg skips orphan UAT without execution artifacts" {
+  cd "$TEST_TEMP_DIR"
+  # Phase with UAT file but no PLAN/SUMMARY (orphan) — should be skipped
+  local orphan_dir="$TEST_TEMP_DIR/.vbw-planning/phases/02-orphan"
+  mkdir -p "$orphan_dir"
+  printf -- '---\nphase: 02\nstatus: issues_found\n---\nSeverity: major\n' > "${orphan_dir}/02-UAT.md"
+
+  # Phase with full execution artifacts + complete UAT — not a remediation target
+  local complete_dir="$TEST_TEMP_DIR/.vbw-planning/phases/05-complete"
+  mkdir -p "$complete_dir"
+  printf -- '---\nphase: 05\nplan: 05-01\n---\n' > "${complete_dir}/05-01-PLAN.md"
+  printf -- '---\nstatus: complete\ndeviations: 0\n---\n' > "${complete_dir}/05-01-SUMMARY.md"
+  printf -- '---\nphase: 05\nstatus: complete\n---\nAll passed.\n' > "${complete_dir}/05-UAT.md"
+
+  run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found
+
+  [ "$status" -eq 0 ]
+  # Should NOT trigger remediation from orphan phase 02
+  [[ "$output" != *"remediation"* ]]
+  [[ "$output" != *"Phase 2"* ]]
+  # Should show generic fix guidance
+  [[ "$output" == *"/vbw:fix"* ]]
+}

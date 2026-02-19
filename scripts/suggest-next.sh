@@ -82,7 +82,8 @@ if [ -d "$PLANNING_DIR" ]; then
   # Scan phases
   if [ -d "$PHASES_DIR" ]; then
     # Sort phase dirs numerically (prevents 100 sorting before 11)
-    phase_dirs_sorted=$(ls -d "$PHASES_DIR"/*/ 2>/dev/null | (sort -V 2>/dev/null || sort -n))
+    # Fallback: extract numeric prefix from basename for systems without sort -V
+    phase_dirs_sorted=$(ls -d "$PHASES_DIR"/*/ 2>/dev/null | (sort -V 2>/dev/null || awk -F/ '{n=$(NF-1); gsub(/[^0-9].*/,"",n); print (n+0)"\t"$0}' | sort -n | cut -f2-))
     for dir in $phase_dirs_sorted; do
       [ -d "$dir" ] || continue
       phase_count=$((phase_count + 1))
@@ -213,8 +214,14 @@ if [ "$CMD" = "verify" ] && [ "$effective_result" = "issues_found" ] && [ -d "${
     done
   else
     # No phase arg — find the first phase with UAT issues (numeric order, matching phase-detect.sh)
-    for dir in $(ls -d "$PHASES_DIR"/*/ 2>/dev/null | (sort -V 2>/dev/null || sort -n)); do
+    for dir in $(ls -d "$PHASES_DIR"/*/ 2>/dev/null | (sort -V 2>/dev/null || awk -F/ '{n=$(NF-1); gsub(/[^0-9].*/,"",n); print (n+0)"\t"$0}' | sort -n | cut -f2-)); do
       [ -d "$dir" ] || continue
+      # Guard: skip phases without execution artifacts (matching phase-detect.sh)
+      _plans=$(find "$dir" -maxdepth 1 -name '*-PLAN.md' 2>/dev/null | wc -l | tr -d ' ')
+      _summaries=$(find "$dir" -maxdepth 1 -name '*-SUMMARY.md' 2>/dev/null | wc -l | tr -d ' ')
+      if [ "$_plans" -eq 0 ] || [ "$_summaries" -lt "$_plans" ]; then
+        continue
+      fi
       _uat=$(ls -1 "$dir"*-UAT.md 2>/dev/null | sort | tail -1 || true)
       if [ -f "$_uat" ]; then
         _us=$(grep -m1 '^status:' "$_uat" 2>/dev/null | sed 's/status:[[:space:]]*//' | tr '[:upper:]' '[:lower:]' || true)

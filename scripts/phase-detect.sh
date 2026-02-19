@@ -89,7 +89,8 @@ UAT_ISSUES_MAJOR_OR_HIGHER=false
 
 if [ -d "$PHASES_DIR" ]; then
   # Collect phase directories in numeric order (prevents 100 sorting before 11)
-  PHASE_DIRS=$(ls -d "$PHASES_DIR"/*/ 2>/dev/null | (sort -V 2>/dev/null || sort -n))
+  # Fallback: extract numeric prefix from basename for systems without sort -V
+  PHASE_DIRS=$(ls -d "$PHASES_DIR"/*/ 2>/dev/null | (sort -V 2>/dev/null || awk -F/ '{n=$(NF-1); gsub(/[^0-9].*/,"",n); print (n+0)"\t"$0}' | sort -n | cut -f2-))
 
   for DIR in $PHASE_DIRS; do
     PHASE_COUNT=$((PHASE_COUNT + 1))
