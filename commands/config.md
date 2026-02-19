@@ -365,6 +365,8 @@ Note: `auto_commit` controls source-task commits during Execute mode. Planning a
 | event_recovery | boolean | true/false | false |
 | monorepo_routing | boolean | true/false | true |
 | rolling_summary | boolean | true/false | false |
+| statusline_hide_limits | boolean | true/false | false |
+| statusline_hide_limits_for_api_key | boolean | true/false | false |
 
 ### agent_max_turns
 
