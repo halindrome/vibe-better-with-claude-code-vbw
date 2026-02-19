@@ -88,8 +88,8 @@ UAT_ISSUES_SLUG="none"
 UAT_ISSUES_MAJOR_OR_HIGHER=false
 
 if [ -d "$PHASES_DIR" ]; then
-  # Collect phase directories in sorted order
-  PHASE_DIRS=$(ls -d "$PHASES_DIR"/*/ 2>/dev/null | sort)
+  # Collect phase directories in numeric order (prevents 100 sorting before 11)
+  PHASE_DIRS=$(ls -d "$PHASES_DIR"/*/ 2>/dev/null | sort -V)
 
   for DIR in $PHASE_DIRS; do
     PHASE_COUNT=$((PHASE_COUNT + 1))
@@ -105,9 +105,10 @@ if [ -d "$PHASES_DIR" ]; then
       NUM=$(echo "$DIRNAME" | sed 's/^\([0-9]*\).*/\1/')
 
       # Skip phases without execution artifacts — a UAT file in a never-executed phase is orphaned/stale.
+      # Also skip mid-execution phases (SUMMARY < PLAN) — UAT from a prior run is stale until re-execution completes.
       DIR_PLANS=$(ls "$DIR"*-PLAN.md 2>/dev/null | wc -l | tr -d ' ')
       DIR_SUMMARIES=$(ls "$DIR"*-SUMMARY.md 2>/dev/null | wc -l | tr -d ' ')
-      if [ "$DIR_PLANS" -eq 0 ] || [ "$DIR_SUMMARIES" -eq 0 ]; then
+      if [ "$DIR_PLANS" -eq 0 ] || [ "$DIR_SUMMARIES" -lt "$DIR_PLANS" ]; then
         continue
       fi
 

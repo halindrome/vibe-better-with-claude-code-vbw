@@ -196,3 +196,51 @@ EOF
   # Should route to needs_plan_and_execute, not needs_uat_remediation
   echo "$output" | grep -q "next_phase_state=needs_plan_and_execute"
 }
+
+@test "mid-execution phase with UAT is not routed to remediation" {
+  mkdir -p .vbw-planning/phases/01-partial/
+  # 2 plans, only 1 summary — still mid-execution
+  touch .vbw-planning/phases/01-partial/01-01-PLAN.md
+  touch .vbw-planning/phases/01-partial/01-02-PLAN.md
+  touch .vbw-planning/phases/01-partial/01-01-SUMMARY.md
+  cat > .vbw-planning/phases/01-partial/01-UAT.md <<'EOF'
+---
+phase: 01
+status: issues_found
+---
+- Severity: major
+EOF
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "uat_issues_phase=none"
+  echo "$output" | grep -q "next_phase_state=needs_execute"
+  echo "$output" | grep -q "next_phase_plans=2"
+  echo "$output" | grep -q "next_phase_summaries=1"
+}
+
+@test "phase directories sort numerically not lexicographically" {
+  mkdir -p .vbw-planning/phases/11-eleven/
+  mkdir -p .vbw-planning/phases/100-hundred/
+  for p in 11 100; do
+    case "$p" in
+      11) dir=".vbw-planning/phases/11-eleven/" ;;
+      100) dir=".vbw-planning/phases/100-hundred/" ;;
+    esac
+    touch "${dir}${p}-01-PLAN.md"
+    touch "${dir}${p}-01-SUMMARY.md"
+    cat > "${dir}${p}-UAT.md" <<EOF
+---
+phase: $p
+status: issues_found
+---
+- Severity: major
+EOF
+  done
+
+  run bash "$SCRIPTS_DIR/phase-detect.sh"
+  [ "$status" -eq 0 ]
+  # Phase 11 should be selected first (numeric), not 100 (lexicographic)
+  echo "$output" | grep -q "uat_issues_phase=11"
+  echo "$output" | grep -q "next_phase=11"
+}

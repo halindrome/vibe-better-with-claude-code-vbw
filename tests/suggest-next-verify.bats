@@ -194,3 +194,16 @@ EOF
   [[ "$output" == *"/vbw:vibe -- Continue UAT remediation"* ]]
   [[ "$output" != *"/vbw:fix"* ]]
 }
+
+@test "suggest-next verify issues_found no-arg targets first UAT phase numerically" {
+  cd "$TEST_TEMP_DIR"
+  # Create two phases with UAT issues — 11 and 100
+  create_phase_with_uat "11" "eleven" "major"
+  create_phase_with_uat "100" "hundred" "major"
+
+  # No phase arg — should target 11 (first numerically), not 100 (first lexicographically)
+  run bash "$SCRIPTS_DIR/suggest-next.sh" verify issues_found
+
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/vbw:vibe -- Continue UAT remediation for Phase 11"* ]]
+}

@@ -81,7 +81,9 @@ if [ -d "$PLANNING_DIR" ]; then
 
   # Scan phases
   if [ -d "$PHASES_DIR" ]; then
-    for dir in "$PHASES_DIR"/*/; do
+    # Sort phase dirs numerically (prevents 100 sorting before 11)
+    phase_dirs_sorted=$(ls -d "$PHASES_DIR"/*/ 2>/dev/null | sort -V)
+    for dir in $phase_dirs_sorted; do
       [ -d "$dir" ] || continue
       phase_count=$((phase_count + 1))
       phase_num=$(basename "$dir" | sed 's/[^0-9].*//')
@@ -191,13 +193,15 @@ effective_result="${RESULT:-$last_qa_result}"
 # - minor-only: route to quick fix
 if [ "$CMD" = "verify" ] && [ "$effective_result" = "issues_found" ] && [ -d "${PHASES_DIR:-}" ]; then
   verify_target_phase="$TARGET_PHASE_ARG"
-  [ -z "$verify_target_phase" ] && verify_target_phase="$active_phase_num"
 
-  # Normalize: strip leading zeros for comparison (user may pass "3" for phase "03")
-  verify_target_phase=$(echo "$verify_target_phase" | sed 's/^0*//')
-  [ -z "$verify_target_phase" ] && verify_target_phase="0"
+  # Normalize explicit arg: strip leading zeros for comparison (user may pass "3" for phase "03")
+  if [ -n "$verify_target_phase" ]; then
+    verify_target_phase=$(echo "$verify_target_phase" | sed 's/^0*//')
+    [ -z "$verify_target_phase" ] && verify_target_phase="0"
+  fi
 
   if [ -n "$verify_target_phase" ]; then
+    # Explicit phase arg — find the matching directory
     for dir in "$PHASES_DIR"/*/; do
       [ -d "$dir" ] || continue
       pn=$(basename "$dir" | sed 's/[^0-9].*//' | sed 's/^0*//')
@@ -207,11 +211,27 @@ if [ "$CMD" = "verify" ] && [ "$effective_result" = "issues_found" ] && [ -d "${
         break
       fi
     done
-  fi
-
-  if [ -z "$verify_target_phase_dir" ] && [ -n "$active_phase_dir" ] && [ -d "$active_phase_dir" ]; then
-    verify_target_phase_dir="$active_phase_dir"
-    [ -z "$verify_target_phase" ] && verify_target_phase="$active_phase_num"
+  else
+    # No phase arg — find the first phase with UAT issues (numeric order, matching phase-detect.sh)
+    for dir in $(ls -d "$PHASES_DIR"/*/ 2>/dev/null | sort -V); do
+      [ -d "$dir" ] || continue
+      _uat=$(ls -1 "$dir"*-UAT.md 2>/dev/null | sort | tail -1 || true)
+      if [ -f "$_uat" ]; then
+        _us=$(grep -m1 '^status:' "$_uat" 2>/dev/null | sed 's/status:[[:space:]]*//' | tr '[:upper:]' '[:lower:]' || true)
+        if [ "$_us" = "issues_found" ]; then
+          verify_target_phase_dir="$dir"
+          verify_target_phase=$(basename "$dir" | sed 's/[^0-9].*//' | sed 's/^0*//')
+          [ -z "$verify_target_phase" ] && verify_target_phase="0"
+          break
+        fi
+      fi
+    done
+    # Final fallback if no UAT with issues found
+    if [ -z "$verify_target_phase_dir" ] && [ -n "$active_phase_dir" ] && [ -d "$active_phase_dir" ]; then
+      verify_target_phase_dir="$active_phase_dir"
+      verify_target_phase=$(echo "$active_phase_num" | sed 's/^0*//')
+      [ -z "$verify_target_phase" ] && verify_target_phase="0"
+    fi
   fi
 
   if [ -n "$verify_target_phase_dir" ]; then
