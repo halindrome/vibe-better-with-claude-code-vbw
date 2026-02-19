@@ -2,6 +2,8 @@
 set -u
 # PreCompact hook: Inject agent-specific summarization priorities
 # Reads agent context and returns additionalContext for compaction
+#
+# Note: Plan mode is preserved natively by Claude Code 2.1.47+ (no workaround needed)
 
 INPUT=$(cat)
 AGENT_NAME=$(echo "$INPUT" | jq -r '.agent_name // .agentName // ""')
