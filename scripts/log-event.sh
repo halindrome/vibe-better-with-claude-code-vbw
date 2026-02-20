@@ -25,6 +25,7 @@ if [ $# -lt 2 ]; then
 fi
 
 PLANNING_DIR=".vbw-planning"
+# shellcheck disable=SC2034 # CONFIG_PATH declared for consistency with other VBW scripts
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 
 EVENT_TYPE="$1"

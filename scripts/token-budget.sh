@@ -14,6 +14,7 @@ set -u
 # Logs overage to metrics (v3_metrics graduated).
 # Exit: 0 always (budget enforcement must never block).
 
+# shellcheck disable=SC2034 # PLANNING_DIR used by convention across VBW scripts
 PLANNING_DIR=".vbw-planning"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUDGETS_PATH="${SCRIPT_DIR}/../config/token-budgets.json"

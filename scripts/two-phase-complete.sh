@@ -9,6 +9,7 @@ set -u
 # Output: JSON {result: "confirmed"|"rejected", checks_passed: N, checks_total: N, errors: [...]}
 # Exit: 0 on confirmed, 2 on rejected, 0 when flag off
 
+# shellcheck disable=SC2034 # PLANNING_DIR used by convention across VBW scripts
 PLANNING_DIR=".vbw-planning"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 

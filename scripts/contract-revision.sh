@@ -15,6 +15,7 @@ fi
 OLD_CONTRACT="$1"
 PLAN_PATH="$2"
 
+# shellcheck disable=SC2034 # PLANNING_DIR used by convention across VBW scripts
 PLANNING_DIR=".vbw-planning"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
