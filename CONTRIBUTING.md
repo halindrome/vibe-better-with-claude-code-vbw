@@ -10,16 +10,33 @@ Thanks for considering a contribution. VBW is a Claude Code plugin, so the conve
 
 ## Local Development
 
-Clone the repo, install the git hooks, and load it as a local plugin:
+Clone the repo and install the git hooks:
 
 ```bash
 git clone https://github.com/yidakee/vibe-better-with-claude-code-vbw.git
 cd vibe-better-with-claude-code-vbw
 bash scripts/install-hooks.sh
-claude --plugin-dir .
 ```
 
-The pre-push hook checks version file consistency (see Version Management below). All `/vbw:*` commands will be available. Restart Claude Code to pick up changes.
+The pre-push hook checks version file consistency (see Version Management below).
+
+### Testing local changes
+
+`claude --plugin-dir .` does **not** work for testing when VBW is already installed globally — the installed plugin's commands always take precedence over `--plugin-dir`. Use the test environment script instead:
+
+```bash
+bash testing/dev-test-env.sh
+```
+
+This copies your real Claude config to `/tmp/vbw-dev-config` and overwrites the VBW plugin in that copy with files from the local repo. Your real config is never modified. Then open a new Claude window pointing at the test config:
+
+```bash
+CLAUDE_CONFIG_DIR=/tmp/vbw-dev-config claude
+```
+
+All `/vbw:*` commands in that window will use your local repo files. Re-run `dev-test-env.sh` any time you make further changes — it wipes and rebuilds the test config from scratch.
+
+> **Note:** The test config inherits your auth, settings, and hooks from the real config, so no re-authentication is needed.
 
 ## Project Structure
 
@@ -44,7 +61,7 @@ Key conventions:
 ## Making Changes
 
 1. **Fork the repo** and create a feature branch from `main`.
-2. **Test locally** with `claude --plugin-dir .` before submitting.
+2. **Test locally** using the test environment (see Local Development above).
    - Run automated checks: `bash testing/run-all.sh`
 3. **Keep commits atomic** -- one logical change per commit.
 4. **Match the existing tone** in command descriptions and user-facing text. VBW is direct, dry, and self-aware. It doesn't use corporate language or unnecessary enthusiasm.
@@ -70,7 +87,7 @@ Less good candidates:
 1. Open an issue first for non-trivial changes so we can discuss the approach.
 2. Reference the issue in your PR.
 3. Describe what changed and why. Include before/after if relevant.
-4. Ensure `claude --plugin-dir .` loads without errors.
+4. Ensure `bash testing/dev-test-env.sh` completes without errors and commands load in the test window.
 5. Test your changes against at least one real project.
 
 ## Version Management
