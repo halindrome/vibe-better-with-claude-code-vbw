@@ -471,6 +471,14 @@ fi
 MILESTONE_DIR="$PLANNING_DIR"
 PHASES_DIR="$PLANNING_DIR/phases"
 
+# --- Shipped milestones detection ---
+has_shipped="false"
+if [ -d "$PLANNING_DIR/milestones" ]; then
+  for _ms in "$PLANNING_DIR"/milestones/*/; do
+    [ -f "${_ms}SHIPPED.md" ] && has_shipped="true" && break
+  done
+fi
+
 # --- Parse config ---
 CONFIG_FILE="$PLANNING_DIR/config.json"
 config_effort="balanced"
@@ -584,13 +592,6 @@ fi
 
 # --- Build additionalContext ---
 CTX="VBW project detected."
-# Check for shipped milestones
-has_shipped="false"
-if [ -d "$PLANNING_DIR/milestones" ]; then
-  for _ms in "$PLANNING_DIR"/milestones/*/; do
-    [ -f "${_ms}SHIPPED.md" ] && has_shipped="true" && break
-  done
-fi
 CTX="$CTX Shipped milestones: ${has_shipped}."
 CTX="$CTX Phase: ${phase_pos}/${phase_total} (${phase_name}) -- ${phase_status}."
 CTX="$CTX Progress: ${progress_pct}%."
