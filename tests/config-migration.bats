@@ -33,21 +33,16 @@ EOF
 
   # Verify still-live flags are present
   run jq '[
-    has("context_compiler"), has("v2_token_budgets"),
+    has("context_compiler"),
     has("model_overrides"), has("prefer_teams")
   ] | map(select(.)) | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "4" ]
+  [ "$output" = "3" ]
 
   # Verify context_compiler defaults to true
   run jq -r '.context_compiler' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "true" ]
-
-  # Verify v2_token_budgets defaults to false
-  run jq -r '.v2_token_budgets' "$TEST_TEMP_DIR/.vbw-planning/config.json"
-  [ "$status" -eq 0 ]
-  [ "$output" = "false" ]
 }
 
 @test "migration handles partial config" {
@@ -65,16 +60,16 @@ EOF
 
   # Verify still-live flags are present
   run jq '[
-    has("context_compiler"), has("v2_token_budgets"),
+    has("context_compiler"),
     has("model_overrides"), has("prefer_teams")
   ] | map(select(.)) | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "4" ]
+  [ "$output" = "3" ]
 
-  # Verify all defaults.json keys are present (23 defaults + 2 pre-existing extra keys)
+  # Verify all defaults.json keys are present (22 defaults + 2 pre-existing extra keys)
   run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "25" ]
+  [ "$output" = "24" ]
 
   # Verify existing values were preserved
   run jq -r '.context_compiler' "$TEST_TEMP_DIR/.vbw-planning/config.json"
@@ -124,10 +119,10 @@ EOF
   # Both runs should produce identical result
   [ "$AFTER_FIRST" = "$AFTER_SECOND" ]
 
-  # Verify flag count is correct (23 total, graduated flags removed)
+  # Verify flag count is correct (22 total, graduated flags removed)
   run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "23" ]
+  [ "$output" = "22" ]
 }
 
 @test "migration detects malformed JSON" {
@@ -362,8 +357,8 @@ EOF
   [ "$output" = "$EXPECTED_ADDED" ]
 }
 
-@test "EXPECTED_FLAG_COUNT is 23 after worktree_isolation addition" {
-  # Verify session-start.sh has EXPECTED_FLAG_COUNT=23 (incremented after worktree_isolation added to defaults.json)
+@test "EXPECTED_FLAG_COUNT is 22 after v2_token_budgets graduation" {
+  # Verify session-start.sh has EXPECTED_FLAG_COUNT=22 (decremented after v2_token_budgets graduated)
   SCRIPT_COUNT=$(grep 'EXPECTED_FLAG_COUNT=' "$SCRIPTS_DIR/session-start.sh" | grep -oE '[0-9]+' | head -1)
-  [ "$SCRIPT_COUNT" = "23" ]
+  [ "$SCRIPT_COUNT" = "22" ]
 }

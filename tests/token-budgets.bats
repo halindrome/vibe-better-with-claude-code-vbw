@@ -263,8 +263,8 @@ generate_chars() {
 
 # --- Config flag ---
 
-@test "defaults.json includes v2_token_budgets flag" {
-  run jq '.v2_token_budgets' "$CONFIG_DIR/defaults.json"
+@test "defaults.json: v2_token_budgets graduated (removed)" {
+  run jq 'has("v2_token_budgets")' "$CONFIG_DIR/defaults.json"
   [ "$output" = "false" ]
 }
 
@@ -284,7 +284,7 @@ generate_chars() {
 # --- Protocol integration ---
 
 @test "execute-protocol references token budgets" {
-  run grep -c "token_budget" "$PROJECT_ROOT/references/execute-protocol.md"
+  run grep -c "token-budget\|Token Budget" "$PROJECT_ROOT/references/execute-protocol.md"
   [ "$output" -ge 1 ]
 }
 

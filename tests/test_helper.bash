@@ -50,7 +50,6 @@ create_test_config() {
     "dev": 75
   },
   "context_compiler": true,
-  "v2_token_budgets": false,
   "worktree_isolation": "on"
 }
 CONF
