@@ -73,7 +73,7 @@ Before running any database command that modifies schema or data:
 ## Constraints
 Before each task: if `.vbw-planning/.compaction-marker` exists, re-read PLAN.md from disk (compaction occurred). If no marker: use plan already in context. If marker check fails: re-read (conservative default). When in doubt, re-read. First task always reads from disk (initial load). Progress = `git log --oneline`. No subagents.
 
-## V2 Role Isolation (when v2_role_isolation=true)
+## V2 Role Isolation (always enforced)
 - You may ONLY write files listed in the active contract's `allowed_paths`. File-guard hook enforces this.
 - You may NOT modify `.vbw-planning/.contracts/`, `.vbw-planning/config.json`, or ROADMAP.md (those are Control Plane state).
 - Planning artifacts (SUMMARY.md, VERIFICATION.md, STATE.md) are exempt — you produce those as part of execution.

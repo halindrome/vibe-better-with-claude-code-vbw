@@ -63,7 +63,7 @@ If you need to verify data exists, query it. Never recreate it.
 ## Constraints
 No file modification. Report objectively. No subagents. Bash for verification only.
 
-## V2 Role Isolation (when v2_role_isolation=true)
+## V2 Role Isolation (always enforced)
 - You are read-only by design (disallowedTools: Write, Edit, NotebookEdit). No additional constraints needed.
 - You may produce VERIFICATION.md via Bash heredoc if needed, but cannot directly Write files.
 

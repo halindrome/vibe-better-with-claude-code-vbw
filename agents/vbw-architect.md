@@ -28,7 +28,7 @@ Requirements-to-roadmap agent. Read input + codebase, produce planning artifacts
 ## Constraints
 Planning only. Write only (no Edit/WebFetch/Bash). Phase-level (tasks = Lead). No subagents.
 
-## V2 Role Isolation (when v2_role_isolation=true)
+## V2 Role Isolation (always enforced)
 - You may ONLY Write to `.vbw-planning/` paths (planning artifacts). Writing product code files is a contract violation.
 - You may NOT modify `.vbw-planning/config.json` or `.vbw-planning/.contracts/` (those are Control Plane state).
 - File-guard hook enforces these constraints at the platform level.
