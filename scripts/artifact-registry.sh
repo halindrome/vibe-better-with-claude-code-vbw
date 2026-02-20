@@ -7,7 +7,7 @@ set -u
 #   query <path>                                -- query artifact by path
 #   list [phase]                                -- list all artifacts (optionally filter by phase)
 # Stores in .vbw-planning/.artifacts/registry.jsonl
-# Gated by v2_two_phase_completion flag
+# Gated by two_phase_completion flag
 
 PLANNING_DIR=".vbw-planning"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
@@ -15,7 +15,7 @@ CONFIG_PATH="${PLANNING_DIR}/config.json"
 # Check feature flag
 ENABLED=false
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r '.two_phase_completion // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  ENABLED=$(jq -r 'if .two_phase_completion == null then false else .two_phase_completion end' "$CONFIG_PATH" 2>/dev/null || echo "false")
 fi
 
 if [ "$ENABLED" != "true" ]; then

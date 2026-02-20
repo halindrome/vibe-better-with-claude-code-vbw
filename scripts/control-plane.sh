@@ -81,11 +81,7 @@ fi
 check_noop() {
   case "$ACTION" in
     pre-task)
-      # Contract and gates are always-on; leases are config-gated
-      if [ "$LEASE_LOCKS" != "true" ]; then
-        # Still need contract+gates, so not a full noop
-        return 1
-      fi
+      # Contract and gates are always-on — pre-task is never a noop
       return 1
       ;;
     post-task)
@@ -96,8 +92,8 @@ check_noop() {
       [ "$CONTEXT_COMPILER" != "true" ] && [ "$TOKEN_BUDGETS" != "true" ] && return 0
       ;;
     full)
-      # Contract is always-on, so check compiler only
-      [ "$CONTEXT_COMPILER" != "true" ] && return 1
+      # Contract is always-on — full is never a noop
+      return 1
       ;;
   esac
   return 1

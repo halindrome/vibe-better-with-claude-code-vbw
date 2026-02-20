@@ -449,7 +449,7 @@ When `worktree_isolation="off"`: skip this block silently.
 
 **Control Plane cleanup:** Lock and token state cleanup already handled by existing Lease Lock and Token Budget cleanup blocks.
 
-**Rolling Summary (REQ-03):** If `v3_rolling_summary=true` in config:
+**Rolling Summary (REQ-03):** If `rolling_summary=true` in config:
 - After TeamDelete (team fully shut down), before phase_end event log:
   ```bash
   bash ${CLAUDE_PLUGIN_ROOT}/scripts/compile-rolling-summary.sh \
@@ -457,7 +457,7 @@ When `worktree_isolation="off"`: skip this block silently.
   ```
   This compiles all completed SUMMARY.md files into a condensed digest for the next phase's agents.
   Fail-open: if script errors, log warning and continue — never block phase completion.
-- When `v3_rolling_summary=false` (default): skip this step silently.
+- When `rolling_summary=false` (default): skip this step silently.
 
 **Event Log — phase end (REQ-16, graduated, always-on):**
 - `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh phase_end {phase} plans_completed={N} total_tasks={N} 2>/dev/null || true`

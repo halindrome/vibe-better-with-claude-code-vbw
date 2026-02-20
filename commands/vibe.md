@@ -383,13 +383,13 @@ FAIL -> STOP with remediation suggestions. WARN -> proceed with warnings.
 1. Resolve context: ACTIVE -> milestone-scoped paths. No ACTIVE -> SLUG="default", root paths.
 2. Parse args: --tag=vN.N.N (custom tag), --no-tag (skip), --force (skip audit).
 3. Compute summary: from ROADMAP (phases), SUMMARY.md files (tasks/commits/deviations), REQUIREMENTS.md (satisfied count).
-4. **Rolling summary (conditional):** If `v3_rolling_summary=true` in config:
+4. **Rolling summary (conditional):** If `rolling_summary=true` in config:
    ```bash
    bash ${CLAUDE_PLUGIN_ROOT}/scripts/compile-rolling-summary.sh \
      .vbw-planning/phases .vbw-planning/ROLLING-CONTEXT.md 2>/dev/null || true
    ```
    Compiles final rolling context before artifacts move to milestones/. Fail-open.
-   When `v3_rolling_summary=false`: skip.
+   When `rolling_summary=false`: skip.
 5. Archive: `mkdir -p .vbw-planning/milestones/`. Move roadmap, state, phases to milestones/{SLUG}/. Write SHIPPED.md. Delete stale RESUME.md.
 5b. **Persist project-level state:** After archiving, run:
    ```bash

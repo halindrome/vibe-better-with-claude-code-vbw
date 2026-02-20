@@ -4,7 +4,7 @@
       "stage": 1,
       "label": "observability",
       "phases_required": 0,
-      "flags": ["metrics"],
+      "flags": ["metrics", "token_budgets", "two_phase_completion"],
       "description": "Low-risk observability flags, safe to enable immediately"
     },
     {
@@ -21,7 +21,7 @@
       "flags": [
         "validation_gates", "smart_routing",
         "snapshot_resume", "event_recovery",
-        "monorepo_routing"
+        "monorepo_routing", "lease_locks"
       ],
       "description": "All remaining optional flags, enable after 5 successful phases"
     }

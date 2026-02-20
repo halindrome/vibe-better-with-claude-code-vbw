@@ -112,7 +112,7 @@ run_rollout() {
   run_rollout advance --stage=1
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.flags_enabled | length == 0'
-  echo "$output" | jq -e '.flags_already_enabled | length == 1'
+  echo "$output" | jq -e '.flags_already_enabled | length == 3'
 }
 
 # --- Test 7: dry-run does not modify config ---

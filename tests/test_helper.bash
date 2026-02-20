@@ -59,7 +59,8 @@ create_test_config() {
   "snapshot_resume": true,
   "lease_locks": false,
   "event_recovery": false,
-  "monorepo_routing": true
+  "monorepo_routing": true,
+  "rolling_summary": false
 }
 CONF
 }

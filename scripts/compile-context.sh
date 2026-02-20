@@ -104,14 +104,14 @@ if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   V3_METRICS_ENABLED=$(jq -r 'if .metrics == null then true else .metrics end' "$CONFIG_PATH" 2>/dev/null || echo "true")
 fi
 
-V3_ROLLING_SUMMARY=false
+ROLLING_SUMMARY=false
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V3_ROLLING_SUMMARY=$(jq -r '.v3_rolling_summary // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  ROLLING_SUMMARY=$(jq -r 'if .rolling_summary == null then false else .rolling_summary end' "$CONFIG_PATH" 2>/dev/null || echo "false")
 fi
 
 ROLLING_CONTEXT_PATH="${PLANNING_DIR}/ROLLING-CONTEXT.md"
 ROLLING_CONTEXT_SECTION=""
-if [ "$V3_ROLLING_SUMMARY" = "true" ] && [ "$PHASE_NUM" -gt 1 ] 2>/dev/null && [ -f "$ROLLING_CONTEXT_PATH" ]; then
+if [ "$ROLLING_SUMMARY" = "true" ] && [ "$PHASE_NUM" -gt 1 ] 2>/dev/null && [ -f "$ROLLING_CONTEXT_PATH" ]; then
   ROLLING_CONTEXT_SECTION=$(cat "$ROLLING_CONTEXT_PATH" 2>/dev/null || true)
 fi
 
