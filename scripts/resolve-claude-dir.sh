@@ -6,8 +6,8 @@
 #
 # After sourcing, CLAUDE_DIR is set to the user's Claude config directory.
 # Resolution order:
-#   1. CLAUDE_CONFIG_DIR env var (if set and directory exists)
-#   2. $HOME/.config/claude-code (new default on many systems)
+#   1. CLAUDE_CONFIG_DIR env var (if set, even if directory does not yet exist)
+#   2. $HOME/.config/claude-code (new default on many systems, existence-checked)
 #   3. $HOME/.claude (legacy default)
 #
 # This is the single source of truth for config directory resolution.

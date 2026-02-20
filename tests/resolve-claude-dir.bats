@@ -42,6 +42,22 @@ teardown() {
   [ "$CLAUDE_DIR" = "$HOME/.claude" ]
 }
 
+@test "resolve-claude-dir.sh falls back to HOME/.config/claude-code when CLAUDE_CONFIG_DIR unset and dir exists" {
+  unset CLAUDE_CONFIG_DIR
+  export HOME="$TEST_TEMP_DIR"
+  mkdir -p "$HOME/.config/claude-code"
+  source "$SCRIPTS_DIR/resolve-claude-dir.sh"
+  [ "$CLAUDE_DIR" = "$TEST_TEMP_DIR/.config/claude-code" ]
+}
+
+@test "resolve-claude-dir.sh skips HOME/.config/claude-code when it does not exist" {
+  unset CLAUDE_CONFIG_DIR
+  export HOME="$TEST_TEMP_DIR"
+  # Do NOT create $HOME/.config/claude-code
+  source "$SCRIPTS_DIR/resolve-claude-dir.sh"
+  [ "$CLAUDE_DIR" = "$TEST_TEMP_DIR/.claude" ]
+}
+
 # --- hooks.json tests ---
 
 @test "hooks.json contains no hardcoded HOME/.claude paths" {
