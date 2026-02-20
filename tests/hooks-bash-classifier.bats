@@ -587,7 +587,7 @@ setup() {
   # Document the test procedure for manual hook execution validation
   # This ensures we have a reproducible test case for future CC versions
 
-  cat > /tmp/vbw-hook-test-procedure.md <<'EOF'
+  cat > "$BATS_TEST_TMPDIR/vbw-hook-test-procedure.md" <<'EOF'
 # VBW Hook Integration Test Procedure
 
 ## Prerequisites
@@ -616,5 +616,5 @@ setup() {
 - Hook-wrapper.sh dual resolution works for both cache and CLAUDE_PLUGIN_ROOT
 EOF
 
-  [ -f /tmp/vbw-hook-test-procedure.md ]
+  [ -f "$BATS_TEST_TMPDIR/vbw-hook-test-procedure.md" ]
 }
