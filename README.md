@@ -96,7 +96,7 @@ Think of it as project management for the post-dignity era of software developme
 - [Autonomy Levels](#autonomy-levels)
 - [Planning & Git](#planning--git)
 - [Settings Reference](#settings-reference)
-- [Feature Flags Reference](#feature-flags-reference)
+- [Feature Flags (Graduated)](#feature-flags-graduated)
 - [Cost Optimization](#cost-optimization)
 - [Project Structure](#project-structure)
 - [Requirements](#requirements)
@@ -726,70 +726,13 @@ Every setting below lives in `.vbw-planning/config.json` and can be changed with
 
 <br>
 
-## Feature Flags Reference
+## Feature Flags (Graduated)
 
-These are advanced runtime controls surfaced in `/vbw:config`. They are off by default and intended for staged rollout, diagnostics, and protocol hardening.
+All V2 and V3 feature flags have graduated to always-on behavior as of v1.31.0. They are no longer configurable and have been removed from `config/defaults.json`.
 
-Toggle any flag with:
+Previously, these flags controlled staged rollout of runtime features (delta context, contract enforcement, lease locks, validation gates, role isolation, token budgets, etc.). All gated behavior is now unconditionally active.
 
-```bash
-/vbw:config <flag_key> true
-/vbw:config <flag_key> false
-```
-
-### V3 runtime flags
-
-- **`v3_delta_context`** — When enabled, `compile-context.sh` includes a "Changed Files (Delta)" section and code slices from recently modified files in each agent's compiled context. Without this, agents only see the full project context and may miss what changed between phases. Useful when iterating on existing code where knowing *what just changed* matters more than the full codebase picture. Adds ~225–375 tokens per compiled context.
-
-- **`v3_context_cache`** — Caches the compiled context index (`context-index.json`) between runs so `compile-context.sh` can skip recomputation when project files haven't changed. In large codebases (thousands of files), this avoids redundant shell work on every agent invocation. Has no effect if you're actively changing lots of files between runs — the cache invalidates and rebuilds anyway.
-
-- **`v3_plan_research_persist`** — During planning, Scout researches the phase and returns structured findings. The orchestrating command writes these to a `RESEARCH.md` file in the phase directory (Scout has `disallowedTools: Write` and cannot write files itself). This makes planning decisions traceable — you can see *what Scout found* that informed the Lead's plan. Skipped when effort is set to `turbo` (which bypasses Scout entirely). Enable this if you want an audit trail of why plans look the way they do.
-
-- **`v3_metrics`** — Instruments planning and execution with metric collection (timing, token usage, agent invocation counts). Data is written to `.vbw-planning/` and can be viewed with `/vbw:status --metrics`. Useful for understanding where time and tokens are spent. No effect on agent behavior — purely observational.
-
-- **`v3_contract_lite`** — Before each task, generates a lightweight 5-field contract (phase, plan, task count, must-haves, allowed file paths) that the executing agent is expected to follow. Violations produce **advisory warnings only** (fail-open, exit 0) — the agent continues working but the warning is logged. This is the soft version of contract enforcement. Use this when you want guardrails without hard stops. See `v2_hard_contracts` for the strict version.
-
-- **`v3_lock_lite`** — Enables lightweight file locks so Dev teammates can claim ownership of specific files during parallel execution. Prevents two teammates from writing to the same file simultaneously. Most useful with high `max_tasks_per_plan` values and `prefer_teams=always`. If your tasks rarely touch overlapping files, this adds overhead without much benefit. Superseded by `v3_lease_locks` if both are enabled.
-
-- **`v3_validation_gates`** — Adds pre-task and post-task validation checks around execution steps. Without this, validation only happens at phase boundaries (QA after all tasks complete). With this enabled, each task gets entry/exit checks using dynamic gate policies from `resolve-gate-policy.sh`. Catches issues *during* execution rather than discovering them all at the end. Pairs well with `v2_hard_gates` for strict enforcement.
-
-- **`v3_smart_routing`** — Routes tasks to agents based on task complexity analysis rather than using the same agent configuration for every task. Simple tasks may get routed to lighter agents; complex tasks get the full treatment. Reduces cost on straightforward work without sacrificing quality on hard problems. Most impactful when a phase mixes trivial and complex tasks.
-
-- **`v3_event_log`** — Emits structured event entries (plan_created, task_started, task_completed, and 8 other event types) at lifecycle points throughout execution. Events are written to `.vbw-planning/` and provide a debug trail when something goes wrong mid-phase. **Required dependency** for `v3_event_recovery` and `v2_two_phase_completion`. Enable this first if you plan to use either of those flags.
-
-- **`v3_schema_validation`** — Validates the structure of planning files (PLAN.md, SUMMARY.md) against expected schemas. Catches malformed artifacts early — before a downstream agent tries to parse a plan with missing fields or a summary with the wrong structure. Low overhead, high diagnostic value. Recommended for most projects.
-
-- **`v3_snapshot_resume`** — Creates per-plan checkpoint snapshots during execution so interrupted work can resume from the last known-good state rather than restarting the entire phase. Useful if you frequently close sessions mid-phase or hit compaction issues. Without this, `/vbw:resume` still works (it reads ground truth from `.vbw-planning/`) but may need to re-derive more state.
-
-- **`v3_lease_locks`** — Time-limited file locks (TTL=300 seconds) for task file ownership during parallel execution. Takes precedence over `v3_lock_lite` if both are enabled. Locks automatically expire, so a crashed teammate won't permanently block a file. Use this instead of `v3_lock_lite` if you've had issues with stale locks or if teammates are running long tasks.
-
-- **`v3_event_recovery`** — When enabled and a failure is detected, attempts to recover execution state by replaying the event log (from `v3_event_log`). This is event-sourced recovery — it reconstructs what happened and where things stopped based on logged events rather than relying solely on file-based state. **Requires `v3_event_log=true`**. Only useful if you're hitting failures that corrupt `.vbw-planning/` state files.
-
-- **`v3_monorepo_routing`** — Makes agent routing aware of monorepo package boundaries. Tasks scoped to `backend/` get routed with backend-relevant context; tasks scoped to `ios/` get iOS context. Without this, every agent loads the full project context regardless of which package a task targets. Enable this if your repo contains multiple distinct packages (e.g., frontend + backend, mobile + API).
-
-### V2 protocol-hardening flags
-
-- **`v2_hard_contracts`** — Upgrades contract enforcement from advisory (see `v3_contract_lite`) to strict. Generates full 11-field contracts with a `contract_hash` for integrity. Violations cause a **hard stop (exit 2)** — the agent cannot continue past a contract breach. Use this when agents are drifting from plan scope and soft warnings aren't enough. **Required dependency** for `v2_hard_gates`.
-
-- **`v2_hard_gates`** — Upgrades validation gates from advisory to strict. When a pre-task or post-task validation check fails, execution **hard-stops (exit 2)** instead of logging a warning and continuing. Prevents broken work from propagating to the next task. Pairs with `v3_validation_gates` (which adds the gate checks) and **requires `v2_hard_contracts=true`**.
-
-- **`v2_typed_protocol`** — Enforces strict typing on inter-agent messages and event log entries. Unknown event types are rejected instead of accepted with a warning. Catches protocol drift where agents send malformed or unexpected message types. Low overhead, useful as a diagnostic safeguard — if agents are communicating cleanly, you'll never notice it's on.
-
-- **`v2_role_isolation`** — Enforces file-write boundaries based on agent role. Scout becomes strictly read-only (blocked from any writes). All roles are restricted to writing within `.vbw-planning/` for planning artifacts. Blocked writes are logged to stderr. Strengthens the platform-level `disallowedTools` enforcement with file-path-level granularity. Recommended for any project where you want guarantees that Scout/QA aren't accidentally modifying source code.
-
-- **`v2_two_phase_completion`** — Tasks require two steps to complete: first register the output artifact (via `artifact-registry.sh`), then mark the task done (via `two-phase-complete.sh`). Prevents agents from claiming "done" without producing verifiable output. **Requires `v3_event_log=true`**. Most useful when tasks are completing without proper deliverables — this forces proof of work.
-
-- **`v2_token_budgets`** — Enables per-agent token budget tracking and context truncation. Each agent gets a budget based on its role and the active model profile. When an agent approaches its budget, context is truncated to stay within limits. Useful for controlling costs on large projects where agents might consume excessive tokens. Without this, agents use as much context as they need with no ceiling.
-
-### Flag dependencies
-
-Some flags require other flags to be enabled first. VBW warns at session start if dependencies are missing:
-
-- `v3_event_recovery` requires `v3_event_log=true` — recovery replays the event log, so there must be one.
-- `v2_hard_gates` requires `v2_hard_contracts=true` — strict gates need strict contracts to enforce against.
-- `v2_two_phase_completion` requires `v3_event_log=true` — artifact registration is tracked via events.
-
-For implementation details, see `references/execute-protocol.md` and script-level checks in `scripts/session-start.sh`.
+Brownfield configs may still contain these keys — they are ignored at runtime and cleaned up automatically by `migrate-config.sh`.
 
 <br>
 
