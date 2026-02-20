@@ -10,13 +10,9 @@ Note: `/vbw:vibe` has additional state detection that precedes phase scanning (s
 
 ## Resolve Phases Directory
 
-Before scanning, determine the correct phases path:
+Phases always live at `.vbw-planning/phases/` (root-canonical).
 
-1. If `.vbw-planning/ACTIVE` exists, read its contents to get the milestone slug
-2. Use `.vbw-planning/{milestone-slug}/phases/` as the phases directory
-3. If ACTIVE does not exist, use `.vbw-planning/phases/`
-
-All directory scanning below uses the resolved phases directory.
+All directory scanning below uses this path.
 
 ## Detection by Command Type
 

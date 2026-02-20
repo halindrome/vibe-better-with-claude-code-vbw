@@ -11,7 +11,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ## Context
 
 Working directory: `!`pwd``
-Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(bash -c 'ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1')}``
 
 Current state:
 ```
@@ -27,8 +27,10 @@ Phase directories:
 
 Phase state:
 ```
-!`bash ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}/scripts/phase-detect.sh 2>/dev/null || echo "phase_detect_error=true"`
+!`bash ${CLAUDE_PLUGIN_ROOT:-$(bash -c 'ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1')}/scripts/phase-detect.sh 2>/dev/null || echo "phase_detect_error=true"`
 ```
+
+!`bash ${CLAUDE_PLUGIN_ROOT:-$(bash -c 'ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1')}/scripts/suggest-compact.sh verify 2>/dev/null || true`
 
 ## Guard
 
@@ -41,7 +43,7 @@ Phase state:
 ### 1. Resolve phase and load summaries
 
 - Parse explicit phase number from $ARGUMENTS, or use auto-detected phase
-- Resolve milestone: if .vbw-planning/ACTIVE exists, use milestone-scoped paths
+- Use `.vbw-planning/phases/` for phase directories
 - Read all `*-SUMMARY.md` files in the phase directory
 - Read corresponding `*-PLAN.md` files for `must_haves` and success criteria
 
@@ -107,7 +109,7 @@ Record: description, inferred severity.
 
 Display:
 ```
-Issue recorded (severity: {level}). Suggest /vbw:fix after UAT.
+Issue recorded (severity: {level}). Final next-step routing shown at UAT summary.
 ```
 
 ### 7. After each response: persist immediately
@@ -144,6 +146,10 @@ Issue recorded (severity: {level}). Suggest /vbw:fix after UAT.
 ```
 This is **display-only**. Do NOT edit STATE.md, do NOT add todos, do NOT invoke /vbw:todo, and do NOT enter an interactive loop. The user decides whether to track these. If no discovered issues: omit the section entirely. After displaying discovered issues, STOP. Do not take further action.
 
-- If issues found: `Suggest /vbw:fix to address recorded issues.`
+- If issues found:
+  - Any issue severity is `critical` or `major`:
+    - `Suggest /vbw:vibe to continue UAT remediation directly from {phase}-UAT.md`
+  - All issues are `minor`:
+    - `Suggest /vbw:fix to address recorded issues.`
 
-Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh verify {result}` and display.
+Run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/suggest-next.sh verify {result} {phase}` and display.

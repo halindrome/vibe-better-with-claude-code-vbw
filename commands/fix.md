@@ -10,7 +10,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
 
 ## Context
 Working directory: `!`pwd``
-Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(bash -c 'ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1')}``
 Config: Pre-injected by SessionStart hook.
 
 ## Guard
@@ -20,8 +20,7 @@ Config: Pre-injected by SessionStart hook.
 ## Steps
 1. **Parse:** Entire $ARGUMENTS (minus flags) = fix description.
 
-2. **Milestone:** If `.vbw-planning/ACTIVE` exists, use milestone-scoped
-   `STATE_PATH`. Else `.vbw-planning/STATE.md`.
+2. **State:** Use `.vbw-planning/STATE.md`.
 
 3. **Spawn Dev:** Resolve model first:
     ```bash

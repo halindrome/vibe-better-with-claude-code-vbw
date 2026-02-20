@@ -42,25 +42,7 @@ EOF
   [ "$count" -eq 3 ]
 }
 
-@test "reads todos from milestone-scoped STATE.md via ACTIVE" {
-  cd "$TEST_TEMP_DIR"
-  mkdir -p .vbw-planning/milestones/m1
-  create_state_with_todos ".vbw-planning/milestones/m1/STATE.md"
-  echo "m1" > .vbw-planning/ACTIVE
-
-  run bash "$SCRIPTS_DIR/list-todos.sh"
-  [ "$status" -eq 0 ]
-
-  local state_path
-  state_path=$(echo "$output" | jq -r '.state_path')
-  [ "$state_path" = ".vbw-planning/milestones/m1/STATE.md" ]
-
-  local count
-  count=$(echo "$output" | jq -r '.count')
-  [ "$count" -eq 3 ]
-}
-
-@test "falls back to milestones/ when no ACTIVE and no root STATE.md" {
+@test "falls back to milestones/ when no root STATE.md" {
   cd "$TEST_TEMP_DIR"
   mkdir -p .vbw-planning/milestones/default
   create_state_with_todos ".vbw-planning/milestones/default/STATE.md"

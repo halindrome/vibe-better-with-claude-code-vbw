@@ -240,7 +240,7 @@ EOF
   [ "$before_hash" = "$after_hash" ]
 }
 
-@test "session-start migration skips when ACTIVE file exists" {
+@test "session-start migration runs even with stale ACTIVE file present" {
   cd "$TEST_TEMP_DIR"
   create_full_state ".vbw-planning/milestones/m1/STATE.md"
   echo "m1" > .vbw-planning/ACTIVE
@@ -248,8 +248,8 @@ EOF
   run bash "$SCRIPTS_DIR/migrate-orphaned-state.sh" .vbw-planning
   [ "$status" -eq 0 ]
 
-  # Should NOT create root STATE.md — ACTIVE means milestone is active, not archived
-  [ ! -f .vbw-planning/STATE.md ]
+  # Should create root STATE.md — ACTIVE guard was removed
+  [ -f .vbw-planning/STATE.md ]
 }
 
 @test "migration picks latest milestone by modification time" {
@@ -447,8 +447,8 @@ EOF
   grep -q "None." "$TEST_TEMP_DIR/.vbw-planning/STATE.md"
 }
 
-# Finding 6: list-todos prefers root STATE.md even when ACTIVE points elsewhere
-@test "list-todos reads from root STATE.md when both root and ACTIVE exist" {
+# Finding 6: list-todos prefers root STATE.md over archived milestones
+@test "list-todos reads from root STATE.md when both root and archived milestone exist" {
   cd "$TEST_TEMP_DIR"
   # Root STATE.md with project-level todos
   cat > ".vbw-planning/STATE.md" <<'EOF'
@@ -463,7 +463,7 @@ EOF
 None
 EOF
 
-  # ACTIVE milestone with different todos
+  # Archived milestone with different todos
   mkdir -p .vbw-planning/milestones/m2
   cat > ".vbw-planning/milestones/m2/STATE.md" <<'EOF'
 # State
@@ -476,7 +476,6 @@ EOF
 ## Blockers
 None
 EOF
-  echo "m2" > .vbw-planning/ACTIVE
 
   run bash "$SCRIPTS_DIR/list-todos.sh"
   [ "$status" -eq 0 ]

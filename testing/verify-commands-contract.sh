@@ -109,28 +109,38 @@ for file in "$COMMANDS_DIR"/*.md; do
   body="$(awk '/^---$/{d++; next} d>=2' "$file")"
   body_no_context="$(printf '%s\n' "$body" | awk '/^## Context$/{skip=1; next} /^## /{skip=0} !skip')"
 
-  # Check if the command body (outside Context) references milestone-scoped paths
-  if ! printf '%s\n' "$body_no_context" | grep -qi 'milestone[-_ ]scoped\|milestone.*ACTIVE\|ACTIVE.*milestone'; then
-    continue
-  fi
-
-  # This command is milestone-aware — check for mitigation
-  has_context_interp=false
-  if grep -q 'cat \.vbw-planning/ACTIVE' "$file" 2>/dev/null; then
-    has_context_interp=true
-  fi
-
-  has_bash=false
-  FRONTMATTER="$(extract_frontmatter "$file")"
-  if printf '%s\n' "$FRONTMATTER" | grep '^allowed-tools:' | grep -qw 'Bash'; then
-    has_bash=true
-  fi
-
-  if $has_context_interp || $has_bash; then
-    pass "$base: milestone-aware command has ACTIVE context or Bash access"
+  # ACTIVE-file milestone indirection was removed (architecture simplification).
+  # Commands should NOT reference .vbw-planning/ACTIVE anymore.
+  if printf '%s\n' "$body_no_context" | grep -qi '\.vbw-planning/ACTIVE'; then
+    fail "$base: references .vbw-planning/ACTIVE — milestone indirection was removed"
   else
-    fail "$base: milestone-aware command has NO way to read .vbw-planning/ACTIVE (needs context interpolation or Bash in allowed-tools)"
+    pass "$base: no stale ACTIVE file references"
   fi
+done
+
+echo ""
+echo "=== Stale ACTIVE Reference Verification (scripts + references) ==="
+
+# Scan scripts and references for any runtime usage of .vbw-planning/ACTIVE
+# (session-start.sh is allowed — it only deletes the stale file)
+for scan_dir in "$ROOT/scripts" "$ROOT/references" "$ROOT/agents" "$ROOT/templates"; do
+  [ -d "$scan_dir" ] || continue
+  dir_label="$(basename "$scan_dir")"
+  while IFS= read -r -d '' scan_file; do
+    scan_base="$(basename "$scan_file")"
+
+    # session-start.sh is allowed to reference ACTIVE (rm -f cleanup migration)
+    if [[ "$scan_base" == "session-start.sh" ]]; then
+      pass "$dir_label/$scan_base: ACTIVE reference allowed (cleanup migration)"
+      continue
+    fi
+
+    if grep -qi '\.vbw-planning/ACTIVE' "$scan_file" 2>/dev/null; then
+      fail "$dir_label/$scan_base: references .vbw-planning/ACTIVE — milestone indirection was removed"
+    else
+      pass "$dir_label/$scan_base: no stale ACTIVE file references"
+    fi
+  done < <(find "$scan_dir" -maxdepth 2 -type f \( -name '*.sh' -o -name '*.md' \) -print0 2>/dev/null)
 done
 
 echo ""

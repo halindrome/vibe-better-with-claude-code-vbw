@@ -11,7 +11,7 @@ allowed-tools: Read, Glob, Grep, Bash
 ## Context
 
 Working directory: `!`pwd``
-Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(bash -c 'ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1')}``
 
 Current state:
 ```
@@ -30,9 +30,9 @@ Phase directories:
 !`ls .vbw-planning/phases/ 2>/dev/null || echo "No phases directory"`
 ```
 
-Active milestone:
+Shipped milestones:
 ```
-!`cat .vbw-planning/ACTIVE 2>/dev/null || echo "No active milestone (single-milestone mode)"`
+!`ls -d .vbw-planning/milestones/*/SHIPPED.md 2>/dev/null || echo "No shipped milestones"`
 ```
 
 ## Guard
@@ -43,7 +43,7 @@ Active milestone:
 ## Steps
 
 1. **Parse args:** --verbose shows per-plan detail within each phase
-2. **Resolve milestone:** If .vbw-planning/ACTIVE exists, use milestone-scoped paths. Gather milestone list (all dirs with ROADMAP.md). Else use defaults.
+2. **Resolve paths:** Use `.vbw-planning/phases/` for phase directories. Gather milestone list from `.vbw-planning/milestones/` (dirs with SHIPPED.md).
 3. **Read data:** (STATE.md and ROADMAP.md use compact format -- flat fields, no verbose prose)
    - STATE.md: project name, current phase (flat `Phase:`, `Plans:`, `Progress:` lines), velocity
    - ROADMAP.md: phases, status markers, plan counts (compact per-phase fields, Progress table)

@@ -113,7 +113,6 @@ EOF
   cd "$TEST_TEMP_DIR"
 
   mkdir -p .vbw-planning/milestones/m1/phases/03-service-utility-tests
-  echo "m1" > .vbw-planning/ACTIVE
 
   # Root files should remain untouched
   cat > .vbw-planning/STATE.md <<'EOF'

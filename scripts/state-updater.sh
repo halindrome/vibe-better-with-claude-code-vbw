@@ -14,16 +14,6 @@ planning_root_from_phase_dir() {
     return 0
   fi
 
-  if [ -f ".vbw-planning/ACTIVE" ]; then
-    local slug candidate
-    slug=$(tr -d '[:space:]' < .vbw-planning/ACTIVE 2>/dev/null)
-    candidate=".vbw-planning/milestones/${slug}"
-    if [ -n "$slug" ] && [ -d "$candidate" ]; then
-      echo "$candidate"
-      return 0
-    fi
-  fi
-
   echo ".vbw-planning"
 }
 
