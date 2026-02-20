@@ -166,3 +166,40 @@ SUMMARY
   [[ "$output" == *"crash recovery fallback available"* ]]
   [[ "$output" == *"77777.txt"* ]]
 }
+
+# ===========================================================================
+# session-start.sh — stale .agent-last-words cleanup
+# ===========================================================================
+
+@test "session-start: removes .agent-last-words files older than 7 days" {
+  mkdir -p .vbw-planning/.agent-last-words
+  echo "old" > .vbw-planning/.agent-last-words/old.txt
+  echo "new" > .vbw-planning/.agent-last-words/new.txt
+
+  if [ "$(uname)" = "Darwin" ]; then
+    touch -t "$(date -v-8d '+%Y%m%d%H%M.%S')" .vbw-planning/.agent-last-words/old.txt
+  else
+    touch -t "$(date -d '8 days ago' '+%Y%m%d%H%M.%S')" .vbw-planning/.agent-last-words/old.txt
+  fi
+
+  run bash "$SCRIPTS_DIR/session-start.sh"
+  [ "$status" -eq 0 ]
+
+  [ ! -f ".vbw-planning/.agent-last-words/old.txt" ]
+  [ -f ".vbw-planning/.agent-last-words/new.txt" ]
+}
+
+@test "session-start: keeps recent .agent-last-words files" {
+  mkdir -p .vbw-planning/.agent-last-words
+  echo "recent" > .vbw-planning/.agent-last-words/recent.txt
+
+  if [ "$(uname)" = "Darwin" ]; then
+    touch -t "$(date -v-6d '+%Y%m%d%H%M.%S')" .vbw-planning/.agent-last-words/recent.txt
+  else
+    touch -t "$(date -d '6 days ago' '+%Y%m%d%H%M.%S')" .vbw-planning/.agent-last-words/recent.txt
+  fi
+
+  run bash "$SCRIPTS_DIR/session-start.sh"
+  [ "$status" -eq 0 ]
+  [ -f ".vbw-planning/.agent-last-words/recent.txt" ]
+}

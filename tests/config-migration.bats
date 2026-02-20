@@ -440,3 +440,41 @@ EOF
   [ "$status" -eq 0 ]
   [ "$output" = "false" ]
 }
+
+@test "migration keeps unprefixed value and removes legacy key for all renamed flag pairs" {
+  local mappings=(
+    "v2_token_budgets token_budgets"
+    "v2_two_phase_completion two_phase_completion"
+    "v3_metrics metrics"
+    "v3_smart_routing smart_routing"
+    "v3_validation_gates validation_gates"
+    "v3_snapshot_resume snapshot_resume"
+    "v3_lease_locks lease_locks"
+    "v3_event_recovery event_recovery"
+    "v3_monorepo_routing monorepo_routing"
+    "v3_rolling_summary rolling_summary"
+  )
+
+  local legacy_key new_key
+  for mapping in "${mappings[@]}"; do
+    read -r legacy_key new_key <<< "$mapping"
+
+    cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<EOF
+{
+  "effort": "balanced",
+  "${new_key}": false,
+  "${legacy_key}": true
+}
+EOF
+
+    run_migration
+
+    run jq -r --arg k "$new_key" '.[$k]' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+    [ "$status" -eq 0 ]
+    [ "$output" = "false" ]
+
+    run jq -r --arg k "$legacy_key" 'has($k)' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+    [ "$status" -eq 0 ]
+    [ "$output" = "false" ]
+  done
+}

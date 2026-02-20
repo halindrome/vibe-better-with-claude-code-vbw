@@ -34,6 +34,28 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+@test "worktree-create: falls back to existing branch when -b path fails" {
+  cd "$TEST_TEMP_DIR"
+  git init -q
+  git config user.name "VBW Test"
+  git config user.email "vbw-test@example.com"
+  echo "seed" > README.md
+  git add README.md
+  git commit -q -m "chore(init): seed"
+
+  # Pre-create the target branch so `git worktree add -b` fails and fallback path is used.
+  git branch "vbw/02-03"
+
+  run bash "$SCRIPTS_DIR/worktree-create.sh" 02 03
+  [ "$status" -eq 0 ]
+  [[ "$output" == *".vbw-worktrees/02-03" ]]
+  [ -d ".vbw-worktrees/02-03" ]
+
+  run git -C ".vbw-worktrees/02-03" rev-parse --abbrev-ref HEAD
+  [ "$status" -eq 0 ]
+  [ "$output" = "vbw/02-03" ]
+}
+
 # ---------------------------------------------------------------------------
 # worktree-merge.sh tests
 # ---------------------------------------------------------------------------

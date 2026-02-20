@@ -620,8 +620,8 @@ EOF
   run bash "$SCRIPTS_DIR/compile-context.sh" 02 dev .vbw-planning/phases
   [ "$status" -eq 0 ]
   [ -f "$output" ]
-  # Metrics section should be present when enabled
-  grep -qi "metric\|performance" "$output" || true
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/.metrics/run-metrics.jsonl" ]
+  grep -q '"event":"compile_context"' "$TEST_TEMP_DIR/.vbw-planning/.metrics/run-metrics.jsonl"
 }
 
 @test "compile-context: unprefixed metrics key wins over legacy v3_metrics" {
@@ -636,6 +636,7 @@ EOF
   run bash "$SCRIPTS_DIR/compile-context.sh" 02 dev .vbw-planning/phases
   [ "$status" -eq 0 ]
   [ -f "$output" ]
+  [ ! -f "$TEST_TEMP_DIR/.vbw-planning/.metrics/run-metrics.jsonl" ]
 }
 
 # ---------------------------------------------------------------------------

@@ -45,6 +45,47 @@ run_rollout() {
   run bash "$SCRIPTS_DIR/rollout-stage.sh" "$@"
 }
 
+set_all_managed_flags_false() {
+  local config_path="$TEST_TEMP_DIR/.vbw-planning/config.json"
+  local tmp
+  tmp=$(mktemp)
+  if jq --slurpfile stages "$TEST_TEMP_DIR/config/rollout-stages.json" '
+    reduce ($stages[0].stages[].flags[]?) as $f (. ; .[$f] = false)
+  ' "$config_path" > "$tmp"; then
+    mv "$tmp" "$config_path"
+  else
+    rm -f "$tmp"
+    return 1
+  fi
+}
+
+stage_flag_count() {
+  local stage="$1"
+  jq -r --argjson stage "$stage" '[.stages[] | select(.stage <= $stage) | .flags[]] | length' "$TEST_TEMP_DIR/config/rollout-stages.json"
+}
+
+assert_flags_true_upto_stage() {
+  local stage="$1"
+  local config_path="$TEST_TEMP_DIR/.vbw-planning/config.json"
+  local flag val
+
+  for flag in $(jq -r --argjson stage "$stage" '.stages[] | select(.stage <= $stage) | .flags[]' "$TEST_TEMP_DIR/config/rollout-stages.json"); do
+    val=$(jq -r --arg f "$flag" '.[$f] // false' "$config_path")
+    [ "$val" = "true" ]
+  done
+}
+
+assert_flags_false_above_stage() {
+  local stage="$1"
+  local config_path="$TEST_TEMP_DIR/.vbw-planning/config.json"
+  local flag val
+
+  for flag in $(jq -r --argjson stage "$stage" '.stages[] | select(.stage > $stage) | .flags[]' "$TEST_TEMP_DIR/config/rollout-stages.json"); do
+    val=$(jq -r --arg f "$flag" '.[$f] // false' "$config_path")
+    [ "$val" = "false" ]
+  done
+}
+
 # --- Test 1: check reports stage 1 with no event log ---
 
 @test "rollout-stage: check reports stage 1 with no event log" {
@@ -77,34 +118,30 @@ run_rollout() {
 # --- Test 4: advance stage 1 enables event_log and metrics ---
 
 @test "rollout-stage: advance stage 1 enables metrics" {
+  set_all_managed_flags_false
   run_rollout advance --stage=1
   [ "$status" -eq 0 ]
-  # Check config was updated
-  local val_metrics val_smart_routing
-  val_metrics=$(jq -r '.metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_smart_routing=$(jq -r '.smart_routing // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  [ "$val_metrics" = "true" ]
-  # smart_routing in stage 3, should not be enabled yet
-  [ "$val_smart_routing" = "true" ]  # already true by default in test config
+  assert_flags_true_upto_stage 1
+  assert_flags_false_above_stage 1
 }
 
 # --- Test 5: advance stage 2 also enables stage 1 flags ---
 
 @test "rollout-stage: advance stage 2 also enables stage 1 flags" {
+  set_all_managed_flags_false
   run_rollout advance --stage=2
   [ "$status" -eq 0 ]
-  local val_metrics val_event_recovery
-  val_metrics=$(jq -r '.metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_event_recovery=$(jq -r '.event_recovery // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  # Stage 1 flag (metrics) should be enabled
-  [ "$val_metrics" = "true" ]
-  # Stage 3 flag (event_recovery) should not be enabled by stage 2
-  [ "$val_event_recovery" = "false" ]
+  assert_flags_true_upto_stage 2
+  assert_flags_false_above_stage 2
 }
 
 # --- Test 6: advance is idempotent ---
 
 @test "rollout-stage: advance is idempotent" {
+  set_all_managed_flags_false
+  local stage1_count
+  stage1_count=$(stage_flag_count 1)
+
   # First advance
   run_rollout advance --stage=1
   [ "$status" -eq 0 ]
@@ -112,24 +149,24 @@ run_rollout() {
   run_rollout advance --stage=1
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.flags_enabled | length == 0'
-  echo "$output" | jq -e '.flags_already_enabled | length == 4'
+  echo "$output" | jq -e ".flags_already_enabled | length == ${stage1_count}"
 }
 
 # --- Test 7: dry-run does not modify config ---
 
 @test "rollout-stage: dry-run does not modify config" {
-  # Set metrics to false so we can verify dry-run doesn't change it
-  cd "$TEST_TEMP_DIR"
-  jq '.metrics = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
-    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
+  set_all_managed_flags_false
+  local before_config after_config stage1_count
+  before_config=$(jq -S . "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  stage1_count=$(stage_flag_count 1)
+
   run_rollout advance --stage=1 --dry-run
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.dry_run == true'
-  echo "$output" | jq -e '.flags_enabled | length == 2'
-  # Config should still have false value
-  local val_metrics
-  val_metrics=$(jq -r '.metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  [ "$val_metrics" = "false" ]
+  echo "$output" | jq -e ".flags_enabled | length == ${stage1_count}"
+
+  after_config=$(jq -S . "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  [ "$before_config" = "$after_config" ]
 }
 
 # --- Test 8: status outputs markdown table ---
@@ -182,14 +219,11 @@ EOF
 # --- Test 10: advance respects phase threshold ---
 
 @test "rollout-stage: advance respects phase threshold" {
+  set_all_managed_flags_false
   create_event_log 1
   run_rollout advance
   [ "$status" -eq 0 ]
-  # With 1 phase, only stage 1 is eligible (stage 2 needs 2, but stage 2 has no flags)
-  local val_metrics val_event_recovery
-  val_metrics=$(jq -r '.metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_event_recovery=$(jq -r '.event_recovery // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  [ "$val_metrics" = "true" ]
-  # Stage 3 flag (event_recovery) should not be enabled with only 1 completed phase
-  [ "$val_event_recovery" = "false" ]
+  # With 1 phase, only stage 1 is eligible (stage 2 has no flags, stage 3 requires 5)
+  assert_flags_true_upto_stage 1
+  assert_flags_false_above_stage 1
 }
