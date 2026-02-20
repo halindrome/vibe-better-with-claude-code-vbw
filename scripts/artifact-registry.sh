@@ -15,7 +15,7 @@ CONFIG_PATH="${PLANNING_DIR}/config.json"
 # Check feature flag
 ENABLED=false
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r 'if .two_phase_completion == null then false else .two_phase_completion end' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  ENABLED=$(jq -r 'if .two_phase_completion != null then .two_phase_completion elif .v2_two_phase_completion != null then .v2_two_phase_completion else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
 fi
 
 if [ "$ENABLED" != "true" ]; then

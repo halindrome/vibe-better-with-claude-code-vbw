@@ -76,6 +76,38 @@ CONTRACT
   echo "$output" | jq -e '.result == "skipped"'
 }
 
+@test "two-phase/artifact-registry: missing key defaults to enabled consistently" {
+  cd "$TEST_TEMP_DIR"
+  create_passing_contract
+
+  jq 'del(.two_phase_completion)' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
+    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
+
+  run bash "$SCRIPTS_DIR/two-phase-complete.sh" "1-1-T1" 1 1 ".vbw-planning/.contracts/1-1.json" "feature works"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.result == "confirmed"'
+
+  echo "artifact" > "$TEST_TEMP_DIR/artifact.txt"
+  run bash "$SCRIPTS_DIR/artifact-registry.sh" register "artifact.txt" "evt-compat" 1 1
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.result == "registered"'
+}
+
+@test "two-phase/artifact-registry: honors legacy v2 key when new key missing" {
+  cd "$TEST_TEMP_DIR"
+
+  jq 'del(.two_phase_completion) | .v2_two_phase_completion = false' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
+    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
+
+  run bash "$SCRIPTS_DIR/two-phase-complete.sh" "1-1-T1" 1 1 "nonexistent.json" "evidence"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.result == "skipped"'
+
+  run bash "$SCRIPTS_DIR/artifact-registry.sh" register "any" "evt-legacy"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.result == "skipped"'
+}
+
 @test "two-phase: missing contract returns error" {
   cd "$TEST_TEMP_DIR"
   run bash "$SCRIPTS_DIR/two-phase-complete.sh" "1-1-T1" 1 1 "nonexistent.json" "evidence"

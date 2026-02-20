@@ -243,3 +243,35 @@ EOF
   [ "$status" -eq 0 ]
   [ "$output" = "[]" ]
 }
+
+@test "route-monorepo: honors legacy v3 flag when new key is missing" {
+  cd "$TEST_TEMP_DIR"
+  mkdir -p packages/core
+  echo '{}' > packages/core/package.json
+  mkdir -p .vbw-planning/phases/01-test
+  cat > .vbw-planning/phases/01-test/01-01-PLAN.md <<'EOF'
+---
+phase: 1
+plan: 1
+title: "Test"
+wave: 1
+depends_on: []
+must_haves: []
+---
+# Plan
+## Tasks
+### Task 1: Update core
+- **Files:** `packages/core/index.js`
+EOF
+
+  run bash "$SCRIPTS_DIR/route-monorepo.sh" .vbw-planning/phases/01-test
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e 'any(. == "packages/core")'
+
+  jq 'del(.monorepo_routing) | .v3_monorepo_routing = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
+    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
+
+  run bash "$SCRIPTS_DIR/route-monorepo.sh" .vbw-planning/phases/01-test
+  [ "$status" -eq 0 ]
+  [ "$output" = "[]" ]
+}

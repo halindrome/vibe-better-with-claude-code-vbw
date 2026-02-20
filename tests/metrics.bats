@@ -48,6 +48,16 @@ teardown() {
   [ "$output" = "3" ]
 }
 
+@test "collect-metrics.sh honors legacy v3_metrics when metrics key missing" {
+  cd "$TEST_TEMP_DIR"
+  jq 'del(.metrics) | .v3_metrics = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
+    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
+
+  run bash "$SCRIPTS_DIR/collect-metrics.sh" cache_hit 2 1 role=dev
+  [ "$status" -eq 0 ]
+  [ ! -f ".vbw-planning/.metrics/run-metrics.jsonl" ]
+}
+
 @test "compile-context.sh emits metrics when metrics=true" {
   cd "$TEST_TEMP_DIR"
 

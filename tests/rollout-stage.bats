@@ -144,6 +144,33 @@ run_rollout() {
   [[ "$output" == *"metrics"* ]]
 }
 
+@test "rollout-stage: status uses defaults when managed flag key missing" {
+  cd "$TEST_TEMP_DIR"
+  cat > ".vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced"
+}
+EOF
+
+  run_rollout status
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -F "| metrics | 1 (observability) | true |"
+}
+
+@test "rollout-stage: status honors legacy key when new flag key missing" {
+  cd "$TEST_TEMP_DIR"
+  cat > ".vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "v3_metrics": false
+}
+EOF
+
+  run_rollout status
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -F "| metrics | 1 (observability) | false |"
+}
+
 # --- Test 9: exits 0 when config missing ---
 
 @test "rollout-stage: exits 0 when config missing" {

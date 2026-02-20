@@ -13,6 +13,49 @@ PLANNING_DIR=".vbw-planning"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 EVENTS_FILE="${PLANNING_DIR}/.events/event-log.jsonl"
 STAGES_PATH="${SCRIPT_DIR}/../config/rollout-stages.json"
+DEFAULTS_PATH="${SCRIPT_DIR}/../config/defaults.json"
+
+legacy_flag_name() {
+  case "$1" in
+    token_budgets) echo "v2_token_budgets" ;;
+    two_phase_completion) echo "v2_two_phase_completion" ;;
+    metrics) echo "v3_metrics" ;;
+    smart_routing) echo "v3_smart_routing" ;;
+    validation_gates) echo "v3_validation_gates" ;;
+    snapshot_resume) echo "v3_snapshot_resume" ;;
+    lease_locks) echo "v3_lease_locks" ;;
+    event_recovery) echo "v3_event_recovery" ;;
+    monorepo_routing) echo "v3_monorepo_routing" ;;
+    rolling_summary) echo "v3_rolling_summary" ;;
+    *) echo "" ;;
+  esac
+}
+
+default_flag_value() {
+  local flag="$1"
+  if [ -f "$DEFAULTS_PATH" ]; then
+    jq -r --arg f "$flag" 'if .[$f] == null then "false" else (.[$f] | tostring) end' "$DEFAULTS_PATH" 2>/dev/null || echo "false"
+  else
+    echo "false"
+  fi
+}
+
+resolve_flag_value() {
+  local flag="$1"
+  local legacy_flag
+  local default_val
+
+  legacy_flag=$(legacy_flag_name "$flag")
+  default_val=$(default_flag_value "$flag")
+
+  jq -r --arg n "$flag" --arg o "$legacy_flag" --arg d "$default_val" '
+    if .[$n] != null then .[$n]
+    elif ($o != "" and .[$o] != null) then .[$o]
+    elif $d == "true" then true
+    else false
+    end
+  ' "$CONFIG_PATH" 2>/dev/null || echo "$default_val"
+}
 
 # --- Argument parsing ---
 ACTION="check"
@@ -151,7 +194,7 @@ if [ "$ACTION" = "advance" ]; then
   for i in $(seq 0 $((FLAG_COUNT - 1))); do
     FLAG=$(echo "$ALL_FLAGS" | jq -r ".[$i]" 2>/dev/null || echo "")
     [ -z "$FLAG" ] && continue
-    CURRENT_VAL=$(jq -r ".${FLAG} // false" "$CONFIG_PATH" 2>/dev/null || echo "false")
+    CURRENT_VAL=$(resolve_flag_value "$FLAG")
     if [ "$CURRENT_VAL" = "true" ]; then
       FLAGS_ALREADY=$(echo "$FLAGS_ALREADY" | jq --arg f "$FLAG" '. + [$f]' 2>/dev/null || echo "$FLAGS_ALREADY")
     else
@@ -215,7 +258,7 @@ if [ "$ACTION" = "status" ]; then
     LABEL=$(jq -r ".stages[$i].label" "$STAGES_PATH" 2>/dev/null || echo "")
     STAGE_FLAGS=$(jq -r ".stages[$i].flags[]" "$STAGES_PATH" 2>/dev/null || echo "")
     for FLAG in $STAGE_FLAGS; do
-      VALUE=$(jq -r ".${FLAG} // false" "$CONFIG_PATH" 2>/dev/null || echo "false")
+      VALUE=$(resolve_flag_value "$FLAG")
       echo "| ${FLAG} | ${STAGE_NUM} (${LABEL}) | ${VALUE} |"
       MANAGED_FLAGS=$(echo "$MANAGED_FLAGS" | jq --arg f "$FLAG" '. + [$f]' 2>/dev/null || echo "$MANAGED_FLAGS")
     done
