@@ -71,10 +71,10 @@ EOF
   [ "$status" -eq 0 ]
   [ "$output" = "4" ]
 
-  # Verify all defaults.json keys are present (22 defaults + 2 pre-existing extra keys)
+  # Verify all defaults.json keys are present (23 defaults + 2 pre-existing extra keys)
   run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "24" ]
+  [ "$output" = "25" ]
 
   # Verify existing values were preserved
   run jq -r '.context_compiler' "$TEST_TEMP_DIR/.vbw-planning/config.json"
@@ -124,10 +124,10 @@ EOF
   # Both runs should produce identical result
   [ "$AFTER_FIRST" = "$AFTER_SECOND" ]
 
-  # Verify flag count is correct (22 total, graduated flags removed)
+  # Verify flag count is correct (23 total, graduated flags removed)
   run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "22" ]
+  [ "$output" = "23" ]
 }
 
 @test "migration detects malformed JSON" {
@@ -362,8 +362,8 @@ EOF
   [ "$output" = "$EXPECTED_ADDED" ]
 }
 
-@test "EXPECTED_FLAG_COUNT is 22 after flag graduation" {
-  # Verify session-start.sh has EXPECTED_FLAG_COUNT=22 (updated from 23 after v3 flag graduation)
+@test "EXPECTED_FLAG_COUNT is 23 after worktree_isolation addition" {
+  # Verify session-start.sh has EXPECTED_FLAG_COUNT=23 (incremented after worktree_isolation added to defaults.json)
   SCRIPT_COUNT=$(grep 'EXPECTED_FLAG_COUNT=' "$SCRIPTS_DIR/session-start.sh" | grep -oE '[0-9]+' | head -1)
-  [ "$SCRIPT_COUNT" = "22" ]
+  [ "$SCRIPT_COUNT" = "23" ]
 }
