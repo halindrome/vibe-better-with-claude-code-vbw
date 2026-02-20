@@ -14,7 +14,11 @@ disable-model-invocation: true
 Working directory: `!`pwd``
 Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(bash -c 'ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1')}``
 
-**IMPORTANT — plugin root in bash:** The value above is pre-computed and respects any externally-set `$CLAUDE_PLUGIN_ROOT`. When you need to reference the plugin root in bash commands, always use the `:-` fallback form to preserve it: `CLAUDE_PLUGIN_ROOT=${CLAUDE_PLUGIN_ROOT:-$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)}`. Never use a bare `CLAUDE_PLUGIN_ROOT=$(...)` assignment — that clobbers values set in the environment by the user.
+**IMPORTANT — plugin root in bash:** The value above is pre-computed and respects any externally-set `$CLAUDE_PLUGIN_ROOT`. When you need to set it in a bash command, use this two-line pattern (Claude Code's bash tool cannot parse nested `$(...)` inside `${:-...}`):
+```
+[ -z "${CLAUDE_PLUGIN_ROOT}" ] && CLAUDE_PLUGIN_ROOT=$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)
+```
+Never use a bare `CLAUDE_PLUGIN_ROOT=$(...)` assignment — that clobbers values set in the environment by the user. Never use `${CLAUDE_PLUGIN_ROOT:-$(ls...)}` — the nested substitution breaks the bash tool parser.
 
 Pre-computed state (via phase-detect.sh):
 ```
