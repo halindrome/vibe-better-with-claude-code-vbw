@@ -135,6 +135,25 @@ assert_flags_false_above_stage() {
   assert_flags_false_above_stage 2
 }
 
+@test "rollout-stage: advance stage 3 newly enables only stage-3 flags" {
+  set_all_managed_flags_false
+
+  # Prime stage-1 flags first so stage-3 advance should only enable stage-3 flags.
+  run_rollout advance --stage=1
+  [ "$status" -eq 0 ]
+
+  local stage1_only_count stage3_only_count
+  stage1_only_count=$(jq -r '[.stages[] | select(.stage == 1) | .flags[]] | length' "$TEST_TEMP_DIR/config/rollout-stages.json")
+  stage3_only_count=$(jq -r '[.stages[] | select(.stage == 3) | .flags[]] | length' "$TEST_TEMP_DIR/config/rollout-stages.json")
+
+  run_rollout advance --stage=3
+  [ "$status" -eq 0 ]
+
+  echo "$output" | jq -e ".flags_enabled | length == ${stage3_only_count}"
+  echo "$output" | jq -e ".flags_already_enabled | length == ${stage1_only_count}"
+  assert_flags_true_upto_stage 3
+}
+
 # --- Test 6: advance is idempotent ---
 
 @test "rollout-stage: advance is idempotent" {

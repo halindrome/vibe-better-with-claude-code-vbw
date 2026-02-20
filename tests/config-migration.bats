@@ -478,3 +478,20 @@ EOF
     [ "$output" = "false" ]
   done
 }
+
+@test "migration defaults worktree_isolation to off for brownfield configs" {
+  # Simulate older initialized repo config with no worktree_isolation key.
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "autonomy": "standard",
+  "v3_metrics": true
+}
+EOF
+
+  run_migration
+
+  run jq -r '.worktree_isolation' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "off" ]
+}

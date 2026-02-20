@@ -123,10 +123,15 @@ teardown() {
   # Read how many flags stage 1 actually has
   local actual_count
   actual_count=$(jq '.stages[] | select(.stage == 1) | .flags | length' "$CONFIG_DIR/rollout-stages.json")
-  # Check that rollout-stage.bats test uses this count in the idempotent assertion
+  # Check that rollout-stage.bats test uses a dynamic count (preferred),
+  # or a matching literal count.
   local rollout_test="$BATS_TEST_DIRNAME/rollout-stage.bats"
+  if grep -q 'flags_already_enabled | length == \${stage1_count}' "$rollout_test"; then
+    return 0
+  fi
+
   grep -q "flags_already_enabled | length == ${actual_count}" "$rollout_test" || {
-    echo "FAIL: rollout-stage.bats idempotent test hardcodes wrong count. Stage 1 has $actual_count flags."
+    echo "FAIL: rollout-stage.bats idempotent test has neither dynamic count nor matching literal count. Stage 1 has $actual_count flags."
     return 1
   }
 }
