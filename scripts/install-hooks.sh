@@ -28,8 +28,7 @@ set -euo pipefail
 # Git runs hooks in a clean environment so CLAUDE_CONFIG_DIR may not be set.
 _vbw_find_script() {
   local dirs=(
-    "${CLAUDE_CONFIG_DIR:-}"
-    "$HOME/.claude"
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
     "$HOME/.config/claude-code"
   )
   for d in "${dirs[@]}"; do
