@@ -118,6 +118,22 @@ else
   exit 1
 fi
 
+# Strip graduated feature flags — all V2/V3 flags are now always-on.
+# These keys have no runtime effect but accumulate in brownfield configs.
+GRADUATED_KEYS='del(
+  .v3_delta_context, .v3_context_cache, .v3_plan_research_persist,
+  .v3_metrics, .v3_contract_lite, .v3_lock_lite, .v3_validation_gates,
+  .v3_smart_routing, .v3_event_log, .v3_schema_validation,
+  .v3_snapshot_resume, .v3_lease_locks, .v3_event_recovery,
+  .v3_monorepo_routing, .v2_hard_contracts, .v2_hard_gates,
+  .v2_typed_protocol, .v2_role_isolation, .v2_two_phase_completion,
+  .v2_token_budgets
+)'
+if ! apply_update "$GRADUATED_KEYS"; then
+  echo "ERROR: Config migration failed while removing graduated flags." >&2
+  exit 1
+fi
+
 MISSING_AFTER=$(missing_defaults_count)
 ADDED_COUNT=$((MISSING_BEFORE - MISSING_AFTER))
 if [ "$ADDED_COUNT" -lt 0 ]; then

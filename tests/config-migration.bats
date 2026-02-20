@@ -66,24 +66,24 @@ EOF
   [ "$status" -eq 0 ]
   [ "$output" = "3" ]
 
-  # Verify all defaults.json keys are present (22 defaults + 2 pre-existing extra keys)
+  # Verify all defaults.json keys are present (22 defaults keys)
   run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "24" ]
+  [ "$output" = "22" ]
 
   # Verify existing values were preserved
   run jq -r '.context_compiler' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "false" ]
 
-  # v3_delta_context and v2_hard_contracts are preserved (migration adds, does not remove keys)
-  run jq -r '.v3_delta_context' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  # Graduated flags should be stripped by migration
+  run jq -r 'has("v3_delta_context")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "true" ]
+  [ "$output" = "false" ]
 
-  run jq -r '.v2_hard_contracts' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  run jq -r 'has("v2_hard_contracts")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "true" ]
+  [ "$output" = "false" ]
 }
 
 @test "migration handles full config" {
@@ -361,4 +361,45 @@ EOF
   # Verify session-start.sh has EXPECTED_FLAG_COUNT=22 (decremented after v2_token_budgets graduated)
   SCRIPT_COUNT=$(grep 'EXPECTED_FLAG_COUNT=' "$SCRIPTS_DIR/session-start.sh" | grep -oE '[0-9]+' | head -1)
   [ "$SCRIPT_COUNT" = "22" ]
+}
+
+@test "migration strips all graduated V2/V3 flags from brownfield config" {
+  # Create config with every graduated flag present
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "v3_delta_context": true,
+  "v3_context_cache": false,
+  "v3_plan_research_persist": true,
+  "v3_metrics": false,
+  "v3_contract_lite": true,
+  "v3_lock_lite": false,
+  "v3_validation_gates": true,
+  "v3_smart_routing": false,
+  "v3_event_log": true,
+  "v3_schema_validation": false,
+  "v3_snapshot_resume": true,
+  "v3_lease_locks": false,
+  "v3_event_recovery": true,
+  "v3_monorepo_routing": false,
+  "v2_hard_contracts": true,
+  "v2_hard_gates": false,
+  "v2_typed_protocol": true,
+  "v2_role_isolation": false,
+  "v2_two_phase_completion": true,
+  "v2_token_budgets": false
+}
+EOF
+
+  run_migration
+
+  # All graduated flags should be removed
+  run jq '[keys[] | select(startswith("v2_") or startswith("v3_"))] | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "0" ]
+
+  # Non-graduated keys should still be present
+  run jq -r '.effort' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "balanced" ]
 }
