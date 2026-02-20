@@ -5,14 +5,12 @@ set -u
 # Generates a contract sidecar JSON from PLAN.md metadata.
 # Output: .vbw-planning/.contracts/{phase}-{plan}.json
 #
-# V3 Lean (v3_contract_lite): 5 fields (phase, plan, task_count, must_haves, allowed_paths)
-# V2 Full (v2_hard_contracts): 11 fields + contract_hash
+# Full contract (v2_hard_contracts, graduated): 11 fields + contract_hash
 #   task_id, phase_id, plan_id, objective, allowed_paths, forbidden_paths,
 #   depends_on, must_haves, verification_checks, max_token_budget, timeout_seconds,
 #   contract_hash (SHA-256 of serialized contract excluding hash)
 #
-# Fail-open when advisory (v3_contract_lite only).
-# Hard stop behavior delegated to validate-contract.sh when v2_hard_contracts=true.
+# Hard stop behavior delegated to validate-contract.sh.
 
 if [ $# -lt 1 ]; then
   echo "Usage: generate-contract.sh <plan-path>" >&2
@@ -23,18 +21,7 @@ PLAN_PATH="$1"
 [ ! -f "$PLAN_PATH" ] && exit 0
 
 PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
-
-# Check feature flags
-V3_LITE=false
-V2_HARD=false
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V3_LITE=$(jq -r '.v3_contract_lite // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  V2_HARD=$(jq -r '.v2_hard_contracts // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-fi
-
-# Need at least one contract flag enabled
-[ "$V3_LITE" != "true" ] && [ "$V2_HARD" != "true" ] && exit 0
+CONFIG_PATH="${CONFIG_PATH:-${PLANNING_DIR}/config.json}"
 
 # Extract phase and plan from frontmatter
 PHASE=$(awk '/^---$/{n++; next} n==1 && /^phase:/{print $2; exit}' "$PLAN_PATH" 2>/dev/null) || exit 0
@@ -147,8 +134,7 @@ CONTRACT_DIR="${PLANNING_DIR}/.contracts"
 mkdir -p "$CONTRACT_DIR" 2>/dev/null || exit 0
 CONTRACT_FILE="${CONTRACT_DIR}/${PHASE}-${PLAN}.json"
 
-if [ "$V2_HARD" = "true" ]; then
-  # V2 Full: all 11 fields + contract_hash
+# Full contract: all 11 fields + contract_hash
   FP_JSON="[]"
   if [ -n "$FORBIDDEN_PATHS" ]; then
     FP_JSON=$(echo "$FORBIDDEN_PATHS" | jq -R '.' | jq -s '.' 2>/dev/null) || FP_JSON="[]"
@@ -211,17 +197,5 @@ if [ "$V2_HARD" = "true" ]; then
 
   # Write final contract with hash
   echo "$CONTRACT_BODY" | jq --arg hash "$CONTRACT_HASH" '. + {contract_hash: $hash}' > "$CONTRACT_FILE" 2>/dev/null || exit 0
-
-else
-  # V3 Lite: 5 fields (backward compatible)
-  jq -n \
-    --argjson phase "$PHASE" \
-    --argjson plan "$PLAN" \
-    --argjson task_count "$TASK_COUNT" \
-    --argjson must_haves "$MH_JSON" \
-    --argjson allowed_paths "$AP_JSON" \
-    '{phase: $phase, plan: $plan, task_count: $task_count, must_haves: $must_haves, allowed_paths: $allowed_paths}' \
-    > "$CONTRACT_FILE" 2>/dev/null || exit 0
-fi
 
 echo "$CONTRACT_FILE"

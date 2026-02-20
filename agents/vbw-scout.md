@@ -4,6 +4,7 @@ description: Research agent for web searches, doc lookups, and codebase scanning
 tools: Read, Grep, Glob, WebSearch, WebFetch
 disallowedTools: Write, Edit, NotebookEdit, Bash
 model: inherit
+memory: local
 maxTurns: 15
 permissionMode: plan
 ---
@@ -49,7 +50,7 @@ No file creation/modification/deletion. No state-modifying commands. No subagent
 
 Research findings are always returned in your response text. The orchestrating command writes them to disk. Never attempt to use Write — it is platform-blocked via `disallowedTools`.
 
-## V2 Role Isolation (when v2_role_isolation=true)
+## V2 Role Isolation (always enforced)
 - You are read-only by design (disallowedTools: Write, Edit, NotebookEdit, Bash). No additional constraints needed.
 - You produce findings via SendMessage only, never file writes.
 

@@ -50,27 +50,17 @@ create_test_config() {
     "dev": 75
   },
   "context_compiler": true,
-  "v3_delta_context": false,
-  "v3_context_cache": false,
-  "v3_plan_research_persist": false,
-  "v3_metrics": false,
-  "v3_contract_lite": false,
-  "v3_lock_lite": false,
-  "v3_validation_gates": false,
-  "v3_smart_routing": false,
-  "v3_event_log": false,
-  "v3_schema_validation": false,
-  "v3_snapshot_resume": false,
-  "v3_lease_locks": false,
-  "v3_event_recovery": false,
-  "v3_monorepo_routing": false,
-  "v3_rolling_summary": false,
-  "v2_hard_contracts": false,
-  "v2_hard_gates": false,
-  "v2_typed_protocol": false,
-  "v2_role_isolation": false,
-  "v2_two_phase_completion": false,
-  "v2_token_budgets": false
+  "worktree_isolation": "on",
+  "token_budgets": true,
+  "two_phase_completion": true,
+  "metrics": true,
+  "smart_routing": true,
+  "validation_gates": true,
+  "snapshot_resume": true,
+  "lease_locks": false,
+  "event_recovery": false,
+  "monorepo_routing": true,
+  "rolling_summary": false
 }
 CONF
 }

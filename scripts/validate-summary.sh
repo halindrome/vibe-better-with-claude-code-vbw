@@ -10,7 +10,55 @@ if ! echo "$FILE_PATH" | grep -qE '\.vbw-planning/.*SUMMARY\.md$'; then
   exit 0
 fi
 
-[ -f "$FILE_PATH" ] || exit 0
+# If SUMMARY.md doesn't exist, check for crash recovery fallback
+if [ ! -f "$FILE_PATH" ]; then
+  PLANNING_DIR=".vbw-planning"
+  LAST_WORDS_DIR="$PLANNING_DIR/.agent-last-words"
+
+  # Look for recent .agent-last-words files (within last 60 seconds)
+  if [ -d "$LAST_WORDS_DIR" ]; then
+    NOW=$(date +%s 2>/dev/null || echo 0)
+    FALLBACK_FOUND=""
+    STALE_FOUND=false
+
+    for lw_file in "$LAST_WORDS_DIR"/*.txt; do
+      [ -f "$lw_file" ] || continue
+
+      # Check file age
+      if [ "$(uname)" = "Darwin" ]; then
+        FILE_MTIME=$(stat -f %m "$lw_file" 2>/dev/null || echo 0)
+      else
+        FILE_MTIME=$(stat -c %Y "$lw_file" 2>/dev/null || echo 0)
+      fi
+
+      AGE=$((NOW - FILE_MTIME))
+      if [ "$AGE" -ge 0 ] && [ "$AGE" -le 60 ]; then
+        FALLBACK_FOUND="$lw_file"
+        break
+      elif [ "$AGE" -gt 60 ]; then
+        STALE_FOUND=true
+      fi
+    done
+
+    if [ -n "$FALLBACK_FOUND" ]; then
+      jq -n --arg file "$(basename "$FALLBACK_FOUND")" '{
+        "hookSpecificOutput": {
+          "hookEventName": "PostToolUse",
+          "additionalContext": ("SUMMARY.md missing but crash recovery fallback available: " + $file + ". Agent may have crashed before writing SUMMARY.md. Check .agent-last-words/ for final output.")
+        }
+      }'
+    elif [ "$STALE_FOUND" = true ]; then
+      jq -n '{
+        "hookSpecificOutput": {
+          "hookEventName": "PostToolUse",
+          "additionalContext": "SUMMARY.md missing and only stale crash recovery artifacts were found in .agent-last-words/ (>60s old). Check those files if this was a prior crash, then rerun or regenerate SUMMARY.md."
+        }
+      }'
+    fi
+  fi
+
+  exit 0
+fi
 
 MISSING=""
 

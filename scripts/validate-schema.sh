@@ -15,15 +15,6 @@ fi
 SCHEMA_TYPE="$1"
 FILE_PATH="$2"
 
-PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
-
-# Check feature flag
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r '.v3_schema_validation // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  [ "$ENABLED" != "true" ] && { echo "valid"; exit 0; }
-fi
-
 [ ! -f "$FILE_PATH" ] && { echo "invalid: file not found"; exit 0; }
 
 # Contract is JSON, not frontmatter — validate separately

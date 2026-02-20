@@ -9,11 +9,6 @@ setup() {
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning/.events"
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning/.metrics"
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning/phases/01-test"
-
-  # Enable V2 hard gates
-  jq '.v2_hard_gates = true | .v2_hard_contracts = true | .v3_event_log = true' \
-    "$TEST_TEMP_DIR/.vbw-planning/config.json" > "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" \
-    && mv "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" "$TEST_TEMP_DIR/.vbw-planning/config.json"
 }
 
 teardown() {
@@ -137,15 +132,6 @@ create_tampered_contract() {
   echo "$output" | jq -e '.result == "fail"'
 }
 
-@test "gate: skip when v2_hard_gates=false" {
-  create_valid_contract
-  cd "$TEST_TEMP_DIR"
-  jq '.v2_hard_gates = false' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
-    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
-  run bash "$SCRIPTS_DIR/hard-gate.sh" contract_compliance 1 1 1 ".vbw-planning/.contracts/1-1.json"
-  [ "$status" -eq 0 ]
-  echo "$output" | jq -e '.result == "skip"'
-}
 
 @test "gate: JSON output format correct" {
   create_valid_contract
@@ -208,15 +194,6 @@ PLAN
   [ "$ATTEMPTS" -le 2 ]
 }
 
-@test "auto-repair: skip when v2_hard_gates=false" {
-  create_valid_contract
-  cd "$TEST_TEMP_DIR"
-  jq '.v2_hard_gates = false' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
-    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
-  run bash "$SCRIPTS_DIR/auto-repair.sh" contract_compliance 1 1 1 ".vbw-planning/.contracts/1-1.json"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"v2_hard_gates=false"* ]]
-}
 
 @test "auto-repair: blocker event logged on final failure" {
   create_tampered_contract

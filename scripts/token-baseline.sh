@@ -118,7 +118,7 @@ get_delta_direction() {
 
 # --- Prerequisites check ---
 if [ ! -f "$EVENTS_FILE" ] && [ ! -f "$METRICS_FILE" ]; then
-  echo "No event data found. Enable v3_event_log=true and v3_metrics=true in config."
+  echo "No event data found yet."
   exit 0
 fi
 

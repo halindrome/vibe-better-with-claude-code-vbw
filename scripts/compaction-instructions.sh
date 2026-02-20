@@ -1,18 +1,36 @@
 #!/bin/bash
 set -u
-# PreCompact hook: Inject agent-specific summarization priorities
-# Reads agent context and returns additionalContext for compaction
+# PreCompact hook: Inject VBW-specific compaction priorities
+#
+# CC 2.1.47+ handles natively:
+#   - Plan mode preservation
+#   - Basic conversation flow retention
+#
+# VBW adds:
+#   - Agent-specific codebase re-read instructions
+#   - Execution state snapshots for crash recovery
+#   - Compaction markers for Dev re-read guards
 
 INPUT=$(cat)
 AGENT_NAME=$(echo "$INPUT" | jq -r '.agent_name // .agentName // ""')
 MATCHER=$(echo "$INPUT" | jq -r '.matcher // "auto"')
 
+# VBW-specific compaction priorities per agent role
 case "$AGENT_NAME" in
   *scout*)
     PRIORITIES="Preserve research findings, URLs, confidence assessments"
     ;;
   *dev*)
     PRIORITIES="Preserve commit hashes, file paths modified, deviation decisions, current task number. After compaction, if .vbw-planning/codebase/META.md exists, re-read CONVENTIONS.md, PATTERNS.md, STRUCTURE.md, and DEPENDENCIES.md (whichever exist) from .vbw-planning/codebase/"
+    # Inject worktree path if agent has a mapping
+    AGENT_NAME_SHORT=$(echo "$AGENT_NAME" | sed 's/.*vbw-//')
+    WORKTREE_MAP_FILE=".vbw-planning/.agent-worktrees/${AGENT_NAME_SHORT}.json"
+    if [ -f "$WORKTREE_MAP_FILE" ]; then
+      WORKTREE_PATH=$(jq -r '.worktree_path // ""' "$WORKTREE_MAP_FILE" 2>/dev/null) || WORKTREE_PATH=""
+      if [ -n "$WORKTREE_PATH" ]; then
+        PRIORITIES="$PRIORITIES CRITICAL: Your working directory is ${WORKTREE_PATH}. All file operations MUST use this path."
+      fi
+    fi
     ;;
   *qa*)
     PRIORITIES="Preserve pass/fail status, gap descriptions, verification results. After compaction, if .vbw-planning/codebase/META.md exists, re-read TESTING.md, CONCERNS.md, and ARCHITECTURE.md (whichever exist) from .vbw-planning/codebase/"

@@ -64,43 +64,34 @@ for arg in "$@"; do
 done
 
 # --- Config / flag resolution ---
-V3_CONTRACT_LITE=false
-V2_HARD_CONTRACTS=false
-V3_LOCK_LITE=false
-V3_LEASE_LOCKS=false
-V2_HARD_GATES=false
 CONTEXT_COMPILER=false
-V2_TOKEN_BUDGETS=false
+TOKEN_BUDGETS=true
 
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V3_CONTRACT_LITE=$(jq -r '.v3_contract_lite // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  V2_HARD_CONTRACTS=$(jq -r '.v2_hard_contracts // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  V3_LOCK_LITE=$(jq -r '.v3_lock_lite // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  V3_LEASE_LOCKS=$(jq -r '.v3_lease_locks // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  V2_HARD_GATES=$(jq -r '.v2_hard_gates // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
   CONTEXT_COMPILER=$(jq -r 'if .context_compiler == null then true else .context_compiler end' "$CONFIG_PATH" 2>/dev/null || echo "true")
-  V2_TOKEN_BUDGETS=$(jq -r '.v2_token_budgets // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  TOKEN_BUDGETS=$(jq -r 'if .token_budgets != null then .token_budgets elif .v2_token_budgets != null then .v2_token_budgets else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
 fi
 
 # --- No-op check (REQ-C1) ---
 # If all flags relevant to the chosen action are false, exit 0 immediately.
+# Note: v2_hard_contracts, v2_hard_gates are now always-on (graduated)
+# Token budgets and context compiler are config-gated.
 check_noop() {
   case "$ACTION" in
     pre-task)
-      [ "$V3_CONTRACT_LITE" != "true" ] && [ "$V2_HARD_CONTRACTS" != "true" ] && \
-      [ "$V3_LOCK_LITE" != "true" ] && [ "$V3_LEASE_LOCKS" != "true" ] && \
-      [ "$V2_HARD_GATES" != "true" ] && return 0
+      # Contract and gates are always-on — pre-task is never a noop
+      return 1
       ;;
     post-task)
-      [ "$V2_HARD_GATES" != "true" ] && \
-      [ "$V3_LOCK_LITE" != "true" ] && [ "$V3_LEASE_LOCKS" != "true" ] && return 0
+      # Gates are always-on
+      return 1
       ;;
     compile)
-      [ "$CONTEXT_COMPILER" != "true" ] && return 0
+      [ "$CONTEXT_COMPILER" != "true" ] && [ "$TOKEN_BUDGETS" != "true" ] && return 0
       ;;
     full)
-      [ "$V3_CONTRACT_LITE" != "true" ] && [ "$V2_HARD_CONTRACTS" != "true" ] && \
-      [ "$CONTEXT_COMPILER" != "true" ] && return 0
+      # Contract is always-on — full is never a noop
+      return 1
       ;;
   esac
   return 1
@@ -139,10 +130,7 @@ emit_result() {
 CONTRACT_PATH_OUT=""
 
 step_contract() {
-  if [ "$V3_CONTRACT_LITE" != "true" ] && [ "$V2_HARD_CONTRACTS" != "true" ]; then
-    record_step "contract" "skip" "no contract flags enabled"
-    return 0
-  fi
+  # v2_hard_contracts is now always enabled (graduated)
   if [ -z "$PLAN_PATH" ] || [ ! -f "$PLAN_PATH" ]; then
     record_step "contract" "skip" "no plan file"
     return 0
@@ -163,37 +151,21 @@ step_contract() {
 }
 
 step_lease_acquire() {
-  if [ "$V3_LEASE_LOCKS" != "true" ] && [ "$V3_LOCK_LITE" != "true" ]; then
-    record_step "lease_acquire" "skip" "no lock flags enabled"
-    return 0
-  fi
   local tid="${TASK_ID:-${PHASE}-${PLAN}-T${TASK}}"
   local files_args=""
   if [ -n "$CLAIMED_FILES" ]; then
     files_args=$(echo "$CLAIMED_FILES" | tr ',' ' ')
   fi
   local result
-  if [ "$V3_LEASE_LOCKS" = "true" ]; then
-    result=$(bash "$SCRIPT_DIR/lease-lock.sh" acquire "$tid" --ttl=300 $files_args 2>/dev/null) || {
-      record_step "lease_acquire" "fail" "lease-lock.sh error"
-      echo "control-plane: lease acquisition failed" >&2
-      return 0
-    }
-  else
-    result=$(bash "$SCRIPT_DIR/lock-lite.sh" acquire "$tid" $files_args 2>/dev/null) || {
-      record_step "lease_acquire" "fail" "lock-lite.sh error"
-      echo "control-plane: lock acquisition failed" >&2
-      return 0
-    }
-  fi
+  result=$(bash "$SCRIPT_DIR/lease-lock.sh" acquire "$tid" --ttl=300 $files_args 2>/dev/null) || {
+    record_step "lease_acquire" "fail" "lease-lock.sh error"
+    echo "control-plane: lease acquisition failed" >&2
+    return 0
+  }
   if [ "$result" = "conflict_blocked" ]; then
     # Retry once after 2s delay (per plan: auto-repair on lease conflict)
     sleep 2
-    if [ "$V3_LEASE_LOCKS" = "true" ]; then
-      result=$(bash "$SCRIPT_DIR/lease-lock.sh" acquire "$tid" --ttl=300 $files_args 2>/dev/null) || result="error"
-    else
-      result=$(bash "$SCRIPT_DIR/lock-lite.sh" acquire "$tid" $files_args 2>/dev/null) || result="error"
-    fi
+    result=$(bash "$SCRIPT_DIR/lease-lock.sh" acquire "$tid" --ttl=300 $files_args 2>/dev/null) || result="error"
     if [ "$result" = "conflict_blocked" ] || [ "$result" = "error" ]; then
       record_step "lease_acquire" "fail" "conflict blocked after retry"
       return 1
@@ -205,10 +177,7 @@ step_lease_acquire() {
 
 step_gate() {
   local gate_type="$1"
-  if [ "$V2_HARD_GATES" != "true" ]; then
-    record_step "gate_${gate_type}" "skip" "v2_hard_gates=false"
-    return 0
-  fi
+  # v2_hard_gates is now always enabled (graduated)
   local contract="${CONTRACT_PATH_OUT:-}"
   if [ -z "$contract" ]; then
     # Try to find contract from phase/plan
@@ -239,17 +208,9 @@ step_gate() {
 }
 
 step_lease_release() {
-  if [ "$V3_LEASE_LOCKS" != "true" ] && [ "$V3_LOCK_LITE" != "true" ]; then
-    record_step "lease_release" "skip" "no lock flags enabled"
-    return 0
-  fi
   local tid="${TASK_ID:-${PHASE}-${PLAN}-T${TASK}}"
   local result
-  if [ "$V3_LEASE_LOCKS" = "true" ]; then
-    result=$(bash "$SCRIPT_DIR/lease-lock.sh" release "$tid" 2>/dev/null) || result="error"
-  else
-    result=$(bash "$SCRIPT_DIR/lock-lite.sh" release "$tid" 2>/dev/null) || result="error"
-  fi
+  result=$(bash "$SCRIPT_DIR/lease-lock.sh" release "$tid" 2>/dev/null) || result="error"
   record_step "lease_release" "pass" "$result"
   return 0
 }
@@ -279,10 +240,12 @@ step_context() {
 }
 
 step_token_budget() {
-  if [ "$V2_TOKEN_BUDGETS" != "true" ]; then
-    record_step "token_budget" "skip" "v2_token_budgets=false"
+  # token_budgets flag controls budget enforcement
+  if [ "$TOKEN_BUDGETS" != "true" ]; then
+    record_step "token_budget" "skip" "token_budgets=false"
     return 0
   fi
+  # token-budget.sh will pass through if no budget definitions exist
   if [ -z "$CONTEXT_PATH_OUT" ] || [ ! -f "$CONTEXT_PATH_OUT" ]; then
     record_step "token_budget" "skip" "no context file"
     return 0

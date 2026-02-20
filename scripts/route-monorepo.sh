@@ -15,17 +15,18 @@ fi
 
 PHASE_DIR="$1"
 
-PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
-
-# Check feature flag
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r '.v3_monorepo_routing // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  [ "$ENABLED" != "true" ] && { echo "[]"; exit 0; }
-fi
-
 command -v jq &>/dev/null || { echo "[]"; exit 0; }
 [ ! -d "$PHASE_DIR" ] && { echo "[]"; exit 0; }
+
+# Check monorepo_routing flag — if disabled, skip
+CONFIG_PATH=".vbw-planning/config.json"
+if [ -f "$CONFIG_PATH" ]; then
+  MONOREPO_ROUTING=$(jq -r 'if .monorepo_routing != null then .monorepo_routing elif .v3_monorepo_routing != null then .v3_monorepo_routing else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  if [ "$MONOREPO_ROUTING" != "true" ]; then
+    echo "[]"
+    exit 0
+  fi
+fi
 
 # Detect package root markers in the repo
 PACKAGE_MARKERS="package.json Cargo.toml go.mod pyproject.toml"

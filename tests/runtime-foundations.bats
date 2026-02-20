@@ -6,12 +6,6 @@ setup() {
   setup_temp_dir
   create_test_config
 
-  # Enable all runtime foundation flags
-  cd "$TEST_TEMP_DIR"
-  jq '.v3_event_log = true | .v3_schema_validation = true | .v3_snapshot_resume = true' \
-    .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
-    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
-
   # Create sample execution state
   cat > "$TEST_TEMP_DIR/.vbw-planning/.execution-state.json" <<'STATE'
 {
@@ -71,15 +65,6 @@ teardown() {
   echo "$LAST" | jq -e '.data.status == "complete"'
 }
 
-@test "log-event: exits 0 when flag disabled" {
-  cd "$TEST_TEMP_DIR"
-  jq '.v3_event_log = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
-    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
-  run bash "$SCRIPTS_DIR/log-event.sh" phase_start 5
-  [ "$status" -eq 0 ]
-  [ ! -f ".vbw-planning/.events/event-log.jsonl" ]
-}
-
 # --- validate-schema.sh tests ---
 
 @test "validate-schema: returns valid for correct plan frontmatter" {
@@ -130,15 +115,6 @@ EOF
 {"phase": 5, "plan": 1, "task_count": 3, "allowed_paths": ["scripts/"]}
 JSON
   run bash "$SCRIPTS_DIR/validate-schema.sh" contract "$TEST_TEMP_DIR/contract.json"
-  [ "$status" -eq 0 ]
-  [ "$output" = "valid" ]
-}
-
-@test "validate-schema: exits 0 when flag disabled" {
-  cd "$TEST_TEMP_DIR"
-  jq '.v3_schema_validation = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
-    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
-  run bash "$SCRIPTS_DIR/validate-schema.sh" plan ".vbw-planning/phases/05-test-phase/05-01-PLAN.md"
   [ "$status" -eq 0 ]
   [ "$output" = "valid" ]
 }
@@ -262,13 +238,4 @@ JSON
 
   SNAP_COUNT=$(ls -1 .vbw-planning/.snapshots/5-*.json 2>/dev/null | wc -l | tr -d ' ')
   [ "$SNAP_COUNT" -le 10 ]
-}
-
-@test "snapshot-resume: exits 0 when flag disabled" {
-  cd "$TEST_TEMP_DIR"
-  jq '.v3_snapshot_resume = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
-    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
-  run bash "$SCRIPTS_DIR/snapshot-resume.sh" save 5
-  [ "$status" -eq 0 ]
-  [ -z "$output" ]
 }

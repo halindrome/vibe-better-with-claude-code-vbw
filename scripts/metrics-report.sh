@@ -17,7 +17,7 @@ FILTER_PHASE="${1:-}"
 if [ ! -f "$METRICS_FILE" ] && [ ! -f "$EVENTS_FILE" ]; then
   echo "# Metrics Report"
   echo ""
-  echo "No metrics data found. Enable \`v3_metrics=true\` and \`v3_event_log=true\` in config."
+  echo "No metrics data found yet."
   exit 0
 fi
 

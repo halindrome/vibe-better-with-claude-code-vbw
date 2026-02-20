@@ -129,16 +129,30 @@ if [ -f ".vbw-planning/.execution-state.json" ] && [ -f "$SCRIPT_DIR/snapshot-re
   fi
 fi
 
+# --- Worktree context injection ---
+WORKTREE_CONTEXT=""
+if echo "$ROLE" | grep -q "vbw-dev\|vbw-debugger"; then
+  AGENT_NAME_COMPACT=$(echo "$INPUT" | jq -r '.agent_name // .agentName // ""' 2>/dev/null) || AGENT_NAME_COMPACT=""
+  AGENT_NAME_SHORT=$(echo "$AGENT_NAME_COMPACT" | sed 's/.*vbw-//')
+  WORKTREE_MAP_FILE=".vbw-planning/.agent-worktrees/${AGENT_NAME_SHORT}.json"
+  if [ -f "$WORKTREE_MAP_FILE" ]; then
+    WT_PATH=$(jq -r '.worktree_path // ""' "$WORKTREE_MAP_FILE" 2>/dev/null) || WT_PATH=""
+    if [ -n "$WT_PATH" ]; then
+      WORKTREE_CONTEXT=" Worktree working directory: ${WT_PATH}. All file operations must use this path."
+    fi
+  fi
+fi
+
 # Teammate task recovery hint
 TASK_HINT=""
 if [ -n "$ROLE" ] && [ "$ROLE" != "unknown" ]; then
   TASK_HINT=" If you are a teammate, call TaskGet for your assigned task ID to restore your current objective."
 fi
 
-jq -n --arg role "${ROLE:-unknown}" --arg files "$FILES" --arg snap "${SNAPSHOT_CONTEXT:-}" --arg taskhint "${TASK_HINT:-}" '{
+jq -n --arg role "${ROLE:-unknown}" --arg files "$FILES" --arg snap "${SNAPSHOT_CONTEXT:-}" --arg taskhint "${TASK_HINT:-}" --arg worktree "${WORKTREE_CONTEXT:-}" '{
   "hookSpecificOutput": {
     "hookEventName": "SessionStart",
-    "additionalContext": ("Context was compacted. Agent role: " + $role + ". Re-read these key files from disk: " + $files + $snap + $taskhint)
+    "additionalContext": ("Context was compacted. Agent role: " + $role + ". Re-read these key files from disk: " + $files + $snap + $taskhint + $worktree)
   }
 }'
 

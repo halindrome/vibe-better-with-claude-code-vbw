@@ -58,4 +58,28 @@ fi
 rmdir "$PLANNING_DIR/.active-agent-count.lock" 2>/dev/null || true
 rm -f "$PLANNING_DIR/.active-agent" "$PLANNING_DIR/.active-agent-count" "$PLANNING_DIR/.agent-panes" "$PLANNING_DIR/.task-verify-seen" 2>/dev/null
 
+# Clean up stale worktrees (>2 hours) — fail-silent
+SCRIPT_DIR_STOP="$(cd "$(dirname "$0")" && pwd)"
+WORKTREES_DIR="$(pwd)/.vbw-worktrees"
+if [ -d "$WORKTREES_DIR" ] && [ -f "$SCRIPT_DIR_STOP/worktree-cleanup.sh" ]; then
+  NOW_STOP=$(date +%s)
+  STALE_SECS=7200
+  for wt_dir in "$WORKTREES_DIR"/*/; do
+    [ ! -d "$wt_dir" ] && continue
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      WT_MTIME=$(stat -f %m "$wt_dir" 2>/dev/null) || WT_MTIME=0
+    else
+      WT_MTIME=$(stat -c %Y "$wt_dir" 2>/dev/null) || WT_MTIME=0
+    fi
+    WT_AGE=$((NOW_STOP - WT_MTIME))
+    if [ "$WT_AGE" -gt "$STALE_SECS" ]; then
+      WT_NAME=$(basename "$wt_dir")
+      # Parse phase and plan from directory name (format: {phase}-{plan})
+      WT_PHASE=$(echo "$WT_NAME" | cut -d'-' -f1)
+      WT_PLAN=$(echo "$WT_NAME" | cut -d'-' -f2)
+      bash "$SCRIPT_DIR_STOP/worktree-cleanup.sh" "$WT_PHASE" "$WT_PLAN" 2>/dev/null || true
+    fi
+  done
+fi
+
 exit 0
