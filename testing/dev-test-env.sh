@@ -6,21 +6,49 @@
 # The resulting environment is fully isolated — your real config is untouched.
 #
 # Usage:
-#   bash scripts/dev-test-env.sh [target-dir]
+#   bash testing/dev-test-env.sh [--target <dir>] [--merge]
 #
-# Default target: /tmp/vbw-dev-config
+# Options:
+#   --target <dir>  Target directory for the test config (default: /tmp/vbw-dev-config)
+#   --merge         Preserve existing target dir; only update VBW plugin files.
+#                   Without --merge, the target is wiped and rebuilt from scratch.
+#
+# Backward compat: a bare positional arg is still accepted as the target dir.
 #
 # Then in a new window:
 #   CLAUDE_CONFIG_DIR=/tmp/vbw-dev-config claude
 #
 # To refresh after making more local changes, just re-run this script.
-# The target dir is always wiped and rebuilt from scratch.
 
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SOURCE_CONFIG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-TARGET_CONFIG="${1:-/tmp/vbw-dev-config}"
+TARGET_CONFIG="/tmp/vbw-dev-config"
+MERGE_MODE=false
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --target)
+      TARGET_CONFIG="$2"
+      shift 2
+      ;;
+    --merge)
+      MERGE_MODE=true
+      shift
+      ;;
+    -*)
+      echo "Unknown option: $1" >&2
+      exit 1
+      ;;
+    *)
+      # Backward compat: bare positional arg treated as target dir
+      TARGET_CONFIG="$1"
+      shift
+      ;;
+  esac
+done
 
 # Plugin directories to sync from repo into the installed cache
 PLUGIN_DIRS=(commands agents references scripts config)
@@ -30,6 +58,7 @@ echo "=========================="
 echo "Source config : $SOURCE_CONFIG"
 echo "Target config : $TARGET_CONFIG"
 echo "Repo root     : $REPO_ROOT"
+echo "Merge mode    : $MERGE_MODE"
 echo ""
 
 # Validate source config exists
@@ -53,10 +82,15 @@ VBW_VERSION=$(basename "$VBW_CACHE")
 echo "VBW version   : $VBW_VERSION"
 echo ""
 
-# Wipe and rebuild target
-echo "Copying Claude config to $TARGET_CONFIG ..."
-rm -rf "$TARGET_CONFIG"
-cp -a "$SOURCE_CONFIG" "$TARGET_CONFIG"
+# Prepare target directory
+if [ "$MERGE_MODE" = true ] && [ -d "$TARGET_CONFIG" ]; then
+  echo "Merge mode: preserving existing target, updating VBW plugin files only."
+else
+  # Wipe and rebuild target
+  echo "Copying Claude config to $TARGET_CONFIG ..."
+  rm -rf "$TARGET_CONFIG"
+  cp -a "$SOURCE_CONFIG" "$TARGET_CONFIG"
+fi
 
 # Overwrite VBW plugin dirs with local repo files
 VBW_TARGET="$TARGET_CONFIG/plugins/cache/vbw-marketplace/vbw/$VBW_VERSION"
@@ -77,3 +111,4 @@ echo ""
 echo "  CLAUDE_CONFIG_DIR=$TARGET_CONFIG claude"
 echo ""
 echo "To refresh after more local changes, re-run this script."
+echo "Use --merge to keep existing project data between refreshes."
