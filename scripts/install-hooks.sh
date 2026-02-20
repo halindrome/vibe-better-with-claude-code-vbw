@@ -23,7 +23,24 @@ HOOK_CONTENT='#!/usr/bin/env bash
 set -euo pipefail
 # VBW pre-push hook — delegates to the latest cached plugin script.
 # Installed by VBW install-hooks.sh. Remove with: rm .git/hooks/pre-push
-SCRIPT=$(ls -1 "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/*/scripts/pre-push-hook.sh 2>/dev/null | sort -V | tail -1)
+#
+# Try CLAUDE_CONFIG_DIR first, then common default locations.
+# Git runs hooks in a clean environment so CLAUDE_CONFIG_DIR may not be set.
+_vbw_find_script() {
+  local dirs=(
+    "${CLAUDE_CONFIG_DIR:-}"
+    "$HOME/.claude"
+    "$HOME/.config/claude-code"
+  )
+  for d in "${dirs[@]}"; do
+    [ -z "$d" ] && continue
+    local s
+    s=$(ls -1 "$d"/plugins/cache/vbw-marketplace/vbw/*/scripts/pre-push-hook.sh 2>/dev/null | sort -V | tail -1 || true)
+    [ -n "$s" ] && [ -f "$s" ] && echo "$s" && return 0
+  done
+  return 1
+}
+SCRIPT=$(_vbw_find_script || true)
 if [ -n "$SCRIPT" ] && [ -f "$SCRIPT" ]; then
   exec bash "$SCRIPT" "$@"
 fi
@@ -43,7 +60,14 @@ if [ -f "$HOOK_PATH" ]; then
       echo "pre-push hook exists but is not managed by VBW -- skipping" >&2
     fi
   elif grep -q "VBW pre-push hook" "$HOOK_PATH" 2>/dev/null; then
-    echo "pre-push hook already installed" >&2
+    # VBW-managed hook — check if it needs upgrading to multi-location resolver
+    if ! grep -q "_vbw_find_script" "$HOOK_PATH" 2>/dev/null; then
+      echo "$HOOK_CONTENT" > "$HOOK_PATH"
+      chmod +x "$HOOK_PATH"
+      echo "Upgraded pre-push hook to multi-location resolver" >&2
+    else
+      echo "pre-push hook already installed" >&2
+    fi
   else
     echo "pre-push hook exists but is not managed by VBW -- skipping" >&2
   fi

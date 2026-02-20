@@ -4,10 +4,19 @@
 # Source this file from other scripts:
 #   . "$(dirname "$0")/resolve-claude-dir.sh"
 #
-# After sourcing, CLAUDE_DIR is set to the user's Claude config directory,
-# respecting the CLAUDE_CONFIG_DIR environment variable when set.
+# After sourcing, CLAUDE_DIR is set to the user's Claude config directory.
+# Resolution order:
+#   1. CLAUDE_CONFIG_DIR env var (if set and directory exists)
+#   2. $HOME/.config/claude-code (new default on many systems)
+#   3. $HOME/.claude (legacy default)
 #
 # This is the single source of truth for config directory resolution.
 # New scripts MUST source this file instead of inlining the fallback pattern.
 
-export CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+if [ -n "${CLAUDE_CONFIG_DIR:-}" ] && [ -d "${CLAUDE_CONFIG_DIR}" ]; then
+  export CLAUDE_DIR="${CLAUDE_CONFIG_DIR}"
+elif [ -d "$HOME/.config/claude-code" ]; then
+  export CLAUDE_DIR="$HOME/.config/claude-code"
+else
+  export CLAUDE_DIR="$HOME/.claude"
+fi

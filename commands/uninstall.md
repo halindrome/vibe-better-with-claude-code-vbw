@@ -13,12 +13,14 @@ allowed-tools: Read, Write, Edit, Bash, Glob
 
 Settings:
 ```
-!`cat "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json" 2>/dev/null || echo "{}"`
+!`for _d in "${CLAUDE_CONFIG_DIR:-}" "$HOME/.config/claude-code" "$HOME/.claude"; do [ -z "$_d" ] && continue; [ -f "$_d/settings.json" ] && cat "$_d/settings.json" 2>/dev/null && break; done || echo "{}"`
 ```
 Planning dir: `!`ls -d .vbw-planning 2>/dev/null && echo "EXISTS" || echo "NONE"``
 CLAUDE.md: `!`ls CLAUDE.md 2>/dev/null && echo "EXISTS" || echo "NONE"``
 
 ## Steps
+
+**Resolve config directory:** Try in order: env var `CLAUDE_CONFIG_DIR` (if set and directory exists), `~/.config/claude-code` (if exists), otherwise `~/.claude`. Store result as `CLAUDE_DIR`.
 
 ### Step 1: Confirm intent
 

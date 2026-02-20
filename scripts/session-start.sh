@@ -192,7 +192,7 @@ SETTINGS_FILE="$CLAUDE_DIR/settings.json"
 if [ -f "$SETTINGS_FILE" ]; then
   SL_CMD=$(jq -r '.statusLine.command // .statusLine // ""' "$SETTINGS_FILE" 2>/dev/null)
   if echo "$SL_CMD" | grep -q 'for f in' && echo "$SL_CMD" | grep -q 'vbw-statusline'; then
-    CORRECT_CMD="bash -c 'f=\$(ls -1 \"\${CLAUDE_CONFIG_DIR:-\$HOME/.claude}\"/plugins/cache/vbw-marketplace/vbw/*/scripts/vbw-statusline.sh 2>/dev/null | sort -V | tail -1) && [ -f \"\$f\" ] && exec bash \"\$f\"'"
+    CORRECT_CMD="bash -c 'for _d in \"\${CLAUDE_CONFIG_DIR:-}\" \"\$HOME/.config/claude-code\" \"\$HOME/.claude\"; do [ -z \"\$_d\" ] && continue; f=\$(ls -1 \"\$_d\"/plugins/cache/vbw-marketplace/vbw/*/scripts/vbw-statusline.sh 2>/dev/null | sort -V | tail -1 || true); [ -f \"\$f\" ] && exec bash \"\$f\"; done'"
     cp "$SETTINGS_FILE" "${SETTINGS_FILE}.bak"
     if ! jq --arg cmd "$CORRECT_CMD" '.statusLine = {"type": "command", "command": $cmd}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp"; then
       cp "${SETTINGS_FILE}.bak" "$SETTINGS_FILE"

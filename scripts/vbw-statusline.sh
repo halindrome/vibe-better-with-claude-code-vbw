@@ -245,14 +245,17 @@ if ! cache_fresh "$SLOW_CF" 60; then
     fi
   fi
 
-  # Priority 3: credentials file (check both with and without leading dot)
+  # Priority 3: credentials file (check both with and without leading dot,
+  # across all common Claude config locations)
   if [ -z "$OAUTH_TOKEN" ]; then
-    CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-    for _cred in "$CLAUDE_DIR/.credentials.json" "$CLAUDE_DIR/credentials.json"; do
-      if [ -f "$_cred" ]; then
-        OAUTH_TOKEN=$(jq -r '.claudeAiOauth.accessToken // empty' "$_cred" 2>/dev/null)
-        [ -n "$OAUTH_TOKEN" ] && break
-      fi
+    for _cdir in "${CLAUDE_CONFIG_DIR:-}" "$HOME/.config/claude-code" "$HOME/.claude"; do
+      [ -z "$_cdir" ] && continue
+      for _cred in "$_cdir/.credentials.json" "$_cdir/credentials.json"; do
+        if [ -f "$_cred" ]; then
+          OAUTH_TOKEN=$(jq -r '.claudeAiOauth.accessToken // empty' "$_cred" 2>/dev/null)
+          [ -n "$OAUTH_TOKEN" ] && break 2
+        fi
+      done
     done
   fi
 

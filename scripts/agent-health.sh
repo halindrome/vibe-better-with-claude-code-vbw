@@ -9,11 +9,13 @@ set -u
 #   agent-health.sh cleanup   # Stop hook: Remove all health tracking
 
 HEALTH_DIR=".vbw-planning/.agent-health"
+# shellcheck source=resolve-claude-dir.sh
+. "$(dirname "$0")/resolve-claude-dir.sh" 2>/dev/null || true
 
 orphan_recovery() {
   local role="$1"
   local pid="$2"
-  local tasks_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/tasks"
+  local tasks_dir="${CLAUDE_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}/tasks"
   local advisory=""
   local task_file task_owner task_status task_id
 

@@ -4,9 +4,15 @@
 # Compatible with bash 3.2+ (macOS default)
 set -euo pipefail
 
+# shellcheck source=resolve-claude-dir.sh
+. "$(dirname "$0")/resolve-claude-dir.sh" 2>/dev/null || true
+
 PLUGIN_ROOT="${1:-${CLAUDE_PLUGIN_ROOT:-}}"
 if [ -z "$PLUGIN_ROOT" ]; then
-  PLUGIN_ROOT=$(ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)
+  PLUGIN_ROOT=$(ls -1d "${CLAUDE_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1 || true)
+fi
+if [ -z "$PLUGIN_ROOT" ] || [ ! -d "$PLUGIN_ROOT" ]; then
+  PLUGIN_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 fi
 
 COMMANDS_DIR="$PLUGIN_ROOT/commands"
