@@ -48,7 +48,7 @@ teardown() {
   [ "$output" = "3" ]
 }
 
-@test "compile-context.sh emits metrics when v3_metrics=true" {
+@test "compile-context.sh emits metrics when metrics=true" {
   cd "$TEST_TEMP_DIR"
 
   cat > ".vbw-planning/phases/02-test-phase/02-01-PLAN.md" <<'EOF'

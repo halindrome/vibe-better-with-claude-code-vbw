@@ -50,7 +50,16 @@ create_test_config() {
     "dev": 75
   },
   "context_compiler": true,
-  "worktree_isolation": "on"
+  "worktree_isolation": "on",
+  "token_budgets": true,
+  "two_phase_completion": true,
+  "metrics": true,
+  "smart_routing": true,
+  "validation_gates": true,
+  "snapshot_resume": true,
+  "lease_locks": false,
+  "event_recovery": false,
+  "monorepo_routing": true
 }
 CONF
 }

@@ -26,8 +26,8 @@ EOF
 
   run_migration
 
-  # Verify graduated flags are NOT present
-  run jq -r 'has("v3_delta_context") or has("v3_context_cache") or has("v3_plan_research_persist") or has("v3_metrics") or has("v3_smart_routing") or has("v3_event_log") or has("v3_schema_validation") or has("v3_snapshot_resume")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  # Verify graduated flags are NOT present (prefixed names stripped)
+  run jq -r 'has("v3_delta_context") or has("v3_context_cache") or has("v3_plan_research_persist") or has("v3_event_log") or has("v3_schema_validation")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "false" ]
 
@@ -66,10 +66,10 @@ EOF
   [ "$status" -eq 0 ]
   [ "$output" = "3" ]
 
-  # Verify all defaults.json keys are present (22 defaults keys)
+  # Verify all defaults.json keys are present (31 defaults keys)
   run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "22" ]
+  [ "$output" = "31" ]
 
   # Verify existing values were preserved
   run jq -r '.context_compiler' "$TEST_TEMP_DIR/.vbw-planning/config.json"
@@ -119,10 +119,10 @@ EOF
   # Both runs should produce identical result
   [ "$AFTER_FIRST" = "$AFTER_SECOND" ]
 
-  # Verify flag count is correct (22 total, graduated flags removed)
+  # Verify flag count is correct (31 total, graduated flags removed)
   run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "22" ]
+  [ "$output" = "31" ]
 }
 
 @test "migration detects malformed JSON" {
@@ -357,10 +357,10 @@ EOF
   [ "$output" = "$EXPECTED_ADDED" ]
 }
 
-@test "EXPECTED_FLAG_COUNT is 22 after v2_token_budgets graduation" {
-  # Verify session-start.sh has EXPECTED_FLAG_COUNT=22 (decremented after v2_token_budgets graduated)
+@test "EXPECTED_FLAG_COUNT is 31 after partial flag restoration" {
+  # Verify session-start.sh has EXPECTED_FLAG_COUNT=31 (9 configurable flags added back)
   SCRIPT_COUNT=$(grep 'EXPECTED_FLAG_COUNT=' "$SCRIPTS_DIR/session-start.sh" | grep -oE '[0-9]+' | head -1)
-  [ "$SCRIPT_COUNT" = "22" ]
+  [ "$SCRIPT_COUNT" = "31" ]
 }
 
 @test "migration strips all graduated V2/V3 flags from brownfield config" {
@@ -371,21 +371,21 @@ EOF
   "v3_delta_context": true,
   "v3_context_cache": false,
   "v3_plan_research_persist": true,
-  "v3_metrics": false,
   "v3_contract_lite": true,
   "v3_lock_lite": false,
-  "v3_validation_gates": true,
-  "v3_smart_routing": false,
   "v3_event_log": true,
   "v3_schema_validation": false,
-  "v3_snapshot_resume": true,
-  "v3_lease_locks": false,
-  "v3_event_recovery": true,
-  "v3_monorepo_routing": false,
   "v2_hard_contracts": true,
   "v2_hard_gates": false,
   "v2_typed_protocol": true,
   "v2_role_isolation": false,
+  "v3_metrics": false,
+  "v3_smart_routing": true,
+  "v3_validation_gates": false,
+  "v3_snapshot_resume": true,
+  "v3_lease_locks": false,
+  "v3_event_recovery": true,
+  "v3_monorepo_routing": false,
   "v2_two_phase_completion": true,
   "v2_token_budgets": false
 }
@@ -393,7 +393,7 @@ EOF
 
   run_migration
 
-  # All graduated flags should be removed
+  # All v2_/v3_ prefixed flags should be removed (graduated or renamed)
   run jq '[keys[] | select(startswith("v2_") or startswith("v3_"))] | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "0" ]
@@ -402,4 +402,21 @@ EOF
   run jq -r '.effort' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "balanced" ]
+
+  # Renamed flags should preserve prior values under new names
+  run jq -r '.metrics' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "false" ]
+
+  run jq -r '.smart_routing' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "true" ]
+
+  run jq -r '.two_phase_completion' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "true" ]
+
+  run jq -r '.token_budgets' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "false" ]
 }

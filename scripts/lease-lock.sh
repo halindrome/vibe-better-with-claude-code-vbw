@@ -21,6 +21,22 @@ PLANNING_DIR=".vbw-planning"
 LOCKS_DIR="${PLANNING_DIR}/.locks"
 LOCK_FILE="${LOCKS_DIR}/${TASK_ID}.lock"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_PATH="${PLANNING_DIR}/config.json"
+
+# Check lease_locks flag — if disabled, skip
+if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
+  LEASE_LOCKS=$(jq -r '.lease_locks // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  if [ "$LEASE_LOCKS" != "true" ]; then
+    case "$ACTION" in
+      acquire) echo "skipped" ;;
+      release) echo "skipped" ;;
+      check)   echo "clear" ;;
+      renew)   echo "skipped" ;;
+      query)   echo "no_lock" ;;
+    esac
+    exit 0
+  fi
+fi
 
 # v2_hard_gates graduated (always true)
 HARD_GATES=true

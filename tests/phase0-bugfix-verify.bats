@@ -227,7 +227,7 @@ setup_monorepo() {
   # Enable monorepo routing
   local TMP
   TMP=$(mktemp)
-  jq '.v3_monorepo_routing = true' .vbw-planning/config.json > "$TMP" && mv "$TMP" .vbw-planning/config.json
+  jq '.monorepo_routing = true' .vbw-planning/config.json > "$TMP" && mv "$TMP" .vbw-planning/config.json
 }
 
 @test "route-monorepo.sh detects package roots" {

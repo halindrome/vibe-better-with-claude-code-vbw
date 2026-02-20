@@ -75,7 +75,7 @@ if [ "$(jq -r '.model_overrides.architect // ""' .vbw-planning/config.json)" != 
 echo "  Lead: $LEAD_DISPLAY | Dev: $DEV_DISPLAY | QA: $QA_DISPLAY | Scout: $SCOUT_DISPLAY | Debugger: $DEBUGGER_DISPLAY | Architect: $ARCHITECT_DISPLAY"
 ```
 
-Note: All V2 and V3 feature flags have graduated to always-on behavior and are no longer configurable. They have been removed from `config/defaults.json`. Brownfield configs may still contain these keys — they are ignored at runtime and will be cleaned up automatically by `migrate-config.sh`.
+Note: Core infrastructure flags (v2_hard_contracts, v2_hard_gates, v2_typed_protocol, v2_role_isolation, v3_event_log, v3_delta_context, v3_context_cache, v3_plan_research_persist, v3_schema_validation, v3_contract_lite, v3_lock_lite) have graduated to always-on behavior. The remaining flags are configurable under unprefixed names (see Settings Reference below). Brownfield configs with old `v2_`/`v3_` prefixed keys are auto-migrated by `migrate-config.sh`.
 
 **Step 2:** AskUserQuestion with up to 5 commonly changed settings (mark current values):
 - Effort: thorough | balanced | fast | turbo
@@ -355,6 +355,15 @@ Note: `auto_commit` controls source-task commits during Execute mode. Planning a
 | model_overrides | object | agent-to-model map | {} |
 | agent_max_turns | object | per-agent turns (number), 0/false = unlimited | scout=15, qa=25, architect=30, debugger=80, lead=50, dev=75 |
 | context_compiler | boolean | true/false | true |
+| token_budgets | boolean | true/false | true |
+| two_phase_completion | boolean | true/false | true |
+| metrics | boolean | true/false | true |
+| smart_routing | boolean | true/false | true |
+| validation_gates | boolean | true/false | true |
+| snapshot_resume | boolean | true/false | true |
+| lease_locks | boolean | true/false | false |
+| event_recovery | boolean | true/false | false |
+| monorepo_routing | boolean | true/false | true |
 
 ### agent_max_turns
 

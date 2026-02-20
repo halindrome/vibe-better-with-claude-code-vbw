@@ -19,6 +19,16 @@ EFFORT="$2"
 
 PLANNING_DIR=".vbw-planning"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_PATH="${PLANNING_DIR}/config.json"
+
+# Check smart_routing flag — if disabled, always include agent
+if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
+  SMART_ROUTING=$(jq -r 'if .smart_routing == null then true else .smart_routing end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  if [ "$SMART_ROUTING" != "true" ]; then
+    echo "{\"agent\":\"${AGENT_ROLE}\",\"decision\":\"include\",\"reason\":\"smart_routing=false\"}"
+    exit 0
+  fi
+fi
 
 DECISION="include"
 REASON="default include"

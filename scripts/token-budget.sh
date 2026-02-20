@@ -39,7 +39,16 @@ fi
 # Optional contract metadata for per-task budgets
 CONTRACT_PATH="${1:-}"
 
-# Budget enforcement is now config-driven (not flag-gated)
+# Check token_budgets flag — if disabled, pass through
+CONFIG_PATH=".vbw-planning/config.json"
+if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
+  TOKEN_BUDGETS=$(jq -r 'if .token_budgets == null then true else .token_budgets end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  if [ "$TOKEN_BUDGETS" != "true" ]; then
+    echo "$CONTENT"
+    exit 0
+  fi
+fi
+
 # If no budget definitions exist, pass through
 if [ ! -f "$BUDGETS_PATH" ]; then
   echo "$CONTENT"

@@ -23,6 +23,16 @@ PLAN="$3"
 CONTRACT_PATH="$4"
 shift 4
 
+# Check two_phase_completion flag — if disabled, skip
+CONFIG_PATH=".vbw-planning/config.json"
+if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
+  TWO_PHASE=$(jq -r 'if .two_phase_completion == null then true else .two_phase_completion end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  if [ "$TWO_PHASE" != "true" ]; then
+    echo '{"result":"skipped","reason":"two_phase_completion=false"}'
+    exit 0
+  fi
+fi
+
 # Collect evidence from remaining args; extract files_modified if present
 EVIDENCE=""
 FILES_MODIFIED=""

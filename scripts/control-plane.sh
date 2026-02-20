@@ -65,26 +65,35 @@ done
 
 # --- Config / flag resolution ---
 CONTEXT_COMPILER=false
+TOKEN_BUDGETS=true
+LEASE_LOCKS=false
 
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   CONTEXT_COMPILER=$(jq -r 'if .context_compiler == null then true else .context_compiler end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  TOKEN_BUDGETS=$(jq -r 'if .token_budgets == null then true else .token_budgets end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  LEASE_LOCKS=$(jq -r '.lease_locks // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
 fi
 
 # --- No-op check (REQ-C1) ---
 # If all flags relevant to the chosen action are false, exit 0 immediately.
-# Note: v2_hard_contracts, v2_hard_gates, and v3_lease_locks are now always-on (graduated)
+# Note: v2_hard_contracts, v2_hard_gates are now always-on (graduated)
+# Lease locks and token budgets are config-gated.
 check_noop() {
   case "$ACTION" in
     pre-task)
-      # Contract, gates, and locking are always-on
+      # Contract and gates are always-on; leases are config-gated
+      if [ "$LEASE_LOCKS" != "true" ]; then
+        # Still need contract+gates, so not a full noop
+        return 1
+      fi
       return 1
       ;;
     post-task)
-      # Gates and locking are always-on
+      # Gates are always-on
       return 1
       ;;
     compile)
-      [ "$CONTEXT_COMPILER" != "true" ] && return 0
+      [ "$CONTEXT_COMPILER" != "true" ] && [ "$TOKEN_BUDGETS" != "true" ] && return 0
       ;;
     full)
       # Contract is always-on, so check compiler only
@@ -237,7 +246,11 @@ step_context() {
 }
 
 step_token_budget() {
-  # v2_token_budgets flag removed - always attempt budget enforcement
+  # token_budgets flag controls budget enforcement
+  if [ "$TOKEN_BUDGETS" != "true" ]; then
+    record_step "token_budget" "skip" "token_budgets=false"
+    return 0
+  fi
   # token-budget.sh will pass through if no budget definitions exist
   if [ -z "$CONTEXT_PATH_OUT" ] || [ ! -f "$CONTEXT_PATH_OUT" ]; then
     record_step "token_budget" "skip" "no context file"

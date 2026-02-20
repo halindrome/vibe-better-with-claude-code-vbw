@@ -4,26 +4,26 @@
       "stage": 1,
       "label": "observability",
       "phases_required": 0,
-      "flags": ["v3_event_log", "v3_metrics"],
+      "flags": ["metrics"],
       "description": "Low-risk observability flags, safe to enable immediately"
     },
     {
       "stage": 2,
       "label": "optimization",
       "phases_required": 2,
-      "flags": ["v3_delta_context", "v3_context_cache"],
-      "description": "Context optimization flags, enable after 2 successful phases"
+      "flags": [],
+      "description": "Context optimization flags (graduated), no rollout-managed flags remain"
     },
     {
       "stage": 3,
       "label": "full",
       "phases_required": 5,
       "flags": [
-        "v3_validation_gates", "v3_smart_routing", "v3_schema_validation",
-        "v3_snapshot_resume", "v3_event_recovery",
-        "v3_monorepo_routing"
+        "validation_gates", "smart_routing",
+        "snapshot_resume", "event_recovery",
+        "monorepo_routing"
       ],
-      "description": "All remaining V3 flags, enable after 5 successful phases"
+      "description": "All remaining optional flags, enable after 5 successful phases"
     }
   ],
   "advancement": {

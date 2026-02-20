@@ -16,6 +16,15 @@ EVENT="$1"
 PHASE="$2"
 shift 2
 
+# Check metrics flag — if disabled, exit silently
+CONFIG_PATH=".vbw-planning/config.json"
+if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
+  METRICS_ENABLED=$(jq -r 'if .metrics == null then true else .metrics end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  if [ "$METRICS_ENABLED" != "true" ]; then
+    exit 0
+  fi
+fi
+
 PLAN=""
 DATA_PAIRS=""
 

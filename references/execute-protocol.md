@@ -21,7 +21,7 @@ Loaded on demand by /vbw:vibe Execute mode. Not a user-facing command.
    When `worktree_isolation="off"`: skip this step silently.
 5. Partially-complete plans: note resume-from task number.
 6. **Crash recovery:** If `.vbw-planning/.execution-state.json` exists with `"status": "running"`, update plan statuses to match current SUMMARY.md state.
-   - **V3 Event Recovery (REQ-17):** If `v3_event_recovery=true` in config, attempt event-sourced recovery first:
+   - **Event Recovery (REQ-17):** If `event_recovery=true` in config, attempt event-sourced recovery first:
      `RECOVERED=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/recover-state.sh {phase} 2>/dev/null || echo "{}")`
      If non-empty and has `plans` array, use recovered state as the baseline instead of the stale execution-state.json. This provides more accurate status when execution-state.json was not written (crash before flush).
 6b. **Generate correlation_id:** Generate a UUID for this phase execution:
@@ -45,15 +45,15 @@ Set completed plans (with SUMMARY.md) to `"complete"`, others to `"pending"`.
     so log-event.sh can fall back to it if .execution-state.json is temporarily unavailable.
     Log a confirmation: `◆ Correlation ID: {CORRELATION_ID}`
 
-8. **V3 Event Log (REQ-16):** If `v3_event_log=true` in config:
+8. **Event Log (REQ-16, graduated, always-on):**
    - Log phase start: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh phase_start {phase} 2>/dev/null || true`
 
-9. **V3 Snapshot Resume (REQ-18):** If `v3_snapshot_resume=true` in config:
+9. **Snapshot Resume (REQ-18):** If `snapshot_resume=true` in config:
    - On crash recovery (execution-state.json exists with `"status": "running"`): attempt restore:
      `SNAPSHOT=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/snapshot-resume.sh restore {phase} {preferred-role} 2>/dev/null || echo "")`
    - If snapshot found, log: `✓ Snapshot found: ${SNAPSHOT}` — use snapshot's `recent_commits` to cross-reference git log for more reliable resume-from detection.
 
-10. **V3 Schema Validation (REQ-17):** If `v3_schema_validation=true` in config:
+10. **Schema Validation (REQ-17, graduated, always-on):**
    - Validate each PLAN.md frontmatter before execution:
      `VALID=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-schema.sh plan {plan_path} 2>/dev/null || echo "valid")`
    - If `invalid`: log warning `⚠ Plan {NN-MM} schema: ${VALID}` — continue execution (advisory only).
@@ -86,7 +86,7 @@ When team should be created based on prefer_teams:
 When team should NOT be created (1 plan with when_parallel/auto, or turbo, or smart-routed turbo):
 - Skip TeamCreate — single agent, no team overhead.
 
-**V3 Smart Routing (REQ-15):** If `v3_smart_routing=true` in config:
+**Smart Routing (REQ-15):** If `smart_routing=true` in config:
 - Before creating agent teams, assess each plan:
   ```bash
   RISK=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/assess-plan-risk.sh {plan_path} 2>/dev/null || echo "medium")
@@ -105,7 +105,7 @@ You are the team LEAD. NEVER implement tasks yourself.
 - If Dev fails: guidance via SendMessage, not takeover. If all Devs unavailable: create new Dev.
 - At Turbo (or smart-routed to turbo): no team — Dev executes directly.
 
-**V3 Monorepo Routing (REQ-17):** If `v3_monorepo_routing=true` in config:
+**Monorepo Routing (REQ-17):** If `monorepo_routing=true` in config:
 - Before context compilation, detect relevant package paths:
   `PACKAGES=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/route-monorepo.sh {phase_dir} 2>/dev/null || echo "[]")`
 - If non-empty array (not `[]`): pass package paths to context compilation for scoped file inclusion.
@@ -196,7 +196,7 @@ Spawn Dev teammates and assign tasks. Platform enforces execution ordering via t
 
 **Blocked agent notification (mandatory):** When a Dev teammate completes a plan (task marked completed + SUMMARY.md verified), check if any other tasks have `blockedBy` containing that completed task's ID. For each newly-unblocked task, send its assigned Dev a message: "Blocking task {id} complete. Your task is now unblocked — proceed with execution." This ensures blocked agents resume without manual intervention.
 
-**V3 Validation Gates (REQ-13, REQ-14):** If `v3_validation_gates=true` in config:
+**Validation Gates (REQ-13, REQ-14):** If `validation_gates=true` in config:
 - **Per plan:** Assess risk and resolve gate policy:
   ```bash
   RISK=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/assess-plan-risk.sh {plan_path} 2>/dev/null || echo "medium")
@@ -208,8 +208,8 @@ Spawn Dev teammates and assign tasks. Platform enforces execution ordering via t
 - On script error: fall back to static tables below
 
 **Plan approval gate (effort-gated, autonomy-gated):**
-When `v3_validation_gates=true`: use `approval_required` from gate policy above.
-When `v3_validation_gates=false` (default): use static table:
+When `validation_gates=true`: use `approval_required` from gate policy above.
+When `validation_gates=false` (default): use static table:
 
 | Autonomy | Approval active at |
 |----------|-------------------|
@@ -221,8 +221,8 @@ When active: spawn Devs with `plan_mode_required`. Dev reads PLAN.md, proposes a
 When off: Devs begin immediately.
 
 **Teammate communication (effort-gated):**
-When `v3_validation_gates=true`: use `communication_level` from gate policy (none/blockers/blockers_findings/full).
-When `v3_validation_gates=false` (default): use static table:
+When `validation_gates=true`: use `communication_level` from gate policy (none/blockers/blockers_findings/full).
+When `validation_gates=false` (default): use static table:
 
 Schema ref: `${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md`
 
@@ -235,12 +235,11 @@ Schema ref: `${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md`
 
 Use targeted `message` not `broadcast`. Reserve broadcast for critical blocking issues only.
 
-**V2 Typed Protocol (REQ-04, REQ-05):** If `v2_typed_protocol=true` in config:
+**Typed Protocol (REQ-04, REQ-05, graduated, always-on):**
 - **On message receive** (from any teammate): validate before processing:
   `VALID=$(echo "$MESSAGE_JSON" | bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-message.sh 2>/dev/null || echo '{"valid":true}')`
   If `valid=false`: log rejection, send error back to sender with `errors` array. Do not process the message.
 - **On message send** (before sending): agents should construct messages using full V2 envelope (id, type, phase, task, author_role, timestamp, schema_version, payload, confidence). Reference `${CLAUDE_PLUGIN_ROOT}/references/handoff-schemas.md` for schema details.
-- **Backward compatibility:** When `v2_typed_protocol=false`, validation is skipped. Old-format messages accepted.
 
 **Execution state updates:**
 - Task completion: update plan status in .execution-state.json (`"complete"` or `"failed"`)
@@ -249,7 +248,7 @@ Use targeted `message` not `broadcast`. Reserve broadcast for critical blocking 
 
 Hooks handle continuous verification: PostToolUse validates SUMMARY.md, TaskCompleted verifies commits, TeammateIdle runs quality gate.
 
-**V3 Event Log — plan lifecycle (REQ-16):** If `v3_event_log=true` in config:
+**Event Log — plan lifecycle (REQ-16, graduated, always-on):**
 - At plan start: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh plan_start {phase} {plan} 2>/dev/null || true`
 - At agent spawn: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh agent_spawn {phase} {plan} role=dev model=$DEV_MODEL 2>/dev/null || true`
 - At agent shutdown: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh agent_shutdown {phase} {plan} role=dev 2>/dev/null || true`
@@ -257,7 +256,7 @@ Hooks handle continuous verification: PostToolUse validates SUMMARY.md, TaskComp
 - At plan failure: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh plan_end {phase} {plan} status=failed 2>/dev/null || true`
 - On error: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh error {phase} {plan} message={error_summary} 2>/dev/null || true`
 
-**V2 Full Event Types (REQ-09, REQ-10):** If `v3_event_log=true` in config, emit all 13 V2 event types at correct lifecycle points.
+**Full Event Types (REQ-09, REQ-10, graduated, always-on):** Emit all 13 event types at correct lifecycle points.
 
 > **Naming convention:** Event types (`shutdown_sent`/`shutdown_received`) log _what happened_ — the orchestrator sent or received a message. Message types (`shutdown_request`/`shutdown_response`) define _what was communicated_ — the typed payload in SendMessage. Events are emitted by `log-event.sh`; messages are validated by `validate-message.sh`.
 - `phase_planned`: at plan completion (after Lead writes PLAN.md): `log-event.sh phase_planned {phase}`
@@ -274,12 +273,12 @@ Hooks handle continuous verification: PostToolUse validates SUMMARY.md, TaskComp
 - `shutdown_sent`: when orchestrator sends shutdown_request to teammates: `log-event.sh shutdown_sent {phase} team={team_name} targets={count}`
 - `shutdown_received`: when orchestrator has collected all shutdown_response messages: `log-event.sh shutdown_received {phase} team={team_name} approved={count} rejected={count}`
 
-**V3 Snapshot — per-plan checkpoint (REQ-18):** If `v3_snapshot_resume=true` in config:
+**Snapshot — per-plan checkpoint (REQ-18):** If `snapshot_resume=true` in config:
 - After each plan completes (SUMMARY.md verified):
   `bash ${CLAUDE_PLUGIN_ROOT}/scripts/snapshot-resume.sh save {phase} .vbw-planning/.execution-state.json {agent-role} {trigger} 2>/dev/null || true`
 - This captures execution state + recent git context for crash recovery. The optional `{agent-role}` and `{trigger}` arguments add metadata to the snapshot for role-filtered restore.
 
-**V3 Metrics instrumentation (REQ-09):** If `v3_metrics=true` in config:
+**Metrics instrumentation (REQ-09):** If `metrics=true` in config:
 - At phase start: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/collect-metrics.sh execute_phase_start {phase} plan_count={N} effort={effort}`
 - At each plan completion: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/collect-metrics.sh execute_plan_complete {phase} {plan} task_count={N} commit_count={N}`
 - At phase end: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/collect-metrics.sh execute_phase_complete {phase} plans_completed={N} total_tasks={N} total_commits={N} deviations={N}`
@@ -320,7 +319,7 @@ All metrics calls should be `2>/dev/null || true` — never block execution.
 - **YOLO mode:** Hard gates ALWAYS fire regardless of autonomy level. YOLO only skips confirmation prompts.
 - **Fallback:** If hard-gate.sh or auto-repair.sh errors (not a gate fail, but a script error), log to metrics and continue (fail-open on script errors, hard-stop only on gate verdicts).
 
-**V3 Lease Locks (REQ-17, graduated):**
+**Lease Locks (REQ-17):** If `lease_locks=true` in config:
 - Use `lease-lock.sh` for all lock operations:
   - Acquire: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/lease-lock.sh acquire {task_id} --ttl=300 {claimed_files...} 2>/dev/null || true`
   - Release: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/lease-lock.sh release {task_id} 2>/dev/null || true`
@@ -328,9 +327,9 @@ All metrics calls should be `2>/dev/null || true` — never block execution.
   `bash ${CLAUDE_PLUGIN_ROOT}/scripts/lease-lock.sh renew {task_id} 2>/dev/null || true`
 - Check for expired leases before acquiring: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/lease-lock.sh check {task_id} {claimed_files...} 2>/dev/null || true`
 
-### Step 3b: V2 Two-Phase Completion (REQ-09)
+### Step 3b: Two-Phase Completion (REQ-09)
 
-**If `v2_two_phase_completion=true` in config:**
+**If `two_phase_completion=true` in config:**
 
 After each task commit (and after post-task gates pass), run two-phase completion:
 ```bash
@@ -342,7 +341,7 @@ RESULT=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/two-phase-complete.sh {task_id} {pha
   ```bash
   bash ${CLAUDE_PLUGIN_ROOT}/scripts/artifact-registry.sh register {file_path} {event_id} {phase} {plan}
   ```
-- When `v2_two_phase_completion=false`: skip (direct task completion as before).
+- When `two_phase_completion=false`: skip (direct task completion as before).
 
 ### Step 3c: SUMMARY.md verification gate (mandatory)
 
@@ -352,7 +351,7 @@ When a Dev teammate reports plan completion (task marked completed):
 1. **Check:** Verify `{phase_dir}/{plan_id}-SUMMARY.md` exists and contains commit hashes, task statuses, and files modified.
 2. **If missing or incomplete:** Send the Dev a message: "Write {plan_id}-SUMMARY.md using the template at templates/SUMMARY.md. Include commit hashes, tasks completed, files modified, and any deviations." Wait for confirmation before proceeding.
 3. **If Dev is unavailable:** Write it yourself from `git log --oneline` and the PLAN.md.
-4. **V3 Schema Validation — SUMMARY.md (REQ-17):** If `v3_schema_validation=true` in config:
+4. **Schema Validation — SUMMARY.md (REQ-17, graduated, always-on):**
    - Validate SUMMARY.md frontmatter: `VALID=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/validate-schema.sh summary {summary_path} 2>/dev/null || echo "valid")`
    - If `invalid`: log warning `⚠ Summary {plan_id} schema: ${VALID}` — advisory only.
 5. **Only after SUMMARY.md is verified:** Update plan status to `"complete"` in .execution-state.json and proceed.
@@ -372,8 +371,8 @@ fi
 ```
 When the agent type is in the skip list, QA is skipped automatically without needing `--skip-qa` flag. Docs-only changes don't need formal QA.
 
-**Tier resolution:** When `v3_validation_gates=true`: use `qa_tier` from gate policy resolved in Step 3.
-When `v3_validation_gates=false` (default): map effort to tier: turbo=skip (already handled), fast=quick, balanced=standard, thorough=deep. Override: if >15 requirements or last phase before ship, force Deep.
+**Tier resolution:** When `validation_gates=true`: use `qa_tier` from gate policy resolved in Step 3.
+When `validation_gates=false` (default): map effort to tier: turbo=skip (already handled), fast=quick, balanced=standard, thorough=deep. Override: if >15 requirements or last phase before ship, force Deep.
 
 **Control Plane QA context:** If `${CLAUDE_PLUGIN_ROOT}/scripts/control-plane.sh` exists:
   `bash ${CLAUDE_PLUGIN_ROOT}/scripts/control-plane.sh compile {phase} 0 0 --role=qa --phase-dir={phase-dir} 2>/dev/null || true`
@@ -450,7 +449,7 @@ When `worktree_isolation="off"`: skip this block silently.
 
 **Control Plane cleanup:** Lock and token state cleanup already handled by existing V3 Lock-Lite and Token Budget cleanup blocks.
 
-**V3 Rolling Summary (REQ-03):** If `v3_rolling_summary=true` in config:
+**Rolling Summary (REQ-03):** If `v3_rolling_summary=true` in config:
 - After TeamDelete (team fully shut down), before phase_end event log:
   ```bash
   bash ${CLAUDE_PLUGIN_ROOT}/scripts/compile-rolling-summary.sh \
@@ -460,10 +459,10 @@ When `worktree_isolation="off"`: skip this block silently.
   Fail-open: if script errors, log warning and continue — never block phase completion.
 - When `v3_rolling_summary=false` (default): skip this step silently.
 
-**V3 Event Log — phase end (REQ-16):** If `v3_event_log=true` in config:
+**Event Log — phase end (REQ-16, graduated, always-on):**
 - `bash ${CLAUDE_PLUGIN_ROOT}/scripts/log-event.sh phase_end {phase} plans_completed={N} total_tasks={N} 2>/dev/null || true`
 
-**V2 Observability Report (REQ-14):** After phase completion, if `v3_metrics=true` or `v3_event_log=true`:
+**Observability Report (REQ-14):** After phase completion, if `metrics=true`:
 - Generate observability report: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/metrics-report.sh {phase}`
 - The report aggregates 7 V2 metrics: task latency, tokens/task, gate failure rate, lease conflicts, resume success, regression escape, fallback %.
 - Display summary table in phase completion output.

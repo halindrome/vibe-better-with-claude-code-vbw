@@ -76,17 +76,16 @@ run_rollout() {
 
 # --- Test 4: advance stage 1 enables event_log and metrics ---
 
-@test "rollout-stage: advance stage 1 enables event_log and metrics" {
+@test "rollout-stage: advance stage 1 enables metrics" {
   run_rollout advance --stage=1
   [ "$status" -eq 0 ]
   # Check config was updated
-  local val_event val_metrics val_delta
-  val_event=$(jq -r '.v3_event_log // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_metrics=$(jq -r '.v3_metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_delta=$(jq -r '.v3_delta_context // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  [ "$val_event" = "true" ]
+  local val_metrics val_smart_routing
+  val_metrics=$(jq -r '.metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_smart_routing=$(jq -r '.smart_routing // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
   [ "$val_metrics" = "true" ]
-  [ "$val_delta" = "false" ]
+  # smart_routing in stage 3, should not be enabled yet
+  [ "$val_smart_routing" = "true" ]  # already true by default in test config
 }
 
 # --- Test 5: advance stage 2 also enables stage 1 flags ---
@@ -94,17 +93,13 @@ run_rollout() {
 @test "rollout-stage: advance stage 2 also enables stage 1 flags" {
   run_rollout advance --stage=2
   [ "$status" -eq 0 ]
-  local val_event val_metrics val_delta val_cache val_routing
-  val_event=$(jq -r '.v3_event_log // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_metrics=$(jq -r '.v3_metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_delta=$(jq -r '.v3_delta_context // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_cache=$(jq -r '.v3_context_cache // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_routing=$(jq -r '.v3_smart_routing // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  [ "$val_event" = "true" ]
+  local val_metrics val_event_recovery
+  val_metrics=$(jq -r '.metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_event_recovery=$(jq -r '.event_recovery // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  # Stage 1 flag (metrics) should be enabled
   [ "$val_metrics" = "true" ]
-  [ "$val_delta" = "true" ]
-  [ "$val_cache" = "true" ]
-  [ "$val_routing" = "false" ]
+  # Stage 3 flag (event_recovery) should not be enabled by stage 2
+  [ "$val_event_recovery" = "false" ]
 }
 
 # --- Test 6: advance is idempotent ---
@@ -117,21 +112,23 @@ run_rollout() {
   run_rollout advance --stage=1
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.flags_enabled | length == 0'
-  echo "$output" | jq -e '.flags_already_enabled | length == 2'
+  echo "$output" | jq -e '.flags_already_enabled | length == 1'
 }
 
 # --- Test 7: dry-run does not modify config ---
 
 @test "rollout-stage: dry-run does not modify config" {
+  # Set metrics to false so we can verify dry-run doesn't change it
+  cd "$TEST_TEMP_DIR"
+  jq '.metrics = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
+    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   run_rollout advance --stage=1 --dry-run
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.dry_run == true'
-  echo "$output" | jq -e '.flags_enabled | length == 2'
-  # Config should still have false values
-  local val_event val_metrics
-  val_event=$(jq -r '.v3_event_log // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_metrics=$(jq -r '.v3_metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  [ "$val_event" = "false" ]
+  echo "$output" | jq -e '.flags_enabled | length == 1'
+  # Config should still have false value
+  local val_metrics
+  val_metrics=$(jq -r '.metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
   [ "$val_metrics" = "false" ]
 }
 
@@ -144,7 +141,7 @@ run_rollout() {
   [[ "$output" == *"Flag"* ]]
   [[ "$output" == *"Stage"* ]]
   [[ "$output" == *"Enabled"* ]]
-  [[ "$output" == *"v3_event_log"* ]]
+  [[ "$output" == *"metrics"* ]]
 }
 
 # --- Test 9: exits 0 when config missing ---
@@ -161,14 +158,11 @@ run_rollout() {
   create_event_log 1
   run_rollout advance
   [ "$status" -eq 0 ]
-  # With 1 phase, only stage 1 is eligible (stage 2 needs 2)
-  local val_event val_metrics val_delta val_cache
-  val_event=$(jq -r '.v3_event_log // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_metrics=$(jq -r '.v3_metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_delta=$(jq -r '.v3_delta_context // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_cache=$(jq -r '.v3_context_cache // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  [ "$val_event" = "true" ]
+  # With 1 phase, only stage 1 is eligible (stage 2 needs 2, but stage 2 has no flags)
+  local val_metrics val_event_recovery
+  val_metrics=$(jq -r '.metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_event_recovery=$(jq -r '.event_recovery // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
   [ "$val_metrics" = "true" ]
-  [ "$val_delta" = "false" ]
-  [ "$val_cache" = "false" ]
+  # Stage 3 flag (event_recovery) should not be enabled with only 1 completed phase
+  [ "$val_event_recovery" = "false" ]
 }

@@ -17,6 +17,15 @@ PHASE="$2"
 
 PLANNING_DIR=".vbw-planning"
 SNAPSHOTS_DIR="${PLANNING_DIR}/.snapshots"
+CONFIG_PATH="${PLANNING_DIR}/config.json"
+
+# Check snapshot_resume flag — if disabled, skip
+if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
+  SNAPSHOT_RESUME=$(jq -r 'if .snapshot_resume == null then true else .snapshot_resume end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  if [ "$SNAPSHOT_RESUME" != "true" ]; then
+    exit 0
+  fi
+fi
 
 case "$ACTION" in
   save)
