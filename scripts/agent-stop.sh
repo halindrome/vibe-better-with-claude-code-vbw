@@ -108,7 +108,7 @@ if [ -n "$LAST_MESSAGE" ] && [ -n "$AGENT_PID" ]; then
       if [ -n "$PHASE_DIR" ] && [ -d "$PHASE_DIR" ]; then
         # Check if any SUMMARY.md exists for this phase
         # shellcheck disable=SC2010
-        SUMMARY_COUNT=$(ls -1 "$PHASE_DIR" 2>/dev/null | grep -c '\-SUMMARY\.md$' 2>/dev/null || echo 0)
+        SUMMARY_COUNT=$(ls -1 "$PHASE_DIR" 2>/dev/null | grep -c '\-SUMMARY\.md$' 2>/dev/null) || SUMMARY_COUNT=0
         if [ "$SUMMARY_COUNT" -eq 0 ]; then
           # No SUMMARY.md found — write last words for crash recovery
           LAST_WORDS_DIR="$PLANNING_DIR/.agent-last-words"
