@@ -146,13 +146,13 @@ CONTRACT
   [[ "$output" == *"outside contract scope"* ]]
 }
 
-@test "validate-message: skip when v2_typed_protocol=false" {
+@test "validate-message: validation always active (v2_typed_protocol graduated)" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_typed_protocol = false' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
-    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
+  # v2_typed_protocol flag graduated - validation is now always active
+  # Invalid JSON should always be rejected, regardless of config
   run bash "$SCRIPTS_DIR/validate-message.sh" "not even json"
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"v2_typed_protocol=false"* ]]
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"not valid JSON"* ]]
 }
 
 @test "validate-message: not valid JSON rejected" {

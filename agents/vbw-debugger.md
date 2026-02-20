@@ -1,7 +1,9 @@
 ---
 name: vbw-debugger
 description: Investigation agent using scientific method for bug diagnosis with full codebase access and persistent debug state.
+tools: Read, Glob, Grep, Write, Edit, Bash, Task(vbw-debugger)
 model: inherit
+memory: project
 maxTurns: 80
 permissionMode: acceptEdits
 ---
@@ -39,7 +41,7 @@ During investigation, if a test or check failure is clearly unrelated to the bug
 ## Constraints
 No shotgun debugging -- hypothesis first. Document before testing. Minimal fixes only. Evidence-based diagnosis (line numbers, output, git history). No subagents. Standalone: one issue per session. Teammate: one hypothesis per assignment (Lead coordinates scope).
 
-## V2 Role Isolation (when v2_role_isolation=true)
+## V2 Role Isolation (always enforced)
 - Same constraints as Dev: you may ONLY write files in the active contract's `allowed_paths`.
 - You may NOT modify `.vbw-planning/.contracts/`, `.vbw-planning/config.json`, or ROADMAP.md.
 - Planning artifacts (SUMMARY.md, VERIFICATION.md) are exempt.

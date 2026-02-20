@@ -11,17 +11,9 @@ teardown() {
   teardown_temp_dir
 }
 
-@test "research-warn: ok when flag disabled" {
-  cd "$TEST_TEMP_DIR"
-  run bash "$SCRIPTS_DIR/research-warn.sh" "$TEST_TEMP_DIR/.vbw-planning"
-  [ "$status" -eq 0 ]
-  echo "$output" | jq -e '.result == "ok"'
-  echo "$output" | jq -e '.reason == "research_persist disabled"'
-}
-
 @test "research-warn: ok when effort=turbo" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_plan_research_persist = true | .effort = "turbo"' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
+  jq '.effort = "turbo"' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
     && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   run bash "$SCRIPTS_DIR/research-warn.sh" "$TEST_TEMP_DIR/.vbw-planning"
   [ "$status" -eq 0 ]
@@ -31,7 +23,7 @@ teardown() {
 
 @test "research-warn: warns when no RESEARCH.md" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_plan_research_persist = true | .effort = "balanced"' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
+  jq '.effort = "balanced"' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
     && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   mkdir -p "$TEST_TEMP_DIR/phase-dir"
   run bash "$SCRIPTS_DIR/research-warn.sh" "$TEST_TEMP_DIR/phase-dir"
@@ -44,7 +36,7 @@ teardown() {
 
 @test "research-warn: ok when RESEARCH.md exists" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_plan_research_persist = true | .effort = "thorough"' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
+  jq '.effort = "thorough"' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
     && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   mkdir -p "$TEST_TEMP_DIR/phase-dir"
   echo "# Research" > "$TEST_TEMP_DIR/phase-dir/02-01-RESEARCH.md"

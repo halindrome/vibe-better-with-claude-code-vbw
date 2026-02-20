@@ -1,6 +1,12 @@
 #!/bin/bash
 set -u
 # file-guard.sh — PreToolUse guard for undeclared file modifications
+#
+# NOTE: Worktree isolation has shipped (worktree_isolation config flag).
+# When worktree_isolation is enabled, git worktrees provide filesystem
+# isolation by construction. This guard remains active as a secondary
+# enforcement layer (belt-and-suspenders) for both modes.
+#
 # Blocks Write/Edit to files not declared in active plan's files_modified.
 # V2 enhancement: also checks forbidden_paths from active contract when v2_hard_contracts=true.
 # Fail-open design: exit 0 on any error, exit 2 only on definitive violations
@@ -45,16 +51,66 @@ normalize_path() {
   echo "$p"
 }
 
+# Best-effort absolute path resolver for boundary checks.
+# - Relative paths are resolved from current working directory.
+# - Non-existent paths still get a stable absolute lexical form.
+to_abs_path() {
+  local p="$1"
+  local base dir file resolved_dir
+  [ -z "$p" ] && {
+    echo ""
+    return 0
+  }
+
+  case "$p" in
+    /*) base="$p" ;;
+    *)  base="$PWD/${p#./}" ;;
+  esac
+
+  dir=$(dirname "$base")
+  file=$(basename "$base")
+  resolved_dir=$(cd "$dir" 2>/dev/null && pwd) || resolved_dir="$dir"
+  echo "${resolved_dir%/}/$file"
+}
+
 NORM_TARGET=$(normalize_path "$FILE_PATH")
 
-# --- V2 forbidden_paths check from active contract ---
+# --- Worktree boundary enforcement ---
 CONFIG_PATH="$PROJECT_ROOT/.vbw-planning/config.json"
-V2_HARD=false
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V2_HARD=$(jq -r '.v2_hard_contracts // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+WORKTREE_ISOLATION="off"
+if command -v jq >/dev/null 2>&1 && [ -f "$CONFIG_PATH" ]; then
+  WORKTREE_ISOLATION=$(jq -r '.worktree_isolation // "off"' "$CONFIG_PATH" 2>/dev/null) || WORKTREE_ISOLATION="off"
+fi
+if [ "$WORKTREE_ISOLATION" != "off" ] && [ -n "${VBW_AGENT_ROLE:-}" ]; then
+  case "${VBW_AGENT_ROLE:-}" in
+    dev|debugger)
+      AGENT_NAME_SHORT=$(echo "${VBW_AGENT_NAME:-}" | sed 's/.*vbw-//')
+      WORKTREE_MAP_FILE="$PROJECT_ROOT/.vbw-planning/.agent-worktrees/${AGENT_NAME_SHORT}.json"
+      if [ -f "$WORKTREE_MAP_FILE" ]; then
+        WORKTREE_PATH=$(jq -r '.worktree_path // ""' "$WORKTREE_MAP_FILE" 2>/dev/null) || WORKTREE_PATH=""
+        if [ -n "$WORKTREE_PATH" ]; then
+          WORKTREE_ABS=$(to_abs_path "$WORKTREE_PATH")
+          TARGET_ABS=$(to_abs_path "$FILE_PATH")
+          case "$TARGET_ABS" in
+            "$WORKTREE_ABS"/*|"$WORKTREE_ABS")
+              : # inside worktree — allowed
+              ;;
+            *)
+              echo "Blocked: write outside worktree boundary (expected prefix: $WORKTREE_ABS, got: $TARGET_ABS)" >&2
+              exit 2
+              ;;
+          esac
+        fi
+      fi
+      ;;
+  esac
 fi
 
-if [ "$V2_HARD" = "true" ]; then
+# --- V2 forbidden_paths check from active contract ---
+# v2_hard_contracts is now always enabled (graduated)
+
+# Contract enforcement is now unconditional
+if true; then
   CONTRACT_DIR="$PROJECT_ROOT/.vbw-planning/.contracts"
   if [ -d "$CONTRACT_DIR" ]; then
     # Find active contract: match the first plan without a SUMMARY
@@ -82,7 +138,8 @@ if [ "$V2_HARD" = "true" ]; then
               fi
             done <<< "$FORBIDDEN"
           fi
-          # Check allowed_paths — file must be in contract scope
+          # Check allowed_paths — file must be in contract scope (only if allowed_paths is specified)
+          # Note: allowed_paths is optional; if empty, fall through to plan files_modified check
           ALLOWED=$(jq -r '.allowed_paths[]' "$CONTRACT_FILE" 2>/dev/null) || ALLOWED=""
           if [ -n "$ALLOWED" ]; then
             IN_SCOPE=false
@@ -107,35 +164,29 @@ if [ "$V2_HARD" = "true" ]; then
 fi
 
 # --- V2 role isolation: check agent role against path rules ---
-V2_ROLE_ISO=false
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V2_ROLE_ISO=$(jq -r '.v2_role_isolation // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+# v2_role_isolation is now always enabled (graduated)
+AGENT_ROLE="${VBW_AGENT_ROLE:-}"
+if [ -n "$AGENT_ROLE" ]; then
+  case "$AGENT_ROLE" in
+    lead|architect|qa)
+      # Planning roles can only write to .vbw-planning/ (already exempted above, so reaching here means non-planning path)
+      echo "Blocked: role '${AGENT_ROLE}' cannot write outside .vbw-planning/" >&2
+      exit 2
+      ;;
+    scout)
+      # Scout is read-only — block all non-planning writes
+      echo "Blocked: role 'scout' is read-only" >&2
+      exit 2
+      ;;
+    dev|debugger)
+      # Dev/debugger allowed — contract allowed_paths enforced above
+      ;;
+    *)
+      # Unknown role — fail-open
+      ;;
+  esac
 fi
-
-if [ "$V2_ROLE_ISO" = "true" ]; then
-  AGENT_ROLE="${VBW_AGENT_ROLE:-}"
-  if [ -n "$AGENT_ROLE" ]; then
-    case "$AGENT_ROLE" in
-      lead|architect|qa)
-        # Planning roles can only write to .vbw-planning/ (already exempted above, so reaching here means non-planning path)
-        echo "Blocked: role '${AGENT_ROLE}' cannot write outside .vbw-planning/ (v2_role_isolation)" >&2
-        exit 2
-        ;;
-      scout)
-        # Scout is read-only — block all non-planning writes
-        echo "Blocked: role 'scout' is read-only (v2_role_isolation)" >&2
-        exit 2
-        ;;
-      dev|debugger)
-        # Dev/debugger allowed — contract allowed_paths enforced above
-        ;;
-      *)
-        # Unknown role — fail-open
-        ;;
-    esac
-  fi
-  # No role set — fail-open
-fi
+# No role set — fail-open
 
 # --- Original file-guard: check files_modified from active plan ---
 ACTIVE_PLAN=""

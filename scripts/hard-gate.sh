@@ -29,15 +29,10 @@ PLANNING_DIR=".vbw-planning"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Check feature flag
-V2_HARD=false
 AUTONOMY="unknown"
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V2_HARD=$(jq -r '.v2_hard_gates // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
   AUTONOMY=$(jq -r '.autonomy // "unknown"' "$CONFIG_PATH" 2>/dev/null || echo "unknown")
 fi
-
-[ "$V2_HARD" != "true" ] && { echo '{"gate":"'"$GATE_TYPE"'","result":"skip","evidence":"v2_hard_gates=false","autonomy":"'"$AUTONOMY"'","ts":"'"$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null)"'"}'; exit 0; }
 
 TS=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "unknown")
 

@@ -14,8 +14,6 @@ teardown() {
 
 @test "smart-route: skips scout for turbo effort" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_smart_routing = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
-    && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   run bash "$SCRIPTS_DIR/smart-route.sh" scout turbo
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.decision == "skip"'
@@ -24,8 +22,6 @@ teardown() {
 
 @test "smart-route: skips scout for fast effort" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_smart_routing = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
-    && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   run bash "$SCRIPTS_DIR/smart-route.sh" scout fast
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.decision == "skip"'
@@ -33,8 +29,6 @@ teardown() {
 
 @test "smart-route: includes scout for thorough effort" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_smart_routing = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
-    && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   run bash "$SCRIPTS_DIR/smart-route.sh" scout thorough
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.decision == "include"'
@@ -42,19 +36,8 @@ teardown() {
 
 @test "smart-route: skips architect for non-thorough" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_smart_routing = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
-    && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   run bash "$SCRIPTS_DIR/smart-route.sh" architect balanced
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.decision == "skip"'
   echo "$output" | jq -e '.reason | test("architect only for thorough")'
-}
-
-@test "smart-route: includes all when flag disabled" {
-  cd "$TEST_TEMP_DIR"
-  # v3_smart_routing defaults to false
-  run bash "$SCRIPTS_DIR/smart-route.sh" scout turbo
-  [ "$status" -eq 0 ]
-  echo "$output" | jq -e '.decision == "include"'
-  echo "$output" | jq -e '.reason == "smart_routing disabled"'
 }

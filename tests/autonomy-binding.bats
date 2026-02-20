@@ -55,11 +55,12 @@ CONTRACT
 
 @test "hard-gate: includes autonomy field in skip output" {
   cd "$TEST_TEMP_DIR"
-  # v2_hard_gates defaults to false
+  # v2_hard_gates graduated (always true) — gates always fire
+  # Test now expects fail output (no more skip)
   run bash "$SCRIPTS_DIR/hard-gate.sh" contract_compliance 1 1 1 /dev/null
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
   echo "$output" | jq -e '.autonomy'
-  echo "$output" | jq -e '.result == "skip"'
+  echo "$output" | jq -e '.result == "fail"'
 }
 
 @test "hard-gate: autonomy value matches config" {

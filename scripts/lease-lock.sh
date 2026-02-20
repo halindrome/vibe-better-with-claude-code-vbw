@@ -18,19 +18,29 @@ TASK_ID="$2"
 shift 2
 
 PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
 LOCKS_DIR="${PLANNING_DIR}/.locks"
 LOCK_FILE="${LOCKS_DIR}/${TASK_ID}.lock"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_PATH="${PLANNING_DIR}/config.json"
 
-# Check feature flag — falls back to lock-lite check if lease flag is off
-HARD_GATES=false
+# Check lease_locks flag — if disabled, skip
+# Legacy fallback: honor v3_lease_locks if unprefixed key missing (pre-migration brownfield)
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  LEASE_ENABLED=$(jq -r '.v3_lease_locks // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  LOCK_ENABLED=$(jq -r '.v3_lock_lite // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  HARD_GATES=$(jq -r '.v2_hard_gates // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  [ "$LEASE_ENABLED" != "true" ] && [ "$LOCK_ENABLED" != "true" ] && exit 0
+  LEASE_LOCKS=$(jq -r 'if .lease_locks != null then .lease_locks elif .v3_lease_locks != null then .v3_lease_locks else false end' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  if [ "$LEASE_LOCKS" != "true" ]; then
+    case "$ACTION" in
+      acquire) echo "skipped" ;;
+      release) echo "skipped" ;;
+      check)   echo "clear" ;;
+      renew)   echo "skipped" ;;
+      query)   echo "no_lock" ;;
+    esac
+    exit 0
+  fi
 fi
+
+# v2_hard_gates graduated (always true)
+HARD_GATES=true
 
 # Parse --ttl=N from args, collect remaining as files
 DEFAULT_TTL=300

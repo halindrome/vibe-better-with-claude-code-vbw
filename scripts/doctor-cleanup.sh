@@ -124,6 +124,29 @@ scan_stale_markers() {
   fi
 }
 
+scan_stale_worktrees() {
+  local worktrees_dir
+  worktrees_dir="$(pwd)/.vbw-worktrees"
+  [ ! -d "$worktrees_dir" ] && return 0
+
+  local now
+  now=$(date +%s)
+
+  for wt_dir in "$worktrees_dir"/*/; do
+    [ ! -d "$wt_dir" ] && continue
+    local wt_name
+    wt_name=$(basename "$wt_dir")
+    local wt_mtime
+    wt_mtime=$(get_mtime "$wt_dir")
+    local age=$((now - wt_mtime))
+    if [ "$age" -gt "$STALE_THRESHOLD_SECONDS" ]; then
+      local hours=$((age / 3600))
+      local minutes=$(((age % 3600) / 60))
+      echo "stale_worktree|$wt_name|age: ${hours}h ${minutes}m"
+    fi
+  done
+}
+
 # --- CLEANUP MODE ---
 cleanup_stale_teams() {
   bash "$SCRIPT_DIR/clean-stale-teams.sh" 2>&1 | while IFS= read -r line; do
@@ -231,6 +254,30 @@ cleanup_stale_markers() {
   log_action "stale markers cleanup completed: $removed removed"
 }
 
+cleanup_stale_worktrees() {
+  local worktrees_dir
+  worktrees_dir="$(pwd)/.vbw-worktrees"
+  [ ! -d "$worktrees_dir" ] && return 0
+
+  local stale
+  stale=$(scan_stale_worktrees)
+  [ -z "$stale" ] && return 0
+
+  local _category _wt_name _detail
+  echo "$stale" | while IFS='|' read -r _category _wt_name _detail; do
+    [ -z "$_wt_name" ] && continue
+    # Parse phase and plan from name (format: {phase}-{plan})
+    local wt_phase wt_plan
+    wt_phase=$(echo "$_wt_name" | cut -d'-' -f1)
+    wt_plan=$(echo "$_wt_name" | cut -d'-' -f2)
+    bash "$SCRIPT_DIR/worktree-cleanup.sh" "$wt_phase" "$wt_plan" 2>/dev/null && \
+      log_action "cleaned stale worktree: $_wt_name ($_detail)" || \
+      log_action "failed to clean worktree: $_wt_name (fail-silent)"
+  done
+
+  log_action "stale worktrees cleanup completed"
+}
+
 # --- MAIN ---
 case "$ACTION" in
   scan)
@@ -238,6 +285,7 @@ case "$ACTION" in
     scan_orphaned_processes
     scan_dangling_pids
     scan_stale_markers
+    scan_stale_worktrees
     ;;
   cleanup)
     log_action "cleanup started"
@@ -247,13 +295,15 @@ case "$ACTION" in
     orphan_count=$(scan_orphaned_processes | wc -l | tr -d ' ')
     pid_count=$(scan_dangling_pids | wc -l | tr -d ' ')
     marker_count=$(scan_stale_markers | wc -l | tr -d ' ')
+    worktree_count=$(scan_stale_worktrees | wc -l | tr -d ' ')
 
     cleanup_stale_teams
     cleanup_orphaned_processes
     cleanup_dangling_pids
     cleanup_stale_markers
+    cleanup_stale_worktrees
 
-    log_action "cleanup complete: teams=$teams_count, orphans=$orphan_count, pids=$pid_count, markers=$marker_count"
+    log_action "cleanup complete: teams=$teams_count, orphans=$orphan_count, pids=$pid_count, markers=$marker_count, worktrees=$worktree_count"
     ;;
   *)
     echo "Usage: $0 {scan|cleanup}" >&2
