@@ -29,7 +29,7 @@ set -euo pipefail
 _vbw_find_script() {
   local dirs=(
     "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-    "$HOME/.config/claude-code"
+    "$HOME/.config/claude-code"  # forward-compat: PR #116 adds this as a canonical fallback
   )
   for d in "${dirs[@]}"; do
     [ -z "$d" ] && continue
