@@ -56,7 +56,7 @@ echo ""
 # Wipe and rebuild target
 echo "Copying Claude config to $TARGET_CONFIG ..."
 rm -rf "$TARGET_CONFIG"
-cp -r "$SOURCE_CONFIG" "$TARGET_CONFIG"
+cp -a "$SOURCE_CONFIG" "$TARGET_CONFIG"
 
 # Overwrite VBW plugin dirs with local repo files
 VBW_TARGET="$TARGET_CONFIG/plugins/cache/vbw-marketplace/vbw/$VBW_VERSION"
@@ -64,7 +64,7 @@ VBW_TARGET="$TARGET_CONFIG/plugins/cache/vbw-marketplace/vbw/$VBW_VERSION"
 echo "Installing local VBW files into test config..."
 for dir in "${PLUGIN_DIRS[@]}"; do
   if [ -d "$REPO_ROOT/$dir" ]; then
-    cp -r "$REPO_ROOT/$dir/." "$VBW_TARGET/$dir/"
+    cp -a "$REPO_ROOT/$dir/." "$VBW_TARGET/$dir/"
     echo "  ✓ $dir/"
   fi
 done
