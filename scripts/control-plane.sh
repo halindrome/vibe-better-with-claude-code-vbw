@@ -66,18 +66,16 @@ done
 # --- Config / flag resolution ---
 CONTEXT_COMPILER=false
 TOKEN_BUDGETS=true
-LEASE_LOCKS=false
 
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   CONTEXT_COMPILER=$(jq -r 'if .context_compiler == null then true else .context_compiler end' "$CONFIG_PATH" 2>/dev/null || echo "true")
   TOKEN_BUDGETS=$(jq -r 'if .token_budgets == null then true else .token_budgets end' "$CONFIG_PATH" 2>/dev/null || echo "true")
-  LEASE_LOCKS=$(jq -r 'if .lease_locks == null then false else .lease_locks end' "$CONFIG_PATH" 2>/dev/null || echo "false")
 fi
 
 # --- No-op check (REQ-C1) ---
 # If all flags relevant to the chosen action are false, exit 0 immediately.
 # Note: v2_hard_contracts, v2_hard_gates are now always-on (graduated)
-# Lease locks and token budgets are config-gated.
+# Token budgets and context compiler are config-gated.
 check_noop() {
   case "$ACTION" in
     pre-task)
