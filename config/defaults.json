@@ -37,5 +37,6 @@
   "lease_locks": false,
   "event_recovery": false,
   "monorepo_routing": true,
-  "rolling_summary": false
+  "rolling_summary": false,
+  "permission_mode_guard": false
 }
