@@ -142,8 +142,8 @@ This produces `{phase-dir}/.context-dev.md` with phase goal and conventions.
 The plan_path argument enables skill bundling: compile-context.sh reads skills_used from the plan's frontmatter and bundles referenced SKILL.md content into .context-dev.md. If the plan has no skills_used, this is a no-op.
 If compilation fails, proceed without it — Dev reads files directly.
 
-**V2 Token Budgets (REQ-12):** If control-plane.sh `compile` or `full` action was used and included token budget enforcement, skip this step. Otherwise, if `v2_token_budgets=true` in config:
-- After context compilation, enforce per-role token budgets. When `v3_contract_lite=true` or `v2_hard_contracts=true`, pass the contract path and task number for per-task budget computation:
+**V2 Token Budgets (REQ-12):** If control-plane.sh `compile` or `full` action was used and included token budget enforcement, skip this step. Otherwise:
+- After context compilation, enforce per-role token budgets. Pass the contract path and task number for per-task budget computation:
   ```bash
   bash ${CLAUDE_PLUGIN_ROOT}/scripts/token-budget.sh dev {phase-dir}/.context-dev.md {contract_path} {task_number} > {phase-dir}/.context-dev.md.tmp && mv {phase-dir}/.context-dev.md.tmp {phase-dir}/.context-dev.md
   ```
@@ -155,7 +155,7 @@ If compilation fails, proceed without it — Dev reads files directly.
 - **Escalation:** When overage occurs, token-budget.sh emits a `token_cap_escalated` event and reduces the remaining budget for subsequent tasks in the plan. The budget reduction state is stored in `.vbw-planning/.token-state/{phase}-{plan}.json`. Escalation is advisory only -- execution continues regardless.
 - **Cleanup:** At phase end, clean up token state: `rm -f .vbw-planning/.token-state/*.json 2>/dev/null || true`
 - Truncation uses tail strategy (keep most recent context).
-- When `v2_token_budgets=false`: no truncation (pass through).
+
 
 **Model resolution:** Resolve models for Dev and QA agents:
 ```bash
@@ -285,7 +285,7 @@ Hooks handle continuous verification: PostToolUse validates SUMMARY.md, TaskComp
 - At phase end: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/collect-metrics.sh execute_phase_complete {phase} plans_completed={N} total_tasks={N} total_commits={N} deviations={N}`
 All metrics calls should be `2>/dev/null || true` — never block execution.
 
-**V3 Contract-Lite (REQ-10):** If `v3_contract_lite=true` in config:
+**V3 Contract-Lite (REQ-10, graduated):**
 - **Once per plan (before first task):** Generate contract sidecar:
   `bash ${CLAUDE_PLUGIN_ROOT}/scripts/generate-contract.sh {plan_path} 2>/dev/null || true`
   This produces `.vbw-planning/.contracts/{phase}-{plan}.json` with allowed_paths and must_haves.
@@ -296,11 +296,11 @@ All metrics calls should be `2>/dev/null || true` — never block execution.
   Where `{modified_files}` comes from `git diff --name-only HEAD~1` after the task's commit.
 - Violations are advisory only (logged to metrics, not blocking).
 
-**V2 Hard Gates (REQ-02, REQ-03):** If `v2_hard_gates=true` in config:
+**V2 Hard Gates (REQ-02, REQ-03, graduated):**
 - **Pre-task gate sequence (before each task starts):**
   1. `contract_compliance` gate: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/hard-gate.sh contract_compliance {phase} {plan} {task} {contract_path}`
   2. **Lease acquisition** (V2 control plane): acquire exclusive file lease before protected_file check:
-     - If `v3_lease_locks=true`: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/lease-lock.sh acquire {task_id} --ttl=300 {claimed_files...}`
+     `bash ${CLAUDE_PLUGIN_ROOT}/scripts/lease-lock.sh acquire {task_id} --ttl=300 {claimed_files...}`
      - Lease conflict → auto-repair attempt (wait + re-acquire), then escalate blocker if unresolved.
   3. `protected_file` gate: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/hard-gate.sh protected_file {phase} {plan} {task} {contract_path}`
   - If any gate fails (exit 2): attempt auto-repair:
@@ -311,7 +311,7 @@ All metrics calls should be `2>/dev/null || true` — never block execution.
   1. `required_checks` gate: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/hard-gate.sh required_checks {phase} {plan} {task} {contract_path}`
   2. `commit_hygiene` gate: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/hard-gate.sh commit_hygiene {phase} {plan} {task} {contract_path}`
   3. **Lease release**: release file lease after task completes:
-     - If `v3_lease_locks=true`: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/lease-lock.sh release {task_id}`
+     `bash ${CLAUDE_PLUGIN_ROOT}/scripts/lease-lock.sh release {task_id}`
   - Gate failures trigger auto-repair with same flow as pre-task.
 - **Post-plan gate (after all tasks complete, before marking plan done):**
   1. `artifact_persistence` gate: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/hard-gate.sh artifact_persistence {phase} {plan} {task} {contract_path}`
@@ -320,7 +320,7 @@ All metrics calls should be `2>/dev/null || true` — never block execution.
 - **YOLO mode:** Hard gates ALWAYS fire regardless of autonomy level. YOLO only skips confirmation prompts.
 - **Fallback:** If hard-gate.sh or auto-repair.sh errors (not a gate fail, but a script error), log to metrics and continue (fail-open on script errors, hard-stop only on gate verdicts).
 
-**V3 Lease Locks (REQ-17):** If `v3_lease_locks=true` in config:
+**V3 Lease Locks (REQ-17, graduated):**
 - Use `lease-lock.sh` for all lock operations:
   - Acquire: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/lease-lock.sh acquire {task_id} --ttl=300 {claimed_files...} 2>/dev/null || true`
   - Release: `bash ${CLAUDE_PLUGIN_ROOT}/scripts/lease-lock.sh release {task_id} 2>/dev/null || true`
