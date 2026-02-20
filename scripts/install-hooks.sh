@@ -34,7 +34,7 @@ _vbw_find_script() {
   for d in "${dirs[@]}"; do
     [ -z "$d" ] && continue
     local s
-    s=$(ls -1 "$d"/plugins/cache/vbw-marketplace/vbw/*/scripts/pre-push-hook.sh 2>/dev/null | sort -V | tail -1 || true)
+    s=$(ls -1 "$d"/plugins/cache/vbw-marketplace/vbw/*/scripts/pre-push-hook.sh 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1 || true)
     [ -n "$s" ] && [ -f "$s" ] && echo "$s" && return 0
   done
   return 1
