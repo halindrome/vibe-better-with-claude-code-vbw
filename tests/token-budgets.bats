@@ -70,15 +70,18 @@ generate_chars() {
   [ "$SCOUT_CHARS" -le 8100 ]
 }
 
-@test "token-budget: skips when flag disabled" {
+@test "token-budget: always enforces when budget definitions exist (graduated)" {
   cd "$TEST_TEMP_DIR"
+  # v2_token_budgets flag no longer controls behavior (graduated)
+  # Budget enforcement is config-driven: token-budgets.json defines budgets
   jq '.v2_token_budgets = false' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
     && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
   generate_chars 12000 > "$TEST_TEMP_DIR/no-truncate.txt"
   run bash "$SCRIPTS_DIR/token-budget.sh" scout "$TEST_TEMP_DIR/no-truncate.txt"
   [ "$status" -eq 0 ]
   CHAR_COUNT=${#output}
-  [ "$CHAR_COUNT" -ge 11900 ]
+  # Scout budget is 8000 chars — still enforced even with flag false
+  [ "$CHAR_COUNT" -le 8100 ]
 }
 
 @test "token-budget: logs overage to metrics" {

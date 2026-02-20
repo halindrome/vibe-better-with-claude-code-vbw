@@ -21,6 +21,7 @@ PLAN_PATH="$1"
 [ ! -f "$PLAN_PATH" ] && exit 0
 
 PLANNING_DIR=".vbw-planning"
+CONFIG_PATH="${CONFIG_PATH:-${PLANNING_DIR}/config.json}"
 
 # Extract phase and plan from frontmatter
 PHASE=$(awk '/^---$/{n++; next} n==1 && /^phase:/{print $2; exit}' "$PLAN_PATH" 2>/dev/null) || exit 0

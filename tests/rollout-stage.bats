@@ -81,9 +81,9 @@ run_rollout() {
   [ "$status" -eq 0 ]
   # Check config was updated
   local val_event val_metrics val_delta
-  val_event=$(jq -r '.v3_event_log' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_metrics=$(jq -r '.v3_metrics' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_delta=$(jq -r '.v3_delta_context' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_event=$(jq -r '.v3_event_log // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_metrics=$(jq -r '.v3_metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_delta=$(jq -r '.v3_delta_context // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
   [ "$val_event" = "true" ]
   [ "$val_metrics" = "true" ]
   [ "$val_delta" = "false" ]
@@ -95,11 +95,11 @@ run_rollout() {
   run_rollout advance --stage=2
   [ "$status" -eq 0 ]
   local val_event val_metrics val_delta val_cache val_routing
-  val_event=$(jq -r '.v3_event_log' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_metrics=$(jq -r '.v3_metrics' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_delta=$(jq -r '.v3_delta_context' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_cache=$(jq -r '.v3_context_cache' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_routing=$(jq -r '.v3_smart_routing' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_event=$(jq -r '.v3_event_log // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_metrics=$(jq -r '.v3_metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_delta=$(jq -r '.v3_delta_context // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_cache=$(jq -r '.v3_context_cache // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_routing=$(jq -r '.v3_smart_routing // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
   [ "$val_event" = "true" ]
   [ "$val_metrics" = "true" ]
   [ "$val_delta" = "true" ]
@@ -129,8 +129,8 @@ run_rollout() {
   echo "$output" | jq -e '.flags_enabled | length == 2'
   # Config should still have false values
   local val_event val_metrics
-  val_event=$(jq -r '.v3_event_log' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_metrics=$(jq -r '.v3_metrics' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_event=$(jq -r '.v3_event_log // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_metrics=$(jq -r '.v3_metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
   [ "$val_event" = "false" ]
   [ "$val_metrics" = "false" ]
 }
@@ -163,10 +163,10 @@ run_rollout() {
   [ "$status" -eq 0 ]
   # With 1 phase, only stage 1 is eligible (stage 2 needs 2)
   local val_event val_metrics val_delta val_cache
-  val_event=$(jq -r '.v3_event_log' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_metrics=$(jq -r '.v3_metrics' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_delta=$(jq -r '.v3_delta_context' "$TEST_TEMP_DIR/.vbw-planning/config.json")
-  val_cache=$(jq -r '.v3_context_cache' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_event=$(jq -r '.v3_event_log // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_metrics=$(jq -r '.v3_metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_delta=$(jq -r '.v3_delta_context // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
+  val_cache=$(jq -r '.v3_context_cache // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
   [ "$val_event" = "true" ]
   [ "$val_metrics" = "true" ]
   [ "$val_delta" = "false" ]

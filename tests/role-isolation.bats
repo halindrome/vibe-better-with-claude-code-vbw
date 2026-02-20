@@ -83,16 +83,15 @@ CONTRACT
   [[ "$output" == *"forbidden path"* ]]
 }
 
-@test "file-guard: skips allowed_paths check when v2_hard_contracts=false" {
+@test "file-guard: contract check enforced when v2_hard_contracts absent (graduated)" {
   cd "$TEST_TEMP_DIR"
   create_plan_with_files
   create_contract
-  # v2_hard_contracts defaults to false in test config
+  # v2_hard_contracts graduated (always on) — config key absence doesn't matter
   INPUT='{"tool_name":"Write","tool_input":{"file_path":"src/unauthorized.js","content":"ok"}}'
   run bash -c "echo '$INPUT' | bash '$SCRIPTS_DIR/file-guard.sh'"
-  # Should not block (falls through to files_modified check only)
-  # files_modified not in plan frontmatter, so fail-open
-  [ "$status" -eq 0 ]
+  # Should enforce contract (graduated) — file not in allowed_paths → block
+  [ "$status" -eq 2 ]
 }
 
 @test "file-guard: no contract present fails open" {
@@ -141,8 +140,9 @@ CONTRACT
 
 # --- v2_role_isolation flag ---
 
-@test "defaults.json includes v2_role_isolation flag" {
-  run jq '.v2_role_isolation' "$CONFIG_DIR/defaults.json"
+@test "v2_role_isolation graduated (not in defaults.json)" {
+  # v2_role_isolation was graduated — flag removed from defaults.json
+  run jq 'has("v2_role_isolation")' "$CONFIG_DIR/defaults.json"
   [ "$output" = "false" ]
 }
 

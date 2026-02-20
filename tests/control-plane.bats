@@ -58,19 +58,21 @@ enable_flags() {
 
 # --- No-op tests ---
 
-@test "control-plane: no-op when all flags OFF (pre-task)" {
+@test "control-plane: pre-task without plan triggers gate failure (graduated flags)" {
   cd "$TEST_TEMP_DIR"
   run bash "$SCRIPTS_DIR/control-plane.sh" pre-task 1 1 1
-  [ "$status" -eq 0 ]
-  echo "$output" | jq -e '.steps[0].status == "skip"'
-  echo "$output" | jq -e '.steps[0].name == "noop"'
+  # Graduated flags mean pre-task always runs; without a plan, gate check fails
+  [ "$status" -eq 1 ]
+  echo "$output" | jq -e '.steps[] | select(.name == "contract") | .status == "skip"'
+  echo "$output" | jq -e '.steps[] | select(.name == "gate_contract_compliance") | .status == "fail"'
 }
 
-@test "control-plane: no-op when all flags OFF (post-task)" {
+@test "control-plane: post-task runs pipeline (graduated flags)" {
   cd "$TEST_TEMP_DIR"
   run bash "$SCRIPTS_DIR/control-plane.sh" post-task 1 1 1
   [ "$status" -eq 0 ]
-  echo "$output" | jq -e '.steps[0].name == "noop"'
+  # Graduated flags mean post-task always runs the gate/lease pipeline
+  echo "$output" | jq -e '.steps | length > 0'
 }
 
 @test "control-plane: no-op when all flags OFF (compile)" {
@@ -81,12 +83,14 @@ enable_flags() {
   echo "$output" | jq -e '.steps[0].name == "noop"'
 }
 
-@test "control-plane: no-op when all flags OFF (full)" {
+@test "control-plane: full runs contract even with context_compiler=false (graduated)" {
   cd "$TEST_TEMP_DIR"
   enable_flags '.context_compiler = false'
   run bash "$SCRIPTS_DIR/control-plane.sh" full 1 1 1
   [ "$status" -eq 0 ]
-  echo "$output" | jq -e '.steps[0].name == "noop"'
+  # Contract is always-on (graduated), so full always runs
+  echo "$output" | jq -e '.steps[] | select(.name == "contract") | .status == "skip"'
+  echo "$output" | jq -e '.steps[] | select(.name == "context") | .status == "skip"'
 }
 
 # --- pre-task tests ---
@@ -94,17 +98,17 @@ enable_flags() {
 @test "control-plane: pre-task sequences contract then gate" {
   create_test_plan
   cd "$TEST_TEMP_DIR"
-  enable_flags '.v3_contract_lite = true | .v2_hard_gates = false'
   run bash "$SCRIPTS_DIR/control-plane.sh" pre-task 1 1 1 --plan-path=test-plan.md --task-id=1-1-T1
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.steps[] | select(.name == "contract") | .status == "pass"'
-  echo "$output" | jq -e '.steps[] | select(.name == "gate_contract_compliance") | .status == "skip"'
+  # v2_hard_gates graduated — gate always runs
+  echo "$output" | jq -e '.steps[] | select(.name == "gate_contract_compliance")'
 }
 
 @test "control-plane: pre-task uses lease-lock when v3_lease_locks=true" {
   create_test_plan
   cd "$TEST_TEMP_DIR"
-  enable_flags '.v3_lease_locks = true'
+  # v3_lease_locks graduated — always on
   run bash "$SCRIPTS_DIR/control-plane.sh" pre-task 1 1 1 --plan-path=test-plan.md --task-id=1-1-T1 --claimed-files=src/a.js
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.steps[] | select(.name == "lease_acquire") | .status == "pass"'
@@ -156,7 +160,7 @@ enable_flags() {
   create_test_plan
   create_roadmap
   cd "$TEST_TEMP_DIR"
-  enable_flags '.v3_contract_lite = true'
+  # v3_contract_lite graduated — contracts always generated
   run bash "$SCRIPTS_DIR/control-plane.sh" full 1 1 1 --plan-path=test-plan.md --role=dev --phase-dir=.vbw-planning/phases/01-test
   [ "$status" -eq 0 ]
   # Contract step should pass
@@ -172,7 +176,7 @@ enable_flags() {
 
 @test "control-plane: gate failure returns exit 1" {
   cd "$TEST_TEMP_DIR"
-  enable_flags '.v2_hard_gates = true | .v2_hard_contracts = true | .v3_contract_lite = true'
+  # All gate/contract flags graduated (always on)
   # No plan file and no contract -> gate should fail on missing contract
   run bash "$SCRIPTS_DIR/control-plane.sh" pre-task 1 1 1 --task-id=1-1-T1
   [ "$status" -eq 1 ]
@@ -211,7 +215,6 @@ enable_flags() {
 @test "control-plane: JSON output format correct" {
   create_test_plan
   cd "$TEST_TEMP_DIR"
-  enable_flags '.v3_contract_lite = true'
   run bash "$SCRIPTS_DIR/control-plane.sh" pre-task 1 1 1 --plan-path=test-plan.md --task-id=1-1-T1
   [ "$status" -eq 0 ]
   # Verify valid JSON with action and steps fields
@@ -226,7 +229,7 @@ enable_flags() {
   create_test_plan
   create_roadmap
   cd "$TEST_TEMP_DIR"
-  enable_flags '.v3_contract_lite = true'
+  # v3_contract_lite graduated — contracts always generated
 
   # Step 1: full action (once per plan) — generates contract + compiles context
   run bash "$SCRIPTS_DIR/control-plane.sh" full 1 1 1 \
@@ -255,7 +258,7 @@ enable_flags() {
   create_test_plan
   create_roadmap
   cd "$TEST_TEMP_DIR"
-  enable_flags '.v3_contract_lite = true'
+  # v3_contract_lite graduated — contracts always generated
 
   # Create a local scripts dir with control-plane.sh but WITHOUT generate-contract.sh
   mkdir -p "$TEST_TEMP_DIR/scripts"
@@ -281,10 +284,10 @@ enable_flags() {
 @test "control-plane: multiple tasks in sequence without stale locks" {
   create_test_plan
   cd "$TEST_TEMP_DIR"
-  enable_flags '.v3_lease_locks = true'
+  # v3_lease_locks graduated — always on
 
-  # Task 1: pre-task -> post-task
-  run bash "$SCRIPTS_DIR/control-plane.sh" pre-task 1 1 1 --task-id=1-1-T1 --claimed-files=src/a.js
+  # Task 1: pre-task -> post-task (pass plan-path for contract generation)
+  run bash "$SCRIPTS_DIR/control-plane.sh" pre-task 1 1 1 --plan-path=test-plan.md --task-id=1-1-T1 --claimed-files=src/a.js
   [ "$status" -eq 0 ]
   [ -f ".vbw-planning/.locks/1-1-T1.lock" ]
 
@@ -293,7 +296,7 @@ enable_flags() {
   [ ! -f ".vbw-planning/.locks/1-1-T1.lock" ]
 
   # Task 2: pre-task -> post-task (no stale lock from task 1)
-  run bash "$SCRIPTS_DIR/control-plane.sh" pre-task 1 1 2 --task-id=1-1-T2 --claimed-files=src/b.js
+  run bash "$SCRIPTS_DIR/control-plane.sh" pre-task 1 1 2 --plan-path=test-plan.md --task-id=1-1-T2 --claimed-files=src/b.js
   [ "$status" -eq 0 ]
   [ -f ".vbw-planning/.locks/1-1-T2.lock" ]
   # Task 1 lock should still be gone

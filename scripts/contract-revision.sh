@@ -5,7 +5,7 @@ set -u
 # Detects scope changes and creates contract revisions.
 # Archives old contract as {phase}-{plan}.rev{N}.json, generates new contract,
 # logs contract_revision event via log-event.sh.
-# Gated by v2_hard_contracts.
+# v2_hard_contracts graduated — always enabled.
 
 if [ $# -lt 2 ]; then
   echo "Usage: contract-revision.sh <old-contract-path> <plan-path>" >&2
@@ -19,11 +19,7 @@ PLANNING_DIR=".vbw-planning"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Check feature flag
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r '.v2_hard_contracts // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  [ "$ENABLED" != "true" ] && exit 0
-fi
+# v2_hard_contracts graduated — always enabled
 
 [ ! -f "$OLD_CONTRACT" ] && exit 0
 [ ! -f "$PLAN_PATH" ] && exit 0

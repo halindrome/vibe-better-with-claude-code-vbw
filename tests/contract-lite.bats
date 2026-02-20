@@ -107,7 +107,8 @@ teardown() {
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/03-test-phase/03-01-PLAN.md"
 
   run bash "$SCRIPTS_DIR/validate-contract.sh" start ".vbw-planning/.contracts/3-1.json" 99
-  [ "$status" -eq 0 ]
+  # Hard contracts graduated — violations are hard stops (exit 2)
+  [ "$status" -eq 2 ]
 
   # Should have logged a scope_violation metric
   [ -f ".vbw-planning/.metrics/run-metrics.jsonl" ]
@@ -129,7 +130,8 @@ teardown() {
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/03-test-phase/03-01-PLAN.md"
 
   run bash "$SCRIPTS_DIR/validate-contract.sh" end ".vbw-planning/.contracts/3-1.json" 1 "some/random/file.txt"
-  [ "$status" -eq 0 ]
+  # Hard contracts graduated — out-of-scope is a hard stop (exit 2)
+  [ "$status" -eq 2 ]
 
   # Should have logged a scope_violation metric
   [ -f ".vbw-planning/.metrics/run-metrics.jsonl" ]

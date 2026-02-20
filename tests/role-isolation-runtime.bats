@@ -82,13 +82,15 @@ CONTRACT
   [ "$status" -eq 0 ]
 }
 
-@test "file-guard: skips role check when v2_role_isolation=false" {
+@test "file-guard: role isolation always enforced (v2_role_isolation graduated)" {
   cd "$TEST_TEMP_DIR"
   create_plan_with_files
-  # v2_role_isolation defaults to false in test config
+  # v2_role_isolation graduated — always enforced, config key absence doesn't matter
   INPUT='{"tool_name":"Write","tool_input":{"file_path":"src/allowed.js","content":"ok"}}'
   run bash -c "VBW_AGENT_ROLE=scout echo '$INPUT' | VBW_AGENT_ROLE=scout bash '$SCRIPTS_DIR/file-guard.sh'"
-  [ "$status" -eq 0 ]
+  # Scout is read-only — always blocked (graduated)
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"read-only"* ]]
 }
 
 @test "file-guard: fails open when VBW_AGENT_ROLE unset" {
