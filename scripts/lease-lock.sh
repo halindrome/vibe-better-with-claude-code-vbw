@@ -24,8 +24,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 
 # Check lease_locks flag — if disabled, skip
+# Legacy fallback: honor v3_lease_locks if unprefixed key missing (pre-migration brownfield)
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  LEASE_LOCKS=$(jq -r 'if .lease_locks == null then false else .lease_locks end' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  LEASE_LOCKS=$(jq -r 'if .lease_locks != null then .lease_locks elif .v3_lease_locks != null then .v3_lease_locks else false end' "$CONFIG_PATH" 2>/dev/null || echo "false")
   if [ "$LEASE_LOCKS" != "true" ]; then
     case "$ACTION" in
       acquire) echo "skipped" ;;

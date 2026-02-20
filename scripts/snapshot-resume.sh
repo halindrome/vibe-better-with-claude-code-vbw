@@ -20,8 +20,9 @@ SNAPSHOTS_DIR="${PLANNING_DIR}/.snapshots"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 
 # Check snapshot_resume flag — if disabled, skip
+# Legacy fallback: honor v3_snapshot_resume if unprefixed key missing (pre-migration brownfield)
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  SNAPSHOT_RESUME=$(jq -r 'if .snapshot_resume == null then true else .snapshot_resume end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  SNAPSHOT_RESUME=$(jq -r 'if .snapshot_resume != null then .snapshot_resume elif .v3_snapshot_resume != null then .v3_snapshot_resume else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
   if [ "$SNAPSHOT_RESUME" != "true" ]; then
     exit 0
   fi

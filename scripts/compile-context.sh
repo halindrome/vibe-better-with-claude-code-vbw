@@ -106,7 +106,8 @@ fi
 
 ROLLING_SUMMARY=false
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ROLLING_SUMMARY=$(jq -r 'if .rolling_summary == null then false else .rolling_summary end' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  # Legacy fallback: honor v3_rolling_summary if unprefixed key missing (pre-migration brownfield)
+  ROLLING_SUMMARY=$(jq -r 'if .rolling_summary != null then .rolling_summary elif .v3_rolling_summary != null then .v3_rolling_summary else false end' "$CONFIG_PATH" 2>/dev/null || echo "false")
 fi
 
 ROLLING_CONTEXT_PATH="${PLANNING_DIR}/ROLLING-CONTEXT.md"

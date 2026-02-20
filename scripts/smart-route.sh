@@ -22,8 +22,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 
 # Check smart_routing flag — if disabled, always include agent
+# Legacy fallback: honor v3_smart_routing if unprefixed key missing (pre-migration brownfield)
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  SMART_ROUTING=$(jq -r 'if .smart_routing == null then true else .smart_routing end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  SMART_ROUTING=$(jq -r 'if .smart_routing != null then .smart_routing elif .v3_smart_routing != null then .v3_smart_routing else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
   if [ "$SMART_ROUTING" != "true" ]; then
     echo "{\"agent\":\"${AGENT_ROLE}\",\"decision\":\"include\",\"reason\":\"smart_routing=false\"}"
     exit 0
