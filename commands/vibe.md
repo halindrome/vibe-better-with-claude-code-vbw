@@ -265,11 +265,13 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
    PERM_GUARD=$(jq -r '.permission_mode_guard // false' .vbw-planning/config.json 2>/dev/null)
    ```
    If `PERM_GUARD=false` (default) → skip, proceed to step 2.
-   If `PERM_GUARD=true` AND effort is not turbo → present via AskUserQuestion:
+   If `--yolo` is set → skip (--yolo bypasses all confirmation gates), proceed to step 2.
+   If `PERM_GUARD=true` AND effort is not turbo (check `--effort` argument first, then config `effort` key) → present via AskUserQuestion:
    - Title: "Permission Mode Guard"
    - Message: "Heads up: VBW agents need file-write permissions. In review-each-action mode, every write will pause for your approval — agents will appear to stall until you respond.\n\nThis is fine if intentional. Otherwise, switch to acceptEdits or bypass permissions mode first — press Shift+Tab now to cycle modes, then select Proceed."
    - Options: ["Proceed"] / ["Cancel"]
    - If "Cancel" → STOP. If "Proceed" → continue to step 2.
+   - Note: this guard fires once per mode entry (before any agents are spawned).
 2. **Parse args:** Phase number (optional, auto-detected), --effort (optional, falls back to config).
 3. **Phase context:** If `{phase-dir}/{phase}-CONTEXT.md` exists, include it in Lead agent context. If not, proceed without — users who want context run `/vbw:discuss N` first.
 4. **Research persistence (REQ-08, graduated):** If effort != turbo:

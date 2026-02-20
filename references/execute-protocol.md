@@ -73,11 +73,13 @@ Set completed plans (with SUMMARY.md) to `"complete"`, others to `"pending"`.
 PERM_GUARD=$(jq -r '.permission_mode_guard // false' .vbw-planning/config.json 2>/dev/null)
 ```
 If `PERM_GUARD=false` (default) → skip, continue to 3b.
-If `PERM_GUARD=true` AND effort is not turbo → present via AskUserQuestion:
+If `--yolo` was passed → skip (--yolo bypasses all confirmation gates), continue to 3b.
+If `PERM_GUARD=true` AND effort is not turbo (check `--effort` argument first, then config `effort` key) → present via AskUserQuestion:
 - Title: "Permission Mode Guard"
 - Message: "Heads up: VBW agents need file-write permissions. In review-each-action mode, every write will pause for your approval — agents will appear to stall until you respond.\n\nThis is fine if intentional. Otherwise, switch to acceptEdits or bypass permissions mode first — press Shift+Tab now to cycle modes, then select Proceed."
 - Options: ["Proceed"] / ["Cancel"]
 - If "Cancel" → STOP. If "Proceed" → continue to 3b.
+- Note: this guard fires once per mode entry (before any agents are spawned). On resume, it fires again if the session was restarted.
 
 **3b. Team creation (multi-agent only):**
 Read prefer_teams config to determine team creation:
