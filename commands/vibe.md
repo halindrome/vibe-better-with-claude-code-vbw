@@ -254,25 +254,19 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
 **Phase auto-detection:** First phase without PLAN.md. All planned: STOP "All phases planned. Specify phase: `/vbw:vibe --plan N`"
 
 **Steps:**
-
-**Permission Mode Guard (if enabled):**
-
-Before any file operations or agent spawning:
-1. Read config flag:
+1. **Permission Mode Guard:** Run this before anything else. Read:
    ```bash
    PERM_GUARD=$(jq -r '.permission_mode_guard // false' .vbw-planning/config.json 2>/dev/null)
    ```
-2. If `PERM_GUARD=false` (default) → skip guard, proceed normally
-3. If `PERM_GUARD=true` AND effort is not turbo → present via AskUserQuestion:
+   If `PERM_GUARD=false` (default) → skip, proceed to step 2.
+   If `PERM_GUARD=true` AND effort is not turbo → present via AskUserQuestion:
    - Title: "Permission Mode Guard"
    - Message: "Heads up: VBW agents need file-write permissions. In review-each-action mode, every write will pause for your approval — agents will appear to stall until you respond.\n\nThis is fine if intentional. Otherwise, switch to acceptEdits or bypass permissions mode first — press Shift+Tab now to cycle modes, then select Proceed."
    - Options: ["Proceed"] / ["Cancel"]
-   - If user selects "Cancel" → STOP, do not continue
-   - If user selects "Proceed" → continue with Plan mode
-
-1. **Parse args:** Phase number (optional, auto-detected), --effort (optional, falls back to config).
-2. **Phase context:** If `{phase-dir}/{phase}-CONTEXT.md` exists, include it in Lead agent context. If not, proceed without — users who want context run `/vbw:discuss N` first.
-3. **Research persistence (REQ-08, graduated):** If effort != turbo:
+   - If "Cancel" → STOP. If "Proceed" → continue to step 2.
+2. **Parse args:** Phase number (optional, auto-detected), --effort (optional, falls back to config).
+3. **Phase context:** If `{phase-dir}/{phase}-CONTEXT.md` exists, include it in Lead agent context. If not, proceed without — users who want context run `/vbw:discuss N` first.
+4. **Research persistence (REQ-08, graduated):** If effort != turbo:
    - Check for `{phase-dir}/{phase}-RESEARCH.md`.
    - **If missing:** Spawn Scout agent to research the phase goal, requirements, and relevant codebase patterns. Scout returns structured findings with sections: `## Findings`, `## Relevant Patterns`, `## Risks`, `## Recommendations`. The **orchestrator** (not Scout) writes the returned findings to `{phase-dir}/{phase}-RESEARCH.md`. Scout has `disallowedTools: Write` (platform-enforced) and cannot write files. Resolve Scout model:
      ```bash
@@ -283,9 +277,9 @@ Before any file operations or agent spawning:
    - **If exists:** Include it in Lead's context for incremental refresh. Lead may update RESEARCH.md if new information emerges.
    - **On failure:** Log warning, continue planning without research. Do not block.
    - If effort=turbo: skip entirely.
-4. **Context compilation:** If `config_context_compiler=true`, run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/compile-context.sh {phase} lead {phases_dir}`. Include `.context-lead.md` in Lead agent context if produced.
-5. **Turbo shortcut:** If effort=turbo, skip Lead. Read phase reqs from ROADMAP.md, create single lightweight PLAN.md inline.
-6. **Other efforts:**
+5. **Context compilation:** If `config_context_compiler=true`, run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/compile-context.sh {phase} lead {phases_dir}`. Include `.context-lead.md` in Lead agent context if produced.
+6. **Turbo shortcut:** If effort=turbo, skip Lead. Read phase reqs from ROADMAP.md, create single lightweight PLAN.md inline.
+7. **Other efforts:**
    - Resolve Lead model:
      ```bash
      LEAD_MODEL=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh lead .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json)
@@ -313,7 +307,7 @@ Before any file operations or agent spawning:
        2. Wait for each `shutdown_response` (approved=true). If rejected, re-request (max 3 attempts per teammate — then proceed).
        3. Call TeamDelete for team "vbw-plan-{NN}"
        4. Verify: after TeamDelete, there must be ZERO active teammates. If tmux panes still show agent labels, something went wrong — do NOT proceed.
-       5. Only THEN proceed to step 7
+       5. Only THEN proceed to step 8
        **WHY THIS EXISTS:** Without this gate, each Plan invocation spawns a new Lead that lingers in tmux. After 2-3 phases, multiple @lea panes accumulate, each burning API credits doing nothing. This is the #1 user-reported cost issue.
 
      When team should NOT be created (Lead-only with when_parallel/auto):
@@ -322,8 +316,8 @@ Before any file operations or agent spawning:
    - **CRITICAL:** Add `model: "${LEAD_MODEL}"` and `maxTurns: ${LEAD_MAX_TURNS}` parameters to the Task tool invocation.
    - **CRITICAL:** Include in the Lead prompt: "Plans will be executed by a team of parallel Dev agents — one agent per plan. Maximize wave 1 plans (no deps) so agents start simultaneously. Ensure same-wave plans modify disjoint file sets to avoid merge conflicts."
    - Display `◆ Spawning Lead agent...` -> `✓ Lead agent complete`.
-7. **Validate output:** Verify PLAN.md has valid frontmatter (phase, plan, title, wave, depends_on, must_haves) and tasks. Check wave deps acyclic.
-8. **Present:** Update STATE.md (phase position, plan count, status=Planned). Resolve model profile:
+8. **Validate output:** Verify PLAN.md has valid frontmatter (phase, plan, title, wave, depends_on, must_haves) and tasks. Check wave deps acyclic.
+9. **Present:** Update STATE.md (phase position, plan count, status=Planned). Resolve model profile:
    ```bash
    MODEL_PROFILE=$(jq -r '.model_profile // "quality"' .vbw-planning/config.json)
    ```
@@ -335,13 +329,13 @@ Before any file operations or agent spawning:
    Effort: {effort}
    Model Profile: {profile}
    ```
-9. **Planning commit boundary (conditional):**
+10. **Planning commit boundary (conditional):**
    ```bash
    bash ${CLAUDE_PLUGIN_ROOT}/scripts/planning-git.sh commit-boundary "plan phase {N}" .vbw-planning/config.json
    ```
    Behavior: `planning_tracking=commit` commits planning artifacts if changed. `auto_push=always` pushes when upstream exists.
-10. **Pre-chain verification:** Before auto-chaining or presenting results, confirm the planning team was fully shut down (step 6 HARD GATE completed). If you skipped the gate or are unsure after compaction, send `shutdown_request` to any teammates that may still be active and call TeamDelete before continuing. NEVER enter Execute mode with a prior planning team still alive.
-11. **Cautious gate (autonomy=cautious only):** STOP after planning. Ask "Plans ready. Execute Phase {N}?" Other levels: auto-chain.
+11. **Pre-chain verification:** Before auto-chaining or presenting results, confirm the planning team was fully shut down (step 7 HARD GATE completed). If you skipped the gate or are unsure after compaction, send `shutdown_request` to any teammates that may still be active and call TeamDelete before continuing. NEVER enter Execute mode with a prior planning team still alive.
+12. **Cautious gate (autonomy=cautious only):** STOP after planning. Ask "Plans ready. Execute Phase {N}?" Other levels: auto-chain.
 
 ### Mode: Execute
 
