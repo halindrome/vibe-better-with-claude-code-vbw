@@ -27,7 +27,7 @@
     "dev": 75
   },
   "qa_skip_agents": ["docs"],
-  "worktree_isolation": "on",
+  "worktree_isolation": "off",
   "token_budgets": true,
   "two_phase_completion": true,
   "metrics": true,
