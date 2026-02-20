@@ -13,7 +13,7 @@
 # This is the single source of truth for config directory resolution.
 # New scripts MUST source this file instead of inlining the fallback pattern.
 
-if [ -n "${CLAUDE_CONFIG_DIR:-}" ] && [ -d "${CLAUDE_CONFIG_DIR}" ]; then
+if [ -n "${CLAUDE_CONFIG_DIR:-}" ]; then
   export CLAUDE_DIR="${CLAUDE_CONFIG_DIR}"
 elif [ -d "$HOME/.config/claude-code" ]; then
   export CLAUDE_DIR="$HOME/.config/claude-code"

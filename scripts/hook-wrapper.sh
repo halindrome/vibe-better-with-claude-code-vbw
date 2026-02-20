@@ -27,7 +27,7 @@ cleanup_on_sighup() {
   # Resolve agent-pid-tracker.sh from cache
   # shellcheck source=resolve-claude-dir.sh
   . "$(dirname "$0")/resolve-claude-dir.sh" 2>/dev/null || true
-  CACHE="${CLAUDE_DIR:-$HOME/.claude}/plugins/cache/vbw-marketplace/vbw"
+  CACHE="${CLAUDE_DIR:-${CLAUDE_CONFIG_DIR:-$HOME/.claude}}/plugins/cache/vbw-marketplace/vbw"
   TRACKER=$(ls -1 "$CACHE"/*/scripts/agent-pid-tracker.sh 2>/dev/null \
     | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1)
 
