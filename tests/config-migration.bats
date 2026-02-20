@@ -66,10 +66,10 @@ EOF
   [ "$status" -eq 0 ]
   [ "$output" = "3" ]
 
-  # Verify all defaults.json keys are present (32 defaults keys)
+  # Verify all defaults.json keys are present (36 defaults keys)
   run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "32" ]
+  [ "$output" = "36" ]
 
   # Verify existing values were preserved
   run jq -r '.context_compiler' "$TEST_TEMP_DIR/.vbw-planning/config.json"
@@ -119,10 +119,10 @@ EOF
   # Both runs should produce identical result
   [ "$AFTER_FIRST" = "$AFTER_SECOND" ]
 
-  # Verify flag count is correct (32 total, graduated flags removed)
+  # Verify flag count is correct (36 total, graduated flags removed)
   run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "32" ]
+  [ "$output" = "36" ]
 }
 
 @test "migration detects malformed JSON" {
@@ -357,10 +357,10 @@ EOF
   [ "$output" = "$EXPECTED_ADDED" ]
 }
 
-@test "EXPECTED_FLAG_COUNT is 32 after partial flag restoration" {
-  # Verify session-start.sh has EXPECTED_FLAG_COUNT=32 (10 configurable flags added back)
+@test "EXPECTED_FLAG_COUNT is 36 after partial flag restoration" {
+  # Verify session-start.sh has EXPECTED_FLAG_COUNT=36 (4 statusline flags added)
   SCRIPT_COUNT=$(grep 'EXPECTED_FLAG_COUNT=' "$SCRIPTS_DIR/session-start.sh" | grep -oE '[0-9]+' | head -1)
-  [ "$SCRIPT_COUNT" = "32" ]
+  [ "$SCRIPT_COUNT" = "36" ]
 }
 
 @test "migration strips all graduated V2/V3 flags from brownfield config" {
