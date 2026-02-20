@@ -406,7 +406,7 @@ fi
 # --- Hide-limits suppression ---
 if [ "$HIDE_LIMITS" = "true" ]; then
   USAGE_LINE=""
-elif [ "$HIDE_LIMITS_API" = "true" ] && [ "$FETCH_OK" != "ok" ] && [ "$FETCH_OK" != "auth" ] && [ "$FETCH_OK" != "fail" ] && [ "$AUTH_METHOD" != "claude.ai" ]; then
+elif [ "$HIDE_LIMITS_API" = "true" ] && [ "$FETCH_OK" = "noauth" ] && [ "$AUTH_METHOD" != "claude.ai" ]; then
   USAGE_LINE=""
 fi
 

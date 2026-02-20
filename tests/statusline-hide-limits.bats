@@ -88,10 +88,14 @@ JSON
 JSON
 
   cd "$repo"
-  # Ensure no OAuth token is available — FETCH_OK will be "noauth" (the else branch)
-  unset VBW_OAUTH_TOKEN
+  # Isolate credential discovery: point CLAUDE_CONFIG_DIR to the empty test repo
+  # so the script cannot find credentials.json in $HOME/.claude or $HOME/.config/claude-code.
+  # This ensures FETCH_OK="noauth" (no OAuth token found) regardless of the developer's env.
+  export CLAUDE_CONFIG_DIR="$repo"
+  unset VBW_OAUTH_TOKEN 2>/dev/null || true
   local output
   output=$(echo '{}' | bash "$STATUSLINE" 2>&1)
+  unset CLAUDE_CONFIG_DIR
   cd "$PROJECT_ROOT"
 
   local l3
