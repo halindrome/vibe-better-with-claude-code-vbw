@@ -39,8 +39,6 @@ CONTRACT
 
 @test "file-guard: blocks file outside contract allowed_paths" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_hard_contracts = true' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
-    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
   create_plan_with_files
   create_contract
   INPUT='{"tool_name":"Write","tool_input":{"file_path":"src/unauthorized.js","content":"bad"}}'
@@ -51,8 +49,6 @@ CONTRACT
 
 @test "file-guard: allows file inside contract allowed_paths" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_hard_contracts = true' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
-    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
   create_plan_with_files
   create_contract
   INPUT='{"tool_name":"Write","tool_input":{"file_path":"src/allowed.js","content":"ok"}}'
@@ -62,8 +58,6 @@ CONTRACT
 
 @test "file-guard: exempts planning artifacts from allowed_paths check" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_hard_contracts = true' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
-    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
   create_plan_with_files
   create_contract
   INPUT='{"tool_name":"Write","tool_input":{"file_path":".vbw-planning/phases/01-test/01-01-SUMMARY.md","content":"ok"}}'
@@ -73,8 +67,6 @@ CONTRACT
 
 @test "file-guard: blocks forbidden_paths even when in allowed_paths" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_hard_contracts = true' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
-    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
   create_plan_with_files
   create_contract
   INPUT='{"tool_name":"Write","tool_input":{"file_path":"secrets/api-key.json","content":"bad"}}'
@@ -96,8 +88,6 @@ CONTRACT
 
 @test "file-guard: no contract present fails open" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_hard_contracts = true' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
-    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
   create_plan_with_files
   # No contract file created
   INPUT='{"tool_name":"Write","tool_input":{"file_path":"src/anything.js","content":"ok"}}'

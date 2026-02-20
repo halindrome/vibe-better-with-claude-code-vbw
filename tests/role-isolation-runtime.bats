@@ -41,8 +41,6 @@ CONTRACT
 
 @test "file-guard: blocks lead from writing outside .vbw-planning/ when role isolation enabled" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_role_isolation = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
-    && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   create_plan_with_files
   INPUT='{"tool_name":"Write","tool_input":{"file_path":"src/code.js","content":"bad"}}'
   run bash -c "VBW_AGENT_ROLE=lead echo '$INPUT' | VBW_AGENT_ROLE=lead bash '$SCRIPTS_DIR/file-guard.sh'"
@@ -52,8 +50,6 @@ CONTRACT
 
 @test "file-guard: allows lead to write planning files" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_role_isolation = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
-    && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   create_plan_with_files
   INPUT='{"tool_name":"Write","tool_input":{"file_path":".vbw-planning/test.md","content":"ok"}}'
   run bash -c "VBW_AGENT_ROLE=lead echo '$INPUT' | VBW_AGENT_ROLE=lead bash '$SCRIPTS_DIR/file-guard.sh'"
@@ -62,8 +58,6 @@ CONTRACT
 
 @test "file-guard: blocks scout from any non-planning write" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_role_isolation = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
-    && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   create_plan_with_files
   INPUT='{"tool_name":"Write","tool_input":{"file_path":"src/file.js","content":"bad"}}'
   run bash -c "VBW_AGENT_ROLE=scout echo '$INPUT' | VBW_AGENT_ROLE=scout bash '$SCRIPTS_DIR/file-guard.sh'"
@@ -73,8 +67,6 @@ CONTRACT
 
 @test "file-guard: allows dev to write contract-scoped files" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_role_isolation = true | .v2_hard_contracts = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
-    && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   create_plan_with_files
   create_contract
   INPUT='{"tool_name":"Write","tool_input":{"file_path":"src/allowed.js","content":"ok"}}'
@@ -95,8 +87,6 @@ CONTRACT
 
 @test "file-guard: fails open when VBW_AGENT_ROLE unset" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_role_isolation = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp \
-    && mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   create_plan_with_files
   INPUT='{"tool_name":"Write","tool_input":{"file_path":"src/allowed.js","content":"ok"}}'
   run bash -c "unset VBW_AGENT_ROLE; echo '$INPUT' | bash '$SCRIPTS_DIR/file-guard.sh'"
