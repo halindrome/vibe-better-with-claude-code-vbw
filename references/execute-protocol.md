@@ -68,6 +68,26 @@ Set completed plans (with SUMMARY.md) to `"complete"`, others to `"pending"`.
 
 ### Step 3: Create Agent Team and execute
 
+**Permission Mode Guard:**
+Before spawning write-capable agents, if `permission_mode_guard` is enabled:
+1. Read `permission_mode_guard` from `.vbw-planning/config.json`:
+   ```bash
+   PERM_GUARD=$(jq -r '.permission_mode_guard // false' .vbw-planning/config.json 2>/dev/null)
+   ```
+2. If `PERM_GUARD=false` → skip guard entirely (default behavior, no change)
+3. If `PERM_GUARD=true` → check your current session permission mode:
+   - If session is `acceptEdits` or `bypassPermissions` → proceed silently
+   - If session is `default` or `plan` mode → STOP and present warning via AskUserQuestion:
+     Title: "Permission Mode Guard"
+     Message: "VBW is about to spawn agents that need file-write permissions, but your session is in [mode] mode. Agents will stall on per-tool permission dialogs. To fix: press Shift+Tab to toggle permission mode, or restart with --dangerously-skip-permissions."
+     Options: ["Switch mode first, then continue", "Proceed anyway (agents may stall)", "Cancel"]
+   - If user selects "Cancel" → STOP, do not spawn agents
+   - If user selects either proceed option → continue with spawn
+
+Skip this guard when:
+- Turbo plan path (no agents spawned inline)
+- Only read-only agents (Scout, QA) being spawned — no write-capable agents like Dev
+
 **Team creation (multi-agent only):**
 Read prefer_teams config to determine team creation:
 ```bash
