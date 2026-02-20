@@ -18,7 +18,6 @@ AGENT_ROLE="$1"
 EFFORT="$2"
 
 PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 DECISION="include"

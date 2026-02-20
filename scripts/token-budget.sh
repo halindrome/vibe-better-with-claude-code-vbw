@@ -15,7 +15,6 @@ set -u
 # Exit: 0 always (budget enforcement must never block).
 
 PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUDGETS_PATH="${SCRIPT_DIR}/../config/token-budgets.json"
 

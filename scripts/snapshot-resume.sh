@@ -16,7 +16,6 @@ ACTION="$1"
 PHASE="$2"
 
 PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
 SNAPSHOTS_DIR="${PLANNING_DIR}/.snapshots"
 
 case "$ACTION" in

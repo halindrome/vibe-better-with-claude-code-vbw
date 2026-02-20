@@ -10,11 +10,7 @@ set -u
 # Exit: 0 on confirmed, 2 on rejected, 0 when flag off
 
 PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# v2_two_phase_completion is now always enabled (graduated)
-ENABLED=true
 
 if [ $# -lt 4 ]; then
   echo '{"result":"error","errors":["usage: two-phase-complete.sh <task_id> <phase> <plan> <contract_path> [evidence...]"]}'

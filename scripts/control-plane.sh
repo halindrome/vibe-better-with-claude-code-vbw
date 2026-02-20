@@ -70,14 +70,6 @@ if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   CONTEXT_COMPILER=$(jq -r 'if .context_compiler == null then true else .context_compiler end' "$CONFIG_PATH" 2>/dev/null || echo "true")
 fi
 
-# V2 hard contracts and gates, and v3_lease_locks are now always enabled (graduated)
-V2_HARD_CONTRACTS=true
-V2_HARD_GATES=true
-
-# v2_token_budgets flag removed - budget enforcement is now config-driven
-# (always call token-budget.sh, which will pass through if no budgets defined)
-V2_TOKEN_BUDGETS=true
-
 # --- No-op check (REQ-C1) ---
 # If all flags relevant to the chosen action are false, exit 0 immediately.
 # Note: v2_hard_contracts, v2_hard_gates, and v3_lease_locks are now always-on (graduated)

@@ -18,7 +18,6 @@ TASK_ID="$2"
 shift 2
 
 PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
 LOCKS_DIR="${PLANNING_DIR}/.locks"
 LOCK_FILE="${LOCKS_DIR}/${TASK_ID}.lock"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

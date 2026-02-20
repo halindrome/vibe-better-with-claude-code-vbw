@@ -29,8 +29,6 @@ PLANNING_DIR=".vbw-planning"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# v2_hard_gates is now always enabled (graduated)
-V2_HARD=true
 AUTONOMY="unknown"
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   AUTONOMY=$(jq -r '.autonomy // "unknown"' "$CONFIG_PATH" 2>/dev/null || echo "unknown")
