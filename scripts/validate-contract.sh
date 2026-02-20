@@ -27,7 +27,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ ! -f "$CONTRACT_PATH" ]; then
   echo "V2 contract: contract file not found: $CONTRACT_PATH" >&2
   exit 2
-  exit 0
 fi
 
 # Read contract fields
