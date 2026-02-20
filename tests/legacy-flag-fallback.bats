@@ -667,4 +667,14 @@ EOF
   check_fallback route-monorepo.sh    monorepo_routing     v3_monorepo_routing
   check_fallback cache-context.sh     rolling_summary      v3_rolling_summary
   check_fallback control-plane.sh     token_budgets        v2_token_budgets
+  check_fallback rollout-stage.sh     token_budgets        v2_token_budgets
+  check_fallback rollout-stage.sh     two_phase_completion v2_two_phase_completion
+  check_fallback rollout-stage.sh     metrics              v3_metrics
+  check_fallback rollout-stage.sh     smart_routing        v3_smart_routing
+  check_fallback rollout-stage.sh     validation_gates     v3_validation_gates
+  check_fallback rollout-stage.sh     snapshot_resume      v3_snapshot_resume
+  check_fallback rollout-stage.sh     lease_locks          v3_lease_locks
+  check_fallback rollout-stage.sh     event_recovery       v3_event_recovery
+  check_fallback rollout-stage.sh     monorepo_routing     v3_monorepo_routing
+  check_fallback rollout-stage.sh     rolling_summary      v3_rolling_summary
 }
