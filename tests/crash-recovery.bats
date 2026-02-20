@@ -55,6 +55,28 @@ teardown() {
   [ ! -f ".vbw-planning/.agent-last-words/12345.txt" ]
 }
 
+@test "agent-stop: does NOT write last-words when phase summary state is unreadable" {
+  chmod 000 .vbw-planning/phases/01-test
+
+  echo '{"pid":"12345","last_assistant_message":"should not write"}' \
+    | bash "$SCRIPTS_DIR/agent-stop.sh"
+
+  # Restore permissions for teardown cleanup
+  chmod 755 .vbw-planning/phases/01-test
+  [ ! -f ".vbw-planning/.agent-last-words/12345.txt" ]
+}
+
+@test "agent-stop: appends instead of clobbering when same pid writes twice" {
+  echo '{"pid":"12345","last_assistant_message":"first message"}' \
+    | bash "$SCRIPTS_DIR/agent-stop.sh"
+  echo '{"pid":"12345","last_assistant_message":"second message"}' \
+    | bash "$SCRIPTS_DIR/agent-stop.sh"
+
+  [ -f ".vbw-planning/.agent-last-words/12345.txt" ]
+  grep -q "first message" ".vbw-planning/.agent-last-words/12345.txt"
+  grep -q "second message" ".vbw-planning/.agent-last-words/12345.txt"
+}
+
 @test "agent-stop: does NOT write last-words when message is empty" {
   echo '{"pid":"12345","last_assistant_message":""}' \
     | bash "$SCRIPTS_DIR/agent-stop.sh"
@@ -105,6 +127,23 @@ teardown() {
   run bash -c "echo '$input' | bash '$SCRIPTS_DIR/validate-summary.sh'"
   [ "$status" -eq 0 ]
   [ -z "$output" ]
+}
+
+@test "validate-summary: reports stale fallback hint when only stale last-words exist" {
+  mkdir -p .vbw-planning/.agent-last-words
+  echo "old crash output" > .vbw-planning/.agent-last-words/stale.txt
+
+  if [ "$(uname)" = "Darwin" ]; then
+    touch -t "$(date -v-2M '+%Y%m%d%H%M.%S')" .vbw-planning/.agent-last-words/stale.txt
+  else
+    touch -t "$(date -d '2 minutes ago' '+%Y%m%d%H%M.%S')" .vbw-planning/.agent-last-words/stale.txt
+  fi
+
+  local input
+  input=$(jq -n --arg fp ".vbw-planning/phases/01-test/01-01-SUMMARY.md" '{"tool_input":{"file_path":$fp}}')
+  run bash -c "echo '$input' | bash '$SCRIPTS_DIR/validate-summary.sh'"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"stale crash recovery artifacts"* ]]
 }
 
 @test "validate-summary: validates existing SUMMARY.md structure" {

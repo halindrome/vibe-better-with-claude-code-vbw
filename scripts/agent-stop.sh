@@ -106,22 +106,61 @@ if [ -n "$LAST_MESSAGE" ] && [ -n "$AGENT_PID" ]; then
     if [ -n "$PHASE_NUM" ]; then
       PHASE_DIR=$(ls -d "$PLANNING_DIR/phases/${PHASE_NUM}-"* 2>/dev/null | head -1)
       if [ -n "$PHASE_DIR" ] && [ -d "$PHASE_DIR" ]; then
-        # Check if any SUMMARY.md exists for this phase
-        # shellcheck disable=SC2010
-        SUMMARY_COUNT=$(ls -1 "$PHASE_DIR" 2>/dev/null | grep -c '\-SUMMARY\.md$' 2>/dev/null) || SUMMARY_COUNT=0
-        if [ "$SUMMARY_COUNT" -eq 0 ]; then
+        # Check if any SUMMARY.md exists for this phase.
+        # If phase directory cannot be read, treat summary existence as unknown
+        # and skip last-words write (avoid false crash fallback artifacts).
+        SUMMARY_COUNT=""
+        if [ -r "$PHASE_DIR" ]; then
+          SUMMARY_COUNT=$(find "$PHASE_DIR" -maxdepth 1 -type f -name '*-SUMMARY.md' 2>/dev/null | wc -l | tr -d ' ') || SUMMARY_COUNT=""
+        fi
+
+        if [ -n "$SUMMARY_COUNT" ] && [ "$SUMMARY_COUNT" -eq 0 ]; then
           # No SUMMARY.md found — write last words for crash recovery
           LAST_WORDS_DIR="$PLANNING_DIR/.agent-last-words"
+          LAST_WORDS_FILE="$LAST_WORDS_DIR/${AGENT_PID}.txt"
+          LAST_WORDS_LOCK="$LAST_WORDS_DIR/.${AGENT_PID}.lock"
           mkdir -p "$LAST_WORDS_DIR" 2>/dev/null || true
           TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date)
-          {
-            echo "# Agent Last Words (Crash Recovery)"
-            echo "Timestamp: $TIMESTAMP"
-            echo "Agent PID: $AGENT_PID"
-            echo "Phase: $PHASE_NUM"
-            echo ""
-            echo "$LAST_MESSAGE"
-          } > "$LAST_WORDS_DIR/${AGENT_PID}.txt" 2>/dev/null || true
+
+          # Serialize writes per PID to avoid clobber when multiple stop events
+          # race for the same agent identifier.
+          _lw_attempts=0
+          while [ "$_lw_attempts" -lt 100 ]; do
+            if mkdir "$LAST_WORDS_LOCK" 2>/dev/null; then
+              break
+            fi
+            _lw_attempts=$((_lw_attempts + 1))
+            sleep 0.01
+          done
+
+          if [ -d "$LAST_WORDS_LOCK" ]; then
+            if [ -f "$LAST_WORDS_FILE" ]; then
+              {
+                echo ""
+                echo "---"
+                echo ""
+              } >> "$LAST_WORDS_FILE" 2>/dev/null || true
+            fi
+            {
+              echo "# Agent Last Words (Crash Recovery)"
+              echo "Timestamp: $TIMESTAMP"
+              echo "Agent PID: $AGENT_PID"
+              echo "Phase: $PHASE_NUM"
+              echo ""
+              echo "$LAST_MESSAGE"
+            } >> "$LAST_WORDS_FILE" 2>/dev/null || true
+            rmdir "$LAST_WORDS_LOCK" 2>/dev/null || true
+          else
+            # Best-effort fallback without lock if contention persists.
+            {
+              echo "# Agent Last Words (Crash Recovery)"
+              echo "Timestamp: $TIMESTAMP"
+              echo "Agent PID: $AGENT_PID"
+              echo "Phase: $PHASE_NUM"
+              echo ""
+              echo "$LAST_MESSAGE"
+            } >> "$LAST_WORDS_FILE" 2>/dev/null || true
+          fi
         fi
       fi
     fi

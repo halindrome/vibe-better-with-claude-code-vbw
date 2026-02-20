@@ -19,6 +19,7 @@ if [ ! -f "$FILE_PATH" ]; then
   if [ -d "$LAST_WORDS_DIR" ]; then
     NOW=$(date +%s 2>/dev/null || echo 0)
     FALLBACK_FOUND=""
+    STALE_FOUND=false
 
     for lw_file in "$LAST_WORDS_DIR"/*.txt; do
       [ -f "$lw_file" ] || continue
@@ -34,6 +35,8 @@ if [ ! -f "$FILE_PATH" ]; then
       if [ "$AGE" -ge 0 ] && [ "$AGE" -le 60 ]; then
         FALLBACK_FOUND="$lw_file"
         break
+      elif [ "$AGE" -gt 60 ]; then
+        STALE_FOUND=true
       fi
     done
 
@@ -42,6 +45,13 @@ if [ ! -f "$FILE_PATH" ]; then
         "hookSpecificOutput": {
           "hookEventName": "PostToolUse",
           "additionalContext": ("SUMMARY.md missing but crash recovery fallback available: " + $file + ". Agent may have crashed before writing SUMMARY.md. Check .agent-last-words/ for final output.")
+        }
+      }'
+    elif [ "$STALE_FOUND" = true ]; then
+      jq -n '{
+        "hookSpecificOutput": {
+          "hookEventName": "PostToolUse",
+          "additionalContext": "SUMMARY.md missing and only stale crash recovery artifacts were found in .agent-last-words/ (>60s old). Check those files if this was a prior crash, then rerun or regenerate SUMMARY.md."
         }
       }'
     fi
