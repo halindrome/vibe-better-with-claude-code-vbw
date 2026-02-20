@@ -25,7 +25,7 @@
 
 ## VBW Token Efficiency vs Stock Opus 4.6 Agent Teams
 
-Every new capability is shell-only — 85 scripts run as bash subprocesses at zero model token cost. The codebase grew 42% since v1.21.30 while per-request overhead grew just 12% (still 7% below v1.20.0). The Worktree Isolation milestone (41 commits, 6 phases) shipped at near-zero model cost — only +16 reference lines loaded lazily. Dead code removal actually shrank the codebase by 1,665 lines vs the CC Alignment snapshot. 825 bats tests validate the stack.
+Every new capability is shell-only — 85 scripts run as bash subprocesses at zero model token cost. The codebase grew 42% since v1.21.30 while per-request overhead grew just 12% (still 7% below v1.20.0). The Worktree Isolation milestone (41 commits, 6 phases) shipped at near-zero model cost — only +16 reference lines loaded lazily. Dead code removal actually shrank the codebase by 1,665 lines vs the CC Alignment snapshot. 845 bats tests validate the stack.
 
 **Analysis reports:** [v1.30.0](docs/vbw-1-30-0-full-spec-token-analysis.md) | [v1.21.30](docs/vbw-1-21-30-full-spec-token-analysis.md) | [v1.20.0](docs/vbw-1-20-0-full-spec-token-analysis.md) | [v1.10.7](docs/vbw-1-10-7-context-compiler-token-analysis.md) | [v1.10.2](docs/vbw-1-10-2-vs-stock-agent-teams-token-analysis.md) | [v1.0.99](docs/vbw-1-0-99-vs-stock-teams-token-analysis.md)
 

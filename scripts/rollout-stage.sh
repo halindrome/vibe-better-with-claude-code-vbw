@@ -2,10 +2,10 @@
 set -u
 
 # rollout-stage.sh [check|advance|status] [--stage=N] [--dry-run]
-# Manages V3 flag rollout through 3 stages based on completed phase count.
-# Stage 1 (observability): v3_event_log, v3_metrics -- threshold 0
-# Stage 2 (optimization): v3_delta_context, v3_context_cache -- threshold 2
-# Stage 3 (full): all remaining v3_ flags -- threshold 5
+# Manages optional flag rollout through 3 stages based on completed phase count.
+# Stage 1 (observability): metrics -- threshold 0
+# Stage 2 (optimization): (graduated, no rollout-managed flags remain) -- threshold 2
+# Stage 3 (full): validation_gates, smart_routing, snapshot_resume, event_recovery, monorepo_routing -- threshold 5
 # Exit 0 always -- rollout must never block execution.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
