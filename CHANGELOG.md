@@ -2,6 +2,30 @@
 
 All notable changes to VBW will be documented in this file.
 
+## [1.30.1] - 2026-02-20
+
+### Added
+
+- **`session-start`** -- Shipped milestones detection and QA verification script for post-ship validation.
+- **`context`** -- Pre-flight context guard to prevent mid-workflow compaction from disrupting agent execution.
+
+### Changed
+
+- **`milestone`** -- Removed ACTIVE-file milestone indirection. Slug derivation and decision/todo extraction enhanced in milestone scripts.
+- **`flags`** -- Partially reverted flag graduation — restored 9 flags as configurable. Legacy key fallback added to all consumer scripts. Runtime defaults aligned with legacy fallback behavior.
+- **`suggest-compact`** -- Replaced eval jq with safe direct assignment. Dynamic token cost from actual file sizes.
+- **`worktree`** -- Defaults to off. Fixed merge args, normalized boundary paths, added branch-exists fallback.
+
+### Fixed
+
+- **`crash-recovery`** -- Avoid false fallback and preserve last words when SUMMARY.md missing.
+- **`uat`** -- 4 rounds of QA fixes: pad normalization, orphan guard, mid-execution guard, numeric sort, sort -V portability, false remediation fallback.
+- **`vibe`** -- Hardened UAT remediation routing and chain enforcement. Auto-route UAT remediation from /vbw:vibe.
+- **`milestone`** -- Fixed rename-default-milestone slug derivation, post-ship state, collision guard, phases/ guard, generic tag strip, contract scope.
+- **`scripts`** -- Null-safe jq patterns for false-default booleans. Tightened artifact globs. Removed unused variables (SC2034). Removed unreachable exit in validate-contract.sh.
+- **`config`** -- Graduated v2_token_budgets. Stripped graduated V2/V3 flags from brownfield configs. Synced EXPECTED_FLAG_COUNT after worktree_isolation addition.
+- **`tests`** -- Updated 90+ tests for graduated flags and portable paths. Fixed BATS_TEST_TMPDIR usage. Updated rollout-stage counts.
+
 ## [1.30.0] - 2026-02-19
 
 ### Added
