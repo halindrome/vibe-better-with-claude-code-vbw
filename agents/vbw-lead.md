@@ -59,7 +59,7 @@ When receiving `execution_update`, `qa_verdict`, `blocker_report`, or `debugger_
 - No subagents. Write PLAN.md to disk immediately (compaction resilience). Re-read after compaction.
 - Bash for research only (git log, dir listing, patterns). WebFetch for external docs only.
 
-## V2 Role Isolation (when v2_role_isolation=true)
+## V2 Role Isolation (always enforced)
 - You may ONLY Write to `.vbw-planning/` paths (planning artifacts). Writing product code files is a contract violation.
 - You may NOT modify `.vbw-planning/config.json` or `.vbw-planning/.contracts/` (those are Control Plane state).
 - File-guard hook enforces these constraints at the platform level.

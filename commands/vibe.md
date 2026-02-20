@@ -208,7 +208,7 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
 **Steps:**
 1. **Parse args:** Phase number (optional, auto-detected), --effort (optional, falls back to config).
 2. **Phase context:** If `{phase-dir}/{phase}-CONTEXT.md` exists, include it in Lead agent context. If not, proceed without — users who want context run `/vbw:discuss N` first.
-3. **Research persistence (REQ-08):** If `v3_plan_research_persist=true` in config AND effort != turbo:
+3. **Research persistence (REQ-08, graduated):** If effort != turbo:
    - Check for `{phase-dir}/{phase}-RESEARCH.md`.
    - **If missing:** Spawn Scout agent to research the phase goal, requirements, and relevant codebase patterns. Scout returns structured findings with sections: `## Findings`, `## Relevant Patterns`, `## Risks`, `## Recommendations`. The **orchestrator** (not Scout) writes the returned findings to `{phase-dir}/{phase}-RESEARCH.md`. Scout has `disallowedTools: Write` (platform-enforced) and cannot write files. Resolve Scout model:
      ```bash
@@ -218,7 +218,7 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
    Pass `model: "${SCOUT_MODEL}"` and `maxTurns: ${SCOUT_MAX_TURNS}` to the Task tool.
    - **If exists:** Include it in Lead's context for incremental refresh. Lead may update RESEARCH.md if new information emerges.
    - **On failure:** Log warning, continue planning without research. Do not block.
-   - If `v3_plan_research_persist=false` or effort=turbo: skip entirely.
+   - If effort=turbo: skip entirely.
 4. **Context compilation:** If `config_context_compiler=true`, run `bash ${CLAUDE_PLUGIN_ROOT}/scripts/compile-context.sh {phase} lead {phases_dir}`. Include `.context-lead.md` in Lead agent context if produced.
 5. **Turbo shortcut:** If effort=turbo, skip Lead. Read phase reqs from ROADMAP.md, create single lightweight PLAN.md inline.
 6. **Other efforts:**
@@ -383,13 +383,13 @@ FAIL -> STOP with remediation suggestions. WARN -> proceed with warnings.
 1. Resolve context: ACTIVE -> milestone-scoped paths. No ACTIVE -> SLUG="default", root paths.
 2. Parse args: --tag=vN.N.N (custom tag), --no-tag (skip), --force (skip audit).
 3. Compute summary: from ROADMAP (phases), SUMMARY.md files (tasks/commits/deviations), REQUIREMENTS.md (satisfied count).
-4. **Rolling summary (conditional):** If `v3_rolling_summary=true` in config:
+4. **Rolling summary (conditional):** If `rolling_summary=true` in config:
    ```bash
    bash ${CLAUDE_PLUGIN_ROOT}/scripts/compile-rolling-summary.sh \
      .vbw-planning/phases .vbw-planning/ROLLING-CONTEXT.md 2>/dev/null || true
    ```
    Compiles final rolling context before artifacts move to milestones/. Fail-open.
-   When `v3_rolling_summary=false`: skip.
+   When `rolling_summary=false`: skip.
 5. Archive: `mkdir -p .vbw-planning/milestones/`. Move roadmap, state, phases to milestones/{SLUG}/. Write SHIPPED.md. Delete stale RESUME.md.
 5b. **Persist project-level state:** After archiving, run:
    ```bash

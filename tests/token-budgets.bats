@@ -7,10 +7,7 @@ setup() {
   create_test_config
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning/.metrics"
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning/.events"
-  # Enable flags
-  jq '.v2_token_budgets = true' \
-    "$TEST_TEMP_DIR/.vbw-planning/config.json" > "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" \
-    && mv "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  # token_budgets is already enabled by create_test_config
   # Copy token budgets config
   mkdir -p "$TEST_TEMP_DIR/config"
   cp "$CONFIG_DIR/token-budgets.json" "$TEST_TEMP_DIR/config/"
@@ -70,14 +67,16 @@ generate_chars() {
   [ "$SCOUT_CHARS" -le 8100 ]
 }
 
-@test "token-budget: skips when flag disabled" {
+@test "token-budget: skips enforcement when token_budgets=false" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_token_budgets = false' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
+  # token_budgets is configurable — disable it
+  jq '.token_budgets = false' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
     && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
   generate_chars 12000 > "$TEST_TEMP_DIR/no-truncate.txt"
   run bash "$SCRIPTS_DIR/token-budget.sh" scout "$TEST_TEMP_DIR/no-truncate.txt"
   [ "$status" -eq 0 ]
   CHAR_COUNT=${#output}
+  # With token_budgets=false, content passes through untruncated
   [ "$CHAR_COUNT" -ge 11900 ]
 }
 
@@ -260,9 +259,9 @@ generate_chars() {
 
 # --- Config flag ---
 
-@test "defaults.json includes v2_token_budgets flag" {
-  run jq '.v2_token_budgets' "$CONFIG_DIR/defaults.json"
-  [ "$output" = "false" ]
+@test "defaults.json: token_budgets present as unprefixed name" {
+  run jq 'has("token_budgets")' "$CONFIG_DIR/defaults.json"
+  [ "$output" = "true" ]
 }
 
 # --- Token budgets config ---
@@ -281,7 +280,7 @@ generate_chars() {
 # --- Protocol integration ---
 
 @test "execute-protocol references token budgets" {
-  run grep -c "token_budget" "$PROJECT_ROOT/references/execute-protocol.md"
+  run grep -c "token-budget\|Token Budget" "$PROJECT_ROOT/references/execute-protocol.md"
   [ "$output" -ge 1 ]
 }
 

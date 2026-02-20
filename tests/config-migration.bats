@@ -26,28 +26,23 @@ EOF
 
   run_migration
 
-  # Verify graduated flags are NOT present
-  run jq -r 'has("v3_delta_context") or has("v3_context_cache") or has("v3_plan_research_persist") or has("v3_metrics") or has("v3_smart_routing") or has("v3_event_log") or has("v3_schema_validation") or has("v3_snapshot_resume")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  # Verify graduated flags are NOT present (prefixed names stripped)
+  run jq -r 'has("v3_delta_context") or has("v3_context_cache") or has("v3_plan_research_persist") or has("v3_event_log") or has("v3_schema_validation")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "false" ]
 
   # Verify still-live flags are present
   run jq '[
-    has("context_compiler"), has("v2_token_budgets"),
+    has("context_compiler"),
     has("model_overrides"), has("prefer_teams")
   ] | map(select(.)) | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "4" ]
+  [ "$output" = "3" ]
 
   # Verify context_compiler defaults to true
   run jq -r '.context_compiler' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "true" ]
-
-  # Verify v2_token_budgets defaults to false
-  run jq -r '.v2_token_budgets' "$TEST_TEMP_DIR/.vbw-planning/config.json"
-  [ "$status" -eq 0 ]
-  [ "$output" = "false" ]
 }
 
 @test "migration handles partial config" {
@@ -65,30 +60,30 @@ EOF
 
   # Verify still-live flags are present
   run jq '[
-    has("context_compiler"), has("v2_token_budgets"),
+    has("context_compiler"),
     has("model_overrides"), has("prefer_teams")
   ] | map(select(.)) | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "4" ]
+  [ "$output" = "3" ]
 
-  # Verify all defaults.json keys are present (22 defaults + 2 pre-existing extra keys)
+  # Verify all defaults.json keys are present (32 defaults keys)
   run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "24" ]
+  [ "$output" = "32" ]
 
   # Verify existing values were preserved
   run jq -r '.context_compiler' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
   [ "$output" = "false" ]
 
-  # v3_delta_context and v2_hard_contracts are preserved (migration adds, does not remove keys)
-  run jq -r '.v3_delta_context' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  # Graduated flags should be stripped by migration
+  run jq -r 'has("v3_delta_context")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "true" ]
+  [ "$output" = "false" ]
 
-  run jq -r '.v2_hard_contracts' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  run jq -r 'has("v2_hard_contracts")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "true" ]
+  [ "$output" = "false" ]
 }
 
 @test "migration handles full config" {
@@ -124,10 +119,10 @@ EOF
   # Both runs should produce identical result
   [ "$AFTER_FIRST" = "$AFTER_SECOND" ]
 
-  # Verify flag count is correct (22 total, graduated flags removed)
+  # Verify flag count is correct (32 total, graduated flags removed)
   run jq 'keys | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
   [ "$status" -eq 0 ]
-  [ "$output" = "22" ]
+  [ "$output" = "32" ]
 }
 
 @test "migration detects malformed JSON" {
@@ -362,8 +357,141 @@ EOF
   [ "$output" = "$EXPECTED_ADDED" ]
 }
 
-@test "EXPECTED_FLAG_COUNT is 22 after flag graduation" {
-  # Verify session-start.sh has EXPECTED_FLAG_COUNT=22 (updated from 23 after v3 flag graduation)
+@test "EXPECTED_FLAG_COUNT is 32 after partial flag restoration" {
+  # Verify session-start.sh has EXPECTED_FLAG_COUNT=32 (10 configurable flags added back)
   SCRIPT_COUNT=$(grep 'EXPECTED_FLAG_COUNT=' "$SCRIPTS_DIR/session-start.sh" | grep -oE '[0-9]+' | head -1)
-  [ "$SCRIPT_COUNT" = "22" ]
+  [ "$SCRIPT_COUNT" = "32" ]
+}
+
+@test "migration strips all graduated V2/V3 flags from brownfield config" {
+  # Create config with every graduated flag present
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "v3_delta_context": true,
+  "v3_context_cache": false,
+  "v3_plan_research_persist": true,
+  "v3_contract_lite": true,
+  "v3_lock_lite": false,
+  "v3_event_log": true,
+  "v3_schema_validation": false,
+  "v2_hard_contracts": true,
+  "v2_hard_gates": false,
+  "v2_typed_protocol": true,
+  "v2_role_isolation": false,
+  "v3_metrics": false,
+  "v3_smart_routing": true,
+  "v3_validation_gates": false,
+  "v3_snapshot_resume": true,
+  "v3_lease_locks": false,
+  "v3_event_recovery": true,
+  "v3_monorepo_routing": false,
+  "v2_two_phase_completion": true,
+  "v2_token_budgets": false
+}
+EOF
+
+  run_migration
+
+  # All v2_/v3_ prefixed flags should be removed (graduated or renamed)
+  run jq '[keys[] | select(startswith("v2_") or startswith("v3_"))] | length' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "0" ]
+
+  # Non-graduated keys should still be present
+  run jq -r '.effort' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "balanced" ]
+
+  # Renamed flags should preserve prior values under new names
+  run jq -r '.metrics' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "false" ]
+
+  run jq -r '.smart_routing' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "true" ]
+
+  run jq -r '.two_phase_completion' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "true" ]
+
+  run jq -r '.token_budgets' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "false" ]
+}
+
+@test "migration keeps new flag value when legacy and new keys disagree" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "monorepo_routing": true,
+  "v3_monorepo_routing": false
+}
+EOF
+
+  run_migration
+
+  run jq -r '.monorepo_routing' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "true" ]
+
+  run jq -r 'has("v3_monorepo_routing")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "false" ]
+}
+
+@test "migration keeps unprefixed value and removes legacy key for all renamed flag pairs" {
+  local mappings=(
+    "v2_token_budgets token_budgets"
+    "v2_two_phase_completion two_phase_completion"
+    "v3_metrics metrics"
+    "v3_smart_routing smart_routing"
+    "v3_validation_gates validation_gates"
+    "v3_snapshot_resume snapshot_resume"
+    "v3_lease_locks lease_locks"
+    "v3_event_recovery event_recovery"
+    "v3_monorepo_routing monorepo_routing"
+    "v3_rolling_summary rolling_summary"
+  )
+
+  local legacy_key new_key
+  for mapping in "${mappings[@]}"; do
+    read -r legacy_key new_key <<< "$mapping"
+
+    cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<EOF
+{
+  "effort": "balanced",
+  "${new_key}": false,
+  "${legacy_key}": true
+}
+EOF
+
+    run_migration
+
+    run jq -r --arg k "$new_key" '.[$k]' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+    [ "$status" -eq 0 ]
+    [ "$output" = "false" ]
+
+    run jq -r --arg k "$legacy_key" 'has($k)' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+    [ "$status" -eq 0 ]
+    [ "$output" = "false" ]
+  done
+}
+
+@test "migration defaults worktree_isolation to off for brownfield configs" {
+  # Simulate older initialized repo config with no worktree_isolation key.
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "autonomy": "standard",
+  "v3_metrics": true
+}
+EOF
+
+  run_migration
+
+  run jq -r '.worktree_isolation' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "off" ]
 }

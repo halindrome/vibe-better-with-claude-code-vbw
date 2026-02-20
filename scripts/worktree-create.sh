@@ -35,12 +35,21 @@ if ! grep -qxF ".vbw-worktrees/" "$GITIGNORE" 2>/dev/null; then
 fi
 
 # Build the git worktree add command
+# Try -b first (create new branch); fall back to existing branch if it already exists
 if [ -n "$BASE" ]; then
   git worktree add "$WORKTREE_DIR" -b "$BRANCH" "$BASE" 2>/dev/null
   GIT_STATUS=$?
+  if [ "$GIT_STATUS" -ne 0 ]; then
+    git worktree add "$WORKTREE_DIR" "$BRANCH" 2>/dev/null
+    GIT_STATUS=$?
+  fi
 else
   git worktree add "$WORKTREE_DIR" -b "$BRANCH" 2>/dev/null
   GIT_STATUS=$?
+  if [ "$GIT_STATUS" -ne 0 ]; then
+    git worktree add "$WORKTREE_DIR" "$BRANCH" 2>/dev/null
+    GIT_STATUS=$?
+  fi
 fi
 
 # On success, resolve and echo the absolute path

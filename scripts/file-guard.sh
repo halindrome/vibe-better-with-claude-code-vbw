@@ -2,18 +2,10 @@
 set -u
 # file-guard.sh — PreToolUse guard for undeclared file modifications
 #
-# DEPRECATION CANDIDATE (Priority 2, Future Milestone)
-# =====================================================
-# This script enforces file access control at the PreToolUse hook level.
-# It is VBW's substitute for git-level isolation in the current shared-directory
-# execution model.
-#
-# When worktree-per-plan ships (align_versions.md section 2.3), git provides
-# isolation by construction and this guard becomes unnecessary. At that point,
-# file-guard can be made optional ("strict mode" for belt-and-suspenders users)
-# or fully deprecated.
-#
-# For now: remains active, no functional changes.
+# NOTE: Worktree isolation has shipped (worktree_isolation config flag).
+# When worktree_isolation is enabled, git worktrees provide filesystem
+# isolation by construction. This guard remains active as a secondary
+# enforcement layer (belt-and-suspenders) for both modes.
 #
 # Blocks Write/Edit to files not declared in active plan's files_modified.
 # V2 enhancement: also checks forbidden_paths from active contract when v2_hard_contracts=true.
@@ -59,6 +51,28 @@ normalize_path() {
   echo "$p"
 }
 
+# Best-effort absolute path resolver for boundary checks.
+# - Relative paths are resolved from current working directory.
+# - Non-existent paths still get a stable absolute lexical form.
+to_abs_path() {
+  local p="$1"
+  local base dir file resolved_dir
+  [ -z "$p" ] && {
+    echo ""
+    return 0
+  }
+
+  case "$p" in
+    /*) base="$p" ;;
+    *)  base="$PWD/${p#./}" ;;
+  esac
+
+  dir=$(dirname "$base")
+  file=$(basename "$base")
+  resolved_dir=$(cd "$dir" 2>/dev/null && pwd) || resolved_dir="$dir"
+  echo "${resolved_dir%/}/$file"
+}
+
 NORM_TARGET=$(normalize_path "$FILE_PATH")
 
 # --- Worktree boundary enforcement ---
@@ -75,12 +89,14 @@ if [ "$WORKTREE_ISOLATION" != "off" ] && [ -n "${VBW_AGENT_ROLE:-}" ]; then
       if [ -f "$WORKTREE_MAP_FILE" ]; then
         WORKTREE_PATH=$(jq -r '.worktree_path // ""' "$WORKTREE_MAP_FILE" 2>/dev/null) || WORKTREE_PATH=""
         if [ -n "$WORKTREE_PATH" ]; then
-          case "$FILE_PATH" in
-            "$WORKTREE_PATH"/*|"$WORKTREE_PATH")
+          WORKTREE_ABS=$(to_abs_path "$WORKTREE_PATH")
+          TARGET_ABS=$(to_abs_path "$FILE_PATH")
+          case "$TARGET_ABS" in
+            "$WORKTREE_ABS"/*|"$WORKTREE_ABS")
               : # inside worktree — allowed
               ;;
             *)
-              echo "Blocked: write outside worktree boundary (expected prefix: $WORKTREE_PATH)" >&2
+              echo "Blocked: write outside worktree boundary (expected prefix: $WORKTREE_ABS, got: $TARGET_ABS)" >&2
               exit 2
               ;;
           esac

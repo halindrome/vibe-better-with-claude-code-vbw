@@ -70,20 +70,20 @@ PLAN
   [ "$HASH" != "null" ]
 }
 
-@test "generate-contract: v3 lite emits 5 fields only" {
+@test "generate-contract: always emits full contract (v3 lite graduated)" {
   create_plan_file
   cd "$TEST_TEMP_DIR"
   run bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md"
   [ "$status" -eq 0 ]
   CONTRACT=".vbw-planning/.contracts/1-1.json"
   [ -f "$CONTRACT" ]
-  # V3 lite: only 5 fields
-  [ "$(jq -r '.phase' "$CONTRACT")" = "1" ]
-  [ "$(jq -r '.plan' "$CONTRACT")" = "1" ]
+  # v3_contract_lite graduated — always full contracts with all fields + hash
+  [ "$(jq -r '.phase_id' "$CONTRACT")" = "phase-1" ]
+  [ "$(jq -r '.plan_id' "$CONTRACT")" = "phase-1-plan-1" ]
   [ "$(jq '.task_count' "$CONTRACT")" = "2" ]
-  # Should NOT have V2 fields
-  [ "$(jq -r '.contract_hash // "missing"' "$CONTRACT")" = "missing" ]
-  [ "$(jq -r '.phase_id // "missing"' "$CONTRACT")" = "missing" ]
+  HASH=$(jq -r '.contract_hash' "$CONTRACT")
+  [ -n "$HASH" ]
+  [ "$HASH" != "null" ]
 }
 
 @test "generate-contract: contract hash is deterministic" {
@@ -150,14 +150,15 @@ PLAN
   [[ "$output" == *"out_of_scope"* ]]
 }
 
-@test "validate-contract: v3 lite advisory only" {
+@test "validate-contract: hard contracts graduated (always hard stop)" {
   create_plan_file
   cd "$TEST_TEMP_DIR"
   bash "$SCRIPTS_DIR/generate-contract.sh" ".vbw-planning/phases/01-test/01-01-PLAN.md" >/dev/null
   CONTRACT=".vbw-planning/.contracts/1-1.json"
-  # Out of scope file — should be advisory (exit 0)
+  # Out of scope file — always hard stop (v3 lite graduated to full)
   run bash "$SCRIPTS_DIR/validate-contract.sh" end "$CONTRACT" 1 "unrelated/file.js"
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"out_of_scope"* ]]
 }
 
 # --- contract-revision.sh tests ---

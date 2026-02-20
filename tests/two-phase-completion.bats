@@ -8,10 +8,7 @@ setup() {
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning/.contracts"
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning/.events"
   mkdir -p "$TEST_TEMP_DIR/.vbw-planning/.artifacts"
-  # Enable flags
-  jq '.v2_two_phase_completion = true | .v3_event_log = true' \
-    "$TEST_TEMP_DIR/.vbw-planning/config.json" > "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" \
-    && mv "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  # two_phase_completion and event logging are already enabled by create_test_config
 }
 
 teardown() {
@@ -69,12 +66,46 @@ CONTRACT
   [[ "$output" == *"task_completion_rejected"* ]]
 }
 
-@test "two-phase: always active (v2_two_phase_completion graduated)" {
+@test "two-phase: skipped when two_phase_completion=false" {
   cd "$TEST_TEMP_DIR"
-  # v2_two_phase_completion flag graduated - two-phase completion is now always active
-  # Missing contract should now return error (not skip)
+  # two_phase_completion is configurable — disable it
+  jq '.two_phase_completion = false' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
+    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
   run bash "$SCRIPTS_DIR/two-phase-complete.sh" "1-1-T1" 1 1 "nonexistent.json" "evidence"
-  [ "$status" -eq 2 ]
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.result == "skipped"'
+}
+
+@test "two-phase/artifact-registry: missing key defaults to enabled consistently" {
+  cd "$TEST_TEMP_DIR"
+  create_passing_contract
+
+  jq 'del(.two_phase_completion)' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
+    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
+
+  run bash "$SCRIPTS_DIR/two-phase-complete.sh" "1-1-T1" 1 1 ".vbw-planning/.contracts/1-1.json" "feature works"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.result == "confirmed"'
+
+  echo "artifact" > "$TEST_TEMP_DIR/artifact.txt"
+  run bash "$SCRIPTS_DIR/artifact-registry.sh" register "artifact.txt" "evt-compat" 1 1
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.result == "registered"'
+}
+
+@test "two-phase/artifact-registry: honors legacy v2 key when new key missing" {
+  cd "$TEST_TEMP_DIR"
+
+  jq 'del(.two_phase_completion) | .v2_two_phase_completion = false' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
+    && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
+
+  run bash "$SCRIPTS_DIR/two-phase-complete.sh" "1-1-T1" 1 1 "nonexistent.json" "evidence"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.result == "skipped"'
+
+  run bash "$SCRIPTS_DIR/artifact-registry.sh" register "any" "evt-legacy"
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e '.result == "skipped"'
 }
 
 @test "two-phase: missing contract returns error" {
@@ -165,18 +196,18 @@ CONTRACT
 
 @test "artifact-registry: skips when flag disabled" {
   cd "$TEST_TEMP_DIR"
-  jq '.v2_two_phase_completion = false' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
+  jq '.two_phase_completion = false' ".vbw-planning/config.json" > ".vbw-planning/config.json.tmp" \
     && mv ".vbw-planning/config.json.tmp" ".vbw-planning/config.json"
   run bash "$SCRIPTS_DIR/artifact-registry.sh" register "any" "evt-000"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"v2_two_phase_completion=false"* ]]
+  [[ "$output" == *"two_phase_completion=false"* ]]
 }
 
 # --- Config flag ---
 
-@test "defaults.json: v2_two_phase_completion flag graduated (removed from defaults)" {
-  run jq '.v2_two_phase_completion // "removed"' "$CONFIG_DIR/defaults.json"
-  [ "$output" = '"removed"' ]
+@test "defaults.json: two_phase_completion flag present as unprefixed name" {
+  run jq '.two_phase_completion' "$CONFIG_DIR/defaults.json"
+  [ "$output" = 'true' ]
 }
 
 # --- Execute protocol integration ---

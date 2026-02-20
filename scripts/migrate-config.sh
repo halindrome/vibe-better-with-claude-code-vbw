@@ -107,8 +107,54 @@ if ! jq -e 'has("prefer_teams")' "$CONFIG_FILE" >/dev/null 2>&1; then
 fi
 
 
+# Strip graduated feature flags — core infrastructure flags are always-on.
+# These keys have no runtime effect but accumulate in brownfield configs.
+GRADUATED_KEYS='del(
+  .v2_hard_contracts, .v2_hard_gates, .v2_typed_protocol, .v2_role_isolation,
+  .v3_event_log, .v3_delta_context, .v3_context_cache,
+  .v3_plan_research_persist, .v3_schema_validation,
+  .v3_contract_lite, .v3_lock_lite
+)'
+if ! apply_update "$GRADUATED_KEYS"; then
+  echo "ERROR: Config migration failed while removing graduated flags." >&2
+  exit 1
+fi
+
+# Rename optional flags from v2_/v3_ prefix to unprefixed config settings.
+# Must happen BEFORE brownfield merge so user values (e.g., v3_metrics=false)
+# are preserved under the new name before defaults backfill.
+rename_flag() {
+  local old_name="$1" new_name="$2"
+  if jq -e "has(\"$old_name\")" "$CONFIG_FILE" >/dev/null 2>&1; then
+    if ! jq -e "has(\"$new_name\")" "$CONFIG_FILE" >/dev/null 2>&1; then
+      # Copy old value to new name
+      if ! apply_update ". + {\"$new_name\": .$old_name} | del(.$old_name)"; then
+        echo "ERROR: Config migration failed while renaming $old_name to $new_name." >&2
+        exit 1
+      fi
+    else
+      # New name already exists — keep it as source of truth and drop legacy key
+      if ! apply_update "del(.$old_name)"; then
+        echo "ERROR: Config migration failed while removing stale $old_name." >&2
+        exit 1
+      fi
+    fi
+  fi
+}
+
+rename_flag v2_token_budgets token_budgets
+rename_flag v2_two_phase_completion two_phase_completion
+rename_flag v3_metrics metrics
+rename_flag v3_smart_routing smart_routing
+rename_flag v3_validation_gates validation_gates
+rename_flag v3_snapshot_resume snapshot_resume
+rename_flag v3_lease_locks lease_locks
+rename_flag v3_event_recovery event_recovery
+rename_flag v3_monorepo_routing monorepo_routing
+rename_flag v3_rolling_summary rolling_summary
+
 # Generic brownfield merge: add any keys missing from defaults.json.
-# Existing project values always win.
+# Existing project values always win (defaults are the base layer).
 TMP=$(mktemp)
 if jq --slurpfile defaults "$DEFAULTS_FILE" '$defaults[0] + .' "$CONFIG_FILE" > "$TMP" 2>/dev/null; then
   mv "$TMP" "$CONFIG_FILE"

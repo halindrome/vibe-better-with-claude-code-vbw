@@ -1,5 +1,7 @@
 #!/usr/bin/env bats
 
+load test_helper
+
 # Test suite for VBW hook bash patterns against CC 2.1.47 stricter classifier
 # REQ-10: Audit bash permission patterns against CC 2.1.47's stricter classifier
 #
@@ -42,7 +44,7 @@ setup() {
 
 @test "hook pattern count matches hooks.json entries" {
   # Count unique bash commands in hooks.json
-  HOOK_COUNT=$(grep -c '"command":' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  HOOK_COUNT=$(grep -c '"command":' "$PROJECT_ROOT/hooks/hooks.json")
 
   # We should have 26 total hook entries (21 unique scripts, some duplicated across events)
   [ "$HOOK_COUNT" -eq 26 ]
@@ -50,7 +52,7 @@ setup() {
 
 @test "all hooks use dual-resolution pattern" {
   # All hooks should use the version-sorted cache resolution pattern
-  PATTERN_COUNT=$(grep -c 'sort -V' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  PATTERN_COUNT=$(grep -c 'sort -V' "$PROJECT_ROOT/hooks/hooks.json")
 
   # Should match total hook count
   [ "$PATTERN_COUNT" -eq 26 ]
@@ -58,7 +60,7 @@ setup() {
 
 @test "all hooks have CLAUDE_PLUGIN_ROOT fallback" {
   # All hooks should have fallback to CLAUDE_PLUGIN_ROOT
-  FALLBACK_COUNT=$(grep -c 'CLAUDE_PLUGIN_ROOT:+' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  FALLBACK_COUNT=$(grep -c 'CLAUDE_PLUGIN_ROOT:+' "$PROJECT_ROOT/hooks/hooks.json")
 
   # Should match total hook count
   [ "$FALLBACK_COUNT" -eq 26 ]
@@ -66,7 +68,7 @@ setup() {
 
 @test "all hooks exit 0 for graceful degradation" {
   # All hooks should end with 'exit 0' for fail-open behavior
-  EXIT_COUNT=$(grep -c 'exit 0' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  EXIT_COUNT=$(grep -c 'exit 0' "$PROJECT_ROOT/hooks/hooks.json")
 
   # Should match total hook count
   [ "$EXIT_COUNT" -eq 26 ]
@@ -74,107 +76,107 @@ setup() {
 
 # Unique hook script invocations (21 total)
 @test "documented scripts: validate-summary.sh appears 2x" {
-  COUNT=$(grep -c 'validate-summary.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'validate-summary.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 2 ]
 }
 
 @test "documented scripts: validate-frontmatter.sh appears 1x" {
-  COUNT=$(grep -c 'validate-frontmatter.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'validate-frontmatter.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: validate-commit.sh appears 1x" {
-  COUNT=$(grep -c 'validate-commit.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'validate-commit.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: skill-hook-dispatch.sh appears 2x" {
-  COUNT=$(grep -c 'skill-hook-dispatch.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'skill-hook-dispatch.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 2 ]
 }
 
 @test "documented scripts: state-updater.sh appears 1x" {
-  COUNT=$(grep -c 'state-updater.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'state-updater.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: bash-guard.sh appears 1x" {
-  COUNT=$(grep -c 'bash-guard.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'bash-guard.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: security-filter.sh appears 1x" {
-  COUNT=$(grep -c 'security-filter.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'security-filter.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: file-guard.sh appears 1x" {
-  COUNT=$(grep -c 'file-guard.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'file-guard.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: agent-start.sh appears 1x" {
-  COUNT=$(grep -c 'agent-start.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'agent-start.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: agent-stop.sh appears 1x" {
-  COUNT=$(grep -c 'agent-stop.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'agent-stop.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: agent-health.sh appears 4x" {
-  COUNT=$(grep -c 'agent-health.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'agent-health.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 4 ]
 }
 
 @test "documented scripts: qa-gate.sh appears 1x" {
-  COUNT=$(grep -c 'qa-gate.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'qa-gate.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: task-verify.sh appears 1x" {
-  COUNT=$(grep -c 'task-verify.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'task-verify.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: blocker-notify.sh appears 1x" {
-  COUNT=$(grep -c 'blocker-notify.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'blocker-notify.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: session-start.sh appears 1x" {
-  COUNT=$(grep -c 'session-start.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'session-start.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: map-staleness.sh appears 1x" {
-  COUNT=$(grep -c 'map-staleness.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'map-staleness.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: post-compact.sh appears 1x" {
-  COUNT=$(grep -c 'post-compact.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'post-compact.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: compaction-instructions.sh appears 1x" {
-  COUNT=$(grep -c 'compaction-instructions.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'compaction-instructions.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: session-stop.sh appears 1x" {
-  COUNT=$(grep -c 'session-stop.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'session-stop.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: prompt-preflight.sh appears 1x" {
-  COUNT=$(grep -c 'prompt-preflight.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'prompt-preflight.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
 @test "documented scripts: notification-log.sh appears 1x" {
-  COUNT=$(grep -c 'notification-log.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  COUNT=$(grep -c 'notification-log.sh' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$COUNT" -eq 1 ]
 }
 
@@ -190,7 +192,7 @@ setup() {
   # This is auto-allowed piping: ls -> sort -> tail
 
   # Verify hook-wrapper.sh actually uses this pattern
-  PATTERN_EXISTS=$(grep -c 'sort -V.*tail -1' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/hook-wrapper.sh")
+  PATTERN_EXISTS=$(grep -c 'sort -V.*tail -1' "$PROJECT_ROOT/scripts/hook-wrapper.sh")
   [ "$PATTERN_EXISTS" -ge 1 ]
 }
 
@@ -199,8 +201,8 @@ setup() {
   # Pattern: [ ! -f "$w" ] && w="${CLAUDE_PLUGIN_ROOT:+...}"; [ -f "$w" ] && exec bash "$w" ...
 
   # Verify hook-wrapper.sh uses file existence checks (both -f and ! -f)
-  FILE_CHECK_POS=$(grep -c '\[ -f' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/hook-wrapper.sh")
-  FILE_CHECK_NEG=$(grep -c '\[ ! -f' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/hook-wrapper.sh")
+  FILE_CHECK_POS=$(grep -c '\[ -f' "$PROJECT_ROOT/scripts/hook-wrapper.sh")
+  FILE_CHECK_NEG=$(grep -c '\[ ! -f' "$PROJECT_ROOT/scripts/hook-wrapper.sh")
   TOTAL_CHECKS=$((FILE_CHECK_POS + FILE_CHECK_NEG))
   [ "$TOTAL_CHECKS" -ge 4 ]
 }
@@ -209,14 +211,14 @@ setup() {
   # Verify hook-wrapper.sh exits 0 when target script not found
   # This is critical for fail-open design
 
-  EXIT_PATTERN=$(grep -c 'exit 0' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/hook-wrapper.sh")
+  EXIT_PATTERN=$(grep -c 'exit 0' "$PROJECT_ROOT/scripts/hook-wrapper.sh")
   [ "$EXIT_PATTERN" -ge 1 ]
 }
 
 @test "hook resolution: all hooks use same wrapper pattern structure" {
   # Verify consistency: all hooks use the exact same resolution structure
   # Extract first hook command as reference
-  FIRST_HOOK=$(grep -m1 '"command":.*bash -c' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json" | sed 's/.*bash -c/bash -c/' | sed 's/validate-[^.]*\.sh/SCRIPT/g' | sed 's/[a-z-]*\.sh/SCRIPT/g')
+  FIRST_HOOK=$(grep -m1 '"command":.*bash -c' "$PROJECT_ROOT/hooks/hooks.json" | sed 's/.*bash -c/bash -c/' | sed 's/validate-[^.]*\.sh/SCRIPT/g' | sed 's/[a-z-]*\.sh/SCRIPT/g')
 
   # All hooks should follow same pattern, just with different script names
   [ -n "$FIRST_HOOK" ]
@@ -224,7 +226,7 @@ setup() {
 
 @test "hook resolution: bash -c wrapping is consistent" {
   # All hooks use 'bash -c' to wrap the resolution logic
-  BASH_C_COUNT=$(grep -c 'bash -c' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  BASH_C_COUNT=$(grep -c 'bash -c' "$PROJECT_ROOT/hooks/hooks.json")
 
   # Should match total hook count (26)
   [ "$BASH_C_COUNT" -eq 26 ]
@@ -234,16 +236,16 @@ setup() {
   # Verify hooks use parameter expansion safely
   # Pattern: ${VAR:-default}, ${VAR:+value}
 
-  SAFE_EXPANSION=$(grep -c '\${CLAUDE_CONFIG_DIR:-' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  SAFE_EXPANSION=$(grep -c '\${CLAUDE_CONFIG_DIR:-' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$SAFE_EXPANSION" -ge 1 ]
 
-  SAFE_PLUGIN_ROOT=$(grep -c '\${CLAUDE_PLUGIN_ROOT:+' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  SAFE_PLUGIN_ROOT=$(grep -c '\${CLAUDE_PLUGIN_ROOT:+' "$PROJECT_ROOT/hooks/hooks.json")
   [ "$SAFE_PLUGIN_ROOT" -ge 1 ]
 }
 
 @test "hook resolution: exec bash handoff is valid" {
   # Verify hooks use 'exec bash' to hand off to hook-wrapper.sh
-  EXEC_COUNT=$(grep -c 'exec bash' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  EXEC_COUNT=$(grep -c 'exec bash' "$PROJECT_ROOT/hooks/hooks.json")
 
   # Should match total hook count (26)
   [ "$EXEC_COUNT" -eq 26 ]
@@ -251,7 +253,7 @@ setup() {
 
 @test "hook resolution: error suppression with 2>/dev/null" {
   # Verify hooks suppress stderr for ls/sort commands
-  ERROR_SUPPRESS=$(grep -c '2>/dev/null' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json")
+  ERROR_SUPPRESS=$(grep -c '2>/dev/null' "$PROJECT_ROOT/hooks/hooks.json")
 
   # At least one per hook (may be more due to multiple redirects)
   [ "$ERROR_SUPPRESS" -ge 26 ]
@@ -264,7 +266,7 @@ setup() {
   # PostToolUse Write|Edit -> validate-summary.sh
   # This hook validates SUMMARY.md files after Write/Edit
 
-  INVOCATION=$(grep 'validate-summary.sh' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json" | head -1)
+  INVOCATION=$(grep 'validate-summary.sh' "$PROJECT_ROOT/hooks/hooks.json" | head -1)
   [ -n "$INVOCATION" ]
 
   # Verify it's a valid bash -c command
@@ -276,10 +278,10 @@ setup() {
   # This script uses grep -iqE for destructive command detection
 
   # Verify bash-guard.sh exists and uses safe grep patterns
-  [ -f "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/bash-guard.sh" ]
+  [ -f "$PROJECT_ROOT/scripts/bash-guard.sh" ]
 
   # Verify it reads patterns from config file (not inline regex)
-  grep -q 'grep.*-iqE' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/bash-guard.sh"
+  grep -q 'grep.*-iqE' "$PROJECT_ROOT/scripts/bash-guard.sh"
 }
 
 @test "script invocation: agent-health.sh with subcommand arguments" {
@@ -287,18 +289,18 @@ setup() {
   # Validates that hook scripts can receive arguments after script name
 
   # Check for all 4 subcommands in hooks.json
-  grep -q 'agent-health.sh start' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
-  grep -q 'agent-health.sh stop' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
-  grep -q 'agent-health.sh idle' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
-  grep -q 'agent-health.sh cleanup' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
+  grep -q 'agent-health.sh start' "$PROJECT_ROOT/hooks/hooks.json"
+  grep -q 'agent-health.sh stop' "$PROJECT_ROOT/hooks/hooks.json"
+  grep -q 'agent-health.sh idle' "$PROJECT_ROOT/hooks/hooks.json"
+  grep -q 'agent-health.sh cleanup' "$PROJECT_ROOT/hooks/hooks.json"
 }
 
 @test "script invocation: skill-hook-dispatch.sh with event type argument" {
   # PostToolUse and PreToolUse -> skill-hook-dispatch.sh {PostToolUse|PreToolUse}
   # Validates passing event type as argument
 
-  grep -q 'skill-hook-dispatch.sh PostToolUse' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
-  grep -q 'skill-hook-dispatch.sh PreToolUse' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
+  grep -q 'skill-hook-dispatch.sh PostToolUse' "$PROJECT_ROOT/hooks/hooks.json"
+  grep -q 'skill-hook-dispatch.sh PreToolUse' "$PROJECT_ROOT/hooks/hooks.json"
 }
 
 @test "script invocation: all 21 unique scripts are invoked correctly" {
@@ -329,7 +331,7 @@ setup() {
   )
 
   for script in "${SCRIPTS[@]}"; do
-    grep -q "$script" "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
+    grep -q "$script" "$PROJECT_ROOT/hooks/hooks.json"
   done
 }
 
@@ -341,7 +343,7 @@ setup() {
   # These should not contain additional pipes
   # The only pipes should be in the ls|sort|tail resolution pattern
 
-  SCRIPT_PARTS=$(grep -o 'exec bash "\$w" [^;]*' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json" || true)
+  SCRIPT_PARTS=$(grep -o 'exec bash "\$w" [^;]*' "$PROJECT_ROOT/hooks/hooks.json" || true)
 
   # None of the script invocation parts should contain pipes
   if [ -n "$SCRIPT_PARTS" ]; then
@@ -354,22 +356,22 @@ setup() {
   # Arguments are literal strings, not command substitutions
 
   # agent-health.sh takes simple literal subcommands
-  grep -q 'agent-health.sh start;' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
-  grep -q 'agent-health.sh stop;' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
-  grep -q 'agent-health.sh idle;' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
-  grep -q 'agent-health.sh cleanup;' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
+  grep -q 'agent-health.sh start;' "$PROJECT_ROOT/hooks/hooks.json"
+  grep -q 'agent-health.sh stop;' "$PROJECT_ROOT/hooks/hooks.json"
+  grep -q 'agent-health.sh idle;' "$PROJECT_ROOT/hooks/hooks.json"
+  grep -q 'agent-health.sh cleanup;' "$PROJECT_ROOT/hooks/hooks.json"
 
   # skill-hook-dispatch.sh takes literal event type arguments
-  grep -q 'skill-hook-dispatch.sh PostToolUse;' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
-  grep -q 'skill-hook-dispatch.sh PreToolUse;' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/hooks/hooks.json"
+  grep -q 'skill-hook-dispatch.sh PostToolUse;' "$PROJECT_ROOT/hooks/hooks.json"
+  grep -q 'skill-hook-dispatch.sh PreToolUse;' "$PROJECT_ROOT/hooks/hooks.json"
 }
 
 # Task 4: Audit bash-guard.sh pattern matching
 # Validate that bash-guard.sh grep pattern matching works under stricter classifier
 
 @test "bash-guard: script exists and is executable" {
-  [ -f "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/bash-guard.sh" ]
-  [ -x "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/bash-guard.sh" ]
+  [ -f "$PROJECT_ROOT/scripts/bash-guard.sh" ]
+  [ -x "$PROJECT_ROOT/scripts/bash-guard.sh" ]
 }
 
 @test "bash-guard: uses safe grep pattern construction" {
@@ -377,14 +379,14 @@ setup() {
   # Pattern: grep -iqE "$PATTERNS"
   # This is safe because patterns come from trusted config files
 
-  grep -q 'grep -iqE' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/bash-guard.sh"
+  grep -q 'grep -iqE' "$PROJECT_ROOT/scripts/bash-guard.sh"
 }
 
 @test "bash-guard: pattern file resolution is safe" {
   # Verify bash-guard.sh resolves pattern files safely
   # Uses simple file path construction, no user input in paths
 
-  SCRIPT="/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/bash-guard.sh"
+  SCRIPT="$PROJECT_ROOT/scripts/bash-guard.sh"
 
   # Check for safe pattern file references
   grep -q 'destructive-commands.txt' "$SCRIPT"
@@ -397,7 +399,7 @@ setup() {
   # Verify bash-guard.sh strips comments and empty lines from pattern files
   # Pattern: grep -v '^\s*#' ... | grep -v '^\s*$'
 
-  SCRIPT="/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/bash-guard.sh"
+  SCRIPT="$PROJECT_ROOT/scripts/bash-guard.sh"
 
   # Check for comment stripping
   grep -q "grep -v '^\\\s\*#'" "$SCRIPT"
@@ -411,17 +413,17 @@ setup() {
   # No need to escape regex metacharacters
 
   # Verify patterns are read from files in config/ directory
-  [ -f "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/config/destructive-commands.txt" ]
+  [ -f "$PROJECT_ROOT/config/destructive-commands.txt" ]
 
   # Pattern file should contain regex patterns (not escaped)
-  grep -q '\\s' "/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/config/destructive-commands.txt"
+  grep -q '\\s' "$PROJECT_ROOT/config/destructive-commands.txt"
 }
 
 @test "bash-guard: jq parsing uses safe patterns" {
   # Verify bash-guard.sh uses jq safely to parse hook JSON input
   # Pattern: jq -r '.tool_input.command // ""'
 
-  SCRIPT="/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/bash-guard.sh"
+  SCRIPT="$PROJECT_ROOT/scripts/bash-guard.sh"
 
   # Check for safe jq usage with default fallback
   grep -q "jq -r '\.tool_input\.command // \"\"'" "$SCRIPT"
@@ -431,7 +433,7 @@ setup() {
   # PreToolUse hooks must exit 0 (allow) or exit 2 (block)
   # Verify bash-guard.sh uses correct exit codes
 
-  SCRIPT="/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/bash-guard.sh"
+  SCRIPT="$PROJECT_ROOT/scripts/bash-guard.sh"
 
   # Should have exit 0 for allow
   grep -q 'exit 0' "$SCRIPT"
@@ -444,7 +446,7 @@ setup() {
   # Verify bash-guard.sh reads stdin via cat, not complex substitution
   # Pattern: INPUT=$(cat 2>/dev/null)
 
-  SCRIPT="/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/bash-guard.sh"
+  SCRIPT="$PROJECT_ROOT/scripts/bash-guard.sh"
 
   grep -q 'INPUT=\$(cat 2>/dev/null)' "$SCRIPT"
 }
@@ -453,7 +455,7 @@ setup() {
   # Verify bash-guard.sh validates commands via echo | grep
   # Pattern: echo "$COMMAND" | grep -iqE "$PATTERNS"
 
-  SCRIPT="/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/bash-guard.sh"
+  SCRIPT="$PROJECT_ROOT/scripts/bash-guard.sh"
 
   # Check for safe piping pattern
   grep -q 'echo "\$COMMAND" | grep -iqE' "$SCRIPT"
@@ -501,7 +503,7 @@ setup() {
 
   # Fallback to local scripts/ for test environment
   if [ -z "$WRAPPER" ] || [ ! -f "$WRAPPER" ]; then
-    WRAPPER="/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/hook-wrapper.sh"
+    WRAPPER="$PROJECT_ROOT/scripts/hook-wrapper.sh"
   fi
 
   # Should find hook-wrapper.sh via one of the paths
@@ -522,7 +524,7 @@ setup() {
 
   # Fallback to local scripts/ for test environment
   if [ -z "$CACHE" ] || [ ! -d "${CACHE}scripts" ]; then
-    CACHE="/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/"
+    CACHE="$PROJECT_ROOT/"
   fi
 
   [ -n "$CACHE" ]
@@ -549,7 +551,7 @@ setup() {
 
   # Fallback to local scripts/ for test environment
   if [ -z "$WRAPPER" ] || [ ! -f "$WRAPPER" ]; then
-    WRAPPER="/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/hook-wrapper.sh"
+    WRAPPER="$PROJECT_ROOT/scripts/hook-wrapper.sh"
   fi
 
   [ -f "$WRAPPER" ]
@@ -566,7 +568,7 @@ setup() {
   # Integration test: verify bash-guard.sh actually blocks destructive patterns
   # Test directly without hook-wrapper.sh to avoid resolution complexity
 
-  GUARD="/Users/tiagoserodio/Documents/AI Stuff/vbw-cc/scripts/bash-guard.sh"
+  GUARD="$PROJECT_ROOT/scripts/bash-guard.sh"
   [ -f "$GUARD" ]
 
   # Create test JSON input with destructive command matching a known pattern
@@ -585,7 +587,7 @@ setup() {
   # Document the test procedure for manual hook execution validation
   # This ensures we have a reproducible test case for future CC versions
 
-  cat > /tmp/vbw-hook-test-procedure.md <<'EOF'
+  cat > "$BATS_TEST_TMPDIR/vbw-hook-test-procedure.md" <<'EOF'
 # VBW Hook Integration Test Procedure
 
 ## Prerequisites
@@ -614,5 +616,5 @@ setup() {
 - Hook-wrapper.sh dual resolution works for both cache and CLAUDE_PLUGIN_ROOT
 EOF
 
-  [ -f /tmp/vbw-hook-test-procedure.md ]
+  [ -f "$BATS_TEST_TMPDIR/vbw-hook-test-procedure.md" ]
 }

@@ -26,13 +26,9 @@ TASK="$4"
 CONTRACT_PATH="$5"
 
 PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 MAX_RETRIES=2
-
-# v2_hard_gates is now always enabled (graduated)
-V2_HARD=true
 
 # Determine if gate is repairable
 REPAIRABLE=false

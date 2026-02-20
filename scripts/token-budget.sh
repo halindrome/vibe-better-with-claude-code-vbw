@@ -14,8 +14,8 @@ set -u
 # Logs overage to metrics (v3_metrics graduated).
 # Exit: 0 always (budget enforcement must never block).
 
+# shellcheck disable=SC2034 # PLANNING_DIR used by convention across VBW scripts
 PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUDGETS_PATH="${SCRIPT_DIR}/../config/token-budgets.json"
 
@@ -40,7 +40,17 @@ fi
 # Optional contract metadata for per-task budgets
 CONTRACT_PATH="${1:-}"
 
-# Budget enforcement is now config-driven (not flag-gated)
+# Check token_budgets flag — if disabled, pass through
+# Legacy fallback: honor v2_token_budgets if unprefixed key missing (pre-migration brownfield)
+CONFIG_PATH=".vbw-planning/config.json"
+if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
+  TOKEN_BUDGETS=$(jq -r 'if .token_budgets != null then .token_budgets elif .v2_token_budgets != null then .v2_token_budgets else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  if [ "$TOKEN_BUDGETS" != "true" ]; then
+    echo "$CONTENT"
+    exit 0
+  fi
+fi
+
 # If no budget definitions exist, pass through
 if [ ! -f "$BUDGETS_PATH" ]; then
   echo "$CONTENT"

@@ -10,11 +10,7 @@ set -u
 # Exit: 0 when valid (or flag off), 2 when invalid and v2_typed_protocol=true.
 
 PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# v2_typed_protocol is now always enabled (graduated)
-V2_TYPED=true
 
 # Read message
 MSG=""

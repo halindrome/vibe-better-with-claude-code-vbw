@@ -34,6 +34,28 @@ teardown() {
   [ "$status" -eq 0 ]
 }
 
+@test "worktree-create: falls back to existing branch when -b path fails" {
+  cd "$TEST_TEMP_DIR"
+  git init -q
+  git config user.name "VBW Test"
+  git config user.email "vbw-test@example.com"
+  echo "seed" > README.md
+  git add README.md
+  git commit -q -m "chore(init): seed"
+
+  # Pre-create the target branch so `git worktree add -b` fails and fallback path is used.
+  git branch "vbw/02-03"
+
+  run bash "$SCRIPTS_DIR/worktree-create.sh" 02 03
+  [ "$status" -eq 0 ]
+  [[ "$output" == *".vbw-worktrees/02-03" ]]
+  [ -d ".vbw-worktrees/02-03" ]
+
+  run git -C ".vbw-worktrees/02-03" rev-parse --abbrev-ref HEAD
+  [ "$status" -eq 0 ]
+  [ "$output" = "vbw/02-03" ]
+}
+
 # ---------------------------------------------------------------------------
 # worktree-merge.sh tests
 # ---------------------------------------------------------------------------
@@ -119,7 +141,7 @@ teardown() {
 
 @test "worktree-agent-map integration: set and get round-trip with worktree path" {
   cd "$TEST_TEMP_DIR"
-  run bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-01 /tmp/fake-path
+  run bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-01 "$TEST_TEMP_DIR/fake-path"
   [ "$status" -eq 0 ]
   run bash "$SCRIPTS_DIR/worktree-status.sh"
   [ "$status" -eq 0 ]
@@ -129,13 +151,13 @@ teardown() {
   cd "$TEST_TEMP_DIR"
   run bash "$SCRIPTS_DIR/worktree-create.sh" 02 03
   [ "$status" -eq 0 ]
-  run bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-03 /tmp/fake-path
+  run bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-03 "$TEST_TEMP_DIR/fake-path"
   [ "$status" -eq 0 ]
 }
 
 @test "worktree-cleanup: agent-map clear integration" {
   cd "$TEST_TEMP_DIR"
-  bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-01 /tmp/fake
+  bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-01 "$TEST_TEMP_DIR/fake"
   mkdir -p .vbw-planning/.agent-worktrees
   echo '{}' > .vbw-planning/.agent-worktrees/dev-01-01-01.json
   run bash "$SCRIPTS_DIR/worktree-cleanup.sh" 01 01

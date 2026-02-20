@@ -100,14 +100,19 @@ V3_DELTA_ENABLED=true
 V3_METRICS_ENABLED=true
 START_TIME=""
 
-V3_ROLLING_SUMMARY=false
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V3_ROLLING_SUMMARY=$(jq -r '.v3_rolling_summary // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  V3_METRICS_ENABLED=$(jq -r 'if .metrics != null then .metrics elif .v3_metrics != null then .v3_metrics else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+fi
+
+ROLLING_SUMMARY=false
+if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
+  # Legacy fallback: honor v3_rolling_summary if unprefixed key missing (pre-migration brownfield)
+  ROLLING_SUMMARY=$(jq -r 'if .rolling_summary != null then .rolling_summary elif .v3_rolling_summary != null then .v3_rolling_summary else false end' "$CONFIG_PATH" 2>/dev/null || echo "false")
 fi
 
 ROLLING_CONTEXT_PATH="${PLANNING_DIR}/ROLLING-CONTEXT.md"
 ROLLING_CONTEXT_SECTION=""
-if [ "$V3_ROLLING_SUMMARY" = "true" ] && [ "$PHASE_NUM" -gt 1 ] 2>/dev/null && [ -f "$ROLLING_CONTEXT_PATH" ]; then
+if [ "$ROLLING_SUMMARY" = "true" ] && [ "$PHASE_NUM" -gt 1 ] 2>/dev/null && [ -f "$ROLLING_CONTEXT_PATH" ]; then
   ROLLING_CONTEXT_SECTION=$(cat "$ROLLING_CONTEXT_PATH" 2>/dev/null || true)
 fi
 

@@ -26,15 +26,17 @@ teardown() {
   [ "$(grep -c "^## Recommendations$" "$RESEARCH_FILE")" -eq 1 ]
 }
 
-@test "research-warn: JSON schema validation - flag disabled" {
+@test "research-warn: JSON schema validation - always active (graduated)" {
   cd "$TEST_TEMP_DIR"
   run bash "$SCRIPTS_DIR/research-warn.sh" "$TEST_TEMP_DIR/.vbw-planning"
   [ "$status" -eq 0 ]
 
-  # Validate JSON schema: must have check, result, reason keys
-  echo "$output" | jq -e 'has("check")'
-  echo "$output" | jq -e 'has("result")'
-  echo "$output" | jq -e 'has("reason")'
+  # Extract first line (JSON) — stderr warning also captured by run
+  local JSON_LINE
+  JSON_LINE=$(echo "$output" | head -1)
+  echo "$JSON_LINE" | jq -e 'has("check")'
+  echo "$JSON_LINE" | jq -e 'has("result")'
+  echo "$JSON_LINE" | jq -e 'has("reason")'
 }
 
 @test "research-warn: JSON schema validation - turbo effort" {

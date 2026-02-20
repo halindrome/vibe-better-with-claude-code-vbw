@@ -65,38 +65,33 @@ done
 
 # --- Config / flag resolution ---
 CONTEXT_COMPILER=false
+TOKEN_BUDGETS=true
 
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   CONTEXT_COMPILER=$(jq -r 'if .context_compiler == null then true else .context_compiler end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  TOKEN_BUDGETS=$(jq -r 'if .token_budgets != null then .token_budgets elif .v2_token_budgets != null then .v2_token_budgets else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
 fi
-
-# V2 hard contracts and gates, and v3_lease_locks are now always enabled (graduated)
-V2_HARD_CONTRACTS=true
-V2_HARD_GATES=true
-
-# v2_token_budgets flag removed - budget enforcement is now config-driven
-# (always call token-budget.sh, which will pass through if no budgets defined)
-V2_TOKEN_BUDGETS=true
 
 # --- No-op check (REQ-C1) ---
 # If all flags relevant to the chosen action are false, exit 0 immediately.
-# Note: v2_hard_contracts, v2_hard_gates, and v3_lease_locks are now always-on (graduated)
+# Note: v2_hard_contracts, v2_hard_gates are now always-on (graduated)
+# Token budgets and context compiler are config-gated.
 check_noop() {
   case "$ACTION" in
     pre-task)
-      # Contract, gates, and locking are always-on
+      # Contract and gates are always-on — pre-task is never a noop
       return 1
       ;;
     post-task)
-      # Gates and locking are always-on
+      # Gates are always-on
       return 1
       ;;
     compile)
-      [ "$CONTEXT_COMPILER" != "true" ] && return 0
+      [ "$CONTEXT_COMPILER" != "true" ] && [ "$TOKEN_BUDGETS" != "true" ] && return 0
       ;;
     full)
-      # Contract is always-on, so check compiler only
-      [ "$CONTEXT_COMPILER" != "true" ] && return 1
+      # Contract is always-on — full is never a noop
+      return 1
       ;;
   esac
   return 1
@@ -245,7 +240,11 @@ step_context() {
 }
 
 step_token_budget() {
-  # v2_token_budgets flag removed - always attempt budget enforcement
+  # token_budgets flag controls budget enforcement
+  if [ "$TOKEN_BUDGETS" != "true" ]; then
+    record_step "token_budget" "skip" "token_budgets=false"
+    return 0
+  fi
   # token-budget.sh will pass through if no budget definitions exist
   if [ -z "$CONTEXT_PATH_OUT" ] || [ ! -f "$CONTEXT_PATH_OUT" ]; then
     record_step "token_budget" "skip" "no context file"
