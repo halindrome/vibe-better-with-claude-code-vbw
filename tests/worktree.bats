@@ -141,7 +141,7 @@ teardown() {
 
 @test "worktree-agent-map integration: set and get round-trip with worktree path" {
   cd "$TEST_TEMP_DIR"
-  run bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-01 /tmp/fake-path
+  run bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-01 "$TEST_TEMP_DIR/fake-path"
   [ "$status" -eq 0 ]
   run bash "$SCRIPTS_DIR/worktree-status.sh"
   [ "$status" -eq 0 ]
@@ -151,13 +151,13 @@ teardown() {
   cd "$TEST_TEMP_DIR"
   run bash "$SCRIPTS_DIR/worktree-create.sh" 02 03
   [ "$status" -eq 0 ]
-  run bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-03 /tmp/fake-path
+  run bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-03 "$TEST_TEMP_DIR/fake-path"
   [ "$status" -eq 0 ]
 }
 
 @test "worktree-cleanup: agent-map clear integration" {
   cd "$TEST_TEMP_DIR"
-  bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-01 /tmp/fake
+  bash "$SCRIPTS_DIR/worktree-agent-map.sh" set dev-01 "$TEST_TEMP_DIR/fake"
   mkdir -p .vbw-planning/.agent-worktrees
   echo '{}' > .vbw-planning/.agent-worktrees/dev-01-01-01.json
   run bash "$SCRIPTS_DIR/worktree-cleanup.sh" 01 01

@@ -47,6 +47,17 @@ run_file_guard() {
   run env VBW_AGENT_ROLE="$role" VBW_AGENT_NAME="$agent_name" bash -c "cat '$TEST_TEMP_DIR/.test-input.json' | bash '$SCRIPTS_DIR/file-guard.sh'"
 }
 
+set_stale_mtime_3h() {
+  local target="$1"
+  local stamp=""
+  if [ "$(uname)" = "Darwin" ]; then
+    stamp=$(date -v-3H '+%Y%m%d%H%M.%S' 2>/dev/null) || return 1
+  else
+    stamp=$(date -d '3 hours ago' '+%Y%m%d%H%M.%S' 2>/dev/null) || return 1
+  fi
+  touch -t "$stamp" "$target"
+}
+
 # ===========================================================================
 # file-guard.sh — Worktree Boundary Enforcement
 # ===========================================================================
@@ -67,9 +78,32 @@ run_file_guard() {
   jq '.worktree_isolation = "on"' .vbw-planning/config.json > .vbw-planning/config.json.tmp
   mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   mkdir -p .vbw-planning/.agent-worktrees
-  echo '{"worktree_path":"/tmp/vbw-wt-01-01"}' > .vbw-planning/.agent-worktrees/dev-01.json
+  local wt_path="$TEST_TEMP_DIR/.vbw-worktrees/01-01"
+  mkdir -p "$wt_path"
+  echo "{\"worktree_path\":\"$wt_path\"}" > .vbw-planning/.agent-worktrees/dev-01.json
 
   run_file_guard dev vbw-dev-01 /some/other/path/app.ts
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"outside worktree boundary"* ]]
+}
+
+@test "file-guard worktree: relative path inside mapped worktree allowed" {
+  jq '.worktree_isolation = "on"' .vbw-planning/config.json > .vbw-planning/config.json.tmp
+  mv .vbw-planning/config.json.tmp .vbw-planning/config.json
+  mkdir -p .vbw-planning/.agent-worktrees
+  echo "{\"worktree_path\":\"$TEST_TEMP_DIR\"}" > .vbw-planning/.agent-worktrees/dev-01.json
+
+  run_file_guard dev vbw-dev-01 src/app.ts
+  [ "$status" -eq 0 ]
+}
+
+@test "file-guard worktree: relative path escaping mapped worktree is blocked" {
+  jq '.worktree_isolation = "on"' .vbw-planning/config.json > .vbw-planning/config.json.tmp
+  mv .vbw-planning/config.json.tmp .vbw-planning/config.json
+  mkdir -p .vbw-planning/.agent-worktrees
+  echo "{\"worktree_path\":\"$TEST_TEMP_DIR\"}" > .vbw-planning/.agent-worktrees/dev-01.json
+
+  run_file_guard dev vbw-dev-01 ../outside.ts
   [ "$status" -eq 2 ]
   [[ "$output" == *"outside worktree boundary"* ]]
 }
@@ -78,7 +112,9 @@ run_file_guard() {
   jq '.worktree_isolation = "on"' .vbw-planning/config.json > .vbw-planning/config.json.tmp
   mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   mkdir -p .vbw-planning/.agent-worktrees
-  echo '{"worktree_path":"/tmp/vbw-wt-01-01"}' > .vbw-planning/.agent-worktrees/qa-01.json
+  local wt_path="$TEST_TEMP_DIR/.vbw-worktrees/qa-01"
+  mkdir -p "$wt_path"
+  echo "{\"worktree_path\":\"$wt_path\"}" > .vbw-planning/.agent-worktrees/qa-01.json
 
   # QA role gets blocked by role isolation (can't write non-planning files), not by worktree
   local input
@@ -92,7 +128,9 @@ run_file_guard() {
   jq '.worktree_isolation = "off"' .vbw-planning/config.json > .vbw-planning/config.json.tmp
   mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   mkdir -p .vbw-planning/.agent-worktrees
-  echo '{"worktree_path":"/tmp/vbw-wt-01-01"}' > .vbw-planning/.agent-worktrees/dev-01.json
+  local wt_path="$TEST_TEMP_DIR/.vbw-worktrees/01-01"
+  mkdir -p "$wt_path"
+  echo "{\"worktree_path\":\"$wt_path\"}" > .vbw-planning/.agent-worktrees/dev-01.json
 
   # Dev role with worktree_isolation=off — boundary check skipped, proceeds to plan check
   run_file_guard dev vbw-dev-01 "$TEST_TEMP_DIR/src/app.ts"
@@ -115,7 +153,9 @@ run_file_guard() {
   jq '.worktree_isolation = "on"' .vbw-planning/config.json > .vbw-planning/config.json.tmp
   mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   mkdir -p .vbw-planning/.agent-worktrees
-  echo '{"worktree_path":"/tmp/vbw-wt-debug"}' > .vbw-planning/.agent-worktrees/debugger.json
+  local wt_path="$TEST_TEMP_DIR/.vbw-worktrees/debugger"
+  mkdir -p "$wt_path"
+  echo "{\"worktree_path\":\"$wt_path\"}" > .vbw-planning/.agent-worktrees/debugger.json
 
   run_file_guard debugger vbw-debugger /outside/path/file.ts
   [ "$status" -eq 2 ]
@@ -127,13 +167,15 @@ run_file_guard() {
 # ===========================================================================
 
 @test "compaction-instructions: dev with worktree mapping includes CRITICAL path" {
+  local wt_path="$TEST_TEMP_DIR/.vbw-worktrees/01-01"
+  mkdir -p "$wt_path"
   mkdir -p .vbw-planning/.agent-worktrees
-  echo '{"worktree_path":"/tmp/vbw-wt-01-01"}' > .vbw-planning/.agent-worktrees/dev-01.json
+  echo "{\"worktree_path\":\"$wt_path\"}" > .vbw-planning/.agent-worktrees/dev-01.json
 
   run bash -c 'echo "{\"agent_name\":\"vbw-dev-01\",\"matcher\":\"auto\"}" | bash "'"$SCRIPTS_DIR"'/compaction-instructions.sh"'
   [ "$status" -eq 0 ]
   [[ "$output" == *"CRITICAL"* ]]
-  [[ "$output" == *"/tmp/vbw-wt-01-01"* ]]
+  [[ "$output" == *"$wt_path"* ]]
 }
 
 @test "compaction-instructions: dev without worktree mapping omits path" {
@@ -143,8 +185,10 @@ run_file_guard() {
 }
 
 @test "compaction-instructions: non-dev agent never gets worktree context" {
+  local wt_path="$TEST_TEMP_DIR/.vbw-worktrees/qa-01"
+  mkdir -p "$wt_path"
   mkdir -p .vbw-planning/.agent-worktrees
-  echo '{"worktree_path":"/tmp/vbw-wt-01-01"}' > .vbw-planning/.agent-worktrees/qa.json
+  echo "{\"worktree_path\":\"$wt_path\"}" > .vbw-planning/.agent-worktrees/qa.json
 
   run bash -c 'echo "{\"agent_name\":\"vbw-qa\",\"matcher\":\"auto\"}" | bash "'"$SCRIPTS_DIR"'/compaction-instructions.sh"'
   [ "$status" -eq 0 ]
@@ -156,12 +200,14 @@ run_file_guard() {
 # ===========================================================================
 
 @test "post-compact: dev with worktree mapping includes worktree path" {
+  local wt_path="$TEST_TEMP_DIR/.vbw-worktrees/01-01"
+  mkdir -p "$wt_path"
   mkdir -p .vbw-planning/.agent-worktrees
-  echo '{"worktree_path":"/tmp/vbw-wt-01-01"}' > .vbw-planning/.agent-worktrees/dev-01.json
+  echo "{\"worktree_path\":\"$wt_path\"}" > .vbw-planning/.agent-worktrees/dev-01.json
 
   run bash -c 'echo "{\"agent_name\":\"vbw-dev-01\"}" | bash "'"$SCRIPTS_DIR"'/post-compact.sh"'
   [ "$status" -eq 0 ]
-  [[ "$output" == *"/tmp/vbw-wt-01-01"* ]]
+  [[ "$output" == *"$wt_path"* ]]
   [[ "$output" == *"Worktree working directory"* ]]
 }
 
@@ -172,8 +218,10 @@ run_file_guard() {
 }
 
 @test "post-compact: non-dev agent never gets worktree context" {
+  local wt_path="$TEST_TEMP_DIR/.vbw-worktrees/lead-01"
+  mkdir -p "$wt_path"
   mkdir -p .vbw-planning/.agent-worktrees
-  echo '{"worktree_path":"/tmp/vbw-wt-01-01"}' > .vbw-planning/.agent-worktrees/lead.json
+  echo "{\"worktree_path\":\"$wt_path\"}" > .vbw-planning/.agent-worktrees/lead.json
 
   run bash -c 'echo "{\"agent_name\":\"vbw-lead\"}" | bash "'"$SCRIPTS_DIR"'/post-compact.sh"'
   [ "$status" -eq 0 ]
@@ -185,16 +233,17 @@ run_file_guard() {
 # ===========================================================================
 
 @test "session-stop: cleans stale worktree directories (>2hrs)" {
-  # Create a fake .vbw-worktrees dir with a stale entry
-  mkdir -p .vbw-worktrees/01-01
-  # Touch it to be 3 hours old
-  touch -t "$(date -v-3H '+%Y%m%d%H%M.%S' 2>/dev/null || date -d '3 hours ago' '+%Y%m%d%H%M.%S' 2>/dev/null)" .vbw-worktrees/01-01 2>/dev/null || true
+  # Create a real git worktree so cleanup outcome can be asserted.
+  git worktree add .vbw-worktrees/01-01 -b vbw/01-01 >/dev/null
+  set_stale_mtime_3h .vbw-worktrees/01-01
+  [ "$?" -eq 0 ]
 
-  # worktree-cleanup.sh needs to exist and handle it
-  # We can't easily test the actual git worktree cleanup, but we can verify the call path
-  # by checking that the directory is attempted for cleanup
   echo '{"cost_usd":0,"duration_ms":0,"tokens_in":0,"tokens_out":0,"model":"test"}' | bash "$SCRIPTS_DIR/session-stop.sh"
-  # Script exits 0 regardless
+
+  [ ! -d ".vbw-worktrees/01-01" ]
+  run git branch --list "vbw/01-01"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
 }
 
 @test "session-stop: preserves fresh worktree directories (<2hrs)" {
@@ -218,7 +267,8 @@ run_file_guard() {
 
 @test "doctor-cleanup scan: detects stale worktree" {
   mkdir -p .vbw-worktrees/02-01
-  touch -t "$(date -v-3H '+%Y%m%d%H%M.%S' 2>/dev/null || date -d '3 hours ago' '+%Y%m%d%H%M.%S' 2>/dev/null)" .vbw-worktrees/02-01 2>/dev/null || true
+  set_stale_mtime_3h .vbw-worktrees/02-01
+  [ "$?" -eq 0 ]
 
   run bash "$SCRIPTS_DIR/doctor-cleanup.sh" scan
   [ "$status" -eq 0 ]

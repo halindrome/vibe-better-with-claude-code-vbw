@@ -51,6 +51,28 @@ normalize_path() {
   echo "$p"
 }
 
+# Best-effort absolute path resolver for boundary checks.
+# - Relative paths are resolved from current working directory.
+# - Non-existent paths still get a stable absolute lexical form.
+to_abs_path() {
+  local p="$1"
+  local base dir file resolved_dir
+  [ -z "$p" ] && {
+    echo ""
+    return 0
+  }
+
+  case "$p" in
+    /*) base="$p" ;;
+    *)  base="$PWD/${p#./}" ;;
+  esac
+
+  dir=$(dirname "$base")
+  file=$(basename "$base")
+  resolved_dir=$(cd "$dir" 2>/dev/null && pwd) || resolved_dir="$dir"
+  echo "${resolved_dir%/}/$file"
+}
+
 NORM_TARGET=$(normalize_path "$FILE_PATH")
 
 # --- Worktree boundary enforcement ---
@@ -67,12 +89,14 @@ if [ "$WORKTREE_ISOLATION" != "off" ] && [ -n "${VBW_AGENT_ROLE:-}" ]; then
       if [ -f "$WORKTREE_MAP_FILE" ]; then
         WORKTREE_PATH=$(jq -r '.worktree_path // ""' "$WORKTREE_MAP_FILE" 2>/dev/null) || WORKTREE_PATH=""
         if [ -n "$WORKTREE_PATH" ]; then
-          case "$FILE_PATH" in
-            "$WORKTREE_PATH"/*|"$WORKTREE_PATH")
+          WORKTREE_ABS=$(to_abs_path "$WORKTREE_PATH")
+          TARGET_ABS=$(to_abs_path "$FILE_PATH")
+          case "$TARGET_ABS" in
+            "$WORKTREE_ABS"/*|"$WORKTREE_ABS")
               : # inside worktree — allowed
               ;;
             *)
-              echo "Blocked: write outside worktree boundary (expected prefix: $WORKTREE_PATH)" >&2
+              echo "Blocked: write outside worktree boundary (expected prefix: $WORKTREE_ABS, got: $TARGET_ABS)" >&2
               exit 2
               ;;
           esac
