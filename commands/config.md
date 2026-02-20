@@ -75,43 +75,7 @@ if [ "$(jq -r '.model_overrides.architect // ""' .vbw-planning/config.json)" != 
 echo "  Lead: $LEAD_DISPLAY | Dev: $DEV_DISPLAY | QA: $QA_DISPLAY | Scout: $SCOUT_DISPLAY | Debugger: $DEBUGGER_DISPLAY | Architect: $ARCHITECT_DISPLAY"
 ```
 
-After the Model Profile section, display Feature Flags section. Read all keys from config.json that start with `v3_` or `v2_`.
-
-Render feature flags in the same single-line box style as the settings table with 4 columns:
-- Flag (human-friendly name, no `v2_`/`v3_` prefix)
-- Value
-- Key (internal key, exact config name)
-- Description
-
-Use this label/description mapping:
-
-- Delta context (`v3_delta_context`): Incremental context compilation
-- Context cache (`v3_context_cache`): Cache compiled context between runs
-- Plan research persist (`v3_plan_research_persist`): Scout writes RESEARCH.md during planning
-- Metrics (`v3_metrics`): Track execution metrics
-- Contract lite (`v3_contract_lite`): Lightweight agent contracts
-- Lock lite (`v3_lock_lite`): Lightweight file locks
-- Validation gates (`v3_validation_gates`): Pre/post validation checks
-- Smart routing (`v3_smart_routing`): Intelligent agent routing
-- Event log (`v3_event_log`): Event logging for debugging
-- Schema validation (`v3_schema_validation`): Validate planning file schemas
-- Snapshot resume (`v3_snapshot_resume`): Resume from snapshots
-- Lease locks (`v3_lease_locks`): Time-limited file locks
-- Event recovery (`v3_event_recovery`): Recover from event failures
-- Monorepo routing (`v3_monorepo_routing`): Monorepo-aware agent routing
-- Hard contracts (`v2_hard_contracts`): Strict agent contracts
-- Hard gates (`v2_hard_gates`): Strict validation gates
-- Typed protocol (`v2_typed_protocol`): Typed agent protocol messages
-- Role isolation (`v2_role_isolation`): Agent role isolation
-- Two-phase completion (`v2_two_phase_completion`): Two-phase task completion
-- Token budgets (`v2_token_budgets`): Agent token budget tracking
-
-Only show flags that exist in config.json. Read dynamically:
-```bash
-jq -r 'to_entries[] | select(.key | startswith("v3_") or startswith("v2_")) | "\(.key)\t\(.value)"' .vbw-planning/config.json
-```
-
-Display hint after flags: `Toggle with: /vbw:config <key> true|false`
+Note: Core infrastructure flags (v2_hard_contracts, v2_hard_gates, v2_typed_protocol, v2_role_isolation, v3_event_log, v3_delta_context, v3_context_cache, v3_plan_research_persist, v3_schema_validation, v3_contract_lite, v3_lock_lite) have graduated to always-on behavior. The remaining flags are configurable under unprefixed names (see Settings Reference below). Brownfield configs with old `v2_`/`v3_` prefixed keys are auto-migrated by `migrate-config.sh`.
 
 **Step 2:** AskUserQuestion with up to 5 commonly changed settings (mark current values):
 - Effort: thorough | balanced | fast | turbo
@@ -391,26 +355,16 @@ Note: `auto_commit` controls source-task commits during Execute mode. Planning a
 | model_overrides | object | agent-to-model map | {} |
 | agent_max_turns | object | per-agent turns (number), 0/false = unlimited | scout=15, qa=25, architect=30, debugger=80, lead=50, dev=75 |
 | context_compiler | boolean | true/false | true |
-| v3_delta_context | boolean | true/false | false |
-| v3_context_cache | boolean | true/false | false |
-| v3_plan_research_persist | boolean | true/false | false |
-| v3_metrics | boolean | true/false | false |
-| v3_contract_lite | boolean | true/false | false |
-| v3_lock_lite | boolean | true/false | false |
-| v3_validation_gates | boolean | true/false | false |
-| v3_smart_routing | boolean | true/false | false |
-| v3_event_log | boolean | true/false | false |
-| v3_schema_validation | boolean | true/false | false |
-| v3_snapshot_resume | boolean | true/false | false |
-| v3_lease_locks | boolean | true/false | false |
-| v3_event_recovery | boolean | true/false | false |
-| v3_monorepo_routing | boolean | true/false | false |
-| v2_hard_contracts | boolean | true/false | false |
-| v2_hard_gates | boolean | true/false | false |
-| v2_typed_protocol | boolean | true/false | false |
-| v2_role_isolation | boolean | true/false | false |
-| v2_two_phase_completion | boolean | true/false | false |
-| v2_token_budgets | boolean | true/false | false |
+| token_budgets | boolean | true/false | true |
+| two_phase_completion | boolean | true/false | true |
+| metrics | boolean | true/false | true |
+| smart_routing | boolean | true/false | true |
+| validation_gates | boolean | true/false | true |
+| snapshot_resume | boolean | true/false | true |
+| lease_locks | boolean | true/false | false |
+| event_recovery | boolean | true/false | false |
+| monorepo_routing | boolean | true/false | true |
+| rolling_summary | boolean | true/false | false |
 
 ### agent_max_turns
 

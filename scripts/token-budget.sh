@@ -11,19 +11,13 @@ set -u
 #
 # Input: file path as arg, or stdin if no file.
 # Output: truncated content within budget (stdout).
-# Logs overage to metrics when v3_metrics=true.
+# Logs overage to metrics (v3_metrics graduated).
 # Exit: 0 always (budget enforcement must never block).
 
+# shellcheck disable=SC2034 # PLANNING_DIR used by convention across VBW scripts
 PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUDGETS_PATH="${SCRIPT_DIR}/../config/token-budgets.json"
-
-# Check feature flag
-ENABLED=false
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r '.v2_token_budgets // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-fi
 
 if [ $# -lt 1 ]; then
   # No role — pass through
@@ -46,8 +40,19 @@ fi
 # Optional contract metadata for per-task budgets
 CONTRACT_PATH="${1:-}"
 
-# If flag disabled, pass through
-if [ "$ENABLED" != "true" ]; then
+# Check token_budgets flag — if disabled, pass through
+# Legacy fallback: honor v2_token_budgets if unprefixed key missing (pre-migration brownfield)
+CONFIG_PATH=".vbw-planning/config.json"
+if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
+  TOKEN_BUDGETS=$(jq -r 'if .token_budgets != null then .token_budgets elif .v2_token_budgets != null then .v2_token_budgets else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  if [ "$TOKEN_BUDGETS" != "true" ]; then
+    echo "$CONTENT"
+    exit 0
+  fi
+fi
+
+# If no budget definitions exist, pass through
+if [ ! -f "$BUDGETS_PATH" ]; then
   echo "$CONTENT"
   exit 0
 fi
@@ -153,13 +158,8 @@ case "$STRATEGY" in
     ;;
 esac
 
-# Log overage to metrics
-METRICS_ENABLED=false
-if [ -f "$CONFIG_PATH" ]; then
-  METRICS_ENABLED=$(jq -r '.v3_metrics // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-fi
-
-if [ "$METRICS_ENABLED" = "true" ] && [ -f "${SCRIPT_DIR}/collect-metrics.sh" ]; then
+# Log overage to metrics (v3_metrics graduated)
+if [ -f "${SCRIPT_DIR}/collect-metrics.sh" ]; then
   bash "${SCRIPT_DIR}/collect-metrics.sh" token_overage 0 \
     "role=${ROLE}" "chars_total=${CHAR_COUNT}" "chars_max=${MAX_CHARS}" \
     "chars_truncated=${OVERAGE}" "budget_source=${BUDGET_SOURCE}" 2>/dev/null || true

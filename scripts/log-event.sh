@@ -25,39 +25,29 @@ if [ $# -lt 2 ]; then
 fi
 
 PLANNING_DIR=".vbw-planning"
+# shellcheck disable=SC2034 # CONFIG_PATH declared for consistency with other VBW scripts
 CONFIG_PATH="${PLANNING_DIR}/config.json"
-
-# Check feature flag
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r '.v3_event_log // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  [ "$ENABLED" != "true" ] && exit 0
-fi
 
 EVENT_TYPE="$1"
 PHASE="$2"
 shift 2
 
-# Optional event type validation (REQ-02)
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  TYPED=$(jq -r '.v2_typed_protocol // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  if [ "$TYPED" = "true" ]; then
-    case "$EVENT_TYPE" in
-      # V1 types
-      phase_start|phase_end|plan_start|plan_end|agent_spawn|agent_shutdown|error|checkpoint)
-        ;;
-      # V2 types
-      phase_planned|task_created|task_claimed|task_started|artifact_written|gate_passed|gate_failed|task_completed_candidate|task_completed_confirmed|task_blocked|task_reassigned|shutdown_sent|shutdown_received)
-        ;;
-      # Additional metric/internal types
-      token_overage|token_cap_escalated|file_conflict|smart_route|contract_revision|cache_hit|task_completion_rejected|snapshot_restored|state_recovered|message_rejected)
-        ;;
-      *)
-        echo "[log-event] WARNING: unknown event type '${EVENT_TYPE}' rejected by v2_typed_protocol" >&2
-        exit 0
-        ;;
-    esac
-  fi
-fi
+# Event type validation is now always enabled (v2_typed_protocol graduated)
+case "$EVENT_TYPE" in
+  # V1 types
+  phase_start|phase_end|plan_start|plan_end|agent_spawn|agent_shutdown|error|checkpoint)
+    ;;
+  # V2 types
+  phase_planned|task_created|task_claimed|task_started|artifact_written|gate_passed|gate_failed|task_completed_candidate|task_completed_confirmed|task_blocked|task_reassigned|shutdown_sent|shutdown_received)
+    ;;
+  # Additional metric/internal types
+  token_overage|token_cap_escalated|file_conflict|smart_route|contract_revision|cache_hit|task_completion_rejected|snapshot_restored|state_recovered|message_rejected)
+    ;;
+  *)
+    echo "[log-event] WARNING: unknown event type '${EVENT_TYPE}' rejected" >&2
+    exit 0
+    ;;
+esac
 
 # Resolve correlation_id: env var override → execution-state.json → "" (empty, always present)
 CORRELATION_ID="${VBW_CORRELATION_ID:-}"

@@ -65,7 +65,6 @@ EOF
 
 @test "compile-context.sh includes delta files when v3_delta_context=true" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_delta_context = true' ".vbw-planning/config.json" > ".vbw-planning/config.tmp" && mv ".vbw-planning/config.tmp" ".vbw-planning/config.json"
 
   # Create a SUMMARY with file list for delta source
   cat > ".vbw-planning/phases/02-test-phase/02-01-SUMMARY.md" <<'EOF'
@@ -80,10 +79,3 @@ EOF
   grep -q "Active Plan" ".vbw-planning/phases/02-test-phase/.context-dev.md"
 }
 
-@test "compile-context.sh omits delta when v3_delta_context=false" {
-  cd "$TEST_TEMP_DIR"
-  run bash "$SCRIPTS_DIR/compile-context.sh" 02 dev ".vbw-planning/phases" ".vbw-planning/phases/02-test-phase/02-01-PLAN.md"
-  [ "$status" -eq 0 ]
-  ! grep -q "Changed Files" ".vbw-planning/phases/02-test-phase/.context-dev.md"
-  ! grep -q "Active Plan" ".vbw-planning/phases/02-test-phase/.context-dev.md"
-}

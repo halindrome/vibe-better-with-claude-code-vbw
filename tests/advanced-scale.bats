@@ -6,9 +6,9 @@ setup() {
   setup_temp_dir
   create_test_config
 
-  # Enable all Phase 6 flags
+  # Enable configurable flags for advanced/scale features
   cd "$TEST_TEMP_DIR"
-  jq '.v3_lease_locks = true | .v3_lock_lite = true | .v3_event_recovery = true | .v3_monorepo_routing = true | .v3_event_log = true' \
+  jq '.lease_locks = true | .event_recovery = true | .monorepo_routing = true' \
     .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
     mv .vbw-planning/config.json.tmp .vbw-planning/config.json
 }
@@ -70,39 +70,33 @@ teardown() {
   [ ! -f ".vbw-planning/.locks/test-task.lock" ]
 }
 
-@test "lease-lock: exits 0 when both flags disabled" {
+@test "lease-lock: exits 0 when lease_locks disabled" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_lease_locks = false | .v3_lock_lite = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
+  jq '.lease_locks = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
     mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   run bash "$SCRIPTS_DIR/lease-lock.sh" acquire test-task file1.sh
   [ "$status" -eq 0 ]
-  [ -z "$output" ]
+  [[ "$output" == *"skipped"* ]]
 }
 
-@test "lease-lock: exits non-zero on conflict when v2_hard_gates=true" {
+@test "lease-lock: exits non-zero on conflict (hard_gates graduated, always-on)" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_lease_locks = true | .v2_hard_gates = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
-    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   bash "$SCRIPTS_DIR/lease-lock.sh" acquire other-task file1.sh >/dev/null 2>&1
   run bash "$SCRIPTS_DIR/lease-lock.sh" acquire new-task file1.sh
   [ "$status" -eq 1 ]
   [[ "$output" == *"conflict_blocked"* ]]
 }
 
-@test "lease-lock: exits 0 on conflict when v2_hard_gates=false" {
+@test "lease-lock: conflict always blocks (hard_gates graduated)" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_lease_locks = true | .v2_hard_gates = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
-    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   bash "$SCRIPTS_DIR/lease-lock.sh" acquire other-task file1.sh >/dev/null 2>&1
   run bash "$SCRIPTS_DIR/lease-lock.sh" acquire new-task file1.sh
-  [ "$status" -eq 0 ]
-  [[ "$output" == *"acquired"* ]]
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"conflict_blocked"* ]]
 }
 
 @test "lease-lock: query returns lock info" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_lease_locks = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
-    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   bash "$SCRIPTS_DIR/lease-lock.sh" acquire test-task file1.sh >/dev/null
   run bash "$SCRIPTS_DIR/lease-lock.sh" query test-task
   [ "$status" -eq 0 ]
@@ -112,8 +106,6 @@ teardown() {
 
 @test "lease-lock: query returns no_lock when absent" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_lease_locks = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
-    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   run bash "$SCRIPTS_DIR/lease-lock.sh" query nonexistent
   [ "$status" -eq 0 ]
   [ "$output" = "no_lock" ]
@@ -176,7 +168,7 @@ EOF
 
 @test "recover-state: exits 0 when flag disabled" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_event_recovery = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
+  jq '.event_recovery = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
     mv .vbw-planning/config.json.tmp .vbw-planning/config.json
   run bash "$SCRIPTS_DIR/recover-state.sh" 5
   [ "$status" -eq 0 ]
@@ -245,8 +237,40 @@ EOF
 
 @test "route-monorepo: exits 0 when flag disabled" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_monorepo_routing = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
+  jq '.monorepo_routing = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
     mv .vbw-planning/config.json.tmp .vbw-planning/config.json
+  run bash "$SCRIPTS_DIR/route-monorepo.sh" .vbw-planning/phases/01-test
+  [ "$status" -eq 0 ]
+  [ "$output" = "[]" ]
+}
+
+@test "route-monorepo: honors legacy v3 flag when new key is missing" {
+  cd "$TEST_TEMP_DIR"
+  mkdir -p packages/core
+  echo '{}' > packages/core/package.json
+  mkdir -p .vbw-planning/phases/01-test
+  cat > .vbw-planning/phases/01-test/01-01-PLAN.md <<'EOF'
+---
+phase: 1
+plan: 1
+title: "Test"
+wave: 1
+depends_on: []
+must_haves: []
+---
+# Plan
+## Tasks
+### Task 1: Update core
+- **Files:** `packages/core/index.js`
+EOF
+
+  run bash "$SCRIPTS_DIR/route-monorepo.sh" .vbw-planning/phases/01-test
+  [ "$status" -eq 0 ]
+  echo "$output" | jq -e 'any(. == "packages/core")'
+
+  jq 'del(.monorepo_routing) | .v3_monorepo_routing = false' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
+    mv .vbw-planning/config.json.tmp .vbw-planning/config.json
+
   run bash "$SCRIPTS_DIR/route-monorepo.sh" .vbw-planning/phases/01-test
   [ "$status" -eq 0 ]
   [ "$output" = "[]" ]

@@ -108,7 +108,7 @@ teardown() {
 
 @test "post-compact: restores role-matched snapshot and infers pending plan" {
   cd "$TEST_TEMP_DIR"
-  jq '.v3_snapshot_resume = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
+  jq '.snapshot_resume = true' .vbw-planning/config.json > .vbw-planning/config.json.tmp && \
     mv .vbw-planning/config.json.tmp .vbw-planning/config.json
 
   cat > .vbw-planning/.execution-state.json <<'STATE'

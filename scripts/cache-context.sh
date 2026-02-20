@@ -27,12 +27,6 @@ if [ -n "$PLAN_PATH" ] && [ -f "$PLAN_PATH" ]; then
   HASH_INPUT="${HASH_INPUT}:plan=${PLAN_SUM}"
 fi
 
-# Config V3 flags (affect compilation behavior)
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V3_FLAGS=$(jq -r '[.v3_delta_context // false, .v3_context_cache // false, .v3_plan_research_persist // false, .v3_metrics // false] | join(",")' "$CONFIG_PATH" 2>/dev/null || echo "false,false,false,false")
-  HASH_INPUT="${HASH_INPUT}:flags=${V3_FLAGS}"
-fi
-
 # Changed files list (git diff for delta awareness)
 if command -v git &>/dev/null && git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
   CHANGED_SUM=$(git diff --name-only HEAD 2>/dev/null | sort | shasum -a 256 2>/dev/null | cut -d' ' -f1 || echo "nogit")
@@ -45,10 +39,10 @@ if [[ "$ROLE" =~ ^(debugger|dev|qa|lead|architect)$ ]] && [ -d ".vbw-planning/co
   HASH_INPUT="${HASH_INPUT}:codebase=${MAP_SUM}"
 fi
 
-# Rolling summary fingerprint (v3_rolling_summary)
+# Rolling summary fingerprint
 ROLLING_PATH=".vbw-planning/ROLLING-CONTEXT.md"
 if command -v jq &>/dev/null && [ -f "$CONFIG_PATH" ]; then
-  ROLLING_ENABLED=$(jq -r '.v3_rolling_summary // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  ROLLING_ENABLED=$(jq -r 'if .rolling_summary != null then .rolling_summary elif .v3_rolling_summary != null then .v3_rolling_summary else false end' "$CONFIG_PATH" 2>/dev/null || echo "false")
   if [ "$ROLLING_ENABLED" = "true" ] && [ -f "$ROLLING_PATH" ]; then
     ROLLING_SUM=$(shasum -a 256 "$ROLLING_PATH" 2>/dev/null | cut -d' ' -f1 || echo "norolling")
     HASH_INPUT="${HASH_INPUT}:rolling=${ROLLING_SUM}"

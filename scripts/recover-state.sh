@@ -19,10 +19,14 @@ PLANNING_DIR=".vbw-planning"
 CONFIG_PATH="${PLANNING_DIR}/config.json"
 EVENTS_FILE="${PLANNING_DIR}/.events/event-log.jsonl"
 
-# Check feature flag
+# Check event_recovery flag — if disabled, output empty object
+# Legacy fallback: honor v3_event_recovery if unprefixed key missing (pre-migration brownfield)
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r '.v3_event_recovery // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-  [ "$ENABLED" != "true" ] && { echo "{}"; exit 0; }
+  EVENT_RECOVERY=$(jq -r 'if .event_recovery != null then .event_recovery elif .v3_event_recovery != null then .v3_event_recovery else false end' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  if [ "$EVENT_RECOVERY" != "true" ]; then
+    echo "{}"
+    exit 0
+  fi
 fi
 
 # Need jq for JSON processing

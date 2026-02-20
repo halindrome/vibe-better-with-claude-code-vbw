@@ -9,20 +9,9 @@ set -u
 # Output: JSON {result: "confirmed"|"rejected", checks_passed: N, checks_total: N, errors: [...]}
 # Exit: 0 on confirmed, 2 on rejected, 0 when flag off
 
+# shellcheck disable=SC2034 # PLANNING_DIR used by convention across VBW scripts
 PLANNING_DIR=".vbw-planning"
-CONFIG_PATH="${PLANNING_DIR}/config.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Check feature flag
-ENABLED=false
-if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  ENABLED=$(jq -r '.v2_two_phase_completion // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
-fi
-
-if [ "$ENABLED" != "true" ]; then
-  echo '{"result":"skipped","reason":"v2_two_phase_completion=false"}'
-  exit 0
-fi
 
 if [ $# -lt 4 ]; then
   echo '{"result":"error","errors":["usage: two-phase-complete.sh <task_id> <phase> <plan> <contract_path> [evidence...]"]}'
@@ -34,6 +23,16 @@ PHASE="$2"
 PLAN="$3"
 CONTRACT_PATH="$4"
 shift 4
+
+# Check two_phase_completion flag — if disabled, skip
+CONFIG_PATH=".vbw-planning/config.json"
+if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
+  TWO_PHASE=$(jq -r 'if .two_phase_completion != null then .two_phase_completion elif .v2_two_phase_completion != null then .v2_two_phase_completion else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  if [ "$TWO_PHASE" != "true" ]; then
+    echo '{"result":"skipped","reason":"two_phase_completion=false"}'
+    exit 0
+  fi
+fi
 
 # Collect evidence from remaining args; extract files_modified if present
 EVIDENCE=""
