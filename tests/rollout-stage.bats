@@ -112,7 +112,7 @@ run_rollout() {
   run_rollout advance --stage=1
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.flags_enabled | length == 0'
-  echo "$output" | jq -e '.flags_already_enabled | length == 3'
+  echo "$output" | jq -e '.flags_already_enabled | length == 4'
 }
 
 # --- Test 7: dry-run does not modify config ---
@@ -125,7 +125,7 @@ run_rollout() {
   run_rollout advance --stage=1 --dry-run
   [ "$status" -eq 0 ]
   echo "$output" | jq -e '.dry_run == true'
-  echo "$output" | jq -e '.flags_enabled | length == 1'
+  echo "$output" | jq -e '.flags_enabled | length == 2'
   # Config should still have false value
   local val_metrics
   val_metrics=$(jq -r '.metrics // false' "$TEST_TEMP_DIR/.vbw-planning/config.json")
