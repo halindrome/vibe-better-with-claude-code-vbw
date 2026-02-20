@@ -87,9 +87,12 @@ if [ "$MERGE_MODE" = true ] && [ -d "$TARGET_CONFIG" ]; then
   echo "Merge mode: preserving existing target, updating VBW plugin files only."
 else
   # Wipe and rebuild target
-  echo "Copying Claude config to $TARGET_CONFIG ..."
+  # NOTE: This copies auth tokens and API keys from your Claude config.
+  # Only use on personal dev machines — not on shared hosts or CI.
+  echo "Copying Claude config to $TARGET_CONFIG (includes auth tokens — personal dev only) ..."
   rm -rf "$TARGET_CONFIG"
   cp -a "$SOURCE_CONFIG" "$TARGET_CONFIG"
+  chmod 700 "$TARGET_CONFIG"
 fi
 
 # Overwrite VBW plugin dirs with local repo files
