@@ -254,6 +254,22 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
 **Phase auto-detection:** First phase without PLAN.md. All planned: STOP "All phases planned. Specify phase: `/vbw:vibe --plan N`"
 
 **Steps:**
+
+**Permission Mode Guard (if enabled):**
+
+Before any file operations or agent spawning:
+1. Read config flag:
+   ```bash
+   PERM_GUARD=$(jq -r '.permission_mode_guard // false' .vbw-planning/config.json 2>/dev/null)
+   ```
+2. If `PERM_GUARD=false` (default) → skip guard, proceed normally
+3. If `PERM_GUARD=true` AND effort is not turbo → present via AskUserQuestion:
+   - Title: "Permission Mode Guard"
+   - Message: "Heads up: VBW agents need file-write permissions. In review-each-action mode, every write will pause for your approval — agents will appear to stall until you respond.\n\nThis is fine if intentional. Otherwise, switch to acceptEdits or bypass permissions mode first — press Shift+Tab now to cycle modes, then select Proceed."
+   - Options: ["Proceed"] / ["Cancel"]
+   - If user selects "Cancel" → STOP, do not continue
+   - If user selects "Proceed" → continue with Plan mode
+
 1. **Parse args:** Phase number (optional, auto-detected), --effort (optional, falls back to config).
 2. **Phase context:** If `{phase-dir}/{phase}-CONTEXT.md` exists, include it in Lead agent context. If not, proceed without — users who want context run `/vbw:discuss N` first.
 3. **Research persistence (REQ-08, graduated):** If effort != turbo:
@@ -279,26 +295,6 @@ If `planning_dir_exists=false`: display "Run /vbw:init first to set up your proj
        exit 1
      fi
      ```
-   - **Permission Mode Guard:**
-     Before spawning write-capable agents, if `permission_mode_guard` is enabled:
-     1. Read `permission_mode_guard` from `.vbw-planning/config.json`:
-        ```bash
-        PERM_GUARD=$(jq -r '.permission_mode_guard // false' .vbw-planning/config.json 2>/dev/null)
-        ```
-     2. If `PERM_GUARD=false` → skip guard entirely (default behavior, no change)
-     3. If `PERM_GUARD=true` → check your current session permission mode:
-        - If session is `acceptEdits` or `bypassPermissions` → proceed silently
-        - If session is `default` or `plan` mode → STOP and present warning via AskUserQuestion:
-          Title: "Permission Mode Guard"
-          Message: "VBW is about to spawn agents that need file-write permissions, but your session is in [mode] mode. Agents will stall on per-tool permission dialogs. To fix: press Shift+Tab to toggle permission mode, or restart with --dangerously-skip-permissions."
-          Options: ["Switch mode first, then continue", "Proceed anyway (agents may stall)", "Cancel"]
-        - If user selects "Cancel" → STOP, do not spawn agents
-        - If user selects either proceed option → continue with spawn
-
-     Skip this guard when:
-     - Turbo plan path (step 5 already handled turbo — no agents spawned inline)
-     - Only read-only agents (Scout) being spawned — no write-capable agents like Lead
-
    - **Team creation:** Read prefer_teams config:
      ```bash
      PREFER_TEAMS=$(jq -r '.prefer_teams // "always"' .vbw-planning/config.json 2>/dev/null)
