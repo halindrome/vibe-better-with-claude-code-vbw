@@ -25,7 +25,7 @@ CONFIG_PATH="${PLANNING_DIR}/config.json"
 
 # Check lease_locks flag — if disabled, skip
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  LEASE_LOCKS=$(jq -r '.lease_locks // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  LEASE_LOCKS=$(jq -r 'if .lease_locks == null then false else .lease_locks end' "$CONFIG_PATH" 2>/dev/null || echo "false")
   if [ "$LEASE_LOCKS" != "true" ]; then
     case "$ACTION" in
       acquire) echo "skipped" ;;

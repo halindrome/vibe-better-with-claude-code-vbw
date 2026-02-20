@@ -71,7 +71,7 @@ LEASE_LOCKS=false
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   CONTEXT_COMPILER=$(jq -r 'if .context_compiler == null then true else .context_compiler end' "$CONFIG_PATH" 2>/dev/null || echo "true")
   TOKEN_BUDGETS=$(jq -r 'if .token_budgets == null then true else .token_budgets end' "$CONFIG_PATH" 2>/dev/null || echo "true")
-  LEASE_LOCKS=$(jq -r '.lease_locks // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  LEASE_LOCKS=$(jq -r 'if .lease_locks == null then false else .lease_locks end' "$CONFIG_PATH" 2>/dev/null || echo "false")
 fi
 
 # --- No-op check (REQ-C1) ---

@@ -21,7 +21,7 @@ EVENTS_FILE="${PLANNING_DIR}/.events/event-log.jsonl"
 
 # Check event_recovery flag — if disabled, output empty object
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  EVENT_RECOVERY=$(jq -r '.event_recovery // false' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  EVENT_RECOVERY=$(jq -r 'if .event_recovery == null then false else .event_recovery end' "$CONFIG_PATH" 2>/dev/null || echo "false")
   if [ "$EVENT_RECOVERY" != "true" ]; then
     echo "{}"
     exit 0
