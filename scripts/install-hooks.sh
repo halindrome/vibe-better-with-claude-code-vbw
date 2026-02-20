@@ -23,7 +23,24 @@ HOOK_CONTENT='#!/usr/bin/env bash
 set -euo pipefail
 # VBW pre-push hook — delegates to the latest cached plugin script.
 # Installed by VBW install-hooks.sh. Remove with: rm .git/hooks/pre-push
-SCRIPT=$(ls -1 "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/*/scripts/pre-push-hook.sh 2>/dev/null | sort -V | tail -1)
+#
+# Try CLAUDE_CONFIG_DIR first, then common default locations.
+# Git runs hooks in a clean environment so CLAUDE_CONFIG_DIR may not be set.
+_vbw_find_script() {
+  local dirs=(
+    "${CLAUDE_CONFIG_DIR:-}"
+    "$HOME/.claude"
+    "$HOME/.config/claude-code"
+  )
+  for d in "${dirs[@]}"; do
+    [ -z "$d" ] && continue
+    local s
+    s=$(ls -1 "$d"/plugins/cache/vbw-marketplace/vbw/*/scripts/pre-push-hook.sh 2>/dev/null | sort -V | tail -1 || true)
+    [ -n "$s" ] && [ -f "$s" ] && echo "$s" && return 0
+  done
+  return 1
+}
+SCRIPT=$(_vbw_find_script || true)
 if [ -n "$SCRIPT" ] && [ -f "$SCRIPT" ]; then
   exec bash "$SCRIPT" "$@"
 fi
