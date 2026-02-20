@@ -101,7 +101,7 @@ V3_METRICS_ENABLED=true
 START_TIME=""
 
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
-  V3_METRICS_ENABLED=$(jq -r 'if .metrics == null then true else .metrics end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  V3_METRICS_ENABLED=$(jq -r 'if .metrics != null then .metrics elif .v3_metrics != null then .v3_metrics else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
 fi
 
 ROLLING_SUMMARY=false

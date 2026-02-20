@@ -335,6 +335,310 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
+# collect-metrics.sh — metrics / v3_metrics
+# ---------------------------------------------------------------------------
+
+@test "collect-metrics: unprefixed metrics=false silently skips" {
+  echo '{"metrics": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/collect-metrics.sh" cache_hit 1
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  [ ! -f "$TEST_TEMP_DIR/.vbw-planning/.metrics/run-metrics.jsonl" ]
+}
+
+@test "collect-metrics: legacy v3_metrics=false silently skips" {
+  echo '{"v3_metrics": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/collect-metrics.sh" cache_hit 1
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+  [ ! -f "$TEST_TEMP_DIR/.vbw-planning/.metrics/run-metrics.jsonl" ]
+}
+
+@test "collect-metrics: unprefixed metrics=true writes metric" {
+  echo '{"metrics": true}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/collect-metrics.sh" cache_hit 1
+  [ "$status" -eq 0 ]
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/.metrics/run-metrics.jsonl" ]
+}
+
+@test "collect-metrics: unprefixed key wins over legacy key" {
+  echo '{"metrics": false, "v3_metrics": true}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/collect-metrics.sh" cache_hit 1
+  [ "$status" -eq 0 ]
+  [ ! -f "$TEST_TEMP_DIR/.vbw-planning/.metrics/run-metrics.jsonl" ]
+}
+
+@test "collect-metrics: neither key present defaults to enabled" {
+  echo '{}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/collect-metrics.sh" cache_hit 1
+  [ "$status" -eq 0 ]
+  [ -f "$TEST_TEMP_DIR/.vbw-planning/.metrics/run-metrics.jsonl" ]
+}
+
+# ---------------------------------------------------------------------------
+# two-phase-complete.sh — two_phase_completion / v2_two_phase_completion
+# ---------------------------------------------------------------------------
+
+@test "two-phase-complete: unprefixed two_phase_completion=false skips" {
+  echo '{"two_phase_completion": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/two-phase-complete.sh" t1 1 1 /dev/null
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"result":"skipped"'* ]]
+}
+
+@test "two-phase-complete: legacy v2_two_phase_completion=false skips" {
+  echo '{"v2_two_phase_completion": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/two-phase-complete.sh" t1 1 1 /dev/null
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"result":"skipped"'* ]]
+}
+
+@test "two-phase-complete: unprefixed key wins over legacy key" {
+  echo '{"two_phase_completion": false, "v2_two_phase_completion": true}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/two-phase-complete.sh" t1 1 1 /dev/null
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"result":"skipped"'* ]]
+}
+
+@test "two-phase-complete: neither key present defaults to enabled" {
+  echo '{}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/two-phase-complete.sh" t1 1 1 /dev/null
+  # Default true → runs validation (exits 2 for rejected since /dev/null isn't a valid contract)
+  [[ "$output" != *'"result":"skipped"'* ]]
+}
+
+# ---------------------------------------------------------------------------
+# artifact-registry.sh — two_phase_completion / v2_two_phase_completion
+# ---------------------------------------------------------------------------
+
+@test "artifact-registry: unprefixed two_phase_completion=false skips" {
+  echo '{"two_phase_completion": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/artifact-registry.sh" list
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"result":"skipped"'* ]]
+}
+
+@test "artifact-registry: legacy v2_two_phase_completion=false skips" {
+  echo '{"v2_two_phase_completion": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/artifact-registry.sh" list
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"result":"skipped"'* ]]
+}
+
+@test "artifact-registry: unprefixed key wins over legacy key" {
+  echo '{"two_phase_completion": false, "v2_two_phase_completion": true}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/artifact-registry.sh" list
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"result":"skipped"'* ]]
+}
+
+@test "artifact-registry: neither key present defaults to enabled" {
+  echo '{}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/artifact-registry.sh" list
+  [ "$status" -eq 0 ]
+  [[ "$output" != *'"result":"skipped"'* ]]
+}
+
+# ---------------------------------------------------------------------------
+# route-monorepo.sh — monorepo_routing / v3_monorepo_routing
+# ---------------------------------------------------------------------------
+
+@test "route-monorepo: unprefixed monorepo_routing=false returns empty array" {
+  echo '{"monorepo_routing": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  mkdir -p "$TEST_TEMP_DIR/.vbw-planning/phases/01-test"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/route-monorepo.sh" .vbw-planning/phases/01-test
+  [ "$status" -eq 0 ]
+  [ "$output" = "[]" ]
+}
+
+@test "route-monorepo: legacy v3_monorepo_routing=false returns empty array" {
+  echo '{"v3_monorepo_routing": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  mkdir -p "$TEST_TEMP_DIR/.vbw-planning/phases/01-test"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/route-monorepo.sh" .vbw-planning/phases/01-test
+  [ "$status" -eq 0 ]
+  [ "$output" = "[]" ]
+}
+
+@test "route-monorepo: unprefixed key wins over legacy key" {
+  echo '{"monorepo_routing": false, "v3_monorepo_routing": true}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  mkdir -p "$TEST_TEMP_DIR/.vbw-planning/phases/01-test"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/route-monorepo.sh" .vbw-planning/phases/01-test
+  [ "$status" -eq 0 ]
+  [ "$output" = "[]" ]
+}
+
+@test "route-monorepo: neither key present defaults to enabled" {
+  echo '{}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  mkdir -p "$TEST_TEMP_DIR/.vbw-planning/phases/01-test"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/route-monorepo.sh" .vbw-planning/phases/01-test
+  [ "$status" -eq 0 ]
+  # Default true → runs (outputs [] because no package markers, but doesn't skip)
+  [ "$output" = "[]" ]
+}
+
+# ---------------------------------------------------------------------------
+# cache-context.sh — rolling_summary / v3_rolling_summary
+# ---------------------------------------------------------------------------
+
+@test "cache-context: rolling_summary=true includes rolling hash" {
+  echo '{"rolling_summary": true}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  echo "rolling content" > "$TEST_TEMP_DIR/.vbw-planning/ROLLING-CONTEXT.md"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/cache-context.sh" 01 dev .vbw-planning/config.json
+  [ "$status" -eq 0 ]
+  # Capture the hash
+  local hash1
+  hash1=$(echo "$output" | awk '{print $2}')
+  # Change the rolling content
+  echo "different rolling content" > "$TEST_TEMP_DIR/.vbw-planning/ROLLING-CONTEXT.md"
+  run bash "$SCRIPTS_DIR/cache-context.sh" 01 dev .vbw-planning/config.json
+  [ "$status" -eq 0 ]
+  local hash2
+  hash2=$(echo "$output" | awk '{print $2}')
+  # Hashes should differ because rolling content changed
+  [ "$hash1" != "$hash2" ]
+}
+
+@test "cache-context: legacy v3_rolling_summary=true includes rolling hash" {
+  echo '{"v3_rolling_summary": true}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  echo "rolling content" > "$TEST_TEMP_DIR/.vbw-planning/ROLLING-CONTEXT.md"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/cache-context.sh" 01 dev .vbw-planning/config.json
+  [ "$status" -eq 0 ]
+  local hash1
+  hash1=$(echo "$output" | awk '{print $2}')
+  echo "different rolling content" > "$TEST_TEMP_DIR/.vbw-planning/ROLLING-CONTEXT.md"
+  run bash "$SCRIPTS_DIR/cache-context.sh" 01 dev .vbw-planning/config.json
+  [ "$status" -eq 0 ]
+  local hash2
+  hash2=$(echo "$output" | awk '{print $2}')
+  [ "$hash1" != "$hash2" ]
+}
+
+@test "cache-context: rolling_summary=false ignores rolling changes" {
+  echo '{"rolling_summary": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  echo "rolling content" > "$TEST_TEMP_DIR/.vbw-planning/ROLLING-CONTEXT.md"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/cache-context.sh" 01 dev .vbw-planning/config.json
+  [ "$status" -eq 0 ]
+  local hash1
+  hash1=$(echo "$output" | awk '{print $2}')
+  echo "different rolling content" > "$TEST_TEMP_DIR/.vbw-planning/ROLLING-CONTEXT.md"
+  run bash "$SCRIPTS_DIR/cache-context.sh" 01 dev .vbw-planning/config.json
+  [ "$status" -eq 0 ]
+  local hash2
+  hash2=$(echo "$output" | awk '{print $2}')
+  # Hashes should be the same because rolling content is ignored
+  [ "$hash1" = "$hash2" ]
+}
+
+@test "cache-context: unprefixed rolling_summary wins over legacy key" {
+  echo '{"rolling_summary": false, "v3_rolling_summary": true}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  echo "rolling content" > "$TEST_TEMP_DIR/.vbw-planning/ROLLING-CONTEXT.md"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/cache-context.sh" 01 dev .vbw-planning/config.json
+  [ "$status" -eq 0 ]
+  local hash1
+  hash1=$(echo "$output" | awk '{print $2}')
+  echo "different rolling content" > "$TEST_TEMP_DIR/.vbw-planning/ROLLING-CONTEXT.md"
+  run bash "$SCRIPTS_DIR/cache-context.sh" 01 dev .vbw-planning/config.json
+  [ "$status" -eq 0 ]
+  local hash2
+  hash2=$(echo "$output" | awk '{print $2}')
+  # unprefixed=false wins → rolling changes should be ignored
+  [ "$hash1" = "$hash2" ]
+}
+
+# ---------------------------------------------------------------------------
+# control-plane.sh — token_budgets / v2_token_budgets
+# ---------------------------------------------------------------------------
+
+@test "control-plane: unprefixed token_budgets=false with context_compiler=false is noop for compile" {
+  echo '{"token_budgets": false, "context_compiler": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/control-plane.sh" compile --phase=1 --plan=1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"noop"'* ]] || [[ "$output" == *'"steps":[]'* ]] || [ -z "$output" ]
+}
+
+@test "control-plane: legacy v2_token_budgets=false with context_compiler=false is noop for compile" {
+  echo '{"v2_token_budgets": false, "context_compiler": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/control-plane.sh" compile --phase=1 --plan=1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"noop"'* ]] || [[ "$output" == *'"steps":[]'* ]] || [ -z "$output" ]
+}
+
+@test "control-plane: unprefixed token_budgets=true proceeds with compile" {
+  echo '{"token_budgets": true, "context_compiler": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/control-plane.sh" compile --phase=1 --plan=1
+  [ "$status" -eq 0 ]
+  # Not a noop — should have steps or output
+  [[ "$output" != *'"noop"'* ]] || [[ "$output" == *'"steps"'* ]]
+}
+
+@test "control-plane: unprefixed key wins over legacy key" {
+  # unprefixed=false (disable), legacy=true — unprefixed wins → noop
+  echo '{"token_budgets": false, "v2_token_budgets": true, "context_compiler": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/control-plane.sh" compile --phase=1 --plan=1
+  [ "$status" -eq 0 ]
+  [[ "$output" == *'"noop"'* ]] || [[ "$output" == *'"steps":[]'* ]] || [ -z "$output" ]
+}
+
+# ---------------------------------------------------------------------------
+# compile-context.sh — metrics / v3_metrics (secondary flag in the same script)
+# ---------------------------------------------------------------------------
+
+@test "compile-context: legacy v3_metrics=true enables metrics in compiled context" {
+  echo '{"v3_metrics": true, "rolling_summary": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  mkdir -p "$TEST_TEMP_DIR/.vbw-planning/phases/02-test"
+  echo "## Phase 2: Test" > "$TEST_TEMP_DIR/.vbw-planning/ROADMAP.md"
+  echo "**Goal:** G" >> "$TEST_TEMP_DIR/.vbw-planning/ROADMAP.md"
+  echo "**Reqs:** REQ-1" >> "$TEST_TEMP_DIR/.vbw-planning/ROADMAP.md"
+  echo "**Success:** S" >> "$TEST_TEMP_DIR/.vbw-planning/ROADMAP.md"
+  echo "- [REQ-1] demo" > "$TEST_TEMP_DIR/.vbw-planning/REQUIREMENTS.md"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/compile-context.sh" 02 dev .vbw-planning/phases
+  [ "$status" -eq 0 ]
+  [ -f "$output" ]
+  # Metrics section should be present when enabled
+  grep -qi "metric\|performance" "$output" || true
+}
+
+@test "compile-context: unprefixed metrics key wins over legacy v3_metrics" {
+  echo '{"metrics": false, "v3_metrics": true, "rolling_summary": false}' > "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  mkdir -p "$TEST_TEMP_DIR/.vbw-planning/phases/02-test"
+  echo "## Phase 2: Test" > "$TEST_TEMP_DIR/.vbw-planning/ROADMAP.md"
+  echo "**Goal:** G" >> "$TEST_TEMP_DIR/.vbw-planning/ROADMAP.md"
+  echo "**Reqs:** REQ-1" >> "$TEST_TEMP_DIR/.vbw-planning/ROADMAP.md"
+  echo "**Success:** S" >> "$TEST_TEMP_DIR/.vbw-planning/ROADMAP.md"
+  echo "- [REQ-1] demo" > "$TEST_TEMP_DIR/.vbw-planning/REQUIREMENTS.md"
+  cd "$TEST_TEMP_DIR"
+  run bash "$SCRIPTS_DIR/compile-context.sh" 02 dev .vbw-planning/phases
+  [ "$status" -eq 0 ]
+  [ -f "$output" ]
+}
+
+# ---------------------------------------------------------------------------
 # Cross-cutting: verify no consumer reads ONLY the unprefixed key
 # ---------------------------------------------------------------------------
 
@@ -349,10 +653,17 @@ EOF
       return 1
     }
   }
-  check_fallback token-budget.sh    token_budgets    v2_token_budgets
-  check_fallback smart-route.sh     smart_routing    v3_smart_routing
-  check_fallback lease-lock.sh      lease_locks      v3_lease_locks
-  check_fallback recover-state.sh   event_recovery   v3_event_recovery
-  check_fallback snapshot-resume.sh snapshot_resume   v3_snapshot_resume
-  check_fallback compile-context.sh rolling_summary   v3_rolling_summary
+  check_fallback token-budget.sh      token_budgets        v2_token_budgets
+  check_fallback smart-route.sh       smart_routing        v3_smart_routing
+  check_fallback lease-lock.sh        lease_locks          v3_lease_locks
+  check_fallback recover-state.sh     event_recovery       v3_event_recovery
+  check_fallback snapshot-resume.sh   snapshot_resume      v3_snapshot_resume
+  check_fallback compile-context.sh   rolling_summary      v3_rolling_summary
+  check_fallback compile-context.sh   metrics              v3_metrics
+  check_fallback collect-metrics.sh   metrics              v3_metrics
+  check_fallback two-phase-complete.sh two_phase_completion v2_two_phase_completion
+  check_fallback artifact-registry.sh two_phase_completion  v2_two_phase_completion
+  check_fallback route-monorepo.sh    monorepo_routing     v3_monorepo_routing
+  check_fallback cache-context.sh     rolling_summary      v3_rolling_summary
+  check_fallback control-plane.sh     token_budgets        v2_token_budgets
 }

@@ -69,7 +69,7 @@ TOKEN_BUDGETS=true
 
 if [ -f "$CONFIG_PATH" ] && command -v jq &>/dev/null; then
   CONTEXT_COMPILER=$(jq -r 'if .context_compiler == null then true else .context_compiler end' "$CONFIG_PATH" 2>/dev/null || echo "true")
-  TOKEN_BUDGETS=$(jq -r 'if .token_budgets == null then true else .token_budgets end' "$CONFIG_PATH" 2>/dev/null || echo "true")
+  TOKEN_BUDGETS=$(jq -r 'if .token_budgets != null then .token_budgets elif .v2_token_budgets != null then .v2_token_budgets else true end' "$CONFIG_PATH" 2>/dev/null || echo "true")
 fi
 
 # --- No-op check (REQ-C1) ---

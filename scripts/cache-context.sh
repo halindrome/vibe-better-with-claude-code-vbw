@@ -42,7 +42,7 @@ fi
 # Rolling summary fingerprint
 ROLLING_PATH=".vbw-planning/ROLLING-CONTEXT.md"
 if command -v jq &>/dev/null && [ -f "$CONFIG_PATH" ]; then
-  ROLLING_ENABLED=$(jq -r 'if .rolling_summary == null then false else .rolling_summary end' "$CONFIG_PATH" 2>/dev/null || echo "false")
+  ROLLING_ENABLED=$(jq -r 'if .rolling_summary != null then .rolling_summary elif .v3_rolling_summary != null then .v3_rolling_summary else false end' "$CONFIG_PATH" 2>/dev/null || echo "false")
   if [ "$ROLLING_ENABLED" = "true" ] && [ -f "$ROLLING_PATH" ]; then
     ROLLING_SUM=$(shasum -a 256 "$ROLLING_PATH" 2>/dev/null | cut -d' ' -f1 || echo "norolling")
     HASH_INPUT="${HASH_INPUT}:rolling=${ROLLING_SUM}"
