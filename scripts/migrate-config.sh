@@ -133,7 +133,7 @@ rename_flag() {
         exit 1
       fi
     else
-      # New name already exists — just remove old key
+      # New name already exists — keep it as source of truth and drop legacy key
       if ! apply_update "del(.$old_name)"; then
         echo "ERROR: Config migration failed while removing stale $old_name." >&2
         exit 1

@@ -420,3 +420,23 @@ EOF
   [ "$status" -eq 0 ]
   [ "$output" = "false" ]
 }
+
+@test "migration keeps new flag value when legacy and new keys disagree" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "effort": "balanced",
+  "monorepo_routing": true,
+  "v3_monorepo_routing": false
+}
+EOF
+
+  run_migration
+
+  run jq -r '.monorepo_routing' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "true" ]
+
+  run jq -r 'has("v3_monorepo_routing")' "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "false" ]
+}
