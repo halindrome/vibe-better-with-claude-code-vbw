@@ -29,11 +29,11 @@ teardown() {
   [ "$output" = "1" ]
 }
 
-@test "event-types: rejects unknown event type when v2_typed_protocol enabled" {
+@test "event-types: rejects unknown event type" {
   cd "$TEST_TEMP_DIR"
   run bash -c "bash '$SCRIPTS_DIR/log-event.sh' bogus_event 1 2>&1"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"unknown event type 'bogus_event' rejected by v2_typed_protocol"* ]]
+  [[ "$output" == *"unknown event type 'bogus_event' rejected"* ]]
   # Event file should not exist or not contain the bogus event
   if [ -f .vbw-planning/.events/event-log.jsonl ]; then
     run grep -c "bogus_event" .vbw-planning/.events/event-log.jsonl
