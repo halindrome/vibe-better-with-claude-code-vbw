@@ -43,8 +43,16 @@ derive_slug() {
   if [[ -f "$shipped" ]]; then
     # Try 1: Use milestone name from title (e.g., "# SHIPPED: My Milestone")
     local title_name
-    title_name=$(sed -n 's/^# SHIPPED: *//p' "$shipped" | head -1)
-    if [[ -n "$title_name" && "$title_name" != "Default Milestone" ]]; then
+    title_name=$(awk '
+      tolower($0) ~ /^#[[:space:]]*shipped:[[:space:]]*/ {
+        sub(/^#[[:space:]]*[Ss][Hh][Ii][Pp][Pp][Ee][Dd]:[[:space:]]*/, "", $0)
+        print
+        exit
+      }
+    ' "$shipped")
+    local title_name_lc
+    title_name_lc=$(printf '%s\n' "$title_name" | tr '[:upper:]' '[:lower:]')
+    if [[ -n "$title_name" && "$title_name_lc" != "default milestone" ]]; then
       slug=$(normalize_slug "$title_name")
     fi
 
@@ -53,7 +61,7 @@ derive_slug() {
     if [[ -z "$slug" ]]; then
       local phases
       phases=$(awk '
-        /^## Phases/ { found=1; next }
+        tolower($0) ~ /^##[[:space:]]+phases[[:space:]]*$/ { found=1; next }
         found && /^## / { exit }
         found && /^[-*] / {
           sub(/^[-*] +(Phase [0-9]+: )?/, "")

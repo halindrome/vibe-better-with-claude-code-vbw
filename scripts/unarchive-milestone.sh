@@ -25,34 +25,117 @@ if [[ ! -d "$MILESTONE_DIR" ]]; then
   exit 1
 fi
 
-# --- Extract section items from STATE.md ---
-# Usage: extract_section_items FILE SECTION_HEADER
-# Returns one item per line (list items "- " and table rows "| ")
-extract_section_items() {
-  local file="$1" header="$2"
+# --- Extract todos from STATE.md ---
+# Supports current/legacy headings: "## Todos" and "### Pending Todos"
+extract_todo_items() {
+  local file="$1"
   [ -f "$file" ] || return 0
-  awk -v hdr="$header" '
-    $0 == hdr { found=1; next }
-    found && /^## / { exit }
-    found && /^- / { print }
-    found && /^\| / && !/^\| *[-:]/ && !/^\| *Decision/ { print }
+  awk '
+    {
+      low = tolower($0)
+
+      if (low ~ /^##[[:space:]]+todos[[:space:]]*$/) {
+        found=1
+        mode="h2"
+        next
+      }
+
+      if (low ~ /^###[[:space:]]+pending[[:space:]]+todos[[:space:]]*$/) {
+        found=1
+        mode="h3"
+        next
+      }
+
+      if (found && mode == "h2" && /^## /) {
+        found=0
+        mode=""
+      }
+
+      if (found && mode == "h3" && (/^## / || /^### /)) {
+        found=0
+        mode=""
+      }
+
+      if (found && /^[-*] /) {
+        print
+      }
+    }
   ' "$file"
 }
 
-# --- Normalize a line for dedup comparison ---
-# Strips leading "- ", "| ", priority tags, date tags, table cell delimiters, and extra whitespace
-normalize_item() {
-  echo "$1" | sed 's/^- //' | sed 's/^| //' | sed 's/ |$//g' | sed 's/ | / /g' | \
-    sed 's/^\[[^]]*\] //' | \
-    sed 's/ *(added [0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\})$//' | \
-    sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | tr '[:upper:]' '[:lower:]'
+# --- Extract decisions from STATE.md ---
+# Supports current/legacy headings: "## Key Decisions" and "## Decisions"
+extract_decision_items() {
+  local file="$1"
+  [ -f "$file" ] || return 0
+  awk '
+    {
+      low = tolower($0)
+
+      if (low ~ /^##[[:space:]]+(key[[:space:]]+)?decisions[[:space:]]*$/) {
+        found=1
+        next
+      }
+
+      if (found && /^## /) {
+        found=0
+      }
+
+      if (!found) {
+        next
+      }
+
+      if (/^[-*] /) {
+        print
+        next
+      }
+
+      if (/^\|/) {
+        # Skip markdown separators and common table header row
+        if (low ~ /^\|[[:space:]:-]+\|?[[:space:]]*$/) {
+          next
+        }
+        if (low ~ /^\|[[:space:]]*decision([[:space:]]*\|.*)?$/) {
+          next
+        }
+        print
+      }
+    }
+  ' "$file"
+}
+
+# --- Normalize todo item for dedup comparison ---
+normalize_todo_item() {
+  printf '%s\n' "$1" | \
+    sed -E 's/^[-*][[:space:]]+//' | \
+    sed -E 's/^\[[^]]+\][[:space:]]*//' | \
+    sed -E 's/[[:space:]]*\(added[[:space:]]+[0-9]{4}-[0-9]{2}-[0-9]{2}\)$//' | \
+    sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//; s/[[:space:]]+/ /g' | \
+    tr '[:upper:]' '[:lower:]'
+}
+
+# --- Normalize decision item for dedup comparison ---
+# For table rows, dedup by the decision text (first column) only.
+normalize_decision_item() {
+  local line="$1"
+
+  if [[ "$line" =~ ^\| ]]; then
+    line=$(printf '%s\n' "$line" | sed 's/^|//' | awk -F'|' '{print $1}')
+  else
+    line=$(printf '%s\n' "$line" | sed -E 's/^[-*][[:space:]]+//')
+  fi
+
+  printf '%s\n' "$line" | \
+    sed -E 's/\*\*//g' | \
+    sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//; s/[[:space:]]+/ /g' | \
+    tr '[:upper:]' '[:lower:]'
 }
 
 # --- Merge two sets of items with dedup ---
-# Usage: merge_items "items1_multiline" "items2_multiline"
+# Usage: merge_items KIND "items1_multiline" "items2_multiline"
 # Returns deduplicated union
 merge_items() {
-  local items1="$1" items2="$2"
+  local kind="$1" items1="$2" items2="$3"
   local -a seen_normalized=()
   local -a result=()
 
@@ -61,7 +144,11 @@ merge_items() {
     [ -z "$line" ] && continue
     [[ "$line" == "None." ]] && continue
     local norm
-    norm=$(normalize_item "$line")
+    if [[ "$kind" == "decisions" ]]; then
+      norm=$(normalize_decision_item "$line")
+    else
+      norm=$(normalize_todo_item "$line")
+    fi
     [ -z "$norm" ] && continue
 
     local found=false
@@ -82,7 +169,11 @@ merge_items() {
     [ -z "$line" ] && continue
     [[ "$line" == "None." ]] && continue
     local norm
-    norm=$(normalize_item "$line")
+    if [[ "$kind" == "decisions" ]]; then
+      norm=$(normalize_decision_item "$line")
+    else
+      norm=$(normalize_todo_item "$line")
+    fi
     [ -z "$norm" ] && continue
 
     local found=false
@@ -103,19 +194,98 @@ merge_items() {
   done
 }
 
-# --- Replace a section in a file with new content ---
-# Usage: replace_section FILE SECTION_HEADER NEW_CONTENT
-replace_section() {
-  local file="$1" header="$2" new_content="$3"
+# --- Replace or append a section in a file with normalized heading matching ---
+# Usage: replace_or_append_section FILE KIND CANONICAL_HEADER NEW_CONTENT
+# KIND: "todos" or "decisions"
+replace_or_append_section() {
+  local file="$1" kind="$2" canonical_header="$3" new_content="$4"
   local tmp="${file}.tmp.$$"
   local content_file="${file}.content.$$"
 
   printf '%s\n' "$new_content" > "$content_file"
 
-  awk -v hdr="$header" -v cfile="$content_file" '
-    $0 == hdr { print; while ((getline line < cfile) > 0) print line; close(cfile); skip=1; next }
-    skip && /^## / { skip=0 }
-    !skip { print }
+  awk -v kind="$kind" -v canonical="$canonical_header" -v cfile="$content_file" '
+    function is_decision_heading(line, low) {
+      low = tolower(line)
+      return (low ~ /^##[[:space:]]+(key[[:space:]]+)?decisions[[:space:]]*$/)
+    }
+
+    function is_todo_heading(line, low) {
+      low = tolower(line)
+      return (low ~ /^##[[:space:]]+todos[[:space:]]*$/)
+    }
+
+    function is_pending_todos_heading(line, low) {
+      low = tolower(line)
+      return (low ~ /^###[[:space:]]+pending[[:space:]]+todos[[:space:]]*$/)
+    }
+
+    function is_target_heading(line) {
+      if (kind == "decisions") {
+        return is_decision_heading(line)
+      }
+      return (is_todo_heading(line) || is_pending_todos_heading(line))
+    }
+
+    function start_skip_mode(line) {
+      if (kind == "todos" && is_pending_todos_heading(line)) {
+        return "h3"
+      }
+      return "h2"
+    }
+
+    function skip_should_end(mode, line) {
+      if (mode == "h3") {
+        return (line ~ /^## / || line ~ /^### /)
+      }
+      return (line ~ /^## /)
+    }
+
+    function print_canonical_section(ln) {
+      print canonical
+      while ((getline ln < cfile) > 0) {
+        print ln
+      }
+      close(cfile)
+    }
+
+    {
+      line = $0
+
+      if (skip && skip_should_end(skip_mode, line)) {
+        skip = 0
+        skip_mode = ""
+      }
+
+      if (skip) {
+        next
+      }
+
+      if (is_target_heading(line)) {
+        if (!inserted) {
+          print_canonical_section()
+          inserted = 1
+          printed_any = 1
+          last_nonempty = 1
+        }
+        skip = 1
+        skip_mode = start_skip_mode(line)
+        next
+      }
+
+      print line
+      printed_any = 1
+      last_nonempty = (line !~ /^[[:space:]]*$/)
+    }
+
+    END {
+      if (!inserted) {
+        if (printed_any && last_nonempty) {
+          print ""
+        }
+        print_canonical_section()
+      }
+    }
   ' "$file" > "$tmp" && mv "$tmp" "$file"
   rm -f "$content_file"
 }
@@ -130,17 +300,17 @@ root_decisions=""
 archived_decisions=""
 
 if [ -f "$ROOT_STATE" ]; then
-  root_todos=$(extract_section_items "$ROOT_STATE" "## Todos")
-  root_decisions=$(extract_section_items "$ROOT_STATE" "## Key Decisions")
+  root_todos=$(extract_todo_items "$ROOT_STATE")
+  root_decisions=$(extract_decision_items "$ROOT_STATE")
 fi
 
 if [ -f "$ARCHIVED_STATE" ]; then
-  archived_todos=$(extract_section_items "$ARCHIVED_STATE" "## Todos")
-  archived_decisions=$(extract_section_items "$ARCHIVED_STATE" "## Key Decisions")
+  archived_todos=$(extract_todo_items "$ARCHIVED_STATE")
+  archived_decisions=$(extract_decision_items "$ARCHIVED_STATE")
 fi
 
-merged_todos=$(merge_items "$archived_todos" "$root_todos")
-merged_decisions=$(merge_items "$archived_decisions" "$root_decisions")
+merged_todos=$(merge_items "todos" "$archived_todos" "$root_todos")
+merged_decisions=$(merge_items "decisions" "$archived_decisions" "$root_decisions")
 
 # --- Move files back to root ---
 # Move phases
@@ -170,10 +340,10 @@ fi
 # --- Write merged sections into restored STATE.md ---
 if [ -f "$ROOT_STATE" ]; then
   if [ -n "$merged_todos" ]; then
-    replace_section "$ROOT_STATE" "## Todos" "$merged_todos"
+    replace_or_append_section "$ROOT_STATE" "todos" "## Todos" "$merged_todos"
   fi
   if [ -n "$merged_decisions" ]; then
-    replace_section "$ROOT_STATE" "## Key Decisions" "$merged_decisions"
+    replace_or_append_section "$ROOT_STATE" "decisions" "## Key Decisions" "$merged_decisions"
   fi
 fi
 

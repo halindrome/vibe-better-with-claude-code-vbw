@@ -270,3 +270,105 @@ EOF
   # "[MEDIUM] Write integration tests" (root-only) should survive
   grep -q 'integration tests' ".vbw-planning/STATE.md"
 }
+
+@test "preserves root decisions when root uses legacy Decisions heading" {
+  create_archived_milestone "foundation"
+
+  cat > ".vbw-planning/STATE.md" <<'EOF'
+# VBW State
+
+**Project:** Test Project
+
+## Decisions
+- Keep production feature flag defaults conservative
+
+## Todos
+None.
+EOF
+
+  run bash "$SCRIPTS_DIR/unarchive-milestone.sh" \
+    ".vbw-planning/milestones/foundation" ".vbw-planning"
+  [ "$status" -eq 0 ]
+
+  grep -q 'PostgreSQL for data store' ".vbw-planning/STATE.md"
+  grep -q 'feature flag defaults conservative' ".vbw-planning/STATE.md"
+}
+
+@test "merges decisions across Decisions and Key Decisions headings" {
+  create_archived_milestone "foundation"
+
+  cat > ".vbw-planning/milestones/foundation/STATE.md" <<'EOF'
+# VBW State
+
+**Project:** Test Project
+
+## Decisions
+- Use REST API for backend
+- PostgreSQL for data store
+
+## Todos
+- Upgrade deps after milestone
+EOF
+
+  cat > ".vbw-planning/STATE.md" <<'EOF'
+# VBW State
+
+**Project:** Test Project
+
+## Key Decisions
+- Keep an append-only migration log
+
+## Todos
+None.
+EOF
+
+  run bash "$SCRIPTS_DIR/unarchive-milestone.sh" \
+    ".vbw-planning/milestones/foundation" ".vbw-planning"
+  [ "$status" -eq 0 ]
+
+  grep -q 'PostgreSQL for data store' ".vbw-planning/STATE.md"
+  grep -q 'append-only migration log' ".vbw-planning/STATE.md"
+}
+
+@test "merges legacy Pending Todos subsection from root state" {
+  create_archived_milestone "foundation"
+
+  cat > ".vbw-planning/STATE.md" <<'EOF'
+# VBW State
+
+**Project:** Test Project
+
+### Pending Todos
+- Document migration edge-cases
+EOF
+
+  run bash "$SCRIPTS_DIR/unarchive-milestone.sh" \
+    ".vbw-planning/milestones/foundation" ".vbw-planning"
+  [ "$status" -eq 0 ]
+
+  grep -q 'Upgrade deps after milestone' ".vbw-planning/STATE.md"
+  grep -q 'Document migration edge-cases' ".vbw-planning/STATE.md"
+}
+
+@test "merges compact table decisions without space after pipe" {
+  create_archived_milestone "foundation"
+
+  cat > ".vbw-planning/STATE.md" <<'EOF'
+# VBW State
+
+**Project:** Test Project
+
+## Key Decisions
+|Add caching layer|2026-02-16|Reduce latency|
+
+## Todos
+None.
+EOF
+
+  run bash "$SCRIPTS_DIR/unarchive-milestone.sh" \
+    ".vbw-planning/milestones/foundation" ".vbw-planning"
+  [ "$status" -eq 0 ]
+
+  grep -q 'Add caching layer' ".vbw-planning/STATE.md"
+  grep -q 'PostgreSQL for data store' ".vbw-planning/STATE.md"
+}

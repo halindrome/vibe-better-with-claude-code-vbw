@@ -167,3 +167,33 @@ EOF
   # Should be 01-milestone-YYYYMMDD, not prose
   [[ "$renamed" =~ ^01-milestone-[0-9]{8}$ ]]
 }
+
+@test "uses mixed-case Shipped title for slug derivation" {
+  mkdir -p .vbw-planning/milestones/default
+  cat > .vbw-planning/milestones/default/SHIPPED.md <<'EOF'
+# Shipped: Custom Milestone
+
+Date: 2026-02-15
+EOF
+
+  run bash "$SCRIPTS_DIR/rename-default-milestone.sh" ".vbw-planning"
+  [ "$status" -eq 0 ]
+  [ ! -d ".vbw-planning/milestones/default" ]
+  [ -d ".vbw-planning/milestones/01-custom-milestone" ]
+}
+
+@test "parses mixed-case phases heading for slug derivation" {
+  mkdir -p .vbw-planning/milestones/default
+  cat > .vbw-planning/milestones/default/SHIPPED.md <<'EOF'
+# SHIPPED: Default Milestone
+
+## phases
+- Phase 1: Setup
+- Phase 2: API Layer
+EOF
+
+  run bash "$SCRIPTS_DIR/rename-default-milestone.sh" ".vbw-planning"
+  [ "$status" -eq 0 ]
+  [ ! -d ".vbw-planning/milestones/default" ]
+  [ -d ".vbw-planning/milestones/01-setup-api-layer" ]
+}
