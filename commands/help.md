@@ -11,7 +11,7 @@ allowed-tools: Read, Glob, Bash
 
 ## Context
 
-Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(bash -c 'for _d in "${CLAUDE_CONFIG_DIR:-}" "$HOME/.config/claude-code" "$HOME/.claude"; do [ -z "$_d" ] && continue; _p=$(ls -1d "$_d"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1 || true); [ -n "$_p" ] && [ -d "$_p" ] && echo "$_p" && break; done')}``
+Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(bash -c 'ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1')}``
 
 ## Behavior
 
@@ -20,7 +20,7 @@ Plugin root: `!`echo ${CLAUDE_PLUGIN_ROOT:-$(bash -c 'for _d in "${CLAUDE_CONFIG
 Run the help output script and display the result exactly as-is (pre-formatted terminal output):
 
 ```
-!`bash ${CLAUDE_PLUGIN_ROOT:-$(bash -c 'for _d in "${CLAUDE_CONFIG_DIR:-}" "$HOME/.config/claude-code" "$HOME/.claude"; do [ -z "$_d" ] && continue; _p=$(ls -1d "$_d"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1 || true); [ -n "$_p" ] && [ -d "$_p" ] && echo "$_p" && break; done')}/scripts/help-output.sh`
+!`bash ${CLAUDE_PLUGIN_ROOT:-$(bash -c 'ls -1d "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"/plugins/cache/vbw-marketplace/vbw/* 2>/dev/null | (sort -V 2>/dev/null || sort -t. -k1,1n -k2,2n -k3,3n) | tail -1')}/scripts/help-output.sh`
 ```
 
 Display the output above verbatim. Do not reformat, summarize, or add commentary. The script dynamically reads all command files and generates grouped output.
