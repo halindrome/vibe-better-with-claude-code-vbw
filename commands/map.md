@@ -78,6 +78,14 @@ PREFER_TEAMS=$(bash "{plugin-root}/scripts/normalize-prefer-teams.sh" .vbw-plann
 ```
 If `PREFER_TEAMS` is `never`, force solo regardless of file count or --tier flag.
 
+After selecting the tier, evaluate the optional Dynamic Workflows executor (see `{plugin-root}/references/workflow-executor.md`):
+```bash
+WF_MODE=$(bash "{plugin-root}/scripts/normalize-workflows-mode.sh" .vbw-planning/config.json 2>/dev/null || echo "auto")
+WF_SUPPORTED=$(bash "{plugin-root}/scripts/detect-workflows-support.sh" --status 2>/dev/null || echo "unsupported")
+WF_EXECUTOR=$(bash "{plugin-root}/scripts/resolve-executor.sh" --mode --fanout "${SOURCE_FILE_COUNT:-0}" --workflows-mode "$WF_MODE" --supported "$WF_SUPPORTED" 2>/dev/null || echo "fallback")
+```
+This applies to `quad` tier only. As a conservative prototype, the workflow executor is used **only** when `WF_EXECUTOR` is `workflow` AND `WF_MODE` is `always` (explicit opt-in). With the default `auto`, quad mapping keeps the standard 4-scout team — no behavior change. `WF_EXECUTOR=fallback` (workflows `never`, unsupported runtime, or low fan-out) always uses the scout team.
+
 ### Step 2: Detect monorepo
 
 **JS/Node patterns:** Check lerna.json, pnpm-workspace.yaml, packages/ or apps/ with sub-package.json, root workspaces field.
@@ -152,6 +160,14 @@ After calling `Skill(...)`, if the loaded skill's instructions reference additio
 Wait for all findings. Proceed to Step 3.5.
 
 ---
+
+**Step 3-quad executor selection:** If the quad scan is workflow-eligible — `WF_EXECUTOR` is `workflow` AND `WF_MODE` is `always` (explicit opt-in; see Step 1.5 and `{plugin-root}/references/workflow-executor.md`) — run **Step 3-quad-workflow** and skip the scout-team path. Otherwise run **Step 3-quad** (the scout-team path) as written.
+
+**Step 3-quad-workflow (opt-in — Dynamic Workflows executor):** Offload the four-domain scan to a Claude Dynamic Workflow instead of a Scout team:
+- Dispatch a workflow that scans the codebase across the same four domains (Tech Stack, Architecture, Quality, Concerns) and returns per-domain findings as structured output. It runs in the background; monitor via `/workflows`.
+- **Result-bridging (mandatory):** the workflow returns findings only and MUST NOT write under `.vbw-planning/`. The orchestrator writes the seven documents itself from the returned findings — `.vbw-planning/codebase/`: STACK.md, DEPENDENCIES.md, ARCHITECTURE.md, STRUCTURE.md, CONVENTIONS.md, TESTING.md, CONCERNS.md. See `{plugin-root}/references/workflow-executor.md`.
+- **Fallback (mandatory):** if workflows are unavailable at dispatch, the run errors, or it returns no usable findings, run the standard **Step 3-quad** scout-team path below instead.
+- Display `◆ Executor: Dynamic Workflow (quad scan)`. After the seven docs are written, proceed to Step 3.5.
 
 **Step 3-quad:** **Pre-TeamCreate cleanup:** `bash "{plugin-root}/scripts/clean-stale-teams.sh" 2>/dev/null || true`. Create team via TeamCreate: `team_name="vbw-map-quad"`, `description="Codebase Map (quad)"` with 4 Scouts via TaskCreate. **Set `subagent_type: "vbw:vbw-scout"` on each Scout TaskCreate.** Do not pass `isolation`, `cwd`, `working_dir`, `workingDirectory`, or `workdir` on any TaskCreate. Each Scout writes its domain files directly via `<output_paths>`, then sends a `scout_findings` message with `cross_cutting` findings only (file contents already written). Schema ref: `{plugin-root}/references/handoff-schemas.md`
 - Scout 1 (Tech Stack): `<output_paths>` = `.vbw-planning/codebase/STACK.md`, `.vbw-planning/codebase/DEPENDENCIES.md`
