@@ -250,6 +250,7 @@ create_test_config() {
   "visual_format": "unicode",
   "max_tasks_per_plan": 5,
   "prefer_teams": "auto",
+  "workflows": "auto",
   "branch_per_milestone": false,
   "plain_summary": true,
   "qa_skip_agents": ["docs"],
