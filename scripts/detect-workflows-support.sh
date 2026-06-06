@@ -8,7 +8,9 @@ set -u
 # script cannot prove the running CLI version ships them, so this reports the
 # strongest signal available from disk/env: whether workflows are NOT disabled.
 # The executor resolver treats "supported" as "eligible to attempt"; final
-# availability is confirmed by the runtime at invocation. When support cannot be
+# availability is confirmed by the runtime at invocation. This single signal gates
+# BOTH workflow invocation surfaces — the per-request `ultracode` keyword and the
+# first-class `Workflow` tool (direct programmatic dispatch). When support cannot be
 # confirmed (no jq, parse failure), detection FAILS CLOSED (unsupported) so VBW
 # keeps using its proven team/subagent/direct delegation — behavior stays
 # identical to today wherever the feature is absent or unverifiable.
@@ -25,6 +27,17 @@ set -u
 #   - CLAUDE_CODE_DISABLE_WORKFLOWS truthy (env kill switch, read at startup)
 #   - "disableWorkflows": true in the effective merged settings.json
 #     (user settings < project .claude/settings.json < project .claude/settings.local.json)
+#   - "enableWorkflows": false in the effective merged settings.json (Pro opt-in
+#     explicitly declined — see note below)
+#
+# Two distinct settings keys exist in practice:
+#   - disableWorkflows (bool): the org/user kill switch documented at
+#     https://code.claude.com/docs/en/workflows.
+#   - enableWorkflows  (bool): the Pro opt-in toggle that the /config "Dynamic
+#     workflows" row and the cloud admin settings actually persist (observed
+#     empirically; not on the public workflows page). On Pro the feature is OFF
+#     until enableWorkflows is true, so enableWorkflows:false is a definitive
+#     "unsupported" signal that disableWorkflows alone does not cover.
 #
 # Always exits 0 — detection must never break a caller.
 
@@ -73,23 +86,35 @@ if ! command -v jq >/dev/null 2>&1; then
   emit false "jq unavailable; cannot confirm support"
 fi
 
-# 3. Compute effective disableWorkflows across settings files, lowest precedence
-#    first so a higher-precedence file can re-enable (false) or disable (true).
-EFFECTIVE=""  # "", "true", or "false"
+# 3. Compute effective disableWorkflows AND enableWorkflows across settings files,
+#    lowest precedence first so a higher-precedence file overrides a lower one.
+EFFECTIVE_DISABLE=""  # "", "true", or "false"
+EFFECTIVE_ENABLE=""   # "", "true", or "false"
 for settings in \
   "${CLAUDE_DIR:+$CLAUDE_DIR/settings.json}" \
   "$PROJECT_DIR/.claude/settings.json" \
   "$PROJECT_DIR/.claude/settings.local.json"; do
   [ -n "$settings" ] || continue
   [ -f "$settings" ] || continue
-  value="$(jq -r 'if has("disableWorkflows") then (.disableWorkflows | tostring) else "" end' "$settings" 2>/dev/null || echo "")"
-  case "$value" in
-    true|false) EFFECTIVE="$value" ;;
+  dvalue="$(jq -r 'if has("disableWorkflows") then (.disableWorkflows | tostring) else "" end' "$settings" 2>/dev/null || echo "")"
+  case "$dvalue" in
+    true|false) EFFECTIVE_DISABLE="$dvalue" ;;
+  esac
+  evalue="$(jq -r 'if has("enableWorkflows") then (.enableWorkflows | tostring) else "" end' "$settings" 2>/dev/null || echo "")"
+  case "$evalue" in
+    true|false) EFFECTIVE_ENABLE="$evalue" ;;
   esac
 done
 
-if [ "$EFFECTIVE" = "true" ]; then
+# The kill switch wins over the opt-in.
+if [ "$EFFECTIVE_DISABLE" = "true" ]; then
   emit false "disabled via disableWorkflows in settings.json"
+fi
+if [ "$EFFECTIVE_ENABLE" = "false" ]; then
+  emit false "disabled via enableWorkflows:false in settings.json (Pro opt-in declined)"
+fi
+if [ "$EFFECTIVE_ENABLE" = "true" ]; then
+  emit true "enabled via enableWorkflows in settings.json"
 fi
 
 emit true "no disable signal detected"

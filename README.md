@@ -798,7 +798,7 @@ Controls whether VBW may offload **wide, parallel, bounded** steps (large codeba
 | `auto` | Use the workflow executor only when it is available **and** the step is a good fit (high fan-out beyond a threshold); otherwise fall back to the normal team/subagent/direct delegation. Default. |
 | `never` | Never route through workflows. All work uses VBW's existing delegation modes. |
 
-VBW remains the lifecycle owner: it decides *which* step is dispatched as a workflow and **bridges the workflow's result back into the durable `.vbw-planning/` artifacts** (map docs, summaries, verification). A workflow never writes VBW state directly. When the runtime does not support workflows (e.g. `disableWorkflows` / `CLAUDE_CODE_DISABLE_WORKFLOWS`, or an older Claude Code), `auto` and `always` degrade silently to the existing behavior, so projects behave identically wherever the feature is absent.
+VBW remains the lifecycle owner: it decides *which* step is dispatched as a workflow and **bridges the workflow's result back into the durable gated `.vbw-planning/` artifacts** (plan summaries, verification). A workflow never writes a gated VBW artifact directly. (One deliberate exception: the read-only `/vbw:map` codebase docs are ungated, so the map workflow's scout workers write them directly — exactly as the scout-team path does.) When the runtime does not support workflows (e.g. `disableWorkflows` / `CLAUDE_CODE_DISABLE_WORKFLOWS`, or an older Claude Code), `auto` and `always` degrade silently to the existing behavior, so projects behave identically wherever the feature is absent.
 
 #### `worktree_isolation` — Filesystem Isolation
 

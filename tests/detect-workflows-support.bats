@@ -79,6 +79,37 @@ run_detect() {
   [ "$output" = "supported" ]
 }
 
+@test "enableWorkflows false disables (Pro opt-in declined)" {
+  echo '{ "enableWorkflows": false }' > "$PROJECT_DIR/.claude/settings.json"
+  run run_detect "$PROJECT_DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"workflows_supported=false"* ]]
+  [[ "$output" == *"enableWorkflows"* ]]
+}
+
+@test "enableWorkflows true is a positive support signal" {
+  echo '{ "enableWorkflows": true }' > "$CLAUDE_CONFIG_DIR/settings.json"
+  run run_detect "$PROJECT_DIR"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"workflows_supported=true"* ]]
+  [[ "$output" == *"enabled via enableWorkflows"* ]]
+}
+
+@test "disableWorkflows kill switch wins over enableWorkflows true" {
+  echo '{ "enableWorkflows": true, "disableWorkflows": true }' > "$PROJECT_DIR/.claude/settings.json"
+  run run_detect --status "$PROJECT_DIR"
+  [ "$status" -eq 0 ]
+  [ "$output" = "unsupported" ]
+}
+
+@test "project-local enableWorkflows false overrides user enableWorkflows true" {
+  echo '{ "enableWorkflows": true }'  > "$CLAUDE_CONFIG_DIR/settings.json"
+  echo '{ "enableWorkflows": false }' > "$PROJECT_DIR/.claude/settings.local.json"
+  run run_detect --status "$PROJECT_DIR"
+  [ "$status" -eq 0 ]
+  [ "$output" = "unsupported" ]
+}
+
 @test "detection always exits 0 even with malformed settings" {
   echo '{ this is not json' > "$PROJECT_DIR/.claude/settings.json"
   run run_detect --status "$PROJECT_DIR"
