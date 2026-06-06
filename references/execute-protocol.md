@@ -172,7 +172,23 @@ Determine whether **real team semantics** are available in the live tool set bef
 - If the live tool set only supports plain background spawns (for example `Agent` with `run_in_background: true` but no `team_name`), then real team semantics are **NOT** available.
 - **Plain background `Agent` spawns without team semantics are NOT an agent team. Do NOT use them as a substitute for team mode.**
 
-Process `ROUTING.segments[]` in order. For each segment, extract `route`, `plan_ids`, `effort`, `delegation_mode`, and optional `team_name` from the helper output. Before any direct, turbo, fallback, or serialized subagent segment starts, check the current delegation marker; if a live execute marker has `delegation_mode=team`, complete shutdown (`shutdown_request`, responses, `TeamDelete`, stale cleanup) and clear the marker first. Do not start a non-team segment while `.delegated-workflow.json` still reports a live team marker.
+Process `ROUTING.segments[]` in order. For each segment, extract `route`, `plan_ids`, `effort`, `delegation_mode`, and optional `team_name` from the helper output. Before any direct, turbo, fallback, serialized subagent, or workflow-executor segment starts, check the current delegation marker; if a live execute marker has `delegation_mode=team`, complete shutdown (`shutdown_request`, responses, `TeamDelete`, stale cleanup) and clear the marker first. Do not start a non-team segment while `.delegated-workflow.json` still reports a live team marker.
+
+**Workflow executor evaluation (opt-in — Dynamic Workflows as a team alternative):** Resolve the executor once before branching (see `${VBW_PLUGIN_ROOT}/references/workflow-executor.md`):
+```bash
+WF_MODE=$(bash "${VBW_PLUGIN_ROOT}/scripts/normalize-workflows-mode.sh" .vbw-planning/config.json 2>/dev/null || echo "auto")
+WF_SUPPORTED=$(bash "${VBW_PLUGIN_ROOT}/scripts/detect-workflows-support.sh" --status 2>/dev/null || echo "unsupported")
+WF_MAX_WORKERS=$(bash "${VBW_PLUGIN_ROOT}/scripts/normalize-workflow-max-workers.sh" .vbw-planning/config.json 2>/dev/null || echo 4)
+```
+For each segment whose helper `delegation_mode=team`, evaluate the executor with that segment's delegate plan count before selecting True team mode:
+```bash
+WF_EXECUTOR=$(bash "${VBW_PLUGIN_ROOT}/scripts/resolve-executor.sh" --mode --fanout {segment_delegate_plan_count} --workflows-mode "$WF_MODE" --supported "$WF_SUPPORTED" 2>/dev/null || echo "fallback")
+```
+Use **Workflow executor mode** (path 4 below) for that segment **only when ALL** of the following hold; otherwise use **True team mode** (path 1):
+- `WF_EXECUTOR=workflow`. This requires `workflows=always` + a supported runtime + delegate width ≥ minimum. With the default `workflows=auto` the Execute delegate widths never reach the `auto` threshold, so this is always `fallback` and Execute behaves **identically to today** — the workflow path is strictly opt-in.
+- The interleaved per-task orchestrator gates are OFF: `validation_gates=false`, `two_phase_completion=false`, **and** `lease_locks=false`. A background workflow runs each plan to completion and cannot interleave these per-task gates between a worker's tasks, so when any is enabled VBW keeps the team/subagent path that can. (`PreToolUse`/`PostToolUse` hooks still fire **inside** workflow workers regardless — enforcement parity holds; only the orchestrator-interleaved gate scripts are unavailable mid-plan.)
+
+This is the **predicate/owner split** applied to Execute: `resolve-execute-delegation-mode.sh` still owns team/subagent/direct selection unchanged; `resolve-executor.sh` is the orthogonal workflow-or-not predicate layered on top, and only ever swaps a `team` segment for a workflow.
 
 Branch each segment into exactly one runtime path and persist that segment's actual mode **before the first spawn or orchestrator product-file write**:
 
@@ -212,6 +228,22 @@ Branch each segment into exactly one runtime path and persist that segment's act
      ```
    - Skip TeamCreate and continue in explicit non-team mode.
    - **Do NOT preserve “parallelism” by launching multiple background `Agent` spawns without `team_name`.**
+
+4. **Workflow executor mode (opt-in — Dynamic Workflows executor; team alternative)**
+   - Use this path for a `delegation_mode=team` segment when the Workflow executor evaluation above selected it (see precedence rule). It replaces True team mode for that segment with a Claude Dynamic Workflow dispatched via the first-class `Workflow` tool (see `${VBW_PLUGIN_ROOT}/references/workflow-executor.md` "Invoking a workflow"); the per-request `ultracode` keyword is the degraded alternate when the tool is absent.
+   - Persist the actual runtime mode (non-team — `delegation_mode=workflow` receives **no** team-style write bypass; `file-guard.sh`/`agent-spawn-guard.sh` already treat it as non-team):
+     ```bash
+     bash "${VBW_PLUGIN_ROOT}/scripts/delegated-workflow.sh" set execute {segment_effort} workflow
+     ```
+   - **Worktree prep:** if `worktree_isolation` is enabled, create/refresh each delegate plan's worktree and compute its targeting exactly as the team/subagent paths do, before dispatch. Pass each worker its plan's `Working directory:`/`Worktree targeting:` inside the worker prompt — never as Claude-side `isolation`/`cwd` (the workflow runtime has no VBW worktree cwd handoff).
+   - **Dispatch** `Workflow({ script })` with an inline script that runs the segment's delegate plans as workers, capped to `${WF_MAX_WORKERS}` concurrent (`0` = no VBW cap; the runtime still caps at 16 concurrent / 1000 total):
+     - For each delegate plan in the segment, spawn one worker via `agent(devPrompt, { agentType: 'vbw:vbw-dev', model: '${DEV_MODEL}', schema: <plan-summary-schema> })`. Use `parallel()` over the plans, batched to `${WF_MAX_WORKERS}`. Segments are already a single dependency wave of independent plans, so the plans are parallel-safe.
+     - Each worker MUST: execute all tasks in its `{NN}-{MM}-PLAN.md`, commit per task (git commits are not gated artifacts), and **return** structured per-plan result via the schema — `status` (`complete|partial|failed`), `commit_hashes`, `files_modified`, `tasks_completed`, `tasks_total`, `deviations`, and `must_haves_met`. Workers MUST NOT write `{NN}-{MM}-SUMMARY.md` — it is a gated artifact and the orchestrator bridges it.
+   - **Worker model governance:** workers use the resolved `${DEV_MODEL}` (per-agent governance via `resolve-agent-model.sh` / `model-profiles.json`), NOT the session model or any `ultracode` escalation. See `workflow-executor.md` "Model and effort governance".
+   - **Result-bridging (mandatory — gated artifact):** for each returned plan result, the orchestrator writes `{phase_dir}/{NN}-{MM}-SUMMARY.md` from `templates/SUMMARY.md` using the returned data, then runs the **Step 3c SUMMARY.md verification gate** (and the `artifact_persistence` post-plan gate when graduated gates apply) before writing the verified status into `.execution-state.json`. The orchestrator is the sole writer of `SUMMARY.md` on this path — identical guarantee to the team path, achieved by bridging instead of a teammate write.
+   - **Enforcement parity:** workflow workers are normal subagents — the same `SubagentStart`/`PreToolUse` hooks and `file-guard.sh`/`agent-spawn-guard.sh` apply (verified empirically). Their product-file writes are allowed via the active-agent bypass exactly as Task-spawned Dev subagents; attempts to write gated artifacts or `.vbw-planning/` are blocked, which is why bridging is required.
+   - **No team to shut down:** the `Workflow` runtime manages and tears down its own workers — skip the team shutdown handshake for this segment. Clear/replace the marker before the next segment per the pre-segment rule above.
+   - **Fallback (mandatory):** if the `Workflow` tool is unavailable at dispatch, the run is refused/errors, or it returns no usable result, fall back to **True team mode** (path 1) for this segment (resolving real team semantics as usual; if those are also unavailable, use the team-tooling-unavailable fallback, path 3). Backward-compat is never weakened: the workflow path only ever runs under explicit `workflows=always` opt-in.
 
 After each segment completes, verify each plan's SUMMARY.md through Step 3c and write the verified status (`complete`, `partial`, or `failed`) into `.execution-state.json`. Only `complete|partial` unlock dependents. Re-run the helper against the updated execution state until no pending plans remain.
 
@@ -999,7 +1031,7 @@ UAT_NAME=$(bash "${VBW_PLUGIN_ROOT}/scripts/resolve-artifact-path.sh" uat "{phas
 
 ### Step 5: Update state and present summary
 
-**HARD GATE — Shutdown before ANY output or state updates:** Run team shutdown only when the persisted/helper-resolved runtime state says `delegation_mode=team` and a real `TEAM_NAME` exists. If the helper selected `subagent`, turbo, internal `direct`, no delegate-eligible plans, or team-tooling-unavailable fallback, skip SendMessage/TeamDelete and clear the marker. For actual team mode, shut down the team BEFORE updating state, presenting results, or asking the user anything. This is blocking and non-negotiable:
+**HARD GATE — Shutdown before ANY output or state updates:** Run team shutdown only when the persisted/helper-resolved runtime state says `delegation_mode=team` and a real `TEAM_NAME` exists. If the helper selected `subagent`, turbo, internal `direct`, the workflow executor (`delegation_mode=workflow`), no delegate-eligible plans, or team-tooling-unavailable fallback, skip SendMessage/TeamDelete and clear the marker. For actual team mode, shut down the team BEFORE updating state, presenting results, or asking the user anything. This is blocking and non-negotiable:
 1. Send `shutdown_request` via SendMessage to EVERY active teammate in `TEAM_NAME` (excluding yourself — the orchestrator controls the sequence, not the lead agent) — do not skip any. The SendMessage JSON body must include at minimum: `{"type": "shutdown_request", "id": "<unique-id>", "reason": "phase_complete", "team_name": "<TEAM_NAME>"}` (this is a simplified form — the full V2 envelope nests these under `payload` with `id` at envelope level, but agents are instructed to match on `"type":"shutdown_request"` regardless of structure). Agents echo the `id` back as `request_id` in their `shutdown_response`. Teammates respond by calling SendMessage with `type: "shutdown_response"`.
 2. Log event: `bash "${VBW_PLUGIN_ROOT}/scripts/log-event.sh" shutdown_sent {phase} team={team_name} targets={count} 2>/dev/null || true`
 3. Wait for each `shutdown_response` with `approved: true` (delivered as a SendMessage tool call from the teammate, NOT as plain text). If a teammate responds in plain text instead of calling SendMessage, re-send the `shutdown_request`. If a teammate rejects, re-request immediately (max 3 attempts per teammate — if still rejected after 3 attempts, log a warning and proceed with TeamDelete).
@@ -1035,7 +1067,7 @@ For each plan that has a `worktree_path` entry in execution-state.json (complete
 All worktree operations are fail-open: script errors are suppressed (2>/dev/null || true). Merge failures are surfaced as warnings, not blockers.
 When `worktree_isolation="off"`: skip this block silently.
 
-**Post-shutdown verification:** After TeamDelete for an actual `delegation_mode=team` run, there must be ZERO active teammates. If the Pure-Vibe loop or auto-chain will re-enter Plan mode next, confirm no prior agents linger before spawning new ones. For serialized subagent, turbo, direct, or fallback runs, rely on completed subagent/direct execution plus the cleared delegation marker; do not send team shutdown messages without a real `TEAM_NAME`.
+**Post-shutdown verification:** After TeamDelete for an actual `delegation_mode=team` run, there must be ZERO active teammates. If the Pure-Vibe loop or auto-chain will re-enter Plan mode next, confirm no prior agents linger before spawning new ones. For serialized subagent, turbo, direct, workflow-executor, or fallback runs, rely on completed subagent/direct/workflow execution plus the cleared delegation marker; do not send team shutdown messages without a real `TEAM_NAME`.
 
 **Control Plane cleanup:** Lock and token state cleanup already handled by existing Lease Lock and Token Budget cleanup blocks.
 

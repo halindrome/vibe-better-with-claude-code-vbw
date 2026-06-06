@@ -713,6 +713,38 @@ else
   fail "execute-protocol preserves team_name/name invariant for true team mode"
 fi
 
+# Workflow executor mode (opt-in Dynamic Workflows as a team alternative)
+if grep -Fq 'Workflow executor mode (opt-in — Dynamic Workflows executor; team alternative)' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'set execute {segment_effort} workflow' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'receives **no** team-style write bypass' "$EXECUTE_PROTOCOL"; then
+  pass "execute-protocol documents the workflow executor mode with a non-team delegation_mode=workflow marker"
+else
+  fail "execute-protocol missing workflow executor mode / non-team workflow marker"
+fi
+
+if grep -Fq 'Workers MUST NOT write `{NN}-{MM}-SUMMARY.md`' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'The orchestrator is the sole writer of `SUMMARY.md` on this path' "$EXECUTE_PROTOCOL"; then
+  pass "execute-protocol mandates orchestrator SUMMARY.md bridging on the workflow path"
+else
+  fail "execute-protocol missing mandatory SUMMARY.md result-bridging on the workflow path"
+fi
+
+if grep -Fq '`validation_gates=false`, `two_phase_completion=false`, **and** `lease_locks=false`' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'fall back to **True team mode** (path 1) for this segment' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'the workflow path only ever runs under explicit `workflows=always` opt-in' "$EXECUTE_PROTOCOL"; then
+  pass "execute-protocol gates the workflow path on interleaved-gate features off, mandatory team fallback, and workflows=always opt-in"
+else
+  fail "execute-protocol missing workflow path gating/fallback/opt-in invariants"
+fi
+
+if grep -Fq 'resolve-executor.sh" --mode --fanout {segment_delegate_plan_count}' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'predicate/owner split' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'workers use the resolved' "$EXECUTE_PROTOCOL"; then
+  pass "execute-protocol evaluates resolve-executor per team segment and preserves predicate/owner split + worker model governance"
+else
+  fail "execute-protocol missing per-segment executor evaluation / predicate-owner split / worker governance"
+fi
+
 echo ""
 echo "==============================="
 echo "TOTAL: $PASS PASS, $FAIL FAIL"

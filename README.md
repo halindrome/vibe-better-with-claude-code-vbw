@@ -801,6 +801,8 @@ Controls whether VBW may offload **wide, parallel, bounded** steps (large codeba
 
 VBW remains the lifecycle owner: it decides *which* step is dispatched as a workflow and **bridges the workflow's result back into the durable gated `.vbw-planning/` artifacts** (plan summaries, verification). A workflow never writes a gated VBW artifact directly. (One deliberate exception: the read-only `/vbw:map` codebase docs are ungated, so the map workflow's scout workers write them directly — exactly as the scout-team path does.) When the runtime does not support workflows (e.g. `disableWorkflows` / `CLAUDE_CODE_DISABLE_WORKFLOWS`, or an older Claude Code), `auto` and `always` degrade silently to the existing behavior, so projects behave identically wherever the feature is absent.
 
+With `workflows=always`, the executor also acts as a **team alternative inside `/vbw:vibe` Execute**: a phase's independent parallel delegate plans (the work that would otherwise spawn an Agent Team) can run as Dynamic Workflow workers instead, with the orchestrator bridging each plan's `SUMMARY.md`. This stays opt-in — under the default `auto`, Execute's delegate widths never reach the auto threshold, so team/subagent routing is unchanged — and it falls back to a real team whenever the workflow runtime is unavailable or when the interleaved per-task gates (`validation_gates`, `two_phase_completion`, `lease_locks`) are enabled.
+
 #### `workflow_max_workers` — Workflow Worker Cap
 
 Bounds how many worker agents VBW fans out to **concurrently** in any workflow it dispatches:
