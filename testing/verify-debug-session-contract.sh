@@ -293,6 +293,15 @@ else
   fail "debug.md Path B missing accepted-exception semantics or fresh-evidence already_fixed rule"
 fi
 
+if contains_literal "$DEBUG_PATH_A_BLOCK" 'Investigator executor selection (opt-in — Dynamic Workflows as a team alternative)' \
+  && contains_literal "$DEBUG_PATH_A_BLOCK" 'set debug "$EFFORT_PROFILE" workflow' \
+  && contains_literal "$DEBUG_PATH_A_BLOCK" 'Dispatch (workflow executor):' \
+  && contains_literal "$DEBUG_PATH_A_BLOCK" 'skip this entire phase when the investigators ran via the workflow executor'; then
+  pass "debug.md Path A offers the Dynamic Workflows executor as a report-only team alternative with no team teardown"
+else
+  fail "debug.md Path A missing Dynamic Workflows executor option / non-team marker / teardown skip"
+fi
+
 if contains_literal "$DEBUG_PATH_B_BLOCK" 'Paste the shared accepted-exception debug semantics block from Step 1 here'; then
   fail "debug.md Path B accepted-exception template can nest duplicate XML tags"
 else
