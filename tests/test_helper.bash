@@ -251,6 +251,7 @@ create_test_config() {
   "max_tasks_per_plan": 5,
   "prefer_teams": "auto",
   "workflows": "auto",
+  "workflow_max_workers": 4,
   "branch_per_milestone": false,
   "plain_summary": true,
   "qa_skip_agents": ["docs"],

@@ -564,6 +564,7 @@ Quick reference for every key in `config/defaults.json`, in order. Click the sec
 | `max_tasks_per_plan` | `5` | [Agent behavior](#agent-behavior) |
 | `prefer_teams` | `"auto"` | [Concurrency controls](#concurrency-controls) |
 | `workflows` | `"auto"` | [Concurrency controls](#concurrency-controls) |
+| `workflow_max_workers` | `4` | [Concurrency controls](#concurrency-controls) |
 | `branch_per_milestone` | `false` | [Display](#display) |
 | `plain_summary` | `true` | [Agent behavior](#agent-behavior) |
 | `active_profile` | `"default"` | [Model routing and cost](#model-routing-and-cost) |
@@ -799,6 +800,16 @@ Controls whether VBW may offload **wide, parallel, bounded** steps (large codeba
 | `never` | Never route through workflows. All work uses VBW's existing delegation modes. |
 
 VBW remains the lifecycle owner: it decides *which* step is dispatched as a workflow and **bridges the workflow's result back into the durable gated `.vbw-planning/` artifacts** (plan summaries, verification). A workflow never writes a gated VBW artifact directly. (One deliberate exception: the read-only `/vbw:map` codebase docs are ungated, so the map workflow's scout workers write them directly — exactly as the scout-team path does.) When the runtime does not support workflows (e.g. `disableWorkflows` / `CLAUDE_CODE_DISABLE_WORKFLOWS`, or an older Claude Code), `auto` and `always` degrade silently to the existing behavior, so projects behave identically wherever the feature is absent.
+
+#### `workflow_max_workers` — Workflow Worker Cap
+
+Bounds how many worker agents VBW fans out to **concurrently** in any workflow it dispatches:
+
+| Setting | Type | Default | Values |
+| :--- | :--- | :--- | :--- |
+| `workflow_max_workers` | integer | `4` | `0` (no VBW cap) / `1`–`16` |
+
+The Claude Workflows runtime already enforces hard ceilings — **up to 16 concurrent agents and 1,000 total per run** — and exposes no setting to lower them. VBW cannot raise those ceilings, but because it authors the workflow script it dispatches, it *can* hold the fan-out below them. `workflow_max_workers` is that VBW-side bound: the orchestrator caps the dispatched script's parallel fan-out / concurrency to this value (batching wider work). `0` disables the VBW cap and lets the platform ceiling apply. The default `4` matches the `/vbw:map` quad scan's four domains — raise it for wider audit/migration steps, lower it to throttle cost. It does not change *whether* a step runs as a workflow (that is `workflows`), only how wide it fans out.
 
 #### `worktree_isolation` — Filesystem Isolation
 

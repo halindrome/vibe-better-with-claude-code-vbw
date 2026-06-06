@@ -124,6 +124,21 @@ separate lever for *whether* to fan out at all; a quad-tier repo clears any sane
 threshold, so on a large repo `auto` will select the workflow once the runtime
 supports it.
 
+### Worker-count cap (`workflow_max_workers`)
+
+The runtime enforces hard ceilings — **up to 16 concurrent agents and 1,000 total
+per run** ("Behavior and limits", official docs) — and exposes no setting to lower
+them. VBW cannot raise those ceilings, but since it authors the script it
+dispatches, it can hold the fan-out below them. The `workflow_max_workers` config
+(integer, default `4`, `0` = no VBW cap) is that bound: when authoring a workflow
+script, the orchestrator caps the `parallel()` / `pipeline()` fan-out width — and
+batches wider work — to at most this many concurrent workers. Resolve it with
+`normalize-workflow-max-workers.sh`. This is orthogonal to `workflows`
+(workflow-or-not) and to model governance (which model each worker runs); it
+governs only how many run at once. The default `4` matches the `/vbw:map` quad
+scan's four domains; raise it for wider audit/migration steps, lower it to throttle
+cost.
+
 ## Invoking a workflow
 
 The orchestrator has three ways to run a qualifying step, in priority order. All

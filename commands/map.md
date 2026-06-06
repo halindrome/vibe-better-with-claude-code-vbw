@@ -83,6 +83,7 @@ After selecting the tier, evaluate the optional Dynamic Workflows executor (see 
 WF_MODE=$(bash "{plugin-root}/scripts/normalize-workflows-mode.sh" .vbw-planning/config.json 2>/dev/null || echo "auto")
 WF_SUPPORTED=$(bash "{plugin-root}/scripts/detect-workflows-support.sh" --status 2>/dev/null || echo "unsupported")
 WF_EXECUTOR=$(bash "{plugin-root}/scripts/resolve-executor.sh" --mode --fanout "${SOURCE_FILE_COUNT:-0}" --workflows-mode "$WF_MODE" --supported "$WF_SUPPORTED" 2>/dev/null || echo "fallback")
+WF_MAX_WORKERS=$(bash "{plugin-root}/scripts/normalize-workflow-max-workers.sh" .vbw-planning/config.json 2>/dev/null || echo 4)
 ```
 This applies to `quad` tier only. As a conservative prototype, the workflow executor is used **only** when `WF_EXECUTOR` is `workflow` AND `WF_MODE` is `always` (explicit opt-in). With the default `auto`, quad mapping keeps the standard 4-scout team — no behavior change. `WF_EXECUTOR=fallback` (workflows `never`, unsupported runtime, or low fan-out) always uses the scout team.
 
@@ -172,6 +173,7 @@ Wait for all findings. Proceed to Step 3.5.
   - Concerns worker → `.vbw-planning/codebase/CONCERNS.md`
 - **Gated-artifact bridging unchanged:** this direct-write carve-out applies ONLY to the read-only `codebase/*.md` docs. Any gated artifact (plans, SUMMARY.md, VERIFICATION.md) must still be orchestrator-bridged and must never be written by a workflow.
 - **Worker model (governed, not inherited):** resolve the worker model exactly as the Scout team does — `bash "{plugin-root}/scripts/resolve-agent-settings.sh" scout .vbw-planning/config.json "{plugin-root}/config/model-profiles.json" "{effort}"` — and pass it explicitly to each worker via `agent(prompt, { agentType: 'vbw:vbw-scout', model: '${RESOLVED_MODEL}' })`. Workers MUST NOT inherit the session or any `ultracode` model. The default `quality` profile resolves `scout` to Sonnet (`budget` → Haiku); only a user `model_overrides`/custom profile escalates to a frontier model. See "Model and effort governance" in `{plugin-root}/references/workflow-executor.md`.
+- **Worker concurrency cap:** fan out to at most `${WF_MAX_WORKERS}` workers concurrently (resolved in Step 1.5 via `normalize-workflow-max-workers.sh`; `0` = no VBW cap). The four domains are independent, so with the default `4` they run together; a lower cap batches them. The runtime still caps at 16 concurrent / 1000 total. See `workflow_max_workers` in `{plugin-root}/references/workflow-executor.md`.
 - **Enforcement parity:** workflow workers are normal subagents under the same SubagentStart/PreToolUse hooks and file/spawn guards as Task-spawned scouts — no special handling needed.
 - **Fallback (mandatory):** if no workflow surface is available at dispatch, the run errors, or it returns no usable result, run the standard **Step 3-quad** scout-team path below instead.
 - Display `◆ Executor: Dynamic Workflow (quad scan)`. The workers write the seven docs directly; verify them in Step 3.5 exactly as the team path, then proceed to Step 3.5.
