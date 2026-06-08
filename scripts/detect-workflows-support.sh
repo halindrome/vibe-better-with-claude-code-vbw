@@ -96,6 +96,11 @@ for settings in \
   "$PROJECT_DIR/.claude/settings.local.json"; do
   [ -n "$settings" ] || continue
   [ -f "$settings" ] || continue
+  # Parse failure on an existing settings file means we cannot confirm support
+  # from it — fail closed, matching this script's header contract.
+  if ! jq empty "$settings" >/dev/null 2>&1; then
+    emit false "unparseable settings.json: $settings"
+  fi
   dvalue="$(jq -r 'if has("disableWorkflows") then (.disableWorkflows | tostring) else "" end' "$settings" 2>/dev/null || echo "")"
   case "$dvalue" in
     true|false) EFFECTIVE_DISABLE="$dvalue" ;;
