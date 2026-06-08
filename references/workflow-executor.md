@@ -3,8 +3,9 @@
 VBW can optionally offload **wide, parallel, bounded** steps to a [Claude Dynamic
 Workflow](https://code.claude.com/docs/en/workflows) instead of running its own
 Agent-Team/subagent fan-out. This is an **optional capability**, gated by the
-`workflows` config setting and detected at runtime — exactly like LSP, MCP, and
-`prefer_teams`. When the runtime does not support workflows, or the user opts
+`prefer_workflows` config setting and detected at runtime — exactly like LSP, MCP,
+and `prefer_teams`. `prefer_workflows` is evaluated **before** `prefer_teams`: a
+workflow is the preferred parallel backend, with Agent Teams as the fallback. When the runtime does not support workflows, or the user opts
 out, VBW behaves **identically to today**.
 
 A Claude Dynamic Workflow is a JavaScript script the Claude Code runtime writes
@@ -58,18 +59,18 @@ requiring VBW gates/QA between units, or single-unit work.
 ## Decision pipeline
 
 1. **Config** — `scripts/normalize-workflows-mode.sh` canonicalizes the
-   `workflows` setting to `always | auto | never`.
+   `prefer_workflows` setting to `always | auto | never`.
 2. **Detection** — `scripts/detect-workflows-support.sh` reports whether the
    runtime supports workflows (honors `CLAUDE_CODE_DISABLE_WORKFLOWS` and
    `disableWorkflows` in merged settings). Fails **closed** (unsupported) when it
    cannot confirm support.
-3. **Resolution** — `scripts/resolve-executor.sh --fanout <N> [--threshold <N>]`
+3. **Resolution** — `scripts/resolve-executor.sh --fanout <N>`
    returns `workflow` or `fallback`:
    - `never` → `fallback`
    - runtime unsupported → `fallback`
-   - fanout below minimum / non-integer → `fallback`
-   - `always` and wide enough → `workflow`
-   - `auto` and fanout ≥ threshold → `workflow`, otherwise `fallback`
+   - fanout below minimum (`< 2`) / non-integer → `fallback`
+   - `always`, fanout ≥ 2 → `workflow`
+   - `auto`, fanout ≥ 2 → `workflow` (mirrors `prefer_teams=auto`; both require real parallel work)
 4. **Dispatch** — on `workflow`, the orchestrator runs the step as a workflow and
    records `delegation_mode=workflow` in `.delegated-workflow.json`. On
    `fallback`, the orchestrator runs its **existing** team/subagent/direct
@@ -77,6 +78,16 @@ requiring VBW gates/QA between units, or single-unit work.
 
 `resolve-executor.sh` is an orthogonal predicate — it answers only "workflow or
 not." It never re-implements team/subagent/direct selection.
+
+On Execute specifically, this orthogonality means `prefer_teams` does **not** gate
+the workflow. A parallel delegate wave (segment `plan_ids` length ≥ 2) is offered
+to `resolve-executor.sh` whether the resolver labeled it `team`
+(`prefer_teams=always`, or `auto` with parallel width) **or** `subagent`
+(`prefer_teams=never` — the resolver still keeps the wave grouped). When the
+executor returns `workflow`, it is the **preferred** parallel backend over Agent
+Teams; when it returns `fallback`, `prefer_teams` selects the fallback as before
+(team vs. serialized subagent). See `execute-protocol.md` "Workflow executor
+evaluation".
 
 ## Model and effort governance
 
@@ -133,7 +144,7 @@ dispatches, it can hold the fan-out below them. The `workflow_max_workers` confi
 (integer, default `4`, `0` = no VBW cap) is that bound: when authoring a workflow
 script, the orchestrator caps the `parallel()` / `pipeline()` fan-out width — and
 batches wider work — to at most this many concurrent workers. Resolve it with
-`normalize-workflow-max-workers.sh`. This is orthogonal to `workflows`
+`normalize-workflow-max-workers.sh`. This is orthogonal to `prefer_workflows`
 (workflow-or-not) and to model governance (which model each worker runs); it
 governs only how many run at once. The default `4` matches the `/vbw:map` quad
 scan's four domains; raise it for wider audit/migration steps, lower it to throttle
@@ -246,10 +257,13 @@ special handling.
 
 ## Backward compatibility (top invariant)
 
-With `workflows=auto` (default) the behavior is identical to today's VBW wherever
-the runtime lacks workflows or the step is not wide enough. `workflows=never`
-guarantees the legacy path. No phase, plan, gate, or verification semantics change
-when the feature is inactive.
+When the runtime lacks workflow support (the user's Claude config has not enabled
+Dynamic Workflows) **or** a step is not parallel (fan-out < 2), behavior is
+identical to today's VBW — `prefer_workflows` has no effect there, and it fails
+closed. `prefer_workflows=never` guarantees the legacy team/subagent path
+everywhere. Where the runtime **does** support workflows, the default `auto` makes
+a workflow the preferred backend for parallel work (Agent Teams become the
+fallback). No phase, plan, gate, or verification semantics change on either path.
 
 ## What the official docs resolved
 

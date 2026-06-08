@@ -730,9 +730,9 @@ else
 fi
 
 if grep -Fq '`validation_gates=false`, `two_phase_completion=false`, **and** `lease_locks=false`' "$EXECUTE_PROTOCOL" \
-  && grep -Fq 'fall back to **True team mode** (path 1) for this segment' "$EXECUTE_PROTOCOL" \
-  && grep -Fq 'the workflow path only ever runs under explicit `workflows=always` opt-in' "$EXECUTE_PROTOCOL"; then
-  pass "execute-protocol gates the workflow path on interleaved-gate features off, mandatory team fallback, and workflows=always opt-in"
+  && grep -Fq "fall back to the segment's resolver-assigned path" "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'prefer_workflows≠never' "$EXECUTE_PROTOCOL"; then
+  pass "execute-protocol gates the workflow path on interleaved-gate features off, resolver-assigned fallback, and prefer_workflows two-half opt-in"
 else
   fail "execute-protocol missing workflow path gating/fallback/opt-in invariants"
 fi

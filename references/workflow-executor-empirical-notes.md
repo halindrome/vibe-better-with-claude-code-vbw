@@ -48,7 +48,7 @@ keyword (and team fallback) as alternates.
   is the clean per-step trigger you wanted.
 - **Opt-in alignment.** The `Workflow` tool itself **refuses unless the user has explicitly
   opted into multi-agent orchestration** for the turn. That dovetails with this branch's
-  conservative `map.md` gate (`WF_MODE=always` only). So "explicit opt-in" is enforced at
+  `map.md` gate (`prefer_workflows≠never` + a supported runtime). So "explicit opt-in" is enforced at
   *two* layers (VBW config + the tool), which is good.
 - **Availability still needs detection.** Whether the orchestrator running a `/vbw:map`
   command can call the `Workflow` tool depends on the runtime exposing it — so
@@ -146,5 +146,5 @@ clear any sane threshold.
 4. **Record the cost anchor** near the threshold logic; consider a worker-model knob
    (Sonnet default for map).
 5. Keep everything else as-is — the predicate/owner split, fail-closed detection,
-   `delegation_mode=workflow` marker, and `workflows=auto` backward-compat invariant are all
+   `delegation_mode=workflow` marker, and the `prefer_workflows` two-half opt-in (runtime support + `≠never`) are all
    correct and align with what the run demonstrated.

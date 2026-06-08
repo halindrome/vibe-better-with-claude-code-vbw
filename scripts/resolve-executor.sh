@@ -15,22 +15,23 @@ set -u
 #
 # Options:
 #   --fanout N           Independent parallel units the step would fan out to (required).
-#   --config PATH        config.json to read the `workflows` mode (default .vbw-planning/config.json).
+#   --config PATH        config.json to read the `prefer_workflows` mode (default .vbw-planning/config.json).
 #   --project DIR        Project dir for runtime support detection (default: PWD).
-#   --threshold N        auto-mode fan-out threshold to prefer workflows (default 25).
 #   --min-fanout N       Below this, a step is never "wide" enough for a workflow (default 2).
-#   --workflows-mode VAL Override the config value (always|auto|never|…); skips config read.
+#   --workflows-mode VAL Override the prefer_workflows value (always|auto|never|…); skips config read.
 #   --supported VAL      Override runtime detection (true|false); skips detect probe.
 #   --mode               Print only the decision token (workflow|fallback).
 #
-# Decision:
-#   workflows=never                      -> fallback
-#   runtime unsupported                  -> fallback
-#   fanout not an integer / < min-fanout -> fallback
-#   workflows=always (fanout >= min)     -> workflow
-#   workflows=auto, fanout >= threshold  -> workflow
-#   workflows=auto, fanout <  threshold  -> fallback
-#   unknown workflows value              -> fallback (conservative)
+# Decision (prefer_workflows mirrors prefer_teams; a workflow is the PREFERRED
+# parallel backend over Agent Teams. It only runs when BOTH the runtime supports
+# workflows — the user's Claude config must enable them, surfaced via
+# detect-workflows-support.sh — AND there is real parallel work, fan-out >= 2):
+#   prefer_workflows=never                -> fallback
+#   runtime unsupported                   -> fallback
+#   fanout not an integer / < min-fanout  -> fallback
+#   prefer_workflows=always (fanout >= 2) -> workflow
+#   prefer_workflows=auto   (fanout >= 2) -> workflow
+#   unknown prefer_workflows value        -> fallback (conservative)
 #
 # Always exits 0 — a routing predicate must never break the caller. Fails safe to
 # "fallback" so behavior is identical to today whenever anything is uncertain.
@@ -40,7 +41,6 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FANOUT=""
 CONFIG_PATH=".vbw-planning/config.json"
 PROJECT_DIR="$PWD"
-THRESHOLD=25
 MIN_FANOUT=2
 MODE_OVERRIDE=""
 SUPPORTED_OVERRIDE=""
@@ -54,8 +54,6 @@ while [ $# -gt 0 ]; do
     --config=*) CONFIG_PATH="${1#--config=}"; shift ;;
     --project) PROJECT_DIR="${2:-}"; shift 2 ;;
     --project=*) PROJECT_DIR="${1#--project=}"; shift ;;
-    --threshold) THRESHOLD="${2:-}"; shift 2 ;;
-    --threshold=*) THRESHOLD="${1#--threshold=}"; shift ;;
     --min-fanout) MIN_FANOUT="${2:-}"; shift 2 ;;
     --min-fanout=*) MIN_FANOUT="${1#--min-fanout=}"; shift ;;
     --workflows-mode) MODE_OVERRIDE="${2:-}"; shift 2 ;;
@@ -84,7 +82,7 @@ emit() {
 
 is_int() { case "${1:-}" in ''|*[!0-9]*) return 1 ;; *) return 0 ;; esac }
 
-# Resolve the workflows mode (canonicalized).
+# Resolve the prefer_workflows mode (canonicalized).
 if [ -n "$MODE_OVERRIDE" ]; then
   WF_MODE="$(bash "$SCRIPT_DIR/normalize-workflows-mode.sh" --value "$MODE_OVERRIDE" 2>/dev/null || echo "$MODE_OVERRIDE")"
 else
@@ -92,13 +90,12 @@ else
 fi
 
 # Cheap, no-detection exits first.
-[ "$WF_MODE" = "never" ] && emit fallback "workflows_never"
+[ "$WF_MODE" = "never" ] && emit fallback "prefer_workflows_never"
 
 if ! is_int "$FANOUT"; then
   emit fallback "invalid_fanout"
 fi
 if ! is_int "$MIN_FANOUT"; then MIN_FANOUT=2; fi
-if ! is_int "$THRESHOLD"; then THRESHOLD=25; fi
 
 if [ "$FANOUT" -lt "$MIN_FANOUT" ]; then
   emit fallback "fanout_below_minimum:$FANOUT<$MIN_FANOUT"
@@ -122,16 +119,12 @@ fi
 
 case "$WF_MODE" in
   always)
-    emit workflow "workflows_always:fanout=$FANOUT"
+    emit workflow "prefer_workflows_always:fanout=$FANOUT"
     ;;
   auto)
-    if [ "$FANOUT" -ge "$THRESHOLD" ]; then
-      emit workflow "auto_fanout_meets_threshold:$FANOUT>=$THRESHOLD"
-    else
-      emit fallback "auto_fanout_below_threshold:$FANOUT<$THRESHOLD"
-    fi
+    emit workflow "prefer_workflows_auto:fanout=$FANOUT"
     ;;
   *)
-    emit fallback "unknown_workflows_mode:$WF_MODE"
+    emit fallback "unknown_prefer_workflows_mode:$WF_MODE"
     ;;
 esac

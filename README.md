@@ -563,7 +563,7 @@ Quick reference for every key in `config/defaults.json`, in order. Click the sec
 | `visual_format` | `"unicode"` | [Display](#display) |
 | `max_tasks_per_plan` | `5` | [Agent behavior](#agent-behavior) |
 | `prefer_teams` | `"auto"` | [Concurrency controls](#concurrency-controls) |
-| `workflows` | `"auto"` | [Concurrency controls](#concurrency-controls) |
+| `prefer_workflows` | `"auto"` | [Concurrency controls](#concurrency-controls) |
 | `workflow_max_workers` | `4` | [Concurrency controls](#concurrency-controls) |
 | `branch_per_milestone` | `false` | [Display](#display) |
 | `plain_summary` | `true` | [Agent behavior](#agent-behavior) |
@@ -785,23 +785,23 @@ If `prefer_teams` requests team mode but the live tool set cannot express real t
 
 This setting determines whether true team execution is allowed for delegate-eligible Execute work. With a single delegate plan or a real dependency chain, `auto` chooses serialized subagents because there is no useful parallelism. For `/vbw:debug`, `auto` is stricter: it uses **Competing Hypotheses** team mode only when the bug is both on the `thorough-effort` profile and ambiguous — think intermittent/flaky/random behavior, generic or missing error text, multiple plausible root-cause areas, or `--competing` / `--parallel`, which force the bug to count as ambiguous for routing. A clear exact-repro issue stays `Standard (single debugger)` unless those `auto` conditions are met. `--serial` forces non-ambiguous routing under `auto`. `prefer_teams=always` still uses team mode for all debug runs, and `prefer_teams=never` still disables team mode regardless of the flags. Note: Planning always uses sequential subagents (Scout → Lead), not teams — `prefer_teams` only affects Execute and debug/map modes.
 
-#### `workflows` — Dynamic Workflow Executor
+#### `prefer_workflows` — Dynamic Workflow Executor (preferred team alternative)
 
 Controls whether VBW may offload **wide, parallel, bounded** steps (large codebase scans, multi-target verification, mechanical migrations) to a [Claude Dynamic Workflow](https://code.claude.com/docs/en/workflows) — a runtime-executed script that orchestrates many subagents in the background and returns only the final result — instead of VBW's own team/subagent fan-out:
 
 | Setting | Type | Default | Values |
 | :--- | :--- | :--- | :--- |
-| `workflows` | string | `auto` | `always` / `auto` / `never` |
+| `prefer_workflows` | string | `auto` | `always` / `auto` / `never` |
 
 | Value | Behavior |
 | :--- | :--- |
-| `always` | Prefer the workflow executor for any qualifying step whenever the Claude Workflows runtime is available. |
-| `auto` | Use the workflow executor only when it is available **and** the step is a good fit (high fan-out beyond a threshold); otherwise fall back to the normal team/subagent/direct delegation. Default. |
-| `never` | Never route through workflows. All work uses VBW's existing delegation modes. |
+| `always` | Prefer the workflow executor for any parallel-eligible step (fan-out ≥ 2) whenever the Claude Workflows runtime is available. Bypasses any future "worth-it" heuristic. |
+| `auto` | Prefer the workflow executor when the runtime is available **and** the step has real parallel work (fan-out ≥ 2); otherwise fall back to the normal team/subagent/direct delegation. Default. |
+| `never` | Never route through workflows. All parallel work falls through to `prefer_teams` (team / subagent). |
 
 VBW remains the lifecycle owner: it decides *which* step is dispatched as a workflow and **bridges the workflow's result back into the durable gated `.vbw-planning/` artifacts** (plan summaries, verification). A workflow never writes a gated VBW artifact directly. (One deliberate exception: the read-only `/vbw:map` codebase docs are ungated, so the map workflow's scout workers write them directly — exactly as the scout-team path does.) When the runtime does not support workflows (e.g. `disableWorkflows` / `CLAUDE_CODE_DISABLE_WORKFLOWS`, or an older Claude Code), `auto` and `always` degrade silently to the existing behavior, so projects behave identically wherever the feature is absent.
 
-With `workflows=always`, the executor also acts as a **team alternative inside `/vbw:vibe` Execute**: a phase's independent parallel delegate plans (the work that would otherwise spawn an Agent Team) can run as Dynamic Workflow workers instead, with the orchestrator bridging each plan's `SUMMARY.md`. This stays opt-in — under the default `auto`, Execute's delegate widths never reach the auto threshold, so team/subagent routing is unchanged — and it falls back to a real team whenever the workflow runtime is unavailable or when the interleaved per-task gates (`validation_gates`, `two_phase_completion`, `lease_locks`) are enabled.
+`prefer_workflows` is the **preferred parallel backend** across every parallel-capable path (`/vbw:vibe` Execute, `/vbw:map` quad, `/vbw:debug` competing-hypotheses), and it is evaluated **before** `prefer_teams`. For any wave of independent parallel work (fan-out ≥ 2) — the work that would otherwise spawn an Agent Team — the workers run as Dynamic Workflow workers instead, with the orchestrator bridging each Execute plan's `SUMMARY.md`. Workflows require a **two-half opt-in**: the runtime must support them (your Claude config must enable Dynamic Workflows) **and** `prefer_workflows ≠ never`. Routing falls through to `prefer_teams` (team vs. serialized subagent) only when `prefer_workflows=never`, the runtime is unavailable, or — on the Execute path — the interleaved per-task gates (`validation_gates`, `two_phase_completion`, `lease_locks`) are enabled (a background workflow can't honor mid-plan gates). Teams remain the fallback; since Agent Teams are a beta Claude feature, `auto` makes workflows the default parallel mechanism wherever they're available.
 
 #### `workflow_max_workers` — Workflow Worker Cap
 

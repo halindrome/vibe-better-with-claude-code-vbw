@@ -20,10 +20,10 @@ run_normalizer() {
   [ "$output" = "auto" ]
 }
 
-@test "normalizer reads workflows value from config" {
+@test "normalizer reads prefer_workflows value from config" {
   cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
 {
-  "workflows": "always"
+  "prefer_workflows": "always"
 }
 EOF
 
@@ -32,7 +32,7 @@ EOF
   [ "$output" = "always" ]
 }
 
-@test "normalizer defaults config without workflows key to auto" {
+@test "normalizer defaults config without prefer_workflows key to auto" {
   cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
 {
   "effort": "balanced"

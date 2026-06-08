@@ -41,12 +41,12 @@ resolve() {
   [ "$output" = "fallback" ]
 }
 
-@test "auto selects workflow only at or above threshold" {
-  run resolve --mode --fanout 25 --threshold 25 --workflows-mode auto --supported true
+@test "auto selects workflow whenever there is parallel work (fanout >= 2)" {
+  run resolve --mode --fanout 2 --workflows-mode auto --supported true
   [ "$status" -eq 0 ]
   [ "$output" = "workflow" ]
 
-  run resolve --mode --fanout 24 --threshold 25 --workflows-mode auto --supported true
+  run resolve --mode --fanout 1 --workflows-mode auto --supported true
   [ "$status" -eq 0 ]
   [ "$output" = "fallback" ]
 }
@@ -57,24 +57,24 @@ resolve() {
   [ "$output" = "fallback" ]
 }
 
-@test "reads workflows mode from config when not overridden" {
-  echo '{ "workflows": "always" }' > "$CONFIG"
+@test "reads prefer_workflows mode from config when not overridden" {
+  echo '{ "prefer_workflows": "always" }' > "$CONFIG"
   run resolve --mode --fanout 5 --config "$CONFIG" --supported true
   [ "$status" -eq 0 ]
   [ "$output" = "workflow" ]
 }
 
-@test "missing config defaults to auto (below threshold -> fallback)" {
-  run resolve --mode --fanout 3 --config "$PROJECT_DIR/.vbw-planning/none.json" --threshold 25 --supported true
+@test "missing config defaults to auto (fanout >= 2 -> workflow)" {
+  run resolve --mode --fanout 3 --config "$PROJECT_DIR/.vbw-planning/none.json" --supported true
   [ "$status" -eq 0 ]
-  [ "$output" = "fallback" ]
+  [ "$output" = "workflow" ]
 }
 
 @test "default output emits executor and reason keys" {
-  run resolve --fanout 50 --workflows-mode auto --threshold 25 --supported true
+  run resolve --fanout 5 --workflows-mode auto --supported true
   [ "$status" -eq 0 ]
   [[ "$output" == *"executor=workflow"* ]]
-  [[ "$output" == *"reason=auto_fanout_meets_threshold"* ]]
+  [[ "$output" == *"reason=prefer_workflows_auto"* ]]
 }
 
 @test "detection override absent: real probe with env kill switch forces fallback" {

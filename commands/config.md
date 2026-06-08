@@ -447,7 +447,7 @@ Note: `auto_commit` controls source-task commits during Execute mode. Planning a
 | visual_format | string | unicode/ascii | unicode |
 | max_tasks_per_plan | number | 1-7 | 5 |
 | prefer_teams | string | always/auto/never | auto |
-| workflows | string | always/auto/never | auto |
+| prefer_workflows | string | always/auto/never | auto |
 | workflow_max_workers | integer | 0-16 (0 = no cap) | 4 |
 | branch_per_milestone | boolean | true/false | false |
 | plain_summary | boolean | true/false | true |

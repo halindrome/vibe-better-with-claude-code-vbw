@@ -85,7 +85,7 @@ WF_SUPPORTED=$(bash "{plugin-root}/scripts/detect-workflows-support.sh" --status
 WF_EXECUTOR=$(bash "{plugin-root}/scripts/resolve-executor.sh" --mode --fanout "${SOURCE_FILE_COUNT:-0}" --workflows-mode "$WF_MODE" --supported "$WF_SUPPORTED" 2>/dev/null || echo "fallback")
 WF_MAX_WORKERS=$(bash "{plugin-root}/scripts/normalize-workflow-max-workers.sh" .vbw-planning/config.json 2>/dev/null || echo 4)
 ```
-This applies to `quad` tier only. As a conservative prototype, the workflow executor is used **only** when `WF_EXECUTOR` is `workflow` AND `WF_MODE` is `always` (explicit opt-in). With the default `auto`, quad mapping keeps the standard 4-scout team — no behavior change. `WF_EXECUTOR=fallback` (workflows `never`, unsupported runtime, or low fan-out) always uses the scout team.
+This applies to `quad` tier only. The quad scan runs as a workflow whenever `WF_EXECUTOR` is `workflow` — i.e. `prefer_workflows≠never` (default `auto`) AND the runtime supports workflows (the user's Claude config must enable them) AND the scan is wide enough (fan-out ≥ 2). `WF_EXECUTOR=fallback` (`prefer_workflows=never`, unsupported runtime, or low fan-out) always uses the 4-scout team.
 
 ### Step 2: Detect monorepo
 
@@ -162,7 +162,7 @@ Wait for all findings. Proceed to Step 3.5.
 
 ---
 
-**Step 3-quad executor selection:** If the quad scan is workflow-eligible — `WF_EXECUTOR` is `workflow` AND `WF_MODE` is `always` (explicit opt-in; see Step 1.5 and `{plugin-root}/references/workflow-executor.md`) — run **Step 3-quad-workflow** and skip the scout-team path. Otherwise run **Step 3-quad** (the scout-team path) as written.
+**Step 3-quad executor selection:** If the quad scan is workflow-eligible — `WF_EXECUTOR` is `workflow` (i.e. `prefer_workflows≠never` + a supported runtime + fan-out ≥ 2; see Step 1.5 and `{plugin-root}/references/workflow-executor.md`) — run **Step 3-quad-workflow** and skip the scout-team path. Otherwise run **Step 3-quad** (the scout-team path) as written.
 
 **Step 3-quad-workflow (opt-in — Dynamic Workflows executor):** Offload the four-domain scan to a Claude Dynamic Workflow instead of a Scout team. Prefer the first-class `Workflow` tool when the runtime exposes it, falling back to the per-request `ultracode` keyword, then to the Step 3-quad scout team (see `{plugin-root}/references/workflow-executor.md` "Invoking a workflow"):
 - Dispatch `Workflow({ script })` with an inline script that scans the codebase across the same four domains (Tech Stack, Architecture, Quality, Concerns), spawning each domain worker via `agent(prompt, { agentType: 'vbw:vbw-scout' })`. It runs in the background; monitor via `/workflows`.
