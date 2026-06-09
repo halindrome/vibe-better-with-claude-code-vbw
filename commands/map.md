@@ -69,23 +69,22 @@ Count source files (Glob), excluding: .vbw-planning/, node_modules/, .git/, vend
 | duo | 200-1000 | 2 scouts, combined domains | 2 |
 | quad | 1000+ | Full 4-scout team | 4 |
 
-Overrides: --tier flag forces tier. Agent Teams not enabled → force solo (`⚠ Agent Teams not enabled — using solo mode`). `prefer_teams='never'` in config → force solo (`⚠ prefer_teams=never — using solo mode`).
-Display: `◆ Sizing: {SOURCE_FILE_COUNT} source files → {tier} mode`
-
-Read `prefer_teams` before applying tier:
+**Resolve backend preferences and the executor BEFORE any team-availability downgrade** — `prefer_workflows` is evaluated **before** `prefer_teams` (same precedence rule as Execute), so `prefer_teams=never` must NOT collapse the tier to solo until the workflow path has been ruled out:
 ```bash
 PREFER_TEAMS=$(bash "{plugin-root}/scripts/normalize-prefer-teams.sh" .vbw-planning/config.json 2>/dev/null || echo "auto")
-```
-If `PREFER_TEAMS` is `never`, force solo regardless of file count or --tier flag.
-
-After selecting the tier, evaluate the optional Dynamic Workflows executor (see `{plugin-root}/references/workflow-executor.md`):
-```bash
 WF_MODE=$(bash "{plugin-root}/scripts/normalize-workflows-mode.sh" .vbw-planning/config.json 2>/dev/null || echo "auto")
 WF_SUPPORTED=$(bash "{plugin-root}/scripts/detect-workflows-support.sh" --status 2>/dev/null || echo "unsupported")
 WF_EXECUTOR=$(bash "{plugin-root}/scripts/resolve-executor.sh" --mode --fanout "${SOURCE_FILE_COUNT:-0}" --workflows-mode "$WF_MODE" --supported "$WF_SUPPORTED" 2>/dev/null || echo "fallback")
 WF_MAX_WORKERS=$(bash "{plugin-root}/scripts/normalize-workflow-max-workers.sh" .vbw-planning/config.json 2>/dev/null || echo 4)
 ```
-This applies to the `duo` and `quad` tiers (both fan out to a Scout team a workflow can replace; `solo` runs in the orchestrator and is never a workflow). The duo/quad scan runs as a workflow whenever `WF_EXECUTOR` is `workflow` — i.e. `prefer_workflows≠never` (default `auto`) AND the runtime supports workflows (the user's Claude config must enable them) AND the scan is wide enough (fan-out ≥ 2; `SOURCE_FILE_COUNT` clears this at both tiers). `WF_EXECUTOR=fallback` (`prefer_workflows=never`, unsupported runtime, or low fan-out) always uses the Scout team (2 scouts for duo, 4 for quad).
+
+Pick the runtime path by this precedence:
+1. **Base tier** = `--tier` if given, else by `SOURCE_FILE_COUNT` (solo <200, duo 200–1000, quad 1000+).
+2. **`solo` tier** (small repo or `--tier=solo`): orchestrator maps inline — no team, no workflow.
+3. **`duo`/`quad` tier with `WF_EXECUTOR=workflow`** (`prefer_workflows≠never` + runtime supported + fan-out ≥ 2 — `SOURCE_FILE_COUNT` clears the width at both tiers): run the **Dynamic Workflow scan regardless of `prefer_teams` or team availability**. A workflow is a team alternative and needs no Agent Team, so **do NOT downgrade to solo for `prefer_teams=never`** here. Display `◆ Sizing: {SOURCE_FILE_COUNT} source files → {tier} mode (workflow executor)`.
+4. **`duo`/`quad` tier with `WF_EXECUTOR=fallback`** (`prefer_workflows=never`, runtime unsupported, or low fan-out): only now apply the team-availability downgrade — if `prefer_teams=never` (`⚠ prefer_teams=never — using solo mode`) or Agent Teams are not enabled (`⚠ Agent Teams not enabled — using solo mode`), force **solo**; otherwise run the scout team at the base tier (2 scouts duo, 4 quad).
+
+Display: `◆ Sizing: {SOURCE_FILE_COUNT} source files → {tier} mode`
 
 ### Step 2: Detect monorepo
 
