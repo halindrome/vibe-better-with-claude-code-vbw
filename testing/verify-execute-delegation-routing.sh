@@ -729,12 +729,21 @@ else
   fail "execute-protocol missing mandatory SUMMARY.md result-bridging on the workflow path"
 fi
 
-if grep -Fq '`validation_gates=false`, `two_phase_completion=false`, **and** `lease_locks=false`' "$EXECUTE_PROTOCOL" \
+if grep -Fq 'All per-task/per-plan gates are honored *within* the workflow, not by blocking it' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'The only conditions that fall back to the team/subagent path are `prefer_workflows=never`, an unsupported runtime, or fan-out < 2' "$EXECUTE_PROTOCOL" \
   && grep -Fq "fall back to the segment's resolver-assigned path" "$EXECUTE_PROTOCOL" \
   && grep -Fq 'prefer_workflows≠never' "$EXECUTE_PROTOCOL"; then
-  pass "execute-protocol gates the workflow path on interleaved-gate features off, resolver-assigned fallback, and prefer_workflows two-half opt-in"
+  pass "execute-protocol honors all gates within the workflow (no gate blocks); fallback only on never/unsupported/fan-out<2, with resolver-assigned fallback and prefer_workflows two-half opt-in"
 else
-  fail "execute-protocol missing workflow path gating/fallback/opt-in invariants"
+  fail "execute-protocol missing within-workflow gate-honoring invariant / fallback / opt-in"
+fi
+
+if grep -Fq 'Worker-self-lease (applies when `lease_locks=true`)' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'Worker-self two-phase (applies when `two_phase_completion=true`)' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'Validation-gate policy (pre-dispatch — applies when `validation_gates=true`)' "$EXECUTE_PROTOCOL"; then
+  pass "execute-protocol wires worker-self-lease, worker-self two-phase, and pre-dispatch validation-gate policy on the workflow path"
+else
+  fail "execute-protocol missing worker-self-lease / worker-self two-phase / pre-dispatch validation-gate wiring on the workflow path"
 fi
 
 if grep -Fq 'resolve-executor.sh" --mode --fanout {segment_delegate_plan_count}' "$EXECUTE_PROTOCOL" \
