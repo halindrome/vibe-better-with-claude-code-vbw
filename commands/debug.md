@@ -176,9 +176,13 @@ If resuming a session with `session_status=complete`: STOP "This debug session i
   git log. Overrides: `--competing`/`--parallel` = always ambiguous;
   `--serial` = never.
 
-3. **Routing decision + delegation marker:** Read prefer_teams config:
+3. **Routing decision + delegation marker:** Read the backend preferences and resolve the investigator executor up front — `prefer_workflows` is evaluated **before** `prefer_teams` (same precedence as Execute and map), so `prefer_teams=never` must NOT suppress the competing-hypotheses cohort until the workflow backend has been ruled out:
    ```bash
    PREFER_TEAMS=$(bash "{plugin-root}/scripts/normalize-prefer-teams.sh" .vbw-planning/config.json 2>/dev/null || echo "auto")
+   WF_MODE=$(bash "{plugin-root}/scripts/normalize-workflows-mode.sh" .vbw-planning/config.json 2>/dev/null || echo "auto")
+   WF_SUPPORTED=$(bash "{plugin-root}/scripts/detect-workflows-support.sh" --status 2>/dev/null || echo "unsupported")
+   WF_MAX_WORKERS=$(bash "{plugin-root}/scripts/normalize-workflow-max-workers.sh" .vbw-planning/config.json 2>/dev/null || echo 4)
+   WF_EXECUTOR=$(bash "{plugin-root}/scripts/resolve-executor.sh" --mode --fanout 3 --workflows-mode "$WF_MODE" --supported "$WF_SUPPORTED" 2>/dev/null || echo "fallback")
    ```
 
    Before spawning any agent, activate the delegation guard:
@@ -186,11 +190,10 @@ If resuming a session with `session_status=complete`: STOP "This debug session i
    bash "{plugin-root}/scripts/delegated-workflow.sh" set debug "$EFFORT_PROFILE"
    ```
 
-   Decision tree:
-
-   - `prefer_teams='always'`: Use Path A (team) for ALL bugs, regardless of effort or ambiguity
-   - `prefer_teams='auto'`: Use Path A (team) only if effort=high AND ambiguous, else Path B
-   - `prefer_teams='never'`: Always use Path B (single debugger, no team). Overrides effort and ambiguity.
+   Decision tree — separate the **methodology** (competing-hypotheses cohort vs single debugger) from the **backend** (workflow vs team):
+   - **Cohort eligible** (Path A — competing hypotheses, 3 investigators) when `prefer_teams='always'` OR (`effort=high` AND ambiguous). `prefer_teams='never'` does **not** by itself suppress the cohort — it only removes the *team* backend.
+   - **Backend for an eligible cohort:** if `WF_EXECUTOR=workflow` → run the cohort as a **Dynamic Workflow** (Path A, workflow backend), regardless of `prefer_teams`. Else (`WF_EXECUTOR=fallback`): if `prefer_teams≠'never'` → run the cohort as a **team** (Path A, team backend); if `prefer_teams='never'` → no cohort backend is available, fall to **Path B** (single debugger).
+   - **Not cohort eligible** (`prefer_teams='auto'`/`'never'` with effort≠high or unambiguous) → **Path B** (single debugger).
 
 4. **Spawn investigation:**
   Before any debugger or team is spawned, capture the current HEAD exactly once:
@@ -199,7 +202,7 @@ If resuming a session with `session_status=complete`: STOP "This debug session i
   ```
   Treat `HEAD_BEFORE` as the pre-investigation baseline for Step 5. Do not use commit presence alone to infer whether this investigation created a new fix.
 
-  **Path A: Competing Hypotheses** (prefer_teams='always' OR (prefer_teams!='never' AND effort=high AND ambiguous)):
+  **Path A: Competing Hypotheses** (cohort eligible per Step 3 — `prefer_teams='always'` OR (effort=high AND ambiguous); backend = workflow when `WF_EXECUTOR=workflow`, else team. On `prefer_teams='never'` this path runs **only** via the workflow backend):
     - Generate 3 hypotheses (cause, codebase area, confirming evidence)
     - Resolve Debugger model:
         ```bash
@@ -212,14 +215,7 @@ If resuming a session with `session_status=complete`: STOP "This debug session i
         DEBUGGER_MAX_TURNS="$RESOLVED_MAX_TURNS"
         ```
     - Display: `◆ Spawning Debugger (${DEBUGGER_MODEL})...`
-    - **Investigator executor selection (opt-in — Dynamic Workflows as a team alternative):** Evaluate the workflow executor for the 3 report-only hypothesis investigators (fan-out 3):
-      ```bash
-      WF_MODE=$(bash "{plugin-root}/scripts/normalize-workflows-mode.sh" .vbw-planning/config.json 2>/dev/null || echo "auto")
-      WF_SUPPORTED=$(bash "{plugin-root}/scripts/detect-workflows-support.sh" --status 2>/dev/null || echo "unsupported")
-      WF_MAX_WORKERS=$(bash "{plugin-root}/scripts/normalize-workflow-max-workers.sh" .vbw-planning/config.json 2>/dev/null || echo 4)
-      WF_EXECUTOR=$(bash "{plugin-root}/scripts/resolve-executor.sh" --mode --fanout 3 --workflows-mode "$WF_MODE" --supported "$WF_SUPPORTED" 2>/dev/null || echo "fallback")
-      ```
-      When `WF_EXECUTOR=workflow` (`prefer_workflows≠never` — default `auto` — AND a supported runtime, the user's Claude config having enabled workflows; the 3 investigators are fan-out 3 ≥ 2), run the 3 investigators via the **Dynamic Workflows executor** (see the dispatch step below) and SKIP the TeamCreate steps and the entire team Teardown phase. Otherwise use the scout-team steps as written. The investigators are **report-only** — they return `debugger_report` and write nothing — so there is no gated-artifact result-bridging; only the spawn mechanism and teardown differ. Hypothesis generation, prompt construction, synthesis, `RESOLUTION_OBSERVATION`, and the single post-synthesis implementation owner are identical on both paths. Predicate/owner split: `prefer_teams` still decides Path A vs Path B (whether there is an investigator cohort at all); when Path A is chosen, `prefer_workflows` — evaluated first, via `resolve-executor.sh` — decides whether that cohort runs as a workflow or a team. When the workflow path is chosen, persist the non-team marker (replacing the Step 3 `set debug` marker):
+    - **Investigator backend (resolved in Step 3):** `WF_EXECUTOR` (fan-out 3) and `WF_MAX_WORKERS` were resolved in the Step 3 routing block. When `WF_EXECUTOR=workflow`, run the 3 investigators via the **Dynamic Workflows executor** (see the dispatch step below) and SKIP the TeamCreate steps and the entire team Teardown phase. Otherwise (team backend) use the scout-team steps as written. The investigators are **report-only** — they return `debugger_report` and write nothing — so there is no gated-artifact result-bridging; only the spawn mechanism and teardown differ. Hypothesis generation, prompt construction, synthesis, `RESOLUTION_OBSERVATION`, and the single post-synthesis implementation owner are identical on both paths. **Predicate/owner split:** the *methodology* decision (competing-hypotheses cohort vs single debugger — resolved in Step 3) is separate from the *backend* decision. `prefer_workflows` — via `resolve-executor.sh`, evaluated **before** `prefer_teams` — decides workflow-vs-team for an eligible cohort; `prefer_teams='never'` only removes the team backend, so an eligible cohort still runs as a **workflow** rather than collapsing to Path B. When the workflow backend is chosen, persist the non-team marker (replacing the Step 3 `set debug` marker):
       ```bash
       bash "{plugin-root}/scripts/delegated-workflow.sh" set debug "$EFFORT_PROFILE" workflow
       ```

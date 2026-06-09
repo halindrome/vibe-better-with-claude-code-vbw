@@ -293,7 +293,7 @@ else
   fail "debug.md Path B missing accepted-exception semantics or fresh-evidence already_fixed rule"
 fi
 
-if contains_literal "$DEBUG_PATH_A_BLOCK" 'Investigator executor selection (opt-in — Dynamic Workflows as a team alternative)' \
+if contains_literal "$DEBUG_PATH_A_BLOCK" 'Investigator backend (resolved in Step 3)' \
   && contains_literal "$DEBUG_PATH_A_BLOCK" 'set debug "$EFFORT_PROFILE" workflow' \
   && contains_literal "$DEBUG_PATH_A_BLOCK" 'Dispatch (workflow executor):' \
   && contains_literal "$DEBUG_PATH_A_BLOCK" 'skip this entire phase when the investigators ran via the workflow executor'; then

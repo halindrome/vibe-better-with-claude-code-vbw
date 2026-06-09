@@ -293,12 +293,14 @@ test_vibe_no_team_machinery_in_plan() {
   fi
 }
 
-# Test 14: debug.md has prefer_teams='never' branch forcing Path B
+# Test 14: debug.md — prefer_teams=never removes the TEAM backend but does NOT
+# suppress the competing-hypotheses cohort (it still runs via the workflow backend).
 test_debug_prefer_teams_never() {
-  if grep -q "prefer_teams='never'" "$ROOT/commands/debug.md"; then
-    pass "debug.md has prefer_teams=never decision tree entry"
+  if grep -q "prefer_teams='never'" "$ROOT/commands/debug.md" \
+     && grep -qF 'only removes the *team* backend' "$ROOT/commands/debug.md"; then
+    pass "debug.md: prefer_teams=never removes team backend only (cohort still workflow-eligible)"
   else
-    fail "debug.md missing prefer_teams=never decision tree entry"
+    fail "debug.md: missing prefer_teams=never team-backend-only precedence"
   fi
 }
 
