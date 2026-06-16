@@ -74,14 +74,22 @@ Count source files (Glob), excluding: .vbw-planning/, node_modules/, .git/, vend
 | duo | 200-1000 | 2 scouts, combined domains | 2 |
 | quad | 1000+ | Full 4-scout team | 4 |
 
-Overrides: --tier flag forces tier. Agent Teams not enabled → force solo (`⚠ Agent Teams not enabled — using solo mode`). `prefer_teams='never'` in config → force solo (`⚠ prefer_teams=never — using solo mode`).
-Display: `◆ Sizing: {SOURCE_FILE_COUNT} source files → {tier} mode`
-
-Read `prefer_teams` before applying tier:
+**Resolve backend preferences and the executor BEFORE any team-availability downgrade** — `prefer_workflows` is evaluated **before** `prefer_teams` (same precedence rule as Execute), so `prefer_teams=never` must NOT collapse the tier to solo until the workflow path has been ruled out:
 ```bash
 PREFER_TEAMS=$(bash "{plugin-root}/scripts/normalize-prefer-teams.sh" "$PLANNING_ROOT/config.json" 2>/dev/null || echo "auto")
+WF_MODE=$(bash "{plugin-root}/scripts/normalize-workflows-mode.sh" "$PLANNING_ROOT/config.json" 2>/dev/null || echo "auto")
+WF_SUPPORTED=$(bash "{plugin-root}/scripts/detect-workflows-support.sh" --status 2>/dev/null || echo "unsupported")
+WF_EXECUTOR=$(bash "{plugin-root}/scripts/resolve-executor.sh" --mode --fanout "${SOURCE_FILE_COUNT:-0}" --workflows-mode "$WF_MODE" --supported "$WF_SUPPORTED" 2>/dev/null || echo "fallback")
+WF_MAX_WORKERS=$(bash "{plugin-root}/scripts/normalize-workflow-max-workers.sh" "$PLANNING_ROOT/config.json" 2>/dev/null || echo 4)
 ```
-If `PREFER_TEAMS` is `never`, force solo regardless of file count or --tier flag.
+
+Pick the runtime path by this precedence:
+1. **Base tier** = `--tier` if given, else by `SOURCE_FILE_COUNT` (solo <200, duo 200–1000, quad 1000+).
+2. **`solo` tier** (small repo or `--tier=solo`): orchestrator maps inline — no team, no workflow.
+3. **`duo`/`quad` tier with `WF_EXECUTOR=workflow`** (`prefer_workflows≠never` + runtime supported + fan-out ≥ 2 — `SOURCE_FILE_COUNT` clears the width at both tiers): run the **Dynamic Workflow scan regardless of `prefer_teams` or team availability**. A workflow is a team alternative and needs no Agent Team, so **do NOT downgrade to solo for `prefer_teams=never`** here. Display `◆ Sizing: {SOURCE_FILE_COUNT} source files → {tier} mode (workflow executor)`.
+4. **`duo`/`quad` tier with `WF_EXECUTOR=fallback`** (`prefer_workflows=never`, runtime unsupported, or low fan-out): only now apply the team-availability downgrade — if `prefer_teams=never` (`⚠ prefer_teams=never — using solo mode`) or Agent Teams are not enabled (`⚠ Agent Teams not enabled — using solo mode`), force **solo**; otherwise run the scout team at the base tier (2 scouts duo, 4 quad).
+
+Display: `◆ Sizing: {SOURCE_FILE_COUNT} source files → {tier} mode`
 
 ### Step 2: Detect monorepo
 
@@ -103,6 +111,20 @@ If monorepo + --package: scope to that package.
 Display ✓ per domain. After all 7 docs written, skip Step 3.5, go to Step 4.
 
 ---
+
+**Step 3-duo executor selection:** If the duo scan is workflow-eligible — `WF_EXECUTOR` is `workflow` (i.e. `prefer_workflows≠never` + a supported runtime + fan-out ≥ 2; see Step 1.5 and `{plugin-root}/references/workflow-executor.md`) — run **Step 3-duo-workflow** and skip the scout-team path. Otherwise run **Step 3-duo** (the scout-team path) as written.
+
+**Step 3-duo-workflow (opt-in — Dynamic Workflows executor):** Offload the two-domain scan to a Claude Dynamic Workflow instead of a Scout team. Prefer the first-class `Workflow` tool when the runtime exposes it, falling back to the per-request `ultracode` keyword, then to the Step 3-duo scout team (see `{plugin-root}/references/workflow-executor.md` "Invoking a workflow"):
+- Dispatch `Workflow({ script })` with an inline script that scans the codebase across the same two combined domains (Tech + Architecture; Quality + Concerns), spawning each domain worker via `agent(prompt, { agentType: 'vbw:vbw-scout' })`. It runs in the background; monitor via `/workflows`.
+- **Direct doc writes (deliberate design decision — see `{plugin-root}/references/workflow-executor.md` "Carve-out: read-only map codebase docs"):** the codebase map docs are read-only and ungated, so the workflow's `vbw:vbw-scout` workers write their domain docs **directly via `<output_paths>`** — identical to the Step 3-duo scout-team path — and return only `cross_cutting` summaries. The orchestrator does **not** round-trip the seven docs' full content back through session context. Assign `<output_paths>` per worker exactly as Step 3-duo:
+  - Tech + Architecture worker → `.vbw-planning/codebase/STACK.md`, `.vbw-planning/codebase/DEPENDENCIES.md`, `.vbw-planning/codebase/ARCHITECTURE.md`, `.vbw-planning/codebase/STRUCTURE.md`
+  - Quality + Concerns worker → `.vbw-planning/codebase/CONVENTIONS.md`, `.vbw-planning/codebase/TESTING.md`, `.vbw-planning/codebase/CONCERNS.md`
+- **Gated-artifact bridging unchanged:** this direct-write carve-out applies ONLY to the read-only `codebase/*.md` docs. Any gated artifact (plans, SUMMARY.md, VERIFICATION.md) must still be orchestrator-bridged and must never be written by a workflow.
+- **Worker model (governed, not inherited):** resolve the worker model exactly as the Scout team does — `bash "{plugin-root}/scripts/resolve-agent-settings.sh" scout .vbw-planning/config.json "{plugin-root}/config/model-profiles.json" "{effort}"` — and pass it explicitly to each worker via `agent(prompt, { agentType: 'vbw:vbw-scout', model: '${RESOLVED_MODEL}' })`. Workers MUST NOT inherit the session or any `ultracode` model. The default `quality` profile resolves `scout` to Sonnet (`budget` → Haiku); only a user `model_overrides`/custom profile escalates to a frontier model. See "Model and effort governance" in `{plugin-root}/references/workflow-executor.md`.
+- **Worker concurrency cap:** fan out to at most `${WF_MAX_WORKERS}` workers concurrently (resolved in Step 1.5 via `normalize-workflow-max-workers.sh`; `0` = no VBW cap). The two domains are independent, so they run together; the runtime still caps at 16 concurrent / 1000 total. See `workflow_max_workers` in `{plugin-root}/references/workflow-executor.md`.
+- **Enforcement parity:** workflow workers are normal subagents under the same SubagentStart/PreToolUse hooks and file/spawn guards as Task-spawned scouts — no special handling needed.
+- **Fallback (mandatory):** if no workflow surface is available at dispatch, the run errors, or it returns no usable result, run the standard **Step 3-duo** scout-team path below instead.
+- Display `◆ Executor: Dynamic Workflow (duo scan)`. The workers write the seven docs directly; verify them in Step 3.5 exactly as the team path, then proceed to Step 3.5.
 
 **Step 3-duo:** **Pre-TeamCreate cleanup:** `bash "{plugin-root}/scripts/clean-stale-teams.sh" 2>/dev/null || true`. Create team via TeamCreate: `team_name="vbw-map-duo"`, `description="Codebase Map (duo)"` with 2 Scouts via TaskCreate. **Set `subagent_type: "vbw:vbw-scout"` on each Scout TaskCreate.** Do not pass `isolation`, `cwd`, `working_dir`, `workingDirectory`, or `workdir` on any TaskCreate.
 
@@ -158,6 +180,22 @@ Wait for all findings. Proceed to Step 3.5.
 
 ---
 
+**Step 3-quad executor selection:** If the quad scan is workflow-eligible — `WF_EXECUTOR` is `workflow` (i.e. `prefer_workflows≠never` + a supported runtime + fan-out ≥ 2; see Step 1.5 and `{plugin-root}/references/workflow-executor.md`) — run **Step 3-quad-workflow** and skip the scout-team path. Otherwise run **Step 3-quad** (the scout-team path) as written.
+
+**Step 3-quad-workflow (opt-in — Dynamic Workflows executor):** Offload the four-domain scan to a Claude Dynamic Workflow instead of a Scout team. Prefer the first-class `Workflow` tool when the runtime exposes it, falling back to the per-request `ultracode` keyword, then to the Step 3-quad scout team (see `{plugin-root}/references/workflow-executor.md` "Invoking a workflow"):
+- Dispatch `Workflow({ script })` with an inline script that scans the codebase across the same four domains (Tech Stack, Architecture, Quality, Concerns), spawning each domain worker via `agent(prompt, { agentType: 'vbw:vbw-scout' })`. It runs in the background; monitor via `/workflows`.
+- **Direct doc writes (deliberate design decision — see `{plugin-root}/references/workflow-executor.md` "Carve-out: read-only map codebase docs"):** the codebase map docs are read-only and ungated, so the workflow's `vbw:vbw-scout` workers write their domain docs **directly via `<output_paths>`** — identical to the Step 3-quad scout-team path — and return only `cross_cutting` summaries. The orchestrator does **not** round-trip the seven docs' full content (~900 lines) back through session context. Assign `<output_paths>` per worker exactly as Step 3-quad:
+  - Tech Stack worker → `.vbw-planning/codebase/STACK.md`, `.vbw-planning/codebase/DEPENDENCIES.md`
+  - Architecture worker → `.vbw-planning/codebase/ARCHITECTURE.md`, `.vbw-planning/codebase/STRUCTURE.md`
+  - Quality worker → `.vbw-planning/codebase/CONVENTIONS.md`, `.vbw-planning/codebase/TESTING.md`
+  - Concerns worker → `.vbw-planning/codebase/CONCERNS.md`
+- **Gated-artifact bridging unchanged:** this direct-write carve-out applies ONLY to the read-only `codebase/*.md` docs. Any gated artifact (plans, SUMMARY.md, VERIFICATION.md) must still be orchestrator-bridged and must never be written by a workflow.
+- **Worker model (governed, not inherited):** resolve the worker model exactly as the Scout team does — `bash "{plugin-root}/scripts/resolve-agent-settings.sh" scout .vbw-planning/config.json "{plugin-root}/config/model-profiles.json" "{effort}"` — and pass it explicitly to each worker via `agent(prompt, { agentType: 'vbw:vbw-scout', model: '${RESOLVED_MODEL}' })`. Workers MUST NOT inherit the session or any `ultracode` model. The default `quality` profile resolves `scout` to Sonnet (`budget` → Haiku); only a user `model_overrides`/custom profile escalates to a frontier model. See "Model and effort governance" in `{plugin-root}/references/workflow-executor.md`.
+- **Worker concurrency cap:** fan out to at most `${WF_MAX_WORKERS}` workers concurrently (resolved in Step 1.5 via `normalize-workflow-max-workers.sh`; `0` = no VBW cap). The four domains are independent, so with the default `4` they run together; a lower cap batches them. The runtime still caps at 16 concurrent / 1000 total. See `workflow_max_workers` in `{plugin-root}/references/workflow-executor.md`.
+- **Enforcement parity:** workflow workers are normal subagents under the same SubagentStart/PreToolUse hooks and file/spawn guards as Task-spawned scouts — no special handling needed.
+- **Fallback (mandatory):** if no workflow surface is available at dispatch, the run errors, or it returns no usable result, run the standard **Step 3-quad** scout-team path below instead.
+- Display `◆ Executor: Dynamic Workflow (quad scan)`. The workers write the seven docs directly; verify them in Step 3.5 exactly as the team path, then proceed to Step 3.5.
+
 **Step 3-quad:** **Pre-TeamCreate cleanup:** `bash "{plugin-root}/scripts/clean-stale-teams.sh" 2>/dev/null || true`. Create team via TeamCreate: `team_name="vbw-map-quad"`, `description="Codebase Map (quad)"` with 4 Scouts via TaskCreate. **Set `subagent_type: "vbw:vbw-scout"` on each Scout TaskCreate.** Do not pass `isolation`, `cwd`, `working_dir`, `workingDirectory`, or `workdir` on any TaskCreate. Each Scout writes its domain files directly via `<output_paths>`, then sends a `scout_findings` message with `cross_cutting` findings only (file contents already written). Schema ref: `{plugin-root}/references/handoff-schemas.md`
 - Scout 1 (Tech Stack): `<output_paths>` = `.vbw-planning/codebase/STACK.md`, `.vbw-planning/codebase/DEPENDENCIES.md`
 - Scout 2 (Architecture): `<output_paths>` = `.vbw-planning/codebase/ARCHITECTURE.md`, `.vbw-planning/codebase/STRUCTURE.md`
@@ -209,7 +247,7 @@ Read all 7 docs. Produce:
 
 ### Step 5: Create META.md and present summary
 
-**HARD GATE — Shutdown before presenting results:** Solo: no team, skip. Duo/Quad: send `shutdown_request` to each teammate, wait for `shutdown_response` (approved=true) delivered via SendMessage tool call (NOT plain text). If a teammate responds in plain text instead of calling SendMessage, re-send the `shutdown_request`. If rejected, re-request (max 3 attempts per teammate — then proceed). Call TeamDelete. **Post-TeamDelete residual cleanup:** `bash "{plugin-root}/scripts/clean-stale-teams.sh" 2>/dev/null || true`. Verify: after TeamDelete, there must be ZERO active teammates. If teardown stalls, advise the user to run `/vbw:doctor --cleanup`. Only THEN proceed to META.md and user output. Failure to shut down leaves agents running and consuming API credits.
+**HARD GATE — Shutdown before presenting results:** Solo: no team, skip. **Duo or Quad via the Dynamic Workflows executor (Step 3-duo-workflow / Step 3-quad-workflow, no TeamCreate): no team exists — skip the shutdown handshake; the workflow runtime manages and tears down its own workers.** Duo/Quad scout-team path: send `shutdown_request` to each teammate, wait for `shutdown_response` (approved=true) delivered via SendMessage tool call (NOT plain text). If a teammate responds in plain text instead of calling SendMessage, re-send the `shutdown_request`. If rejected, re-request (max 3 attempts per teammate — then proceed). Call TeamDelete. **Post-TeamDelete residual cleanup:** `bash "{plugin-root}/scripts/clean-stale-teams.sh" 2>/dev/null || true`. Verify: after TeamDelete, there must be ZERO active teammates. If teardown stalls, advise the user to run `/vbw:doctor --cleanup`. Only THEN proceed to META.md and user output. Failure to shut down leaves agents running and consuming API credits.
 
 Write META.md: mapped_at, git_hash, file_count, document list, mode, monorepo flag, mapping_tier, mcp_tools_used (tool names or "none").
 

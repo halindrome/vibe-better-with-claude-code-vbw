@@ -103,6 +103,20 @@ elif jq -e 'has("agent_teams")' "$CONFIG_FILE" >/dev/null 2>&1; then
   fi
 fi
 
+# Rename branch-era key: workflows -> prefer_workflows (value carries over verbatim).
+if jq -e 'has("workflows") and (has("prefer_workflows") | not)' "$CONFIG_FILE" >/dev/null 2>&1; then
+  if ! apply_update '. + {prefer_workflows: .workflows} | del(.workflows)'; then
+    echo "ERROR: Config migration failed while renaming workflows." >&2
+    exit 1
+  fi
+elif jq -e 'has("workflows")' "$CONFIG_FILE" >/dev/null 2>&1; then
+  # prefer_workflows already exists — drop stale key only.
+  if ! apply_update 'del(.workflows)'; then
+    echo "ERROR: Config migration failed while removing stale workflows." >&2
+    exit 1
+  fi
+fi
+
 # Ensure required top-level keys exist.
 if ! jq -e 'has("model_profile")' "$CONFIG_FILE" >/dev/null 2>&1; then
   if ! apply_update '. + {model_profile: "quality"}'; then

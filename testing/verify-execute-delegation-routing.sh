@@ -713,6 +713,47 @@ else
   fail "execute-protocol preserves team_name/name invariant for true team mode"
 fi
 
+# Workflow executor mode (opt-in Dynamic Workflows as a team alternative)
+if grep -Fq 'Workflow executor mode (opt-in — Dynamic Workflows executor; team alternative)' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'set execute {segment_effort} workflow' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'receives **no** team-style write bypass' "$EXECUTE_PROTOCOL"; then
+  pass "execute-protocol documents the workflow executor mode with a non-team delegation_mode=workflow marker"
+else
+  fail "execute-protocol missing workflow executor mode / non-team workflow marker"
+fi
+
+if grep -Fq 'Workers MUST NOT write `{NN}-{MM}-SUMMARY.md`' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'The orchestrator is the sole writer of `SUMMARY.md` on this path' "$EXECUTE_PROTOCOL"; then
+  pass "execute-protocol mandates orchestrator SUMMARY.md bridging on the workflow path"
+else
+  fail "execute-protocol missing mandatory SUMMARY.md result-bridging on the workflow path"
+fi
+
+if grep -Fq 'All per-task/per-plan gates are honored *within* the workflow, not by blocking it' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'The only conditions that fall back to the team/subagent path are `prefer_workflows=never`, an unsupported runtime, or fan-out < 2' "$EXECUTE_PROTOCOL" \
+  && grep -Fq "fall back to the segment's resolver-assigned path" "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'prefer_workflows≠never' "$EXECUTE_PROTOCOL"; then
+  pass "execute-protocol honors all gates within the workflow (no gate blocks); fallback only on never/unsupported/fan-out<2, with resolver-assigned fallback and prefer_workflows two-half opt-in"
+else
+  fail "execute-protocol missing within-workflow gate-honoring invariant / fallback / opt-in"
+fi
+
+if grep -Fq 'Worker-self-lease (applies when `lease_locks=true`)' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'Worker-self two-phase (applies when `two_phase_completion=true`)' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'Validation-gate policy (pre-dispatch — applies when `validation_gates=true`)' "$EXECUTE_PROTOCOL"; then
+  pass "execute-protocol wires worker-self-lease, worker-self two-phase, and pre-dispatch validation-gate policy on the workflow path"
+else
+  fail "execute-protocol missing worker-self-lease / worker-self two-phase / pre-dispatch validation-gate wiring on the workflow path"
+fi
+
+if grep -Fq 'resolve-executor.sh" --mode --fanout {segment_delegate_plan_count}' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'predicate/owner split' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'workers use the resolved' "$EXECUTE_PROTOCOL"; then
+  pass "execute-protocol evaluates resolve-executor per team segment and preserves predicate/owner split + worker model governance"
+else
+  fail "execute-protocol missing per-segment executor evaluation / predicate-owner split / worker governance"
+fi
+
 echo ""
 echo "==============================="
 echo "TOTAL: $PASS PASS, $FAIL FAIL"
