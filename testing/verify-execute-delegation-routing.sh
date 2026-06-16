@@ -525,6 +525,19 @@ else
   fail "execute-protocol references resolve-execute-delegation-mode.sh"
 fi
 
+# HARD GATE: routing must be resolver-owned, never orchestrator-chosen, with a visible attestation.
+# Guards against the dogfood regression where the orchestrator skipped Step 3 resolution and
+# self-selected serialized subagents (observed: codebase-memory-mcp phase 22, wave 2 never reached
+# the workflow executor despite prefer_workflows=auto + supported runtime + fan-out 2).
+if grep -Fq 'HARD GATE — routing is resolver-owned, never orchestrator-chosen (NON-NEGOTIABLE)' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'You MUST NOT decide team / subagent / serial / workflow execution by reasoning' "$EXECUTE_PROTOCOL" \
+  && grep -Fq 'Running both scripts and obeying their output is mandatory on every Execute run' "$EXECUTE_PROTOCOL" \
+  && grep -Fq '**Attestation (mandatory, before the first spawn or orchestrator product-file write):**' "$EXECUTE_PROTOCOL"; then
+  pass "execute-protocol forces resolver-owned routing with a mandatory pre-spawn attestation"
+else
+  fail "execute-protocol missing resolver-owned routing HARD GATE / mandatory attestation"
+fi
+
 if grep -Fq "prefer_teams='auto': request team mode only when 2+ uncompleted plans remain" "$EXECUTE_PROTOCOL"; then
   fail "execute-protocol no longer contains stale 2+ uncompleted auto routing wording"
 else
