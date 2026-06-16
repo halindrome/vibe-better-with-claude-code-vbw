@@ -127,6 +127,25 @@ Set plan status from verified SUMMARY.md frontmatter: `complete|completed` → `
 
 ### Step 3: Resolve Execute routing and run segments
 
+**HARD GATE — routing is resolver-owned, never orchestrator-chosen (NON-NEGOTIABLE):**
+You MUST NOT decide team / subagent / serial / workflow execution by reasoning, by scope, by
+"protocol weight", or by any shortcut. The delegation mode and the workflow-or-not decision are
+produced **only** by running, in this order:
+1. `resolve-execute-delegation-mode.sh` (team/subagent/direct + wave segments), then
+2. the **Workflow executor evaluation** (`resolve-executor.sh --mode --fanout …`) for every
+   delegate segment with fan-out ≥ 2.
+Running both scripts and obeying their output is mandatory on every Execute run, including resumes
+and single-wave phases. "Serialized Dev subagents" is a **resolver verdict**
+(`delegation_mode=subagent` / `max_parallel_width ≤ 1` / executor `fallback`) — it is NOT a
+sanctioned shortcut the orchestrator may select on its own. The size of this protocol is never a
+reason to skip resolution.
+
+**Attestation (mandatory, before the first spawn or orchestrator product-file write):** emit one
+visible line per segment stating the resolved verdict, e.g.
+`◆ Routing: segment plans=[22-02,22-03] delegation_mode=team WF_EXECUTOR=workflow (prefer_workflows_auto:fanout=2)`.
+If you are about to spawn any Dev agent and have not produced this attestation from actual script
+output, STOP — you have skipped the gate.
+
 **Smart Routing (REQ-15):** If `smart_routing=true` in config, build a transient route map before selecting team/subagent mode:
 ```bash
 ROUTE_MAP=.vbw-planning/.cache/execute-route-map.json
@@ -157,7 +176,7 @@ ROUTING=$(bash "${VBW_PLUGIN_ROOT}/scripts/resolve-execute-delegation-mode.sh" \
   --segments)
 ```
 The helper canonicalizes `prefer_teams` with `normalize-prefer-teams.sh`, computes remaining dependency waves from the execution state and plan frontmatter, and emits compact JSON (`delegation_mode`, `requested_mode`, `reason`, `max_parallel_width`, `delegate_count`, route-specific plan IDs, and ordered `segments`).
-If the helper exits non-zero or returns `reason=invalid_dependency_graph`, stop before spawning agents and surface the diagnostic. Valid serial graphs are not errors: `prefer_teams=auto` with `max_parallel_width <= 1` uses serialized Dev subagents.
+If the helper exits non-zero or returns `reason=invalid_dependency_graph`, stop before spawning agents and surface the diagnostic. Valid serial graphs are not errors: when **the helper output** reports `max_parallel_width <= 1` (or `delegation_mode=subagent`), the **resolved** mode is serialized Dev subagents. This is a verdict you read from the script — never a mode you choose without running it.
 
 Team request policy from helper output:
 - `prefer_teams='always'`: request team mode for delegate-eligible work regardless of dependency width; it does not override phase-level turbo, smart-routed turbo, or explicit internal-direct segments.
@@ -180,7 +199,7 @@ WF_MODE=$(bash "${VBW_PLUGIN_ROOT}/scripts/normalize-workflows-mode.sh" .vbw-pla
 WF_SUPPORTED=$(bash "${VBW_PLUGIN_ROOT}/scripts/detect-workflows-support.sh" --status 2>/dev/null || echo "unsupported")
 WF_MAX_WORKERS=$(bash "${VBW_PLUGIN_ROOT}/scripts/normalize-workflow-max-workers.sh" .vbw-planning/config.json 2>/dev/null || echo 4)
 ```
-For each **delegate segment with parallel fan-out ≥ 2** (`delegation_mode` is `team`, **or** `subagent` with `plan_ids` length ≥ 2 — a wave the resolver kept grouped but the user declined to run as a team), evaluate the executor with that segment's delegate plan count (`plan_ids | length`) before selecting its resolver-assigned path:
+For each **delegate segment with parallel fan-out ≥ 2** (`delegation_mode` is `team`, **or** `subagent` with `plan_ids` length ≥ 2 — a wave the resolver kept grouped but the user declined to run as a team), **you MUST** evaluate the executor with that segment's delegate plan count (`plan_ids | length`) before selecting its path — the script verdict, not orchestrator judgment, selects the path:
 ```bash
 WF_EXECUTOR=$(bash "${VBW_PLUGIN_ROOT}/scripts/resolve-executor.sh" --mode --fanout {segment_delegate_plan_count} --workflows-mode "$WF_MODE" --supported "$WF_SUPPORTED" 2>/dev/null || echo "fallback")
 ```
