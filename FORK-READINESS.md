@@ -1,7 +1,7 @@
 # Fork Readiness Ledger
 
 **Purpose:** keep a hard fork of VBW a few hours away, not a few weeks — without taxing
-ongoing upstream contribution. This branch (`integration/vbw-all-fixes-plus-workflows`) is
+ongoing upstream contribution. This branch (`integrated`) is
 the **designated hard-fork base**: it carries upstream `main` plus all of our unmerged work.
 Local-only — never pushed to upstream (`swt-labs`).
 
@@ -21,7 +21,7 @@ Local-only — never pushed to upstream (`swt-labs`).
 ## Fork health (verify periodically)
 
 - `origin/main` vs `upstream/main`: should stay **0 ahead / 0 behind** (live mirror).
-- `integration/vbw-all-fixes-plus-workflows` vs `upstream/main`: **N ahead / 0 behind**
+- `integrated` vs `upstream/main`: **N ahead / 0 behind**
   (as of 2026-06-18: +89 / 0). The "0 behind" is the important invariant — it means this
   branch is a current base, not a stale snapshot. Rebase on upstream main regularly.
 
