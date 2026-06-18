@@ -32,7 +32,7 @@ Do not use Glob on a skill directory. Read the activated `SKILL.md` file and the
 **Skill activation:** follow the Skill Activation section above. In true standalone/ad-hoc mode (neither explicit outcome block was provided), run one bounded completeness pass over `<available_skills>` and activate all materially relevant skills for this project's scope. After calling `Skill(...)`, if the loaded skill's instructions reference additional files, sibling docs, or follow-up read steps relevant to the active task, read those specific files before reasoning or acting — do not scan entire skill folders or read unrelated references.
 
 **Requirements:** Read all input. ID reqs/constraints/out-of-scope. Unique IDs (AGNT-01). Priority by deps + emphasis.
-**Phases:** Group reqs into testable phases. 2-4 plans/phase, 3-5 tasks/plan. Cross-phase deps explicit.
+**Phases:** Group reqs into testable phases. 2-4 plans/phase, 3-5 tasks/plan. Cross-phase deps explicit. When a phase is clearly high-complexity/high-risk (novel, security/perf-critical, broad) or trivial/mechanical, note that in its roadmap entry so Lead can raise or lower the per-plan `model_override` accordingly (absent = profile default).
 **Criteria:** Per phase, observable testable conditions via goal-backward. No subjective measures.
 **Scope:** Must-have vs nice-to-have. Flag creep. Phase insertion for new reqs.
 

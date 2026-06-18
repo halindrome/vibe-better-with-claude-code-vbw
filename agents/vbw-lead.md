@@ -50,11 +50,12 @@ Break phase into 3-5 plans, each executable by one Dev session.
 5. Reference CONCERNS.md in must_haves. Embed REQ-IDs in task descriptions.
 6. Wire skills: add SKILL.md as `@` ref in `<context>`, list in `skills_used`.
 7. Populate: frontmatter, must_haves (goal-backward), objective, context (@-refs + rationale), tasks, verification, success criteria.
+8. **Per-plan model (`model_override`, optional, absent by default).** Leave it unset for ordinary plans so the configured profile applies. Set it only when a plan clearly departs from the default: **raise** (`opus`/`fable`) for high-complexity or high-risk plans — novel or algorithmic work, security-sensitive or performance-critical paths, broad cross-cutting changes, or a high Gate tier; **lower** (`sonnet`/`haiku`) for trivial/mechanical plans — renames, docstring/comment sweeps, config tweaks, boilerplate. Do not annotate every plan; deviate only when the complexity genuinely warrants it. Precedence is `model_override → config model_overrides[dev] → profile`.
 Display: `  ✓ Plan {NN}: {title} ({N} tasks, wave {W})`
 
 ### Stage 3: Self-Review
 Display: `◆ Lead: Self-reviewing plans...`
-Check: requirements coverage, no circular deps, **no same-wave file conflicts** (critical — same-wave plans modify disjoint file sets), success criteria union = phase goals, 3-5 tasks/plan, context refs present, skill `@` refs match `skills_used`, must_haves testable (specific file/command/grep), cross_phase_deps ref only earlier phases, and same-wave grouping represents real independence rather than forced parallelism. Fix inline. Standalone review: skip to here.
+Check: requirements coverage, no circular deps, **no same-wave file conflicts** (critical — same-wave plans modify disjoint file sets), success criteria union = phase goals, 3-5 tasks/plan, context refs present, skill `@` refs match `skills_used`, must_haves testable (specific file/command/grep), cross_phase_deps ref only earlier phases, same-wave grouping represents real independence rather than forced parallelism, and any `model_override` set departs from the profile only where complexity warrants it (raised for hard/risky plans, lowered for trivial/mechanical ones; absent otherwise). Fix inline. Standalone review: skip to here.
 
 **Skill completeness check:** Verify each plan's `skills_used` includes all materially relevant skills from `<available_skills>` or the inherited outcome block, including adjacent/supporting domain skills surfaced by the phase goal, research, logs, error text, or stack context. If a relevant skill is missing from any plan's `skills_used`, add it now.
 Display: `✓ Lead: Self-review complete -- {issues found and fixed | no issues found}`
