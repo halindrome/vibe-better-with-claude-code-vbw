@@ -71,7 +71,7 @@ teardown() {
   CONFIG_HASH=$(_fingerprint "$TEST_TEMP_DIR/.vbw-planning/config.json")
   PROFILES_HASH=$(_fingerprint "$CONFIG_DIR/model-profiles.json")
   PATH_HASH=$(vbw_hash_path "$TEST_TEMP_DIR/.vbw-planning/config.json|$CONFIG_DIR/model-profiles.json")
-  [ -f "/tmp/vbw-model-dev-${PATH_HASH}-${CONFIG_HASH}-${PROFILES_HASH}" ]
+  [ -f "/tmp/vbw-model-dev-${PATH_HASH}-${CONFIG_HASH}-${PROFILES_HASH}-none" ]
 }
 
 @test "cache is isolated by config path even when mtimes match" {
@@ -125,4 +125,58 @@ teardown() {
   run bash "$SCRIPTS_DIR/resolve-agent-model.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$profiles_copy"
   [ "$status" -eq 0 ]
   [ "$output" = "sonnet" ]
+}
+
+@test "phase-model override beats the profile preset" {
+  # balanced profile resolves dev -> sonnet; phase asks for opus
+  jq '.model_profile = "balanced"' "$TEST_TEMP_DIR/.vbw-planning/config.json" > "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp"
+  mv "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" "$TEST_TEMP_DIR/.vbw-planning/config.json"
+
+  run bash "$SCRIPTS_DIR/resolve-agent-model.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json" opus
+  [ "$status" -eq 0 ]
+  [ "$output" = "opus" ]
+}
+
+@test "phase-model override beats model_overrides (most specific wins)" {
+  jq '.model_overrides.dev = "haiku"' "$TEST_TEMP_DIR/.vbw-planning/config.json" > "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp"
+  mv "$TEST_TEMP_DIR/.vbw-planning/config.json.tmp" "$TEST_TEMP_DIR/.vbw-planning/config.json"
+
+  run bash "$SCRIPTS_DIR/resolve-agent-model.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json" opus
+  [ "$status" -eq 0 ]
+  [ "$output" = "opus" ]
+}
+
+@test "empty phase-model arg preserves base resolution (back-compat)" {
+  # quality profile resolves dev -> opus; empty 4th arg must not change it
+  run bash "$SCRIPTS_DIR/resolve-agent-model.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json" ""
+  [ "$status" -eq 0 ]
+  [ "$output" = "opus" ]
+}
+
+@test "rejects invalid phase-model value" {
+  run bash "$SCRIPTS_DIR/resolve-agent-model.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json" gpt5
+  [ "$status" -eq 1 ]
+}
+
+@test "rejects a 5th positional argument" {
+  run bash "$SCRIPTS_DIR/resolve-agent-model.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json" opus extra
+  [ "$status" -eq 1 ]
+}
+
+@test "phase-model is part of the cache key (distinct overrides do not collide)" {
+  # Prime cache with no phase override (opus from quality), then haiku phase —
+  # the second must not return the cached opus.
+  run bash "$SCRIPTS_DIR/resolve-agent-model.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "opus" ]
+
+  run bash "$SCRIPTS_DIR/resolve-agent-model.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json" haiku
+  [ "$status" -eq 0 ]
+  [ "$output" = "haiku" ]
+}
+
+@test "phase-model accepts fable (top tier, above opus)" {
+  run bash "$SCRIPTS_DIR/resolve-agent-model.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json" fable
+  [ "$status" -eq 0 ]
+  [ "$output" = "fable" ]
 }

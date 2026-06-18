@@ -4,10 +4,16 @@
 # Reads model_profile from config.json, loads preset from model-profiles.json,
 # applies per-agent overrides, and returns the final model string.
 #
-# Usage: resolve-agent-model.sh <agent-name> <config-path> <profiles-path>
+# Usage: resolve-agent-model.sh <agent-name> <config-path> <profiles-path> [phase-model]
 #   agent-name: lead|dev|qa|scout|debugger|architect|docs
 #   config-path: path to .vbw-planning/config.json
 #   profiles-path: path to config/model-profiles.json
+#   phase-model (optional): opus|sonnet|haiku|fable — a per-phase override sourced
+#     from a plan's `model_override` frontmatter. Empty/absent preserves today's
+#     behavior exactly. `fable` is the most-capable tier (Claude Fable 5), above opus.
+#
+# Precedence (most specific wins):
+#   phase-model  ->  config.model_overrides[agent]  ->  model_profile preset
 #
 # Returns: stdout = model string (opus|sonnet|haiku), exit 0
 # Errors: stderr = error message, exit 1
@@ -16,6 +22,7 @@
 #   MODEL=$(bash ${CLAUDE_PLUGIN_ROOT}/scripts/resolve-agent-model.sh lead .vbw-planning/config.json ${CLAUDE_PLUGIN_ROOT}/config/model-profiles.json)
 #   if [ $? -ne 0 ]; then echo "Model resolution failed"; exit 1; fi
 #   # Pass to Task tool: model: "${MODEL}"
+#   # Per-phase override: pass the phase's **Model:** value as the 4th arg (or "").
 
 set -euo pipefail
 
@@ -35,15 +42,16 @@ file_content_fingerprint() {
   fi
 }
 
-# Argument parsing
-if [ $# -ne 3 ]; then
-  echo "Usage: resolve-agent-model.sh <agent-name> <config-path> <profiles-path>" >&2
+# Argument parsing (3 required + 1 optional phase-model)
+if [ $# -lt 3 ] || [ $# -gt 4 ]; then
+  echo "Usage: resolve-agent-model.sh <agent-name> <config-path> <profiles-path> [phase-model]" >&2
   exit 1
 fi
 
 AGENT="$1"
 CONFIG_PATH="$2"
 PROFILES_PATH="$3"
+PHASE_MODEL="${4:-}"
 
 # Validate agent name
 case "$AGENT" in
@@ -55,6 +63,17 @@ case "$AGENT" in
     exit 1
     ;;
 esac
+
+# Validate optional per-phase model override (empty = no override)
+if [ -n "$PHASE_MODEL" ]; then
+  case "$PHASE_MODEL" in
+    opus|sonnet|haiku|fable) ;;
+    *)
+      echo "Invalid phase-model '$PHASE_MODEL'. Valid: opus, sonnet, haiku, fable" >&2
+      exit 1
+      ;;
+  esac
+fi
 
 # Validate config file exists
 if [ ! -f "$CONFIG_PATH" ]; then
@@ -70,11 +89,13 @@ fi
 
 # Session-level cache: avoid repeated jq calls for the same agent + config pair.
 # Scope by content fingerprints and path hash so parallel BATS workers
-# using different temp repos cannot collide.
+# using different temp repos cannot collide. The phase-model is part of the key
+# so distinct per-phase overrides cache independently (and the no-override case
+# keeps a stable `-none` suffix).
 CONFIG_HASH=$(file_content_fingerprint "$CONFIG_PATH")
 PROFILES_HASH=$(file_content_fingerprint "$PROFILES_PATH")
 PATH_HASH=$(vbw_hash_path "${CONFIG_PATH}|${PROFILES_PATH}")
-CACHE_FILE="/tmp/vbw-model-${AGENT}-${PATH_HASH}-${CONFIG_HASH}-${PROFILES_HASH}"
+CACHE_FILE="/tmp/vbw-model-${AGENT}-${PATH_HASH}-${CONFIG_HASH}-${PROFILES_HASH}-${PHASE_MODEL:-none}"
 if [ -f "$CACHE_FILE" ]; then
   _cached=$(cat "$CACHE_FILE")
   case "$_cached" in
@@ -95,21 +116,26 @@ fi
 # Get model from preset for the agent
 MODEL=$(jq -r ".$PROFILE.$AGENT" "$PROFILES_PATH")
 
-# Check for per-agent override in config.json model_overrides
+# Check for per-agent override in config.json model_overrides (beats the profile)
 OVERRIDE=$(jq -r ".model_overrides.$AGENT // \"\"" "$CONFIG_PATH")
 if [ -n "$OVERRIDE" ]; then
   MODEL="$OVERRIDE"
 fi
 
+# Per-phase override wins over both the profile preset and model_overrides.
+if [ -n "$PHASE_MODEL" ]; then
+  MODEL="$PHASE_MODEL"
+fi
+
 # Validate final model value
 case "$MODEL" in
-  opus|sonnet|haiku)
+  opus|sonnet|haiku|fable)
     echo "$MODEL"
     # Cache result for session reuse
     echo "$MODEL" > "$CACHE_FILE" 2>/dev/null || true
     ;;
   *)
-    echo "Invalid model '$MODEL' for $AGENT. Valid: opus, sonnet, haiku" >&2
+    echo "Invalid model '$MODEL' for $AGENT. Valid: opus, sonnet, haiku, fable" >&2
     exit 1
     ;;
 esac

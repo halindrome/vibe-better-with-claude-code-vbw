@@ -196,7 +196,7 @@ Process `ROUTING.segments[]` in order. For each segment, extract `route`, `plan_
 
 **Workflow executor evaluation (opt-in — Dynamic Workflows as a team alternative):** Resolve the executor once before branching (see `${VBW_PLUGIN_ROOT}/references/workflow-executor.md`):
 ```bash
-WF_MODE=$(bash "${VBW_PLUGIN_ROOT}/scripts/normalize-workflows-mode.sh" .vbw-planning/config.json 2>/dev/null || echo "auto")
+WF_MODE=$(bash "${VBW_PLUGIN_ROOT}/scripts/normalize-workflows-mode.sh" .vbw-planning/config.json dev 2>/dev/null || echo "auto")
 WF_SUPPORTED=$(bash "${VBW_PLUGIN_ROOT}/scripts/detect-workflows-support.sh" --status 2>/dev/null || echo "unsupported")
 WF_MAX_WORKERS=$(bash "${VBW_PLUGIN_ROOT}/scripts/normalize-workflow-max-workers.sh" .vbw-planning/config.json 2>/dev/null || echo 4)
 ```
@@ -370,17 +370,46 @@ If a plan task contains validation requirements such as "MUST be done before any
 4. **Operator fallback:** If automated respawn after a blocker is not possible, surface a message to the user: "Validation gate failed for task {N}. Restart `/vbw:vibe` from current plan state to retry."
 
 
-**Model resolution:** Resolve models for Dev and QA agents:
+**Model resolution:** Resolve models for Dev and QA agents. **Per-phase model selection** (config `phase_model_selection`, default `true`) lets each plan's frontmatter `model_override` (opus|sonnet|haiku|fable) raise or lower its Dev model; precedence is `plan model_override → config model_overrides[dev] → profile`. **Review downgrade** (config `review_model_downgrade`, default `false`) runs QA one tier below the phase's build model (prover-verifier asymmetry).
 ```bash
+PHASE_MODEL_SELECTION=$(jq -r '.phase_model_selection // true' .vbw-planning/config.json 2>/dev/null || echo true)
+REVIEW_DOWNGRADE=$(jq -r '.review_model_downgrade // false' .vbw-planning/config.json 2>/dev/null || echo false)
+
+# Base Dev model — the fallback for any plan that sets no model_override.
 DEV_MODEL=$(bash "${VBW_PLUGIN_ROOT}/scripts/resolve-agent-model.sh" dev .vbw-planning/config.json "${VBW_PLUGIN_ROOT}/config/model-profiles.json")
 if [ $? -ne 0 ]; then echo "$DEV_MODEL" >&2; exit 1; fi
 DEV_MAX_TURNS=$(bash "${VBW_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh" dev .vbw-planning/config.json "{effort}")
 if [ $? -ne 0 ]; then echo "$DEV_MAX_TURNS" >&2; exit 1; fi
 
-QA_MODEL=$(bash "${VBW_PLUGIN_ROOT}/scripts/resolve-agent-model.sh" qa .vbw-planning/config.json "${VBW_PLUGIN_ROOT}/config/model-profiles.json")
-if [ $? -ne 0 ]; then echo "$QA_MODEL" >&2; exit 1; fi
+# Phase build model = the highest tier across the base Dev model and every plan's
+# model_override (fable > opus > sonnet > haiku). It is the reference the review
+# downgrade steps below, so QA stays one tier under the hardest plan's builder.
+_mrank() { case "$1" in fable) echo 4;; opus) echo 3;; sonnet) echo 2;; haiku) echo 1;; *) echo 0;; esac; }
+PHASE_BUILD_MODEL="$DEV_MODEL"
+if [ "$PHASE_MODEL_SELECTION" != "false" ]; then
+  for _mo in $(sed -nE 's/^model_override:[[:space:]]*(fable|opus|sonnet|haiku).*/\1/p' "{phase-dir}"/*-PLAN.md 2>/dev/null); do
+    if [ "$(_mrank "$_mo")" -gt "$(_mrank "$PHASE_BUILD_MODEL")" ]; then PHASE_BUILD_MODEL="$_mo"; fi
+  done
+fi
+
+# QA model: one tier below the build model when review_model_downgrade=true,
+# otherwise the QA agent's normally-resolved model.
+if [ "$REVIEW_DOWNGRADE" = "true" ]; then
+  QA_MODEL=$(bash "${VBW_PLUGIN_ROOT}/scripts/model-tier-down.sh" "$PHASE_BUILD_MODEL")
+  if [ $? -ne 0 ]; then echo "$QA_MODEL" >&2; exit 1; fi
+else
+  QA_MODEL=$(bash "${VBW_PLUGIN_ROOT}/scripts/resolve-agent-model.sh" qa .vbw-planning/config.json "${VBW_PLUGIN_ROOT}/config/model-profiles.json")
+  if [ $? -ne 0 ]; then echo "$QA_MODEL" >&2; exit 1; fi
+fi
 QA_MAX_TURNS=$(bash "${VBW_PLUGIN_ROOT}/scripts/resolve-agent-max-turns.sh" qa .vbw-planning/config.json "{effort}")
 if [ $? -ne 0 ]; then echo "$QA_MAX_TURNS" >&2; exit 1; fi
+```
+
+**Per-plan Dev model (when `phase_model_selection≠false`):** immediately before each plan's Dev spawn — team teammate, sequential subagent, **or** workflow worker — re-resolve **that plan's** Dev model by passing its `model_override` frontmatter value (empty if absent) as the 4th arg, and use the result on that spawn. Every `${DEV_MODEL}` reference in the spawn shapes below then refers to **this plan's** model; a plan with no `model_override` resolves to the base Dev model above.
+```bash
+PLAN_MODEL_OVERRIDE=$(sed -nE 's/^model_override:[[:space:]]*(fable|opus|sonnet|haiku).*/\1/p' "{PLAN_PATH}" 2>/dev/null)
+DEV_MODEL=$(bash "${VBW_PLUGIN_ROOT}/scripts/resolve-agent-model.sh" dev .vbw-planning/config.json "${VBW_PLUGIN_ROOT}/config/model-profiles.json" "$PLAN_MODEL_OVERRIDE")
+if [ $? -ne 0 ]; then echo "$DEV_MODEL" >&2; exit 1; fi
 ```
 
 **Skill activation for Dev/QA tasks:** Before composing task descriptions, evaluate installed skills visible in your system context — read each skill's description and select all materially helpful installed skills for the tasks being executed, including adjacent/supporting domain skills surfaced by the prompt, logs, error text, related files, or stack context — not just the single most direct skill. Every spawned prompt that performs this evaluation MUST begin with exactly one explicit outcome block: use `<skill_activation>` as the FIRST line when one or more installed skills are preselected at orchestration time, or `<skill_no_activation>` as the FIRST line when none are preselected. Silent omission of both blocks is invalid. After evaluating, state the skill outcome in your response (e.g., "Skills: activating {skill-name}" or "Skills: none preselected — {reason}") so the user has visibility before the agent is spawned. Example: if the prompt or error mentions SwiftData, include `swiftdata` alongside relevant test/build/debug skills. After calling `Skill(...)`, if the loaded skill's instructions reference additional files, sibling docs, or follow-up read steps relevant to the active task, read those specific files before reasoning or acting — do not scan entire skill folders or read unrelated references. When preselected skills expose named local follow-up docs, resolve them with `extract-skill-follow-up-files.sh` and paste the emitted `<skill_follow_up_files>` block immediately after the follow-up-read sentence in the spawned payload.

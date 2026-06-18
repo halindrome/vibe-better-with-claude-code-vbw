@@ -8,6 +8,7 @@ depends_on: [{deps}]
 cross_phase_deps: [{phase: {NN}, plan: "{NN-MM}", artifact: "{path}", reason: "{why}"}]
 autonomous: {true|false}
 effort_override: {thorough|balanced|fast|turbo}
+model_override: {opus|sonnet|haiku|fable} # optional; omit to use the profile. Set UP for high-complexity/high-risk plans, DOWN for trivial/mechanical ones.
 skills_used: [{skill}]
 files_modified: [{path}]
 forbidden_commands: []

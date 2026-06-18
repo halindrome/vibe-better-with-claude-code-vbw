@@ -21,6 +21,8 @@
   "custom_profiles": {},
   "model_profile": "quality",
   "model_overrides": {},
+  "phase_model_selection": true,
+  "review_model_downgrade": false,
   "agent_max_turns": {
     "scout": 15,
     "qa": 25,

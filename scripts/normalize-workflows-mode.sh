@@ -6,8 +6,23 @@ set -u
 # Reads the `prefer_workflows` config key (the workflows-vs-teams backend
 # preference). Mirrors `prefer_teams`: always | auto | never.
 #
+# `prefer_workflows` may be EITHER a scalar OR a per-agent object:
+#
+#   "prefer_workflows": "auto"                  # scalar — applies to every agent
+#
+#   "prefer_workflows": {                       # object — per-agent override + default
+#     "default": "auto",
+#     "qa": "auto",
+#     "dev": "never"
+#   }
+#
+# Per-agent resolution (most specific wins), mirroring resolve-agent-model.sh:
+#   object[role]  ->  object.default  ->  "auto"
+# A scalar is treated as the value for every role. When no role is given, the
+# object's `default` (else "auto") is returned, preserving today's global behavior.
+#
 # Usage:
-#   bash scripts/normalize-workflows-mode.sh [path/to/config.json]
+#   bash scripts/normalize-workflows-mode.sh [path/to/config.json] [role]
 #   bash scripts/normalize-workflows-mode.sh --value <raw-value>
 #
 # Canonical values:
@@ -29,13 +44,23 @@ set -u
 
 read_raw_value() {
   local config_path="$1"
+  local role="${2:-}"
 
   if [ ! -f "$config_path" ] || ! command -v jq >/dev/null 2>&1; then
     echo "auto"
     return 0
   fi
 
-  jq -r '.prefer_workflows // "auto"' "$config_path" 2>/dev/null || echo "auto"
+  # Scalar `prefer_workflows` is returned as-is (applies to all roles). An object
+  # resolves role -> default -> "auto". `$pw[$role]` with an empty role is null,
+  # so the empty-role case naturally falls through to `default`.
+  jq -r --arg role "$role" '
+    (.prefer_workflows // "auto") as $pw
+    | if ($pw | type) == "object"
+      then ($pw[$role] // $pw.default // "auto")
+      else $pw
+      end
+  ' "$config_path" 2>/dev/null || echo "auto"
 }
 
 normalize_workflows_mode() {
@@ -66,4 +91,4 @@ if [ "${1:-}" = "--value" ]; then
   exit 0
 fi
 
-normalize_workflows_mode "$(read_raw_value "${1:-.vbw-planning/config.json}")"
+normalize_workflows_mode "$(read_raw_value "${1:-.vbw-planning/config.json}" "${2:-}")"

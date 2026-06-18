@@ -76,3 +76,83 @@ EOF
   [ "$status" -eq 0 ]
   [ "$output" = "bogus" ]
 }
+
+@test "per-agent object: role override wins over default" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "prefer_workflows": { "default": "auto", "qa": "always", "dev": "never" }
+}
+EOF
+
+  run run_normalizer "$TEST_TEMP_DIR/.vbw-planning/config.json" qa
+  [ "$status" -eq 0 ]
+  [ "$output" = "always" ]
+
+  run run_normalizer "$TEST_TEMP_DIR/.vbw-planning/config.json" dev
+  [ "$status" -eq 0 ]
+  [ "$output" = "never" ]
+}
+
+@test "per-agent object: role without override falls back to default" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "prefer_workflows": { "default": "never", "qa": "always" }
+}
+EOF
+
+  run run_normalizer "$TEST_TEMP_DIR/.vbw-planning/config.json" scout
+  [ "$status" -eq 0 ]
+  [ "$output" = "never" ]
+}
+
+@test "per-agent object: no default and no role override yields auto" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "prefer_workflows": { "qa": "always" }
+}
+EOF
+
+  run run_normalizer "$TEST_TEMP_DIR/.vbw-planning/config.json" scout
+  [ "$status" -eq 0 ]
+  [ "$output" = "auto" ]
+}
+
+@test "per-agent object: omitting role returns the default (global back-compat)" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "prefer_workflows": { "default": "always", "dev": "never" }
+}
+EOF
+
+  run run_normalizer "$TEST_TEMP_DIR/.vbw-planning/config.json"
+  [ "$status" -eq 0 ]
+  [ "$output" = "always" ]
+}
+
+@test "scalar prefer_workflows applies to every role" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "prefer_workflows": "never"
+}
+EOF
+
+  run run_normalizer "$TEST_TEMP_DIR/.vbw-planning/config.json" qa
+  [ "$status" -eq 0 ]
+  [ "$output" = "never" ]
+}
+
+@test "per-agent object: legacy on/off values normalize per role" {
+  cat > "$TEST_TEMP_DIR/.vbw-planning/config.json" <<'EOF'
+{
+  "prefer_workflows": { "default": "off", "qa": "on" }
+}
+EOF
+
+  run run_normalizer "$TEST_TEMP_DIR/.vbw-planning/config.json" qa
+  [ "$status" -eq 0 ]
+  [ "$output" = "always" ]
+
+  run run_normalizer "$TEST_TEMP_DIR/.vbw-planning/config.json" dev
+  [ "$status" -eq 0 ]
+  [ "$output" = "never" ]
+}

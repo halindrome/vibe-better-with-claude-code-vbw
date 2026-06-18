@@ -255,6 +255,15 @@ agents identically to team/Task subagents). Per-repo policy overlays (lint gates
 CMM/ctx nudges, file guards) keep working under the workflow executor with no
 special handling.
 
+Because the **consumer repo's** `PreToolUse` hooks apply to workers, author worker
+prompts to be hook-robust: prefer single bounded commands with absolute paths, and
+avoid compound shell (`cd … && …`), pipes, and redirects that a consumer hook may
+block mid-run (VBW's own dev repo blocks exactly these). A blocked worker returns a
+*degraded* result the orchestrator cannot see the block reason for directly — so
+workers must self-report any tool/provisioning block in their structured return
+(`tooling_unavailable`), which the orchestrator's coverage + provisioning screen
+then distinguishes from a real task failure.
+
 ## Backward compatibility (top invariant)
 
 When the runtime lacks workflow support (the user's Claude config has not enabled
