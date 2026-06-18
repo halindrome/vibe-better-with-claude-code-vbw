@@ -71,3 +71,31 @@ teardown() {
   [ "$status" -eq 1 ]
   [[ "$output" == *"Config not found at $TEST_TEMP_DIR/.vbw-planning/missing.json"* ]]
 }
+
+@test "resolve-agent-settings passes the phase-model override through to the model" {
+  # quality profile resolves dev -> opus; phase override asks for fable
+  run bash "$SCRIPTS_DIR/resolve-agent-settings.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json" balanced fable
+  [ "$status" -eq 0 ]
+
+  eval "$output"
+  [ "$RESOLVED_MODEL" = "fable" ]
+  [ "$RESOLVED_EFFORT" = "balanced" ]
+}
+
+@test "resolve-agent-settings with an empty phase-model preserves base resolution" {
+  run bash "$SCRIPTS_DIR/resolve-agent-settings.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json" balanced ""
+  [ "$status" -eq 0 ]
+
+  eval "$output"
+  [ "$RESOLVED_MODEL" = "opus" ]
+}
+
+@test "resolve-agent-settings surfaces an invalid phase-model as an error" {
+  run bash "$SCRIPTS_DIR/resolve-agent-settings.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json" balanced gpt5
+  [ "$status" -eq 1 ]
+}
+
+@test "resolve-agent-settings rejects a 6th positional argument" {
+  run bash "$SCRIPTS_DIR/resolve-agent-settings.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json" balanced opus extra
+  [ "$status" -eq 1 ]
+}

@@ -2,7 +2,7 @@
 # resolve-agent-settings.sh - Resolve model + max-turns for one agent in one call.
 #
 # Usage:
-#   resolve-agent-settings.sh <agent-name> <config-path> <profiles-path> [effort]
+#   resolve-agent-settings.sh <agent-name> <config-path> <profiles-path> [effort] [phase-model]
 #
 # Output:
 #   Shell-safe assignments suitable for eval:
@@ -13,12 +13,15 @@
 #
 # Notes:
 # - If [effort] is omitted or invalid, falls back to config.effort, then balanced.
+# - [phase-model] (opus|sonnet|haiku|fable, or empty) is an optional per-phase model
+#   override passed straight through to resolve-agent-model.sh as its 4th arg. Empty
+#   preserves today's behavior. Invalid values make resolve-agent-model.sh exit 1.
 # - RESOLVED_MAX_TURNS may be empty when turn budgets are disabled/unlimited.
 
 set -euo pipefail
 
 usage() {
-  echo "Usage: resolve-agent-settings.sh <agent-name> <config-path> <profiles-path> [effort]" >&2
+  echo "Usage: resolve-agent-settings.sh <agent-name> <config-path> <profiles-path> [effort] [phase-model]" >&2
 }
 
 normalize_effort() {
@@ -85,7 +88,7 @@ emit_assignment() {
   printf '%s=%s\n' "$name" "$(shell_quote "$value")"
 }
 
-if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
+if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
   usage
   exit 1
 fi
@@ -95,8 +98,9 @@ AGENT="$1"
 CONFIG_PATH="$2"
 PROFILES_PATH="$3"
 EFFORT_INPUT="${4:-}"
+PHASE_MODEL_INPUT="${5:-}"
 
-if ! MODEL=$(bash "$SCRIPT_DIR/resolve-agent-model.sh" "$AGENT" "$CONFIG_PATH" "$PROFILES_PATH" 2>&1); then
+if ! MODEL=$(bash "$SCRIPT_DIR/resolve-agent-model.sh" "$AGENT" "$CONFIG_PATH" "$PROFILES_PATH" "$PHASE_MODEL_INPUT" 2>&1); then
   printf '%s\n' "$MODEL"
   exit 1
 fi
