@@ -174,3 +174,9 @@ teardown() {
   [ "$status" -eq 0 ]
   [ "$output" = "haiku" ]
 }
+
+@test "phase-model accepts fable (top tier, above opus)" {
+  run bash "$SCRIPTS_DIR/resolve-agent-model.sh" dev "$TEST_TEMP_DIR/.vbw-planning/config.json" "$CONFIG_DIR/model-profiles.json" fable
+  [ "$status" -eq 0 ]
+  [ "$output" = "fable" ]
+}

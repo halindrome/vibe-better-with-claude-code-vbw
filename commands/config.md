@@ -385,7 +385,7 @@ echo "✓ Model profile ➜ $PROFILE"
 
 ### Per-agent override: `model_override <agent> <model>`
 
-Validates agent name (lead|dev|qa|scout|debugger|architect) and model (opus|sonnet|haiku). Updates config.json model_overrides object.
+Validates agent name (lead|dev|qa|scout|debugger|architect) and model (opus|sonnet|haiku|fable). Updates config.json model_overrides object.
 
 ```bash
 AGENT="$1"
@@ -404,11 +404,11 @@ esac
 
 # Validate model
 case "$MODEL" in
-  opus|sonnet|haiku)
+  opus|sonnet|haiku|fable)
     # Valid
     ;;
   *)
-    echo "⚠ Unknown model '$MODEL'. Valid: opus, sonnet, haiku"
+    echo "⚠ Unknown model '$MODEL'. Valid: opus, sonnet, haiku, fable"
     exit 0
     ;;
 esac

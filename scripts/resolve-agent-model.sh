@@ -8,8 +8,9 @@
 #   agent-name: lead|dev|qa|scout|debugger|architect|docs
 #   config-path: path to .vbw-planning/config.json
 #   profiles-path: path to config/model-profiles.json
-#   phase-model (optional): opus|sonnet|haiku — a per-phase override sourced from a
-#     plan's `**Model:**` field. Empty/absent preserves today's behavior exactly.
+#   phase-model (optional): opus|sonnet|haiku|fable — a per-phase override sourced
+#     from a plan's `model_override` frontmatter. Empty/absent preserves today's
+#     behavior exactly. `fable` is the most-capable tier (Claude Fable 5), above opus.
 #
 # Precedence (most specific wins):
 #   phase-model  ->  config.model_overrides[agent]  ->  model_profile preset
@@ -66,9 +67,9 @@ esac
 # Validate optional per-phase model override (empty = no override)
 if [ -n "$PHASE_MODEL" ]; then
   case "$PHASE_MODEL" in
-    opus|sonnet|haiku) ;;
+    opus|sonnet|haiku|fable) ;;
     *)
-      echo "Invalid phase-model '$PHASE_MODEL'. Valid: opus, sonnet, haiku" >&2
+      echo "Invalid phase-model '$PHASE_MODEL'. Valid: opus, sonnet, haiku, fable" >&2
       exit 1
       ;;
   esac
@@ -128,13 +129,13 @@ fi
 
 # Validate final model value
 case "$MODEL" in
-  opus|sonnet|haiku)
+  opus|sonnet|haiku|fable)
     echo "$MODEL"
     # Cache result for session reuse
     echo "$MODEL" > "$CACHE_FILE" 2>/dev/null || true
     ;;
   *)
-    echo "Invalid model '$MODEL' for $AGENT. Valid: opus, sonnet, haiku" >&2
+    echo "Invalid model '$MODEL' for $AGENT. Valid: opus, sonnet, haiku, fable" >&2
     exit 1
     ;;
 esac

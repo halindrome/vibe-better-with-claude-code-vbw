@@ -7,14 +7,17 @@ set -u
 # `review_model_downgrade` config flag: a phase's review/QA runs one tier below
 # its build model so the verifier is cheaper than the builder. The ladder is:
 #
-#   opus -> sonnet -> haiku   (haiku is the floor — it never drops further)
+#   fable -> opus -> sonnet -> haiku   (haiku is the floor — it never drops further)
 #
 # Usage: model-tier-down.sh <model>
-#   model: opus|sonnet|haiku
+#   model: fable|opus|sonnet|haiku
 # Returns: stdout = the downgraded model; exit 0.
 # Errors:  stderr = error message, exit 1 (unknown/empty model).
 
 case "${1:-}" in
+  fable)
+    echo "opus"
+    ;;
   opus)
     echo "sonnet"
     ;;
@@ -25,7 +28,7 @@ case "${1:-}" in
     echo "haiku"
     ;;
   *)
-    echo "Invalid model '${1:-}'. Valid: opus, sonnet, haiku" >&2
+    echo "Invalid model '${1:-}'. Valid: fable, opus, sonnet, haiku" >&2
     exit 1
     ;;
 esac

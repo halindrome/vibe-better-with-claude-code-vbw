@@ -6,6 +6,12 @@ run_tier_down() {
   bash "$SCRIPTS_DIR/model-tier-down.sh" "$@"
 }
 
+@test "fable downgrades to opus" {
+  run run_tier_down fable
+  [ "$status" -eq 0 ]
+  [ "$output" = "opus" ]
+}
+
 @test "opus downgrades to sonnet" {
   run run_tier_down opus
   [ "$status" -eq 0 ]
