@@ -274,6 +274,8 @@ create_test_config() {
   "metrics": true,
   "smart_routing": true,
   "validation_gates": true,
+  "phase_model_selection": true,
+  "review_model_downgrade": false,
   "snapshot_resume": true,
   "lease_locks": false,
   "event_recovery": false,

@@ -447,14 +447,16 @@ Note: `auto_commit` controls source-task commits during Execute mode. Planning a
 | visual_format | string | unicode/ascii | unicode |
 | max_tasks_per_plan | number | 1-7 | 5 |
 | prefer_teams | string | always/auto/never | auto |
-| prefer_workflows | string | always/auto/never | auto |
+| prefer_workflows | string OR object | scalar always/auto/never (applies to all agents), OR per-agent object `{default, <role>...}` resolved role→default→auto | auto |
 | workflow_max_workers | integer | 0-16 (0 = no cap) | 4 |
 | branch_per_milestone | boolean | true/false | false |
 | plain_summary | boolean | true/false | true |
 | active_profile | string | profile name or "custom" | default |
 | custom_profiles | object | user-defined profiles | {} |
 | model_profile | string | quality/balanced/budget | quality |
-| model_overrides | object | agent-to-model map | {} |
+| model_overrides | object | agent-to-model map (opus/sonnet/haiku/fable) | {} |
+| phase_model_selection | boolean | true/false (per-plan model_override on/off) | true |
+| review_model_downgrade | boolean | true/false (QA one tier below build model) | false |
 | agent_max_turns | object | per-agent turns (number), 0/false = unlimited | scout=15, qa=25, architect=30, debugger=80, lead=50, dev=75 |
 | qa_skip_agents | array | array of agent role names | ["docs"] |
 | context_compiler | boolean | true/false | true |

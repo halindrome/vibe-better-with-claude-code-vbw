@@ -571,6 +571,8 @@ Quick reference for every key in `config/defaults.json`, in order. Click the sec
 | `custom_profiles` | `{}` | [Model routing and cost](#model-routing-and-cost) |
 | `model_profile` | `"quality"` | [Model routing and cost](#model-routing-and-cost) |
 | `model_overrides` | `{}` | [Model routing and cost](#model-routing-and-cost) |
+| `phase_model_selection` | `true` | [Model routing and cost](#model-routing-and-cost) |
+| `review_model_downgrade` | `false` | [Model routing and cost](#model-routing-and-cost) |
 | `agent_max_turns` | `{...}` | [Agent turn limits](#agent-turn-limits) |
 | `qa_skip_agents` | `["docs"]` | [Agent behavior](#agent-behavior) |
 | `worktree_isolation` | `"off"` | [Concurrency controls](#concurrency-controls) |
