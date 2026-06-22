@@ -247,13 +247,26 @@ write bypass; it relies solely on `.vbw-planning/codebase/` being ungated.**
 
 ### Enforcement parity
 
-Workflow workers are normal subagents: they are subject to the same project
-`SubagentStart`/`PreToolUse` hooks and the same file/spawn guards as `Task`-spawned
-subagents (verified empirically — the project's `.claude/settings.json` overlays
-injected context and fired/blocked inside the workflow-spawned `vbw:vbw-scout`
-agents identically to team/Task subagents). Per-repo policy overlays (lint gates,
-CMM/ctx nudges, file guards) keep working under the workflow executor with no
-special handling.
+Workflow workers run under the consumer repo's `PreToolUse`/`PostToolUse` hooks and
+the same file/spawn guards as `Task`-spawned subagents — verified empirically on the
+`/vbw:map` path, where the project's `.claude/settings.json` overlays injected
+context and fired/blocked inside the workflow-spawned `vbw:vbw-scout` workers
+identically to team/Task subagents. Per-repo policy overlays (lint gates, CMM/ctx
+nudges, file guards) keep working under the workflow executor.
+
+**Exception — subagent lifecycle hooks do NOT fire for workflow workers.**
+`SubagentStart`/`SubagentStop` run only for Task/Team subagents, **not** for workers
+spawned via the `Workflow` tool's `agent()` primitive. This matters for any
+enforcement keyed on the active-agent count those hooks maintain — notably
+`file-guard.sh`'s orchestrator-vs-agent product-write gate, which blocks a worker's
+Write/Edit when the per-session active-agent count is `0`. The map-path validation
+above never surfaced this because `vbw:vbw-scout` workers write only **ungated**
+`.vbw-planning/codebase/*.md` docs (the carve-out above), which the count gate does
+not guard. Product-writing workers (Dev under the Execute path) **must** register
+themselves explicitly — see **Worker-self-registration** in `execute-protocol.md`
+path 4, which injects a `workflow-worker-register.sh` call into each worker's prompt.
+So: `PreToolUse`/`PostToolUse` parity holds; subagent-lifecycle parity does not, and
+that gap is closed by worker self-registration rather than by weakening the guard.
 
 Because the **consumer repo's** `PreToolUse` hooks apply to workers, author worker
 prompts to be hook-robust: prefer single bounded commands with absolute paths, and
