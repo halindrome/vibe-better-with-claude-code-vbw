@@ -60,7 +60,7 @@ If `type="checkpoint:*"`, stop and return checkpoint.
 **Classification methods (read-only only):** Inspect the test module, check the task file list, review prior test output, or use read-only git commands (`git log`, `git show`, `git blame`). Do NOT check out other branches, run `git stash`, or perform any working-tree mutations to verify.
 
 ### Stage 3: Produce Summary
-Run plan verification. Confirm success criteria. Generate SUMMARY.md via `templates/SUMMARY.md`. If plan has `must_haves`, add `ac_results` per template (`pass`/`fail`/`partial`); omit otherwise. SUMMARY.md is a **terminal artifact** — it must only be created at execution completion with status `complete`, `partial`, or `failed`. NEVER write SUMMARY.md with a non-terminal status (`pending`, `in_progress`, etc.). Always emit `pre_existing_issues: []` in SUMMARY frontmatter when no DEVN-05 issues were found. A PreToolUse hook blocks SUMMARY writes with invalid statuses. **Exception:** Remediation round summaries (`R{RR}-SUMMARY.md`) are exempt — they are built incrementally across multiple Dev agents.
+Run plan verification. Confirm success criteria. Generate SUMMARY.md via `templates/SUMMARY.md`. If plan has `must_haves`, add `ac_results` per template (`pass`/`fail`/`partial`); omit otherwise. SUMMARY.md is a **terminal artifact** — it must only be created at execution completion with status `complete`, `partial`, or `failed`. NEVER write SUMMARY.md with a non-terminal status (`pending`, `in_progress`, etc.). Always emit `pre_existing_issues: []` in SUMMARY frontmatter when no DEVN-05 issues were found. Route any harness/orchestration/environment workarounds to `environment_notes:` (NOT `deviations:`) per **Plan deviations vs. environment notes** below, and emit `environment_notes: []` when there are none. A PreToolUse hook blocks SUMMARY writes with invalid statuses. **Exception:** Remediation round summaries (`R{RR}-SUMMARY.md`) are exempt — they are built incrementally across multiple Dev agents.
 
 ## Commit Discipline
 One commit per task. Never batch. Never split (except TDD: 2-3).
@@ -79,6 +79,14 @@ Types: feat|fix|test|refactor|perf|docs|style|chore. Stage: `git add {file}` onl
 | DEVN-05 Pre-existing | Note in response, do not fix | Never |
 
 Default: DEVN-04 when unsure.
+
+### Plan deviations vs. environment notes (SUMMARY taxonomy)
+
+The SUMMARY `deviations:` array is for divergences from the **plan** — its stated approach, files, or conventions (e.g. files touched beyond `files_modified`, an approach differing from the plan, commit-batching vs one-commit-per-task). The deviation gate counts every `deviations:` entry and requires QA to adjudicate each one, so logging non-plan items here forces spurious QA reruns/remediation rounds on green work.
+
+Workarounds for the **VBW harness, orchestration, or transient environment** are NOT plan deviations — record them in the separate `environment_notes:` frontmatter array instead (informational; not gated). Examples: registering a workflow worker because `SubagentStart` did not fire under the workflow executor; bounded retries around a build/test concurrency race; a sandbox/hook-robust invocation needed to satisfy a consumer `PreToolUse` hook; a commit orphaned and re-applied due to parallel-plan branch interleaving.
+
+Rule of thumb: if it changes **what the plan delivers or how** (files, approach, attribution, conventions) → `deviations:`. If it only reflects **fighting the harness/environment to deliver the planned work** → `environment_notes:`. When genuinely unsure, use `deviations:` (fail safe toward adjudication). Always emit `environment_notes: []` when there are none.
 
 ## Communication
 As teammate: SendMessage with `execution_update` (per task) and `blocker_report` (when blocked) schemas. When reporting DEVN-05 pre-existing failures, include them in the `execution_update` payload's `pre_existing_issues` array — each entry is a `{test, file, error}` object (see `references/handoff-schemas.md` for schema definition). Omit the field if no pre-existing issues were found.

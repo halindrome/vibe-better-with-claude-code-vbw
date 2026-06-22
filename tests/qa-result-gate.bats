@@ -711,6 +711,27 @@ SUMMARY
   [[ "$output" == *"qa_gate_routing=QA_RERUN_REQUIRED"* ]]
 }
 
+@test "environment_notes do not count toward the deviation gate" {
+  create_verif "write-verification.sh" "PASS"
+  cat > "$PHASE_DIR/01-01-SUMMARY.md" <<'SUMMARY'
+---
+plan: 01-01
+deviations: []
+environment_notes: ["Registered workflow worker because SubagentStart did not fire", "Bounded retry around a build-race"]
+---
+
+## Summary
+Work completed.
+SUMMARY
+
+  run bash "$SCRIPT" "$PHASE_DIR"
+
+  [ "$status" -eq 0 ]
+  # Harness/environment notes are informational — the deviation gate ignores them.
+  [[ "$output" == *"qa_gate_deviation_count=0"* ]]
+  [[ "$output" != *"qa_gate_routing=QA_RERUN_REQUIRED"* ]]
+}
+
 @test "PARTIAL result → REMEDIATION_REQUIRED" {
   create_verif "write-verification.sh" "PARTIAL"
 
