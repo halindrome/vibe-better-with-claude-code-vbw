@@ -129,10 +129,13 @@ record_update() {
   record_unlock
 }
 
-# record_commit MESSAGE: commit VBW's own files that changed (.vbw/spec.md,
+# record_commit [--strict] MESSAGE [FILE...]: commit VBW's own files that changed (.vbw/spec.md,
 # .vbw/record.json, .vbw/map.md, .vbw/.gitignore and the protected check
 # files) with `git commit --only`, so the user's staged work stays staged.
-# Called when a run ends, at approval and at ship. Nothing changed: no commit.
+# Called when a run ends, at approval and at ship. With FILE... (paths from the
+# project root) only those of VBW's files are considered, so a command that
+# writes the record alone never takes the user's edit of the spec with it
+# (vbw todo). Nothing changed: no commit.
 # A failing commit (no git identity, a hook) warns with git's own reason and
 # never undoes the step; with --strict as first argument it prints the reason
 # alone and returns 1, for a caller that must stop (vbw approve).
@@ -140,13 +143,19 @@ record_commit() {
   local strict=0
   [ "${1:-}" != "--strict" ] || { strict=1; shift; }
   local msg="$1" own=() changed=() untracked=() f why
+  shift
+  local only=("$@")
   (
     # A subshell starts without the parent's traps: it guards only its own lock.
     vbw_guard_reset
     cd "$VBW_ROOT" || exit 1
-    for f in .vbw/spec.md .vbw/record.json .vbw/map.md .vbw/.gitignore; do [ -f "$f" ] && own+=("$f"); done
-    while IFS= read -r -d '' f; do [ -f "$f" ] && own+=("$f"); done \
-      < <(jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"' "$VBW_RECORD")
+    if [ ${#only[@]} -gt 0 ]; then
+      for f in "${only[@]}"; do [ -f "$f" ] && own+=("$f"); done
+    else
+      for f in .vbw/spec.md .vbw/record.json .vbw/map.md .vbw/.gitignore; do [ -f "$f" ] && own+=("$f"); done
+      while IFS= read -r -d '' f; do [ -f "$f" ] && own+=("$f"); done \
+        < <(jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"' "$VBW_RECORD")
+    fi
     [ ${#own[@]} -gt 0 ] || exit 0
     while IFS= read -r -d '' f; do changed+=("$f"); done < <(git diff --name-only -z HEAD -- "${own[@]}" 2> /dev/null)
     while IFS= read -r -d '' f; do untracked+=("$f"); changed+=("$f"); done \
