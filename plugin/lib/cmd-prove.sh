@@ -23,7 +23,7 @@ cmd_prove() {
   esac
   vbw_require_project
   cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
-  local record checks commands scope tree head ev at mark=""
+  local record checks commands scope tree head ev at testrun mark=""
   # This session's Stop hook waits while the mark names a live process (R98).
   if [ -n "$(vbw_session)" ]; then
     mark="$VBW_RUNTIME/proving.$(vbw_session)"
@@ -58,12 +58,14 @@ cmd_prove() {
   # tree: the working folder (QA freshness, R12); head: the committed code the
   # checks ran on, so committing unproved edits later makes the proof stale.
   # full: nothing reused, no quick stand-in, every full command ran (R111).
-  ev=$(jq -n --arg at "$at" --arg h "$CHECK_HASH" --argjson standin "$QUICK_STANDIN" --arg tree "$tree" --arg head "$head" \
+  testrun=$(proofreuse_test_run "$record" "$commands" "$head" "$tree")
+  ev=$(jq -n --arg at "$at" --argjson tr "${testrun:-null}" --arg h "$CHECK_HASH" --argjson standin "$QUICK_STANDIN" --arg tree "$tree" --arg head "$head" \
     --argjson c "$checks" --argjson m "$commands" --argjson s "$scope" \
     '{at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, scope: $s,
-      full: (($standin | not) and all($c[]; (.reused // false) | not) and all($m[]; (.reused // false) | not)
+      full: (($standin | not) and all($c[]; (.reused // false) | not) and all($m[]; ((.reused // false) | not) or .reuse == "docs")
              and all($m | to_entries[] | select(.key != "quick"); .value.status != "skipped")),
-      passed: (all($c[]; .status == "pass") and all($m[]; .status == "pass" or .status == "skipped") and ($s | length) == 0)}')
+      passed: (all($c[]; .status == "pass") and all($m[]; .status == "pass" or .status == "skipped") and ($s | length) == 0)}
+    | if $tr then . + {test_run: $tr} else . end')
   record_update "$VBW_JQ_DEFS$(cat "$VBW_LIB/prove.jq")" --argjson ev "$ev" --argjson cap "$VBW_FIX_CAP" --argjson cur "$(qa_combined "$record")" --arg at "$at"
   rm -f "$(proofreuse_marker)"
   # The evidence is part of the plan of record: commit it, so a proof never
@@ -119,7 +121,7 @@ prove_summary() {
   jq -r --argjson fullrun "$1" '.evidence as $e
     | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
-      ($e.commands | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" else "" end)" end)"),
+      ($e.commands | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))\(if .value.reuse == "docs" then ": only documentation changed since" else "" end)" else "" end)" end)"),
       (if $fullrun == 1 then empty else "  checks: \([$e.checks[] | select(.reused | not)] | length) ran, \([$e.checks[] | select(.reused)] | length) reused" end),
       (if $e.full != false then "  proof: full" else
         "  proof: partial [" + ([ (if any(($e.checks[], $e.commands[]); .reused) then "results reused" else empty end),

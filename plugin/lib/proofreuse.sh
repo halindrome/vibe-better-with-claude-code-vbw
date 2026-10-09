@@ -108,6 +108,50 @@ proofreuse_plan() {
       TODO_COMMANDS=$(printf '%s' "$TODO_COMMANDS" | jq -c --arg n "$name" '. + [$n]')
     fi
   done < <(printf '%s' "$PROVE_NAMES" | jq -j '.[] + "\u0000"')
+  [ "${2:-0}" != 1 ] || proofreuse_docs "$record"
+}
+
+# proofreuse_docs RECORD: in a full proof, move the test command from the
+# commands to run to the reused ones when its latest real run (evidence.test_run)
+# passed with today's argv, nothing is unfinished, uncommitted or (D173)
+# re-run on purpose, and every file committed since is documentation or
+# VBW's own, neither a test file nor one an approved check lists or runs (R144).
+proofreuse_docs() {
+  local ev run head old argv=() a paths
+  printf '%s' "$TODO_COMMANDS" | jq -e 'index("test")' > /dev/null || return 0
+  ev=$(proofreuse_last "$1") || return 0
+  run=$(printf '%s' "$ev" | jq -c '.test_run // empty | select(.status == "pass" and (.head // "") != "")') || return 0
+  [ -n "$run" ] || return 0
+  [ "$(printf '%s' "$run" | jq -r .fp)" = "$(proofreuse_command_fp "$1" test)" ] || return 0
+  while IFS= read -r -d '' a; do argv+=("$a"); done \
+    < <(printf '%s' "$1" | jq -j '.commands.test[] + "\u0000"')
+  consent_has command "$(vbw_sha256_argv "${argv[@]}")" || return 0
+  head=$(vbw_head_tree) && [ -n "$head" ] && [ "$(vbw_code_tree)" = "$head" ] || return 0
+  old=$(printf '%s' "$run" | jq -r .head)
+  paths=$(git -C "$VBW_ROOT" diff-tree -z -r --name-only "$old" "$head" 2> /dev/null | tr '\0' '\n') || return 0
+  printf '%s' "$paths" | jq -R -s -e --argjson r "$1" "$VBW_JQ_DEFS"'
+    def is_test: test("(^|/)(test|tests|__tests__|spec|fixtures)/") or (split("/") | last | test("\\.test\\.|_test\\.|\\.spec\\.|^test_"));
+    [$r.checks[] | (.files // [])[]] as $listed | [$r.checks[] | (.run // [])[]] as $ran
+    | [split("\n")[] | select(length > 0)]
+    | all(.[]; . as $f | startswith(".vbw/") or (is_doc and (is_test | not)
+        and (any($listed[]; . as $l | $l | covers($f)) | not) and (any($ran[]; . == $f) | not)))' > /dev/null || return 0
+  REUSE_COMMANDS=$(printf '%s' "$REUSE_COMMANDS" | jq -c --argjson r "$run" '. + {test: (($r | del(.head)) + {reused: true, reuse: "docs"})}')
+  TODO_COMMANDS=$(printf '%s' "$TODO_COMMANDS" | jq -c '. - ["test"]')
+}
+
+# proofreuse_test_run RECORD COMMANDS HEAD TREE: the latest real run of the test
+# command, to keep in the evidence: this proof's own when it ran the command
+# (tied to the committed code only when it ran on exactly that), else the
+# previous one, carried forward unchanged.
+proofreuse_test_run() {
+  local run
+  run=$(printf '%s' "$2" | jq -c '.test // empty | select(.status != "skipped" and (.reused | not))')
+  if [ -n "$run" ]; then
+    if [ "$3" = "$4" ]; then run=$(printf '%s' "$run" | jq -c --arg h "$3" '. + {head: $h}'); fi
+    printf '%s\n' "$run"
+  else
+    printf '%s' "$1" | jq -c '.evidence.test_run // empty'
+  fi
 }
 
 # proofreuse_stamp RECORD KIND RESULTS AT: add each new result's fingerprint
