@@ -172,7 +172,8 @@ An express phase has exactly one plan: `vbw apply` refuses more.
 
 ## QA depth
 
-The table gives each phase a QA depth. Size and risk can only lower it. At
+The table gives each phase a QA depth. Size and risk can only lower it, and
+only for a phase that never escalated. At
 the `qa` step, `vbw next --json` carries the depth chosen per phase in
 `round.tiers`, and the QA workflow checks each phase at that depth:
 
@@ -187,10 +188,17 @@ are.
 
 | The phase's change | `round.tiers` |
 |---|---|
+| the phase escalated (a blocked plan, a fix that needed another round, a failed QA, or `vbw tier raise`) | the depth of its raised tier, whatever its size |
 | risk is not `none` in its tier reasons, or it has no recorded reasons | the profile's depth |
 | 1 or 2 files in its plans | `quick`, never deeper |
 | 3 to 9 files | `standard` at most (a profile's `quick` stays `quick`) |
 | 10 or more files | the profile's depth |
+
+The size rows apply only to phases that never escalated. A tier you force
+with `vbw config rigor` is not an escalation, so the size rows still apply to it.
+
+Example: a five-file phase is raised to `deep` after a blocked plan. It is
+verified at `deep`, not at `standard` as its size alone would give.
 
 Files are counted once across the phase's plans. A risky change gets the full
 depth however few files it touches. A small, low-risk change never gets a deep
