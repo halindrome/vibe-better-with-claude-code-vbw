@@ -142,6 +142,11 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 - R141 [auto] When jq is missing, starting a Claude Code session in a VBW project shows no 'jq: command not found' error: the session-start hook ends quietly like the other hooks
 - R142 [auto] CI splits the macOS test run across several machines, so a push that changes VBW code finishes CI in about 20 minutes or less
 - R143 [auto] When a push changes no shipped code, tools or docs, CI runs only the test files that changed, and skips the tests when only the VBW record or saved test results changed
+- R144 [auto] When a fix after QA changes only documentation, the next full proof reuses the project test command's earlier passing result instead of running it again; any change to code, tests or a check's files still runs it
+- R145 [auto] A phase that was escalated (raised after a blocked plan, a failed fix or a failed QA) is verified at the QA depth of its raised tier; the small-change discount applies only to phases that never escalated
+- R146 [auto] vbw todo add, sort, done and drop commit the record when they change it, so the project is left clean, and never take the user's own staged files with them
+- R147 [auto] By default VBW runs at most as many checks at once as the machine can carry (about three quarters of its processor cores, at least one), instead of 4 on every machine; the check_jobs setting still overrides it
+- R148 [auto] When several Devs or fix groups work at once, the checks they run together stay within that same machine-sized limit, and fix groups share one run of the project test command instead of each running it
 
 <!-- One requirement per line: an id, how it is proved, and a user-observable
      statement. [auto] = a check can prove it; [human] = only a person can judge it.

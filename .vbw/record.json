@@ -4234,6 +4234,46 @@
           "check": "C207"
         }
       ]
+    },
+    {
+      "id": "R144",
+      "text": "When a fix after QA changes only documentation, the next full proof reuses the project test command's earlier passing result instead of running it again; any change to code, tests or a check's files still runs it",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M19",
+      "rules": []
+    },
+    {
+      "id": "R145",
+      "text": "A phase that was escalated (raised after a blocked plan, a failed fix or a failed QA) is verified at the QA depth of its raised tier; the small-change discount applies only to phases that never escalated",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M19",
+      "rules": []
+    },
+    {
+      "id": "R146",
+      "text": "vbw todo add, sort, done and drop commit the record when they change it, so the project is left clean, and never take the user's own staged files with them",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M19",
+      "rules": []
+    },
+    {
+      "id": "R147",
+      "text": "By default VBW runs at most as many checks at once as the machine can carry (about three quarters of its processor cores, at least one), instead of 4 on every machine; the check_jobs setting still overrides it",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M19",
+      "rules": []
+    },
+    {
+      "id": "R148",
+      "text": "When several Devs or fix groups work at once, the checks they run together stay within that same machine-sized limit, and fix groups share one run of the project test command instead of each running it",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M19",
+      "rules": []
     }
   ],
   "checks": [
@@ -18135,7 +18175,7 @@
     {
       "id": "T65",
       "text": "M16 discussion (owner): vbw prove's default check parallelism should depend on the machine (4, 10 or 50 cores); today it is 4 everywhere (R69/R81 check_jobs)",
-      "status": "open",
+      "status": "done",
       "sort": "next",
       "size": "small"
     },
@@ -18189,7 +18229,7 @@
     {
       "id": "T75",
       "text": "Cost: parallel fix groups each ran the full suite in vbw fix done (load 21, timing tests failed); share one test run across groups",
-      "status": "open",
+      "status": "done",
       "sort": "next",
       "size": "medium"
     },
@@ -18256,7 +18296,7 @@
       "text": "A docs-only fix after QA forces a second full proof (vbw prove --full, ~23 min on VBW) before QA rechecks; let the full proof reuse the suite result when only docs changed since it ran (as R115 does for QA)",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T87",
@@ -18284,7 +18324,7 @@
       "text": "vbw todo add, sort, done and drop leave .vbw/record.json uncommitted when they are the last command (as vbw recommend did until 2.0.29); commit the record after a backlog change, the user's staged files untouched",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T91",
@@ -18305,7 +18345,7 @@
       "text": "QA depth: next.jq applies the R71 small-change cap (risk: none, 3-9 files -> at most standard) even to a phase with escalations, so a phase raised to deep is verified at standard (P89, P90, P92 on 2026-10-09; P92 failed QA 4 times). A phase with escalations keeps its cell's QA depth",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T94",
@@ -18333,7 +18373,7 @@
       "text": "Machine load (brainstorm R1, owner's priority 2): measure first how many processes VBW really runs (parallel Devs x their checks x each test runner's workers), then cap by machine size (e.g. at most ~75% of cores), balanced by default and wider only at higher effort; with T65 (check_jobs per machine). Fans spin long on a 10-core Mac; users with fewer cores may give up",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T98",
