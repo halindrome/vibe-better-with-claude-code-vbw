@@ -1,9 +1,11 @@
 #!/usr/bin/env bats
 # R111 (docs/proof.md): a project may name a quick test command (a Commands
 # entry called quick); a plain vbw prove runs it in place of the test command,
-# vbw prove --full runs every check and every full project command and reuses
-# nothing, and the evidence records whether the proof was full. Every check and
-# command logs its own name to $RANLOG when it really runs. L1.
+# vbw prove --full runs every check and every full project command and, after a
+# code change, reuses nothing (after a documentation-only change it may reuse
+# the test command's passing result: R144, tests/proof-doc-reuse.bats), and the
+# evidence records whether the proof was full. Every check and command logs its
+# own name to $RANLOG when it really runs. L1.
 
 load helper
 
@@ -107,9 +109,9 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   printf '%s\n' "$output" | grep -qE '^ +proof: full$' || { echo "$output"; false; }
 }
 
-@test "R111: vbw prove --full reuses nothing and runs every check, the test command and every other command, but not the quick command" {
+@test "R111: after a code change, vbw prove --full reuses nothing and runs every check, the test command and every other command, but not the quick command" {
   named_quick
-  "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
+  change src/pay.txt
   vbw_run prove --full
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(ran)" = "C1 C2 cmd-lint cmd-test " ] || { echo "ran: $(ran)"; false; }

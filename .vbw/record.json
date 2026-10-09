@@ -4241,7 +4241,76 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M19",
-      "rules": []
+      "rules": [
+        {
+          "text": "after a documentation-only commit, vbw prove --full reuses the test command's latest passing run instead of running it",
+          "check": "C208"
+        },
+        {
+          "text": "the summary line marks the test command as reused, and the proof stays full in the summary and the evidence",
+          "check": "C208"
+        },
+        {
+          "text": ".md, .markdown and .rst files count as documentation; a plain .txt file does not",
+          "check": "C208"
+        },
+        {
+          "text": "changes to VBW's own .vbw/ files, alone or with documentation, still allow the reuse",
+          "check": "C208"
+        },
+        {
+          "text": "a committed change to any code file since that run makes the test command run, even with documentation changes after it",
+          "check": "C208"
+        },
+        {
+          "text": "a changed test file makes the test command run, even when it is a Markdown file",
+          "check": "C208"
+        },
+        {
+          "text": "a changed file an approved check lists in its files or names in its run words makes the test command run, even when it is a Markdown file",
+          "check": "C208"
+        },
+        {
+          "text": "uncommitted changes to code in the working folder make the test command run",
+          "check": "C208"
+        },
+        {
+          "text": "a change to the test command's words makes it run",
+          "check": "C208"
+        },
+        {
+          "text": "a failed latest test-command run is never reused",
+          "check": "C208"
+        },
+        {
+          "text": "a quick command run standing in for the test command is never reused as the test result",
+          "check": "C208"
+        },
+        {
+          "text": "a second vbw prove --full with nothing committed since the passing proof runs everything fresh (D173)",
+          "check": "C208"
+        },
+        {
+          "text": "an unfinished or interrupted earlier proof (its marker left behind) is never reused",
+          "check": "C208"
+        },
+        {
+          "text": "every approved check and every other project command still runs in the full proof",
+          "check": "C208"
+        },
+        {
+          "text": "vbw qa record and vbw ship accept a full proof with the reused test result, and vbw qa record still refuses a partial proof",
+          "check": "C208"
+        },
+        {
+          "text": "docs/proof.md explains the rule and what still runs the test command, and that a test reading a documentation file not listed by any check is not re-run",
+          "check": "C209"
+        },
+        {
+          "text": "docs/record.md describes how the reused test result is kept in the evidence",
+          "check": "C209"
+        }
+      ]
     },
     {
       "id": "R145",
@@ -4249,7 +4318,40 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M19",
-      "rules": []
+      "rules": [
+        {
+          "text": "a phase with at least one escalation gets its raised tier's cell depth at the qa step, whatever its number of files",
+          "check": "C210"
+        },
+        {
+          "text": "an escalated phase of at most two files is not lowered to quick",
+          "check": "C210"
+        },
+        {
+          "text": "an escalated phase of three to nine files with no risk path is not capped at standard",
+          "check": "C210"
+        },
+        {
+          "text": "the depth never goes above what the profile's cell gives the raised tier",
+          "check": "C210"
+        },
+        {
+          "text": "a phase that never escalated keeps the discount: at most two files quick, three to nine at most standard",
+          "check": "C210"
+        },
+        {
+          "text": "a tier forced with vbw config rigor and never escalated counts as never escalated",
+          "check": "C210"
+        },
+        {
+          "text": "a blocked plan, a fix needing another round and a failed QA each lead to the raised depth",
+          "check": "C210"
+        },
+        {
+          "text": "the QA round's tier reflects the raised depth when an escalated phase is among those to verify",
+          "check": "C210"
+        }
+      ]
     },
     {
       "id": "R146",
@@ -4257,7 +4359,44 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M19",
-      "rules": []
+      "rules": [
+        {
+          "text": "vbw todo add, with or without --sort and --size, commits the record and the commit names the new item",
+          "check": "C211"
+        },
+        {
+          "text": "vbw todo sort, done and drop commit the record and the commit names the item and what happened to it",
+          "check": "C211"
+        },
+        {
+          "text": "files the user staged stay staged, unchanged, and are not part of VBW's commit",
+          "check": "C211"
+        },
+        {
+          "text": "files the user changed but did not stage, VBW's spec included, are not part of VBW's commit",
+          "check": "C211"
+        },
+        {
+          "text": "vbw todo list never commits",
+          "check": "C211"
+        },
+        {
+          "text": "a command that changes nothing makes no commit",
+          "check": "C211"
+        },
+        {
+          "text": "a refused command (unknown id, a closed item, wrong usage) changes nothing and commits nothing",
+          "check": "C211"
+        },
+        {
+          "text": "when git cannot commit (a failing hook, no git identity) the change is kept, the command succeeds and a warning gives git's reason and says to commit the files yourself",
+          "check": "C211"
+        },
+        {
+          "text": "the commit goes through record_commit, not a second copy",
+          "check": "C211"
+        }
+      ]
     },
     {
       "id": "R147",
@@ -4265,7 +4404,40 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M19",
-      "rules": []
+      "rules": [
+        {
+          "text": "with no setting the limit is three quarters of the processor cores, rounded down, at least 1",
+          "check": "C212"
+        },
+        {
+          "text": "the machine default is never more than 64",
+          "check": "C212"
+        },
+        {
+          "text": "a core count that cannot be read gives 1 and VBW keeps working",
+          "check": "C212"
+        },
+        {
+          "text": "a proof with no setting runs at most the machine default at once",
+          "check": "C212"
+        },
+        {
+          "text": "check_jobs N (1 to 64) overrides the machine default, default returns to it, and invalid values are refused",
+          "check": "C212"
+        },
+        {
+          "text": "vbw config shows the value in use and whether it is the machine default or set",
+          "check": "C212"
+        },
+        {
+          "text": "docs/proof.md describes the machine-sized default",
+          "check": "C215"
+        },
+        {
+          "text": "the old 'default 4' wording is gone from docs, help and code comments",
+          "check": "C215"
+        }
+      ]
     },
     {
       "id": "R148",
@@ -4273,7 +4445,52 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M19",
-      "rules": []
+      "rules": [
+        {
+          "text": "several vbw check processes at once never run more checks together than the limit",
+          "check": "C213"
+        },
+        {
+          "text": "vbw prove beside vbw check processes share the same limit",
+          "check": "C213"
+        },
+        {
+          "text": "with check_jobs 1 only one check runs at a time across processes",
+          "check": "C213"
+        },
+        {
+          "text": "a check waiting for a free slot waits instead of failing, and its timeout counts from its real start",
+          "check": "C213"
+        },
+        {
+          "text": "a slot held by a VBW process that died is freed",
+          "check": "C213"
+        },
+        {
+          "text": "checks marked alone still run with nothing else beside checks from other processes",
+          "check": "C213"
+        },
+        {
+          "text": "every Dev of a fix round is told not to run the project's test command or its quick command, only its own checks",
+          "check": "C214"
+        },
+        {
+          "text": "every Dev of a fix round is told the whole test command runs once, in the proof after the round",
+          "check": "C214"
+        },
+        {
+          "text": "a fix for a failure of the test command itself may run only the failing tests it needs",
+          "check": "C214"
+        },
+        {
+          "text": "the Dev instructions say this",
+          "check": "C214"
+        },
+        {
+          "text": "docs/proof.md describes the shared limit and docs/workflows.md the single test run of a fix round",
+          "check": "C216"
+        }
+      ]
     }
   ],
   "checks": [
@@ -6694,6 +6911,115 @@
       ],
       "files": [
         "tests/ci-scope-wiring.bats"
+      ]
+    },
+    {
+      "id": "C208",
+      "req": "R144",
+      "run": [
+        "bats",
+        "tests/proof-doc-reuse.bats"
+      ],
+      "files": [
+        "tests/proof-doc-reuse.bats"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C209",
+      "req": "R144",
+      "run": [
+        "bats",
+        "tests/proof-doc-reuse-docs.bats"
+      ],
+      "files": [
+        "tests/proof-doc-reuse-docs.bats"
+      ]
+    },
+    {
+      "id": "C210",
+      "req": "R145",
+      "run": [
+        "bats",
+        "tests/qa-depth-escalated.bats"
+      ],
+      "files": [
+        "tests/qa-depth-escalated.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C211",
+      "req": "R146",
+      "run": [
+        "bats",
+        "tests/todo-commit.bats"
+      ],
+      "files": [
+        "tests/todo-commit.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C212",
+      "req": "R147",
+      "run": [
+        "bats",
+        "tests/check-jobs-machine.bats"
+      ],
+      "files": [
+        "tests/check-jobs-machine.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C213",
+      "req": "R148",
+      "run": [
+        "bats",
+        "tests/check-jobs-shared.bats"
+      ],
+      "files": [
+        "tests/check-jobs-shared.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C214",
+      "req": "R148",
+      "run": [
+        "bats",
+        "tests/fix-suite-once.bats"
+      ],
+      "files": [
+        "tests/fix-suite-once.bats",
+        "tests/helpers/run-workflow.js"
+      ]
+    },
+    {
+      "id": "C215",
+      "req": "R147",
+      "run": [
+        "bats",
+        "tests/check-jobs-docs.bats",
+        "-f",
+        "R147"
+      ],
+      "files": [
+        "tests/check-jobs-docs.bats"
+      ]
+    },
+    {
+      "id": "C216",
+      "req": "R148",
+      "run": [
+        "bats",
+        "tests/check-jobs-docs.bats",
+        "-f",
+        "R148"
+      ],
+      "files": [
+        "tests/check-jobs-docs.bats"
       ]
     }
   ],
@@ -10753,6 +11079,136 @@
         "qa_findings": 0,
         "escalations": 0
       }
+    },
+    {
+      "id": "P97",
+      "title": "No second full test run after a documentation-only fix",
+      "reqs": [
+        "R144"
+      ],
+      "milestone": "M19",
+      "goal": "After QA, a fix that only changes documentation no longer makes the next full proof (vbw prove --full) run the project's whole test command again; it reuses the earlier passing result and says so, while any real change still runs it.",
+      "criteria": [
+        "When every file changed since the last proof whose project test command passed is documentation (the same documentation rule QA already uses, is_doc: Markdown and other doc files) or VBW's own .vbw/ files, `vbw prove --full` reuses that passing test-command result instead of running the command, and its summary line marks the test command as reused",
+        "A change to any code file since that proof makes `vbw prove --full` run the test command again",
+        "A change to a test file or to any file an approved check lists or runs makes `vbw prove --full` run the test command again, even when that file is a Markdown or other documentation file",
+        "Uncommitted changes to code in the working folder make the test command run (reuse only compares committed content, as R103 does)",
+        "A change to the test command itself (its words in the spec) makes it run again",
+        "If the earlier test-command result failed, or came from the quick command standing in for it, it is never reused: the full test command runs",
+        "A second `vbw prove --full` with nothing committed since the last passing proof still runs everything fresh (D173 kept)",
+        "An interrupted or unfinished earlier proof (the unfinished marker is present) is never reused",
+        "Every approved check still runs in a full proof exactly as today; only the project test command's result is reused",
+        "`vbw qa record` and `vbw ship` accept a full proof whose test-command result was reused under this rule, and still refuse a proof that ran only part of the checks or commands",
+        "docs/proof.md explains the rule, including that a test which reads a documentation file not listed by any check is not re-run by a documentation-only change"
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 4 (63396 bytes)",
+        "files: more than 2 in a repository tracking 775 files",
+        "risk: none",
+        "breaks: R69, R81, R111",
+        "guarded: R12 (C11), R25 (C24), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R115 (C181), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P98",
+      "title": "Escalated phases get the full QA depth of their raised tier",
+      "reqs": [
+        "R145"
+      ],
+      "milestone": "M19",
+      "goal": "A phase VBW had to raise to a higher tier because something went wrong is checked by QA at that higher tier's depth, never at the reduced depth meant for small, trouble-free changes.",
+      "criteria": [
+        "For a phase with at least one recorded escalation, `vbw next --json` at the qa step gives it the QA depth of its current (raised) tier's cell, whatever its number of files",
+        "For a phase with an escalation and at most two files, the QA depth is not lowered to quick",
+        "For a phase with an escalation and three to nine files and no risk path, the QA depth is not capped at standard (for example a phase raised to deep is verified at deep's QA depth)",
+        "A phase that never escalated keeps today's small-change discount: at most two files and no risk path gives quick; three to nine files and no risk path gives at most standard",
+        "A phase whose tier was set by the user's forced rigor setting (vbw config rigor) but never escalated is treated as never escalated",
+        "Each kind of escalation (a blocked plan, a fix needing another round, a failed QA) is covered by a test that shows the raised depth is used",
+        "The QA round's tier (the highest tier among phases to verify) reflects the raised depth when an escalated phase is among them"
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 2 (22907 bytes)",
+        "risk: none",
+        "breaks: R111",
+        "guarded: R13 (C12), R14 (C13), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R35 (C31), R37 (C35), R38 (C33, C34), R40 (C37), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R67 (C96), R70 (C114), R71 (C115, C121), R72 (C116, C118), R74 (C99, C100), R79 (C107), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R116 (C182, C183), R131 (C198)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P99",
+      "title": "Backlog commands leave the project clean",
+      "reqs": [
+        "R146"
+      ],
+      "milestone": "M19",
+      "goal": "Adding, sorting, finishing or dropping a backlog item saves that change in git right away, so the project never sits with an unsaved record file, and the user's own work waiting to be saved is never swept into VBW's save.",
+      "criteria": [
+        "After `vbw todo add TEXT` (with or without --sort and --size), `git status` shows .vbw/record.json clean and the last commit is a VBW record commit naming the new item",
+        "After `vbw todo sort ID next|later SIZE`, `vbw todo done ID` and `vbw todo drop ID`, .vbw/record.json is clean and the last commit names the item and what happened to it",
+        "Files the user had staged before the command are still staged afterwards, unchanged, and are not part of VBW's commit",
+        "Files the user changed but did not stage are not part of VBW's commit",
+        "`vbw todo list` never commits",
+        "A command that changes nothing (for example sorting an item to the sort and size it already has) makes no commit",
+        "A refused command (unknown id, sorting a closed item, wrong usage) changes nothing and commits nothing",
+        "When the commit cannot be made (no git identity, a failing git hook), the backlog change is kept, the command still succeeds, and a warning gives git's own reason and says to commit the files yourself",
+        "The commit goes through the existing single commit path for VBW's files (record_commit), not a second copy"
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 3 (14889 bytes)",
+        "files: more than 2 in a repository tracking 775 files",
+        "risk: none",
+        "breaks: R81",
+        "guarded: R1 (C1), R2 (C2), R22 (C19), R23 (C20), R25 (C24), R33 (C29), R38 (C33, C34), R46 (C46), R47 (C47), R49 (C48), R121 (C187, C188), R122 (C189), R123 (C190, C191), R127 (C194), R133 (C195)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P100",
+      "title": "Checks sized to the machine",
+      "reqs": [
+        "R147",
+        "R148"
+      ],
+      "milestone": "M19",
+      "goal": "VBW never runs more checks at once than the computer can comfortably carry, even when several Devs or fix groups work at the same time, and a round of fixes runs the project's test command once instead of once per group.",
+      "criteria": [
+        "With no check_jobs setting, the number of checks VBW runs at once is three quarters of the machine's processor cores, rounded down, and at least 1 (for example 10 cores give 7, 4 give 3, 2 give 1, 1 gives 1), and never more than 64",
+        "When the core count cannot be read, VBW uses 1 and keeps working",
+        "`vbw config set check_jobs N` (1 to 64) still overrides the machine default, and `vbw config set check_jobs default` returns to it",
+        "`vbw config` shows the check_jobs value in use and whether it is the machine default or a set value",
+        "Several VBW commands running checks at the same time in one project folder (for example parallel Devs each running `vbw check`, or `vbw fix done` and `vbw prove`) never have more checks running together than that same limit; a test starts more checks than the limit from separate processes and records the most that ran at once",
+        "A check that has to wait for a free slot waits instead of failing, and its timeout counts only from when it really starts",
+        "A slot held by a VBW process that died is freed, so later checks do not wait forever",
+        "Checks marked to run alone still run with nothing else, as today (R45)",
+        "With check_jobs set to 1, only one check runs at a time across all those processes",
+        "In a fix round with several fix groups, the Devs do not each run the project's test command or quick command; they run their own checks, and the project test command runs once, in the single proof after the round",
+        "When a fix is for a failure of the project test command itself, the Dev may run the failing tests it needs to fix, and the whole command still runs only once, at the proof after the round",
+        "The Dev instructions and the fixing workflow say this, and a test pins it",
+        "docs/ describe the machine-sized default and the shared limit; the old 'default 4' wording is gone from docs, help and code comments"
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 2",
+        "files: 8 (107081 bytes)",
+        "files: more than 2 in a repository tracking 775 files",
+        "risk: none",
+        "breaks: R69, R81, R111",
+        "guarded: R1 (C1), R2 (C2), R3 (C3), R12 (C11), R13 (C12), R14 (C13), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R58 (C62, C63, C64, C67), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202)",
+        "tests: project test command",
+        "raised by the Architect"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -17085,6 +17541,220 @@
         "CONTRIBUTING.md CI section: the full suite runs for any change to plugin/, tools/, docs/, root documents, version files, .github/, test helpers or fixtures, or any path CI does not recognise, and on a new branch or a force push",
         "Only changed tests/*.bats files run when nothing else changed (deleted ones are not run); a push of only .vbw/record.json, .vbw/spec.md or saved test results runs no tests, and every job still shows success",
         "Saved results folders come from the spec's Test results section (D195), named in the record before and after the push; the run log's 'Decide' step shows what CI chose and why"
+      ]
+    },
+    {
+      "id": "P97.1",
+      "phase": "P97",
+      "title": "Full proof reuses the last passing test run when only documentation changed",
+      "reqs": [
+        "R144"
+      ],
+      "files": [
+        "plugin/lib/proofreuse.sh",
+        "plugin/lib/cmd-prove.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Remember the latest real run of the project test command across proofs: a proof that runs it stamps its result with the committed tree it ran on (head) and its argv fingerprint (proofreuse_command_fp); a proof that does not run it (the quick command stood in, or it was reused) carries that latest run forward unchanged in a new optional evidence field (for example evidence.test_run), so a failed latest run is never passed over for an older pass",
+        "In vbw prove --full only, reuse that run for the test command when all hold: no unfinished marker (proofreuse_marker); not the D173 case (nothing committed since a passing proof, as proofreuse_last decides); it passed, ran the test command itself (never quick) and its argv fingerprint is today's; the working folder is the committed code (vbw_code_tree = vbw_head_tree); and every path from `git diff-tree -z -r --name-only <its head> <current head>` is under .vbw/ or is documentation (is_doc), is not a test file (a path with a test, tests, __tests__, spec or fixtures folder, or a name like *.test.*, *_test.*, *.spec.*, test_*), and is not a file any approved check lists in files or names in run. Every check and every other command still runs as today",
+        "cmd-prove.sh: a full proof whose only reused result is the test command under this rule stays full (evidence.full true, so vbw qa record and vbw ship accept it with no change of theirs); the reused result keeps reused: true and its original time, its summary line reads `test pass Ns reused (proof of AT): only documentation changed since`, and the summary still ends `proof: full`",
+        "Run tests/proof-doc-reuse.bats, then proof-quick, proof-reuse, proof-selective, proof-full-gate, kernel-prove and qa-suite-once, under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P97.2",
+      "phase": "P97",
+      "title": "Proof guide: when a full proof reuses the test run",
+      "reqs": [
+        "R144"
+      ],
+      "files": [
+        "docs/proof.md",
+        "docs/record.md"
+      ],
+      "after": [
+        "P97.1"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/proof.md, Full and partial proofs: replace 'vbw prove --full reuses nothing' with the rule: a full proof reuses no check and no other command, and reuses the test command's latest passing run when only documentation (.md, .markdown, .rst) or VBW's own .vbw/ files changed since it (a documentation-only change); the summary marks it reused and the proof stays full; update the 'A proof is full only when' list to match, keeping every phrase tests/proof-quick-docs.bats and tests/qa-refusal-wording.bats look for",
+        "List what still runs the test command: a code file, a test file (even a Markdown one), a file an approved check lists or runs, uncommitted code, changed test command words, a failed latest run, a quick command run standing in for it, nothing committed since a passing proof (D173), and an unfinished or interrupted proof",
+        "State the limit plainly: a test that reads a documentation file not listed by any check is not re-run by a documentation-only change; to make such a file count, list it in that check's files",
+        "docs/record.md: describe the evidence field that keeps the latest test-command run (its committed tree and fingerprint) and how a test command result reused after a documentation-only change is marked (reused: true)"
+      ]
+    },
+    {
+      "id": "P98.1",
+      "phase": "P98",
+      "title": "An escalated phase keeps its raised QA depth",
+      "reqs": [
+        "R145"
+      ],
+      "files": [
+        "plugin/lib/next.jq"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "next.jq, the QA-depth step ($tiers_qa): a phase with at least one recorded escalation ((.escalations // []) | length > 0) gets its cell's depth ($rigor[id].qa), whatever its number of files; the at-most-two-files quick and three-to-nine-files standard cap apply only to phases with no escalation (a tier forced with vbw config rigor records none, so it keeps the discount)",
+        "Update the R71 comment above the step to name this exception (R145); detail.tier stays the highest cell among the phases to verify, so the round's tier already reflects the raised depth",
+        "Run tests/qa-depth-escalated.bats, qa-depth-docs, verify-adaptive, adaptive-results and rigor-*.bats under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P98.2",
+      "phase": "P98",
+      "title": "Rigor guide: escalated phases keep their QA depth",
+      "reqs": [
+        "R145"
+      ],
+      "files": [
+        "docs/rigor.md"
+      ],
+      "after": [
+        "P98.1"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/rigor.md, QA depth: add that a phase that escalated (a blocked plan, a fix needing another round, a failed QA, vbw tier raise) is checked at its raised tier's depth whatever its size, as the first row of the depth table",
+        "Say the size discount applies only to phases that never escalated, and that a tier forced with vbw config rigor is not an escalation",
+        "Add a short example: a five-file phase raised to deep is verified at deep, not standard"
+      ]
+    },
+    {
+      "id": "P99.1",
+      "phase": "P99",
+      "title": "Backlog commands save the record in git at once",
+      "reqs": [
+        "R146"
+      ],
+      "files": [
+        "plugin/lib/record.sh",
+        "plugin/lib/cmd-todo.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "record.sh: record_commit takes an optional list of VBW files after the message (`record_commit [--strict] MESSAGE [FILE...]`); with a list it commits only those of VBW's own files that changed, without one everything as today; still `git commit --only` with an explicit pathspec, so staged and unstaged user files stay out; header comment updated",
+        "cmd-todo.sh: add, sort, done and drop call record_commit with .vbw/record.json only, so a user's unsaved edit of the spec or a check file is never swept in; messages `chore(vbw): todo T5 added`, `chore(vbw): todo T5 sorted next, small`, `chore(vbw): todo T5 done`, `chore(vbw): todo T5 dropped`; list never commits; refused commands stop before any write",
+        "A command that changes nothing (the same sort and size again) leaves the record bytes unchanged, so no commit is made; a commit git refuses (no identity, a failing hook) keeps the change, prints record_commit's warning with git's reason and 'commit them yourself', and the command still exits 0",
+        "Run tests/todo-commit.bats, todo-sort, recommend-commit, kernel-commit, approve-commit-fails and the triage tests under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P99.2",
+      "phase": "P99",
+      "title": "Backlog guide: each change is saved in git",
+      "reqs": [
+        "R146"
+      ],
+      "files": [
+        "docs/triage.md"
+      ],
+      "after": [
+        "P99.1"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/triage.md, The backlog: vbw todo add, sort, done and drop save the change in git at once (a `chore(vbw): todo ...` commit of .vbw/record.json), so the project is left clean; vbw todo list and a command that changes nothing make no commit",
+        "Say the user's own staged and unstaged files are never part of that commit",
+        "Say that when git cannot commit (no git identity, a hook that refuses), the change is kept and a warning gives git's reason and asks to commit the file yourself"
+      ]
+    },
+    {
+      "id": "P100.1",
+      "phase": "P100",
+      "title": "Default number of checks at once follows the machine's cores",
+      "reqs": [
+        "R147"
+      ],
+      "files": [
+        "plugin/lib/core.sh",
+        "plugin/lib/cmd-config.sh",
+        "plugin/bin/vbw"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "core.sh: a core-count reader that asks, in order, `getconf _NPROCESSORS_ONLN`, `nproc`, `sysctl -n hw.ncpu` (found on PATH, never by absolute path) and takes the first whole number of at least 1; none gives 'cannot be read'. vbw_check_jobs: a valid set value wins; else floor(cores * 3 / 4), at least 1 and at most 64, and 1 when the count cannot be read; a companion tells whether the value is set or the machine default; comments carry no 'default 4'",
+        "cmd-config.sh: vbw config prints `check_jobs: N (machine default)` or `check_jobs: N (set)`; vbw config set check_jobs 1..64 and default work as today and invalid values are still refused; header comment updated",
+        "plugin/bin/vbw help: the check_jobs entry says that without a setting it is three quarters of the processor cores",
+        "Run tests/check-jobs-machine.bats, prove-parallel, check-wait-patient, prove-kept-output and config-qa under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P100.2",
+      "phase": "P100",
+      "title": "One limit on checks at once for every VBW process in the project",
+      "reqs": [
+        "R148"
+      ],
+      "files": [
+        "plugin/lib/checks.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "The gate under .vbw/runtime/gate (checks_gate_enter, checks_gate_blocker): a shared check also waits while the live registrations already number the limit (vbw_check_jobs, read once per process); looking and registering stay one step under the gate mutex, so separate processes never pass the limit together",
+        "A waiting check keeps waiting, never fails for having waited, and registers only when a slot is free; its timeout clock (checks_exec) starts after it registers, as today",
+        "Registrations of a process that died are dropped as today, which frees their slot; alone checks are unchanged (they need an empty gate and hold back new shared checks while they wait: R45, R94)",
+        "Comments: the in-process runner still starts at most the limit at once and the gate holds the same limit across processes; no 'default 4'. Run tests/check-jobs-shared.bats, check-wait-patient, check-alone-runner, prove-parallel, prove-signal and kernel-prove under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P100.3",
+      "phase": "P100",
+      "title": "Fix rounds run the project's test command once, at the proof",
+      "reqs": [
+        "R148"
+      ],
+      "files": [
+        "plugin/workflows/fixing.js",
+        "plugin/agents/dev.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "fixing.js: every Dev prompt of a fix round adds: \"Do not run the project's test command or its quick command: run only your fixes' checks (vbw check). The whole test command runs once, in the proof after this round. If your fix is for a failure of the test command itself, run only the failing tests you need to fix.\"",
+        "dev.md, Stage 2 for fixes: \"In a fix, never run the project's test command or its quick command: run your fixes' checks (vbw check); the round's proof runs the whole command once. A fix for a failing test command runs only the failing tests it needs.\" Stay within the agent's 1.5k-token budget",
+        "Run tests/fix-suite-once.bats, workflows.bats and standards.bats (prompt and workflow budgets)"
+      ]
+    },
+    {
+      "id": "P100.4",
+      "phase": "P100",
+      "title": "Proof and workflow guides: machine-sized limit, shared limit, one test run per fix round",
+      "reqs": [
+        "R147",
+        "R148"
+      ],
+      "files": [
+        "docs/proof.md",
+        "docs/workflows.md"
+      ],
+      "after": [
+        "P97.2",
+        "P100.1",
+        "P100.2",
+        "P100.3"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/proof.md, Checks run in parallel: without a setting check_jobs is three quarters of the processor cores, rounded down, at least 1 and at most 64, and 1 when the core count cannot be read; vbw config shows the value and whether it is the machine default or set; vbw config set check_jobs default returns to it; remove 'default 4' and 'means 4'",
+        "docs/proof.md: the limit is shared: several VBW commands running checks at the same time in one project folder (parallel Devs each running vbw check, vbw fix done beside vbw prove) never run more checks together than it; a check waits for a free slot instead of failing, and its timeout counts from its real start; a slot held by a VBW process that died is freed; alone checks unchanged",
+        "docs/workflows.md, vbw:fixing: in a fix round the Devs run their own checks and never run the project's test command or its quick command; the project test command runs once, in the proof after the round; a fix for a failing test command runs only the failing tests it needs"
       ]
     }
   ],

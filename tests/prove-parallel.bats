@@ -3,10 +3,12 @@
 # except checks marked alone, which still run by themselves; the passed and
 # failed checks and their recorded results equal those of a sequential run; a
 # proof of many checks finishes in a fraction of the sequential time; the
-# project setting check_jobs (vbw config set check_jobs N, 1 to 64, default 4)
-# limits how many run at once, and 1 is sequential; an invalid value is refused
-# with a message and changes nothing. L1: shell scripts that record how many
-# of them overlap, on a fixture.
+# project setting check_jobs (vbw config set check_jobs N, 1 to 64; without it
+# three quarters of the processor cores, R147) limits how many run at once, and
+# 1 is sequential; an invalid value is refused with a message and changes
+# nothing. The machine reports 6 cores here (stand-ins for getconf, nproc and
+# sysctl first on PATH), so the default is 4 on every machine. L1: shell
+# scripts that record how many of them overlap, on a fixture.
 
 load helper
 
@@ -14,6 +16,14 @@ setup() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
+  local tool
+  mkdir -p "$TEST_ROOT/bin"
+  for tool in getconf nproc sysctl; do
+    printf '#!/bin/sh\necho 6\n' > "$TEST_ROOT/bin/$tool"
+    chmod +x "$TEST_ROOT/bin/$tool"
+  done
+  PATH="$TEST_ROOT/bin:$PATH"
+  export PATH
   mkdir -p src tests
   printf 'paid\n' > src/pay.txt
   CONC="$TEST_ROOT/conc"
@@ -163,6 +173,7 @@ results() { jq -c '.evidence | {passed, checks: (.checks | map_values({status, e
 
 @test "R81: the setting is the clone's own: it is not written into the shared record" {
   "$VBW" config set check_jobs 2 > /dev/null
-  ! grep -q check_jobs .vbw/record.json
+  run grep -q check_jobs .vbw/record.json
+  [ "$status" -ne 0 ]
   jq -e '.schema == 1 or .schema == 2' .vbw/record.json
 }
