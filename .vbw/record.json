@@ -17749,7 +17749,7 @@
         "P100.2",
         "P100.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md, Checks run in parallel: without a setting check_jobs is three quarters of the processor cores, rounded down, at least 1 and at most 64, and 1 when the core count cannot be read; vbw config shows the value and whether it is the machine default or set; vbw config set check_jobs default returns to it; remove 'default 4' and 'means 4'",
