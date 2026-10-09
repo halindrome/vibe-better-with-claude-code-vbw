@@ -44,6 +44,7 @@ cmd_todo() {
       record_update "$VBW_JQ_DEFS"'.todos += [{id: (.todos | next_id("T")), text: $text} + (if $sort == "" then {} else {sort: $sort, size: $size} end) + {status: "open"}]' \
         --arg text "$1" --arg sort "$sort" --arg size "$size"
       jq -r '.todos[-1] | "added \(.id): \(.text)"' "$VBW_RECORD"
+      record_commit "chore(vbw): todo $(jq -r '.todos[-1].id' "$VBW_RECORD") added" .vbw/record.json
       ;;
     sort)
       local state
@@ -52,6 +53,7 @@ cmd_todo() {
       case "$state" in open|in_progress) ;; *) vbw_die "$1 is closed ($state): only an open item can be sorted" ;; esac
       record_update '(.todos[] | select(.id == $t)) |= (.sort = $sort | .size = $size)' --arg t "$1" --arg sort "$2" --arg size "$3"
       record_read | jq -r --arg t "$1" '.todos[] | select(.id == $t) | "\(.id) [\(.sort), \(.size)] \(.text)"'
+      record_commit "chore(vbw): todo $1 sorted $2, $3" .vbw/record.json
       ;;
     done|drop)
       local outcome=dropped
@@ -59,6 +61,7 @@ cmd_todo() {
       record_read | jq -e --arg t "$1" 'any(.todos[]; .id == $t)' > /dev/null || vbw_die "unknown todo $1"
       record_update '(.todos[] | select(.id == $t)).status = $s' --arg t "$1" --arg s "$outcome"
       printf '%s %s\n' "$1" "$outcome"
+      record_commit "chore(vbw): todo $1 $outcome" .vbw/record.json
       ;;
   esac
 }
