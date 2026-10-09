@@ -8,9 +8,9 @@
     ]
   },
   "milestone": {
-    "id": "M18",
-    "title": "Quiet start, faster CI",
-    "status": "shipped"
+    "id": "M19",
+    "title": "Lighter rounds",
+    "status": "active"
   },
   "shipped": [
     {
