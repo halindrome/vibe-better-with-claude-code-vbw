@@ -98,10 +98,20 @@ vbw config set check_jobs default
 ```
 
 `vbw prove`, `vbw check` and the checks of `vbw fix done` run at most
-`check_jobs` checks at a time: 1 to 64, default 4. The setting belongs to this
-clone and is shared by its worktrees; it is not in the record or the contract,
-so changing it needs no approval. `vbw config` shows it. A missing or damaged
-setting means 4.
+`check_jobs` checks at a time: 1 to 64. Without a setting, `check_jobs` is
+three quarters of the processor cores, rounded down, at least 1 and at most 64
+(a machine with 8 cores runs 6). It is 1 when the core count cannot be read.
+`vbw config` shows the value and whether it is the machine default or set;
+`vbw config set check_jobs default` returns to the default. The setting
+belongs to this clone and is shared by its worktrees; it is not in the record
+or the contract, so changing it needs no approval.
+
+The limit is shared. Several VBW commands can run checks at the same time in
+one project folder (parallel Devs each running `vbw check`, `vbw fix done`
+beside `vbw prove`). Together they never run more checks than the limit. A
+check that finds no free slot waits for one instead of failing, and its
+timeout counts from its real start. A slot held by a VBW process that died is
+freed. Checks that run alone are unchanged.
 
 The results are the same as running the checks one after another: the
 evidence lists them in the checks' own order, whatever order they finish in.
