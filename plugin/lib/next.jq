@@ -65,12 +65,13 @@ def fix_files($r): if .command then ["*"]
 | ([$to_verify[] | $rigor[.].qa] | max_by(qa_rank) // "standard") as $tier
 # QA depth by the size and risk of the change (R71): at most two files and no risk
 # path is quick; three to nine files and no risk at most standard; else the cell's.
-# A phase with no recorded reasons is not small.
+# A phase with no recorded reasons is not small. A phase with a recorded escalation (R145)
+# keeps its cell's depth whatever its size; a tier forced with vbw config rigor records none.
 | (. as $rec | [$to_verify[] | . as $id | ($rec.phases[] | select(.id == $id)) as $ph
     | ($rec.plans | map(select(.phase == $id) | .files // []) | add // [] | unique | length) as $nf
     | ($ph.reasons // []) as $why
     | $rigor[$id].qa as $cell
-    | {key: $id, value: (if ($why | index("risk: none")) == null then $cell
+    | {key: $id, value: (if ($why | index("risk: none")) == null or (($ph.escalations // []) | length) > 0 then $cell
         elif $nf <= 2 then "quick"
         elif $nf <= 9 then ([$cell, "standard"] | min_by(qa_rank))
         else $cell end)}] | from_entries) as $tiers_qa
