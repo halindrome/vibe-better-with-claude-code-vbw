@@ -72,6 +72,32 @@ It replaces both values, then lists the item in its group. An unknown or
 closed item, or a value other than `next`/`later` and `small`/`medium`/`large`,
 is refused and nothing changes.
 
+### Each change is saved in git
+
+`vbw todo add`, `sort`, `done` and `drop` save their change at once, as a
+commit of `.vbw/record.json`, so the project is left clean:
+
+```
+$ vbw todo add "Gift cards"
+$ git log -1 --format=%s
+chore(vbw): todo T2 added
+```
+
+The message names the item and what happened to it (`todo T3 sorted next,
+small`, `todo T1 done`, `todo T2 dropped`). `vbw todo list` and a command that
+changes nothing make no commit.
+
+Only `.vbw/record.json` is in that commit. Files you staged stay staged, and
+files you changed but did not stage stay changed. Neither goes into the commit.
+
+If git cannot commit (no git identity set, or a hook that refuses), the change
+is kept and the command still succeeds. It prints a warning with git's reason
+and asks you to commit the file yourself:
+
+```
+vbw: warning: could not commit VBW files (chore(vbw): todo T2 added): <git's reason>; commit them yourself
+```
+
 `vbw triage` prints what VBW looks at when it sorts: the active milestone, its
 requirements not yet proven or accepted, any open run and the open backlog.
 It writes nothing.
