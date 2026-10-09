@@ -336,6 +336,10 @@ QA's own instructions say where the command lives: the `test:` line under
 `project commands` in `vbw show contract`. QA uses the result in its prompt as
 evidence and does not run the command itself.
 
+## One test run per fix round
+
+In a fix round (`vbw:fixing`) the Devs run their own checks. They never run the project's test command or its quick command. The project's test command runs once, in the proof after the round. A fix for a failing test command runs only the failing tests it needs.
+
 ## Rigor
 
 The router passes `args.rigor` (the `rigor` key of `vbw next --json`, docs/next.md)
