@@ -98,7 +98,11 @@ checks_result() {
 # is registered and none is waiting. A short mutex directory makes the look and
 # the registration one step. Registrations of a dead process are taken over
 # (kill -0 is only a liveness probe), and every hold is released on exit,
-# or interrupt through the guard.
+# or interrupt through the guard. A shared check also waits while the live
+# registrations already number the limit (vbw_check_jobs, read once per
+# process), so separate processes never pass the limit together. The in-process
+# runner starts at most the limit at once; the gate holds the same limit across
+# processes. A waiting check never fails for having waited.
 
 # checks_gate_live FILE: the process named in the file's name (NAME.PID...) is alive.
 checks_gate_live() {
@@ -110,26 +114,33 @@ checks_gate_live() {
 
 # checks_gate_blocker KIND: print the check blocking KIND ("alone" or "shared")
 # and return 0, or return 1 when nothing blocks. Dead registrations are dropped.
+# A shared check is also blocked (printing "-") when the live registrations
+# number the limit in $2 (empty: no limit).
 checks_gate_blocker() {
-  local kind="$1" f id
+  local kind="$1" limit="${2:-}" f id n=0
   for f in "$VBW_RUNTIME"/gate/reg.* "$VBW_RUNTIME"/gate/want.*; do
     [ -e "$f" ] || continue
     checks_gate_live "$f" || { rm -f "$f"; continue; }
     id="${f##*.}"
     case "${f##*/}" in
       want.*) [ "$kind" = shared ] || continue ;;
-      *) [ "$kind" = alone ] || [ "$(cat "$f" 2> /dev/null)" = alone ] || continue ;;
+      *) n=$((n + 1)); [ "$kind" = alone ] || [ "$(cat "$f" 2> /dev/null)" = alone ] || continue ;;
     esac
     printf '%s\n' "$id"
     return 0
   done
+  if [ "$kind" = shared ] && [ -n "$limit" ] && [ "$n" -ge "$limit" ]; then
+    printf -- '-\n'
+    return 0
+  fi
   return 1
 }
 
 # checks_gate_enter ID ALONE: wait for the gate, then register this check.
 checks_gate_enter() {
-  local id="$1" kind=shared g="$VBW_RUNTIME/gate" idle=0 want='' owner
+  local id="$1" kind=shared g="$VBW_RUNTIME/gate" idle=0 want='' owner limit
   [ "$2" != true ] || kind=alone
+  limit=$(vbw_check_jobs) || limit=1
   mkdir -p "$g" || vbw_die "cannot create $g"
   while :; do
     if mkdir "$g/mutex" 2> /dev/null; then
@@ -137,7 +148,7 @@ checks_gate_enter() {
       { printf '%s\n' "$$" > "$g/mutex/pid"; } 2> /dev/null || { sleep 0.1; continue; }
       vbw_guard_add dir "$g/mutex"
       idle=0
-      if checks_gate_blocker "$kind" > /dev/null; then
+      if checks_gate_blocker "$kind" "$limit" > /dev/null; then
         # An alone check that has to wait holds back new shared checks, so it is not starved.
         if [ "$kind" = alone ] && [ -z "$want" ]; then
           want="$g/want.$$.$id"
