@@ -147,6 +147,7 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 - R146 [auto] vbw todo add, sort, done and drop commit the record when they change it, so the project is left clean, and never take the user's own staged files with them
 - R147 [auto] By default VBW runs at most as many checks at once as the machine can carry (about three quarters of its processor cores, at least one), instead of 4 on every machine; the check_jobs setting still overrides it
 - R148 [auto] When several Devs or fix groups work at once, the checks they run together stay within that same machine-sized limit, and fix groups share one run of the project test command instead of each running it
+- R149 [auto] Every vbw command works on a project whose record (.vbw/record.json) is larger than the operating system's command-line limit (over 1 MB, as long-lived projects reach): no record-sized data is ever passed to a helper program as a command-line argument
 
 <!-- One requirement per line: an id, how it is proved, and a user-observable
      statement. [auto] = a check can prove it; [human] = only a person can judge it.

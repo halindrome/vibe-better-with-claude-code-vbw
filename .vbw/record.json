@@ -4491,6 +4491,14 @@
           "check": "C216"
         }
       ]
+    },
+    {
+      "id": "R149",
+      "text": "Every vbw command works on a project whose record (.vbw/record.json) is larger than the operating system's command-line limit (over 1 MB, as long-lived projects reach): no record-sized data is ever passed to a helper program as a command-line argument",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M19",
+      "rules": []
     }
   ],
   "checks": [
