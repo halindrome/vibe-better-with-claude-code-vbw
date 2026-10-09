@@ -67,10 +67,11 @@ const closeRun = async ids => {
 }
 
 phase('Fix')
+const NO_SUITE = ' Do not run the project\'s test command or its quick command: run only your fixes\' checks (vbw check). The whole test command runs once, in the proof after this round. If your fix is for a failure of the test command itself, run only the failing tests you need to fix.'
 const results = await pipeline(groups, ids =>
   agent(ids.length === 1
-    ? `Fix VBW fix item ${ids[0]}. Start with: vbw show fix ${ids[0]}${voice}`
-    : `Fix VBW fix items ${ids.join(', ')} together: they touch the same files and may share one cause. Start with: ${ids.map(id => `vbw show fix ${id}`).join('; ')}${voice}`,
+    ? `Fix VBW fix item ${ids[0]}. Start with: vbw show fix ${ids[0]}.${NO_SUITE}${voice}`
+    : `Fix VBW fix items ${ids.join(', ')} together: they touch the same files and may share one cause. Start with: ${ids.map(id => `vbw show fix ${id}`).join('; ')}.${NO_SUITE}${voice}`,
     Object.assign({ agentType: 'vbw:dev', label: ids.join('+'), phase: 'Fix', schema: FIX_RESULT },
       devModel ? { model: devModel } : {}, effortOf('dev', 'fix'))))
 
