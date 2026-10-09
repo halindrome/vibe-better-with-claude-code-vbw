@@ -17578,7 +17578,7 @@
       "after": [
         "P97.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md, Full and partial proofs: replace 'vbw prove --full reuses nothing' with the rule: a full proof reuses no check and no other command, and reuses the test command's latest passing run when only documentation (.md, .markdown, .rst) or VBW's own .vbw/ files changed since it (a documentation-only change); the summary marks it reused and the proof stays full; update the 'A proof is full only when' list to match, keeping every phrase tests/proof-quick-docs.bats and tests/qa-refusal-wording.bats look for",
@@ -17619,7 +17619,7 @@
       "after": [
         "P98.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/rigor.md, QA depth: add that a phase that escalated (a blocked plan, a fix needing another round, a failed QA, vbw tier raise) is checked at its raised tier's depth whatever its size, as the first row of the depth table",
@@ -17661,7 +17661,7 @@
       "after": [
         "P99.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/triage.md, The backlog: vbw todo add, sort, done and drop save the change in git at once (a `chore(vbw): todo ...` commit of .vbw/record.json), so the project is left clean; vbw todo list and a command that changes nothing make no commit",
