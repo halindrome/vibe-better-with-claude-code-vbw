@@ -17555,7 +17555,7 @@
         "plugin/lib/cmd-prove.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Remember the latest real run of the project test command across proofs: a proof that runs it stamps its result with the committed tree it ran on (head) and its argv fingerprint (proofreuse_command_fp); a proof that does not run it (the quick command stood in, or it was reused) carries that latest run forward unchanged in a new optional evidence field (for example evidence.test_run), so a failed latest run is never passed over for an older pass",
@@ -17598,7 +17598,7 @@
         "plugin/lib/next.jq"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "next.jq, the QA-depth step ($tiers_qa): a phase with at least one recorded escalation ((.escalations // []) | length > 0) gets its cell's depth ($rigor[id].qa), whatever its number of files; the at-most-two-files quick and three-to-nine-files standard cap apply only to phases with no escalation (a tier forced with vbw config rigor records none, so it keeps the discount)",
@@ -17639,7 +17639,7 @@
         "plugin/lib/cmd-todo.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "record.sh: record_commit takes an optional list of VBW files after the message (`record_commit [--strict] MESSAGE [FILE...]`); with a list it commits only those of VBW's own files that changed, without one everything as today; still `git commit --only` with an explicit pathspec, so staged and unstaged user files stay out; header comment updated",
@@ -17682,7 +17682,7 @@
         "plugin/bin/vbw"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "core.sh: a core-count reader that asks, in order, `getconf _NPROCESSORS_ONLN`, `nproc`, `sysctl -n hw.ncpu` (found on PATH, never by absolute path) and takes the first whole number of at least 1; none gives 'cannot be read'. vbw_check_jobs: a valid set value wins; else floor(cores * 3 / 4), at least 1 and at most 64, and 1 when the count cannot be read; a companion tells whether the value is set or the machine default; comments carry no 'default 4'",
@@ -17702,7 +17702,7 @@
         "plugin/lib/checks.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "The gate under .vbw/runtime/gate (checks_gate_enter, checks_gate_blocker): a shared check also waits while the live registrations already number the limit (vbw_check_jobs, read once per process); looking and registering stay one step under the gate mutex, so separate processes never pass the limit together",
@@ -17723,7 +17723,7 @@
         "plugin/agents/dev.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "fixing.js: every Dev prompt of a fix round adds: \"Do not run the project's test command or its quick command: run only your fixes' checks (vbw check). The whole test command runs once, in the proof after this round. If your fix is for a failure of the test command itself, run only the failing tests you need to fix.\"",
@@ -19064,6 +19064,13 @@
       "text": "Offer CI for the user's project (owner idea 2026-10-09): once, when it matters (a GitHub remote and the project is about to be shared or deployed, or code changed outside VBW), one yes-or-no suggestion with the trade-off in plain words (GitHub minutes, red failure emails vs catching outside changes and the deploy OS); yes sets up CI that runs the same approved checks; no is never asked again. Never in the interview. Before the 2.1 launch, after Lighter rounds",
       "sort": "later",
       "size": "medium",
+      "status": "open"
+    },
+    {
+      "id": "T101",
+      "text": "R144 known limit: a test inside the project test command that reads a documentation file no check lists is not re-run after a documentation-only change; consider vbw ship always running the test command fresh (M19 planning note)",
+      "sort": "later",
+      "size": "small",
       "status": "open"
     }
   ],
