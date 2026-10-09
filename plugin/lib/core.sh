@@ -112,23 +112,59 @@ vbw_step_add() {
 
 # This clone's own settings: $(git-common-dir)/vbw/settings.json (shared by the
 # clone's worktrees, never in the shared record). Today: check_jobs, how many
-# checks run at the same time (1 to 64, default 4; 1 is sequential).
+# checks run at the same time (1 to 64; 1 is sequential). Without a setting
+# the machine decides: three quarters of its processor cores.
 vbw_clone_settings_file() {
   local common
   common=$(git rev-parse --path-format=absolute --git-common-dir 2> /dev/null) || vbw_die "not a git repository"
   printf '%s/vbw/settings.json\n' "$common"
 }
 
-# vbw_check_jobs: the one reader of check_jobs; a missing or damaged file or
-# an out-of-range value gives the default.
-vbw_check_jobs() {
+# vbw_cores: the processor core count, from the first of getconf, nproc and
+# sysctl (found on PATH) that gives a whole number of at least 1; none gives
+# "cannot be read" (status 1, no output).
+vbw_cores() {
+  local n
+  n=$(getconf _NPROCESSORS_ONLN 2> /dev/null) || n=""
+  case "$n" in [1-9] | [1-9][0-9]*) printf '%s\n' "$n"; return 0 ;; esac
+  n=$(nproc 2> /dev/null) || n=""
+  case "$n" in [1-9] | [1-9][0-9]*) printf '%s\n' "$n"; return 0 ;; esac
+  n=$(sysctl -n hw.ncpu 2> /dev/null) || n=""
+  case "$n" in [1-9] | [1-9][0-9]*) printf '%s\n' "$n"; return 0 ;; esac
+  return 1
+}
+
+# vbw_check_jobs_set_value: the check_jobs value set in this clone's settings,
+# or nothing when missing, damaged or out of range.
+vbw_check_jobs_set_value() {
   local file n
   file=$(vbw_clone_settings_file) || return 1
   n=$(jq -r '.check_jobs // empty' "$file" 2> /dev/null) || n=""
   case "$n" in
     [1-9] | [1-5][0-9] | 6[0-4]) printf '%s\n' "$n" ;;
-    *) printf '4\n' ;;
   esac
+  return 0
+}
+
+# vbw_check_jobs: the one reader of check_jobs: a valid set value, else three
+# quarters of the cores (rounded down, 1 to 64), 1 when the count cannot be read.
+vbw_check_jobs() {
+  local n cores
+  n=$(vbw_check_jobs_set_value) || return 1
+  if [ -n "$n" ]; then printf '%s\n' "$n"; return 0; fi
+  cores=$(vbw_cores) || cores=""
+  if [ -z "$cores" ]; then printf '1\n'; return 0; fi
+  n=$((cores * 3 / 4))
+  [ "$n" -ge 1 ] || n=1
+  [ "$n" -le 64 ] || n=64
+  printf '%s\n' "$n"
+}
+
+# vbw_check_jobs_source: "set" or "machine default".
+vbw_check_jobs_source() {
+  local n
+  n=$(vbw_check_jobs_set_value) || return 1
+  if [ -n "$n" ]; then printf 'set\n'; else printf 'machine default\n'; fi
 }
 
 # vbw_check_jobs_set N|default: atomic, locked change of check_jobs.
