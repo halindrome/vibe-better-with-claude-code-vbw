@@ -9,7 +9,7 @@
 # since QA needs Sonnet or stronger), rigor (auto|express|
 # standard|deep: auto computes each phase's tier, the others force it),
 # motion (full|calm|off: the panel's animation; "default" removes it and the
-# panel picks by the interview level), check_jobs (1 to 64, default 4: checks run at the same time; kept in this
+# panel picks by the interview level), check_jobs (1 to 64; without a setting three quarters of the processor cores: checks run at the same time; kept in this
 # clone's own settings file in the git directory, not in the record).
 
 # Profiles name a model per workflow role (lib/profiles.json, shared with the
@@ -75,7 +75,7 @@ cmd_config() {
   config_migrate_roles
   case "$sub" in
     "")
-      printf 'check_jobs: %s\n' "$(vbw_check_jobs)"
+      printf 'check_jobs: %s (%s)\n' "$(vbw_check_jobs)" "$(vbw_check_jobs_source)"
       record_read | jq -r --argjson p "$VBW_PROFILES" '.settings as $s
         | "profile: \($s.profile)", "autonomy: \($s.autonomy // "balanced")", "autonomy_cap: \($s.autonomy_cap)", "rigor: \($s.rigor // "auto")", "motion: \($s.motion // "default")",
           ($p[$s.profile] + ($s.models // {}) | (if ((.qa // "") | ascii_downcase | contains("haiku")) then .qa = "sonnet" else . end) | to_entries[] | "model.\(.key): \(.value)")'
