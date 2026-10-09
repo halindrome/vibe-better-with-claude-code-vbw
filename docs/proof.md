@@ -319,14 +319,39 @@ clone (`vbw approve` keeps a copy of what it approved in `.vbw/runtime/`).
 usage: vbw prove [--full]
 ```
 
-`vbw prove --full` reuses nothing. It runs every check, the test command and
-every other approved command, and never the quick command. Any other argument
-is refused with the usage line, and nothing runs.
+`vbw prove --full` reuses no check and no other command. It runs every
+approved check and project command, and never the quick command. It reuses one
+thing: the test command's latest passing run, when only documentation (`.md`,
+`.markdown`, `.rst`) or VBW's own `.vbw/` files changed since that run (a
+documentation-only change). The summary then marks the line
+`test pass 41s reused (proof of 2026-10-09T20:01:12Z): only documentation changed since`,
+and the proof stays full. Any other argument is refused with the usage line,
+and nothing runs.
+
+These still run the test command:
+
+- a code file changed, or a test file, even a Markdown one such as
+  `tests/fixtures/sample.md`,
+- a file an approved check lists or runs changed, even a Markdown one,
+- uncommitted code,
+- changed test command words,
+- the latest run failed,
+- a quick command run stood in for it (no real test run to reuse),
+- nothing was committed since a passing proof (D173: a second proof is a
+  deliberate re-run), or
+- the earlier proof was unfinished or interrupted (it recorded no run).
+
+Limit: a test that reads a documentation file not listed by any check is not
+re-run by a documentation-only change, because VBW cannot see what a test
+reads. To make such a file count, list it in that check's `files`.
 
 A proof is full only when all of these hold; otherwise it is partial:
 
-- it reused no result ([Reusing results](#reusing-results-in-vbw-prove)),
-- it ran the test command, not the quick command, and
+- it reused no check or other command result, and the only reused result is
+  the test command's after a documentation-only change
+  ([Reusing results](#reusing-results-in-vbw-prove)),
+- it ran the test command, or reused its passing run as above, and not the
+  quick command, and
 - every project command ran (none was skipped as not approved).
 
 The summary ends with `proof: full` or `proof: partial`, and the evidence
