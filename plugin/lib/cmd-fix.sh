@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# vbw fix check FIX < CHECK: an open fix QA opened registers its regression test
+# as a check of the finding's requirement (run, files and the optional exit,
+# output, timeout, alone, as vbw apply takes them; the next free C id, marked
+# fix: FIX). Any other fix is refused with what to do instead.
 # vbw fix done ID [ID...] | retry ID (docs/proof.md). "done" is verified, not claimed:
 # for a requirement's fix, none of the files it may touch has uncommitted
 # changes, and the checks of every finished requirement served by those files
@@ -33,10 +37,36 @@ cmd_fix_checks() {
     | .checks[] | select(.req as $q | any($reqs[]; . == $q)) | .id'
 }
 
+# cmd_fix_check FIX: the check document on stdin becomes a check of the finding's requirement.
+cmd_fix_check() {
+  [ $# -eq 1 ] || vbw_usage_error "usage: vbw fix check FIX < CHECK  (a JSON object: run, files and optionally exit, output, timeout, alone)"
+  vbw_require_project
+  local id="$1" doc record why
+  doc=$(cat)
+  printf '%s' "$doc" | jq -e 'type == "object" and (keys - ["run", "files", "exit", "output", "timeout", "alone"]) == []
+      and (.run | type == "array") and (.files | type == "array" and length > 0)' > /dev/null 2>&1 \
+    || vbw_usage_error "the check is a JSON object on stdin: run (argv array), files (the test files it runs, non-empty) and optionally exit, output, timeout, alone"
+  record=$(record_read)
+  why=$(printf '%s' "$record" | jq -r --arg f "$id" '[.fixes[] | select(.id == $f)][0] as $x
+    | if $x == null then "unknown fix \($f)"
+      elif $x.status != "open" then "\($f) is \($x.status), not open: its checks can no longer change; QA opens a new fix if the problem remains"
+      elif $x.source != "qa" then "\($f) was not opened by QA: only the fix of a QA finding adds a regression test; a proof failure is fixed in the code its check already tests, and a new check goes through the plan (vbw next)"
+      else empty end')
+  [ -z "$why" ] || vbw_die "$why"
+  local f
+  while IFS= read -r f; do
+    [ -f "$VBW_ROOT/$f" ] || vbw_die "$f does not exist: create the test file before registering it"
+  done < <(printf '%s' "$doc" | jq -r '.files[] | strings')
+  record_update "$VBW_JQ_DEFS"'[.fixes[] | select(.id == $f)][0].req as $q
+    | .checks += [{id: (.checks | next_id("C")), req: $q} + $d + {fix: $f}]' --arg f "$id" --argjson d "$doc"
+  jq -r --arg f "$id" '.checks[-1] | "\(.id) added to \(.req) by \($f)"' "$VBW_RECORD"
+}
+
 cmd_fix() {
   local mode="${1:-}"
+  [ "$mode" != check ] || { shift; cmd_fix_check "$@"; return; }
   { [ "$mode" = "done" ] && [ $# -ge 2 ]; } || { [ "$mode" = retry ] && [ $# -eq 2 ]; } \
-    || vbw_usage_error "usage: vbw fix done ID [ID...] | fix retry ID"
+    || vbw_usage_error "usage: vbw fix done ID [ID...] | fix retry ID | fix check FIX < CHECK"
   shift
   vbw_require_project
   local record id
