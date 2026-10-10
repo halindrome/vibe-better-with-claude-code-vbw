@@ -19548,19 +19548,19 @@
         "plugin/lib/cmd-config.sh",
         "plugin/lib/record.jq",
         "plugin/bin/vbw",
-        "plugin/skills/config/SKILL.md"
+        "plugin/skills/config/SKILL.md",
+        "tests/prove-kept-output.bats"
       ],
       "after": [],
-      "status": "blocked",
-      "role": "dev",
+      "status": "planned",
       "tasks": [
         "cmd-prove.sh: each project command gets settings.command_timeout seconds, 3600 (60 minutes) without a setting instead of 900; checks keep their own timeout (default 300)",
         "vbw config set command_timeout SECONDS (a whole number from 1 to 86400) stores it in the record's settings; default removes it; anything else exits 2 with a message naming 1 to 86400 and changes nothing; vbw config shows 'command_timeout: N'",
         "record.jq accepts settings.command_timeout, a whole number from 1 to 86400, and refuses any other value",
         "The proof summary: a project command stopped by its limit adds 'NAME stopped by its time limit (N s); raise it with vbw config set command_timeout SECONDS'; a command that ended in time is reported as before",
-        "vbw help and the config skill list command_timeout with its default and range"
-      ],
-      "note": "Plan cannot pass as written. (1) C236 (tests/command-timeout-docs.bats) reads docs/proof.md, which is not in the plan's files; the 3600s/command_timeout text must be added there. (2) tests/prove-kept-output.bats (R118) seds the literal 'VBW_COMMAND_TIMEOUT=900' in plugin/lib to shorten the timeout; changing the default breaks it, and it is outside the plan too. Needs docs/proof.md (and a fix to that test, e.g. use 'vbw config set command_timeout 2') added to the plan files. No code changed."
+        "vbw help and the config skill list command_timeout with its default and range",
+        "tests/prove-kept-output.bats sets its 2-second limit with vbw config set command_timeout 2 instead of editing VBW_COMMAND_TIMEOUT in a copy of the plugin; C236 (the docs check) turns green in P105.2, which owns docs/proof.md, so it may stay red after this plan"
+      ]
     },
     {
       "id": "P105.2",
@@ -22318,6 +22318,11 @@
       "id": "D246",
       "at": "2026-10-10T14:42:18Z",
       "text": "Contract approved: 142 requirements, 231 checks, 307 plans (1997c3b87899)"
+    },
+    {
+      "id": "D247",
+      "at": "2026-10-10T14:54:51Z",
+      "text": "Contract approved: 142 requirements, 231 checks, 307 plans (5a02dbe92125)"
     }
   ],
   "commands": {
