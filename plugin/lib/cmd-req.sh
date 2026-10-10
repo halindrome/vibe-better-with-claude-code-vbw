@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
-# vbw req accept ID | reject ID NOTE: the user's verdict on a [human]
+# vbw req accept ID | reject ID NOTE | skip ID: the user's verdict on a [human]
 # requirement (docs/proof.md). A rejection opens a fix item carrying the note;
 # when that fix is done the requirement returns to the user for acceptance.
-# Accepting closes only the user's own fixes, never one QA opened.
+# Accepting closes only the user's own fixes, never one QA opened. skip records
+# "Skip for now": the requirement stays open and, when it is all that holds up
+# the release, vbw ship moves it to the next milestone (docs/proof.md).
 
 cmd_req() {
   local sub="${1:-}" id="${2:-}"
   case "$sub" in
     accept) [ $# -eq 2 ] || vbw_usage_error "usage: vbw req accept ID" ;;
     reject) [ $# -eq 3 ] && [ -n "$3" ] || vbw_usage_error "usage: vbw req reject ID NOTE" ;;
-    *) vbw_usage_error "usage: vbw req accept ID | reject ID NOTE" ;;
+    skip) [ $# -eq 2 ] || vbw_usage_error "usage: vbw req skip ID" ;;
+    *) vbw_usage_error "usage: vbw req accept ID | reject ID NOTE | skip ID" ;;
   esac
   vbw_require_project
   # shellcheck source=cmd-next.sh
@@ -18,16 +21,25 @@ cmd_req() {
   proof=$(record_read | jq -r --arg q "$id" '[.requirements[] | select(.id == $q) | .proof][0] // empty')
   [ -n "$proof" ] || vbw_die "unknown requirement $id"
   [ "$proof" = human ] || vbw_die "$id is proved by its checks (vbw prove), not by acceptance"
-  if [ "$sub" = accept ]; then
+  if [ "$sub" = skip ]; then
+    record_read | jq -e --arg q "$id" '.requirements[] | select(.id == $q) | .status != "accepted"' > /dev/null \
+      || vbw_die "$id is already accepted: there is nothing to skip"
+    record_read | jq -e --arg q "$id" '[.fixes[] | select(.req == $q and .source != "qa" and (.status | IN("open", "escalated")))] | length == 0' > /dev/null \
+      || vbw_die "$id has an open fix from your rejection: finish it (vbw next), then judge $id or skip it"
+    record_update '(.requirements[] | select(.id == $q)).skipped = true' --arg q "$id"
+    printf '%s skipped: you can judge it in the next milestone\n' "$id"
+  elif [ "$sub" = accept ]; then
     # The user's word settles their own rejections; a fix QA opened stays open until QA passes.
     vbw_scratch_json curf "$(qa_combined "$(record_read)")"
     record_update "$VBW_JQ_DEFS"'$cf[0] as $cur | (.requirements[] | select(.id == $q)).status = "accepted"
+      | del(.requirements[] | select(.id == $q) | .skipped)
       | (.fixes[] | select(.req == $q and .source != "qa" and (.status | IN("open", "fixed", "escalated")))).status = "closed"
       | finish_phases($cur)' --arg q "$id" --slurpfile cf "$curf"
     vbw_guard_drop "$curf"
     printf '%s accepted\n' "$id"
   else
     record_update "$VBW_JQ_DEFS"'(.requirements[] | select(.id == $q)).status = "rejected"
+      | del(.requirements[] | select(.id == $q) | .skipped)
       | .fixes += [{id: (.fixes | next_id("F")), req: $q, attempts: 0, status: "open", note: $note}]' \
       --arg q "$id" --arg note "$3"
     jq -r '.fixes[-1] | "\(.req) rejected: \(.id) opened (\(.note))"' "$VBW_RECORD"
