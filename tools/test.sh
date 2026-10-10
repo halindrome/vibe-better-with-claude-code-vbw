@@ -40,7 +40,7 @@ cd "$ROOT"
 # The files that measure time run alone after the rest, so the parallel batch
 # cannot slow them past their limits (2026-10-07: a 24-check proof took 16 s
 # against 15 s inside the batch, 11 s alone). One list for full, quick and shard runs.
-timed='tests/prove-parallel.bats tests/guard-cost.bats tests/bench-hooks.bats tests/big-record-hooks.bats tests/proof-stale-links.bats'
+timed='tests/prove-parallel.bats tests/guard-cost.bats tests/bench-hooks.bats tests/big-record-hooks.bats tests/bench-protected.bats tests/proof-stale-links.bats'
 
 # The quick mode: every test file no approved check runs or protects (those
 # run in proof), minus the timing benchmarks, plus the engineering rules always.
