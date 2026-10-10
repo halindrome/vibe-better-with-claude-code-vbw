@@ -29,6 +29,8 @@
 - **Long-lived projects keep working.** Every `vbw` command works on a record
   over 1 MB (the operating system's command-line limit), and VBW's guards stay
   fast however long the record grows.
+- **`vbw config rigor` works with macOS's built-in bash.** Setting a rigor
+  mode no longer fails with "record update failed" under `/bin/bash` 3.2.
 
 ### What you need to know
 
