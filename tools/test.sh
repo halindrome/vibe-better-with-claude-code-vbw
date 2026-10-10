@@ -5,6 +5,8 @@
 # No option: the lint and every test file except the timed ones (tests/timed-*.bats),
 # the run `vbw prove` uses. --release adds both benchmarks and the timed files, run
 # alone after the rest: the speed checks run once per release, never in a proof.
+# When the last proof was full and passed on code that differs from the working
+# tree only in the version files and the changelog, --release runs just those.
 # --shard K/N runs share K of N of the release run, so CI can split it.
 set -euo pipefail
 
@@ -145,6 +147,60 @@ fi
 
 echo "bash: $(bash -c 'echo "$BASH_VERSION"')"
 
+# release_reuse: succeed when the last proof in .vbw/record.json was full, passed,
+# and the project's files differ from the code it proved only in the version
+# files and the changelog; print the proof's time. Otherwise fail, printing why
+# (naming the differing files) on stdout.
+release_reuse() {
+  local ev at head idx now diff other f
+  [ -f .vbw/record.json ] && ev=$(jq -c '.evidence // empty | select(type == "object")' .vbw/record.json 2>/dev/null) && [ -n "$ev" ] \
+    || { echo "no proof recorded"; return 1; }
+  at=$(jq -r '.at // "unknown time"' <<< "$ev")
+  jq -e '.full == true' >/dev/null <<< "$ev" || { echo "the last proof (of $at) was not a full one"; return 1; }
+  jq -e '.passed == true' >/dev/null <<< "$ev" || { echo "the last full proof (of $at) failed"; return 1; }
+  head=$(jq -r '.head // empty' <<< "$ev")
+  [ -n "$head" ] || { echo "the last proof (of $at) names no proved code"; return 1; }
+  git rev-parse -q --verify HEAD >/dev/null 2>&1 || { echo "not a git repository with a commit; no proof to compare"; return 1; }
+  idx=$(mktemp "$ROOT/.vbw/runtime/index.XXXXXX" 2>/dev/null) || idx=$(mktemp "$(git rev-parse --absolute-git-dir)/vbw-release-index.XXXXXX") \
+    || { echo "cannot fingerprint the project files"; return 1; }
+  now=$(
+    real=$(git rev-parse --path-format=absolute --git-path index)
+    if [ -f "$real" ]; then cp "$real" "$idx"; else rm -f "$idx"; fi
+    export GIT_INDEX_FILE="$idx"
+    git add -A -- . ':(exclude).vbw' ':(exclude).vbw-planning' >/dev/null 2>&1 &&
+      git rm -r -q --cached --ignore-unmatch -- .vbw .vbw-planning >/dev/null 2>&1 &&
+      git write-tree
+  ) || now=
+  rm -f "$idx"
+  [ -n "$now" ] || { echo "cannot fingerprint the project files"; return 1; }
+  diff=$(git diff-tree -z -r --name-only "$head" "$now" 2>/dev/null | tr '\0' '\n') \
+    || { echo "the proved code of $at is not in this repository"; return 1; }
+  other=
+  while IFS= read -r f; do
+    case "$f" in
+      ""|VERSION|plugin/.claude-plugin/plugin.json|.claude-plugin/marketplace.json|marketplace.json|CHANGELOG.md) ;;
+      *) other="${other:+$other, }$f" ;;
+    esac
+  done <<< "$diff"
+  [ -z "$other" ] || { echo "files changed since the last full proof (of $at): $other"; return 1; }
+  echo "$at"
+}
+
+if [ "$release" = 1 ]; then
+  if why=$(release_reuse); then
+    echo "release: reusing the full passing proof of $why (only the version files and the changelog changed since); running the benchmarks and the timed tests only"
+    bash tools/bench-hooks.sh
+    if command -v node >/dev/null 2>&1; then
+      bash tools/bench-panel.sh
+    fi
+    if [ -n "$timed" ]; then
+      # shellcheck disable=SC2086 # the list is fixed paths without spaces
+      bats --print-output-on-failure $timed
+    fi
+    exit 0
+  fi
+fi
+
 tools_sh=()
 while IFS= read -r -d '' f; do tools_sh+=("$f"); done < <(find tools -type f -name '*.sh' -print0)
 if command -v shellcheck >/dev/null 2>&1; then
@@ -159,6 +215,8 @@ if [ "$quick" = 1 ]; then
   bats --print-output-on-failure --jobs "$(jobs_count)" "${quick_list[@]}"
   exit 0
 fi
+
+if [ "$release" = 1 ]; then echo "release: running everything: $why"; fi
 
 rest=()
 for f in tests/*.bats; do
