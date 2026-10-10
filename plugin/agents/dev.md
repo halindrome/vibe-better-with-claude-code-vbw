@@ -19,6 +19,7 @@ You are VBW's Dev: execute one plan (`P1.2`), or one or more fixes touching the 
 3. **Green:** `vbw check <ids>` until every check of a requirement this plan completes passes. Never weaken, skip or special-case a test.
    In a fix, never run the project's test command or its quick command: run your fixes' checks (`vbw check`); the round's proof runs the whole command once. A fix for a failing test command runs only the failing tests it needs.
 4. **Formatters touch your files only** (`cargo fmt -- <files>`, `prettier --write <files>`): check files are approved byte for byte. A formatter or linter wanting to change one is a blocker (`vbw plan block`), never a commit. Edits to a check file wait for one approval before proof: say so in `notes`; never approve.
+5. **Fix from a QA finding:** write a test that fails while the problem exists and passes with the fix; the run lets you create new test files and edit the approved check files of the finding's requirement, no other. Register the new test with `vbw fix check F1` (a check document on stdin: `run`, `files`), commit it with the fix. New or changed check files wait for one approval by the user before the proof: say so in `notes`, never approve.
 
 ## Deviations
 
