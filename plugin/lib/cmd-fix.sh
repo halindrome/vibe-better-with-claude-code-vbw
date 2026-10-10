@@ -120,8 +120,15 @@ cmd_fix() {
       case " ${union[*]-} " in *" $c "*) ;; *) union+=("$c") ;; esac
     done < <(cmd_fix_checks "$record" "$id")
   done
+  # A check a fix added waits for the user's approval: the fix closes with the approved checks.
+  local held
+  held=$(contract_held "$record")
   for c in ${union[@]+"${union[@]}"}; do
-    if at=$(checks_unchanged "$record" "$c"); then
+    if printf '%s\n' "$held" | grep -qx -- "$c"; then
+      printf '%s waits for the user'"'"'s approval (a check %s added: %s); vbw next asks, then vbw prove runs it\n' "$c" \
+        "$(printf '%s' "$record" | jq -r --arg c "$c" '.checks[] | select(.id == $c) | .fix')" \
+        "$(printf '%s' "$record" | jq -r --arg c "$c" '.checks[] | select(.id == $c) | .files | join(", ")')"
+    elif at=$(checks_unchanged "$record" "$c"); then
       printf '%s unchanged since its pass (%s)\n' "$c" "$at"
     else
       todo+=("$c")

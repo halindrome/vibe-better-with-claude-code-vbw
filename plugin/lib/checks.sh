@@ -5,8 +5,9 @@
 
 # checks_begin RECORD [strict]: die unless the contract is approved. Check
 # files edited since the approval wait for it (CHECK_WAITING): the checks still
-# run and the files are named, but with "strict" (proof) it dies. Sets
-# CHECK_HASH and CHECK_OUT, a fresh output directory for this invocation
+# run and the files are named, but with "strict" (proof) it dies. A check a fix
+# added waits too, and never runs before the approval (CHECK_HELD, its ids).
+# Sets CHECK_HASH and CHECK_OUT, a fresh output directory for this invocation
 # (parallel Devs each get their own). Called directly, never in $(...).
 checks_begin() {
   local waiting
@@ -15,9 +16,11 @@ checks_begin() {
     || vbw_die "the contract is not approved, or changed since it was approved: review it (vbw show contract), then ask the user with the approval menu (AskUserQuestion)"
   if [ -n "$CHECK_WAITING" ]; then
     waiting=$(printf '%s' "$CHECK_WAITING" | tr '\n' ' ')
-    [ "${2:-}" != strict ] || vbw_die "check files changed since it was approved are waiting for approval: ${waiting% }: review them, then ask the user with the approval menu (AskUserQuestion)"
-    printf 'vbw: waiting for approval (changed since approved): %s\n' "${waiting% }" >&2
+    [ "${2:-}" != strict ] || vbw_die "check files new or changed since the contract was approved are waiting for approval, and nothing runs them before: ${waiting% }
+Next: review them, then ask the user to approve them once (vbw next asks), and run vbw prove again"
+    printf 'vbw: waiting for approval (new or changed since approved): %s\n' "${waiting% }" >&2
   fi
+  CHECK_HELD=$(contract_held "$1")
   CHECK_OUT=$(mktemp -d "$VBW_RUNTIME/run.XXXXXX") || vbw_die "cannot create a directory in $VBW_RUNTIME"
   vbw_guard_add dir "$CHECK_OUT"
 }
@@ -217,6 +220,18 @@ checks_run_all() {
   for id in "${ids[@]}"; do
     printf '%s' "$record" | jq -e --arg id "$id" 'any(.checks[]; .id == $id)' > /dev/null || vbw_die "unknown check $id"
   done
+  # A check a fix added waits for the user's approval: it is reported, never run.
+  local run=()
+  for id in "${ids[@]}"; do
+    if printf '%s\n' "${CHECK_HELD:-}" | grep -qx -- "$id"; then
+      all=$(printf '%s' "$all" | jq -c --arg id "$id" '. + {($id): {status: "waiting", exit: null, seconds: 0,
+        tail: "not run: a check a fix added waits for the user'"'"'s approval"}}')
+    else
+      run+=("$id")
+    fi
+  done
+  ids=(${run[@]+"${run[@]}"})
+  [ ${#ids[@]} -gt 0 ] || { printf '%s\n' "$all"; return 0; }
   local jobs
   jobs=$(vbw_check_jobs) || jobs=1
   CHECKS_LIMIT=$jobs
