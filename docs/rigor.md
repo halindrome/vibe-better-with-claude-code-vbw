@@ -201,8 +201,8 @@ Example: a five-file phase is raised to `deep` after a blocked plan. It is
 verified at `deep`, not at `standard` as its size alone would give.
 
 Files are counted once across the phase's plans. A risky change gets the full
-depth however few files it touches. A small, low-risk change never gets a deep
-check.
+depth however few files it touches. A small, low-risk change that never
+escalated never gets a deep check.
 
 ## Documentation changes
 
