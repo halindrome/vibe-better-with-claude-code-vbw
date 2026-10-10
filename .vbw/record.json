@@ -18407,7 +18407,7 @@
         "plugin/lib/record.jq"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/record.sh record_update: when the new record has more than 50 checks, set the top-level field protected to the sorted list of every file in .checks[].files, each once, and set schema 4; with 50 checks or fewer, remove protected and keep today's schema rule (3, 2 or 1); key order schema, lease, protected (when present), checks, then the rest (D226, D229)",
@@ -18473,7 +18473,7 @@
         "docs/guards.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/record.md: a protected row in the field table, written only on records with more than 50 checks, and the key order schema, lease, protected, checks, then the rest, in one paragraph that names protected, lease and schema 4",
