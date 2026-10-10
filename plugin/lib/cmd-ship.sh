@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # vbw ship: the user ships the milestone once vbw next says so (everything
 # proven on the current files and accepted). Marks it shipped and logs the
-# decision; it publishes nothing (no tag, no push).
+# decision; it publishes nothing (no tag, no push). A [human] requirement the
+# user skipped (vbw req skip) is marked later: vbw milestone start moves it on.
 
 cmd_ship() {
   [ $# -eq 0 ] || vbw_usage_error "usage: vbw ship"
@@ -18,9 +19,12 @@ cmd_ship() {
   done < <(git -C "$VBW_ROOT" status --porcelain=v1 -z --no-renames --untracked-files=all -- . ':(exclude).vbw')
   [ -z "$dirty" ] || vbw_die "the proven work is not committed:$dirty (commit it, then vbw ship)"
   record_update "$VBW_JQ_DEFS"'.milestone.id as $m | .milestone.status = "shipped"
+    | (.requirements[] | select(.milestone == $m and .skipped == true and .status != "accepted")).later = true
+    | [.requirements[] | select(.milestone == $m and .later == true) | .id] as $moved
     | .shipped += [{id: .milestone.id, title: .milestone.title, at: $at}]
     | .decisions += [{id: (.decisions | next_id("D")), at: $at,
-        text: "Shipped \(.milestone.id) \(.milestone.title): \([.requirements[] | select(.milestone == $m)] | length) requirements proven or accepted"}]' \
+        text: "Shipped \(.milestone.id) \(.milestone.title): \([.requirements[] | select(.milestone == $m and (.status | IN("proven", "accepted")))] | length) requirement\(if ([.requirements[] | select(.milestone == $m and (.status | IN("proven", "accepted")))] | length) == 1 then "" else "s" end) proven or accepted"
+          + (if ($moved | length) > 0 then "; moved to the next milestone to judge: \($moved | join(", "))" else "" end)}]' \
     --arg at "$(vbw_now)"
   record_commit "chore(vbw): ship $(jq -r .milestone.id "$VBW_RECORD")"
   jq -r '"shipped \(.milestone.id) \(.milestone.title)"' "$VBW_RECORD"
