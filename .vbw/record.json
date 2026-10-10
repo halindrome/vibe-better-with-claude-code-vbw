@@ -18641,19 +18641,19 @@
         "tools/test.sh"
       ],
       "after": [
+        "P101.11",
         "P101.6",
         "P101.7",
         "P102.2"
       ],
-      "status": "blocked",
+      "status": "planned",
       "tasks": [
         "Done (657e1ab2, 68fde7dc): the bench measures a record over 2 MB and the status line on both records; tools/test.sh and tests/test-shards.bats list big-record-hooks among the timed files",
         "Done (9f1b8da2): the guard reads the lease and the checks' files key by key instead of rebuilding every event",
         "tools/bench-hooks.sh: the large record is written once through the kernel (one record write, such as vbw decide, instead of vbw status) so it holds the format the kernel writes; with its 100 checks that is schema 4 with the protected field (P102.1), which the guards read without walking the checks (P102.2); the 'large record: N bytes' line and every existing line stay as they are",
         "Run tests/bench-hooks.bats, big-record-hooks.bats and guard-cost.bats under macOS /bin/bash 3.2 and bash 5; every guard line and the status line within budget; if a limit cannot hold, record the measured times in the plan note and block the plan, never raise a limit",
         "plugin/scripts/vbw-statusline.sh reads the glance unless the record is newer than it ([ ! record -nt glance ] with the glance present), instead of only when the glance is newer: macOS /bin/bash 3.2 compares file times in whole seconds, so a glance written in the same second as the record counted as not newer and the status line parsed the whole record (33 ms against 30 on a 2.3 MB record); bash 5 compares finer and was unaffected; the large-record status line line of tools/bench-hooks.sh is within 30 ms under /bin/bash 3.2"
-      ],
-      "note": "Tasks 1-5 done (status line fix committed 6075825f; bench, big-record-hooks, guard-cost, statusline bats pass on bash 3.2 and 5; bench: guards 7.3-7.8 ms, status line 23.6 ms large). C220 (tests/record-args-rule.bats) fails: 4 shipped lines pass record-sized data to jq as arguments, all outside this plan's files: plugin/lib/cmd-next.sh:51, cmd-show.sh:31, qa-inputs.sh:94, checks.sh:296. Needs a plan that owns those files. C219 failed once under load (26.8 ms status line, guard 8.1 ms) when run in parallel with other checks, passes alone."
+      ]
     },
     {
       "id": "P101.9",
@@ -18851,6 +18851,26 @@
         "docs/record.md Versioning: `VBW_SCHEMA_MAX`, currently 4; records of schemas 1 to 3 that an older VBW wrote (no list) are still read and become schema 4 on their next write, with no migration command; an older VBW opened on a record this VBW wrote says it needs a newer VBW; keep, as history of what older VBWs wrote, the line that a record whose checks use alone was schema 2 so an older VBW asks to update (tests/check-alone-docs.bats reads it); no 50-check wording and no sentence saying this VBW writes schema 1, 2 or 3",
         "docs/guards.md: the guards read schema, lease and protected, stop at the end of the list and never read the checks; under a build or fix run, an agent's file write on a record without the list is refused until it is saved by this VBW (add it to the table of refusals, with what to do); no 50-check wording",
         "Keep tests/protected-docs.bats, check-alone-docs.bats, big-record-docs.bats and the docs checks of tests/standards.bats passing"
+      ]
+    },
+    {
+      "id": "P101.11",
+      "phase": "P101",
+      "title": "The last four command lines hand record-sized data to jq without the command line",
+      "reqs": [
+        "R149"
+      ],
+      "files": [
+        "plugin/lib/cmd-next.sh",
+        "plugin/lib/cmd-show.sh",
+        "plugin/lib/qa-inputs.sh",
+        "plugin/lib/checks.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "tasks": [
+        "plugin/lib/cmd-next.sh line 51, cmd-show.sh line 31, qa-inputs.sh line 94 and checks.sh line 296 (as tools/check-record-args.sh plugin/lib reports them): every value built from the whole record (the record, the QA state or fingerprints, the interview effective answers taken from the record, the contract hash computed from the record) reaches jq through a pipe, --slurpfile or --rawfile from inside the project, under bash 3.2 too (no <(...) fed to record_update: use a scratch file in .vbw/runtime as P101.1 does); a small value computed from the record may stay an argument only when computed first into its own variable on its own line, so the line-level rule judges it correctly",
+        "bash tools/check-record-args.sh plugin/lib plugin/bin plugin/hooks plugin/scripts reports nothing; tests/record-args-rule.bats (C220) passes under macOS /bin/bash 3.2 and bash 5; the suites for next, show, QA and checks (kernel-next, kernel-show, qa-state, kernel-qa, checks and big-record-commands) still pass"
       ]
     }
   ],
@@ -21485,6 +21505,11 @@
       "id": "D235",
       "at": "2026-10-10T08:50:57Z",
       "text": "Contract approved: 139 requirements, 222 checks, 296 plans (18c2335f36c0)"
+    },
+    {
+      "id": "D236",
+      "at": "2026-10-10T09:29:13Z",
+      "text": "Contract approved: 139 requirements, 222 checks, 297 plans (ab5bcdcd84be)"
     }
   ],
   "commands": {
