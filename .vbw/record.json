@@ -12347,7 +12347,7 @@
         "A test command that finishes within the limit is recorded exactly as before (pass or fail with its exit code); the time limits of individual checks (their own timeout field) are unchanged",
         "docs/proof.md states the default limit, how to set a project's own limit, its range and what a stop by the limit looks like"
       ],
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 7 (97991 bytes)",
@@ -12357,7 +12357,15 @@
         "guarded: R3 (C3), R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R38 (C33, C34), R39 (C36), R40 (C37), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215), R148 (C213, C214, C216), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "escalations": [
+        {
+          "at": "2026-10-10T14:43:28Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "Dev blocked P105.1: Plan cannot pass as written. (1) C236 (tests/command-timeout-docs.bats) reads docs/proof.md, which is not in the plan's files; the 3600s/command_timeout text must be added there. (2) tests/prove-kept-output.bats (R118) seds the literal 'VBW_COMMAND_TIMEOUT=900' in plugin/lib to shorten the timeout; changing the default breaks it, and it is outside the plan too. Needs docs/proof.md (and a fix to that test, e.g. use 'vbw config set command_timeout 2') added to the plan files. No code changed."
+        }
+      ]
     }
   ],
   "plans": [
@@ -19418,7 +19426,7 @@
         ".github/workflows/ci.yml"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Judge each guard by its own cost alone: at most VBW_HOOK_BUDGET_MS (default 20) per call; remove the relative limit VBW_HOOK_BUDGET and every mention of it, comments included; each line reads 'guard (INPUT[, LABEL]): X ms own CPU per call (...); budget N ms', ending ': OVER' when above",
@@ -19543,7 +19551,7 @@
         "plugin/skills/config/SKILL.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "cmd-prove.sh: each project command gets settings.command_timeout seconds, 3600 (60 minutes) without a setting instead of 900; checks keep their own timeout (default 300)",
@@ -19551,7 +19559,8 @@
         "record.jq accepts settings.command_timeout, a whole number from 1 to 86400, and refuses any other value",
         "The proof summary: a project command stopped by its limit adds 'NAME stopped by its time limit (N s); raise it with vbw config set command_timeout SECONDS'; a command that ended in time is reported as before",
         "vbw help and the config skill list command_timeout with its default and range"
-      ]
+      ],
+      "note": "Plan cannot pass as written. (1) C236 (tests/command-timeout-docs.bats) reads docs/proof.md, which is not in the plan's files; the 3600s/command_timeout text must be added there. (2) tests/prove-kept-output.bats (R118) seds the literal 'VBW_COMMAND_TIMEOUT=900' in plugin/lib to shorten the timeout; changing the default breaks it, and it is outside the plan too. Needs docs/proof.md (and a fix to that test, e.g. use 'vbw config set command_timeout 2') added to the plan files. No code changed."
     },
     {
       "id": "P105.2",
