@@ -1,5 +1,45 @@
 # Changelog
 
+## [2.0.31] - 2026-10-10
+
+### Changed
+
+- **Lighter fix rounds.** When a fix after QA changes only documentation, the
+  next full proof reuses the earlier passing run of your test command instead
+  of running it again, and says so. Any change to code, tests or a check's
+  files still runs it.
+- **VBW sizes itself to your machine.** By default it runs about three
+  quarters of your processor cores' worth of checks at once (at least one),
+  instead of 4 everywhere, and Devs or fix groups working at the same time
+  share that one limit. Fix groups share one run of your test command.
+  `vbw config set check_jobs N` still overrides it.
+- **More time for your test command.** `vbw prove` now gives your project's
+  commands 60 minutes (was 15), so a busy machine no longer stops a long test
+  run. Set your own with `vbw config set command_timeout SECONDS` (1 to
+  86400; `default` resets it). When a limit stops a command, the proof names
+  the limit and how to raise it.
+- **A phase that was raised stays raised.** A phase escalated after a blocked
+  plan, a failed fix or a failed QA is verified at its raised QA depth; the
+  small-change shortcut applies only to phases that never escalated.
+- **Backlog commands leave your project clean.** `vbw todo add`, `sort`,
+  `done` and `drop` commit the record, never taking your own staged files.
+
+### Fixed
+
+- **Long-lived projects keep working.** Every `vbw` command works on a record
+  over 1 MB (the operating system's command-line limit), and VBW's guards stay
+  fast however long the record grows.
+
+### What you need to know
+
+- **Record format 4.** The first VBW 2.0.31 command in a project saves its
+  record in format 4. Older VBW versions cannot read it, so update VBW on every
+  machine that works on the project. Nothing else to do.
+- For contributors: VBW's speed checks fail only on a real slowdown (a hook
+  above 20 ms per call, the status line above 60 ms) and report a busy machine
+  instead of failing. They run once per release (`bash tools/test.sh --release`,
+  in CI and before a push), never in `vbw prove`.
+
 ## [2.0.30] - 2026-10-09
 
 ### Fixed
