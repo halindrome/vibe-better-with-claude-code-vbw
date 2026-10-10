@@ -21335,6 +21335,32 @@
         "--quick and --shard K/N behave exactly as today; a failing benchmark or timed check still fails the run",
         "CLAUDE.md, AGENTS.md, CONTRIBUTING.md and the vbw-release skill describe the shorter run, keeping the sentences approved tests read"
       ]
+    },
+    {
+      "id": "P115.2",
+      "phase": "P115",
+      "title": "README states how VBW works with the settings and behaviour of 2.0.31 and 2.0.32",
+      "reqs": [
+        "R157",
+        "R161",
+        "R165"
+      ],
+      "files": [
+        "README.md"
+      ],
+      "after": [
+        "P111.4",
+        "P112.3",
+        "P113.4"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "README.md settings table: add check_jobs (how many checks run at once; default about three quarters of the processor cores, at least 1; kept in this clone) and command_timeout (how long the project's commands may run in a proof; default 3600 seconds, 1 to 86400)",
+        "README.md 'How It Stays Safe' table: one row: a VBW guard that breaks (crashes, cannot start or times out) during a VBW run blocks the action it guards",
+        "README.md loop step 3 (Approve): one sentence: you can change your mind any time; VBW re-plans without touching finished work, and a check you are not ready to judge can wait for the next milestone when it is all that holds up shipping",
+        "State current behaviour only, never what changed or was fixed (no 'now', 'no longer', 'fixed'); keep the README's tone and length"
+      ]
     }
   ],
   "fixes": [
@@ -24230,6 +24256,11 @@
       "text": "A skipped [human] check moves to the next milestone only when it holds up a release: the three answers (Works, Something's wrong, Skip for now) stay; when skipped checks are all that is left before shipping, VBW asks once: ship now and judge them in the next milestone, or judge them now",
       "why": "owner, 2026-10-10: no extra choice in every question, a check moves only when it is really in the way; cost: one extra question at release time",
       "at": "2026-10-10T21:15:12Z"
+    },
+    {
+      "id": "D257",
+      "at": "2026-10-10T22:03:10Z",
+      "text": "Contract approved: 154 requirements, 247 checks, 337 plans (17615271bd6b)"
     }
   ],
   "commands": {
