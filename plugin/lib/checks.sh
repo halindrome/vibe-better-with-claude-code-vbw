@@ -289,11 +289,12 @@ checks_served_dirty() {
 # checks_unchanged RECORD ID: print the time of the recorded pass and succeed
 # when it matches the current contract hash and fingerprint, with nothing dirty.
 checks_unchanged() {
-  local fp pass
+  local fp pass hash
   fp=$(checks_fingerprint "$1" "$2") || return 1
   checks_served_dirty "$1" "$2" && return 1
-  contract_approved "$(contract_hash "$1")" || return 1
-  pass=$(jq -r --arg id "$2" --arg h "$(contract_hash "$1")" --arg fp "$fp" \
+  hash=$(contract_hash "$1")
+  contract_approved "$hash" || return 1
+  pass=$(jq -r --arg id "$2" --arg h "$hash" --arg fp "$fp" \
     '.[$id] // empty | select(type == "object" and .contract == $h and .tree == $fp) | .at // empty' "$(checks_passes_file)" 2> /dev/null) || return 1
   [ -n "$pass" ] && printf '%s\n' "$pass"
 }

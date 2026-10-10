@@ -31,7 +31,7 @@ qa_combined() {
 
 cmd_next() {
   vbw_require_project
-  local effort record hash counts approved=false changed=false legacy=false next qa waiting
+  local effort record hash counts approved=false changed=false legacy=false next qa waiting profile
   record=$(record_read)
   hash=$(contract_hash "$record")
   # Check files edited since the approval wait: the build goes on, the one approval comes before proof.
@@ -47,8 +47,9 @@ cmd_next() {
   printf '%s' "$qa" | jq -e '.problems | any(.[]; contains("does not exist")) | not' > /dev/null || vbw_die "$(printf '%s' "$qa" | jq -r '.problems | join("; ")')"
   # The profile's effort table; a wrong table stops here, before any answer.
   effort=$(effort_table "$(printf '%s' "$record" | jq -r '.settings.profile')") || exit 1
+  profile=$(interview_effective "$record")
   next=$(printf '%s' "$record" | jq -c --argjson effort "$effort" --argjson tracked "$counts" --argjson approved "$approved" --arg waiting "$waiting" --arg contract "$hash" \
-    --argjson code_changed "$changed" --argjson legacy "$legacy" --slurpfile qa <(printf '%s' "$qa") --argjson profile "$(interview_effective "$record")" --arg session "$(vbw_session)" --slurpfile tiers "$VBW_LIB/tiers.json" "$VBW_JQ_DEFS$(cat "$VBW_LIB/next.jq")")
+    --argjson code_changed "$changed" --argjson legacy "$legacy" --slurpfile qa <(printf '%s' "$qa") --argjson profile "$profile" --arg session "$(vbw_session)" --slurpfile tiers "$VBW_LIB/tiers.json" "$VBW_JQ_DEFS$(cat "$VBW_LIB/next.jq")")
   # The status line shows the last answer (docs/statusline.md).
   printf '%s\n' "$next" > "$VBW_RUNTIME/next.json.$$" && mv "$VBW_RUNTIME/next.json.$$" "$VBW_RUNTIME/next.json"
   if [ "${1:-}" = "--json" ]; then

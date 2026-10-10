@@ -85,16 +85,18 @@ qa_cache_read() {
 # TREE, when given, is the qa.tree in the record that these digests vouch for.
 # Locked; a damaged file starts afresh.
 qa_cache_put() {
-  local file tmp commit="${3:-}"
+  local file tmp dg commit="${3:-}"
   [ -n "$commit" ] || commit=$(git -C "$VBW_ROOT" rev-parse HEAD 2> /dev/null) || commit=
   file=$(qa_cache_file)
   mkdir -p "${file%/*}" && vbw_lock_take "${file%.json}.lock" "the QA cache"
   tmp=$(mktemp "${file%/*}/qa.XXXXXX") || vbw_die "cannot write ${file%/*}"
   vbw_guard_add file "$tmp"
-  qa_cache_read | jq -c --arg p "$1" --slurpfile dg <(printf '%s' "$2") --argjson v "$QA_FP_VERSION" --arg c "$commit" --arg t "${4:-}" 'def own: {files, tests, plan, reqs};
+  vbw_scratch_json dg "$2"
+  qa_cache_read | jq -c --arg p "$1" --slurpfile dg "$dg" --argjson v "$QA_FP_VERSION" --arg c "$commit" --arg t "${4:-}" 'def own: {files, tests, plan, reqs};
     $dg[0] as $d | (. // {}) + {($p): (($d[$p] | own) + {combined: $d[$p].combined, version: $v, deps: ([$d[$p].deps[] | {key: ., value: ($d[.] | own)}] | from_entries)}
       + (if $c != "" then {commit: $c} else {} end) + (if $t != "" then {tree: $t} else {} end))}' > "$tmp" && mv "$tmp" "$file"
   vbw_guard_drop "$tmp"
+  vbw_guard_drop "$dg"
   vbw_guard_drop "${file%.json}.lock"
 }
 

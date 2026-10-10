@@ -5,7 +5,7 @@
 # context a Dev works from.
 
 cmd_show() {
-  local view="${1:-}" record
+  local view="${1:-}" record cf
   [ $# -gt 0 ] && shift
   case "$view" in roadmap|phase|req|plan|fix|contract|evidence|decisions|requirements|rigor|qa) ;; *) vbw_usage_error "usage: vbw show roadmap | phase ID | req ID | plan ID [--json] | fix ID [--json] | contract [--changes] | evidence | decisions | requirements | rigor | qa" ;; esac
   vbw_require_project
@@ -28,7 +28,8 @@ cmd_show() {
     phase)
       [ $# -eq 1 ] || vbw_usage_error "usage: vbw show phase ID"
       printf '%s' "$record" | jq -e --arg p "$1" 'any(.phases[]; .id == $p)' > /dev/null || vbw_die "unknown phase $1"
-      printf '%s' "$record" | jq -r --arg p "$1" --slurpfile cf <(qa_combined "$record") "$SHOW_JQ_DEFS"'
+      vbw_scratch_json cf "$(qa_combined "$record")"
+      printf '%s' "$record" | jq -r --arg p "$1" --slurpfile cf "$cf" "$SHOW_JQ_DEFS"'
         $cf[0] as $cur | . as $r | (.phases[] | select(.id == $p)) as $ph
         | "\($ph.id) \($ph.title) [\($ph | phase_status($r))]",
           (if $ph.goal then "goal: \($ph.goal)" else empty end),
