@@ -47,7 +47,7 @@ user's `settings.json` (`$CLAUDE_CONFIG_DIR`, else `~/.config/claude-code`, else
 The setting also asks Claude Code to re-run the status line every 5 seconds
 (`statusLine.refreshInterval: 5`), on top of its event-driven redraws, so a
 run's time and its working agents stay current while nothing else happens.
-A run is budgeted at 30 ms (no network, no git process). `vbw statusline on` on a
+A run is budgeted at 60 ms (no network, no git process). `vbw statusline on` on a
 VBW status line set by an older VBW (or by VBW 1) adds the interval and changes
 nothing else; an interval the user set is kept. `vbw statusline status` says
 when the interval is missing, `vbw doctor` warns about it, and a session that
@@ -68,7 +68,7 @@ so updating from VBW 1 switches the status line over with no change.
   show the reasons; `vbw show qa` does.
 - It reads `.vbw/runtime/glance.json` when that is newer than the record, and
   the record otherwise (docs/record.md). The glance holds only what the status
-  line shows, so the 30 ms limit holds on a record over 2 MB. Any `vbw` command
+  line shows, so the 60 ms limit holds on a record over 2 MB. Any `vbw` command
   refreshes a missing or stale glance.
 - No network, no temporary files, no git process (the branch is read from
   `.git/HEAD`, also in linked worktrees).
