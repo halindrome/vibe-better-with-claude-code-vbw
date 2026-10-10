@@ -21,7 +21,7 @@ rigor_assess() {
     facts=$(printf '%s' "$facts" | jq -c --arg p "$p" --argjson n "$(wc -c < "$VBW_ROOT/$p" | tr -d ' ')" '.[$p] = $n')
   done
   guarded=$(rigor_guarded "$record")
-  printf '%s' "$record" | jq -c --argjson facts "$facts" --argjson guarded "$guarded" --argjson tracked "${tracked:-0}" --argjson ids "$ids" "$VBW_JQ_DEFS$(cat "$VBW_LIB/rigor.jq")"
+  printf '%s' "$record" | jq -c --slurpfile f_facts <(printf '%s' "$facts") --slurpfile f_guarded <(printf '%s' "$guarded") --argjson tracked "${tracked:-0}" --argjson ids "$ids" "$VBW_JQ_DEFS$(cat "$VBW_LIB/rigor.jq")"
 }
 
 # rigor_guarded RECORD_JSON: a JSON array [{req, checks}] of the guarded
@@ -36,8 +36,8 @@ rigor_guarded() {
     [ -f "$VBW_ROOT/$f" ] && [ ! -L "$VBW_ROOT/$f" ] || continue
     digests=$(printf '%s' "$digests" | jq -c --arg f "$f" --arg d "$(vbw_sha256 < "$VBW_ROOT/$f")" '.[$f] = $d')
   done < <(printf '%s' "$1" | jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"')
-  printf '%s' "$1" | jq -c --slurpfile old "$old" --argjson now "$digests" '
-    $old[0] as $o
+  printf '%s' "$1" | jq -c --slurpfile old "$old" --slurpfile f_now <(printf '%s' "$digests") '
+    $old[0] as $o | $f_now[0] as $now
     | def approved: . as $c | $o.checks[$c.id] == $c
         and all(($c.files // [])[]; . as $f | ($now[$f] != null and $o.files[$f] == $now[$f]));
     . as $r

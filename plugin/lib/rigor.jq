@@ -17,7 +17,8 @@ def overlaps($b): . as $a
 
 def rid: ltrimstr("R") | tonumber? // 0;
 
-. as $r
+$f_facts[0] as $facts | $f_guarded[0] as $guarded
+| . as $r
 | ($ids // [$r.phases[] | select(.milestone == $r.milestone.id) | .id]) as $want
 | [ $r.phases[] | select(.id as $i | $want | index($i)) | . as $ph
     | ([$r.plans[] | select(.phase == $ph.id) | .files[]] | unique) as $files
