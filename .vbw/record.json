@@ -7455,76 +7455,11 @@
     },
     {
       "id": "R150",
-      "text": "On a project whose record has more than 50 checks, a guard's cost per tool call stays within its budget however long the record grows, because the guards never read through every check; only such a record moves to format 4, and a record with 50 checks or fewer keeps its format so older VBW versions still read it",
+      "text": "A guard's cost per tool call stays within its budget however long the record grows: every record that has checks keeps the protected check files as one short list near its top (record format 4), and the guards read only that list, never the checks themselves; there is one way to read it, with no size threshold",
       "proof": "auto",
       "status": "open",
       "milestone": "M19",
-      "rules": [
-        {
-          "text": "A write that leaves more than 50 checks stores protected (every check file once, sorted) right after lease and sets schema 4",
-          "check": "C223"
-        },
-        {
-          "text": "A write that leaves 50 checks or fewer stores no field and keeps schema 1, 2 or 3 by today's rules; exactly 50 gives no field, 51 gives it",
-          "check": "C223"
-        },
-        {
-          "text": "Dropping to 50 checks or fewer removes the field and returns to schema 1, 2 or 3 on that write; growing past 50 adds it on that write",
-          "check": "C223"
-        },
-        {
-          "text": "After every write the field equals the union of the current checks' files: adding, removing or changing a check's files updates it",
-          "check": "C223"
-        },
-        {
-          "text": "A schema-3 record with more than 50 checks and no field works for every command and moves to schema 4 on its next write of any kind",
-          "check": "C223"
-        },
-        {
-          "text": "This VBW reads schemas 1 to 4 and asks for a newer VBW on schema 5, naming schema 4 as its highest",
-          "check": "C223"
-        },
-        {
-          "text": "The validator refuses as corrupt a schema-4 record without the field, a field that differs from the checks' files, a field on 50 checks or fewer, and schema 4 on 50 checks or fewer",
-          "check": "C223"
-        },
-        {
-          "text": "A VBW that reads up to schema 3 says a schema-4 record (the new fixture, or one this VBW wrote) needs a newer VBW, never calls it corrupt and leaves it unchanged",
-          "check": "C224"
-        },
-        {
-          "text": "A record of 50 checks or fewer that this VBW wrote is still read and written by a VBW that reads up to schema 3",
-          "check": "C224"
-        },
-        {
-          "text": "The status line, session-start hook and panel show the same on a schema-4 record as on schema 3, with no error",
-          "check": "C224"
-        },
-        {
-          "text": "On schema 4 the guards read only schema, lease and protected and stop before the checks begin",
-          "check": "C225"
-        },
-        {
-          "text": "On schema 4 a build or fix agent's Edit, Write or Bash change of a protected check file is stopped exactly as at schema 3, and an unprotected file is not",
-          "check": "C225"
-        },
-        {
-          "text": "On schema 4 the main conversation, another session and calls outside a run get the same answers as at schema 3",
-          "check": "C225"
-        },
-        {
-          "text": "On a record of 50 checks or fewer, and on a large record not yet moved to schema 4, the guards answer as today",
-          "check": "C225"
-        },
-        {
-          "text": "tools/bench-hooks.sh measures every guard input on schema-4 records of 51, 500 and 2,000 checks (the largest over 2 MB), each within the same hook budget",
-          "check": "C226"
-        },
-        {
-          "text": "docs/record.md documents schema 4, protected, the 50-check threshold and why ordinary projects keep their format; docs/guards.md says what the guards read on each format",
-          "check": "C227"
-        }
-      ]
+      "rules": []
     }
   ],
   "phases": [
@@ -18566,15 +18501,14 @@
         "P101.7",
         "P102.2"
       ],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "Done (657e1ab2, 68fde7dc): the bench measures a record over 2 MB and the status line on both records; tools/test.sh and tests/test-shards.bats list big-record-hooks among the timed files",
         "Done (9f1b8da2): the guard reads the lease and the checks' files key by key instead of rebuilding every event",
         "tools/bench-hooks.sh: the large record is written once through the kernel (one record write, such as vbw decide, instead of vbw status) so it holds the format the kernel writes; with its 100 checks that is schema 4 with the protected field (P102.1), which the guards read without walking the checks (P102.2); the 'large record: N bytes' line and every existing line stay as they are",
         "Run tests/bench-hooks.bats, big-record-hooks.bats and guard-cost.bats under macOS /bin/bash 3.2 and bash 5; every guard line and the status line within budget; if a limit cannot hold, record the measured times in the plan note and block the plan, never raise a limit"
-      ],
-      "note": "Task 4 cannot hold: under macOS /bin/bash 3.2 the status line on the kernel-written 2.3 MB record (schema 4, protected field, 100 checks) costs 33.9-34.0 ms CPU per call (budget 30 ms), against 19.8 ms on the same record when only 'vbw status' touches it; bash 5.3 passes. All guard lines are within budget on both shells (interp 7.5 ms/1.29x, read 2.9-3.5 ms, answer 0.8-1.1 ms). Fixing needs plugin/scripts/statusline.jq or vbw-statusline.sh, outside this plan's files; limit not raised."
+      ]
     },
     {
       "id": "P101.9",
@@ -20032,6 +19966,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T104",
+      "text": "vbw decide --help records a decision with the text '--help' (D231, 2026-10-10); every kernel command treats --help/-h as a usage request and writes nothing",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
@@ -21307,6 +21248,12 @@
       "id": "D231",
       "text": "--help",
       "at": "2026-10-10T07:12:27Z"
+    },
+    {
+      "id": "D232",
+      "text": "One guard path: every record with checks keeps the protected list (format 4); no 50-check threshold; the guards never walk the checks",
+      "why": "owner 2026-10-10: no legacy constraint before the 2.1.0 public release, so the most elegant option with no second code path wins",
+      "at": "2026-10-10T07:20:32Z"
     }
   ],
   "commands": {
