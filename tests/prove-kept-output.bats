@@ -105,7 +105,7 @@ OUT=.vbw/runtime/output
 }
 
 @test "R118: a project command that times out keeps its complete output" {
-  "$VBW" init > /dev/null 2>&1 || true
+  "$VBW" config set command_timeout 2 > /dev/null
   plan '[{id: "C1", req: "R1", run: ["sh", "tests/ok.sh"], files: ["tests/ok.sh"]},
          {id: "C2", req: "R2", run: ["sh", "tests/ok.sh"], files: ["tests/ok.sh"]},
          {id: "C3", req: "R3", run: ["sh", "tests/ok.sh"], files: ["tests/ok.sh"]}]' '{test: ["sh", "tests/slow.sh"]}'
