@@ -12327,7 +12327,22 @@
         "guarded: R15 (C14), R16 (C15), R21 (C16), R48 (C49, C50), R55 (C56, C57), R75 (C101), R77 (C104), R120 (C185), R126 (C186), R142 (C204, C205), R143 (C206, C207), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "3760d7a47e03c978e4b719f04e824edcda513063a5fa6126d9d3daa127702669",
+        "at": "2026-10-10T16:42:32Z",
+        "note": "30/30 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 0
+      }
     },
     {
       "id": "P104",
