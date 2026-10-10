@@ -40,10 +40,9 @@ a subagent never counts. The guard above still refuses the model's own
 `/vbw:approve`.
 
 **Cost does not grow with history.** A guard reads the whole hook input but only
-the beginning of the record. On schema 4 (a record with more than 50 checks) it
-reads `schema`, `lease` and `protected` and stops before the checks, so it costs
-the same on a record of 10 KB or 10 MB. On schemas 1 to 3 it reads the `checks`
-as before, with the same answers, only slower. The writer keeps those keys first
+the beginning of the record: `schema`, `lease` and `protected`. It stops at the
+end of the `protected` list and never reads the `checks`, so it costs the same
+on a record of 10 KB or 10 MB. The writer keeps those keys first
 (docs/record.md); a record whose keys are in another order (written by an older
 VBW) gives the same answer, only slower.
 
@@ -66,6 +65,7 @@ input names an `agent_type`) is also held to the lease. The main session never i
 | Writing a project file outside `lease.files` (file tools, shell redirects; paths resolved, `..` included) | Builders write only their plan's files |
 | During `plan`, writing a project file that is neither under `.vbw/` nor a test file (`tests/`, `test/`, `spec/` or `__tests__/` folders; `*.test.*`, `*_test.*`, `test_*.py`) | Planning writes the spec, plans and tests, never product code |
 | Writing a protected check file (any check's `files`) during `build` or `fix` | The contract is fixed while building. The Lead runs the project's formatter and linter on check files before approval, and Devs format only their own files, so a formatter never changes an approved file |
+| Under `build` or `fix`, an agent's file write on a record of schema 1 to 3, which has no `protected` list | The guard cannot tell which files are protected, so it refuses until the record is saved by this VBW as schema 4. Run any `vbw` command that writes the record (such as `/vbw:vibe`) from the main session, then retry |
 | `git commit`, `push`, `rebase`, `merge`, `pull`, `cherry-pick`, `revert`, `am` | Commits go through `vbw commit`, with provenance |
 | `git stash` (except `list`, `show`), `switch`, `reset`, `checkout` of a branch; `git checkout -- PATH` or `git restore PATH` outside `lease.files` | Agents share one working tree: nothing may move HEAD or other agents' changes |
 
