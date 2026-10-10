@@ -21707,6 +21707,11 @@
       "text": "Replaces D237: every record write also writes a small side file (.vbw/runtime/glance.json, extended with schema, lease and protected) and the guards read that small file with a normal jq parse; they fall back to the record when it is missing or older; no streaming",
       "why": "D237 rested on a mis-read figure (the bench's startup line, not a record read); a normal parse of a 2.3 MB record costs 22 ms per guard call; the side file keeps the cost flat at any size (owner's choice, 2026-10-10)",
       "at": "2026-10-10T10:34:19Z"
+    },
+    {
+      "id": "D239",
+      "at": "2026-10-10T11:25:08Z",
+      "text": "Contract approved: 139 requirements, 225 checks, 300 plans (38bf9ae0e3e8)"
     }
   ],
   "commands": {
