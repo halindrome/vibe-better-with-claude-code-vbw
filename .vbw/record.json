@@ -12446,7 +12446,15 @@
           "to": "deep",
           "reason": "Dev blocked P105.1: Implemented and committed (698afd1b): 3600 s default, vbw config set command_timeout (1-86400, default), record.jq validation, time-limit line in proof summary, help/skill text, prove-kept-output.bats uses the setting. C235 test 2 ('a project sets its own limit') still fails: after 'config set command_timeout default' the next 'vbw prove --full' expects the test command to run again with 3600 s, but it is reused (proofreuse_docs: only .vbw changed since the last passing run, same argv fingerprint), so no limit is logged. Fix needs plugin/lib/proofreuse.sh (outside this plan's files): include the effective command timeout in proofreuse_command_fp so a changed limit re-runs the command. Please add proofreuse.sh to the plan (I did not test this fix; the guard blocked a debug repro). Also: tests/prove-kept-output.bats was edited and waits for approval before vbw check proves C-checks that protect it."
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "d4890b098405baaa5867df5ad27facc17030c9ab2e984750e4d2b89405818d53",
+        "at": "2026-10-10T16:44:55Z",
+        "note": "29/30 checks",
+        "rounds": 1
+      }
     }
   ],
   "plans": [
@@ -20495,6 +20503,14 @@
       "attempts": 0,
       "status": "open",
       "note": "plugin/lib/checks.sh checks_gate_enter calls vbw_check_jobs on every check (line 143), and each parallel check runs in its own subshell (checks_run_all), so the limit is read (getconf + jq) once per check, not once per process. Plan P100.2 and the comment at lines 101-103 say 'read once per process'. The comment is wrong and the plan is not followed; a setting changed mid-run is seen by only some checks. Fix: read the limit once in the process (for example pass it from checks_run_all/checks_run) or correct the plan and the comment."
+    },
+    {
+      "id": "F108",
+      "req": "R153",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The stop report prints how long the command actually ran, not the limit in use. plugin/lib/cmd-prove.sh prove_summary prints '(\\(.value.seconds | floor) s)'; seconds is the whole-second wall clock measured by checks_exec (bash SECONDS), which is >= the limit and can be limit+1 on a loaded machine (the exact case this phase is about). So the line can say '(3601 s)' for a 3600 s limit, or '(3 s)' for a limit of 2, though the criterion says the report names the limit in use. tests/command-timeout.bats test 3 checks only for '2 s' and would fail intermittently when the run reads 3. Fix: print the effective limit (settings.command_timeout // 3600, the same value prove_commands uses) in the summary line, and pin it in the test with a run that reports seconds above the limit."
     }
   ],
   "todos": [
