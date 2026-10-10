@@ -8591,6 +8591,30 @@
           "check": "C252"
         }
       ]
+    },
+    {
+      "id": "R166",
+      "text": "Every proof, including the full proof that QA and shipping require, re-runs only the checks a change can affect and reuses the passing result of every other check; a check is affected when a file it lists or a project file it reads has changed since its last pass",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M21",
+      "rules": []
+    },
+    {
+      "id": "R167",
+      "text": "The project's test command re-runs only the test files a change can affect when the project's test runner can run single test files; otherwise it runs whole; a one-file fix in VBW itself proves in minutes, not the whole suite",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M21",
+      "rules": []
+    },
+    {
+      "id": "R168",
+      "text": "When VBW cannot know what a change affects (the project's commands, the test setup, a shared helper every test loads, or a file no check or test is known to read), the proof runs everything and says why; the proof summary says how many checks and test files ran and how many were reused",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M21",
+      "rules": []
     }
   ],
   "phases": [
@@ -24287,6 +24311,12 @@
       "id": "D258",
       "at": "2026-10-10T23:20:20Z",
       "text": "Contract approved: 154 requirements, 247 checks, 337 plans (87373ed38cf3)"
+    },
+    {
+      "id": "D259",
+      "text": "Next milestone after M21 is 'proofs re-run only what a change can affect' (T110), ahead of /vbw:loop and everything else",
+      "why": "owner, 2026-10-11: #1 priority; full re-runs after small fixes cost about 45 minutes each",
+      "at": "2026-10-10T23:34:42Z"
     }
   ],
   "commands": {
