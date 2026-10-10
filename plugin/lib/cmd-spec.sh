@@ -49,13 +49,13 @@ spec_sync() {
   # A requirement removed from the spec takes its checks with it, and the plans
   # that only served it, unless such a plan has already started: that work is
   # never thrown away without the user deciding.
-  blocked=$(record_read | jq -r --argjson s "$reqs" '
+  blocked=$(record_read | jq -r --slurpfile f_s <(printf '%s' "$reqs") '$f_s[0] as $s |
     [.requirements[].id | select(. as $id | any($s[]; .id == $id) | not)] as $gone
     | [.plans[] | select(.status != "planned")
         | select(all(.reqs[]; . as $q | any($gone[]; . == $q)))
         | "\(.id) (\(.status)) serves only \(.reqs | join(", "))"] | join("; ")')
   [ -z "$blocked" ] || vbw_die "the spec removes requirements whose plans have already started: $blocked. Keep them in the spec, or reset those plans first (vbw plan reset)"
-  record_read | jq -r --argjson s "$reqs" '
+  record_read | jq -r --slurpfile f_s <(printf '%s' "$reqs") '$f_s[0] as $s |
     . as $rec | .requirements as $old
     | ($s[] | . as $n | [$old[] | select(.id == $n.id)][0] as $o
        | if $o == null then "added \(.id)"
@@ -63,7 +63,7 @@ spec_sync() {
          else empty end),
       ($old[] | select(.id as $id | any($s[]; .id == $id) | not) | .id as $id
         | "removed \($id)" + ([$rec.checks[] | select(.req == $id) | .id] | if length > 0 then " and its checks \(join(", "))" else "" end))'
-  record_update '.milestone.id as $m
+  record_update '$f_s[0] as $s | .milestone.id as $m
     | .requirements as $old
     | [$old[].id | select(. as $id | any($s[]; .id == $id) | not)] as $gone
     | any($old[]; has("rules")) as $ruled
@@ -78,7 +78,7 @@ spec_sync() {
     | .plans = [.plans[] | .reqs = [.reqs[] | select(kept)] | select(.reqs | length > 0)]
     | ([.plans[].id]) as $ids
     | .plans = [.plans[] | .after = [.after[] | select(. as $a | any($ids[]; . == $a))]]
-    | .phases = [.phases[] | .reqs = [.reqs[] | select(kept)] | select(.reqs | length > 0)]' --argjson s "$reqs"
+    | .phases = [.phases[] | .reqs = [.reqs[] | select(kept)] | select(.reqs | length > 0)]' --slurpfile f_s <(printf '%s' "$reqs")
   spec_sync_commands "$(printf '%s' "$1" | jq -c '.commands')"
   spec_sync_results "$(printf '%s' "$1" | jq -c '.results')"
   printf 'record has %s requirements\n' "$(jq '.requirements | length' "$VBW_RECORD")"
@@ -89,20 +89,20 @@ spec_sync() {
 # approval before any proof runs it (vbw next asks for it).
 spec_sync_commands() {
   [ "$1" != null ] || return 0
-  record_read | jq -r --argjson c "$1" '.commands as $o
+  record_read | jq -r --slurpfile f_c <(printf '%s' "$1") '$f_c[0] as $c | .commands as $o
     | ($c | to_entries[] | if $o[.key] == null then "added command \(.key)"
         elif $o[.key] != .value then "changed command \(.key)" else empty end),
       ($o | keys[] | select(. as $k | $c | has($k) | not) | "removed command \(.)")'
-  record_update '.commands = $c' --argjson c "$1"
+  record_update '$f_c[0] as $c | .commands = $c' --slurpfile f_c <(printf '%s' "$1")
 }
 
 # The record's project.results becomes the spec's Test results folders, and
 # goes when the spec names none. A changed list needs the user's approval.
 spec_sync_results() {
-  record_read | jq -r --argjson l "$1" '(.project.results // null) as $o
+  record_read | jq -r --slurpfile f_l <(printf '%s' "$1") '$f_l[0] as $l | (.project.results // null) as $o
     | select($o != $l)
     | if $l == null then "removed the test results folders" else "test results folders: \($l | join(", "))" end'
-  record_update 'if $l == null then .project |= del(.results) else .project.results = $l end' --argjson l "$1"
+  record_update '$f_l[0] as $l | if $l == null then .project |= del(.results) else .project.results = $l end' --slurpfile f_l <(printf '%s' "$1")
 }
 
 # Insert "- R<next> [PROOF] TEXT" at the end of the Requirements section, then sync.
@@ -112,8 +112,8 @@ spec_add() {
   text=${text# }
   text=${text% }
   [ -n "$text" ] || vbw_usage_error "requirement text must not be empty"
-  id=$(record_read | jq -r --argjson p "$parsed" \
-    '[(.requirements[], $p.requirements[]) | .id | ltrimstr("R") | tonumber] | "R\((max // 0) + 1)"')
+  id=$(record_read | jq -r --slurpfile f_p <(printf '%s' "$parsed") \
+    '$f_p[0] as $p | [(.requirements[], $p.requirements[]) | .id | ltrimstr("R") | tonumber] | "R\((max // 0) + 1)"')
   line="- $id [$proof] $text"
   end=$(printf '%s' "$parsed" | jq -r '.end')
   tmp=$(mktemp "$VBW_RUNTIME/spec.XXXXXX") || vbw_die "cannot write $VBW_RUNTIME"

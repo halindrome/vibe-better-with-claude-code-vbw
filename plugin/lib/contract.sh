@@ -76,7 +76,7 @@ contract_doc() {
       files=$(printf '%s' "$files" | jq -c --arg f "$f" '. + {($f): "missing"}')
     fi
   done < <(printf '%s' "$1" | jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"')
-  printf '%s' "$1" | jq -c --argjson files "$files" '{
+  printf '%s' "$1" | jq -c --slurpfile f_files <(printf '%s' "$files") '$f_files[0] as $files | {
     requirements: (.requirements | map({key: .id, value: ({text, proof} + (if has("rules") then {rules} else {} end))}) | from_entries),
     checks: (.checks | map({key: .id, value: .}) | from_entries),
     plans: (.plans | map({key: .id, value: del(.status, .note)}) | from_entries),
