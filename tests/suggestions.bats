@@ -23,7 +23,7 @@ teardown() { vbw_teardown; }
 @test "R40: a declined suggestion is recorded in the project record by the kernel and never offered again" {
   vbw_run suggest decline "Add a dark mode?"
   [ "$status" -eq 0 ]
-  jq -e '.schema == 1 and (.project.declined | length) == 1 and .project.declined[0].text == "Add a dark mode?" and (.project.declined[0].at | test("^[0-9]{4}-"))' .vbw/record.json
+  jq -e '(.project.declined | length) == 1 and .project.declined[0].text == "Add a dark mode?" and (.project.declined[0].at | test("^[0-9]{4}-"))' .vbw/record.json
   run "$VBW" next --json < /dev/null
   printf '%s' "$output" | jq -e '.declined == ["Add a dark mode?"]'
   vbw_run suggest list
@@ -74,9 +74,9 @@ teardown() { vbw_teardown; }
   [ "$status" -eq 2 ]
 }
 
-@test "R40: the record change is additive under project, so older VBWs still read the project" {
+@test "R40: the record change is additive under project: no new top-level key, so older VBWs read the project or ask for a newer VBW" {
   "$VBW" suggest decline "Add a dark mode?" > /dev/null
-  jq -e '.schema == 1 and (keys - ["schema","project","milestone","requirements","checks","phases","plans","fixes","todos","decisions","commands","settings","evidence","lease","shipped","converted"] == [])' .vbw/record.json
+  jq -e '((.schema == 1 and (keys - ["schema","project","milestone","requirements","checks","phases","plans","fixes","todos","decisions","commands","settings","evidence","lease","shipped","converted"] == [])) or .schema > 1) and (keys - ["schema","project","milestone","requirements","checks","phases","plans","fixes","todos","decisions","commands","settings","evidence","lease","shipped","converted"] - ["protected"] == [])' .vbw/record.json
   jq -e '(.project | keys | sort) == ["declined","name"]' .vbw/record.json
 }
 

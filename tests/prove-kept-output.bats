@@ -38,7 +38,7 @@ setup() {
 teardown() { vbw_teardown; }
 
 edit_record() {
-  jq "$1" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
+  jq "$1 | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
 }
 
 # plan CHECKS_JSON [COMMANDS_JSON]: one phase, a plan per requirement, these

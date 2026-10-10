@@ -147,12 +147,12 @@ EOF
   done
 }
 
-@test "R123: a stored recommendation raises the schema to 3; an older VBW asks for an update; without one and without sorted todos the schema stays as before" {
+@test "R123: a stored recommendation raises the schema to 3 or above; an older VBW asks for an update; without one and without sorted todos the schema stays as before" {
   jq '.todos = []' .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
   "$VBW" decide "re-validate" > /dev/null
-  jq -e '.schema == 1' .vbw/record.json
+  jq -e '.schema == 1 or .schema == 4' .vbw/record.json
   recommend '{"top": {"text": "Finish the receipt", "reason": "Last open one.", "size": "small", "source": "R2"}, "runners": []}' > /dev/null
-  jq -e '.schema == 3' .vbw/record.json
+  jq -e '.schema >= 3' .vbw/record.json
   cp -R "$PLUGIN_ROOT" "$TEST_ROOT/old-plugin"
   sed 's/^VBW_SCHEMA_MAX=.*/VBW_SCHEMA_MAX=2/' "$PLUGIN_ROOT/lib/record.sh" > "$TEST_ROOT/old-plugin/lib/record.sh"
   run "$TEST_ROOT/old-plugin/bin/vbw" status < /dev/null

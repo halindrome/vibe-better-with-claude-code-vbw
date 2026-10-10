@@ -73,11 +73,11 @@ no_private_copy() {
   [ -z "$(git status --porcelain)" ]
 }
 
-@test "R38: shared answers are written to the project record by the kernel, valid at schema 1, with no private copy" {
+@test "R38: shared answers are written to the project record by the kernel, valid, with no private copy" {
   answer "senior engineer" "technical and brief" "I make the calls"
   vbw_run interview keep project
   [ "$status" -eq 0 ]
-  jq -e '.schema == 1 and .project.interview.level == "senior engineer"
+  jq -e '.project.interview.level == "senior engineer"
     and .project.interview.depth == "technical and brief"
     and .project.interview.involvement == "I make the calls"' .vbw/record.json
   [ "$(kept)" = "project" ]
@@ -183,10 +183,10 @@ no_private_copy() {
   [ "$status" -eq 0 ]
 }
 
-@test "R38: the record change is additive under project: schema stays 1, older VBWs read it, and a bad value is corrupt" {
+@test "R38: the record change is additive under project: no new top-level key, older VBWs read it or ask for a newer VBW, and a bad value is corrupt" {
   answer "never" "plain words" "decide and tell me"
   "$VBW" interview keep project
-  jq -e '.schema == 1 and (keys - ["schema","project","milestone","requirements","checks","phases","plans","fixes","todos","decisions","commands","settings","evidence","lease","shipped","converted"] == [])' .vbw/record.json
+  jq -e '((.schema == 1 and (keys - ["schema","project","milestone","requirements","checks","phases","plans","fixes","todos","decisions","commands","settings","evidence","lease","shipped","converted"] == [])) or .schema > 1) and (keys - ["schema","project","milestone","requirements","checks","phases","plans","fixes","todos","decisions","commands","settings","evidence","lease","shipped","converted"] - ["protected"] == [])' .vbw/record.json
   jq -e '(.project | keys | sort) == ["interview","name"]' .vbw/record.json
   jq '.project.interview.level = "wizard"' .vbw/record.json > "$TEST_ROOT/bad.json"
   cp "$TEST_ROOT/bad.json" .vbw/record.json

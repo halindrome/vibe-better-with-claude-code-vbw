@@ -7459,7 +7459,124 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M19",
-      "rules": []
+      "rules": [
+        {
+          "text": "vbw init and every later write leave schema 4 with keys schema, lease, protected, checks first",
+          "check": "C223"
+        },
+        {
+          "text": "with 0, 1, 50, 51 or 2,000 checks the record is format 4",
+          "check": "C223"
+        },
+        {
+          "text": "a record with no checks carries an empty protected list",
+          "check": "C223"
+        },
+        {
+          "text": "a record with checks carries every check file once, in sorted order",
+          "check": "C223"
+        },
+        {
+          "text": "a check with no files adds nothing and a file several checks share appears once",
+          "check": "C223"
+        },
+        {
+          "text": "a contract change that edits or removes a check drops the files no remaining check names, in the same write",
+          "check": "C223"
+        },
+        {
+          "text": "a contract change that adds or edits a check adds the newly named files, in the same write",
+          "check": "C223"
+        },
+        {
+          "text": "a record an older VBW wrote (schema 1, 2 or 3, no list) is read by every command without a corrupt error",
+          "check": "C223"
+        },
+        {
+          "text": "the next write turns an older record into format 4 and keeps every other entry unchanged",
+          "check": "C223"
+        },
+        {
+          "text": "there is no migration command",
+          "check": "C223"
+        },
+        {
+          "text": "a schema-4 record without the list is corrupt for every command, which names protected",
+          "check": "C223"
+        },
+        {
+          "text": "a list that differs from the checks' files (missing, extra, out of order, repeated, not a list) is corrupt, naming protected",
+          "check": "C223"
+        },
+        {
+          "text": "a record below schema 4 that carries a protected list is corrupt",
+          "check": "C223"
+        },
+        {
+          "text": "record.sh and record.jq hold no 50-check threshold",
+          "check": "C223"
+        },
+        {
+          "text": "under a build or fix run an agent's Edit, Write or Bash change of a listed file is refused with today's message",
+          "check": "C225"
+        },
+        {
+          "text": "under a build or fix run an unprotected file the run may write is not refused",
+          "check": "C225"
+        },
+        {
+          "text": "the main conversation, another session and calls outside a run get the same answers on format 4 and on an older record",
+          "check": "C225"
+        },
+        {
+          "text": "under a build or fix run an agent's file write on a record without the list is refused, saying it must first be saved by this VBW",
+          "check": "C225"
+        },
+        {
+          "text": "on format 4 the guards stop at the end of the list: an unreadable checks section changes no answer",
+          "check": "C225"
+        },
+        {
+          "text": "a file named only under checks, not on the list, is not seen by the guards",
+          "check": "C225"
+        },
+        {
+          "text": "common.jq has no code that reads the checks and no 50-check threshold",
+          "check": "C225"
+        },
+        {
+          "text": "a VBW that reads up to schema 3 says the project needs a newer VBW on every record this VBW writes, and never calls it corrupt",
+          "check": "C224"
+        },
+        {
+          "text": "the status line shows the same on a format-4 record with 0 and 60 checks as on schema 3, with no error",
+          "check": "C224"
+        },
+        {
+          "text": "the panel shows the same on a format-4 record with 0 and 60 checks as on schema 3, with no error",
+          "check": "C224"
+        },
+        {
+          "text": "the session-start hook says the same on a format-4 record as on schema 3",
+          "check": "C224"
+        },
+        {
+          "text": "every guard input stays within the hook budget on records of 51, 500 and 2,000 checks",
+          "check": "C226"
+        },
+        {
+          "text": "docs/record.md describes format 4 for every record with protected after lease, and says older records are read and converted on their next write",
+          "check": "C227"
+        },
+        {
+          "text": "docs/guards.md describes one read path, the protected list, and the refusal on a record without it",
+          "check": "C227"
+        },
+        {
+          "text": "neither guide mentions a 50-check threshold or this VBW writing schemas 1 to 3",
+          "check": "C227"
+        }
+      ]
     }
   ],
   "phases": [
@@ -11540,14 +11657,15 @@
         "`vbw qa record` and `vbw ship` accept a full proof whose test-command result was reused under this rule, and still refuse a proof that ran only part of the checks or commands",
         "docs/proof.md explains the rule, including that a test which reads a documentation file not listed by any check is not re-run by a documentation-only change"
       ],
+      "proposed": "standard",
       "tier": "standard",
       "reasons": [
         "requirements: 1",
-        "files: 4 (63396 bytes)",
-        "files: more than 2 in a repository tracking 775 files",
+        "files: 4 (70819 bytes)",
+        "files: more than 2 in a repository tracking 800 files",
         "risk: none",
-        "breaks: R69, R81, R111",
-        "guarded: R12 (C11), R25 (C24), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R115 (C181), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202)",
+        "breaks: none",
+        "guarded: R12 (C11), R25 (C24), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202)",
         "tests: project test command"
       ],
       "predicted": "standard"
@@ -11569,14 +11687,16 @@
         "Each kind of escalation (a blocked plan, a fix needing another round, a failed QA) is covered by a test that shows the raised depth is used",
         "The QA round's tier (the highest tier among phases to verify) reflects the raised depth when an escalated phase is among them"
       ],
+      "proposed": "standard",
       "tier": "standard",
       "reasons": [
         "requirements: 1",
-        "files: 2 (22907 bytes)",
+        "files: 2 (23701 bytes)",
         "risk: none",
-        "breaks: R111",
-        "guarded: R13 (C12), R14 (C13), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R35 (C31), R37 (C35), R38 (C33, C34), R40 (C37), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R67 (C96), R70 (C114), R71 (C115, C121), R72 (C116, C118), R74 (C99, C100), R79 (C107), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R116 (C182, C183), R131 (C198)",
-        "tests: project test command"
+        "breaks: none",
+        "guarded: R13 (C12), R14 (C13), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R35 (C31), R37 (C35), R38 (C33, C34), R40 (C37), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R67 (C96), R70 (C114), R71 (C115, C121), R72 (C116, C118), R74 (C99, C100), R79 (C107), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R131 (C198)",
+        "tests: project test command",
+        "raised by the Architect"
       ],
       "predicted": "standard"
     },
@@ -11599,14 +11719,15 @@
         "When the commit cannot be made (no git identity, a failing git hook), the backlog change is kept, the command still succeeds, and a warning gives git's own reason and says to commit the files yourself",
         "The commit goes through the existing single commit path for VBW's files (record_commit), not a second copy"
       ],
+      "proposed": "standard",
       "tier": "standard",
       "reasons": [
         "requirements: 1",
-        "files: 3 (14889 bytes)",
-        "files: more than 2 in a repository tracking 775 files",
+        "files: 3 (18560 bytes)",
+        "files: more than 2 in a repository tracking 800 files",
         "risk: none",
-        "breaks: R81",
-        "guarded: R1 (C1), R2 (C2), R22 (C19), R23 (C20), R25 (C24), R33 (C29), R38 (C33, C34), R46 (C46), R47 (C47), R49 (C48), R121 (C187, C188), R122 (C189), R123 (C190, C191), R127 (C194), R133 (C195)",
+        "breaks: none",
+        "guarded: R1 (C1), R2 (C2), R22 (C19), R23 (C20), R25 (C24), R33 (C29), R38 (C33, C34), R46 (C46), R47 (C47), R49 (C48), R81 (C109, C111, C112, C113), R121 (C187, C188), R122 (C189), R123 (C190, C191), R127 (C194), R133 (C195)",
         "tests: project test command"
       ],
       "predicted": "standard"
@@ -11639,11 +11760,11 @@
       "tier": "deep",
       "reasons": [
         "requirements: 2",
-        "files: 8 (107081 bytes)",
-        "files: more than 2 in a repository tracking 775 files",
+        "files: 8 (112136 bytes)",
+        "files: more than 2 in a repository tracking 800 files",
         "risk: none",
-        "breaks: R69, R81, R111",
-        "guarded: R1 (C1), R2 (C2), R3 (C3), R12 (C11), R13 (C12), R14 (C13), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R58 (C62, C63, C64, C67), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202)",
+        "breaks: none",
+        "guarded: R1 (C1), R2 (C2), R3 (C3), R12 (C11), R13 (C12), R14 (C13), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R58 (C62, C63, C64, C67), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202)",
         "tests: project test command",
         "raised by the Architect"
       ],
@@ -11668,14 +11789,15 @@
         "The hook and status line speed limits still hold on the large fixture as measured by tools/bench-hooks.sh (hook CPU per call within its limit, status line at most 30 ms), or, if reading a 2 MB record cannot meet them, the measured times are recorded and the phase fails rather than raising a limit",
         "bash tools/test.sh passes in full, and the user docs say a record of any size is supported"
       ],
+      "proposed": "deep",
       "tier": "deep",
       "reasons": [
         "requirements: 1",
-        "files: 54 (316639 bytes)",
-        "files: more than 2 in a repository tracking 783 files",
+        "files: 57 (356848 bytes)",
+        "files: more than 2 in a repository tracking 800 files",
         "risk: none",
         "breaks: none",
-        "guarded: R1 (C1), R2 (C2), R10 (C9), R11 (C10), R12 (C11), R13 (C12), R14 (C13), R15 (C14), R16 (C15), R21 (C16), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R29 (C26), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R37 (C35), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R53 (C54, C55), R55 (C56, C57), R58 (C62, C63, C64, C67), R61 (C73, C74, C75, C76, C77), R65 (C86, C87, C88, C89, C90), R66 (C95), R67 (C96), R68 (C97), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R98 (C154), R99 (C155), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R113 (C177), R114 (C178), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205)",
+        "guarded: R1 (C1), R2 (C2), R10 (C9), R11 (C10), R12 (C11), R13 (C12), R14 (C13), R15 (C14), R16 (C15), R21 (C16), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R29 (C26), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R53 (C54, C55), R55 (C56, C57), R58 (C62, C63, C64, C67), R61 (C73, C74, C75, C76, C77), R65 (C86, C87, C88, C89, C90), R66 (C95), R67 (C96), R68 (C97), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R113 (C177), R114 (C178), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205)",
         "tests: project test command"
       ],
       "predicted": "deep",
@@ -11719,34 +11841,35 @@
         "R150"
       ],
       "milestone": "M19",
-      "goal": "On a project with more than 50 checks, the Bash and file guards answer each tool call within their time budget no matter how many checks the record holds, because they read one ready-made list of protected files instead of walking every check, while projects with 50 checks or fewer keep the record format older VBW versions can read.",
+      "goal": "Every record this VBW writes is format 4 with the protected check files listed right after the lease, and the Bash and file guards read only that list, with the 50-check threshold and the old read-the-checks path removed from code, tests and guides.",
       "criteria": [
-        "When a write leaves the record with more than 50 checks, the kernel's single writer stores a field holding every file an approved check protects (the union of all checks' files, each path once, in a fixed sorted order), placed right after `lease` (key order: schema, lease, that field, then the rest), and sets the record's schema to 4 (D226, D229)",
-        "When a write leaves the record with 50 checks or fewer, that field is absent and the schema stays at 1, 2 or 3 exactly as today's rules choose (R46); exactly 50 checks gives no field, 51 gives the field",
-        "A record that drops from more than 50 checks to 50 or fewer (for example after an approved spec change removes checks) loses the field and returns to schema 1, 2 or 3 on that same write; one that grows past 50 gains it on that write",
-        "After every write, the field equals the union of the current checks' files: adding, removing or changing a check's files updates it in the same write, with no separate step",
-        "An existing project with more than 50 checks at schema 3 (such as a record written by the current VBW) moves to schema 4 on its next write of any kind, with no migration command; until then every command and guard still works on it, reading the checks as today",
-        "This VBW reads records of schemas 1 to 4 (VBW_SCHEMA_MAX is 4); the validator refuses as corrupt a schema-4 record without the field, a field that differs from the checks' files, a field on a record with 50 checks or fewer, and schema 4 on a record with 50 checks or fewer",
-        "A VBW that reads up to schema 3, opened on a schema-4 record, says the project needs a newer VBW and is never told the record is corrupt (R46 kept); a fixture of a schema-4 record is added beside the existing record fixtures",
-        "On a schema-4 record, the Bash and file guards read only schema, lease and the protected-files field, and stop reading the record before the checks begin, whatever the number of checks",
-        "On a schema-4 record, the guards give exactly the same answers as on the same project at schema 3: a Dev or other subagent under a build or fix run that tries to change a protected check file through Edit, Write or a Bash command is stopped the same way, an unprotected file is not, and the main conversation and calls outside a run are treated as today",
-        "On a record of 50 checks or fewer, and on a large record not yet moved to schema 4, the guards give the same answers as today",
-        "tools/bench-hooks.sh measures every guard input on records with 51, 500 and at least 2,000 checks (the largest over 2 MB) and each stays within the hook CPU budget; the time per call on the 2,000-check record is no more than the budget allows the 51-check one, so cost does not climb with the number of checks; if the budget cannot be met, the measured times are recorded and the phase fails rather than raising the limit",
-        "The status line, panel and session-start hook show the same on a schema-4 record as on schema 3 and print no error",
-        "docs/record.md documents schema 4, the protected-files field, the 50-check threshold and why ordinary projects keep their older format; docs/guards.md says what the guards read on each format",
-        "bash tools/test.sh passes in full under macOS /bin/bash 3.2 and bash 5, from a project path containing a space"
+        "After any vbw write, the record is schema 4 and its keys begin schema, lease, protected, checks, whatever the number of checks: 0, 1, 50, 51 or 2,000",
+        "A record with no checks carries protected as an empty list; a record with checks carries every file any check protects, each path once, in sorted order",
+        "When a contract change adds, removes or edits a check, the same write updates the protected list: a file no remaining check names leaves the list, a newly named file joins it",
+        "A check with no files, or files shared by several checks, adds nothing extra: shared paths appear once",
+        "A record an older VBW wrote (schema 1, 2 or 3, no protected list) is read by every vbw command without a corrupt error, and its next write turns it into schema 4 with the list, keeping every other entry unchanged; no migration command exists",
+        "Every vbw command reports the record as corrupt, naming the protected field, when a schema-4 record has no protected list, or a list that differs from the files its checks name, or when a record below schema 4 carries a protected list",
+        "plugin/lib/record.sh, plugin/lib/record.jq and plugin/hooks/common.jq contain no 50-check threshold: no `> 50`, no 'more than 50 checks' wording, no `$big` branch",
+        "The guards have one way to learn the protected files: plugin/hooks/common.jq has no code that reads the checks (the check_files path and the checks branch of read_events are gone), and a test that plants a protected file only under checks, absent from the list, shows the guards do not see it",
+        "Under a build or fix run, an agent's Edit, Write or Bash change to a file on the protected list is refused with the same message as today; an unprotected file the run may write is not refused",
+        "The main conversation, another session, and calls outside a run get the same answers as today, on schema-4 records and on older records without the list",
+        "Under a build or fix run, an agent's file write on a record that has no protected list (older format, not yet rewritten) is refused with a message saying the record must first be saved by this VBW, never silently allowed",
+        "On a schema-4 record the guards stop reading at the end of the protected list: a test with a deliberately unreadable checks section still gets the correct answer",
+        "The status line and the panel show the same on a schema-4 record with 0 checks, with 60 checks and on the same project at schema 3, and print no error",
+        "An older VBW (reading up to schema 3) opened on a record this VBW wrote says the project needs a newer VBW and never calls it corrupt (R46 still holds)",
+        "docs/record.md and docs/guards.md describe one format (4) written for every record and one guard read path, and no longer mention 50 checks, schemas 1 to 3 being written, or guards reading the checks; they still say older records are read and converted on their next write",
+        "The R150 checks (C223 to C227) no longer expect a record of 50 checks to keep schema 1 to 3 or the guards to read the checks; their replacements are approved through a contract change, and tools/test.sh passes under macOS /bin/bash 3.2"
       ],
       "proposed": "deep",
       "tier": "deep",
       "reasons": [
         "requirements: 1",
-        "files: 7 (81476 bytes)",
-        "files: more than 2 in a repository tracking 792 files",
+        "files: 13 (133306 bytes)",
+        "files: more than 2 in a repository tracking 800 files",
         "risk: none",
         "breaks: none",
-        "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R45 (C39, C40, C41), R46 (C46), R47 (C47), R49 (C48), R55 (C56, C57), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R75 (C101), R76 (C102, C103), R77 (C104), R81 (C109, C111, C112, C113), R99 (C155), R101 (C179), R111 (C171, C172, C173, C174, C175), R115 (C181), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205)",
-        "tests: project test command",
-        "raised by the Architect"
+        "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R55 (C56, C57), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R75 (C101), R76 (C102, C103), R77 (C104), R81 (C109, C111, C112, C113), R99 (C155), R101 (C179), R109 (C168), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205)",
+        "tests: project test command"
       ],
       "predicted": "deep"
     }
@@ -18499,7 +18622,8 @@
       "after": [
         "P101.6",
         "P101.7",
-        "P102.2"
+        "P102.2",
+        "P102.6"
       ],
       "status": "planned",
       "role": "dev",
@@ -18606,7 +18730,8 @@
       ],
       "after": [
         "P101.8",
-        "P102.2"
+        "P102.2",
+        "P102.6"
       ],
       "status": "planned",
       "role": "dev",
@@ -18614,6 +18739,7 @@
         "tools/bench-hooks.sh builds, once per run in its work folder, three more projects with 51, 500 and 2,000 checks under the same build lease, their history padded so the 2,000-check record is over 2 MB, each written once through the kernel so it is schema 4 with the protected field, and prints 'record (N checks): B bytes, schema S' for each",
         "For every input it prints 'guard (NAME, N checks): ...' in the existing format and with the same budget; over budget prints OVER and exits 1 as today; the existing lines stay unchanged (tests/bench-hooks.bats and big-record-hooks.bats read them)",
         "tools/test.sh lists tests/bench-protected.bats with the timed files that run alone after the rest; the bench's header comment says what the new records measure",
+        "tools/bench-hooks.sh: the small record it builds by hand at the top is a format-4 record (schema 4, the build lease, protected [] then checks []), so every guard input takes the path a real project takes; the large record stays written once through the kernel",
         "Run tests/bench-protected.bats, bench-hooks.bats, big-record-hooks.bats, guard-cost.bats, test-shards.bats and quick-mode.bats under macOS /bin/bash 3.2 and bash 5; if a line is over budget, record the measured times in the plan note and block the plan, never raise a limit"
       ]
     },
@@ -18635,6 +18761,77 @@
         "docs/record.md: a protected row in the field table, written only on records with more than 50 checks, and the key order schema, lease, protected, checks, then the rest, in one paragraph that names protected, lease and schema 4",
         "docs/record.md Versioning: `VBW_SCHEMA_MAX`, currently 4; a record with protected is schema 4; records with 50 checks or fewer keep schema 1, 2 or 3 so an older VBW still reads them; a larger record an older VBW wrote moves to schema 4 on its next write, with no migration command",
         "docs/guards.md 'Cost does not grow with history': on schema 4 the guards read schema, lease and protected and stop before the checks; on schemas 1 to 3 they read the checks as before, with the same answers, only slower; keep tests/protected-docs.bats, big-record-docs.bats and check-alone-docs.bats passing"
+      ]
+    },
+    {
+      "id": "P102.5",
+      "phase": "P102",
+      "title": "Every record VBW writes is format 4, whatever its number of checks",
+      "reqs": [
+        "R150"
+      ],
+      "files": [
+        "plugin/lib/record.sh",
+        "plugin/lib/record.jq",
+        "plugin/lib/cmd-init.sh",
+        "tests/record.bats",
+        "tests/kernel-prove.bats",
+        "tests/kernel-plan-dirs.bats",
+        "tests/kernel-show.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/record.sh record_update: every write sets schema 4 and protected, the sorted list of every string in .checks[].files, each once ([] with no checks or no files), and writes the keys in the order schema, lease (null when none), protected, checks ([] when none), then every other key as before; remove the `> 50` test and the `$big` branch, keep VBW_SCHEMA_MAX at 4, and rewrite the comments of VBW_SCHEMA_MAX and record_update to say every record is format 4 (D232) and records of schemas 1 to 3 written by an older VBW are read and become format 4 on their next write",
+        "plugin/lib/record.jq: a schema-4 record must carry protected; a record below schema 4 must not; protected must equal that sorted, unique list of check files whatever the number of checks; every violation about the list names the protected field (as tests/record-protected.bats expects); records without protected keep today's rule for schemas 1, 2 and 3 so older records stay valid until their next write; no 50-check wording, and the header comment describes format 4 and the older formats",
+        "plugin/lib/cmd-init.sh: vbw init writes the new record in format 4 directly (schema 4, lease null, protected [], checks [] first, then the other keys as today), so a fresh project's first later write changes only what that write changes (this also makes tests/interview-store.bats 'private answers never touch the project' pass again, which fails on today's v2)",
+        "Tests that are not protected check files and build records by hand: in tests/kernel-prove.bats, tests/kernel-plan-dirs.bats and tests/kernel-show.bats every hand edit of the record keeps the list in step, with the same filter the approved check files use (`| if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end`); tests/record.bats checks the new schema and protected rules instead of '2 only when a check is alone, else 1'",
+        "Run tests/record-protected.bats, record-v4-compat.bats, record.bats, record-compat, record-newer, big-record-writes, big-record-commands, interview-store, suggestions, triage-kernel, recommend-store, check-alone-contract, panel-steps, kernel-prove, kernel-plan-dirs, kernel-show, proof-reuse and approve-once under macOS /bin/bash 3.2 and bash 5; the kernel stays within its line budget (tests/standards.bats)"
+      ]
+    },
+    {
+      "id": "P102.6",
+      "phase": "P102",
+      "title": "The Bash and file guards learn the protected files only from the protected list",
+      "reqs": [
+        "R150"
+      ],
+      "files": [
+        "plugin/hooks/common.jq",
+        "tests/hooks-guard.bats"
+      ],
+      "after": [
+        "P102.5"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/hooks/common.jq read_events: read only schema, lease and protected; delete check_files and the checks branch, so no code reads the checks; on a format-4 record stop at the event that closes the protected list and never pull the event after it; a record without the list (written by an older VBW) is read on, skipping every other key without building it, until the lease and either a schema below 4 or the end of the file",
+        "lease_write_denial: the protected check files come only from the record's protected list, with today's message ('is a protected check file: the contract is fixed while building'); under a build or fix lease, an agent's file write on a record without the list is refused with a reason that contains 'saved by this VBW' and says how to get there (end the run and start it again, which saves the record); the main conversation, another session's run and calls outside a run keep today's answers",
+        "The header comment of common.jq describes the one read path, with no 50-check wording; hooks.json and vbw doctor's guard self-test stay as they are; tests/hooks-guard.bats (not a protected check file) builds its build and fix leases with the protected list in step, as the approved check files do",
+        "Run tests/guard-protected.bats, record-v4-compat.bats, hooks-guard, guard-plan-writes, guard-interpreters, guard-reads-approval, hook-answers, hooks-session-scope, big-record-hooks and guard-cost under macOS /bin/bash 3.2 and bash 5, then tools/bench-hooks.sh: every guard line within budget; if a limit cannot hold, record the measured times in the plan note and block the plan, never raise a limit"
+      ]
+    },
+    {
+      "id": "P102.7",
+      "phase": "P102",
+      "title": "Record and guard guides: one format, one guard read path",
+      "reqs": [
+        "R150"
+      ],
+      "files": [
+        "docs/record.md",
+        "docs/guards.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/record.md: every record VBW writes is schema 4, keys schema, lease, protected, checks first; the protected row: always present, the sorted list of every file a check protects, each once, an empty list when there are no checks, kept equal to the checks on every write; the Shape heading and example show schema 4 with protected; the schema row and the corrupt cases (no list on schema 4, a list that differs, a list below schema 4) name protected",
+        "docs/record.md Versioning: `VBW_SCHEMA_MAX`, currently 4; records of schemas 1 to 3 that an older VBW wrote (no list) are still read and become schema 4 on their next write, with no migration command; an older VBW opened on a record this VBW wrote says it needs a newer VBW; keep, as history of what older VBWs wrote, the line that a record whose checks use alone was schema 2 so an older VBW asks to update (tests/check-alone-docs.bats reads it); no 50-check wording and no sentence saying this VBW writes schema 1, 2 or 3",
+        "docs/guards.md: the guards read schema, lease and protected, stop at the end of the list and never read the checks; under a build or fix run, an agent's file write on a record without the list is refused until it is saved by this VBW (add it to the table of refusals, with what to do); no 50-check wording",
+        "Keep tests/protected-docs.bats, check-alone-docs.bats, big-record-docs.bats and the docs checks of tests/standards.bats passing"
       ]
     }
   ],

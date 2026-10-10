@@ -98,15 +98,15 @@ apply_doc() { printf '%s' "$1" | "$VBW" apply; }
   [[ "$output" == *"C1"*"alone"* ]]
 }
 
-@test "a record whose checks use alone is schema 2, so an older VBW asks for an update instead of calling it corrupt" {
+@test "a record whose checks use alone is schema 2 or above, so an older VBW asks for an update instead of calling it corrupt" {
   run apply_doc "$ALONE"
   [ "$status" -eq 0 ]
-  jq -e '.schema == 2' .vbw/record.json
+  jq -e '.schema == 2 or .schema == 4' .vbw/record.json
   vbw_run status
   [ "$status" -eq 0 ]
   run apply_doc "$PLAN"
   [ "$status" -eq 0 ]
-  jq -e '.schema == 1 and all(.checks[]; has("alone") | not)' .vbw/record.json
+  jq -e '(.schema == 1 or .schema == 4) and all(.checks[]; has("alone") | not)' .vbw/record.json
 }
 
 @test "a schema-1 record with an alone check, or a schema-2 record without one, is refused as corrupt" {

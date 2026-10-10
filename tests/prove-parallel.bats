@@ -73,7 +73,7 @@ project() {
     | .phases = [{id:"P1", title:"Pay", reqs:["R1"], milestone:"M1"}]
     | .plans = [{id:"P1.1", phase:"P1", title:"Pay", reqs:["R1"], files:["src/pay.txt"], after:[], status:"done"}]
     | .schema = (if any(.checks[]; .alone == true) then 2 else 1 end)
-    | del(.requirements[]?.rules)' .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
+    | del(.requirements[]?.rules) | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end' .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
   git add -A && git commit -q -m "chore(vbw): plan"
   "$VBW" approve > /dev/null
 }
@@ -175,5 +175,5 @@ results() { jq -c '.evidence | {passed, checks: (.checks | map_values({status, e
   "$VBW" config set check_jobs 2 > /dev/null
   run grep -q check_jobs .vbw/record.json
   [ "$status" -ne 0 ]
-  jq -e '.schema == 1 or .schema == 2' .vbw/record.json
+  jq -e '.schema == 1 or .schema == 2 or .schema == 4' .vbw/record.json
 }

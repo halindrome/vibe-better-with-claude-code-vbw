@@ -1,8 +1,9 @@
 #!/usr/bin/env bats
-# R46: a schema-1 record stays readable by VBW 2.0.16, the last release that reads
-# only schema 1 (docs/record.md). A field 2.0.16 does not know makes it call the
-# record corrupt, so a change that needs one raises the schema instead: then an
-# older VBW says it needs a newer VBW (R33). The lists below are 2.0.16's, frozen.
+# R46: a record this VBW writes is either read by VBW 2.0.16, the last release
+# that reads only schema 1 (docs/record.md), or carries a schema above 1, so
+# that 2.0.16 says it needs a newer VBW (R33). A field 2.0.16 does not know
+# makes it call the record corrupt, so a record with one never stays at
+# schema 1. The lists below are 2.0.16's, frozen.
 
 load helper
 
@@ -33,14 +34,20 @@ setup() {
 
 teardown() { vbw_teardown; }
 
-# fits: the record is schema 1 and holds only the fields 2.0.16 reads.
-fits() {
+# reads: the record is schema 1 and holds only the fields 2.0.16 reads.
+reads() {
   jq -e --argjson top "$TOP" --argjson check "$CHECK" '.schema == 1
     and all(keys[]; . as $k | $top | index($k))
     and all(.checks[]; all(keys[]; . as $k | $check | index($k)))' .vbw/record.json
 }
 
-@test "closing a fix, proving and keeping the interview answers in the project leave a record VBW 2.0.16 reads" {
+# fits: 2.0.16 reads the record, or its schema is a number above 1, so 2.0.16
+# says the project needs a newer VBW; it never calls it corrupt.
+fits() {
+  reads || jq -e '(.schema | type) == "number" and .schema > 1' .vbw/record.json
+}
+
+@test "closing a fix, proving and keeping the interview answers in the project leave a record VBW 2.0.16 reads or asks to update for" {
   vbw_run fix done F1
   [ "$status" -eq 0 ]
   fits
@@ -56,8 +63,8 @@ fits() {
 
 @test "the fields 2.0.16 does not read raise the schema, never stay at schema 1" {
   printf '%s' "$PLAN" | jq '.checks[0].alone = true' | "$VBW" apply > /dev/null
-  jq -e '.schema == 2' .vbw/record.json
-  run fits
+  jq -e '.schema > 1' .vbw/record.json
+  run reads
   [ "$status" -ne 0 ]
 }
 

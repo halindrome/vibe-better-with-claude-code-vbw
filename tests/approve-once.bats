@@ -23,14 +23,14 @@ setup() {
     | .phases = [{id:"P1", title:"Pay", reqs:["R1"], milestone:"M1"}]
     | .plans = [{id:"P1.1", phase:"P1", title:"Pay", reqs:["R1"], files:["src/pay.txt"], after:[], status:"planned"},
                 {id:"P1.2", phase:"P1", title:"Receipt", reqs:["R1"], files:["src/receipt.txt"], after:[], status:"planned"}]
-    | del(.requirements[]?.rules)' .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
+    | del(.requirements[]?.rules) | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end' .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
   git add -A && git commit -q -m "chore(vbw): plan"
   "$VBW" approve > /dev/null
 }
 
 teardown() { vbw_teardown; }
 
-edit_record() { jq "$1" .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json; }
+edit_record() { jq "$1 | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json; }
 
 # built: both plans done, the work committed.
 built() {

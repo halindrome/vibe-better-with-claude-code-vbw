@@ -143,7 +143,7 @@ overlaps() {
   git add src && git commit -q -m "feat: built"
   jq '.checks |= map(select(.id | IN("C5", "C6", "C7") | not))
       | .plans[0].files = ["src/a.txt", "src/b.txt"] | .plans[].status = "done"
-      | .fixes = [{id: "F1", req: "R2", attempts: 0, status: "open", note: "x"}]' .vbw/record.json > "$TEST_ROOT/r.json"
+      | .fixes = [{id: "F1", req: "R2", attempts: 0, status: "open", note: "x"}] | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end' .vbw/record.json > "$TEST_ROOT/r.json"
   cp "$TEST_ROOT/r.json" .vbw/record.json
   vbw_consent_contract
   bg "$TEST_ROOT/o1" fix done F1
@@ -217,7 +217,7 @@ overlaps() {
 }
 
 @test "without an alone marker behaviour is unchanged: no waiting, no lock left behind" {
-  jq 'del(.checks[].alone) | .schema = 1' .vbw/record.json > "$TEST_ROOT/r.json"
+  jq 'del(.checks[].alone) | .schema = 1 | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end' .vbw/record.json > "$TEST_ROOT/r.json"
   cp "$TEST_ROOT/r.json" .vbw/record.json
   vbw_consent_contract
   bg "$TEST_ROOT/o1" check C2

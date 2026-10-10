@@ -133,11 +133,11 @@ triage_json() {
   [ "$status" -eq 3 ]
 }
 
-@test "R121: a sorted backlog item raises the schema to 3, so an older VBW asks for an update instead of calling the record corrupt" {
+@test "R121: a sorted backlog item raises the schema to 3 or above, so an older VBW asks for an update instead of calling the record corrupt" {
   "$VBW" todo add "Dark mode" > /dev/null
-  jq -e '.schema == 1' .vbw/record.json
+  jq -e '.schema == 1 or .schema == 4' .vbw/record.json
   "$VBW" todo add --sort later --size small "Coupons" > /dev/null
-  jq -e '.schema == 3' .vbw/record.json
+  jq -e '.schema >= 3' .vbw/record.json
   vbw_run status
   [ "$status" -eq 0 ]
   # An older VBW (one that reads up to schema 2, as 2.0.27 does) refuses it with its update message.

@@ -60,7 +60,8 @@ twin_project() {
                                           tasks: [("Old task \($k).\(.)" | p)]}]
       | .decisions = ([range(1; 121) | {id: "D\(.)", text: ("Old decision \(.)" | p), at: $at}]
                       + [{id: "D121", text: ("Old long decision" + fill($one)), at: $at}])
-      | .todos = [range(1; 31) | {id: "T\(.)", text: ("Old idea \(.)" | p), status: "done"}]' \
+      | .todos = [range(1; 31) | {id: "T\(.)", text: ("Old idea \(.)" | p), status: "done"}]
+      | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end' \
       .vbw/record.json > .vbw/runtime/fixture.json || exit 1
     # The fixture is written as a project restored from git would hold it, not through vbw.
     cat .vbw/runtime/fixture.json > .vbw/record.json

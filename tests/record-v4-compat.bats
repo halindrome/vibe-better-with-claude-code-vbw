@@ -1,9 +1,11 @@
 #!/usr/bin/env bats
-# R150 (R46, R33; docs/record.md): a schema-4 record (more than 50 checks, the
-# protected field) loads in this VBW; a VBW that reads up to schema 3 says the
-# project needs a newer VBW and never calls it corrupt nor touches it; and the
-# status line, the session-start hook and the panel show the same on a schema-4
-# record as on the same project at schema 3, with no error. L1.
+# R150 (R46, R33; docs/record.md): a format-4 record (schema 4, the protected
+# list) loads in this VBW; a VBW that reads up to schema 3 says the project
+# needs a newer VBW on every record this VBW writes, whatever its number of
+# checks, and never calls it corrupt nor touches it; and the status line, the
+# session-start hook and the panel show the same on a format-4 record with 0
+# checks and with 60 as on the same project as an older VBW wrote it
+# (schema 3), with no error. L1.
 
 load helper
 load protected-helper
@@ -18,6 +20,7 @@ teardown() { vbw_teardown; }
 
 # older: a copy of this VBW that reads up to schema 3, as VBW 2.0.30 does.
 older() {
+  rm -rf "$TEST_ROOT/older"
   cp -R "$PLUGIN_ROOT" "$TEST_ROOT/older"
   sed 's/^VBW_SCHEMA_MAX=.*/VBW_SCHEMA_MAX=3/' "$PLUGIN_ROOT/lib/record.sh" > "$TEST_ROOT/older/lib/record.sh"
   grep -qx 'VBW_SCHEMA_MAX=3' "$TEST_ROOT/older/lib/record.sh"
@@ -44,8 +47,7 @@ refused_by_older() {
   vbw_git_project
   mkdir -p .vbw
   cp "$FIXTURES/v4.json" .vbw/record.json
-  jq -e '.schema == 4 and (.checks | length) > 50 and .protected == ([.checks[].files // [] | .[]] | unique)
-    and (keys_unsorted | .[:4]) == ["schema", "lease", "protected", "checks"]' .vbw/record.json
+  format4
   vbw_run status
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   vbw_run show roadmap
@@ -56,7 +58,8 @@ refused_by_older() {
   [[ "$output" != *"needs a newer VBW"* ]] || { echo "$output"; false; }
   vbw_run decide "still works"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  jq -e '.schema == 4 and .decisions[-1].text == "still works"' .vbw/record.json
+  format4
+  jq -e '.decisions[-1].text == "still works"' .vbw/record.json
 }
 
 @test "R150: a VBW that reads up to schema 3 asks for a newer VBW on the schema-4 fixture, never calling it corrupt" {
@@ -68,50 +71,51 @@ refused_by_older() {
   cmp .vbw/record.json "$FIXTURES/v4.json"
 }
 
-@test "R150: a VBW that reads up to schema 3 asks for a newer VBW on a record this VBW moved to schema 4" {
+@test "R150: a VBW that reads up to schema 3 asks for a newer VBW on every record this VBW writes: 0, 1, 3 and 51 checks" {
   protected_base
-  protected_apply 51
-  jq -e '.schema == 4' .vbw/record.json
+  "$VBW" decide "first" > /dev/null
+  format4
   older
-  refused_by_older
+  refused_by_older || { echo "with 0 checks"; false; }
+  local n
+  for n in 1 3 51; do
+    protected_apply "$n"
+    format4
+    refused_by_older || { echo "with $n checks"; false; }
+  done
 }
 
-@test "R150: a VBW that reads up to schema 3 still reads a record of 50 checks this VBW wrote" {
-  protected_base
-  protected_apply 50
-  jq -e '.schema == 1 and (has("protected") | not)' .vbw/record.json
-  older
-  run "$OLDER" status < /dev/null
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  run "$OLDER" decide "older still writes"
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-}
-
-# twins_at_schema_4_and_3: the same project twice, built with 51 checks: FOUR
-# as this VBW wrote it (schema 4), THREE without the field at schema 3 (as the
-# VBW before R150 wrote it), each in a folder named "project with space".
-twins_at_schema_4_and_3() {
+# twins N [run]: the same project twice with N checks (0: none applied): FOUR
+# as this VBW wrote it (format 4), OLD as an older VBW wrote it (schema 3, a
+# sorted todo, no list), each in a folder named "project with space"; with
+# "run" a build run is open.
+twins() {
   FOUR="$TEST_ROOT/four/project with space"
-  THREE="$TEST_ROOT/three/project with space"
-  mkdir -p "$FOUR" "$TEST_ROOT/three"
+  OLD="$TEST_ROOT/old/project with space"
+  rm -rf "$TEST_ROOT/four" "$TEST_ROOT/old"
+  mkdir -p "$FOUR" "$TEST_ROOT/old"
   cd "$FOUR" || return 1
   protected_base
-  protected_apply 51
-  "$VBW" approve > /dev/null
-  [ "${1:-}" != run ] || VBW_SESSION_ID=s1 "$VBW" run start build P1.1 > /dev/null
-  jq -e '.schema == 4 and has("protected")' .vbw/record.json
-  cp -R "$FOUR" "$THREE"
-  as_schema3 "$THREE/.vbw/record.json"
-  rm -f "$FOUR/.vbw/runtime/glance.json" "$THREE/.vbw/runtime/glance.json"
+  "$VBW" todo add --sort later --size small "Gift cards" > /dev/null
+  if [ "$1" -gt 0 ]; then
+    protected_apply "$1"
+    "$VBW" approve > /dev/null
+    [ "${2:-}" != run ] || VBW_SESSION_ID=s1 "$VBW" run start build P1.1 > /dev/null
+  fi
+  format4
+  cp -R "$FOUR" "$OLD"
+  as_older "$OLD/.vbw/record.json"
+  jq -e '.schema == 3 and (has("protected") | not)' "$OLD/.vbw/record.json"
+  rm -f "$FOUR/.vbw/runtime/glance.json" "$OLD/.vbw/runtime/glance.json"
 }
 
-# same_shown OUT_FOUR OUT_THREE: equal once the twin folder names are made one
+# same_shown OUT_FOUR OUT_OLD: equal once the twin folder names are made one
 # and durations (a run's elapsed time) are removed.
 same_shown() {
   local a b
   a=$(printf '%s\n' "$1" | sed -E "s#$TEST_ROOT/four#<twin>#g; s/[0-9]+(ms|s|m|h)([^a-z]|\$)/<t>\2/g")
-  b=$(printf '%s\n' "$2" | sed -E "s#$TEST_ROOT/three#<twin>#g; s/[0-9]+(ms|s|m|h)([^a-z]|\$)/<t>\2/g")
-  [ "$a" = "$b" ] || { printf 'schema 4:\n%s\nschema 3:\n%s\n' "$a" "$b" | cut -c 1-400; return 1; }
+  b=$(printf '%s\n' "$2" | sed -E "s#$TEST_ROOT/old#<twin>#g; s/[0-9]+(ms|s|m|h)([^a-z]|\$)/<t>\2/g")
+  [ "$a" = "$b" ] || { printf 'schema 4:\n%s\nolder:\n%s\n' "$a" "$b" | cut -c 1-400; return 1; }
 }
 
 statusline_in() {
@@ -123,36 +127,41 @@ session_in() {
   jq -nc --arg d "$1" '{hook_event_name: "SessionStart", source: "startup", cwd: $d}' | HOOK_PROJECT_DIR="$1" vbw_hook SessionStart 2> "$TEST_ROOT/err"
 }
 
-@test "R150: the status line shows the same on a schema-4 record as on schema 3, idle and during a run" {
-  local step a b
-  for step in idle run; do
-    rm -rf "$TEST_ROOT/four" "$TEST_ROOT/three"
-    twins_at_schema_4_and_3 "$step"
-    a=$(statusline_in "$FOUR")
-    [ ! -s "$TEST_ROOT/err" ] || { cat "$TEST_ROOT/err"; false; }
-    b=$(statusline_in "$THREE")
-    [ -n "$a" ] && [[ "$a" != *unavailable* ]] || { echo "$a"; false; }
-    same_shown "$a" "$b"
-    # Once a command has rewritten the glance, the status line reads it: still the same.
-    (cd "$FOUR" && "$VBW" status > /dev/null)
-    a=$(statusline_in "$FOUR")
-    [ ! -s "$TEST_ROOT/err" ] || { cat "$TEST_ROOT/err"; false; }
-    same_shown "$a" "$b"
+@test "R150: the status line shows the same on a format-4 record with 0 and 60 checks as on an older one, idle and during a run, with no error" {
+  local n step a b
+  for n in 0 60; do
+    for step in idle run; do
+      [ "$n" -gt 0 ] || [ "$step" = idle ] || continue
+      twins "$n" "$step"
+      a=$(statusline_in "$FOUR")
+      [ ! -s "$TEST_ROOT/err" ] || { cat "$TEST_ROOT/err"; false; }
+      b=$(statusline_in "$OLD")
+      [ ! -s "$TEST_ROOT/err" ] || { cat "$TEST_ROOT/err"; false; }
+      [ -n "$a" ] && [[ "$a" != *unavailable* ]] || { echo "$a"; false; }
+      same_shown "$a" "$b" || { echo "$n checks, $step"; false; }
+      # Once a command has rewritten the glance, the status line reads it: still the same.
+      (cd "$FOUR" && "$VBW" status > /dev/null)
+      a=$(statusline_in "$FOUR")
+      [ ! -s "$TEST_ROOT/err" ] || { cat "$TEST_ROOT/err"; false; }
+      same_shown "$a" "$b" || { echo "$n checks, $step, glance"; false; }
+    done
   done
 }
 
-@test "R150: the session-start hook says the same on a schema-4 record as on schema 3, with no error" {
-  twins_at_schema_4_and_3
-  local a b
-  a=$(session_in "$FOUR")
-  [ ! -s "$TEST_ROOT/err" ] || { cat "$TEST_ROOT/err"; false; }
-  b=$(session_in "$THREE")
-  [[ "$a" == *"VBW project"* ]] || { echo "$a"; false; }
-  [[ "$a" != *"newer VBW"* && "$a" != *corrupt* ]] || { echo "$a"; false; }
-  same_shown "$a" "$b"
+@test "R150: the session-start hook says the same on a format-4 record as on an older one, with no error" {
+  local n a b
+  for n in 0 60; do
+    twins "$n"
+    a=$(session_in "$FOUR")
+    [ ! -s "$TEST_ROOT/err" ] || { cat "$TEST_ROOT/err"; false; }
+    b=$(session_in "$OLD")
+    [[ "$a" == *"VBW project"* ]] || { echo "$a"; false; }
+    [[ "$a" != *"newer VBW"* && "$a" != *corrupt* ]] || { echo "$a"; false; }
+    same_shown "$a" "$b" || { echo "$n checks"; false; }
+  done
 }
 
-@test "R150: the panel shows the same on a schema-4 record as on schema 3" {
+@test "R150: the panel shows the same on a format-4 record with 0 and 60 checks as on an older one" {
   command -v node > /dev/null 2>&1 || skip "node is not installed"
   run node --test "$REPO_ROOT/tests/panel/schema4.test.mjs"
   [ "$status" -eq 0 ] || { echo "$output" | tail -40; false; }
