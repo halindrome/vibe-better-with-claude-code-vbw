@@ -20908,7 +20908,9 @@
     {
       "id": "T12",
       "text": "Idea (owner, 2026-10-03): coordination between VBW sessions on one repo. (1) Planning awareness: a session's planning sees other sessions' open runs and their files (from the record) and plans around them. (2) Optional notices via Claude Code's peer-session messaging (ListAgents/SendMessage, seen working on this machine): when a run ends or a milestone ships, tell the other sessions on the same repo; degrade silently where unavailable",
-      "status": "open"
+      "status": "open",
+      "sort": "later",
+      "size": "large"
     },
     {
       "id": "T13",
