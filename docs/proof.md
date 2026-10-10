@@ -219,6 +219,36 @@ what was approved:
 A change to the structure (a new check, a changed `run`, a plan's files) is not
 waiting: the contract needs approval first, as before.
 
+### A regression test added by a QA fix
+
+When QA finds a problem, the fix can add a test that would have caught it. The
+Dev writes the test file, then registers it:
+
+```
+echo '{"run": ["sh", "tests/pay-zero.sh"], "files": ["tests/pay-zero.sh"]}' | vbw fix check F3
+```
+
+The document takes the same fields as a check in `vbw apply` (`run` and `files`
+are required). The new check belongs to the finding's requirement, and
+`vbw show req R1` names the fix it came from. Only a fix that QA opened can do
+this; a fix for a failed proof is fixed in the code its check already tests.
+
+The test is new, so nothing runs it until you approve it. The fix closes with
+the checks already approved. When the fix is done, `vbw next` returns `approve`
+once, naming every new or changed check file of the fix (`detail.files`):
+
+```
+approval question: Approve contract 4cfe6f0859c9?
+approval options: Approve, Not yet
+```
+
+- **Approve** lets `vbw prove` run the new test with the others.
+- **Not yet** approves nothing. `vbw prove` runs none of the waiting files,
+  names them and says to approve; the fix stays open until you do.
+
+The approval is by content: if the test changes again, it waits for a new
+approval. See docs/guards.md for what the fix run may write.
+
 ### An approval whose commit fails
 
 `vbw approve` commits the approval record. When that commit fails (a project
