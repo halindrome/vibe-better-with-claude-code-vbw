@@ -125,7 +125,10 @@ if type != "object" then ["record must be a JSON object"] else
     id_rules(arr("decisions"); "^D[0-9]+$"),
 
     ( $reqs[]
-      | field_rule(["id","text","proof","status","milestone","rules"]),
+      | field_rule(["id","text","proof","status","milestone","rules","skipped","later"]),
+        ( select((has("skipped") and .skipped != true) or (has("later") and .later != true)) | "\(.id) skipped and later can only be true" ),
+        ( select((has("skipped") or has("later")) and .proof != "human") | "\(.id) is auto-proved and cannot be skipped" ),
+        ( select(has("later") and (has("skipped") | not)) | "\(.id) moves to the next milestone only when skipped" ),
         ( select(has("rules") and (.rules | type) != "array") | "\(.id) rules must be an array" ),
         ( select(has("rules") and .proof == "human") | "\(.id) is human-proved and cannot carry rules" ),
         ( . as $q | select(.rules | type == "array") | .rules[]
