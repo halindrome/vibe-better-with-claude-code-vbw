@@ -22304,6 +22304,11 @@
       "text": "Speed limits relaxed: a hook fails only above 20 ms per call, the status line only above 60 ms; a machine too busy to measure is reported, never a failure; timed speed checks run once per release (CI and before a push), not in every proof; vbw prove's time limit never stops a project's test command just because the machine is busy",
       "why": "owner, 2026-10-10: failed proofs caused by other sessions' load cost far more time than millisecond differences nobody can notice (16 ms is not noticeable); kept: a limit that still catches a cost that grows with the record (16.9 ms on a 2 MB record)",
       "at": "2026-10-10T13:56:25Z"
+    },
+    {
+      "id": "D246",
+      "at": "2026-10-10T14:42:18Z",
+      "text": "Contract approved: 142 requirements, 231 checks, 307 plans (1997c3b87899)"
     }
   ],
   "commands": {
