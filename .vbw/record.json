@@ -21035,7 +21035,7 @@
     {
       "id": "T39",
       "text": "On Linux distributions with jq 1.6 (Debian 12) the guard costs about 1.8x the shell and jq startup, over the hook budget; CI and macOS use jq 1.7. Measure, then decide whether to speed the guard up or state a jq 1.7 minimum (doctor)",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T40",
