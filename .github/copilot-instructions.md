@@ -24,8 +24,10 @@
 - Skills and agents are LLM-consumed: small wording changes change behavior.
 
 ## Validation
-- `bash tools/test.sh`: the hook latency benchmark, then every bats suite. Run
-  it directly (never through `| tail` or `| tee`). It needs `jq`, `bats` and
+- `bash tools/test.sh`: shellcheck, then every bats suite except the timed
+  speed checks (what `vbw prove` runs). `bash tools/test.sh --release` is the
+  run before a push: it adds the hook and panel benchmarks and
+  `tests/timed-*.bats`. Run them directly (never through `| tail` or `| tee`). It needs `jq`, `bats` and
   `shellcheck`.
 - CI runs the suite on macOS `/bin/bash` 3.2 and Linux bash 5, plus plugin
   manifest validation (`.github/workflows/ci.yml`).

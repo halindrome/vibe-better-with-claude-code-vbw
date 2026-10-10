@@ -34,11 +34,14 @@ There is no setup script, no cache link and no command mirror. `--plugin-dir` lo
 ## Tests
 
 ```bash
-bash tools/test.sh                   # shellcheck on tools + the full bats suite
+bash tools/test.sh                   # shellcheck on tools + the bats suite, without the timed speed checks
+bash tools/test.sh --release         # the run before a push: adds the benchmarks and tests/timed-*.bats
 PATH="/bin:$PATH" bash tools/test.sh # the same under macOS /bin/bash 3.2
 bash tools/test.sh --shard 2/4       # share 2 of 4, the way CI's macOS jobs run it
 bash tools/test.sh --shard 2/4 --list # show that share without running it
 ```
+
+Run `PATH="/bin:$PATH" bash tools/test.sh --release` before a push. It adds the hook, status line and panel benchmarks and the timed test files, which run alone after the rest; `vbw prove` and plain `bash tools/test.sh` skip them, so a busy machine never fails a proof.
 
 A new test file needs no list edit: shares are worked out from `tests/*.bats` on every run.
 
