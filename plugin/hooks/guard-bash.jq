@@ -111,14 +111,15 @@ def destructive:
 def reader: test("^(cat|jq|head|tail|less|more|grep|egrep|rg|wc|git|ls|stat|diff|cmp|shasum|sha256sum|file|test|sort|awk|gawk|nawk|cut|nl|column|paste|\\[\\[?)$");
 def copier: test("^(cp|rsync|install|ln)$");
 
-# The command writes the plan of record: a redirect to it, a copier whose
-# destination (last operand) is it, or a program that names it and is not
-# known to only read (sort -o and awk -i inplace write the file they read).
-def record_written:
-  (.out | any(.[]; record_path))
-  or (any(.args[]; record_path) and
+# The command writes a file the path rule names (record_path, glance_path): a
+# redirect to it, a copier whose destination (last operand) is it, or a program
+# that names it and is not known to only read (sort -o and awk -i inplace write
+# the file they read).
+def written(rule):
+  (.out | any(.[]; rule))
+  or (any(.args[]; rule) and
       (if .cmd | copier then
-         ([.args[] | select(startswith("-") | not)] | (last // "") | record_path)
+         ([.args[] | select(startswith("-") | not)] | (last // "") | rule)
          or any(.args[]; test("^(-t|--target-directory.*|--remove-source-files)$"))
        elif .cmd | reader then
          (.cmd == "sort" and any(.args[]; test("^(-[A-Za-z]*o|--output.*)$")))
@@ -137,7 +138,7 @@ def everywhere:
 def in_project:
   destructive,
   ( select(.cmd | test("^(ls|stat|test|\\[\\[?)$") | not) | [paths | select(secret_path)][0] // empty | secret_reason ),
-  ( select(record_written) | record_reason );
+  ( select(written(record_path)) | record_reason );
 
 # --- programs that write files (R76) -----------------------------------------
 
@@ -170,6 +171,7 @@ def program_denial($g):
 # builders share one working tree, so nothing may move HEAD or other builders'
 # changes; files are restored and redirects written only within the run's files.
 def in_run($g):
+  ( select(written(glance_path)) | glance_reason ),
   ( select(.cmd == "git") | git_words as $w | ($w[0] // "") as $s | $w[1:] as $a
     | ( select($s | test("^(commit|push|rebase|merge|pull|cherry-pick|revert|am)$"))
         | "git \($s) by a builder: commits go through vbw commit PLAN \"type(scope): description\"" ),

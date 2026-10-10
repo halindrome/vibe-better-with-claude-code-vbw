@@ -1,74 +1,34 @@
 # Shared by the PreToolUse guards (docs/guards.md). Each guard runs as jq
-# itself (build plan K20), with --stream and --arg root "$CLAUDE_PROJECT_DIR".
-# Its inputs, in order: the hook input (stdin); $CLAUDE_PROJECT_DIR/.vbw/record.json,
-# which jq skips when it does not exist; hooks/end.json, the sentinel
-# "vbw-guard-end". So after the hook input, the next input is the record (a VBW
-# project), the sentinel (not one), or a parse error (a corrupt record: still a
-# VBW project).
+# itself (build plan K20), with --arg root "$CLAUDE_PROJECT_DIR" and
+# --rawfile glance F. Its inputs, in order: the hook input (stdin);
+# $CLAUDE_PROJECT_DIR/.vbw/record.json, which jq skips when it does not exist;
+# hooks/end.json, the sentinel "vbw-guard-end". So after the hook input, the
+# next input is the record (a VBW project), the sentinel (not one), or a parse
+# error (a corrupt record: still a VBW project).
 #
-# --stream hands the inputs over as events, so a guard reads the hook input in
-# full and only the beginning of the record (R149, R150). Every record this VBW
-# writes (format 4) begins schema, lease, protected: the protected check files,
-# one short list of every file an approved check protects. The guard reads those
-# three and stops at the event that closes the list, whatever the record's size;
-# it never reads a check. A record an older VBW wrote (schema below 4, no list,
-# until its next write) is read on, skipping every other key without building
-# it, until the lease and a schema below 4 are known, or the file ends. There is
-# one way to read it, with no size threshold.
+# The guard has two sources for the schema, lease and protected check files
+# (R150). The glance (.vbw/runtime/glance.json, decision D238) is a small file
+# the kernel rewrites with every record write; the hook command passes it as
+# $glance only when the record exists and the glance is a readable regular file
+# strictly newer than the record, else $glance is empty. When $glance parses to
+# an object holding schema, lease and protected, the guard uses it and never
+# reads the record input. Otherwise it reads the record with one plain input,
+# whatever its size: the glance was missing, stale, forged older or damaged.
+# Both give the same answers.
 #
 # Membership tests are anchored regexes, not array literals: they compile to far
 # fewer jq instructions, and compiling is most of a guard's cost.
 
-# The events of the hook input, up to the one that closes its top-level value.
-def hook_events: [label $l | inputs | ., (select((.[0] | length) == 0 or (length == 1 and (.[0] | length) == 1)) | break $l)];
+# The glance as an object when it holds schema, lease and protected, else null.
+def glance_object:
+  (try fromjson catch null) | select(type == "object" and has("schema") and has("lease") and has("protected"));
 
-# What follows the events of one top-level key: [values, next], next being the
-# event after them (null at the end of the input). A generator of values and the
-# event that ends them, as {next: EVENT}, becomes that pair.
-def split_next: if (last | type) == "object" and (last | has("next")) then [.[:-1], last.next] else [., null] end;
-
-# The lease: the leaf events of the top-level key "lease" (the first is $head).
-def lease_events($head):
-  [$head, (label $l | inputs | if .[0][0] == "lease" then select(length == 2) else ({next: .}, break $l) end)] | split_next;
-
-# The protected check files: the events of the list under the top-level key
-# "protected" ($head is the first; an empty list is that one event). It stops at
-# the event that closes the list and never pulls the one after it, which belongs
-# to the checks.
-def protected_events($head):
-  if ($head[0] | length) == 1 then [$head]
-  else [$head, (label $l | inputs | ., (select(length == 1 and (.[0] | length) == 2) | break $l))] end;
-
-# The events after the key $k, up to the one that follows them (null at the end).
-def skip_key($k): first((inputs | select((.[0] | length) == 0 or .[0][0] != $k)), null);
-
-# The schema, lease and protected list of the record, from the events after the
-# hook input. The lease is rebuilt from its leaf events at once (cheaper than
-# setting each path as it arrives); any other key is skipped. Reading ends when
-# the lease is known and so is the protected list, or the schema says an older
-# VBW wrote the record (no list).
-def record_read($rec): ($rec | has("lease")) and (($rec | has("protected")) or ((($rec.schema // 4) | type) == "number" and ($rec.schema // 4) < 4));
-
-def read_events($e; $rec):
-  if $e == null or ($e[0] | length) == 0 or record_read($rec) then $rec
-  elif $e[0][0] == "schema" then
-    read_events(skip_key("schema"); $rec + (if ($e | length) == 2 then {schema: $e[1]} else {} end))
-  elif $e[0][0] == "lease" then
-    lease_events($e) as [$evs, $next]
-    | read_events($next; $rec + {lease: ([fromstream($evs[], [["lease"]])][0].lease)})
-  elif $e[0][0] == "protected" then
-    protected_events($e) as $evs
-    | read_events(if $rec | has("lease") then null else first(inputs, null) end;
-        $rec + {protected: ([fromstream($evs[], [["protected"]])][0].protected // [])})
-  else read_events(skip_key($e[0][0]); $rec) end;
-
+# {project, record}: from the current glance, else from the record input.
 def read_record:
-  (try input catch null) as $first
-  | if $first == null then {project: true, record: {}}
-    elif ($first[0] | length) == 0 then {project: ($first[1] != "vbw-guard-end"), record: {}}
-    else
-      try {project: true, record: read_events($first; {})}
-      catch {project: true, record: {}}
+  ([$glance | glance_object][0]) as $gl
+  | if $gl != null then {project: true, record: $gl}
+    else (try input catch {}) as $rec
+      | {project: ($rec != "vbw-guard-end"), record: (if $rec | type == "object" then $rec else {} end)}
     end;
 
 # {hook, project, record, lease, foreign}: foreign is the open run lease (under
@@ -76,9 +36,9 @@ def read_record:
 # session, main conversation or agent alike (D11), else null. lease is the active run lease when this call
 # comes from a subagent (the hook input names an agent_type) during a run of
 # at most 24 hours (docs/workflows.md), else null. The main session is never
-# held to a lease. WRITES (the guards pass whether the call may write a file) no longer changes what is read: the record's beginning is always the same three keys.
+# held to a lease.
 def guard_context(writes):
-  (hook_events | fromstream(.[])) as $hook
+  input as $hook
   | read_record as $r
   | ($r.record) as $record
   | (($record.lease | select(type == "object" and (try (now - (.started_at | fromdateiso8601) < 86400) catch false))) // null) as $live
@@ -91,6 +51,8 @@ def secret_path: basename
   | (test("^\\.env(\\..+)?$") and (test("^\\.env\\.(example|sample|template|dist|defaults)$") | not))
     or test("\\.(pem|key|p12|pfx|kdbx|keystore|jks)$|^id_(rsa|dsa|ecdsa|ed25519)$|^\\.(netrc|pgpass|npmrc|pypirc)$|^credentials(\\.json)?$");
 def record_path: test("(^|/)\\.vbw/record\\.json$");
+def glance_reason: ".vbw/runtime/glance.json is written only by vbw (vbw help lists the commands)";
+def glance_path: test("(^|/)\\.vbw/runtime/glance\\.json$");
 def consent_path: test("(^|/)vbw/consent\\.json$");
 
 # PATH (relative to $cwd unless absolute) as a project-relative path, or null
@@ -113,6 +75,7 @@ def test_path: test("(^|/)(tests?|spec|__tests__)/") or (basename | test("\\.tes
 # Why a subagent may not write PATH (project-relative) under LEASE, or empty.
 def lease_write_denial($lease; $record):
   if . == null then empty
+  elif glance_path then glance_reason
   elif $lease.files == [] then
     "\(.) cannot be written during a \($lease.kind) run: its agents only read"
   elif $lease.kind == "plan" and test_path then empty
