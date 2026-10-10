@@ -19,31 +19,50 @@
 # The events of the hook input, up to the one that closes its top-level value.
 def hook_events: [label $l | inputs | ., (select((.[0] | length) == 0 or (length == 1 and (.[0] | length) == 1)) | break $l)];
 
-# The lease and checks of the record, from the events after the hook input.
+# What follows the events of one top-level key: [values, next], next being the
+# event after them (null at the end of the input). A generator of values and the
+# event that ends them, as {next: EVENT}, becomes that pair.
+def split_next: if (last | type) == "object" and (last | has("next")) then [.[:-1], last.next] else [., null] end;
+
+# The lease: the leaf events of the top-level key "lease" (the first is $head).
+def lease_events($head):
+  [$head, (label $l | inputs | if .[0][0] == "lease" then select(length == 2) else ({next: .}, break $l) end)] | split_next;
+
+# The checks: the paths of their files, all a guard reads (leaf events of
+# "checks" whose path has "files" third; closing events carry no value, so null
+# is dropped). The first event is $head.
+def check_files($head):
+  [($head | select(.[0][2] == "files") | .[1]), (label $l | inputs | if .[0][0] != "checks" then ({next: .}, break $l) elif .[0][2] == "files" then .[1] else empty end)]
+  | split_next | .[0] |= map(select(. != null));
+
+# The events after the key $k, up to the one that follows them (null at the end).
+def skip_key($k): first((inputs | select((.[0] | length) == 0 or .[0][0] != $k)), null);
+
+# The lease and checks of the record, from the events after the hook input. The
+# input is read key by key: the lease is rebuilt from its leaf events at once
+# (cheaper than setting each path as it arrives), the checks are reduced to one
+# entry holding every protected file, and any other key is skipped.
 # $agent: the call comes from a subagent; $writes: it may write a file. Only
 # then does a build or fix lease need the checks (protected check files).
+def read_events($e; $rec; $agent; $writes):
+  if $e == null or ($e[0] | length) == 0 then $rec
+  elif ($rec | has("lease"))
+       and ((($agent and $writes and ($rec.lease | type) == "object" and (($rec.lease.kind // "") | test("^(build|fix)$"))) | not)
+            or ($rec | has("checks"))) then $rec
+  elif $e[0][0] == "lease" then
+    lease_events($e) as [$evs, $next]
+    | read_events($next; $rec + {lease: ([fromstream($evs[], [["lease"]])][0].lease)}; $agent; $writes)
+  elif $e[0][0] == "checks" then
+    check_files($e) as [$files, $next]
+    | read_events($next; $rec + {checks: [{files: $files}]}; $agent; $writes)
+  else read_events(skip_key($e[0][0]); $rec; $agent; $writes) end;
+
 def read_record($agent; $writes):
   (try input catch null) as $first
   | if $first == null then {project: true, record: {}}
     elif ($first[0] | length) == 0 then {project: ($first[1] != "vbw-guard-end"), record: {}}
     else
-      try (last(label $stop
-        | foreach ($first, inputs) as $e ({rec: {}, done: {}, cur: null};
-            if ($e[0] | length) == 0 then .stop = true
-            elif ($e[0][0] | type) != "string" then .
-            else
-              $e[0][0] as $k
-              | (if .cur != null and .cur != $k then .done[.cur] = true else . end)
-              | .cur = $k
-              | (if ($k | test("^(lease|checks)$")) and ($e | length) == 2 then .rec |= setpath($e[0]; $e[1]) else . end)
-              | (if ($e[0] | length) == 1 then .done[$k] = true else . end)
-              | (if .done.lease
-                    and ((($agent and $writes and (.rec.lease | type) == "object" and ((.rec.lease.kind // "") | test("^(build|fix)$"))) | not)
-                         or .done.checks)
-                 then .stop = true else . end)
-            end;
-            ., (select(.stop) | break $stop)))
-        | {project: true, record: .rec})
+      try {project: true, record: read_events($first; {}; $agent; $writes)}
       catch {project: true, record: {}}
     end;
 
