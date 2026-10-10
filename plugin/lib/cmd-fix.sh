@@ -24,9 +24,9 @@ cmd_fix_files() {
 cmd_fix_checks() {
   local files=() f
   while IFS= read -r -d '' f; do files+=("$f"); done < <(cmd_fix_files "$1" "$2")
-  printf '%s' "$1" | jq -r --argjson files \
-    "$(printf '%s\n' ${files[@]+"${files[@]}"} | jq -R . | jq -sc 'map(select(length > 0))')" '
-    . as $r
+  printf '%s' "$1" | jq -r --slurpfile files \
+    <(printf '%s\n' ${files[@]+"${files[@]}"} | jq -R . | jq -sc 'map(select(length > 0))') '
+    $files[0] as $files | . as $r
     | [.requirements[] | .id as $q | [$r.plans[] | select(any(.reqs[]; . == $q))] as $ps
        | select(($ps | length) > 0 and all($ps[]; .status == "done")
                 and any($ps[].files[]; . as $x | any($files[]; . == $x))) | $q] as $reqs
@@ -106,11 +106,10 @@ cmd_fix() {
   fi
 
   # Each fix ends as it would alone; a failing check fails only the fixes it serves.
-  local closed=() mine failed human fixed='[]' humans='[]'
+  local closed=() failed human fixed='[]' humans='[]'
   for id in ${ids[@]+"${ids[@]}"}; do
-    mine=$(cmd_fix_checks "$record" "$id" | jq -R . | jq -sc 'map(select(length > 0))')
-    failed=$(printf '%s' "$results" | jq -r --argjson mine "$mine" \
-      '[to_entries[] | select(.value.status != "pass" and (.key as $k | $mine | index($k))) | "\(.key) \(.value.status)"] | join(", ")')
+    failed=$(printf '%s' "$results" | jq -r --slurpfile mine <(cmd_fix_checks "$record" "$id" | jq -R . | jq -sc 'map(select(length > 0))') \
+      '$mine[0] as $mine | [to_entries[] | select(.value.status != "pass" and (.key as $k | $mine | index($k))) | "\(.key) \(.value.status)"] | join(", ")')
     if [ -n "$failed" ]; then
       printf 'vbw: %s broke finished work: these checks of requirements its files serve do not pass: %s\n' "$id" "$failed" >&2
       bad=1

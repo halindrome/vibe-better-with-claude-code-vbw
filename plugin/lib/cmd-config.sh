@@ -49,14 +49,14 @@ config_rigor() {
       | select(.id as $i | [$r.plans[] | select(.phase == $i and .status != "planned")] | length == 0) | .id')
     if [ ${#ids[@]} -gt 0 ]; then
       tiers=$(record_read | jq 'del(.phases[].tier)' | rigor_assess "${ids[@]}")
-      record_update "$VBW_JQ_DEFS"'(.phases[] | select(.id as $i | $t | any(.[]; .id == $i))) |= (. as $ph
+      record_update "$VBW_JQ_DEFS"'$tiers[0] as $t | (.phases[] | select(.id as $i | $t | any(.[]; .id == $i))) |= (. as $ph
         | ([$t[] | select(.id == $ph.id)][0]) as $a
         | if $m == "auto" then
             (if .proposed != null and (.proposed | tier_rank) > ($a.floor | tier_rank)
              then .tier = .proposed | .predicted = .proposed | .reasons = $a.reasons + ["raised by the Architect"]
              else .tier = $a.tier | .predicted = $a.tier | .reasons = $a.reasons end)
           else .tier = $m | .predicted = $m | .reasons = $a.reasons + ["forced: vbw config rigor \($m)"] end)' \
-        --argjson t "$tiers" --arg m "$mode"
+        --slurpfile tiers <(printf '%s' "$tiers") --arg m "$mode"
     fi
   fi
   printf 'rigor = %s\n' "$mode"

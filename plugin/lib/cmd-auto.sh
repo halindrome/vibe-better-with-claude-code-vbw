@@ -43,8 +43,10 @@ cmd_auto() {
 auto_write() {
   local tmp
   tmp=$(mktemp "$VBW_RUNTIME/auto.XXXXXX") || vbw_die "cannot write $VBW_RUNTIME"
+  vbw_guard_add file "$tmp"
   printf '%s\n' "$2" > "$tmp"
   mv "$tmp" "$1"
+  vbw_guard_drop "$tmp"
 }
 
 # Prints a Stop hook decision, or nothing (the stop proceeds).
