@@ -110,7 +110,7 @@ def fix_files($r): if .command then ["*"]
     result("fix"; false; "Run the fix workflow for \($open_fixes | join(", "))"; {fixes: $open_fixes, groups: $fix_groups})
   elif ($waiting | length) > 0 and ($unproven | length) > 0 then
     ([$waiting | split("\n")[] | select(length > 0)] | sort) as $wf
-    | result("approve"; true; "Approve the test files edited since the approval, once, before they are proved: \($wf | join(", "))"; {files: $wf})
+    | result("approve"; true; "Approve the test files new or edited since the approval (a fix may add or change them), once, before they are proved: \($wf | join(", "))"; {files: $wf})
   elif ($unproven | length) > 0 then
     result("prove"; false; "Run vbw prove for \($unproven | join(", "))"; {requirements: $unproven})
   elif (.evidence.full == false) and (($to_verify | length) > 0 or ($to_accept | length) == 0) then
