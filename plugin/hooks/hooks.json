@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -nc --stream --arg root \"${CLAUDE_PROJECT_DIR:-$PWD}\" -f \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-bash.jq\" - \"${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/record.json\" \"${CLAUDE_PLUGIN_ROOT}/hooks/end.json\" 2>/dev/null || true"
+            "command": "r=\"${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/record.json\"; g=/dev/null; d=\"${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/runtime/glance.json\"; [ -f \"$r\" ] && [ -f \"$d\" ] && [ -r \"$d\" ] && [ \"$d\" -nt \"$r\" ] && g=\"$d\"; jq -nc --rawfile glance \"$g\" --arg root \"${CLAUDE_PROJECT_DIR:-$PWD}\" -f \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-bash.jq\" - \"$r\" \"${CLAUDE_PLUGIN_ROOT}/hooks/end.json\" 2>/dev/null || true"
           }
         ]
       },
@@ -35,7 +35,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -nc --stream --arg root \"${CLAUDE_PROJECT_DIR:-$PWD}\" -f \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-file.jq\" - \"${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/record.json\" \"${CLAUDE_PLUGIN_ROOT}/hooks/end.json\" 2>/dev/null || true"
+            "command": "r=\"${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/record.json\"; g=/dev/null; d=\"${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/runtime/glance.json\"; [ -f \"$r\" ] && [ -f \"$d\" ] && [ -r \"$d\" ] && [ \"$d\" -nt \"$r\" ] && g=\"$d\"; jq -nc --rawfile glance \"$g\" --arg root \"${CLAUDE_PROJECT_DIR:-$PWD}\" -f \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-file.jq\" - \"$r\" \"${CLAUDE_PLUGIN_ROOT}/hooks/end.json\" 2>/dev/null || true"
           }
         ]
       }
