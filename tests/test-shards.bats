@@ -31,7 +31,7 @@ shard_files() {
 }
 
 # fake_repo: a scratch repository holding a copy of tools/test.sh, stand-in
-# benchmark scripts, a few test files (the four timed ones among them) and a
+# benchmark scripts, a few test files (the five timed ones among them) and a
 # bin folder of stand-in tools that log every call to $LOG.
 fake_repo() {
   FAKE="$TEST_ROOT/fake repo"
@@ -43,7 +43,7 @@ fake_repo() {
   printf '#!/usr/bin/env bash\necho bench-hooks >> "$LOG"\n' > "$FAKE/tools/bench-hooks.sh"
   printf '#!/usr/bin/env bash\necho bench-panel >> "$LOG"\n' > "$FAKE/tools/bench-panel.sh"
   local f t
-  for f in a b c d e prove-parallel guard-cost bench-hooks proof-stale-links z; do
+  for f in a b c d e prove-parallel guard-cost bench-hooks big-record-hooks proof-stale-links z; do
     printf '#!/usr/bin/env bats\n@test "%s" { true; }\n' "$f" > "$FAKE/tests/$f.bats"
   done
   for t in bats shellcheck parallel node; do
@@ -207,7 +207,7 @@ fake_run() {
       code=0
       (cd "$FAKE" && PATH="$STUBS:$PATH" bash tools/test.sh --shard "$k/2" < /dev/null) > /dev/null 2>&1 || code=$?
       # A shard with no timed file never runs the failing timed call.
-      if [ "$which" = timed ] && ! shard_files "$FAKE" "$k" 2 | grep -qE 'prove-parallel|guard-cost|bench-hooks|proof-stale-links'; then
+      if [ "$which" = timed ] && ! shard_files "$FAKE" "$k" 2 | grep -qE 'prove-parallel|guard-cost|bench-hooks|big-record-hooks|proof-stale-links'; then
         continue
       fi
       [ "$code" -ne 0 ] || {
@@ -230,7 +230,7 @@ fake_run() {
   [ "$(printf '%s\n' "$lines" | sed -n '2,$p')" = "bench-hooks
 bench-panel
 bats --print-output-on-failure --jobs 4 tests/a.bats tests/b.bats tests/c.bats tests/d.bats tests/e.bats tests/z.bats
-bats --print-output-on-failure tests/prove-parallel.bats tests/guard-cost.bats tests/bench-hooks.bats tests/proof-stale-links.bats" ] || {
+bats --print-output-on-failure tests/prove-parallel.bats tests/guard-cost.bats tests/bench-hooks.bats tests/big-record-hooks.bats tests/proof-stale-links.bats" ] || {
     echo "$lines"
     false
   }
