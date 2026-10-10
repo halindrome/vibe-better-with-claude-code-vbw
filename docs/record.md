@@ -13,6 +13,20 @@ carries `VBW-Plan:`/`VBW-Req:` trailers, so the record stays small.
 - **Validated on every read and write:** `plugin/lib/record.jq` is the
   definition. A record that fails validation is reported as corrupt with the
   first violation; the kernel never "repairs" it silently.
+- **A record of any size is supported:** VBW never puts the record, or
+  anything built from all of it, on a command line. The operating system caps
+  command-line size (macOS 1 MB for all arguments together, Linux 128 KB for
+  one), and a long-lived project's record can pass that. VBW hands record data
+  to `jq` through files and pipes, so every `vbw` command keeps working however
+  large the record grows.
+- **Key order:** the writer puts `schema`, `lease` and `checks` first, so the
+  guards (docs/guards.md) can read just the start of the record. A record with
+  another key order, written by an older VBW, still works; it is only slower
+  to guard.
+- **The glance:** `.vbw/runtime/glance.json` is the record cut down to what the
+  status line shows. Every `vbw` command that writes the record refreshes it,
+  and any `vbw` command rewrites it when it is missing or older than the
+  record. It is never a source of truth, and it is safe to delete.
 - **Stable ids:** ids are assigned once and never reused or renumbered.
 - **Versioned:** `schema` is an integer. A newer kernel migrates older records
   forward in one tested step; an older kernel refuses a newer record (see

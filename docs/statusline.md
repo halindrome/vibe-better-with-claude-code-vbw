@@ -66,6 +66,10 @@ so updating from VBW 1 switches the status line over with no change.
   phase QA checks again with its reasons, and the phases that keep their pass
   (docs/next.md). The status line reads only its `action` and `gate`, so it does not
   show the reasons; `vbw show qa` does.
+- It reads `.vbw/runtime/glance.json` when that is newer than the record, and
+  the record otherwise (docs/record.md). The glance holds only what the status
+  line shows, so the 30 ms limit holds on a record over 2 MB. Any `vbw` command
+  refreshes a missing or stale glance.
 - No network, no temporary files, no git process (the branch is read from
   `.git/HEAD`, also in linked worktrees).
 - It reads stdin with a timeout (Claude Code may send nothing on the first

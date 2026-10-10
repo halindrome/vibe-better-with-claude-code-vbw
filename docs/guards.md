@@ -39,6 +39,13 @@ a subagent never counts. The guard above still refuses the model's own
 `vbw approve`, so the answer hook is the only route besides the user typing
 `/vbw:approve`.
 
+**Cost does not grow with history.** A guard reads the whole hook input but only
+the beginning of the record: its `lease` and, when a build or fix lease needs
+them, its `checks`. The writer keeps those first (docs/record.md), so a guard
+stops at the first other key and costs the same on a record of 10 KB or 10 MB.
+A record whose keys are in another order (written by an older VBW) gives the
+same answer, only slower.
+
 **In VBW projects** (the session's project directory, `$CLAUDE_PROJECT_DIR`,
 holds `.vbw/record.json`; a corrupt record still counts):
 
