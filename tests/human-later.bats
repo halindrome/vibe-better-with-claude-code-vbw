@@ -35,7 +35,9 @@ next_json() { "$VBW" next --json < /dev/null; }
 
 # r2: the requirement R2 as the record keeps it, without its milestone and status.
 r2() { jq -cS '.requirements[] | select(.id == "R2") | del(.milestone, .status, .skipped, .later)' .vbw/record.json; }
-history() { jq -cS '{fixes: [.fixes[] | select(.req == "R2")], decisions: [.decisions[] | select(.text | contains("R2"))], checks}' .vbw/record.json; }
+# history: R2's fixes, decisions and the checks. The ship's own decision names
+# R2 as moved (the test above requires it), so it is not part of R2's history.
+history() { jq -cS '{fixes: [.fixes[] | select(.req == "R2")], decisions: [.decisions[] | select((.text | contains("R2")) and (.text | startswith("Shipped ") | not))], checks}' .vbw/record.json; }
 
 @test "R161: the verify and vibe skills keep the three answers, and Skip for now is recorded with vbw req skip" {
   local f
