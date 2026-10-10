@@ -634,7 +634,8 @@ The time is when that check passed. A check is skipped only when all of these ho
 
 A check with no `files`, or with a served path that is not committed, always
 runs and is never recorded. A check that fails loses its recorded pass.
-`vbw prove` does not use this cache; it has its own reuse, described in
+`vbw prove` does not use this cache: it still runs every check, except for
+the reuse described in
 [Reusing results in `vbw prove`](#reusing-results-in-vbw-prove).
 
 An escalated fix is a human gate (`vbw next`).
