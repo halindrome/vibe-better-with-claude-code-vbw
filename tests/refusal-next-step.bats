@@ -1,0 +1,196 @@
+#!/usr/bin/env bats
+# R162 (docs/workflows.md, docs/guards.md): every refusal VBW gives while a plan
+# changes says what to do instead. Each refusal of vbw apply (full apply, --add,
+# --patch), of vbw run start, and each block of the file guard and the Bash
+# guard ends with its next step, written "Next: " and then a command to run or a
+# change to make. This file lists every refusal path and fails when one has no
+# next step; a new refusal path gets its line here. L1.
+
+load helper
+load replan-helper
+
+setup() {
+  vbw_setup
+  replan_project
+  printf 'true\n' > tests/c1.sh
+  printf 'true\n' > tests/c2.sh
+  printf 'true\n' > tests/c3.sh
+  # P2.1 may write tests/, so only the protection of a check file stops a write
+  # there; P2.2 shares src/c.txt with P2.1.
+  replan_accepted full "$(replan_doc '(.plans[] | select(.id == "P2.1")).files = ["src/c.txt", "tests/"]
+    | .plans += [{id: "P2.2", phase: "P2", title: "Receipt mail", reqs: ["R2"], files: ["src/c.txt"], after: [], tasks: ["mail"]}]
+    | .checks = [{id: "C1", req: "R1", run: ["sh", "tests/c1.sh"], files: ["tests/c1.sh"]},
+      {id: "C2", req: "R2", run: ["sh", "tests/c2.sh"], files: ["tests/c2.sh"]}]
+    | .rules = [{req: "R1", text: "paying works", check: "C1"}, {req: "R2", text: "a receipt is shown", check: "C2"}]')"
+  FULL=$(jq -c '.milestone.id as $m | {phases: [.phases[] | select(.milestone == $m) | {id, title, reqs, goal, criteria, tier}],
+      plans: [.plans[] | {id, phase, title, reqs, files, after, tasks}], checks: .checks,
+      rules: [.requirements[] | .id as $q | (.rules // [])[] | {req: $q, text, check}]}' .vbw/record.json)
+  ADD='{"phases": [{"id": "P3", "title": "Refund", "reqs": ["R3"], "goal": "Customers get refunds", "criteria": ["a refund is paid"], "tier": "standard"}],
+    "plans": [{"id": "P3.1", "phase": "P3", "title": "Refund", "reqs": ["R3"], "files": ["src/r.txt"], "after": []}],
+    "checks": [{"id": "C3", "req": "R3", "run": ["sh", "tests/c3.sh"], "files": ["tests/c3.sh"]}],
+    "rules": [{"req": "R3", "text": "a refund is paid", "check": "C3"}]}'
+  git add -A
+  git commit -q -m "chore(test): planned"
+}
+
+teardown() { vbw_teardown; }
+
+# next_step WHAT MESSAGE: the message's last line holds "Next: " and a step.
+next_step() {
+  local last
+  last=$(printf '%s\n' "$2" | sed '/^[[:space:]]*$/d' | tail -n 1)
+  [[ "$last" == *"Next: "?* ]] || { printf '%s: no next step at the end of the refusal:\n%s\n' "$1" "$2"; return 1; }
+}
+
+# apply_refusal MODE WHAT DOC: vbw apply in MODE refuses DOC with a next step.
+apply_refusal() {
+  replan_refused "$1" "$3" || { echo "$2"; return 1; }
+  next_step "apply ($1): $2" "$output"
+}
+
+full_with() { printf '%s' "$FULL" | jq -c "$1"; }
+add_with() { printf '%s' "$ADD" | jq -c "$1"; }
+
+@test "R162: every refusal of a full apply ends with its next step" {
+  replan_start P1.1
+  apply_refusal full "not JSON" 'not json {'
+  apply_refusal full "not an object" '[]'
+  apply_refusal full "an unknown key" "$(full_with '.extra = []')"
+  apply_refusal full "phases not an array" "$(full_with '.phases = {}')"
+  apply_refusal full "an unknown phase field" "$(full_with '.phases[0].colour = "red"')"
+  apply_refusal full "an unknown plan field" "$(full_with '.plans[0].file = "x"')"
+  apply_refusal full "an invalid tier" "$(full_with '.phases[0].tier = "fast"')"
+  apply_refusal full "an unknown requirement" "$(full_with '(.plans[] | select(.id == "P2.1")).reqs = ["R9"]')"
+  apply_refusal full "a plan for no phase" "$(full_with '.plans += [{id: "P9.1", phase: "P9", title: "x", reqs: ["R2"], files: ["src/x.txt"], after: []}]')"
+  apply_refusal full "a changed started plan" "$(full_with '(.plans[] | select(.id == "P1.1")).files += ["src/extra.txt"]')"
+  apply_refusal full "a dropped started plan" "$(full_with '.plans |= map(select(.id != "P1.1")) | (.plans[] | select(.id == "P1.2")).after = []')"
+  apply_refusal full "a renamed started phase" "$(full_with '(.phases[] | select(.id == "P1")).title = "Checkout"')"
+  apply_refusal full "a started phase's requirements" "$(full_with '(.phases[] | select(.id == "P1")).reqs = ["R1", "R3"]')"
+  apply_refusal full "a started phase's goal" "$(full_with '(.phases[] | select(.id == "P1")).goal = "Customers pay twice"')"
+  apply_refusal full "a missing rule" "$(full_with '.phases += [{id: "P3", title: "Refund", reqs: ["R3"], goal: "g", criteria: ["c"], tier: "standard"}]
+    | .plans += [{id: "P3.1", phase: "P3", title: "Refund", reqs: ["R3"], files: ["src/r.txt"], after: []}]
+    | .checks += [{id: "C3", req: "R3", run: ["sh", "tests/c3.sh"], files: ["tests/c3.sh"]}]')"
+  apply_refusal full "a rule naming no check of its requirement" "$(full_with '.rules += [{req: "R2", text: "x", check: "C1"}]')"
+  apply_refusal full "a tier below its floor" "$(full_with '(.plans[] | select(.id == "P2.2")).files = ["src/payments/charge.js"]')"
+  apply_refusal full "an express phase with two plans" "$(full_with '(.phases[] | select(.id == "P2")).tier = "express"')"
+  replan_edit '(.requirements[] | select(.id == "R3")).milestone = "M0"'
+  apply_refusal full "a requirement of another milestone" "$(full_with '.phases += [{id: "P3", title: "Refund", reqs: ["R3"], goal: "g", criteria: ["c"], tier: "standard"}]
+    | .plans += [{id: "P3.1", phase: "P3", title: "Refund", reqs: ["R3"], files: ["src/r.txt"], after: []}]')"
+  replan_edit '(.requirements[] | select(.id == "R3")).milestone = "M1"'
+  "$VBW" run start build P2.1 > /dev/null
+  apply_refusal full "an open run" "$FULL"
+}
+
+@test "R162: every refusal of vbw apply --add ends with its next step" {
+  apply_refusal add "not JSON" 'not json {'
+  apply_refusal add "no phases" '{"plans": []}'
+  apply_refusal add "an unknown phase field" "$(add_with '.phases[0].colour = "red"')"
+  apply_refusal add "an invalid tier" "$(add_with '.phases[0].tier = "fast"')"
+  apply_refusal add "a phase id in use" "$(add_with '.phases[0].id = "P2" | .plans[0].phase = "P2"')"
+  apply_refusal add "a plan for a phase it does not bring" "$(add_with '.plans[0].phase = "P2"')"
+  apply_refusal add "a plan id in use" "$(add_with '.plans[0].id = "P2.1"')"
+  apply_refusal add "a check id in use" "$(add_with '.checks[0].id = "C1" | .rules[0].check = "C1"')"
+  apply_refusal add "a check for a requirement it does not bring" "$(add_with '.checks += [{id: "C4", req: "R2", run: ["true"]}]')"
+  apply_refusal add "a missing rule" "$(add_with '.rules = []')"
+  apply_refusal add "a tier below its floor" "$(add_with '.plans[0].files = ["src/payments/refund.js"]')"
+  replan_edit '(.requirements[] | select(.id == "R3")).milestone = "M0"'
+  apply_refusal add "a requirement of another milestone" "$ADD"
+  replan_edit '(.requirements[] | select(.id == "R3")).milestone = "M1"'
+  "$VBW" run start build P2.1 > /dev/null
+  apply_refusal add "an open run" "$ADD"
+}
+
+@test "R162: every refusal of vbw apply --patch ends with its next step" {
+  replan_start P1.1
+  apply_refusal patch "not JSON" 'not json {'
+  apply_refusal patch "phases" '{"phases": []}'
+  apply_refusal patch "an unknown plan field" '{"plans": [{"id": "P2.2", "phase": "P2", "title": "Receipt mail", "reqs": ["R2"], "files": ["src/c.txt"], "after": [], "colour": "red"}]}'
+  apply_refusal patch "a changed started plan" '{"plans": [{"id": "P1.1", "phase": "P1", "title": "Pay form", "reqs": ["R1"], "files": ["src/a.txt", "src/z.txt"], "after": []}]}'
+  apply_refusal patch "a plan for no phase" '{"plans": [{"id": "P9.1", "phase": "P9", "title": "x", "reqs": ["R2"], "files": ["src/x.txt"], "after": []}]}'
+  apply_refusal patch "a rule naming no check" '{"rules": [{"req": "R1", "text": "a second rule", "check": "C9"}]}'
+  "$VBW" run start build P2.1 > /dev/null
+  apply_refusal patch "an open run" '{"plans": [{"id": "P2.2", "phase": "P2", "title": "Receipt mail", "reqs": ["R2"], "files": ["src/c.txt"], "after": []}]}'
+}
+
+# start_refusal WHAT SESSION ARGS...: vbw run start ARGS is refused with a next step.
+start_refusal() {
+  local what=$1 me=$2 out code=0
+  shift 2
+  out=$(VBW_SESSION_ID=$me "$VBW" run start "$@" < /dev/null 2>&1) || code=$?
+  [ "$code" -ne 0 ] || { echo "$what: vbw run start $* was accepted: $out"; return 1; }
+  next_step "run start: $what" "$out"
+}
+
+@test "R162: every refusal of vbw run start ends with its next step" {
+  replan_start P1.1
+  "$VBW" qa finding R1 "a payment of zero is accepted" > /dev/null
+  # shellcheck disable=SC1010 # "done" is a vbw subcommand
+  "$VBW" fix done F1 > /dev/null 2>&1 || true
+  replan_edit '(.fixes[] | select(.id == "F1")).status = "closed"'
+  start_refusal "an unknown plan" s1 build P9.9
+  start_refusal "a plan already done" s1 build P1.1
+  replan_edit '(.plans[] | select(.id == "P1.1")).status = "planned"'
+  start_refusal "a plan waiting for another" s1 build P1.2
+  start_refusal "two plans sharing a file" s1 build P2.1 P2.2
+  start_refusal "an unknown fix" s1 fix F9
+  start_refusal "a fix that is not open" s1 fix F1
+  VBW_SESSION_ID=s1 "$VBW" run start build P2.1 > /dev/null
+  start_refusal "a run already open in this session" s1 build P2.2
+  start_refusal "a run open in another session" s2 build P2.2
+  start_refusal "a run open in another session" s2 plan
+}
+
+# guard_answer TOOL INPUT_JSON [PLUGIN]: the guard's block reason for the call,
+# from a deny answer or an exit-2 message; empty when it was not blocked.
+guard_answer() {
+  local cmd root=${3:-$PLUGIN_ROOT} out code=0
+  cmd=$(jq -r --arg t "$1" '[.hooks.PreToolUse[] | select((.matcher // "") as $m | $t | test("^(" + $m + ")$"))][0].hooks[0].command' "$root/hooks/hooks.json")
+  out=$(printf '%s' "$2" | CLAUDE_PLUGIN_ROOT="$root" CLAUDE_PROJECT_DIR="$PROJECT" sh -c "$cmd" 2> "$TEST_ROOT/err") || code=$?
+  if [ "$code" -eq 2 ]; then cat "$TEST_ROOT/err"; else printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecisionReason // empty' 2> /dev/null; fi
+}
+fin() { jq -nc --arg t "$1" --arg p "$2" --arg a "${3:-}" --arg s "${4:-s1}" --arg d "$PROJECT" '{hook_event_name: "PreToolUse", session_id: $s, cwd: $d, tool_name: $t,
+  tool_input: {file_path: $p, content: "x", old_string: "a", new_string: "b"}} + (if $a == "" then {} else {agent_id: "a1", agent_type: $a} end)'; }
+bin() { jq -nc --arg c "$1" --arg a "${2:-}" --arg s "${3:-s1}" --arg d "$PROJECT" '{hook_event_name: "PreToolUse", session_id: $s, cwd: $d, tool_name: "Bash",
+  tool_input: {command: $c}} + (if $a == "" then {} else {agent_id: "a1", agent_type: $a} end)'; }
+
+# blocks WHAT TOOL INPUT_JSON [PLUGIN]: the guard blocks the call with a next step.
+blocks() {
+  local why
+  why=$(guard_answer "$2" "$3" "${4:-}")
+  [ -n "$why" ] || { echo "$1: not blocked"; return 1; }
+  next_step "guard: $1" "$why"
+}
+
+@test "R162: every block of the file guard and the Bash guard ends with its next step" {
+  printf 'SECRET=1\n' > .env
+  blocks "a secret file (file tool)" Read "$(fin Read .env)"
+  blocks "a secret file (Bash)" Bash "$(bin 'cat .env')"
+  blocks "the record (file tool)" Write "$(fin Write .vbw/record.json)"
+  blocks "the record (Bash)" Bash "$(bin 'echo x > .vbw/record.json')"
+  blocks "the consent file (file tool)" Write "$(fin Write .git/vbw/consent.json)"
+  blocks "the consent file (Bash)" Bash "$(bin 'echo x > .git/vbw/consent.json')"
+  blocks "vbw approve by an agent (Bash)" Bash "$(bin 'vbw approve' vbw:lead)"
+  VBW_SESSION_ID=s1 "$VBW" run start build P2.1 > /dev/null
+  blocks "the status file (file tool)" Write "$(fin Write .vbw/runtime/glance.json vbw:dev)"
+  blocks "the status file (Bash)" Bash "$(bin 'printf x > .vbw/runtime/glance.json' vbw:dev)"
+  blocks "another session's files (file tool)" Write "$(fin Write src/c.txt "" s2)"
+  blocks "another session's files (Bash)" Bash "$(bin 'printf x > src/c.txt' "" s2)"
+  blocks "a protected check file (file tool)" Edit "$(fin Edit tests/c1.sh vbw:dev)"
+  blocks "a protected check file (Bash)" Bash "$(bin 'printf x > tests/c1.sh' vbw:dev)"
+  blocks "a file outside the run's plan (file tool)" Write "$(fin Write README.md vbw:dev)"
+  blocks "a file outside the run's plan (Bash)" Bash "$(bin 'printf x > README.md' vbw:dev)"
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" run start qa > /dev/null
+  blocks "a write during a run whose agents only read (file tool)" Write "$(fin Write src/c.txt vbw:qa)"
+  blocks "a write during a run whose agents only read (Bash)" Bash "$(bin 'printf x > src/c.txt' vbw:qa)"
+}
+
+@test "R162: a guard that failed during a run blocks with a next step" {
+  local copy="$TEST_ROOT/plugin copy"
+  cp -R "$PLUGIN_ROOT" "$copy"
+  printf 'error("broken on purpose")\n' > "$copy/hooks/guard-file.jq"
+  printf 'error("broken on purpose")\n' > "$copy/hooks/guard-bash.jq"
+  VBW_SESSION_ID=s1 "$VBW" run start build P2.1 > /dev/null
+  blocks "a failed file guard" Write "$(fin Write src/c.txt vbw:dev)" "$copy"
+  blocks "a failed Bash guard" Bash "$(bin 'ls' vbw:dev)" "$copy"
+}

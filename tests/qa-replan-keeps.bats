@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
 # R66 (docs/proof.md): re-planning mid-milestone (vbw apply with a phase added)
 # keeps each existing phase's QA verdict; QA then checks again only the new
-# phase and the phases whose own inputs changed, by the R47 re-check rule.
+# phase and the phases whose own inputs changed, by the R47 re-check rule. (A
+# checked phase has started, so a re-plan can no longer change its goal: R158.)
 
 load helper
 load qa-recheck-helper
@@ -35,15 +36,4 @@ replan_add() {
   "$VBW" prove --full > /dev/null
   [ "$(listed)" = '["P3"]' ]
   next_json | jq -e '.qa.standing == ["P1","P2"]'
-}
-
-@test "R66: a kept phase whose goal changed in the re-plan is still checked again" {
-  qa_project 2
-  qa_pass P1 P2
-  printf -- '- R3 [auto] Part 3 works\n' >> .vbw/spec.md
-  "$VBW" spec sync > /dev/null
-  printf 'grep -qx part3 src/p3.txt\n' > tests/p3.sh
-  qa_doc 3 | jq -c '.phases[0].goal = "Part 1 works, now with a new goal"' | "$VBW" apply > /dev/null
-  next_json | jq -e '.qa.recheck.P1 | any(.[]; contains("goal or plan"))'
-  next_json | jq -e '.qa.recheck.P2 == null'
 }

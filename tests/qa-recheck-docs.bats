@@ -154,11 +154,9 @@ rechecked() { next_json | jq -c '.qa.recheck | keys'; }
 
 @test "R115: a change to the phase's goal, success criteria or plans still lists it again" {
   docs_project
-  local doc
-  doc=$(jq -c '.milestone.id as $m | {phases: [.phases[] | select(.milestone == $m) | {id, title, reqs, goal, criteria}],
-      plans: [.plans[] | {id, phase, title, reqs, files, after, tasks}], checks: .checks,
-      rules: [.requirements[] | .id as $q | (.rules // [])[] | {req: $q, text, check}]}' .vbw/record.json)
-  printf '%s' "$doc" | jq -c '(.phases[] | select(.id == "P1")).criteria += ["src/p1.txt ends with a newline"]' | "$VBW" apply > /dev/null
+  # A re-plan can no longer change a started phase's criteria (R158); the record
+  # is edited by hand, as a restored or older project could hold it.
+  edit_record '(.phases[] | select(.id == "P1")).criteria += ["src/p1.txt ends with a newline"]'
   next_json | jq -e '.qa.recheck.P1 | index("its goal or plan changed")' || { next_json | jq -c .qa; false; }
 }
 

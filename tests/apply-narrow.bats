@@ -2,8 +2,9 @@
 # R80 (docs/workflows.md): one plan, check or rule can be changed without
 # resubmitting the whole milestone: vbw apply --patch takes only the changed
 # plans, checks and rules, and every untouched item stays byte-identical. Once
-# work has started, a planning round cannot add phases or rename phases nobody
-# asked for: an attempt is refused with the reason. L1.
+# work has started, a planning round cannot rename phases nobody asked for: an
+# attempt is refused with the reason. (A new phase beside a started one, for
+# the same requirement, is allowed since R157: tests/apply-beside-started.bats.) L1.
 
 load helper
 
@@ -109,16 +110,6 @@ part() { jq -cS "$1" .vbw/record.json; }
   [ "$status" -ne 0 ]
   [[ "$output" == *"P1"* ]]
   [[ "$output" == *"title"* ]]
-  [ "$(cksum < .vbw/record.json)" = "$before" ]
-}
-
-@test "R80: once work has started, a planning round cannot add a phase for requirements that already have one" {
-  edit_record '(.plans[] | select(.id == "P1.1")).status = "done"'
-  local before
-  before=$(cksum < .vbw/record.json)
-  run bash -c 'printf "%s" "$2" | jq -c ".phases += [{id: \"P3\", title: \"Pay again\", reqs: [\"R1\"], goal: \"g\", criteria: [\"c\"], tier: \"standard\"}] | .plans += [{id: \"P3.1\", phase: \"P3\", title: \"x\", reqs: [\"R1\"], files: [\"src/p3.txt\"], after: []}]" | "$1" apply' _ "$VBW" "$DOC"
-  [ "$status" -ne 0 ]
-  [[ "$output" == *"P3"* ]]
   [ "$(cksum < .vbw/record.json)" = "$before" ]
 }
 

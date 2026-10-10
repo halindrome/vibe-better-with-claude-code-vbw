@@ -4,7 +4,8 @@
 # already covers, with the message vbw apply --add gives, and the record is
 # byte-for-byte unchanged. A full apply of the active milestone's own
 # requirements is accepted as before. One rule serves both: the same bad
-# document fed to both gets the same message.
+# document fed to both gets the same message, apart from the name of the mode
+# each refusal gives (R156: "full apply" or "--add").
 
 load helper
 
@@ -30,6 +31,12 @@ setup() {
 }
 
 teardown() { vbw_teardown; }
+
+# modeless MESSAGE: the message without the names of the two modes (R156).
+modeless() {
+  local s=${1//full apply/}
+  printf '%s' "${s//--add/}"
+}
 
 # doc REQ...: a document with one phase P3 for the given requirements, one plan
 # and one check (with a rule) for each requirement.
@@ -60,7 +67,7 @@ apply_refused() {
   full=$(apply_refused full "$(doc R3 R2)") || { echo "$full"; false; }
   [[ "$full" == *"R2 belongs to milestone M1"* ]] || { echo "$full"; false; }
   add=$(apply_refused add "$(doc R3 R2)") || { echo "$add"; false; }
-  [ "$full" = "$add" ] || { printf 'full: %s\nadd:  %s\n' "$full" "$add"; false; }
+  [ "$(modeless "$full")" = "$(modeless "$add")" ] || { printf 'full: %s\nadd:  %s\n' "$full" "$add"; false; }
 }
 
 @test "R130: a full apply listing a requirement a phase of another milestone covers is refused with the --add message, and nothing changes" {
@@ -68,7 +75,7 @@ apply_refused() {
   full=$(apply_refused full "$(doc R1)") || { echo "$full"; false; }
   [[ "$full" == *"R1 is already covered by P1"* ]] || { echo "$full"; false; }
   add=$(apply_refused add "$(doc R1)") || { echo "$add"; false; }
-  [ "$full" = "$add" ] || { printf 'full: %s\nadd:  %s\n' "$full" "$add"; false; }
+  [ "$(modeless "$full")" = "$(modeless "$add")" ] || { printf 'full: %s\nadd:  %s\n' "$full" "$add"; false; }
 }
 
 @test "R130: the same bad document gets the same message from the full apply and from --add, for each kind of conflict" {
@@ -76,7 +83,7 @@ apply_refused() {
   for d in "$(doc R2)" "$(doc R1)" "$(doc R4 R1)" "$(doc R2 R3)"; do
     full=$(apply_refused full "$d") || { echo "$full"; false; }
     add=$(apply_refused add "$d") || { echo "$add"; false; }
-    [ "$full" = "$add" ] || { printf 'doc: %s\nfull: %s\nadd:  %s\n' "$d" "$full" "$add"; false; }
+    [ "$(modeless "$full")" = "$(modeless "$add")" ] || { printf 'doc: %s\nfull: %s\nadd:  %s\n' "$d" "$full" "$add"; false; }
   done
 }
 
