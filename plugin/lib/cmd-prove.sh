@@ -12,7 +12,8 @@
 . "$VBW_LIB/cmd-next.sh"
 
 VBW_FIX_CAP=3
-VBW_COMMAND_TIMEOUT=900
+# A project command (its test run above all) gets this many seconds unless settings.command_timeout says otherwise (R153).
+VBW_COMMAND_TIMEOUT=3600
 
 cmd_prove() {
   local full=0
@@ -83,15 +84,16 @@ cmd_prove() {
 
 # Project commands: run only those whose exact argv the user approved.
 prove_commands() {
-  local name argv a all='{}' res
+  local name argv a all='{}' res limit
+  limit=$(printf '%s' "$1" | jq -r --argjson d "$VBW_COMMAND_TIMEOUT" '.settings.command_timeout // $d')
   # $2: JSON array of the command names to run.
   while IFS= read -r -d '' name; do
     argv=()
     while IFS= read -r -d '' a; do argv+=("$a"); done \
       < <(printf '%s' "$1" | jq -j --arg n "$name" '.commands[$n][] + "\u0000"')
     if consent_has command "$(vbw_sha256_argv "${argv[@]}")"; then
-      checks_exec "$VBW_COMMAND_TIMEOUT" "$CHECK_OUT/cmd-$name.out" "${argv[@]}"
-      res=$(checks_result "$CHECK_OUT/cmd-$name.out" "$VBW_COMMAND_TIMEOUT" 0)
+      checks_exec "$limit" "$CHECK_OUT/cmd-$name.out" "${argv[@]}"
+      res=$(checks_result "$CHECK_OUT/cmd-$name.out" "$limit" 0)
     else
       res='{"status":"skipped","exit":null,"seconds":0,"tail":"not approved"}'
     fi
@@ -128,6 +130,8 @@ prove_summary() {
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
       ($e.commands | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))\(if .value.reuse == "docs" then ": only documentation changed since" else "" end)" else "" end)" end)"),
       (if $fullrun == 1 then empty else "  checks: \([$e.checks[] | select(.reused | not)] | length) ran, \([$e.checks[] | select(.reused)] | length) reused" end),
+      ($e.commands | to_entries[] | select(.value.status == "timeout")
+        | "  \(.key) stopped by its time limit (\(.value.seconds | floor) s); raise it with vbw config set command_timeout SECONDS"),
       (if $e.full != false then "  proof: full" else
         "  proof: partial [" + ([ (if any(($e.checks[], $e.commands[]); .reused) then "results reused" else empty end),
           (if ($e.commands | has("quick") and (.quick.status != "skipped") and (has("test") | not)) then "quick stood in for the test command" else empty end),

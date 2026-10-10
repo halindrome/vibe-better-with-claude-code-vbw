@@ -105,13 +105,7 @@ OUT=.vbw/runtime/output
 }
 
 @test "R118: a project command that times out keeps its complete output" {
-  # A copy of the plugin whose project-command timeout is 2 seconds instead of 900.
-  cp -R "$PLUGIN_ROOT" "$TEST_ROOT/plugin"
-  local f
-  f=$(grep -rl 'VBW_COMMAND_TIMEOUT=900' "$TEST_ROOT/plugin/lib")
-  [ -n "$f" ]
-  sed 's/VBW_COMMAND_TIMEOUT=900/VBW_COMMAND_TIMEOUT=2/' "$f" > "$TEST_ROOT/t" && cp "$TEST_ROOT/t" "$f"
-  VBW="$TEST_ROOT/plugin/bin/vbw"
+  "$VBW" init > /dev/null 2>&1 || true
   plan '[{id: "C1", req: "R1", run: ["sh", "tests/ok.sh"], files: ["tests/ok.sh"]},
          {id: "C2", req: "R2", run: ["sh", "tests/ok.sh"], files: ["tests/ok.sh"]},
          {id: "C3", req: "R3", run: ["sh", "tests/ok.sh"], files: ["tests/ok.sh"]}]' '{test: ["sh", "tests/slow.sh"]}'

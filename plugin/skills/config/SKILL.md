@@ -26,6 +26,7 @@ Change asked: make it with `vbw config set KEY VALUE`, show the result. Else sho
 - `rigor`: how thorough each phase's checking is. `auto` (default) picks a tier per phase from its risk; `express`, `standard` or `deep` forces it. Set with `vbw config rigor MODE`; phases not yet started are re-tiered.
 - `motion`: panel animation, `full`, `calm` or `off`; `default`: by interview level.
 - `check_jobs`: how many checks run at the same time, shared by every VBW command in this project, 1 to 64; `default`: three quarters of the processor cores (at least 1). Kept in this clone, not in the record.
+- `command_timeout`: seconds `vbw prove` lets one project command (the test command above all) run before stopping it, 1 to 86400; `default`: 3600 (60 minutes). A check keeps its own timeout.
 - Status line: `vbw statusline on` or `off`.
 
 Your own session keeps the model you chose with `/model`; it must be Sonnet, Opus or Fable for auto mode.

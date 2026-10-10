@@ -10,7 +10,8 @@
 # standard|deep: auto computes each phase's tier, the others force it),
 # motion (full|calm|off: the panel's animation; "default" removes it and the
 # panel picks by the interview level), check_jobs (1 to 64; without a setting three quarters of the processor cores: checks run at the same time; kept in this
-# clone's own settings file in the git directory, not in the record).
+# clone's own settings file in the git directory, not in the record),
+# command_timeout (1 to 86400 seconds a project command may run under vbw prove; 3600 when unset, "default" removes it).
 
 # Profiles name a model per workflow role (lib/profiles.json, shared with the
 # status line). The session itself always runs the user's model, which must be
@@ -77,7 +78,7 @@ cmd_config() {
     "")
       printf 'check_jobs: %s (%s)\n' "$(vbw_check_jobs)" "$(vbw_check_jobs_source)"
       record_read | jq -r --argjson p "$VBW_PROFILES" '.settings as $s
-        | "profile: \($s.profile)", "autonomy: \($s.autonomy // "balanced")", "autonomy_cap: \($s.autonomy_cap)", "rigor: \($s.rigor // "auto")", "motion: \($s.motion // "default")",
+        | "profile: \($s.profile)", "autonomy: \($s.autonomy // "balanced")", "autonomy_cap: \($s.autonomy_cap)", "rigor: \($s.rigor // "auto")", "motion: \($s.motion // "default")", "command_timeout: \($s.command_timeout // 3600) seconds",
           ($p[$s.profile] + ($s.models // {}) | (if ((.qa // "") | ascii_downcase | contains("haiku")) then .qa = "sonnet" else . end) | to_entries[] | "model.\(.key): \(.value)")'
       ;;
     models)
@@ -116,6 +117,14 @@ cmd_config() {
             *) vbw_usage_error "check_jobs must be a whole number from 1 to 64 (or default): how many checks run at the same time" ;;
           esac
           vbw_check_jobs_set "$value" ;;
+        command_timeout)
+          case "$value" in
+            default) record_update '.settings |= del(.command_timeout)' ;;
+            0* | *[!0-9]* | "") vbw_usage_error "command_timeout must be a whole number of seconds from 1 to 86400 (or default): how long vbw prove lets a project command run" ;;
+            *)
+              [ "${#value}" -le 5 ] && [ "$value" -le 86400 ] || vbw_usage_error "command_timeout must be a whole number of seconds from 1 to 86400 (or default): how long vbw prove lets a project command run"
+              record_update '.settings.command_timeout = ($v | tonumber)' --arg v "$value" ;;
+          esac ;;
         model.qa)
           case $(printf '%s' "$value" | tr '[:upper:]' '[:lower:]') in
             *haiku*) vbw_usage_error "model.qa cannot be Haiku: QA needs Sonnet or stronger. Allowed: sonnet, opus or a stronger model id, or default" ;;
@@ -131,7 +140,7 @@ cmd_config() {
           else
             record_update '.settings.models = ((.settings.models // {}) + {($r): $v})' --arg r "${key#model.}" --arg v "$value"
           fi ;;
-        *) vbw_usage_error "unknown setting $key (profile, autonomy, autonomy_cap, motion, check_jobs, model.ROLE for $VBW_ROLES)" ;;
+        *) vbw_usage_error "unknown setting $key (profile, autonomy, autonomy_cap, motion, check_jobs, command_timeout, model.ROLE for $VBW_ROLES)" ;;
       esac
       printf '%s = %s\n' "$key" "$value"
       ;;
