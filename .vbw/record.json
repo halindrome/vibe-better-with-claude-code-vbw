@@ -20910,7 +20910,7 @@
     {
       "id": "T14",
       "text": "Finding (2.0.15 release run): the Lead once planned a task no requirement asked for (removing a README heading it misread as stray). QA caught the deviation. Watch for repeats; if seen again, add to the Lead's self-review: every task traces to a requirement or a stated rule",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T15",
