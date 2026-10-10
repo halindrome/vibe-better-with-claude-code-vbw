@@ -99,8 +99,8 @@ checks_result() {
 # the registration one step. Registrations of a dead process are taken over
 # (kill -0 is only a liveness probe), and every hold is released on exit,
 # or interrupt through the guard. A shared check also waits while the live
-# registrations already number the limit (vbw_check_jobs, read once per
-# process), so separate processes never pass the limit together. The in-process
+# registrations already number the limit (the limit checks_run_all reads
+# once per run and hands on in CHECKS_LIMIT), so separate processes never pass the limit together. The in-process
 # runner starts at most the limit at once; the gate holds the same limit across
 # processes. A waiting check never fails for having waited.
 
@@ -140,7 +140,8 @@ checks_gate_blocker() {
 checks_gate_enter() {
   local id="$1" kind=shared g="$VBW_RUNTIME/gate" idle=0 want='' owner limit
   [ "$2" != true ] || kind=alone
-  limit=$(vbw_check_jobs) || limit=1
+  limit="${CHECKS_LIMIT:-}"
+  [ -n "$limit" ] || limit=$(vbw_check_jobs) || limit=1
   mkdir -p "$g" || vbw_die "cannot create $g"
   while :; do
     if mkdir "$g/mutex" 2> /dev/null; then
@@ -218,6 +219,7 @@ checks_run_all() {
   done
   local jobs
   jobs=$(vbw_check_jobs) || jobs=1
+  CHECKS_LIMIT=$jobs
   if [ "$jobs" -le 1 ] || [ ${#ids[@]} -le 1 ]; then
     for id in "${ids[@]}"; do
       res=$(checks_run "$record" "$id") || res=
