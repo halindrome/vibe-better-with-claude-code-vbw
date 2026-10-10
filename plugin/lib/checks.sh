@@ -58,8 +58,8 @@ checks_keep() {
         ;;
       pass) rm -f "$kept" ;;
     esac
-  done < <(jq -n -j --argjson c "$1" --argjson m "$2" \
-    '($c | to_entries[] | "check\u001f\(.key)\u001f\(.value.status)\u0000"), ($m | to_entries[] | "command\u001f\(.key)\u001f\(.value.status)\u0000")')
+  done < <(jq -n -j --slurpfile cs <(printf '%s' "$1") --slurpfile ms <(printf '%s' "$2") \
+    '$cs[0] as $c | $ms[0] as $m | ($c | to_entries[] | "check\u001f\(.key)\u001f\(.value.status)\u0000"), ($m | to_entries[] | "command\u001f\(.key)\u001f\(.value.status)\u0000")')
 }
 
 # checks_exec TIMEOUT OUTFILE ARGV...: run ARGV from the project root, output to
@@ -326,8 +326,8 @@ checks_record_passes() {
   vbw_lock_take "$lock" "passes"
   cur=$(jq -c 'if type == "object" then . else {} end' "$file" 2> /dev/null) || cur='{}'
   tmp=$(mktemp "${file%/*}/passes.XXXXXX") || vbw_die "cannot create a temporary file in ${file%/*}"
-  printf '%s' "$cur" | jq -c --argjson ran "$ran" --argjson new "$new" \
-    'with_entries(select(.key as $k | $ran | index($k) | not)) + $new' > "$tmp" && mv "$tmp" "$file"
+  printf '%s' "$cur" | jq -c --slurpfile rn <(printf '%s' "$ran") --slurpfile nw <(printf '%s' "$new") \
+    '$rn[0] as $ran | $nw[0] as $new | with_entries(select(.key as $k | $ran | index($k) | not)) + $new' > "$tmp" && mv "$tmp" "$file"
   vbw_guard_drop "$lock"
 }
 

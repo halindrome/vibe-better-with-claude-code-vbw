@@ -23,7 +23,7 @@ cmd_prove() {
   esac
   vbw_require_project
   cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
-  local record checks commands scope tree head ev at testrun mark=""
+  local record checks commands scope tree head ev at testrun evf curf mark=""
   # This session's Stop hook waits while the mark names a live process (R98).
   if [ -n "$(vbw_session)" ]; then
     mark="$VBW_RUNTIME/proving.$(vbw_session)"
@@ -59,14 +59,18 @@ cmd_prove() {
   # checks ran on, so committing unproved edits later makes the proof stale.
   # full: nothing reused, no quick stand-in, every full command ran (R111).
   testrun=$(proofreuse_test_run "$record" "$commands" "$head" "$tree")
-  ev=$(jq -n --arg at "$at" --argjson tr "${testrun:-null}" --arg h "$CHECK_HASH" --argjson standin "$QUICK_STANDIN" --arg tree "$tree" --arg head "$head" \
-    --argjson c "$checks" --argjson m "$commands" --argjson s "$scope" \
-    '{at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, scope: $s,
+  ev=$(jq -n --arg at "$at" --slurpfile trf <(printf '%s' "${testrun:-null}") --arg h "$CHECK_HASH" --argjson standin "$QUICK_STANDIN" --arg tree "$tree" --arg head "$head" \
+    --slurpfile cf <(printf '%s' "$checks") --slurpfile mf <(printf '%s' "$commands") --slurpfile sf <(printf '%s' "$scope") \
+    '$trf[0] as $tr | $cf[0] as $c | $mf[0] as $m | $sf[0] as $s | {at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, scope: $s,
       full: (($standin | not) and all($c[]; (.reused // false) | not) and all($m[]; ((.reused // false) | not) or .reuse == "docs")
              and all($m | to_entries[] | select(.key != "quick"); .value.status != "skipped")),
       passed: (all($c[]; .status == "pass") and all($m[]; .status == "pass" or .status == "skipped") and ($s | length) == 0)}
     | if $tr then . + {test_run: $tr} else . end')
-  record_update "$VBW_JQ_DEFS$(cat "$VBW_LIB/prove.jq")" --argjson ev "$ev" --argjson cap "$VBW_FIX_CAP" --argjson cur "$(qa_combined "$record")" --arg at "$at"
+  vbw_scratch_json evf "$ev"
+  vbw_scratch_json curf "$(qa_combined "$record")"
+  record_update "$VBW_JQ_DEFS$(cat "$VBW_LIB/prove.jq")" --slurpfile ev "$evf" --argjson cap "$VBW_FIX_CAP" --slurpfile cur "$curf" --arg at "$at"
+  vbw_guard_drop "$evf"
+  vbw_guard_drop "$curf"
   rm -f "$(proofreuse_marker)"
   # The evidence is part of the plan of record: commit it, so a proof never
   # leaves VBW's own file modified in the user's working tree.
@@ -109,8 +113,9 @@ prove_scope() {
         printf '%s\x1f%s\x1f%s\n' "${sha:0:12}" "$plan" "$f"
       done < <(git diff-tree -z --no-commit-id --name-only -r --root "$sha")
     done < <(git log -z --format='%H%x1f%(trailers:key=VBW-Plan,valueonly)' 2> /dev/null)
-  } | jq -R -s -c --argjson r "$1" "$VBW_JQ_DEFS"'
-    ($r.plans | map({key: .id, value: .files}) | from_entries) as $files
+  } | jq -R -s -c --slurpfile rec <(printf '%s' "$1") "$VBW_JQ_DEFS"'
+    $rec[0] as $r
+    | ($r.plans | map({key: .id, value: .files}) | from_entries) as $files
     | [split("\n")[] | select(length > 0) | split("\u001f") | select($files[.[1]] != null)
        | select(.[2] as $f | any($files[.[1]][]; covers($f)) | not)
        | "\(.[0]) (\(.[1])) changed \(.[2]), which is not in the plan"]'

@@ -129,8 +129,9 @@ proofreuse_docs() {
   head=$(vbw_head_tree) && [ -n "$head" ] && [ "$(vbw_code_tree)" = "$head" ] || return 0
   old=$(printf '%s' "$run" | jq -r .head)
   paths=$(git -C "$VBW_ROOT" diff-tree -z -r --name-only "$old" "$head" 2> /dev/null | tr '\0' '\n') || return 0
-  printf '%s' "$paths" | jq -R -s -e --argjson r "$1" "$VBW_JQ_DEFS"'
-    def is_test: test("(^|/)(test|tests|__tests__|spec|fixtures)/") or (split("/") | last | test("\\.test\\.|_test\\.|\\.spec\\.|^test_"));
+  printf '%s' "$paths" | jq -R -s -e --slurpfile rec <(printf '%s' "$1") "$VBW_JQ_DEFS"'
+    $rec[0] as $r
+    | def is_test: test("(^|/)(test|tests|__tests__|spec|fixtures)/") or (split("/") | last | test("\\.test\\.|_test\\.|\\.spec\\.|^test_"));
     [$r.checks[] | (.files // [])[]] as $listed | [$r.checks[] | (.run // [])[]] as $ran
     | [split("\n")[] | select(length > 0)]
     | all(.[]; . as $f | startswith(".vbw/") or (is_doc and (is_test | not)
@@ -171,6 +172,6 @@ proofreuse_stamp() {
 
 # proofreuse_join ORDER REUSED NEW: one object in ORDER (a JSON array of names).
 proofreuse_join() {
-  jq -nc --argjson o "$1" --argjson a "$2" --argjson b "$3" \
-    '$o | map({key: ., value: ($b[.] // $a[.])}) | from_entries'
+  jq -nc --slurpfile o <(printf '%s' "$1") --slurpfile a <(printf '%s' "$2") --slurpfile b <(printf '%s' "$3") \
+    '$a[0] as $a | $b[0] as $b | $o[0] | map({key: ., value: ($b[.] // $a[.])}) | from_entries'
 }

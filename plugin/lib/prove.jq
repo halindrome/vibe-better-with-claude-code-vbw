@@ -1,9 +1,11 @@
 # vbw prove: fold one run into the record (docs/proof.md). Input: the record.
-# Args: $ev (the evidence object), $cap (fix attempt cap), $cur (qa_combined), $at (the time). VBW_JQ_DEFS prepended.
+# Args: $ev and $cur (slurped, so [evidence object] and [qa_combined]: handed over files, not the command line), $cap (fix attempt cap), $at (the time). VBW_JQ_DEFS prepended.
 
 def ok: .status == "pass";
 
-. as $r
+$ev[0] as $ev
+| $cur[0] as $cur
+| . as $r
 | ($ev.checks) as $checks
 | ([ .requirements[] | select(.proof == "auto") | .id as $id
     | [$r.checks[] | select(.req == $id) | .id] as $ids
