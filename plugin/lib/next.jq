@@ -52,7 +52,9 @@ def fix_files($r): if .command then ["*"]
    | map(.ids)) as $fix_groups
 | (.evidence == null or .evidence.contract != $contract or $code_changed) as $stale
 | ([.requirements[] | select(.proof == "auto" and (.status != "proven" or $stale)) | .id]) as $unproven
-| ([$current[] | select(.proof == "human" and .status == "open") | .id]) as $to_accept
+| ([$current[] | select(.proof == "human" and .status == "open" and .skipped != true) | .id]) as $to_accept
+# [human] requirements the user skipped (vbw req skip): the ship offers to move them on.
+| ([$current[] | select(.proof == "human" and .status == "open" and .skipped == true) | .id]) as $later
 # Rigor: each current phase's tier (standard when it has none) with its cell of
 # the profile (lib/tiers.json); the user's model overrides win over the cell's.
 | ((.settings.models // {}) | {dev, qa} | with_entries(select(.value != null))) as $override
@@ -119,6 +121,8 @@ def fix_files($r): if .command then ["*"]
     result("qa"; false; "Run the QA workflow (\($tier)) for \($to_verify | join(", ")): goal-backward verification of the built work. Checked again: \([$to_verify[] | "\(.) (\($qa.recheck[.] | join("; ")))"] | join(", "))\(if ($qa.standing | length) > 0 then ". Keeping their pass: \($qa.standing | join(", "))" else "" end)"; {phases: $to_verify, tier: $tier})
   elif ($to_accept | length) > 0 then
     result("accept"; true; "Accept or reject \($to_accept | join(", ")), one scenario at a time"; {requirements: $to_accept})
+  elif ($later | length) > 0 then
+    result("ship"; true; "Everything else is proven and accepted; you skipped \($later | join(", ")). Choose: ship milestone \(.milestone.id) now and judge \($later | join(", ")) in the next milestone, or judge \($later | join(", ")) now (vbw req accept or vbw req reject)"; {later: $later})
   else
     result("ship"; true; "Everything is proven and accepted: ship milestone \(.milestone.id)"; {})
   end) as $n | $n + (if $n.action == "qa" then {round: {tiers: $tiers_qa, suite: (if (.commands.test // null) == null then null else (.commands.test) as $cmd | (if .evidence.commands.test == null then {command: "test", status: "not run"} else .evidence.commands.test | (if (.command // "") == "" then .command = ($cmd | join(" ")) else . end) end) end)}} else {} end) + {next_phase: $next_phase, effort: $effort, requirements: [$current[] | {id, text, proof}], rigor: $rigor, qa: ($qa | {recheck, standing, problems}), declined: [(.project.declined // [])[].text], profile: ({level: "small scripts or no-code", depth: "plain with technical terms explained", involvement: "options with a recommendation"} + ($profile | with_entries(select(.value != null or .key == "kept" or .key == "pending"))) + {ask: ([$n.action] | inside(["spec","convert"]) and ($profile.interviewed | not))})}
