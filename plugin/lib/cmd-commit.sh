@@ -3,7 +3,9 @@
 # changed (or only the named FILEs, each covered by the plan: one commit per
 # task), with VBW-Plan/VBW-Req trailers. Nothing else in the working tree or the index is
 # touched: the user's own staged work stays staged. vbw commit --fix FIX MESSAGE
-# FILE...: an open project-command fix commits the named changed files (VBW-Fix). Commits are serialized with
+# FILE...: an open project-command fix commits the named changed files (VBW-Fix);
+# an open fix QA opened commits the check files of its requirement (its new
+# regression test included). Commits are serialized with
 # the project lock, so parallel Devs never collide on git's index lock.
 
 VBW_COMMIT_RE='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)\([^)]+\)!?: .+'
@@ -83,19 +85,26 @@ commit_escalate() {
   fi
 }
 
-# cmd_commit_fix FIX MESSAGE FILE...: only an open fix for a project command;
-# FILEs must have changed and may not be under .vbw/.
+# cmd_commit_fix FIX MESSAGE FILE...: an open fix for a project command, or one
+# QA opened (then only check files of its requirement); FILEs must have changed
+# and may not be under .vbw/.
 cmd_commit_fix() {
   [ $# -ge 3 ] || vbw_usage_error "usage: vbw commit --fix FIX MESSAGE FILE..."
   local fix="$1" msg="$2" f changed=()
   shift 2
   printf '%s' "$msg" | grep -Eq "$VBW_COMMIT_RE" || vbw_usage_error "commit message must be 'type(scope): description'"
   vbw_require_project
-  record_read | jq -e --arg f "$fix" 'any(.fixes[]?; .id == $f and .status == "open" and (.command // "") != "")' > /dev/null \
-    || vbw_die "$fix is not an open project-command fix: a requirement fix commits through its plan (vbw commit PLAN MESSAGE)"
+  local record qa=false
+  record=$(record_read)
+  printf '%s' "$record" | jq -e --arg f "$fix" 'any(.fixes[]?; .id == $f and .status == "open" and (.source // "") == "qa")' > /dev/null && qa=true
+  [ "$qa" = true ] || printf '%s' "$record" | jq -e --arg f "$fix" 'any(.fixes[]?; .id == $f and .status == "open" and (.command // "") != "")' > /dev/null \
+    || vbw_die "$fix is not an open project-command or QA fix: a requirement fix commits through its plan (vbw commit PLAN MESSAGE)"
   for f in "$@"; do
     f="${f#./}"
     case "/$f/" in /.vbw/* | */../*) vbw_die "$f: .vbw/ and paths outside the project cannot be committed by a fix" ;; esac
+    [ "$qa" = false ] || printf '%s' "$record" | jq -e --arg f "$fix" --arg p "$f" '[.fixes[] | select(.id == $f)][0].req as $q
+        | any(.checks[]; .req == $q and any(.files[]?; . == $p))' > /dev/null \
+      || vbw_die "$f is not a check file of the requirement $fix is about: commit code through its plan (vbw commit PLAN MESSAGE), test files through vbw fix check first"
   done
   cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
   record_lock
