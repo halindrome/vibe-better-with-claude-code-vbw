@@ -17959,7 +17959,7 @@
         "plugin/lib/checks.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "QA state (qa_state, qa_combined, qa_digests, qa_settle, qa_cache_put in cmd-next.sh and qa-inputs.sh): the record, the phases' fingerprints (digests), the QA cache and the QA state reach jq only through a pipe (printf '%s' \"$x\" | jq) or --slurpfile/--rawfile fed by process substitution <(...); never --arg/--argjson, never a here-string (<<<, which bash writes to the system's temporary folder); adjust qa.jq and next.jq to the new inputs",
@@ -17984,7 +17984,7 @@
         "plugin/lib/rigor.jq"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vbw apply, apply --patch and apply --add (cmd-apply.sh): the plan document merged with the record's started work, the hypothetical record and the rigor tiers reach jq through a pipe or --slurpfile <(...), never --arg/--argjson or a here-string",
@@ -18025,7 +18025,7 @@
         "plugin/lib/effort.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Audit every jq call in these files: any value built from the whole record (the record itself, all fixes, all check results, a fix's checks and files, the run report) reaches jq through a pipe or --slurpfile/--rawfile <(...), never --arg/--argjson, a positional argument or a here-string; small values (an id, a time, a count, one setting) stay as they are",
@@ -18047,7 +18047,7 @@
         "AGENTS.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/check-record-args.sh DIR...: reads every non-comment line of the shell files under DIR (*.sh and bin/vbw) and prints FILE:LINE with the line, exiting 1, when jq gets record-sized data through --arg, --argjson, --args/--jsonargs or a here-string (<<<): record_read, a cat or git show of record.json, qa_combined, qa_digests, qa_state, qa_cache_read, a variable named record, digests or results (and any other name the kernel uses for whole-record data), or a positional parameter that the function's header comment ('# name ARG...:') names RECORD, RECORD_JSON, DIGESTS or RESULTS; a pipe, --slurpfile, --rawfile, small values and comments pass",
@@ -18067,7 +18067,7 @@
         "plugin/lib/record.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "record_update writes the record's keys in one fixed order: schema, lease (null when no run is open), checks, then every other key in its current order, so the guards can read just the beginning of the file; the content and validation are unchanged",
