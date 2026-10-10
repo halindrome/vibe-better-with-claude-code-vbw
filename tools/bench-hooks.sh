@@ -21,6 +21,11 @@
 # 2 MB (R149: a long-lived project's record), both with the same build lease.
 # The status line is measured on both records too: its CPU per call is within
 # VBW_STATUSLINE_BUDGET_MS (default 30), startup included.
+# The guards read the glance (.vbw/runtime/glance.json, the record cut down to what
+# they need) when it is newer than the record, else the record itself. The large
+# project is written once by the kernel (vbw decide), so its glance is current and
+# its lines measure the glance path. The small record is built by hand without a
+# glance, so its lines measure the record path.
 # VBW_BENCH_RUNS and VBW_BENCH_PLUGIN_ROOT override the runs and the plugin (tests).
 set -euo pipefail
 
