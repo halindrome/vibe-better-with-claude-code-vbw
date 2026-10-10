@@ -7172,6 +7172,14 @@
           "check": "C222"
         }
       ]
+    },
+    {
+      "id": "R150",
+      "text": "On a project whose record has more than 50 checks, a guard's cost per tool call stays within its budget however long the record grows, because the guards never read through every check; only such a record moves to format 4, and a record with 50 checks or fewer keeps its format so older VBW versions still read it",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M19",
+      "rules": []
     }
   ],
   "phases": [
@@ -18171,7 +18179,7 @@
         "P101.6",
         "P101.7"
       ],
-      "status": "blocked",
+      "status": "planned",
       "tasks": [
         "tools/bench-hooks.sh also builds, in its work folder, a record of more than 2 MB (the same build lease plus a long history of requirements, checks, phases, plans and decisions, keys in the writer's order, its glance written by running vbw once) and prints 'large record: N bytes'",
         "For every input it adds a line 'guard (NAME, large record): ...' in the existing format and budget; the six existing lines stay unchanged (tests/bench-hooks.bats reads them)",
@@ -18182,8 +18190,7 @@
         "plugin/lib/record.sh and plugin/lib/record.jq: when the record has more than 50 checks, the single writer keeps a top-level field protected (the sorted, unique list of every file in .checks[].files) right after lease, so the key order is schema, lease, protected, checks, then the rest; with 50 checks or fewer there is no protected field and the record is unchanged; the validator requires protected, when present, to equal that list exactly; only a record with protected is schema 4 (VBW_SCHEMA_MAX 4), following the existing rule that the schema follows the fields in use, so ordinary projects keep schemas 1 to 3 and older VBWs still read them (R46, tests/record-compat.bats and tests/record-newer.bats stay as they are); record_update adds, updates or removes it on every write",
         "plugin/hooks/common.jq: the guards stop reading at the first key after protected and never walk .checks; a record without protected (written by an older VBW, before its next write) is read on to the checks as today, so its answer is the same, only slower",
         "docs/record.md: the protected field (written only for records with more than 50 checks), why it exists, the key order, and that only such records are format 4"
-      ],
-      "note": "Tasks 1-6 are committed (bench with large record and status line, timed-file lists, key-by-key guard read). Tasks 7-9 (the protected field, schema 4, guard stop, docs) cannot land inside the plan's files: the large-record twins in tests/big-record-helper.bash hold 100 checks, so once the writer stores protected (and schema 4) every write on them adds those two fields, and the protected check C218 (tests/big-record-writes.bats, kept() compares the record after a write with the record before, exactly) fails on 'vbw decide', 'vbw todo add', 'vbw req accept' etc. The plan lists no test file to change and the guard denies edits to tests/big-record-*.bats and the helper. I implemented 7-9 (record.sh/record.jq with schema 4, common.jq protected branch, bench record with protected, docs) and the bench passed (guards 6.6-7.5 ms, status line 24 ms), then reverted it uncommitted. Needs: a plan that also lets kept() in tests/big-record-writes.bats ignore .protected and .schema (or builds the twin with protected), plus a new tests/record-protected.bats for the writer, validator and guard; a decision on whether the old-record guard walk key by key is enough for task 5."
+      ]
     },
     {
       "id": "P101.9",
@@ -20814,6 +20821,12 @@
       "id": "D228",
       "at": "2026-10-10T05:47:42Z",
       "text": "Contract approved: 138 requirements, 217 checks, 289 plans (27e2e9ddbe5c)"
+    },
+    {
+      "id": "D229",
+      "text": "The protected field is written only when a record has more than 50 checks; only such records are schema 4; ordinary records stay at schemas 1 to 3 (R46)",
+      "why": "keeps every ordinary project readable by older VBWs; only large projects need the newer VBW",
+      "at": "2026-10-10T06:04:11Z"
     }
   ],
   "commands": {
