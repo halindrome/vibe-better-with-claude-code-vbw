@@ -22895,6 +22895,13 @@
       "sort": "next",
       "size": "large",
       "status": "open"
+    },
+    {
+      "id": "T111",
+      "text": "No shortcuts, for every VBW user (owner, 2026-10-11: 'this must NEVER happen to ANYONE using VBW, NO SHORTCUTS EVER ALLOWED'): the Architect and Lead choose the optimal, future-proof design, never the merely safe or simple one, and name any known cost or debt instead of hiding it behind a fallback; their self-review refuses a design that pays a recurring cost (time, tokens, re-runs) to avoid thinking; QA fails a phase that introduces such a shortcut or unnamed debt. Applies to plans for users' projects and to VBW itself",
+      "sort": "next",
+      "size": "medium",
+      "status": "open"
     }
   ],
   "decisions": [
