@@ -64,7 +64,7 @@ jq -nc --arg d "$work" '{hook_event_name: "PostToolUse", tool_name: "AskUserQues
 # The large project: a record of more than 2 MB in its own folder, the same build
 # lease plus a long history (requirements with rules, checks, phases, plans and
 # decisions of a shipped milestone, every text padded), keys in the writer's
-# order (schema, lease, checks, then the rest). The kernel then rewrites it once
+# order (schema, lease, protected, checks, then the rest). The kernel then rewrites it once
 # (vbw decide, a record write), so the file holds the format the kernel writes:
 # schema 4 with the protected field, which the guards read without walking the checks.
 large="$work/large"
@@ -90,7 +90,8 @@ jq --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
                                       tasks: [("Old task \($k).\(.)" + $f)]}]
   | .decisions = [range(1; 121) | {id: "D\(.)", text: ("Old decision \(.)" + $f), at: $at}]
                  + [{id: "D121", text: ("Old long decision" + ("~" * 140000)), at: $at}]
-  | {schema, lease, checks} + .' \
+  | .protected = ["tests/old.sh"]
+  | {schema, lease, protected, checks} + .' \
   "$large/.vbw/record.json" > "$large/.vbw/edited.json"
 cat "$large/.vbw/edited.json" > "$large/.vbw/record.json"
 rm -f "$large/.vbw/edited.json"
