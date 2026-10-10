@@ -1,12 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "qa-20261010T163802Z",
-    "kind": "qa",
-    "started_at": "2026-10-10T16:38:02Z",
-    "files": [],
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-foreign-req.bats",
