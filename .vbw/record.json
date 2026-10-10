@@ -18780,7 +18780,7 @@
         "tests/kernel-show.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/record.sh record_update: every write sets schema 4 and protected, the sorted list of every string in .checks[].files, each once ([] with no checks or no files), and writes the keys in the order schema, lease (null when none), protected, checks ([] when none), then every other key as before; remove the `> 50` test and the `$big` branch, keep VBW_SCHEMA_MAX at 4, and rewrite the comments of VBW_SCHEMA_MAX and record_update to say every record is format 4 (D232) and records of schemas 1 to 3 written by an older VBW are read and become format 4 on their next write",
@@ -18825,7 +18825,7 @@
         "docs/guards.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/record.md: every record VBW writes is schema 4, keys schema, lease, protected, checks first; the protected row: always present, the sorted list of every file a check protects, each once, an empty list when there are no checks, kept equal to the checks on every write; the Shape heading and example show schema 4 with protected; the schema row and the corrupt cases (no list on schema 4, a list that differs, a list below schema 4) name protected",
