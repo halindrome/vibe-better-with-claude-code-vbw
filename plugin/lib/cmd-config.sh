@@ -20,6 +20,8 @@
 . "$VBW_LIB/rigor.sh"
 # shellcheck source=effort.sh
 . "$VBW_LIB/effort.sh"
+# shellcheck source=qa-inputs.sh
+. "$VBW_LIB/qa-inputs.sh"
 VBW_PROFILES=$(jq -c . "$VBW_LIB/profiles.json")
 VBW_ROLES="architect lead dev qa scout debugger docs"
 
@@ -35,7 +37,7 @@ config_migrate_roles() {
 # escalations (auto recomputes through rigor.sh and keeps a tier the Architect
 # raised above the floor, a forced mode sets the tier).
 config_rigor() {
-  local mode="${1:-}" old ids tiers
+  local mode="${1:-}" old ids tiers tiersf
   if [ -z "$mode" ]; then
     record_read | jq -r '.settings.rigor // "auto"'
     return 0
@@ -50,6 +52,7 @@ config_rigor() {
       | select(.id as $i | [$r.plans[] | select(.phase == $i and .status != "planned")] | length == 0) | .id')
     if [ ${#ids[@]} -gt 0 ]; then
       tiers=$(record_read | jq 'del(.phases[].tier)' | rigor_assess "${ids[@]}")
+      vbw_scratch_json tiersf "$tiers"
       record_update "$VBW_JQ_DEFS"'$tiers[0] as $t | (.phases[] | select(.id as $i | $t | any(.[]; .id == $i))) |= (. as $ph
         | ([$t[] | select(.id == $ph.id)][0]) as $a
         | if $m == "auto" then
@@ -57,7 +60,8 @@ config_rigor() {
              then .tier = .proposed | .predicted = .proposed | .reasons = $a.reasons + ["raised by the Architect"]
              else .tier = $a.tier | .predicted = $a.tier | .reasons = $a.reasons end)
           else .tier = $m | .predicted = $m | .reasons = $a.reasons + ["forced: vbw config rigor \($m)"] end)' \
-        --slurpfile tiers <(printf '%s' "$tiers") --arg m "$mode"
+        --slurpfile tiers "$tiersf" --arg m "$mode"
+      vbw_guard_drop "$tiersf"
     fi
   fi
   printf 'rigor = %s\n' "$mode"
