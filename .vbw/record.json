@@ -20805,7 +20805,7 @@
         "plugin/lib/cmd-apply.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "A requirement reopened into the current milestone (its spec text or proof type changed, so vbw spec sync moved it here) may be covered by a new phase in a full apply; the shipped phase that covered it, and that phase's plans, stay exactly as they are",
@@ -20871,7 +20871,7 @@
         "plugin/agents/lead.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Planning again: more work on a requirement whose phase has started goes in a new phase beside it (full apply or vbw apply --add); the started phase comes back exactly as it is",
@@ -20917,7 +20917,7 @@
         "plugin/lib/cmd-commit.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vbw fix check FIX < CHECK: for an open fix QA opened, add the check (run, files and the optional exit, output, timeout, alone of vbw apply) to the finding's requirement with the next free C id and fix: FIX; anything else is refused with what to do instead",
@@ -20987,7 +20987,7 @@
         "plugin/agents/qa.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Fixing a QA finding: the Dev writes a test that fails while the problem exists, registers it with vbw fix check, and commits it with the fix",
@@ -21079,7 +21079,7 @@
         "plugin/skills/vibe/SKILL.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "The three answers stay: Works, Something's wrong, Skip for now; Skip for now runs vbw req skip ID",
@@ -21121,7 +21121,7 @@
         "plugin/lib/record.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "With every record write (the glance, decision D238), the kernel keeps a small marker under .vbw/runtime/ that exists exactly while a run lease is open, readable without jq",
@@ -21327,7 +21327,7 @@
         ".claude/skills/vbw-release/SKILL.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "bash tools/test.sh --release reads the last proof in .vbw/record.json: when it was full and passed, and the working tree differs from the proved tree only in VERSION, plugin/.claude-plugin/plugin.json, .claude-plugin/marketplace.json, marketplace.json and CHANGELOG.md, it runs only the benchmarks and the timed test files and prints the proof's time",
