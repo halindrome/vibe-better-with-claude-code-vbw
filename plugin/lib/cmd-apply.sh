@@ -20,8 +20,11 @@
 # Architect's optional tier may only raise it (a lower one is refused) and is
 # kept as the phase's proposed tier (config rigor auto restores it), and
 # settings.rigor forced to a tier overrides both. A phase that already existed
-# keeps escalations, outcome and its qa verdict (and the predicted tier, once work began), and a started or
-# escalated phase never records a lower tier than it has.
+# keeps escalations, outcome and its qa verdict. A phase that has started (a plan
+# not planned, or an escalation) or finished keeps its tier, reasons and predicted
+# tier on every re-plan, forced rigor included (R159): the floor, the forced tier and
+# the one-plan rule for express judge only the phases that have not started. A new
+# phase may cover a requirement a started phase covers (R157).
 # vbw apply --patch < DOC: only plans, checks and rules, merged by id (R80).
 # vbw apply --add < DOC: new phases with their plans, checks and rules (R116),
 # appended to the milestone; a phase id it already has, a requirement any
@@ -40,13 +43,14 @@
 # shellcheck source=cmd-spec.sh
 . "$VBW_LIB/cmd-spec.sh"
 
-# foreign_reqs: the refusals --add and the full apply share. $scope is "all"
-# (--add: every phase counts as covering) or "others" (the full apply: only the
-# phases of other milestones; the active milestone's own are replaced).
+# foreign_reqs: the refusals --add and the full apply share. Only phases of other
+# milestones count as covering (a new phase may cover a requirement of this
+# milestone again: R157). $scope is "add" (--add: a requirement of this milestone
+# that another milestone's phase covers is refused too) or "others" (the full apply).
 FOREIGN_REQS_JQ='def foreign_reqs($r; $m; $p; $scope; $mode):
     [$p.phases[] | (.reqs | arrays)[]] as $reqs
-    | [($reqs[] | . as $q | ([$r.phases[] | select($scope == "all" or .milestone != $m) | select(any(.reqs[]; . == $q))][0]) | select(. != null)
-         | select($scope == "all" or ([$r.requirements[] | select(.id == $q and .milestone == $m)] | length) == 0)
+    | [($reqs[] | . as $q | ([$r.phases[] | select(.milestone != $m) | select(any(.reqs[]; . == $q))][0]) | select(. != null)
+         | select($scope == "add" or ([$r.requirements[] | select(.id == $q and .milestone == $m)] | length) == 0)
          | "\($q) is already covered by \(.id) (milestone \(.milestone)): \($mode) takes requirements that have no phase yet"),
        ($reqs[] | . as $q | ([$r.requirements[] | select(.id == $q and .milestone != $m)][0]) | select(. != null)
          | "\($q) belongs to milestone \(.milestone): \($mode) takes requirements of this milestone")];
@@ -61,7 +65,7 @@ cmd_apply() {
   case "${1:-}" in --patch) patch=true; MODE_NAME="--patch"; shift ;; --add) add=true; MODE_NAME="--add"; shift ;; esac
   [ $# -eq 0 ] || vbw_usage_error "usage: vbw apply < plan.json (full apply) | vbw apply --add < doc.json | vbw apply --patch < doc.json"
   vbw_require_project
-  local doc record problem merged filter hypo tiers judged one pdoc='{}' df tf pf
+  local doc record problem merged filter hypo tiers judged one pdoc='{}' df tf pf ids p
   doc=$(cat)
   if [ "$add" = true ]; then
     # --add: new phases with their plans, checks and rules, appended to the milestone;
@@ -75,7 +79,7 @@ cmd_apply() {
     problem=$(record_read | jq -r --slurpfile f_p <(printf '%s' "$pdoc") "$FOREIGN_REQS_JQ"'$f_p[0] as $p | . as $r | .milestone.id as $m
       | ([.phases[] | select(.milestone == $m)]) as $ph | [$p.phases[].id] as $new | [$p.phases[].reqs[]] as $newreqs
       | [($p.phases[] | select(.id as $i | any($ph[]; .id == $i)) | "\(.id) is already a phase of this milestone: --add takes new phases only"),
-         foreign_reqs($r; $m; $p; "all"; "--add")[],
+         foreign_reqs($r; $m; $p; "add"; "--add")[],
          ($p.plans[] | select(.phase as $x | $new | index($x) | not) | "\(.id // "a plan") is for \(.phase // "no phase"), not a phase this --add brings"),
          ($p.plans[] | select(.id as $i | any(($r.plans // [])[]; .id == $i)) | "\(.id) is already a plan: --add takes new plans only"),
          ($p.checks[] | select(.id as $i | any(($r.checks // [])[]; .id == $i)) | "\(.id) is already a check: --add takes new checks only"),
@@ -152,20 +156,19 @@ cmd_apply() {
     | select(any(.plans[]; .status != "planned" and (.phase as $p | any($old[]; .id == $p))))
     | [($d.phases[] | . as $n | ([$old[] | select(.id == $n.id)][0]) as $o | select($o != null)
         | if $o.title != $n.title then "\($n.id) has work started: its title stays \"\($o.title)\" (a phase is not renamed once planned work has started)"
-          elif ($o.reqs | sort) != ($n.reqs | sort) then "\($n.id) has work started: its requirements stay \($o.reqs | join(", "))" else empty end),
-       ($d.phases[] | . as $n | select(any($old[]; .id == $n.id) | not)
-        | select(any($old[]; any(.reqs[]; . as $q | any($n.reqs[]; . == $q))))
-        | "\($n.id) is a new phase for requirements another phase already covers: once work has started, add plans to that phase"
-      )] | .[0] // empty')
+          elif ($o.reqs | sort) != ($n.reqs | sort) then "\($n.id) has work started: its requirements stay \($o.reqs | join(", "))" else empty end)
+      ] | .[0] // empty')
   [ -z "$problem" ] || apply_refuse "$problem"
-  problem=$(printf '%s' "$record" | jq -r --slurpfile f_d <(printf '%s' "$doc") "$VBW_JQ_DEFS"'$f_d[0] as $d | select($d | has("rules"))
-    | . as $r | $d.rules as $rules
+  problem=$(printf '%s' "$record" | jq -r --slurpfile f_d <(printf '%s' "$doc") --slurpfile f_p <(printf '%s' "$pdoc") --argjson add "$add" "$VBW_JQ_DEFS"'$f_d[0] as $d | select($d | has("rules"))
+    | . as $r | $d.rules as $rules | ([$f_p[0].phases[]?.reqs[]] | unique) as $newreqs
     | [($rules[] | . as $x | select(any($r.requirements[]; .id == $x.req and .proof == "human"))
         | "the rule \"\($x.text)\" is for \($x.req), a [human] requirement: only [auto] requirements list rules"),
        ($rules[] | . as $x | select(any($d.checks[]; .id == $x.check and .req == $x.req) | not)
         | "the rule \"\($x.text)\" names \($x.check), which is not a check of \($x.req) in this plan"),
        ($r.requirements[] | . as $q | select(.proof == "auto" and .status != "proven" and ($q | doc_only($d.plans; $d.checks) | not)
-          and any($d.phases[].reqs[]; . == $q.id)
+          and any($d.phases[].reqs[]; . == $q.id) and (($add | not) or ($newreqs | index($q.id) != null))
+          and ($r.phases | any(.milestone == $r.milestone.id and any(.reqs[]; . == $q.id)
+                and (((.escalations // []) != []) or (.id as $i | $r.plans | any(.phase == $i and .status != "planned")))) | not)
           and ((($rules | any(.req == $q.id)) or ((.rules // []) | length > 0)) | not))
         | "\(.id) lists no rules: list each condition, edge and error case its text states, with the check that tests it (rules)")]
     | .[0] // empty')
@@ -176,8 +179,20 @@ cmd_apply() {
   # The phases judged: with --add only the ones it brings, else every phase of the doc.
   judged=$doc
   [ "$add" = false ] || judged=$pdoc
-  tiers=$(printf '%s' "$hypo" | rigor_assess "$(printf '%s' "$judged" | jq -r '.phases[].id')" 2> /dev/null) \
-    || vbw_die "internal error: cannot compute the rigor tiers"
+  # A phase that has started (a plan no longer planned, or an escalation) or finished keeps
+  # its tier, reasons and predicted tier: only the phases that have not started are judged (R159).
+  ids=()
+  while IFS= read -r p; do
+    ids+=("$p")
+  done < <(printf '%s' "$record" | jq -r --slurpfile f_j <(printf '%s' "$judged") '.milestone.id as $m
+    | [.plans[] | select(.status != "planned") | .phase] as $began
+    | [.phases[] | select(.milestone == $m and ((.escalations // []) != [])) | .id] as $esc
+    | $f_j[0].phases[].id | select(. as $i | (($began + $esc) | index($i)) | not)')
+  tiers='[]'
+  if [ ${#ids[@]} -gt 0 ]; then
+    tiers=$(printf '%s' "$hypo" | rigor_assess "${ids[@]}" 2> /dev/null) \
+      || vbw_die "internal error: cannot compute the rigor tiers"
+  fi
   problem=$(printf '%s' "$tiers" | jq -r --slurpfile f_d <(printf '%s' "$doc") '$f_d[0] as $d | [.[] | . as $a | ([$d.phases[] | select(.id == $a.id)][0].tier) as $s
       | select($s != null and ($s | IN("express", "standard", "deep")) and (["express", "standard", "deep"] | index($s)) < (["express", "standard", "deep"] | index($a.floor)))
       | "\($a.id) is planned at \($s) but its signals set the floor at \($a.floor) (\($a.reasons | map(select(test("^(requirements|files|risk|breaks|tests): ") and (test(": none$") | not))) | join("; "))): the Architect may only raise a tier"]
@@ -206,16 +221,17 @@ cmd_apply() {
                   | ($mode | IN("express", "standard", "deep")) as $forced
                   | (($o != null) and (($o.escalations // []) != [] or any($started[]; . == $np.id))) as $locked
                   | (if $forced then $mode else $a.tier end) as $want
-                  | (if $locked and ($o.tier != null)
-                        and ((["express", "standard", "deep"] | index($o.tier)) > (["express", "standard", "deep"] | index($want)))
-                     then $o.tier else $want end) as $tier
+                  | ($locked and ($o.tier != null)) as $keep
+                  | (if $keep then $o.tier else $want end) as $tier
                   | {id, title, reqs, milestone: $m} + (with_entries(select(.key | IN("goal", "criteria"))))
-                    + (if $sub != null then {proposed: $sub} else {} end)
+                    + (if $keep then ($o | with_entries(select(.key == "proposed")))
+                       elif $sub != null then {proposed: $sub} else {} end)
                     + {tier: $tier,
-                       reasons: ($a.reasons | map(select(startswith("Architect raised") | not))
-                         + (if $forced then ["forced: vbw config rigor \($mode)"]
-                            elif ($sub != null and $tier == $sub and $tier != $a.floor) then ["raised by the Architect"]
-                            else [] end)),
+                       reasons: (if $keep then ($o.reasons // [])
+                         else ($a.reasons | map(select(startswith("Architect raised") | not))
+                           + (if $forced then ["forced: vbw config rigor \($mode)"]
+                              elif ($sub != null and $tier == $sub and $tier != $a.floor) then ["raised by the Architect"]
+                              else [] end)) end),
                        predicted: (if $locked then ($o.predicted // $tier) else $tier end)}
                     + ($o // {} | with_entries(select(.key | IN("escalations", "outcome", "qa")))))] end)
     | ([($pd.plans // $d.plans)[] | {id, phase, title, reqs, files, after: (.after // []), status: ($status[.id] // "planned")}
