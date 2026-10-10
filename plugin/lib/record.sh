@@ -34,11 +34,41 @@ record_refuse_newer() {
   vbw_die "this project needs a newer VBW: its record was written with schema $n, this VBW reads up to schema $VBW_SCHEMA_MAX; update VBW with /vbw:update" 4
 }
 
+# The glance: the record cut down to what the status line reads (R149), so it
+# never parses a record of megabytes. Written beside the record, never a source
+# of truth. Call with the record lock held; a failure leaves the old glance.
+record_glance_write() {
+  local tmp
+  tmp=$(mktemp "$VBW_RUNTIME/glance.XXXXXX" 2> /dev/null) || return 0
+  vbw_guard_add file "$tmp"
+  if jq -c '.milestone.id as $m | {schema, project, milestone, settings, lease,
+      requirements: [.requirements[]? | select(.milestone == $m)],
+      plans: [.plans[]? | select(.status == "building")]}' \
+    "$VBW_RECORD" > "$tmp" 2> /dev/null; then
+    mv "$tmp" "$VBW_RUNTIME/glance.json" 2> /dev/null || true
+  fi
+  vbw_guard_drop "$tmp"
+  rm -f "$tmp" 2> /dev/null || true
+}
+
 # The validated record on stdout; exit 3 if it is corrupt, 4 if it is newer.
+# A missing or older glance (after a checkout, or a record an older VBW wrote)
+# is rewritten here, so any vbw command brings it up to date.
 record_read() {
   local v
   record_refuse_newer
   v=$(record_violation "$VBW_RECORD") || vbw_die "record is corrupt: $v ($VBW_RECORD)" 3
+  if [ ! -f "$VBW_RUNTIME/glance.json" ] || [ "$VBW_RUNTIME/glance.json" -ot "$VBW_RECORD" ]; then
+    (
+      vbw_guard_reset
+      mkdir -p "$VBW_RUNTIME" 2> /dev/null || exit 0
+      record_lock
+      if [ ! -f "$VBW_RUNTIME/glance.json" ] || [ "$VBW_RUNTIME/glance.json" -ot "$VBW_RECORD" ]; then
+        record_glance_write
+      fi
+      record_unlock
+    ) || true
+  fi
   cat "$VBW_RECORD"
 }
 
@@ -120,12 +150,16 @@ record_update() {
   tmp=$(mktemp "$VBW_RUNTIME/record.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"
   vbw_guard_add file "$tmp"
   # The schema follows the fields in use: 3 when a todo is sorted (R121) or a recommendation is stored (R123), else 2 when a check is alone (R46), else 1.
+  # Key order: schema, lease, checks, then the rest, so the guards read the
+  # beginning of the file alone (R149).
   jq "$@" "$filter
     | .schema = (if has(\"recommendation\") or ((.todos | type) == \"array\" and any(.todos[]; type == \"object\" and (has(\"sort\") or has(\"size\")))) then 3
-                elif (.checks | type) == \"array\" and any(.checks[]; type == \"object\" and .alone == true) then 2 else 1 end)" "$VBW_RECORD" > "$tmp" 2>/dev/null || vbw_die "internal error: record update failed"
+                elif (.checks | type) == \"array\" and any(.checks[]; type == \"object\" and .alone == true) then 2 else 1 end)
+    | {schema, lease: (.lease // null)} + (if has(\"checks\") then {checks} else {} end) + ." "$VBW_RECORD" > "$tmp" 2>/dev/null || vbw_die "internal error: record update failed"
   v=$(record_violation "$tmp") || vbw_die "refused: $v"
   mv "$tmp" "$VBW_RECORD"
   vbw_guard_drop "$tmp"
+  record_glance_write
   record_unlock
 }
 
