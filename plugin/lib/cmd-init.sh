@@ -22,15 +22,18 @@ cmd_init() {
     init_spec "$name" "$commands" > "$VBW_DIR/spec.md"
   fi
   jq -n --arg name "$name" --argjson commands "$commands" '{
-    schema: 1,
+    schema: 4,
+    lease: null,
+    protected: [],
+    checks: [],
     project: {name: $name},
     milestone: {id: "M1", title: "First milestone", status: "active"},
     shipped: [],
-    requirements: [], checks: [], phases: [], plans: [],
+    requirements: [], phases: [], plans: [],
     fixes: [], todos: [], decisions: [],
     commands: $commands,
     settings: {profile: "balanced", autonomy_cap: 25},
-    evidence: null, lease: null
+    evidence: null
   }' > "$VBW_RUNTIME/record.init"
   mv "$VBW_RUNTIME/record.init" "$VBW_RECORD"
   init_gitignore
