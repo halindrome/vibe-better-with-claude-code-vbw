@@ -3055,7 +3055,7 @@
   "milestone": {
     "id": "M19",
     "title": "Lighter rounds",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -3147,6 +3147,11 @@
       "id": "M18",
       "title": "Quiet start, faster CI",
       "at": "2026-10-09T20:47:54Z"
+    },
+    {
+      "id": "M19",
+      "title": "Lighter rounds",
+      "at": "2026-10-10T19:06:04Z"
     }
   ],
   "requirements": [
@@ -22653,6 +22658,11 @@
       "id": "D251",
       "at": "2026-10-10T17:33:42Z",
       "text": "Contract approved: 142 requirements, 234 checks, 310 plans (668d43d83e3e)"
+    },
+    {
+      "id": "D252",
+      "at": "2026-10-10T19:06:04Z",
+      "text": "Shipped M19 Lighter rounds: 10 requirements proven or accepted"
     }
   ],
   "commands": {
