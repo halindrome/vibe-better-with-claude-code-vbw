@@ -113,8 +113,17 @@ cmd_run() {
          else [$fx[].req as $q | .plans[] | select(any(.reqs[]; . == $q)) | .files[]] | unique end
      elif $k == "qa" or $k == "map" then []
      else [".vbw/"] end) as $files
+    | (if $k == "fix" and $files != null and all(.fixes[] | select(.id as $i | any($ids[]; . == $i)); .source == "qa") then
+         # Fixes QA opened (R160): the Dev may add test files and edit the check
+         # files of the findings requirements that no other requirement uses.
+         ([.fixes[] | select(.id as $i | any($ids[]; . == $i)) | .req] | unique) as $qs
+         | {new_tests: true,
+            checks: (([.checks[] | select(.req as $q | any($qs[]; . == $q)) | .files[]] | unique) as $mine
+              | ([.checks[] | select(.req as $q | any($qs[]; . == $q) | not) | .files[]] | unique) as $others
+              | $mine - $others)}
+       else {} end) as $qa
     | .lease = {run: "\($k)-\($at | gsub("[-:]"; ""))", kind: $k, started_at: $at, files: $files}
-       + (if $me == "" then {} else {session: $me} end)
+       + (if $me == "" then {} else {session: $me} end) + $qa
     | if $k == "build" then (.plans[] | select(.id as $i | any($ids[]; . == $i))).status = "building" else . end' \
     --arg k "$kind" --arg me "$(vbw_session)" --argjson ids "$ids" --arg at "$(vbw_now)"
   jq -r '.lease | "run \(.run) started; agents may write: \(if .files == null then "any file (protected checks excepted)" else (.files | join(", ")) end)"' "$VBW_RECORD"
