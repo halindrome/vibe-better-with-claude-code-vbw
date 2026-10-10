@@ -16,7 +16,10 @@ record_violation() {
   return 1
 }
 
-VBW_SCHEMA_MAX=3
+# Schemas 1 to 4 are read. Schema 4 exists only for a record of more than 50
+# checks, which carries the protected field so the guards never read every check
+# (R150); a record of 50 checks or fewer keeps schema 1, 2 or 3 so older VBW reads it.
+VBW_SCHEMA_MAX=4
 
 # The schema of the record at FILE when it is a number above the highest this
 # VBW reads (written by a newer VBW); empty and status 1 otherwise. A
@@ -149,13 +152,19 @@ record_update() {
   v=$(record_violation "$VBW_RECORD") || vbw_die "record is corrupt: $v ($VBW_RECORD)" 3
   tmp=$(mktemp "$VBW_RUNTIME/record.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"
   vbw_guard_add file "$tmp"
-  # The schema follows the fields in use: 3 when a todo is sorted (R121) or a recommendation is stored (R123), else 2 when a check is alone (R46), else 1.
-  # Key order: schema, lease, checks, then the rest, so the guards read the
-  # beginning of the file alone (R149).
+  # The schema follows the fields in use: 4 when the record has more than 50
+  # checks (it then carries the protected field, D226/D229, R150), else 3 when a
+  # todo is sorted (R121) or a recommendation is stored (R123), else 2 when a check is alone (R46), else 1.
+  # Key order: schema, lease, protected (when present), checks, then the rest,
+  # so the guards read the beginning of the file alone (R149, R150).
   jq "$@" "$filter
-    | .schema = (if has(\"recommendation\") or ((.todos | type) == \"array\" and any(.todos[]; type == \"object\" and (has(\"sort\") or has(\"size\")))) then 3
+    | del(.protected)
+    | ((.checks | type) == \"array\" and (.checks | length) > 50) as \$big
+    | .schema = (if \$big then 4
+                elif has(\"recommendation\") or ((.todos | type) == \"array\" and any(.todos[]; type == \"object\" and (has(\"sort\") or has(\"size\")))) then 3
                 elif (.checks | type) == \"array\" and any(.checks[]; type == \"object\" and .alone == true) then 2 else 1 end)
-    | {schema, lease: (.lease // null)} + (if has(\"checks\") then {checks} else {} end) + ." "$VBW_RECORD" > "$tmp" 2>/dev/null || vbw_die "internal error: record update failed"
+    | (if \$big then {protected: ([.checks[] | objects | .files? | arrays | .[] | strings] | unique)} else {} end) as \$p
+    | {schema, lease: (.lease // null)} + \$p + (if has(\"checks\") then {checks} else {} end) + ." "$VBW_RECORD" > "$tmp" 2>/dev/null || vbw_die "internal error: record update failed"
   v=$(record_violation "$tmp") || vbw_die "refused: $v"
   mv "$tmp" "$VBW_RECORD"
   vbw_guard_drop "$tmp"
