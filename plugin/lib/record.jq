@@ -1,7 +1,8 @@
-# The definition of .vbw/record.json: schema 1, 2 when a check is alone, 3 when a todo is sorted (docs/record.md),
-# 4 when it has more than 50 checks: it then carries protected, the sorted list of every file a check
-# protects, so a guard reads the list without reading through the checks (R150). A record of more than 50
-# checks written before schema 4 (schema 1, 2 or 3, no field) stays valid until its next write.
+# The definition of .vbw/record.json (docs/record.md). Format 4 (D232) is what every write produces:
+# schema 4 and protected, the sorted list of every file a check protects, each once ([] without
+# checks), so a guard reads the list without reading through the checks (R150). The older formats
+# stay valid until their next write: schema 1, 2 when a check is alone, 3 when a todo is sorted or
+# a recommendation is stored; they carry no protected field.
 # Input: the record. Output: a JSON array of violation messages; [] = valid.
 
 def nonempty: type == "string" and length > 0;
@@ -47,14 +48,16 @@ if type != "object" then ["record must be a JSON object"] else
 | ([($r.shipped // [])[]?.id] + [$r.milestone.id?]) as $milestones
 | ($plans | map({key: .id, value: (.after // [])}) | from_entries) as $graph
 | [
-    ( select($r.schema != (if ($r | has("protected")) then 4
-                           elif ($r | has("recommendation")) or ((($r.todos // []) | type) == "array" and any(($r.todos // [])[]?; type == "object" and (has("sort") or has("size")))) then 3
-                           elif (($r.checks // []) | type) == "array" and any(($r.checks // [])[]?; type == "object" and .alone == true) then 2 else 1 end))
-      | "schema must be 3 when a todo is sorted or a recommendation is stored; schema must be 2 when a check is alone, else 1; schema must be 4 exactly when the protected field is present (more than 50 checks)" ),
-    ( select(($r | has("protected")) and ((($r.checks // []) | type == "array" and length > 50) | not))
-      | "protected is only for a record of more than 50 checks" ),
-    ( select(($r | has("protected")) and ((($r.checks // []) | type == "array" and length > 50)))
-      | select($r.protected != ([($r.checks // [])[] | objects | .files? | arrays | .[] | strings] | unique))
+    ( select(($r | has("protected") | not) and $r.schema == 4)
+      | "protected is missing: a schema-4 record must carry the protected field" ),
+    ( select(($r | has("protected")) and $r.schema != 4)
+      | "protected is only for a schema-4 record" ),
+    ( select(($r | has("protected") | not) and $r.schema != 4
+             and $r.schema != (if ($r | has("recommendation")) or ((($r.todos // []) | type) == "array" and any(($r.todos // [])[]?; type == "object" and (has("sort") or has("size")))) then 3
+                               elif (($r.checks // []) | type) == "array" and any(($r.checks // [])[]?; type == "object" and .alone == true) then 2 else 1 end))
+      | "schema must be 3 when a todo is sorted or a recommendation is stored; schema must be 2 when a check is alone, else 1" ),
+    ( select($r | has("protected"))
+      | select($r.protected != ([($r.checks // [])[]? | objects | .files? | arrays | .[] | strings] | unique))
       | "protected must be the sorted list of every file the checks protect, each once" ),
     ( $r | keys[]
       | select(one_of(["schema","project","milestone","requirements","checks","phases","plans",
