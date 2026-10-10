@@ -18628,24 +18628,25 @@
         "R149"
       ],
       "files": [
-        "tools/bench-hooks.sh",
-        "tools/test.sh",
+        "plugin/hooks/common.jq",
+        "plugin/scripts/vbw-statusline.sh",
         "tests/test-shards.bats",
-        "plugin/hooks/common.jq"
+        "tools/bench-hooks.sh",
+        "tools/test.sh"
       ],
       "after": [
         "P101.6",
         "P101.7",
         "P102.2"
       ],
-      "status": "blocked",
+      "status": "planned",
       "tasks": [
         "Done (657e1ab2, 68fde7dc): the bench measures a record over 2 MB and the status line on both records; tools/test.sh and tests/test-shards.bats list big-record-hooks among the timed files",
         "Done (9f1b8da2): the guard reads the lease and the checks' files key by key instead of rebuilding every event",
         "tools/bench-hooks.sh: the large record is written once through the kernel (one record write, such as vbw decide, instead of vbw status) so it holds the format the kernel writes; with its 100 checks that is schema 4 with the protected field (P102.1), which the guards read without walking the checks (P102.2); the 'large record: N bytes' line and every existing line stay as they are",
-        "Run tests/bench-hooks.bats, big-record-hooks.bats and guard-cost.bats under macOS /bin/bash 3.2 and bash 5; every guard line and the status line within budget; if a limit cannot hold, record the measured times in the plan note and block the plan, never raise a limit"
-      ],
-      "note": "Tasks 1-3 done. Task 4: under macOS /bin/bash 3.2 the status line on the 2.3 MB record measures 32.7, 33.2 and 34.8 ms CPU per call (budget 30 ms; 18.5-20.2 ms on the small record); all guard lines are within budget (max 7.6 ms vs 8 ms/1.0x startup). Under bash 5 everything passes. The status line script (plugin/scripts/vbw-statusline.sh) is outside this plan's files, and the limit must not be raised; needs a plan to cut the status line's cost on a large record under bash 3.2."
+        "Run tests/bench-hooks.bats, big-record-hooks.bats and guard-cost.bats under macOS /bin/bash 3.2 and bash 5; every guard line and the status line within budget; if a limit cannot hold, record the measured times in the plan note and block the plan, never raise a limit",
+        "plugin/scripts/vbw-statusline.sh reads the glance unless the record is newer than it ([ ! record -nt glance ] with the glance present), instead of only when the glance is newer: macOS /bin/bash 3.2 compares file times in whole seconds, so a glance written in the same second as the record counted as not newer and the status line parsed the whole record (33 ms against 30 on a 2.3 MB record); bash 5 compares finer and was unaffected; the large-record status line line of tools/bench-hooks.sh is within 30 ms under /bin/bash 3.2"
+      ]
     },
     {
       "id": "P101.9",
@@ -21472,6 +21473,11 @@
       "id": "D234",
       "at": "2026-10-10T08:32:09Z",
       "text": "Contract approved: 139 requirements, 222 checks, 296 plans (86538f372362)"
+    },
+    {
+      "id": "D235",
+      "at": "2026-10-10T08:50:57Z",
+      "text": "Contract approved: 139 requirements, 222 checks, 296 plans (18c2335f36c0)"
     }
   ],
   "commands": {
