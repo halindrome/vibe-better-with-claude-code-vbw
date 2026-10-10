@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
 # R55: the panel stays light. Its CPU cost per refresh is measured by
 # tools/bench-panel.sh (like tools/bench-hooks.sh does for the hooks) against a
-# stated budget; it uses no network and reads no credentials; its code is
+# stated budget, judged in the release run (bash tools/test.sh --release, R152)
+# and never in vbw prove; it uses no network and reads no credentials; its code is
 # read-only; and the kernel and workflow budgets still hold. Behaviour is in
 # tests/panel/light.test.mjs. L1.
 
@@ -12,10 +13,10 @@ teardown() { vbw_teardown; }
 
 BENCH="$BATS_TEST_DIRNAME/../tools/bench-panel.sh"
 
-@test "R55: the bench measures the CPU of a refresh that found nothing new and of one that redraws, within the stated budget" {
+@test "R55: the bench measures the CPU of a refresh that found nothing new and of one that redraws, against the stated budget" {
   command -v node > /dev/null 2>&1 || { echo "node is needed for the panel tests"; false; }
   [ -f "$BENCH" ]
-  VBW_BENCH_RUNS=30 run bash "$BENCH"
+  VBW_PANEL_BUDGET_MS=100000 VBW_BENCH_RUNS=30 run bash "$BENCH"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [[ "$output" =~ (^|$'\n')"tick, nothing changed: "[0-9.]+" ms CPU" ]] || { echo "$output"; false; }
   [[ "$output" =~ (^|$'\n')"refresh, state changed: "[0-9.]+" ms CPU" ]] || { echo "$output"; false; }
@@ -52,7 +53,7 @@ BENCH="$BATS_TEST_DIRNAME/../tools/bench-panel.sh"
 }
 
 @test "R55: the panel never names the record as something to write" {
-  ! grep -nE 'record\.json.*(write|set)|(write|set).*record\.json' "$PLUGIN_ROOT"/hooks/panel*.js
+  ! grep -nE 'record\.json.*(write|set)|(write|set).*record\.json' "$PLUGIN_ROOT"/hooks/panel*.js || false
   [ -f "$PLUGIN_ROOT/hooks/panel.js" ]
 }
 

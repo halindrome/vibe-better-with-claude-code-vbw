@@ -2,7 +2,8 @@
 # R69 and R81 (docs/proof.md): vbw prove runs the approved checks in parallel,
 # except checks marked alone, which still run by themselves; the passed and
 # failed checks and their recorded results equal those of a sequential run; a
-# proof of many checks finishes in a fraction of the sequential time; the
+# proof of many checks runs them side by side (its time is measured in the
+# release run, tests/timed-*.bats, R152, never in vbw prove); the
 # project setting check_jobs (vbw config set check_jobs N, 1 to 64; without it
 # three quarters of the processor cores, R147) limits how many run at once, and
 # 1 is sequential; an invalid value is refused with a message and changes
@@ -91,16 +92,14 @@ results() { jq -c '.evidence | {passed, checks: (.checks | map_values({status, e
   [ "$(peak)" -le 4 ]
 }
 
-@test "R69: a proof of 24 checks takes a fraction of the sequential time" {
+@test "R69: a proof of 24 checks runs them side by side, so it takes a fraction of the sequential time, and all pass" {
   project 24
-  # 24 checks of one second each take at least 24 s one after another, so any
-  # proof under 24 s ran checks side by side. The bound is that floor, not a
-  # guess of this machine's speed: VBW's own work per check (a shell, git, jq)
-  # comes on top and is several seconds on a slow CI runner (15 s on macOS CI,
-  # 2026-10-09), while 4 at a time sleeps only 6 s.
-  NAP=1 run bash -c 'start=$(date +%s); "$1" prove > /dev/null; echo $(( $(date +%s) - start ))' _ "$VBW"
-  [ "$status" -eq 0 ]
-  [ "$output" -lt 24 ] || { echo "took $output s"; false; }
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  # Every check ran, and some ran beside others: the proof did not wait for
+  # one check to end before starting the next.
+  [ "$(wc -l < "$CONC/seen" | tr -d ' ')" = 24 ]
+  [ "$(peak)" -ge 2 ]
   jq -e '.evidence.passed == true and (.evidence.checks | length) == 24' .vbw/record.json
 }
 

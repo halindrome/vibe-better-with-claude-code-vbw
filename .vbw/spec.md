@@ -149,6 +149,9 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 - R148 [auto] When several Devs or fix groups work at once, the checks they run together stay within that same machine-sized limit, and fix groups share one run of the project test command instead of each running it
 - R149 [auto] Every vbw command works on a project whose record (.vbw/record.json) is larger than the operating system's command-line limit (over 1 MB, as long-lived projects reach): no record-sized data is ever passed to a helper program as a command-line argument
 - R150 [auto] A guard's cost per tool call stays within its budget however long the record grows: every record that has checks keeps the protected check files as one short list near its top (record format 4), and the guards read only that list, never the checks themselves; there is one way to read it, with no size threshold
+- R151 [auto] VBW's speed checks fail only on a real slowdown: a hook's own cost above 20 ms per call, or the status line above 60 ms; when the machine is too busy to measure (starting the shell and jq alone takes longer than the hook limit) the check reports the machine as busy and does not fail
+- R152 [auto] The timed speed checks run once per release (in CI and in the local run before a push), not in every vbw prove, so a proof never fails or waits because the machine is busy
+- R153 [auto] vbw prove never stops a project's test command only because the machine is busy: its time limit fits a large project's full test run on a loaded machine, and a project can set its own limit
 
 <!-- One requirement per line: an id, how it is proved, and a user-observable
      statement. [auto] = a check can prove it; [human] = only a person can judge it.

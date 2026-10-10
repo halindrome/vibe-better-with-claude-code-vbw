@@ -20,6 +20,8 @@
     "tests/auto-gate-background.bats",
     "tests/baseline-cases.bats",
     "tests/baseline-results.bats",
+    "tests/bench-limits-docs.bats",
+    "tests/bench-limits.bats",
     "tests/bench-protected.bats",
     "tests/big-record-commands.bats",
     "tests/big-record-docs.bats",
@@ -38,6 +40,8 @@
     "tests/ci-scope-wiring.bats",
     "tests/ci-scope.bats",
     "tests/ci-shards.bats",
+    "tests/command-timeout-docs.bats",
+    "tests/command-timeout.bats",
     "tests/config-qa.bats",
     "tests/contract-waves.bats",
     "tests/contributor-files.bats",
@@ -189,6 +193,8 @@
     "tests/record-newer.bats",
     "tests/record-protected.bats",
     "tests/record-v4-compat.bats",
+    "tests/release-run-docs.bats",
+    "tests/release-run.bats",
     "tests/rigor-config.bats",
     "tests/rigor-escalation.bats",
     "tests/rigor-express.bats",
@@ -1021,7 +1027,7 @@
       "run": [
         "bats",
         "-f",
-        "costs less than|without mods|help and the README|preference is the user",
+        "sound costs|without mods|help and the README|preference is the user",
         "tests/panel-sound.bats"
       ],
       "files": [
@@ -2929,6 +2935,75 @@
       "files": [
         "tests/glance-docs.bats"
       ]
+    },
+    {
+      "id": "C231",
+      "req": "R151",
+      "run": [
+        "bats",
+        "tests/bench-limits.bats"
+      ],
+      "files": [
+        "tests/bench-limits.bats"
+      ],
+      "timeout": 1800
+    },
+    {
+      "id": "C232",
+      "req": "R151",
+      "run": [
+        "bats",
+        "tests/bench-limits-docs.bats"
+      ],
+      "files": [
+        "tests/bench-limits-docs.bats"
+      ]
+    },
+    {
+      "id": "C233",
+      "req": "R152",
+      "run": [
+        "bats",
+        "tests/release-run.bats"
+      ],
+      "files": [
+        "tests/release-run.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C234",
+      "req": "R152",
+      "run": [
+        "bats",
+        "tests/release-run-docs.bats"
+      ],
+      "files": [
+        "tests/release-run-docs.bats"
+      ]
+    },
+    {
+      "id": "C235",
+      "req": "R153",
+      "run": [
+        "bats",
+        "tests/command-timeout.bats"
+      ],
+      "files": [
+        "tests/command-timeout.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C236",
+      "req": "R153",
+      "run": [
+        "bats",
+        "tests/command-timeout-docs.bats"
+      ],
+      "files": [
+        "tests/command-timeout-docs.bats"
+      ]
     }
   ],
   "project": {
@@ -4065,7 +4140,7 @@
           "check": "C57"
         },
         {
-          "text": "the CPU time of a refresh that found nothing and of one that redraws is measured by tools/bench-panel.sh and stays within the stated budget",
+          "text": "the CPU time of a refresh that found nothing and of one that redraws is measured by tools/bench-panel.sh against the stated budget (judged in the release run, not in vbw prove)",
           "check": "C56"
         },
         {
@@ -4106,7 +4181,7 @@
           "check": "C61"
         },
         {
-          "text": "a refresh that also reads the cost and works out estimates stays within the panel's CPU budget",
+          "text": "the panel bench measures a refresh that also reads the cost and works out estimates (its CPU budget is judged in the release run, not in vbw prove)",
           "check": "C65"
         },
         {
@@ -4155,7 +4230,7 @@
           "check": "C59"
         },
         {
-          "text": "raising a need and playing the sound costs less than the hook CPU limit of 8 ms, measured",
+          "text": "the panel bench measures what raising a need and playing the sound costs (its budget is judged in the release run, not in vbw prove)",
           "check": "C71"
         },
         {
@@ -4228,7 +4303,7 @@
           "check": "C67"
         },
         {
-          "text": "a refresh that works out two estimates stays within the panel's CPU budget",
+          "text": "the panel bench measures a refresh that works out two estimates (its CPU budget is judged in the release run, not in vbw prove)",
           "check": "C67"
         },
         {
@@ -4355,7 +4430,7 @@
           "check": "C75"
         },
         {
-          "text": "the new hook stays within the hot-path budget and the kernel within 3,500 lines",
+          "text": "the hook bench measures the new hook's cost (its limit is judged in the release run, not in vbw prove) and the kernel stays within its line budget",
           "check": "C75"
         },
         {
@@ -4657,7 +4732,7 @@
           "check": "C110"
         },
         {
-          "text": "a proof of many checks finishes in a fraction of the sequential time",
+          "text": "a proof of many checks runs them side by side, so it takes a fraction of the sequential time (its duration is measured in the release run, not in vbw prove)",
           "check": "C110"
         },
         {
@@ -4870,6 +4945,10 @@
         {
           "text": "programs that only read, or run tests, are allowed",
           "check": "C102"
+        },
+        {
+          "text": "the hook benchmark measures a program command during a run (its cost is judged in the release run, not in vbw prove)",
+          "check": "C103"
         }
       ]
     },
@@ -5352,7 +5431,7 @@
           "check": "C140"
         },
         {
-          "text": "the scan's time on a 50,000-file working folder is measured and bounded",
+          "text": "on a 50,000-file working folder the scan names the stale links and the proof passes (its time is measured in the release run, not in vbw prove)",
           "check": "C143"
         },
         {
@@ -6633,7 +6712,7 @@
           "check": "C192"
         },
         {
-          "text": "the panel bench measures a refresh that draws the section within VBW_PANEL_BUDGET_MS",
+          "text": "the panel bench measures a refresh that draws the section (judged against VBW_PANEL_BUDGET_MS in the release run, not in vbw prove)",
           "check": "C193"
         },
         {
@@ -6760,10 +6839,6 @@
         },
         {
           "text": "the standards inventory fails on a new hook answer shape that has no pinning test, and on any allow",
-          "check": "C200"
-        },
-        {
-          "text": "hook timing stays within the hot-path budget (tools/bench-hooks.sh passes)",
           "check": "C200"
         }
       ]
@@ -6983,10 +7058,6 @@
           "check": "C203"
         },
         {
-          "text": "without jq the hook stops early and finishes well within the hook time budget",
-          "check": "C203"
-        },
-        {
           "text": "with jq present, the existing session-start tests pass without edits",
           "check": "C203"
         },
@@ -7012,7 +7083,7 @@
           "check": "C205"
         },
         {
-          "text": "a shard job runs tools/test.sh --shard K/N with N the shard count; a job without a shard (Linux) runs the full suite",
+          "text": "a shard job runs tools/test.sh --shard K/N with N the shard count; a job without a shard (Linux) runs the release run, tools/test.sh --release",
           "check": "C205"
         },
         {
@@ -7020,7 +7091,7 @@
           "check": "C205"
         },
         {
-          "text": "the CI budget settings VBW_HOOK_BUDGET_MS 25 and VBW_PANEL_BUDGET_MS 3 are unchanged",
+          "text": "the CI panel budget VBW_PANEL_BUDGET_MS 3 is unchanged and CI sets no hook or status line limit of its own",
           "check": "C205"
         },
         {
@@ -7048,7 +7119,7 @@
           "check": "C204"
         },
         {
-          "text": "each shard runs its timed files alone after its parallel batch",
+          "text": "each shard runs its timed files (tests/timed-*.bats) alone after its parallel batch",
           "check": "C204"
         },
         {
@@ -7057,10 +7128,6 @@
         },
         {
           "text": "a failing test file in a shard, in the batch or among the timed files, makes that shard fail",
-          "check": "C204"
-        },
-        {
-          "text": "with no arguments the full local run is unchanged: lint, benchmarks, every file on half the cores, timed files last",
           "check": "C204"
         },
         {
@@ -7471,7 +7538,7 @@
           "check": "C219"
         },
         {
-          "text": "tools/bench-hooks.sh measures every guard input and the status line on a record over 2 MB within their limits (hook CPU budget, status line at most 30 ms)",
+          "text": "tools/bench-hooks.sh measures every guard input and the status line on a record over 2 MB; whether they are within their limits is judged in the release run, not in vbw prove",
           "check": "C219"
         },
         {
@@ -7600,7 +7667,7 @@
           "check": "C224"
         },
         {
-          "text": "every guard input stays within the hook budget on records of 51, 500 and 2,000 checks",
+          "text": "the hook benchmark measures every guard input on records of 51, 500 and 2,000 checks against one hook limit, judged in the release run, not in vbw prove",
           "check": "C226"
         },
         {
@@ -7686,6 +7753,169 @@
         {
           "text": "no guide says the guards stream the record or read only its beginning",
           "check": "C230"
+        }
+      ]
+    },
+    {
+      "id": "R151",
+      "text": "VBW's speed checks fail only on a real slowdown: a hook's own cost above 20 ms per call, or the status line above 60 ms; when the machine is too busy to measure (starting the shell and jq alone takes longer than the hook limit) the check reports the machine as busy and does not fail",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M19",
+      "rules": [
+        {
+          "text": "a guard whose own cost (its CPU time minus the sh and jq startup) is above 20 ms per call fails the bench, and the line names the input, the cost and the 20 ms limit",
+          "check": "C231"
+        },
+        {
+          "text": "a hook doing extra work well over 20 ms on a quiet machine still fails the bench: a real slowdown is caught",
+          "check": "C231"
+        },
+        {
+          "text": "a guard whose own cost is at or below 20 ms per call passes, and the old relative limit (1x the startup) is gone",
+          "check": "C231"
+        },
+        {
+          "text": "the status line above 60 ms per call fails the bench on the small record and on the record over 2 MB, the line naming the cost and the 60 ms limit",
+          "check": "C231"
+        },
+        {
+          "text": "without settings the limits are 20 ms per hook call and 60 ms for the status line",
+          "check": "C231"
+        },
+        {
+          "text": "when the sh and jq startup alone is above the hook limit, the bench prints that the machine is too busy to measure, with the startup and the limit, judges nothing and exits 0",
+          "check": "C231"
+        },
+        {
+          "text": "with a startup below the limit the same run judges every guard and the status line as usual",
+          "check": "C231"
+        },
+        {
+          "text": "VBW_HOOK_BUDGET_MS and VBW_STATUSLINE_BUDGET_MS override the two limits, and the busy threshold follows the hook limit",
+          "check": "C231"
+        },
+        {
+          "text": "CI sets no hook or status line limit of its own: it runs with the local defaults",
+          "check": "C232"
+        },
+        {
+          "text": "docs/guards.md states 20 ms per hook call and the busy-machine report, and no 8 ms or relative limit",
+          "check": "C232"
+        },
+        {
+          "text": "docs/statusline.md states 60 ms and no 30 ms limit",
+          "check": "C232"
+        },
+        {
+          "text": "the hot-path rule in CLAUDE.md states 20 ms per hook call, 60 ms for the status line and the busy report, and neither 8 ms nor 30 ms",
+          "check": "C232"
+        }
+      ]
+    },
+    {
+      "id": "R152",
+      "text": "The timed speed checks run once per release (in CI and in the local run before a push), not in every vbw prove, so a proof never fails or waits because the machine is busy",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M19",
+      "rules": [
+        {
+          "text": "bash tools/test.sh with no option runs the lint and every test file except tests/timed-*.bats, and neither tools/bench-hooks.sh nor tools/bench-panel.sh",
+          "check": "C233"
+        },
+        {
+          "text": "bash tools/test.sh --release runs the lint, both benchmarks, every other test file in one parallel batch, then the timed files alone",
+          "check": "C233"
+        },
+        {
+          "text": "the release run fails when a benchmark, the batch or a timed file fails",
+          "check": "C233"
+        },
+        {
+          "text": "bash tools/test.sh --quick still runs, without the benchmarks and without any timed file",
+          "check": "C233"
+        },
+        {
+          "text": "the CI shards together make one release run: shard 1 runs both benchmarks and every timed file runs alone after its shard's batch",
+          "check": "C233"
+        },
+        {
+          "text": "--release with any other argument exits 2 with the usage line and runs nothing",
+          "check": "C233"
+        },
+        {
+          "text": "CI runs the release way: the jobs without a shard run bash tools/test.sh --release and the shard jobs their share",
+          "check": "C233"
+        },
+        {
+          "text": "no test file of the default run measures a duration (the bash or wall clock, or a speed benchmark at its real limit); the 24-check proof time and the 50,000-file scan time are timed tests",
+          "check": "C233"
+        },
+        {
+          "text": "docs/proof.md says the timed speed checks run in bash tools/test.sh --release and that vbw prove does not run them",
+          "check": "C234"
+        },
+        {
+          "text": "the testing section of CLAUDE.md names the release run, says vbw prove does not run the timed checks, and makes it the local run before a push",
+          "check": "C234"
+        },
+        {
+          "text": "CONTRIBUTING.md names the release run as the local run before a push",
+          "check": "C234"
+        }
+      ]
+    },
+    {
+      "id": "R153",
+      "text": "vbw prove never stops a project's test command only because the machine is busy: its time limit fits a large project's full test run on a loaded machine, and a project can set its own limit",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M19",
+      "rules": [
+        {
+          "text": "without a setting vbw config shows 3600 seconds and vbw prove gives the test command 3600 seconds (60 minutes) before stopping it",
+          "check": "C235"
+        },
+        {
+          "text": "vbw config set command_timeout SECONDS sets the project's own limit; vbw config shows it and later runs keep and use it",
+          "check": "C235"
+        },
+        {
+          "text": "vbw config set command_timeout default returns to 3600 seconds",
+          "check": "C235"
+        },
+        {
+          "text": "vbw prove stops the test command at the project's limit and records it as timeout",
+          "check": "C235"
+        },
+        {
+          "text": "the report of a stop says the test command was stopped by its time limit, names the limit in use and says vbw config set command_timeout raises it",
+          "check": "C235"
+        },
+        {
+          "text": "a limit that is not a whole number, is zero, negative or above 86400 is refused with a message naming 1 to 86400 and changes nothing",
+          "check": "C235"
+        },
+        {
+          "text": "a test command that ends within the limit is recorded as before: pass, or fail with its exit code",
+          "check": "C235"
+        },
+        {
+          "text": "a check's own timeout is unchanged: its default stays 300 seconds and its timeout field still stops it",
+          "check": "C235"
+        },
+        {
+          "text": "docs/proof.md states the default limit, 3600 seconds (60 minutes), and no longer 900 seconds",
+          "check": "C236"
+        },
+        {
+          "text": "docs/proof.md says how a project sets its own limit, the range 1 to 86400 and how to return to the default",
+          "check": "C236"
+        },
+        {
+          "text": "docs/proof.md says what a stop by the limit looks like and how to raise the limit",
+          "check": "C236"
         }
       ]
     }
@@ -11784,11 +12014,11 @@
       "tier": "standard",
       "reasons": [
         "requirements: 1",
-        "files: 4 (70738 bytes)",
-        "files: more than 2 in a repository tracking 800 files",
+        "files: 4 (70768 bytes)",
+        "files: more than 2 in a repository tracking 804 files",
         "risk: none",
         "breaks: none",
-        "guarded: R12 (C11), R25 (C24), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202)",
+        "guarded: R12 (C11), R25 (C24), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R147 (C212, C215), R148 (C213, C214, C216), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230)",
         "tests: project test command"
       ],
       "predicted": "standard"
@@ -11817,7 +12047,7 @@
         "files: 2 (23701 bytes)",
         "risk: none",
         "breaks: none",
-        "guarded: R13 (C12), R14 (C13), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R35 (C31), R37 (C35), R38 (C33, C34), R40 (C37), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R67 (C96), R70 (C114), R71 (C115, C121), R72 (C116, C118), R74 (C99, C100), R79 (C107), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R131 (C198)",
+        "guarded: R13 (C12), R14 (C13), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R35 (C31), R37 (C35), R38 (C33, C34), R40 (C37), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R67 (C96), R70 (C114), R71 (C115, C121), R72 (C116, C118), R74 (C99, C100), R79 (C107), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R131 (C198), R149 (C217, C218, C219, C220, C221, C222)",
         "tests: project test command",
         "raised by the Architect"
       ],
@@ -11846,11 +12076,11 @@
       "tier": "standard",
       "reasons": [
         "requirements: 1",
-        "files: 3 (18195 bytes)",
-        "files: more than 2 in a repository tracking 800 files",
+        "files: 3 (19638 bytes)",
+        "files: more than 2 in a repository tracking 804 files",
         "risk: none",
         "breaks: none",
-        "guarded: R1 (C1), R2 (C2), R22 (C19), R23 (C20), R25 (C24), R33 (C29), R38 (C33, C34), R46 (C46), R47 (C47), R49 (C48), R81 (C109, C111, C112, C113), R121 (C187, C188), R122 (C189), R123 (C190, C191), R127 (C194), R133 (C195)",
+        "guarded: R1 (C1), R2 (C2), R22 (C19), R23 (C20), R25 (C24), R33 (C29), R38 (C33, C34), R46 (C46), R47 (C47), R49 (C48), R81 (C109, C111, C112, C113), R121 (C187, C188), R122 (C189), R123 (C190, C191), R127 (C194), R133 (C195), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230)",
         "tests: project test command"
       ],
       "predicted": "standard"
@@ -11884,10 +12114,10 @@
       "reasons": [
         "requirements: 2",
         "files: 8 (112138 bytes)",
-        "files: more than 2 in a repository tracking 800 files",
+        "files: more than 2 in a repository tracking 804 files",
         "risk: none",
         "breaks: none",
-        "guarded: R1 (C1), R2 (C2), R3 (C3), R12 (C11), R13 (C12), R14 (C13), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R58 (C62, C63, C64, C67), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202)",
+        "guarded: R1 (C1), R2 (C2), R3 (C3), R12 (C11), R13 (C12), R14 (C13), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R38 (C33, C34), R39 (C36), R40 (C37), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R58 (C62, C63, C64, C67), R60 (C72, C94), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R149 (C217, C218, C219, C220, C221, C222)",
         "tests: project test command",
         "raised by the Architect"
       ],
@@ -11916,11 +12146,11 @@
       "tier": "deep",
       "reasons": [
         "requirements: 1",
-        "files: 55 (341239 bytes)",
-        "files: more than 2 in a repository tracking 800 files",
+        "files: 57 (358891 bytes)",
+        "files: more than 2 in a repository tracking 804 files",
         "risk: none",
         "breaks: none",
-        "guarded: R1 (C1), R2 (C2), R10 (C9), R11 (C10), R12 (C11), R13 (C12), R14 (C13), R15 (C14), R16 (C15), R21 (C16), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R29 (C26), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R53 (C54, C55), R55 (C56, C57), R58 (C62, C63, C64, C67), R61 (C73, C74, C75, C76, C77), R65 (C86, C87, C88, C89, C90), R66 (C95), R67 (C96), R68 (C97), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R113 (C177), R114 (C178), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195)",
+        "guarded: R1 (C1), R2 (C2), R10 (C9), R11 (C10), R12 (C11), R13 (C12), R14 (C13), R15 (C14), R16 (C15), R21 (C16), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R29 (C26), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R53 (C54, C55), R55 (C56, C57), R58 (C62, C63, C64, C67), R65 (C86, C87, C88, C89, C90), R66 (C95), R67 (C96), R68 (C97), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R74 (C99, C100), R75 (C101), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R113 (C177), R114 (C178), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205), R144 (C208, C209), R145 (C210), R146 (C211), R147 (C212, C215), R148 (C213, C214, C216), R150 (C223, C224, C225, C226, C227, C228, C229, C230)",
         "tests: project test command"
       ],
       "predicted": "deep",
@@ -12017,11 +12247,11 @@
       "tier": "deep",
       "reasons": [
         "requirements: 1",
-        "files: 18 (161314 bytes)",
-        "files: more than 2 in a repository tracking 800 files",
+        "files: 19 (175234 bytes)",
+        "files: more than 2 in a repository tracking 804 files",
         "risk: none",
         "breaks: none",
-        "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R51 (C52, C53, C66), R53 (C54, C55), R55 (C56, C57), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R75 (C101), R76 (C102, C103), R77 (C104), R81 (C109, C111, C112, C113), R83 (C119), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R109 (C168), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R114 (C178), R115 (C181), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205)",
+        "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R51 (C52, C53, C66), R53 (C54, C55), R55 (C56, C57), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R75 (C101), R77 (C104), R81 (C109, C111, C112, C113), R83 (C119), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R109 (C168), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R114 (C178), R115 (C181), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205), R144 (C208, C209), R146 (C211), R149 (C217, C218, C219, C220, C221, C222)",
         "tests: project test command"
       ],
       "predicted": "deep",
@@ -12039,6 +12269,95 @@
           "reason": "Dev blocked P102.3: Tasks 1-4 are committed (70016611, 537a7b4d) and every bench line is within budget (20 runs, all inputs on 51/500/2000 checks, max about 7.2 ms). But tests/test-shards.bats test 19 now fails on bash 3.2 and 5: it pins the timed-file list and its fake repo lacks bench-protected.bats, so the full-run order line must name tests/bench-protected.bats (before proof-stale-links.bats). That file is outside this plan and protected by check C204, so it needs a one-line edit and your approval. Fix: add bench-protected to the fake-repo file list (line 46) and the expected line (line 233), the same edit P101.8 made for big-record-hooks."
         }
       ]
+    },
+    {
+      "id": "P103",
+      "title": "Speed checks fail only on a real slowdown",
+      "reqs": [
+        "R151"
+      ],
+      "milestone": "M19",
+      "goal": "VBW's hook and status-line speed checks fail only when VBW itself got slower, never because other programs are keeping the machine busy.",
+      "criteria": [
+        "tools/bench-hooks.sh fails when a guard's own cost (its CPU time minus the shell-and-jq startup it is measured against) is above 20 ms per call on any measured input and record size, and the failure line names the input, the measured cost and the 20 ms limit",
+        "tools/bench-hooks.sh passes when every guard's own cost is at or below 20 ms per call; the old relative limit (1x the startup) no longer fails a run",
+        "tools/bench-hooks.sh fails when the status line costs more than 60 ms per call on the small record or on the record over 2 MB, and the line names the cost and the 60 ms limit",
+        "When the shell-and-jq startup alone measures above 20 ms, tools/bench-hooks.sh prints a line saying the machine is too busy to measure, with the measured startup, and exits 0 without judging any guard",
+        "A test with a hook that does extra work costing well over 20 ms on a quiet machine still makes tools/bench-hooks.sh fail (a real slowdown is caught)",
+        "A test that simulates a busy machine (startup above the limit) shows the busy line and exit 0, and the same test with normal startup judges the guards as usual",
+        "VBW_HOOK_BUDGET_MS and VBW_STATUSLINE_BUDGET_MS still override the two limits; the defaults are 20 and 60; CI uses the same defaults as a local run, with no CI-only hook limit",
+        "docs/guards.md, docs/statusline.md and the hot-path rule in CLAUDE.md state 20 ms per hook call, 60 ms for the status line, and the busy-machine report; none still states 8 ms or 30 ms as the limit"
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 6 (58380 bytes)",
+        "files: more than 2 in a repository tracking 804 files",
+        "risk: CI (.github/workflows/ci.yml)",
+        "breaks: none",
+        "guarded: R15 (C14), R16 (C15), R21 (C16), R48 (C49, C50), R55 (C56, C57), R75 (C101), R77 (C104), R120 (C185), R126 (C186), R142 (C204, C205), R143 (C206, C207), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P104",
+      "title": "Timed speed checks run once per release, not in every proof",
+      "reqs": [
+        "R152"
+      ],
+      "milestone": "M19",
+      "goal": "A vbw prove never runs a check that can fail or wait because of a measured time; the timed speed checks run once per release, in CI and in the local run before a push.",
+      "criteria": [
+        "bash tools/test.sh with no option (the project's test command that vbw prove runs) runs neither tools/bench-hooks.sh nor tools/bench-panel.sh and no test that fails on a measured duration",
+        "One documented way of running tools/test.sh for a release (an option of tools/test.sh) runs the full suite plus every timed speed check: the hook and status-line benchmark, the panel benchmark and the time-measuring tests",
+        "The CI workflow runs the timed speed checks in that release way on every push, so each release has them in CI, on macOS and Linux",
+        "The local run before a push described in CLAUDE.md and the contributor docs is the release way of running tools/test.sh",
+        "No check approved for vbw prove fails because of a measured time: the checks that today assert a time (the guard cost checks of R76, R149 and R150, the 24-check parallel proof speed of R69, the 50,000-file scan time of R93) either move to the release run or keep only their non-timed assertions in proof, through an approved contract change",
+        "The requirements those checks prove (R69, R76, R93, R149, R150) each still have an approved check in proof that passes without timing",
+        "bash tools/test.sh --quick and the CI shards still work, and the timed tests still run alone after the parallel batch in the release run",
+        "docs/proof.md and the testing section of CLAUDE.md state where the timed speed checks run and that vbw prove does not run them"
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 12 (92712 bytes)",
+        "files: more than 2 in a repository tracking 804 files",
+        "risk: CI (.github/workflows/ci.yml)",
+        "breaks: none",
+        "guarded: R12 (C11), R21 (C16), R31 (C27), R32 (C28), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R55 (C56, C57), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R126 (C186), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R142 (C204, C205), R143 (C206, C207), R144 (C208, C209), R147 (C212, C215), R148 (C213, C214, C216), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P105",
+      "title": "The project's test command is not stopped just because the machine is busy",
+      "reqs": [
+        "R153"
+      ],
+      "milestone": "M19",
+      "goal": "vbw prove gives a project's test command enough time to finish a large project's full test run on a loaded machine, and a project can set its own limit.",
+      "criteria": [
+        "Without a setting, vbw prove lets the project test command run for at least 60 minutes before stopping it (today 15 minutes)",
+        "A project can set its own time limit for its test command; the setting is shown by vbw config, remembered between runs, and returns to the default with the same reset as the other settings",
+        "vbw prove stops the test command at the project's own limit when one is set, and records the result as timeout",
+        "An invalid limit (not a whole number, zero, negative or above the documented maximum) is refused with a message naming the allowed range, and changes nothing",
+        "When the test command is stopped by its time limit, vbw prove's report says it was stopped by the limit, names the limit in use and how to raise it",
+        "A test command that finishes within the limit is recorded exactly as before (pass or fail with its exit code); the time limits of individual checks (their own timeout field) are unchanged",
+        "docs/proof.md states the default limit, how to set a project's own limit, its range and what a stop by the limit looks like"
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 7 (97991 bytes)",
+        "files: more than 2 in a repository tracking 804 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R3 (C3), R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R38 (C33, C34), R39 (C36), R40 (C37), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215), R148 (C213, C214, C216), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -19085,6 +19404,177 @@
         "Before M19: extract commit f3761b76 (M18 shipped) with git archive f3761b76 plugin tools into a folder made by mktemp -d, removed afterwards, and run its tools/bench-hooks.sh three times, alternating with today's; today's small-record guard lines stay within their budget and at most 0.5 ms slower than before M19 (the side-file check, accepted by the owner); write both sets of times in the plan note; if more than 0.5 ms slower or over budget, block with the times",
         "Run tests/bench-hooks.bats, big-record-hooks.bats (C219), hook-answers.bats and guard-cost.bats under macOS /bin/bash 3.2 and bash 5"
       ]
+    },
+    {
+      "id": "P103.1",
+      "phase": "P103",
+      "title": "The hook benchmark fails only above 20 ms per hook call or 60 ms for the status line, and reports a busy machine",
+      "reqs": [
+        "R151"
+      ],
+      "files": [
+        "tools/bench-hooks.sh",
+        "tests/bench-hooks.bats",
+        ".github/workflows/ci.yml"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Judge each guard by its own cost alone: at most VBW_HOOK_BUDGET_MS (default 20) per call; remove the relative limit VBW_HOOK_BUDGET and every mention of it, comments included; each line reads 'guard (INPUT[, LABEL]): X ms own CPU per call (...); budget N ms', ending ': OVER' when above",
+        "Judge the status line at VBW_STATUSLINE_BUDGET_MS (default 60) per call on the small and the large record: 'status line[ (large record)]: X ms CPU per call; budget N ms', ending ': OVER' when above",
+        "Busy machine: measure the sh and jq startup first, before building the test records; when it is above the hook limit, print one line 'machine too busy to measure: ...' giving the startup and the limit, judge nothing and exit 0",
+        "tests/bench-hooks.bats: drop the tests of the old limits (tests/bench-limits.bats covers the new ones) and keep 'time a hook spends waiting is not counted'",
+        "CI: remove the CI-only VBW_HOOK_BUDGET_MS from both test steps of .github/workflows/ci.yml and its comment; keep VBW_PANEL_BUDGET_MS"
+      ]
+    },
+    {
+      "id": "P103.2",
+      "phase": "P103",
+      "title": "Guides: 20 ms per hook call, 60 ms for the status line, and the busy-machine report",
+      "reqs": [
+        "R151"
+      ],
+      "files": [
+        "docs/guards.md",
+        "docs/statusline.md",
+        "AGENTS.md"
+      ],
+      "after": [
+        "P103.1"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/guards.md: the budget paragraph states 20 ms of VBW's own CPU per hook call, the busy-machine report and that CI uses the same limit; no 8 ms limit, no 1x ratio, no CI-only 25 ms",
+        "docs/statusline.md: the status line limit is 60 ms per call, also on a record over 2 MB; no 30 ms limit",
+        "AGENTS.md (CLAUDE.md links to it): the hot-path rule states 20 ms per hook call, 60 ms for the status line and that a machine too busy to measure is reported, not failed"
+      ]
+    },
+    {
+      "id": "P104.1",
+      "phase": "P104",
+      "title": "tools/test.sh: the default run leaves out the speed checks, --release runs them, and CI runs the release way",
+      "reqs": [
+        "R152"
+      ],
+      "files": [
+        "tools/test.sh",
+        ".github/workflows/ci.yml"
+      ],
+      "after": [
+        "P103.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "The timed test files are tests/timed-*.bats, found at run time; the hand-kept list goes",
+        "No option: shellcheck, then every other test file in one parallel batch; no benchmark and no timed file",
+        "--release: shellcheck, tools/bench-hooks.sh, tools/bench-panel.sh (when node exists), the parallel batch, then the timed files alone; usage line 'usage: tools/test.sh [--quick [--list]] | --release | --shard K/N [--list]'; --release with anything else exits 2 and runs nothing",
+        "--shard K/N stays a share of the release run (timed files among the shares, alone after each batch; both benchmarks on share 1); --quick leaves out every timed file",
+        "CI: the jobs without a shard run bash tools/test.sh --release; the step's comment says the timed checks run there and never in vbw prove"
+      ]
+    },
+    {
+      "id": "P104.2",
+      "phase": "P104",
+      "title": "The timed tests move to tests/timed-*.bats, and no other test measures a duration",
+      "reqs": [
+        "R152"
+      ],
+      "files": [
+        "tests/timed-prove-parallel.bats",
+        "tests/timed-proof-stale-links.bats",
+        "tests/timed-bench-hooks.bats",
+        "tests/timed-hooks-session-nojq.bats",
+        "tests/bench-hooks.bats",
+        "tests/kernel-prove.bats"
+      ],
+      "after": [
+        "P103.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tests/timed-prove-parallel.bats: a proof of 24 checks of one second each finishes in under 24 s (the time bound removed from tests/prove-parallel.bats), with that file's fixture",
+        "tests/timed-proof-stale-links.bats: on a working folder with 50,000 files the stale-link scan adds under 30 s (the bound removed from tests/proof-stale-links.bats)",
+        "tests/timed-bench-hooks.bats: tests/bench-hooks.bats moved with git mv; time a hook spends waiting is not counted",
+        "tests/timed-hooks-session-nojq.bats: without jq, five session starts finish within 3 s (the bound removed from tests/hooks-session-nojq.bats), with that file's PATH setup",
+        "tests/kernel-prove.bats: drop the SECONDS bounds of the two hanging-check tests; their timeout status already shows the stop"
+      ]
+    },
+    {
+      "id": "P104.3",
+      "phase": "P104",
+      "title": "Guides: the timed speed checks run once per release, never in vbw prove",
+      "reqs": [
+        "R152"
+      ],
+      "files": [
+        "docs/proof.md",
+        "AGENTS.md",
+        "CONTRIBUTING.md",
+        ".github/copilot-instructions.md"
+      ],
+      "after": [
+        "P104.1",
+        "P103.2"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/proof.md: VBW's own timed speed checks (the hook, status line and panel benchmarks and tests/timed-*.bats) run in bash tools/test.sh --release, in CI and before a push; vbw prove does not run them, so a busy machine never fails a proof",
+        "AGENTS.md (CLAUDE.md links to it), Testing: bash tools/test.sh is the proof's run without timed checks; the run before every push is PATH=\"/bin:$PATH\" bash tools/test.sh --release; vbw prove does not run the timed checks",
+        "CONTRIBUTING.md and .github/copilot-instructions.md: the commands list and the CI description name bash tools/test.sh --release as the run before a push and say what it adds"
+      ]
+    },
+    {
+      "id": "P105.1",
+      "phase": "P105",
+      "title": "vbw prove gives project commands 60 minutes, and a project can set its own limit",
+      "reqs": [
+        "R153"
+      ],
+      "files": [
+        "plugin/lib/cmd-prove.sh",
+        "plugin/lib/cmd-config.sh",
+        "plugin/lib/record.jq",
+        "plugin/bin/vbw",
+        "plugin/skills/config/SKILL.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "cmd-prove.sh: each project command gets settings.command_timeout seconds, 3600 (60 minutes) without a setting instead of 900; checks keep their own timeout (default 300)",
+        "vbw config set command_timeout SECONDS (a whole number from 1 to 86400) stores it in the record's settings; default removes it; anything else exits 2 with a message naming 1 to 86400 and changes nothing; vbw config shows 'command_timeout: N'",
+        "record.jq accepts settings.command_timeout, a whole number from 1 to 86400, and refuses any other value",
+        "The proof summary: a project command stopped by its limit adds 'NAME stopped by its time limit (N s); raise it with vbw config set command_timeout SECONDS'; a command that ended in time is reported as before",
+        "vbw help and the config skill list command_timeout with its default and range"
+      ]
+    },
+    {
+      "id": "P105.2",
+      "phase": "P105",
+      "title": "Proof and record guides: the time limit of the project's commands",
+      "reqs": [
+        "R153"
+      ],
+      "files": [
+        "docs/proof.md",
+        "docs/record.md"
+      ],
+      "after": [
+        "P105.1",
+        "P104.3"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/proof.md: project commands get 3600 seconds (60 minutes) by default; vbw config set command_timeout SECONDS sets the project's own limit, 1 to 86400; vbw config set command_timeout default returns to 3600",
+        "docs/proof.md: what a stop by the limit looks like (the command recorded as timeout, the summary line naming the limit and how to raise it); a check's own timeout is separate",
+        "docs/record.md: settings.command_timeout, a whole number of seconds from 1 to 86400, shared with the project"
+      ]
     }
   ],
   "fixes": [
@@ -21808,6 +22298,12 @@
       "id": "D244",
       "at": "2026-10-10T13:46:05Z",
       "text": "Contract approved: 139 requirements, 225 checks, 300 plans (7f47611fadf4)"
+    },
+    {
+      "id": "D245",
+      "text": "Speed limits relaxed: a hook fails only above 20 ms per call, the status line only above 60 ms; a machine too busy to measure is reported, never a failure; timed speed checks run once per release (CI and before a push), not in every proof; vbw prove's time limit never stops a project's test command just because the machine is busy",
+      "why": "owner, 2026-10-10: failed proofs caused by other sessions' load cost far more time than millisecond differences nobody can notice (16 ms is not noticeable); kept: a limit that still catches a cost that grows with the record (16.9 ms on a 2 MB record)",
+      "at": "2026-10-10T13:56:25Z"
     }
   ],
   "commands": {

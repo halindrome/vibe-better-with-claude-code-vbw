@@ -132,16 +132,16 @@ together() {
               {"id":"C2","req":"R1","run":["sh","tests/short.sh"],"files":["tests/short.sh"]}]'
   "$VBW" config set check_jobs 1 > /dev/null
   LONG=20 "$VBW" check C1 > "$TEST_ROOT/o1" 2>&1 < /dev/null 3>&- &
-  local holder=$! i start
+  local holder=$! i
   for i in $(seq 1 100); do [ -e "$CONC/long.start" ] && break; sleep 0.1; done
   [ -e "$CONC/long.start" ]
   # The VBW process dies without cleaning up; its check runs on, orphaned.
   kill -KILL "$holder"
   wait "$holder" 2> /dev/null || true
-  start=$(date +%s)
   vbw_run check C2
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ $(($(date +%s) - start)) -lt 12 ] || { echo "C2 waited for the dead process's slot"; false; }
+  # C2 ran while the orphaned check still held on: it did not wait for it.
+  [ "$(cat "$CONC/short")" = during ] || { echo "C2 waited for the dead process's slot"; false; }
 }
 
 @test "R148: a check marked alone still runs with nothing else beside checks from other processes (R45)" {

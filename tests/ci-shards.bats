@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
 # R142 (L1): CI runs the macOS /bin/bash 3.2 suite as several parallel shard
 # jobs of the one Tests job, while both Linux bash 5 entries keep the full
-# suite and the manifest validation job is unchanged. The matrix fans out only
+# release run (bash tools/test.sh --release, R152) and the manifest validation
+# job is unchanged. The matrix fans out only
 # the macOS entry: its base is os: [macos-latest] with shard: [1, ..., N], the
 # macOS include entry matches that os (so it joins every shard) and the Linux
 # include entries name another os (so each becomes one job of its own). The
@@ -70,7 +71,7 @@ shard_list() {
   }
 }
 
-@test "R142: a shard job runs tools/test.sh --shard K/N with N the shard count; a job without a shard runs the full suite" {
+@test "R142: a shard job runs tools/test.sh --shard K/N with N the shard count; a job without a shard runs the full release run" {
   local n step
   n=$(shard_list | grep -c .)
   step=$(job test)
@@ -86,8 +87,8 @@ shard_list() {
     echo "no shard run"
     false
   }
-  printf '%s\n' "$step" | grep -qE 'bash tools/test.sh *(;|$| *fi)' || {
-    echo "no full run for the entries without a shard"
+  printf '%s\n' "$step" | grep -qE 'bash tools/test.sh --release *(;|$| *fi)' || {
+    echo "no release run for the entries without a shard"
     false
   }
 }
@@ -105,11 +106,12 @@ shard_list() {
   }
 }
 
-@test "R142: the CI budget settings are unchanged" {
+@test "R142: the CI panel budget is unchanged and CI sets no hook or status line limit of its own" {
   local step
   step=$(job test)
-  printf '%s\n' "$step" | grep -q 'VBW_HOOK_BUDGET_MS: "25"'
   printf '%s\n' "$step" | grep -q 'VBW_PANEL_BUDGET_MS: "3"'
+  # R151: the hook and status line limits are the local defaults.
+  ! printf '%s\n' "$step" | grep -qE 'VBW_HOOK_BUDGET|VBW_STATUSLINE_BUDGET'
 }
 
 @test "R142: shards never cancel each other and a failing shard fails CI" {

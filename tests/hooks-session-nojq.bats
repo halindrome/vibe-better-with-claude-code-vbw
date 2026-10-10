@@ -108,15 +108,3 @@ quiet() {
 @test "R141: without jq, in a folder that is not a VBW project the hook ends quietly" {
   quiet "$PLAIN"
 }
-
-@test "R141: without jq, the hook stops early: five starts finish well within the hook time budget" {
-  local d start
-  start=$SECONDS
-  for d in "$PROJECT" "$NEWER" "$V1" "$PROJECT/src" "$PLAIN"; do
-    quiet "$d"
-  done
-  [ $((SECONDS - start)) -le 3 ] || {
-    echo "five starts took $((SECONDS - start)) s"
-    false
-  }
-}

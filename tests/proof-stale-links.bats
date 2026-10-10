@@ -4,8 +4,9 @@
 # inside a proof copy (.vbw/runtime/proof.*, absolute or relative) and names each
 # one with how to repair it, so damage left by an earlier VBW is found; with none
 # it says nothing. The scan only reads: it does not follow links, skips .git, and
-# never turns a passing proof into a failing one. L1: stale links planted by hand
-# in a fixture.
+# never turns a passing proof into a failing one. Its time on a large working
+# folder is measured in the release run (tests/timed-*.bats, R152), never in
+# vbw prove. L1: stale links planted by hand in a fixture.
 
 load helper
 
@@ -129,24 +130,19 @@ snap() {
   jq -e '.evidence.passed == true' .vbw/record.json
 }
 
-@test "R93: the scan of a working folder with 50,000 files adds little time (measured)" {
-  local d i t0 t1 t2
+@test "R93: on a working folder with 50,000 files the scan names the stale link and the proof passes" {
+  local d
   for d in $(seq 1 50); do
     mkdir -p "target/d$d"
     (cd "target/d$d" && seq 1 1000 | sed 's/^/f/' | xargs touch)
   done
   [ "$(find target -type f | wc -l | tr -d ' ')" -eq 50000 ]
-  now() { perl -MTime::HiRes=time -e 'printf "%.2f", time'; }
-  t0=$(now)
   vbw_run prove
-  t1=$(now)
   [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" != *"proof.OLD"* ]]
   plant
   vbw_run prove
-  t2=$(now)
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
   [[ "$output" == *"proof.OLDabs1"* ]]
-  i=$(perl -e 'printf "%.2f", $ARGV[0] - $ARGV[1]' "$t2" "$t1")
-  echo "50,000 files in the working folder: proof without a stale link $(perl -e 'printf "%.2f", $ARGV[0] - $ARGV[1]' "$t1" "$t0")s, with one $i s" >&3
-  perl -e 'exit($ARGV[0] < 30 ? 0 : 1)' "$i"
+  [[ "$output" == *"proof.OLDrel2"* ]]
 }

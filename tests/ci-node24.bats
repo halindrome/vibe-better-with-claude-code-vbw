@@ -76,7 +76,6 @@ install_step() {
   [ "$(grep -c '^    steps:' "$CI")" -ge 1 ]
   grep -q 'path: src dir' "$CI"
   grep -q 'working-directory: src dir' "$CI"
-  grep -q 'VBW_HOOK_BUDGET_MS: "25"' "$CI"
   grep -q 'VBW_PANEL_BUDGET_MS: "3"' "$CI"
   grep -q 'bash tools/test.sh' "$CI"
   ! grep -qE "matrix\.os *(==|!=) *'?ubuntu-(latest|26)" "$CI" || { echo "a step is limited to one Linux image"; false; }

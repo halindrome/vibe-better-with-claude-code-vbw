@@ -217,8 +217,3 @@ POST='["hookSpecificOutput.additionalContext","hookSpecificOutput.hookEventName"
   grep -qF 'tools/check-hook-answers.sh' "$REPO_ROOT/tests/standards.bats"
   grep -qF 'tools/check-hook-answers.sh' "$REPO_ROOT/tests/standards-selftest.bats"
 }
-
-@test "R128: hook timing stays within the hot-path budget (tools/bench-hooks.sh)" {
-  run bash "$REPO_ROOT/tools/bench-hooks.sh"
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-}

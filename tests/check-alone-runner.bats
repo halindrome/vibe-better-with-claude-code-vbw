@@ -160,7 +160,6 @@ overlaps() {
   vbw_run check C5
   [ "$status" -eq 1 ]
   [[ "$output" == *"C5 timeout"* ]]
-  SECONDS=0
   vbw_run check C3
   # A held exclusion would make C3 fail naming what it waited on.
   [ "$status" -eq 0 ]
@@ -172,7 +171,6 @@ overlaps() {
   started C6
   kill -9 "$BG_PID"
   wait "$BG_PID" 2> /dev/null || true
-  SECONDS=0
   vbw_run check C3
   # A stale lock would make C3 fail naming what it waited on.
   [ "$status" -eq 0 ]
@@ -197,10 +195,8 @@ overlaps() {
   bg "$TEST_ROOT/o1" check C6
   started C6
   cd "$other" || return 1
-  SECONDS=0
   vbw_run check C3
   [ "$status" -eq 0 ]
-  [ "$SECONDS" -lt 5 ]
   wait
   before "$(t C3 end)" "$(t C6 end)"
 }

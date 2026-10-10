@@ -7,8 +7,6 @@
 
 load helper
 
-TIMED='tests/prove-parallel.bats tests/guard-cost.bats tests/bench-hooks.bats tests/proof-stale-links.bats'
-
 # The script runs the whole suite when it does not know its arguments: never call it before it has a quick mode.
 setup() {
   grep -q -- '--quick' "$REPO_ROOT/tools/test.sh" || { echo "tools/test.sh has no --quick mode yet"; return 1; }
@@ -37,7 +35,7 @@ covered() {
     ! printf '%s\n' "$output" | grep -qx "$f" || { echo "$f is run by an approved check but is in the quick mode"; false; }
   done < <(covered)
   while IFS= read -r f; do
-    case " $TIMED " in *" $f "*) continue ;; esac
+    case "$f" in tests/timed-*) continue ;; esac
     covered | grep -qx "$f" && continue
     printf '%s\n' "$output" | grep -qx "$f" || { echo "$f is not in the quick mode"; false; }
   done < <(ls tests/*.bats)
@@ -47,10 +45,7 @@ covered() {
   cd "$REPO_ROOT"
   run bash tools/test.sh --quick --list < /dev/null
   [ "$status" -eq 0 ]
-  local f
-  for f in $TIMED; do
-    ! printf '%s\n' "$output" | grep -qx "$f" || { echo "$f is in the quick mode"; false; }
-  done
+  ! printf '%s\n' "$output" | grep -q '^tests/timed-' || { echo "a timed file is in the quick mode: $output"; false; }
   [[ "$output" != *bench-hooks.sh* && "$output" != *bench-panel.sh* ]] || { echo "$output"; false; }
 }
 

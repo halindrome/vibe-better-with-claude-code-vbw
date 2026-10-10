@@ -4,15 +4,16 @@
 # --shard K/N --list prints what shard K would run, one stage or test file per
 # line (stages first, then the parallel batch, then the timed files), and runs
 # nothing. Shares come from tests/*.bats at run time and are the same for the
-# same inputs; together the shards run every file exactly once. Shard 1 alone
-# runs the tool lint and the hook and panel benchmarks. With no arguments the
-# script runs the full suite exactly as before. Runs below use a copy of the
+# same inputs; together the shards run every file exactly once, the timed
+# files (tests/timed-*.bats, R152) alone after each shard's batch. Shard 1 alone
+# runs the tool lint and the hook and panel benchmarks. The unsharded runs are
+# tests/release-run.bats's (R152). Runs below use a copy of the
 # script in a scratch repository whose bats, shellcheck, parallel, node and
 # getconf are stand-ins that only log their arguments.
 
 load helper
 
-TIMED='tests/prove-parallel.bats tests/guard-cost.bats tests/bench-hooks.bats tests/proof-stale-links.bats'
+TIMED='tests/timed-speed.bats tests/timed-cost.bats'
 
 setup() {
   vbw_setup
@@ -31,7 +32,7 @@ shard_files() {
 }
 
 # fake_repo: a scratch repository holding a copy of tools/test.sh, stand-in
-# benchmark scripts, a few test files (the five timed ones among them) and a
+# benchmark scripts, a few test files (two timed ones among them) and a
 # bin folder of stand-in tools that log every call to $LOG.
 fake_repo() {
   FAKE="$TEST_ROOT/fake repo"
@@ -43,7 +44,7 @@ fake_repo() {
   printf '#!/usr/bin/env bash\necho bench-hooks >> "$LOG"\n' > "$FAKE/tools/bench-hooks.sh"
   printf '#!/usr/bin/env bash\necho bench-panel >> "$LOG"\n' > "$FAKE/tools/bench-panel.sh"
   local f t
-  for f in a b c d e prove-parallel guard-cost bench-hooks big-record-hooks bench-protected proof-stale-links z; do
+  for f in a b c d e prove-parallel guard-cost bench-hooks big-record-hooks bench-protected proof-stale-links timed-speed timed-cost z; do
     printf '#!/usr/bin/env bats\n@test "%s" { true; }\n' "$f" > "$FAKE/tests/$f.bats"
   done
   for t in bats shellcheck parallel node; do
@@ -207,7 +208,7 @@ fake_run() {
       code=0
       (cd "$FAKE" && PATH="$STUBS:$PATH" bash tools/test.sh --shard "$k/2" < /dev/null) > /dev/null 2>&1 || code=$?
       # A shard with no timed file never runs the failing timed call.
-      if [ "$which" = timed ] && ! shard_files "$FAKE" "$k" 2 | grep -qE 'prove-parallel|guard-cost|bench-hooks|big-record-hooks|bench-protected|proof-stale-links'; then
+      if [ "$which" = timed ] && ! shard_files "$FAKE" "$k" 2 | grep -q 'tests/timed-'; then
         continue
       fi
       [ "$code" -ne 0 ] || {
@@ -216,24 +217,6 @@ fake_run() {
       }
     done
   done
-}
-
-@test "R142: with no arguments the full run is unchanged: lint, benchmarks, every file on half the cores, timed files last" {
-  fake_repo
-  fake_run
-  local lines
-  lines=$(cat "$LOG")
-  [ "$(printf '%s\n' "$lines" | sed -n 1p | cut -d' ' -f1-4)" = "shellcheck -S warning -x" ] || {
-    echo "$lines"
-    false
-  }
-  [ "$(printf '%s\n' "$lines" | sed -n '2,$p')" = "bench-hooks
-bench-panel
-bats --print-output-on-failure --jobs 4 tests/a.bats tests/b.bats tests/c.bats tests/d.bats tests/e.bats tests/z.bats
-bats --print-output-on-failure tests/prove-parallel.bats tests/guard-cost.bats tests/bench-hooks.bats tests/big-record-hooks.bats tests/bench-protected.bats tests/proof-stale-links.bats" ] || {
-    echo "$lines"
-    false
-  }
 }
 
 @test "R142: an invalid shard argument exits 2 with the usage line and runs nothing" {
