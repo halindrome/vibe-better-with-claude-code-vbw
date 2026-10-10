@@ -17,15 +17,16 @@
 #   so the absolute bound covers a quiet machine of any platform.
 # A real regression still shows: an added subprocess costs about one startup
 # more, and the 20 KB heredoc case catches work that grows faster than the input.
-# Every input is measured twice: on the small record and on a record of more than
-# 2 MB (R149: a long-lived project's record), both with the same build lease.
+# Every input is measured on the small record, on a record of more than 2 MB
+# (R149: a long-lived project's record) and on the records of N checks below,
+# all with the same build lease.
 # The status line is measured on both records too: its CPU per call is within
 # VBW_STATUSLINE_BUDGET_MS (default 30), startup included.
-# The guards read the glance (.vbw/runtime/glance.json, the record cut down to what
-# they need) when it is newer than the record, else the record itself. The large
-# project is written once by the kernel (vbw decide), so its glance is current and
-# its lines measure the glance path. The small record is built by hand without a
-# glance, so its lines measure the record path.
+# Three more projects (R150) hold records of 51, 500 and 2,000 checks (the last over
+# 2 MB), each written once by the kernel, so each is schema 4 with the protected
+# field. The small record is format 4 too. Every guard input takes the path a real
+# project takes, and the lines 'guard (NAME, N checks)' share one budget: a guard's
+# cost does not climb with the number of checks.
 # VBW_BENCH_RUNS and VBW_BENCH_PLUGIN_ROOT override the runs and the plugin (tests).
 set -euo pipefail
 
@@ -47,7 +48,7 @@ mkdir -p "$work/.vbw"
 # A build lease on the record: the interp case is a build agent's command, which
 # the guard reads in full. Calls without an agent_type are never held to it.
 jq -nc --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-  '{lease: {run: "build-1", kind: "build", session: "bench", started_at: $t, files: ["src/pay.py"]}}' > "$work/.vbw/record.json"
+  '{schema: 4, lease: {run: "build-1", kind: "build", session: "bench", started_at: $t, files: ["src/pay.py"]}, protected: [], checks: []}' > "$work/.vbw/record.json"
 
 # Representative calls: a compound command the guard must read in full (git, a
 # heredoc, quotes, a substitution), one it can skip unread, and a file read, and a build agent's program command.
@@ -102,6 +103,32 @@ cat "$large/.vbw/edited.json" > "$large/.vbw/record.json"
 rm -f "$large/.vbw/edited.json"
 (cd "$large" && "$PLUGIN/bin/vbw" decide "Benchmark record written by the kernel" > /dev/null)
 printf 'large record: %s bytes\n' "$(wc -c < "$large/.vbw/record.json" | tr -d ' ')"
+
+# sized N: a project of N checks (one per requirement) in $work/checks-N, its
+# history padded in proportion, written once by the kernel (vbw decide).
+sized() {
+  local n="$1" d="$work/checks-$1"
+  mkdir -p "$d"
+  git -C "$d" init -q
+  (cd "$d" && "$PLUGIN/bin/vbw" init > /dev/null)
+  jq --argjson n "$n" --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
+    "2026-01-01T00:00:00Z" as $at
+    | [range(1; $n + 1)] as $k
+    | .lease = {run: "build-1", kind: "build", session: "bench", started_at: $t, files: ["src/pay.py"]}
+    | .milestone = {id: "M2", title: "New work", status: "active"}
+    | .shipped = [{id: "M1", title: "Old work", at: $at}]
+    | .requirements = [$k[] | {id: "R\(.)", text: "Old part \(.) works", proof: "auto", status: "proven", milestone: "M1",
+                                rules: [{text: "Old rule \(.)", check: "C\(.)"}]}]
+    | .checks = [$k[] | {id: "C\(.)", req: "R\(.)", run: ["sh", "tests/old.sh"], files: ["tests/old.sh"]}]
+    | .decisions = [{id: "D1", text: ("Old long decision" + ("~" * ($n * 1100))), at: $at}]
+    | .protected = ["tests/old.sh"]
+    | {schema, lease, protected, checks} + .' "$d/.vbw/record.json" > "$d/.vbw/edited.json"
+  cat "$d/.vbw/edited.json" > "$d/.vbw/record.json"
+  rm -f "$d/.vbw/edited.json"
+  (cd "$d" && "$PLUGIN/bin/vbw" decide "Benchmark record written by the kernel" > /dev/null)
+  printf 'record (%s checks): %s bytes, schema %s\n' "$n" "$(wc -c < "$d/.vbw/record.json" | tr -d ' ')" "$(jq -r .schema "$d/.vbw/record.json")"
+}
+for n in 51 500 2000; do sized "$n"; done
 
 # cpu_pair INPUT BASELINE HOOK: the mean CPU time in ms of RUNS runs of each
 # `sh -c` command, "BASELINE HOOK", alternating call by call so both see the
@@ -176,6 +203,7 @@ statusline() {
 
 guards "$work" ""
 guards "$large" ", large record"
+for n in 51 500 2000; do guards "$work/checks-$n" ", $n checks"; done
 statusline "$work" ""
 statusline "$large" " (large record)"
 exit $status
