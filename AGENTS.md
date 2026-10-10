@@ -167,7 +167,7 @@ cat "$CLAUDE_PROJECT_DIR"/<session-id>/subagents/agent-*.jsonl
 
 ## Testing
 
-Run everything with `bash tools/test.sh`. Run it directly, never through `| tail` or `| tee`.
+Run everything with `bash tools/test.sh`: the proof's run, without the timed speed checks. `vbw prove` does not run the timed speed checks, so a busy machine never fails a proof. They run once per release: `PATH="/bin:$PATH" bash tools/test.sh --release` is the run before every push, and it adds the hook, status line and panel benchmarks and the timed test files, run alone after the rest. Run these directly, never through `| tail` or `| tee`.
 
 - **Test first.** Every behavior gets a failing test before the code. Every fix gets a regression test that is shown to fail without the fix.
 - **Zero tolerance:** every failure is investigated and resolved before committing, with no "pre-existing" exemptions.
