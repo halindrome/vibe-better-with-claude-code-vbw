@@ -142,10 +142,19 @@ code_grep() {
 }
 
 @test "per-tool-call hooks run jq directly and never exit non-zero (K20)" {
-  local hooks="$PLUGIN_ROOT/hooks/hooks.json" cmd
+  local hooks="$PLUGIN_ROOT/hooks/hooks.json" cmd rest
+  # Before jq a command may hold only shell builtins: NAME=value assignments and
+  # [ ... ] tests, joined by && || ; . No program starts, no $(...), no pipe.
+  local exp='\$\{[^}`(]*\}|\$[A-Za-z_][A-Za-z0-9_]*'
+  local val='([A-Za-z0-9_./:-]|'"$exp"'|"([^"$`]|'"$exp"')*")+'
+  local assign='^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*='"$val"'[[:space:]]*(;|&&|\|\|)?'
+  local test_='^[[:space:]]*\[ ([^]$`;&|()<>]|'"$exp"')* \][[:space:]]*(;|&&|\|\|)'
   [ -f "$hooks" ] || return 0
   while IFS= read -r cmd; do
-    [[ "$cmd" == "jq "* ]] || { echo "PreToolUse hook must be jq itself (no interpreter startup): $cmd"; false; }
+    rest=$cmd
+    while [[ "$rest" =~ $assign || "$rest" =~ $test_ ]]; do rest=${rest#"${BASH_REMATCH[0]}"}; done
+    rest=${rest#"${rest%%[![:space:]]*}"}
+    [[ "$rest" == "jq "* ]] || { echo "PreToolUse hook must be jq itself (only shell variable assignments and [ ] tests may come before it; no interpreter startup): $cmd"; false; }
     [[ "$cmd" == *" || true" ]] || { echo "PreToolUse hook must never exit non-zero (exit 2 blocks the call): $cmd"; false; }
   done < <(jq -r '.hooks.PreToolUse[]?.hooks[].command' "$hooks")
 }
