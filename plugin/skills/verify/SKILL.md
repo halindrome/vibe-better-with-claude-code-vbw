@@ -25,6 +25,6 @@ AskUserQuestion: "Works", "Something's wrong", "Skip for now".
 - Works: `vbw req accept <id>`.
 - Something's wrong: ask what, in their words, then
   `vbw req reject <id> "<their words>"` (VBW fixes it and asks again).
-- Skip: leave it.
+- Skip for now: `vbw req skip <id>` (it stays open; `/vbw:vibe` offers to ship and judge it in the next milestone).
 
 Close with what was accepted and what goes back for fixing; `/vbw:vibe` continues.

@@ -129,9 +129,9 @@ once more (`vbw fix retry <id>`), or change the requirement or its check
 thing to judge: run it yourself when you can; put its output, or one concrete thing to try, in the question and the
 `preview` of "Works". Visual: screenshot into `.vbw/runtime/` and open it. Ask with AskUserQuestion: "Works",
 "Something's wrong", "Skip for now". Works: `vbw req accept <id>`. Something's
-wrong: ask what, then `vbw req reject <id> "<their words>"`. Skip: leave it.
+wrong: ask what, then `vbw req reject <id> "<their words>"`. Skip for now: `vbw req skip <id>`.
 
-**ship** (needs user): summarize what was delivered (`vbw status`, `vbw show roadmap`); ask whether to ship. Yes: `vbw ship`; then follow `vbw:whats-next` (the ship never waits for it).
+**ship** (needs user): summarize what was delivered (`vbw status`, `vbw show roadmap`); with `detail.later`, name them and ask once: ship now and judge them in the next milestone, or judge them now (nothing changes; ask the verdicts). Otherwise ask whether to ship. Yes: `vbw ship`; then follow `vbw:whats-next` (the ship never waits for it).
 
 **milestone** (needs user): ask what next milestone is about,
 `vbw milestone start "<title>"`, then `spec`.
