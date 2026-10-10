@@ -149,6 +149,22 @@ empty backlog it runs no agent and returns `{recommendation: {empty: true}}`.
 If the Architect fails it returns `{error}` and no recommendation. The skill
 pipes a recommendation to `vbw recommend`, which stores it.
 
+## Help on every command
+
+`--help` or `-h` after any `vbw` command prints that command's usage and
+changes nothing. It also works right after a subcommand. With no command,
+`vbw --help` lists them all.
+
+```
+$ vbw run start --help
+usage: vbw run start KIND [IDS] | run confirm ID... | run end [--owner-closed]   open the run lease, check what its agents recorded, close it
+```
+
+Help writes no record, makes no commit and does not touch the index. It works
+outside a VBW project and while another session's run is open. Text that
+merely contains `--help` (for example a todo) is still text. The test is
+`tests/help-every-command.bats`.
+
 ## Kernel commands agents use
 
 | Command | Who | What |
