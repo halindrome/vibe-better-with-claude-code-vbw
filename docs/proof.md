@@ -279,6 +279,27 @@ without the section keeps the commands it has. A command whose exact argv the
 user has not approved makes `vbw next` ask for approval again, and
 `vbw prove` runs only approved commands.
 
+### The time limit of project commands
+
+A project command (the test run above all) runs for up to 3600 seconds
+(60 minutes) under `vbw prove`. A project sets its own limit, from 1 to 86400
+seconds, and returns to the default:
+
+```
+vbw config set command_timeout 7200
+vbw config set command_timeout default
+```
+
+A command that reaches the limit is stopped and recorded with the status
+`timeout`. The summary then names the limit it ran under and how to raise it:
+
+```
+  test stopped by its time limit (3600 s); raise it with vbw config set command_timeout SECONDS
+```
+
+A check's own `timeout` (1 to 3600 seconds, see [Checks](#checks)) is separate:
+it limits that check only, and `command_timeout` does not change it.
+
 ### The quick command
 
 A project whose test command is slow can name a faster variant for build and
