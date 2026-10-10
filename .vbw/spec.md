@@ -154,6 +154,16 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 - R153 [auto] vbw prove never stops a project's test command only because the machine is busy: its time limit fits a large project's full test run on a loaded machine, and a project can set its own limit
 - R154 [auto] vbw config rigor works under macOS /bin/bash 3.2: setting a mode re-tiers the unstarted phases and saves the record, as it does under bash 5
 - R155 [auto] VBW's own test suite passes under macOS /bin/bash 3.2: a test that edits the record by hand also drops the status line's side file, as a kernel write would refresh it
+- R156 [auto] A milestone can re-plan a requirement it reopened from a shipped milestone: a full vbw apply accepts phases that cover it, and every vbw apply refusal names the mode it came from (full apply, --add or --patch)
+- R157 [auto] A re-plan can add a new phase for more work on a requirement that a started phase already covers; the started phase and its finished plans stay exactly as they are
+- R158 [auto] A re-plan can change the goal and criteria of a phase that has not started
+- R159 [auto] A re-plan never raises the tier of a phase that has started or finished; the minimum rigor is judged for unstarted phases only
+- R160 [auto] A fix that follows a QA finding can add its regression test: the fix run may create new test files, registered as checks of the finding's requirement, and edits to an approved check file wait for one approval by the user before the proof
+- R161 [auto] A [human] requirement the user wants to judge later can move to the next milestone, keeping its id, its checks and its history
+- R162 [auto] Every refusal VBW gives while a plan changes (vbw apply, vbw run start, the guards) says what to do instead
+- R163 [auto] --help or -h on any vbw command prints that command's usage and changes nothing (no record write, no commit)
+- R164 [auto] Before a push, the release run adds only the timed speed checks and the benchmarks when a passing full proof already covers the same code (only version files and the changelog changed since); otherwise it runs everything
+- R165 [auto] During a VBW run, a VBW guard that crashes, cannot start or times out blocks the action it guards instead of letting it through; outside VBW projects and outside runs nothing changes
 
 <!-- One requirement per line: an id, how it is proved, and a user-observable
      statement. [auto] = a check can prove it; [human] = only a person can judge it.
