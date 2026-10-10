@@ -12019,6 +12019,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P102.6: Code done and committed (a0a30369, e55479dd); C223-C225, C227 pass, guard suites pass on bash 3.2 and 5. C226 and the 3 bench tests (hook-answers 70, big-record-hooks 78, guard-cost 79) fail because tools/bench-hooks.sh (owned by planned P102.3, outside this plan's files) hand-builds its large record with an empty protected list, which the format-4 validator from P102.5 rejects ('protected must be the sorted list...', stopped at line 97). Fix is one line there: add protected: [\"tests/old.sh\"] to the {schema, lease, checks} + . reorder. Build P102.3 first, then re-run C226 and task 4's bench; bench timings were not measured."
+        },
+        {
+          "at": "2026-10-10T12:29:00Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P102.3: Tasks 1-4 are committed (70016611, 537a7b4d) and every bench line is within budget (20 runs, all inputs on 51/500/2000 checks, max about 7.2 ms). But tests/test-shards.bats test 19 now fails on bash 3.2 and 5: it pins the timed-file list and its fake repo lacks bench-protected.bats, so the full-run order line must name tests/bench-protected.bats (before proof-stale-links.bats). That file is outside this plan and protected by check C204, so it needs a one-line edit and your approval. Fix: add bench-protected to the fake-repo file list (line 46) and the expected line (line 233), the same edit P101.8 made for big-record-hooks."
         }
       ]
     }
@@ -18853,7 +18859,7 @@
         "P101.8",
         "P102.2"
       ],
-      "status": "planned",
+      "status": "blocked",
       "tasks": [
         "tools/bench-hooks.sh builds, once per run in its work folder, three more projects with 51, 500 and 2,000 checks under the same build lease, their history padded so the 2,000-check record is over 2 MB, each written once through the kernel so it is schema 4 with the protected field, and prints 'record (N checks): B bytes, schema S' for each",
         "For every input it prints 'guard (NAME, N checks): ...' in the existing format and with the same budget; over budget prints OVER and exits 1 as today; the existing lines stay unchanged (tests/bench-hooks.bats and big-record-hooks.bats read them)",
@@ -18861,7 +18867,8 @@
         "tools/bench-hooks.sh: the small record it builds by hand at the top is a format-4 record (schema 4, the build lease, protected [] then checks []), so every guard input takes the path a real project takes; the large record stays written once through the kernel",
         "Run tests/bench-protected.bats, bench-hooks.bats, big-record-hooks.bats, guard-cost.bats, test-shards.bats and quick-mode.bats under macOS /bin/bash 3.2 and bash 5; if a line is over budget, record the measured times in the plan note and block the plan, never raise a limit"
       ],
-      "role": "dev"
+      "role": "dev",
+      "note": "Tasks 1-4 are committed (70016611, 537a7b4d) and every bench line is within budget (20 runs, all inputs on 51/500/2000 checks, max about 7.2 ms). But tests/test-shards.bats test 19 now fails on bash 3.2 and 5: it pins the timed-file list and its fake repo lacks bench-protected.bats, so the full-run order line must name tests/bench-protected.bats (before proof-stale-links.bats). That file is outside this plan and protected by check C204, so it needs a one-line edit and your approval. Fix: add bench-protected to the fake-repo file list (line 46) and the expected line (line 233), the same edit P101.8 made for big-record-hooks."
     },
     {
       "id": "P102.4",
