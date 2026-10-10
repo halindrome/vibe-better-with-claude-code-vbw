@@ -11871,7 +11871,15 @@
         "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R55 (C56, C57), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R75 (C101), R76 (C102, C103), R77 (C104), R81 (C109, C111, C112, C113), R99 (C155), R101 (C179), R109 (C168), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-10T08:30:05Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P102.6: Code done and committed (a0a30369, e55479dd); C223-C225, C227 pass, guard suites pass on bash 3.2 and 5. C226 and the 3 bench tests (hook-answers 70, big-record-hooks 78, guard-cost 79) fail because tools/bench-hooks.sh (owned by planned P102.3, outside this plan's files) hand-builds its large record with an empty protected list, which the format-4 validator from P102.5 rejects ('protected must be the sorted list...', stopped at line 97). Fix is one line there: add protected: [\"tests/old.sh\"] to the {schema, lease, checks} + . reorder. Build P102.3 first, then re-run C226 and task 4's bench; bench timings were not measured."
+        }
+      ]
     }
   ],
   "plans": [
@@ -18804,14 +18812,15 @@
       "after": [
         "P102.5"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/hooks/common.jq read_events: read only schema, lease and protected; delete check_files and the checks branch, so no code reads the checks; on a format-4 record stop at the event that closes the protected list and never pull the event after it; a record without the list (written by an older VBW) is read on, skipping every other key without building it, until the lease and either a schema below 4 or the end of the file",
         "lease_write_denial: the protected check files come only from the record's protected list, with today's message ('is a protected check file: the contract is fixed while building'); under a build or fix lease, an agent's file write on a record without the list is refused with a reason that contains 'saved by this VBW' and says how to get there (end the run and start it again, which saves the record); the main conversation, another session's run and calls outside a run keep today's answers",
         "The header comment of common.jq describes the one read path, with no 50-check wording; hooks.json and vbw doctor's guard self-test stay as they are; tests/hooks-guard.bats (not a protected check file) builds its build and fix leases with the protected list in step, as the approved check files do",
         "Run tests/guard-protected.bats, record-v4-compat.bats, hooks-guard, guard-plan-writes, guard-interpreters, guard-reads-approval, hook-answers, hooks-session-scope, big-record-hooks and guard-cost under macOS /bin/bash 3.2 and bash 5, then tools/bench-hooks.sh: every guard line within budget; if a limit cannot hold, record the measured times in the plan note and block the plan, never raise a limit"
-      ]
+      ],
+      "note": "Code done and committed (a0a30369, e55479dd); C223-C225, C227 pass, guard suites pass on bash 3.2 and 5. C226 and the 3 bench tests (hook-answers 70, big-record-hooks 78, guard-cost 79) fail because tools/bench-hooks.sh (owned by planned P102.3, outside this plan's files) hand-builds its large record with an empty protected list, which the format-4 validator from P102.5 rejects ('protected must be the sorted list...', stopped at line 97). Fix is one line there: add protected: [\"tests/old.sh\"] to the {schema, lease, checks} + . reorder. Build P102.3 first, then re-run C226 and task 4's bench; bench timings were not measured."
     },
     {
       "id": "P102.7",
