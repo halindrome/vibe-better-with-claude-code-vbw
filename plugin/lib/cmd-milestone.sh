@@ -3,7 +3,8 @@
 # start opens the next milestone once the current one has shipped. Shipped
 # requirements, plans and checks stay in the record: their checks keep running
 # in every vbw prove, so later work cannot silently break shipped work. The new
-# milestone starts with no requirements (vbw next: spec).
+# milestone starts with no requirements (vbw next: spec), except the [human]
+# ones the user skipped at ship (later): they move in, open, with their history.
 # rename names the current milestone (vbw init calls M1 "First milestone");
 # a shipped milestone keeps the name it shipped with.
 
@@ -20,7 +21,9 @@ cmd_milestone() {
   fi
   record_read | jq -e '.milestone.status == "shipped"' > /dev/null \
     || vbw_die "$(record_read | jq -r '"\(.milestone.id) is not shipped yet: finish it first (vbw next)"')"
-  record_update '.milestone = {id: "M\((.milestone.id | ltrimstr("M") | tonumber) + 1)", title: $t, status: "active"}' \
+  record_update '"M\((.milestone.id | ltrimstr("M") | tonumber) + 1)" as $n
+    | .milestone = {id: $n, title: $t, status: "active"}
+    | (.requirements[] | select(.later == true)) |= (.milestone = $n | .status = "open" | del(.skipped, .later))' \
     --arg t "$2"
   record_commit "chore(vbw): start $(jq -r .milestone.id "$VBW_RECORD")"
   jq -r '"started \(.milestone.id) \(.milestone.title): add its requirements to .vbw/spec.md (vbw spec add)"' "$VBW_RECORD"
