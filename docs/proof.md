@@ -675,6 +675,25 @@ that the user's own rejections opened (`vbw req reject ID NOTE`). A fix that QA
 opened (`source: "qa"`) stays open after acceptance and closes only on a passing
 QA verdict (below).
 
+### Skip for now: judging a `[human]` requirement later
+
+When you cannot judge a `[human]` requirement yet, answer "Skip for now". The
+skill records it with `vbw req skip R2`. The three answers stay: Works
+(`vbw req accept`), Something's wrong (`vbw req reject`) and Skip for now.
+
+If every other requirement is done and only skipped `[human]` ones remain,
+`vbw next` offers `ship` and names them in `detail.later`. You choose once:
+ship now and judge them in the next milestone, or judge them now (`vbw req
+accept R2`). Looking at the offer changes nothing in the record.
+
+`vbw ship` then ships the milestone. Its decision counts only the requirements
+that were proven or accepted and names the moved ones
+(`...; moved to the next milestone to judge: R2`). `vbw milestone start TITLE`
+moves each into the new milestone with the same id, text, proof type, rules and
+history (fixes, decisions, checks), status `open`. `vbw next` there asks you to
+accept it. Its line in `.vbw/spec.md` stays as it was, and `vbw spec sync`
+neither resets nor duplicates it.
+
 ### QA verification
 
 Passing checks prove each requirement's behavior; they cannot see whether the
