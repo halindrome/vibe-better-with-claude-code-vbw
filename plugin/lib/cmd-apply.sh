@@ -65,7 +65,7 @@ cmd_apply() {
         and all(.plans, .checks, .rules; . == null or (type == "array" and all(.[]; type == "object")))' > /dev/null 2>&1 \
       || vbw_die "apply --add needs a JSON object with the new phases ({id, title, reqs}) and their plans, checks and rules"
     pdoc=$(printf '%s' "$doc" | jq -c '{phases, plans: (.plans // []), checks: (.checks // []), rules: (.rules // [])}')
-    problem=$(record_read | jq -r --argjson p "$pdoc" "$FOREIGN_REQS_JQ"'. as $r | .milestone.id as $m
+    problem=$(record_read | jq -r --slurpfile f_p <(printf '%s' "$pdoc") "$FOREIGN_REQS_JQ"'$f_p[0] as $p | . as $r | .milestone.id as $m
       | ([.phases[] | select(.milestone == $m)]) as $ph | [$p.phases[].id] as $new | [$p.phases[].reqs[]] as $newreqs
       | [($p.phases[] | select(.id as $i | any($ph[]; .id == $i)) | "\(.id) is already a phase of this milestone: --add takes new phases only"),
          foreign_reqs($r; $m; $p; "all")[],
@@ -76,7 +76,7 @@ cmd_apply() {
            | "\(.id // "the rule \"\(.text)\"") is for \(.req), not a requirement of the phases this --add brings")]
       | .[0] // empty') || vbw_die "internal error: cannot read the added phases"
     [ -z "$problem" ] || vbw_die "refused: $problem"
-    doc=$(record_read | jq -c --argjson p "$pdoc" '.milestone.id as $m
+    doc=$(record_read | jq -c --slurpfile f_p <(printf '%s' "$pdoc") '$f_p[0] as $p | .milestone.id as $m
       | ([.phases[] | select(.milestone == $m)]) as $ph
       | ([.requirements[] | select(.milestone == $m)]) as $rq
       | {phases: [($ph[] | {id, title, reqs} + with_entries(select(.key | IN("goal", "criteria")))
@@ -91,7 +91,7 @@ cmd_apply() {
     printf '%s' "$doc" | jq -e 'type == "object" and (has("phases") | not)' > /dev/null 2>&1 \
       || vbw_die "a patch carries plans, checks and rules, never phases: change phases with a full apply"
     pdoc=$(printf '%s' "$doc" | jq -c '{plans: (.plans // []), checks: (.checks // []), rules: (.rules // [])}')
-    doc=$(record_read | jq -c --argjson p "$pdoc" '.milestone.id as $m
+    doc=$(record_read | jq -c --slurpfile f_p <(printf '%s' "$pdoc") '$f_p[0] as $p | .milestone.id as $m
       | ([.phases[] | select(.milestone == $m)]) as $ph
       | ([.requirements[] | select(.milestone == $m)]) as $rq
       | def merge($old; $new; $keys): [$old[] | . as $o | ([$new[] | select(. as $n | $keys | all(. as $k | $n[$k] == $o[$k]))][0]) // $o]
@@ -108,7 +108,7 @@ cmd_apply() {
       and ((has("rules") | not) or (.rules | type == "array" and all(.[]; type == "object" and (keys - ["req", "text", "check"]) == [] and (.text | type == "string" and length > 0))))' \
     > /dev/null || vbw_die "apply needs phases, plans and checks, each an array, and optionally rules: [{req, text, check}]"
   if [ "$add" = false ] && [ "$patch" = false ]; then
-    problem=$(record_read | jq -r --argjson p "$doc" "$FOREIGN_REQS_JQ"'. as $r | foreign_reqs($r; .milestone.id; $p; "others")[0] // empty') \
+    problem=$(record_read | jq -r --slurpfile f_p <(printf '%s' "$doc") "$FOREIGN_REQS_JQ"'$f_p[0] as $p | . as $r | foreign_reqs($r; .milestone.id; $p; "others")[0] // empty') \
       || vbw_die "internal error: cannot read the phases' requirements"
     [ -z "$problem" ] || vbw_die "refused: $problem"
   fi
@@ -123,7 +123,7 @@ cmd_apply() {
   record=$(record_read)
   printf '%s' "$record" | jq -e '.lease == null or .lease.kind == "plan"' > /dev/null \
     || vbw_die "a $(printf '%s' "$record" | jq -r .lease.kind) run is open: plan again after it ends (vbw run end)"
-  problem=$(printf '%s' "$record" | jq -r --argjson d "$doc" '.milestone.id as $m
+  problem=$(printf '%s' "$record" | jq -r --slurpfile f_d <(printf '%s' "$doc") '$f_d[0] as $d | .milestone.id as $m
     | ([.phases[] | select(.milestone == $m) | .id]) as $mine
     | [.plans[] | select(.status != "planned" and (.phase as $p | any($mine[]; . == $p))) | . as $old
         | ([$d.plans[] | select(.id == $old.id)][0]) as $new
@@ -131,7 +131,7 @@ cmd_apply() {
         | "\($old.id) is \($old.status): a plan that has started must stay as it is (same phase, requirements, files and order)"]
     | .[0] // empty')
   [ -z "$problem" ] || vbw_die "refused: $problem"
-  problem=$(printf '%s' "$record" | jq -r --argjson d "$doc" '.milestone.id as $m | [.phases[] | select(.milestone == $m)] as $old
+  problem=$(printf '%s' "$record" | jq -r --slurpfile f_d <(printf '%s' "$doc") '$f_d[0] as $d | .milestone.id as $m | [.phases[] | select(.milestone == $m)] as $old
     | select(any(.plans[]; .status != "planned" and (.phase as $p | any($old[]; .id == $p))))
     | [($d.phases[] | . as $n | ([$old[] | select(.id == $n.id)][0]) as $o | select($o != null)
         | if $o.title != $n.title then "\($n.id) has work started: its title stays \"\($o.title)\" (a phase is not renamed once planned work has started)"
@@ -141,7 +141,7 @@ cmd_apply() {
         | "\($n.id) is a new phase for requirements another phase already covers: once work has started, add plans to that phase"
       )] | .[0] // empty')
   [ -z "$problem" ] || vbw_die "refused: $problem"
-  problem=$(printf '%s' "$record" | jq -r --argjson d "$doc" "$VBW_JQ_DEFS"'select($d | has("rules"))
+  problem=$(printf '%s' "$record" | jq -r --slurpfile f_d <(printf '%s' "$doc") "$VBW_JQ_DEFS"'$f_d[0] as $d | select($d | has("rules"))
     | . as $r | $d.rules as $rules
     | [($rules[] | . as $x | select(any($r.requirements[]; .id == $x.req and .proof == "human"))
         | "the rule \"\($x.text)\" is for \($x.req), a [human] requirement: only [auto] requirements list rules"),
@@ -153,7 +153,7 @@ cmd_apply() {
         | "\(.id) lists no rules: list each condition, edge and error case its text states, with the check that tests it (rules)")]
     | .[0] // empty')
   [ -z "$problem" ] || vbw_die "refused: $problem"
-  hypo=$(printf '%s' "$record" | jq -c --argjson d "$doc" '.milestone.id as $m
+  hypo=$(printf '%s' "$record" | jq -c --slurpfile f_d <(printf '%s' "$doc") '$f_d[0] as $d | .milestone.id as $m
     | .phases = [(.phases[] | select(.milestone != $m)), ($d.phases[] | {id, title, reqs, milestone: $m} + (with_entries(select(.key | IN("goal", "tier")))))]
     | .plans = [.plans[] | select(.phase as $p | $d.phases | any(.id == $p) | not)] + [$d.plans[] | {id, phase, title, reqs, files, after: (.after // [])}]')
   # The phases judged: with --add only the ones it brings, else every phase of the doc.
@@ -161,19 +161,19 @@ cmd_apply() {
   [ "$add" = false ] || judged=$pdoc
   tiers=$(printf '%s' "$hypo" | rigor_assess "$(printf '%s' "$judged" | jq -r '.phases[].id')" 2> /dev/null) \
     || vbw_die "internal error: cannot compute the rigor tiers"
-  problem=$(printf '%s' "$tiers" | jq -r --argjson d "$doc" '[.[] | . as $a | ([$d.phases[] | select(.id == $a.id)][0].tier) as $s
+  problem=$(printf '%s' "$tiers" | jq -r --slurpfile f_d <(printf '%s' "$doc") '$f_d[0] as $d | [.[] | . as $a | ([$d.phases[] | select(.id == $a.id)][0].tier) as $s
       | select($s != null and ($s | IN("express", "standard", "deep")) and (["express", "standard", "deep"] | index($s)) < (["express", "standard", "deep"] | index($a.floor)))
       | "\($a.id) is planned at \($s) but its signals set the floor at \($a.floor) (\($a.reasons | map(select(test("^(requirements|files|risk|breaks|tests): ") and (test(": none$") | not))) | join("; "))): the Architect may only raise a tier"]
     | .[0] // empty')
   if [ -n "$problem" ] && [ "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')" = auto ]; then
     vbw_die "refused: $problem"
   fi
-  one=$(printf '%s' "$record" | jq -r --argjson d "$doc" --argjson tiers "$tiers" --arg mode "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')" '
+  one=$(printf '%s' "$record" | jq -r --slurpfile f_d <(printf '%s' "$doc") --slurpfile f_tiers <(printf '%s' "$tiers") --arg mode "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')" '$f_d[0] as $d | $f_tiers[0] as $tiers |
       [$tiers[] | . as $a | (if $mode | IN("express", "standard", "deep") then $mode else $a.tier end) as $t
         | select($t == "express" and ([$d.plans[] | select(.phase == $a.id)] | length) > 1)
         | "\($a.id) is express: one plan, merge its plans or raise its tier"] | .[0] // empty')
   [ -z "$one" ] || vbw_die "refused: $one"
-  record_update '.milestone.id as $m
+  record_update '$f_d[0] as $d | $f_tiers[0] as $tiers | $f_pd[0] as $pd | .milestone.id as $m
     | ([.phases[] | select(.milestone == $m) | .id]) as $mine
     | ([.requirements[] | select(.milestone == $m) | .id]) as $myreqs
     | (.plans | map({key: .id, value: .status}) | from_entries) as $status
@@ -206,7 +206,7 @@ cmd_apply() {
         else [($c0[] | select(.req as $q | any($myreqs[]; . == $q) | not)), $d.checks[]] end)
     | if $d | has("rules") then .requirements |= map(. as $q
         | if any($d.rules[]; .req == $q.id) then .rules = [$d.rules[] | select(.req == $q.id) | {text, check}] else . end)
-      else . end' --argjson d "$doc" --argjson tiers "$tiers" --argjson pd "$pdoc" --argjson patch "$patch" --argjson add "$add" --arg mode "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')"
+      else . end' --slurpfile f_d <(printf '%s' "$doc") --slurpfile f_tiers <(printf '%s' "$tiers") --slurpfile f_pd <(printf '%s' "$pdoc") --argjson patch "$patch" --argjson add "$add" --arg mode "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')"
   jq -r '.milestone.id as $m | ([.phases[] | select(.milestone == $m) | .id]) as $mine
     | "applied \($mine | length) phases, \([.plans[] | select(.phase as $p | any($mine[]; . == $p))] | length) plans, \(.checks | length) checks in all"' "$VBW_RECORD"
 }
