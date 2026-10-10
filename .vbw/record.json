@@ -21050,7 +21050,7 @@
     {
       "id": "T42",
       "text": "Flaky (2026-10-06): the project test command (bash tools/test.sh) failed inside vbw prove twice (fail, not timeout), then passed in three proofs; the suite passes standalone and in a clean copy; the proof keeps only a 20-line tail, so the failing test is unknown. Next time: scratchpad catch.sh (copies .vbw/runtime/run.*/cmd-test.out) or keep failing outputs in VBW (backlog)",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T43",
