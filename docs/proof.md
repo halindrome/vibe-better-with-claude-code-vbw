@@ -323,6 +323,14 @@ clone (`vbw approve` keeps a copy of what it approved in `.vbw/runtime/`).
 5. Writes the evidence and updates requirements and fixes in one atomic record
    update, then prints a one-screen summary. Exit 0 only when everything passed.
 
+### Timed speed checks are not part of the proof
+
+`vbw prove` does not run VBW's own timed speed checks (the hook, status line
+and panel benchmarks, and the test files named `tests/timed-*.bats`), so a busy
+machine never fails or delays a proof. They run once per release, in
+`bash tools/test.sh --release`: in CI and before a push. `bash tools/test.sh`
+without `--release` runs the same lint and tests the proof runs, without them.
+
 ### Full and partial proofs: `vbw prove --full`
 
 ```text
