@@ -21020,7 +21020,7 @@
         "P110.3",
         "P109.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md: a QA fix can add its regression test; the one approval question; what happens if the user says not yet",
@@ -21067,14 +21067,13 @@
         "P111.1",
         "P110.3"
       ],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "When the only unfinished requirements are skipped [human] ones, vbw next answers ship (needs you) with detail.later naming them and an instruction giving both choices: ship now and judge them in the next milestone, or judge them now",
         "No such offer while any other work remains or when nothing was skipped (the accept step stays as it is)",
         "In the new milestone a moved requirement is offered for judgement (accept), not planned again"
-      ],
-      "note": "next.jq part done and committed (tests 1-5 of C248 pass). C248 tests 6-9 still fail because plugin/lib/cmd-ship.sh (P111.1) has a jq syntax error: the decision text 'text: \"...\" + (if ... end)' inside an object literal needs parentheses around the whole concatenation, so every vbw ship dies with 'record update failed'. cmd-ship.sh is outside P111.2's files; it needs a one-line fix there."
+      ]
     },
     {
       "id": "P111.3",
@@ -21244,7 +21243,7 @@
       "after": [
         "P112.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Secret files, the record, the consent file, the status file (glance), another session's files, protected check files, files outside the run's plan, read-only runs and vbw approve by an agent: each block ends 'Next: ' with what to do instead",
