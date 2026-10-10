@@ -72,10 +72,14 @@ fi
 color=1
 [ -z "${NO_COLOR:-}" ] || color=""
 
-# The record, or its small glance (record.sh) when that is newer: same four
-# lines, without parsing a record of megabytes. bash's -nt, no extra process.
+# The record, or its small glance (record.sh) unless the record is newer: same
+# four lines, without parsing a record of megabytes. bash's -nt, no extra
+# process. "Not older" is tested as "record not newer", because bash 3.2 compares
+# file times in whole seconds and a glance written in the record's second is
+# not newer than it.
 recfile="$root/.vbw/record.json"
-[ ! "$root/.vbw/runtime/glance.json" -nt "$recfile" ] || recfile="$root/.vbw/runtime/glance.json"
+glance="$root/.vbw/runtime/glance.json"
+[ ! -f "$glance" ] || [ "$recfile" -nt "$glance" ] || recfile="$glance"
 
 end="$plugin/hooks/end.json"
 # Autonomy is per session: only this session's file counts.
