@@ -20631,7 +20631,7 @@
       "req": "R152",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The release procedure still gives the old run. .claude/skills/vbw-release/SKILL.md step 1 says to run 'PATH=\"/bin:$PATH\" /bin/bash tools/test.sh' once and ends with 'The hook benchmark must be within budget.' Since P104.1 that run skips both benchmarks and every tests/timed-*.bats, so a release that follows the skill never runs the timed speed checks, and its sentence about the hook benchmark is now false. Plain English: the goal is 'timed checks run once per release, in the local run before a push', but the maintainer's own release checklist still points at the run that leaves them out. Fix: change step 1 to the --release run under /bin/bash 3.2. Also worth aligning: tools/test-linux.sh (line 19, runs bash tools/test.sh, comment says 'the whole suite') and README.md:434 ('Tests: bash tools/test.sh') name the default run as if it were the full suite. P104.3 listed only docs/proof.md, AGENTS.md, CONTRIBUTING.md and copilot-instructions.md, so these were missed."
     },
     {
@@ -20639,7 +20639,7 @@
       "req": "R147",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "plugin/lib/core.sh vbw_cores accepts a core count with trailing junk: the pattern '[1-9][0-9]*' means a digit, a digit, then anything. A reader answering '10.5' or '12abc' is accepted as a whole number, then $((cores * 3 / 4)) dies with 'arithmetic syntax error' (checked in bash: 'n=10.5; echo $((n*3/4))' fails). The criterion says the first whole number is taken and VBW keeps working when the count is unusable. tests/check-jobs-machine.bats only tries '2.5' (single digit then dot), which the pattern happens to reject. Fix: accept only all-digit values (for example reject any value matching *[!0-9]*, then require at least 1), and add '10.5' and '12abc' to the unreadable-count test."
     },
     {
@@ -20647,7 +20647,7 @@
       "req": "R148",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "plugin/lib/checks.sh checks_gate_enter calls vbw_check_jobs on every check (line 143), and each parallel check runs in its own subshell (checks_run_all), so the limit is read (getconf + jq) once per check, not once per process. Plan P100.2 and the comment at lines 101-103 say 'read once per process'. The comment is wrong and the plan is not followed; a setting changed mid-run is seen by only some checks. Fix: read the limit once in the process (for example pass it from checks_run_all/checks_run) or correct the plan and the comment."
     },
     {
@@ -20655,7 +20655,7 @@
       "req": "R153",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The stop report prints how long the command actually ran, not the limit in use. plugin/lib/cmd-prove.sh prove_summary prints '(\\(.value.seconds | floor) s)'; seconds is the whole-second wall clock measured by checks_exec (bash SECONDS), which is >= the limit and can be limit+1 on a loaded machine (the exact case this phase is about). So the line can say '(3601 s)' for a 3600 s limit, or '(3 s)' for a limit of 2, though the criterion says the report names the limit in use. tests/command-timeout.bats test 3 checks only for '2 s' and would fail intermittently when the run reads 3. Fix: print the effective limit (settings.command_timeout // 3600, the same value prove_commands uses) in the summary line, and pin it in the test with a run that reports seconds above the limit."
     }
   ],
