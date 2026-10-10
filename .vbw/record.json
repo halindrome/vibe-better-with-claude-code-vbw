@@ -21367,7 +21367,7 @@
         "P112.3",
         "P113.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "README.md settings table: add check_jobs (how many checks run at once; default about three quarters of the processor cores, at least 1; kept in this clone) and command_timeout (how long the project's commands may run in a proof; default 3600 seconds, 1 to 86400)",
