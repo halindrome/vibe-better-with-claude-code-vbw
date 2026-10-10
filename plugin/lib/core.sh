@@ -120,17 +120,23 @@ vbw_clone_settings_file() {
   printf '%s/vbw/settings.json\n' "$common"
 }
 
+# vbw_cores_ok N: N is a whole number of at least 1: digits only, no leading
+# zero (it would read as octal), no sign, dot or trailing text.
+vbw_cores_ok() {
+  case "$1" in '' | *[!0-9]* | 0*) return 1 ;; esac
+}
+
 # vbw_cores: the processor core count, from the first of getconf, nproc and
 # sysctl (found on PATH) that gives a whole number of at least 1; none gives
 # "cannot be read" (status 1, no output).
 vbw_cores() {
   local n
   n=$(getconf _NPROCESSORS_ONLN 2> /dev/null) || n=""
-  case "$n" in [1-9] | [1-9][0-9]*) printf '%s\n' "$n"; return 0 ;; esac
+  vbw_cores_ok "$n" && { printf '%s\n' "$n"; return 0; }
   n=$(nproc 2> /dev/null) || n=""
-  case "$n" in [1-9] | [1-9][0-9]*) printf '%s\n' "$n"; return 0 ;; esac
+  vbw_cores_ok "$n" && { printf '%s\n' "$n"; return 0; }
   n=$(sysctl -n hw.ncpu 2> /dev/null) || n=""
-  case "$n" in [1-9] | [1-9][0-9]*) printf '%s\n' "$n"; return 0 ;; esac
+  vbw_cores_ok "$n" && { printf '%s\n' "$n"; return 0; }
   return 1
 }
 
