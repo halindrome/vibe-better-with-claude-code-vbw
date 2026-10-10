@@ -21510,6 +21510,12 @@
       "id": "D236",
       "at": "2026-10-10T09:29:13Z",
       "text": "Contract approved: 139 requirements, 222 checks, 297 plans (ab5bcdcd84be)"
+    },
+    {
+      "id": "D237",
+      "text": "The guards read the record with a normal (non-streaming) jq parse and use the protected list; they never use the checks; no --stream in hooks.json or the doctor's guard self-test",
+      "why": "measured 2026-10-10 on the owner's Mac: streaming made every guard call 1.5-2 ms slower on normal records (8.2-8.5 ms vs 6.6-7.0 before M19, budget 8); a normal parse took about 6.7 ms even at 2.9 MB; the cost on big records came from walking the checks, which the protected list removes",
+      "at": "2026-10-10T10:17:25Z"
     }
   ],
   "commands": {
