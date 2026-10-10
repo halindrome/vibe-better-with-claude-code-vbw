@@ -694,6 +694,11 @@ history (fixes, decisions, checks), status `open`. `vbw next` there asks you to
 accept it. Its line in `.vbw/spec.md` stays as it was, and `vbw spec sync`
 neither resets nor duplicates it.
 
+What never moves: an `[auto]` requirement (`vbw req skip` refuses it; a check
+can judge it), and a `[human]` requirement with an open fix from your rejection
+(`vbw req skip` refuses it too). Finish the fix with `vbw next`, then judge the
+requirement or skip it. `vbw ship` refuses while such a fix is open.
+
 ### QA verification
 
 Passing checks prove each requirement's behavior; they cannot see whether the
