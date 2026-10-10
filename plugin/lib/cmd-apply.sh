@@ -57,7 +57,39 @@ FOREIGN_REQS_JQ='def foreign_reqs($r; $m; $p; $scope; $mode):
 '
 
 # apply_refuse MESSAGE: every refusal names the mode it came from (R156).
-apply_refuse() { vbw_die "$MODE_NAME refused: $1"; }
+# apply_next MESSAGE: the one next step of the kind of refusal MESSAGE is. Messages of the
+# record's own validation (an unknown requirement, a duplicate id, ...) take the last arm.
+apply_next() {
+  case "$1" in
+    "a patch carries plans"*) echo "remove \"phases\" from the document, or send it to a full apply (vbw apply) to change phases" ;;
+    "--add needs"*) echo "send --add a JSON object whose \"phases\" array holds the new phases, with their plans, checks and rules" ;;
+    "apply needs a JSON object"*) echo "pipe one JSON object into vbw apply: {\"phases\": [], \"plans\": [], \"checks\": []}" ;;
+    "apply needs phases"*) echo "give phases, plans and checks as arrays, and rules as [{req, text, check}] if present" ;;
+    *"is already a phase of this milestone"*) echo "give the new phase an unused id, or change the existing phase with a full apply" ;;
+    *"is already a plan"* | *"is already a check"*) echo "give it an unused id, or change the existing one with vbw apply --patch" ;;
+    *"is already covered by"* | *"belongs to milestone"*) echo "take that requirement out of the phases in the document; plan only requirements of this milestone that have no phase yet" ;;
+    *"not a phase this --add brings"*) echo "set the plan's phase to one of the phases of this --add, or send the plan with vbw apply --patch" ;;
+    *"not a requirement of the phases this --add brings"*) echo "set its req to a requirement of the new phases, or send it with vbw apply --patch" ;;
+    *"has an unknown field"*) echo "remove that field from the document; the allowed fields are in docs/workflows.md" ;;
+    *"the tier must be"*) echo "set the phase's tier to express, standard or deep, or leave it out" ;;
+    *" run is open"*) echo "end the open run (vbw run end), then plan again" ;;
+    *"a plan that has started must stay"*) echo "put the plan back as the record has it (vbw show plan ID), and add a new plan for any further work" ;;
+    *"its goal and criteria stay"*) echo "keep the phase's goal and criteria as they are, and add a new phase for the further work (vbw apply --add)" ;;
+    *"has work started: its title"* | *"has work started: its requirements"*) echo "keep the phase as it is; add a new phase for the further work (vbw apply --add)" ;;
+    *"a [human] requirement"*) echo "remove that rule: only [auto] requirements list rules" ;;
+    *"which is not a check of"*) echo "name a check of that requirement in the rule, or add the check to the plan's checks" ;;
+    *"lists no rules"*) echo "add one rule per condition, edge and error case to \"rules\", each with the check that tests it" ;;
+    *"the Architect may only raise a tier"*) echo "raise the phase's tier to its floor or higher, or leave the tier out" ;;
+    *"is express: one plan"*) echo "merge the phase's plans into one, or raise the phase's tier to standard" ;;
+    *) echo "fix what the message names in the document, then run vbw apply again (vbw doctor checks the record)" ;;
+  esac
+}
+
+# apply_refuse MESSAGE: every refusal names the mode it came from (R156) and ends with its next step (R162).
+apply_refuse() { vbw_die "$MODE_NAME refused: $1"$'\n'"Next: $(apply_next "$1")"; }
+
+# apply_internal MESSAGE: an internal failure; its next step is the same for every kind.
+apply_internal() { vbw_die "internal error: $1"$'\n'"Next: run vbw doctor, then send the document again; report it if it fails again"; }
 
 cmd_apply() {
   local patch=false add=false
@@ -85,7 +117,7 @@ cmd_apply() {
          ($p.checks[] | select(.id as $i | any(($r.checks // [])[]; .id == $i)) | "\(.id) is already a check: --add takes new checks only"),
          ($p.checks[], $p.rules[] | select(.req as $q | $newreqs | index($q) | not)
            | "\(.id // "the rule \"\(.text)\"") is for \(.req), not a requirement of the phases this --add brings")]
-      | .[0] // empty') || vbw_die "internal error: cannot read the added phases"
+      | .[0] // empty') || apply_internal "cannot read the added phases"
     [ -z "$problem" ] || apply_refuse "$problem"
     doc=$(record_read | jq -c --slurpfile f_p <(printf '%s' "$pdoc") '$f_p[0] as $p | .milestone.id as $m
       | ([.phases[] | select(.milestone == $m)]) as $ph
@@ -95,7 +127,7 @@ cmd_apply() {
          plans: ([.plans[] | select(.phase as $x | any($ph[]; .id == $x)) | with_entries(select(.key | IN("id", "phase", "title", "reqs", "files", "after", "tasks", "role")))] + $p.plans),
          checks: ([.checks[] | select(.req as $x | any($rq[]; .id == $x))] + $p.checks),
          rules: ([$rq[] | .id as $q | (.rules // [])[] | {req: $q, text, check}] + $p.rules)}') \
-      || vbw_die "internal error: cannot merge the added phases"
+      || apply_internal "cannot merge the added phases"
   elif [ "$patch" = true ]; then
     # --patch: plans, checks and rules to change, merged by id (rules by requirement and text)
     # into the milestone; the merged whole then meets every rule a full apply does.
@@ -112,7 +144,7 @@ cmd_apply() {
        plans: merge([.plans[] | select(.phase as $x | any($ph[]; .id == $x)) | with_entries(select(.key | IN("id", "phase", "title", "reqs", "files", "after", "tasks", "role")))]; $p.plans; ["id"]),
        checks: merge([.checks[] | select(.req as $x | any($rq[]; .id == $x))]; $p.checks; ["id"]),
        rules: merge([$rq[] | .id as $q | (.rules // [])[] | {req: $q, text, check}]; $p.rules; ["req", "text"])}') \
-      || vbw_die "internal error: cannot merge the patch"
+      || apply_internal "cannot merge the patch"
   fi
   printf '%s' "$doc" | jq -e 'type == "object"' > /dev/null 2>&1 || apply_refuse "apply needs a JSON object on stdin"
   printf '%s' "$doc" | jq -e '(keys - ["phases", "plans", "checks", "rules"]) == [] and all(.phases, .plans, .checks; type == "array")
@@ -120,7 +152,7 @@ cmd_apply() {
     > /dev/null || apply_refuse "apply needs phases, plans and checks, each an array, and optionally rules: [{req, text, check}]"
   if [ "$add" = false ] && [ "$patch" = false ]; then
     problem=$(record_read | jq -r --slurpfile f_p <(printf '%s' "$doc") "$FOREIGN_REQS_JQ"'$f_p[0] as $p | . as $r | foreign_reqs($r; .milestone.id; $p; "others"; "full apply")[0] // empty') \
-      || vbw_die "internal error: cannot read the phases' requirements"
+      || apply_internal "cannot read the phases' requirements"
     [ -z "$problem" ] || apply_refuse "$problem"
   fi
   problem=$(printf '%s' "$doc" | jq -r '[
@@ -191,7 +223,7 @@ cmd_apply() {
   tiers='[]'
   if [ ${#ids[@]} -gt 0 ]; then
     tiers=$(printf '%s' "$hypo" | rigor_assess "${ids[@]}" 2> /dev/null) \
-      || vbw_die "internal error: cannot compute the rigor tiers"
+      || apply_internal "cannot compute the rigor tiers"
   fi
   problem=$(printf '%s' "$tiers" | jq -r --slurpfile f_d <(printf '%s' "$doc") '$f_d[0] as $d | [.[] | . as $a | ([$d.phases[] | select(.id == $a.id)][0].tier) as $s
       | select($s != null and ($s | IN("express", "standard", "deep")) and (["express", "standard", "deep"] | index($s)) < (["express", "standard", "deep"] | index($a.floor)))
@@ -244,10 +276,10 @@ cmd_apply() {
         | if any($d.rules[]; .req == $q.id) then .rules = [$d.rules[] | select(.req == $q.id) | {text, check}] else . end)
       else . end'
   # The merged record is checked here, so a violation names the mode too; record_update checks it again.
-  merged=$(mktemp "$VBW_RUNTIME/apply.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"
+  merged=$(mktemp "$VBW_RUNTIME/apply.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"$'\n'"Next: check that $VBW_RUNTIME exists and can be written to, then run vbw apply again"
   vbw_guard_add file "$merged"
   jq "$filter | .protected = ([(.checks // [])[]? | objects | .files? | arrays | .[] | strings] | unique)" --slurpfile f_d "$df" --slurpfile f_tiers "$tf" --slurpfile f_pd "$pf" --argjson patch "$patch" --argjson add "$add" --arg mode "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')" "$VBW_RECORD" > "$merged" 2> /dev/null \
-    || vbw_die "internal error: cannot merge the plan into the record"
+    || apply_internal "cannot merge the plan into the record"
   problem=$(record_violation "$merged") || true
   rm -f "$merged"
   vbw_guard_drop "$merged"
