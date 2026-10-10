@@ -45,10 +45,13 @@ same_commits() {
 }
 
 # kept FILTER: the large twin's record is valid JSON, and FILTER applied to it
-# gives back exactly the record before the write (nothing lost or cut).
+# gives back exactly the record before the write (nothing lost or cut). The
+# schema and the protected field are left out of the comparison: the writer
+# sets both from the fields in use (R46, R150), and the twins' 102 checks give
+# a write the protected field.
 kept() {
   jq -e . "$BIG/.vbw/record.json" > /dev/null || { echo "the record is not valid JSON"; return 1; }
-  [ "$(jq -cS "$1" "$BIG/.vbw/record.json")" = "$(jq -cS . "$TEST_ROOT/big.before.json")" ] \
+  [ "$(jq -cS "($1) | del(.schema, .protected)" "$BIG/.vbw/record.json")" = "$(jq -cS 'del(.schema, .protected)' "$TEST_ROOT/big.before.json")" ] \
     || { echo "the record lost or changed more than the write: $1"; return 1; }
   [ "$(wc -c < "$BIG/.vbw/record.json")" -gt 2097152 ]
 }
@@ -93,7 +96,7 @@ committed() {
   snapshot
   TWIN_IN="$TEST_ROOT/doc.json" twin_step apply
   kept 'del(.phases[-2:], .plans[-2:], .checks[-2:]) | (.requirements[] | select(.milestone == "M2")) |= del(.rules)
-    | (.phases[] |= del(.proposed, .reasons, .predicted)) | .schema = 1'
+    | (.phases[] |= del(.proposed, .reasons, .predicted))'
   twin_step approve
   same_commits .vbw/record.json .vbw/spec.md tests/a.sh tests/b.sh
   committed

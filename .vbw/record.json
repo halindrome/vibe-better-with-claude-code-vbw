@@ -2606,6 +2606,71 @@
       "files": [
         "tests/big-record-docs.bats"
       ]
+    },
+    {
+      "id": "C223",
+      "req": "R150",
+      "run": [
+        "bats",
+        "tests/record-protected.bats"
+      ],
+      "files": [
+        "tests/record-protected.bats",
+        "tests/protected-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C224",
+      "req": "R150",
+      "run": [
+        "bats",
+        "tests/record-v4-compat.bats"
+      ],
+      "files": [
+        "tests/record-v4-compat.bats",
+        "tests/protected-helper.bash",
+        "tests/fixtures/records/v4.json",
+        "tests/panel/schema4.test.mjs"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C225",
+      "req": "R150",
+      "run": [
+        "bats",
+        "tests/guard-protected.bats"
+      ],
+      "files": [
+        "tests/guard-protected.bats",
+        "tests/protected-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C226",
+      "req": "R150",
+      "run": [
+        "bats",
+        "tests/bench-protected.bats"
+      ],
+      "files": [
+        "tests/bench-protected.bats"
+      ],
+      "timeout": 1200,
+      "alone": true
+    },
+    {
+      "id": "C227",
+      "req": "R150",
+      "run": [
+        "bats",
+        "tests/protected-docs.bats"
+      ],
+      "files": [
+        "tests/protected-docs.bats"
+      ]
     }
   ],
   "project": {
@@ -7179,7 +7244,72 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M19",
-      "rules": []
+      "rules": [
+        {
+          "text": "A write that leaves more than 50 checks stores protected (every check file once, sorted) right after lease and sets schema 4",
+          "check": "C223"
+        },
+        {
+          "text": "A write that leaves 50 checks or fewer stores no field and keeps schema 1, 2 or 3 by today's rules; exactly 50 gives no field, 51 gives it",
+          "check": "C223"
+        },
+        {
+          "text": "Dropping to 50 checks or fewer removes the field and returns to schema 1, 2 or 3 on that write; growing past 50 adds it on that write",
+          "check": "C223"
+        },
+        {
+          "text": "After every write the field equals the union of the current checks' files: adding, removing or changing a check's files updates it",
+          "check": "C223"
+        },
+        {
+          "text": "A schema-3 record with more than 50 checks and no field works for every command and moves to schema 4 on its next write of any kind",
+          "check": "C223"
+        },
+        {
+          "text": "This VBW reads schemas 1 to 4 and asks for a newer VBW on schema 5, naming schema 4 as its highest",
+          "check": "C223"
+        },
+        {
+          "text": "The validator refuses as corrupt a schema-4 record without the field, a field that differs from the checks' files, a field on 50 checks or fewer, and schema 4 on 50 checks or fewer",
+          "check": "C223"
+        },
+        {
+          "text": "A VBW that reads up to schema 3 says a schema-4 record (the new fixture, or one this VBW wrote) needs a newer VBW, never calls it corrupt and leaves it unchanged",
+          "check": "C224"
+        },
+        {
+          "text": "A record of 50 checks or fewer that this VBW wrote is still read and written by a VBW that reads up to schema 3",
+          "check": "C224"
+        },
+        {
+          "text": "The status line, session-start hook and panel show the same on a schema-4 record as on schema 3, with no error",
+          "check": "C224"
+        },
+        {
+          "text": "On schema 4 the guards read only schema, lease and protected and stop before the checks begin",
+          "check": "C225"
+        },
+        {
+          "text": "On schema 4 a build or fix agent's Edit, Write or Bash change of a protected check file is stopped exactly as at schema 3, and an unprotected file is not",
+          "check": "C225"
+        },
+        {
+          "text": "On schema 4 the main conversation, another session and calls outside a run get the same answers as at schema 3",
+          "check": "C225"
+        },
+        {
+          "text": "On a record of 50 checks or fewer, and on a large record not yet moved to schema 4, the guards answer as today",
+          "check": "C225"
+        },
+        {
+          "text": "tools/bench-hooks.sh measures every guard input on schema-4 records of 51, 500 and 2,000 checks (the largest over 2 MB), each within the same hook budget",
+          "check": "C226"
+        },
+        {
+          "text": "docs/record.md documents schema 4, protected, the 50-check threshold and why ordinary projects keep their format; docs/guards.md says what the guards read on each format",
+          "check": "C227"
+        }
+      ]
     }
   ],
   "phases": [
@@ -11425,6 +11555,44 @@
           "reason": "Dev blocked P101.8: Tasks 1-6 are committed (bench with large record and status line, timed-file lists, key-by-key guard read). Tasks 7-9 (the protected field, schema 4, guard stop, docs) cannot land inside the plan's files: the large-record twins in tests/big-record-helper.bash hold 100 checks, so once the writer stores protected (and schema 4) every write on them adds those two fields, and the protected check C218 (tests/big-record-writes.bats, kept() compares the record after a write with the record before, exactly) fails on 'vbw decide', 'vbw todo add', 'vbw req accept' etc. The plan lists no test file to change and the guard denies edits to tests/big-record-*.bats and the helper. I implemented 7-9 (record.sh/record.jq with schema 4, common.jq protected branch, bench record with protected, docs) and the bench passed (guards 6.6-7.5 ms, status line 24 ms), then reverted it uncommitted. Needs: a plan that also lets kept() in tests/big-record-writes.bats ignore .protected and .schema (or builds the twin with protected), plus a new tests/record-protected.bats for the writer, validator and guard; a decision on whether the old-record guard walk key by key is enough for task 5."
         }
       ]
+    },
+    {
+      "id": "P102",
+      "title": "Guards stay fast on records with many checks",
+      "reqs": [
+        "R150"
+      ],
+      "milestone": "M19",
+      "goal": "On a project with more than 50 checks, the Bash and file guards answer each tool call within their time budget no matter how many checks the record holds, because they read one ready-made list of protected files instead of walking every check, while projects with 50 checks or fewer keep the record format older VBW versions can read.",
+      "criteria": [
+        "When a write leaves the record with more than 50 checks, the kernel's single writer stores a field holding every file an approved check protects (the union of all checks' files, each path once, in a fixed sorted order), placed right after `lease` (key order: schema, lease, that field, then the rest), and sets the record's schema to 4 (D226, D229)",
+        "When a write leaves the record with 50 checks or fewer, that field is absent and the schema stays at 1, 2 or 3 exactly as today's rules choose (R46); exactly 50 checks gives no field, 51 gives the field",
+        "A record that drops from more than 50 checks to 50 or fewer (for example after an approved spec change removes checks) loses the field and returns to schema 1, 2 or 3 on that same write; one that grows past 50 gains it on that write",
+        "After every write, the field equals the union of the current checks' files: adding, removing or changing a check's files updates it in the same write, with no separate step",
+        "An existing project with more than 50 checks at schema 3 (such as a record written by the current VBW) moves to schema 4 on its next write of any kind, with no migration command; until then every command and guard still works on it, reading the checks as today",
+        "This VBW reads records of schemas 1 to 4 (VBW_SCHEMA_MAX is 4); the validator refuses as corrupt a schema-4 record without the field, a field that differs from the checks' files, a field on a record with 50 checks or fewer, and schema 4 on a record with 50 checks or fewer",
+        "A VBW that reads up to schema 3, opened on a schema-4 record, says the project needs a newer VBW and is never told the record is corrupt (R46 kept); a fixture of a schema-4 record is added beside the existing record fixtures",
+        "On a schema-4 record, the Bash and file guards read only schema, lease and the protected-files field, and stop reading the record before the checks begin, whatever the number of checks",
+        "On a schema-4 record, the guards give exactly the same answers as on the same project at schema 3: a Dev or other subagent under a build or fix run that tries to change a protected check file through Edit, Write or a Bash command is stopped the same way, an unprotected file is not, and the main conversation and calls outside a run are treated as today",
+        "On a record of 50 checks or fewer, and on a large record not yet moved to schema 4, the guards give the same answers as today",
+        "tools/bench-hooks.sh measures every guard input on records with 51, 500 and at least 2,000 checks (the largest over 2 MB) and each stays within the hook CPU budget; the time per call on the 2,000-check record is no more than the budget allows the 51-check one, so cost does not climb with the number of checks; if the budget cannot be met, the measured times are recorded and the phase fails rather than raising the limit",
+        "The status line, panel and session-start hook show the same on a schema-4 record as on schema 3 and print no error",
+        "docs/record.md documents schema 4, the protected-files field, the 50-check threshold and why ordinary projects keep their older format; docs/guards.md says what the guards read on each format",
+        "bash tools/test.sh passes in full under macOS /bin/bash 3.2 and bash 5, from a project path containing a space"
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 7 (81476 bytes)",
+        "files: more than 2 in a repository tracking 792 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R45 (C39, C40, C41), R46 (C46), R47 (C47), R49 (C48), R55 (C56, C57), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R75 (C101), R76 (C102, C103), R77 (C104), R81 (C109, C111, C112, C113), R99 (C155), R101 (C179), R111 (C171, C172, C173, C174, C175), R115 (C181), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205)",
+        "tests: project test command",
+        "raised by the Architect"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -18162,34 +18330,28 @@
     {
       "id": "P101.8",
       "phase": "P101",
-      "title": "The hook benchmark also measures a record over 2 MB and the status line",
+      "title": "The hook benchmark measures a record over 2 MB as the kernel writes it",
       "reqs": [
         "R149"
       ],
       "files": [
-        "docs/record.md",
-        "plugin/hooks/common.jq",
-        "plugin/lib/record.jq",
-        "plugin/lib/record.sh",
-        "tests/test-shards.bats",
         "tools/bench-hooks.sh",
-        "tools/test.sh"
+        "tools/test.sh",
+        "tests/test-shards.bats",
+        "plugin/hooks/common.jq"
       ],
       "after": [
         "P101.6",
-        "P101.7"
+        "P101.7",
+        "P102.2"
       ],
       "status": "planned",
+      "role": "dev",
       "tasks": [
-        "tools/bench-hooks.sh also builds, in its work folder, a record of more than 2 MB (the same build lease plus a long history of requirements, checks, phases, plans and decisions, keys in the writer's order, its glance written by running vbw once) and prints 'large record: N bytes'",
-        "For every input it adds a line 'guard (NAME, large record): ...' in the existing format and budget; the six existing lines stay unchanged (tests/bench-hooks.bats reads them)",
-        "It measures the status line's CPU per call on the small and the large record: 'status line: X ms CPU per call; budget 30 ms' and 'status line (large record): X ms CPU per call; budget 30 ms' (VBW_STATUSLINE_BUDGET_MS overrides 30); over budget prints OVER and exits 1, as the guards do",
-        "tools/test.sh lists tests/big-record-hooks.bats with the timed files that run alone after the rest; run tests/bench-hooks.bats and big-record-hooks.bats; if a limit cannot hold, record the measured times in the plan note and block the plan",
-        "plugin/hooks/common.jq: the guard keeps the streaming read for the lease, but when a build or fix agent writes and the protected check files must be read, it reads the whole record at once (jq parses a 2.9 MB record in about 7 ms) instead of rebuilding every check event by event (about 17 ms with 100 checks); the interp large-record line must be within the 8 ms or 1.0x budget",
-        "tests/test-shards.bats: the full-run order test lists tests/big-record-hooks.bats among the timed files that run alone after the rest, as tools/test.sh now does",
-        "plugin/lib/record.sh and plugin/lib/record.jq: when the record has more than 50 checks, the single writer keeps a top-level field protected (the sorted, unique list of every file in .checks[].files) right after lease, so the key order is schema, lease, protected, checks, then the rest; with 50 checks or fewer there is no protected field and the record is unchanged; the validator requires protected, when present, to equal that list exactly; only a record with protected is schema 4 (VBW_SCHEMA_MAX 4), following the existing rule that the schema follows the fields in use, so ordinary projects keep schemas 1 to 3 and older VBWs still read them (R46, tests/record-compat.bats and tests/record-newer.bats stay as they are); record_update adds, updates or removes it on every write",
-        "plugin/hooks/common.jq: the guards stop reading at the first key after protected and never walk .checks; a record without protected (written by an older VBW, before its next write) is read on to the checks as today, so its answer is the same, only slower",
-        "docs/record.md: the protected field (written only for records with more than 50 checks), why it exists, the key order, and that only such records are format 4"
+        "Done (657e1ab2, 68fde7dc): the bench measures a record over 2 MB and the status line on both records; tools/test.sh and tests/test-shards.bats list big-record-hooks among the timed files",
+        "Done (9f1b8da2): the guard reads the lease and the checks' files key by key instead of rebuilding every event",
+        "tools/bench-hooks.sh: the large record is written once through the kernel (one record write, such as vbw decide, instead of vbw status) so it holds the format the kernel writes; with its 100 checks that is schema 4 with the protected field (P102.1), which the guards read without walking the checks (P102.2); the 'large record: N bytes' line and every existing line stay as they are",
+        "Run tests/bench-hooks.bats, big-record-hooks.bats and guard-cost.bats under macOS /bin/bash 3.2 and bash 5; every guard line and the status line within budget; if a limit cannot hold, record the measured times in the plan note and block the plan, never raise a limit"
       ]
     },
     {
@@ -18231,6 +18393,92 @@
       "status": "done",
       "tasks": [
         "plugin/skills/config/SKILL.md lists check_jobs with its range and default: checks running at the same time, shared by every VBW command in this project, 1 to 64; default: three quarters of the processor cores; kept in this clone, not in the record (tests/check-jobs-docs.bats B2)"
+      ]
+    },
+    {
+      "id": "P102.1",
+      "phase": "P102",
+      "title": "The record keeps its protected check files in their own field once it has more than 50 checks",
+      "reqs": [
+        "R150"
+      ],
+      "files": [
+        "plugin/lib/record.sh",
+        "plugin/lib/record.jq"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/record.sh record_update: when the new record has more than 50 checks, set the top-level field protected to the sorted list of every file in .checks[].files, each once, and set schema 4; with 50 checks or fewer, remove protected and keep today's schema rule (3, 2 or 1); key order schema, lease, protected (when present), checks, then the rest (D226, D229)",
+        "plugin/lib/record.jq: protected is a known top-level key; the schema rule expects 4 exactly when protected is present; protected must equal that sorted, unique list and is refused on a record of 50 checks or fewer, so a schema-4 record without it, a field that differs, and schema 4 on 50 checks or fewer are corrupt; a record of more than 50 checks without the field at schema 1, 2 or 3 (written before this change) stays valid until its next write",
+        "VBW_SCHEMA_MAX becomes 4; the comments of record_update, record_newer_schema and the record.jq header name schema 4 and why it is kept for records of more than 50 checks",
+        "Run tests/record-protected.bats, record-v4-compat.bats, record.bats, record-compat.bats, record-newer.bats (it now also loads tests/fixtures/records/v4.json and fails until this plan lands), check-alone-contract.bats, recommend-store.bats, triage-kernel.bats, big-record-writes.bats and big-record-commands.bats under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P102.2",
+      "phase": "P102",
+      "title": "The Bash and file guards read only the protected field on a schema-4 record",
+      "reqs": [
+        "R150"
+      ],
+      "files": [
+        "plugin/hooks/common.jq"
+      ],
+      "after": [
+        "P102.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/hooks/common.jq read_events: on the top-level key protected, take its list (an empty list too) as the protected check files, in the same one-entry checks shape lease_write_denial already reads, and stop at the event that closes it, never reading an event of checks",
+        "A record without protected (50 checks or fewer, or a larger record an older VBW wrote, until its next write) is read on to the checks exactly as today; the hooks.json commands and vbw doctor's guard self-test stay as they are; the header comment says what the guards read on each format",
+        "Every answer stays as today: run tests/guard-protected.bats, hooks-guard.bats, guard-plan-writes.bats, guard-interpreters.bats, guard-reads-approval.bats, hook-answers.bats, hooks-session-scope.bats and big-record-hooks.bats under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P102.3",
+      "phase": "P102",
+      "title": "The hook benchmark measures schema-4 records of 51, 500 and 2,000 checks",
+      "reqs": [
+        "R150"
+      ],
+      "files": [
+        "tools/bench-hooks.sh",
+        "tools/test.sh"
+      ],
+      "after": [
+        "P101.8",
+        "P102.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/bench-hooks.sh builds, once per run in its work folder, three more projects with 51, 500 and 2,000 checks under the same build lease, their history padded so the 2,000-check record is over 2 MB, each written once through the kernel so it is schema 4 with the protected field, and prints 'record (N checks): B bytes, schema S' for each",
+        "For every input it prints 'guard (NAME, N checks): ...' in the existing format and with the same budget; over budget prints OVER and exits 1 as today; the existing lines stay unchanged (tests/bench-hooks.bats and big-record-hooks.bats read them)",
+        "tools/test.sh lists tests/bench-protected.bats with the timed files that run alone after the rest; the bench's header comment says what the new records measure",
+        "Run tests/bench-protected.bats, bench-hooks.bats, big-record-hooks.bats, guard-cost.bats, test-shards.bats and quick-mode.bats under macOS /bin/bash 3.2 and bash 5; if a line is over budget, record the measured times in the plan note and block the plan, never raise a limit"
+      ]
+    },
+    {
+      "id": "P102.4",
+      "phase": "P102",
+      "title": "Record and guard guides: format 4 and the protected field",
+      "reqs": [
+        "R150"
+      ],
+      "files": [
+        "docs/record.md",
+        "docs/guards.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/record.md: a protected row in the field table, written only on records with more than 50 checks, and the key order schema, lease, protected, checks, then the rest, in one paragraph that names protected, lease and schema 4",
+        "docs/record.md Versioning: `VBW_SCHEMA_MAX`, currently 4; a record with protected is schema 4; records with 50 checks or fewer keep schema 1, 2 or 3 so an older VBW still reads them; a larger record an older VBW wrote moves to schema 4 on its next write, with no migration command",
+        "docs/guards.md 'Cost does not grow with history': on schema 4 the guards read schema, lease and protected and stop before the checks; on schemas 1 to 3 they read the checks as before, with the same answers, only slower; keep tests/protected-docs.bats, big-record-docs.bats and check-alone-docs.bats passing"
       ]
     }
   ],
