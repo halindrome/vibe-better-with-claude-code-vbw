@@ -37,6 +37,8 @@
 
 # shellcheck source=rigor.sh
 . "$VBW_LIB/rigor.sh"
+# shellcheck source=cmd-spec.sh
+. "$VBW_LIB/cmd-spec.sh"
 
 # foreign_reqs: the refusals --add and the full apply share. $scope is "all"
 # (--add: every phase counts as covering) or "others" (the full apply: only the
@@ -54,7 +56,7 @@ cmd_apply() {
   case "${1:-}" in --patch) patch=true; shift ;; --add) add=true; shift ;; esac
   [ $# -eq 0 ] || vbw_usage_error "usage: vbw apply [--patch | --add] < plan.json"
   vbw_require_project
-  local doc record problem hypo tiers judged one pdoc='{}'
+  local doc record problem hypo tiers judged one pdoc='{}' df tf pf
   doc=$(cat)
   if [ "$add" = true ]; then
     # --add: new phases with their plans, checks and rules, appended to the milestone;
@@ -173,6 +175,9 @@ cmd_apply() {
         | select($t == "express" and ([$d.plans[] | select(.phase == $a.id)] | length) > 1)
         | "\($a.id) is express: one plan, merge its plans or raise its tier"] | .[0] // empty')
   [ -z "$one" ] || vbw_die "refused: $one"
+  vbw_scratch df "$doc"
+  vbw_scratch tf "$tiers"
+  vbw_scratch pf "$pdoc"
   record_update '$f_d[0] as $d | $f_tiers[0] as $tiers | $f_pd[0] as $pd | .milestone.id as $m
     | ([.phases[] | select(.milestone == $m) | .id]) as $mine
     | ([.requirements[] | select(.milestone == $m) | .id]) as $myreqs
@@ -206,7 +211,10 @@ cmd_apply() {
         else [($c0[] | select(.req as $q | any($myreqs[]; . == $q) | not)), $d.checks[]] end)
     | if $d | has("rules") then .requirements |= map(. as $q
         | if any($d.rules[]; .req == $q.id) then .rules = [$d.rules[] | select(.req == $q.id) | {text, check}] else . end)
-      else . end' --slurpfile f_d <(printf '%s' "$doc") --slurpfile f_tiers <(printf '%s' "$tiers") --slurpfile f_pd <(printf '%s' "$pdoc") --argjson patch "$patch" --argjson add "$add" --arg mode "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')"
+      else . end' --slurpfile f_d "$df" --slurpfile f_tiers "$tf" --slurpfile f_pd "$pf" --argjson patch "$patch" --argjson add "$add" --arg mode "$(printf '%s' "$record" | jq -r '.settings.rigor // "auto"')"
+  vbw_guard_drop "$df"
+  vbw_guard_drop "$tf"
+  vbw_guard_drop "$pf"
   jq -r '.milestone.id as $m | ([.phases[] | select(.milestone == $m) | .id]) as $mine
     | "applied \($mine | length) phases, \([.plans[] | select(.phase as $p | any($mine[]; . == $p))] | length) plans, \(.checks | length) checks in all"' "$VBW_RECORD"
 }

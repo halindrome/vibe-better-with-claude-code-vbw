@@ -28,6 +28,18 @@ cmd_spec() {
   esac
 }
 
+# vbw_scratch VAR VALUE: write VALUE to a file in .vbw/runtime and set VAR to its
+# path, for a jq call inside record_update (--slurpfile NAME "$VAR"): bash 3.2
+# closes a <(...) descriptor before record_update's jq reads it. Removed by
+# vbw_guard_drop, or by the interrupt cleanup.
+vbw_scratch() {
+  local f
+  f=$(mktemp "$VBW_RUNTIME/arg.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"
+  vbw_guard_add file "$f"
+  printf '%s' "$2" > "$f"
+  printf -v "$1" '%s' "$f"
+}
+
 # The parsed spec on stdout; every error on stderr and exit 1 if it is invalid.
 spec_parse() {
   local spec="$VBW_DIR/spec.md" parsed
@@ -44,7 +56,7 @@ spec_parse() {
 # or changed [auto] requirement gets rules: [] (pending) once any requirement
 # has a rules field; projects approved before rules existed are untouched (D53).
 spec_sync() {
-  local reqs blocked
+  local reqs blocked sf
   reqs=$(printf '%s' "$1" | jq -c '.requirements')
   # A requirement removed from the spec takes its checks with it, and the plans
   # that only served it, unless such a plan has already started: that work is
@@ -63,6 +75,7 @@ spec_sync() {
          else empty end),
       ($old[] | select(.id as $id | any($s[]; .id == $id) | not) | .id as $id
         | "removed \($id)" + ([$rec.checks[] | select(.req == $id) | .id] | if length > 0 then " and its checks \(join(", "))" else "" end))'
+  vbw_scratch sf "$reqs"
   record_update '$f_s[0] as $s | .milestone.id as $m
     | .requirements as $old
     | [$old[].id | select(. as $id | any($s[]; .id == $id) | not)] as $gone
@@ -78,7 +91,8 @@ spec_sync() {
     | .plans = [.plans[] | .reqs = [.reqs[] | select(kept)] | select(.reqs | length > 0)]
     | ([.plans[].id]) as $ids
     | .plans = [.plans[] | .after = [.after[] | select(. as $a | any($ids[]; . == $a))]]
-    | .phases = [.phases[] | .reqs = [.reqs[] | select(kept)] | select(.reqs | length > 0)]' --slurpfile f_s <(printf '%s' "$reqs")
+    | .phases = [.phases[] | .reqs = [.reqs[] | select(kept)] | select(.reqs | length > 0)]' --slurpfile f_s "$sf"
+  vbw_guard_drop "$sf"
   spec_sync_commands "$(printf '%s' "$1" | jq -c '.commands')"
   spec_sync_results "$(printf '%s' "$1" | jq -c '.results')"
   printf 'record has %s requirements\n' "$(jq '.requirements | length' "$VBW_RECORD")"
@@ -88,21 +102,27 @@ spec_sync() {
 # without that section leaves them as they are. A changed argv needs the user's
 # approval before any proof runs it (vbw next asks for it).
 spec_sync_commands() {
+  local cf
   [ "$1" != null ] || return 0
   record_read | jq -r --slurpfile f_c <(printf '%s' "$1") '$f_c[0] as $c | .commands as $o
     | ($c | to_entries[] | if $o[.key] == null then "added command \(.key)"
         elif $o[.key] != .value then "changed command \(.key)" else empty end),
       ($o | keys[] | select(. as $k | $c | has($k) | not) | "removed command \(.)")'
-  record_update '$f_c[0] as $c | .commands = $c' --slurpfile f_c <(printf '%s' "$1")
+  vbw_scratch cf "$1"
+  record_update '$f_c[0] as $c | .commands = $c' --slurpfile f_c "$cf"
+  vbw_guard_drop "$cf"
 }
 
 # The record's project.results becomes the spec's Test results folders, and
 # goes when the spec names none. A changed list needs the user's approval.
 spec_sync_results() {
+  local lf
   record_read | jq -r --slurpfile f_l <(printf '%s' "$1") '$f_l[0] as $l | (.project.results // null) as $o
     | select($o != $l)
     | if $l == null then "removed the test results folders" else "test results folders: \($l | join(", "))" end'
-  record_update '$f_l[0] as $l | if $l == null then .project |= del(.results) else .project.results = $l end' --slurpfile f_l <(printf '%s' "$1")
+  vbw_scratch lf "$1"
+  record_update '$f_l[0] as $l | if $l == null then .project |= del(.results) else .project.results = $l end' --slurpfile f_l "$lf"
+  vbw_guard_drop "$lf"
 }
 
 # Insert "- R<next> [PROOF] TEXT" at the end of the Requirements section, then sync.
