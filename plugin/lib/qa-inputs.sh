@@ -18,6 +18,21 @@
 # the pass is fingerprinted again at its own commit (qa_settle).
 QA_FP_VERSION=1
 
+# vbw_scratch_json VAR VALUE: put VALUE in a new file inside .vbw/runtime, removed when the
+# command ends or fails (vbw_guard_add), and set VAR to its path. For a jq call that
+# record_update makes: bash 3.2 closes a <(...) handed to a function as soon as the
+# function runs another program, so there the value goes in as --slurpfile NAME "$VAR".
+# Not a command substitution: the guard must belong to the caller. Drop it with
+# vbw_guard_drop when done.
+vbw_scratch_json() {
+  local _f
+  mkdir -p "$VBW_RUNTIME"
+  _f=$(mktemp "$VBW_RUNTIME/$1.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"
+  vbw_guard_add file "$_f"
+  printf '%s' "$2" > "$_f" || vbw_die "cannot write $_f"
+  printf -v "$1" '%s' "$_f"
+}
+
 # qa_tree REV: read paths (one per line), print the digest of what commit REV holds there.
 qa_tree() {
   local p=() l
@@ -34,9 +49,9 @@ qa_digests() {
     res=$(printf '%s' "$1" | jq -c '.project.results')
   fi
   while read -r id line; do
-    own=$(printf '%s' "$own" | jq -c --arg id "$id" --arg f "$(jq -r '.files[]' <<< "$line" | qa_tree "$rev")" --arg p "$(jq -c '.plan' <<< "$line" | vbw_sha256)" --arg q "$(jq -c '.auto' <<< "$line" | vbw_sha256)" \
-      --arg t "$({ jq -c '.checks' <<< "$line"; jq -r '.check_files[]' <<< "$line" | qa_tree "$rev"; } | vbw_sha256)" '. + {($id): {files: $f, tests: $t, plan: $p, reqs: $q}}')
-  done < <(printf '%s' "$1" | jq -r --argjson res "$res" "$VBW_JQ_DEFS"'. as $r | $r.phases[] | select(.milestone == $r.milestone.id) | . as $ph
+    own=$(printf '%s' "$own" | jq -c --arg id "$id" --arg f "$(printf '%s' "$line" | jq -r '.files[]' | qa_tree "$rev")" --arg p "$(printf '%s' "$line" | jq -c '.plan' | vbw_sha256)" --arg q "$(printf '%s' "$line" | jq -c '.auto' | vbw_sha256)" \
+      --arg t "$({ printf '%s' "$line" | jq -c '.checks'; printf '%s' "$line" | jq -r '.check_files[]' | qa_tree "$rev"; } | vbw_sha256)" '. + {($id): {files: $f, tests: $t, plan: $p, reqs: $q}}')
+  done < <(printf '%s' "$1" | jq -r --slurpfile res <(printf '%s' "$res") "$VBW_JQ_DEFS"'$res[0] as $res | . as $r | $r.phases[] | select(.milestone == $r.milestone.id) | . as $ph
     | ([$r.checks[] | select(.req as $q | $ph.reqs | index($q))] | sort_by(.id)) as $ch
     | ([$r.requirements[] | select(.proof == "auto") | .id]) as $aid
     | [$r.plans[] | select(.phase == $ph.id) | [.files[]? | select((startswith(".vbw/") or startswith("./.vbw/")) | not)]] as $pf
@@ -48,9 +63,9 @@ qa_digests() {
               plans: [$r.plans[] | select(.phase == $ph.id) | {id, title, reqs: [.reqs[]? | select(. as $q | $aid | index($q))], files, after, tasks}]}} | tojson)')
   cl=$(printf '%s' "$1" | jq -c --argjson fpv "$QA_FP_VERSION" --argjson inputs null --argjson cache null -f "$VBW_LIB/qa.jq" | jq -c '.closure')
   while IFS=$'\t' read -r id line; do
-    out=$(printf '%s' "$out" | jq -c --arg id "$id" --arg c "$(printf '%s' "$line" | vbw_sha256)" --argjson own "$own" --argjson cl "$cl" \
-      '. + {($id): ($own[$id] + {combined: $c, deps: $cl[$id]})}')
-  done < <(jq -nr --argjson own "$own" --argjson cl "$cl" '$own | keys[] | . as $k | [$k, ([$k] + $cl[$k] | map("\(.) \($own[.].files) \($own[.].tests) \($own[.].plan) \($own[.].reqs)") | join(";"))] | @tsv')
+    out=$(printf '%s' "$out" | jq -c --arg id "$id" --arg c "$(printf '%s' "$line" | vbw_sha256)" --slurpfile own <(printf '%s' "$own") --slurpfile cl <(printf '%s' "$cl") \
+      '. + {($id): ($own[0][$id] + {combined: $c, deps: $cl[0][$id]})}')
+  done < <(jq -nr --slurpfile own <(printf '%s' "$own") --slurpfile cl <(printf '%s' "$cl") '$own[0] as $own | $cl[0] as $cl | $own | keys[] | . as $k | [$k, ([$k] + $cl[$k] | map("\(.) \($own[.].files) \($own[.].tests) \($own[.].plan) \($own[.].reqs)") | join(";"))] | @tsv')
   printf '%s\n' "$out"
 }
 
@@ -76,8 +91,8 @@ qa_cache_put() {
   mkdir -p "${file%/*}" && vbw_lock_take "${file%.json}.lock" "the QA cache"
   tmp=$(mktemp "${file%/*}/qa.XXXXXX") || vbw_die "cannot write ${file%/*}"
   vbw_guard_add file "$tmp"
-  qa_cache_read | jq -c --arg p "$1" --argjson d "$2" --argjson v "$QA_FP_VERSION" --arg c "$commit" --arg t "${4:-}" 'def own: {files, tests, plan, reqs};
-    (. // {}) + {($p): (($d[$p] | own) + {combined: $d[$p].combined, version: $v, deps: ([$d[$p].deps[] | {key: ., value: ($d[.] | own)}] | from_entries)}
+  qa_cache_read | jq -c --arg p "$1" --slurpfile dg <(printf '%s' "$2") --argjson v "$QA_FP_VERSION" --arg c "$commit" --arg t "${4:-}" 'def own: {files, tests, plan, reqs};
+    $dg[0] as $d | (. // {}) + {($p): (($d[$p] | own) + {combined: $d[$p].combined, version: $v, deps: ([$d[$p].deps[] | {key: ., value: ($d[.] | own)}] | from_entries)}
       + (if $c != "" then {commit: $c} else {} end) + (if $t != "" then {tree: $t} else {} end))}' > "$tmp" && mv "$tmp" "$file"
   vbw_guard_drop "$tmp"
   vbw_guard_drop "${file%.json}.lock"
@@ -93,10 +108,10 @@ qa_pass_commit() {
     printf '%s\n' "$3"
     return 0
   fi
-  tree=$(jq -r '.tree // empty' <<< "$2")
+  tree=$(printf '%s' "$2" | jq -r '.tree // empty')
   [ -n "$tree" ] || return 0
   while IFS= read -r c; do
-    if git -C "$VBW_ROOT" show "$c:.vbw/record.json" 2> /dev/null | jq -e --arg p "$1" --argjson q "$2" 'any(.phases[]; .id == $p and .qa == $q)' > /dev/null 2>&1; then
+    if git -C "$VBW_ROOT" show "$c:.vbw/record.json" 2> /dev/null | jq -e --arg p "$1" --slurpfile q <(printf '%s' "$2") 'any(.phases[]; .id == $p and .qa == $q[0])' > /dev/null 2>&1; then
       printf '%s\n' "$c"
       return 0
     fi
@@ -116,13 +131,13 @@ qa_settle() {
   cache=$(qa_cache_read)
   while IFS= read -r id; do
     qa=$(printf '%s' "$1" | jq -c --arg p "$id" '.phases[] | select(.id == $p) | .qa')
-    c=$(qa_pass_commit "$id" "$qa" "$(jq -r --arg p "$id" '.[$p].commit // empty' <<< "$cache")")
+    c=$(qa_pass_commit "$id" "$qa" "$(printf '%s' "$cache" | jq -r --arg p "$id" '.[$p].commit // empty')")
     [ -n "$c" ] || continue
     rec=$(git -C "$VBW_ROOT" show "$c:.vbw/record.json" 2> /dev/null) || continue
     old=$(qa_digests "$rec" "$c" 2> /dev/null) || continue
     printf '%s' "$old" | jq -e --arg p "$id" 'has($p)' > /dev/null || continue
-    qa_cache_put "$id" "$old" "$c" "$(jq -r '.tree' <<< "$qa")"
-  done < <(printf '%s' "$1" | jq -r --argjson d "$2" --argjson c "$cache" --argjson v "$QA_FP_VERSION" '. as $r
+    qa_cache_put "$id" "$old" "$c" "$(printf '%s' "$qa" | jq -r '.tree')"
+  done < <(printf '%s' "$1" | jq -r --slurpfile dg <(printf '%s' "$2") --slurpfile cg <(printf '%s' "$cache") --argjson v "$QA_FP_VERSION" '$dg[0] as $d | $cg[0] as $c | . as $r
     | $r.phases[] | select(.milestone == $r.milestone.id and .qa.result == "pass" and .qa.tree != ($d[.id].combined // .qa.tree)
         and ((($c | if type == "object" then . else {} end)[.id] | type == "object" and ((.version // 0) != $v))))
     | select(.id as $i | [$r.plans[] | select(.phase == $i)] | length > 0 and all(.[]; .status == "done")) | .id')

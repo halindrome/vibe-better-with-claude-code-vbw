@@ -16,7 +16,7 @@ qa_state() {
   local d="${2:-}"
   [ -n "$d" ] || d=$(qa_digests "$1")
   qa_settle "$1" "$d"
-  jq -c --argjson inputs "$d" --argjson cache "$(qa_cache_read)" --argjson fpv "$QA_FP_VERSION" -f "$VBW_LIB/qa.jq" <<< "$1"
+  printf '%s' "$1" | jq -c --slurpfile in <(printf '%s' "$d") --slurpfile ch <(qa_cache_read) --argjson fpv "$QA_FP_VERSION" '$in[0] as $inputs | $ch[0] as $cache | '"$(cat "$VBW_LIB/qa.jq")"
 }
 
 # qa_combined RECORD [DIGESTS]: {Pn: the phase's current fingerprint}: what a
@@ -25,7 +25,7 @@ qa_state() {
 qa_combined() {
   local d="${2:-}"
   [ -n "$d" ] || d=$(qa_digests "$1")
-  qa_state "$1" "$d" | jq -c --argjson d "$d" --argjson r "$1" '. as $s | $d | map_values(.combined)
+  qa_state "$1" "$d" | jq -c --slurpfile dg <(printf '%s' "$d") --slurpfile rc <(printf '%s' "$1") '$dg[0] as $d | $rc[0] as $r | . as $s | $d | map_values(.combined)
     + ([$r.phases[] | select(.id as $i | $s.standing | index($i)) | select(.qa.tree != null) | {(.id): .qa.tree}] | add // {})'
 }
 
@@ -44,11 +44,11 @@ cmd_next() {
     | {tracked: length, code: ([.[] | select((startswith(".vbw/") or is_doc) | not)] | length)}')
   qa=$(qa_state "$record")
   # A plan that names a plan or phase that is not there cannot be judged.
-  jq -e '.problems | any(.[]; contains("does not exist")) | not' <<< "$qa" > /dev/null || vbw_die "$(jq -r '.problems | join("; ")' <<< "$qa")"
+  printf '%s' "$qa" | jq -e '.problems | any(.[]; contains("does not exist")) | not' > /dev/null || vbw_die "$(printf '%s' "$qa" | jq -r '.problems | join("; ")')"
   # The profile's effort table; a wrong table stops here, before any answer.
   effort=$(effort_table "$(printf '%s' "$record" | jq -r '.settings.profile')") || exit 1
   next=$(printf '%s' "$record" | jq -c --argjson effort "$effort" --argjson tracked "$counts" --argjson approved "$approved" --arg waiting "$waiting" --arg contract "$hash" \
-    --argjson code_changed "$changed" --argjson legacy "$legacy" --argjson qa "$qa" --argjson profile "$(interview_effective "$record")" --arg session "$(vbw_session)" --slurpfile tiers "$VBW_LIB/tiers.json" "$VBW_JQ_DEFS$(cat "$VBW_LIB/next.jq")")
+    --argjson code_changed "$changed" --argjson legacy "$legacy" --slurpfile qa <(printf '%s' "$qa") --argjson profile "$(interview_effective "$record")" --arg session "$(vbw_session)" --slurpfile tiers "$VBW_LIB/tiers.json" "$VBW_JQ_DEFS$(cat "$VBW_LIB/next.jq")")
   # The status line shows the last answer (docs/statusline.md).
   printf '%s\n' "$next" > "$VBW_RUNTIME/next.json.$$" && mv "$VBW_RUNTIME/next.json.$$" "$VBW_RUNTIME/next.json"
   if [ "${1:-}" = "--json" ]; then

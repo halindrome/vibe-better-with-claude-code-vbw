@@ -5,6 +5,7 @@
 # $waiting: the check files edited since the approval, newline-separated ("" when none).
 # $tracked (the number of files git tracks, for the early tier).
 # $profile: interview_effective (lib/interview.sh); next fills unanswered ones with the neutral middle choice.
+# $qa (slurped: [state]; lib/qa.jq's answer, handed over a file so the command line stays short).
 # $tiers (slurped: [table]; lib/tiers.json: profile -> tier -> cell).
 # $effort: the current profile's effort table (lib/effort.sh), passed through as `effort`.
 # Output: {action, gate, instruction, detail, requirements (the active milestone's: id, text, proof), rigor, profile}; profile.ask is true only
@@ -30,6 +31,7 @@ def fix_files($r): if .command then ["*"]
        | if length == 0 then ["*"] else . end end;
 
 .milestone.id as $m
+| $qa[0] as $qa
 | ([.requirements[] | select(.milestone == null) | .id]) as $unassigned
 | (if ($unassigned | length) > 0 then error("requirements with no milestone: \($unassigned | join(", "))") else . end)
 | [.requirements[] | select(.milestone == $m)] as $current
