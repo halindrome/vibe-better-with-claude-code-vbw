@@ -21040,7 +21040,7 @@
     {
       "id": "T40",
       "text": "Flake (2026-10-06, Linux container under heavy load): tools/bench-hooks.sh stopped silently between the big and read cases inside test 'R61 answer hook cost'; passed 3/3 alone and in the next full run. The bench now prints the line where it stops (ERR trap); find the cause when it recurs",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T41",
