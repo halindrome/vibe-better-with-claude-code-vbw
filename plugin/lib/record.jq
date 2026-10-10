@@ -1,4 +1,7 @@
-# The definition of .vbw/record.json: schema 1, 2 when a check is alone, 3 when a todo is sorted (docs/record.md).
+# The definition of .vbw/record.json: schema 1, 2 when a check is alone, 3 when a todo is sorted (docs/record.md),
+# 4 when it has more than 50 checks: it then carries protected, the sorted list of every file a check
+# protects, so a guard reads the list without reading through the checks (R150). A record of more than 50
+# checks written before schema 4 (schema 1, 2 or 3, no field) stays valid until its next write.
 # Input: the record. Output: a JSON array of violation messages; [] = valid.
 
 def nonempty: type == "string" and length > 0;
@@ -44,12 +47,18 @@ if type != "object" then ["record must be a JSON object"] else
 | ([($r.shipped // [])[]?.id] + [$r.milestone.id?]) as $milestones
 | ($plans | map({key: .id, value: (.after // [])}) | from_entries) as $graph
 | [
-    ( select($r.schema != (if ($r | has("recommendation")) or ((($r.todos // []) | type) == "array" and any(($r.todos // [])[]?; type == "object" and (has("sort") or has("size")))) then 3
+    ( select($r.schema != (if ($r | has("protected")) then 4
+                           elif ($r | has("recommendation")) or ((($r.todos // []) | type) == "array" and any(($r.todos // [])[]?; type == "object" and (has("sort") or has("size")))) then 3
                            elif (($r.checks // []) | type) == "array" and any(($r.checks // [])[]?; type == "object" and .alone == true) then 2 else 1 end))
-      | "schema must be 3 when a todo is sorted or a recommendation is stored; schema must be 2 when a check is alone, else 1" ),
+      | "schema must be 3 when a todo is sorted or a recommendation is stored; schema must be 2 when a check is alone, else 1; schema must be 4 exactly when the protected field is present (more than 50 checks)" ),
+    ( select(($r | has("protected")) and ((($r.checks // []) | type == "array" and length > 50) | not))
+      | "protected is only for a record of more than 50 checks" ),
+    ( select(($r | has("protected")) and ((($r.checks // []) | type == "array" and length > 50)))
+      | select($r.protected != ([($r.checks // [])[] | objects | .files? | arrays | .[] | strings] | unique))
+      | "protected must be the sorted list of every file the checks protect, each once" ),
     ( $r | keys[]
       | select(one_of(["schema","project","milestone","requirements","checks","phases","plans",
-                       "fixes","todos","decisions","commands","settings","evidence","lease","shipped","converted","recommendation"]) | not)
+                       "fixes","todos","decisions","commands","settings","evidence","lease","shipped","converted","recommendation","protected"]) | not)
       | "unknown key: \(.)" ),
     ( ["requirements","checks","phases","plans","fixes","todos","decisions","shipped"][]
       | select(($r[.] | type) != "array") | "\(.) must be an array" ),
