@@ -26,25 +26,43 @@ contract_core() {
                              + (if .project.results then {results: .project.results} else {} end)'
 }
 
-# contract_shape RECORD_JSON: the fingerprint of that structure alone. Each
-# approval remembers it (consent kind "shape") beside the full hash, so edits
-# to check files alone can wait for one approval before proof.
+# contract_shape RECORD_JSON: the fingerprint of that structure alone, without
+# the checks a fix added (they carry "fix"). Each approval remembers it (consent
+# kind "shape") beside the full hash, so edits to check files and the checks a
+# fix adds can wait for one approval before proof.
 contract_shape() {
-  contract_core "$1" | vbw_sha256
+  contract_core "$(printf '%s' "$1" | jq -c '.checks |= map(select(has("fix") | not))')" | vbw_sha256
+}
+
+# contract_held RECORD_JSON: the ids, one per line, of the checks a fix added
+# that the last approval does not hold as they are (new or changed): nothing
+# runs them before the user approves. Empty when the contract is approved exactly.
+contract_held() {
+  contract_approved "$(contract_hash "$1")" && return 0
+  printf '%s' "$1" | jq -r --slurpfile old "$VBW_RUNTIME/approved-contract.json" '.checks[] | select(has("fix")) | . as $c
+    | select($old[0].checks[$c.id] != $c) | .id' 2> /dev/null \
+    || printf '%s' "$1" | jq -r '.checks[] | select(has("fix")) | .id'
 }
 
 # contract_waiting RECORD_JSON: succeed when the contract may run: approved
 # exactly (prints nothing), or approved apart from the bytes of check files
-# (prints those files, sorted, one per line). Fails for any other contract.
+# (prints those files, sorted, one per line; a check a fix added counts with all
+# its files until approved). Fails for any other contract.
 contract_waiting() {
-  local f d old="$VBW_RUNTIME/approved-contract.json" out="" all=""
+  local f d old="$VBW_RUNTIME/approved-contract.json" out="" all="" held=""
   contract_approved "$(contract_hash "$1")" && return 0
   consent_has shape "$(contract_shape "$1")" || return 1
+  held=$(printf '%s' "$1" | jq -j --slurpfile old "$old" '.checks[] | select(has("fix")) | . as $c
+    | select($old[0].checks[$c.id] != $c) | .files[]? | . + "\u0000"' 2> /dev/null) \
+    || held=$(printf '%s' "$1" | jq -j '.checks[] | select(has("fix")) | .files[]? | . + "\u0000"')
   while IFS= read -r -d '' f; do
     all="$all$f"$'\n'
     d=missing
     [ ! -f "$VBW_ROOT/$f" ] || d=$(vbw_sha256 < "$VBW_ROOT/$f")
-    [ "$(jq -r --arg f "$f" '.files[$f] // "new"' "$old" 2> /dev/null)" = "$d" ] || out="$out$f"$'\n'
+    if [ "$(jq -r --arg f "$f" '.files[$f] // "new"' "$old" 2> /dev/null)" != "$d" ] \
+      || printf '%s' "$held" | tr '\0' '\n' | grep -qxF -- "$f"; then
+      out="$out$f"$'\n'
+    fi
   done < <(printf '%s' "$1" | jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"')
   printf '%s' "${out:-$all}"
 }
