@@ -136,9 +136,10 @@ doctor_project() {
 
 # The guard works with this jq: it must deny a destructive command here.
 doctor_guard() {
-  local out
+  local out g=/dev/null d="${VBW_RECORD%/*}/runtime/glance.json"
+  if [ -f "$VBW_RECORD" ] && [ -f "$d" ] && [ -r "$d" ] && [ "$d" -nt "$VBW_RECORD" ]; then g=$d; fi
   out=$(jq -nc --arg d "$VBW_ROOT" '{tool_name: "Bash", cwd: $d, tool_input: {command: "git reset --hard"}}' \
-    | jq -nc --stream --arg root "$VBW_ROOT" -f "$VBW_PLUGIN/hooks/guard-bash.jq" - "$VBW_RECORD" "$VBW_PLUGIN/hooks/end.json" 2> /dev/null)
+    | jq -nc --rawfile glance "$g" --arg root "$VBW_ROOT" -f "$VBW_PLUGIN/hooks/guard-bash.jq" - "$VBW_RECORD" "$VBW_PLUGIN/hooks/end.json" 2> /dev/null)
   if printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' > /dev/null 2>&1; then doctor_line ok "the guards work"
   else doctor_line fail "the guards do not work with this jq" "update jq, then run vbw doctor again"
   fi
