@@ -3086,7 +3086,7 @@
   "milestone": {
     "id": "M20",
     "title": "Release fix: bash 3.2",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -3183,6 +3183,11 @@
       "id": "M19",
       "title": "Lighter rounds",
       "at": "2026-10-10T19:06:04Z"
+    },
+    {
+      "id": "M20",
+      "title": "Release fix: bash 3.2",
+      "at": "2026-10-10T20:17:05Z"
     }
   ],
   "requirements": [
@@ -22827,6 +22832,11 @@
       "id": "D254",
       "at": "2026-10-10T19:33:13Z",
       "text": "Contract approved: 144 requirements, 236 checks, 312 plans (2102880e9044); express: P106 (R154, C240, P106.1); express: P107 (R155, C241, P107.1)"
+    },
+    {
+      "id": "D255",
+      "at": "2026-10-10T20:17:05Z",
+      "text": "Shipped M20 Release fix: bash 3.2: 2 requirements proven or accepted"
     }
   ],
   "commands": {
