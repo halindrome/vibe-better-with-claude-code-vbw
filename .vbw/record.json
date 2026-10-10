@@ -21265,7 +21265,7 @@
     {
       "id": "T83",
       "text": "Release: stop running the full suite twice per release (vbw prove --full already runs it); the pre-push bash 3.2 run reuses the proof's result when the tree is unchanged",
-      "status": "open",
+      "status": "dropped",
       "sort": "next",
       "size": "small"
     },
