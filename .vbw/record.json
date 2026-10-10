@@ -21073,14 +21073,13 @@
         "P111.1",
         "P110.3"
       ],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "When the only unfinished requirements are skipped [human] ones, vbw next answers ship (needs you) with detail.later naming them and an instruction giving both choices: ship now and judge them in the next milestone, or judge them now",
         "No such offer while any other work remains or when nothing was skipped (the accept step stays as it is)",
         "In the new milestone a moved requirement is offered for judgement (accept), not planned again"
-      ],
-      "note": "Tasks 1-3 are in plugin/lib/next.jq (tests 3,4,5,8 of tests/human-later.bats pass). Test 7 can never pass: it snapshots decisions containing 'R2' before ship, then requires them unchanged after ship + milestone start, but test 6 requires the ship decision (appended) to name R2. Both need a change to the protected check file tests/human-later.bats (history() must exclude the ship decision); I may not edit it."
+      ]
     },
     {
       "id": "P111.3",
@@ -21275,7 +21274,7 @@
         "P113.3",
         "P112.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/guards.md and docs/workflows.md: every refusal ends with 'Next: ' and what that means for the user",
