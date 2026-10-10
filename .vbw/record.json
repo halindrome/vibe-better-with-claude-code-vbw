@@ -19005,7 +19005,7 @@
         "P102.8",
         "P102.10"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "hooks.json, the Bash and the file guard commands: shell tests only (no other program) choose the glance: it goes to jq as --rawfile glance when the record exists and .vbw/runtime/glance.json is a regular, readable file strictly newer than the record ([ -f ] && [ -r ] && [ -nt ]), else /dev/null; then the hook input, the record and end.json are jq's inputs, as before M19; no --stream; one jq; the command still ends in || true",
