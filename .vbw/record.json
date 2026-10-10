@@ -11409,6 +11409,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P101.8: Tasks 1-4 and 6 are committed (bench measures the 2 MB record and status line; test.sh and test-shards list big-record-hooks). Measured now (20-30 runs): every guard line within budget except 'guard (interp, large record)', 6.9 ms small vs 7.7-8.3 ms large (1.28x startup, limit 1.0x or 8 ms: OVER, borderline); status line 25.1 / 24.9 ms (limit 30). Task 5's whole-record read would cost ~7 ms parse, worse than the current streaming, so the fix is the protected field (tasks 7-8). Blocker (DEVN-04): task 7 makes every record that has checks schema 4 with a new top-level key 'protected'. That contradicts tests/record-compat.bats (R46: 'fits' requires schema == 1 and the old key list; schema 2 test), tests/record.bats (schema 1/2/3 rules, and the validator's schema rule and unknown-key list) and tests/record-newer.bats, which are check files outside this plan (protected by other checks, need owner approval to edit), and it makes every project need VBW 2.0.17+ at once, against R46's intent that old VBW keeps reading ordinary records. Options: (A, recommended) write 'protected' (schema 4) only when the check-file list is long enough to matter (e.g. the record over 1 MB or more than N checks), so ordinary records stay schema 1-3 and R46 holds; add the validator rule and tests for schema 4 in a plan that owns record.bats; (B) always write it and re-approve record-compat/record/record-newer tests with new schema numbers; (C) accept interp large-record at ~1.0-1.3x by raising that single budget (not recommended)."
+        },
+        {
+          "at": "2026-10-10T06:03:46Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P101.8: Tasks 1-6 are committed (bench with large record and status line, timed-file lists, key-by-key guard read). Tasks 7-9 (the protected field, schema 4, guard stop, docs) cannot land inside the plan's files: the large-record twins in tests/big-record-helper.bash hold 100 checks, so once the writer stores protected (and schema 4) every write on them adds those two fields, and the protected check C218 (tests/big-record-writes.bats, kept() compares the record after a write with the record before, exactly) fails on 'vbw decide', 'vbw todo add', 'vbw req accept' etc. The plan lists no test file to change and the guard denies edits to tests/big-record-*.bats and the helper. I implemented 7-9 (record.sh/record.jq with schema 4, common.jq protected branch, bench record with protected, docs) and the bench passed (guards 6.6-7.5 ms, status line 24 ms), then reverted it uncommitted. Needs: a plan that also lets kept() in tests/big-record-writes.bats ignore .protected and .schema (or builds the twin with protected), plus a new tests/record-protected.bats for the writer, validator and guard; a decision on whether the old-record guard walk key by key is enough for task 5."
         }
       ]
     }
@@ -18165,7 +18171,7 @@
         "P101.6",
         "P101.7"
       ],
-      "status": "planned",
+      "status": "blocked",
       "tasks": [
         "tools/bench-hooks.sh also builds, in its work folder, a record of more than 2 MB (the same build lease plus a long history of requirements, checks, phases, plans and decisions, keys in the writer's order, its glance written by running vbw once) and prints 'large record: N bytes'",
         "For every input it adds a line 'guard (NAME, large record): ...' in the existing format and budget; the six existing lines stay unchanged (tests/bench-hooks.bats reads them)",
@@ -18176,7 +18182,8 @@
         "plugin/lib/record.sh and plugin/lib/record.jq: when the record has more than 50 checks, the single writer keeps a top-level field protected (the sorted, unique list of every file in .checks[].files) right after lease, so the key order is schema, lease, protected, checks, then the rest; with 50 checks or fewer there is no protected field and the record is unchanged; the validator requires protected, when present, to equal that list exactly; only a record with protected is schema 4 (VBW_SCHEMA_MAX 4), following the existing rule that the schema follows the fields in use, so ordinary projects keep schemas 1 to 3 and older VBWs still read them (R46, tests/record-compat.bats and tests/record-newer.bats stay as they are); record_update adds, updates or removes it on every write",
         "plugin/hooks/common.jq: the guards stop reading at the first key after protected and never walk .checks; a record without protected (written by an older VBW, before its next write) is read on to the checks as today, so its answer is the same, only slower",
         "docs/record.md: the protected field (written only for records with more than 50 checks), why it exists, the key order, and that only such records are format 4"
-      ]
+      ],
+      "note": "Tasks 1-6 are committed (bench with large record and status line, timed-file lists, key-by-key guard read). Tasks 7-9 (the protected field, schema 4, guard stop, docs) cannot land inside the plan's files: the large-record twins in tests/big-record-helper.bash hold 100 checks, so once the writer stores protected (and schema 4) every write on them adds those two fields, and the protected check C218 (tests/big-record-writes.bats, kept() compares the record after a write with the record before, exactly) fails on 'vbw decide', 'vbw todo add', 'vbw req accept' etc. The plan lists no test file to change and the guard denies edits to tests/big-record-*.bats and the helper. I implemented 7-9 (record.sh/record.jq with schema 4, common.jq protected branch, bench record with protected, docs) and the bench passed (guards 6.6-7.5 ms, status line 24 ms), then reverted it uncommitted. Needs: a plan that also lets kept() in tests/big-record-writes.bats ignore .protected and .schema (or builds the twin with protected), plus a new tests/record-protected.bats for the writer, validator and guard; a decision on whether the old-record guard walk key by key is enough for task 5."
     },
     {
       "id": "P101.9",
