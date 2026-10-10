@@ -13374,6 +13374,12 @@
           "from": "standard",
           "to": "deep",
           "reason": "Dev blocked P111.2: next.jq part done and committed (tests 1-5 of C248 pass). C248 tests 6-9 still fail because plugin/lib/cmd-ship.sh (P111.1) has a jq syntax error: the decision text 'text: \"...\" + (if ... end)' inside an object literal needs parentheses around the whole concatenation, so every vbw ship dies with 'record update failed'. cmd-ship.sh is outside P111.2's files; it needs a one-line fix there."
+        },
+        {
+          "at": "2026-10-10T23:11:19Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P111.2: Tasks 1-3 are in plugin/lib/next.jq (tests 3,4,5,8 of tests/human-later.bats pass). Test 7 can never pass: it snapshots decisions containing 'R2' before ship, then requires them unchanged after ship + milestone start, but test 6 requires the ship decision (appended) to name R2. Both need a change to the protected check file tests/human-later.bats (history() must exclude the ship decision); I may not edit it."
         }
       ]
     },
@@ -21067,13 +21073,14 @@
         "P111.1",
         "P110.3"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "When the only unfinished requirements are skipped [human] ones, vbw next answers ship (needs you) with detail.later naming them and an instruction giving both choices: ship now and judge them in the next milestone, or judge them now",
         "No such offer while any other work remains or when nothing was skipped (the accept step stays as it is)",
         "In the new milestone a moved requirement is offered for judgement (accept), not planned again"
-      ]
+      ],
+      "note": "Tasks 1-3 are in plugin/lib/next.jq (tests 3,4,5,8 of tests/human-later.bats pass). Test 7 can never pass: it snapshots decisions containing 'R2' before ship, then requires them unchanged after ship + milestone start, but test 6 requires the ship decision (appended) to name R2. Both need a change to the protected check file tests/human-later.bats (history() must exclude the ship decision); I may not edit it."
     },
     {
       "id": "P111.3",
@@ -21178,7 +21185,7 @@
         "P112.2",
         "P110.5"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "What happens when a guard fails during a run, outside a run, and outside a VBW project",
