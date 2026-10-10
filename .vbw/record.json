@@ -21451,6 +21451,11 @@
       "text": "One guard path: every record with checks keeps the protected list (format 4); no 50-check threshold; the guards never walk the checks",
       "why": "owner 2026-10-10: no legacy constraint before the 2.1.0 public release, so the most elegant option with no second code path wins",
       "at": "2026-10-10T07:20:32Z"
+    },
+    {
+      "id": "D233",
+      "at": "2026-10-10T08:09:22Z",
+      "text": "Contract approved: 139 requirements, 222 checks, 296 plans (fd37a17e132c)"
     }
   ],
   "commands": {
