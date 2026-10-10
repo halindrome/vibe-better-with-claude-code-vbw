@@ -38,14 +38,21 @@ record_refuse_newer() {
   vbw_die "this project needs a newer VBW: its record was written with schema $n, this VBW reads up to schema $VBW_SCHEMA_MAX; update VBW with /vbw:update" 4
 }
 
-# The glance: the record cut down to what the status line reads (R149), so it
-# never parses a record of megabytes. Written beside the record, never a source
-# of truth. Call with the record lock held; a failure leaves the old glance.
+# The glance: the record cut down to what the status line and the guards read
+# (R149, R150): schema, lease and protected exactly as the record has them
+# (protected left out only when the record has none, as an older VBW wrote it),
+# besides the status line's fields. Both read it instead of the record, so
+# neither parses a record of megabytes. It is never a source of truth (D238):
+# the guards trust it only while it is strictly newer than the record, and
+# otherwise read the record. Call with the record lock held. It is built in a
+# temporary file and renamed into place, so it is never half-written.
 record_glance_write() {
   local tmp
   tmp=$(mktemp "$VBW_RUNTIME/glance.XXXXXX" 2> /dev/null) || return 0
   vbw_guard_add file "$tmp"
-  if jq -c '.milestone.id as $m | {schema, project, milestone, settings, lease,
+  if jq -c '.milestone.id as $m | {schema, lease}
+      + (if has("protected") then {protected} else {} end)
+      + {project, milestone, settings,
       requirements: [.requirements[]? | select(.milestone == $m)],
       plans: [.plans[]? | select(.status == "building")]}' \
     "$VBW_RECORD" > "$tmp" 2> /dev/null; then
@@ -55,21 +62,34 @@ record_glance_write() {
   rm -f "$tmp" 2> /dev/null || true
 }
 
+# record_back FILE: set FILE's time one second back (touch -A on macOS and BSD,
+# -r with -d on GNU; when neither works the time stays and the guards simply
+# read the record). Done to a new record before it is renamed into place, so the
+# glance written after it is strictly newer even when compared in whole seconds.
+record_back() {
+  touch -A -01 "$1" 2> /dev/null || touch -r "$1" -d '-1 second' "$1" 2> /dev/null || true
+}
+
+# True when the glance is a regular file strictly newer than the record.
+record_glance_current() {
+  [ -f "$VBW_RUNTIME/glance.json" ] && [ "$VBW_RUNTIME/glance.json" -nt "$VBW_RECORD" ]
+}
+
 # The validated record on stdout; exit 3 if it is corrupt, 4 if it is newer.
-# A missing or older glance (after a checkout, or a record an older VBW wrote)
-# is rewritten here, so any vbw command brings it up to date.
+# A glance that is missing, not a regular file or not strictly newer than the
+# record (after a checkout, a reset, a hand edit, or a record an older VBW wrote)
+# is rewritten here under the lock, so the first vbw command brings it up to
+# date. The record and its file time are never changed.
 record_read() {
   local v
   record_refuse_newer
   v=$(record_violation "$VBW_RECORD") || vbw_die "record is corrupt: $v ($VBW_RECORD)" 3
-  if [ ! -f "$VBW_RUNTIME/glance.json" ] || [ "$VBW_RUNTIME/glance.json" -ot "$VBW_RECORD" ]; then
+  if ! record_glance_current; then
     (
       vbw_guard_reset
       mkdir -p "$VBW_RUNTIME" 2> /dev/null || exit 0
       record_lock
-      if [ ! -f "$VBW_RUNTIME/glance.json" ] || [ "$VBW_RUNTIME/glance.json" -ot "$VBW_RECORD" ]; then
-        record_glance_write
-      fi
+      record_glance_current || record_glance_write
       record_unlock
     ) || true
   fi
@@ -163,6 +183,12 @@ record_update() {
        protected: ([(.checks // [])[]? | objects | .files? | arrays | .[] | strings] | unique)}
       + (if has(\"checks\") then {checks} else {checks: []} end) + del(.schema, .lease, .protected, .checks)" "$VBW_RECORD" > "$tmp" 2>/dev/null || vbw_die "internal error: record update failed"
   v=$(record_violation "$tmp") || vbw_die "refused: $v"
+  # The new record's time goes one second back, the old glance goes, and the
+  # new glance is written after the record: it is strictly newer than the record
+  # (even in whole seconds), a failed glance write leaves no glance that looks
+  # current, and the record write never fails because of the glance.
+  record_back "$tmp"
+  rm -f "$VBW_RUNTIME/glance.json" 2> /dev/null || true
   mv "$tmp" "$VBW_RECORD"
   vbw_guard_drop "$tmp"
   record_glance_write

@@ -35,7 +35,10 @@ cmd_init() {
     settings: {profile: "balanced", autonomy_cap: 25},
     evidence: null
   }' > "$VBW_RUNTIME/record.init"
+  record_back "$VBW_RUNTIME/record.init"
   mv "$VBW_RUNTIME/record.init" "$VBW_RECORD"
+  # A new project starts with a current glance (written under the lock).
+  ( vbw_guard_reset; record_lock; record_glance_write; record_unlock ) || true
   init_gitignore
   printf 'Initialized VBW in %s\n' "$VBW_ROOT"
   printf '  .vbw/spec.md      what you are building (you own this file)\n'
