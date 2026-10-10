@@ -79,6 +79,10 @@ def lease_write_denial($lease; $record):
   elif $lease.files == [] then
     "\(.) cannot be written during a \($lease.kind) run: its agents only read"
   elif $lease.kind == "plan" and test_path then empty
+  elif $lease.new_tests == true and (. as $p | any($lease.checks[]?; . == $p)) then empty
+  elif $lease.new_tests == true and (. as $p | any($record.protected[]?; . == $p)) then
+    "\(.) is a protected check file of another requirement: the fix may edit only the check files of its own requirement (\($lease.checks | join(", ")))\nNext: leave \(.) as it is; put the regression test in a new test file and register it with vbw fix check"
+  elif $lease.new_tests == true and test_path then empty
   elif $lease.files != null and (. as $p | any($lease.files[]; covers($p)) | not) then
     "\(.) is outside this run's files (\($lease.files | join(", "))): agents write only their plan's files"
   elif ($lease.kind | test("^(build|fix)$")) and ($record | has("protected") | not) then
