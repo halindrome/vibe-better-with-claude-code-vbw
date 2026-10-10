@@ -3,8 +3,13 @@
 #   load helper
 #   load rigor-helper
 
+# edit_record JQ_EXPR: a hand edit of the record. The kernel refreshes the
+# status line's side file (.vbw/runtime/glance.json) on every write; a hand edit
+# drops it instead, so readers take the record (bash 3.2 compares file times in
+# whole seconds and would keep a glance written in the same second).
 edit_record() {
   jq "$1 | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
+  rm -f .vbw/runtime/glance.json
 }
 
 phase_json() { # JQ_EXPR: evaluate against phase P1 of the record

@@ -153,6 +153,7 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 - R152 [auto] The timed speed checks run once per release (in CI and in the local run before a push), not in every vbw prove, so a proof never fails or waits because the machine is busy
 - R153 [auto] vbw prove never stops a project's test command only because the machine is busy: its time limit fits a large project's full test run on a loaded machine, and a project can set its own limit
 - R154 [auto] vbw config rigor works under macOS /bin/bash 3.2: setting a mode re-tiers the unstarted phases and saves the record, as it does under bash 5
+- R155 [auto] VBW's own test suite passes under macOS /bin/bash 3.2: a test that edits the record by hand also drops the status line's side file, as a kernel write would refresh it
 
 <!-- One requirement per line: an id, how it is proved, and a user-observable
      statement. [auto] = a check can prove it; [human] = only a person can judge it.

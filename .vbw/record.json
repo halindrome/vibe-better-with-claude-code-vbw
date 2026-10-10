@@ -3056,6 +3056,24 @@
         "tests/config-rigor-bash32.bats"
       ],
       "timeout": 600
+    },
+    {
+      "id": "C241",
+      "req": "R155",
+      "run": [
+        "env",
+        "PATH=/bin:/usr/bin:/opt/homebrew/bin:/usr/local/bin",
+        "bats",
+        "tests/qa-model.bats",
+        "tests/qa-depth-escalated.bats",
+        "tests/rigor-config.bats",
+        "tests/kernel-commands.bats"
+      ],
+      "files": [
+        "tests/qa-model.bats",
+        "tests/rigor-helper.bash"
+      ],
+      "timeout": 900
     }
   ],
   "project": {
@@ -8000,6 +8018,19 @@
           "check": "C240"
         }
       ]
+    },
+    {
+      "id": "R155",
+      "text": "VBW's own test suite passes under macOS /bin/bash 3.2: a test that edits the record by hand also drops the status line's side file, as a kernel write would refresh it",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M20",
+      "rules": [
+        {
+          "text": "the rigor and QA-model tests that edit the record by hand pass when bats runs under /bin/bash",
+          "check": "C241"
+        }
+      ]
     }
   ],
   "phases": [
@@ -12619,6 +12650,24 @@
         "risk: none",
         "breaks: none",
         "guarded: R23 (C20), R27 (C21), R35 (C31), R36 (C32), R81 (C109, C111, C112, C113), R101 (C179), R107 (C166, C167), R119 (C180), R147 (C212, C215, C237), R149 (C217, C218, C219, C220, C221, C222), R153 (C235, C236, C239)",
+        "tests: project test command"
+      ],
+      "predicted": "express"
+    },
+    {
+      "id": "P107",
+      "title": "The test suite under bash 3.2",
+      "reqs": [
+        "R155"
+      ],
+      "milestone": "M20",
+      "proposed": "express",
+      "tier": "express",
+      "reasons": [
+        "requirements: 1",
+        "files: 1 (4151 bytes)",
+        "risk: none",
+        "breaks: none",
         "tests: project test command"
       ],
       "predicted": "express"
@@ -19915,6 +19964,23 @@
       "role": "dev",
       "tasks": [
         "plugin/lib/cmd-config.sh config_rigor: write the assessed tiers to a scratch file in .vbw/runtime (vbw_scratch_json, as cmd-prove and cmd-qa do) and pass that file to record_update with --slurpfile, never a process substitution, which bash 3.2 closes before record_update's jq reads it"
+      ]
+    },
+    {
+      "id": "P107.1",
+      "phase": "P107",
+      "title": "A hand edit of the record in tests drops the glance",
+      "reqs": [
+        "R155"
+      ],
+      "files": [
+        "tests/rigor-helper.bash"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tests/rigor-helper.bash edit_record drops .vbw/runtime/glance.json after its hand edit, so the status line reads the record under bash 3.2 (whole-second file times); written in plan run plan-20261010T192811Z, the build confirms the tests under /bin/bash"
       ]
     }
   ],
