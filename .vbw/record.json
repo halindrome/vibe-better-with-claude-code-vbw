@@ -12057,7 +12057,15 @@
         "tests: project test command",
         "raised by the Architect"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "qa": {
+        "result": "fail",
+        "tier": "quick",
+        "tree": "3b3041e370ba246d3fb89b5ebe7b3ef2c1191e49bd0875c8d7ed75c1bd9c8d9d",
+        "at": "2026-10-10T16:40:34Z",
+        "note": "7/8 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P99",
@@ -20409,6 +20417,14 @@
       "attempts": 0,
       "status": "closed",
       "note": "test timeout"
+    },
+    {
+      "id": "F104",
+      "req": "R145",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "docs/rigor.md line 204 (QA depth section, edited by P98.2) still ends with \"A small, low-risk change never gets a deep check.\" That is now false: a small phase that escalated to deep is verified at deep, as the same section says two paragraphs above. Fix: say a small, low-risk change that never escalated never gets a deep check."
     }
   ],
   "todos": [
