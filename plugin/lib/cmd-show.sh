@@ -56,7 +56,7 @@ cmd_show() {
         . as $r | (.requirements[] | select(.id == $q)) as $req
         | "\($req.id) [\($req.proof), \($req.status)] \($req.text)",
           ($req | rule_lines),
-          "checks:", ($r.checks[] | select(.req == $q) | "  \(.id) " + check_line),
+          "checks:", ($r.checks[] | select(.req == $q) | "  \(.id) " + check_line + (if .fix then " (added by \(.fix))" else "" end)),
           "plans:", ($r.plans[] | select(any(.reqs[]; . == $q)) | "  \(.id) \(.title) [\(.status)]")'
       printf 'commits:\n'
       show_commits_for_req "$1"
