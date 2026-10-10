@@ -23,8 +23,8 @@ cmd_ship() {
     | [.requirements[] | select(.milestone == $m and .later == true) | .id] as $moved
     | .shipped += [{id: .milestone.id, title: .milestone.title, at: $at}]
     | .decisions += [{id: (.decisions | next_id("D")), at: $at,
-        text: "Shipped \(.milestone.id) \(.milestone.title): \([.requirements[] | select(.milestone == $m and (.status | IN("proven", "accepted")))] | length) requirement\(if ([.requirements[] | select(.milestone == $m and (.status | IN("proven", "accepted")))] | length) == 1 then "" else "s" end) proven or accepted"
-          + (if ($moved | length) > 0 then "; moved to the next milestone to judge: \($moved | join(", "))" else "" end)}]' \
+        text: ("Shipped \(.milestone.id) \(.milestone.title): \([.requirements[] | select(.milestone == $m and (.status | IN("proven", "accepted")))] | length) requirement\(if ([.requirements[] | select(.milestone == $m and (.status | IN("proven", "accepted")))] | length) == 1 then "" else "s" end) proven or accepted"
+          + (if ($moved | length) > 0 then "; moved to the next milestone to judge: \($moved | join(", "))" else "" end))}]' \
     --arg at "$(vbw_now)"
   record_commit "chore(vbw): ship $(jq -r .milestone.id "$VBW_RECORD")"
   jq -r '"shipped \(.milestone.id) \(.milestone.title)"' "$VBW_RECORD"
