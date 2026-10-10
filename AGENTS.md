@@ -156,6 +156,7 @@ cat "$CLAUDE_PROJECT_DIR"/<session-id>/subagents/agent-*.jsonl
 - **Nothing outside the project:** no writes to `/tmp`, other repos or git hooks, and no process killing. The one exception is the user's Claude Code `settings.json`, where VBW turns on its status line and Dynamic workflows (owner decision, 2026-10-01), keeping every other setting and a backup of a replaced status line. It must work under the Claude Code sandbox.
 - **Hot paths:** a hook's own CPU per call ≤ 8 ms, or ≤ 1x the platform's shell and jq startup on a loaded machine (`tools/bench-hooks.sh`), statusline ≤ 30 ms, with no network and no credentials.
 - **JSON only through `jq`,** never grep or sed on JSON.
+- **Record-sized data never on a command line:** the record and anything built from all of it reach jq through a pipe, `--slurpfile` or `--rawfile` from inside the project, never `--arg`/`--argjson` or a here-string (enforced by `tests/record-args-rule.bats`).
 
 ## Engine, agent and prompt rules
 
