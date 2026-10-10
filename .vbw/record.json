@@ -21116,7 +21116,7 @@
         "P111.2",
         "P110.5"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md: Skip for now, and moving a skipped [human] requirement to the next milestone with its history",
@@ -21318,7 +21318,7 @@
         "P114.1",
         "P113.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/workflows.md: every vbw command answers --help and -h, also after a subcommand",
