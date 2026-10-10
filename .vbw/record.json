@@ -21433,7 +21433,9 @@
     {
       "id": "T107",
       "text": "Judge Claude Code 2.1.295 hook onFailure: \"block\" for VBW's guards (a guard that fails to start or times out would block instead of letting the call through); weigh against VBW's no-jq quiet start (2.0.30) and the hooks-inert-outside-VBW rule",
-      "status": "open"
+      "status": "open",
+      "sort": "next",
+      "size": "small"
     },
     {
       "id": "T108",
