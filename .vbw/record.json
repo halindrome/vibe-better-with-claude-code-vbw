@@ -20501,7 +20501,7 @@
       "req": "R145",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/rigor.md line 204 (QA depth section, edited by P98.2) still ends with \"A small, low-risk change never gets a deep check.\" That is now false: a small phase that escalated to deep is verified at deep, as the same section says two paragraphs above. Fix: say a small, low-risk change that never escalated never gets a deep check."
     },
     {
