@@ -16,7 +16,7 @@ checks_begin() {
     || vbw_die "the contract is not approved, or changed since it was approved: review it (vbw show contract), then ask the user with the approval menu (AskUserQuestion)"
   if [ -n "$CHECK_WAITING" ]; then
     waiting=$(printf '%s' "$CHECK_WAITING" | tr '\n' ' ')
-    [ "${2:-}" != strict ] || vbw_die "check files new or changed since the contract was approved are waiting for approval, and nothing runs them before: ${waiting% }
+    [ "${2:-}" != strict ] || vbw_die "check files changed since it was approved, or added by a fix, are waiting for approval, and nothing runs them before: ${waiting% }
 Next: review them, then ask the user to approve them once (vbw next asks), and run vbw prove again"
     printf 'vbw: waiting for approval (new or changed since approved): %s\n' "${waiting% }" >&2
   fi
