@@ -71,12 +71,7 @@ jobs:
         if: steps.scope.outputs.scope != 'some' && steps.scope.outputs.scope != 'none'
         working-directory: src dir
         env:
-          # The hook budget (8 ms of VBW's own CPU per call, or 1x the platform's
-          # shell and jq startup) is calibrated on a developer Mac. Hosted runners
-          # are slower and have a cheaper startup, so CI uses a looser tripwire
-          # that still catches the regressions the budget exists for.
-          VBW_HOOK_BUDGET_MS: "25"
-          # The panel budget (0.5 ms of CPU per refresh) is calibrated the same way.
+          # The panel budget (0.5 ms of CPU per refresh) is calibrated on a developer Mac.
           VBW_PANEL_BUDGET_MS: "3"
           SHARD: ${{ matrix.shard }}
           SHARDS: 4
@@ -94,7 +89,6 @@ jobs:
         working-directory: src dir
         env:
           FILES: ${{ steps.scope.outputs.files }}
-          VBW_HOOK_BUDGET_MS: "25"
           VBW_PANEL_BUDGET_MS: "3"
         run: |
           export PATH="${{ matrix.bash_path }}:$PATH"
