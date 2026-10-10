@@ -18142,21 +18142,23 @@
       ],
       "files": [
         "tools/bench-hooks.sh",
-        "tools/test.sh"
+        "tools/test.sh",
+        "plugin/hooks/common.jq",
+        "tests/test-shards.bats"
       ],
       "after": [
         "P101.6",
         "P101.7"
       ],
-      "status": "blocked",
-      "role": "dev",
+      "status": "planned",
       "tasks": [
         "tools/bench-hooks.sh also builds, in its work folder, a record of more than 2 MB (the same build lease plus a long history of requirements, checks, phases, plans and decisions, keys in the writer's order, its glance written by running vbw once) and prints 'large record: N bytes'",
         "For every input it adds a line 'guard (NAME, large record): ...' in the existing format and budget; the six existing lines stay unchanged (tests/bench-hooks.bats reads them)",
         "It measures the status line's CPU per call on the small and the large record: 'status line: X ms CPU per call; budget 30 ms' and 'status line (large record): X ms CPU per call; budget 30 ms' (VBW_STATUSLINE_BUDGET_MS overrides 30); over budget prints OVER and exits 1, as the guards do",
-        "tools/test.sh lists tests/big-record-hooks.bats with the timed files that run alone after the rest; run tests/bench-hooks.bats and big-record-hooks.bats; if a limit cannot hold, record the measured times in the plan note and block the plan"
-      ],
-      "note": "Tasks 1-4 are coded and committed (tools/bench-hooks.sh, tools/test.sh), but two limits do not hold. (1) 'guard (interp, large record)' measures 16.7-17.2 ms own CPU (2.75-2.87x startup) against 8 ms or 1.0x, in 3 runs (20 and 50 runs/each); the other five large-record guards are 2.7-7.2 ms and in budget (git 7.2, npm 6.2, big 6.7, read 2.7, answer 1.1), small interp is 6.8. Cause: the build-agent write case must read the lease's checks (100 checks in the fixture) in plugin/hooks/common.jq (P101.6), costing about 10 ms; this is the checks count, not the record size, so it needs a faster check read in common.jq, outside this plan's files. Status line: 23.6 ms small, 23.8 ms large, in the 30 ms budget. (2) tests/test-shards.bats test 13 (full run order) mirrors the timed list and fails now that tools/test.sh lists tests/big-record-hooks.bats; that test file is outside this plan's files and needs the same list update (tests/quick-mode.bats passes)."
+        "tools/test.sh lists tests/big-record-hooks.bats with the timed files that run alone after the rest; run tests/bench-hooks.bats and big-record-hooks.bats; if a limit cannot hold, record the measured times in the plan note and block the plan",
+        "plugin/hooks/common.jq: the guard keeps the streaming read for the lease, but when a build or fix agent writes and the protected check files must be read, it reads the whole record at once (jq parses a 2.9 MB record in about 7 ms) instead of rebuilding every check event by event (about 17 ms with 100 checks); the interp large-record line must be within the 8 ms or 1.0x budget",
+        "tests/test-shards.bats: the full-run order test lists tests/big-record-hooks.bats among the timed files that run alone after the rest, as tools/test.sh now does"
+      ]
     },
     {
       "id": "P101.9",
@@ -20750,6 +20752,11 @@
       "id": "D224",
       "at": "2026-10-10T00:14:47Z",
       "text": "Contract approved: 138 requirements, 217 checks, 288 plans (dcdfdd2f59f1)"
+    },
+    {
+      "id": "D225",
+      "at": "2026-10-10T01:55:31Z",
+      "text": "Contract approved: 138 requirements, 217 checks, 288 plans (4ccbd27ee577)"
     }
   ],
   "commands": {
