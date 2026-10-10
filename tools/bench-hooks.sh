@@ -17,12 +17,17 @@
 #   so the absolute bound covers a quiet machine of any platform.
 # A real regression still shows: an added subprocess costs about one startup
 # more, and the 20 KB heredoc case catches work that grows faster than the input.
+# Every input is measured twice: on the small record and on a record of more than
+# 2 MB (R149: a long-lived project's record), both with the same build lease.
+# The status line is measured on both records too: its CPU per call is within
+# VBW_STATUSLINE_BUDGET_MS (default 30), startup included.
 # VBW_BENCH_RUNS and VBW_BENCH_PLUGIN_ROOT override the runs and the plugin (tests).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUDGET="${VBW_HOOK_BUDGET:-1.0}"
 BUDGET_MS="${VBW_HOOK_BUDGET_MS:-8}"
+STATUS_MS="${VBW_STATUSLINE_BUDGET_MS:-30}"
 RUNS="${VBW_BENCH_RUNS:-100}"
 PLUGIN="${VBW_BENCH_PLUGIN_ROOT:-$ROOT/plugin}"
 work="$(mktemp -d)"
@@ -56,6 +61,41 @@ jq -nc --arg d "$work" '{hook_event_name: "PostToolUse", tool_name: "AskUserQues
   tool_input: {questions: [{question: "Which database should the app use?", options: [{label: "SQLite"}, {label: "Postgres"}]}]},
   tool_response: {answers: {"Which database should the app use?": "SQLite"}}}' > "$work/answer.json"
 
+# The large project: a record of more than 2 MB in its own folder, the same build
+# lease plus a long history (requirements with rules, checks, phases, plans and
+# decisions of a shipped milestone, every text padded), keys in the writer's
+# order (schema, lease, checks, then the rest, as the kernel writes them). Its glance is
+# written by running vbw once, as any command does.
+large="$work/large"
+mkdir -p "$large"
+git -C "$large" init -q
+(cd "$large" && "$PLUGIN/bin/vbw" init > /dev/null)
+jq --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
+  ("~" * 5000) as $f
+  | "2026-01-01T00:00:00Z" as $at
+  | [range(1; 51)] as $n
+  | .lease = {run: "build-1", kind: "build", session: "bench", started_at: $t, files: ["src/pay.py"]}
+  | .milestone = {id: "M2", title: "New work", status: "active"}
+  | .shipped = [{id: "M1", title: "Old work", at: $at}]
+  | .requirements = [$n[] | {id: "R\(.)", text: ("Old part \(.) works" + $f), proof: "auto", status: "proven", milestone: "M1",
+                              rules: [{text: ("Old rule \(.)" + $f), check: "C\(2 * . - 1)"}, {text: "Old second rule \(.)", check: "C\(2 * .)"}]}]
+  | .checks = [$n[] | {id: "C\(2 * . - 1)", req: "R\(.)", run: ["sh", "tests/old.sh"], files: ["tests/old.sh"]},
+                      {id: "C\(2 * .)", req: "R\(.)", run: ["sh", "tests/old.sh"], files: ["tests/old.sh"]}]
+  | .phases = [$n[] | {id: "P\(.)", title: "Old phase \(.)", reqs: ["R\(.)"], milestone: "M1",
+                        goal: ("Old goal \(.)" + $f), criteria: [("Old criterion \(.)" + $f)], tier: "standard",
+                        qa: {result: "pass", tier: "standard", tree: "0000000000000000000000000000000000000000", at: $at}}]
+  | .plans = [$n[] as $k | (1, 2) | {id: "P\($k).\(.)", phase: "P\($k)", title: "Old plan \($k).\(.)", reqs: ["R\($k)"],
+                                      files: ["src/old/\($k)-\(.).txt"], after: [], status: "done", role: "dev",
+                                      tasks: [("Old task \($k).\(.)" + $f)]}]
+  | .decisions = [range(1; 121) | {id: "D\(.)", text: ("Old decision \(.)" + $f), at: $at}]
+                 + [{id: "D121", text: ("Old long decision" + ("~" * 140000)), at: $at}]
+  | {schema, lease, checks} + .' \
+  "$large/.vbw/record.json" > "$large/.vbw/edited.json"
+cat "$large/.vbw/edited.json" > "$large/.vbw/record.json"
+rm -f "$large/.vbw/edited.json"
+(cd "$large" && "$PLUGIN/bin/vbw" status > /dev/null)
+printf 'large record: %s bytes\n' "$(wc -c < "$large/.vbw/record.json" | tr -d ' ')"
+
 # cpu_pair INPUT BASELINE HOOK: the mean CPU time in ms of RUNS runs of each
 # `sh -c` command, "BASELINE HOOK", alternating call by call so both see the
 # same machine. The children's user and system time comes from bash's `times`
@@ -78,23 +118,57 @@ cpu_pair() {
           printf "%.1f %.1f\n", sum[0] * 1000 / runs, sum[1] * 1000 / runs }' "$log"
 }
 
-baseline="jq -nc 'input | empty' - \"$CLAUDE_PROJECT_DIR/.vbw/record.json\" \"$CLAUDE_PLUGIN_ROOT/hooks/end.json\" 2>/dev/null || true"
+
+# guards DIR LABEL: measure every input against the project at DIR; LABEL is
+# the empty string, or ", large record".
 status=0
-for input in git npm big interp read answer; do
-  tool=$(jq -r .tool_name "$work/$input.json")
-  event=PreToolUse
-  [ "$input" != answer ] || event=PostToolUse
-  hook=$(jq -r --arg t "$tool" --arg e "$event" '[.hooks[$e][] | select(.matcher as $m | $t | test("^(" + $m + ")$"))][0].hooks[0].command' "$hooks_json")
-  read -r shell total < <(cpu_pair "$work/$input.json" "$baseline" "$hook")
-  own=$(perl -e 'printf "%.1f", $ARGV[0] - $ARGV[1]' -- "$total" "$shell")
-  ratio=$(perl -e 'printf "%.2f", $ARGV[1] > 0 ? $ARGV[0] / $ARGV[1] : 99' -- "$own" "$shell")
-  line=$(printf 'guard (%s): %s ms own CPU per call, %sx the platform'"'"'s sh and jq startup (%s ms); budget %s ms or %sx' \
-    "$input" "$own" "$ratio" "$shell" "$BUDGET_MS" "$BUDGET")
-  if perl -e 'exit($ARGV[0] <= $ARGV[1] || $ARGV[2] <= $ARGV[3] ? 0 : 1)' -- "$own" "$BUDGET_MS" "$ratio" "$BUDGET"; then
+guards() {
+  local dir="$1" label="$2" input tool event hook shell total own ratio line baseline file
+  export CLAUDE_PROJECT_DIR="$dir"
+  baseline="jq -nc 'input | empty' - \"$dir/.vbw/record.json\" \"$CLAUDE_PLUGIN_ROOT/hooks/end.json\" 2>/dev/null || true"
+  for input in git npm big interp read answer; do
+    tool=$(jq -r .tool_name "$work/$input.json")
+    event=PreToolUse
+    [ "$input" != answer ] || event=PostToolUse
+    hook=$(jq -r --arg t "$tool" --arg e "$event" '[.hooks[$e][] | select(.matcher as $m | $t | test("^(" + $m + ")$"))][0].hooks[0].command' "$hooks_json")
+    file="$work/$input.json"
+    if [ "$dir" != "$work" ]; then
+      file="$work/$input.large.json"
+      jq -c --arg o "$work" --arg d "$dir" 'walk(if type == "string" and startswith($o) then $d + .[($o | length):] else . end)' \
+        "$work/$input.json" > "$file"
+    fi
+    read -r shell total < <(cpu_pair "$file" "$baseline" "$hook")
+    own=$(perl -e 'printf "%.1f", $ARGV[0] - $ARGV[1]' -- "$total" "$shell")
+    ratio=$(perl -e 'printf "%.2f", $ARGV[1] > 0 ? $ARGV[0] / $ARGV[1] : 99' -- "$own" "$shell")
+    line=$(printf 'guard (%s%s): %s ms own CPU per call, %sx the platform'"'"'s sh and jq startup (%s ms); budget %s ms or %sx' \
+      "$input" "$label" "$own" "$ratio" "$shell" "$BUDGET_MS" "$BUDGET")
+    if perl -e 'exit($ARGV[0] <= $ARGV[1] || $ARGV[2] <= $ARGV[3] ? 0 : 1)' -- "$own" "$BUDGET_MS" "$ratio" "$BUDGET"; then
+      printf '%s\n' "$line"
+    else
+      printf '%s: OVER\n' "$line" >&2
+      status=1
+    fi
+  done
+}
+
+# statusline DIR LABEL: the status line's CPU per call (the whole process tree,
+# startup included) for a session in the project at DIR.
+statusline() {
+  local dir="$1" label="$2" cmd total line
+  jq -nc --arg d "$dir" '{session_id: "bench", workspace: {project_dir: $d}, cwd: $d, model: {display_name: "Opus"}}' > "$work/statusline.json"
+  cmd="NO_COLOR=1 bash '$PLUGIN/scripts/vbw-statusline.sh'"
+  read -r _ total < <(cpu_pair "$work/statusline.json" true "$cmd")
+  line=$(printf 'status line%s: %s ms CPU per call; budget %s ms' "$label" "$total" "$STATUS_MS")
+  if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$total" "$STATUS_MS"; then
     printf '%s\n' "$line"
   else
     printf '%s: OVER\n' "$line" >&2
     status=1
   fi
-done
+}
+
+guards "$work" ""
+guards "$large" ", large record"
+statusline "$work" ""
+statusline "$large" " (large record)"
 exit $status
