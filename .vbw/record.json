@@ -19778,7 +19778,7 @@
         "tests/check-jobs-once.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tests/check-jobs-regress.bats (new): a core count VBW cannot read as a whole number (10.5, 12abc, 08) gives a limit of 1 and VBW keeps working; shown to fail against the code before afcb49ae (F106)",
@@ -19816,7 +19816,7 @@
         "tests/command-timeout-report.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tests/command-timeout-report.bats (new): a command stopped by a 2-second limit whose measured run is longer than 2 seconds reports the limit (2 s), never the measured seconds; shown to fail against the code before a528091f (F108)"
