@@ -18860,7 +18860,7 @@
         "P101.8",
         "P102.2"
       ],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "tools/bench-hooks.sh builds, once per run in its work folder, three more projects with 51, 500 and 2,000 checks under the same build lease, their history padded so the 2,000-check record is over 2 MB, each written once through the kernel so it is schema 4 with the protected field, and prints 'record (N checks): B bytes, schema S' for each",
         "For every input it prints 'guard (NAME, N checks): ...' in the existing format and with the same budget; over budget prints OVER and exits 1 as today; the existing lines stay unchanged (tests/bench-hooks.bats and big-record-hooks.bats read them)",
