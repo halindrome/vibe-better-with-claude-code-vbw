@@ -1,6 +1,6 @@
 # The VBW status line (docs/statusline.md). $cc: Claude Code's status line
 # JSON ({} when it sent none). Inputs, in order: plugin.json; the
-# project's .vbw/record.json if it exists; the sentinel; .vbw/runtime/next.json
+# project's .vbw/record.json, or its smaller glance.json when newer, if it exists; the sentinel; .vbw/runtime/next.json
 # if it exists (the last `vbw next`); the sentinel; this session's
 # .vbw/runtime/auto.SESSION.json if it armed an autonomous run. jq skips missing files, so the sentinels mark which
 # optional input is which. Args: $branch, $color ("1" or ""),

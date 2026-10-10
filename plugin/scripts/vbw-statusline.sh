@@ -72,12 +72,17 @@ fi
 color=1
 [ -z "${NO_COLOR:-}" ] || color=""
 
+# The record, or its small glance (record.sh) when that is newer: same four
+# lines, without parsing a record of megabytes. bash's -nt, no extra process.
+recfile="$root/.vbw/record.json"
+[ ! "$root/.vbw/runtime/glance.json" -nt "$recfile" ] || recfile="$root/.vbw/runtime/glance.json"
+
 end="$plugin/hooks/end.json"
 # Autonomy is per session: only this session's file counts.
 auto="$root/.vbw/runtime/auto.${sid:-none}.json"
 [ -n "$input" ] || input='{}'
 # jq exits non-zero when an optional file is missing; only an empty render is a failure.
 out=$(jq -nr --argjson cc "$input" --arg branch "$branch" --arg color "$color" --arg legacy "$legacy" --argjson agents "$agents" --slurpfile profiles "$plugin/lib/profiles.json" -f "$here/statusline.jq" \
-  "$plugin/.claude-plugin/plugin.json" "$root/.vbw/record.json" "$end" \
+  "$plugin/.claude-plugin/plugin.json" "$recfile" "$end" \
   "$root/.vbw/runtime/next.json" "$end" "$auto" 2> /dev/null)
 if [ -n "$out" ]; then printf '%s\n' "$out"; else printf '[VBW] status line unavailable\n'; fi
