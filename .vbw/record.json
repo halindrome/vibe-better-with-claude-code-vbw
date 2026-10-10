@@ -18630,11 +18630,9 @@
       "after": [
         "P101.6",
         "P101.7",
-        "P102.2",
-        "P102.6"
+        "P102.2"
       ],
       "status": "planned",
-      "role": "dev",
       "tasks": [
         "Done (657e1ab2, 68fde7dc): the bench measures a record over 2 MB and the status line on both records; tools/test.sh and tests/test-shards.bats list big-record-hooks among the timed files",
         "Done (9f1b8da2): the guard reads the lease and the checks' files key by key instead of rebuilding every event",
@@ -18738,11 +18736,9 @@
       ],
       "after": [
         "P101.8",
-        "P102.2",
-        "P102.6"
+        "P102.2"
       ],
       "status": "planned",
-      "role": "dev",
       "tasks": [
         "tools/bench-hooks.sh builds, once per run in its work folder, three more projects with 51, 500 and 2,000 checks under the same build lease, their history padded so the 2,000-check record is over 2 MB, each written once through the kernel so it is schema 4 with the protected field, and prints 'record (N checks): B bytes, schema S' for each",
         "For every input it prints 'guard (NAME, N checks): ...' in the existing format and with the same budget; over budget prints OVER and exits 1 as today; the existing lines stay unchanged (tests/bench-hooks.bats and big-record-hooks.bats read them)",
@@ -18810,17 +18806,16 @@
         "tests/hooks-guard.bats"
       ],
       "after": [
+        "P102.3",
         "P102.5"
       ],
-      "status": "blocked",
-      "role": "dev",
+      "status": "planned",
       "tasks": [
         "plugin/hooks/common.jq read_events: read only schema, lease and protected; delete check_files and the checks branch, so no code reads the checks; on a format-4 record stop at the event that closes the protected list and never pull the event after it; a record without the list (written by an older VBW) is read on, skipping every other key without building it, until the lease and either a schema below 4 or the end of the file",
         "lease_write_denial: the protected check files come only from the record's protected list, with today's message ('is a protected check file: the contract is fixed while building'); under a build or fix lease, an agent's file write on a record without the list is refused with a reason that contains 'saved by this VBW' and says how to get there (end the run and start it again, which saves the record); the main conversation, another session's run and calls outside a run keep today's answers",
         "The header comment of common.jq describes the one read path, with no 50-check wording; hooks.json and vbw doctor's guard self-test stay as they are; tests/hooks-guard.bats (not a protected check file) builds its build and fix leases with the protected list in step, as the approved check files do",
         "Run tests/guard-protected.bats, record-v4-compat.bats, hooks-guard, guard-plan-writes, guard-interpreters, guard-reads-approval, hook-answers, hooks-session-scope, big-record-hooks and guard-cost under macOS /bin/bash 3.2 and bash 5, then tools/bench-hooks.sh: every guard line within budget; if a limit cannot hold, record the measured times in the plan note and block the plan, never raise a limit"
-      ],
-      "note": "Code done and committed (a0a30369, e55479dd); C223-C225, C227 pass, guard suites pass on bash 3.2 and 5. C226 and the 3 bench tests (hook-answers 70, big-record-hooks 78, guard-cost 79) fail because tools/bench-hooks.sh (owned by planned P102.3, outside this plan's files) hand-builds its large record with an empty protected list, which the format-4 validator from P102.5 rejects ('protected must be the sorted list...', stopped at line 97). Fix is one line there: add protected: [\"tests/old.sh\"] to the {schema, lease, checks} + . reorder. Build P102.3 first, then re-run C226 and task 4's bench; bench timings were not measured."
+      ]
     },
     {
       "id": "P102.7",
@@ -21465,6 +21460,11 @@
       "id": "D233",
       "at": "2026-10-10T08:09:22Z",
       "text": "Contract approved: 139 requirements, 222 checks, 296 plans (fd37a17e132c)"
+    },
+    {
+      "id": "D234",
+      "at": "2026-10-10T08:32:09Z",
+      "text": "Contract approved: 139 requirements, 222 checks, 296 plans (86538f372362)"
     }
   ],
   "commands": {
