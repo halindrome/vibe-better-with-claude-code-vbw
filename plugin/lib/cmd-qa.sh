@@ -30,7 +30,7 @@ cmd_qa() {
     jq -r '.fixes[-1] | "\(.id) opened for \(.req) (qa): \(.note)"' "$VBW_RECORD"
     return 0
   fi
-  local phase="$2" result="$3" tier="$4" note="${5:-}" tree digests
+  local phase="$2" result="$3" tier="$4" note="${5:-}" tree digests curf
   printf '%s' "$record" | jq -e --arg p "$phase" 'any(.phases[]; .id == $p)' > /dev/null || vbw_die "unknown phase $phase"
   printf '%s' "$record" | jq -e '.evidence.tree' > /dev/null || vbw_die "no proof yet: QA verifies proven work (vbw prove first)"
   # shellcheck source=cmd-next.sh
@@ -46,7 +46,8 @@ cmd_qa() {
       | any(.fixes[]; .source == "qa" and .status == "open" and (.req as $x | any($q[]; . == $x)))' > /dev/null \
       || vbw_die "a failed verdict needs its findings first (vbw qa finding REQ TEXT for each)"
   fi
-  record_update "$VBW_JQ_DEFS"'([.phases[] | select(.id == $p)][0]) as $ph
+  vbw_scratch_json curf "$(qa_combined "$record" "$digests" | jq -c --arg p "$phase" --arg t "$tree" '. + {($p): $t}')"
+  record_update "$VBW_JQ_DEFS"'$cf[0] as $cur | ([.phases[] | select(.id == $p)][0]) as $ph
     | ($ph.reqs) as $q
     | (if $res == "fail" and ($ph.qa.result // "") == "fail" then ($ph.qa.rounds // 1) + 1 elif $res == "fail" then 1 else 0 end) as $rounds
     | (.phases[] | select(.id == $p)).qa = ({result: $res, tier: $tier, tree: $tree, at: $at}
@@ -60,7 +61,8 @@ cmd_qa() {
     | escalate_phases(if $rounds >= 2 then [$p] else [] end; null; "QA needs a second round"; $at)
     | finish_phases($cur)' \
     --arg p "$phase" --arg res "$result" --arg tier "$tier" --arg tree "$tree" --arg note "$note" \
-    --arg at "$(vbw_now)" --argjson cap "$VBW_QA_ROUNDS" --argjson cur "$(qa_combined "$record" "$digests" | jq -c --arg p "$phase" --arg t "$tree" '. + {($p): $t}')"
+    --arg at "$(vbw_now)" --argjson cap "$VBW_QA_ROUNDS" --slurpfile cf "$curf"
+  vbw_guard_drop "$curf"
   qa_cache_put "$phase" "$digests"
   record_commit "chore(vbw): qa $phase $result"
   jq -r --arg p "$phase" '.phases[] | select(.id == $p) | "\(.id) qa \(.qa.result) (\(.qa.tier))\(if .qa.rounds then ", round \(.qa.rounds)" else "" end)"' "$VBW_RECORD"

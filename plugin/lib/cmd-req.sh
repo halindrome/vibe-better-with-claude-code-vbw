@@ -14,15 +14,17 @@ cmd_req() {
   vbw_require_project
   # shellcheck source=cmd-next.sh
   . "$VBW_LIB/cmd-next.sh"
-  local proof
+  local proof curf
   proof=$(record_read | jq -r --arg q "$id" '[.requirements[] | select(.id == $q) | .proof][0] // empty')
   [ -n "$proof" ] || vbw_die "unknown requirement $id"
   [ "$proof" = human ] || vbw_die "$id is proved by its checks (vbw prove), not by acceptance"
   if [ "$sub" = accept ]; then
     # The user's word settles their own rejections; a fix QA opened stays open until QA passes.
-    record_update "$VBW_JQ_DEFS"'(.requirements[] | select(.id == $q)).status = "accepted"
+    vbw_scratch_json curf "$(qa_combined "$(record_read)")"
+    record_update "$VBW_JQ_DEFS"'$cf[0] as $cur | (.requirements[] | select(.id == $q)).status = "accepted"
       | (.fixes[] | select(.req == $q and .source != "qa" and (.status | IN("open", "fixed", "escalated")))).status = "closed"
-      | finish_phases($cur)' --arg q "$id" --argjson cur "$(qa_combined "$(record_read)")"
+      | finish_phases($cur)' --arg q "$id" --slurpfile cf "$curf"
+    vbw_guard_drop "$curf"
     printf '%s accepted\n' "$id"
   else
     record_update "$VBW_JQ_DEFS"'(.requirements[] | select(.id == $q)).status = "rejected"

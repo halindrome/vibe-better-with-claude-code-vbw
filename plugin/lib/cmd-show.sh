@@ -28,8 +28,8 @@ cmd_show() {
     phase)
       [ $# -eq 1 ] || vbw_usage_error "usage: vbw show phase ID"
       printf '%s' "$record" | jq -e --arg p "$1" 'any(.phases[]; .id == $p)' > /dev/null || vbw_die "unknown phase $1"
-      printf '%s' "$record" | jq -r --arg p "$1" --argjson cur "$(qa_combined "$record")" "$SHOW_JQ_DEFS"'
-        . as $r | (.phases[] | select(.id == $p)) as $ph
+      printf '%s' "$record" | jq -r --arg p "$1" --slurpfile cf <(qa_combined "$record") "$SHOW_JQ_DEFS"'
+        $cf[0] as $cur | . as $r | (.phases[] | select(.id == $p)) as $ph
         | "\($ph.id) \($ph.title) [\($ph | phase_status($r))]",
           (if $ph.goal then "goal: \($ph.goal)" else empty end),
           (if $ph.criteria then "criteria:", ($ph.criteria[] | "  - " + .) else empty end),
