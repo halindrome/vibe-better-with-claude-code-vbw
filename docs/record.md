@@ -27,8 +27,8 @@ carries `VBW-Plan:`/`VBW-Req:` trailers, so the record stays small.
   `lease` and `protected` for the guards (docs/guards.md), besides what the
   status line shows. Every record write rewrites it in the same locked write and
   sets the record's file time one second back, so the glance stays newer. Any
-  `vbw` command rewrites a missing or out-of-date glance. It is never
-  the source of truth, and it is safe to delete.
+  `vbw` command rewrites a missing or out-of-date glance.
+  It is never the source of truth, and it is safe to delete.
 - **Stable ids:** ids are assigned once and never reused or renumbered.
 - **Versioned:** `schema` is an integer. A newer kernel migrates older records
   forward in one tested step; an older kernel refuses a newer record (see
