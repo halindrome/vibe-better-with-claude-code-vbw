@@ -19,10 +19,11 @@ carries `VBW-Plan:`/`VBW-Req:` trailers, so the record stays small.
   one), and a long-lived project's record can pass that. VBW hands record data
   to `jq` through files and pipes, so every `vbw` command keeps working however
   large the record grows.
-- **Key order:** the writer puts `schema`, `lease` and `checks` first, so the
-  guards (docs/guards.md) can read just the start of the record. A record with
-  another key order, written by an older VBW, still works; it is only slower
-  to guard.
+- **Key order:** the writer puts `schema`, `lease`, `protected` (only on a
+  record with more than 50 checks, schema 4) and `checks` first, in that order,
+  then the rest, so the guards (docs/guards.md) can read just the start of the
+  record. A record with another key order, written by an older VBW, still
+  works; it is only slower to guard.
 - **The glance:** `.vbw/runtime/glance.json` is the record cut down to what the
   status line shows. Every `vbw` command that writes the record refreshes it,
   and any `vbw` command rewrites it when it is missing or older than the
@@ -68,7 +69,7 @@ carries `VBW-Plan:`/`VBW-Req:` trailers, so the record stays small.
 
 | Field | Rules |
 |---|---|
-| `schema` | `3` when any todo has `sort` and `size` or a `recommendation` is stored, else `2` when any check has `alone: true`, else `1`; anything else is corrupt |
+| `schema` | `4` when the record has a `protected` field, else `3` when any todo has `sort` and `size` or a `recommendation` is stored, else `2` when any check has `alone: true`, else `1`; anything else is corrupt |
 | `project.name` | non-empty string |
 | `project.interview` | optional: the interview's answers kept in the project, `{ "level", "depth", "involvement", "at" }`: all three answers from the allowed values (`plugin/lib/interview.json`) and an ISO-8601 UTC time `at`; no other keys. Absent when the answers are kept private or not given yet. `vbw interview keep project` writes it (docs/interview.md). Added within schema 1: a record without it stays valid, so the schema stays 1 |
 | `project.declined` | optional: the suggestions the user declined, `[{ "text", "at" }]`, each a non-empty `text` and an ISO-8601 UTC time `at`; no other keys. `vbw suggest decline TEXT` appends one (a text equal to an existing one, ignoring case and spacing, is not added again); `vbw suggest list` prints them and `vbw next --json` returns the texts as `declined`. They are never offered again in the project (docs/interview.md). Absent until something is declined. Added within schema 1: a record without it stays valid, so the schema stays 1 |
@@ -87,6 +88,7 @@ carries `VBW-Plan:`/`VBW-Req:` trailers, so the record stays small.
 | `settings` | `profile` `quality`, `balanced` (default: Opus for the Architect and the Lead, Sonnet for every other role) or `budget`: the models VBW 1's team runs on (QA never runs below Sonnet) (`vbw config`, `lib/profiles.json`); optional `rigor` `auto` (the default when unset), `express`, `standard` or `deep`: computes each phase's tier or forces it (`vbw config rigor`, docs/rigor.md); optional `autonomy` `guided`, `balanced` (the default when unset) or `hands-off`: how much `/vbw:vibe` does on its own (`/vbw:profile`); `autonomy_cap` steps per autonomous run (1–500, default 25); optional `motion` `full`, `calm` or `off`: how much the VBW panel animates (`vbw config set motion`; unset, the panel picks `full` for users new to code and `calm` otherwise; test mode is always `off`); optional `models` overrides per agent (`architect`, `lead`, `dev`, `qa`, `scout`, `debugger`, `docs`; the earlier names `planner`, `critic`, `builder` are renamed to `lead`, `qa`, `dev` on first use) |
 | `evidence` | `null` or the last `vbw prove` result: `at`, `contract` (the hash proved), `tree` (the git tree id of the working folder's project files), `head` (the tree of the committed code the checks ran on; both decide freshness, docs/proof.md), `full` (true when the proof ran everything, false when it was partial; evidence without it counts as full, docs/proof.md), `passed`, `checks` and `commands` (name → `{status, exit, seconds, tail}`), `scope[]` violations (docs/proof.md) and `test_run` (the latest real run of the test command, kept across proofs: its `status`, `exit`, `seconds`, `tail`, its fingerprint `fp` and, when it ran on committed code, `head`, that code's tree). A full proof reuses it after a documentation-only change: the test command's entry in `commands` then carries `reused: true` and `reuse: "docs"`, and `full` stays true (docs/proof.md) |
 | `converted` | optional: `{ "from": ".vbw-planning", "at" }`, set by `vbw legacy done` once a VBW 1 plan was brought in (docs/convert.md) |
+| `protected` | optional: every file an approved check protects, the union of all checks' `files`, each path once, in sorted order. Written only on a record with more than 50 checks, right after `lease`, and makes the record schema 4. The guards read it instead of the checks (docs/guards.md). A record with 50 checks or fewer has no `protected` field |
 | `lease` | `null` or `{ "run", "kind", "started_at", "files" }`: the active run (`kind` `plan`, `build`, `fix`, `qa` or `map`; `files` the paths its agents may write: `null` for any, `[]` for none) that the guards hold subagents to (docs/workflows.md) |
 
 Unknown keys are rejected, at the top level and inside every item: an unknown
@@ -94,12 +96,17 @@ key is a typo, a stale field or a newer schema, and all three must be loud.
 
 ## Versioning
 
-A VBW reads every schema up to its own (`VBW_SCHEMA_MAX`, currently 3).
+A VBW reads every schema up to its own (`VBW_SCHEMA_MAX`, currently 4).
 The kernel writes the schema that the fields in use need: a record with a check
 that has `alone: true` is schema 2, every other record is schema 1. A record
 with a sorted todo (one with `sort` and `size`) or a stored `recommendation` is schema 3. A VBW that
 reads only schema 1 therefore asks for an update on a record that uses `alone`
 instead of calling it corrupt.
+
+A record with a `protected` field is schema 4. VBW writes that field only when
+the record has more than 50 checks, so a record with 50 checks or fewer keeps
+schema 1, 2 or 3 and an older VBW still reads it. A larger record that an older
+VBW wrote moves to schema 4 on its next write. There is no migration command.
 
 The last pass of each check is not in the record. It is a cache in the clone
 (`passes.json` in the git directory, see docs/proof.md), so a record never
