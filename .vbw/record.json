@@ -12255,7 +12255,22 @@
           "to": "deep",
           "reason": "Dev blocked P101.8: Task 3 failed: small-record guard lines are slower than before M19 (f3761b76) by more than run-to-run spread. Task 1 committed (acc1dc46). Task 2 passed: all lines within limits (max own CPU 7.8 ms; 1.10x worst on large record, inside the 8 ms absolute bound; status line 25.4-27.4 ms), macOS /bin/bash 3.2, 100 runs, 3 alternating runs. Small record own-CPU ms, today (r1,r2,r3) vs M18 (r1,r2,r3): git 6.9,6.9,7.0 vs 6.6,6.7,6.7; npm 6.1,6.3,6.8 vs 5.8,5.7,5.6; big 7.0,7.1,7.8 vs 6.7,6.8,6.7; interp 6.8,7.0,7.4 vs 6.4,6.4,6.5; read 2.5,2.4,2.3 vs 2.0,1.9,1.9; answer 1.0,1.1,1.0 vs 1.0,0.8,1.0. Today is about 0.2-0.5 ms slower consistently (read about +0.5, +25%). Large record today (r1,r2,r3): git 7.8,6.9,7.1; npm 6.6,6.2,6.3; big 7.5,7.0,7.1; interp 6.9,6.8,6.9; read 2.4,2.5,2.3; answer 0.8,1.0,1.1. Task 4 not run."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "815c185593baba7de463b1717285b81178351095b73862f261941062f149288d",
+        "at": "2026-10-10T16:54:08Z",
+        "note": "24/24 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 8
+      }
     },
     {
       "id": "P102",
