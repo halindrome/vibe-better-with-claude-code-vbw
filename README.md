@@ -222,7 +222,7 @@ You only need to remember one command. In any git repository, new or existing:
 
    ![VBW asking a decision with a recommendation](assets/first-question.png)
 
-3. **Approve.** Enter approves; **Not yet** or your own words change the plan. Seniors: you'll skim. They're short so skimming is enough.
+3. **Approve.** Enter approves; **Not yet** or your own words change the plan. Seniors: you'll skim. They're short so skimming is enough. You can change your mind any time: VBW re-plans without touching finished work, and a check you aren't ready to judge can wait for the next milestone when it is all that holds up shipping.
 
    ![The plan and its checks, ready for approval](assets/approve.png)
 
@@ -307,6 +307,7 @@ Full reference: [docs/workflows.md](docs/workflows.md).
 | An agent writes outside its part of the plan | Guards deny it |
 | The AI approves its own plan | It can't, however creatively it spells the command. Approval lives in your clone's `.git` folder, so a repository you download can't approve itself |
 | An agent edits a test until it passes | Approved checks are frozen while building. If the code doesn't pass, the code changes. Revolutionary, we know |
+| A guard itself breaks: it crashes, cannot start or times out | During a VBW run, the action it guards is blocked, not let through. Outside VBW projects and outside runs nothing changes |
 | Nobody knows who changed what | Every change is committed with the requirement it serves. `git log` reads like an audit, not a crime scene |
 
 How it's enforced: [For engineers](#for-engineers-the-model-proposes-the-kernel-disposes). Every rule and why it exists: [docs/guards.md](docs/guards.md).
@@ -332,6 +333,8 @@ Approval, checking and shipping always stop for you, whatever the preset. Autono
 | `autonomy` | `guided` / `balanced` / `hands-off` | How much `/vbw:vibe` does on its own |
 | `autonomy_cap` | a number | Steps one autonomous run takes before stopping |
 | `rigor` | `auto` / `express` / `standard` / `deep` | How thorough each phase is: sized to the work (`auto`, the default) or forced |
+| `check_jobs` | `1` to `64` | How many checks run at once. Default: about three quarters of the processor cores, at least 1. Kept in this clone |
+| `command_timeout` | `1` to `86400` seconds | How long the project's own commands may run in a proof. Default: 3600 |
 | status line | `vbw statusline on` / `off` | The status line |
 
 Your own session keeps the model you chose with `/model`; it must be Sonnet, Opus or Fable for auto mode.
