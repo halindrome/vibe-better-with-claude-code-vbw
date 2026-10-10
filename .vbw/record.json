@@ -1,5 +1,2613 @@
 {
   "schema": 3,
+  "lease": null,
+  "checks": [
+    {
+      "id": "C1",
+      "req": "R1",
+      "run": [
+        "bats",
+        "-f",
+        "R1:",
+        "tests/kernel-safety.bats"
+      ],
+      "files": [
+        "tests/kernel-safety.bats"
+      ]
+    },
+    {
+      "id": "C2",
+      "req": "R2",
+      "run": [
+        "bats",
+        "-f",
+        "R2:",
+        "tests/kernel-safety.bats"
+      ],
+      "files": [
+        "tests/kernel-safety.bats"
+      ]
+    },
+    {
+      "id": "C3",
+      "req": "R3",
+      "run": [
+        "bats",
+        "tests/kernel-diagnostics.bats"
+      ],
+      "files": [
+        "tests/kernel-diagnostics.bats"
+      ]
+    },
+    {
+      "id": "C4",
+      "req": "R4",
+      "run": [
+        "bats",
+        "-f",
+        "R4:",
+        "tests/l3-results.bats"
+      ],
+      "files": [
+        "tests/l3-results.bats"
+      ]
+    },
+    {
+      "id": "C5",
+      "req": "R5",
+      "run": [
+        "bats",
+        "-f",
+        "R5:",
+        "tests/l3-results.bats"
+      ],
+      "files": [
+        "tests/l3-results.bats"
+      ]
+    },
+    {
+      "id": "C8",
+      "req": "R8",
+      "run": [
+        "bats",
+        "-f",
+        "R8:",
+        "tests/l3-results.bats"
+      ],
+      "files": [
+        "tests/l3-results.bats"
+      ]
+    },
+    {
+      "id": "C9",
+      "req": "R10",
+      "run": [
+        "bats",
+        "tests/kernel-approval.bats"
+      ],
+      "files": [
+        "tests/kernel-approval.bats"
+      ]
+    },
+    {
+      "id": "C10",
+      "req": "R11",
+      "run": [
+        "bats",
+        "tests/kernel-accept.bats"
+      ],
+      "files": [
+        "tests/kernel-accept.bats"
+      ]
+    },
+    {
+      "id": "C11",
+      "req": "R12",
+      "run": [
+        "bats",
+        "tests/kernel-qafresh.bats"
+      ],
+      "files": [
+        "tests/kernel-qafresh.bats"
+      ]
+    },
+    {
+      "id": "C12",
+      "req": "R13",
+      "run": [
+        "bats",
+        "-f",
+        "next in another session",
+        "tests/kernel-sessions.bats"
+      ],
+      "files": [
+        "tests/kernel-sessions.bats"
+      ]
+    },
+    {
+      "id": "C13",
+      "req": "R14",
+      "run": [
+        "bats",
+        "-f",
+        "run end|run start records",
+        "tests/kernel-sessions.bats"
+      ],
+      "files": [
+        "tests/kernel-sessions.bats"
+      ]
+    },
+    {
+      "id": "C14",
+      "req": "R15",
+      "run": [
+        "bats",
+        "tests/hooks-session-guard.bats"
+      ],
+      "files": [
+        "tests/hooks-session-guard.bats"
+      ]
+    },
+    {
+      "id": "C15",
+      "req": "R16",
+      "run": [
+        "bats",
+        "tests/kernel-auto-sessions.bats"
+      ],
+      "files": [
+        "tests/kernel-auto-sessions.bats"
+      ]
+    },
+    {
+      "id": "C16",
+      "req": "R21",
+      "run": [
+        "bats",
+        "tests/contributor-files.bats"
+      ],
+      "files": [
+        "tests/contributor-files.bats"
+      ]
+    },
+    {
+      "id": "C17",
+      "req": "R17",
+      "run": [
+        "bats",
+        "tests/baseline-cases.bats"
+      ],
+      "files": [
+        "tests/baseline-cases.bats"
+      ]
+    },
+    {
+      "id": "C18",
+      "req": "R18",
+      "run": [
+        "bats",
+        "tests/baseline-results.bats"
+      ],
+      "files": [
+        "tests/baseline-results.bats"
+      ]
+    },
+    {
+      "id": "C19",
+      "req": "R22",
+      "run": [
+        "bats",
+        "tests/rigor-record.bats"
+      ],
+      "files": [
+        "tests/rigor-record.bats",
+        "tests/rigor-helper.bash"
+      ]
+    },
+    {
+      "id": "C20",
+      "req": "R23",
+      "run": [
+        "bats",
+        "tests/rigor-floor.bats"
+      ],
+      "files": [
+        "tests/rigor-floor.bats",
+        "tests/rigor-helper.bash"
+      ]
+    },
+    {
+      "id": "C21",
+      "req": "R27",
+      "run": [
+        "bats",
+        "tests/rigor-config.bats"
+      ],
+      "files": [
+        "tests/rigor-config.bats",
+        "tests/rigor-helper.bash"
+      ]
+    },
+    {
+      "id": "C22",
+      "req": "R26",
+      "run": [
+        "bats",
+        "tests/rigor-profile.bats"
+      ],
+      "files": [
+        "tests/rigor-profile.bats",
+        "tests/rigor-helper.bash"
+      ]
+    },
+    {
+      "id": "C23",
+      "req": "R24",
+      "run": [
+        "bats",
+        "tests/rigor-express.bats"
+      ],
+      "files": [
+        "tests/rigor-express.bats",
+        "tests/rigor-helper.bash"
+      ]
+    },
+    {
+      "id": "C24",
+      "req": "R25",
+      "run": [
+        "bats",
+        "tests/rigor-escalation.bats"
+      ],
+      "files": [
+        "tests/rigor-escalation.bats",
+        "tests/rigor-helper.bash"
+      ]
+    },
+    {
+      "id": "C25",
+      "req": "R28",
+      "run": [
+        "bats",
+        "tests/rigor-prediction.bats"
+      ],
+      "files": [
+        "tests/rigor-prediction.bats",
+        "tests/rigor-helper.bash"
+      ]
+    },
+    {
+      "id": "C26",
+      "req": "R29",
+      "run": [
+        "bats",
+        "tests/adaptive-results.bats"
+      ],
+      "files": [
+        "tests/adaptive-results.bats"
+      ]
+    },
+    {
+      "id": "C27",
+      "req": "R31",
+      "run": [
+        "bats",
+        "tests/rules.bats"
+      ],
+      "files": [
+        "tests/rules.bats"
+      ]
+    },
+    {
+      "id": "C28",
+      "req": "R32",
+      "run": [
+        "bats",
+        "tests/prove-clean.bats"
+      ],
+      "files": [
+        "tests/prove-clean.bats"
+      ]
+    },
+    {
+      "id": "C29",
+      "req": "R33",
+      "run": [
+        "bats",
+        "tests/record-newer.bats"
+      ],
+      "files": [
+        "tests/record-newer.bats",
+        "tests/fixtures/records/v1.json",
+        "tests/fixtures/records/future.json"
+      ]
+    },
+    {
+      "id": "C30",
+      "req": "R34",
+      "run": [
+        "bats",
+        "tests/l3-scenarios.bats"
+      ],
+      "files": [
+        "tests/l3-scenarios.bats"
+      ]
+    },
+    {
+      "id": "C31",
+      "req": "R35",
+      "run": [
+        "bats",
+        "tests/qa-model.bats"
+      ],
+      "files": [
+        "tests/qa-model.bats"
+      ]
+    },
+    {
+      "id": "C32",
+      "req": "R36",
+      "run": [
+        "bats",
+        "tests/config-qa.bats"
+      ],
+      "files": [
+        "tests/config-qa.bats"
+      ]
+    },
+    {
+      "id": "C33",
+      "req": "R38",
+      "run": [
+        "bats",
+        "tests/interview-store.bats"
+      ],
+      "files": [
+        "tests/interview-store.bats"
+      ]
+    },
+    {
+      "id": "C34",
+      "req": "R38",
+      "run": [
+        "bats",
+        "tests/interview-once.bats"
+      ],
+      "files": [
+        "tests/interview-once.bats"
+      ]
+    },
+    {
+      "id": "C35",
+      "req": "R37",
+      "run": [
+        "bats",
+        "tests/interview-flow.bats"
+      ],
+      "files": [
+        "tests/interview-flow.bats"
+      ]
+    },
+    {
+      "id": "C36",
+      "req": "R39",
+      "run": [
+        "bats",
+        "tests/profile-levels.bats"
+      ],
+      "files": [
+        "tests/profile-levels.bats"
+      ]
+    },
+    {
+      "id": "C37",
+      "req": "R40",
+      "run": [
+        "bats",
+        "tests/suggestions.bats"
+      ],
+      "files": [
+        "tests/suggestions.bats"
+      ]
+    },
+    {
+      "id": "C38",
+      "req": "R42",
+      "run": [
+        "bats",
+        "tests/l3-interview.bats"
+      ],
+      "files": [
+        "tests/l3-interview.bats"
+      ]
+    },
+    {
+      "id": "C39",
+      "req": "R45",
+      "run": [
+        "bats",
+        "tests/check-alone-contract.bats"
+      ],
+      "files": [
+        "tests/check-alone-contract.bats"
+      ]
+    },
+    {
+      "id": "C40",
+      "req": "R45",
+      "run": [
+        "bats",
+        "tests/check-alone-runner.bats"
+      ],
+      "files": [
+        "tests/check-alone-runner.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C41",
+      "req": "R45",
+      "run": [
+        "bats",
+        "tests/check-alone-docs.bats"
+      ],
+      "files": [
+        "tests/check-alone-docs.bats"
+      ]
+    },
+    {
+      "id": "C42",
+      "req": "R43",
+      "run": [
+        "bats",
+        "tests/fix-reuse.bats"
+      ],
+      "files": [
+        "tests/fix-reuse.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C43",
+      "req": "R43",
+      "run": [
+        "bats",
+        "tests/fix-reuse-docs.bats"
+      ],
+      "files": [
+        "tests/fix-reuse-docs.bats"
+      ]
+    },
+    {
+      "id": "C44",
+      "req": "R44",
+      "run": [
+        "bats",
+        "tests/fix-many.bats"
+      ],
+      "files": [
+        "tests/fix-many.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C45",
+      "req": "R44",
+      "run": [
+        "bats",
+        "tests/fix-many-docs.bats"
+      ],
+      "files": [
+        "tests/fix-many-docs.bats"
+      ]
+    },
+    {
+      "id": "C46",
+      "req": "R46",
+      "run": [
+        "bats",
+        "tests/record-compat.bats"
+      ],
+      "files": [
+        "tests/record-compat.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C47",
+      "req": "R47",
+      "run": [
+        "bats",
+        "tests/qa-recheck-scope.bats"
+      ],
+      "files": [
+        "tests/qa-recheck-scope.bats",
+        "tests/qa-recheck-helper.bash",
+        "tests/helpers/run-workflow.js"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C48",
+      "req": "R49",
+      "run": [
+        "bats",
+        "tests/qa-recheck-deps.bats"
+      ],
+      "files": [
+        "tests/qa-recheck-deps.bats",
+        "tests/qa-recheck-helper.bash"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C49",
+      "req": "R48",
+      "run": [
+        "bats",
+        "tests/qa-recheck-why.bats"
+      ],
+      "files": [
+        "tests/qa-recheck-why.bats",
+        "tests/qa-recheck-helper.bash",
+        "tests/helpers/run-workflow.js"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C50",
+      "req": "R48",
+      "run": [
+        "bats",
+        "tests/l3-recheck.bats"
+      ],
+      "files": [
+        "tests/l3-recheck.bats"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C51",
+      "req": "R50",
+      "run": [
+        "bats",
+        "tests/plan-scope.bats"
+      ],
+      "files": [
+        "tests/plan-scope.bats",
+        "tests/helpers/run-workflow.js"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C52",
+      "req": "R51",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/view.test.mjs"
+      ],
+      "files": [
+        "tests/panel/view.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C53",
+      "req": "R51",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/panel.test.mjs"
+      ],
+      "files": [
+        "tests/panel/panel.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C54",
+      "req": "R53",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/safe.test.mjs"
+      ],
+      "files": [
+        "tests/panel/safe.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C55",
+      "req": "R53",
+      "run": [
+        "bats",
+        "tests/panel-compat.bats"
+      ],
+      "files": [
+        "tests/panel-compat.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C56",
+      "req": "R55",
+      "run": [
+        "bats",
+        "tests/panel-light.bats"
+      ],
+      "files": [
+        "tests/panel-light.bats"
+      ],
+      "timeout": 900,
+      "alone": true
+    },
+    {
+      "id": "C57",
+      "req": "R55",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/light.test.mjs"
+      ],
+      "files": [
+        "tests/panel/light.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C58",
+      "req": "R52",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/open.test.mjs"
+      ],
+      "files": [
+        "tests/panel/open.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C59",
+      "req": "R57",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/sound.test.mjs"
+      ],
+      "files": [
+        "tests/panel/sound.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C61",
+      "req": "R56",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/cost.test.mjs"
+      ],
+      "files": [
+        "tests/panel/cost.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C62",
+      "req": "R58",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/estimate.test.mjs"
+      ],
+      "files": [
+        "tests/panel/estimate.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C63",
+      "req": "R58",
+      "run": [
+        "bats",
+        "tests/panel-steps.bats"
+      ],
+      "files": [
+        "tests/panel-steps.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C64",
+      "req": "R58",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/glance.test.mjs"
+      ],
+      "files": [
+        "tests/panel/glance.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C65",
+      "req": "R56",
+      "run": [
+        "bats",
+        "--filter",
+        "R56",
+        "tests/panel-glance.bats"
+      ],
+      "files": [
+        "tests/panel-glance.bats"
+      ],
+      "timeout": 600,
+      "alone": true
+    },
+    {
+      "id": "C66",
+      "req": "R51",
+      "run": [
+        "bats",
+        "tests/l3-panel.bats"
+      ],
+      "files": [
+        "tests/l3-panel.bats"
+      ]
+    },
+    {
+      "id": "C67",
+      "req": "R58",
+      "run": [
+        "bats",
+        "--filter",
+        "R58",
+        "tests/panel-glance.bats"
+      ],
+      "files": [
+        "tests/panel-glance.bats"
+      ],
+      "timeout": 600,
+      "alone": true
+    },
+    {
+      "id": "C68",
+      "req": "R59",
+      "run": [
+        "bats",
+        "tests/interview-greeting.bats"
+      ],
+      "files": [
+        "tests/interview-greeting.bats"
+      ]
+    },
+    {
+      "id": "C70",
+      "req": "R57",
+      "run": [
+        "bats",
+        "tests/panel-sound-audio.bats"
+      ],
+      "files": [
+        "tests/panel-sound-audio.bats"
+      ]
+    },
+    {
+      "id": "C71",
+      "req": "R57",
+      "run": [
+        "bats",
+        "-f",
+        "costs less than|without mods|help and the README|preference is the user",
+        "tests/panel-sound.bats"
+      ],
+      "files": [
+        "tests/panel-sound.bats"
+      ],
+      "alone": true,
+      "timeout": 600
+    },
+    {
+      "id": "C72",
+      "req": "R60",
+      "run": [
+        "bats",
+        "tests/stop-line.bats"
+      ],
+      "files": [
+        "tests/stop-line.bats"
+      ]
+    },
+    {
+      "id": "C73",
+      "req": "R61",
+      "run": [
+        "bats",
+        "tests/approve-choice-kernel.bats"
+      ],
+      "files": [
+        "tests/approve-choice-kernel.bats",
+        "tests/approve-choice-helper.bash"
+      ]
+    },
+    {
+      "id": "C74",
+      "req": "R61",
+      "run": [
+        "bats",
+        "tests/approve-choice-hook.bats"
+      ],
+      "files": [
+        "tests/approve-choice-hook.bats",
+        "tests/approve-choice-helper.bash"
+      ]
+    },
+    {
+      "id": "C75",
+      "req": "R61",
+      "run": [
+        "bats",
+        "tests/approve-choice-guard.bats"
+      ],
+      "files": [
+        "tests/approve-choice-guard.bats",
+        "tests/approve-choice-helper.bash"
+      ],
+      "alone": true
+    },
+    {
+      "id": "C76",
+      "req": "R61",
+      "run": [
+        "bats",
+        "tests/approve-choice-docs.bats"
+      ],
+      "files": [
+        "tests/approve-choice-docs.bats"
+      ]
+    },
+    {
+      "id": "C77",
+      "req": "R61",
+      "run": [
+        "bats",
+        "tests/l3-approval.bats"
+      ],
+      "files": [
+        "tests/l3-approval.bats"
+      ]
+    },
+    {
+      "id": "C78",
+      "req": "R62",
+      "run": [
+        "bats",
+        "tests/tools-store.bats"
+      ],
+      "files": [
+        "tests/tools-store.bats"
+      ]
+    },
+    {
+      "id": "C79",
+      "req": "R62",
+      "run": [
+        "bats",
+        "tests/tools-workflow.bats"
+      ],
+      "files": [
+        "tests/tools-workflow.bats"
+      ]
+    },
+    {
+      "id": "C80",
+      "req": "R62",
+      "run": [
+        "bats",
+        "tests/tools-skill.bats"
+      ],
+      "files": [
+        "tests/tools-skill.bats"
+      ]
+    },
+    {
+      "id": "C81",
+      "req": "R62",
+      "run": [
+        "bats",
+        "tests/tools-interview.bats"
+      ],
+      "files": [
+        "tests/tools-interview.bats"
+      ]
+    },
+    {
+      "id": "C82",
+      "req": "R62",
+      "run": [
+        "bats",
+        "tests/tools-docs.bats"
+      ],
+      "files": [
+        "tests/tools-docs.bats"
+      ]
+    },
+    {
+      "id": "C83",
+      "req": "R62",
+      "run": [
+        "bats",
+        "tests/l3-tools.bats"
+      ],
+      "files": [
+        "tests/l3-tools.bats"
+      ]
+    },
+    {
+      "id": "C84",
+      "req": "R64",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/testmode.test.mjs"
+      ],
+      "files": [
+        "tests/panel/testmode.test.mjs"
+      ]
+    },
+    {
+      "id": "C85",
+      "req": "R64",
+      "run": [
+        "bats",
+        "tests/l3-testmode.bats"
+      ],
+      "files": [
+        "tests/l3-testmode.bats"
+      ]
+    },
+    {
+      "id": "C86",
+      "req": "R65",
+      "run": [
+        "bats",
+        "tests/legacy-review.bats"
+      ],
+      "files": [
+        "tests/legacy-review.bats"
+      ]
+    },
+    {
+      "id": "C87",
+      "req": "R65",
+      "run": [
+        "bats",
+        "tests/legacy-choice.bats"
+      ],
+      "files": [
+        "tests/legacy-choice.bats"
+      ]
+    },
+    {
+      "id": "C88",
+      "req": "R65",
+      "run": [
+        "bats",
+        "tests/legacy-interview.bats"
+      ],
+      "files": [
+        "tests/legacy-interview.bats"
+      ]
+    },
+    {
+      "id": "C89",
+      "req": "R65",
+      "run": [
+        "bats",
+        "tests/legacy-docs.bats"
+      ],
+      "files": [
+        "tests/legacy-docs.bats"
+      ]
+    },
+    {
+      "id": "C90",
+      "req": "R65",
+      "run": [
+        "bats",
+        "tests/l3-legacy.bats"
+      ],
+      "files": [
+        "tests/l3-legacy.bats"
+      ]
+    },
+    {
+      "id": "C91",
+      "req": "R52",
+      "run": [
+        "bats",
+        "tests/panel-skill-open.bats"
+      ],
+      "files": [
+        "tests/panel-skill-open.bats"
+      ]
+    },
+    {
+      "id": "C92",
+      "req": "R59",
+      "run": [
+        "bats",
+        "tests/l3-greeting.bats"
+      ],
+      "files": [
+        "tests/l3-greeting.bats"
+      ]
+    },
+    {
+      "id": "C93",
+      "req": "R62",
+      "run": [
+        "bats",
+        "tests/interview-tools-permission.bats"
+      ],
+      "files": [
+        "tests/interview-tools-permission.bats"
+      ]
+    },
+    {
+      "id": "C94",
+      "req": "R60",
+      "run": [
+        "bats",
+        "tests/router-spec-rules.bats"
+      ],
+      "files": [
+        "tests/router-spec-rules.bats"
+      ]
+    },
+    {
+      "id": "C95",
+      "req": "R66",
+      "run": [
+        "bats",
+        "tests/qa-replan-keeps.bats"
+      ],
+      "files": [
+        "tests/qa-replan-keeps.bats"
+      ]
+    },
+    {
+      "id": "C96",
+      "req": "R67",
+      "run": [
+        "bats",
+        "tests/legacy-interview-order.bats"
+      ],
+      "files": [
+        "tests/legacy-interview-order.bats"
+      ]
+    },
+    {
+      "id": "C97",
+      "req": "R68",
+      "run": [
+        "bats",
+        "tests/legacy-review-linux.bats"
+      ],
+      "files": [
+        "tests/legacy-review-linux.bats"
+      ]
+    },
+    {
+      "id": "C98",
+      "req": "R73",
+      "run": [
+        "bats",
+        "tests/proof-build-dirs.bats"
+      ],
+      "files": [
+        "tests/proof-build-dirs.bats"
+      ]
+    },
+    {
+      "id": "C99",
+      "req": "R74",
+      "run": [
+        "bats",
+        "tests/plan-done-committed.bats"
+      ],
+      "files": [
+        "tests/plan-done-committed.bats"
+      ]
+    },
+    {
+      "id": "C100",
+      "req": "R74",
+      "run": [
+        "bats",
+        "tests/next-blocked.bats"
+      ],
+      "files": [
+        "tests/next-blocked.bats"
+      ]
+    },
+    {
+      "id": "C101",
+      "req": "R75",
+      "run": [
+        "bats",
+        "tests/guard-plan-writes.bats"
+      ],
+      "files": [
+        "tests/guard-plan-writes.bats"
+      ]
+    },
+    {
+      "id": "C102",
+      "req": "R76",
+      "run": [
+        "bats",
+        "tests/guard-interpreters.bats"
+      ],
+      "files": [
+        "tests/guard-interpreters.bats"
+      ]
+    },
+    {
+      "id": "C103",
+      "req": "R76",
+      "run": [
+        "bats",
+        "tests/guard-cost.bats"
+      ],
+      "files": [
+        "tests/guard-cost.bats"
+      ]
+    },
+    {
+      "id": "C104",
+      "req": "R77",
+      "run": [
+        "bats",
+        "tests/guard-reads-approval.bats"
+      ],
+      "files": [
+        "tests/guard-reads-approval.bats"
+      ]
+    },
+    {
+      "id": "C105",
+      "req": "R78",
+      "run": [
+        "bats",
+        "tests/run-confirm.bats",
+        "-f",
+        "R78"
+      ],
+      "files": [
+        "tests/run-confirm.bats"
+      ]
+    },
+    {
+      "id": "C106",
+      "req": "R78",
+      "run": [
+        "bats",
+        "tests/workflows-run-end.bats",
+        "-f",
+        "R78"
+      ],
+      "files": [
+        "tests/workflows-run-end.bats",
+        "tests/helpers/run-workflow.js"
+      ]
+    },
+    {
+      "id": "C107",
+      "req": "R79",
+      "run": [
+        "bats",
+        "tests/approve-once.bats"
+      ],
+      "files": [
+        "tests/approve-once.bats"
+      ]
+    },
+    {
+      "id": "C108",
+      "req": "R80",
+      "run": [
+        "bats",
+        "tests/apply-narrow.bats"
+      ],
+      "files": [
+        "tests/apply-narrow.bats"
+      ]
+    },
+    {
+      "id": "C109",
+      "req": "R81",
+      "run": [
+        "bats",
+        "tests/approve-commit-fails.bats"
+      ],
+      "files": [
+        "tests/approve-commit-fails.bats"
+      ]
+    },
+    {
+      "id": "C110",
+      "req": "R69",
+      "run": [
+        "bats",
+        "tests/prove-parallel.bats",
+        "-f",
+        "R69"
+      ],
+      "files": [
+        "tests/prove-parallel.bats"
+      ]
+    },
+    {
+      "id": "C111",
+      "req": "R81",
+      "run": [
+        "bats",
+        "tests/prove-parallel.bats",
+        "-f",
+        "R81"
+      ],
+      "files": [
+        "tests/prove-parallel.bats"
+      ]
+    },
+    {
+      "id": "C112",
+      "req": "R81",
+      "run": [
+        "bats",
+        "tests/workflows-run-end.bats",
+        "-f",
+        "R81"
+      ],
+      "files": [
+        "tests/workflows-run-end.bats",
+        "tests/helpers/run-workflow.js"
+      ]
+    },
+    {
+      "id": "C113",
+      "req": "R81",
+      "run": [
+        "bats",
+        "tests/run-confirm.bats",
+        "-f",
+        "R81"
+      ],
+      "files": [
+        "tests/run-confirm.bats"
+      ]
+    },
+    {
+      "id": "C114",
+      "req": "R70",
+      "run": [
+        "bats",
+        "tests/qa-suite-once.bats"
+      ],
+      "files": [
+        "tests/qa-suite-once.bats",
+        "tests/helpers/run-workflow.js"
+      ]
+    },
+    {
+      "id": "C115",
+      "req": "R71",
+      "run": [
+        "bats",
+        "tests/qa-depth-docs.bats"
+      ],
+      "files": [
+        "tests/qa-depth-docs.bats",
+        "tests/helpers/run-workflow.js"
+      ]
+    },
+    {
+      "id": "C116",
+      "req": "R72",
+      "run": [
+        "bats",
+        "tests/small-change.bats"
+      ],
+      "files": [
+        "tests/small-change.bats",
+        "tests/rigor-helper.bash"
+      ]
+    },
+    {
+      "id": "C117",
+      "req": "R82",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/width.test.mjs"
+      ],
+      "files": [
+        "tests/panel/width.test.mjs"
+      ]
+    },
+    {
+      "id": "C118",
+      "req": "R72",
+      "run": [
+        "bats",
+        "tests/l3-smallchange.bats"
+      ],
+      "files": [
+        "tests/l3-smallchange.bats"
+      ]
+    },
+    {
+      "id": "C119",
+      "req": "R83",
+      "run": [
+        "bats",
+        "tests/approval-menu.bats"
+      ],
+      "files": [
+        "tests/approval-menu.bats"
+      ]
+    },
+    {
+      "id": "C120",
+      "req": "R69",
+      "run": [
+        "bats",
+        "tests/prove-signal.bats"
+      ],
+      "files": [
+        "tests/prove-signal.bats"
+      ]
+    },
+    {
+      "id": "C121",
+      "req": "R71",
+      "run": [
+        "bats",
+        "tests/doc-definition.bats"
+      ],
+      "files": [
+        "tests/doc-definition.bats"
+      ]
+    },
+    {
+      "id": "C122",
+      "req": "R69",
+      "run": [
+        "bats",
+        "tests/gate-race.bats"
+      ],
+      "files": [
+        "tests/gate-race.bats"
+      ]
+    },
+    {
+      "id": "C123",
+      "req": "R84",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/palette.test.mjs"
+      ],
+      "files": [
+        "tests/panel/palette.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C124",
+      "req": "R86",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/band-colours.test.mjs"
+      ],
+      "files": [
+        "tests/panel/band-colours.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C125",
+      "req": "R85",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/cards.test.mjs"
+      ],
+      "files": [
+        "tests/panel/cards.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C126",
+      "req": "R87",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/intent.test.mjs"
+      ],
+      "files": [
+        "tests/panel/intent.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/helpers/feed-fs.mjs"
+      ]
+    },
+    {
+      "id": "C127",
+      "req": "R87",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/activity-render.test.mjs"
+      ],
+      "files": [
+        "tests/panel/activity-render.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C128",
+      "req": "R89",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/pane.test.mjs"
+      ],
+      "files": [
+        "tests/panel/pane.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C129",
+      "req": "R88",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/record-row.test.mjs"
+      ],
+      "files": [
+        "tests/panel/record-row.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/helpers/run.mjs"
+      ]
+    },
+    {
+      "id": "C130",
+      "req": "R91",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/flash.test.mjs"
+      ],
+      "files": [
+        "tests/panel/flash.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/helpers/run.mjs"
+      ]
+    },
+    {
+      "id": "C131",
+      "req": "R92",
+      "run": [
+        "bats",
+        "tests/proof-selfcontained.bats",
+        "-f",
+        "no git-ignored path of the copy is a link"
+      ],
+      "files": [
+        "tests/proof-selfcontained.bats"
+      ]
+    },
+    {
+      "id": "C132",
+      "req": "R92",
+      "run": [
+        "bats",
+        "tests/proof-selfcontained.bats",
+        "-f",
+        "a write inside node_modules|pnpm 11 refusal"
+      ],
+      "files": [
+        "tests/proof-selfcontained.bats"
+      ]
+    },
+    {
+      "id": "C133",
+      "req": "R92",
+      "run": [
+        "bats",
+        "tests/proof-selfcontained.bats",
+        "-f",
+        "byte-identical"
+      ],
+      "files": [
+        "tests/proof-selfcontained.bats"
+      ]
+    },
+    {
+      "id": "C134",
+      "req": "R92",
+      "run": [
+        "bats",
+        "tests/proof-selfcontained.bats",
+        "-f",
+        "links inside a copied folder stay links"
+      ],
+      "files": [
+        "tests/proof-selfcontained.bats"
+      ]
+    },
+    {
+      "id": "C135",
+      "req": "R92",
+      "run": [
+        "bats",
+        "tests/proof-selfcontained.bats",
+        "-f",
+        "copy-on-write clone first"
+      ],
+      "files": [
+        "tests/proof-selfcontained.bats"
+      ]
+    },
+    {
+      "id": "C136",
+      "req": "R92",
+      "run": [
+        "bats",
+        "tests/proof-selfcontained.bats",
+        "-f",
+        "build output is not brought in"
+      ],
+      "files": [
+        "tests/proof-selfcontained.bats"
+      ]
+    },
+    {
+      "id": "C137",
+      "req": "R92",
+      "run": [
+        "bats",
+        "tests/proof-selfcontained.bats",
+        "-f",
+        "cannot be read fails the proof"
+      ],
+      "files": [
+        "tests/proof-selfcontained.bats"
+      ]
+    },
+    {
+      "id": "C138",
+      "req": "R92",
+      "run": [
+        "bats",
+        "tests/proof-selfcontained.bats",
+        "-f",
+        "copy is removed after a proof|interrupted proof removes"
+      ],
+      "files": [
+        "tests/proof-selfcontained.bats"
+      ]
+    },
+    {
+      "id": "C139",
+      "req": "R92",
+      "run": [
+        "bats",
+        "tests/proof-copy-docs.bats",
+        "-f",
+        "R92: docs"
+      ],
+      "files": [
+        "tests/proof-copy-docs.bats"
+      ]
+    },
+    {
+      "id": "C140",
+      "req": "R93",
+      "run": [
+        "bats",
+        "tests/proof-stale-links.bats",
+        "-f",
+        "each stale link|not pnpm|with no such link|never turns a passing proof"
+      ],
+      "files": [
+        "tests/proof-stale-links.bats"
+      ]
+    },
+    {
+      "id": "C141",
+      "req": "R93",
+      "run": [
+        "bats",
+        "tests/proof-stale-links.bats",
+        "-f",
+        "changes nothing in the working folder"
+      ],
+      "files": [
+        "tests/proof-stale-links.bats"
+      ]
+    },
+    {
+      "id": "C142",
+      "req": "R93",
+      "run": [
+        "bats",
+        "tests/proof-stale-links.bats",
+        "-f",
+        "stops early with an error"
+      ],
+      "files": [
+        "tests/proof-stale-links.bats"
+      ]
+    },
+    {
+      "id": "C143",
+      "req": "R93",
+      "run": [
+        "bats",
+        "tests/proof-stale-links.bats",
+        "-f",
+        "50,000 files"
+      ],
+      "files": [
+        "tests/proof-stale-links.bats"
+      ]
+    },
+    {
+      "id": "C144",
+      "req": "R93",
+      "run": [
+        "bats",
+        "tests/proof-copy-docs.bats",
+        "-f",
+        "R93: docs"
+      ],
+      "files": [
+        "tests/proof-copy-docs.bats"
+      ]
+    },
+    {
+      "id": "C145",
+      "req": "R94",
+      "run": [
+        "bats",
+        "tests/check-wait-patient.bats",
+        "-f",
+        "shared checks wait for a long alone check|interrupt during a wait"
+      ],
+      "files": [
+        "tests/check-wait-patient.bats"
+      ]
+    },
+    {
+      "id": "C146",
+      "req": "R94",
+      "run": [
+        "bats",
+        "tests/check-wait-patient.bats",
+        "-f",
+        "holder dies"
+      ],
+      "files": [
+        "tests/check-wait-patient.bats"
+      ]
+    },
+    {
+      "id": "C147",
+      "req": "R94",
+      "run": [
+        "bats",
+        "tests/check-wait-patient.bats",
+        "-f",
+        "runner ends without a result|many quick checks"
+      ],
+      "files": [
+        "tests/check-wait-patient.bats"
+      ]
+    },
+    {
+      "id": "C148",
+      "req": "R94",
+      "run": [
+        "bats",
+        "tests/check-wait-patient.bats",
+        "-f",
+        "VBW_CHECK_WAIT_SECONDS is gone"
+      ],
+      "files": [
+        "tests/check-wait-patient.bats"
+      ]
+    },
+    {
+      "id": "C149",
+      "req": "R95",
+      "run": [
+        "bats",
+        "tests/record-duty.bats",
+        "-f",
+        "R95"
+      ],
+      "files": [
+        "tests/record-duty.bats"
+      ]
+    },
+    {
+      "id": "C150",
+      "req": "R95",
+      "run": [
+        "bats",
+        "tests/workflow-closing.bats",
+        "-f",
+        "R95"
+      ],
+      "files": [
+        "tests/workflow-closing.bats"
+      ]
+    },
+    {
+      "id": "C151",
+      "req": "R96",
+      "run": [
+        "bats",
+        "tests/record-duty.bats",
+        "-f",
+        "R96"
+      ],
+      "files": [
+        "tests/record-duty.bats"
+      ]
+    },
+    {
+      "id": "C152",
+      "req": "R96",
+      "run": [
+        "bats",
+        "tests/workflow-closing.bats",
+        "-f",
+        "R96"
+      ],
+      "files": [
+        "tests/workflow-closing.bats"
+      ]
+    },
+    {
+      "id": "C153",
+      "req": "R97",
+      "run": [
+        "bats",
+        "tests/approve-fingerprint.bats"
+      ],
+      "files": [
+        "tests/approve-fingerprint.bats",
+        "tests/approve-choice-helper.bash"
+      ]
+    },
+    {
+      "id": "C154",
+      "req": "R98",
+      "run": [
+        "bats",
+        "tests/auto-gate-background.bats"
+      ],
+      "files": [
+        "tests/auto-gate-background.bats"
+      ]
+    },
+    {
+      "id": "C155",
+      "req": "R99",
+      "run": [
+        "bats",
+        "tests/fix-commit.bats"
+      ],
+      "files": [
+        "tests/fix-commit.bats"
+      ]
+    },
+    {
+      "id": "C156",
+      "req": "R100",
+      "run": [
+        "bats",
+        "tests/approval-after-plan.bats"
+      ],
+      "files": [
+        "tests/approval-after-plan.bats",
+        "tests/approve-choice-helper.bash"
+      ]
+    },
+    {
+      "id": "C158",
+      "req": "R102",
+      "run": [
+        "bats",
+        "tests/contract-waves.bats"
+      ],
+      "files": [
+        "tests/contract-waves.bats"
+      ]
+    },
+    {
+      "id": "C159",
+      "req": "R102",
+      "run": [
+        "bats",
+        "tests/lead-parallel.bats"
+      ],
+      "files": [
+        "tests/lead-parallel.bats"
+      ]
+    },
+    {
+      "id": "C160",
+      "req": "R103",
+      "run": [
+        "bats",
+        "tests/proof-reuse.bats"
+      ],
+      "files": [
+        "tests/proof-reuse.bats"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C161",
+      "req": "R104",
+      "run": [
+        "bats",
+        "tests/qa-recheck-skip.bats"
+      ],
+      "files": [
+        "tests/qa-recheck-skip.bats",
+        "tests/qa-skip-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C162",
+      "req": "R104",
+      "run": [
+        "bats",
+        "tests/qa-recheck-requirements.bats"
+      ],
+      "files": [
+        "tests/qa-recheck-requirements.bats",
+        "tests/qa-skip-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C163",
+      "req": "R105",
+      "run": [
+        "bats",
+        "tests/rigor-guarded.bats"
+      ],
+      "files": [
+        "tests/rigor-guarded.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C164",
+      "req": "R106",
+      "run": [
+        "bats",
+        "tests/next-phase.bats"
+      ],
+      "files": [
+        "tests/next-phase.bats"
+      ]
+    },
+    {
+      "id": "C165",
+      "req": "R106",
+      "run": [
+        "bats",
+        "tests/planning-number.bats"
+      ],
+      "files": [
+        "tests/planning-number.bats"
+      ]
+    },
+    {
+      "id": "C166",
+      "req": "R107",
+      "run": [
+        "bats",
+        "tests/effort-profile.bats"
+      ],
+      "files": [
+        "tests/effort-profile.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C167",
+      "req": "R107",
+      "run": [
+        "bats",
+        "tests/effort-workflows.bats"
+      ],
+      "files": [
+        "tests/effort-workflows.bats",
+        "tests/helpers/run-workflow-all.js"
+      ]
+    },
+    {
+      "id": "C168",
+      "req": "R109",
+      "run": [
+        "bats",
+        "tests/init-approval-wording.bats"
+      ],
+      "files": [
+        "tests/init-approval-wording.bats"
+      ]
+    },
+    {
+      "id": "C169",
+      "req": "R110",
+      "run": [
+        "bats",
+        "tests/proof-selective.bats"
+      ],
+      "files": [
+        "tests/proof-selective.bats"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C170",
+      "req": "R110",
+      "run": [
+        "bats",
+        "tests/proof-selective-docs.bats"
+      ],
+      "files": [
+        "tests/proof-selective-docs.bats"
+      ]
+    },
+    {
+      "id": "C171",
+      "req": "R111",
+      "run": [
+        "bats",
+        "tests/proof-quick.bats"
+      ],
+      "files": [
+        "tests/proof-quick.bats"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C172",
+      "req": "R111",
+      "run": [
+        "bats",
+        "tests/proof-full-gate.bats"
+      ],
+      "files": [
+        "tests/proof-full-gate.bats"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C173",
+      "req": "R111",
+      "run": [
+        "bats",
+        "tests/proof-full-prompts.bats"
+      ],
+      "files": [
+        "tests/proof-full-prompts.bats"
+      ]
+    },
+    {
+      "id": "C174",
+      "req": "R111",
+      "run": [
+        "bats",
+        "tests/quick-mode.bats"
+      ],
+      "files": [
+        "tests/quick-mode.bats"
+      ]
+    },
+    {
+      "id": "C175",
+      "req": "R111",
+      "run": [
+        "bats",
+        "tests/proof-quick-docs.bats"
+      ],
+      "files": [
+        "tests/proof-quick-docs.bats"
+      ]
+    },
+    {
+      "id": "C176",
+      "req": "R112",
+      "run": [
+        "bats",
+        "tests/interview-wording.bats"
+      ],
+      "files": [
+        "tests/interview-wording.bats"
+      ]
+    },
+    {
+      "id": "C177",
+      "req": "R113",
+      "run": [
+        "bats",
+        "tests/qa-vbw-files.bats"
+      ],
+      "files": [
+        "tests/qa-vbw-files.bats"
+      ]
+    },
+    {
+      "id": "C178",
+      "req": "R114",
+      "run": [
+        "bats",
+        "tests/approve-ask.bats"
+      ],
+      "files": [
+        "tests/approve-ask.bats"
+      ]
+    },
+    {
+      "id": "C179",
+      "req": "R101",
+      "run": [
+        "bats",
+        "tests/profile-architect-qa.bats"
+      ],
+      "files": [
+        "tests/profile-architect-qa.bats",
+        "tests/rigor-helper.bash",
+        "tests/helpers/run-workflow.js"
+      ]
+    },
+    {
+      "id": "C180",
+      "req": "R119",
+      "run": [
+        "bats",
+        "tests/profile-lead-opus.bats"
+      ],
+      "files": [
+        "tests/profile-lead-opus.bats",
+        "tests/helpers/run-workflow.js"
+      ]
+    },
+    {
+      "id": "C181",
+      "req": "R115",
+      "run": [
+        "bats",
+        "tests/qa-recheck-docs.bats"
+      ],
+      "files": [
+        "tests/qa-recheck-docs.bats",
+        "tests/qa-recheck-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C182",
+      "req": "R116",
+      "run": [
+        "bats",
+        "tests/small-request.bats"
+      ],
+      "files": [
+        "tests/small-request.bats",
+        "tests/rigor-helper.bash"
+      ]
+    },
+    {
+      "id": "C183",
+      "req": "R116",
+      "run": [
+        "bats",
+        "tests/l3-smallchange-added.bats"
+      ],
+      "files": [
+        "tests/l3-smallchange-added.bats"
+      ]
+    },
+    {
+      "id": "C184",
+      "req": "R118",
+      "run": [
+        "bats",
+        "tests/prove-kept-output.bats"
+      ],
+      "files": [
+        "tests/prove-kept-output.bats"
+      ]
+    },
+    {
+      "id": "C185",
+      "req": "R120",
+      "run": [
+        "bats",
+        "tests/approve-ask-shown.bats"
+      ],
+      "files": [
+        "tests/approve-ask-shown.bats"
+      ]
+    },
+    {
+      "id": "C186",
+      "req": "R126",
+      "run": [
+        "bats",
+        "tests/ci-node24.bats"
+      ],
+      "files": [
+        "tests/ci-node24.bats"
+      ]
+    },
+    {
+      "id": "C187",
+      "req": "R121",
+      "run": [
+        "bats",
+        "tests/triage-kernel.bats"
+      ],
+      "files": [
+        "tests/triage-kernel.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C188",
+      "req": "R121",
+      "run": [
+        "bats",
+        "tests/triage-skill.bats"
+      ],
+      "files": [
+        "tests/triage-skill.bats"
+      ]
+    },
+    {
+      "id": "C189",
+      "req": "R122",
+      "run": [
+        "bats",
+        "tests/triage-overrule.bats"
+      ],
+      "files": [
+        "tests/triage-overrule.bats"
+      ]
+    },
+    {
+      "id": "C190",
+      "req": "R123",
+      "run": [
+        "bats",
+        "tests/recommend-store.bats"
+      ],
+      "files": [
+        "tests/recommend-store.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C191",
+      "req": "R123",
+      "run": [
+        "bats",
+        "tests/recommend-flow.bats"
+      ],
+      "files": [
+        "tests/recommend-flow.bats",
+        "tests/helpers/run-workflow.js"
+      ]
+    },
+    {
+      "id": "C192",
+      "req": "R124",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/whats-next.test.mjs"
+      ],
+      "files": [
+        "tests/panel/whats-next.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C193",
+      "req": "R124",
+      "run": [
+        "bats",
+        "tests/panel-whats-next.bats"
+      ],
+      "files": [
+        "tests/panel-whats-next.bats"
+      ],
+      "alone": true,
+      "timeout": 600
+    },
+    {
+      "id": "C194",
+      "req": "R127",
+      "run": [
+        "bats",
+        "tests/todo-sort.bats"
+      ],
+      "files": [
+        "tests/todo-sort.bats",
+        "tests/helpers/run-workflow.js"
+      ]
+    },
+    {
+      "id": "C195",
+      "req": "R133",
+      "run": [
+        "bats",
+        "tests/recommend-source.bats"
+      ],
+      "files": [
+        "tests/recommend-source.bats",
+        "tests/helpers/run-workflow.js"
+      ]
+    },
+    {
+      "id": "C196",
+      "req": "R129",
+      "run": [
+        "bats",
+        "tests/plan-block-done.bats"
+      ],
+      "files": [
+        "tests/plan-block-done.bats"
+      ]
+    },
+    {
+      "id": "C197",
+      "req": "R130",
+      "run": [
+        "bats",
+        "tests/apply-foreign-req.bats"
+      ],
+      "files": [
+        "tests/apply-foreign-req.bats"
+      ]
+    },
+    {
+      "id": "C198",
+      "req": "R131",
+      "run": [
+        "bats",
+        "tests/qa-prompt-suite.bats"
+      ],
+      "files": [
+        "tests/qa-prompt-suite.bats",
+        "tests/helpers/run-workflow.js"
+      ]
+    },
+    {
+      "id": "C199",
+      "req": "R132",
+      "run": [
+        "bats",
+        "tests/qa-fp-version.bats"
+      ],
+      "files": [
+        "tests/qa-fp-version.bats",
+        "tests/qa-recheck-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C200",
+      "req": "R128",
+      "run": [
+        "bats",
+        "tests/hook-answers.bats"
+      ],
+      "files": [
+        "tests/hook-answers.bats",
+        "tests/approve-choice-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C201",
+      "req": "R134",
+      "run": [
+        "bats",
+        "tests/docs-workflows-count.bats"
+      ],
+      "files": [
+        "tests/docs-workflows-count.bats"
+      ]
+    },
+    {
+      "id": "C202",
+      "req": "R135",
+      "run": [
+        "bats",
+        "tests/router-triage-line.bats"
+      ],
+      "files": [
+        "tests/router-triage-line.bats"
+      ]
+    },
+    {
+      "id": "C203",
+      "req": "R141",
+      "run": [
+        "bats",
+        "tests/hooks-session-nojq.bats",
+        "tests/hooks-session.bats",
+        "tests/hooks-session-guard.bats",
+        "tests/hooks-session-scope.bats"
+      ],
+      "files": [
+        "tests/hooks-session-nojq.bats"
+      ]
+    },
+    {
+      "id": "C204",
+      "req": "R142",
+      "run": [
+        "bats",
+        "tests/test-shards.bats"
+      ],
+      "files": [
+        "tests/test-shards.bats"
+      ]
+    },
+    {
+      "id": "C205",
+      "req": "R142",
+      "run": [
+        "bats",
+        "tests/ci-shards.bats",
+        "tests/ci-node24.bats"
+      ],
+      "files": [
+        "tests/ci-shards.bats"
+      ]
+    },
+    {
+      "id": "C206",
+      "req": "R143",
+      "run": [
+        "bats",
+        "tests/ci-scope.bats"
+      ],
+      "files": [
+        "tests/ci-scope.bats"
+      ]
+    },
+    {
+      "id": "C207",
+      "req": "R143",
+      "run": [
+        "bats",
+        "tests/ci-scope-wiring.bats",
+        "tests/ci-shards.bats",
+        "tests/ci-node24.bats"
+      ],
+      "files": [
+        "tests/ci-scope-wiring.bats"
+      ]
+    },
+    {
+      "id": "C208",
+      "req": "R144",
+      "run": [
+        "bats",
+        "tests/proof-doc-reuse.bats"
+      ],
+      "files": [
+        "tests/proof-doc-reuse.bats"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C209",
+      "req": "R144",
+      "run": [
+        "bats",
+        "tests/proof-doc-reuse-docs.bats"
+      ],
+      "files": [
+        "tests/proof-doc-reuse-docs.bats"
+      ]
+    },
+    {
+      "id": "C210",
+      "req": "R145",
+      "run": [
+        "bats",
+        "tests/qa-depth-escalated.bats"
+      ],
+      "files": [
+        "tests/qa-depth-escalated.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C211",
+      "req": "R146",
+      "run": [
+        "bats",
+        "tests/todo-commit.bats"
+      ],
+      "files": [
+        "tests/todo-commit.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C212",
+      "req": "R147",
+      "run": [
+        "bats",
+        "tests/check-jobs-machine.bats"
+      ],
+      "files": [
+        "tests/check-jobs-machine.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C213",
+      "req": "R148",
+      "run": [
+        "bats",
+        "tests/check-jobs-shared.bats"
+      ],
+      "files": [
+        "tests/check-jobs-shared.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C214",
+      "req": "R148",
+      "run": [
+        "bats",
+        "tests/fix-suite-once.bats"
+      ],
+      "files": [
+        "tests/fix-suite-once.bats",
+        "tests/helpers/run-workflow.js"
+      ]
+    },
+    {
+      "id": "C215",
+      "req": "R147",
+      "run": [
+        "bats",
+        "tests/check-jobs-docs.bats",
+        "-f",
+        "R147"
+      ],
+      "files": [
+        "tests/check-jobs-docs.bats"
+      ]
+    },
+    {
+      "id": "C216",
+      "req": "R148",
+      "run": [
+        "bats",
+        "tests/check-jobs-docs.bats",
+        "-f",
+        "R148"
+      ],
+      "files": [
+        "tests/check-jobs-docs.bats"
+      ]
+    },
+    {
+      "id": "C217",
+      "req": "R149",
+      "run": [
+        "bats",
+        "tests/big-record-commands.bats"
+      ],
+      "files": [
+        "tests/big-record-commands.bats",
+        "tests/big-record-helper.bash"
+      ],
+      "timeout": 1800
+    },
+    {
+      "id": "C218",
+      "req": "R149",
+      "run": [
+        "bats",
+        "tests/big-record-writes.bats"
+      ],
+      "files": [
+        "tests/big-record-writes.bats",
+        "tests/big-record-helper.bash"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C219",
+      "req": "R149",
+      "run": [
+        "bats",
+        "tests/big-record-hooks.bats"
+      ],
+      "files": [
+        "tests/big-record-hooks.bats",
+        "tests/big-record-helper.bash",
+        "tests/panel/big-record.test.mjs"
+      ],
+      "timeout": 1200,
+      "alone": true
+    },
+    {
+      "id": "C220",
+      "req": "R149",
+      "run": [
+        "bats",
+        "tests/record-args-rule.bats"
+      ],
+      "files": [
+        "tests/record-args-rule.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C221",
+      "req": "R149",
+      "run": [
+        "bats",
+        "tests/big-record-scratch.bats"
+      ],
+      "files": [
+        "tests/big-record-scratch.bats",
+        "tests/big-record-helper.bash"
+      ],
+      "timeout": 1800
+    },
+    {
+      "id": "C222",
+      "req": "R149",
+      "run": [
+        "bats",
+        "tests/big-record-docs.bats"
+      ],
+      "files": [
+        "tests/big-record-docs.bats"
+      ]
+    }
+  ],
   "project": {
     "name": "v2",
     "results": [
@@ -4563,2613 +7171,6 @@
           "text": "docs/record.md says a record of any size is supported and why",
           "check": "C222"
         }
-      ]
-    }
-  ],
-  "checks": [
-    {
-      "id": "C1",
-      "req": "R1",
-      "run": [
-        "bats",
-        "-f",
-        "R1:",
-        "tests/kernel-safety.bats"
-      ],
-      "files": [
-        "tests/kernel-safety.bats"
-      ]
-    },
-    {
-      "id": "C2",
-      "req": "R2",
-      "run": [
-        "bats",
-        "-f",
-        "R2:",
-        "tests/kernel-safety.bats"
-      ],
-      "files": [
-        "tests/kernel-safety.bats"
-      ]
-    },
-    {
-      "id": "C3",
-      "req": "R3",
-      "run": [
-        "bats",
-        "tests/kernel-diagnostics.bats"
-      ],
-      "files": [
-        "tests/kernel-diagnostics.bats"
-      ]
-    },
-    {
-      "id": "C4",
-      "req": "R4",
-      "run": [
-        "bats",
-        "-f",
-        "R4:",
-        "tests/l3-results.bats"
-      ],
-      "files": [
-        "tests/l3-results.bats"
-      ]
-    },
-    {
-      "id": "C5",
-      "req": "R5",
-      "run": [
-        "bats",
-        "-f",
-        "R5:",
-        "tests/l3-results.bats"
-      ],
-      "files": [
-        "tests/l3-results.bats"
-      ]
-    },
-    {
-      "id": "C8",
-      "req": "R8",
-      "run": [
-        "bats",
-        "-f",
-        "R8:",
-        "tests/l3-results.bats"
-      ],
-      "files": [
-        "tests/l3-results.bats"
-      ]
-    },
-    {
-      "id": "C9",
-      "req": "R10",
-      "run": [
-        "bats",
-        "tests/kernel-approval.bats"
-      ],
-      "files": [
-        "tests/kernel-approval.bats"
-      ]
-    },
-    {
-      "id": "C10",
-      "req": "R11",
-      "run": [
-        "bats",
-        "tests/kernel-accept.bats"
-      ],
-      "files": [
-        "tests/kernel-accept.bats"
-      ]
-    },
-    {
-      "id": "C11",
-      "req": "R12",
-      "run": [
-        "bats",
-        "tests/kernel-qafresh.bats"
-      ],
-      "files": [
-        "tests/kernel-qafresh.bats"
-      ]
-    },
-    {
-      "id": "C12",
-      "req": "R13",
-      "run": [
-        "bats",
-        "-f",
-        "next in another session",
-        "tests/kernel-sessions.bats"
-      ],
-      "files": [
-        "tests/kernel-sessions.bats"
-      ]
-    },
-    {
-      "id": "C13",
-      "req": "R14",
-      "run": [
-        "bats",
-        "-f",
-        "run end|run start records",
-        "tests/kernel-sessions.bats"
-      ],
-      "files": [
-        "tests/kernel-sessions.bats"
-      ]
-    },
-    {
-      "id": "C14",
-      "req": "R15",
-      "run": [
-        "bats",
-        "tests/hooks-session-guard.bats"
-      ],
-      "files": [
-        "tests/hooks-session-guard.bats"
-      ]
-    },
-    {
-      "id": "C15",
-      "req": "R16",
-      "run": [
-        "bats",
-        "tests/kernel-auto-sessions.bats"
-      ],
-      "files": [
-        "tests/kernel-auto-sessions.bats"
-      ]
-    },
-    {
-      "id": "C16",
-      "req": "R21",
-      "run": [
-        "bats",
-        "tests/contributor-files.bats"
-      ],
-      "files": [
-        "tests/contributor-files.bats"
-      ]
-    },
-    {
-      "id": "C17",
-      "req": "R17",
-      "run": [
-        "bats",
-        "tests/baseline-cases.bats"
-      ],
-      "files": [
-        "tests/baseline-cases.bats"
-      ]
-    },
-    {
-      "id": "C18",
-      "req": "R18",
-      "run": [
-        "bats",
-        "tests/baseline-results.bats"
-      ],
-      "files": [
-        "tests/baseline-results.bats"
-      ]
-    },
-    {
-      "id": "C19",
-      "req": "R22",
-      "run": [
-        "bats",
-        "tests/rigor-record.bats"
-      ],
-      "files": [
-        "tests/rigor-record.bats",
-        "tests/rigor-helper.bash"
-      ]
-    },
-    {
-      "id": "C20",
-      "req": "R23",
-      "run": [
-        "bats",
-        "tests/rigor-floor.bats"
-      ],
-      "files": [
-        "tests/rigor-floor.bats",
-        "tests/rigor-helper.bash"
-      ]
-    },
-    {
-      "id": "C21",
-      "req": "R27",
-      "run": [
-        "bats",
-        "tests/rigor-config.bats"
-      ],
-      "files": [
-        "tests/rigor-config.bats",
-        "tests/rigor-helper.bash"
-      ]
-    },
-    {
-      "id": "C22",
-      "req": "R26",
-      "run": [
-        "bats",
-        "tests/rigor-profile.bats"
-      ],
-      "files": [
-        "tests/rigor-profile.bats",
-        "tests/rigor-helper.bash"
-      ]
-    },
-    {
-      "id": "C23",
-      "req": "R24",
-      "run": [
-        "bats",
-        "tests/rigor-express.bats"
-      ],
-      "files": [
-        "tests/rigor-express.bats",
-        "tests/rigor-helper.bash"
-      ]
-    },
-    {
-      "id": "C24",
-      "req": "R25",
-      "run": [
-        "bats",
-        "tests/rigor-escalation.bats"
-      ],
-      "files": [
-        "tests/rigor-escalation.bats",
-        "tests/rigor-helper.bash"
-      ]
-    },
-    {
-      "id": "C25",
-      "req": "R28",
-      "run": [
-        "bats",
-        "tests/rigor-prediction.bats"
-      ],
-      "files": [
-        "tests/rigor-prediction.bats",
-        "tests/rigor-helper.bash"
-      ]
-    },
-    {
-      "id": "C26",
-      "req": "R29",
-      "run": [
-        "bats",
-        "tests/adaptive-results.bats"
-      ],
-      "files": [
-        "tests/adaptive-results.bats"
-      ]
-    },
-    {
-      "id": "C27",
-      "req": "R31",
-      "run": [
-        "bats",
-        "tests/rules.bats"
-      ],
-      "files": [
-        "tests/rules.bats"
-      ]
-    },
-    {
-      "id": "C28",
-      "req": "R32",
-      "run": [
-        "bats",
-        "tests/prove-clean.bats"
-      ],
-      "files": [
-        "tests/prove-clean.bats"
-      ]
-    },
-    {
-      "id": "C29",
-      "req": "R33",
-      "run": [
-        "bats",
-        "tests/record-newer.bats"
-      ],
-      "files": [
-        "tests/record-newer.bats",
-        "tests/fixtures/records/v1.json",
-        "tests/fixtures/records/future.json"
-      ]
-    },
-    {
-      "id": "C30",
-      "req": "R34",
-      "run": [
-        "bats",
-        "tests/l3-scenarios.bats"
-      ],
-      "files": [
-        "tests/l3-scenarios.bats"
-      ]
-    },
-    {
-      "id": "C31",
-      "req": "R35",
-      "run": [
-        "bats",
-        "tests/qa-model.bats"
-      ],
-      "files": [
-        "tests/qa-model.bats"
-      ]
-    },
-    {
-      "id": "C32",
-      "req": "R36",
-      "run": [
-        "bats",
-        "tests/config-qa.bats"
-      ],
-      "files": [
-        "tests/config-qa.bats"
-      ]
-    },
-    {
-      "id": "C33",
-      "req": "R38",
-      "run": [
-        "bats",
-        "tests/interview-store.bats"
-      ],
-      "files": [
-        "tests/interview-store.bats"
-      ]
-    },
-    {
-      "id": "C34",
-      "req": "R38",
-      "run": [
-        "bats",
-        "tests/interview-once.bats"
-      ],
-      "files": [
-        "tests/interview-once.bats"
-      ]
-    },
-    {
-      "id": "C35",
-      "req": "R37",
-      "run": [
-        "bats",
-        "tests/interview-flow.bats"
-      ],
-      "files": [
-        "tests/interview-flow.bats"
-      ]
-    },
-    {
-      "id": "C36",
-      "req": "R39",
-      "run": [
-        "bats",
-        "tests/profile-levels.bats"
-      ],
-      "files": [
-        "tests/profile-levels.bats"
-      ]
-    },
-    {
-      "id": "C37",
-      "req": "R40",
-      "run": [
-        "bats",
-        "tests/suggestions.bats"
-      ],
-      "files": [
-        "tests/suggestions.bats"
-      ]
-    },
-    {
-      "id": "C38",
-      "req": "R42",
-      "run": [
-        "bats",
-        "tests/l3-interview.bats"
-      ],
-      "files": [
-        "tests/l3-interview.bats"
-      ]
-    },
-    {
-      "id": "C39",
-      "req": "R45",
-      "run": [
-        "bats",
-        "tests/check-alone-contract.bats"
-      ],
-      "files": [
-        "tests/check-alone-contract.bats"
-      ]
-    },
-    {
-      "id": "C40",
-      "req": "R45",
-      "run": [
-        "bats",
-        "tests/check-alone-runner.bats"
-      ],
-      "files": [
-        "tests/check-alone-runner.bats"
-      ],
-      "timeout": 300
-    },
-    {
-      "id": "C41",
-      "req": "R45",
-      "run": [
-        "bats",
-        "tests/check-alone-docs.bats"
-      ],
-      "files": [
-        "tests/check-alone-docs.bats"
-      ]
-    },
-    {
-      "id": "C42",
-      "req": "R43",
-      "run": [
-        "bats",
-        "tests/fix-reuse.bats"
-      ],
-      "files": [
-        "tests/fix-reuse.bats"
-      ],
-      "timeout": 300
-    },
-    {
-      "id": "C43",
-      "req": "R43",
-      "run": [
-        "bats",
-        "tests/fix-reuse-docs.bats"
-      ],
-      "files": [
-        "tests/fix-reuse-docs.bats"
-      ]
-    },
-    {
-      "id": "C44",
-      "req": "R44",
-      "run": [
-        "bats",
-        "tests/fix-many.bats"
-      ],
-      "files": [
-        "tests/fix-many.bats"
-      ],
-      "timeout": 300
-    },
-    {
-      "id": "C45",
-      "req": "R44",
-      "run": [
-        "bats",
-        "tests/fix-many-docs.bats"
-      ],
-      "files": [
-        "tests/fix-many-docs.bats"
-      ]
-    },
-    {
-      "id": "C46",
-      "req": "R46",
-      "run": [
-        "bats",
-        "tests/record-compat.bats"
-      ],
-      "files": [
-        "tests/record-compat.bats"
-      ],
-      "timeout": 300
-    },
-    {
-      "id": "C47",
-      "req": "R47",
-      "run": [
-        "bats",
-        "tests/qa-recheck-scope.bats"
-      ],
-      "files": [
-        "tests/qa-recheck-scope.bats",
-        "tests/qa-recheck-helper.bash",
-        "tests/helpers/run-workflow.js"
-      ],
-      "timeout": 900
-    },
-    {
-      "id": "C48",
-      "req": "R49",
-      "run": [
-        "bats",
-        "tests/qa-recheck-deps.bats"
-      ],
-      "files": [
-        "tests/qa-recheck-deps.bats",
-        "tests/qa-recheck-helper.bash"
-      ],
-      "timeout": 900
-    },
-    {
-      "id": "C49",
-      "req": "R48",
-      "run": [
-        "bats",
-        "tests/qa-recheck-why.bats"
-      ],
-      "files": [
-        "tests/qa-recheck-why.bats",
-        "tests/qa-recheck-helper.bash",
-        "tests/helpers/run-workflow.js"
-      ],
-      "timeout": 900
-    },
-    {
-      "id": "C50",
-      "req": "R48",
-      "run": [
-        "bats",
-        "tests/l3-recheck.bats"
-      ],
-      "files": [
-        "tests/l3-recheck.bats"
-      ],
-      "timeout": 900
-    },
-    {
-      "id": "C51",
-      "req": "R50",
-      "run": [
-        "bats",
-        "tests/plan-scope.bats"
-      ],
-      "files": [
-        "tests/plan-scope.bats",
-        "tests/helpers/run-workflow.js"
-      ],
-      "timeout": 900
-    },
-    {
-      "id": "C52",
-      "req": "R51",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/view.test.mjs"
-      ],
-      "files": [
-        "tests/panel/view.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C53",
-      "req": "R51",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/panel.test.mjs"
-      ],
-      "files": [
-        "tests/panel/panel.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C54",
-      "req": "R53",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/safe.test.mjs"
-      ],
-      "files": [
-        "tests/panel/safe.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C55",
-      "req": "R53",
-      "run": [
-        "bats",
-        "tests/panel-compat.bats"
-      ],
-      "files": [
-        "tests/panel-compat.bats"
-      ],
-      "timeout": 300
-    },
-    {
-      "id": "C56",
-      "req": "R55",
-      "run": [
-        "bats",
-        "tests/panel-light.bats"
-      ],
-      "files": [
-        "tests/panel-light.bats"
-      ],
-      "timeout": 900,
-      "alone": true
-    },
-    {
-      "id": "C57",
-      "req": "R55",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/light.test.mjs"
-      ],
-      "files": [
-        "tests/panel/light.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C58",
-      "req": "R52",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/open.test.mjs"
-      ],
-      "files": [
-        "tests/panel/open.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C59",
-      "req": "R57",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/sound.test.mjs"
-      ],
-      "files": [
-        "tests/panel/sound.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C61",
-      "req": "R56",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/cost.test.mjs"
-      ],
-      "files": [
-        "tests/panel/cost.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C62",
-      "req": "R58",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/estimate.test.mjs"
-      ],
-      "files": [
-        "tests/panel/estimate.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C63",
-      "req": "R58",
-      "run": [
-        "bats",
-        "tests/panel-steps.bats"
-      ],
-      "files": [
-        "tests/panel-steps.bats"
-      ],
-      "timeout": 300
-    },
-    {
-      "id": "C64",
-      "req": "R58",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/glance.test.mjs"
-      ],
-      "files": [
-        "tests/panel/glance.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C65",
-      "req": "R56",
-      "run": [
-        "bats",
-        "--filter",
-        "R56",
-        "tests/panel-glance.bats"
-      ],
-      "files": [
-        "tests/panel-glance.bats"
-      ],
-      "timeout": 600,
-      "alone": true
-    },
-    {
-      "id": "C66",
-      "req": "R51",
-      "run": [
-        "bats",
-        "tests/l3-panel.bats"
-      ],
-      "files": [
-        "tests/l3-panel.bats"
-      ]
-    },
-    {
-      "id": "C67",
-      "req": "R58",
-      "run": [
-        "bats",
-        "--filter",
-        "R58",
-        "tests/panel-glance.bats"
-      ],
-      "files": [
-        "tests/panel-glance.bats"
-      ],
-      "timeout": 600,
-      "alone": true
-    },
-    {
-      "id": "C68",
-      "req": "R59",
-      "run": [
-        "bats",
-        "tests/interview-greeting.bats"
-      ],
-      "files": [
-        "tests/interview-greeting.bats"
-      ]
-    },
-    {
-      "id": "C70",
-      "req": "R57",
-      "run": [
-        "bats",
-        "tests/panel-sound-audio.bats"
-      ],
-      "files": [
-        "tests/panel-sound-audio.bats"
-      ]
-    },
-    {
-      "id": "C71",
-      "req": "R57",
-      "run": [
-        "bats",
-        "-f",
-        "costs less than|without mods|help and the README|preference is the user",
-        "tests/panel-sound.bats"
-      ],
-      "files": [
-        "tests/panel-sound.bats"
-      ],
-      "alone": true,
-      "timeout": 600
-    },
-    {
-      "id": "C72",
-      "req": "R60",
-      "run": [
-        "bats",
-        "tests/stop-line.bats"
-      ],
-      "files": [
-        "tests/stop-line.bats"
-      ]
-    },
-    {
-      "id": "C73",
-      "req": "R61",
-      "run": [
-        "bats",
-        "tests/approve-choice-kernel.bats"
-      ],
-      "files": [
-        "tests/approve-choice-kernel.bats",
-        "tests/approve-choice-helper.bash"
-      ]
-    },
-    {
-      "id": "C74",
-      "req": "R61",
-      "run": [
-        "bats",
-        "tests/approve-choice-hook.bats"
-      ],
-      "files": [
-        "tests/approve-choice-hook.bats",
-        "tests/approve-choice-helper.bash"
-      ]
-    },
-    {
-      "id": "C75",
-      "req": "R61",
-      "run": [
-        "bats",
-        "tests/approve-choice-guard.bats"
-      ],
-      "files": [
-        "tests/approve-choice-guard.bats",
-        "tests/approve-choice-helper.bash"
-      ],
-      "alone": true
-    },
-    {
-      "id": "C76",
-      "req": "R61",
-      "run": [
-        "bats",
-        "tests/approve-choice-docs.bats"
-      ],
-      "files": [
-        "tests/approve-choice-docs.bats"
-      ]
-    },
-    {
-      "id": "C77",
-      "req": "R61",
-      "run": [
-        "bats",
-        "tests/l3-approval.bats"
-      ],
-      "files": [
-        "tests/l3-approval.bats"
-      ]
-    },
-    {
-      "id": "C78",
-      "req": "R62",
-      "run": [
-        "bats",
-        "tests/tools-store.bats"
-      ],
-      "files": [
-        "tests/tools-store.bats"
-      ]
-    },
-    {
-      "id": "C79",
-      "req": "R62",
-      "run": [
-        "bats",
-        "tests/tools-workflow.bats"
-      ],
-      "files": [
-        "tests/tools-workflow.bats"
-      ]
-    },
-    {
-      "id": "C80",
-      "req": "R62",
-      "run": [
-        "bats",
-        "tests/tools-skill.bats"
-      ],
-      "files": [
-        "tests/tools-skill.bats"
-      ]
-    },
-    {
-      "id": "C81",
-      "req": "R62",
-      "run": [
-        "bats",
-        "tests/tools-interview.bats"
-      ],
-      "files": [
-        "tests/tools-interview.bats"
-      ]
-    },
-    {
-      "id": "C82",
-      "req": "R62",
-      "run": [
-        "bats",
-        "tests/tools-docs.bats"
-      ],
-      "files": [
-        "tests/tools-docs.bats"
-      ]
-    },
-    {
-      "id": "C83",
-      "req": "R62",
-      "run": [
-        "bats",
-        "tests/l3-tools.bats"
-      ],
-      "files": [
-        "tests/l3-tools.bats"
-      ]
-    },
-    {
-      "id": "C84",
-      "req": "R64",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/testmode.test.mjs"
-      ],
-      "files": [
-        "tests/panel/testmode.test.mjs"
-      ]
-    },
-    {
-      "id": "C85",
-      "req": "R64",
-      "run": [
-        "bats",
-        "tests/l3-testmode.bats"
-      ],
-      "files": [
-        "tests/l3-testmode.bats"
-      ]
-    },
-    {
-      "id": "C86",
-      "req": "R65",
-      "run": [
-        "bats",
-        "tests/legacy-review.bats"
-      ],
-      "files": [
-        "tests/legacy-review.bats"
-      ]
-    },
-    {
-      "id": "C87",
-      "req": "R65",
-      "run": [
-        "bats",
-        "tests/legacy-choice.bats"
-      ],
-      "files": [
-        "tests/legacy-choice.bats"
-      ]
-    },
-    {
-      "id": "C88",
-      "req": "R65",
-      "run": [
-        "bats",
-        "tests/legacy-interview.bats"
-      ],
-      "files": [
-        "tests/legacy-interview.bats"
-      ]
-    },
-    {
-      "id": "C89",
-      "req": "R65",
-      "run": [
-        "bats",
-        "tests/legacy-docs.bats"
-      ],
-      "files": [
-        "tests/legacy-docs.bats"
-      ]
-    },
-    {
-      "id": "C90",
-      "req": "R65",
-      "run": [
-        "bats",
-        "tests/l3-legacy.bats"
-      ],
-      "files": [
-        "tests/l3-legacy.bats"
-      ]
-    },
-    {
-      "id": "C91",
-      "req": "R52",
-      "run": [
-        "bats",
-        "tests/panel-skill-open.bats"
-      ],
-      "files": [
-        "tests/panel-skill-open.bats"
-      ]
-    },
-    {
-      "id": "C92",
-      "req": "R59",
-      "run": [
-        "bats",
-        "tests/l3-greeting.bats"
-      ],
-      "files": [
-        "tests/l3-greeting.bats"
-      ]
-    },
-    {
-      "id": "C93",
-      "req": "R62",
-      "run": [
-        "bats",
-        "tests/interview-tools-permission.bats"
-      ],
-      "files": [
-        "tests/interview-tools-permission.bats"
-      ]
-    },
-    {
-      "id": "C94",
-      "req": "R60",
-      "run": [
-        "bats",
-        "tests/router-spec-rules.bats"
-      ],
-      "files": [
-        "tests/router-spec-rules.bats"
-      ]
-    },
-    {
-      "id": "C95",
-      "req": "R66",
-      "run": [
-        "bats",
-        "tests/qa-replan-keeps.bats"
-      ],
-      "files": [
-        "tests/qa-replan-keeps.bats"
-      ]
-    },
-    {
-      "id": "C96",
-      "req": "R67",
-      "run": [
-        "bats",
-        "tests/legacy-interview-order.bats"
-      ],
-      "files": [
-        "tests/legacy-interview-order.bats"
-      ]
-    },
-    {
-      "id": "C97",
-      "req": "R68",
-      "run": [
-        "bats",
-        "tests/legacy-review-linux.bats"
-      ],
-      "files": [
-        "tests/legacy-review-linux.bats"
-      ]
-    },
-    {
-      "id": "C98",
-      "req": "R73",
-      "run": [
-        "bats",
-        "tests/proof-build-dirs.bats"
-      ],
-      "files": [
-        "tests/proof-build-dirs.bats"
-      ]
-    },
-    {
-      "id": "C99",
-      "req": "R74",
-      "run": [
-        "bats",
-        "tests/plan-done-committed.bats"
-      ],
-      "files": [
-        "tests/plan-done-committed.bats"
-      ]
-    },
-    {
-      "id": "C100",
-      "req": "R74",
-      "run": [
-        "bats",
-        "tests/next-blocked.bats"
-      ],
-      "files": [
-        "tests/next-blocked.bats"
-      ]
-    },
-    {
-      "id": "C101",
-      "req": "R75",
-      "run": [
-        "bats",
-        "tests/guard-plan-writes.bats"
-      ],
-      "files": [
-        "tests/guard-plan-writes.bats"
-      ]
-    },
-    {
-      "id": "C102",
-      "req": "R76",
-      "run": [
-        "bats",
-        "tests/guard-interpreters.bats"
-      ],
-      "files": [
-        "tests/guard-interpreters.bats"
-      ]
-    },
-    {
-      "id": "C103",
-      "req": "R76",
-      "run": [
-        "bats",
-        "tests/guard-cost.bats"
-      ],
-      "files": [
-        "tests/guard-cost.bats"
-      ]
-    },
-    {
-      "id": "C104",
-      "req": "R77",
-      "run": [
-        "bats",
-        "tests/guard-reads-approval.bats"
-      ],
-      "files": [
-        "tests/guard-reads-approval.bats"
-      ]
-    },
-    {
-      "id": "C105",
-      "req": "R78",
-      "run": [
-        "bats",
-        "tests/run-confirm.bats",
-        "-f",
-        "R78"
-      ],
-      "files": [
-        "tests/run-confirm.bats"
-      ]
-    },
-    {
-      "id": "C106",
-      "req": "R78",
-      "run": [
-        "bats",
-        "tests/workflows-run-end.bats",
-        "-f",
-        "R78"
-      ],
-      "files": [
-        "tests/workflows-run-end.bats",
-        "tests/helpers/run-workflow.js"
-      ]
-    },
-    {
-      "id": "C107",
-      "req": "R79",
-      "run": [
-        "bats",
-        "tests/approve-once.bats"
-      ],
-      "files": [
-        "tests/approve-once.bats"
-      ]
-    },
-    {
-      "id": "C108",
-      "req": "R80",
-      "run": [
-        "bats",
-        "tests/apply-narrow.bats"
-      ],
-      "files": [
-        "tests/apply-narrow.bats"
-      ]
-    },
-    {
-      "id": "C109",
-      "req": "R81",
-      "run": [
-        "bats",
-        "tests/approve-commit-fails.bats"
-      ],
-      "files": [
-        "tests/approve-commit-fails.bats"
-      ]
-    },
-    {
-      "id": "C110",
-      "req": "R69",
-      "run": [
-        "bats",
-        "tests/prove-parallel.bats",
-        "-f",
-        "R69"
-      ],
-      "files": [
-        "tests/prove-parallel.bats"
-      ]
-    },
-    {
-      "id": "C111",
-      "req": "R81",
-      "run": [
-        "bats",
-        "tests/prove-parallel.bats",
-        "-f",
-        "R81"
-      ],
-      "files": [
-        "tests/prove-parallel.bats"
-      ]
-    },
-    {
-      "id": "C112",
-      "req": "R81",
-      "run": [
-        "bats",
-        "tests/workflows-run-end.bats",
-        "-f",
-        "R81"
-      ],
-      "files": [
-        "tests/workflows-run-end.bats",
-        "tests/helpers/run-workflow.js"
-      ]
-    },
-    {
-      "id": "C113",
-      "req": "R81",
-      "run": [
-        "bats",
-        "tests/run-confirm.bats",
-        "-f",
-        "R81"
-      ],
-      "files": [
-        "tests/run-confirm.bats"
-      ]
-    },
-    {
-      "id": "C114",
-      "req": "R70",
-      "run": [
-        "bats",
-        "tests/qa-suite-once.bats"
-      ],
-      "files": [
-        "tests/qa-suite-once.bats",
-        "tests/helpers/run-workflow.js"
-      ]
-    },
-    {
-      "id": "C115",
-      "req": "R71",
-      "run": [
-        "bats",
-        "tests/qa-depth-docs.bats"
-      ],
-      "files": [
-        "tests/qa-depth-docs.bats",
-        "tests/helpers/run-workflow.js"
-      ]
-    },
-    {
-      "id": "C116",
-      "req": "R72",
-      "run": [
-        "bats",
-        "tests/small-change.bats"
-      ],
-      "files": [
-        "tests/small-change.bats",
-        "tests/rigor-helper.bash"
-      ]
-    },
-    {
-      "id": "C117",
-      "req": "R82",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/width.test.mjs"
-      ],
-      "files": [
-        "tests/panel/width.test.mjs"
-      ]
-    },
-    {
-      "id": "C118",
-      "req": "R72",
-      "run": [
-        "bats",
-        "tests/l3-smallchange.bats"
-      ],
-      "files": [
-        "tests/l3-smallchange.bats"
-      ]
-    },
-    {
-      "id": "C119",
-      "req": "R83",
-      "run": [
-        "bats",
-        "tests/approval-menu.bats"
-      ],
-      "files": [
-        "tests/approval-menu.bats"
-      ]
-    },
-    {
-      "id": "C120",
-      "req": "R69",
-      "run": [
-        "bats",
-        "tests/prove-signal.bats"
-      ],
-      "files": [
-        "tests/prove-signal.bats"
-      ]
-    },
-    {
-      "id": "C121",
-      "req": "R71",
-      "run": [
-        "bats",
-        "tests/doc-definition.bats"
-      ],
-      "files": [
-        "tests/doc-definition.bats"
-      ]
-    },
-    {
-      "id": "C122",
-      "req": "R69",
-      "run": [
-        "bats",
-        "tests/gate-race.bats"
-      ],
-      "files": [
-        "tests/gate-race.bats"
-      ]
-    },
-    {
-      "id": "C123",
-      "req": "R84",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/palette.test.mjs"
-      ],
-      "files": [
-        "tests/panel/palette.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C124",
-      "req": "R86",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/band-colours.test.mjs"
-      ],
-      "files": [
-        "tests/panel/band-colours.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C125",
-      "req": "R85",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/cards.test.mjs"
-      ],
-      "files": [
-        "tests/panel/cards.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C126",
-      "req": "R87",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/intent.test.mjs"
-      ],
-      "files": [
-        "tests/panel/intent.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs",
-        "tests/panel/helpers/feed-fs.mjs"
-      ]
-    },
-    {
-      "id": "C127",
-      "req": "R87",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/activity-render.test.mjs"
-      ],
-      "files": [
-        "tests/panel/activity-render.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C128",
-      "req": "R89",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/pane.test.mjs"
-      ],
-      "files": [
-        "tests/panel/pane.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C129",
-      "req": "R88",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/record-row.test.mjs"
-      ],
-      "files": [
-        "tests/panel/record-row.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs",
-        "tests/panel/helpers/run.mjs"
-      ]
-    },
-    {
-      "id": "C130",
-      "req": "R91",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/flash.test.mjs"
-      ],
-      "files": [
-        "tests/panel/flash.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs",
-        "tests/panel/helpers/run.mjs"
-      ]
-    },
-    {
-      "id": "C131",
-      "req": "R92",
-      "run": [
-        "bats",
-        "tests/proof-selfcontained.bats",
-        "-f",
-        "no git-ignored path of the copy is a link"
-      ],
-      "files": [
-        "tests/proof-selfcontained.bats"
-      ]
-    },
-    {
-      "id": "C132",
-      "req": "R92",
-      "run": [
-        "bats",
-        "tests/proof-selfcontained.bats",
-        "-f",
-        "a write inside node_modules|pnpm 11 refusal"
-      ],
-      "files": [
-        "tests/proof-selfcontained.bats"
-      ]
-    },
-    {
-      "id": "C133",
-      "req": "R92",
-      "run": [
-        "bats",
-        "tests/proof-selfcontained.bats",
-        "-f",
-        "byte-identical"
-      ],
-      "files": [
-        "tests/proof-selfcontained.bats"
-      ]
-    },
-    {
-      "id": "C134",
-      "req": "R92",
-      "run": [
-        "bats",
-        "tests/proof-selfcontained.bats",
-        "-f",
-        "links inside a copied folder stay links"
-      ],
-      "files": [
-        "tests/proof-selfcontained.bats"
-      ]
-    },
-    {
-      "id": "C135",
-      "req": "R92",
-      "run": [
-        "bats",
-        "tests/proof-selfcontained.bats",
-        "-f",
-        "copy-on-write clone first"
-      ],
-      "files": [
-        "tests/proof-selfcontained.bats"
-      ]
-    },
-    {
-      "id": "C136",
-      "req": "R92",
-      "run": [
-        "bats",
-        "tests/proof-selfcontained.bats",
-        "-f",
-        "build output is not brought in"
-      ],
-      "files": [
-        "tests/proof-selfcontained.bats"
-      ]
-    },
-    {
-      "id": "C137",
-      "req": "R92",
-      "run": [
-        "bats",
-        "tests/proof-selfcontained.bats",
-        "-f",
-        "cannot be read fails the proof"
-      ],
-      "files": [
-        "tests/proof-selfcontained.bats"
-      ]
-    },
-    {
-      "id": "C138",
-      "req": "R92",
-      "run": [
-        "bats",
-        "tests/proof-selfcontained.bats",
-        "-f",
-        "copy is removed after a proof|interrupted proof removes"
-      ],
-      "files": [
-        "tests/proof-selfcontained.bats"
-      ]
-    },
-    {
-      "id": "C139",
-      "req": "R92",
-      "run": [
-        "bats",
-        "tests/proof-copy-docs.bats",
-        "-f",
-        "R92: docs"
-      ],
-      "files": [
-        "tests/proof-copy-docs.bats"
-      ]
-    },
-    {
-      "id": "C140",
-      "req": "R93",
-      "run": [
-        "bats",
-        "tests/proof-stale-links.bats",
-        "-f",
-        "each stale link|not pnpm|with no such link|never turns a passing proof"
-      ],
-      "files": [
-        "tests/proof-stale-links.bats"
-      ]
-    },
-    {
-      "id": "C141",
-      "req": "R93",
-      "run": [
-        "bats",
-        "tests/proof-stale-links.bats",
-        "-f",
-        "changes nothing in the working folder"
-      ],
-      "files": [
-        "tests/proof-stale-links.bats"
-      ]
-    },
-    {
-      "id": "C142",
-      "req": "R93",
-      "run": [
-        "bats",
-        "tests/proof-stale-links.bats",
-        "-f",
-        "stops early with an error"
-      ],
-      "files": [
-        "tests/proof-stale-links.bats"
-      ]
-    },
-    {
-      "id": "C143",
-      "req": "R93",
-      "run": [
-        "bats",
-        "tests/proof-stale-links.bats",
-        "-f",
-        "50,000 files"
-      ],
-      "files": [
-        "tests/proof-stale-links.bats"
-      ]
-    },
-    {
-      "id": "C144",
-      "req": "R93",
-      "run": [
-        "bats",
-        "tests/proof-copy-docs.bats",
-        "-f",
-        "R93: docs"
-      ],
-      "files": [
-        "tests/proof-copy-docs.bats"
-      ]
-    },
-    {
-      "id": "C145",
-      "req": "R94",
-      "run": [
-        "bats",
-        "tests/check-wait-patient.bats",
-        "-f",
-        "shared checks wait for a long alone check|interrupt during a wait"
-      ],
-      "files": [
-        "tests/check-wait-patient.bats"
-      ]
-    },
-    {
-      "id": "C146",
-      "req": "R94",
-      "run": [
-        "bats",
-        "tests/check-wait-patient.bats",
-        "-f",
-        "holder dies"
-      ],
-      "files": [
-        "tests/check-wait-patient.bats"
-      ]
-    },
-    {
-      "id": "C147",
-      "req": "R94",
-      "run": [
-        "bats",
-        "tests/check-wait-patient.bats",
-        "-f",
-        "runner ends without a result|many quick checks"
-      ],
-      "files": [
-        "tests/check-wait-patient.bats"
-      ]
-    },
-    {
-      "id": "C148",
-      "req": "R94",
-      "run": [
-        "bats",
-        "tests/check-wait-patient.bats",
-        "-f",
-        "VBW_CHECK_WAIT_SECONDS is gone"
-      ],
-      "files": [
-        "tests/check-wait-patient.bats"
-      ]
-    },
-    {
-      "id": "C149",
-      "req": "R95",
-      "run": [
-        "bats",
-        "tests/record-duty.bats",
-        "-f",
-        "R95"
-      ],
-      "files": [
-        "tests/record-duty.bats"
-      ]
-    },
-    {
-      "id": "C150",
-      "req": "R95",
-      "run": [
-        "bats",
-        "tests/workflow-closing.bats",
-        "-f",
-        "R95"
-      ],
-      "files": [
-        "tests/workflow-closing.bats"
-      ]
-    },
-    {
-      "id": "C151",
-      "req": "R96",
-      "run": [
-        "bats",
-        "tests/record-duty.bats",
-        "-f",
-        "R96"
-      ],
-      "files": [
-        "tests/record-duty.bats"
-      ]
-    },
-    {
-      "id": "C152",
-      "req": "R96",
-      "run": [
-        "bats",
-        "tests/workflow-closing.bats",
-        "-f",
-        "R96"
-      ],
-      "files": [
-        "tests/workflow-closing.bats"
-      ]
-    },
-    {
-      "id": "C153",
-      "req": "R97",
-      "run": [
-        "bats",
-        "tests/approve-fingerprint.bats"
-      ],
-      "files": [
-        "tests/approve-fingerprint.bats",
-        "tests/approve-choice-helper.bash"
-      ]
-    },
-    {
-      "id": "C154",
-      "req": "R98",
-      "run": [
-        "bats",
-        "tests/auto-gate-background.bats"
-      ],
-      "files": [
-        "tests/auto-gate-background.bats"
-      ]
-    },
-    {
-      "id": "C155",
-      "req": "R99",
-      "run": [
-        "bats",
-        "tests/fix-commit.bats"
-      ],
-      "files": [
-        "tests/fix-commit.bats"
-      ]
-    },
-    {
-      "id": "C156",
-      "req": "R100",
-      "run": [
-        "bats",
-        "tests/approval-after-plan.bats"
-      ],
-      "files": [
-        "tests/approval-after-plan.bats",
-        "tests/approve-choice-helper.bash"
-      ]
-    },
-    {
-      "id": "C158",
-      "req": "R102",
-      "run": [
-        "bats",
-        "tests/contract-waves.bats"
-      ],
-      "files": [
-        "tests/contract-waves.bats"
-      ]
-    },
-    {
-      "id": "C159",
-      "req": "R102",
-      "run": [
-        "bats",
-        "tests/lead-parallel.bats"
-      ],
-      "files": [
-        "tests/lead-parallel.bats"
-      ]
-    },
-    {
-      "id": "C160",
-      "req": "R103",
-      "run": [
-        "bats",
-        "tests/proof-reuse.bats"
-      ],
-      "files": [
-        "tests/proof-reuse.bats"
-      ],
-      "timeout": 900
-    },
-    {
-      "id": "C161",
-      "req": "R104",
-      "run": [
-        "bats",
-        "tests/qa-recheck-skip.bats"
-      ],
-      "files": [
-        "tests/qa-recheck-skip.bats",
-        "tests/qa-skip-helper.bash"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C162",
-      "req": "R104",
-      "run": [
-        "bats",
-        "tests/qa-recheck-requirements.bats"
-      ],
-      "files": [
-        "tests/qa-recheck-requirements.bats",
-        "tests/qa-skip-helper.bash"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C163",
-      "req": "R105",
-      "run": [
-        "bats",
-        "tests/rigor-guarded.bats"
-      ],
-      "files": [
-        "tests/rigor-guarded.bats"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C164",
-      "req": "R106",
-      "run": [
-        "bats",
-        "tests/next-phase.bats"
-      ],
-      "files": [
-        "tests/next-phase.bats"
-      ]
-    },
-    {
-      "id": "C165",
-      "req": "R106",
-      "run": [
-        "bats",
-        "tests/planning-number.bats"
-      ],
-      "files": [
-        "tests/planning-number.bats"
-      ]
-    },
-    {
-      "id": "C166",
-      "req": "R107",
-      "run": [
-        "bats",
-        "tests/effort-profile.bats"
-      ],
-      "files": [
-        "tests/effort-profile.bats"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C167",
-      "req": "R107",
-      "run": [
-        "bats",
-        "tests/effort-workflows.bats"
-      ],
-      "files": [
-        "tests/effort-workflows.bats",
-        "tests/helpers/run-workflow-all.js"
-      ]
-    },
-    {
-      "id": "C168",
-      "req": "R109",
-      "run": [
-        "bats",
-        "tests/init-approval-wording.bats"
-      ],
-      "files": [
-        "tests/init-approval-wording.bats"
-      ]
-    },
-    {
-      "id": "C169",
-      "req": "R110",
-      "run": [
-        "bats",
-        "tests/proof-selective.bats"
-      ],
-      "files": [
-        "tests/proof-selective.bats"
-      ],
-      "timeout": 900
-    },
-    {
-      "id": "C170",
-      "req": "R110",
-      "run": [
-        "bats",
-        "tests/proof-selective-docs.bats"
-      ],
-      "files": [
-        "tests/proof-selective-docs.bats"
-      ]
-    },
-    {
-      "id": "C171",
-      "req": "R111",
-      "run": [
-        "bats",
-        "tests/proof-quick.bats"
-      ],
-      "files": [
-        "tests/proof-quick.bats"
-      ],
-      "timeout": 900
-    },
-    {
-      "id": "C172",
-      "req": "R111",
-      "run": [
-        "bats",
-        "tests/proof-full-gate.bats"
-      ],
-      "files": [
-        "tests/proof-full-gate.bats"
-      ],
-      "timeout": 900
-    },
-    {
-      "id": "C173",
-      "req": "R111",
-      "run": [
-        "bats",
-        "tests/proof-full-prompts.bats"
-      ],
-      "files": [
-        "tests/proof-full-prompts.bats"
-      ]
-    },
-    {
-      "id": "C174",
-      "req": "R111",
-      "run": [
-        "bats",
-        "tests/quick-mode.bats"
-      ],
-      "files": [
-        "tests/quick-mode.bats"
-      ]
-    },
-    {
-      "id": "C175",
-      "req": "R111",
-      "run": [
-        "bats",
-        "tests/proof-quick-docs.bats"
-      ],
-      "files": [
-        "tests/proof-quick-docs.bats"
-      ]
-    },
-    {
-      "id": "C176",
-      "req": "R112",
-      "run": [
-        "bats",
-        "tests/interview-wording.bats"
-      ],
-      "files": [
-        "tests/interview-wording.bats"
-      ]
-    },
-    {
-      "id": "C177",
-      "req": "R113",
-      "run": [
-        "bats",
-        "tests/qa-vbw-files.bats"
-      ],
-      "files": [
-        "tests/qa-vbw-files.bats"
-      ]
-    },
-    {
-      "id": "C178",
-      "req": "R114",
-      "run": [
-        "bats",
-        "tests/approve-ask.bats"
-      ],
-      "files": [
-        "tests/approve-ask.bats"
-      ]
-    },
-    {
-      "id": "C179",
-      "req": "R101",
-      "run": [
-        "bats",
-        "tests/profile-architect-qa.bats"
-      ],
-      "files": [
-        "tests/profile-architect-qa.bats",
-        "tests/rigor-helper.bash",
-        "tests/helpers/run-workflow.js"
-      ]
-    },
-    {
-      "id": "C180",
-      "req": "R119",
-      "run": [
-        "bats",
-        "tests/profile-lead-opus.bats"
-      ],
-      "files": [
-        "tests/profile-lead-opus.bats",
-        "tests/helpers/run-workflow.js"
-      ]
-    },
-    {
-      "id": "C181",
-      "req": "R115",
-      "run": [
-        "bats",
-        "tests/qa-recheck-docs.bats"
-      ],
-      "files": [
-        "tests/qa-recheck-docs.bats",
-        "tests/qa-recheck-helper.bash"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C182",
-      "req": "R116",
-      "run": [
-        "bats",
-        "tests/small-request.bats"
-      ],
-      "files": [
-        "tests/small-request.bats",
-        "tests/rigor-helper.bash"
-      ]
-    },
-    {
-      "id": "C183",
-      "req": "R116",
-      "run": [
-        "bats",
-        "tests/l3-smallchange-added.bats"
-      ],
-      "files": [
-        "tests/l3-smallchange-added.bats"
-      ]
-    },
-    {
-      "id": "C184",
-      "req": "R118",
-      "run": [
-        "bats",
-        "tests/prove-kept-output.bats"
-      ],
-      "files": [
-        "tests/prove-kept-output.bats"
-      ]
-    },
-    {
-      "id": "C185",
-      "req": "R120",
-      "run": [
-        "bats",
-        "tests/approve-ask-shown.bats"
-      ],
-      "files": [
-        "tests/approve-ask-shown.bats"
-      ]
-    },
-    {
-      "id": "C186",
-      "req": "R126",
-      "run": [
-        "bats",
-        "tests/ci-node24.bats"
-      ],
-      "files": [
-        "tests/ci-node24.bats"
-      ]
-    },
-    {
-      "id": "C187",
-      "req": "R121",
-      "run": [
-        "bats",
-        "tests/triage-kernel.bats"
-      ],
-      "files": [
-        "tests/triage-kernel.bats"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C188",
-      "req": "R121",
-      "run": [
-        "bats",
-        "tests/triage-skill.bats"
-      ],
-      "files": [
-        "tests/triage-skill.bats"
-      ]
-    },
-    {
-      "id": "C189",
-      "req": "R122",
-      "run": [
-        "bats",
-        "tests/triage-overrule.bats"
-      ],
-      "files": [
-        "tests/triage-overrule.bats"
-      ]
-    },
-    {
-      "id": "C190",
-      "req": "R123",
-      "run": [
-        "bats",
-        "tests/recommend-store.bats"
-      ],
-      "files": [
-        "tests/recommend-store.bats"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C191",
-      "req": "R123",
-      "run": [
-        "bats",
-        "tests/recommend-flow.bats"
-      ],
-      "files": [
-        "tests/recommend-flow.bats",
-        "tests/helpers/run-workflow.js"
-      ]
-    },
-    {
-      "id": "C192",
-      "req": "R124",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/whats-next.test.mjs"
-      ],
-      "files": [
-        "tests/panel/whats-next.test.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C193",
-      "req": "R124",
-      "run": [
-        "bats",
-        "tests/panel-whats-next.bats"
-      ],
-      "files": [
-        "tests/panel-whats-next.bats"
-      ],
-      "alone": true,
-      "timeout": 600
-    },
-    {
-      "id": "C194",
-      "req": "R127",
-      "run": [
-        "bats",
-        "tests/todo-sort.bats"
-      ],
-      "files": [
-        "tests/todo-sort.bats",
-        "tests/helpers/run-workflow.js"
-      ]
-    },
-    {
-      "id": "C195",
-      "req": "R133",
-      "run": [
-        "bats",
-        "tests/recommend-source.bats"
-      ],
-      "files": [
-        "tests/recommend-source.bats",
-        "tests/helpers/run-workflow.js"
-      ]
-    },
-    {
-      "id": "C196",
-      "req": "R129",
-      "run": [
-        "bats",
-        "tests/plan-block-done.bats"
-      ],
-      "files": [
-        "tests/plan-block-done.bats"
-      ]
-    },
-    {
-      "id": "C197",
-      "req": "R130",
-      "run": [
-        "bats",
-        "tests/apply-foreign-req.bats"
-      ],
-      "files": [
-        "tests/apply-foreign-req.bats"
-      ]
-    },
-    {
-      "id": "C198",
-      "req": "R131",
-      "run": [
-        "bats",
-        "tests/qa-prompt-suite.bats"
-      ],
-      "files": [
-        "tests/qa-prompt-suite.bats",
-        "tests/helpers/run-workflow.js"
-      ]
-    },
-    {
-      "id": "C199",
-      "req": "R132",
-      "run": [
-        "bats",
-        "tests/qa-fp-version.bats"
-      ],
-      "files": [
-        "tests/qa-fp-version.bats",
-        "tests/qa-recheck-helper.bash"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C200",
-      "req": "R128",
-      "run": [
-        "bats",
-        "tests/hook-answers.bats"
-      ],
-      "files": [
-        "tests/hook-answers.bats",
-        "tests/approve-choice-helper.bash"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C201",
-      "req": "R134",
-      "run": [
-        "bats",
-        "tests/docs-workflows-count.bats"
-      ],
-      "files": [
-        "tests/docs-workflows-count.bats"
-      ]
-    },
-    {
-      "id": "C202",
-      "req": "R135",
-      "run": [
-        "bats",
-        "tests/router-triage-line.bats"
-      ],
-      "files": [
-        "tests/router-triage-line.bats"
-      ]
-    },
-    {
-      "id": "C203",
-      "req": "R141",
-      "run": [
-        "bats",
-        "tests/hooks-session-nojq.bats",
-        "tests/hooks-session.bats",
-        "tests/hooks-session-guard.bats",
-        "tests/hooks-session-scope.bats"
-      ],
-      "files": [
-        "tests/hooks-session-nojq.bats"
-      ]
-    },
-    {
-      "id": "C204",
-      "req": "R142",
-      "run": [
-        "bats",
-        "tests/test-shards.bats"
-      ],
-      "files": [
-        "tests/test-shards.bats"
-      ]
-    },
-    {
-      "id": "C205",
-      "req": "R142",
-      "run": [
-        "bats",
-        "tests/ci-shards.bats",
-        "tests/ci-node24.bats"
-      ],
-      "files": [
-        "tests/ci-shards.bats"
-      ]
-    },
-    {
-      "id": "C206",
-      "req": "R143",
-      "run": [
-        "bats",
-        "tests/ci-scope.bats"
-      ],
-      "files": [
-        "tests/ci-scope.bats"
-      ]
-    },
-    {
-      "id": "C207",
-      "req": "R143",
-      "run": [
-        "bats",
-        "tests/ci-scope-wiring.bats",
-        "tests/ci-shards.bats",
-        "tests/ci-node24.bats"
-      ],
-      "files": [
-        "tests/ci-scope-wiring.bats"
-      ]
-    },
-    {
-      "id": "C208",
-      "req": "R144",
-      "run": [
-        "bats",
-        "tests/proof-doc-reuse.bats"
-      ],
-      "files": [
-        "tests/proof-doc-reuse.bats"
-      ],
-      "timeout": 900
-    },
-    {
-      "id": "C209",
-      "req": "R144",
-      "run": [
-        "bats",
-        "tests/proof-doc-reuse-docs.bats"
-      ],
-      "files": [
-        "tests/proof-doc-reuse-docs.bats"
-      ]
-    },
-    {
-      "id": "C210",
-      "req": "R145",
-      "run": [
-        "bats",
-        "tests/qa-depth-escalated.bats"
-      ],
-      "files": [
-        "tests/qa-depth-escalated.bats"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C211",
-      "req": "R146",
-      "run": [
-        "bats",
-        "tests/todo-commit.bats"
-      ],
-      "files": [
-        "tests/todo-commit.bats"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C212",
-      "req": "R147",
-      "run": [
-        "bats",
-        "tests/check-jobs-machine.bats"
-      ],
-      "files": [
-        "tests/check-jobs-machine.bats"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C213",
-      "req": "R148",
-      "run": [
-        "bats",
-        "tests/check-jobs-shared.bats"
-      ],
-      "files": [
-        "tests/check-jobs-shared.bats"
-      ],
-      "timeout": 600
-    },
-    {
-      "id": "C214",
-      "req": "R148",
-      "run": [
-        "bats",
-        "tests/fix-suite-once.bats"
-      ],
-      "files": [
-        "tests/fix-suite-once.bats",
-        "tests/helpers/run-workflow.js"
-      ]
-    },
-    {
-      "id": "C215",
-      "req": "R147",
-      "run": [
-        "bats",
-        "tests/check-jobs-docs.bats",
-        "-f",
-        "R147"
-      ],
-      "files": [
-        "tests/check-jobs-docs.bats"
-      ]
-    },
-    {
-      "id": "C216",
-      "req": "R148",
-      "run": [
-        "bats",
-        "tests/check-jobs-docs.bats",
-        "-f",
-        "R148"
-      ],
-      "files": [
-        "tests/check-jobs-docs.bats"
-      ]
-    },
-    {
-      "id": "C217",
-      "req": "R149",
-      "run": [
-        "bats",
-        "tests/big-record-commands.bats"
-      ],
-      "files": [
-        "tests/big-record-commands.bats",
-        "tests/big-record-helper.bash"
-      ],
-      "timeout": 1800
-    },
-    {
-      "id": "C218",
-      "req": "R149",
-      "run": [
-        "bats",
-        "tests/big-record-writes.bats"
-      ],
-      "files": [
-        "tests/big-record-writes.bats",
-        "tests/big-record-helper.bash"
-      ],
-      "timeout": 900
-    },
-    {
-      "id": "C219",
-      "req": "R149",
-      "run": [
-        "bats",
-        "tests/big-record-hooks.bats"
-      ],
-      "files": [
-        "tests/big-record-hooks.bats",
-        "tests/big-record-helper.bash",
-        "tests/panel/big-record.test.mjs"
-      ],
-      "timeout": 1200,
-      "alone": true
-    },
-    {
-      "id": "C220",
-      "req": "R149",
-      "run": [
-        "bats",
-        "tests/record-args-rule.bats"
-      ],
-      "files": [
-        "tests/record-args-rule.bats"
-      ],
-      "timeout": 300
-    },
-    {
-      "id": "C221",
-      "req": "R149",
-      "run": [
-        "bats",
-        "tests/big-record-scratch.bats"
-      ],
-      "files": [
-        "tests/big-record-scratch.bats",
-        "tests/big-record-helper.bash"
-      ],
-      "timeout": 1800
-    },
-    {
-      "id": "C222",
-      "req": "R149",
-      "run": [
-        "bats",
-        "tests/big-record-docs.bats"
-      ],
-      "files": [
-        "tests/big-record-docs.bats"
       ]
     }
   ],
@@ -18093,7 +18094,7 @@
       "after": [
         "P101.5"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "The guards (hooks.json PreToolUse commands, still one jq each, ending in || true) read with jq's streaming parser (--stream): the hook input in full, then from the record only schema, lease and, when a build or fix agent's write must be checked, checks; they stop at the first other key, so a 2 MB record costs about what a small one does; vbw doctor's guard self-test (cmd-doctor.sh) calls the guard the same way hooks.json does",
@@ -18116,7 +18117,7 @@
       "after": [
         "P101.5"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vbw-statusline.sh reads .vbw/runtime/glance.json instead of the record when the glance is newer than the record (bash's -nt test, no extra process); otherwise it reads the record as today; it still writes nothing and makes no network or git call",
@@ -22594,7 +22595,6 @@
     "full": true,
     "passed": true
   },
-  "lease": null,
   "recommendation": {
     "at": "2026-10-09T20:53:56Z",
     "top": {
