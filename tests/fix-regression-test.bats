@@ -67,9 +67,11 @@ bash_call() {
 }
 denied() { printf '%s' "$1" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' > /dev/null 2>&1; }
 
-# regression: the Dev's new test, which leaves a mark whenever it runs.
+# regression: the Dev's new test, which leaves a mark whenever it runs. The mark
+# is an absolute path outside the project: vbw prove runs checks in a copy of
+# the committed project, so a mark inside the project would never be seen.
 regression() {
-  printf ': > .ran-regression\ngrep -qx paid src/pay.txt\n' > tests/r1-regression.sh
+  printf ': > "%s"\ngrep -qx paid src/pay.txt\n' "$TEST_ROOT/ran-regression" > tests/r1-regression.sh
 }
 register() {
   printf '%s' '{"run": ["sh", "tests/r1-regression.sh"], "files": ["tests/r1-regression.sh"]}' | VBW_SESSION_ID=s1 "$VBW" fix check "$F_QA"
@@ -137,7 +139,7 @@ fixed_and_ended() {
   built refund
   qa_fix_run
   fixed_and_ended
-  [ ! -e .ran-regression ] || { echo "the new test ran before the approval"; false; }
+  [ ! -e "$TEST_ROOT/ran-regression" ] || { echo "the new test ran before the approval"; false; }
   local next
   next=$("$VBW" next --json < /dev/null)
   printf '%s' "$next" | jq -e '.action == "approve" and .gate == true and .detail.files == ["tests/c1.sh", "tests/r1-regression.sh"]' || { echo "$next"; false; }
@@ -151,7 +153,7 @@ fixed_and_ended() {
   fixed_and_ended
   run "$VBW" prove
   [ "$status" -ne 0 ] || { echo "$output"; false; }
-  [ ! -e .ran-regression ] || { echo "the new test ran before the approval"; false; }
+  [ ! -e "$TEST_ROOT/ran-regression" ] || { echo "the new test ran before the approval"; false; }
   [[ "$output" == *"tests/r1-regression.sh"* && "$output" == *"tests/c1.sh"* ]] || { echo "$output"; false; }
   [[ "$output" == *"approv"* ]] || { echo "$output"; false; }
   jq -e --arg f "$F_QA" '.fixes[] | select(.id == $f) | .status != "closed"' .vbw/record.json
@@ -163,7 +165,7 @@ fixed_and_ended() {
   fixed_and_ended
   "$VBW" approve > /dev/null
   "$VBW" prove > /dev/null 2>&1 || true
-  [ -e .ran-regression ] || { echo "the new test did not run after the approval"; false; }
+  [ -e "$TEST_ROOT/ran-regression" ] || { echo "the new test did not run after the approval"; false; }
   jq -e --arg id "$(new_check)" '.evidence.checks[$id].status == "pass"' .vbw/record.json
 }
 
@@ -173,13 +175,13 @@ fixed_and_ended() {
   fixed_and_ended
   "$VBW" approve > /dev/null
   "$VBW" prove > /dev/null 2>&1 || true
-  rm -f .ran-regression
+  rm -f "$TEST_ROOT/ran-regression"
   printf 'test -s src/pay.txt\n' >> tests/r1-regression.sh
   git add tests/r1-regression.sh
   git commit -q -m "test(pay): stricter"
   run "$VBW" prove
   [ "$status" -ne 0 ] || { echo "$output"; false; }
-  [ ! -e .ran-regression ] || { echo "the changed test ran without a new approval"; false; }
+  [ ! -e "$TEST_ROOT/ran-regression" ] || { echo "the changed test ran without a new approval"; false; }
   [[ "$output" == *"tests/r1-regression.sh"* ]] || { echo "$output"; false; }
 }
 
