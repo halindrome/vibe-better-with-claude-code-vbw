@@ -11768,6 +11768,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P101.8: Tasks 1-6 are committed (bench with large record and status line, timed-file lists, key-by-key guard read). Tasks 7-9 (the protected field, schema 4, guard stop, docs) cannot land inside the plan's files: the large-record twins in tests/big-record-helper.bash hold 100 checks, so once the writer stores protected (and schema 4) every write on them adds those two fields, and the protected check C218 (tests/big-record-writes.bats, kept() compares the record after a write with the record before, exactly) fails on 'vbw decide', 'vbw todo add', 'vbw req accept' etc. The plan lists no test file to change and the guard denies edits to tests/big-record-*.bats and the helper. I implemented 7-9 (record.sh/record.jq with schema 4, common.jq protected branch, bench record with protected, docs) and the bench passed (guards 6.6-7.5 ms, status line 24 ms), then reverted it uncommitted. Needs: a plan that also lets kept() in tests/big-record-writes.bats ignore .protected and .schema (or builds the twin with protected), plus a new tests/record-protected.bats for the writer, validator and guard; a decision on whether the old-record guard walk key by key is enough for task 5."
+        },
+        {
+          "at": "2026-10-10T07:17:25Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P101.8: Task 4 cannot hold: under macOS /bin/bash 3.2 the status line on the kernel-written 2.3 MB record (schema 4, protected field, 100 checks) costs 33.9-34.0 ms CPU per call (budget 30 ms), against 19.8 ms on the same record when only 'vbw status' touches it; bash 5.3 passes. All guard lines are within budget on both shells (interp 7.5 ms/1.29x, read 2.9-3.5 ms, answer 0.8-1.1 ms). Fixing needs plugin/scripts/statusline.jq or vbw-statusline.sh, outside this plan's files; limit not raised."
         }
       ]
     },
@@ -18560,14 +18566,15 @@
         "P101.7",
         "P102.2"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "Done (657e1ab2, 68fde7dc): the bench measures a record over 2 MB and the status line on both records; tools/test.sh and tests/test-shards.bats list big-record-hooks among the timed files",
         "Done (9f1b8da2): the guard reads the lease and the checks' files key by key instead of rebuilding every event",
         "tools/bench-hooks.sh: the large record is written once through the kernel (one record write, such as vbw decide, instead of vbw status) so it holds the format the kernel writes; with its 100 checks that is schema 4 with the protected field (P102.1), which the guards read without walking the checks (P102.2); the 'large record: N bytes' line and every existing line stay as they are",
         "Run tests/bench-hooks.bats, big-record-hooks.bats and guard-cost.bats under macOS /bin/bash 3.2 and bash 5; every guard line and the status line within budget; if a limit cannot hold, record the measured times in the plan note and block the plan, never raise a limit"
-      ]
+      ],
+      "note": "Task 4 cannot hold: under macOS /bin/bash 3.2 the status line on the kernel-written 2.3 MB record (schema 4, protected field, 100 checks) costs 33.9-34.0 ms CPU per call (budget 30 ms), against 19.8 ms on the same record when only 'vbw status' touches it; bash 5.3 passes. All guard lines are within budget on both shells (interp 7.5 ms/1.29x, read 2.9-3.5 ms, answer 0.8-1.1 ms). Fixing needs plugin/scripts/statusline.jq or vbw-statusline.sh, outside this plan's files; limit not raised."
     },
     {
       "id": "P101.9",
@@ -21295,6 +21302,11 @@
       "id": "D230",
       "at": "2026-10-10T06:36:00Z",
       "text": "Contract approved: 139 requirements, 222 checks, 293 plans (4dbe038b9772)"
+    },
+    {
+      "id": "D231",
+      "text": "--help",
+      "at": "2026-10-10T07:12:27Z"
     }
   ],
   "commands": {
