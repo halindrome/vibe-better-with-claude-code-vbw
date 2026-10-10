@@ -21125,7 +21125,9 @@
     {
       "id": "T55",
       "text": "A [human] requirement the owner wants to judge later cannot move to the next milestone; R90 was dropped and re-added. Consider 'defer to next milestone' that keeps the id",
-      "status": "open"
+      "status": "open",
+      "sort": "next",
+      "size": "small"
     },
     {
       "id": "T56",
