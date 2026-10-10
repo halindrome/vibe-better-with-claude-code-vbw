@@ -7,16 +7,14 @@
 # VBW project).
 #
 # --stream hands the inputs over as events, so a guard reads the hook input in
-# full and only the beginning of the record (R149, R150): the record writer puts
-# schema, lease and then the protected check files first, and the guard stops at
-# the first other key, whatever the record's size. Format 4 (more than 50
-# checks) carries the top-level key "protected", the list of every protected
-# check file: the guard reads it and stops there, never reading an event of
-# checks. Format 3 (50 checks or fewer) has no protected key: the guard reads
-# its checks, which come right after the lease and are small. A record with its
-# keys in another order, or a larger one an older VBW wrote (until its next
-# write), is read on until the lease, and the checks when they matter, are
-# complete, or the file ends: the same answer, only slower.
+# full and only the beginning of the record (R149, R150). Every record this VBW
+# writes (format 4) begins schema, lease, protected: the protected check files,
+# one short list of every file an approved check protects. The guard reads those
+# three and stops at the event that closes the list, whatever the record's size;
+# it never reads a check. A record an older VBW wrote (schema below 4, no list,
+# until its next write) is read on, skipping every other key without building
+# it, until the lease and a schema below 4 are known, or the file ends. There is
+# one way to read it, with no size threshold.
 #
 # Membership tests are anchored regexes, not array literals: they compile to far
 # fewer jq instructions, and compiling is most of a guard's cost.
@@ -41,45 +39,35 @@ def protected_events($head):
   if ($head[0] | length) == 1 then [$head]
   else [$head, (label $l | inputs | ., (select(length == 1 and (.[0] | length) == 2) | break $l))] end;
 
-# The checks: the paths of their files, all a guard reads (leaf events of
-# "checks" whose path has "files" third; closing events carry no value, so null
-# is dropped). The first event is $head.
-def check_files($head):
-  [($head | select(.[0][2] == "files") | .[1]), (label $l | inputs | if .[0][0] != "checks" then ({next: .}, break $l) elif .[0][2] == "files" then .[1] else empty end)]
-  | split_next | .[0] |= map(select(. != null));
-
 # The events after the key $k, up to the one that follows them (null at the end).
 def skip_key($k): first((inputs | select((.[0] | length) == 0 or .[0][0] != $k)), null);
 
-# The lease and checks of the record, from the events after the hook input. The
-# input is read key by key: the lease is rebuilt from its leaf events at once
-# (cheaper than setting each path as it arrives), the checks are reduced to one
-# entry holding every protected file, and any other key is skipped.
-# $agent: the call comes from a subagent; $writes: it may write a file. Only
-# then does a build or fix lease need the checks (protected check files).
-def read_events($e; $rec; $agent; $writes):
-  if $e == null or ($e[0] | length) == 0 then $rec
-  elif ($rec | has("lease"))
-       and ((($agent and $writes and ($rec.lease | type) == "object" and (($rec.lease.kind // "") | test("^(build|fix)$"))) | not)
-            or ($rec | has("checks"))) then $rec
+# The schema, lease and protected list of the record, from the events after the
+# hook input. The lease is rebuilt from its leaf events at once (cheaper than
+# setting each path as it arrives); any other key is skipped. Reading ends when
+# the lease is known and so is the protected list, or the schema says an older
+# VBW wrote the record (no list).
+def record_read($rec): ($rec | has("lease")) and (($rec | has("protected")) or ((($rec.schema // 4) | type) == "number" and ($rec.schema // 4) < 4));
+
+def read_events($e; $rec):
+  if $e == null or ($e[0] | length) == 0 or record_read($rec) then $rec
+  elif $e[0][0] == "schema" then
+    read_events(skip_key("schema"); $rec + (if ($e | length) == 2 then {schema: $e[1]} else {} end))
   elif $e[0][0] == "lease" then
     lease_events($e) as [$evs, $next]
-    | read_events($next; $rec + {lease: ([fromstream($evs[], [["lease"]])][0].lease)}; $agent; $writes)
+    | read_events($next; $rec + {lease: ([fromstream($evs[], [["lease"]])][0].lease)})
   elif $e[0][0] == "protected" then
     protected_events($e) as $evs
     | read_events(if $rec | has("lease") then null else first(inputs, null) end;
-        $rec + {checks: [{files: ([fromstream($evs[], [["protected"]])][0].protected // [])}]}; $agent; $writes)
-  elif $e[0][0] == "checks" then
-    check_files($e) as [$files, $next]
-    | read_events($next; $rec + {checks: [{files: $files}]}; $agent; $writes)
-  else read_events(skip_key($e[0][0]); $rec; $agent; $writes) end;
+        $rec + {protected: ([fromstream($evs[], [["protected"]])][0].protected // [])})
+  else read_events(skip_key($e[0][0]); $rec) end;
 
-def read_record($agent; $writes):
+def read_record:
   (try input catch null) as $first
   | if $first == null then {project: true, record: {}}
     elif ($first[0] | length) == 0 then {project: ($first[1] != "vbw-guard-end"), record: {}}
     else
-      try {project: true, record: read_events($first; {}; $agent; $writes)}
+      try {project: true, record: read_events($first; {})}
       catch {project: true, record: {}}
     end;
 
@@ -88,10 +76,10 @@ def read_record($agent; $writes):
 # session, main conversation or agent alike (D11), else null. lease is the active run lease when this call
 # comes from a subagent (the hook input names an agent_type) during a run of
 # at most 24 hours (docs/workflows.md), else null. The main session is never
-# held to a lease. WRITES, run on the hook input: whether the call may write a file.
+# held to a lease. WRITES (the guards pass whether the call may write a file) no longer changes what is read: the record's beginning is always the same three keys.
 def guard_context(writes):
   (hook_events | fromstream(.[])) as $hook
-  | read_record(($hook.agent_type // "") != ""; $hook | writes) as $r
+  | read_record as $r
   | ($r.record) as $record
   | (($record.lease | select(type == "object" and (try (now - (.started_at | fromdateiso8601) < 86400) catch false))) // null) as $live
   | {hook: $hook, project: $r.project, record: $record,
@@ -130,7 +118,9 @@ def lease_write_denial($lease; $record):
   elif $lease.kind == "plan" and test_path then empty
   elif $lease.files != null and (. as $p | any($lease.files[]; covers($p)) | not) then
     "\(.) is outside this run's files (\($lease.files | join(", "))): agents write only their plan's files"
-  elif ($lease.kind | test("^(build|fix)$")) and (. as $p | any($record.checks[]?.files[]?; . == $p)) then
+  elif ($lease.kind | test("^(build|fix)$")) and ($record | has("protected") | not) then
+    "\(.) cannot be written: this project's record was not saved by this VBW yet, so its protected check files are unknown; end the run and start it again, which saves the record"
+  elif ($lease.kind | test("^(build|fix)$")) and (. as $p | any($record.protected[]?; . == $p)) then
     "\(.) is a protected check file: the contract is fixed while building"
   else empty end;
 
