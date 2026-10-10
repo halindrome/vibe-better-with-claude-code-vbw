@@ -18867,7 +18867,7 @@
         "plugin/lib/checks.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "plugin/lib/cmd-next.sh line 51, cmd-show.sh line 31, qa-inputs.sh line 94 and checks.sh line 296 (as tools/check-record-args.sh plugin/lib reports them): every value built from the whole record (the record, the QA state or fingerprints, the interview effective answers taken from the record, the contract hash computed from the record) reaches jq through a pipe, --slurpfile or --rawfile from inside the project, under bash 3.2 too (no <(...) fed to record_update: use a scratch file in .vbw/runtime as P101.1 does); a small value computed from the record may stay an argument only when computed first into its own variable on its own line, so the line-level rule judges it correctly",
         "bash tools/check-record-args.sh plugin/lib plugin/bin plugin/hooks plugin/scripts reports nothing; tests/record-args-rule.bats (C220) passes under macOS /bin/bash 3.2 and bash 5; the suites for next, show, QA and checks (kernel-next, kernel-show, qa-state, kernel-qa, checks and big-record-commands) still pass"
