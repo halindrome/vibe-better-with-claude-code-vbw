@@ -264,11 +264,15 @@ When any plan of a phase is no longer `planned`, a planning round (a full
 
 - renames the phase or changes its requirements
   (`P1 has work started: its title stays "Pay"`);
-- adds a phase for requirements another phase already covers
-  (`P3 is a new phase for requirements another phase already covers: once work has started, add plans to that phase`).
 
-A new phase for requirements nobody planned yet is still accepted, and before
-any work has started planning may rename and reshape phases freely. To add or
+A phase has *started* when any of its plans is no longer `planned`, or it has
+an escalation. It is *finished* when its work is done. Either way it stays
+exactly as it was, with its finished plans.
+
+A new phase is welcome beside a started or finished one, including for more
+work on a requirement that phase already covers. Example: `P1` (started) covers
+`R1`. A re-plan keeps `P1` unchanged and adds `P2` for `R1`'s further work.
+Before any work has started planning may rename and reshape phases freely. To add or
 change a plan that has not started, add plans to the phase or use `vbw apply --patch`.
 
 A phase that has not started (every plan `planned`, no tier raise) may change

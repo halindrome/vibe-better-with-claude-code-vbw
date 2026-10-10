@@ -249,6 +249,12 @@ escalations, and records `forced: vbw config rigor deep` as the reason. `auto`
 recomputes them and keeps a tier the Architect raised. Phases already started
 keep their tier.
 
+A re-plan (`vbw apply`) never raises the tier of a phase that has started or
+finished. The minimum rigor (the floor) and a forced tier reach only phases
+that have not started, and escalations are never lowered. Example: `P1` is
+started at `standard`. You run `vbw config rigor deep` and re-plan with a new
+`P2`. `P2` is `deep`; `P1` stays `standard`.
+
 ## Escalation
 
 While a phase runs, VBW raises its tier one step (`deep` stays `deep`) and
