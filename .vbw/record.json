@@ -11397,6 +11397,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P101.8: Tasks 1-4 are coded and committed (tools/bench-hooks.sh, tools/test.sh), but two limits do not hold. (1) 'guard (interp, large record)' measures 16.7-17.2 ms own CPU (2.75-2.87x startup) against 8 ms or 1.0x, in 3 runs (20 and 50 runs/each); the other five large-record guards are 2.7-7.2 ms and in budget (git 7.2, npm 6.2, big 6.7, read 2.7, answer 1.1), small interp is 6.8. Cause: the build-agent write case must read the lease's checks (100 checks in the fixture) in plugin/hooks/common.jq (P101.6), costing about 10 ms; this is the checks count, not the record size, so it needs a faster check read in common.jq, outside this plan's files. Status line: 23.6 ms small, 23.8 ms large, in the 30 ms budget. (2) tests/test-shards.bats test 13 (full run order) mirrors the timed list and fails now that tools/test.sh lists tests/big-record-hooks.bats; that test file is outside this plan's files and needs the same list update (tests/quick-mode.bats passes)."
+        },
+        {
+          "at": "2026-10-10T02:31:00Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P101.8: Task 5 limit does not hold. Quiet-machine bench (tools/bench-hooks.sh), guard (interp, large record): 16.9 ms before the change, 8.4-8.7 ms after (small record 6.9-7.4 ms, sh+jq startup 6.0-6.4 ms, budget 8 ms or 1.0x). Reading the whole record at once is not possible from common.jq: hooks.json runs jq with --stream, and jq cannot switch to a plain parse mid-input. Skipping the 100 checks without keeping anything still measures 8.4-8.5 ms, so the floor of walking the ~1000 check events is about 1.1 ms over the small record, and the small interp case already uses 6.9-7.4 of the 8 ms. Other guard lines on the large record are within budget (git 6.8, npm 6.0, big 7.1, read 2.8, answer 0.8; status line 24.0 and 23.7 ms vs 30). Needs a decision: raise the interp large-record budget, or change hooks.json (outside this plan's files) so build/fix agent calls skip the stream, or have the kernel write the protected check files as their own early key in record.json (outside this plan's files). Tasks 1-3, 4 (test.sh lists big-record-hooks) and 6 are done and committed."
         }
       ]
     }
@@ -18150,7 +18156,7 @@
         "P101.6",
         "P101.7"
       ],
-      "status": "planned",
+      "status": "blocked",
       "tasks": [
         "tools/bench-hooks.sh also builds, in its work folder, a record of more than 2 MB (the same build lease plus a long history of requirements, checks, phases, plans and decisions, keys in the writer's order, its glance written by running vbw once) and prints 'large record: N bytes'",
         "For every input it adds a line 'guard (NAME, large record): ...' in the existing format and budget; the six existing lines stay unchanged (tests/bench-hooks.bats reads them)",
@@ -18158,7 +18164,8 @@
         "tools/test.sh lists tests/big-record-hooks.bats with the timed files that run alone after the rest; run tests/bench-hooks.bats and big-record-hooks.bats; if a limit cannot hold, record the measured times in the plan note and block the plan",
         "plugin/hooks/common.jq: the guard keeps the streaming read for the lease, but when a build or fix agent writes and the protected check files must be read, it reads the whole record at once (jq parses a 2.9 MB record in about 7 ms) instead of rebuilding every check event by event (about 17 ms with 100 checks); the interp large-record line must be within the 8 ms or 1.0x budget",
         "tests/test-shards.bats: the full-run order test lists tests/big-record-hooks.bats among the timed files that run alone after the rest, as tools/test.sh now does"
-      ]
+      ],
+      "note": "Task 5 limit does not hold. Quiet-machine bench (tools/bench-hooks.sh), guard (interp, large record): 16.9 ms before the change, 8.4-8.7 ms after (small record 6.9-7.4 ms, sh+jq startup 6.0-6.4 ms, budget 8 ms or 1.0x). Reading the whole record at once is not possible from common.jq: hooks.json runs jq with --stream, and jq cannot switch to a plain parse mid-input. Skipping the 100 checks without keeping anything still measures 8.4-8.5 ms, so the floor of walking the ~1000 check events is about 1.1 ms over the small record, and the small interp case already uses 6.9-7.4 of the 8 ms. Other guard lines on the large record are within budget (git 6.8, npm 6.0, big 7.1, read 2.8, answer 0.8; status line 24.0 and 23.7 ms vs 30). Needs a decision: raise the interp large-record budget, or change hooks.json (outside this plan's files) so build/fix agent calls skip the stream, or have the kernel write the protected check files as their own early key in record.json (outside this plan's files). Tasks 1-3, 4 (test.sh lists big-record-hooks) and 6 are done and committed."
     },
     {
       "id": "P101.9",
