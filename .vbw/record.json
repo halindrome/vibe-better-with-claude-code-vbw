@@ -19534,7 +19534,7 @@
         "P104.1",
         "P103.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md: VBW's own timed speed checks (the hook, status line and panel benchmarks and tests/timed-*.bats) run in bash tools/test.sh --release, in CI and before a push; vbw prove does not run them, so a busy machine never fails a proof",
@@ -19559,7 +19559,7 @@
         "plugin/lib/proofreuse.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "cmd-prove.sh: each project command gets settings.command_timeout seconds, 3600 (60 minutes) without a setting instead of 900; checks keep their own timeout (default 300)",
         "vbw config set command_timeout SECONDS (a whole number from 1 to 86400) stores it in the record's settings; default removes it; anything else exits 2 with a message naming 1 to 86400 and changes nothing; vbw config shows 'command_timeout: N'",
