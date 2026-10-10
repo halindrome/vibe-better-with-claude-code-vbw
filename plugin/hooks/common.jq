@@ -14,7 +14,10 @@
 # an object holding schema, lease and protected, the guard uses it and never
 # reads the record input. Otherwise it reads the record with one plain input,
 # whatever its size: the glance was missing, stale, forged older or damaged.
-# Both give the same answers.
+# Both give the same answers. A record that cannot be parsed counts as a VBW
+# project with no lease, except during a run: the hook command passes
+# --arg open 1 while .vbw/runtime/run-open exists, and then the guard fails
+# (R165), which the hook command turns into a block.
 #
 # Membership tests are anchored regexes, not array literals: they compile to far
 # fewer jq instructions, and compiling is most of a guard's cost.
@@ -27,7 +30,8 @@ def glance_object:
 def read_record:
   ([$glance | glance_object][0]) as $gl
   | if $gl != null then {project: true, record: $gl}
-    else (try input catch {}) as $rec
+    else (try input catch "vbw-guard-corrupt") as $rec
+      | if $rec == "vbw-guard-corrupt" and ($ARGS.named.open // "") == "1" then error("the record cannot be parsed during a run") else . end
       | {project: ($rec != "vbw-guard-end"), record: (if $rec | type == "object" then $rec else {} end)}
     end;
 
