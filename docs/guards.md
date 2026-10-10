@@ -174,14 +174,14 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
   prints nothing, and Claude Code decides as it normally would. A standards test
   enforces both.
 - **Budget:** VBW's own cost (the hook's CPU time minus that of the platform's
-  `sh -c jq` startup) is at most 8 ms per call, or at most 1x that startup,
+  `sh -c jq` startup) is at most 20 ms per call, judged for each guard alone,
   measured by `tools/bench-hooks.sh` before every test run, including on a
   20 KB heredoc command. CPU time, so waiting for a busy machine never counts.
-  The ratio covers a loaded machine, whose slower cores grow startup and the
-  guard's cost together; the milliseconds cover a quiet one on any platform
-  (startup differs: about 8 ms on a Mac, 3.4 ms on a Linux CI runner). On an
-  idle Mac: file tools about 2 ms, Bash about 5 to 7 ms. CI uses 25 ms for its
-  slower runners.
+  On an idle Mac: file tools about 2 ms, Bash about 5 to 7 ms. A real slowdown
+  (an added subprocess costs several ms) still shows. When the machine is too
+  busy to measure (starting the shell and jq alone takes longer than 20 ms),
+  the benchmark reports that the machine is busy, judges nothing and does not
+  fail. CI runs it with the same limit as a local run.
 
 ## SessionStart
 
