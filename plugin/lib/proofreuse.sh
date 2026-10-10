@@ -10,9 +10,11 @@ proofreuse_check_fp() {
     | {id, req, run, exit, output, timeout, alone, files}' | vbw_sha256
 }
 
-# proofreuse_command_fp RECORD NAME: fingerprint of a project command's argv.
+# proofreuse_command_fp RECORD NAME: fingerprint of a project command's argv
+# and the time limit it runs under (settings.command_timeout, else the default).
 proofreuse_command_fp() {
   local argv=() a
+  argv+=("$(printf '%s' "$1" | jq -r --argjson d "$VBW_COMMAND_TIMEOUT" '.settings.command_timeout // $d')")
   while IFS= read -r -d '' a; do argv+=("$a"); done \
     < <(printf '%s' "$1" | jq -j --arg n "$2" '.commands[$n][] + "\u0000"')
   vbw_sha256_argv ${argv[@]+"${argv[@]}"}
