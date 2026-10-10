@@ -431,7 +431,7 @@ Every capability was shell-only: 85 scripts ran as bash subprocesses at zero mod
 
 VBW is open source because the best tools are built by the people who use them. The kernel, the workflows, the agents, the guards: all of it is open to improvement. Found a better way to plan, build or prove code with Claude? File an issue, open a PR, or **[join the Discord](https://discord.gg/zh6pV53SaP)**.
 
-Tests: `bash tools/test.sh` (macOS bash 3.2 and bash 5). Local development and pull requests: [CONTRIBUTING.md](CONTRIBUTING.md).
+Tests: `bash tools/test.sh` is the run a proof uses; `bash tools/test.sh --release` is the full run with the timed speed checks (macOS bash 3.2 and bash 5). Local development and pull requests: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 [![Contributors](https://contrib.rocks/image?repo=swt-labs/vibe-better-with-claude-code-vbw)](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/graphs/contributors)
 

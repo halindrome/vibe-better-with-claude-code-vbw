@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# test-linux.sh: run the whole suite on Linux (bash 5, GNU coreutils) in a
+# test-linux.sh: run the release run (tools/test.sh --release: the proof's run
+# plus the timed speed checks) on Linux (bash 5, GNU coreutils) in a
 # container shaped like CI's Linux job (Ubuntu 24.04, its jq 1.7), before a push. Maintainer tooling, never
 # shipped. Needs Docker. The committed tree (HEAD) is copied into a path with a
 # space and tested as a non-root user. Exit status is the suite's.
@@ -16,4 +17,4 @@ DOCKERFILE
 git -C "$root" archive --format=tar HEAD | docker run --rm -i "$image" bash -c '
   mkdir -p "/home/ubuntu/src dir" && cd "/home/ubuntu/src dir" && tar -xf - &&
   git init -q && git add -A && git commit -q -m snapshot &&
-  bash tools/test.sh'
+  bash tools/test.sh --release'
