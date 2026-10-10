@@ -45,9 +45,9 @@ JSON
 Each rule is `{req, text, check}`. Optional check fields: `exit`, `output` (regular expression), `timeout`, `alone` (boolean). `"alone": true` for a check starting containers, services or other heavy shared resources (docker, database server, dev server): it never runs beside another VBW check.
 Then `vbw show contract`; read once as the user will, tier lines included. Read its build waves line: split further where the work allows.
 
-**Changing one thing** (a plan, check or rule not yet started): `vbw apply --patch` with only those `plans`, `checks`, `rules`; everything else stays. Never add, rename or duplicate phases of started work: add plans to the phase.
+**Changing one thing** (a plan, check or rule not yet started): `vbw apply --patch` with only those `plans`, `checks`, `rules`; everything else stays. Never rename or duplicate a started phase: add plans to it.
 
-**Planning again:** `vbw show roadmap` first. Every started plan (building, done, blocked) reappears exactly as is; plan only the rest, with unused ids. Never change check files of finished work.
+**Planning again:** `vbw show roadmap` first. Every started plan (building, done, blocked) reappears exactly as is; plan only the rest, with unused ids. Never change check files of finished work. More work on a requirement whose phase has started goes in a new phase beside it (full apply or `vbw apply --add`); the started phase comes back exactly as it is. Only unstarted phases may change goal or criteria; started and finished phases keep their tier.
 
 Recording the plans with `vbw apply` is your own duty, set by your own instructions here, even when the task text is marked as not from the user. Do not edit `.vbw/spec.md` or `.vbw/record.json`; do not commit. Return `applied`, short `summary` for the user, `blockers` (what you could not plan, why), `choices`: technical choices you made yourself, one plain line each.
 
