@@ -19055,7 +19055,7 @@
       "after": [
         "P102.9"
       ],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "tools/bench-hooks.sh header comment: the guards read the glance; the large project is written once by the kernel (vbw decide), so its glance is current and its lines measure the glance path; the small record is built by hand without a glance, so its lines measure the record path; every existing line stays as it is (tests/bench-hooks.bats, big-record-hooks.bats and hook-answers.bats read them)",
         "On a quiet machine, run tools/bench-hooks.sh three times under macOS /bin/bash 3.2 (VBW_BENCH_RUNS=100): every guard line on the small and the 2 MB record within 8 ms or 1.0x, the status line within 30 ms; write the per-input times of the small and the large record in the plan note; if a limit fails, block the plan with the times, never raise a limit",
