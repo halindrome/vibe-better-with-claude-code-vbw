@@ -12550,12 +12550,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "d4890b098405baaa5867df5ad27facc17030c9ab2e984750e4d2b89405818d53",
-        "at": "2026-10-10T16:44:55Z",
-        "note": "29/30 checks",
-        "rounds": 1
+        "tree": "afecc98940df3050321245e9ddb2afffb11f0e21a006cc55b2f7f6be96f14512",
+        "at": "2026-10-10T18:49:52Z",
+        "note": "22/22 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 1,
+        "qa_findings": 1,
+        "escalations": 3
       }
     }
   ],
@@ -20668,7 +20675,7 @@
       "req": "R153",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The stop report prints how long the command actually ran, not the limit in use. plugin/lib/cmd-prove.sh prove_summary prints '(\\(.value.seconds | floor) s)'; seconds is the whole-second wall clock measured by checks_exec (bash SECONDS), which is >= the limit and can be limit+1 on a loaded machine (the exact case this phase is about). So the line can say '(3601 s)' for a 3600 s limit, or '(3 s)' for a limit of 2, though the criterion says the report names the limit in use. tests/command-timeout.bats test 3 checks only for '2 s' and would fail intermittently when the run reads 3. Fix: print the effective limit (settings.command_timeout // 3600, the same value prove_commands uses) in the summary line, and pin it in the test with a run that reports seconds above the limit."
     }
   ],
