@@ -56,10 +56,28 @@ record_glance_write() {
       requirements: [.requirements[]? | select(.milestone == $m)],
       plans: [.plans[]? | select(.status == "building")]}' \
     "$VBW_RECORD" > "$tmp" 2> /dev/null; then
+    record_open_marker "$tmp"
     mv "$tmp" "$VBW_RUNTIME/glance.json" 2> /dev/null || true
   fi
   vbw_guard_drop "$tmp"
   rm -f "$tmp" 2> /dev/null || true
+}
+
+# record_open_marker GLANCE: keep .vbw/runtime/run-open, an empty file that
+# exists exactly while the record shows an open run lease, so a guard that
+# cannot run jq (broken, missing, timed out) can still tell with a plain
+# file test that a run is open (R165). Written only from a glance that was just
+# built from a readable record: an unreadable record never reaches here, so the
+# marker then stays as it was. Created by rename, so it is never half-written.
+record_open_marker() {
+  local m="$VBW_RUNTIME/run-open" t
+  if [ "$(jq -r '.lease != null' "$1" 2> /dev/null)" = true ]; then
+    [ -f "$m" ] && return 0
+    t=$(mktemp "$VBW_RUNTIME/run-open.XXXXXX" 2> /dev/null) || return 0
+    mv "$t" "$m" 2> /dev/null || rm -f "$t" 2> /dev/null || true
+  else
+    rm -f "$m" 2> /dev/null || true
+  fi
 }
 
 # record_back FILE: set FILE's time one second back (touch -A on macOS and BSD,
