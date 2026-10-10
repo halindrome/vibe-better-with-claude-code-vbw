@@ -2,11 +2,15 @@
 # Run every check: shellcheck on repo tooling, then the bats suite. Runs under
 # whatever `bash` is first on PATH, so CI runs it once with macOS /bin/bash 3.2
 # and once with bash 5. Fails on the first failing stage (no pipes).
-# --shard K/N runs share K of N of the suite, so CI can split the run.
+# No option: the lint and every test file except the timed ones (tests/timed-*.bats),
+# the run `vbw prove` uses. --release adds both benchmarks and the timed files, run
+# alone after the rest: the speed checks run once per release, never in a proof.
+# --shard K/N runs share K of N of the release run, so CI can split it.
 set -euo pipefail
 
-usage='usage: tools/test.sh [--quick [--list]] | --shard K/N [--list]'
+usage='usage: tools/test.sh [--quick [--list]] | --release | --shard K/N [--list]'
 quick=0
+release=0
 list=0
 shard=0
 nshards=0
@@ -29,6 +33,7 @@ else
   case "$#:${1-}:${2-}" in
     0::) ;;
     1:--quick:) quick=1 ;;
+    1:--release:) release=1 ;;
     2:--quick:--list) quick=1 list=1 ;;
     *) bad_usage ;;
   esac
@@ -37,10 +42,14 @@ fi
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-# The files that measure time run alone after the rest, so the parallel batch
-# cannot slow them past their limits (2026-10-07: a 24-check proof took 16 s
-# against 15 s inside the batch, 11 s alone). One list for full, quick and shard runs.
-timed='tests/prove-parallel.bats tests/guard-cost.bats tests/bench-hooks.bats tests/big-record-hooks.bats tests/bench-protected.bats tests/proof-stale-links.bats'
+# The files that measure time (tests/timed-*.bats) run alone after the rest, so the
+# parallel batch cannot slow them past their limits (2026-10-07: a 24-check proof took
+# 16 s against 15 s inside the batch, 11 s alone). Found at run time; one list for
+# default, release, quick and shard runs.
+timed=""
+for f in tests/timed-*.bats; do
+  [ -e "$f" ] && timed="${timed:+$timed }$f"
+done
 
 # The quick mode: every test file no approved check runs or protects (those
 # run in proof), minus the timing benchmarks, plus the engineering rules always.
@@ -151,17 +160,22 @@ if [ "$quick" = 1 ]; then
   exit 0
 fi
 
-# The hook cost budget (CPU time, so other load does not skew it) is measured first.
-bash tools/bench-hooks.sh
-# The panel cost budget, when node exists (the panel is JS).
-if command -v node >/dev/null 2>&1; then
-  bash tools/bench-panel.sh
-fi
-
 rest=()
 for f in tests/*.bats; do
   case " $timed " in *" $f "*) ;; *) rest+=("$f") ;; esac
 done
+
+if [ "$release" = 1 ]; then
+  # The hook cost budget (CPU time, so other load does not skew it) is measured first.
+  bash tools/bench-hooks.sh
+  # The panel cost budget, when node exists (the panel is JS).
+  if command -v node >/dev/null 2>&1; then
+    bash tools/bench-panel.sh
+  fi
+fi
+
 bats --print-output-on-failure --jobs "$(jobs_count)" "${rest[@]}"
-# shellcheck disable=SC2086 # the list is fixed paths without spaces
-bats --print-output-on-failure $timed
+if [ "$release" = 1 ] && [ -n "$timed" ]; then
+  # shellcheck disable=SC2086 # the list is fixed paths without spaces
+  bats --print-output-on-failure $timed
+fi

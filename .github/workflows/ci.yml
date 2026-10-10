@@ -78,10 +78,11 @@ jobs:
         run: |
           export PATH="${{ matrix.bash_path }}:$PATH"
           bash --version | head -1
+          # The timed speed checks run here, in the release run, and never in vbw prove.
           if [ -n "$SHARD" ]; then
             bash tools/test.sh --shard "$SHARD/$SHARDS"
           else
-            bash tools/test.sh
+            bash tools/test.sh --release
           fi
 
       - name: Run the changed test files with the target bash first on PATH
