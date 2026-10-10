@@ -7,12 +7,13 @@ description: Release a new VBW version - tests on both shells, the real-user sce
 
 Every step runs; a failure stops the release until its root cause is fixed.
 
-1. **Tests:** `bash tools/test.sh` once, under macOS `/bin/bash` 3.2 (the
-   floor, `PATH="/bin:$PATH" /bin/bash tools/test.sh`); it uses half the cores.
-   Linux bash 5 and macOS bash 3.2 run again in CI after the push, and CI must be
-   green before the owner updates (owner decision, 2026-10-08).
-   `tools/test-linux.sh` stays for chasing a Linux-only failure. The hook
-   benchmark must be within budget.
+1. **Tests:** `PATH="/bin:$PATH" /bin/bash tools/test.sh --release` once,
+   under macOS `/bin/bash` 3.2 (the floor); it uses half the cores. This is the
+   release run: the proof's run plus the timed speed checks (both benchmarks and
+   the timed files), which are judged here and nowhere else, so they must be
+   within budget. Linux bash 5 and macOS bash 3.2 run again in CI after the
+   push, and CI must be green before the owner updates (owner decision,
+   2026-10-08). `tools/test-linux.sh` stays for chasing a Linux-only failure.
 2. **Real-user scenarios:** `bash tools/l3-suite.sh SCENARIO...` (the real
    Claude Code TUI, driven as a user; each scenario costs API credits). Run only
    the scenarios of the area the release changed, plus `greenfield` when the
