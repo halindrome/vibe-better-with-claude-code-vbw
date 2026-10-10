@@ -125,13 +125,13 @@ prove_scope() {
 
 # One screen: what ran, what it means, what is next.
 prove_summary() {
-  jq -r --argjson fullrun "$1" '.evidence as $e
+  jq -r --argjson fullrun "$1" --argjson d "$VBW_COMMAND_TIMEOUT" '(.settings.command_timeout // $d) as $limit | .evidence as $e
     | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
       ($e.commands | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))\(if .value.reuse == "docs" then ": only documentation changed since" else "" end)" else "" end)" end)"),
       (if $fullrun == 1 then empty else "  checks: \([$e.checks[] | select(.reused | not)] | length) ran, \([$e.checks[] | select(.reused)] | length) reused" end),
       ($e.commands | to_entries[] | select(.value.status == "timeout")
-        | "  \(.key) stopped by its time limit (\(.value.seconds | floor) s); raise it with vbw config set command_timeout SECONDS"),
+        | "  \(.key) stopped by its time limit (\($limit) s); raise it with vbw config set command_timeout SECONDS"),
       (if $e.full != false then "  proof: full" else
         "  proof: partial [" + ([ (if any(($e.checks[], $e.commands[]); .reused) then "results reused" else empty end),
           (if ($e.commands | has("quick") and (.quick.status != "skipped") and (has("test") | not)) then "quick stood in for the test command" else empty end),
