@@ -19699,6 +19699,63 @@
         "docs/proof.md: what a stop by the limit looks like (the command recorded as timeout, the summary line naming the limit and how to raise it); a check's own timeout is separate",
         "docs/record.md: settings.command_timeout, a whole number of seconds from 1 to 86400, shared with the project"
       ]
+    },
+    {
+      "id": "P100.5",
+      "phase": "P100",
+      "title": "Regression tests for the core count and the limit read once",
+      "reqs": [
+        "R147",
+        "R148"
+      ],
+      "files": [
+        "tests/check-jobs-machine.bats",
+        "tests/check-jobs-shared.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tests/check-jobs-machine.bats: the unreadable-count test also tries 10.5, 12abc and 08, and VBW keeps working with 1 (F106; shown to fail before afcb49ae)",
+        "tests/check-jobs-shared.bats: a run of several checks reads the check_jobs limit once per process, so a setting changed while the checks run is seen by none or all of them (F107; shown to fail before d52a5c86)"
+      ]
+    },
+    {
+      "id": "P104.4",
+      "phase": "P104",
+      "title": "The release checklist and the Linux script name the release run",
+      "reqs": [
+        "R152"
+      ],
+      "files": [
+        ".claude/skills/vbw-release/SKILL.md",
+        "tools/test-linux.sh",
+        "README.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        ".claude/skills/vbw-release/SKILL.md step 1 runs PATH=\"/bin:$PATH\" /bin/bash tools/test.sh --release once and says the timed speed checks are judged there; the false sentence about the hook benchmark is gone (F105)",
+        "tools/test-linux.sh and README.md name tools/test.sh as the proof's run and tools/test.sh --release as the full run with the timed checks (F105)"
+      ]
+    },
+    {
+      "id": "P105.3",
+      "phase": "P105",
+      "title": "Regression test: the stop report names the limit",
+      "reqs": [
+        "R153"
+      ],
+      "files": [
+        "tests/command-timeout.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tests/command-timeout.bats: a command stopped by a 2-second limit whose measured run is longer than 2 seconds still reports the limit (2 s), never the measured seconds (F108; shown to fail before a528091f)"
+      ]
     }
   ],
   "fixes": [
@@ -22488,6 +22545,11 @@
       "id": "D249",
       "at": "2026-10-10T15:34:37Z",
       "text": "Contract approved: 142 requirements, 231 checks, 307 plans (2d7aef190c9f)"
+    },
+    {
+      "id": "D250",
+      "at": "2026-10-10T17:15:17Z",
+      "text": "Contract approved: 142 requirements, 231 checks, 310 plans (0ed3047c2e54)"
     }
   ],
   "commands": {
