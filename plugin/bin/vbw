@@ -62,8 +62,79 @@ usage: vbw <command> [args]
 EOF
 }
 
+# vbw_cmd_usage CMD: the usage of one command, for vbw CMD --help (and -h), also
+# right after a subcommand. One entry per command in the dispatch list below: a
+# new command gets its entry here, or tests/help-every-command.bats fails.
+vbw_cmd_usage() {
+  case "$1" in
+    init) echo "usage: vbw init   create .vbw/ (spec and record) in this git repository" ;;
+    status) echo "usage: vbw status [--json]   where the project stands" ;;
+    triage) echo "usage: vbw triage [--json]   the facts for sorting a new idea: milestone, open requirements, run, sorted backlog" ;;
+    todo)
+      echo "usage: vbw todo [list]"
+      echo "       vbw todo add [--sort next|later --size small|medium|large] TEXT"
+      echo "       vbw todo sort ID next|later small|medium|large"
+      echo "       vbw todo done ID | vbw todo drop ID   the backlog" ;;
+    commit) echo "usage: vbw commit PLAN MSG [FILE...]   commit a plan's declared files (or only FILEs) with trailers" ;;
+    next) echo "usage: vbw next [--json]   the next lifecycle step and whether it needs you" ;;
+    show) echo "usage: vbw show VIEW [ID]   VIEW: roadmap | phase ID | req ID | plan ID | fix ID | contract [--changes] | evidence | decisions | requirements" ;;
+    spec)
+      echo "usage: vbw spec check|sync   validate .vbw/spec.md; sync its requirements into the record"
+      echo "       vbw spec add auto|human TEXT   append a requirement to the spec and sync" ;;
+    approve) echo "usage: vbw approve [--hash FINGERPRINT]   approve the contract and project commands (the user, via /vbw:approve)" ;;
+    check) echo "usage: vbw check [--expect-red] [CHECK...]   run approved checks and report (writes nothing)" ;;
+    prove) echo "usage: vbw prove [--full]   run the approved checks and commands, record the evidence" ;;
+    apply)
+      echo "usage: vbw apply < PLAN   the planner's write: phases, plans and checks in one update"
+      echo "       vbw apply --patch < P   change only the plans, checks and rules given"
+      echo "       vbw apply --add < P   add new phases with their plans, checks and rules" ;;
+    run) echo "usage: vbw run start KIND [IDS] | run confirm ID... | run end [--owner-closed]   open the run lease, check what its agents recorded, close it" ;;
+    plan) echo "usage: vbw plan done|block|reset ID   a plan's outcome (done is verified; block takes a reason)" ;;
+    fix)
+      echo "usage: vbw fix done ID [ID...]   fixes committed; the checks they serve run once"
+      echo "       vbw fix retry ID   retry an escalated fix"
+      echo "       vbw fix check FIX < CHECK   add a check (a JSON object: run, files, optionally exit, output, timeout, alone)" ;;
+    req)
+      echo "usage: vbw req accept ID | req reject ID NOTE   the user's verdict on a [human] requirement"
+      echo "       vbw req skip ID   set a requirement aside" ;;
+    qa)
+      echo "usage: vbw qa finding REQ TEXT   the QA agent's finding on a requirement"
+      echo "       vbw qa record PHASE pass|fail TIER [NOTE]   its verdict on a built phase" ;;
+    ship) echo "usage: vbw ship   mark the milestone shipped (when vbw next says ship)" ;;
+    config) echo "usage: vbw config [set KEY VALUE | models | autonomy | rigor [MODE]]   settings (vbw help lists the keys)" ;;
+    auto) echo "usage: vbw auto on SESSION_ID | off [SESSION_ID] | status [SESSION_ID] | gate   autonomous runs, kept per session (gate: the Stop hook)" ;;
+    statusline) echo "usage: vbw statusline [status | on | off]   the VBW status line in your Claude settings" ;;
+    workflows) echo "usage: vbw workflows [status | on]   Claude Code's Dynamic workflows, which VBW plans and builds with" ;;
+    doctor) echo "usage: vbw doctor   check everything VBW needs, with the fix for anything wrong" ;;
+    rtk) echo "usage: vbw rtk [status]   the state of RTK (command-output compression)" ;;
+    report) echo "usage: vbw report   diagnostic facts for a bug report about VBW (no spec text or code)" ;;
+    milestone)
+      echo "usage: vbw milestone start TITLE   open the next milestone after shipping"
+      echo "       vbw milestone rename TITLE   name the current milestone" ;;
+    decide) echo "usage: vbw decide TEXT [WHY]   record a decision the user made, and why" ;;
+    legacy) echo "usage: vbw legacy [facts] | review | choose | done | remove   a VBW 1 project (.vbw-planning/): facts, review, record convert or fresh, mark converted, remove" ;;
+    tier) echo "usage: vbw tier raise PHASE TIER REASON   raise a phase's rigor tier and record why (never lowered during a run)" ;;
+    interview) echo "usage: vbw interview [--json] | set level|depth|involvement VALUE | keep private|project   the interview's answers and where they are kept" ;;
+    suggest) echo "usage: vbw suggest decline TEXT | list   suggestions the user declined (never offered again)" ;;
+    recommend) echo "usage: vbw recommend < JSON   store the what's-next recommendation the Architect wrote" ;;
+    tools) echo "usage: vbw tools [--json] | answer yes|no   whether you allowed VBW to look for the best tools for this project" ;;
+    version) echo "usage: vbw version   print the plugin version" ;;
+    help) echo "usage: vbw help   the list of commands" ;;
+  esac
+}
+
 cmd="${1:-}"
 [ $# -gt 0 ] && shift
+# --help or -h as the first argument, or right after a subcommand, is help: it
+# runs before anything else, needs no project and changes nothing.
+for help_arg in "${1:-}" "${2:-}"; do
+  case "$cmd:$help_arg" in
+    :*|-h:*|--help:*) ;;
+    *:-h|*:--help)
+      help_text=$(vbw_cmd_usage "$cmd")
+      if [ -n "$help_text" ]; then printf '%s\n' "$help_text"; exit 0; fi ;;
+  esac
+done
 case "$cmd" in
   version) jq -r .version "$VBW_PLUGIN/.claude-plugin/plugin.json" ;;
   help|-h|--help) vbw_help ;;
