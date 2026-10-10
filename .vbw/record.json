@@ -12225,12 +12225,11 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
-        "tier": "standard",
-        "tree": "85c5b67fea05c99b324a31afb359950c4157c909e0da61ce64fac852a32fb4fa",
-        "at": "2026-10-10T16:43:01Z",
-        "note": "15/17 checks",
-        "rounds": 1
+        "result": "pass",
+        "tier": "deep",
+        "tree": "2af886641cb6400ba49d66028ae5c8a690f06ba806324882db9f02c75788da3c",
+        "at": "2026-10-10T18:51:04Z",
+        "note": "30/30 checks"
       },
       "escalations": [
         {
@@ -12239,7 +12238,15 @@
           "to": "deep",
           "reason": "Dev blocked P100.5: Both plan files (tests/check-jobs-machine.bats, tests/check-jobs-shared.bats) are protected check files (C212, C213); the guard denies every edit while the contract is fixed. Checks C212/C213 also already pass (fixes afcb49ae, d52a5c86 landed). Needs the contract reopened for these two files, or the tests added as new unprotected files. Planned tests: add 10.5, 12abc, 08 to the unreadable-count list; add a two-process test where a check raises check_jobs to 8 mid-run and peak must stay <= 2."
         }
-      ]
+      ],
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 2,
+        "qa_findings": 2,
+        "escalations": 1
+      }
     },
     {
       "id": "P101",
@@ -20659,7 +20666,7 @@
       "req": "R147",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/lib/core.sh vbw_cores accepts a core count with trailing junk: the pattern '[1-9][0-9]*' means a digit, a digit, then anything. A reader answering '10.5' or '12abc' is accepted as a whole number, then $((cores * 3 / 4)) dies with 'arithmetic syntax error' (checked in bash: 'n=10.5; echo $((n*3/4))' fails). The criterion says the first whole number is taken and VBW keeps working when the count is unusable. tests/check-jobs-machine.bats only tries '2.5' (single digit then dot), which the pattern happens to reject. Fix: accept only all-digit values (for example reject any value matching *[!0-9]*, then require at least 1), and add '10.5' and '12abc' to the unreadable-count test."
     },
     {
@@ -20667,7 +20674,7 @@
       "req": "R148",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/lib/checks.sh checks_gate_enter calls vbw_check_jobs on every check (line 143), and each parallel check runs in its own subshell (checks_run_all), so the limit is read (getconf + jq) once per check, not once per process. Plan P100.2 and the comment at lines 101-103 say 'read once per process'. The comment is wrong and the plan is not followed; a setting changed mid-run is seen by only some checks. Fix: read the limit once in the process (for example pass it from checks_run_all/checks_run) or correct the plan and the comment."
     },
     {
