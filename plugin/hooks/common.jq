@@ -7,11 +7,16 @@
 # VBW project).
 #
 # --stream hands the inputs over as events, so a guard reads the hook input in
-# full and only the beginning of the record (R149): the record writer puts
-# schema, lease and checks first, and the guard stops at the first other key,
-# whatever the record's size. A record with its keys in another order (written
-# by an older VBW) is read on until the lease, and the checks when they matter,
-# are complete, or the file ends: the same answer, only slower.
+# full and only the beginning of the record (R149, R150): the record writer puts
+# schema, lease and then the protected check files first, and the guard stops at
+# the first other key, whatever the record's size. Format 4 (more than 50
+# checks) carries the top-level key "protected", the list of every protected
+# check file: the guard reads it and stops there, never reading an event of
+# checks. Format 3 (50 checks or fewer) has no protected key: the guard reads
+# its checks, which come right after the lease and are small. A record with its
+# keys in another order, or a larger one an older VBW wrote (until its next
+# write), is read on until the lease, and the checks when they matter, are
+# complete, or the file ends: the same answer, only slower.
 #
 # Membership tests are anchored regexes, not array literals: they compile to far
 # fewer jq instructions, and compiling is most of a guard's cost.
@@ -27,6 +32,14 @@ def split_next: if (last | type) == "object" and (last | has("next")) then [.[:-
 # The lease: the leaf events of the top-level key "lease" (the first is $head).
 def lease_events($head):
   [$head, (label $l | inputs | if .[0][0] == "lease" then select(length == 2) else ({next: .}, break $l) end)] | split_next;
+
+# The protected check files: the events of the list under the top-level key
+# "protected" ($head is the first; an empty list is that one event). It stops at
+# the event that closes the list and never pulls the one after it, which belongs
+# to the checks.
+def protected_events($head):
+  if ($head[0] | length) == 1 then [$head]
+  else [$head, (label $l | inputs | ., (select(length == 1 and (.[0] | length) == 2) | break $l))] end;
 
 # The checks: the paths of their files, all a guard reads (leaf events of
 # "checks" whose path has "files" third; closing events carry no value, so null
@@ -52,6 +65,10 @@ def read_events($e; $rec; $agent; $writes):
   elif $e[0][0] == "lease" then
     lease_events($e) as [$evs, $next]
     | read_events($next; $rec + {lease: ([fromstream($evs[], [["lease"]])][0].lease)}; $agent; $writes)
+  elif $e[0][0] == "protected" then
+    protected_events($e) as $evs
+    | read_events(if $rec | has("lease") then null else first(inputs, null) end;
+        $rec + {checks: [{files: ([fromstream($evs[], [["protected"]])][0].protected // [])}]}; $agent; $writes)
   elif $e[0][0] == "checks" then
     check_files($e) as [$files, $next]
     | read_events($next; $rec + {checks: [{files: $files}]}; $agent; $writes)
