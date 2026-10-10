@@ -12357,7 +12357,15 @@
         "guarded: R12 (C11), R21 (C16), R31 (C27), R32 (C28), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R55 (C56, C57), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R126 (C186), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R142 (C204, C205), R143 (C206, C207), R144 (C208, C209), R147 (C212, C215), R148 (C213, C214, C216), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "a5d28ce760b63c62c7f81c108ee8e2bda3ef2413a7b738d867792a7f87a2b1e3",
+        "at": "2026-10-10T16:41:04Z",
+        "note": "25/26 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P105",
@@ -20425,6 +20433,14 @@
       "attempts": 0,
       "status": "open",
       "note": "docs/rigor.md line 204 (QA depth section, edited by P98.2) still ends with \"A small, low-risk change never gets a deep check.\" That is now false: a small phase that escalated to deep is verified at deep, as the same section says two paragraphs above. Fix: say a small, low-risk change that never escalated never gets a deep check."
+    },
+    {
+      "id": "F105",
+      "req": "R152",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The release procedure still gives the old run. .claude/skills/vbw-release/SKILL.md step 1 says to run 'PATH=\"/bin:$PATH\" /bin/bash tools/test.sh' once and ends with 'The hook benchmark must be within budget.' Since P104.1 that run skips both benchmarks and every tests/timed-*.bats, so a release that follows the skill never runs the timed speed checks, and its sentence about the hook benchmark is now false. Plain English: the goal is 'timed checks run once per release, in the local run before a push', but the maintainer's own release checklist still points at the run that leaves them out. Fix: change step 1 to the --release run under /bin/bash 3.2. Also worth aligning: tools/test-linux.sh (line 19, runs bash tools/test.sh, comment says 'the whole suite') and README.md:434 ('Tests: bash tools/test.sh') name the default run as if it were the full suite. P104.3 listed only docs/proof.md, AGENTS.md, CONTRIBUTING.md and copilot-instructions.md, so these were missed."
     }
   ],
   "todos": [
