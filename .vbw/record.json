@@ -1,14 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "plan-20261010T171817Z",
-    "kind": "plan",
-    "started_at": "2026-10-10T17:18:17Z",
-    "files": [
-      ".vbw/"
-    ],
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-foreign-req.bats",
