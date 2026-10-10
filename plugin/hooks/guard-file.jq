@@ -2,7 +2,7 @@
 
 include "common" {search: "./"};
 
-guard_context as $g
+guard_context(.tool_name | test("^(Write|Edit|MultiEdit|NotebookEdit)$")) as $g
 | $g.hook
 | ((.tool_input // {}) | .file_path // .notebook_path // .path // "" | tostring) as $path
 | (.tool_name | test("^(Write|Edit|MultiEdit|NotebookEdit)$")) as $writes

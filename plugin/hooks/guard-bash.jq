@@ -193,7 +193,7 @@ def foreign_run($g):
 # is allowed unread. During a run a subagent's every command is read.
 def may_matter: test("rm|git|vbw|consent|record\\.json|\\.env|\\.(pem|key|p12|pfx|kdbx|keystore|jks)|id_(rsa|dsa|ecdsa|ed25519)|netrc|pgpass|npmrc|pypirc|credentials");
 
-guard_context as $g
+guard_context(true) as $g
 | ($g.hook.tool_input.command // "") as $c
 | select($g.lease != null or $g.foreign != null or ($c | may_matter))
 | [$c | commands(3)] as $cmds

@@ -1,24 +1,64 @@
 # Shared by the PreToolUse guards (docs/guards.md). Each guard runs as jq
-# itself (build plan K20), with --arg root "$CLAUDE_PROJECT_DIR". Its inputs, in
-# order: the hook input (stdin); $CLAUDE_PROJECT_DIR/.vbw/record.json, which jq
-# skips when it does not exist; hooks/end.json, the sentinel "vbw-guard-end".
-# So after the hook input, the next input is the record (a VBW project), the
-# sentinel (not one), or a parse error (a corrupt record: still a VBW project).
+# itself (build plan K20), with --stream and --arg root "$CLAUDE_PROJECT_DIR".
+# Its inputs, in order: the hook input (stdin); $CLAUDE_PROJECT_DIR/.vbw/record.json,
+# which jq skips when it does not exist; hooks/end.json, the sentinel
+# "vbw-guard-end". So after the hook input, the next input is the record (a VBW
+# project), the sentinel (not one), or a parse error (a corrupt record: still a
+# VBW project).
+#
+# --stream hands the inputs over as events, so a guard reads the hook input in
+# full and only the beginning of the record (R149): the record writer puts
+# schema, lease and checks first, and the guard stops at the first other key,
+# whatever the record's size. A record with its keys in another order (written
+# by an older VBW) is read on until the lease, and the checks when they matter,
+# are complete, or the file ends: the same answer, only slower.
 #
 # Membership tests are anchored regexes, not array literals: they compile to far
 # fewer jq instructions, and compiling is most of a guard's cost.
+
+# The events of the hook input, up to the one that closes its top-level value.
+def hook_events: [label $l | inputs | ., (select((.[0] | length) == 0 or (length == 1 and (.[0] | length) == 1)) | break $l)];
+
+# The lease and checks of the record, from the events after the hook input.
+# $agent: the call comes from a subagent; $writes: it may write a file. Only
+# then does a build or fix lease need the checks (protected check files).
+def read_record($agent; $writes):
+  (try input catch null) as $first
+  | if $first == null then {project: true, record: {}}
+    elif ($first[0] | length) == 0 then {project: ($first[1] != "vbw-guard-end"), record: {}}
+    else
+      try (last(label $stop
+        | foreach ($first, inputs) as $e ({rec: {}, done: {}, cur: null};
+            if ($e[0] | length) == 0 then .stop = true
+            elif ($e[0][0] | type) != "string" then .
+            else
+              $e[0][0] as $k
+              | (if .cur != null and .cur != $k then .done[.cur] = true else . end)
+              | .cur = $k
+              | (if ($k | test("^(lease|checks)$")) and ($e | length) == 2 then .rec |= setpath($e[0]; $e[1]) else . end)
+              | (if ($e[0] | length) == 1 then .done[$k] = true else . end)
+              | (if .done.lease
+                    and ((($agent and $writes and (.rec.lease | type) == "object" and ((.rec.lease.kind // "") | test("^(build|fix)$"))) | not)
+                         or .done.checks)
+                 then .stop = true else . end)
+            end;
+            ., (select(.stop) | break $stop)))
+        | {project: true, record: .rec})
+      catch {project: true, record: {}}
+    end;
 
 # {hook, project, record, lease, foreign}: foreign is the open run lease (under
 # 24 hours, with an owning session) when the hook input comes from a different
 # session, main conversation or agent alike (D11), else null. lease is the active run lease when this call
 # comes from a subagent (the hook input names an agent_type) during a run of
 # at most 24 hours (docs/workflows.md), else null. The main session is never
-# held to a lease.
-def guard_context:
-  input as $hook | (try input catch {}) as $rec
-  | ($rec | if type == "object" then . else {} end) as $record
+# held to a lease. WRITES, run on the hook input: whether the call may write a file.
+def guard_context(writes):
+  (hook_events | fromstream(.[])) as $hook
+  | read_record(($hook.agent_type // "") != ""; $hook | writes) as $r
+  | ($r.record) as $record
   | (($record.lease | select(type == "object" and (try (now - (.started_at | fromdateiso8601) < 86400) catch false))) // null) as $live
-  | {hook: $hook, project: ($rec != "vbw-guard-end"), record: $record,
+  | {hook: $hook, project: $r.project, record: $record,
      lease: (if ($hook.agent_type // "") != "" then $live else null end),
      foreign: (($live | select((.session // "") != "" and ($hook.session_id // .session) != .session)) // null)};
 
