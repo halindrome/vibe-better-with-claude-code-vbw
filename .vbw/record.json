@@ -18165,7 +18165,7 @@
         "P101.6",
         "P101.7"
       ],
-      "status": "blocked",
+      "status": "planned",
       "tasks": [
         "tools/bench-hooks.sh also builds, in its work folder, a record of more than 2 MB (the same build lease plus a long history of requirements, checks, phases, plans and decisions, keys in the writer's order, its glance written by running vbw once) and prints 'large record: N bytes'",
         "For every input it adds a line 'guard (NAME, large record): ...' in the existing format and budget; the six existing lines stay unchanged (tests/bench-hooks.bats reads them)",
@@ -18173,11 +18173,10 @@
         "tools/test.sh lists tests/big-record-hooks.bats with the timed files that run alone after the rest; run tests/bench-hooks.bats and big-record-hooks.bats; if a limit cannot hold, record the measured times in the plan note and block the plan",
         "plugin/hooks/common.jq: the guard keeps the streaming read for the lease, but when a build or fix agent writes and the protected check files must be read, it reads the whole record at once (jq parses a 2.9 MB record in about 7 ms) instead of rebuilding every check event by event (about 17 ms with 100 checks); the interp large-record line must be within the 8 ms or 1.0x budget",
         "tests/test-shards.bats: the full-run order test lists tests/big-record-hooks.bats among the timed files that run alone after the rest, as tools/test.sh now does",
-        "plugin/lib/record.sh and plugin/lib/record.jq: the single writer keeps a top-level field protected (the sorted, unique list of every file in .checks[].files) written right after lease, so the key order is schema, lease, protected, checks, then the rest; the validator requires protected to equal that list exactly; a record with protected is schema 4 (VBW_SCHEMA_MAX 4), so an older VBW refuses it as needing a newer VBW; record_update keeps it current on every write",
+        "plugin/lib/record.sh and plugin/lib/record.jq: when the record has more than 50 checks, the single writer keeps a top-level field protected (the sorted, unique list of every file in .checks[].files) right after lease, so the key order is schema, lease, protected, checks, then the rest; with 50 checks or fewer there is no protected field and the record is unchanged; the validator requires protected, when present, to equal that list exactly; only a record with protected is schema 4 (VBW_SCHEMA_MAX 4), following the existing rule that the schema follows the fields in use, so ordinary projects keep schemas 1 to 3 and older VBWs still read them (R46, tests/record-compat.bats and tests/record-newer.bats stay as they are); record_update adds, updates or removes it on every write",
         "plugin/hooks/common.jq: the guards stop reading at the first key after protected and never walk .checks; a record without protected (written by an older VBW, before its next write) is read on to the checks as today, so its answer is the same, only slower",
-        "docs/record.md: the protected field, why it exists, the key order and record format 4"
-      ],
-      "note": "Tasks 1-4 and 6 are committed (bench measures the 2 MB record and status line; test.sh and test-shards list big-record-hooks). Measured now (20-30 runs): every guard line within budget except 'guard (interp, large record)', 6.9 ms small vs 7.7-8.3 ms large (1.28x startup, limit 1.0x or 8 ms: OVER, borderline); status line 25.1 / 24.9 ms (limit 30). Task 5's whole-record read would cost ~7 ms parse, worse than the current streaming, so the fix is the protected field (tasks 7-8). Blocker (DEVN-04): task 7 makes every record that has checks schema 4 with a new top-level key 'protected'. That contradicts tests/record-compat.bats (R46: 'fits' requires schema == 1 and the old key list; schema 2 test), tests/record.bats (schema 1/2/3 rules, and the validator's schema rule and unknown-key list) and tests/record-newer.bats, which are check files outside this plan (protected by other checks, need owner approval to edit), and it makes every project need VBW 2.0.17+ at once, against R46's intent that old VBW keeps reading ordinary records. Options: (A, recommended) write 'protected' (schema 4) only when the check-file list is long enough to matter (e.g. the record over 1 MB or more than N checks), so ordinary records stay schema 1-3 and R46 holds; add the validator rule and tests for schema 4 in a plan that owns record.bats; (B) always write it and re-approve record-compat/record/record-newer tests with new schema numbers; (C) accept interp large-record at ~1.0-1.3x by raising that single budget (not recommended)."
+        "docs/record.md: the protected field (written only for records with more than 50 checks), why it exists, the key order, and that only such records are format 4"
+      ]
     },
     {
       "id": "P101.9",
@@ -20803,6 +20802,11 @@
       "id": "D227",
       "at": "2026-10-10T05:42:24Z",
       "text": "Contract approved: 138 requirements, 217 checks, 289 plans (7ca7077373c0)"
+    },
+    {
+      "id": "D228",
+      "at": "2026-10-10T05:47:42Z",
+      "text": "Contract approved: 138 requirements, 217 checks, 289 plans (27e2e9ddbe5c)"
     }
   ],
   "commands": {
