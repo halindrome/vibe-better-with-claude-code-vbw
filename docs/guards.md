@@ -7,6 +7,11 @@ Code sandbox and permission rules remain the security boundary.
 
 ## What is denied
 
+Every block ends with `Next: ` and says what to do instead, for
+example `Next: leave src/x.js as it is; report that the plan needs it, so the
+plan can be replanned with vbw apply`. The list of refusal kinds and their next
+steps is in docs/workflows.md ("Every refusal and its next step").
+
 **Everywhere** (any project, VBW or not):
 
 | Call | Why |
@@ -102,7 +107,7 @@ input names an `agent_type`) is also held to the lease. The main session never i
 | During `plan`, writing a project file that is neither under `.vbw/` nor a test file (`tests/`, `test/`, `spec/` or `__tests__/` folders; `*.test.*`, `*_test.*`, `test_*.py`) | Planning writes the spec, plans and tests, never product code |
 | Writing `.vbw/runtime/glance.json` | Under any run, an agent's write is refused: only `vbw` writes the glance, like the record |
 | Writing a protected check file (any check's `files`) during `build` or `fix` | The contract is fixed while building. The Lead runs the project's formatter and linter on check files before approval, and Devs format only their own files, so a formatter never changes an approved file |
-| Writing a protected check file during a `fix` run for a QA finding | Allowed for the check files of the finding's requirement, and a new test file may be created; both wait for one approval before the proof (docs/proof.md). A check file of any other requirement stays protected, and the refusal says what to do instead. Fix runs for a failed proof stay fully protected |
+| Writing a protected check file during a `fix` run for a QA finding | Allowed for the check files of the finding's requirement, and a new test file may be created; both wait for one approval before the proof (docs/proof.md). A check file of any other requirement stays protected, and the refusal ends with `Next: put the regression test in a new test file and register it with vbw fix check`. Fix runs for a failed proof stay fully protected |
 | Under `build` or `fix`, an agent's file write on a record of schema 1 to 3, which has no `protected` list | The guard cannot tell which files are protected, so it refuses until the record is saved by this VBW as schema 4. Run any `vbw` command that writes the record (such as `/vbw:vibe`) from the main session, then retry |
 | `git commit`, `push`, `rebase`, `merge`, `pull`, `cherry-pick`, `revert`, `am` | Commits go through `vbw commit`, with provenance |
 | `git stash` (except `list`, `show`), `switch`, `reset`, `checkout` of a branch; `git checkout -- PATH` or `git restore PATH` outside `lease.files` | Agents share one working tree: nothing may move HEAD or other agents' changes |

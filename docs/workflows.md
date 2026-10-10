@@ -284,16 +284,41 @@ add a new phase for the further work`). Add a new phase for the new work, for a
 requirement nobody planned yet or one reopened as above. `vbw apply --patch`
 never changes a phase.
 
-### Refusal messages name their mode
+### Refusal messages name their mode and end with a next step
 
-Every `vbw apply` refusal starts with the mode it came from, then the reason.
-Nothing is written.
+Every `vbw apply` refusal starts with the mode it came from, then the reason,
+and ends with `Next: ` and what to do instead. Nothing is
+written.
 
 | Mode | Example |
 |---|---|
-| full apply (no option) | `vbw: full apply refused: apply needs a JSON object on stdin` |
-| `--add` | `vbw: --add refused: --add needs a JSON object with the new phases ({id, title, reqs}) and their plans, checks and rules` |
-| `--patch` | `vbw: --patch refused: a patch carries plans, checks and rules, never phases: change phases with a full apply` |
+| full apply (no option) | `vbw: full apply refused: apply needs a JSON object on stdin`<br>`Next: pipe one JSON object into vbw apply: {"phases": [], "plans": [], "checks": []}` |
+| `--add` | `vbw: --add refused: --add needs a JSON object with the new phases ({id, title, reqs}) and their plans, checks and rules`<br>`Next: send --add a JSON object whose "phases" array holds the new phases, with their plans, checks and rules` |
+| `--patch` | `vbw: --patch refused: a patch carries plans, checks and rules, never phases: change phases with a full apply`<br>`Next: remove "phases" from the document, or send it to a full apply (vbw apply) to change phases` |
+
+### Every refusal and its next step
+
+Each refusal below ends with `Next: ` and the step in the right column
+(`tests/refusal-next-step.bats` fails when one has none).
+
+| Refusal | Next step |
+|---|---|
+| `vbw apply`: a document that is not a JSON object, or has no phases, plans and checks arrays | Send one JSON object with those arrays |
+| `vbw apply`: an unknown field, or a tier that is not `express`, `standard` or `deep` | Remove the field, or set a valid tier |
+| `vbw apply`: a phase or plan or check id already in use (`--add`) | Use an unused id, or change the existing one with `--patch` or a full apply |
+| `vbw apply`: a requirement of another milestone, or already covered by a phase | Take it out of the document |
+| `vbw apply`: a started plan or phase changed or dropped | Put it back as the record has it (`vbw show plan ID`) and add a new plan or phase for further work |
+| `vbw apply`: a missing rule, or a rule naming no check of its requirement | Add one rule per condition, each with its check |
+| `vbw apply`: a tier below its floor, or an express phase with two plans | Raise the tier, or merge the plans |
+| `vbw apply`: a build or fix run is open | End the run (`vbw run end`), then plan again |
+| `vbw run start`: an unknown plan or fix | Check the id with `vbw status` |
+| `vbw run start`: a plan or fix not ready (done, or not open) | Build a plan that is planned (`vbw next` shows which) |
+| `vbw run start`: a plan waiting for another | Build those first, or run `vbw next` |
+| `vbw run start`: two plans sharing a file | Start one now and the other after it ends |
+| `vbw run start`: a run already open | In this session, `vbw run end`; in another session, wait for it or check `vbw status` |
+| Guards (docs/guards.md): a secret file, the record, the consent file, `vbw approve` | Use the `vbw` command or `/vbw:approve` instead of writing directly |
+| Guards: a file outside the run's plan, a protected check file, a read-only run, another session's files | Leave the file; report the need, or work on other files until the run ends |
+| Guards: a guard that failed during a run | Run `vbw doctor`, then retry |
 
 An unknown option prints the usage line for the three modes and exits 2.
 
