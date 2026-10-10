@@ -19055,15 +19055,13 @@
       "after": [
         "P102.9"
       ],
-      "status": "blocked",
-      "role": "dev",
+      "status": "planned",
       "tasks": [
         "tools/bench-hooks.sh header comment: the guards read the glance; the large project is written once by the kernel (vbw decide), so its glance is current and its lines measure the glance path; the small record is built by hand without a glance, so its lines measure the record path; every existing line stays as it is (tests/bench-hooks.bats, big-record-hooks.bats and hook-answers.bats read them)",
         "On a quiet machine, run tools/bench-hooks.sh three times under macOS /bin/bash 3.2 (VBW_BENCH_RUNS=100): every guard line on the small and the 2 MB record within 8 ms or 1.0x, the status line within 30 ms; write the per-input times of the small and the large record in the plan note; if a limit fails, block the plan with the times, never raise a limit",
-        "Before M19: extract commit f3761b76 (M18 shipped) with git archive f3761b76 plugin tools into a folder made by mktemp -d, removed afterwards, and run its tools/bench-hooks.sh three times, alternating with today's; today's small-record guard lines must not be slower than before M19 by more than the spread between runs; write both sets of times in the plan note; if slower, block with the times",
+        "Before M19: extract commit f3761b76 (M18 shipped) with git archive f3761b76 plugin tools into a folder made by mktemp -d, removed afterwards, and run its tools/bench-hooks.sh three times, alternating with today's; today's small-record guard lines stay within their budget and at most 0.5 ms slower than before M19 (the side-file check, accepted by the owner); write both sets of times in the plan note; if more than 0.5 ms slower or over budget, block with the times",
         "Run tests/bench-hooks.bats, big-record-hooks.bats (C219), hook-answers.bats and guard-cost.bats under macOS /bin/bash 3.2 and bash 5"
-      ],
-      "note": "Task 3 failed: small-record guard lines are slower than before M19 (f3761b76) by more than run-to-run spread. Task 1 committed (acc1dc46). Task 2 passed: all lines within limits (max own CPU 7.8 ms; 1.10x worst on large record, inside the 8 ms absolute bound; status line 25.4-27.4 ms), macOS /bin/bash 3.2, 100 runs, 3 alternating runs. Small record own-CPU ms, today (r1,r2,r3) vs M18 (r1,r2,r3): git 6.9,6.9,7.0 vs 6.6,6.7,6.7; npm 6.1,6.3,6.8 vs 5.8,5.7,5.6; big 7.0,7.1,7.8 vs 6.7,6.8,6.7; interp 6.8,7.0,7.4 vs 6.4,6.4,6.5; read 2.5,2.4,2.3 vs 2.0,1.9,1.9; answer 1.0,1.1,1.0 vs 1.0,0.8,1.0. Today is about 0.2-0.5 ms slower consistently (read about +0.5, +25%). Large record today (r1,r2,r3): git 7.8,6.9,7.1; npm 6.6,6.2,6.3; big 7.5,7.0,7.1; interp 6.9,6.8,6.9; read 2.4,2.5,2.3; answer 0.8,1.0,1.1. Task 4 not run."
+      ]
     }
   ],
   "fixes": [
@@ -21726,6 +21724,17 @@
       "id": "D239",
       "at": "2026-10-10T11:25:08Z",
       "text": "Contract approved: 139 requirements, 225 checks, 300 plans (38bf9ae0e3e8)"
+    },
+    {
+      "id": "D240",
+      "text": "Guards on normal projects may cost up to 0.5 ms more per call than before M19, within every budget",
+      "why": "the small side-file check (about 0.3 ms) buys a guard cost that stays flat however big the record grows (owner, 2026-10-10)",
+      "at": "2026-10-10T12:01:14Z"
+    },
+    {
+      "id": "D241",
+      "at": "2026-10-10T12:02:00Z",
+      "text": "Contract approved: 139 requirements, 225 checks, 300 plans (45c839b9d219)"
     }
   ],
   "commands": {
