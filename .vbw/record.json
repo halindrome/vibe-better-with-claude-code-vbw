@@ -21075,6 +21075,11 @@
       "text": "The protected field is written only when a record has more than 50 checks; only such records are schema 4; ordinary records stay at schemas 1 to 3 (R46)",
       "why": "keeps every ordinary project readable by older VBWs; only large projects need the newer VBW",
       "at": "2026-10-10T06:04:11Z"
+    },
+    {
+      "id": "D230",
+      "at": "2026-10-10T06:36:00Z",
+      "text": "Contract approved: 139 requirements, 222 checks, 293 plans (4dbe038b9772)"
     }
   ],
   "commands": {
