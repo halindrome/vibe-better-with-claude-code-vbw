@@ -64,8 +64,9 @@ jq -nc --arg d "$work" '{hook_event_name: "PostToolUse", tool_name: "AskUserQues
 # The large project: a record of more than 2 MB in its own folder, the same build
 # lease plus a long history (requirements with rules, checks, phases, plans and
 # decisions of a shipped milestone, every text padded), keys in the writer's
-# order (schema, lease, checks, then the rest, as the kernel writes them). Its glance is
-# written by running vbw once, as any command does.
+# order (schema, lease, checks, then the rest). The kernel then rewrites it once
+# (vbw decide, a record write), so the file holds the format the kernel writes:
+# schema 4 with the protected field, which the guards read without walking the checks.
 large="$work/large"
 mkdir -p "$large"
 git -C "$large" init -q
@@ -93,7 +94,7 @@ jq --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
   "$large/.vbw/record.json" > "$large/.vbw/edited.json"
 cat "$large/.vbw/edited.json" > "$large/.vbw/record.json"
 rm -f "$large/.vbw/edited.json"
-(cd "$large" && "$PLUGIN/bin/vbw" status > /dev/null)
+(cd "$large" && "$PLUGIN/bin/vbw" decide "Benchmark record written by the kernel" > /dev/null)
 printf 'large record: %s bytes\n' "$(wc -c < "$large/.vbw/record.json" | tr -d ' ')"
 
 # cpu_pair INPUT BASELINE HOOK: the mean CPU time in ms of RUNS runs of each
