@@ -1,6 +1,14 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "plan-20261010T171817Z",
+    "kind": "plan",
+    "started_at": "2026-10-10T17:18:17Z",
+    "files": [
+      ".vbw/"
+    ],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-foreign-req.bats",
@@ -34,6 +42,8 @@
     "tests/check-alone-runner.bats",
     "tests/check-jobs-docs.bats",
     "tests/check-jobs-machine.bats",
+    "tests/check-jobs-once.bats",
+    "tests/check-jobs-regress.bats",
     "tests/check-jobs-shared.bats",
     "tests/check-wait-patient.bats",
     "tests/ci-node24.bats",
@@ -41,6 +51,7 @@
     "tests/ci-scope.bats",
     "tests/ci-shards.bats",
     "tests/command-timeout-docs.bats",
+    "tests/command-timeout-report.bats",
     "tests/command-timeout.bats",
     "tests/config-qa.bats",
     "tests/contract-waves.bats",
@@ -3004,6 +3015,42 @@
       "files": [
         "tests/command-timeout-docs.bats"
       ]
+    },
+    {
+      "id": "C237",
+      "req": "R147",
+      "run": [
+        "bats",
+        "tests/check-jobs-regress.bats"
+      ],
+      "files": [
+        "tests/check-jobs-regress.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C238",
+      "req": "R148",
+      "run": [
+        "bats",
+        "tests/check-jobs-once.bats"
+      ],
+      "files": [
+        "tests/check-jobs-once.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C239",
+      "req": "R153",
+      "run": [
+        "bats",
+        "tests/command-timeout-report.bats"
+      ],
+      "files": [
+        "tests/command-timeout-report.bats"
+      ],
+      "timeout": 600
     }
   ],
   "project": {
@@ -7434,6 +7481,10 @@
         {
           "text": "the old 'default 4' wording is gone from docs, help and code comments",
           "check": "C215"
+        },
+        {
+          "text": "a core count that is not a whole number (10.5, 12abc, 08) gives a limit of 1 and VBW keeps working",
+          "check": "C237"
         }
       ]
     },
@@ -7487,6 +7538,10 @@
         {
           "text": "docs/proof.md describes the shared limit and docs/workflows.md the single test run of a fix round",
           "check": "C216"
+        },
+        {
+          "text": "the check_jobs limit is read once per process, so a setting changed while checks run does not change how many run at once",
+          "check": "C238"
         }
       ]
     },
@@ -7916,6 +7971,10 @@
         {
           "text": "docs/proof.md says what a stop by the limit looks like and how to raise the limit",
           "check": "C236"
+        },
+        {
+          "text": "a command stopped by its limit is reported with the limit in use, never the seconds it was measured to run",
+          "check": "C239"
         }
       ]
     }
@@ -19723,17 +19782,16 @@
         "R148"
       ],
       "files": [
-        "tests/check-jobs-machine.bats",
-        "tests/check-jobs-shared.bats"
+        "tests/check-jobs-regress.bats",
+        "tests/check-jobs-once.bats"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
-        "tests/check-jobs-machine.bats: the unreadable-count test also tries 10.5, 12abc and 08, and VBW keeps working with 1 (F106; shown to fail before afcb49ae)",
-        "tests/check-jobs-shared.bats: a run of several checks reads the check_jobs limit once per process, so a setting changed while the checks run is seen by none or all of them (F107; shown to fail before d52a5c86)"
-      ],
-      "note": "Both plan files (tests/check-jobs-machine.bats, tests/check-jobs-shared.bats) are protected check files (C212, C213); the guard denies every edit while the contract is fixed. Checks C212/C213 also already pass (fixes afcb49ae, d52a5c86 landed). Needs the contract reopened for these two files, or the tests added as new unprotected files. Planned tests: add 10.5, 12abc, 08 to the unreadable-count list; add a two-process test where a check raises check_jobs to 8 mid-run and peak must stay <= 2."
+        "tests/check-jobs-regress.bats (new): a core count VBW cannot read as a whole number (10.5, 12abc, 08) gives a limit of 1 and VBW keeps working; shown to fail against the code before afcb49ae (F106)",
+        "tests/check-jobs-once.bats (new): a run of several checks reads the check_jobs limit once per process, so a check that raises check_jobs while it runs does not raise the number of checks running at once; shown to fail against the code before d52a5c86 (F107)"
+      ]
     },
     {
       "id": "P104.4",
@@ -19763,15 +19821,14 @@
         "R153"
       ],
       "files": [
-        "tests/command-timeout.bats"
+        "tests/command-timeout-report.bats"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
-        "tests/command-timeout.bats: a command stopped by a 2-second limit whose measured run is longer than 2 seconds still reports the limit (2 s), never the measured seconds (F108; shown to fail before a528091f)"
-      ],
-      "note": "The plan's only file, tests/command-timeout.bats, is the protected check file of C235, and the build guard denies every write to it (Edit and Bash both refused: 'the contract is fixed while building'). The new test (a stand-in timeout that sleeps 4 s then exits 124 under a 2 s limit, asserting the report says '(2 s)') needs a spec/contract change approved by the user, or the test belongs in a new unprotected file. Also C235 already passes (fix a528091f shipped), so the red step proves nothing until the test exists."
+        "tests/command-timeout-report.bats (new): a command stopped by a 2-second limit whose measured run is longer than 2 seconds reports the limit (2 s), never the measured seconds; shown to fail against the code before a528091f (F108)"
+      ]
     }
   ],
   "fixes": [
@@ -21190,6 +21247,11 @@
       "text": "Public doc docs/parallel-sessions.md (owner 2026-10-10, for the next version): how to run several Claude Code sessions on one VBW project - start each at the project root, give each a different area, say what to leave alone, what 'another session holds the run' means and when to choose wait or closed, worktrees vs one folder, the shared check limit; linked from the README",
       "sort": "next",
       "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T106",
+      "text": "Next core milestone 'projects that change' (owner, 2026-10-10: things change often, VBW must be resilient to any scenario): (1) a full apply lets the active milestone plan a requirement it reopened from a shipped milestone, and the refusal names the right mode (brainstorm B3, Portfolium R2); (2) judge whether a new phase may share a requirement with a started phase; (3) apply and --patch check the rigor floor of unstarted phases only, never finished ones; (4) a QA-finding fix can add its regression test (to new or protected check files, with one approval) instead of a hand-made plan; (5) audit every apply/run/guard refusal against re-plans, reopened work and mid-milestone changes. Keep: approved tests stay locked, owner approval still required",
       "status": "open"
     }
   ],
