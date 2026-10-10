@@ -20828,7 +20828,7 @@
       "after": [
         "P108.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "In the vbw apply section: how a requirement from a shipped milestone is reopened (change its text or proof type in the spec) and planned again with a full apply",
@@ -20850,7 +20850,7 @@
       "after": [
         "P108.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "A full apply and vbw apply --add accept a new phase for a requirement a started phase of the current milestone already covers; the started phase keeps id, title, requirements, goal, criteria, tier, reasons, predicted tier and escalations, and its started plans keep phase, requirements, files, order, tasks and status",
@@ -20940,7 +20940,7 @@
       "after": [
         "P110.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vbw run start fix, for fixes QA opened: the lease sets new_tests and lists in checks the check files of the findings' requirements that no other requirement's check uses",
@@ -20966,7 +20966,7 @@
       "after": [
         "P110.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "A check a fix added and the user has not approved waits like an edited check file: its files join the files waiting for approval, consent stays by content hash (a later change needs a new approval)",
@@ -21036,7 +21036,7 @@
       "after": [
         "P110.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vbw req skip ID records the user's 'Skip for now' on an open [human] requirement; an [auto] requirement or one with an open fix from the user's rejection is refused, saying what to do instead",
