@@ -1,6 +1,12 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "fix-20261010T152043Z",
+    "kind": "fix",
+    "started_at": "2026-10-10T15:20:43Z",
+    "files": null,
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-foreign-req.bats",
@@ -22336,6 +22342,11 @@
       "id": "D248",
       "at": "2026-10-10T15:04:47Z",
       "text": "Contract approved: 142 requirements, 231 checks, 307 plans (7139925ec189)"
+    },
+    {
+      "id": "D249",
+      "at": "2026-10-10T15:34:37Z",
+      "text": "Contract approved: 142 requirements, 231 checks, 307 plans (2d7aef190c9f)"
     }
   ],
   "commands": {
