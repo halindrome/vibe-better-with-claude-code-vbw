@@ -14,6 +14,10 @@ Every step runs; a failure stops the release until its root cause is fixed.
    within budget. Linux bash 5 and macOS bash 3.2 run again in CI after the
    push, and CI must be green before the owner updates (owner decision,
    2026-10-08). `tools/test-linux.sh` stays for chasing a Linux-only failure.
+   When the last proof was full and passed, and only the version files and
+   `CHANGELOG.md` changed since, the run reuses it: it runs only the benchmarks
+   and the timed files, and prints the proof's time. Any other change, or no
+   passing full proof, runs everything and says why.
 2. **Real-user scenarios:** `bash tools/l3-suite.sh SCENARIO...` (the real
    Claude Code TUI, driven as a user; each scenario costs API credits). Run only
    the scenarios of the area the release changed, plus `greenfield` when the

@@ -41,7 +41,7 @@ bash tools/test.sh --shard 2/4       # share 2 of 4, the way CI's macOS jobs run
 bash tools/test.sh --shard 2/4 --list # show that share without running it
 ```
 
-Run `PATH="/bin:$PATH" bash tools/test.sh --release` before a push. It adds the hook, status line and panel benchmarks and the timed test files, which run alone after the rest; `vbw prove` and plain `bash tools/test.sh` skip them, so a busy machine never fails a proof.
+Run `PATH="/bin:$PATH" bash tools/test.sh --release` before a push. It adds the hook, status line and panel benchmarks and the timed test files, which run alone after the rest; `vbw prove` and plain `bash tools/test.sh` skip them, so a busy machine never fails a proof. When the last proof was full and passed and only the version files and `CHANGELOG.md` changed since, the release run reuses it and runs only the benchmarks and the timed test files; otherwise it runs everything and says why.
 
 A new test file needs no list edit: shares are worked out from `tests/*.bats` on every run.
 
