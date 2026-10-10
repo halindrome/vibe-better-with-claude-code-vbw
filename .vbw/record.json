@@ -19911,7 +19911,7 @@
         "plugin/lib/cmd-config.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/cmd-config.sh config_rigor: write the assessed tiers to a scratch file in .vbw/runtime (vbw_scratch_json, as cmd-prove and cmd-qa do) and pass that file to record_update with --slurpfile, never a process substitution, which bash 3.2 closes before record_update's jq reads it"
