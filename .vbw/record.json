@@ -20896,7 +20896,9 @@
     {
       "id": "T10",
       "text": "Concept (owner, 2026-10-03, positioning): cost per correct outcome, not cost per turn. Stop wasting tokens is not fewer tokens per turn: ten cheap turns that ship broken code waste more than five dearer turns that ship proven code. Measure and present VBW's cost per proven, safe result",
-      "status": "open"
+      "status": "open",
+      "sort": "later",
+      "size": "medium"
     },
     {
       "id": "T11",
