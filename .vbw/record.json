@@ -20944,7 +20944,9 @@
     {
       "id": "T18",
       "text": "Later (owner, 2026-10-05): let the user choose the sound character (folders under plugin/assets/audio/)",
-      "status": "open"
+      "status": "open",
+      "sort": "later",
+      "size": "small"
     },
     {
       "id": "T19",
