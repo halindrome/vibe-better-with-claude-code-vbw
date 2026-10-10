@@ -3053,9 +3053,9 @@
     ]
   },
   "milestone": {
-    "id": "M19",
-    "title": "Lighter rounds",
-    "status": "shipped"
+    "id": "M20",
+    "title": "Release fix: bash 3.2",
+    "status": "active"
   },
   "shipped": [
     {
