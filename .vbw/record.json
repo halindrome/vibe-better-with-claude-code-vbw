@@ -21283,6 +21283,11 @@
       "id": "T107",
       "text": "Judge Claude Code 2.1.295 hook onFailure: \"block\" for VBW's guards (a guard that fails to start or times out would block instead of letting the call through); weigh against VBW's no-jq quiet start (2.0.30) and the hooks-inert-outside-VBW rule",
       "status": "open"
+    },
+    {
+      "id": "T108",
+      "text": "Release run adds only what the proof did not run: when a passing full proof covers the same code (only version files and the changelog changed since), the pre-push run executes the timed speed checks and the benchmarks, not the whole suite again (2.0.31 release: about 25 minutes duplicated); bash 3.2 coverage stays in CI's macOS shards",
+      "status": "open"
     }
   ],
   "decisions": [
