@@ -19585,7 +19585,7 @@
         "P105.1",
         "P104.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md: project commands get 3600 seconds (60 minutes) by default; vbw config set command_timeout SECONDS sets the project's own limit, 1 to 86400; vbw config set command_timeout default returns to 3600",
