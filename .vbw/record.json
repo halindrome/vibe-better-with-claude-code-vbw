@@ -55,6 +55,10 @@
     "tests/fixtures/records/v1.json",
     "tests/fixtures/records/v4.json",
     "tests/gate-race.bats",
+    "tests/glance-docs.bats",
+    "tests/glance-guards.bats",
+    "tests/glance-helper.bash",
+    "tests/glance-write.bats",
     "tests/guard-cost.bats",
     "tests/guard-interpreters.bats",
     "tests/guard-plan-writes.bats",
@@ -2885,6 +2889,45 @@
       ],
       "files": [
         "tests/protected-docs.bats"
+      ]
+    },
+    {
+      "id": "C228",
+      "req": "R150",
+      "run": [
+        "bats",
+        "tests/glance-write.bats"
+      ],
+      "files": [
+        "tests/glance-write.bats",
+        "tests/glance-helper.bash",
+        "tests/protected-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C229",
+      "req": "R150",
+      "run": [
+        "bats",
+        "tests/glance-guards.bats"
+      ],
+      "files": [
+        "tests/glance-guards.bats",
+        "tests/glance-helper.bash",
+        "tests/protected-helper.bash"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C230",
+      "req": "R150",
+      "run": [
+        "bats",
+        "tests/glance-docs.bats"
+      ],
+      "files": [
+        "tests/glance-docs.bats"
       ]
     }
   ],
@@ -7533,10 +7576,6 @@
           "check": "C225"
         },
         {
-          "text": "on format 4 the guards stop at the end of the list: an unreadable checks section changes no answer",
-          "check": "C225"
-        },
-        {
           "text": "a file named only under checks, not on the list, is not seen by the guards",
           "check": "C225"
         },
@@ -7575,6 +7614,78 @@
         {
           "text": "neither guide mentions a 50-check threshold or this VBW writing schemas 1 to 3",
           "check": "C227"
+        },
+        {
+          "text": "vbw init and every command that writes the record rewrite the glance in the same locked write, holding the record's schema, lease and protected list exactly, besides the status line's fields",
+          "check": "C228"
+        },
+        {
+          "text": "the glance the kernel writes is newer than the record even when both are written within the same second",
+          "check": "C228"
+        },
+        {
+          "text": "a failed glance write leaves the record write done and the guards reading the record, never the glance written before it",
+          "check": "C228"
+        },
+        {
+          "text": "after the record changes outside vbw, the next vbw command rewrites the glance from the record",
+          "check": "C228"
+        },
+        {
+          "text": "while the glance is current the guards answer from it alone with a normal jq parse, never reading the record",
+          "check": "C229"
+        },
+        {
+          "text": "a missing glance, or one that is not a readable file, not JSON, empty, or lacks schema, lease or protected, gives the answers of the record",
+          "check": "C229"
+        },
+        {
+          "text": "a glance that is not newer than the record gives the answers of the record",
+          "check": "C229"
+        },
+        {
+          "text": "after git checkout, git reset or a hand edit of the record (in place or saved as a new file) within the glance's own second, the guards answer from the record, for a changed lease and a changed protected list",
+          "check": "C229"
+        },
+        {
+          "text": "with no run, a plan, build or fix run, another session's run and the main conversation, the guards give identical answers from the glance and from the record for protected check files, files outside the run, secret files, the record and the consent file",
+          "check": "C229"
+        },
+        {
+          "text": "a forged glance with an empty protected list or no lease, older than the record, changes no answer",
+          "check": "C229"
+        },
+        {
+          "text": "under a plan, qa, map, build or fix run an agent's Write, Edit, MultiEdit or Bash write of the glance (redirect, cp, tee, sed -i, a program) is refused, saying it is written only by vbw, as for the record",
+          "check": "C229"
+        },
+        {
+          "text": "outside a run the main conversation's write of the glance is not refused",
+          "check": "C229"
+        },
+        {
+          "text": "outside a VBW project the guards give no answer and print no error, with or without a stray glance",
+          "check": "C229"
+        },
+        {
+          "text": "hooks.json, the doctor's guard self-test and the guards' jq files hold no --stream and common.jq no event-stream code; the doctor's guard self-test passes with and without a glance",
+          "check": "C229"
+        },
+        {
+          "text": "docs/guards.md says the guards read .vbw/runtime/glance.json and read .vbw/record.json when the glance is missing, not newer, or the record changed by a checkout or a hand edit",
+          "check": "C230"
+        },
+        {
+          "text": "docs/guards.md and docs/record.md say the glance is never the source of truth",
+          "check": "C230"
+        },
+        {
+          "text": "docs/record.md says the glance holds schema, lease and protected for the guards",
+          "check": "C230"
+        },
+        {
+          "text": "no guide says the guards stream the record or read only its beginning",
+          "check": "C230"
         }
       ]
     }
@@ -11661,7 +11772,7 @@
       "tier": "standard",
       "reasons": [
         "requirements: 1",
-        "files: 4 (70819 bytes)",
+        "files: 4 (70738 bytes)",
         "files: more than 2 in a repository tracking 800 files",
         "risk: none",
         "breaks: none",
@@ -11723,7 +11834,7 @@
       "tier": "standard",
       "reasons": [
         "requirements: 1",
-        "files: 3 (18560 bytes)",
+        "files: 3 (18195 bytes)",
         "files: more than 2 in a repository tracking 800 files",
         "risk: none",
         "breaks: none",
@@ -11760,7 +11871,7 @@
       "tier": "deep",
       "reasons": [
         "requirements: 2",
-        "files: 8 (112136 bytes)",
+        "files: 8 (112138 bytes)",
         "files: more than 2 in a repository tracking 800 files",
         "risk: none",
         "breaks: none",
@@ -11793,11 +11904,11 @@
       "tier": "deep",
       "reasons": [
         "requirements: 1",
-        "files: 57 (356848 bytes)",
+        "files: 55 (341239 bytes)",
         "files: more than 2 in a repository tracking 800 files",
         "risk: none",
         "breaks: none",
-        "guarded: R1 (C1), R2 (C2), R10 (C9), R11 (C10), R12 (C11), R13 (C12), R14 (C13), R15 (C14), R16 (C15), R21 (C16), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R29 (C26), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R53 (C54, C55), R55 (C56, C57), R58 (C62, C63, C64, C67), R61 (C73, C74, C75, C76, C77), R65 (C86, C87, C88, C89, C90), R66 (C95), R67 (C96), R68 (C97), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R113 (C177), R114 (C178), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205)",
+        "guarded: R1 (C1), R2 (C2), R10 (C9), R11 (C10), R12 (C11), R13 (C12), R14 (C13), R15 (C14), R16 (C15), R21 (C16), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R29 (C26), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R53 (C54, C55), R55 (C56, C57), R58 (C62, C63, C64, C67), R61 (C73, C74, C75, C76, C77), R65 (C86, C87, C88, C89, C90), R66 (C95), R67 (C96), R68 (C97), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R113 (C177), R114 (C178), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195)",
         "tests: project test command"
       ],
       "predicted": "deep",
@@ -11853,7 +11964,7 @@
         "R150"
       ],
       "milestone": "M19",
-      "goal": "Every record this VBW writes is format 4 with the protected check files listed right after the lease, and the Bash and file guards read only that list, with the 50-check threshold and the old read-the-checks path removed from code, tests and guides.",
+      "goal": "Every record this VBW writes is format 4 with the protected check files listed right after the lease, and the Bash and file guards read only that list, with the 50-check threshold and the old read-the-checks path removed from code, tests and guides. The Bash and file guards answer every tool call from a small side file (.vbw/runtime/glance.json) that the kernel rewrites with every record write, so a guard's cost stays within its budget however large .vbw/record.json grows, and they fall back to the record itself only when that file is missing or out of date (D238).",
       "criteria": [
         "After any vbw write, the record is schema 4 and its keys begin schema, lease, protected, checks, whatever the number of checks: 0, 1, 50, 51 or 2,000",
         "A record with no checks carries protected as an empty list; a record with checks carries every file any check protects, each path once, in sorted order",
@@ -11866,21 +11977,33 @@
         "Under a build or fix run, an agent's Edit, Write or Bash change to a file on the protected list is refused with the same message as today; an unprotected file the run may write is not refused",
         "The main conversation, another session, and calls outside a run get the same answers as today, on schema-4 records and on older records without the list",
         "Under a build or fix run, an agent's file write on a record that has no protected list (older format, not yet rewritten) is refused with a message saying the record must first be saved by this VBW, never silently allowed",
-        "On a schema-4 record the guards stop reading at the end of the protected list: a test with a deliberately unreadable checks section still gets the correct answer",
         "The status line and the panel show the same on a schema-4 record with 0 checks, with 60 checks and on the same project at schema 3, and print no error",
         "An older VBW (reading up to schema 3) opened on a record this VBW wrote says the project needs a newer VBW and never calls it corrupt (R46 still holds)",
         "docs/record.md and docs/guards.md describe one format (4) written for every record and one guard read path, and no longer mention 50 checks, schemas 1 to 3 being written, or guards reading the checks; they still say older records are read and converted on their next write",
-        "The R150 checks (C223 to C227) no longer expect a record of 50 checks to keep schema 1 to 3 or the guards to read the checks; their replacements are approved through a contract change, and tools/test.sh passes under macOS /bin/bash 3.2"
+        "The R150 checks (C223 to C227) no longer expect a record of 50 checks to keep schema 1 to 3 or the guards to read the checks; their replacements are approved through a contract change, and tools/test.sh passes under macOS /bin/bash 3.2",
+        "Every vbw command that writes the record also rewrites .vbw/runtime/glance.json in the same locked write, and that file then holds the record's schema, lease and protected list exactly as the record does, besides what the status line already reads",
+        "After a failed glance write the record write still succeeds and the guards fall back to the record; they never answer from a glance that is out of date",
+        "The guard commands in plugin/hooks/hooks.json and the doctor's guard self-test (plugin/lib/cmd-doctor.sh) read the glance with a normal jq parse: no --stream remains in hooks.json, cmd-doctor.sh or plugin/hooks/*.jq, and common.jq has no event-stream reading code",
+        "When the glance is missing, is unreadable JSON, lacks schema, lease or protected, or is older than the record, the guards read .vbw/record.json and give the same answer they would give from a current glance",
+        "When the record changes without the kernel (git checkout, git reset or a hand edit of .vbw/record.json), the guards never answer from the glance written before that change, even when both changes happen within the same second; a test reproduces this with a changed lease and a changed protected list",
+        "On the same project the guards give identical answers (allow, deny and the deny wording) from the glance and from the record, for: no run, a plan run, a build run, a fix run, another session's open run, the main conversation, a protected check file, a file outside the run's files, a secret file, the record file and the consent file",
+        "Under any run, an agent's Edit, Write or Bash command that would write .vbw/runtime/glance.json is refused with a message saying the file is written only by vbw, exactly as writes to .vbw/record.json are refused; the main conversation outside a run is not affected",
+        "A forged glance planted by hand with an empty protected list or no lease, older than the record, does not change any guard answer",
+        "On a 2 MB-plus record written by the kernel, tools/bench-hooks.sh measures each guard's own CPU per call within its limit (8 ms, or at most 1x the platform's shell and jq startup); the measured times for a small record and the large one are recorded, and if the limit is not met the phase fails rather than raising the limit",
+        "On a normal small record the guards are not slower than before M19 by more than the benchmark's measurement noise, as measured by tools/bench-hooks.sh",
+        "Outside a VBW project (no .vbw/ folder) the guards still give no answer and print no error, with or without a stray glance file",
+        "docs/guards.md and docs/record.md say the guards read the small side file, when they fall back to the record, and that the side file is never the source of truth; no guide mentions streaming the record",
+        "bash tools/test.sh passes in full under macOS /bin/bash 3.2, from a project path containing a space"
       ],
       "proposed": "deep",
       "tier": "deep",
       "reasons": [
         "requirements: 1",
-        "files: 13 (133306 bytes)",
+        "files: 18 (161314 bytes)",
         "files: more than 2 in a repository tracking 800 files",
         "risk: none",
         "breaks: none",
-        "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R55 (C56, C57), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R75 (C101), R76 (C102, C103), R77 (C104), R81 (C109, C111, C112, C113), R99 (C155), R101 (C179), R109 (C168), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205)",
+        "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R51 (C52, C53, C66), R53 (C54, C55), R55 (C56, C57), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R75 (C101), R76 (C102, C103), R77 (C104), R81 (C109, C111, C112, C113), R83 (C119), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R109 (C168), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R114 (C178), R115 (C181), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205)",
         "tests: project test command"
       ],
       "predicted": "deep",
@@ -18239,13 +18362,13 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "Remember the latest real run of the project test command across proofs: a proof that runs it stamps its result with the committed tree it ran on (head) and its argv fingerprint (proofreuse_command_fp); a proof that does not run it (the quick command stood in, or it was reused) carries that latest run forward unchanged in a new optional evidence field (for example evidence.test_run), so a failed latest run is never passed over for an older pass",
         "In vbw prove --full only, reuse that run for the test command when all hold: no unfinished marker (proofreuse_marker); not the D173 case (nothing committed since a passing proof, as proofreuse_last decides); it passed, ran the test command itself (never quick) and its argv fingerprint is today's; the working folder is the committed code (vbw_code_tree = vbw_head_tree); and every path from `git diff-tree -z -r --name-only <its head> <current head>` is under .vbw/ or is documentation (is_doc), is not a test file (a path with a test, tests, __tests__, spec or fixtures folder, or a name like *.test.*, *_test.*, *.spec.*, test_*), and is not a file any approved check lists in files or names in run. Every check and every other command still runs as today",
         "cmd-prove.sh: a full proof whose only reused result is the test command under this rule stays full (evidence.full true, so vbw qa record and vbw ship accept it with no change of theirs); the reused result keeps reused: true and its original time, its summary line reads `test pass Ns reused (proof of AT): only documentation changed since`, and the summary still ends `proof: full`",
         "Run tests/proof-doc-reuse.bats, then proof-quick, proof-reuse, proof-selective, proof-full-gate, kernel-prove and qa-suite-once, under macOS /bin/bash 3.2 and bash 5"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P97.2",
@@ -18262,13 +18385,13 @@
         "P97.1"
       ],
       "status": "done",
-      "role": "docs",
       "tasks": [
         "docs/proof.md, Full and partial proofs: replace 'vbw prove --full reuses nothing' with the rule: a full proof reuses no check and no other command, and reuses the test command's latest passing run when only documentation (.md, .markdown, .rst) or VBW's own .vbw/ files changed since it (a documentation-only change); the summary marks it reused and the proof stays full; update the 'A proof is full only when' list to match, keeping every phrase tests/proof-quick-docs.bats and tests/qa-refusal-wording.bats look for",
         "List what still runs the test command: a code file, a test file (even a Markdown one), a file an approved check lists or runs, uncommitted code, changed test command words, a failed latest run, a quick command run standing in for it, nothing committed since a passing proof (D173), and an unfinished or interrupted proof",
         "State the limit plainly: a test that reads a documentation file not listed by any check is not re-run by a documentation-only change; to make such a file count, list it in that check's files",
         "docs/record.md: describe the evidence field that keeps the latest test-command run (its committed tree and fingerprint) and how a test command result reused after a documentation-only change is marked (reused: true)"
-      ]
+      ],
+      "role": "docs"
     },
     {
       "id": "P98.1",
@@ -18282,12 +18405,12 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "next.jq, the QA-depth step ($tiers_qa): a phase with at least one recorded escalation ((.escalations // []) | length > 0) gets its cell's depth ($rigor[id].qa), whatever its number of files; the at-most-two-files quick and three-to-nine-files standard cap apply only to phases with no escalation (a tier forced with vbw config rigor records none, so it keeps the discount)",
         "Update the R71 comment above the step to name this exception (R145); detail.tier stays the highest cell among the phases to verify, so the round's tier already reflects the raised depth",
         "Run tests/qa-depth-escalated.bats, qa-depth-docs, verify-adaptive, adaptive-results and rigor-*.bats under macOS /bin/bash 3.2 and bash 5"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P98.2",
@@ -18303,12 +18426,12 @@
         "P98.1"
       ],
       "status": "done",
-      "role": "docs",
       "tasks": [
         "docs/rigor.md, QA depth: add that a phase that escalated (a blocked plan, a fix needing another round, a failed QA, vbw tier raise) is checked at its raised tier's depth whatever its size, as the first row of the depth table",
         "Say the size discount applies only to phases that never escalated, and that a tier forced with vbw config rigor is not an escalation",
         "Add a short example: a five-file phase raised to deep is verified at deep, not standard"
-      ]
+      ],
+      "role": "docs"
     },
     {
       "id": "P99.1",
@@ -18323,13 +18446,13 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "record.sh: record_commit takes an optional list of VBW files after the message (`record_commit [--strict] MESSAGE [FILE...]`); with a list it commits only those of VBW's own files that changed, without one everything as today; still `git commit --only` with an explicit pathspec, so staged and unstaged user files stay out; header comment updated",
         "cmd-todo.sh: add, sort, done and drop call record_commit with .vbw/record.json only, so a user's unsaved edit of the spec or a check file is never swept in; messages `chore(vbw): todo T5 added`, `chore(vbw): todo T5 sorted next, small`, `chore(vbw): todo T5 done`, `chore(vbw): todo T5 dropped`; list never commits; refused commands stop before any write",
         "A command that changes nothing (the same sort and size again) leaves the record bytes unchanged, so no commit is made; a commit git refuses (no identity, a failing hook) keeps the change, prints record_commit's warning with git's reason and 'commit them yourself', and the command still exits 0",
         "Run tests/todo-commit.bats, todo-sort, recommend-commit, kernel-commit, approve-commit-fails and the triage tests under macOS /bin/bash 3.2 and bash 5"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P99.2",
@@ -18345,12 +18468,12 @@
         "P99.1"
       ],
       "status": "done",
-      "role": "docs",
       "tasks": [
         "docs/triage.md, The backlog: vbw todo add, sort, done and drop save the change in git at once (a `chore(vbw): todo ...` commit of .vbw/record.json), so the project is left clean; vbw todo list and a command that changes nothing make no commit",
         "Say the user's own staged and unstaged files are never part of that commit",
         "Say that when git cannot commit (no git identity, a hook that refuses), the change is kept and a warning gives git's reason and asks to commit the file yourself"
-      ]
+      ],
+      "role": "docs"
     },
     {
       "id": "P100.1",
@@ -18366,13 +18489,13 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "core.sh: a core-count reader that asks, in order, `getconf _NPROCESSORS_ONLN`, `nproc`, `sysctl -n hw.ncpu` (found on PATH, never by absolute path) and takes the first whole number of at least 1; none gives 'cannot be read'. vbw_check_jobs: a valid set value wins; else floor(cores * 3 / 4), at least 1 and at most 64, and 1 when the count cannot be read; a companion tells whether the value is set or the machine default; comments carry no 'default 4'",
         "cmd-config.sh: vbw config prints `check_jobs: N (machine default)` or `check_jobs: N (set)`; vbw config set check_jobs 1..64 and default work as today and invalid values are still refused; header comment updated",
         "plugin/bin/vbw help: the check_jobs entry says that without a setting it is three quarters of the processor cores",
         "Run tests/check-jobs-machine.bats, prove-parallel, check-wait-patient, prove-kept-output and config-qa under macOS /bin/bash 3.2 and bash 5"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P100.2",
@@ -18386,13 +18509,13 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "The gate under .vbw/runtime/gate (checks_gate_enter, checks_gate_blocker): a shared check also waits while the live registrations already number the limit (vbw_check_jobs, read once per process); looking and registering stay one step under the gate mutex, so separate processes never pass the limit together",
         "A waiting check keeps waiting, never fails for having waited, and registers only when a slot is free; its timeout clock (checks_exec) starts after it registers, as today",
         "Registrations of a process that died are dropped as today, which frees their slot; alone checks are unchanged (they need an empty gate and hold back new shared checks while they wait: R45, R94)",
         "Comments: the in-process runner still starts at most the limit at once and the gate holds the same limit across processes; no 'default 4'. Run tests/check-jobs-shared.bats, check-wait-patient, check-alone-runner, prove-parallel, prove-signal and kernel-prove under macOS /bin/bash 3.2 and bash 5"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P100.3",
@@ -18407,12 +18530,12 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "fixing.js: every Dev prompt of a fix round adds: \"Do not run the project's test command or its quick command: run only your fixes' checks (vbw check). The whole test command runs once, in the proof after this round. If your fix is for a failure of the test command itself, run only the failing tests you need to fix.\"",
         "dev.md, Stage 2 for fixes: \"In a fix, never run the project's test command or its quick command: run your fixes' checks (vbw check); the round's proof runs the whole command once. A fix for a failing test command runs only the failing tests it needs.\" Stay within the agent's 1.5k-token budget",
         "Run tests/fix-suite-once.bats, workflows.bats and standards.bats (prompt and workflow budgets)"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P100.4",
@@ -18433,12 +18556,12 @@
         "P100.3"
       ],
       "status": "done",
-      "role": "docs",
       "tasks": [
         "docs/proof.md, Checks run in parallel: without a setting check_jobs is three quarters of the processor cores, rounded down, at least 1 and at most 64, and 1 when the core count cannot be read; vbw config shows the value and whether it is the machine default or set; vbw config set check_jobs default returns to it; remove 'default 4' and 'means 4'",
         "docs/proof.md: the limit is shared: several VBW commands running checks at the same time in one project folder (parallel Devs each running vbw check, vbw fix done beside vbw prove) never run more checks together than it; a check waits for a free slot instead of failing, and its timeout counts from its real start; a slot held by a VBW process that died is freed; alone checks unchanged",
         "docs/workflows.md, vbw:fixing: in a fix round the Devs run their own checks and never run the project's test command or its quick command; the project test command runs once, in the proof after the round; a fix for a failing test command runs only the failing tests it needs"
-      ]
+      ],
+      "role": "docs"
     },
     {
       "id": "P101.1",
@@ -18462,13 +18585,13 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "QA state (qa_state, qa_combined, qa_digests, qa_settle, qa_cache_put in cmd-next.sh and qa-inputs.sh): the record, the phases' fingerprints (digests), the QA cache and the QA state reach jq only through a pipe (printf '%s' \"$x\" | jq) or --slurpfile/--rawfile fed by process substitution <(...); never --arg/--argjson, never a here-string (<<<, which bash writes to the system's temporary folder); adjust qa.jq and next.jq to the new inputs",
         "Their callers: vbw show phase and show (cmd-show.sh), vbw qa record (cmd-qa.sh), vbw req accept/reject (cmd-req.sh) and vbw next (cmd-next.sh) pass the combined fingerprints and the QA state the same way; record_update keeps its argument list, so a caller hands it --slurpfile NAME <(...) and reads NAME[0]",
         "Proof: vbw prove and prove --full (cmd-prove.sh with prove.jq: the evidence, the check and command results, the scope, prove_scope's record), proof reuse (proofreuse.sh) and the check runner (checks.sh: checks_record_passes and every accumulated result set) pass record-sized values the same way; a scratch file, if one is ever needed, is made with mktemp \"$VBW_RUNTIME/NAME.XXXXXX\" and registered with vbw_guard_add so it is removed when the command ends or fails",
         "Run tests/big-record-commands.bats, big-record-writes.bats and big-record-scratch.bats for the QA and proof commands, plus kernel-prove, kernel-qa, qa-state, proof-reuse, fix-reuse and kernel-next, under macOS /bin/bash 3.2 and bash 5; tools/check-record-args.sh (once P101.4 has it) reports nothing in these files"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P101.2",
@@ -18487,13 +18610,13 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "vbw apply, apply --patch and apply --add (cmd-apply.sh): the plan document merged with the record's started work, the hypothetical record and the rigor tiers reach jq through a pipe or --slurpfile <(...), never --arg/--argjson or a here-string",
         "vbw spec check, sync and add (cmd-spec.sh) and vbw approve (cmd-approve.sh, contract.sh: contract_doc's file digests and the approval comparison) do the same; contract hashes and approvals stay byte-for-byte what they are today, so no project needs approving again",
         "Rigor (rigor.sh, rigor.jq): the phase facts, the guarded requirements list and the fingerprints reach jq the same way; tiers, floors and reasons stay exactly as today",
         "Run tests/big-record-commands.bats (spec, apply, approve steps), big-record-writes.bats, apply-narrow, approval-after-plan, approve-fingerprint, rigor-floor, rigor-record and kernel-spec under macOS /bin/bash 3.2 and bash 5"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P101.3",
@@ -18528,13 +18651,13 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "Audit every jq call in these files: any value built from the whole record (the record itself, all fixes, all check results, a fix's checks and files, the run report) reaches jq through a pipe or --slurpfile/--rawfile <(...), never --arg/--argjson, a positional argument or a here-string; small values (an id, a time, a count, one setting) stay as they are",
         "Commands that pass text from the record to other programs (git commit messages, vbw run confirm reports) pass only small, bounded text; vbw fix done/retry, run start/confirm/end, status, config, recommend, todo, decide, tier, plan, commit, milestone, ship and the autonomy gate behave exactly as today",
         "Any scratch file is made with mktemp in \"$VBW_RUNTIME\" or the clone's git directory and registered with vbw_guard_add (core.sh) so it is removed when the command ends, also on failure; a project path with a space keeps working",
         "Run tests/big-record-commands.bats, big-record-writes.bats and big-record-scratch.bats, plus kernel-work, todo-commit, fix-commit, run-confirm, recommend-store, kernel-sessions and auto-gate-background, under macOS /bin/bash 3.2 and bash 5"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P101.4",
@@ -18550,13 +18673,13 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "tools/check-record-args.sh DIR...: reads every non-comment line of the shell files under DIR (*.sh and bin/vbw) and prints FILE:LINE with the line, exiting 1, when jq gets record-sized data through --arg, --argjson, --args/--jsonargs or a here-string (<<<): record_read, a cat or git show of record.json, qa_combined, qa_digests, qa_state, qa_cache_read, a variable named record, digests or results (and any other name the kernel uses for whole-record data), or a positional parameter that the function's header comment ('# name ARG...:') names RECORD, RECORD_JSON, DIGESTS or RESULTS; a pipe, --slurpfile, --rawfile, small values and comments pass",
         "Bash 3.2 compatible, shellcheck clean (tools/test.sh lints tools/), no /tmp; it passes every self-test in tests/record-args-rule.bats",
         "CLAUDE.md and AGENTS.md, Kernel and hook rules: one rule, 'Record-sized data never on a command line: the record and anything built from all of it reach jq through a pipe, --slurpfile or --rawfile from inside the project, never --arg/--argjson or a here-string (enforced by tests/record-args-rule.bats)'; keep both files identical where they are today and tools/check-contributor-files.sh passing",
         "Once P101.1 to P101.3 are done, the rule passes on the repository (tests/record-args-rule.bats in full); until then, list what it still reports in the plan note"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P101.5",
@@ -18570,13 +18693,13 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "record_update writes the record's keys in one fixed order: schema, lease (null when no run is open), checks, then every other key in its current order, so the guards can read just the beginning of the file; the content and validation are unchanged",
         "After each successful write, record_update also writes .vbw/runtime/glance.json (atomically, through a temporary file in .vbw/runtime): the record cut down to what the status line reads (schema, project, milestone, settings, lease, the current milestone's requirements, the plans being built)",
         "record_read rewrites the glance when it is missing or older than the record (for example after a git checkout or a record written by an older VBW), so any vbw command brings it back up to date",
         "Run tests/record.bats, record-compat, record-newer, lock-exclusive, gate-race, kernel-core and big-record-writes.bats under macOS /bin/bash 3.2 and bash 5"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P101.6",
@@ -18596,13 +18719,13 @@
         "P101.5"
       ],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "The guards (hooks.json PreToolUse commands, still one jq each, ending in || true) read with jq's streaming parser (--stream): the hook input in full, then from the record only schema, lease and, when a build or fix agent's write must be checked, checks; they stop at the first other key, so a 2 MB record costs about what a small one does; vbw doctor's guard self-test (cmd-doctor.sh) calls the guard the same way hooks.json does",
         "A record whose keys are in another order (written by an older VBW, before its next write) is read on until the lease is found or the file ends, so its answer is the same as today, only slower",
         "Every answer stays exactly as today: project detection, secret files, record and consent writes, a foreign session's run, a run's files and protected check files (tests/hooks-guard.bats, guard-plan-writes, guard-interpreters, guard-reads-approval, hook-answers, hooks-session-scope, kernel-diagnostics, big-record-hooks.bats)",
         "Measure with tools/bench-hooks.sh on the small record and on a 2 MB one; if the own CPU per call cannot stay within the budget, record the numbers in the plan note and block the plan instead of raising a limit"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P101.7",
@@ -18619,41 +18742,12 @@
         "P101.5"
       ],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "vbw-statusline.sh reads .vbw/runtime/glance.json instead of the record when the glance is newer than the record (bash's -nt test, no extra process); otherwise it reads the record as today; it still writes nothing and makes no network or git call",
         "statusline.jq renders the same four lines from either source (tests/statusline.bats, panel-light, big-record-hooks.bats status line test)",
         "Measure the status line's CPU per call on a 2 MB record with and without a current glance; at most 30 ms with a current glance on this machine; if not, record the numbers in the plan note and block the plan instead of raising the limit"
-      ]
-    },
-    {
-      "id": "P101.8",
-      "phase": "P101",
-      "title": "The hook benchmark measures a record over 2 MB as the kernel writes it",
-      "reqs": [
-        "R149"
       ],
-      "files": [
-        "plugin/hooks/common.jq",
-        "plugin/scripts/vbw-statusline.sh",
-        "tests/test-shards.bats",
-        "tools/bench-hooks.sh",
-        "tools/test.sh"
-      ],
-      "after": [
-        "P101.11",
-        "P101.6",
-        "P101.7",
-        "P102.2"
-      ],
-      "status": "planned",
-      "tasks": [
-        "Done (657e1ab2, 68fde7dc): the bench measures a record over 2 MB and the status line on both records; tools/test.sh and tests/test-shards.bats list big-record-hooks among the timed files",
-        "Done (9f1b8da2): the guard reads the lease and the checks' files key by key instead of rebuilding every event",
-        "tools/bench-hooks.sh: the large record is written once through the kernel (one record write, such as vbw decide, instead of vbw status) so it holds the format the kernel writes; with its 100 checks that is schema 4 with the protected field (P102.1), which the guards read without walking the checks (P102.2); the 'large record: N bytes' line and every existing line stay as they are",
-        "Run tests/bench-hooks.bats, big-record-hooks.bats and guard-cost.bats under macOS /bin/bash 3.2 and bash 5; every guard line and the status line within budget; if a limit cannot hold, record the measured times in the plan note and block the plan, never raise a limit",
-        "plugin/scripts/vbw-statusline.sh reads the glance unless the record is newer than it ([ ! record -nt glance ] with the glance present), instead of only when the glance is newer: macOS /bin/bash 3.2 compares file times in whole seconds, so a glance written in the same second as the record counted as not newer and the status line parsed the whole record (33 ms against 30 on a 2.3 MB record); bash 5 compares finer and was unaffected; the large-record status line line of tools/bench-hooks.sh is within 30 ms under /bin/bash 3.2"
-      ]
+      "role": "dev"
     },
     {
       "id": "P101.9",
@@ -18673,12 +18767,12 @@
         "P101.7"
       ],
       "status": "done",
-      "role": "docs",
       "tasks": [
         "docs/record.md, Guarantees: a record of any size is supported; VBW never puts the record, or anything built from all of it, on a command line (macOS allows 1 MB for all arguments, Linux 128 KB for one), so long-lived projects keep working; the writer's key order (schema, lease, checks first) and .vbw/runtime/glance.json, kept current by every vbw command",
         "docs/guards.md: the guards read only the beginning of the record (its lease and checks), so their cost does not grow with the project's history",
         "docs/statusline.md: the status line reads the glance when it is current and the record otherwise; its 30 ms limit holds on a record over 2 MB"
-      ]
+      ],
+      "role": "docs"
     },
     {
       "id": "P101.10",
@@ -18709,13 +18803,13 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "plugin/lib/record.sh record_update: when the new record has more than 50 checks, set the top-level field protected to the sorted list of every file in .checks[].files, each once, and set schema 4; with 50 checks or fewer, remove protected and keep today's schema rule (3, 2 or 1); key order schema, lease, protected (when present), checks, then the rest (D226, D229)",
         "plugin/lib/record.jq: protected is a known top-level key; the schema rule expects 4 exactly when protected is present; protected must equal that sorted, unique list and is refused on a record of 50 checks or fewer, so a schema-4 record without it, a field that differs, and schema 4 on 50 checks or fewer are corrupt; a record of more than 50 checks without the field at schema 1, 2 or 3 (written before this change) stays valid until its next write",
         "VBW_SCHEMA_MAX becomes 4; the comments of record_update, record_newer_schema and the record.jq header name schema 4 and why it is kept for records of more than 50 checks",
         "Run tests/record-protected.bats, record-v4-compat.bats, record.bats, record-compat.bats, record-newer.bats (it now also loads tests/fixtures/records/v4.json and fails until this plan lands), check-alone-contract.bats, recommend-store.bats, triage-kernel.bats, big-record-writes.bats and big-record-commands.bats under macOS /bin/bash 3.2 and bash 5"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P102.2",
@@ -18731,12 +18825,12 @@
         "P102.1"
       ],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "plugin/hooks/common.jq read_events: on the top-level key protected, take its list (an empty list too) as the protected check files, in the same one-entry checks shape lease_write_denial already reads, and stop at the event that closes it, never reading an event of checks",
         "A record without protected (50 checks or fewer, or a larger record an older VBW wrote, until its next write) is read on to the checks exactly as today; the hooks.json commands and vbw doctor's guard self-test stay as they are; the header comment says what the guards read on each format",
         "Every answer stays as today: run tests/guard-protected.bats, hooks-guard.bats, guard-plan-writes.bats, guard-interpreters.bats, guard-reads-approval.bats, hook-answers.bats, hooks-session-scope.bats and big-record-hooks.bats under macOS /bin/bash 3.2 and bash 5"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P102.3",
@@ -18760,7 +18854,8 @@
         "tools/test.sh lists tests/bench-protected.bats with the timed files that run alone after the rest; the bench's header comment says what the new records measure",
         "tools/bench-hooks.sh: the small record it builds by hand at the top is a format-4 record (schema 4, the build lease, protected [] then checks []), so every guard input takes the path a real project takes; the large record stays written once through the kernel",
         "Run tests/bench-protected.bats, bench-hooks.bats, big-record-hooks.bats, guard-cost.bats, test-shards.bats and quick-mode.bats under macOS /bin/bash 3.2 and bash 5; if a line is over budget, record the measured times in the plan note and block the plan, never raise a limit"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P102.4",
@@ -18775,12 +18870,12 @@
       ],
       "after": [],
       "status": "done",
-      "role": "docs",
       "tasks": [
         "docs/record.md: a protected row in the field table, written only on records with more than 50 checks, and the key order schema, lease, protected, checks, then the rest, in one paragraph that names protected, lease and schema 4",
         "docs/record.md Versioning: `VBW_SCHEMA_MAX`, currently 4; a record with protected is schema 4; records with 50 checks or fewer keep schema 1, 2 or 3 so an older VBW still reads them; a larger record an older VBW wrote moves to schema 4 on its next write, with no migration command",
         "docs/guards.md 'Cost does not grow with history': on schema 4 the guards read schema, lease and protected and stop before the checks; on schemas 1 to 3 they read the checks as before, with the same answers, only slower; keep tests/protected-docs.bats, big-record-docs.bats and check-alone-docs.bats passing"
-      ]
+      ],
+      "role": "docs"
     },
     {
       "id": "P102.5",
@@ -18800,37 +18895,14 @@
       ],
       "after": [],
       "status": "done",
-      "role": "dev",
       "tasks": [
         "plugin/lib/record.sh record_update: every write sets schema 4 and protected, the sorted list of every string in .checks[].files, each once ([] with no checks or no files), and writes the keys in the order schema, lease (null when none), protected, checks ([] when none), then every other key as before; remove the `> 50` test and the `$big` branch, keep VBW_SCHEMA_MAX at 4, and rewrite the comments of VBW_SCHEMA_MAX and record_update to say every record is format 4 (D232) and records of schemas 1 to 3 written by an older VBW are read and become format 4 on their next write",
         "plugin/lib/record.jq: a schema-4 record must carry protected; a record below schema 4 must not; protected must equal that sorted, unique list of check files whatever the number of checks; every violation about the list names the protected field (as tests/record-protected.bats expects); records without protected keep today's rule for schemas 1, 2 and 3 so older records stay valid until their next write; no 50-check wording, and the header comment describes format 4 and the older formats",
         "plugin/lib/cmd-init.sh: vbw init writes the new record in format 4 directly (schema 4, lease null, protected [], checks [] first, then the other keys as today), so a fresh project's first later write changes only what that write changes (this also makes tests/interview-store.bats 'private answers never touch the project' pass again, which fails on today's v2)",
         "Tests that are not protected check files and build records by hand: in tests/kernel-prove.bats, tests/kernel-plan-dirs.bats and tests/kernel-show.bats every hand edit of the record keeps the list in step, with the same filter the approved check files use (`| if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end`); tests/record.bats checks the new schema and protected rules instead of '2 only when a check is alone, else 1'",
         "Run tests/record-protected.bats, record-v4-compat.bats, record.bats, record-compat, record-newer, big-record-writes, big-record-commands, interview-store, suggestions, triage-kernel, recommend-store, check-alone-contract, panel-steps, kernel-prove, kernel-plan-dirs, kernel-show, proof-reuse and approve-once under macOS /bin/bash 3.2 and bash 5; the kernel stays within its line budget (tests/standards.bats)"
-      ]
-    },
-    {
-      "id": "P102.6",
-      "phase": "P102",
-      "title": "The Bash and file guards learn the protected files only from the protected list",
-      "reqs": [
-        "R150"
       ],
-      "files": [
-        "plugin/hooks/common.jq",
-        "tests/hooks-guard.bats"
-      ],
-      "after": [
-        "P102.3",
-        "P102.5"
-      ],
-      "status": "planned",
-      "tasks": [
-        "plugin/hooks/common.jq read_events: read only schema, lease and protected; delete check_files and the checks branch, so no code reads the checks; on a format-4 record stop at the event that closes the protected list and never pull the event after it; a record without the list (written by an older VBW) is read on, skipping every other key without building it, until the lease and either a schema below 4 or the end of the file",
-        "lease_write_denial: the protected check files come only from the record's protected list, with today's message ('is a protected check file: the contract is fixed while building'); under a build or fix lease, an agent's file write on a record without the list is refused with a reason that contains 'saved by this VBW' and says how to get there (end the run and start it again, which saves the record); the main conversation, another session's run and calls outside a run keep today's answers",
-        "The header comment of common.jq describes the one read path, with no 50-check wording; hooks.json and vbw doctor's guard self-test stay as they are; tests/hooks-guard.bats (not a protected check file) builds its build and fix leases with the protected list in step, as the approved check files do",
-        "Run tests/guard-protected.bats, record-v4-compat.bats, hooks-guard, guard-plan-writes, guard-interpreters, guard-reads-approval, hook-answers, hooks-session-scope, big-record-hooks and guard-cost under macOS /bin/bash 3.2 and bash 5, then tools/bench-hooks.sh: every guard line within budget; if a limit cannot hold, record the measured times in the plan note and block the plan, never raise a limit"
-      ]
+      "role": "dev"
     },
     {
       "id": "P102.7",
@@ -18845,13 +18917,13 @@
       ],
       "after": [],
       "status": "done",
-      "role": "docs",
       "tasks": [
         "docs/record.md: every record VBW writes is schema 4, keys schema, lease, protected, checks first; the protected row: always present, the sorted list of every file a check protects, each once, an empty list when there are no checks, kept equal to the checks on every write; the Shape heading and example show schema 4 with protected; the schema row and the corrupt cases (no list on schema 4, a list that differs, a list below schema 4) name protected",
         "docs/record.md Versioning: `VBW_SCHEMA_MAX`, currently 4; records of schemas 1 to 3 that an older VBW wrote (no list) are still read and become schema 4 on their next write, with no migration command; an older VBW opened on a record this VBW wrote says it needs a newer VBW; keep, as history of what older VBWs wrote, the line that a record whose checks use alone was schema 2 so an older VBW asks to update (tests/check-alone-docs.bats reads it); no 50-check wording and no sentence saying this VBW writes schema 1, 2 or 3",
         "docs/guards.md: the guards read schema, lease and protected, stop at the end of the list and never read the checks; under a build or fix run, an agent's file write on a record without the list is refused until it is saved by this VBW (add it to the table of refusals, with what to do); no 50-check wording",
         "Keep tests/protected-docs.bats, check-alone-docs.bats, big-record-docs.bats and the docs checks of tests/standards.bats passing"
-      ]
+      ],
+      "role": "docs"
     },
     {
       "id": "P101.11",
@@ -18871,6 +18943,119 @@
       "tasks": [
         "plugin/lib/cmd-next.sh line 51, cmd-show.sh line 31, qa-inputs.sh line 94 and checks.sh line 296 (as tools/check-record-args.sh plugin/lib reports them): every value built from the whole record (the record, the QA state or fingerprints, the interview effective answers taken from the record, the contract hash computed from the record) reaches jq through a pipe, --slurpfile or --rawfile from inside the project, under bash 3.2 too (no <(...) fed to record_update: use a scratch file in .vbw/runtime as P101.1 does); a small value computed from the record may stay an argument only when computed first into its own variable on its own line, so the line-level rule judges it correctly",
         "bash tools/check-record-args.sh plugin/lib plugin/bin plugin/hooks plugin/scripts reports nothing; tests/record-args-rule.bats (C220) passes under macOS /bin/bash 3.2 and bash 5; the suites for next, show, QA and checks (kernel-next, kernel-show, qa-state, kernel-qa, checks and big-record-commands) still pass"
+      ]
+    },
+    {
+      "id": "P102.8",
+      "phase": "P102",
+      "title": "The kernel keeps the small side file current: the guards' three fields, rewritten with every record write",
+      "reqs": [
+        "R150"
+      ],
+      "files": [
+        "plugin/lib/record.sh",
+        "plugin/lib/cmd-init.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "record_glance_write (record.sh): the glance (.vbw/runtime/glance.json) also holds protected exactly as the record has it (left out only when the record has none, as an older VBW wrote it), besides schema, lease and the status line's fields; it is still written to a mktemp file in .vbw/runtime and renamed into place with mv, so it is never half-written",
+        "record_update, in the same locked write: (a) set the new record's file time one second back before renaming it into place, in one small helper (touch -A -01 on macOS and BSD, else touch -r FILE -d '-1 second' FILE on GNU; when neither works, leave the time, and the guards simply read the record); (b) delete the old glance before the rename; (c) write the new glance after it. So the glance is strictly newer than the record even when compared in whole seconds (macOS /bin/sh), any later change of the record (git checkout, git reset, a hand edit) leaves it not newer, and a failed glance write leaves no glance, never an old one that looks current; the record write never fails because of the glance",
+        "record_read: rewrite the glance (under the lock) when it is missing, not a regular file, or not strictly newer than the record ([ glance -nt record ] fails), instead of only when older, so the first vbw command after a checkout or a hand edit brings it up to date; it never changes the record or its file time. vbw init (cmd-init.sh): set the new record's time back the same way, then write the glance under the lock, so a new project starts with a current glance",
+        "The comments of record_glance_write, record_update and record_read say what the glance holds, who reads it (the status line and the guards), why the record's time is set back, and that the glance is never the source of truth (D238); the kernel stays within its line budget (tests/standards.bats)",
+        "Run tests/glance-write.bats (C228), record.bats, record-protected, record-v4-compat, record-compat, record-newer, big-record-writes, big-record-scratch, statusline, lock-exclusive, gate-race and kernel-core under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P102.10",
+      "phase": "P102",
+      "title": "The engineering rule lets a guard pick its input with shell tests before jq",
+      "reqs": [
+        "R150"
+      ],
+      "files": [
+        "tests/standards.bats",
+        "tests/standards-selftest.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tests/standards.bats, rule 'per-tool-call hooks run jq directly and never exit non-zero (K20)', name kept: a PreToolUse command may begin with shell variable assignments and [ ... ] tests joined by &&, || and ; (shell builtins, no other program), then runs jq as its only program and ends in || true",
+        "tests/standards-selftest.bats: the rule still fails for a command that starts another program before jq (bash x.sh, cat f && jq, a $(...) or a pipe before jq) and for one that does not end in || true, and passes a command of the new form (assignments and [ -f ], [ -r ], [ -nt ] tests, then jq ... || true)",
+        "Run tests/standards.bats and tests/standards-selftest.bats under macOS /bin/bash 3.2 and bash 5; the guard commands of today still pass the rule"
+      ]
+    },
+    {
+      "id": "P102.9",
+      "phase": "P102",
+      "title": "The Bash and file guards read the small side file, and the record only when that file is not current",
+      "reqs": [
+        "R150"
+      ],
+      "files": [
+        "plugin/hooks/hooks.json",
+        "plugin/hooks/common.jq",
+        "plugin/hooks/guard-file.jq",
+        "plugin/hooks/guard-bash.jq",
+        "plugin/lib/cmd-doctor.sh"
+      ],
+      "after": [
+        "P102.8",
+        "P102.10"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "hooks.json, the Bash and the file guard commands: shell tests only (no other program) choose the glance: it goes to jq as --rawfile glance when the record exists and .vbw/runtime/glance.json is a regular, readable file strictly newer than the record ([ -f ] && [ -r ] && [ -nt ]), else /dev/null; then the hook input, the record and end.json are jq's inputs, as before M19; no --stream; one jq; the command still ends in || true",
+        "common.jq: the guard uses the glance when it parses (try fromjson) to an object with schema, lease and protected, and then never reads the record input; otherwise it reads the record with one plain input: a missing record gives the sentinel (not a VBW project), a parse error a VBW project with an empty record, as before M19; the hook input is read with input; delete hook_events, lease_events, protected_events, skip_key, split_next, read_events and every fromstream; the header comment describes the two sources and when each is used, without the word stream",
+        "Writes of the glance refused: glance_path and glance_reason ('.vbw/runtime/glance.json is written only by vbw (vbw help lists the commands)') in common.jq; lease_write_denial refuses the glance first, under every run kind (plan, build, fix, qa, map), which covers the file tools, redirects and programs' writes; guard-bash.jq: record_written becomes one test that takes the path rule, and in_run also refuses a copier, tee, sed -i or any other non-reader that writes the glance; the main conversation and calls outside a run keep today's answers",
+        "cmd-doctor.sh doctor_guard: choose the glance with the same tests as hooks.json (its folder taken from the record's path, as VBW_RUNTIME may be unset there) and call the guard the same way, without --stream",
+        "Run tests/glance-guards.bats (C229), guard-protected (C225), hooks-guard, guard-plan-writes, guard-interpreters, guard-reads-approval, hook-answers, hooks-session-scope, hooks-session-guard, approve-choice-hook, kernel-diagnostics, big-record-hooks, guard-cost and standards under macOS /bin/bash 3.2 and bash 5; then tools/bench-hooks.sh on a quiet machine: every guard line within 8 ms or 1.0x; if not, write the times in the plan note and block, never raise a limit"
+      ]
+    },
+    {
+      "id": "P102.11",
+      "phase": "P102",
+      "title": "Guard and record guides: the guards read the small side file and fall back to the record",
+      "reqs": [
+        "R150"
+      ],
+      "files": [
+        "docs/guards.md",
+        "docs/record.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/guards.md, 'Cost does not grow with history': the guards read .vbw/runtime/glance.json (the record's schema, lease and protected list) with a normal parse while it is current, that is newer than the record, which the kernel keeps so with every record write; they read .vbw/record.json instead when the glance is missing, unreadable, lacks one of those fields or is not newer (after git checkout, git reset, a hand edit or a failed glance write), with the same answers; the glance is never the source of truth; keep one paragraph that names protected, schema 4 and 'never' or 'only' (tests/protected-docs.bats); no 'beginning of the record' and no word of streaming",
+        "docs/guards.md, Engineering: the guard command's shell tests (built into the shell, no other program) pick the glance or nothing, then jq reads the hook input, the record only when needed, and the sentinel; the refusals table: under any run an agent's write of .vbw/runtime/glance.json is refused, as it is written only by vbw, like the record",
+        "docs/record.md, the glance item: .vbw/runtime/glance.json holds the record's `schema`, `lease` and `protected` for the guards, besides what the status line shows; every record write rewrites it in the same locked write and sets the record's file time one second back, so the glance stays newer; any vbw command rewrites a missing or out-of-date glance; it is never the source of truth and safe to delete; the key order item no longer says the guards read the start of the record",
+        "Keep tests/glance-docs.bats (C230), protected-docs.bats (C227), big-record-docs.bats (C222), check-alone-docs.bats and the docs checks of tests/standards.bats passing"
+      ]
+    },
+    {
+      "id": "P101.8",
+      "phase": "P101",
+      "title": "The hook benchmark measures the guards on a record over 2 MB with its side file, and against the guards before M19",
+      "reqs": [
+        "R149"
+      ],
+      "files": [
+        "tools/bench-hooks.sh"
+      ],
+      "after": [
+        "P102.9"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/bench-hooks.sh header comment: the guards read the glance; the large project is written once by the kernel (vbw decide), so its glance is current and its lines measure the glance path; the small record is built by hand without a glance, so its lines measure the record path; every existing line stays as it is (tests/bench-hooks.bats, big-record-hooks.bats and hook-answers.bats read them)",
+        "On a quiet machine, run tools/bench-hooks.sh three times under macOS /bin/bash 3.2 (VBW_BENCH_RUNS=100): every guard line on the small and the 2 MB record within 8 ms or 1.0x, the status line within 30 ms; write the per-input times of the small and the large record in the plan note; if a limit fails, block the plan with the times, never raise a limit",
+        "Before M19: extract commit f3761b76 (M18 shipped) with git archive f3761b76 plugin tools into a folder made by mktemp -d, removed afterwards, and run its tools/bench-hooks.sh three times, alternating with today's; today's small-record guard lines must not be slower than before M19 by more than the spread between runs; write both sets of times in the plan note; if slower, block with the times",
+        "Run tests/bench-hooks.bats, big-record-hooks.bats (C219), hook-answers.bats and guard-cost.bats under macOS /bin/bash 3.2 and bash 5"
       ]
     }
   ],
@@ -21516,6 +21701,12 @@
       "text": "The guards read the record with a normal (non-streaming) jq parse and use the protected list; they never use the checks; no --stream in hooks.json or the doctor's guard self-test",
       "why": "measured 2026-10-10 on the owner's Mac: streaming made every guard call 1.5-2 ms slower on normal records (8.2-8.5 ms vs 6.6-7.0 before M19, budget 8); a normal parse took about 6.7 ms even at 2.9 MB; the cost on big records came from walking the checks, which the protected list removes",
       "at": "2026-10-10T10:17:25Z"
+    },
+    {
+      "id": "D238",
+      "text": "Replaces D237: every record write also writes a small side file (.vbw/runtime/glance.json, extended with schema, lease and protected) and the guards read that small file with a normal jq parse; they fall back to the record when it is missing or older; no streaming",
+      "why": "D237 rested on a mis-read figure (the bench's startup line, not a record read); a normal parse of a 2.3 MB record costs 22 ms per guard call; the side file keeps the cost flat at any size (owner's choice, 2026-10-10)",
+      "at": "2026-10-10T10:34:19Z"
     }
   ],
   "commands": {

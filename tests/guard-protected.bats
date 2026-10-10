@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
-# R150 (decision D232; docs/guards.md): the Bash and file guards have one way to
-# learn the protected check files: the protected list of a format-4 record.
-# They stop reading at its end, never read the checks, and give today's answers
+# R150 (decisions D232, D238; docs/guards.md): the Bash and file guards have one
+# way to learn the protected check files: the protected list of a format-4
+# record (read from the glance while it is current, else from the record). They
+# never read the checks, and give today's answers
 # for a build or fix agent, the main conversation, another session and calls
 # outside a run. On a record an older VBW wrote (no list) the main conversation,
 # other sessions and calls outside a run get the same answers as before, and a
@@ -161,19 +162,6 @@ unsaved_denied() {
   (cd "$OLD" && "$VBW" decide "saved again" > /dev/null)
   format4 "$OLD/.vbw/record.json"
   ANSWER=$(answer "$OLD" "$(file_in Write src/pay.txt workflow-subagent)")
-  allowed
-}
-
-@test "R150: on format 4 the guards stop at the end of the protected list: an unreadable checks section changes no answer" {
-  local rec
-  rec=$(jq -c . "$FOUR/.vbw/record.json")
-  [[ "$rec" == *',"protected":['*'],"checks":['* ]]
-  printf '%s,"checks":[{"i' "${rec%%,\"checks\":*}" > "$FOUR/.vbw/record.json"
-  in4 "$(file_in Write tests/c1.sh workflow-subagent)"
-  protected_denied
-  in4 "$(bash_in 'printf x > tests/shared.sh' workflow-subagent)"
-  protected_denied
-  in4 "$(file_in Write src/pay.txt workflow-subagent)"
   allowed
 }
 
