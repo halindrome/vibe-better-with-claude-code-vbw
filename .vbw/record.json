@@ -20920,7 +20920,9 @@
     {
       "id": "T16",
       "text": "Express path friction (M7 senior run): the router put a check file in the contract before writing it (first approval refused) and set a project test command that failed without arguments (fix round and re-approval). The express step should write and red-check the check file first, and the project command must run bare",
-      "status": "open"
+      "status": "open",
+      "sort": "next",
+      "size": "small"
     },
     {
       "id": "T17",
