@@ -240,6 +240,23 @@ in a repository tracking more than 30 files, an express phase over more than
 two files is refused (`its signals set the floor at standard`). The new phase
 changes the contract, so you approve it once.
 
+### Reopening a shipped requirement
+
+A requirement of a shipped milestone stays closed. To work on it again, change
+its text or its proof type (`[auto]` or `[human]`) in `.vbw/spec.md` and run
+`vbw spec sync`. The requirement moves to the current milestone, status `open`.
+A full `vbw apply` then accepts a new phase that covers it:
+
+```
+echo '{"phases": [{"id": "P3", "title": "Notes again", "reqs": ["R1"], "goal": "Notes read better", "criteria": ["notes read better"], "tier": "standard"}],
+ "plans": [{"id": "P3.1", "phase": "P3", "title": "Again", "reqs": ["R1"], "files": ["src/n3.txt"], "after": []}],
+ "checks": []}' | vbw apply
+```
+
+The shipped milestone's phase keeps its id, title, requirements, goal,
+criteria, tier and plans, each plan with its status. A requirement of a shipped
+milestone that was not reopened is still refused (`R1 belongs to milestone M1`).
+
 ### Once work has started
 
 When any plan of a phase is no longer `planned`, a planning round (a full
@@ -253,6 +270,27 @@ When any plan of a phase is no longer `planned`, a planning round (a full
 A new phase for requirements nobody planned yet is still accepted, and before
 any work has started planning may rename and reshape phases freely. To add or
 change a plan that has not started, add plans to the phase or use `vbw apply --patch`.
+
+A phase that has not started (every plan `planned`, no tier raise) may change
+its goal and criteria in a full `vbw apply`; its id, title, requirements and
+plans stay as they were. For a started phase the goal and criteria stay. A
+change is refused (`P1 has work started: its goal and criteria stay as they are;
+add a new phase for the further work`). Add a new phase for the new work, for a
+requirement nobody planned yet or one reopened as above. `vbw apply --patch`
+never changes a phase.
+
+### Refusal messages name their mode
+
+Every `vbw apply` refusal starts with the mode it came from, then the reason.
+Nothing is written.
+
+| Mode | Example |
+|---|---|
+| full apply (no option) | `vbw: full apply refused: apply needs a JSON object on stdin` |
+| `--add` | `vbw: --add refused: --add needs a JSON object with the new phases ({id, title, reqs}) and their plans, checks and rules` |
+| `--patch` | `vbw: --patch refused: a patch carries plans, checks and rules, never phases: change phases with a full apply` |
+
+An unknown option prints the usage line for the three modes and exits 2.
 
 ## Agents
 
