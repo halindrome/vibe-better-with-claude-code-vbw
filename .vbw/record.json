@@ -12500,12 +12500,19 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "a5d28ce760b63c62c7f81c108ee8e2bda3ef2413a7b738d867792a7f87a2b1e3",
-        "at": "2026-10-10T16:41:04Z",
-        "note": "25/26 checks",
-        "rounds": 1
+        "tree": "89fa041731a29a925be5db1ef45579173966d69a0b7350cd98e212a6a293900a",
+        "at": "2026-10-10T18:53:31Z",
+        "note": "26/26 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 1,
+        "qa_findings": 1,
+        "escalations": 0
       }
     },
     {
@@ -20658,7 +20665,7 @@
       "req": "R152",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The release procedure still gives the old run. .claude/skills/vbw-release/SKILL.md step 1 says to run 'PATH=\"/bin:$PATH\" /bin/bash tools/test.sh' once and ends with 'The hook benchmark must be within budget.' Since P104.1 that run skips both benchmarks and every tests/timed-*.bats, so a release that follows the skill never runs the timed speed checks, and its sentence about the hook benchmark is now false. Plain English: the goal is 'timed checks run once per release, in the local run before a push', but the maintainer's own release checklist still points at the run that leaves them out. Fix: change step 1 to the --release run under /bin/bash 3.2. Also worth aligning: tools/test-linux.sh (line 19, runs bash tools/test.sh, comment says 'the whole suite') and README.md:434 ('Tests: bash tools/test.sh') name the default run as if it were the full suite. P104.3 listed only docs/proof.md, AGENTS.md, CONTRIBUTING.md and copilot-instructions.md, so these were missed."
     },
     {
