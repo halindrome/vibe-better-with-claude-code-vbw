@@ -19977,7 +19977,7 @@
         "tests/rigor-helper.bash"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tests/rigor-helper.bash edit_record drops .vbw/runtime/glance.json after its hand edit, so the status line reads the record under bash 3.2 (whole-second file times); written in plan run plan-20261010T192811Z, the build confirms the tests under /bin/bash"
