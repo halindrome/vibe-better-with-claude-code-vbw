@@ -20870,7 +20870,7 @@
     {
       "id": "T6",
       "text": "Enforce the unenforced budgets: a status line CPU benchmark (30 ms), and prompt budget tests by one documented token estimate (router 2k, each skill 3k, all prompts 15k); trim if they show it (owner: not critical before the merge)",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T7",
