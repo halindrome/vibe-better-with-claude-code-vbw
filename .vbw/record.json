@@ -1,6 +1,19 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "build-20261010T112524Z",
+    "kind": "build",
+    "started_at": "2026-10-10T11:25:24Z",
+    "files": [
+      "docs/guards.md",
+      "docs/record.md",
+      "plugin/lib/cmd-init.sh",
+      "plugin/lib/record.sh",
+      "tests/standards-selftest.bats",
+      "tests/standards.bats"
+    ],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-foreign-req.bats",
@@ -18957,7 +18970,7 @@
         "plugin/lib/cmd-init.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "record_glance_write (record.sh): the glance (.vbw/runtime/glance.json) also holds protected exactly as the record has it (left out only when the record has none, as an older VBW wrote it), besides schema, lease and the status line's fields; it is still written to a mktemp file in .vbw/runtime and renamed into place with mv, so it is never half-written",
@@ -18979,7 +18992,7 @@
         "tests/standards-selftest.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tests/standards.bats, rule 'per-tool-call hooks run jq directly and never exit non-zero (K20)', name kept: a PreToolUse command may begin with shell variable assignments and [ ... ] tests joined by &&, || and ; (shell builtins, no other program), then runs jq as its only program and ends in || true",
@@ -19027,7 +19040,7 @@
         "docs/record.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/guards.md, 'Cost does not grow with history': the guards read .vbw/runtime/glance.json (the record's schema, lease and protected list) with a normal parse while it is current, that is newer than the record, which the kernel keeps so with every record write; they read .vbw/record.json instead when the glance is missing, unreadable, lacks one of those fields or is not newer (after git checkout, git reset, a hand edit or a failed glance write), with the same answers; the glance is never the source of truth; keep one paragraph that names protected, schema 4 and 'never' or 'only' (tests/protected-docs.bats); no 'beginning of the record' and no word of streaming",
@@ -20391,6 +20404,13 @@
     {
       "id": "T104",
       "text": "vbw decide --help records a decision with the text '--help' (D231, 2026-10-10); every kernel command treats --help/-h as a usage request and writes nothing",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T105",
+      "text": "Public doc docs/parallel-sessions.md (owner 2026-10-10, for the next version): how to run several Claude Code sessions on one VBW project - start each at the project root, give each a different area, say what to leave alone, what 'another session holds the run' means and when to choose wait or closed, worktrees vs one folder, the shared check limit; linked from the README",
       "sort": "next",
       "size": "small",
       "status": "open"
