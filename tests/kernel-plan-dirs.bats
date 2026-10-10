@@ -4,6 +4,9 @@
 
 load helper
 
+# Hand edits of the record keep the protected list in step with the checks (R150), as the approved check files do.
+KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end'
+
 setup() {
   vbw_setup
   vbw_git_project
@@ -23,7 +26,7 @@ setup() {
 teardown() { vbw_teardown; }
 
 edit_record() {
-  jq "$1" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
+  jq "$1" .vbw/record.json > "$TEST_ROOT/edit.json" && jq "$KEEP_PROTECTED" "$TEST_ROOT/edit.json" > .vbw/record.json
 }
 
 # write_decision SESSION PATH [AGENT_TYPE]: the guard's decision on a Write.

@@ -51,15 +51,23 @@ violations_after() {
 }
 
 @test "the minimal record written by vbw init is valid" {
-  run bash -c 'jq -n --arg n "x" "{schema:1, project:{name:\$n}, milestone:{id:\"M1\",title:\"First milestone\",status:\"active\"}, shipped:[], requirements:[], checks:[], phases:[], plans:[], fixes:[], todos:[], decisions:[], commands:{}, settings:{profile:\"balanced\",autonomy_cap:25}, evidence:null, lease:null}" | jq -c -f "$1"' _ "$VALIDATOR"
+  run bash -c 'jq -n --arg n "x" "{schema:4, lease:null, protected:[], checks:[], project:{name:\$n}, milestone:{id:\"M1\",title:\"First milestone\",status:\"active\"}, shipped:[], requirements:[], phases:[], plans:[], fixes:[], todos:[], decisions:[], commands:{}, settings:{profile:\"balanced\",autonomy_cap:25}, evidence:null}" | jq -c -f "$1"' _ "$VALIDATOR"
   [ "$output" = "[]" ]
 }
 
-@test "rejects a schema that does not match the record: 2 only when a check is alone, else 1" {
+@test "rejects a schema that does not match the record: older records follow their fields, format 4 carries protected" {
   run violations_after '.schema = 2'
   [[ "$output" == *"schema must be 2 when a check is alone, else 1"* ]]
   run violations_after 'del(.schema)'
   [[ "$output" == *"schema must be 2 when a check is alone, else 1"* ]]
+  run violations_after '.schema = 4'
+  [[ "$output" == *"protected is missing"* ]]
+  run violations_after '.protected = ["tests/pay.test.ts"]'
+  [[ "$output" == *"protected is only for a schema-4 record"* ]]
+  run violations_after '.schema = 4 | .protected = ["tests/pay.test.ts"]'
+  [ "$output" = "[]" ]
+  run violations_after '.schema = 4 | .protected = []'
+  [[ "$output" == *"protected must be the sorted list"* ]]
 }
 
 @test "rejects unknown top-level keys" {

@@ -3,6 +3,9 @@
 
 load helper
 
+# Hand edits of the record keep the protected list in step with the checks (R150), as the approved check files do.
+KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end'
+
 setup() {
   vbw_setup
   vbw_git_project
@@ -15,7 +18,7 @@ setup() {
       | .plans = [
           {id:"P1.1", phase:"P1", title:"Card form", reqs:["R1"], files:["src/pay.js"], after:[], status:"done"},
           {id:"P1.2", phase:"P1", title:"Receipt", reqs:["R1"], files:["src/receipt.js"], after:["P1.1"], status:"planned"}]' \
-    .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
+    .vbw/record.json > "$TEST_ROOT/r.json" && jq "$KEEP_PROTECTED" "$TEST_ROOT/r.json" > .vbw/record.json
   git add -A && git commit -q -m "chore(vbw): plan"
   mkdir -p src && printf 'pay\n' > src/pay.js
   "$VBW" commit P1.1 "feat(pay): card form" > /dev/null
@@ -69,7 +72,7 @@ teardown() { vbw_teardown; }
 @test "show req matches requirement ids exactly (R1 is not R12)" {
   jq '.requirements += [{id:"R12", text:"Refunds", proof:"auto", status:"open", milestone: "M1"}]
       | .plans += [{id:"P1.3", phase:"P1", title:"Refund", reqs:["R12"], files:["src/refund.js"], after:[], status:"planned"}]' \
-    .vbw/record.json > "$TEST_ROOT/r2.json" && cp "$TEST_ROOT/r2.json" .vbw/record.json
+    .vbw/record.json > "$TEST_ROOT/r2.json" && jq "$KEEP_PROTECTED" "$TEST_ROOT/r2.json" > .vbw/record.json
   printf 'refund\n' > src/refund.js
   "$VBW" commit P1.3 "feat(pay): refunds" > /dev/null
   vbw_run show req R1
@@ -79,10 +82,10 @@ teardown() { vbw_teardown; }
 }
 
 @test "a phase's status is derived from its plans" {
-  jq '.plans[1].status = "done"' .vbw/record.json > "$TEST_ROOT/d.json" && cp "$TEST_ROOT/d.json" .vbw/record.json
+  jq '.plans[1].status = "done"' .vbw/record.json > "$TEST_ROOT/d.json" && jq "$KEEP_PROTECTED" "$TEST_ROOT/d.json" > .vbw/record.json
   vbw_run show roadmap
   [[ "$output" == *"P1 Payments [built]"* ]]
-  jq '.plans[].status = "planned"' .vbw/record.json > "$TEST_ROOT/d.json" && cp "$TEST_ROOT/d.json" .vbw/record.json
+  jq '.plans[].status = "planned"' .vbw/record.json > "$TEST_ROOT/d.json" && jq "$KEEP_PROTECTED" "$TEST_ROOT/d.json" > .vbw/record.json
   vbw_run show phase P1
   [[ "$output" == *"P1 Payments [planned]"* ]]
 }
@@ -104,7 +107,7 @@ teardown() { vbw_teardown; }
       | .phases = [{id:"P1", title:"Pay", reqs:["R1","R2"], milestone:"M1"}]
       | .plans = [{id:"P1.1", phase:"P1", title:"Pay", reqs:["R1"], files:["a"], after:[], status:"done"},
                   {id:"P1.2", phase:"P1", title:"Look", reqs:["R2"], files:["b"], after:[], status:"planned"}]' \
-    .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
+    .vbw/record.json > "$TEST_ROOT/r.json" && jq "$KEEP_PROTECTED" "$TEST_ROOT/r.json" > .vbw/record.json
   vbw_run show requirements
   [ "$status" -eq 0 ]
   [ "${lines[0]}" = "R1 [auto, proven] Pay (M1, built)" ]
@@ -116,7 +119,7 @@ teardown() { vbw_teardown; }
   [[ "$output" != *"tier:"* ]]
   vbw_run show contract
   [[ "$output" != *"phases:"* ]]
-  jq '.phases[0] += {tier:"standard", predicted:"express", reasons:["requirements: 2","risk: none"]}' .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
+  jq '.phases[0] += {tier:"standard", predicted:"express", reasons:["requirements: 2","risk: none"]}' .vbw/record.json > "$TEST_ROOT/r.json" && jq "$KEEP_PROTECTED" "$TEST_ROOT/r.json" > .vbw/record.json
   vbw_run show phase P1
   [[ "$output" == *"tier: standard (predicted express)"* ]]
   [[ "$output" == *"  - risk: none"* ]]
@@ -125,7 +128,7 @@ teardown() { vbw_teardown; }
 }
 
 @test "show req prints a requirement's rules, and show contract --changes reports rule changes" {
-  set_rules() { jq --argjson r "$1" '.requirements[0].rules = $r | .checks |= (if any(.[]; .id == "C2") then . else . + [{id:"C2", req:"R1", run:["true"]}] end)' .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json; }
+  set_rules() { jq --argjson r "$1" '.requirements[0].rules = $r | .checks |= (if any(.[]; .id == "C2") then . else . + [{id:"C2", req:"R1", run:["true"]}] end)' .vbw/record.json > "$TEST_ROOT/r.json" && jq "$KEEP_PROTECTED" "$TEST_ROOT/r.json" > .vbw/record.json; }
   set_rules '[{"text": "A payment succeeds", "check": "C1"}]'
   vbw_run show req R1
   [[ "$output" == *"rule: A payment succeeds -> C1"* ]]
@@ -154,7 +157,7 @@ teardown() { vbw_teardown; }
             commands: .commands, files: {}} + (if .project.results then {results: .project.results} else {} end)' \
       .vbw/record.json > .vbw/runtime/approved-contract.json
   }
-  set_results() { jq "$1" .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json; }
+  set_results() { jq "$1" .vbw/record.json > "$TEST_ROOT/r.json" && jq "$KEEP_PROTECTED" "$TEST_ROOT/r.json" > .vbw/record.json; }
   snapshot
   vbw_run show contract --changes
   [[ "$output" == *"no changes since the last approval"* ]]
