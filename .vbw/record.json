@@ -1,6 +1,12 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261010T163802Z",
+    "kind": "qa",
+    "started_at": "2026-10-10T16:38:02Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-foreign-req.bats",
@@ -12083,7 +12089,22 @@
         "guarded: R1 (C1), R2 (C2), R22 (C19), R23 (C20), R25 (C24), R33 (C29), R38 (C33, C34), R46 (C46), R47 (C47), R49 (C48), R81 (C109, C111, C112, C113), R121 (C187, C188), R122 (C189), R123 (C190, C191), R127 (C194), R133 (C195), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "qa": {
+        "result": "pass",
+        "tier": "standard",
+        "tree": "df820cbfc89738da8f377f6eca69483151e14cf6174724ae5dc3665b83382e7e",
+        "at": "2026-10-10T16:40:11Z",
+        "note": "12/12 checks"
+      },
+      "outcome": {
+        "tier": "standard",
+        "predicted": "standard",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 0
+      }
     },
     {
       "id": "P100",
