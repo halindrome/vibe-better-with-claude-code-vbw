@@ -43,3 +43,11 @@ DOC="$REPO_ROOT/docs/proof.md"
   grep -qiE 'once, in the proof after the round' "$doc"
   grep -qiE 'only the failing tests' "$doc"
 }
+
+@test "B2: the config skill lists check_jobs with its range and default, so /vbw:config can change it" {
+  local skill="$PLUGIN_ROOT/skills/config/SKILL.md"
+  grep -qE '^- `check_jobs`:' "$skill"
+  grep -E '^- `check_jobs`:' "$skill" | grep -qE '1 to 64'
+  grep -E '^- `check_jobs`:' "$skill" | grep -qiE 'three quarters'
+  grep -E '^- `check_jobs`:' "$skill" | grep -qF '`default`'
+}

@@ -4498,7 +4498,72 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M19",
-      "rules": []
+      "rules": [
+        {
+          "text": "On a record over 2 MB (history lists and one field each over 128 KB), status, next, spec check, triage, todo list, config, interview and every show view answer exactly as on the equivalent small record",
+          "check": "C217"
+        },
+        {
+          "text": "spec sync, spec add, apply, apply --patch and approve behave the same on the large record",
+          "check": "C217"
+        },
+        {
+          "text": "A whole build (run start/confirm/end, commit, plan done/block/reset), check, prove and prove --full behave the same on the large record, whose proof results alone exceed 128 KB",
+          "check": "C217"
+        },
+        {
+          "text": "tier raise, qa finding and qa record, fix done, req accept and req reject behave the same on the large record",
+          "check": "C217"
+        },
+        {
+          "text": "decide, todo add/sort/done/drop and recommend behave the same on the large record",
+          "check": "C217"
+        },
+        {
+          "text": "No command prints 'Argument list too long' on the large record",
+          "check": "C217"
+        },
+        {
+          "text": "A write on the large record leaves valid JSON with the change and every earlier entry, nothing lost or cut",
+          "check": "C218"
+        },
+        {
+          "text": "The commits a write makes on the large record hold only the record and the files the command names, the same as on the small record",
+          "check": "C218"
+        },
+        {
+          "text": "The session-start hook, the Bash and file guards and the approve hooks answer the same on the large record, with and without a run, and print no error",
+          "check": "C219"
+        },
+        {
+          "text": "The status line and the panel show the same on the large record and print no error",
+          "check": "C219"
+        },
+        {
+          "text": "tools/bench-hooks.sh measures every guard input and the status line on a record over 2 MB within their limits (hook CPU budget, status line at most 30 ms)",
+          "check": "C219"
+        },
+        {
+          "text": "No shipped shell line hands the record or a value built from all of it to jq through --arg, --argjson, --args/--jsonargs or a here-string",
+          "check": "C220"
+        },
+        {
+          "text": "The rule's self-tests catch every planted violation (the record, values derived from it, a function's RECORD parameter) and let pipes, --slurpfile, --rawfile, small values and comments pass",
+          "check": "C220"
+        },
+        {
+          "text": "Scratch files for record-sized data stay inside the project and are gone when the command ends, after success and after failure, from a project path with a space",
+          "check": "C221"
+        },
+        {
+          "text": "Every mktemp names a folder, so nothing falls back to the system's temporary folder, and TMPDIR stays empty",
+          "check": "C221"
+        },
+        {
+          "text": "docs/record.md says a record of any size is supported and why",
+          "check": "C222"
+        }
+      ]
     }
   ],
   "checks": [
@@ -7028,6 +7093,83 @@
       ],
       "files": [
         "tests/check-jobs-docs.bats"
+      ]
+    },
+    {
+      "id": "C217",
+      "req": "R149",
+      "run": [
+        "bats",
+        "tests/big-record-commands.bats"
+      ],
+      "files": [
+        "tests/big-record-commands.bats",
+        "tests/big-record-helper.bash"
+      ],
+      "timeout": 1800
+    },
+    {
+      "id": "C218",
+      "req": "R149",
+      "run": [
+        "bats",
+        "tests/big-record-writes.bats"
+      ],
+      "files": [
+        "tests/big-record-writes.bats",
+        "tests/big-record-helper.bash"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C219",
+      "req": "R149",
+      "run": [
+        "bats",
+        "tests/big-record-hooks.bats"
+      ],
+      "files": [
+        "tests/big-record-hooks.bats",
+        "tests/big-record-helper.bash",
+        "tests/panel/big-record.test.mjs"
+      ],
+      "timeout": 1200,
+      "alone": true
+    },
+    {
+      "id": "C220",
+      "req": "R149",
+      "run": [
+        "bats",
+        "tests/record-args-rule.bats"
+      ],
+      "files": [
+        "tests/record-args-rule.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C221",
+      "req": "R149",
+      "run": [
+        "bats",
+        "tests/big-record-scratch.bats"
+      ],
+      "files": [
+        "tests/big-record-scratch.bats",
+        "tests/big-record-helper.bash"
+      ],
+      "timeout": 1800
+    },
+    {
+      "id": "C222",
+      "req": "R149",
+      "run": [
+        "bats",
+        "tests/big-record-docs.bats"
+      ],
+      "files": [
+        "tests/big-record-docs.bats"
       ]
     }
   ],
@@ -11215,6 +11357,37 @@
         "guarded: R1 (C1), R2 (C2), R3 (C3), R12 (C11), R13 (C12), R14 (C13), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R58 (C62, C63, C64, C67), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202)",
         "tests: project test command",
         "raised by the Architect"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P101",
+      "title": "Every command works on a record over 1 MB",
+      "reqs": [
+        "R149"
+      ],
+      "milestone": "M19",
+      "goal": "Every vbw command, hook and the status line works the same on a project whose .vbw/record.json is larger than the operating system's command-line limit, because record-sized data reaches helper programs (such as jq and git) only through files or standard input, never as a command-line argument.",
+      "criteria": [
+        "A test fixture project has a valid record of more than 2 MB (larger than macOS's 1 MB command-line limit, which getconf ARG_MAX reports as 1048576) and of more than 128 KB in any single field passed around (Linux's per-argument limit); the test suite uses it under macOS /bin/bash 3.2 and under bash 5",
+        "On that fixture, every vbw subcommand that reads or writes the record (including status, show and each of its views, next --json, plan, approve, apply, run start/end, check, prove and prove --full, qa, fix, commit, tier, decide, req, spec, todo add/sort/done/drop and recommend) exits with the same code and prints the same output as on an equivalent small record, and none prints 'Argument list too long' or any other error",
+        "On that fixture, a write (for example vbw decide or vbw todo add) leaves .vbw/record.json valid JSON containing the change and every earlier entry, with no truncation, and the commit it makes contains only the record and the files it names, as on a small record",
+        "On that fixture, the session-start hook, the file and Bash guard hooks, the approve hooks, the panel and the status line give the same answers as on a small record and print no error",
+        "No kernel or hook code passes the record, or a value derived from the whole record (for example the QA state, the proof results or the combined fingerprints of all phases), to jq or another program as a command-line argument (--arg, --argjson, or a positional argument); such data goes through standard input, --slurpfile or --rawfile from a file inside the project's .vbw/runtime or the clone's git directory, never /tmp",
+        "A standards test fails when a line in plugin/lib, plugin/bin, plugin/hooks or plugin/scripts passes a record-sized variable to jq through --arg or --argjson, and its self-test proves the rule catches a planted violation",
+        "Any temporary file used to hand data to jq is created inside the project (never /tmp), is removed when the command ends, including when it fails, and works from a project path containing a space and under the Claude Code sandbox",
+        "The hook and status line speed limits still hold on the large fixture as measured by tools/bench-hooks.sh (hook CPU per call within its limit, status line at most 30 ms), or, if reading a 2 MB record cannot meet them, the measured times are recorded and the phase fails rather than raising a limit",
+        "bash tools/test.sh passes in full, and the user docs say a record of any size is supported"
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 54 (316639 bytes)",
+        "files: more than 2 in a repository tracking 783 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R1 (C1), R2 (C2), R10 (C9), R11 (C10), R12 (C11), R13 (C12), R14 (C13), R15 (C14), R16 (C15), R21 (C16), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R29 (C26), R31 (C27), R32 (C28), R33 (C29), R35 (C31), R36 (C32), R37 (C35), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R53 (C54, C55), R55 (C56, C57), R58 (C62, C63, C64, C67), R61 (C73, C74, C75, C76, C77), R65 (C86, C87, C88, C89, C90), R66 (C95), R67 (C96), R68 (C97), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R98 (C154), R99 (C155), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R113 (C177), R114 (C178), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R142 (C204, C205)",
+        "tests: project test command"
       ],
       "predicted": "deep"
     }
@@ -17764,6 +17937,241 @@
         "docs/proof.md: the limit is shared: several VBW commands running checks at the same time in one project folder (parallel Devs each running vbw check, vbw fix done beside vbw prove) never run more checks together than it; a check waits for a free slot instead of failing, and its timeout counts from its real start; a slot held by a VBW process that died is freed; alone checks unchanged",
         "docs/workflows.md, vbw:fixing: in a fix round the Devs run their own checks and never run the project's test command or its quick command; the project test command runs once, in the proof after the round; a fix for a failing test command runs only the failing tests it needs"
       ]
+    },
+    {
+      "id": "P101.1",
+      "phase": "P101",
+      "title": "QA and proof steps hand the record to jq through a pipe, not the command line",
+      "reqs": [
+        "R149"
+      ],
+      "files": [
+        "plugin/lib/cmd-next.sh",
+        "plugin/lib/next.jq",
+        "plugin/lib/qa.jq",
+        "plugin/lib/qa-inputs.sh",
+        "plugin/lib/cmd-qa.sh",
+        "plugin/lib/cmd-req.sh",
+        "plugin/lib/cmd-show.sh",
+        "plugin/lib/cmd-prove.sh",
+        "plugin/lib/prove.jq",
+        "plugin/lib/proofreuse.sh",
+        "plugin/lib/checks.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "QA state (qa_state, qa_combined, qa_digests, qa_settle, qa_cache_put in cmd-next.sh and qa-inputs.sh): the record, the phases' fingerprints (digests), the QA cache and the QA state reach jq only through a pipe (printf '%s' \"$x\" | jq) or --slurpfile/--rawfile fed by process substitution <(...); never --arg/--argjson, never a here-string (<<<, which bash writes to the system's temporary folder); adjust qa.jq and next.jq to the new inputs",
+        "Their callers: vbw show phase and show (cmd-show.sh), vbw qa record (cmd-qa.sh), vbw req accept/reject (cmd-req.sh) and vbw next (cmd-next.sh) pass the combined fingerprints and the QA state the same way; record_update keeps its argument list, so a caller hands it --slurpfile NAME <(...) and reads NAME[0]",
+        "Proof: vbw prove and prove --full (cmd-prove.sh with prove.jq: the evidence, the check and command results, the scope, prove_scope's record), proof reuse (proofreuse.sh) and the check runner (checks.sh: checks_record_passes and every accumulated result set) pass record-sized values the same way; a scratch file, if one is ever needed, is made with mktemp \"$VBW_RUNTIME/NAME.XXXXXX\" and registered with vbw_guard_add so it is removed when the command ends or fails",
+        "Run tests/big-record-commands.bats, big-record-writes.bats and big-record-scratch.bats for the QA and proof commands, plus kernel-prove, kernel-qa, qa-state, proof-reuse, fix-reuse and kernel-next, under macOS /bin/bash 3.2 and bash 5; tools/check-record-args.sh (once P101.4 has it) reports nothing in these files"
+      ]
+    },
+    {
+      "id": "P101.2",
+      "phase": "P101",
+      "title": "Planning and approval steps hand the record to jq through a pipe, not the command line",
+      "reqs": [
+        "R149"
+      ],
+      "files": [
+        "plugin/lib/cmd-apply.sh",
+        "plugin/lib/cmd-spec.sh",
+        "plugin/lib/cmd-approve.sh",
+        "plugin/lib/contract.sh",
+        "plugin/lib/rigor.sh",
+        "plugin/lib/rigor.jq"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "vbw apply, apply --patch and apply --add (cmd-apply.sh): the plan document merged with the record's started work, the hypothetical record and the rigor tiers reach jq through a pipe or --slurpfile <(...), never --arg/--argjson or a here-string",
+        "vbw spec check, sync and add (cmd-spec.sh) and vbw approve (cmd-approve.sh, contract.sh: contract_doc's file digests and the approval comparison) do the same; contract hashes and approvals stay byte-for-byte what they are today, so no project needs approving again",
+        "Rigor (rigor.sh, rigor.jq): the phase facts, the guarded requirements list and the fingerprints reach jq the same way; tiers, floors and reasons stay exactly as today",
+        "Run tests/big-record-commands.bats (spec, apply, approve steps), big-record-writes.bats, apply-narrow, approval-after-plan, approve-fingerprint, rigor-floor, rigor-record and kernel-spec under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P101.3",
+      "phase": "P101",
+      "title": "Every other kernel command hands record-sized data to jq without the command line",
+      "reqs": [
+        "R149"
+      ],
+      "files": [
+        "plugin/lib/cmd-fix.sh",
+        "plugin/lib/cmd-check.sh",
+        "plugin/lib/cmd-run.sh",
+        "plugin/lib/cmd-status.sh",
+        "plugin/lib/cmd-config.sh",
+        "plugin/lib/cmd-recommend.sh",
+        "plugin/lib/cmd-todo.sh",
+        "plugin/lib/cmd-decide.sh",
+        "plugin/lib/cmd-tier.sh",
+        "plugin/lib/cmd-plan.sh",
+        "plugin/lib/cmd-commit.sh",
+        "plugin/lib/cmd-milestone.sh",
+        "plugin/lib/cmd-ship.sh",
+        "plugin/lib/cmd-suggest.sh",
+        "plugin/lib/cmd-auto.sh",
+        "plugin/lib/cmd-interview.sh",
+        "plugin/lib/interview.sh",
+        "plugin/lib/cmd-legacy.sh",
+        "plugin/lib/legacy-review.sh",
+        "plugin/lib/consent.sh",
+        "plugin/lib/core.sh",
+        "plugin/lib/effort.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Audit every jq call in these files: any value built from the whole record (the record itself, all fixes, all check results, a fix's checks and files, the run report) reaches jq through a pipe or --slurpfile/--rawfile <(...), never --arg/--argjson, a positional argument or a here-string; small values (an id, a time, a count, one setting) stay as they are",
+        "Commands that pass text from the record to other programs (git commit messages, vbw run confirm reports) pass only small, bounded text; vbw fix done/retry, run start/confirm/end, status, config, recommend, todo, decide, tier, plan, commit, milestone, ship and the autonomy gate behave exactly as today",
+        "Any scratch file is made with mktemp in \"$VBW_RUNTIME\" or the clone's git directory and registered with vbw_guard_add (core.sh) so it is removed when the command ends, also on failure; a project path with a space keeps working",
+        "Run tests/big-record-commands.bats, big-record-writes.bats and big-record-scratch.bats, plus kernel-work, todo-commit, fix-commit, run-confirm, recommend-store, kernel-sessions and auto-gate-background, under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P101.4",
+      "phase": "P101",
+      "title": "An engineering rule that refuses record-sized data on jq's command line",
+      "reqs": [
+        "R149"
+      ],
+      "files": [
+        "tools/check-record-args.sh",
+        "CLAUDE.md",
+        "AGENTS.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/check-record-args.sh DIR...: reads every non-comment line of the shell files under DIR (*.sh and bin/vbw) and prints FILE:LINE with the line, exiting 1, when jq gets record-sized data through --arg, --argjson, --args/--jsonargs or a here-string (<<<): record_read, a cat or git show of record.json, qa_combined, qa_digests, qa_state, qa_cache_read, a variable named record, digests or results (and any other name the kernel uses for whole-record data), or a positional parameter that the function's header comment ('# name ARG...:') names RECORD, RECORD_JSON, DIGESTS or RESULTS; a pipe, --slurpfile, --rawfile, small values and comments pass",
+        "Bash 3.2 compatible, shellcheck clean (tools/test.sh lints tools/), no /tmp; it passes every self-test in tests/record-args-rule.bats",
+        "CLAUDE.md and AGENTS.md, Kernel and hook rules: one rule, 'Record-sized data never on a command line: the record and anything built from all of it reach jq through a pipe, --slurpfile or --rawfile from inside the project, never --arg/--argjson or a here-string (enforced by tests/record-args-rule.bats)'; keep both files identical where they are today and tools/check-contributor-files.sh passing",
+        "Once P101.1 to P101.3 are done, the rule passes on the repository (tests/record-args-rule.bats in full); until then, list what it still reports in the plan note"
+      ]
+    },
+    {
+      "id": "P101.5",
+      "phase": "P101",
+      "title": "The record's single writer puts the guards' data first and keeps a small summary for the status line",
+      "reqs": [
+        "R149"
+      ],
+      "files": [
+        "plugin/lib/record.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "record_update writes the record's keys in one fixed order: schema, lease (null when no run is open), checks, then every other key in its current order, so the guards can read just the beginning of the file; the content and validation are unchanged",
+        "After each successful write, record_update also writes .vbw/runtime/glance.json (atomically, through a temporary file in .vbw/runtime): the record cut down to what the status line reads (schema, project, milestone, settings, lease, the current milestone's requirements, the plans being built)",
+        "record_read rewrites the glance when it is missing or older than the record (for example after a git checkout or a record written by an older VBW), so any vbw command brings it back up to date",
+        "Run tests/record.bats, record-compat, record-newer, lock-exclusive, gate-race, kernel-core and big-record-writes.bats under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P101.6",
+      "phase": "P101",
+      "title": "The Bash and file guards read only the beginning of a large record",
+      "reqs": [
+        "R149"
+      ],
+      "files": [
+        "plugin/hooks/common.jq",
+        "plugin/hooks/guard-bash.jq",
+        "plugin/hooks/guard-file.jq",
+        "plugin/hooks/hooks.json",
+        "plugin/lib/cmd-doctor.sh"
+      ],
+      "after": [
+        "P101.5"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "The guards (hooks.json PreToolUse commands, still one jq each, ending in || true) read with jq's streaming parser (--stream): the hook input in full, then from the record only schema, lease and, when a build or fix agent's write must be checked, checks; they stop at the first other key, so a 2 MB record costs about what a small one does; vbw doctor's guard self-test (cmd-doctor.sh) calls the guard the same way hooks.json does",
+        "A record whose keys are in another order (written by an older VBW, before its next write) is read on until the lease is found or the file ends, so its answer is the same as today, only slower",
+        "Every answer stays exactly as today: project detection, secret files, record and consent writes, a foreign session's run, a run's files and protected check files (tests/hooks-guard.bats, guard-plan-writes, guard-interpreters, guard-reads-approval, hook-answers, hooks-session-scope, kernel-diagnostics, big-record-hooks.bats)",
+        "Measure with tools/bench-hooks.sh on the small record and on a 2 MB one; if the own CPU per call cannot stay within the budget, record the numbers in the plan note and block the plan instead of raising a limit"
+      ]
+    },
+    {
+      "id": "P101.7",
+      "phase": "P101",
+      "title": "The status line reads the small summary when it is current",
+      "reqs": [
+        "R149"
+      ],
+      "files": [
+        "plugin/scripts/vbw-statusline.sh",
+        "plugin/scripts/statusline.jq"
+      ],
+      "after": [
+        "P101.5"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "vbw-statusline.sh reads .vbw/runtime/glance.json instead of the record when the glance is newer than the record (bash's -nt test, no extra process); otherwise it reads the record as today; it still writes nothing and makes no network or git call",
+        "statusline.jq renders the same four lines from either source (tests/statusline.bats, panel-light, big-record-hooks.bats status line test)",
+        "Measure the status line's CPU per call on a 2 MB record with and without a current glance; at most 30 ms with a current glance on this machine; if not, record the numbers in the plan note and block the plan instead of raising the limit"
+      ]
+    },
+    {
+      "id": "P101.8",
+      "phase": "P101",
+      "title": "The hook benchmark also measures a record over 2 MB and the status line",
+      "reqs": [
+        "R149"
+      ],
+      "files": [
+        "tools/bench-hooks.sh",
+        "tools/test.sh"
+      ],
+      "after": [
+        "P101.6",
+        "P101.7"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/bench-hooks.sh also builds, in its work folder, a record of more than 2 MB (the same build lease plus a long history of requirements, checks, phases, plans and decisions, keys in the writer's order, its glance written by running vbw once) and prints 'large record: N bytes'",
+        "For every input it adds a line 'guard (NAME, large record): ...' in the existing format and budget; the six existing lines stay unchanged (tests/bench-hooks.bats reads them)",
+        "It measures the status line's CPU per call on the small and the large record: 'status line: X ms CPU per call; budget 30 ms' and 'status line (large record): X ms CPU per call; budget 30 ms' (VBW_STATUSLINE_BUDGET_MS overrides 30); over budget prints OVER and exits 1, as the guards do",
+        "tools/test.sh lists tests/big-record-hooks.bats with the timed files that run alone after the rest; run tests/bench-hooks.bats and big-record-hooks.bats; if a limit cannot hold, record the measured times in the plan note and block the plan"
+      ]
+    },
+    {
+      "id": "P101.9",
+      "phase": "P101",
+      "title": "Guides: a record of any size is supported",
+      "reqs": [
+        "R149"
+      ],
+      "files": [
+        "docs/record.md",
+        "docs/guards.md",
+        "docs/statusline.md"
+      ],
+      "after": [
+        "P101.5",
+        "P101.6",
+        "P101.7"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/record.md, Guarantees: a record of any size is supported; VBW never puts the record, or anything built from all of it, on a command line (macOS allows 1 MB for all arguments, Linux 128 KB for one), so long-lived projects keep working; the writer's key order (schema, lease, checks first) and .vbw/runtime/glance.json, kept current by every vbw command",
+        "docs/guards.md: the guards read only the beginning of the record (its lease and checks), so their cost does not grow with the project's history",
+        "docs/statusline.md: the status line reads the glance when it is current and the record otherwise; its 30 ms limit holds on a record over 2 MB"
+      ]
     }
   ],
   "fixes": [
@@ -18967,7 +19375,7 @@
       "text": "Show a long proof's progress: the kernel writes checks done of total to .vbw/runtime/proving.<session>, and the panel and status line show \"proving: N of M checks, T min\" while Claude runs the proof in the background (no spinner then)",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T86",
@@ -19079,6 +19487,13 @@
       "text": "R144 known limit: a test inside the project test command that reads a documentation file no check lists is not re-run after a documentation-only change; consider vbw ship always running the test command fresh (M19 planning note)",
       "sort": "later",
       "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T102",
+      "text": "Every long VBW step (planning, build, proof, QA) shows what it is doing now and when it should end, as a clock time from how long the same step took before in this project, in the panel, status line and VBW's messages; absorbs T85. Final polish before 2.1.0 (owner 2026-10-10: cosmetics last, core first unless a technical reason makes it urgent)",
+      "sort": "later",
+      "size": "medium",
       "status": "open"
     }
   ],
