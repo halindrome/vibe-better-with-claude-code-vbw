@@ -132,7 +132,7 @@ def approve_call:
   | select(.cmd == "vbw" and (.args[0] // "") == "approve");
 
 def everywhere:
-  ( approve_call | "only the user approves the contract: ask with the approval menu (AskUserQuestion, the question vbw show contract prints; vbw show contract shows what they approve); /vbw:approve is the user's own command" ),
+  ( approve_call | "only the user approves the contract: ask with the approval menu (AskUserQuestion, the question vbw show contract prints; vbw show contract shows what they approve); /vbw:approve is the user's own command\nNext: ask the user with the approval menu (AskUserQuestion) instead of running vbw approve" ),
   ( select((.out | any(.[]; consent_path)) or ((.cmd | reader) | not) and any(.args[]; consent_path)) | consent_reason );
 
 def in_project:

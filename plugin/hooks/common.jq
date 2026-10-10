@@ -55,7 +55,7 @@ def secret_path: basename
   | (test("^\\.env(\\..+)?$") and (test("^\\.env\\.(example|sample|template|dist|defaults)$") | not))
     or test("\\.(pem|key|p12|pfx|kdbx|keystore|jks)$|^id_(rsa|dsa|ecdsa|ed25519)$|^\\.(netrc|pgpass|npmrc|pypirc)$|^credentials(\\.json)?$");
 def record_path: test("(^|/)\\.vbw/record\\.json$");
-def glance_reason: ".vbw/runtime/glance.json is written only by vbw (vbw help lists the commands)";
+def glance_reason: ".vbw/runtime/glance.json is written only by vbw (vbw help lists the commands)\nNext: leave it as it is; vbw rewrites it with every change to the record";
 def glance_path: test("(^|/)\\.vbw/runtime/glance\\.json$");
 def consent_path: test("(^|/)vbw/consent\\.json$");
 
@@ -81,29 +81,29 @@ def lease_write_denial($lease; $record):
   if . == null then empty
   elif glance_path then glance_reason
   elif $lease.files == [] then
-    "\(.) cannot be written during a \($lease.kind) run: its agents only read"
+    "\(.) cannot be written during a \($lease.kind) run: its agents only read\nNext: leave \(.) as it is; report the change you need in your result for the session that started the run"
   elif $lease.kind == "plan" and test_path then empty
   elif $lease.new_tests == true and (. as $p | any($lease.checks[]?; . == $p)) then empty
   elif $lease.new_tests == true and (. as $p | any($record.protected[]?; . == $p)) then
     "\(.) is a protected check file of another requirement: the fix may edit only the check files of its own requirement (\($lease.checks | join(", ")))\nNext: leave \(.) as it is; put the regression test in a new test file and register it with vbw fix check"
   elif $lease.new_tests == true and test_path then empty
   elif $lease.files != null and (. as $p | any($lease.files[]; covers($p)) | not) then
-    "\(.) is outside this run's files (\($lease.files | join(", "))): agents write only their plan's files"
+    "\(.) is outside this run's files (\($lease.files | join(", "))): agents write only their plan's files\nNext: leave \(.) as it is; report that the plan needs it, so the plan can be replanned with vbw apply"
   elif ($lease.kind | test("^(build|fix)$")) and ($record | has("protected") | not) then
-    "\(.) cannot be written: this project's record was not saved by this VBW yet, so its protected check files are unknown; end the run and start it again, which saves the record"
+    "\(.) cannot be written: this project's record was not saved by this VBW yet, so its protected check files are unknown; end the run and start it again, which saves the record\nNext: tell the session that started the run to end it (vbw run end) and start it again"
   elif ($lease.kind | test("^(build|fix)$")) and (. as $p | any($record.protected[]?; . == $p)) then
-    "\(.) is a protected check file: the contract is fixed while building"
+    "\(.) is a protected check file: the contract is fixed while building\nNext: leave \(.) as it is; if the check is wrong, report it so the user can change the contract"
   else empty end;
 
 # Why another session may not write PATH (project-relative) while FOREIGN's run
 # is open, or empty: it writes lease.files (null: any project file, []: none).
 def foreign_denial($f):
   . as $p | select($p != null and (($f.files // [$p]) | any(.[]; covers($p))))
-  | "\($p) is being written by run \($f.run) of another session (\($f.session)): wait for it; if the user says that session is closed, they run vbw run end --owner-closed";
+  | "\($p) is being written by run \($f.run) of another session (\($f.session)): wait for it; if the user says that session is closed, they run vbw run end --owner-closed\nNext: work on files outside \($f.files // ["the project"] | join(", ")) meanwhile, or wait until run \($f.run) ends";
 
-def secret_reason: "\(basename) may hold secrets; VBW never reads or writes secret files";
-def record_reason: ".vbw/record.json is written only by vbw (vbw help lists the commands)";
-def consent_reason: "the consent file is written only by /vbw:approve";
+def secret_reason: "\(basename) may hold secrets; VBW never reads or writes secret files\nNext: do not open \(basename); ask the user for the value you need, or use an example file such as .env.example";
+def record_reason: ".vbw/record.json is written only by vbw (vbw help lists the commands)\nNext: run the vbw command that makes this change (vbw help lists them); read the record with vbw show or vbw status";
+def consent_reason: "the consent file is written only by /vbw:approve\nNext: ask the user to run /vbw:approve themselves";
 
 # A reason string becomes the hook's deny decision.
 def deny: {hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny",
