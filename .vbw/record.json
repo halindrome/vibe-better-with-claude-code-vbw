@@ -1,12 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "fix-20261010T152043Z",
-    "kind": "fix",
-    "started_at": "2026-10-10T15:20:43Z",
-    "files": null,
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-foreign-req.bats",
@@ -20364,35 +20358,35 @@
       "id": "F99",
       "req": "R43",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C43 fail (exit 1)"
     },
     {
       "id": "F100",
       "req": "R61",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C75 fail (exit 1)"
     },
     {
       "id": "F101",
       "req": "R76",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C103 fail (exit 1)"
     },
     {
       "id": "F102",
       "req": "R128",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C200 fail (exit 1)"
     },
     {
       "id": "F103",
       "command": "test",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "test timeout"
     }
   ],
