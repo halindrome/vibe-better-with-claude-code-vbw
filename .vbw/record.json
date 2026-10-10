@@ -21407,7 +21407,7 @@
       "text": "The /vbw:config skill does not list check_jobs (R147's machine default, shared by every VBW command in the project, 1 to 64, kept in the clone); found as an unplanned edit during M19 planning, reverted, patch kept in a_non_prod_docs/stray-config-skill.patch",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T104",
