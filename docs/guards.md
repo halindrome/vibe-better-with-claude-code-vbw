@@ -50,14 +50,37 @@ missing, unreadable, lacks one of the three fields or is not newer (after
 `git checkout`, `git reset`, a hand edit or a failed glance write). The answers
 are the same; only the cost differs. The glance is never the source of truth.
 
-**When a guard fails.** During a run, a guard that crashes, cannot start (jq or
-its file is missing or unreadable), runs past its time limit (5 seconds of CPU
-time, set with the shell's own `ulimit -t`) or must read a record it cannot
-parse blocks the call, saying "VBW guard: the guard failed ..." and "Next: run
-vbw doctor". A run is open while `.vbw/runtime/run-open` exists (the kernel
-keeps it with the glance). With no open run, and outside VBW projects, a
-failing guard lets the call through silently as before. Nothing ever answers
-allow.
+## When a guard fails
+
+A guard can fail: it crashes, cannot start (`jq` or the guard's file is missing
+or unreadable), or runs past its time limit. What happens depends on where the
+call happens:
+
+| Where | What happens |
+|---|---|
+| During a run (`.vbw/runtime/run-open` exists; the kernel keeps it with the glance) | The call is **blocked**. Claude sees `VBW guard: the guard failed while a run is open, so this call is blocked. Next: run vbw doctor to see why, then retry` (exit status 2). The same holds when the guard must read `.vbw/record.json` and cannot parse it |
+| In a VBW project with no open run | The call goes through, silently, as before |
+| Outside a VBW project | Nothing changes and nothing is printed |
+
+During a run the guard fails closed: a broken guard never lets a call through.
+Nothing ever answers allow.
+
+**Time limit.** A guard may use 5 seconds of CPU time, set with the shell's own
+`ulimit -t 5` at the start of the hook command. Past that the shell stops the
+guard, and the call is treated as a failed guard (blocked during a run). A
+healthy guard takes a few milliseconds, so waiting on a busy machine does not
+count: only CPU time does.
+
+**If you are blocked.** Claude's own Bash calls may be blocked too, so run the
+check yourself in a terminal, in the project folder:
+
+```
+vbw doctor
+```
+
+It reports what is wrong (for example `jq` missing) with the fix for each item
+(docs/diagnostics.md). Fix it, then ask Claude to retry. If you cannot fix it
+and want the run gone, `vbw run end` closes it (docs/workflows.md).
 
 **In VBW projects** (the session's project directory, `$CLAUDE_PROJECT_DIR`,
 holds `.vbw/record.json`; a corrupt record still counts):
@@ -130,14 +153,15 @@ hook answers `ask` instead. Only your exact answer `Approve` approves a
 contract. A standards test (`tools/check-hook-answers.sh`) fails if any hook
 could answer `allow`.
 
-### A failing hook gives no answer
+### A failing hook gives no answer, except during a run
 
-The four guard and approval hook commands end in `|| true` and exit 0 with no
-output when they fail (bad input, missing `jq`). The
+Outside a run, the four guard and approval hook commands exit 0 with no
+output when they fail (bad input, missing `jq`). During a run the two guards
+(Bash and file tools) block instead, as described in "When a guard fails". The
 session-start hook has no `|| true`: if it fails (for example, no `jq`), it
-prints an error and exits non-zero, but it never prints a decision. In every
-case Claude Code goes on as it normally would. A failure never becomes an
-`allow`, and a failing hook never becomes a `deny`. A corrupt
+prints an error and exits non-zero, but it never prints a decision. When a
+hook gives no answer, Claude Code goes on as it normally would. A failure never
+becomes an `allow`; it becomes a `deny` only for a guard during a run. A corrupt
 `.vbw/record.json` is not a hook failure: the folder still counts as a VBW
 project, the guards stay on, and a guarded call such as `vbw approve` is still
 denied with a `VBW guard:` reason.
@@ -179,10 +203,11 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
   nothing when it is not current. jq then reads the hook input, the record only
   when needed, and a sentinel file. jq skips a missing file, so the sentinel
   says whether this is a VBW project.
-- **A guard can never block by accident.** Every PreToolUse command ends in
-  `|| true` (exit status 2 would block the call), and a guard that errors
-  prints nothing, and Claude Code decides as it normally would. A standards test
-  enforces both.
+- **A guard blocks by accident never, by failure only during a run.** The
+  approval-menu command ends in `|| true`. The two guards exit 2 only when
+  their run-open flag is set; otherwise a guard that errors prints nothing and
+  Claude Code decides as it normally would. `tests/guard-fail-closed.bats`
+  pins both.
 - **Budget:** VBW's own cost (the hook's CPU time minus that of the platform's
   `sh -c jq` startup) is at most 20 ms per call, judged for each guard alone,
   measured by `tools/bench-hooks.sh` before every test run, including on a
