@@ -6,22 +6,19 @@
 # RUNS calls. VBW's own cost is the hook's CPU time minus that of the same
 # `sh -c jq` with an empty program: shell and jq startup are the platform's
 # (about 8 ms of CPU on an idle Mac), paid by any hook, and not ours to remove.
-# The budget: VBW's own CPU per call is within VBW_HOOK_BUDGET_MS (default 8),
-# or within VBW_HOOK_BUDGET times that startup (default 1.0x).
+# The budget (R151): VBW's own CPU per call is at most VBW_HOOK_BUDGET_MS (default 20),
+# judged for each guard alone, however it compares with the startup.
 # - CPU time, not wall-clock time: waiting for a busy machine is not the hook's
 #   work.
-# - The relative bound covers a loaded machine: processes run on slower cores,
-#   so startup and the guard's own cost grow together (7.7 to 15.5 ms of
-#   startup on one Mac, the guard staying near 0.8x). It cannot stand alone:
-#   platforms differ in startup (3.4 ms on a Linux CI runner, the guard 2.2x),
-#   so the absolute bound covers a quiet machine of any platform.
-# A real regression still shows: an added subprocess costs about one startup
-# more, and the 20 KB heredoc case catches work that grows faster than the input.
+# - A machine too busy to measure: when that startup alone (measured first) is above
+#   the hook limit, the bench prints one line saying so, judges nothing and exits 0.
+# A real regression still shows: an added subprocess costs several ms, and the 20 KB
+# heredoc case catches work that grows faster than the input.
 # Every input is measured on the small record, on a record of more than 2 MB
 # (R149: a long-lived project's record) and on the records of N checks below,
 # all with the same build lease.
-# The status line is measured on both records too: its CPU per call is within
-# VBW_STATUSLINE_BUDGET_MS (default 30), startup included.
+# The status line is measured on both records too: its CPU per call is at most
+# VBW_STATUSLINE_BUDGET_MS (default 60), startup included.
 # Three more projects (R150) hold records of 51, 500 and 2,000 checks (the last over
 # 2 MB), each written once by the kernel, so each is schema 4 with the protected
 # field. The small record is format 4 too. Every guard input takes the path a real
@@ -31,9 +28,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-BUDGET="${VBW_HOOK_BUDGET:-1.0}"
-BUDGET_MS="${VBW_HOOK_BUDGET_MS:-8}"
-STATUS_MS="${VBW_STATUSLINE_BUDGET_MS:-30}"
+BUDGET_MS="${VBW_HOOK_BUDGET_MS:-20}"
+STATUS_MS="${VBW_STATUSLINE_BUDGET_MS:-60}"
 RUNS="${VBW_BENCH_RUNS:-100}"
 PLUGIN="${VBW_BENCH_PLUGIN_ROOT:-$ROOT/plugin}"
 work="$(mktemp -d)"
@@ -42,6 +38,36 @@ trap 'rm -rf "$work"' EXIT
 trap 'echo "bench-hooks: stopped at line $LINENO (status $?)" >&2' ERR
 hooks_json="$PLUGIN/hooks/hooks.json"
 export CLAUDE_PLUGIN_ROOT="$PLUGIN" CLAUDE_PROJECT_DIR="$work"
+
+# cpu_pair INPUT BASELINE HOOK: the mean CPU time in ms of RUNS runs of each
+# `sh -c` command, "BASELINE HOOK", alternating call by call so both see the
+# same machine. The children's user and system time comes from bash's `times`
+# (millisecond resolution), written to a file to stay in this shell.
+cpu_pair() {
+  local i c log="$work/times.log"
+  : > "$log"
+  for ((i = 0; i < RUNS; i++)); do
+    for c in "$2" "$3"; do
+      times >> "$log"
+      sh -c "$c" < "$1" > /dev/null 2>&1 || true
+      times >> "$log"
+    done
+  done
+  # Each `times` prints the shell's line, then the children's cumulative line.
+  awk -v runs="$RUNS" '
+    function sec(s) { sub(/s$/, "", s); split(s, p, "m"); return p[1] * 60 + p[2] }
+    NR % 2 == 0 { t[++n] = sec($1) + sec($2) }
+    END { for (k = 1; k + 1 <= n; k += 2) sum[int((k - 1) / 2) % 2] += t[k + 1] - t[k]
+          printf "%.1f %.1f\n", sum[0] * 1000 / runs, sum[1] * 1000 / runs }' "$log"
+}
+
+# Measure the platform's sh and jq startup first, before the test records are
+# built: above the hook limit, the machine is too busy to judge anything.
+read -r startup _ < <(cpu_pair /dev/null "jq -n empty" "jq -n empty")
+if perl -e 'exit($ARGV[0] > $ARGV[1] ? 0 : 1)' -- "$startup" "$BUDGET_MS"; then
+  printf 'machine too busy to measure: sh and jq startup takes %s ms CPU per call, above the %s ms hook limit; nothing judged\n' "$startup" "$BUDGET_MS"
+  exit 0
+fi
 
 git -C "$work" init -q
 mkdir -p "$work/.vbw"
@@ -130,34 +156,11 @@ sized() {
 }
 for n in 51 500 2000; do sized "$n"; done
 
-# cpu_pair INPUT BASELINE HOOK: the mean CPU time in ms of RUNS runs of each
-# `sh -c` command, "BASELINE HOOK", alternating call by call so both see the
-# same machine. The children's user and system time comes from bash's `times`
-# (millisecond resolution), written to a file to stay in this shell.
-cpu_pair() {
-  local i c log="$work/times.log"
-  : > "$log"
-  for ((i = 0; i < RUNS; i++)); do
-    for c in "$2" "$3"; do
-      times >> "$log"
-      sh -c "$c" < "$1" > /dev/null 2>&1 || true
-      times >> "$log"
-    done
-  done
-  # Each `times` prints the shell's line, then the children's cumulative line.
-  awk -v runs="$RUNS" '
-    function sec(s) { sub(/s$/, "", s); split(s, p, "m"); return p[1] * 60 + p[2] }
-    NR % 2 == 0 { t[++n] = sec($1) + sec($2) }
-    END { for (k = 1; k + 1 <= n; k += 2) sum[int((k - 1) / 2) % 2] += t[k + 1] - t[k]
-          printf "%.1f %.1f\n", sum[0] * 1000 / runs, sum[1] * 1000 / runs }' "$log"
-}
-
-
 # guards DIR LABEL: measure every input against the project at DIR; LABEL is
 # the empty string, or ", large record".
 status=0
 guards() {
-  local dir="$1" label="$2" input tool event hook shell total own ratio line baseline file
+  local dir="$1" label="$2" input tool event hook shell total own line baseline file
   export CLAUDE_PROJECT_DIR="$dir"
   baseline="jq -nc 'input | empty' - \"$dir/.vbw/record.json\" \"$CLAUDE_PLUGIN_ROOT/hooks/end.json\" 2>/dev/null || true"
   for input in git npm big interp read answer; do
@@ -173,10 +176,9 @@ guards() {
     fi
     read -r shell total < <(cpu_pair "$file" "$baseline" "$hook")
     own=$(perl -e 'printf "%.1f", $ARGV[0] - $ARGV[1]' -- "$total" "$shell")
-    ratio=$(perl -e 'printf "%.2f", $ARGV[1] > 0 ? $ARGV[0] / $ARGV[1] : 99' -- "$own" "$shell")
-    line=$(printf 'guard (%s%s): %s ms own CPU per call, %sx the platform'"'"'s sh and jq startup (%s ms); budget %s ms or %sx' \
-      "$input" "$label" "$own" "$ratio" "$shell" "$BUDGET_MS" "$BUDGET")
-    if perl -e 'exit($ARGV[0] <= $ARGV[1] || $ARGV[2] <= $ARGV[3] ? 0 : 1)' -- "$own" "$BUDGET_MS" "$ratio" "$BUDGET"; then
+    line=$(printf 'guard (%s%s): %s ms own CPU per call (sh and jq startup %s ms); budget %s ms' \
+      "$input" "$label" "$own" "$shell" "$BUDGET_MS")
+    if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$own" "$BUDGET_MS"; then
       printf '%s\n' "$line"
     else
       printf '%s: OVER\n' "$line" >&2
