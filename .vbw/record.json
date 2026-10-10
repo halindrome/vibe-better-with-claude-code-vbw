@@ -46,6 +46,7 @@
     "tests/command-timeout-report.bats",
     "tests/command-timeout.bats",
     "tests/config-qa.bats",
+    "tests/config-rigor-bash32.bats",
     "tests/contract-waves.bats",
     "tests/contributor-files.bats",
     "tests/doc-definition.bats",
@@ -3041,6 +3042,18 @@
       ],
       "files": [
         "tests/command-timeout-report.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C240",
+      "req": "R154",
+      "run": [
+        "bats",
+        "tests/config-rigor-bash32.bats"
+      ],
+      "files": [
+        "tests/config-rigor-bash32.bats"
       ],
       "timeout": 600
     }
@@ -7974,6 +7987,19 @@
           "check": "C239"
         }
       ]
+    },
+    {
+      "id": "R154",
+      "text": "vbw config rigor works under macOS /bin/bash 3.2: setting a mode re-tiers the unstarted phases and saves the record, as it does under bash 5",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M20",
+      "rules": [
+        {
+          "text": "under /bin/bash, vbw config rigor deep and then auto succeed, re-tier the unstarted phase and save the setting",
+          "check": "C240"
+        }
+      ]
     }
   ],
   "phases": [
@@ -12577,6 +12603,25 @@
         "qa_findings": 1,
         "escalations": 3
       }
+    },
+    {
+      "id": "P106",
+      "title": "vbw config rigor under bash 3.2",
+      "reqs": [
+        "R154"
+      ],
+      "milestone": "M20",
+      "proposed": "express",
+      "tier": "express",
+      "reasons": [
+        "requirements: 1",
+        "files: 1 (8638 bytes)",
+        "risk: none",
+        "breaks: none",
+        "guarded: R23 (C20), R27 (C21), R35 (C31), R36 (C32), R81 (C109, C111, C112, C113), R101 (C179), R107 (C166, C167), R119 (C180), R147 (C212, C215, C237), R149 (C217, C218, C219, C220, C221, C222), R153 (C235, C236, C239)",
+        "tests: project test command"
+      ],
+      "predicted": "express"
     }
   ],
   "plans": [
@@ -19853,6 +19898,23 @@
       "role": "dev",
       "tasks": [
         "tests/command-timeout-report.bats (new): a command stopped by a 2-second limit whose measured run is longer than 2 seconds reports the limit (2 s), never the measured seconds; shown to fail against the code before a528091f (F108)"
+      ]
+    },
+    {
+      "id": "P106.1",
+      "phase": "P106",
+      "title": "config rigor hands the new tiers to the record update through a scratch file",
+      "reqs": [
+        "R154"
+      ],
+      "files": [
+        "plugin/lib/cmd-config.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/cmd-config.sh config_rigor: write the assessed tiers to a scratch file in .vbw/runtime (vbw_scratch_json, as cmd-prove and cmd-qa do) and pass that file to record_update with --slurpfile, never a process substitution, which bash 3.2 closes before record_update's jq reads it"
       ]
     }
   ],
