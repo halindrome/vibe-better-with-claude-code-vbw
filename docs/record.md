@@ -20,14 +20,15 @@ carries `VBW-Plan:`/`VBW-Req:` trailers, so the record stays small.
   to `jq` through files and pipes, so every `vbw` command keeps working however
   large the record grows.
 - **Key order:** the writer puts `schema`, `lease`, `protected` and `checks`
-  first, in that order, then the rest, so the guards (docs/guards.md) can read
-  just the start of the record. Every record VBW writes is schema 4 and has
-  all four. A record with another key order, written by an older VBW, still
-  works; it is only slower to guard.
-- **The glance:** `.vbw/runtime/glance.json` is the record cut down to what the
-  status line shows. Every `vbw` command that writes the record refreshes it,
-  and any `vbw` command rewrites it when it is missing or older than the
-  record. It is never a source of truth, and it is safe to delete.
+  first, in that order, then the rest. Every record VBW writes is schema 4 and
+  has all four. A record with another key order, written by an older VBW, still
+  works.
+- **The glance:** `.vbw/runtime/glance.json` holds the record's `schema`,
+  `lease` and `protected` for the guards (docs/guards.md), besides what the
+  status line shows. Every record write rewrites it in the same locked write and
+  sets the record's file time one second back, so the glance stays newer. Any
+  `vbw` command rewrites a missing or out-of-date glance. It is never
+  the source of truth, and it is safe to delete.
 - **Stable ids:** ids are assigned once and never reused or renumbered.
 - **Versioned:** `schema` is an integer. A newer kernel migrates older records
   forward in one tested step; an older kernel refuses a newer record (see

@@ -39,12 +39,16 @@ a subagent never counts. The guard above still refuses the model's own
 `vbw approve`, so the answer hook is the only route besides the user typing
 `/vbw:approve`.
 
-**Cost does not grow with history.** A guard reads the whole hook input but only
-the beginning of the record: `schema`, `lease` and `protected`. It stops at the
-end of the `protected` list and never reads the `checks`, so it costs the same
-on a record of 10 KB or 10 MB. The writer keeps those keys first
-(docs/record.md); a record whose keys are in another order (written by an older
-VBW) gives the same answer, only slower.
+**Cost does not grow with history.** A guard needs only three things from the
+record: `schema`, `lease` and `protected` (the protected check files, one short
+list in schema 4; it never reads the `checks`). While
+`.vbw/runtime/glance.json` is current, that is newer than the record, the guard
+reads those three from it with a normal parse, so it costs the same on a record
+of 10 KB or 10 MB. The kernel keeps the glance newer with every record write
+(docs/record.md). The guard reads `.vbw/record.json` instead when the glance is
+missing, unreadable, lacks one of the three fields or is not newer (after
+`git checkout`, `git reset`, a hand edit or a failed glance write). The answers
+are the same; only the cost differs. The glance is never the source of truth.
 
 **In VBW projects** (the session's project directory, `$CLAUDE_PROJECT_DIR`,
 holds `.vbw/record.json`; a corrupt record still counts):
@@ -64,6 +68,7 @@ input names an `agent_type`) is also held to the lease. The main session never i
 |---|---|
 | Writing a project file outside `lease.files` (file tools, shell redirects; paths resolved, `..` included) | Builders write only their plan's files |
 | During `plan`, writing a project file that is neither under `.vbw/` nor a test file (`tests/`, `test/`, `spec/` or `__tests__/` folders; `*.test.*`, `*_test.*`, `test_*.py`) | Planning writes the spec, plans and tests, never product code |
+| Writing `.vbw/runtime/glance.json` | Under any run, an agent's write is refused: only `vbw` writes the glance, like the record |
 | Writing a protected check file (any check's `files`) during `build` or `fix` | The contract is fixed while building. The Lead runs the project's formatter and linter on check files before approval, and Devs format only their own files, so a formatter never changes an approved file |
 | Under `build` or `fix`, an agent's file write on a record of schema 1 to 3, which has no `protected` list | The guard cannot tell which files are protected, so it refuses until the record is saved by this VBW as schema 4. Run any `vbw` command that writes the record (such as `/vbw:vibe`) from the main session, then retry |
 | `git commit`, `push`, `rebase`, `merge`, `pull`, `cherry-pick`, `revert`, `am` | Commits go through `vbw commit`, with provenance |
@@ -159,10 +164,11 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
 - **Per-tool-call hooks are jq itself** (build plan K20): no shell script, no
   interpreter startup of our own. On a Mac, Homebrew bash takes 9 ms just to
   start; jq is required by VBW anyway.
-- **The project test needs no filesystem call from jq.** The hook passes
-  `$CLAUDE_PROJECT_DIR/.vbw/record.json` and a sentinel file as inputs after the
-  hook input; jq skips a missing file, so the second input says whether this is
-  a VBW project.
+- **The guard command's own shell tests pick the input; jq does the rest.** The
+  tests are built into the shell (no other program): they pick the glance, or
+  nothing when it is not current. jq then reads the hook input, the record only
+  when needed, and a sentinel file. jq skips a missing file, so the sentinel
+  says whether this is a VBW project.
 - **A guard can never block by accident.** Every PreToolUse command ends in
   `|| true` (exit status 2 would block the call), and a guard that errors
   prints nothing, and Claude Code decides as it normally would. A standards test
