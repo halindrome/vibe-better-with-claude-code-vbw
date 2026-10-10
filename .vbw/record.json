@@ -20935,7 +20935,9 @@
     {
       "id": "T19",
       "text": "qa.jq names a phase cycle as a problem even when plans are acyclic (P46.7 after P47.4, P47.5/P47.6 after P46.x): interleaved phases are legitimate; report it as a note, keep the recheck closure",
-      "status": "open"
+      "status": "open",
+      "sort": "next",
+      "size": "small"
     },
     {
       "id": "T20",
