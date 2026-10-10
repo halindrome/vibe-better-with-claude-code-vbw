@@ -12364,6 +12364,12 @@
           "from": "standard",
           "to": "deep",
           "reason": "Dev blocked P105.1: Plan cannot pass as written. (1) C236 (tests/command-timeout-docs.bats) reads docs/proof.md, which is not in the plan's files; the 3600s/command_timeout text must be added there. (2) tests/prove-kept-output.bats (R118) seds the literal 'VBW_COMMAND_TIMEOUT=900' in plugin/lib to shorten the timeout; changing the default breaks it, and it is outside the plan too. Needs docs/proof.md (and a fix to that test, e.g. use 'vbw config set command_timeout 2') added to the plan files. No code changed."
+        },
+        {
+          "at": "2026-10-10T14:58:50Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P105.1: Implemented and committed (698afd1b): 3600 s default, vbw config set command_timeout (1-86400, default), record.jq validation, time-limit line in proof summary, help/skill text, prove-kept-output.bats uses the setting. C235 test 2 ('a project sets its own limit') still fails: after 'config set command_timeout default' the next 'vbw prove --full' expects the test command to run again with 3600 s, but it is reused (proofreuse_docs: only .vbw changed since the last passing run, same argv fingerprint), so no limit is logged. Fix needs plugin/lib/proofreuse.sh (outside this plan's files): include the effective command timeout in proofreuse_command_fp so a changed limit re-runs the command. Please add proofreuse.sh to the plan (I did not test this fix; the guard blocked a debug repro). Also: tests/prove-kept-output.bats was edited and waits for approval before vbw check proves C-checks that protect it."
         }
       ]
     }
@@ -19451,7 +19457,7 @@
       "after": [
         "P103.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/guards.md: the budget paragraph states 20 ms of VBW's own CPU per hook call, the busy-machine report and that CI uses the same limit; no 8 ms limit, no 1x ratio, no CI-only 25 ms",
@@ -19473,7 +19479,7 @@
       "after": [
         "P103.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "The timed test files are tests/timed-*.bats, found at run time; the hand-kept list goes",
@@ -19501,7 +19507,7 @@
       "after": [
         "P103.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tests/timed-prove-parallel.bats: a proof of 24 checks of one second each finishes in under 24 s (the time bound removed from tests/prove-parallel.bats), with that file's fixture",
@@ -19552,7 +19558,7 @@
         "tests/prove-kept-output.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "tasks": [
         "cmd-prove.sh: each project command gets settings.command_timeout seconds, 3600 (60 minutes) without a setting instead of 900; checks keep their own timeout (default 300)",
         "vbw config set command_timeout SECONDS (a whole number from 1 to 86400) stores it in the record's settings; default removes it; anything else exits 2 with a message naming 1 to 86400 and changes nothing; vbw config shows 'command_timeout: N'",
@@ -19560,7 +19566,8 @@
         "The proof summary: a project command stopped by its limit adds 'NAME stopped by its time limit (N s); raise it with vbw config set command_timeout SECONDS'; a command that ended in time is reported as before",
         "vbw help and the config skill list command_timeout with its default and range",
         "tests/prove-kept-output.bats sets its 2-second limit with vbw config set command_timeout 2 instead of editing VBW_COMMAND_TIMEOUT in a copy of the plugin; C236 (the docs check) turns green in P105.2, which owns docs/proof.md, so it may stay red after this plan"
-      ]
+      ],
+      "note": "Implemented and committed (698afd1b): 3600 s default, vbw config set command_timeout (1-86400, default), record.jq validation, time-limit line in proof summary, help/skill text, prove-kept-output.bats uses the setting. C235 test 2 ('a project sets its own limit') still fails: after 'config set command_timeout default' the next 'vbw prove --full' expects the test command to run again with 3600 s, but it is reused (proofreuse_docs: only .vbw changed since the last passing run, same argv fingerprint), so no limit is logged. Fix needs plugin/lib/proofreuse.sh (outside this plan's files): include the effective command timeout in proofreuse_command_fp so a changed limit re-runs the command. Please add proofreuse.sh to the plan (I did not test this fix; the guard blocked a debug repro). Also: tests/prove-kept-output.bats was edited and waits for approval before vbw check proves C-checks that protect it."
     },
     {
       "id": "P105.2",
