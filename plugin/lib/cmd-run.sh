@@ -58,7 +58,7 @@ cmd_run() {
     refusal=$(record_read | jq -r --arg me "$me" --argjson h "$VBW_LEASE_HOURS" --arg closed "${1:-}" '
       .lease | select(. != null and .session != null and .session != $me
         and $closed != "--owner-closed" and (now - (.started_at | fromdateiso8601) <= $h * 3600))
-      | "run \(.run) belongs to another session\(if $me == "" then " (this session is unknown)" else "" end): wait for it, or if the user says that session is closed, vbw run end --owner-closed"')
+      | "run \(.run) belongs to another session\(if $me == "" then " (this session is unknown)" else "" end). Next: wait for it, or if the user says that session is closed, vbw run end --owner-closed"')
     [ -z "$refusal" ] || vbw_die "$refusal"
     run=$(record_read | jq -r '.lease.run // "no run"')
     local lease
@@ -73,9 +73,13 @@ cmd_run() {
   local kind="$1" record ids
   shift
   record=$(record_read)
-  printf '%s' "$record" | jq -e --argjson h "$VBW_LEASE_HOURS" \
-    '.lease == null or (now - (.lease.started_at | fromdateiso8601) > $h * 3600)' > /dev/null \
-    || vbw_die "a run is active ($(printf '%s' "$record" | jq -r .lease.run)): vbw run end first"
+  local open
+  open=$(printf '%s' "$record" | jq -r --arg me "$(vbw_session)" --argjson h "$VBW_LEASE_HOURS" '
+    .lease | select(. != null and (now - (.started_at | fromdateiso8601) <= $h * 3600))
+    | if .session != null and .session != $me
+      then "a run is active (\(.run)) in another session. Next: wait for it, or check vbw status"
+      else "a run is active (\(.run)) in this session. Next: wait for it, or vbw run end" end')
+  [ -z "$open" ] || vbw_die "$open"
   ids=$(printf '%s\n' "$@" | jq -R . | jq -sc 'map(select(length > 0))')
   case "$kind" in
     plan|qa|map) [ "$ids" = "[]" ] || vbw_usage_error "usage: vbw run start $kind" ;;
@@ -87,9 +91,9 @@ cmd_run() {
     if $k == "build" then
       (.plans | map(select(.status == "done") | .id)) as $done
       | $ids[] as $i | [.plans[] | select(.id == $i)][0] as $p
-      | if $p == null then "unknown plan \($i)"
-        elif ($p.status | IN("planned", "building") | not) then "\($i) is \($p.status), not ready to build"
-        elif any($p.after[]; . as $a | any($done[]; . == $a) | not) then "\($i) waits for \($p.after | join(", "))"
+      | if $p == null then "unknown plan \($i). Next: check the id with vbw status"
+        elif ($p.status | IN("planned", "building") | not) then "\($i) is \($p.status), not ready to build. Next: build a plan that is planned (vbw next shows which)"
+        elif any($p.after[]; . as $a | any($done[]; . == $a) | not) then "\($i) waits for \($p.after | join(", ")). Next: build those first, or run vbw next"
         else empty end,
       # Builders share one working tree: one wave never shares a file (a
       # directory entry shares every file under it).
@@ -98,10 +102,10 @@ cmd_run() {
           | $w[$a].files[] as $x | $w[$b].files[] as $y
           | select(($x | covers($y)) or ($y | covers($x))) | if ($x | length) <= ($y | length) then $x else $y end]
          | unique[]
-         | "more than one plan in this wave writes \(.): build them in separate waves (vbw next)")
+         | "more than one plan in this wave writes \(.): build them in separate waves. Next: start one of them now and the other after it ends (vbw next shows the waves)")
     elif $k == "fix" then
       $ids[] as $i | [.fixes[] | select(.id == $i)][0] as $f
-      | if $f == null then "unknown fix \($i)" elif $f.status != "open" then "\($i) is \($f.status), not open" else empty end
+      | if $f == null then "unknown fix \($i). Next: check the id with vbw status" elif $f.status != "open" then "\($i) is \($f.status), not open. Next: start only fixes that are open (vbw status lists them)" else empty end
     else empty end] | .[0] // empty')
   [ -z "$problem" ] || vbw_die "$problem"
 
