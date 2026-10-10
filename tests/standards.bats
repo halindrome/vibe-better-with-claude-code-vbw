@@ -149,13 +149,17 @@ code_grep() {
   local val='([A-Za-z0-9_./:-]|'"$exp"'|"([^"$`]|'"$exp"')*")+'
   local assign='^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*='"$val"'[[:space:]]*(;|&&|\|\|)?'
   local test_='^[[:space:]]*\[ ([^]$`;&|()<>]|'"$exp"')* \][[:space:]]*(;|&&|\|\|)'
+  # The one program-free limit allowed first: the shell's own CPU-time limit (R165).
+  local limit='^[[:space:]]*ulimit -t [0-9]+( 2>/dev/null)?[[:space:]]*;'
   [ -f "$hooks" ] || return 0
   while IFS= read -r cmd; do
     rest=$cmd
-    while [[ "$rest" =~ $assign || "$rest" =~ $test_ ]]; do rest=${rest#"${BASH_REMATCH[0]}"}; done
+    while [[ "$rest" =~ $assign || "$rest" =~ $test_ || "$rest" =~ $limit ]]; do rest=${rest#"${BASH_REMATCH[0]}"}; done
     rest=${rest#"${rest%%[![:space:]]*}"}
     [[ "$rest" == "jq "* ]] || { echo "PreToolUse hook must be jq itself (only shell variable assignments and [ ] tests may come before it; no interpreter startup): $cmd"; false; }
-    [[ "$cmd" == *" || true" ]] || { echo "PreToolUse hook must never exit non-zero (exit 2 blocks the call): $cmd"; false; }
+    # It ends in || true, or in the fail-closed handler (R165): a failing guard
+    # blocks with exit 2 only while a run is open, and otherwise ends in true.
+    [[ "$cmd" == *" || true" || "$cmd" == *" || { "*"exit 2"*" true; }" ]] || { echo "PreToolUse hook must end in || true, or in the fail-closed handler (exit 2 only while a run is open): $cmd"; false; }
   done < <(jq -r '.hooks.PreToolUse[]?.hooks[].command' "$hooks")
 }
 

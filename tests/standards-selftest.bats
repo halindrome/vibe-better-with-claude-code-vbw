@@ -101,11 +101,11 @@ failing_rules_with_hooks() {
 
 @test "per-tool-call hooks: only assignments and [ ] tests may come before jq, and the command must end in || true" {
   local c
-  for c in 'bash x.sh; jq -n . || true' 'cat f && jq -n . || true' 'x=$(cat f); jq -n . || true' 'cat f | jq -n . || true' '[ -f a ] && cat f; jq -n . || true' 'jq -n .'; do
+  for c in 'bash x.sh; jq -n . || true' 'cat f && jq -n . || true' 'x=$(cat f); jq -n . || true' 'cat f | jq -n . || true' '[ -f a ] && cat f; jq -n . || true' 'jq -n .' 'ulimit -t 10; jq -n . || { exit 2; }' 'ulimit -s 10; jq -n . || true' 'ulimit -t 10 && cat f; jq -n . || true'; do
     run failing_rules_with_hooks "$(jq -nc --arg c "$c" '{hooks:{PreToolUse:[{hooks:[{type:"command",command:$c}]}]}}')"
     [[ "$output" == *"per-tool-call hooks run jq directly"* ]] || { echo "not caught: $c"; false; }
   done
-  for c in 'jq -n -f "${CLAUDE_PLUGIN_ROOT}/hooks/x.sh" || true' 'r="${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/record.json"; [ -f "$r" ] && [ -r "$r" ] && [ "$r" -nt "${CLAUDE_PLUGIN_ROOT}/x" ] || r=/dev/null; jq -n --arg r "$r" -f "${CLAUDE_PLUGIN_ROOT}/hooks/x.sh" 2>/dev/null || true'; do
+  for c in 'jq -n -f "${CLAUDE_PLUGIN_ROOT}/hooks/x.sh" || true' 'r="${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/record.json"; [ -f "$r" ] && [ -r "$r" ] && [ "$r" -nt "${CLAUDE_PLUGIN_ROOT}/x" ] || r=/dev/null; jq -n --arg r "$r" -f "${CLAUDE_PLUGIN_ROOT}/hooks/x.sh" 2>/dev/null || true' 'ulimit -t 10 2>/dev/null; o=0; [ -e "$PWD/run-open" ] && o=1; jq -n --arg open "$o" -f "${CLAUDE_PLUGIN_ROOT}/hooks/x.sh" 2>/dev/null || { [ "$o" = 1 ] && { echo "VBW guard: failed" >&2; exit 2; }; true; }'; do
     run failing_rules_with_hooks "$(jq -nc --arg c "$c" '{hooks:{PreToolUse:[{hooks:[{type:"command",command:$c}]}]}}')"
     [ -z "$output" ] || { echo "wrongly caught: $c: $output"; false; }
   done
