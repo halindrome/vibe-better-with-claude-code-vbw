@@ -55,6 +55,9 @@ def fix_files($r): if .command then ["*"]
 | ([$current[] | select(.proof == "human" and .status == "open" and .skipped != true) | .id]) as $to_accept
 # [human] requirements the user skipped (vbw req skip): the ship offers to move them on.
 | ([$current[] | select(.proof == "human" and .status == "open" and .skipped == true) | .id]) as $later
+# A moved requirement (vbw milestone start) was built in an earlier milestone: it only awaits its verdict.
+| ([.phases[] | select(.milestone != $m) | .reqs[]?] | unique) as $built_before
+| (all($current[]; .proof == "human" and (.id as $i | $built_before | index($i) != null))) as $only_moved
 # Rigor: each current phase's tier (standard when it has none) with its cell of
 # the profile (lib/tiers.json); the user's model overrides win over the cell's.
 | ((.settings.models // {}) | {dev, qa} | with_entries(select(.value != null))) as $override
@@ -92,7 +95,7 @@ def fix_files($r): if .command then ["*"]
     result("convert"; true; "This project has a VBW 1 plan (.vbw-planning/): bring it into VBW 2 (/vbw:convert), or start fresh"; {})
   elif ($current | length) == 0 then
     result("spec"; true; "Write the requirements for \(.milestone.id) \(.milestone.title) in .vbw/spec.md"; {})
-  elif ([.phases[] | select(.milestone == $m)] | length) == 0
+  elif (([.phases[] | select(.milestone == $m)] | length) == 0 and ($only_moved | not))
        or (. as $r | any(.requirements[]; .proof == "auto" and (.id as $id | any($r.checks[]; .req == $id) | not) and (doc_only($r) | not)))
        or (.plans as $p | any($current[]; .proof == "auto" and (.id as $id | any($p[]; any(.reqs[]; . == $id)) | not))) then
     result("plan"; false; "Run the plan workflow: phases, plans and contract checks"; {tier: early_tier($tracked), small: small_change})
