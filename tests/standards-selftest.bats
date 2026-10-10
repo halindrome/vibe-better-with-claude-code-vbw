@@ -99,6 +99,18 @@ failing_rules_with_hooks() {
   [[ "$output" == *"per-tool-call hooks run jq directly"* ]]
 }
 
+@test "per-tool-call hooks: only assignments and [ ] tests may come before jq, and the command must end in || true" {
+  local c
+  for c in 'bash x.sh; jq -n . || true' 'cat f && jq -n . || true' 'x=$(cat f); jq -n . || true' 'cat f | jq -n . || true' '[ -f a ] && cat f; jq -n . || true' 'jq -n .'; do
+    run failing_rules_with_hooks "$(jq -nc --arg c "$c" '{hooks:{PreToolUse:[{hooks:[{type:"command",command:$c}]}]}}')"
+    [[ "$output" == *"per-tool-call hooks run jq directly"* ]] || { echo "not caught: $c"; false; }
+  done
+  for c in 'jq -n -f "${CLAUDE_PLUGIN_ROOT}/hooks/x.sh" || true' 'r="${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/record.json"; [ -f "$r" ] && [ -r "$r" ] && [ "$r" -nt "${CLAUDE_PLUGIN_ROOT}/x" ] || r=/dev/null; jq -n --arg r "$r" -f "${CLAUDE_PLUGIN_ROOT}/hooks/x.sh" 2>/dev/null || true'; do
+    run failing_rules_with_hooks "$(jq -nc --arg c "$c" '{hooks:{PreToolUse:[{hooks:[{type:"command",command:$c}]}]}}')"
+    [ -z "$output" ] || { echo "wrongly caught: $c: $output"; false; }
+  done
+}
+
 # A copy of the files the vision rule lives in, for breaking one at a time.
 vision_copy() {
   local d="$TEST_ROOT/vision" f
