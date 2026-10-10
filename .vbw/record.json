@@ -12320,7 +12320,22 @@
           "to": "deep",
           "reason": "Dev blocked P102.3: Tasks 1-4 are committed (70016611, 537a7b4d) and every bench line is within budget (20 runs, all inputs on 51/500/2000 checks, max about 7.2 ms). But tests/test-shards.bats test 19 now fails on bash 3.2 and 5: it pins the timed-file list and its fake repo lacks bench-protected.bats, so the full-run order line must name tests/bench-protected.bats (before proof-stale-links.bats). That file is outside this plan and protected by check C204, so it needs a one-line edit and your approval. Fix: add bench-protected to the fake-repo file list (line 46) and the expected line (line 233), the same edit P101.8 made for big-record-hooks."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "cd1de2e3a079f3a505d91f3246b50cb2af897848acaabef96e499a2401def958",
+        "at": "2026-10-10T16:50:28Z",
+        "note": "30/30 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 2
+      }
     },
     {
       "id": "P103",
