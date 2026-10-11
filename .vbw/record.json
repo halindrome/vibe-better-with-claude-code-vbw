@@ -23510,15 +23510,14 @@
       "after": [
         "P123.3"
       ],
-      "status": "blocked",
-      "role": "dev",
+      "status": "planned",
       "tasks": [
         "cmd-approve.sh, approve_problems: the spec-versus-record comparison also compares the saved test results folders: the record's project.results (absent read as null) must equal the parsed spec's results (null when the spec has no '## Test results' section), same folders in the same order. The message stays 'spec.md and the record differ (vbw spec sync)'.",
         "The same function serves vbw next's contract-readiness answer (R171): confirm cmd-next.sh and next.jq keep no comparison of their own, so the Test results difference reaches the 'not ready' answer with 'vbw spec sync' as its step. Run tests/approve-whole-spec.bats and tests/next-contract-ready.bats green.",
         "docs/proof.md, section 'The contract and approval': say that vbw approve (and vbw next before it offers the approval question) first compares every section of .vbw/spec.md with the record: Requirements, Commands, Test files and Test results; a spec that was edited and not synced cannot be approved, and the refusal reads 'spec.md and the record differ (vbw spec sync)'. Section 'Saved test results': one sentence that the list is compared at approval like the other sections. tests/approve-whole-spec-docs.bats green.",
-        "Run the approval, spec and docs test files (approve-*.bats, kernel-approval.bats, kernel-spec.bats, testfiles-spec.bats, l3-results.bats, proof-causes-docs, fix-reuse-docs, testfiles-docs) under /bin/bash 3.2 to see nothing else moved; vbw approve after vbw spec sync still approves or says the contract is already approved."
-      ],
-      "note": "Code and docs are done and committed (C280 passes; the refusal works). C279 stays red on tests 4 and 5 of tests/approve-whole-spec.bats: each approves the contract first, then edits the spec and calls refused(), whose last line asserts '! approved' (show contract first line is not '(approved)'). The record is unchanged by a spec edit, so its contract hash stays approved and that assertion cannot hold; the refusal output, exit code, no decision and no commit all pass before it. The protected test needs that final assertion dropped in those two cases (or the check made against a not-yet-approved contract)."
+        "Run the approval, spec and docs test files (approve-*.bats, kernel-approval.bats, kernel-spec.bats, testfiles-spec.bats, l3-results.bats, proof-causes-docs, fix-reuse-docs, testfiles-docs) under /bin/bash 3.2 to see nothing else moved; vbw approve after vbw spec sync still approves or says the contract is already approved.",
+        "Commit the re-wrap of docs/proof.md left in the working tree by P123.1 (the phrase never the subject of the last commit on one line, which C275 greps): it is this plan file. The approval code and docs are already committed (C280 green); C279 helper was corrected by the planner (a refusal writes no consent)."
+      ]
     },
     {
       "id": "P125.1",
@@ -26990,6 +26989,11 @@
       "id": "D292",
       "at": "2026-10-11T23:23:26Z",
       "text": "Contract approved: 166 requirements, 282 checks, 370 plans (2d8f515505f1)"
+    },
+    {
+      "id": "D293",
+      "at": "2026-10-11T23:56:18Z",
+      "text": "Contract approved: 166 requirements, 282 checks, 370 plans (1c1a2564ab69)"
     }
   ],
   "commands": {
