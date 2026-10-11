@@ -134,8 +134,8 @@ You type `/vbw:vibe` and what you want. VBW runs this loop and stops only when i
   ┌──────────────────────────────────────┐
   │ 7. SHIP                              │    Regression suite
   │ More to build: /vbw:vibe again.      │    Every later proof covers every
-  │                                      │    check: re-run if its files
-  │                                      │    changed, reused if not.
+  │                                      │    check: re-run if a file it
+  │                                      │    read changed, reused if not.
   │                                      │    Nothing proven breaks quietly.
   └──────────────────────────────────────┘
 ```
@@ -164,7 +164,7 @@ VBW 2 is built around a **kernel**: `vbw`, a small bash + `jq` + `git` program t
 Two design choices worth knowing:
 
 - **No per-agent worktrees, on purpose.** A worktree has no `node_modules` or virtualenv, so an agent either reinstalls everything or proves the main checkout's code instead of its own. A false proof is the one failure VBW refuses to have. File-disjoint waves plus guards give the same isolation without it.
-- **Proof reuses what didn't change.** A check whose files, definition and last result are unchanged keeps its pass; `vbw prove --full` re-runs everything.
+- **Proof reuses what didn't change.** VBW records what each check reads while it runs; a check whose definition, last result and every file it read are unchanged keeps its pass, and your test command runs one test file at a time when you declare the form. `vbw prove --full` re-runs everything.
 
 How many agents? One per plan in a wave, and VBW keeps the wave as wide as the file boundaries allow. The theoretical ceiling is your token budget. Somewhere right now, a college freshman is running 140 VBW sessions on his trust fund to build Uber for houseplants. The idea is garbage, but it was built once, proven once, and cost less than watching plain Claude Code rebuild it five times. VBW can't fix a bad startup idea, but it makes it work.
 
