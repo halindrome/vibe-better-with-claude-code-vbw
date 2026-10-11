@@ -1,10 +1,10 @@
 #!/usr/bin/env bats
-# R166 with R164 (docs/proof.md): a proof that reused results is recorded as not
-# full, so bash tools/test.sh --release never takes it for a full proof: it runs
-# everything and says the last proof was not a full one; a vbw prove --full is
-# taken as before. L1: a real vbw prove in a scratch git project that holds a
-# copy of tools/test.sh, with stand-ins for bats, the benchmarks and shellcheck
-# that log their calls.
+# R166 with R170 (docs/proof.md): a proof that reused results is recorded as not
+# full, and bash tools/test.sh --release reuses it all the same: a reused result
+# is one the read lists still vouch for. A vbw prove --full is reused as before.
+# L1: a real vbw prove in a scratch git project that holds a copy of
+# tools/test.sh, with stand-ins for bats, the benchmarks and shellcheck that log
+# their calls.
 
 load helper
 
@@ -52,7 +52,7 @@ release_run() {
   run env PATH="$TEST_ROOT/bin:$PATH" bash tools/test.sh --release < /dev/null
 }
 
-@test "R166: a proof that reused results is not full, and the release run runs everything and says so" {
+@test "R170: a proof that reused results is recorded as not full, and the release run reuses it all the same" {
   "$VBW" prove --full > /dev/null || { echo "the full proof failed"; false; }
   change src/other.txt
   "$VBW" prove > /dev/null || { echo "the proof failed"; false; }
@@ -60,9 +60,8 @@ release_run() {
   git add -A && git commit -q -m "chore(vbw): record" || true
   release_run
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [[ "$output" == *"was not a full one"* ]] || { echo "$output"; false; }
-  [[ "$output" == *"release: running everything"* ]] || { echo "$output"; false; }
-  grep -q 'tests/a.bats' "$LOG" || { cat "$LOG"; false; }
+  [[ "$output" == *"reusing the passing proof"* ]] || { echo "$output"; false; }
+  ! grep -q 'tests/a.bats' "$LOG" || { cat "$LOG"; false; }
 }
 
 @test "R166: after a full proof of the same code, the release run reuses it" {
@@ -70,6 +69,6 @@ release_run() {
   git add -A && git commit -q -m "chore(vbw): record" || true
   release_run
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [[ "$output" == *"reusing the full passing proof"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"reusing the passing proof"* ]] || { echo "$output"; false; }
   ! grep -q 'tests/a.bats' "$LOG" || { cat "$LOG"; false; }
 }
