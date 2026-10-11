@@ -42,9 +42,10 @@ case "$cmd" in
       '{enabledPlugins:{"vbw@vbw-marketplace":false},sandbox:{enabled:true},claudeMdExcludes:[$a,$b]}')
     # L3_STATUSLINE=1: the session also shows the working tree's status line (the
     # user's own setting runs the installed plugin-cache copy, not the code under
-    # test). Every other scenario keeps a real user's settings.
+    # test). Every other scenario keeps a real user's settings. Double quotes in
+    # the command: the settings travel inside single quotes.
     if [ "${L3_STATUSLINE:-}" = 1 ]; then
-      settings=$(printf '%s' "$settings" | jq -c --arg c "bash '$ROOT/plugin/scripts/vbw-statusline.sh'" \
+      settings=$(printf '%s' "$settings" | jq -c --arg c "bash \"$ROOT/plugin/scripts/vbw-statusline.sh\"" \
         '.statusLine = {type: "command", command: $c, refreshInterval: 5}')
     fi
     plugin="--plugin-dir '$ROOT/plugin'"
