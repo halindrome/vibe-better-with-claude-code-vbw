@@ -21933,18 +21933,18 @@
         "plugin/lib/cmd-qa.sh",
         "plugin/lib/next.jq",
         "plugin/lib/cmd-ship.sh",
-        "tests/qa-reused-proof.bats"
+        "tests/qa-reused-proof.bats",
+        "plugin/lib/record.sh"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "vbw qa record accepts a current proof whose results ran or were reused; it refuses a stale proof (vbw prove) and a proof in which the quick command stood in for the test command or an approved full command was skipped (vbw prove --full)",
         "vbw next asks for vbw prove --full (detail.full) only in that incomplete case; after a proof that reused results it goes on to QA and to shipping",
         "vbw ship accepts the same proofs QA accepts",
         "tests/qa-reused-proof.bats: reused proof accepted by qa record, next and ship; quick stand-in still refused with vbw prove --full; a proof recorded before these fields existed still accepted"
-      ],
-      "note": "Needs plugin/lib/record.sh (not in the plan's files): the shared jq def proof_complete (proof not a quick stand-in, no approved full command skipped, or evidence.full != false) must live in VBW_JQ_DEFS so cmd-qa.sh and next.jq use one definition. Implemented and tests/qa-reused-proof.bats (9 tests) pass, uncommitted in the tree; add record.sh to the plan's files (or approve duplicating the def) and re-run. Checks C253-C256 are red only because prove is mid-rewrite by sibling plans (proofreuse_stamp missing)."
+      ]
     },
     {
       "id": "P116.6",
@@ -25147,6 +25147,11 @@
       "id": "D262",
       "at": "2026-10-11T00:42:48Z",
       "text": "Contract approved: 157 requirements, 257 checks, 353 plans (e9c937a9fa75)"
+    },
+    {
+      "id": "D263",
+      "at": "2026-10-11T00:58:19Z",
+      "text": "Contract approved: 157 requirements, 257 checks, 353 plans (1e2fd2ac90a1)"
     }
   ],
   "commands": {
