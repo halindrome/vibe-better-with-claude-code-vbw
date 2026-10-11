@@ -169,7 +169,9 @@ now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
   [ "$(runs C1)" = 1 ] && [ "$(runs C2)" = 1 ] && [ "$(runs C3)" = 1 ] || { echo "C1 $(runs C1) C2 $(runs C2) C3 $(runs C3)"; echo "$output"; false; }
   [[ "$output" == *"C1 unchanged since its pass"* ]]
   [[ "$output" == *"C3 unchanged since its pass"* ]]
-  # Only the record changed since the passing proof: nothing it read changed.
+  # A commit no check read since the passing proof (the record alone would make the next
+  # prove a deliberate re-run of everything, D173): every pass is reused.
+  printf 'more\n' >> README.md && git commit -q -am "docs: readme"
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(runs C1)" = 1 ] && [ "$(runs C2)" = 1 ] && [ "$(runs C3)" = 1 ] || { echo "C1 $(runs C1) C2 $(runs C2) C3 $(runs C3)"; echo "$output"; false; }
