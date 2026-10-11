@@ -38,6 +38,12 @@
 # doc brings (their signals see the whole milestone); every other rule above
 # holds for the merged whole.
 
+# Every mode takes an optional "test_files": {run, files} (R167): the Lead's proposal of how the
+# project's test runner runs one test file (run: an argv naming {file} exactly once; files: git
+# pathspecs without spaces). A bad one is refused before anything changes. A good one is written as
+# the spec's "## Test files" section, replacing an older one, and the spec is synced; the user
+# approves the form with the contract, and VBW never runs one that is not approved.
+
 # shellcheck source=rigor.sh
 . "$VBW_LIB/rigor.sh"
 # shellcheck source=cmd-spec.sh
@@ -63,6 +69,7 @@ apply_next() {
   case "$1" in
     "a patch carries plans"*) echo "remove \"phases\" from the document, or send it to a full apply (vbw apply) to change phases" ;;
     "--add needs"*) echo "send --add a JSON object whose \"phases\" array holds the new phases, with their plans, checks and rules" ;;
+    "test_files must be"*) echo "give test_files as {\"run\": [argv naming {file} once], \"files\": [git pathspecs]}, or leave it out" ;;
     "apply needs a JSON object"*) echo "pipe one JSON object into vbw apply: {\"phases\": [], \"plans\": [], \"checks\": []}" ;;
     "apply needs phases"*) echo "give phases, plans and checks as arrays, and rules as [{req, text, check}] if present" ;;
     *"is already a phase of this milestone"*) echo "give the new phase an unused id, or change the existing phase with a full apply" ;;
@@ -91,14 +98,42 @@ apply_refuse() { vbw_die "$MODE_NAME refused: $1"$'\n'"Next: $(apply_next "$1")"
 # apply_internal MESSAGE: an internal failure; its next step is the same for every kind.
 apply_internal() { vbw_die "internal error: $1"$'\n'"Next: run vbw doctor, then send the document again; report it if it fails again"; }
 
+# apply_write_test_files FORM: the spec's "## Test files" section becomes FORM (replacing an
+# older one, wherever it stands), then the spec is synced. The run line is plain words when
+# they parse back to the same argv, else a JSON array.
+apply_write_test_files() {
+  local spec="$VBW_DIR/spec.md" tmp
+  [ -f "$spec" ] || vbw_die "no .vbw/spec.md (run /vbw:init)"
+  tmp=$(mktemp "$VBW_RUNTIME/spec.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"
+  vbw_guard_add file "$tmp"
+  awk 'BEGIN { skip = 0 }
+    /^#{1,2}[ \t]/ { skip = (tolower($0) ~ /^##[ \t]+test files[ \t\r]*$/) }
+    !skip { print }' "$spec" > "$tmp"
+  [ ! -s "$tmp" ] || [ -z "$(tail -c 1 "$tmp")" ] || printf '\n' >> "$tmp"
+  printf '%s' "$1" | jq -r '"\n## Test files\n\n- run: \(.run | if all(.[]; test("\\s") | not) and (.[0] | startswith("[") | not) then join(" ") else tojson end)\n- files: \(.files | join(" "))"' >> "$tmp"
+  cat "$tmp" > "$spec"
+  rm -f "$tmp"
+  vbw_guard_drop "$tmp"
+  spec_sync "$(spec_parse)"
+}
+
 cmd_apply() {
   local patch=false add=false
   MODE_NAME="full apply"
   case "${1:-}" in --patch) patch=true; MODE_NAME="--patch"; shift ;; --add) add=true; MODE_NAME="--add"; shift ;; esac
   [ $# -eq 0 ] || vbw_usage_error "usage: vbw apply < plan.json (full apply) | vbw apply --add < doc.json | vbw apply --patch < doc.json"
   vbw_require_project
-  local doc record problem merged filter hypo tiers judged one pdoc='{}' df tf pf ids p
+  local doc record problem merged filter hypo tiers judged one pdoc='{}' df tf pf ids p form=null
   doc=$(cat)
+  if printf '%s' "$doc" | jq -e 'type == "object" and has("test_files")' > /dev/null 2>&1; then
+    form=$(printf '%s' "$doc" | jq -c '.test_files')
+    printf '%s' "$form" | jq -e 'type == "object" and (keys == ["files", "run"])
+        and (.run | type == "array" and length > 0 and all(.[]; type == "string" and length > 0)
+             and ([.[] | [match("\\{file\\}"; "g")] | length] | add) == 1)
+        and (.files | type == "array" and length > 0 and all(.[]; type == "string" and length > 0 and (test("\\s") | not)))' > /dev/null 2>&1 \
+      || apply_refuse "test_files must be {run, files}: run an argv naming {file} exactly once, files a non-empty array of git pathspecs without spaces"
+    doc=$(printf '%s' "$doc" | jq -c 'del(.test_files)')
+  fi
   if [ "$add" = true ]; then
     # --add: new phases with their plans, checks and rules, appended to the milestone;
     # every existing item stays as it is, its tier included; the rigor floor and the
@@ -290,4 +325,5 @@ cmd_apply() {
   vbw_guard_drop "$pf"
   jq -r '.milestone.id as $m | ([.phases[] | select(.milestone == $m) | .id]) as $mine
     | "applied \($mine | length) phases, \([.plans[] | select(.phase as $p | any($mine[]; . == $p))] | length) plans, \(.checks | length) checks in all"' "$VBW_RECORD"
+  [ "$form" = null ] || apply_write_test_files "$form"
 }
