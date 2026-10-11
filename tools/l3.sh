@@ -40,6 +40,13 @@ case "$cmd" in
     # settings a real user would not have (VBW turns workflows on itself).
     settings=$(jq -cn --arg a "$ROOT/CLAUDE.md" --arg b "$ROOT/AGENTS.md" \
       '{enabledPlugins:{"vbw@vbw-marketplace":false},sandbox:{enabled:true},claudeMdExcludes:[$a,$b]}')
+    # L3_STATUSLINE=1: the session also shows the working tree's status line (the
+    # user's own setting runs the installed plugin-cache copy, not the code under
+    # test). Every other scenario keeps a real user's settings.
+    if [ "${L3_STATUSLINE:-}" = 1 ]; then
+      settings=$(printf '%s' "$settings" | jq -c --arg c "bash '$ROOT/plugin/scripts/vbw-statusline.sh'" \
+        '.statusLine = {type: "command", command: $c, refreshInterval: 5}')
+    fi
     plugin="--plugin-dir '$ROOT/plugin'"
     [ "$mode" = vbw ] || plugin=""
     # A session launched from inside Claude Code inherits its PATH, which puts
