@@ -14957,7 +14957,7 @@
         "R176: closing outcomes and the exit code are unchanged: \"F<n> fixed: vbw prove decides\", \"F<n> closed: ...\", the broke-finished-work and still-failing refusals, non-zero exit when any fix could not close.",
         "R176: docs/proof.md's vbw fix done section shows the output form with the per-unit lines and the two count lines."
       ],
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 2",
         "files: 7 (106689 bytes)",
@@ -14967,7 +14967,15 @@
         "guarded: R12 (C11), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "escalations": [
+        {
+          "at": "2026-10-11T22:59:50Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "Dev blocked P123.1: Code and the two pinned tests are done and committed; C274 passes. Plan step 4 also wants tests/fix-reuse.bats (test 9, line 175) and tests/prove-summary.bats (test 29, line 65) green, and they fail under the tree rule. Both prove, then change only VBW's own files (a hand-added fix in the record, or a spec/approve change) with the code untouched, then run vbw prove expecting reuse. The old rule passed only because a dirty .vbw or a different last commit subject stopped the cause; the plan removes both tests. Under the new rule that prove is exactly 'nothing committed since the last passing proof' (D173) and runs everything. Those two test files are outside this plan's files; they must either be changed (fixture commits a code change after the proof, or expect the cause) or the rule needs a further condition (e.g. evidence.contract equals the approved contract would fix prove-summary but not fix-reuse). Also tests/proof-cause-tree-docs.bats (C275) fails until P123.3 adds the docs sentence."
+        }
+      ]
     },
     {
       "id": "P124",
@@ -23422,14 +23430,15 @@
         "tests/proofreuse-rule.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "proofreuse.sh: one shared function, proofreuse_proved RECORD HEAD, that succeeds only when the record's last proof passed (evidence.passed true), the project's files have the fingerprint that proof recorded (vbw_code_tree equals evidence.tree) and the committed code is the tree it ran on (evidence.head equals HEAD, when the evidence carries a head). It reads trees only: no git log, no commit subject.",
         "proofreuse.sh: proofreuse_allowed RECORD [KIND] gets its 'proving again with nothing committed' reason from proofreuse_proved (KIND fix: the reason never applies, as D270 says for vbw fix done); the commit-subject test and the '.vbw is clean' test go.",
         "proofcauses.sh: proofcauses_find names 'nothing was committed since the last passing proof' only through proofreuse_proved, for KIND prove; KIND fix still never names it. testfiles.sh: testfiles_plan hands the record (and the kind) to proofreuse_allowed, as proofreuse_plan does.",
         "tests/proofcauses-lib.bats and tests/proofreuse-rule.bats: the two tests that pinned the old rule (an empty commit with the proof's subject) now pin the new one: their fixture gains a passing evidence of the committed tree (evidence.passed, evidence.tree, evidence.head), and the expected cause or reason stays. Then tests/proof-cause-tree.bats, both older files, fix-reuse, prove-reads and prove-summary all green under /bin/bash 3.2."
-      ]
+      ],
+      "note": "Code and the two pinned tests are done and committed; C274 passes. Plan step 4 also wants tests/fix-reuse.bats (test 9, line 175) and tests/prove-summary.bats (test 29, line 65) green, and they fail under the tree rule. Both prove, then change only VBW's own files (a hand-added fix in the record, or a spec/approve change) with the code untouched, then run vbw prove expecting reuse. The old rule passed only because a dirty .vbw or a different last commit subject stopped the cause; the plan removes both tests. Under the new rule that prove is exactly 'nothing committed since the last passing proof' (D173) and runs everything. Those two test files are outside this plan's files; they must either be changed (fixture commits a code change after the proof, or expect the cause) or the rule needs a further condition (e.g. evidence.contract equals the approved contract would fix prove-summary but not fix-reuse). Also tests/proof-cause-tree-docs.bats (C275) fails until P123.3 adds the docs sentence."
     },
     {
       "id": "P123.2",
@@ -23466,7 +23475,7 @@
         "docs/proof.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "Causes table, row 'nothing was committed since the last passing proof': the 'What happened' column says the project's files are the tree the last passing proof recorded (`evidence.tree`) and the committed code is the tree it ran on (`evidence.head`), with the record's last proof passed; the message text stays. The D173 paragraph ('To run everything fresh ...') says VBW compares those trees and never the subject of the last commit, so a VBW record commit landing after code commits re-runs nothing it need not.",
@@ -23509,7 +23518,7 @@
         "plugin/scripts/statusline.jq"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "statusline.jq: when Claude Code's JSON carries cost.total_cost_usd, print one extra last line holding the side-file record as compact JSON: {session: the session id, usd: cost.total_cost_usd, in: context_window.total_input_tokens, out: context_window.total_output_tokens, at: now as an ISO-8601 UTC time}; with no cost field, no extra line. One jq process still renders everything (the status line's 60 ms budget).",
@@ -23529,7 +23538,7 @@
         "plugin/lib/costs.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "record.jq: an optional top-level `costs` object, {runs: [...], milestones: {...}}, no other keys. Each run: exactly {id, kind (plan, build, fix, qa or map), session (string or null), milestone (an id that exists), started, ended (ISO-8601 UTC), cost} where cost is null or exactly {usd, in, out}, each a non-negative number. Each milestones entry, keyed by an existing milestone id: exactly {baseline, total?}; baseline maps a session id to exactly {usd, in, out, at}; total, when present, is exactly {usd, in, out, sessions} with non-negative numbers. Every refusal names `costs`. Add `costs` to the known top-level keys; the schema stays 4 and a record without costs stays valid.",
@@ -23624,7 +23633,7 @@
         "docs/costs.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/record.md: a `costs` row in the field table (the shape: runs with id, kind, session, milestone, started, ended, cost or null; milestones with baseline per session and a frozen total once shipped; the rules: exact keys, non-negative numbers, ISO-8601 UTC times, existing milestone ids; the writers: vbw run start, vbw run end, vbw ship, vbw milestone start; the status line, hooks and panel never write it) and the lease's `lease.cost` (the opening session's figures or null); the sentence 'Added within schema 4: a record without it stays valid, so the schema stays 4'.",
@@ -23645,7 +23654,7 @@
         "plugin/hooks/guard-bash.jq"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "common.jq: a path that resolves outside the project (project_path gives null) is a denial during a run: the original path, outside the project, where the run may write (plan run: test files; build or fix run: its plan files; debugging files there too), Next:; today null means nothing to deny",
         "guard-file.jq and guard-bash.jq: hand the original path to the rule so the reason can name it (write targets and redirect targets alike)",
