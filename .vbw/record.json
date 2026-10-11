@@ -21889,7 +21889,7 @@
         "P116.1",
         "P116.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "checks_run_all becomes a runner of units (a check, a project command and later a test file: name, argv, timeout, expected exit and output, alone). Each unit takes a free slot copy; still at most check_jobs at a time, and the alone gate is kept",
@@ -21937,7 +21937,7 @@
         "plugin/lib/record.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vbw qa record accepts a current proof whose results ran or were reused; it refuses a stale proof (vbw prove) and a proof in which the quick command stood in for the test command or an approved full command was skipped (vbw prove --full)",
@@ -22052,7 +22052,7 @@
       "after": [
         "P117.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vbw apply (full, --patch and --add) takes an optional test_files {run, files}, refuses a bad one, writes it as the spec's '## Test files' section (replacing an older one) and syncs; the user approves it with the contract",
@@ -22124,7 +22124,7 @@
       "after": [
         "P116.7"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md, project commands: the '## Test files' section with its run and files lines and {file}; it is approved like a command and never guessed; without it the test command runs whole (tests/testfiles-docs.bats lists the phrases it checks)",
@@ -22146,7 +22146,7 @@
       "after": [
         "P116.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "proofcauses.sh: the causes that make a proof run everything, each with its message: 'vbw prove --full', 'the last proof was cut short', 'this clone has no earlier recorded run', 'this file system does not record which files are read', 'the approved command <name> changed', 'the single-file form changed', 'the list of test files changed', 'nothing was committed since the last passing proof' (D173)",
