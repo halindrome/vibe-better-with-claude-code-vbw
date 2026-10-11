@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.33] - 2026-10-11
+
+### Fixed
+
+- **No approval question for a contract that approval would refuse.** While a
+  check file is still missing or the spec and the record differ, `vbw next`
+  says the contract is not ready, names each problem and the step that fixes
+  it, instead of asking you to approve. The question comes once approval would
+  succeed.
+- For contributors: the test helper leaves the repository before its git
+  calls and turns off background git work; no test runs bats on a bats file it
+  wrote (that lost a test on Linux CI).
+
 ## [2.0.32] - 2026-10-11
 
 ### Changed
