@@ -24311,6 +24311,13 @@
       "sort": "later",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T120",
+      "text": "README states (behaviour, not history): fix rounds add their own regression tests (vbw fix check), --help on every command, the ## Test files form by name, Skip for now by name (owner 2026-10-11 19:55: for the next release)",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
