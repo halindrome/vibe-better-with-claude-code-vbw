@@ -22177,22 +22177,27 @@
         "R168"
       ],
       "files": [
+        "plugin/lib/cmd-fix.sh",
         "plugin/lib/cmd-prove.sh",
+        "plugin/lib/proofreuse.sh",
+        "plugin/lib/testfiles.sh",
         "tests/prove-summary.bats"
       ],
       "after": [
         "P117.3",
         "P118.1"
       ],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "Wire the causes into vbw prove (and the fix done selection): any cause runs every check, test file and command, and saves the commands fingerprint for the next proof",
         "One cause prints '  ran everything: <cause>'; several print '  ran everything, because:' and one '  - <cause>' line each",
         "Every summary prints 'checks: N ran, M reused' and 'test files: N ran, M reused'; every reused line names the proof it came from",
-        "tests/prove-summary.bats for the wiring"
-      ],
-      "note": "Blocked (DEVN-04): wiring causes into plugin/lib/cmd-prove.sh works for the run-everything part, but the saved commands fingerprint cannot be read back. proofreuse_save (plugin/lib/proofreuse.sh, outside this plan) stores its FORM argument with jq --arg, i.e. as a JSON string, while proofcauses_form_causes (P118.1) only compares an old form that is a JSON object, so 'command X changed', 'single-file form changed' and 'list of test files changed' never fire (C261 tests 1-3 fail). Needed: add plugin/lib/proofreuse.sh to this plan's files and store the form as an object (form: ($form | fromjson? // null)), plus check kernel tests that pin the store shape. cmd-prove.sh changes I made then reverted: source proofcauses.sh; causes=$(proofcauses_find \"$record\" \"$full\" \"$(vbw_head_tree)\") after proofreuse_plan, run everything when causes is non-empty; proofreuse_save form arg = \"$(proofcauses_form \"$record\")\"; prove_summary takes causes, one prints 'ran everything: X', several print 'ran everything, because:' then '  - X' lines."
+        "tests/prove-summary.bats for the wiring",
+        "plugin/lib/proofreuse.sh proofreuse_save stores the form as a JSON object (not a string), so proofcauses_form_causes sees a changed command, single-file form or test-file list; the store shape tests still pass and the form vbw fix done re-saves round-trips",
+        "vbw fix done honours the same causes as vbw prove (a cause runs everything), and a failing test file is re-run on its own through the single-file form, not the whole test command",
+        "plugin/lib/testfiles.sh testfiles_save uses proofreuse.sh s lock-and-merge (one shared function) instead of its own copy"
+      ]
     },
     {
       "id": "P118.3",
@@ -25172,6 +25177,11 @@
       "id": "D264",
       "at": "2026-10-11T08:02:06Z",
       "text": "Contract approved: 157 requirements, 257 checks, 353 plans (19e7f07bd766)"
+    },
+    {
+      "id": "D265",
+      "at": "2026-10-11T08:47:04Z",
+      "text": "Contract approved: 157 requirements, 257 checks, 353 plans (03a0a3052c4d)"
     }
   ],
   "commands": {
