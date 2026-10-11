@@ -1,14 +1,14 @@
 {
   "scenario": "qafix",
   "fixture": "greet.sh plus NOTES.md (no check names it); the built NOTES.md is deleted after the build, so only QA can see the deviation",
-  "cost_usd": 1.29,
+  "cost_usd": 3.96,
   "evidence_level": "L3",
-  "at": "2026-10-06T13:08:07Z",
+  "at": "2026-10-11T16:49:59Z",
   "passed": true,
   "facts": {
     "deviation": "NOTES.md",
     "first_qa_verdict": "fail",
-    "first_qa_note": "5/6 checks NOTES.md does not exist. It was created in 1faa73c but deleted in b47c141 ('chore: drop NOTES.md'); ls NOTES.md says no such file. Plan P1.2 and the criteria require it with one sentence about greet.sh. No recorded decision allows dropping it.",
+    "first_qa_note": "11/13 checks NOTES.md does not exist. Commit aeacffc 'chore: drop NOTES.md' deleted it after P1.2 created it (fe34ba6, a8d12c3). No recorded decision allows this; plan P1.2 and the phase criteria require NOTES.md in the project root with exactly one sentence saying greet.sh greets the given name, or the world with no name. Restore it (last good text: 'greet.sh prints a greeting for the name you give it, or greets the world when you give no name.'). Regression test: a check that NOTES.md exists, has exactly one sentence, and mentions a name and the world.",
     "fix_rounds": 1,
     "final_qa_verdict": "pass",
     "phase_proved": true
