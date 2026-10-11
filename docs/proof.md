@@ -593,7 +593,8 @@ read list and nothing on it has changed since that pass.
 - Its approved definition changed (its command, expected exit and output,
   timeout, `alone`, `files` or requirement).
 - A file on its read list was changed, deleted or renamed.
-- A file was added to or removed from a folder on its read list.
+- A file or a sub-folder was added to or removed from a folder on its read list
+  (a sub-folder appears with its first file and vanishes with its last).
 - Its last result failed (fail, timeout or lost).
 - It never passed: it is new, or no earlier proof ran it.
 - It has no read list (for example, the earlier run recorded none).
@@ -659,7 +660,10 @@ nothing that was run. An added or deleted file no recorded run saw (none read
 it or listed its folder, and every recorded run predates it) runs everything,
 because a check could now see a different set of files. An addition or deletion
 that some recorded run already ran with is not unseen: the proof that ran it
-judged it. A changed approved command, single-file form or list of test files
+judged it. A file whose own folder appeared or vanished with it (the first file
+of a new sub-folder, the last file of one) is seen through the nearest folder
+above it that a recorded run listed: that listing gained or lost an entry, so
+the run that listed it runs again and nothing else does. A changed approved command, single-file form or list of test files
 is no cause either: each unit re-runs by its own definition
 ([Reusing results](#reusing-results-in-vbw-prove)).
 

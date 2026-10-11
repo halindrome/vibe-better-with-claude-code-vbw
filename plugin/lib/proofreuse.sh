@@ -4,12 +4,14 @@
 # test file) is run again only when something it depends on changed; its read
 # list, written down by the run itself, says what it depends on.
 
-# A run result's read list ({files, dirs: [{path, fp}], git}) as the store keeps it (null when none was written down).
+# A run result's read list ({files, dirs: [{path, fp}], git}) as the store keeps it (null when
+# none was written down). A listed folder keeps its fingerprint (the names directly inside it),
+# so a later proof can tell that its listing changed even when no file directly inside did.
 # A project command (its test run above all) gets this many seconds unless settings.command_timeout says otherwise (R153).
 VBW_COMMAND_TIMEOUT=3600
 # shellcheck disable=SC2034 # read by cmd_prove and cmd_fix
 PROVE_FLAT='map_values(if $off or (.reads | type) != "object" then . + {reads: null}
-  else . + {dirs: [.reads.dirs[].path], git: .reads.git, reads: .reads.files} end)'
+  else . + {dirs: .reads.dirs, git: .reads.git, reads: .reads.files} end)'
 
 # proofreuse_check_fp RECORD ID: fingerprint of a check's approved definition.
 proofreuse_check_fp() {
@@ -107,13 +109,26 @@ proofreuse_save() {
   proofreuse_merge "$new"
 }
 
+# proofreuse_dir_fp HEAD DIR: the fingerprint of DIR's listing on the committed
+# code HEAD, computed as reads.sh computes it from a copy: the names directly
+# inside DIR among the tracked files and folders (DIR "." is the project root).
+proofreuse_dir_fp() {
+  local spec=()
+  [ "$2" = "." ] || spec=(-- "$2")
+  git -C "$VBW_ROOT" ls-tree -r -z --name-only "$1" ${spec[@]+"${spec[@]}"} 2> /dev/null \
+    | jq -R -s -c --arg d "$2" '(split("\u0000") | map(select(length > 0))) as $f
+        | [$d, ([$f[] | (if $d == "." then . else ltrimstr($d + "/") end) | split("/")[0]] | unique)]' | tr -d '\n' | vbw_sha256
+}
+
 # proofreuse_reason KEY FP HEAD: the one reuse rule. Succeeds, printing
 # nothing, when the unit's pass may be reused: its last result passed, its
 # definition fingerprint FP is unchanged, it has a read list and did not read
 # through git, and one git diff-tree between the tree it ran on and the
 # committed code HEAD shows no file of its read list changed or deleted and no
-# file added to or removed from a folder it listed. Otherwise fails and prints
-# the reason. Reads the store from PROOFREUSE_STORE (a JSON text).
+# listed folder whose listing changed (a file or sub-folder added or removed
+# directly inside it; a folder recorded without a fingerprint is judged by the
+# changed files' parents). Otherwise fails and prints the reason. Reads the
+# store from PROOFREUSE_STORE (a JSON text).
 proofreuse_reason() {
   local entry reason diff
   entry=$(printf '%s' "$PROOFREUSE_STORE" | jq -c --arg k "$1" '.runs[$k] // empty | select(type == "object")') || entry=
@@ -129,13 +144,23 @@ proofreuse_reason() {
     || { printf 'the code it ran on is unknown\n'; return 1; }
   [ -n "$diff" ] || return 0
   reason=$(printf '%s\n' "$diff" | jq -R -s -r --slurpfile e <(printf '%s' "$entry") '
-    $e[0] as $e | ($e.reads | map({key: ., value: true}) | from_entries) as $reads | $e.dirs as $dirs
+    $e[0] as $e | ($e.reads | map({key: ., value: true}) | from_entries) as $reads
+    | [$e.dirs[] | strings] as $plain
     | [split("\n")[] | select(length > 0)] as $l
     | [range(0; $l | length; 2) | {s: $l[.][0:1], p: $l[. + 1]}]
     | (map(select($reads[.p]) | if .s == "D" then "\(.p) deleted" else "\(.p) changed" end)
        + map(select(.s == "A" or .s == "D") | (.p | if test("/") then sub("/[^/]*$"; "") else "." end) as $d
-             | select($dirs | index($d)) | "\($d) listing changed")) | first // empty')
+             | select($plain | index($d)) | "\($d) listing changed")) | first // empty')
   if [ -n "$reason" ]; then printf '%s\n' "$reason"; return 1; fi
+  # A listed folder with a recorded fingerprint: its entries on HEAD must read the same. Only
+  # an added or deleted file can change a listing, so nothing is computed for a content change.
+  if printf '%s\n' "$diff" | jq -R -s -e '[split("\n")[] | select(length > 0)] as $l | any(range(0; $l | length; 2); $l[.][0:1] | IN("A", "D"))' > /dev/null; then
+    local d fp
+    while IFS=$'\t' read -r d fp; do
+      [ -n "$d" ] || continue
+      [ "$(proofreuse_dir_fp "$3" "$d")" = "$fp" ] || { printf '%s listing changed\n' "$d"; return 1; }
+    done < <(printf '%s' "$entry" | jq -r '.dirs[] | objects | select(.fp != null) | "\(.path)\t\(.fp)"')
+  fi
 }
 
 # proofreuse_names RECORD FULL: sets PROVE_NAMES (JSON array of the command

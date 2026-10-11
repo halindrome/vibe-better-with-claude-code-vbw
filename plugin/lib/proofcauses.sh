@@ -36,10 +36,15 @@ proofcauses_known() {
 # or deleted file that every recorded run with a known tree predates (no run
 # saw it), that no run read, that is no test or check file of its own, and
 # whose folder no run listed. A change some recorded run already ran with is
-# not unseen: the proof that ran it judged it.
+# not unseen: the proof that ran it judged it. A file whose own folder appeared
+# or vanished with it is seen through the nearest folder above that a run
+# listed: that listing gained or lost an entry, and the reuse rule re-runs the
+# run that listed it; the file was never reachable any other way.
 proofcauses_files() {
-  local key tree entries='[]' ch known
+  local key tree entries='[]' ch known head
   [ -n "$2" ] || return 0
+  head=$(git -C "$VBW_ROOT" ls-tree -r -z --name-only "$2" 2> /dev/null | jq -R -s -c 'split("\u0000") | map(select(length > 0))')
+  [ -n "$head" ] || head='[]'
   while IFS=$'\t' read -r key tree; do
     ch=$(proofcauses_changes "$tree" "$2")
     # An unknown tree prints nothing and must not veto; a known tree with no change prints [] and does.
@@ -48,7 +53,11 @@ proofcauses_files() {
       '. + [$s[0].runs[$k] | {key: $k, reads, dirs: (.dirs // []), changes: $c[0]}]')
   done < <(printf '%s' "$3" | jq -r '.runs | to_entries[] | select(.value | type == "object" and (.tree | type) == "string") | [.key, .value.tree] | @tsv')
   known=$(proofcauses_known "$1" "$2")
-  jq -nr --slurpfile e <(printf '%s' "$entries") --slurpfile s <(printf '%s' "$3") --slurpfile known <(printf '%s' "$known") '
+  jq -nr --slurpfile e <(printf '%s' "$entries") --slurpfile s <(printf '%s' "$3") --slurpfile known <(printf '%s' "$known") \
+    --slurpfile head <(printf '%s' "$head") '
+    def parent: if test("/") then sub("/[^/]*$"; "") else "." end;
+    # The folders above a path, nearest first, the root (".") last.
+    def above: parent as $p | if $p == "." then ["."] else [$p] + ($p | above) end;
     $e[0] as $e | ($e | map(select(.reads | type == "array"))) as $r
     | ($known[0] + [$s[0].runs | keys[] | select(startswith("file:")) | ltrimstr("file:")]) as $own
     | ([$r[].reads[]] | unique) as $read
@@ -58,9 +67,20 @@ proofcauses_files() {
          ($e | map([.changes[] | select(.s == "A" or .s == "D") | "\(.s)\u001f\(.p)"] | unique))
          | reduce .[1:][] as $c (.[0]; map(select(. as $x | $c | index($x))))
          | map(split("\u001f") | {s: .[0], p: .[1]}) end) as $unseen
-    | $unseen
-    | map(select(.p as $p | ($read | index($p) | not) and ($own | index($p) | not)
-          and (($p | if test("/") then sub("/[^/]*$"; "") else "." end) as $d | $dirs | index($d) | not))
+    | ($unseen | map(select(.s == "A") | .p)) as $added
+    # Seen through a listing: the nearest listed folder above the file gained the entry that
+    # holds the file (every file under it is new) or lost it (nothing is left under it).
+    | def through($p; $s):
+        ([$p | above[] | select(. as $d | $dirs | index($d))] | .[0]) as $l
+        | $l != null
+          and (($p | if $l == "." then . else ltrimstr($l + "/") end | split("/")[0]) as $e
+               | (if $l == "." then $e else $l + "/" + $e end) as $f
+               | [$head[0][] | select(startswith($f + "/"))] as $inside
+               | if $s == "A" then ($inside | length) > 0 and all($inside[]; . as $x | $added | index($x))
+                 else ($inside | length) == 0 end);
+    $unseen
+    | map(select(.p as $p | .s as $s | ($read | index($p) | not) and ($own | index($p) | not)
+          and (($p | parent) as $d | $dirs | index($d) | not) and (through($p; $s) | not))
          | "\(.p) was \(if .s == "A" then "added" else "deleted" end), and no recorded run read it or listed its folder")
     | sort | .[]'
 }
