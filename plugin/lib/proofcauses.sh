@@ -99,9 +99,7 @@ proofcauses_find() {
   printf '%s' "$store" | jq -e '(.runs | length) > 0' > /dev/null || printf 'this clone has no earlier recorded run\n'
   mkdir -p "$VBW_RUNTIME" 2> /dev/null || true
   probe=$(reads_probe "$VBW_RUNTIME" 2>&1) || printf '%s\n' "$probe"
-  if [ "${4:-prove}" != fix ] && [ "$(git -C "$VBW_ROOT" log -1 --format=%s 2> /dev/null)" = 'chore(vbw): proof passed' ] \
-    && [ -z "$(git -C "$VBW_ROOT" status --porcelain -z -- .vbw 2> /dev/null | tr -d '\000')" ] \
-    && [ "$(vbw_code_tree)" = "$3" ]; then
+  if [ "${4:-prove}" != fix ] && proofreuse_proved "$1" "$3"; then
     printf 'nothing was committed since the last passing proof\n'
   fi
   proofcauses_files "$1" "$3" "$store"

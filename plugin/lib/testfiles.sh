@@ -64,7 +64,7 @@ testfiles_plan() {
   QUICK_STANDIN=false
   while IFS= read -r -d '' p; do TF_PATHS+=("$p"); done < <(testfiles_list "$record")
   if [ "$2" != 1 ]; then
-    off=$(proofreuse_allowed) || true
+    off=$(proofreuse_allowed "$record") || true
     if [ -z "$off" ]; then
       head=$(vbw_head_tree) || head=
       [ -n "$head" ] || off='no committed code'
