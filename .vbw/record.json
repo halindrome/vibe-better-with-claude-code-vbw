@@ -3446,9 +3446,9 @@
     ]
   },
   "milestone": {
-    "id": "M22",
-    "title": "Release fix: a test-file form with nothing left to run",
-    "status": "shipped"
+    "id": "M23",
+    "title": "Express path: write and see the check fail before approval",
+    "status": "active"
   },
   "shipped": [
     {
@@ -25841,6 +25841,18 @@
       "id": "D278",
       "at": "2026-10-11T18:11:51Z",
       "text": "Shipped M22 Release fix: a test-file form with nothing left to run: 2 requirements proven or accepted"
+    },
+    {
+      "id": "D279",
+      "text": "Core order after 2.0.32: (1) before the loop, the ones it depends on: T109 cost data, T68 approve compares the whole spec, T16 express path order, T116 re-run cause by tree, T117 fix done output; (2) T99 /vbw:loop; (3) right after: T74 mutation check, T111 no shortcuts, T118 and T45 QA re-check scope; (4) then T115, T120, T112, T119, T114, T82, T98, then the small tooling items T19 T27 T54 T56 T61 T101 T105 T107, T12 and T13 last (research first)",
+      "why": "owner, 2026-10-11 20:15: loop first unless it has a dependency. The loop's design (brainstorm F1) needs cost data for its budget ceiling (T109) and makes approval the security-critical step (T68, T16); its morning report and its cost depend on honest proof output and no wasted re-runs (T116, T117). The kernel keeps no order inside the next bucket (by id), so the order lives in this decision",
+      "at": "2026-10-11T19:10:28Z"
+    },
+    {
+      "id": "D280",
+      "text": "T82 (prebuilt test template) moves down to the tooling items and T74 (mutation check of a plan's own tests) moves up, within D279",
+      "why": "owner's point, 2026-10-11: the release is much faster; a normal proof now runs few test files, so the per-test setup saving of T82 is small, while QA rounds finding weak tests are what is left to wait for",
+      "at": "2026-10-11T19:24:13Z"
     }
   ],
   "commands": {
