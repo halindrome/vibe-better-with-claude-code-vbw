@@ -5,16 +5,15 @@
 # fix: FIX). Any other fix is refused with what to do instead.
 # vbw fix done ID [ID...] | retry ID (docs/proof.md). "done" is verified, not claimed:
 # for a requirement's fix, none of the files it may touch has uncommitted
-# changes, and the checks of every finished requirement served by those files
-# pass now (one that already passed on the same committed files under the same
-# approved contract is not rerun), so a fix cannot quietly break other work. Then, for a requirement
+# changes, and the checks of every finished requirement pass now (the one reuse
+# rule of vbw prove picks which run, in clean copies), so a fix cannot quietly break other work. Then, for a requirement
 # proved by checks, or a project command, it awaits proof: the next vbw prove
 # closes it or counts a failed attempt. For a [human] requirement no check can
 # decide, so the fix closes and the requirement returns to the user for
 # acceptance. `retry` reopens an escalated fix for one more attempt (the user's
 # decision at the cap; a further failure escalates again). Several fixes close in
-# one command: the checks they serve run once (their union), a failing check
-# fails only the fixes it serves, and a fix that cannot close is named while the
+# one command: the candidate checks run once, a failing check
+# fails the fixes whose files serve it (every named fix when it serves none), and a fix that cannot close is named while the
 # others still close; the exit code is non-zero when any could not.
 
 # cmd_fix_files RECORD ID: the files the fix's requirement may touch, NUL-separated.
