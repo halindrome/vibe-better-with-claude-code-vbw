@@ -190,8 +190,7 @@ cmd_fix() {
     checks_end
     results=$(printf '%s' "$results" | jq -c --argjson off "$off" "$PROVE_FLAT")
     tfres=$(printf '%s' "$tfres" | jq -c --argjson off "$off" "$PROVE_FLAT")
-    # The form is kept as the last proof recorded it: a changed command is still a cause for vbw prove.
-    proofreuse_save "$record" "$results" '{}' "$head" "$at" "$(proofreuse_store_form)"
+    proofreuse_save "$record" "$results" '{}' "$head" "$at"
     [ "$tfres" = '{}' ] || testfiles_save "$record" "$tfres" "$head" "$at"
     tfbad=$(printf '%s' "$tfres" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')
   fi

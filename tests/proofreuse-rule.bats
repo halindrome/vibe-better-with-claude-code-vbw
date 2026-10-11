@@ -36,7 +36,7 @@ store() {
   tree=$(pr 'vbw_head_tree')
   mkdir -p "$(git rev-parse --git-common-dir)/vbw"
   jq -n --argjson r "$1" --arg tree "$tree" \
-    '{runs: {"check:C1": ({fp: "F", tree: $tree, status: "pass", at: "t", seconds: 1, tail: "", reads: ["src/a.txt"], dirs: ["src/lib"], git: false} + $r)}, form: null}' \
+    '{runs: {"check:C1": ({fp: "F", tree: $tree, status: "pass", at: "t", seconds: 1, tail: "", reads: ["src/a.txt"], dirs: ["src/lib"], git: false} + $r)}}' \
     > "$(git rev-parse --git-common-dir)/vbw/runs.json"
 }
 
@@ -62,7 +62,7 @@ reason() {
 
 @test "never passed: no run is stored for the unit" {
   mkdir -p "$(git rev-parse --git-common-dir)/vbw"
-  printf '{"runs":{},"form":null}\n' > "$(git rev-parse --git-common-dir)/vbw/runs.json"
+  printf '{"runs":{}}\n' > "$(git rev-parse --git-common-dir)/vbw/runs.json"
   run reason
   [ "$status" -eq 1 ]
   [ "$output" = "never passed" ]
@@ -170,10 +170,17 @@ reason() {
   [ "$output" = "the code it ran on is unknown" ]
 }
 
-@test "a clone with no runs reuses nothing and has no form" {
-  run pr 'PROOFREUSE_STORE=$(proofreuse_store_read); proofreuse_reason check:C1 F "$(vbw_head_tree)"; printf "[%s]\n" "$(proofreuse_store_form)"'
+@test "a clone with no runs reuses nothing, and its empty store holds runs and nothing else" {
+  run pr 'PROOFREUSE_STORE=$(proofreuse_store_read); proofreuse_reason check:C1 F "$(vbw_head_tree)"; printf "%s\n" "$PROOFREUSE_STORE"'
   [[ "$output" == *"never passed"* ]]
-  [[ "$output" == *"[]" ]]
+  [[ "$output" == *'{"runs":{}}' ]]
+}
+
+@test "a store an older VBW left with a form is read as its runs alone" {
+  mkdir -p "$(git rev-parse --git-common-dir)/vbw"
+  printf '{"runs":{},"form":{"commands":{}}}\n' > "$(git rev-parse --git-common-dir)/vbw/runs.json"
+  run pr 'proofreuse_store_read'
+  [ "$output" = '{"runs":{}}' ]
 }
 
 @test "a damaged store reuses nothing" {
@@ -190,26 +197,26 @@ reason() {
 @test "saving over a damaged store starts a good one" {
   mkdir -p "$(git rev-parse --git-common-dir)/vbw"
   printf 'garbage' > "$(git rev-parse --git-common-dir)/vbw/runs.json"
-  run pr 'proofreuse_save "{\"checks\":[{\"id\":\"C1\",\"run\":[\"true\"]}],\"commands\":{}}" "{\"C1\":{\"status\":\"pass\",\"seconds\":2,\"tail\":\"ok\",\"reads\":[\"src/a.txt\"],\"dirs\":[],\"git\":false}}" "{}" TREE NOW FORM'
+  run pr 'proofreuse_save "{\"checks\":[{\"id\":\"C1\",\"run\":[\"true\"]}],\"commands\":{}}" "{\"C1\":{\"status\":\"pass\",\"seconds\":2,\"tail\":\"ok\",\"reads\":[\"src/a.txt\"],\"dirs\":[],\"git\":false}}" "{}" TREE NOW'
   [ "$status" -eq 0 ]
   run jq -r '.runs["check:C1"] | "\(.status) \(.tree) \(.at) \(.seconds) \(.reads[0])"' "$(git rev-parse --git-common-dir)/vbw/runs.json"
   [ "$output" = "pass TREE NOW 2 src/a.txt" ]
-  run pr 'proofreuse_store_form'
-  [ "$output" = "FORM" ]
+  run jq -c 'keys' "$(git rev-parse --git-common-dir)/vbw/runs.json"
+  [ "$output" = '["runs"]' ]
 }
 
 @test "a saved run keeps the others and a unit that did not run keeps its earlier run" {
   rec='{"checks":[{"id":"C1","run":["true"]},{"id":"C2","run":["true"]}],"commands":{"test":["make"]}}'
-  pr 'proofreuse_save '"'$rec'"' "{\"C1\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[],\"dirs\":[]},\"C2\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[],\"dirs\":[]}}" "{\"test\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[],\"dirs\":[]}}" T1 N1 F1'
-  pr 'proofreuse_save '"'$rec'"' "{\"C1\":{\"status\":\"fail\",\"seconds\":1,\"reads\":null},\"C2\":{\"status\":\"waiting\",\"seconds\":0}}" "{\"test\":{\"status\":\"skipped\",\"seconds\":0}}" T2 N2 F2'
-  run jq -r '[.runs["check:C1"].status, .runs["check:C1"].tree, .runs["check:C2"].tree, .runs["command:test"].tree, .form] | join(" ")' "$(git rev-parse --git-common-dir)/vbw/runs.json"
-  [ "$output" = "fail T2 T1 T1 F2" ]
+  pr 'proofreuse_save '"'$rec'"' "{\"C1\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[],\"dirs\":[]},\"C2\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[],\"dirs\":[]}}" "{\"test\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[],\"dirs\":[]}}" T1 N1'
+  pr 'proofreuse_save '"'$rec'"' "{\"C1\":{\"status\":\"fail\",\"seconds\":1,\"reads\":null},\"C2\":{\"status\":\"waiting\",\"seconds\":0}}" "{\"test\":{\"status\":\"skipped\",\"seconds\":0}}" T2 N2'
+  run jq -r '[.runs["check:C1"].status, .runs["check:C1"].tree, .runs["check:C2"].tree, .runs["command:test"].tree] | join(" ")' "$(git rev-parse --git-common-dir)/vbw/runs.json"
+  [ "$output" = "fail T2 T1 T1" ]
 }
 
 @test "the store is never written into the record" {
   rec='{"checks":[{"id":"C1","run":["true"]}],"commands":{}}'
   before=$(cat .vbw/record.json)
-  pr 'proofreuse_save '"'$rec'"' "{\"C1\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[],\"dirs\":[]}}" "{}" T N F'
+  pr 'proofreuse_save '"'$rec'"' "{\"C1\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[],\"dirs\":[]}}" "{}" T N'
   [ "$(cat .vbw/record.json)" = "$before" ]
   [ -f "$(git rev-parse --git-common-dir)/vbw/runs.json" ]
 }
@@ -217,7 +224,7 @@ reason() {
 @test "the plan reuses what the rule allows and says why the rest runs" {
   rec='{"checks":[{"id":"C1","run":["true"]},{"id":"C2","run":["true"]},{"id":"C3","run":["true"]}],"commands":{"test":["make"]}}'
   tree=$(pr 'vbw_head_tree')
-  pr 'proofreuse_save '"'$rec'"' "{\"C1\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[\"src/a.txt\"],\"dirs\":[]},\"C2\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[\"src/b.txt\"],\"dirs\":[]}}" "{\"test\":{\"status\":\"pass\",\"seconds\":1,\"reads\":null}}" '"$tree"' N F'
+  pr 'proofreuse_save '"'$rec'"' "{\"C1\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[\"src/a.txt\"],\"dirs\":[]},\"C2\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[\"src/b.txt\"],\"dirs\":[]}}" "{\"test\":{\"status\":\"pass\",\"seconds\":1,\"reads\":null}}" '"$tree"' N'
   printf 'b2\n' > src/b.txt
   git commit -q -am "chore(test): edit b"
   run pr 'proofreuse_plan '"'$rec'"' 1; jq -nc --argjson r "$REUSE_CHECKS" --argjson w "$WHY_CHECKS" --argjson c "$WHY_COMMANDS" "{reused: (\$r | keys), why: \$w, commands: \$c, todo: \"${TODO_CHECKS[*]}\"}"'
@@ -228,7 +235,7 @@ reason() {
 @test "an unfinished proof and proving again with nothing committed reuse nothing" {
   rec='{"checks":[{"id":"C1","run":["true"]}],"commands":{}}'
   tree=$(pr 'vbw_head_tree')
-  pr 'proofreuse_save '"'$rec'"' "{\"C1\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[],\"dirs\":[]}}" "{}" '"$tree"' N F'
+  pr 'proofreuse_save '"'$rec'"' "{\"C1\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[],\"dirs\":[]}}" "{}" '"$tree"' N'
   pr ': > "$(proofreuse_marker)"'
   run pr 'proofreuse_plan '"'$rec'"'; printf "%s\n" "$WHY_CHECKS"'
   [ "$output" = '{"C1":"the last proof was cut short"}' ]

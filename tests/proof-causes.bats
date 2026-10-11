@@ -1,12 +1,13 @@
 #!/usr/bin/env bats
 # R168 (docs/proof.md): when VBW cannot know what a change affects, vbw prove
-# runs every check and every test file and names the cause in plain words: an
-# approved command changed (its argv, the single-file form or the list of test
-# files); a file every test file reads changed (named); a file was added or
-# deleted that no recorded run read and no recorded run listed the folder of;
-# the file system cannot record reads; this clone has no earlier recorded run;
-# the last proof was cut short. A content change to a file no recorded run
-# read makes nothing run. Every summary, full or not, prints
+# runs every check and every test file and names the cause in plain words: a
+# file was added or deleted that no recorded run read and no recorded run
+# listed the folder of; the file system cannot record reads; this clone has no
+# earlier recorded run; the last proof was cut short. A changed approved
+# command, single-file form or list of test files re-runs only what runs
+# through it (each unit by its own definition), and a file every test file
+# reads re-runs those files and nothing else. A content change to a file no
+# recorded run read makes nothing run. Every summary, full or not, prints
 # "checks: N ran, M reused" and "test files: N ran, M reused"; one cause is
 # one "ran everything:" line, several are listed one per line. Scripts log
 # their runs to $RANLOG. L1.
@@ -84,37 +85,44 @@ no_reads() {
   chmod +x "$TEST_ROOT/noreads/touch"
 }
 
-@test "R168: a changed approved command runs every check and test file, and names the command" {
+# nothing_global: the summary has no "ran everything" line.
+nothing_global() { ! printf '%s\n' "$output" | grep -q 'ran everything' || { echo "$output"; return 1; }; }
+
+@test "R168: a changed approved command re-runs that command only, and its line says why" {
   respec 'sh tests/lint.sh x' 'sh {file}' 'tests/t_*.sh'
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  everything
-  cause 'command lint changed'
+  [ "$(ran)" = "lintx " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +lint pass .*ran: definition changed' || { echo "$output"; false; }
+  nothing_global
 }
 
-@test "R168: a changed single-file form runs every check and test file, and says so" {
+@test "R168: a changed single-file form re-runs every test file and nothing else" {
   respec 'sh tests/lint.sh' 'sh -e {file}' 'tests/t_*.sh'
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  everything
-  cause 'single-file form changed'
+  [ "$(ran)" = "t_a t_b " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +tests/t_a\.sh pass .*ran: definition changed' || { echo "$output"; false; }
+  nothing_global
 }
 
-@test "R168: a changed list of test files runs every check and test file, and says so" {
+@test "R168: a changed list of test files runs the files it adds and nothing else" {
+  printf 'echo u_c >> "$RANLOG"\n' > tests/u_c.sh
+  git add tests/u_c.sh && git commit -q -m "feat: test u_c"
   respec 'sh tests/lint.sh' 'sh {file}' 'tests/t_*.sh tests/u_*.sh'
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  everything
-  cause 'list of test files changed'
+  [ "$(ran)" = "u_c " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  nothing_global
 }
 
-@test "R168: a change to a file every test file reads runs every check and test file, and names that file" {
+@test "R168: a change to a file every test file reads re-runs those files and nothing else, and each line names the file" {
   change tests/helper.sh
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  everything
-  cause 'tests/helper\.sh changed, and every test file reads it'
-  ! printf '%s\n' "$output" | grep -q 'ran everything, because:' || { echo "$output"; false; }
+  [ "$(ran)" = "t_a t_b " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +tests/t_a\.sh pass .*ran: tests/helper\.sh changed' || { echo "$output"; false; }
+  nothing_global
 }
 
 @test "R168: an added file that no recorded run read and no recorded run listed the folder of runs everything, and names it" {

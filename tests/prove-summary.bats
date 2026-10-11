@@ -1,10 +1,10 @@
 #!/usr/bin/env bats
-# R168 (docs/proof.md): the wiring of the causes and counts. vbw prove saves
-# the approved commands and the test file form in the clone's store as a JSON
-# object; vbw fix done honours the same causes as vbw prove (a cause runs every
-# candidate check) and re-saves that form unchanged; a failing test file is
-# re-run on its own through the single-file form, never as the whole test
-# command. Scripts log their runs to $RANLOG. L1.
+# R168 (docs/proof.md): the wiring of the causes and counts. The clone's store
+# holds runs only; a changed approved command re-runs that command and nothing
+# else, in vbw prove as in vbw fix done (which honours the same causes as vbw
+# prove: a cause runs every candidate check); a failing test file is re-run on
+# its own through the single-file form, never as the whole test command.
+# Scripts log their runs to $RANLOG. L1.
 
 load helper
 
@@ -46,33 +46,25 @@ store() { cat "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/runs
 
 ran() { sort "$RANLOG" | tr '\n' ' '; }
 
-@test "R168: vbw prove saves the commands and the test file form in the store as an object" {
-  store | jq -e '.form | type == "object" and (.commands | has("lint")) and has("single") and has("list")' > /dev/null || { store; false; }
+@test "R168: the clone's store holds the recorded runs and nothing else" {
+  store | jq -e '(keys == ["runs"]) and (.runs | type == "object") and (.runs | has("check:C1") and has("command:lint") and has("file:tests/t_a.sh"))' > /dev/null || { store; false; }
 }
 
-@test "R168: vbw fix done keeps the saved form as it was, an object" {
-  local before
-  before=$(store | jq -cS .form)
-  edit_record '.fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "a"}]'
-  printf 'more\n' >> src/a.txt
-  git add src/a.txt && git commit -q -m "fix: a"
-  vbw_run fix done F1
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(store | jq -cS .form)" = "$before" ] || { store; false; }
-}
-
-@test "R168: vbw fix done with a changed approved command runs the candidate checks and names the cause" {
+@test "R168: a changed approved command re-runs that command only: vbw fix done re-runs no check for it, the next vbw prove runs the command and says why" {
   edit_record '.fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "a"}]'
   spec 'sh tests/lint.sh x' > /dev/null
   git add -A && git commit -q -m "chore(vbw): commands"
   "$VBW" approve > /dev/null
   vbw_run fix done F1
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  printf '%s\n' "$output" | grep -qE 'every candidate check runs: .*command lint changed' || { echo "$output"; false; }
-  [ "$(ran)" = "C1 " ] || { echo "ran: $(ran)"; false; }
-  # the form stays as the last proof saved it: the next proof still sees the cause
+  printf '%s\n' "$output" | grep -q 'C1 unchanged since its pass' || { echo "$output"; false; }
+  ! printf '%s\n' "$output" | grep -q 'every candidate check runs' || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
   vbw_run prove
-  printf '%s\n' "$output" | grep -qE '^ +ran everything: .*command lint changed' || { echo "$output"; false; }
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "lint " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +lint pass .*ran: definition changed' || { echo "$output"; false; }
+  ! printf '%s\n' "$output" | grep -q 'ran everything' || { echo "$output"; false; }
 }
 
 # A failing test file opens a fix for the test command.

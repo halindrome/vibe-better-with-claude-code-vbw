@@ -11,14 +11,17 @@ DOC="$REPO_ROOT/docs/proof.md"
   grep -qF 'ran everything, because:' "$DOC"
 }
 
-@test "R168: docs/proof.md lists a changed approved command, single-file form and list of test files, with their messages" {
-  grep -qF 'command test changed' "$DOC"
-  grep -qF 'single-file form changed' "$DOC"
-  grep -qF 'list of test files changed' "$DOC"
+@test "R168: docs/proof.md says a changed approved command, single-file form or list of test files re-runs only what runs through it, and lists none of them as a cause" {
+  grep -qF 're-runs only that command' "$DOC"
+  grep -qF 're-runs every test file' "$DOC"
+  ! grep -qF 'command test changed' "$DOC" || { grep -n 'command test changed' "$DOC"; false; }
+  ! grep -qF 'single-file form changed' "$DOC" || { grep -n 'single-file form changed' "$DOC"; false; }
+  ! grep -qF 'list of test files changed' "$DOC" || { grep -n 'list of test files changed' "$DOC"; false; }
 }
 
-@test "R168: docs/proof.md lists a changed file every test file reads, with its message" {
-  grep -qF 'changed, and every test file reads it' "$DOC"
+@test "R168: docs/proof.md no longer lists a file every test file reads as a cause: each file re-runs by its own read list" {
+  ! grep -qF 'changed, and every test file reads it' "$DOC" || { grep -n 'every test file reads it' "$DOC"; false; }
+  grep -qi 'own read list' "$DOC"
 }
 
 @test "R168: docs/proof.md lists an added or deleted file no recorded run saw, with its messages" {

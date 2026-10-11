@@ -31,25 +31,23 @@ teardown() { vbw_teardown; }
 
 # store: the clone's store of runs, as a proof of the committed code leaves it:
 # both test files read the helper and src/a.txt, the check read its own file,
-# and every run listed the folder src. FORM is the recorded form.
+# and every run listed the folder src.
 store() {
   local tree common
   tree=$(vbw_kernel 'vbw_head_tree')
   common=$(git rev-parse --path-format=absolute --git-common-dir)
   mkdir -p "$common/vbw"
-  jq -n --arg t "$tree" --argjson f "$(form)" '
+  jq -n --arg t "$tree" '
     def run($reads): {fp: "x", tree: $t, status: "pass", at: "t", seconds: 1, tail: "", reads: $reads, dirs: [{path: "src", fp: "f"}], git: false};
     {runs: {"file:tests/t_a.sh": run(["tests/t_a.sh","tests/helper.sh","src/a.txt"]),
             "file:tests/t_b.sh": run(["tests/t_b.sh","tests/helper.sh"]),
-            "check:C1": run(["tests/c1.sh"])}, form: $f}' > "$common/vbw/runs.json"
+            "check:C1": run(["tests/c1.sh"])}}' > "$common/vbw/runs.json"
 }
 
 # edit_record FILTER: change the record, keeping the protected list in step.
 edit_record() {
   jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
 }
-
-form() { vbw_kernel '. "$VBW_LIB/proofcauses.sh"; VBW_COMMAND_TIMEOUT=3600; proofcauses_form "$(record_read)"'; }
 
 # causes [FULL]: the causes for the committed code, one per line.
 causes() {
@@ -104,47 +102,33 @@ noreads() {
   [ "$output" = "nothing was committed since the last passing proof" ] || { echo "$output"; false; }
 }
 
-@test "R168: a changed approved command is a cause, and names it" {
+@test "R168: a changed approved command, single-file form or list of test files is no cause: each unit re-runs by its own definition" {
   edit_record '.commands.lint = ["sh","tests/lint.sh","x"]'
   run causes
-  [ "$output" = "the approved command lint changed" ] || { echo "$output"; false; }
-}
-
-@test "R168: a changed single-file form is a cause" {
+  [ -z "$output" ] || { echo "$output"; false; }
   edit_record '.test_files.run = ["sh","-e","{file}"]'
   run causes
-  [ "$output" = "the single-file form changed" ] || { echo "$output"; false; }
-}
-
-@test "R168: a changed list of test files is a cause" {
+  [ -z "$output" ] || { echo "$output"; false; }
   edit_record '.test_files.files = ["tests/t_*.sh","tests/u_*.sh"]'
-  run causes
-  [ "$output" = "the list of test files changed" ] || { echo "$output"; false; }
-}
-
-@test "R168: a store with no recorded form names no form cause" {
-  common=$(git rev-parse --path-format=absolute --git-common-dir)
-  jq '.form = "abc"' "$common/vbw/runs.json" > "$TEST_ROOT/s.json" && cp "$TEST_ROOT/s.json" "$common/vbw/runs.json"
   run causes
   [ -z "$output" ] || { echo "$output"; false; }
 }
 
-@test "R168: a changed file that every test file reads is a cause, and names it" {
+@test "R168: a store from an older VBW that still carries a form is read as its runs" {
+  common=$(git rev-parse --path-format=absolute --git-common-dir)
+  jq '.form = {commands: {}}' "$common/vbw/runs.json" > "$TEST_ROOT/s.json" && cp "$TEST_ROOT/s.json" "$common/vbw/runs.json"
+  run causes
+  [ -z "$output" ] || { echo "$output"; false; }
+}
+
+@test "R168: a changed file that every test file reads is no cause: each file re-runs by its own read list" {
   change tests/helper.sh
   run causes
-  [ "$output" = "tests/helper.sh changed, and every test file reads it" ] || { echo "$output"; false; }
+  [ -z "$output" ] || { echo "$output"; false; }
 }
 
 @test "R168: a changed file that only one test file reads is no cause" {
   change src/a.txt
-  run causes
-  [ -z "$output" ] || { echo "$output"; false; }
-}
-
-@test "R168: with one recorded test file, a file it reads is no cause" {
-  common=$(git rev-parse --path-format=absolute --git-common-dir)
-  jq 'del(.runs["file:tests/t_b.sh"])' "$common/vbw/runs.json" > "$TEST_ROOT/s.json" && cp "$TEST_ROOT/s.json" "$common/vbw/runs.json"
-  change tests/helper.sh
   run causes
   [ -z "$output" ] || { echo "$output"; false; }
 }
@@ -171,6 +155,21 @@ noreads() {
   git rm -q other/old.txt && git commit -q -m "feat: drop old"
   run causes
   [ "$output" = "other/old.txt was deleted, and no recorded run read it or listed its folder" ] || { echo "$output"; false; }
+}
+
+@test "R168: a deletion that a later recorded run already ran without is no cause" {
+  local common tree
+  mkdir -p other
+  printf 'n\n' > other/old.txt
+  git add other/old.txt && git commit -q -m "feat: old"
+  store
+  git rm -q other/old.txt && git commit -q -m "feat: drop old"
+  # One run re-ran on the code without the file, as a proof that judged the deletion leaves it.
+  common=$(git rev-parse --path-format=absolute --git-common-dir)
+  tree=$(vbw_kernel 'vbw_head_tree')
+  jq --arg t "$tree" '.runs["check:C1"].tree = $t' "$common/vbw/runs.json" > "$TEST_ROOT/s.json" && cp "$TEST_ROOT/s.json" "$common/vbw/runs.json"
+  run causes
+  [ -z "$output" ] || { echo "$output"; false; }
 }
 
 @test "R168: an added file in a folder a recorded run listed is no cause" {

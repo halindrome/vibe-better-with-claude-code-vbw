@@ -26,7 +26,7 @@ cmd_prove() {
   esac
   vbw_require_project
   cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
-  local causes record checks commands scope tree head ev at evf curf noreads mark="" n files='{}' tfs='{}' alln=0
+  local causes record checks commands scope tree head ev at evf curf noreads mark="" n files='{}' tfs='{}' tfsum alln=0
   # This session's Stop hook waits while the mark names a live process (R98).
   if [ -n "$(vbw_session)" ]; then
     mark="$VBW_RUNTIME/proving.$(vbw_session)"
@@ -71,7 +71,7 @@ cmd_prove() {
   checks=$(printf '%s' "$checks" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
   commands=$(printf '%s' "$commands" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
   files=$(printf '%s' "$files" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
-  proofreuse_save "$record" "$checks" "$commands" "$head" "$at" "$(proofcauses_form "$record")"
+  proofreuse_save "$record" "$checks" "$commands" "$head" "$at"
   [ "$files" = '{}' ] || testfiles_save "$record" "$files" "$head" "$at"
   checks=$(prove_stamp "$record" check "$checks" "$at" "$WHY_CHECKS")
   commands=$(prove_stamp "$record" command "$commands" "$at" "$WHY_COMMANDS")
@@ -83,7 +83,8 @@ cmd_prove() {
     | jq -c 'map_values(del(.reads, .dirs, .git) | if .reused and .status == "pass" then .exit = 0 else . end)')
   if testfiles_on "$record"; then
     tfs=$(testfiles_finish "$record" "$files" "$at")
-    commands=$(printf '%s' "$commands" | jq -c --argjson t "$(testfiles_command "$record" "$tfs")" '. + {test: $t}')
+    tfsum=$(testfiles_command "$record" "$tfs")
+    commands=$(printf '%s' "$commands" | jq -c --argjson t "$tfsum" '. + {test: $t}')
   fi
   scope=$(prove_scope "$record")
   tree=$(vbw_code_tree) || vbw_die "cannot fingerprint the project files"

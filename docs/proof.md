@@ -349,7 +349,11 @@ user can say which subset of the tests is enough for a build round.
 
 A plain `vbw prove` runs the quick command in place of the test command. When
 the quick command is not approved, the summary says so and the full test
-command runs instead. `vbw prove --full` never runs the quick command.
+command runs instead. `vbw prove --full` never runs the quick command. A proof
+where the quick command stood in is partial: QA and shipping accept a proof that
+reused results but refuse a partial one until a full proof ran. The refusals read
+`the last proof was partial: run vbw prove --full, then record the verdict again`
+(`vbw qa record`) and `Run vbw prove --full` (`vbw next`).
 
 Any change to the contract (a check edited, a test file touched, a plan's files
 widened) changes the hash, and the contract is unapproved again until the user
@@ -570,14 +574,16 @@ checks: 1 ran, 1 reused
 ```
 
 Each line shows the seconds the result took when it ran and, for a reused
-result, the time of the proof that really ran it. A reused result keeps the
-time and fingerprint of that run, so reuse can chain across proofs. In the
-evidence, reused results carry `"reused": true`, and the last line counts
-`checks: N ran, M reused`.
+result, the time of the proof that really ran it. A reused result keeps the time
+it really ran and the fingerprint of that run, so reuse can chain across proofs.
+In the evidence, reused results carry `"reused": true`, and the summary counts
+`checks: N ran, M reused` and `test files: N ran, M reused`.
 
 **The read list.** While a check runs, VBW records its read list: the files it
 opened and the folders it listed. The list comes from the run itself,
-never from file names, and not from the `files` a check declares.
+never from file names, and not from the `files` a check declares. A check that
+declares no files is judged by what it read, like any other, and a documentation
+file a check reads is on its read list like any other file.
 
 **When a result is reused.** A check's last pass is reused when the check has a
 read list and nothing on it has changed since that pass.
@@ -604,14 +610,17 @@ clean copy of the committed code.
 
 Other things to know:
 
-- A change in the working folder that is not committed does not make a check
-  run again, and is never counted as proven: the proof reads only the
-  committed code. Commit the work, then run `vbw prove`.
+- An uncommitted change in the working folder does not make a check run again,
+  and is never counted as proven: the proof reads only the committed code.
+  Commit the work, then run `vbw prove`.
 - An interrupted proof recorded no evidence, so the next proof runs every check.
-- Project commands keep their own rule: a command's result is reused only when
-  the committed code is identical to the last passing proof's (only
-  `.vbw/record.json` or `.vbw/spec.md` differ), the working folder has no
-  uncommitted or untracked project files, and its approved argv is unchanged.
+- Project commands and test files follow the same rule. `vbw prove` reuses the test command's
+  passing result when nothing it read changed; a command runs again only when its
+  approved argv or time limit changed, a file it read changed, or its last result
+  did not pass. A changed approved command re-runs only that command; a changed
+  single-file form re-runs every test file; a changed list of test files runs the
+  files it adds. Each unit re-runs by its own definition and its own read list, so
+  none of these runs everything.
 
 A proof that reuses results records the current contract and code. `passed` is
 set from every result, reused or new, and requirements become `proven` as
@@ -624,7 +633,7 @@ test file runs, and the summary says why. One cause prints on one line; several
 print as a list.
 
 ```text
-  ran everything: the approved command test changed
+  ran everything: this clone has no earlier recorded run
 ```
 
 ```text
@@ -637,10 +646,6 @@ The causes, with the text the summary shows:
 
 | What happened | Message |
 |---|---|
-| An approved project command changed (`test` here) | `the approved command test changed` |
-| The single-file form of the test command changed | `the single-file form changed` |
-| The list of test files changed | `the list of test files changed` |
-| A file every test file reads changed (for example a shared helper) | `tests/helper.sh changed, and every test file reads it` |
 | A file was added that no recorded run read and no recorded run listed its folder | `src/new.txt was added, and no recorded run read it or listed its folder` |
 | A file was deleted under the same condition | `src/old.txt was deleted, and no recorded run read it or listed its folder` |
 | The file system cannot record which files are read | `this file system does not record which files are read` |
@@ -651,8 +656,12 @@ The causes, with the text the summary shows:
 
 A content change to a file no recorded run read runs nothing: it affects
 nothing that was run. An added or deleted file no recorded run saw (none read
-it or listed its folder) runs everything, because a check could now see a
-different set of files.
+it or listed its folder, and every recorded run predates it) runs everything,
+because a check could now see a different set of files. An addition or deletion
+that some recorded run already ran with is not unseen: the proof that ran it
+judged it. A changed approved command, single-file form or list of test files
+is no cause either: each unit re-runs by its own definition
+([Reusing results](#reusing-results-in-vbw-prove)).
 
 Every summary, full or not, prints both counts:
 
@@ -674,7 +683,7 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
 - Reads through git always run again.
 
 To run everything fresh, use `vbw prove --full`, or prove again with
-nothing committed since a passing proof (a second proof is a deliberate re-run).
+nothing committed since a passing proof (a second `vbw prove` is a deliberate re-run).
 
 ### Fix items
 

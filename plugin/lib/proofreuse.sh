@@ -53,12 +53,12 @@ proofreuse_allowed() {
 # The store of recorded runs lives in the clone, never in the record (it
 # changes on every run and would make the record's history noise):
 # $(git common dir)/vbw/runs.json, {runs: {"check:ID" | "command:NAME" |
-# "file:PATH": {fp, tree, status, at, seconds, tail, reads, dirs, git}}, form}.
+# "file:PATH": {fp, tree, status, at, seconds, tail, reads, dirs, git}}}.
 # fp: fingerprint of the unit's approved definition; tree: the committed code
 # it ran on; reads: the project files it opened (null: none was written down);
-# dirs: the folders it listed; git: it read the project through git. form: the
-# fingerprint of the approved commands and test-file form of the last recorded
-# run. A missing or damaged store means nothing is reused.
+# dirs: the folders it listed; git: it read the project through git. The store
+# holds runs and nothing else (a form field an older VBW wrote is dropped on
+# reading). A missing or damaged store means nothing is reused.
 proofreuse_store_file() {
   local common
   common=$(git -C "$VBW_ROOT" rev-parse --path-format=absolute --git-common-dir 2> /dev/null) || vbw_die "not a git repository"
@@ -67,18 +67,13 @@ proofreuse_store_file() {
 
 # proofreuse_store_read: the store, or an empty one when it is missing or damaged.
 proofreuse_store_read() {
-  jq -c 'if type == "object" and (.runs | type) == "object" then {runs, form: (.form // null)} else error("shape") end' \
-    "$(proofreuse_store_file)" 2> /dev/null || printf '{"runs":{},"form":null}\n'
+  jq -c 'if type == "object" and (.runs | type) == "object" then {runs} else error("shape") end' \
+    "$(proofreuse_store_file)" 2> /dev/null || printf '{"runs":{}}\n'
 }
 
-# proofreuse_store_form: the form of the last recorded run (a JSON object; a
-# plain text from an older store prints as it is), or nothing.
-proofreuse_store_form() { proofreuse_store_read | jq -r '.form // empty | if type == "string" then . else tojson end'; }
-
-# proofreuse_merge NEW [FORM]: the one writer of the store. NEW (a JSON object
-# key -> run) is merged over the recorded runs; FORM, when given, replaces the
-# form (JSON text is kept as an object, anything else as text). The
-# read-modify-write runs under a lock beside the file and ends in an atomic move.
+# proofreuse_merge NEW: the one writer of the store. NEW (a JSON object
+# key -> run) is merged over the recorded runs. The read-modify-write runs
+# under a lock beside the file and ends in an atomic move.
 proofreuse_merge() {
   local file lock tmp
   file=$(proofreuse_store_file)
@@ -87,16 +82,15 @@ proofreuse_merge() {
   vbw_lock_take "$lock" "runs"
   tmp=$(mktemp "${file%/*}/runs.XXXXXX") || vbw_die "cannot create a temporary file in ${file%/*}"
   vbw_guard_add file "$tmp"
-  proofreuse_store_read | jq -c --slurpfile nw <(printf '%s' "$1") --arg form "${2-}" --argjson keep "$([ $# -ge 2 ] && echo false || echo true)" \
-    '{runs: (.runs + $nw[0]), form: (if $keep then .form else ($form | try fromjson catch $form) end)}' > "$tmp" && mv "$tmp" "$file"
+  proofreuse_store_read | jq -c --slurpfile nw <(printf '%s' "$1") '{runs: (.runs + $nw[0])}' > "$tmp" && mv "$tmp" "$file"
   vbw_guard_drop "$tmp"
   vbw_guard_drop "$lock"
 }
 
-# proofreuse_save RECORD CHECKS COMMANDS TREE AT FORM (JSON text): record the
-# runs that really happened (CHECKS and COMMANDS: JSON objects name -> result,
-# with the read list the runner collected) on the committed code TREE. A unit
-# that was not run (skipped, waiting) leaves its earlier run alone.
+# proofreuse_save RECORD CHECKS COMMANDS TREE AT: record the runs that really
+# happened (CHECKS and COMMANDS: JSON objects name -> result, with the read
+# list the runner collected) on the committed code TREE. A unit that was not
+# run (skipped, waiting) leaves its earlier run alone.
 proofreuse_save() {
   local new='{}' kind name fp res
   for kind in check command; do
@@ -110,7 +104,7 @@ proofreuse_save() {
             reads: ($x.reads // null), dirs: ($x.dirs // []), git: ($x.git // false)}} end')
     done < <(printf '%s' "$res" | jq -j 'keys[] | . + "\u0000"')
   done
-  proofreuse_merge "$new" "$6"
+  proofreuse_merge "$new"
 }
 
 # proofreuse_reason KEY FP HEAD: the one reuse rule. Succeeds, printing
