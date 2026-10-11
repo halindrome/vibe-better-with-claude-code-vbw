@@ -70,6 +70,7 @@ apply_next() {
     "a patch carries plans"*) echo "remove \"phases\" from the document, or send it to a full apply (vbw apply) to change phases" ;;
     "--add needs"*) echo "send --add a JSON object whose \"phases\" array holds the new phases, with their plans, checks and rules" ;;
     "test_files must be"*) echo "give test_files as {\"run\": [argv naming {file} once], \"files\": [git pathspecs]}, or leave it out" ;;
+    "no .vbw/spec.md"*) echo "restore .vbw/spec.md (git checkout -- .vbw/spec.md), then send the document again" ;;
     "apply needs a JSON object"*) echo "pipe one JSON object into vbw apply: {\"phases\": [], \"plans\": [], \"checks\": []}" ;;
     "apply needs phases"*) echo "give phases, plans and checks as arrays, and rules as [{req, text, check}] if present" ;;
     *"is already a phase"*) echo "give the new phase an unused id, or change the existing phase with a full apply" ;;
@@ -104,8 +105,8 @@ apply_internal() { vbw_die "internal error: $1"$'\n'"Next: run vbw doctor, then 
 # they parse back to the same argv, else a JSON array.
 apply_write_test_files() {
   local spec="$VBW_DIR/spec.md" tmp
-  [ -f "$spec" ] || vbw_die "no .vbw/spec.md (run /vbw:init)"
-  tmp=$(mktemp "$VBW_RUNTIME/spec.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"
+  # cmd_apply refused earlier when the spec was missing; the folder was just written to.
+  tmp=$(mktemp "$VBW_RUNTIME/spec.XXXXXX") || apply_internal "cannot create a temporary file in $VBW_RUNTIME"
   vbw_guard_add file "$tmp"
   awk 'BEGIN { skip = 0 }
     /^#{1,2}[ \t]/ { skip = (tolower($0) ~ /^##[ \t]+test files[ \t\r]*$/) }
@@ -133,6 +134,8 @@ cmd_apply() {
              and ([.[] | [match("\\{file\\}"; "g")] | length] | add) == 1)
         and (.files | type == "array" and length > 0 and all(.[]; type == "string" and length > 0 and (test("\\s") | not)))' > /dev/null 2>&1 \
       || apply_refuse "test_files must be {run, files}: run an argv naming {file} exactly once, files a non-empty array of git pathspecs without spaces"
+    # Judged before anything is written: the form goes into the spec after the record.
+    [ -f "$VBW_DIR/spec.md" ] || apply_refuse "no .vbw/spec.md to write the test-file form into"
     doc=$(printf '%s' "$doc" | jq -c 'del(.test_files)')
   fi
   if [ "$add" = true ]; then
