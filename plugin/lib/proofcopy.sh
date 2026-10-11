@@ -19,32 +19,59 @@ proofcopy_is_build_dir() {
   return 1
 }
 
+# proofcopy_slots WORK: how many copies to make for WORK pieces of work: one per
+# parallel slot, as many as check_jobs allows and the work needs (at least 1).
+proofcopy_slots() {
+  local n
+  n=$(vbw_check_jobs) || n=1
+  [ "$1" -ge "$n" ] || n=$1
+  [ "$n" -ge 1 ] || n=1
+  printf '%s\n' "$n"
+}
+
 # proofcopy_create: make the copy; sets PROOF_COPY (absolute path). Called
 # directly, never in $(...), so the guard that removes it on interrupt holds.
 proofcopy_create() {
-  local dir p l t real
+  proofcopy_create_slots 1
+}
+
+# proofcopy_create_slots N: make N copies, each made like the single one; sets
+# PROOF_COPIES (all of them) and PROOF_COPY (the first). Called directly, never
+# in $(...). proofcopy_remove removes every one, and so does an interrupt.
+proofcopy_create_slots() {
+  local i
+  PROOF_COPIES=()
+  for ((i = 0; i < $1; i++)); do proofcopy_make; done
+  PROOF_COPY=${PROOF_COPIES[0]}
+}
+
+# proofcopy_make: one more copy, added to PROOF_COPIES.
+proofcopy_make() {
+  local dir p l t real copy
   dir=$(mktemp -d "$VBW_RUNTIME/proof.XXXXXX") || vbw_die "cannot create a directory in $VBW_RUNTIME"
   vbw_guard_add dir "$dir"
-  PROOF_COPY="$dir/tree"
+  copy="$dir/tree"
+  PROOF_COPIES+=("$copy")
+  PROOF_COPY=$copy
   git -C "$VBW_ROOT" worktree prune 2> /dev/null || true
-  git -C "$VBW_ROOT" -c core.hooksPath=/dev/null worktree add -q --detach "$PROOF_COPY" HEAD > /dev/null 2>&1 \
-    || vbw_die "cannot make a clean copy of the committed code (does the project have a commit?)"
+  git -C "$VBW_ROOT" -c core.hooksPath=/dev/null worktree add -q --detach "$copy" HEAD > /dev/null 2>&1 \
+    || { proofcopy_remove; vbw_die "cannot make a clean copy of the committed code (does the project have a commit?)"; }
   real=$(cd -P "$VBW_ROOT" && pwd -P) || vbw_die "cannot resolve $VBW_ROOT"
   while IFS= read -r -d '' p; do
     p=${p%/}
     case "$p" in .git | .git/* | .vbw | .vbw/*) continue ;; esac
     ! proofcopy_is_build_dir "$p" || continue
-    [ ! -e "$PROOF_COPY/$p" ] && [ ! -L "$PROOF_COPY/$p" ] || continue
-    mkdir -p "$PROOF_COPY/$(dirname "$p")"
-    proofcopy_copy "$VBW_ROOT/$p" "$PROOF_COPY/$p" || { proofcopy_remove; vbw_die "cannot copy the ignored path $p into the clean copy (is it readable?)"; }
+    [ ! -e "$copy/$p" ] && [ ! -L "$copy/$p" ] || continue
+    mkdir -p "$copy/$(dirname "$p")"
+    proofcopy_copy "$VBW_ROOT/$p" "$copy/$p" || { proofcopy_remove; vbw_die "cannot copy the ignored path $p into the clean copy (is it readable?)"; }
     while IFS= read -r -d '' l; do
-      t=$(readlink "$PROOF_COPY/$l")
-      case "$t" in /*) t=$(cd -P "$(dirname "$t")" 2> /dev/null && printf '%s/%s' "$(pwd -P)" "$(basename "$t")") || t=$(readlink "$PROOF_COPY/$l") ;; esac
+      t=$(readlink "$copy/$l")
+      case "$t" in /*) t=$(cd -P "$(dirname "$t")" 2> /dev/null && printf '%s/%s' "$(pwd -P)" "$(basename "$t")") || t=$(readlink "$copy/$l") ;; esac
       # A link into .vbw (an old proof copy) is the stale-link scan's to report.
       case "$t" in "$real"/.vbw | "$real"/.vbw/*) ;; "$real" | "$real"/*)
-        printf 'vbw: %s links into the working folder (%s); it is copied as a link\n' "$l" "$(readlink "$PROOF_COPY/$l")" >&2 ;;
+        printf 'vbw: %s links into the working folder (%s); it is copied as a link\n' "$l" "$(readlink "$copy/$l")" >&2 ;;
       esac
-    done < <(cd "$PROOF_COPY" && find "$p" -type l -print0)
+    done < <(cd "$copy" && find "$p" -type l -print0)
   done < <(git -C "$VBW_ROOT" ls-files -z --others --ignored --exclude-standard --directory)
 }
 
@@ -82,14 +109,17 @@ proofcopy_copy() {
   return 1
 }
 
-# proofcopy_remove: drop the worktree and whatever is left of the directory,
-# read-only folders included (rm never follows a link out of the copy).
+# proofcopy_remove: drop every copy's worktree and whatever is left of its
+# directory, read-only folders included (rm never follows a link out of a copy).
 proofcopy_remove() {
-  [ -n "${PROOF_COPY:-}" ] || return 0
-  chmod -R u+rwx "$PROOF_COPY" 2> /dev/null || true
-  git -C "$VBW_ROOT" worktree remove --force "$PROOF_COPY" > /dev/null 2>&1 || true
+  local c
+  for c in ${PROOF_COPIES[@]+"${PROOF_COPIES[@]}"}; do
+    chmod -R u+rwx "$c" 2> /dev/null || true
+    git -C "$VBW_ROOT" worktree remove --force "$c" > /dev/null 2>&1 || true
+    vbw_guard_drop "$(dirname "$c")"
+  done
   git -C "$VBW_ROOT" worktree prune 2> /dev/null || true
-  vbw_guard_drop "$(dirname "$PROOF_COPY")"
+  PROOF_COPIES=()
   PROOF_COPY=
 }
 
