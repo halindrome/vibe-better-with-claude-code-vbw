@@ -24249,7 +24249,7 @@
       "text": "#1 PRIORITY (owner, 2026-10-11): proofs re-run only what a change can affect. After a fix, the final proof before QA and shipping reuses every check and test result whose files the change cannot reach, and re-runs only the failed checks and the tests that cover the changed files (an impact map of which test uses which file, kept by VBW; the project's own test runner's changed-files mode where it has one); a full run still happens when the impact cannot be known. Target: a one-file fix proves in minutes, not 45",
       "sort": "next",
       "size": "large",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T111",
