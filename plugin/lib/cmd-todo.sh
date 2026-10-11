@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# vbw todo [list] | add [--sort next|later --size small|medium|large] TEXT | sort ID next|later small|medium|large | done ID | drop ID: the backlog in the plan of
-# record (ideas for later; they do not enter the current milestone by themselves).
+# vbw todo [list] | add [--sort next|later --size small|medium|large] TEXT
+#   | sort ID next|later small|medium|large | done ID | drop ID: the backlog in
+# the plan of record (ideas for later; they do not enter the current milestone
+# by themselves).
 
 # The open and in-progress items, next first, then later, then unsorted, each group by id.
 TODO_OPEN_JQ='[.todos[] | select(.status == "open" or .status == "in_progress")]
