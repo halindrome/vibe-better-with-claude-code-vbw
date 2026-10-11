@@ -130,7 +130,7 @@ cmd_show() {
       printf '%s' "$record" | jq -r '
         if .evidence == null then "no proof run yet (vbw prove)" else .evidence
         | "proof run \(.at): \(if .passed then "passed" else "FAILED" end) (contract \(.contract[0:12]))",
-          ((.checks + .commands) | to_entries[]
+          ((.checks + (.commands | map_values(select(.of_files | not))) + (.test_files // {})) | to_entries[]
             | "  \(.key) \(.value.status)\(if .value.exit != null then " exit \(.value.exit)" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" else "" end)",
               (.value.tail | select(length > 0) | split("\n")[] | "    | " + .)),
           (.scope[] | "  scope: " + .)

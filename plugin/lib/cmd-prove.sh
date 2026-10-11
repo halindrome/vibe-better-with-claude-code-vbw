@@ -8,6 +8,8 @@
 . "$VBW_LIB/proofcopy.sh"
 # shellcheck source=proofreuse.sh
 . "$VBW_LIB/proofreuse.sh"
+# shellcheck source=testfiles.sh
+. "$VBW_LIB/testfiles.sh"
 # shellcheck source=cmd-next.sh
 . "$VBW_LIB/cmd-next.sh"
 
@@ -27,7 +29,7 @@ cmd_prove() {
   esac
   vbw_require_project
   cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
-  local record checks commands scope tree head ev at evf curf noreads mark="" fresh_checks='{}' fresh_commands='{}' n
+  local record checks commands scope tree head ev at evf curf noreads mark="" n files='{}' tfs='{}' alln=0
   # This session's Stop hook waits while the mark names a live process (R98).
   if [ -n "$(vbw_session)" ]; then
     mark="$VBW_RUNTIME/proving.$(vbw_session)"
@@ -40,6 +42,9 @@ cmd_prove() {
   mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
   noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
   proofreuse_plan "$record" "$full"
+  # With an approved single-file form the test files run in place of the test command.
+  if [ "$full" = 1 ] || [ -n "$noreads" ]; then alln=1; fi
+  testfiles_plan "$record" "$alln"
   if [ "$full" = 1 ] || [ -n "$noreads" ]; then prove_plan_all "$record"; fi
   # A clone with no recorded run has nothing to compare with: no line gives a reason of its own.
   if printf '%s' "$PROOFREUSE_STORE" | jq -e '(.runs | length) == 0' > /dev/null; then WHY_CHECKS='{}' WHY_COMMANDS='{}'; fi
@@ -48,15 +53,17 @@ cmd_prove() {
   : > "$(proofreuse_marker)" || vbw_die "cannot write $(proofreuse_marker)"
   head=$(vbw_head_tree) || vbw_die "cannot fingerprint the committed code"
   checks='{}' commands='{}'
-  if [ ${#TODO_CHECKS[@]} -gt 0 ] || [ "$TODO_COMMANDS" != '[]' ]; then
+  if [ ${#TODO_CHECKS[@]} -gt 0 ] || [ "$TODO_COMMANDS" != '[]' ] || [ ${#TF_TODO[@]} -gt 0 ]; then
     n=${#TODO_CHECKS[@]}
+    [ "$n" -ge ${#TF_TODO[@]} ] || n=${#TF_TODO[@]}
     [ "$n" -gt 0 ] || n=1
     proofcopy_create_slots "$(proofcopy_slots "$n")"
     proofcopy_verify "$CHECK_HASH" "$record"
     # Checks and commands run in clean copies; evidence and the record stay here.
     [ ${#TODO_CHECKS[@]} -eq 0 ] || checks=$(checks_run_all "$record" "${TODO_CHECKS[@]}")
     commands=$(prove_commands "$record" "$TODO_COMMANDS")
-    checks_keep "$checks" "$commands"
+    [ ${#TF_TODO[@]} -eq 0 ] || files=$(testfiles_run "$record")
+    checks_keep "$checks" "$commands" "$files"
     proofcopy_remove
   fi
   checks_end
@@ -64,7 +71,9 @@ cmd_prove() {
   # system records no reads no list is saved at all.
   checks=$(printf '%s' "$checks" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
   commands=$(printf '%s' "$commands" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
+  files=$(printf '%s' "$files" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
   proofreuse_save "$record" "$checks" "$commands" "$head" "$at" ""
+  [ "$files" = '{}' ] || testfiles_save "$record" "$files" "$head" "$at"
   checks=$(prove_stamp "$record" check "$checks" "$at" "$WHY_CHECKS")
   commands=$(prove_stamp "$record" command "$commands" "$at" "$WHY_COMMANDS")
   # A reused pass ended as the check expects: its exit status is the expected one.
@@ -73,17 +82,21 @@ cmd_prove() {
         | if .reused and .status == "pass" then .exit = ($r[0].checks[] | select(.id == $id) | .exit // 0) else . end)) | from_entries')
   commands=$(proofreuse_join "$PROVE_NAMES" "$REUSE_COMMANDS" "$commands" \
     | jq -c 'map_values(del(.reads, .dirs, .git) | if .reused and .status == "pass" then .exit = 0 else . end)')
+  if testfiles_on "$record"; then
+    tfs=$(testfiles_finish "$record" "$files" "$at")
+    commands=$(printf '%s' "$commands" | jq -c --argjson t "$(testfiles_command "$record" "$tfs")" '. + {test: $t}')
+  fi
   scope=$(prove_scope "$record")
   tree=$(vbw_code_tree) || vbw_die "cannot fingerprint the project files"
   # tree: the working folder (QA freshness, R12); head: the committed code the
   # checks ran on, so committing unproved edits later makes the proof stale.
   # full: nothing reused, no quick stand-in, every full command ran (R111).
   ev=$(jq -n --arg at "$at" --arg h "$CHECK_HASH" --argjson standin "$QUICK_STANDIN" --arg tree "$tree" --arg head "$head" \
-    --slurpfile cf <(printf '%s' "$checks") --slurpfile mf <(printf '%s' "$commands") --slurpfile sf <(printf '%s' "$scope") \
-    '$cf[0] as $c | $mf[0] as $m | $sf[0] as $s | {at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, scope: $s,
-      full: (($standin | not) and all($c[]; (.reused // false) | not) and all($m[]; (.reused // false) | not)
+    --slurpfile cf <(printf '%s' "$checks") --slurpfile mf <(printf '%s' "$commands") --slurpfile sf <(printf '%s' "$scope") --slurpfile tf <(printf '%s' "$tfs") \
+    '$cf[0] as $c | $mf[0] as $m | $sf[0] as $s | $tf[0] as $t | {at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, test_files: $t, scope: $s,
+      full: (($standin | not) and all($c[]; (.reused // false) | not) and all($m[]; (.reused // false) | not) and all($t[]; (.reused // false) | not)
              and all($m | to_entries[] | select(.key != "quick"); .value.status != "skipped")),
-      passed: (all($c[]; .status == "pass") and all($m[]; .status == "pass" or .status == "skipped") and ($s | length) == 0)}')
+      passed: (all($c[]; .status == "pass") and all($m[]; .status == "pass" or .status == "skipped") and all($t[]; .status == "pass") and ($s | length) == 0)}')
   vbw_scratch_json evf "$ev"
   vbw_scratch_json curf "$(qa_combined "$record")"
   record_update "$VBW_JQ_DEFS$(cat "$VBW_LIB/prove.jq")" --slurpfile ev "$evf" --argjson cap "$VBW_FIX_CAP" --slurpfile cur "$curf" --arg at "$at"
@@ -168,13 +181,18 @@ prove_summary() {
   jq -r --arg noreads "$1" --argjson d "$VBW_COMMAND_TIMEOUT" '(.settings.command_timeout // $d) as $limit | .evidence as $e
     | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
-      ($e.commands | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)" end)"),
+      ($e.commands | to_entries[] | select(.value.of_files | not) | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)" end)"),
+      (($e.test_files // {}) | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
+        + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
       (if $noreads != "" then "  ran everything: \($noreads)" else empty end),
       "  checks: \([$e.checks[] | select(.reused | not)] | length) ran, \([$e.checks[] | select(.reused)] | length) reused",
-      ($e.commands | to_entries[] | select(.value.status == "timeout")
+      "  test files: \([($e.test_files // {})[] | select(.reused | not)] | length) ran, \([($e.test_files // {})[] | select(.reused)] | length) reused",
+      (if ($e.commands.test // null) != null and ($e.commands.test.of_files | not) and ($e.commands.test.reused | not) and ($e.commands.test.status != "skipped")
+         then "  test command ran whole: no single-file form is declared" else empty end),
+      (($e.commands + ($e.test_files // {})) | to_entries[] | select(.value.status == "timeout" and (.value.of_files | not))
         | "  \(.key) stopped by its time limit (\($limit) s); raise it with vbw config set command_timeout SECONDS"),
       (if $e.full != false then "  proof: full" else
-        "  proof: partial [" + ([ (if any(($e.checks[], $e.commands[]); .reused) then "results reused" else empty end),
+        "  proof: partial [" + ([ (if any(($e.checks[], $e.commands[], ($e.test_files // {})[]); .reused) then "results reused" else empty end),
           (if ($e.commands | has("quick") and (.quick.status != "skipped") and (has("test") | not)) then "quick stood in for the test command" else empty end),
           ($e.commands | to_entries[] | select(.key != "quick" and .value.status == "skipped") | "\(.key) not approved") ] | join(", ")) + "]" end),
       (if ($e.scope | length) == 0 then "  scope ok" else ($e.scope[] | "  scope: " + .) end),
