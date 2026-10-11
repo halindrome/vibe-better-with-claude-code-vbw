@@ -22536,7 +22536,7 @@
         "docs/proof.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "testfiles_finish: an empty TF_PATHS gives an empty order (printf with no arguments printed one NUL, making a unit named \"\")",
         "testfiles_command: with no unit, pass with exit 0 and a tail saying every matching file runs as an approved check when the pathspecs match tracked files, else fail with exit 1 and a tail naming the pathspecs",
