@@ -243,7 +243,8 @@ reason() {
   run pr 'proofreuse_plan '"'$rec'"'; printf "%s\n" "$REUSE_CHECKS"'
   [[ "$output" == *'"reused":true'* ]]
   git add -A .vbw && git commit -q -m "chore(vbw): state"
-  git commit -q --allow-empty -m 'chore(vbw): proof passed'
+  code=$(pr 'vbw_code_tree')
+  rec='{"checks":[{"id":"C1","run":["true"]}],"commands":{},"evidence":{"passed":true,"tree":"'"$code"'","head":"'"$tree"'"}}'
   run pr 'proofreuse_plan '"'$rec'"'; printf "%s\n" "$WHY_CHECKS"'
   [ "$output" = '{"C1":"proving again with nothing committed"}' ]
 }

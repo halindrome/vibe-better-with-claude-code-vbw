@@ -97,14 +97,21 @@ noreads() {
   [ "$output" = "this file system does not record which files are read" ] || { echo "$output"; false; }
 }
 
+# prove_passed: the record says a proof passed on the project as it is now (R175).
+prove_passed() {
+  local code head
+  code=$(vbw_kernel 'vbw_code_tree'); head=$(vbw_kernel 'vbw_head_tree')
+  edit_record '.evidence = {at: "2026-10-11T00:00:00Z", contract: "0000000000000000000000000000000000000000000000000000000000000000", passed: true, checks: {}, commands: {}, scope: [], tree: "'"$code"'", head: "'"$head"'"}'
+}
+
 @test "R168: nothing committed since the last passing proof is a cause" {
-  git commit -q --allow-empty -m "chore(vbw): proof passed"
+  prove_passed
   run causes
   [ "$output" = "nothing was committed since the last passing proof" ] || { echo "$output"; false; }
 }
 
 @test "R168: for vbw fix done, nothing committed since the last passing proof is no cause: that proof is what it wants" {
-  git commit -q --allow-empty -m "chore(vbw): proof passed"
+  prove_passed
   run causes 0 fix
   [ -z "$output" ] || { echo "$output"; false; }
 }
