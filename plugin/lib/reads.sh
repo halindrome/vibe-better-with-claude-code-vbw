@@ -4,7 +4,9 @@
 # every tracked file and folder of the copy, and of the copy's own git HEAD
 # and index files, is set back with touch -a to an old date. After it, what
 # moved forward was read: a file was opened, a folder was listed, git was used.
-# #
+# A file a run writes remembers that run's read list; a later run in the same
+# copy that reads it adds that list to its own.
+#
 # Per slot a state folder (outside the copy) holds: gitdir, files and dirs (the
 # tracked paths, "./"-prefixed, NUL-separated), ref (modification and access
 # time set to the old date plus a day: the yardstick "read since" compares
@@ -95,25 +97,31 @@ reads_reset() {
     printf '%s\n' "$gd" > "$st/gitdir"
   fi
   gd=$(cat "$st/gitdir")
+  [ -f "$st/written.json" ] || printf '{}\n' > "$st/written.json"
+  jq -j 'keys[] | "./" + . + "\u0000"' "$st/written.json" > "$st/wlist" || return 1
   : > "$st/ref" && touch -t "$READS_OLD_DAY" "$st/ref" || return 1
   : > "$st/mark" && touch -t "$(reads_stamp "$slack")" "$st/mark" || return 1
   # Never earlier than the first mark: nothing made with the copy is a write.
   [ ! "$st/mark0" -nt "$st/mark" ] || touch -r "$st/mark0" "$st/mark" || return 1
   reads_touch "$st/files" "$copy"
   reads_touch "$st/dirs" "$copy"
+  reads_touch "$st/wlist" "$copy"
   [ ! -e "$gd/HEAD" ] || touch -a -t "$READS_OLD" "$gd/HEAD" 2> /dev/null || true
   [ ! -e "$gd/index" ] || touch -a -t "$READS_OLD" "$gd/index" 2> /dev/null || true
 }
 
 # reads_collect COPY STATE: after a run; prints its read list as one JSON
 # object {files, dirs: [{path, fp}], git}. fp fingerprints the names of the
-# tracked files and folders directly in the listed folder. 
+# tracked files and folders directly in the listed folder. Reads the written
+# files this run opened (set back by the reset) for their lists, and records
+# the files it wrote with this list.
 reads_collect() {
   local copy=$1 st=$2 gd git=false line fp
   gd=$(cat "$st/gitdir")
   [ -z "$(find "$gd/HEAD" "$gd/index" -maxdepth 0 -anewer "$st/ref" -print 2> /dev/null)" ] || git=true
   reads_moved "$st/files" "$copy" "$st/ref" > "$st/opened"
   reads_moved "$st/dirs" "$copy" "$st/ref" > "$st/listed"
+  reads_moved "$st/wlist" "$copy" "$st/ref" > "$st/inherited"
   : > "$st/dirs.json"
   while IFS= read -r line; do
     fp=$(printf '%s' "$line" | vbw_sha256)
@@ -124,11 +132,20 @@ reads_collect() {
     | ($listed | split("\u0000") | map(select(length > 0)))[] as $raw | ($raw | strip) as $d
     | [($raw | strip | if . == "" then "." else . end),
        ([$f[] | select($d == "" or startswith($d + "/")) | ltrimstr($d + "/") | split("/")[0]] | unique)]' "$st/files")
-  jq -nc --rawfile o "$st/opened" --slurpfile d "$st/dirs.json" --argjson g "$git" '
+  jq -nc --rawfile o "$st/opened" --rawfile i "$st/inherited" --slurpfile d "$st/dirs.json" --slurpfile w "$st/written.json" --argjson g "$git" '
     def strip: sub("^\\./"; "");
     def paths: split("\u0000") | map(select(length > 0) | strip);
     {files: ($o | paths), dirs: $d, git: $g} as $own
-    | $own
+    | reduce ($i | paths)[] as $p ($own; ($w[0][$p] // {files: [], dirs: [], git: false}) as $l
+        | {files: (.files + $l.files), dirs: (.dirs + $l.dirs), git: (.git or $l.git)})
     | {files: (.files | unique), dirs: (.dirs | unique_by(.path)), git}' > "$st/last.json" || return 1
+  # What the run wrote (not in .git) now carries its read list.
+  (cd "$copy" && find . -path ./.git -prune -o -type f -newer "$st/mark" -print0) > "$st/new" 2> /dev/null || true
+  jq -c --rawfile n "$st/new" --slurpfile r "$st/last.json" '
+    def strip: sub("^\\./"; "");
+    reduce ($n | split("\u0000") | map(select(length > 0) | strip))[] as $p (.;
+      (.[$p] // {files: [], dirs: [], git: false}) as $l
+      | .[$p] = {files: ($l.files + $r[0].files | unique), dirs: ($l.dirs + $r[0].dirs | unique_by(.path)), git: ($l.git or $r[0].git)})' \
+    "$st/written.json" > "$st/written.tmp" && mv "$st/written.tmp" "$st/written.json" || return 1
   cat "$st/last.json"
 }
