@@ -271,6 +271,9 @@ record_commit() {
 VBW_JQ_DEFS='def next_id($p): (([.[]?.id | ltrimstr($p) | tonumber?] | max) // 0) + 1 | "\($p)\(.)";
 def covers($p): . as $e | $e == $p or (($e | endswith("/")) and ($p | startswith($e)));
 def overlaps($a; $b): any($a[], $b[]; . == "*") or any($a[]; . as $x | any($b[]; . as $y | ($x | covers($y)) or ($y | covers($x))));
+def proof_complete: (.evidence.commands // {}) as $m | .evidence.full != false
+  or ((($m | has("quick")) and $m.quick.status != "skipped" and ($m | has("test") | not)) | not)
+     and all($m | to_entries[] | select(.key != "quick"); .value.status != "skipped");
 def wave($done): [.[] | select(all((.after // [])[]; . as $a | any($done[]; . == $a)))]
   | reduce .[] as $p ({ids: [], files: []}; if overlaps(.files; $p.files) then . else .ids += [$p.id] | .files += $p.files end) | .ids;
 '"$(cat "$VBW_LIB/rigor-defs.jq")"
