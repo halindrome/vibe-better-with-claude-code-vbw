@@ -14136,12 +14136,19 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "a49aa54133596cad02b104047e6404771c5dc23bc7ba41f9639c28555f06f1e3",
-        "at": "2026-10-11T11:43:35Z",
-        "note": "27/28 checks",
-        "rounds": 1
+        "tree": "750b86ed7707195d34b97a9134d6ffe4b82c437a0701287bdf398e02305bd4ae",
+        "at": "2026-10-11T15:09:19Z",
+        "note": "28/28 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 1,
+        "qa_findings": 1,
+        "escalations": 0
       }
     },
     {
@@ -23332,7 +23339,7 @@
       "req": "R167",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Criterion 8 is unmet: no measurement of a one-kernel-file proof (e.g. a change to plugin/lib/cmd-todo.sh) exists. The progress log (a_non_prod_docs/v2_progress_log.md) records only the first full proof (2183 s, 257 checks and 51 test files all ran, nothing reused) and no before/after pair against the under-10-minute target. A task or check should run vbw prove after a one-file kernel change on the owner's Mac and log both times."
     },
     {
