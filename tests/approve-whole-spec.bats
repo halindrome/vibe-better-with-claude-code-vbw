@@ -40,19 +40,21 @@ spec() {
 
 decisions() { jq '.decisions | length' .vbw/record.json; }
 commits() { git rev-list --count HEAD; }
-approved() { "$VBW" show contract | sed -n '1p' | grep -q '(approved)'; }
+# consent: the bytes of the clone's consent store, or "none" before any approval. An earlier
+# approval stands after a spec edit (the record did not change); the refusal must add nothing.
+consent() { local f; f="$(git rev-parse --path-format=absolute --git-common-dir)/vbw/consent.json"; if [ -f "$f" ]; then cksum < "$f"; else printf none; fi; }
 
 # refused: vbw approve refuses the unsynced spec: exit 1, both lines, nothing written.
 refused() {
-  local d c
-  d=$(decisions) c=$(commits)
+  local d c k
+  d=$(decisions) c=$(commits) k=$(consent)
   vbw_run approve
   [ "$status" -eq 1 ] || { echo "exit $status: $output"; return 1; }
   [[ "$output" == *"the contract is not ready for approval:"* ]] || { echo "$output"; return 1; }
   [[ "$output" == *"spec.md and the record differ (vbw spec sync)"* ]] || { echo "$output"; return 1; }
   [ "$(decisions)" = "$d" ] || { echo "a decision was written"; return 1; }
   [ "$(commits)" = "$c" ] || { echo "a commit was made"; return 1; }
-  ! approved || { echo "consent was written"; return 1; }
+  [ "$(consent)" = "$k" ] || { echo "consent was written"; return 1; }
 }
 
 @test "R174: a Test results folder added to the spec and not synced is refused: exit 1, both lines, no decision, no commit, no consent" {
