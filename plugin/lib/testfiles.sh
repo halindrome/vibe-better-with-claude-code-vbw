@@ -107,9 +107,9 @@ testfiles_run() {
 
 # testfiles_save RECORD FILES TREE AT: record the runs that really happened in
 # the store (read list included, and the test file itself: a changed test file
-# always runs). Like proofreuse_save, under the store's lock.
+# always runs). Through proofreuse_merge, under the store's lock.
 testfiles_save() {
-  local file lock tmp new p fp
+  local new p fp
   new='{}'
   while IFS= read -r -d '' p; do
     fp=$(testfiles_fp "$1" "$p")
@@ -118,15 +118,7 @@ testfiles_save() {
         . + {("file:" + $p): {fp: $fp, tree: $tree, status: $x.status, at: $at, seconds: $x.seconds, tail: ($x.tail // ""),
           reads: (if $x.reads == null then null else ($x.reads + [$p] | unique) end), dirs: ($x.dirs // []), git: ($x.git // false)}} end')
   done < <(printf '%s' "$2" | jq -j 'keys[] | . + "\u0000"')
-  file=$(proofreuse_store_file)
-  mkdir -p "${file%/*}" || vbw_die "cannot create ${file%/*}"
-  lock="${file%.json}.lock"
-  vbw_lock_take "$lock" "runs"
-  tmp=$(mktemp "${file%/*}/runs.XXXXXX") || vbw_die "cannot create a temporary file in ${file%/*}"
-  vbw_guard_add file "$tmp"
-  proofreuse_store_read | jq -c --slurpfile nw <(printf '%s' "$new") '{runs: (.runs + $nw[0]), form: .form}' > "$tmp" && mv "$tmp" "$file"
-  vbw_guard_drop "$tmp"
-  vbw_guard_drop "$lock"
+  proofreuse_merge "$new"
 }
 
 # testfiles_finish RECORD RESULTS AT: the results of the test files for the

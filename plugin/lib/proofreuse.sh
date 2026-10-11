@@ -64,16 +64,34 @@ proofreuse_store_read() {
     "$(proofreuse_store_file)" 2> /dev/null || printf '{"runs":{},"form":null}\n'
 }
 
-# proofreuse_store_form: the form fingerprint of the last recorded run, or nothing.
-proofreuse_store_form() { proofreuse_store_read | jq -r '.form // empty'; }
+# proofreuse_store_form: the form of the last recorded run (a JSON object; a
+# plain text from an older store prints as it is), or nothing.
+proofreuse_store_form() { proofreuse_store_read | jq -r '.form // empty | if type == "string" then . else tojson end'; }
 
-# proofreuse_save RECORD CHECKS COMMANDS TREE AT FORM: record the runs that
-# really happened (CHECKS and COMMANDS: JSON objects name -> result, with the
-# read list the runner collected) on the committed code TREE. A unit that was
-# not run (skipped, waiting) leaves its earlier run alone. The read-modify-write
-# runs under a lock beside the file and ends in an atomic move.
+# proofreuse_merge NEW [FORM]: the one writer of the store. NEW (a JSON object
+# key -> run) is merged over the recorded runs; FORM, when given, replaces the
+# form (JSON text is kept as an object, anything else as text). The
+# read-modify-write runs under a lock beside the file and ends in an atomic move.
+proofreuse_merge() {
+  local file lock tmp
+  file=$(proofreuse_store_file)
+  mkdir -p "${file%/*}" || vbw_die "cannot create ${file%/*}"
+  lock="${file%.json}.lock"
+  vbw_lock_take "$lock" "runs"
+  tmp=$(mktemp "${file%/*}/runs.XXXXXX") || vbw_die "cannot create a temporary file in ${file%/*}"
+  vbw_guard_add file "$tmp"
+  proofreuse_store_read | jq -c --slurpfile nw <(printf '%s' "$1") --arg form "${2-}" --argjson keep "$([ $# -ge 2 ] && echo false || echo true)" \
+    '{runs: (.runs + $nw[0]), form: (if $keep then .form else ($form | try fromjson catch $form) end)}' > "$tmp" && mv "$tmp" "$file"
+  vbw_guard_drop "$tmp"
+  vbw_guard_drop "$lock"
+}
+
+# proofreuse_save RECORD CHECKS COMMANDS TREE AT FORM (JSON text): record the
+# runs that really happened (CHECKS and COMMANDS: JSON objects name -> result,
+# with the read list the runner collected) on the committed code TREE. A unit
+# that was not run (skipped, waiting) leaves its earlier run alone.
 proofreuse_save() {
-  local file lock tmp new='{}' kind name fp res
+  local new='{}' kind name fp res
   for kind in check command; do
     res="$2"
     [ "$kind" = check ] || res="$3"
@@ -85,16 +103,7 @@ proofreuse_save() {
             reads: ($x.reads // null), dirs: ($x.dirs // []), git: ($x.git // false)}} end')
     done < <(printf '%s' "$res" | jq -j 'keys[] | . + "\u0000"')
   done
-  file=$(proofreuse_store_file)
-  mkdir -p "${file%/*}" || vbw_die "cannot create ${file%/*}"
-  lock="${file%.json}.lock"
-  vbw_lock_take "$lock" "runs"
-  tmp=$(mktemp "${file%/*}/runs.XXXXXX") || vbw_die "cannot create a temporary file in ${file%/*}"
-  vbw_guard_add file "$tmp"
-  proofreuse_store_read | jq -c --slurpfile nw <(printf '%s' "$new") --arg form "$6" \
-    '{runs: (.runs + $nw[0]), form: $form}' > "$tmp" && mv "$tmp" "$file"
-  vbw_guard_drop "$tmp"
-  vbw_guard_drop "$lock"
+  proofreuse_merge "$new" "$6"
 }
 
 # proofreuse_reason KEY FP HEAD: the one reuse rule. Succeeds, printing
