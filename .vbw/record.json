@@ -21966,7 +21966,8 @@
       ],
       "files": [
         "docs/proof.md",
-        "docs/guards.md"
+        "docs/guards.md",
+        "docs/record.md"
       ],
       "after": [],
       "status": "planned",
@@ -21975,7 +21976,8 @@
         "Rewrite 'Reusing results in vbw prove': a check's read list is the files it opened and the folders it listed while it ran, from the run itself, never from file names; when a pass is reused and every reason a check runs again; read lists are kept in vbw/runs.json in the clone's git directory; checks still run several at a time, each in its own clean copy (tests/reads-docs.bats lists the phrases it checks)",
         "Rewrite 'Full and partial proofs': QA verdicts and shipping accept a proof that reused results; vbw prove --full runs everything fresh; a proof that reused anything is never the release run's full proof",
         "Rewrite 'Reusing an unchanged pass' for vbw fix done under the same rule, and remove the served-files rule, the passes cache and the documentation-only rule",
-        "Name the limits: what lies outside the project (installed tools, the network, the clock) is not tracked; a check that only looks whether a file exists, or at its size, without opening it; reads through git always run again; how to run everything fresh (vbw prove --full, or proving again with nothing committed); docs/guards.md: the store of recorded runs is protected"
+        "Name the limits: what lies outside the project (installed tools, the network, the clock) is not tracked; a check that only looks whether a file exists, or at its size, without opening it; reads through git always run again; how to run everything fresh (vbw prove --full, or proving again with nothing committed); docs/guards.md: the store of recorded runs is protected",
+        "docs/record.md evidence row: replace test_run and the reused: true, reuse: \"docs\" marking with the read-list reuse (lists kept in the clone at .git/vbw/runs.json, never in the record) and the counts of ran and reused the proof records"
       ]
     },
     {
@@ -25131,6 +25133,11 @@
       "id": "D261",
       "at": "2026-10-11T00:41:20Z",
       "text": "Contract approved: 157 requirements, 257 checks, 353 plans (9d1498438f18)"
+    },
+    {
+      "id": "D262",
+      "at": "2026-10-11T00:42:48Z",
+      "text": "Contract approved: 157 requirements, 257 checks, 353 plans (e9c937a9fa75)"
     }
   ],
   "commands": {
