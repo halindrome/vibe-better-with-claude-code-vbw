@@ -1,0 +1,214 @@
+#!/usr/bin/env bats
+# R166 (docs/proof.md): the runner of units in plugin/lib/checks.sh. A unit (a
+# check, a project command, later a test file) takes a free slot copy; at most
+# check_jobs run at a time, units marked alone run by themselves, the read
+# lists of units running together stay apart, and a runner that dies leaves a
+# "skipped" result instead of taking the proof down. The passes cache and the
+# served-files fingerprint are gone. L1: units are small shell scripts.
+
+load helper
+
+setup() {
+  vbw_setup
+  vbw_git_project
+  "$VBW" init > /dev/null
+  mkdir -p src tests
+  printf 'a\n' > src/a.txt
+  printf 'b\n' > src/b.txt
+  CONC="$TEST_ROOT/conc"
+  mkdir -p "$CONC"
+  export CONC
+  # conc.sh: registers itself in $CONC and records how many are registered.
+  cat > tests/conc.sh << 'SH'
+touch "$CONC/run.$$"
+ls "$CONC" | grep -c '^run\.' >> "$CONC/seen"
+[ -z "$(ls "$CONC" | grep '^alone\.')" ] || echo "started beside an alone unit" >> "$CONC/violation"
+sleep "${NAP:-0.6}"
+rm -f "$CONC/run.$$"
+SH
+  cat > tests/alone.sh << 'SH'
+touch "$CONC/run.$$" "$CONC/alone.$$"
+n=$(ls "$CONC" | grep -c '^run\.')
+[ "$n" -eq 1 ] || echo "alone unit ran beside $n" >> "$CONC/violation"
+sleep 0.6
+rm -f "$CONC/run.$$" "$CONC/alone.$$"
+SH
+  # reads.sh FILE: reads one project file, waits for its partner, then ends.
+  cat > tests/reads.sh << 'SH'
+cat "$1" > /dev/null
+touch "$CONC/here.$(basename "$1")"
+[ -n "$2" ] || exit 0
+n=0
+while [ "$(ls "$CONC" | grep -c '^here\.')" -lt 2 ] && [ "$n" -lt 100 ]; do sleep 0.1; n=$((n + 1)); done
+SH
+  git add src tests
+  git commit -q -m "chore(test): units"
+}
+
+teardown() { vbw_teardown; }
+
+# jobs N: set check_jobs.
+jobs_set() { "$VBW" config set check_jobs "$1" > /dev/null; }
+
+# lib SNIPPET: SNIPPET with the runner, the clean copies and the reads libraries loaded.
+lib() {
+  vbw_kernel 'set -u; . "$VBW_LIB/checks.sh"; . "$VBW_LIB/proofcopy.sh"; mkdir -p "$VBW_RUNTIME"
+    CHECK_OUT=$(mktemp -d "$VBW_RUNTIME/run.XXXXXX"); CHECK_HELD=
+    # unit NAME ALONE ARGV...: one unit as JSON.
+    unit() { local n=$1 al=$2; shift 2; printf "%s\0" "$@" | jq -Rsc --arg n "$n" --argjson al "$al" "{name: \$n, out: (\$n + \".out\"), argv: (split(\"\\u0000\")[:-1]), timeout: 30, exit: 0, output: \"\", alone: \$al}"; }
+    '"$1"
+}
+
+# peak: the most units registered together.
+peak() { sort -n "$CONC/seen" | tail -1; }
+
+@test "R166: at most check_jobs units run together, and they do run together" {
+  jobs_set 2
+  run lib 'units=$(jq -sc . <(for i in 1 2 3 4 5 6; do unit U$i false sh tests/conc.sh; done))
+    checks_run_units "$units" | jq -r "[.[] | .status] | join(\",\")"'
+  [ "$status" -eq 0 ]
+  [ "$output" = "pass,pass,pass,pass,pass,pass" ]
+  [ "$(wc -l < "$CONC/seen" | tr -d ' ')" -eq 6 ]
+  [ "$(peak)" -eq 2 ]
+}
+
+@test "R166: with slot copies at most as many units run together as there are copies" {
+  jobs_set 4
+  run lib 'proofcopy_create_slots 2
+    units=$(jq -sc . <(for i in 1 2 3 4 5; do unit U$i false sh tests/conc.sh; done))
+    checks_run_units "$units" | jq -r "[.[] | .status] | join(\",\")"; proofcopy_remove'
+  [ "$status" -eq 0 ]
+  [ "$output" = "pass,pass,pass,pass,pass" ]
+  [ "$(peak)" -eq 2 ]
+}
+
+@test "R166: an alone unit runs by itself and the others still run together" {
+  jobs_set 3
+  run lib 'units=$(jq -sc . <(unit A true sh tests/alone.sh; unit U1 false sh tests/conc.sh; unit U2 false sh tests/conc.sh; unit U3 false sh tests/conc.sh))
+    checks_run_units "$units" | jq -r "[.[] | .status] | join(\",\")"'
+  [ "$status" -eq 0 ]
+  [ "$output" = "pass,pass,pass,pass" ]
+  [ ! -e "$CONC/violation" ] || { cat "$CONC/violation"; false; }
+  [ "$(peak)" -ge 2 ]
+}
+
+@test "R166: an alone unit stays alone when it runs in a slot copy" {
+  jobs_set 3
+  run lib 'proofcopy_create_slots 3
+    units=$(jq -sc . <(unit U1 false sh tests/conc.sh; unit A true sh tests/alone.sh; unit U2 false sh tests/conc.sh))
+    checks_run_units "$units" | jq -r "[.[] | .status] | join(\",\")"; proofcopy_remove'
+  [ "$status" -eq 0 ]
+  [ "$output" = "pass,pass,pass" ]
+  [ ! -e "$CONC/violation" ] || { cat "$CONC/violation"; false; }
+}
+
+@test "R166: read lists of units running together in two copies stay apart" {
+  jobs_set 2
+  run lib 'proofcopy_create_slots 2
+    units=$(jq -sc . <(unit RA false sh tests/reads.sh src/a.txt wait; unit RB false sh tests/reads.sh src/b.txt wait))
+    checks_run_units "$units" | jq -c "{a: .RA.reads.files, b: .RB.reads.files, sa: .RA.status, sb: .RB.status}"; proofcopy_remove'
+  [ "$status" -eq 0 ]
+  # They really ran together (each waited for the other's marker).
+  [ "$(ls "$CONC" | grep -c '^here\.')" -eq 2 ]
+  [ "$(printf '%s' "$output" | jq -r '[.sa, .sb] | join(",")')" = "pass,pass" ]
+  printf '%s' "$output" | jq -e '(.a | index("src/a.txt")) != null and (.a | index("src/b.txt")) == null
+    and (.b | index("src/b.txt")) != null and (.b | index("src/a.txt")) == null' > /dev/null
+}
+
+@test "R166: units after one another in one copy get a list each, not the earlier one's" {
+  jobs_set 1
+  run lib 'proofcopy_create_slots 1
+    units=$(jq -sc . <(unit RA false sh tests/reads.sh src/a.txt; unit RB false sh tests/reads.sh src/b.txt))
+    checks_run_units "$units" | jq -c "{a: .RA.reads.files, b: .RB.reads.files}"; proofcopy_remove'
+  [ "$status" -eq 0 ]
+  printf '%s' "$output" | jq -e '(.a | index("src/a.txt")) != null and (.a | index("src/b.txt")) == null
+    and (.b | index("src/b.txt")) != null and (.b | index("src/a.txt")) == null' > /dev/null
+}
+
+@test "R166: without slot copies a unit runs where the caller is and carries no read list" {
+  jobs_set 2
+  run lib 'checks_run_units "$(jq -sc . <(unit U1 false sh -c "pwd > $CONC/cwd"; unit U2 false true))" | jq -c "[.[] | has(\"reads\")]"'
+  [ "$status" -eq 0 ]
+  [ "$output" = "[false,false]" ]
+  [ "$(cat "$CONC/cwd")" = "$(pwd -P)" ] || [ "$(cat "$CONC/cwd")" = "$PWD" ]
+}
+
+@test "R166: a unit in a slot copy runs inside that copy" {
+  jobs_set 1
+  run lib 'proofcopy_create_slots 1
+    checks_run_units "$(jq -sc . <(unit U1 false sh -c "pwd > $CONC/cwd"))" > /dev/null; printf "%s\n" "$PROOF_COPY" > "$CONC/copy"; proofcopy_remove'
+  [ "$status" -eq 0 ]
+  [ "$(basename "$(cat "$CONC/cwd")")" = tree ]
+  [[ "$(cat "$CONC/cwd")" == *"$(basename "$(dirname "$(cat "$CONC/copy")")")"* ]]
+}
+
+@test "R166: a failing unit and a timed out unit report their status and carry their read lists" {
+  jobs_set 2
+  run lib 'proofcopy_create_slots 2
+    u2=$(unit T false sleep 30 | jq -c ".timeout = 1")
+    checks_run_units "$(jq -sc . <(unit F false sh -c "cat src/a.txt; exit 3"; printf "%s\n" "$u2"))" | jq -c "{f: .F.status, fe: .F.exit, t: .T.status, fr: (.F.reads.files | index(\"src/a.txt\") != null), tr: (.T.reads != null)}"; proofcopy_remove'
+  [ "$status" -eq 0 ]
+  [ "$output" = '{"f":"fail","fe":3,"t":"timeout","fr":true,"tr":true}' ]
+}
+
+@test "R166: a runner that dies without a result leaves a skipped result and the others finish (in parallel)" {
+  jobs_set 3
+  run lib 'eval "real_$(declare -f checks_exec)"
+    checks_exec() { case "$2" in *DIE.out) sh -c "kill -9 \$PPID" ;; esac; real_checks_exec "$@"; }
+    checks_run_units "$(jq -sc . <(unit U1 false true; unit DIE false true; unit U3 false true))" | jq -c "[.U1.status, .DIE.status, .U3.status, (.DIE.tail | test(\"ended without a result\"))]"'
+  [ "$status" -eq 0 ]
+  [ "$output" = '["pass","skipped","pass",true]' ]
+}
+
+@test "R166: a runner that dies without a result leaves a skipped result (one at a time)" {
+  jobs_set 1
+  run lib 'eval "real_$(declare -f checks_exec)"
+    checks_exec() { case "$2" in *DIE.out) sh -c "kill -9 \$PPID" ;; esac; real_checks_exec "$@"; }
+    checks_run_units "$(jq -sc . <(unit DIE false true; unit U2 false true))" | jq -c "[.DIE.status, .U2.status]"'
+  [ "$status" -eq 0 ]
+  [ "$output" = '["skipped","pass"]' ]
+}
+
+@test "R166: a runner that dies in a slot copy leaves a skipped result and frees the copy" {
+  jobs_set 2
+  run lib 'proofcopy_create_slots 1
+    eval "real_$(declare -f checks_exec)"
+    checks_exec() { case "$2" in *DIE.out) sh -c "kill -9 \$PPID" ;; esac; real_checks_exec "$@"; }
+    checks_run_units "$(jq -sc . <(unit DIE false true; unit U2 false true))" | jq -c "[.DIE.status, .U2.status]"; proofcopy_remove'
+  [ "$status" -eq 0 ]
+  [ "$output" = '["skipped","pass"]' ]
+}
+
+@test "R166: checks_run_all runs the checks of a record in order and reports a held check as waiting" {
+  jobs_set 2
+  run lib 'rec=$(jq -nc "{checks: [{id: \"C1\", req: \"R1\", run: [\"true\"]}, {id: \"C2\", req: \"R1\", run: [\"false\"]}, {id: \"C3\", req: \"R1\", run: [\"true\"]}]}")
+    CHECK_HELD=C3
+    checks_run_all "$rec" | jq -c "[to_entries[] | \"\(.key) \(.value.status)\"]"'
+  [ "$status" -eq 0 ]
+  [ "$output" = '["C1 pass","C2 fail","C3 waiting"]' ]
+}
+
+@test "R166: the passes cache and the served-files fingerprint are gone from the runner" {
+  run grep -En 'checks_unchanged|checks_record_passes|checks_passes_file|checks_served|checks_fingerprint|checks_served_dirty|passes\.json' "$PLUGIN_ROOT/lib/checks.sh"
+  [ "$status" -ne 0 ]
+}
+
+@test "R166: vbw check runs in the working folder and records nothing" {
+  printf '%s' "$(jq -nc '{phases: [{id: "P1", title: "Pay", reqs: ["R1"], tier: "standard"}],
+    plans: [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1"], files: ["src/a.txt"]}],
+    checks: [{id: "C1", req: "R1", run: ["sh", "-c", "pwd > conc-cwd"], files: ["src/a.txt"]}]}')" > "$TEST_ROOT/plan.json"
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  "$VBW" apply < "$TEST_ROOT/plan.json" > /dev/null
+  git add -A > /dev/null && git commit -q -m "chore(vbw): plan" || true
+  "$VBW" approve > /dev/null
+  git add -A > /dev/null && git commit -q -m "chore(vbw): approved" || true
+  common=$(git rev-parse --path-format=absolute --git-common-dir)
+  run "$VBW" check C1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" == "C1 pass"* ]]
+  [ "$(cat conc-cwd)" = "$(pwd -P)" ] || [ "$(cat conc-cwd)" = "$PWD" ]
+  [ ! -e "$common/vbw/passes.json" ]
+  [ ! -e "$common/vbw/runs.json" ]
+  rm -f conc-cwd
+}
