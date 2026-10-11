@@ -12,6 +12,9 @@
 . "$VBW_LIB/cmd-next.sh"
 
 VBW_FIX_CAP=3
+# A run result's read list ({files, dirs: [{path, fp}], git}) as the store keeps it (null when none was written down).
+PROVE_FLAT='map_values(if $off or (.reads | type) != "object" then . + {reads: null}
+  else . + {dirs: [.reads.dirs[].path], git: .reads.git, reads: .reads.files} end)'
 # A project command (its test run above all) gets this many seconds unless settings.command_timeout says otherwise (R153).
 VBW_COMMAND_TIMEOUT=3600
 
@@ -24,7 +27,7 @@ cmd_prove() {
   esac
   vbw_require_project
   cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
-  local record checks commands scope tree head ev at testrun evf curf mark=""
+  local record checks commands scope tree head ev at evf curf noreads mark="" fresh_checks='{}' fresh_commands='{}' n
   # This session's Stop hook waits while the mark names a live process (R98).
   if [ -n "$(vbw_session)" ]; then
     mark="$VBW_RUNTIME/proving.$(vbw_session)"
@@ -33,40 +36,54 @@ cmd_prove() {
   VBW_DIE_HOOK=proofcopy_warn_stale
   record=$(record_read)
   checks_begin "$record" strict
+  # The file-system test first: where reads cannot be recorded nothing is reused.
+  mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
+  noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
   proofreuse_plan "$record" "$full"
+  if [ "$full" = 1 ] || [ -n "$noreads" ]; then prove_plan_all "$record"; fi
+  # A clone with no recorded run has nothing to compare with: no line gives a reason of its own.
+  if printf '%s' "$PROOFREUSE_STORE" | jq -e '(.runs | length) == 0' > /dev/null; then WHY_CHECKS='{}' WHY_COMMANDS='{}'; fi
   at=$(vbw_now)
   # The marker stays until the evidence is recorded: a proof cut short reuses nothing next time.
   : > "$(proofreuse_marker)" || vbw_die "cannot write $(proofreuse_marker)"
+  head=$(vbw_head_tree) || vbw_die "cannot fingerprint the committed code"
   checks='{}' commands='{}'
   if [ ${#TODO_CHECKS[@]} -gt 0 ] || [ "$TODO_COMMANDS" != '[]' ]; then
-    proofcopy_create
+    n=${#TODO_CHECKS[@]}
+    [ "$n" -gt 0 ] || n=1
+    proofcopy_create_slots "$(proofcopy_slots "$n")"
     proofcopy_verify "$CHECK_HASH" "$record"
-    # Checks and commands run on the clean copy; evidence and the record stay here.
-    cd "$PROOF_COPY" || vbw_die "cannot enter the clean copy"
+    # Checks and commands run in clean copies; evidence and the record stay here.
     [ ${#TODO_CHECKS[@]} -eq 0 ] || checks=$(checks_run_all "$record" "${TODO_CHECKS[@]}")
     commands=$(prove_commands "$record" "$TODO_COMMANDS")
-    cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
     checks_keep "$checks" "$commands"
     proofcopy_remove
   fi
   checks_end
-  checks_record_passes "$record" "$checks" "$CHECK_HASH"
-  checks=$(proofreuse_join "$(printf '%s' "$record" | jq -c '[.checks[].id]')" "$REUSE_CHECKS" "$(proofreuse_stamp "$record" check "$checks" "$at")")
-  commands=$(proofreuse_join "$PROVE_NAMES" "$REUSE_COMMANDS" "$(proofreuse_stamp "$record" command "$commands" "$at")")
+  # The store keeps a read list as files, folders and git use; where the file
+  # system records no reads no list is saved at all.
+  checks=$(printf '%s' "$checks" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
+  commands=$(printf '%s' "$commands" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
+  proofreuse_save "$record" "$checks" "$commands" "$head" "$at" ""
+  checks=$(prove_stamp "$record" check "$checks" "$at" "$WHY_CHECKS")
+  commands=$(prove_stamp "$record" command "$commands" "$at" "$WHY_COMMANDS")
+  # A reused pass ended as the check expects: its exit status is the expected one.
+  checks=$(proofreuse_join "$(printf '%s' "$record" | jq -c '[.checks[].id]')" "$REUSE_CHECKS" "$checks" \
+    | jq -c --slurpfile r <(printf '%s' "$record") 'to_entries | map(.key as $id | .value |= (del(.reads, .dirs, .git)
+        | if .reused and .status == "pass" then .exit = ($r[0].checks[] | select(.id == $id) | .exit // 0) else . end)) | from_entries')
+  commands=$(proofreuse_join "$PROVE_NAMES" "$REUSE_COMMANDS" "$commands" \
+    | jq -c 'map_values(del(.reads, .dirs, .git) | if .reused and .status == "pass" then .exit = 0 else . end)')
   scope=$(prove_scope "$record")
   tree=$(vbw_code_tree) || vbw_die "cannot fingerprint the project files"
-  head=$(vbw_head_tree) || vbw_die "cannot fingerprint the committed code"
   # tree: the working folder (QA freshness, R12); head: the committed code the
   # checks ran on, so committing unproved edits later makes the proof stale.
   # full: nothing reused, no quick stand-in, every full command ran (R111).
-  testrun=$(proofreuse_test_run "$record" "$commands" "$head" "$tree")
-  ev=$(jq -n --arg at "$at" --slurpfile trf <(printf '%s' "${testrun:-null}") --arg h "$CHECK_HASH" --argjson standin "$QUICK_STANDIN" --arg tree "$tree" --arg head "$head" \
+  ev=$(jq -n --arg at "$at" --arg h "$CHECK_HASH" --argjson standin "$QUICK_STANDIN" --arg tree "$tree" --arg head "$head" \
     --slurpfile cf <(printf '%s' "$checks") --slurpfile mf <(printf '%s' "$commands") --slurpfile sf <(printf '%s' "$scope") \
-    '$trf[0] as $tr | $cf[0] as $c | $mf[0] as $m | $sf[0] as $s | {at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, scope: $s,
-      full: (($standin | not) and all($c[]; (.reused // false) | not) and all($m[]; ((.reused // false) | not) or .reuse == "docs")
+    '$cf[0] as $c | $mf[0] as $m | $sf[0] as $s | {at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, scope: $s,
+      full: (($standin | not) and all($c[]; (.reused // false) | not) and all($m[]; (.reused // false) | not)
              and all($m | to_entries[] | select(.key != "quick"); .value.status != "skipped")),
-      passed: (all($c[]; .status == "pass") and all($m[]; .status == "pass" or .status == "skipped") and ($s | length) == 0)}
-    | if $tr then . + {test_run: $tr} else . end')
+      passed: (all($c[]; .status == "pass") and all($m[]; .status == "pass" or .status == "skipped") and ($s | length) == 0)}')
   vbw_scratch_json evf "$ev"
   vbw_scratch_json curf "$(qa_combined "$record")"
   record_update "$VBW_JQ_DEFS$(cat "$VBW_LIB/prove.jq")" --slurpfile ev "$evf" --argjson cap "$VBW_FIX_CAP" --slurpfile cur "$curf" --arg at "$at"
@@ -79,12 +96,13 @@ cmd_prove() {
   # shellcheck disable=SC2034
   VBW_DIE_HOOK=; proofcopy_warn_stale
   [ -z "$mark" ] || vbw_guard_drop "$mark"
-  prove_summary "$full"
+  prove_summary "$noreads"
 }
 
-# Project commands: run only those whose exact argv the user approved.
+# Project commands: run only those whose exact argv the user approved, each as
+# a unit of its own (alone: one at a time, in a slot copy), after the checks.
 prove_commands() {
-  local name argv a all='{}' res limit
+  local name argv a units='[]' skipped='{}' limit res
   limit=$(printf '%s' "$1" | jq -r --argjson d "$VBW_COMMAND_TIMEOUT" '.settings.command_timeout // $d')
   # $2: JSON array of the command names to run.
   while IFS= read -r -d '' name; do
@@ -92,14 +110,36 @@ prove_commands() {
     while IFS= read -r -d '' a; do argv+=("$a"); done \
       < <(printf '%s' "$1" | jq -j --arg n "$name" '.commands[$n][] + "\u0000"')
     if consent_has command "$(vbw_sha256_argv "${argv[@]}")"; then
-      checks_exec "$limit" "$CHECK_OUT/cmd-$name.out" "${argv[@]}"
-      res=$(checks_result "$CHECK_OUT/cmd-$name.out" "$limit" 0)
+      units=$(printf '%s' "$units" | jq -c --arg n "cmd-$name" --argjson t "$limit" \
+        --slurpfile a <(printf '%s\0' "${argv[@]}" | jq -Rsc 'split("\u0000")[:-1]') \
+        '. + [{name: $n, out: "\($n).out", argv: $a[0], timeout: $t, exit: 0, output: "", alone: true}]')
     else
-      res='{"status":"skipped","exit":null,"seconds":0,"tail":"not approved"}'
+      skipped=$(printf '%s' "$skipped" | jq -c --arg n "$name" '. + {($n): {status: "skipped", exit: null, seconds: 0, tail: "not approved"}}')
     fi
-    all=$(printf '%s' "$all" | jq -c --arg n "$name" --argjson r "$res" '. + {($n): $r}')
   done < <(printf '%s' "$1" | jq -j --argjson t "$2" '.commands | keys[] | select(. as $k | $t | index($k)) | . + "\u0000"')
-  printf '%s\n' "$all"
+  res=$(checks_run_units "$units")
+  printf '%s' "$res" | jq -c --slurpfile s <(printf '%s' "$skipped") 'with_entries(.key |= ltrimstr("cmd-")) + $s[0]'
+}
+
+# prove_plan_all RECORD: nothing is reused (vbw prove --full, or a file system
+# that records no reads): every check and command runs.
+prove_plan_all() {
+  REUSE_CHECKS='{}' REUSE_COMMANDS='{}' WHY_CHECKS='{}' WHY_COMMANDS='{}' TODO_CHECKS=() TODO_COMMANDS=$PROVE_NAMES
+  local id
+  while IFS= read -r id; do [ -z "$id" ] || TODO_CHECKS+=("$id"); done < <(printf '%s' "$1" | jq -r '.checks[].id')
+}
+
+# prove_stamp RECORD KIND RESULTS AT WHY: each result that really ran carries
+# the fingerprint of its approved definition, the time it ran and the reason it
+# had to run (WHY: JSON object name -> reason).
+prove_stamp() {
+  local name fp out="$3"
+  while IFS= read -r -d '' name; do
+    if [ "$2" = check ]; then fp=$(proofreuse_check_fp "$1" "$name"); else fp=$(proofreuse_command_fp "$1" "$name"); fi
+    out=$(printf '%s' "$out" | jq -c --arg n "$name" --arg fp "$fp" --arg at "$4" --slurpfile w <(printf '%s' "$5") \
+      '.[$n] += ({fp: $fp, at: $at} + (if $w[0][$n] and .[$n].status != "skipped" then {why: $w[0][$n]} else {} end))')
+  done < <(printf '%s' "$3" | jq -j 'keys[] | . + "\u0000"')
+  printf '%s\n' "$out"
 }
 # Scope: every commit whose VBW-Plan trailer names a plan in the record changes
 # only that plan's files. Prints a JSON array of violations.
@@ -125,11 +165,12 @@ prove_scope() {
 
 # One screen: what ran, what it means, what is next.
 prove_summary() {
-  jq -r --argjson fullrun "$1" --argjson d "$VBW_COMMAND_TIMEOUT" '(.settings.command_timeout // $d) as $limit | .evidence as $e
-    | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" else "" end)"
+  jq -r --arg noreads "$1" --argjson d "$VBW_COMMAND_TIMEOUT" '(.settings.command_timeout // $d) as $limit | .evidence as $e
+    | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
-      ($e.commands | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))\(if .value.reuse == "docs" then ": only documentation changed since" else "" end)" else "" end)" end)"),
-      (if $fullrun == 1 then empty else "  checks: \([$e.checks[] | select(.reused | not)] | length) ran, \([$e.checks[] | select(.reused)] | length) reused" end),
+      ($e.commands | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)" end)"),
+      (if $noreads != "" then "  ran everything: \($noreads)" else empty end),
+      "  checks: \([$e.checks[] | select(.reused | not)] | length) ran, \([$e.checks[] | select(.reused)] | length) reused",
       ($e.commands | to_entries[] | select(.value.status == "timeout")
         | "  \(.key) stopped by its time limit (\($limit) s); raise it with vbw config set command_timeout SECONDS"),
       (if $e.full != false then "  proof: full" else
