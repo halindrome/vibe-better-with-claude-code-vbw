@@ -24219,7 +24219,7 @@
     {
       "id": "T106",
       "text": "Next core milestone 'projects that change' (owner, 2026-10-10: things change often, VBW must be resilient to any scenario): (1) a full apply lets the active milestone plan a requirement it reopened from a shipped milestone, and the refusal names the right mode (brainstorm B3, Portfolium R2); (2) judge whether a new phase may share a requirement with a started phase; (3) apply and --patch check the rigor floor of unstarted phases only, never finished ones; (4) a QA-finding fix can add its regression test (to new or protected check files, with one approval) instead of a hand-made plan; (5) audit every apply/run/guard refusal against re-plans, reopened work and mid-milestone changes. Keep: approved tests stay locked, owner approval still required",
-      "status": "open",
+      "status": "done",
       "sort": "next",
       "size": "large"
     },
