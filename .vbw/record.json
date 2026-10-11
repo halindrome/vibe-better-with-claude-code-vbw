@@ -26965,6 +26965,12 @@
       "id": "D290",
       "at": "2026-10-11T22:44:32Z",
       "text": "Contract approved: 166 requirements, 282 checks, 370 plans (5b4416af8279); express: P124 (R174, C279, C280, P124.1)"
+    },
+    {
+      "id": "D291",
+      "text": "The cause 'nothing was committed since the last passing proof' fires only when the code tree AND the contract are the ones the last passing proof recorded (evidence.tree and evidence.contract); a changed approved command or check is a change, so only its own units re-run. A test that proves twice with nothing changed expects a full run, so tests/fix-reuse.bats test 9 commits an unrelated code change between its proofs",
+      "why": "P123.1 blocked, 2026-10-12 00:01: two older fixtures passed under the subject rule by accident (a dirty .vbw switched the cause off); prove-summary test 29 changes a command's definition and rightly expects only that unit to run; fix-reuse test 9 reproves with nothing changed, which D173 defines as a deliberate full run",
+      "at": "2026-10-11T23:01:56Z"
     }
   ],
   "commands": {
