@@ -1,6 +1,12 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261011T210103Z",
+    "kind": "qa",
+    "started_at": "2026-10-11T21:01:03Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-beside-started.bats",
@@ -14537,12 +14543,11 @@
       ],
       "predicted": "standard",
       "qa": {
-        "result": "fail",
-        "tier": "standard",
-        "tree": "c713311cb354115cb563dc2745b3e6357fd1ba419006d79dc72c93f2f417270c",
-        "at": "2026-10-11T20:23:58Z",
-        "note": "13/14 checks",
-        "rounds": 2
+        "result": "pass",
+        "tier": "deep",
+        "tree": "80235597e9f3b1e67788db528f8976a1386907ea109e8b89ea2fb86ac78cc7b6",
+        "at": "2026-10-11T21:01:53Z",
+        "note": "30/30 checks"
       },
       "escalations": [
         {
@@ -14551,7 +14556,15 @@
           "to": "deep",
           "reason": "QA needs a second round"
         }
-      ]
+      ],
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 3,
+        "qa_findings": 3,
+        "escalations": 1
+      }
     }
   ],
   "plans": [
@@ -23853,7 +23866,7 @@
       "req": "R172",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "tests/helper.bash lines 36-37 state the macOS teardown cause as a mechanism without saying it is unproven: \"a detached gc or maintenance after a commit can still be writing into .git/objects when teardown removes the folder (Directory not empty)\". tests/helper.bats lines 13-15 and decision D283 say \"cause not proven\"; the helper comment must carry the same wording (for example \"candidate cause, not proven\"), since the F122 criterion is unproven wording everywhere it appears."
     }
   ],
