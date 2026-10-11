@@ -128,6 +128,7 @@
     "tests/next-contract-ready.bats",
     "tests/next-phase.bats",
     "tests/next-table.bats",
+    "tests/no-bats-on-generated.bats",
     "tests/panel-compat.bats",
     "tests/panel-glance.bats",
     "tests/panel-light.bats",
@@ -3474,6 +3475,18 @@
       "files": [
         "tests/helper.bats"
       ]
+    },
+    {
+      "id": "C273",
+      "req": "R172",
+      "run": [
+        "bats",
+        "tests/no-bats-on-generated.bats"
+      ],
+      "files": [
+        "tests/no-bats-on-generated.bats"
+      ],
+      "fix": "F121"
     }
   ],
   "project": {
@@ -23816,7 +23829,7 @@
       "req": "R172",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Nested bats runs remain in the suite: 14 'run bats --filter ...' calls inside @test bodies (approve-choice-guard:77, check-alone-docs:17,22, config-qa:68, effort-profile:127,129, fix-many-docs:23, fix-reuse-docs:26, kernel-safety:107, legacy-review:246, panel-light:61,63, planning-number:70,72). The CI failure on Linux was a bats-inside-bats run losing a test; these are the same pattern. The phase goal says no nested bats run, and the recorded decision/plan neither removes them nor records why they stay."
     },
     {
@@ -23824,7 +23837,7 @@
       "req": "R172",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The cause of the macOS teardown failure is not stated as unproven anywhere I can read: no decision (vbw show decisions) and no progress note in the repo mention it, and the test title 'so teardown never races a detached gc or maintenance' reads as fact. Only the tests/helper.bash comment hedges it ('can still be writing'). Record the cause as a candidate, not reproduced."
     }
   ],
@@ -26106,6 +26119,12 @@
       "id": "D282",
       "at": "2026-10-11T20:12:45Z",
       "text": "Contract approved: 161 requirements, 267 checks, 358 plans (a627428c6fac)"
+    },
+    {
+      "id": "D283",
+      "text": "The suite's nested bats runs stay: a dozen tests start the real bats on an existing file of the suite with --filter, and standards-selftest.bats starts it on standards.bats; they have passed on Linux and macOS in every CI run. What failed in 2.0.32 was a real bats run over a bats file the test had just written (tests/helper-quiet-git.bats, cause not proven); tests/no-bats-on-generated.bats keeps any test from writing a bats file and also starting the real bats. The cause of the one macOS teardown failure (Directory not empty on .git/objects) is likewise not proven; the helper turns off gc and maintenance as the candidate removal",
+      "why": "QA findings F121 and F122, 2026-10-11: the finding overstated the nested runs (they are the proven pattern) and rightly asked that the unproven cause be stated as unproven",
+      "at": "2026-10-11T20:17:26Z"
     }
   ],
   "commands": {
