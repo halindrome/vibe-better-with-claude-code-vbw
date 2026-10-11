@@ -8,6 +8,8 @@
 . "$VBW_LIB/proofcopy.sh"
 # shellcheck source=proofreuse.sh
 . "$VBW_LIB/proofreuse.sh"
+# shellcheck source=proofcauses.sh
+. "$VBW_LIB/proofcauses.sh"
 # shellcheck source=testfiles.sh
 . "$VBW_LIB/testfiles.sh"
 # shellcheck source=cmd-next.sh
@@ -29,7 +31,7 @@ cmd_prove() {
   esac
   vbw_require_project
   cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
-  local record checks commands scope tree head ev at evf curf noreads mark="" n files='{}' tfs='{}' alln=0
+  local causes record checks commands scope tree head ev at evf curf noreads mark="" n files='{}' tfs='{}' alln=0
   # This session's Stop hook waits while the mark names a live process (R98).
   if [ -n "$(vbw_session)" ]; then
     mark="$VBW_RUNTIME/proving.$(vbw_session)"
@@ -42,10 +44,12 @@ cmd_prove() {
   mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
   noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
   proofreuse_plan "$record" "$full"
+  # Any cause (R168) runs every check, test file and command, and the summary names it.
+  causes=$(proofcauses_find "$record" "$full" "$(vbw_head_tree 2> /dev/null)")
+  if [ -n "$causes" ]; then alln=1; fi
   # With an approved single-file form the test files run in place of the test command.
-  if [ "$full" = 1 ] || [ -n "$noreads" ]; then alln=1; fi
   testfiles_plan "$record" "$alln"
-  if [ "$full" = 1 ] || [ -n "$noreads" ]; then prove_plan_all "$record"; fi
+  if [ -n "$causes" ]; then prove_plan_all "$record"; fi
   # A clone with no recorded run has nothing to compare with: no line gives a reason of its own.
   if printf '%s' "$PROOFREUSE_STORE" | jq -e '(.runs | length) == 0' > /dev/null; then WHY_CHECKS='{}' WHY_COMMANDS='{}'; fi
   at=$(vbw_now)
@@ -72,7 +76,7 @@ cmd_prove() {
   checks=$(printf '%s' "$checks" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
   commands=$(printf '%s' "$commands" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
   files=$(printf '%s' "$files" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
-  proofreuse_save "$record" "$checks" "$commands" "$head" "$at" ""
+  proofreuse_save "$record" "$checks" "$commands" "$head" "$at" "$(proofcauses_form "$record")"
   [ "$files" = '{}' ] || testfiles_save "$record" "$files" "$head" "$at"
   checks=$(prove_stamp "$record" check "$checks" "$at" "$WHY_CHECKS")
   commands=$(prove_stamp "$record" command "$commands" "$at" "$WHY_COMMANDS")
@@ -109,7 +113,7 @@ cmd_prove() {
   # shellcheck disable=SC2034
   VBW_DIE_HOOK=; proofcopy_warn_stale
   [ -z "$mark" ] || vbw_guard_drop "$mark"
-  prove_summary "$noreads"
+  prove_summary "$causes"
 }
 
 # Project commands: run only those whose exact argv the user approved, each as
@@ -176,15 +180,17 @@ prove_scope() {
        | "\(.[0]) (\(.[1])) changed \(.[2]), which is not in the plan"]'
 }
 
-# One screen: what ran, what it means, what is next.
+# One screen: what ran, what it means, what is next. $1: the causes that ran everything, one per line.
 prove_summary() {
-  jq -r --arg noreads "$1" --argjson d "$VBW_COMMAND_TIMEOUT" '(.settings.command_timeout // $d) as $limit | .evidence as $e
+  jq -r --arg causes "$1" --argjson d "$VBW_COMMAND_TIMEOUT" '(.settings.command_timeout // $d) as $limit | .evidence as $e
     | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
       ($e.commands | to_entries[] | select(.value.of_files | not) | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)" end)"),
       (($e.test_files // {}) | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
-      (if $noreads != "" then "  ran everything: \($noreads)" else empty end),
+      ([$causes | split("\n")[] | select(length > 0)] as $c
+        | if ($c | length) == 1 then "  ran everything: \($c[0])"
+          elif ($c | length) > 1 then "  ran everything, because:", ($c[] | "  - \(.)") else empty end),
       "  checks: \([$e.checks[] | select(.reused | not)] | length) ran, \([$e.checks[] | select(.reused)] | length) reused",
       "  test files: \([($e.test_files // {})[] | select(.reused | not)] | length) ran, \([($e.test_files // {})[] | select(.reused)] | length) reused",
       (if ($e.commands.test // null) != null and ($e.commands.test.of_files | not) and ($e.commands.test.reused | not) and ($e.commands.test.status != "skipped")
