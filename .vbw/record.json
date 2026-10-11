@@ -13910,7 +13910,22 @@
         "guarded: R21 (C16), R55 (C56, C57), R111 (C171, C172, C173, C174, C175), R128 (C200), R142 (C204, C205), R143 (C206, C207), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "qa": {
+        "result": "pass",
+        "tier": "standard",
+        "tree": "7481d25741cd78d46156f9322abc87f66c3d1d1c26e8bf6f0c9de19783b7c019",
+        "at": "2026-10-11T11:43:08Z",
+        "note": "12/12 checks"
+      },
+      "outcome": {
+        "tier": "standard",
+        "predicted": "standard",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 0
+      }
     },
     {
       "id": "P116",
@@ -23154,6 +23169,14 @@
       "attempts": 0,
       "status": "open",
       "note": "The new \"vbw req skip ID\" is not consistent across the surface: plugin/bin/vbw:38 (vbw --help) and the first usage line of \"vbw req --help\" (line 98) still list only \"req accept ID | req reject ID NOTE\"; line 99 describes skip as \"set a requirement aside\", a stale text from P114.1 that does not say it records \"Skip for now\" on a [human] requirement; tests/help-every-command.bats SUBCOMMANDS omits \"req skip\", so its help-does-no-work check never runs for it; plugin/hooks/panel-intent.js and panel-lines.js name accept/reject but not skip. A regression test should require that every req subcommand cmd-req.sh accepts appears in the top-level usage, in the req help with an accurate description, and in the help-every-command list."
+    },
+    {
+      "id": "F113",
+      "req": "R162",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "tests/refusal-next-step.bats is a hand-written list and omits vbw apply refusal paths that exist in plugin/lib/cmd-apply.sh: (1) --add of a requirement covered by a phase whose work has not started (a76e061b, 'whose work has not started') and by a phase of another milestone ('is already covered by'); (2) --add of a phase id that exists only in another milestone (a76e061b widened 'is already a phase'); (3) a malformed test_files (line 135, from P117.2). Phase criterion 4 says the test lists every refusal path and fails when one has no next step, and the file's own header says a new refusal path gets its line. A regression test should send each of these documents to vbw apply (--add, full) and assert the refusal ends with 'Next: ' and a step, and should preferably also fail on any vbw_die/apply_refuse in cmd-apply.sh and cmd-run.sh whose message lacks a Next arm. Run start/guard lists and all message text checked are otherwise complete."
     }
   ],
   "todos": [
