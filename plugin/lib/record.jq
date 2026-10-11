@@ -21,6 +21,8 @@ def ids: [.[]?.id];
 def has_id($x): any(.[]?; .id == $x);
 def tier: one_of(["express","standard","deep"]);
 def count: type == "number" and . == floor and . >= 0;
+def nonneg: type == "number" and . >= 0;
+def figures: type == "object" and (keys | sort) == ["in","out","usd"] and all(.[]; nonneg);
 
 # Plan ids reachable from $n through "after" edges ($g: id -> [ids]).
 def reachable($g; $n):
@@ -61,7 +63,7 @@ if type != "object" then ["record must be a JSON object"] else
       | "protected must be the sorted list of every file the checks protect, each once" ),
     ( $r | keys[]
       | select(one_of(["schema","project","milestone","requirements","checks","phases","plans",
-                       "fixes","todos","decisions","commands","test_files","settings","evidence","lease","shipped","converted","recommendation","protected"]) | not)
+                       "fixes","todos","decisions","commands","test_files","settings","evidence","lease","shipped","converted","recommendation","protected","costs"]) | not)
       | "unknown key: \(.)" ),
     ( ["requirements","checks","phases","plans","fixes","todos","decisions","shipped"][]
       | select(($r[.] | type) != "array") | "\(.) must be an array" ),
@@ -268,6 +270,33 @@ if type != "object" then ["record must be a JSON object"] else
                     and (.scope | type == "array" and all(.[]; type == "string"))) | not)
             | "evidence needs at, contract, tree, passed, checks, commands and scope (docs/proof.md)" )
         end ),
+    ( $r.costs
+      | select(. != null)
+      | if type != "object" then "costs must be an object of runs and milestones" else
+          ( keys[] | select(one_of(["runs","milestones"]) | not) | "costs has an unknown key: \(.)" ),
+          ( select((.runs // []) | type != "array") | "costs.runs must be an array" ),
+          ( select((.milestones // {}) | type != "object") | "costs.milestones must be an object" ),
+          ( ((.runs // []) | if type == "array" then . else [] end)[]
+            | select((type == "object"
+                and (keys | sort) == ["cost","ended","id","kind","milestone","session","started"]
+                and (.id | nonempty) and (.kind | one_of(["plan","build","fix","qa","map"]))
+                and (.session == null or (.session | type == "string"))
+                and (.milestone | type == "string" and one_of($milestones))
+                and (.started | iso) and (.ended | iso)
+                and (.cost == null or (.cost | figures))) | not)
+            | "costs.runs entries need exactly id, kind (plan, build, fix, qa or map), session (string or null), milestone (an existing id), started, ended (ISO-8601 UTC) and cost (null or {usd, in, out} non-negative numbers)" ),
+          ( ((.milestones // {}) | if type == "object" then . else {} end) | to_entries[]
+            | select((.key | one_of($milestones)) | not) | "costs.milestones.\(.key) is not an existing milestone" ),
+          ( ((.milestones // {}) | if type == "object" then . else {} end) | to_entries[] | .key as $k | .value
+            | select((type == "object" and (keys - ["baseline","total"] == []) and has("baseline")
+                and (.baseline | type == "object"
+                     and all(.[]; type == "object" and (keys | sort) == ["at","in","out","usd"]
+                                  and (.at | iso) and (.usd | nonneg) and (.in | nonneg) and (.out | nonneg)))
+                and ((has("total") | not)
+                     or (.total | type == "object" and (keys | sort) == ["in","out","sessions","usd"]
+                         and all(.[]; nonneg)))) | not)
+            | "costs.milestones.\($k) needs a baseline of {usd, in, out, at} per session and, optionally, a total of {usd, in, out, sessions}, all non-negative numbers" )
+        end ),
     ( $r.lease
       | select(. != null)
       | if type != "object" then "lease must be null or an object" else
@@ -275,10 +304,11 @@ if type != "object" then ["record must be a JSON object"] else
                     and (.files == null or (.files | type == "array" and all(.[]; safe_path)))
                     and ((has("session") | not) or (.session | type == "string" and length > 0))
                     and ((has("editable") | not) or (.editable | type == "array" and all(.[]; safe_path)))
-                    and ((has("new_tests") | not) or (.new_tests | type == "boolean"))) | not)
-            | "lease needs run, kind (plan, build, fix, qa or map), started_at (ISO-8601 UTC) and files (null or relative paths) and optionally a session (string), editable (relative paths) and new_tests (true or false)" ),
+                    and ((has("new_tests") | not) or (.new_tests | type == "boolean"))
+                    and ((has("cost") | not) or .cost == null or (.cost | figures))) | not)
+            | "lease needs run, kind (plan, build, fix, qa or map), started_at (ISO-8601 UTC) and files (null or relative paths) and optionally a session (string), cost (null or the costs figures {usd, in, out}), editable (relative paths) and new_tests (true or false)" ),
           ( select((has("editable") or has("new_tests")) and .kind != "fix") | "only a fix run carries editable and new_tests" ),
-          ( . as $l | keys[] | select(one_of(["run","kind","started_at","files","session","editable","new_tests"]) | not) | "lease has an unknown field: \(.)" )
+          ( . as $l | keys[] | select(one_of(["run","kind","started_at","files","session","editable","new_tests","cost"]) | not) | "lease has an unknown field: \(.)" )
         end )
   ]
 end
