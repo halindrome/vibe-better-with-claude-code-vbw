@@ -617,6 +617,53 @@ A proof that reuses results records the current contract and code. `passed` is
 set from every result, reused or new, and requirements become `proven` as
 usual.
 
+#### When a proof runs everything
+
+When VBW cannot tell what a change affects, it does not guess: every check and
+test file runs, and the summary says why. One cause prints on one line; several
+print as a list.
+
+```text
+  ran everything: the approved command test changed
+```
+
+```text
+  ran everything, because:
+    - this clone has no earlier recorded run
+    - this file system does not record which files are read
+```
+
+The causes, with the text the summary shows:
+
+| What happened | Message |
+|---|---|
+| An approved project command changed (`test` here) | `the approved command test changed` |
+| The single-file form of the test command changed | `the single-file form changed` |
+| The list of test files changed | `the list of test files changed` |
+| A file every test file reads changed (for example a shared helper) | `tests/helper.sh changed, and every test file reads it` |
+| A file was added that no recorded run read and no recorded run listed its folder | `src/new.txt was added, and no recorded run read it or listed its folder` |
+| A file was deleted under the same condition | `src/old.txt was deleted, and no recorded run read it or listed its folder` |
+| The file system cannot record which files are read | `this file system does not record which files are read` |
+| The clone has no earlier recorded run | `this clone has no earlier recorded run` |
+| The last proof was cut short | `the last proof was cut short` |
+| `vbw prove --full` | `vbw prove --full` |
+| Nothing was committed since the last passing proof | `nothing was committed since the last passing proof` |
+
+A content change to a file no recorded run read runs nothing: it affects
+nothing that was run. An added or deleted file no recorded run saw (none read
+it or listed its folder) runs everything, because a check could now see a
+different set of files.
+
+Every summary, full or not, prints both counts:
+
+```text
+  checks: 1 ran, 1 reused
+  test files: 2 ran, 40 reused
+```
+
+They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
+`vbw prove --full`, the reused counts are 0.
+
 #### Limits of reusing results
 
 - What lies outside the project is not tracked: installed tools, the network
