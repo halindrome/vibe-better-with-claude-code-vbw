@@ -3448,7 +3448,7 @@
   "milestone": {
     "id": "M22",
     "title": "Release fix: a test-file form with nothing left to run",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -3555,6 +3555,11 @@
       "id": "M21",
       "title": "Projects that change",
       "at": "2026-10-11T15:51:17Z"
+    },
+    {
+      "id": "M22",
+      "title": "Release fix: a test-file form with nothing left to run",
+      "at": "2026-10-11T18:11:51Z"
     }
   ],
   "requirements": [
@@ -25782,6 +25787,11 @@
       "id": "D277",
       "at": "2026-10-11T17:32:58Z",
       "text": "Contract approved: 159 requirements, 264 checks, 356 plans (b9415de54293)"
+    },
+    {
+      "id": "D278",
+      "at": "2026-10-11T18:11:51Z",
+      "text": "Shipped M22 Release fix: a test-file form with nothing left to run: 2 requirements proven or accepted"
     }
   ],
   "commands": {
