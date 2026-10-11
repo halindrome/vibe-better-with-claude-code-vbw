@@ -1,6 +1,12 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261011T201514Z",
+    "kind": "qa",
+    "started_at": "2026-10-11T20:15:14Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-beside-started.bats",
@@ -14507,7 +14513,15 @@
         "tests: project test command",
         "raised by the Architect"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "qa": {
+        "result": "fail",
+        "tier": "quick",
+        "tree": "3813db90b506bccb72a2639c02605969cd5d2449351a40f0fd29634076724bd9",
+        "at": "2026-10-11T20:16:04Z",
+        "note": "5/7 checks",
+        "rounds": 1
+      }
     }
   ],
   "plans": [
@@ -23787,6 +23801,22 @@
       "attempts": 0,
       "status": "closed",
       "note": "test fail"
+    },
+    {
+      "id": "F121",
+      "req": "R172",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Nested bats runs remain in the suite: 14 'run bats --filter ...' calls inside @test bodies (approve-choice-guard:77, check-alone-docs:17,22, config-qa:68, effort-profile:127,129, fix-many-docs:23, fix-reuse-docs:26, kernel-safety:107, legacy-review:246, panel-light:61,63, planning-number:70,72). The CI failure on Linux was a bats-inside-bats run losing a test; these are the same pattern. The phase goal says no nested bats run, and the recorded decision/plan neither removes them nor records why they stay."
+    },
+    {
+      "id": "F122",
+      "req": "R172",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The cause of the macOS teardown failure is not stated as unproven anywhere I can read: no decision (vbw show decisions) and no progress note in the repo mention it, and the test title 'so teardown never races a detached gc or maintenance' reads as fact. Only the tests/helper.bash comment hedges it ('can still be writing'). Record the cause as a candidate, not reproduced."
     }
   ],
   "todos": [
