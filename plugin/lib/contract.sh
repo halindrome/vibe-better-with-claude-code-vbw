@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # The contract (docs/proof.md): requirements, checks, plans without their
-# status, the saved test results folders when the spec names any, and the
+# status, the saved test results folders and the test file form when the spec
+# names them, and the
 # contents of every check's files. Approved = its hash has
 # consent in the clone's git directory.
 
@@ -23,7 +24,8 @@ contract_hash() {
 contract_core() {
   printf '%s' "$1" | jq -cS '{requirements: [.requirements[] | {id, text, proof} + (if has("rules") then {rules} else {} end)],
                               checks: .checks, plans: [.plans[] | del(.status, .note)]}
-                             + (if .project.results then {results: .project.results} else {} end)'
+                             + (if .project.results then {results: .project.results} else {} end)
+                             + (if .test_files then {test_files} else {} end)'
 }
 
 # contract_shape RECORD_JSON: the fingerprint of that structure alone, without
@@ -71,8 +73,15 @@ contract_approved() {
   consent_has contract "$1"
 }
 
+# test_files_hash RECORD_JSON: the fingerprint of the test file form (canonical
+# {run, files}); the consent kind "test_files" holds it.
+test_files_hash() {
+  printf '%s' "$1" | jq -cS '.test_files' | vbw_sha256
+}
+
 # commands_approved RECORD_JSON: the user approved every project command's
-# exact argv (a command edited in spec.md needs approving again).
+# exact argv and the test file form, when there is one (a command or form edited
+# in spec.md needs approving again).
 commands_approved() {
   local name argv a
   while IFS= read -r -d '' name; do
@@ -81,6 +90,7 @@ commands_approved() {
       < <(printf '%s' "$1" | jq -j --arg n "$name" '.commands[$n][] + "\u0000"')
     consent_has command "$(vbw_sha256_argv "${argv[@]}")" || return 1
   done < <(printf '%s' "$1" | jq -j '.commands | keys[] | . + "\u0000"')
+  printf '%s' "$1" | jq -e 'has("test_files") | not' > /dev/null || consent_has test_files "$(test_files_hash "$1")"
 }
 
 # contract_doc RECORD_JSON: the contract as JSON, for comparing two approvals:
@@ -99,5 +109,6 @@ contract_doc() {
     checks: (.checks | map({key: .id, value: .}) | from_entries),
     plans: (.plans | map({key: .id, value: del(.status, .note)}) | from_entries),
     commands: .commands,
-    files: $files} + (if .project.results then {results: .project.results} else {} end)'
+    files: $files} + (if .project.results then {results: .project.results} else {} end)
+    + (if .test_files then {test_files} else {} end)'
 }

@@ -64,7 +64,8 @@ approve_problems() {
     printf 'spec.md is invalid (vbw spec check)\n'
   elif ! printf '%s' "$1" | jq -e --slurpfile f_p <(printf '%s' "$parsed") \
       '$f_p[0] as $p | [.requirements[] | {id, text, proof}] == [$p.requirements[] | {id, text, proof}]
-        and ($p.commands == null or .commands == $p.commands)' > /dev/null; then
+        and ($p.commands == null or .commands == $p.commands)
+        and ((.test_files // null) == $p.test_files)' > /dev/null; then
     printf 'spec.md and the record differ (vbw spec sync)\n'
   fi
   printf '%s' "$1" | jq -r "$VBW_JQ_DEFS"'
@@ -78,9 +79,14 @@ approve_problems() {
   done < <(printf '%s' "$1" | jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"')
 }
 
-# Consent to every project command, by argv hash.
+# Consent to every project command, by argv hash, and to the test file form.
 approve_commands() {
   local name argv a
+  if printf '%s' "$1" | jq -e 'has("test_files")' > /dev/null; then
+    consent_grant test_files "$(test_files_hash "$1")" "$(printf '%s' "$1" | jq -c '.test_files')"
+    printf 'approved test file form: %s (files %s)\n' "$(printf '%s' "$1" | jq -r '.test_files.run | join(" ")')" \
+      "$(printf '%s' "$1" | jq -r '.test_files.files | join(" ")')"
+  fi
   while IFS= read -r -d '' name; do
     argv=()
     while IFS= read -r -d '' a; do argv+=("$a"); done \
