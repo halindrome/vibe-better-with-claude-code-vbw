@@ -59,7 +59,9 @@ refuses such a line and prints its line number.
 - `vbw spec sync` copies the list into the record (`project.results`,
   docs/record.md) and prints the new list. It is part of the contract: adding,
   changing or removing the list needs approval like any other spec change, and
-  `vbw show contract` shows the folders and how they changed.
+  `vbw show contract` shows the folders and how they changed. The list is
+  compared with the record at approval like the other spec sections (see
+  [The contract and approval](#the-contract-and-approval)).
 - A file committed inside one of these folders is a saved test result. It does
   not make QA check a passed phase again
   ([Which phases QA checks again](#which-phases-qa-checks-again)).
@@ -148,6 +150,12 @@ reason) and counts as not passed; every other result stands.
 The contract is the requirements (id, text, proof, and rules when listed), the checks, the plans
 (everything but their status) and the contents of every check's `files`. Its
 hash is SHA-256 over a canonical rendering of all of it.
+
+`vbw approve`, and `vbw next` before it offers the approval question, first
+compares every section of `.vbw/spec.md` with the record: Requirements,
+Commands, Test files and Test results. A spec that was edited and not synced
+cannot be approved; the refusal reads `spec.md and the record differ (vbw spec
+sync)`. Run `vbw spec sync`, then approve.
 
 ### Approving by choice
 
