@@ -17,7 +17,6 @@ setup() {
 
 teardown() { vbw_teardown; }
 
-P1='{"id": "P1", "title": "Pay", "reqs": ["R1"], "tier": "standard"}'
 FULL='"phases": [{"id": "P1", "title": "Pay", "reqs": ["R1"], "tier": "standard"}],
   "plans": [{"id": "P1.1", "phase": "P1", "title": "Pay", "reqs": ["R1"], "files": ["src/a.txt"]}],
   "checks": [{"id": "C1", "req": "R1", "run": ["sh", "tests/c1.sh"], "files": ["tests/c1.sh"]}],
