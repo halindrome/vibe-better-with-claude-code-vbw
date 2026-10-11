@@ -1,0 +1,91 @@
+#!/usr/bin/env bats
+# R177 (docs/guards.md): during a run, VBW's guards deny any write by an agent
+# to a path outside the project folder, a file write or a shell redirect, /tmp
+# included, and say where the run may write instead. Inside the project the
+# lease rules decide as before. Outside runs and outside VBW projects nothing
+# changes. Found 2026-10-11: the Lead wrote /tmp/dbg.bats during a plan run and
+# the file guard let it through (a path outside the project resolved to null,
+# which the lease rule took as nothing to deny). L1: the hooks run through
+# hooks.json the way Claude Code runs them (vbw_hook).
+
+load helper
+
+setup() {
+  vbw_setup
+  vbw_git_project
+  "$VBW" init > /dev/null
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  mkdir -p src tests
+  printf 'grep -qx paid src/pay.txt\n' > tests/c1.sh
+  jq -nc '{phases: [{id: "P1", title: "Pay", reqs: ["R1"], goal: "Customers pay", criteria: ["paid"], tier: "standard"}],
+    plans: [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1"], files: ["src/pay.txt"], after: [], tasks: ["pay"]}],
+    checks: [{id: "C1", req: "R1", run: ["sh", "tests/c1.sh"], files: ["tests/c1.sh"]}],
+    rules: [{req: "R1", text: "a customer can pay", check: "C1"}]}' | "$VBW" apply > /dev/null
+  git add -A && git commit -q -m "chore(test): planned"
+  "$VBW" approve > /dev/null
+}
+
+teardown() { vbw_teardown; }
+
+open_run() { VBW_SESSION_ID=s1 "$VBW" run start build P1.1 > /dev/null; }
+
+# write_in PATH: a Write by a Dev agent to PATH, as Claude Code hands it to the hook.
+write_in() { jq -nc --arg d "${HOOK_DIR:-$PROJECT}" --arg p "$1" '{hook_event_name: "PreToolUse", session_id: "s1", cwd: $d, tool_name: "Write", agent_id: "a1", agent_type: "vbw:dev", tool_input: {file_path: $p, content: "x"}}'; }
+# bash_in COMMAND: a Bash call by a Dev agent.
+bash_in() { jq -nc --arg d "${HOOK_DIR:-$PROJECT}" --arg c "$1" '{hook_event_name: "PreToolUse", session_id: "s1", cwd: $d, tool_name: "Bash", agent_id: "a1", agent_type: "vbw:dev", tool_input: {command: $c}}'; }
+
+# denied_outside OUTPUT: a deny whose reason says the path is outside the project and where to write.
+denied_outside() {
+  printf '%s' "$1" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' > /dev/null || { echo "not denied: $1"; return 1; }
+  local why
+  why=$(printf '%s' "$1" | jq -r '.hookSpecificOutput.permissionDecisionReason')
+  [[ "$why" == *"outside the project"* ]] || { echo "the reason does not say outside the project: $why"; return 1; }
+  [[ "$why" == *"Next: "* ]] || { echo "no next step: $why"; return 1; }
+}
+
+@test "R177: during a run a file write to /tmp is denied, naming the path and where the run may write" {
+  open_run
+  out=$(printf '%s' "$(write_in /tmp/scratch.txt)" | vbw_hook PreToolUse Write)
+  denied_outside "$out"
+  [[ "$out" == *"/tmp/scratch.txt"* ]] || { echo "$out"; false; }
+}
+
+@test "R177: during a run a shell redirect to /tmp is denied the same way" {
+  open_run
+  out=$(printf '%s' "$(bash_in 'echo hi > /tmp/scratch.txt')" | vbw_hook PreToolUse Bash)
+  denied_outside "$out"
+}
+
+@test "R177: a path outside the project that is not /tmp, and a relative path that climbs out, are denied too" {
+  open_run
+  out=$(printf '%s' "$(write_in "$TEST_ROOT/elsewhere.txt")" | vbw_hook PreToolUse Write)
+  denied_outside "$out"
+  out=$(printf '%s' "$(write_in ../outside.txt)" | vbw_hook PreToolUse Write)
+  denied_outside "$out"
+}
+
+@test "R177: inside the project the lease rules decide as before: the plan's file is allowed, another file is refused as outside the run's files" {
+  open_run
+  out=$(printf '%s' "$(write_in src/pay.txt)" | vbw_hook PreToolUse Write)
+  [ -z "$out" ] || { echo "the plan's file was not allowed: $out"; false; }
+  out=$(printf '%s' "$(write_in src/other.txt)" | vbw_hook PreToolUse Write)
+  printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' > /dev/null
+  [[ "$(printf '%s' "$out" | jq -r .hookSpecificOutput.permissionDecisionReason)" == *"outside this run's files"* ]] || { echo "$out"; false; }
+}
+
+@test "R177: with no run open a write outside the project gets no answer from VBW" {
+  out=$(printf '%s' "$(write_in /tmp/scratch.txt)" | vbw_hook PreToolUse Write)
+  [ -z "$out" ] || { echo "$out"; false; }
+}
+
+@test "R177: outside a VBW project the guards say nothing" {
+  mkdir -p "$TEST_ROOT/plain"
+  out=$(HOOK_DIR="$TEST_ROOT/plain" HOOK_PROJECT_DIR="$TEST_ROOT/plain" bash -c 'printf "%s" "$1" | vbw_hook PreToolUse Write' _ "$(HOOK_DIR="$TEST_ROOT/plain" write_in /tmp/scratch.txt)" 2> /dev/null || true)
+  out=$(cd "$TEST_ROOT/plain" && printf '%s' "$(HOOK_DIR="$TEST_ROOT/plain" write_in /tmp/scratch.txt)" | HOOK_PROJECT_DIR="$TEST_ROOT/plain" vbw_hook PreToolUse Write)
+  [ -z "$out" ] || { echo "$out"; false; }
+}
+
+@test "R177: docs/guards.md states that a run writes only inside the project and where" {
+  grep -qi 'outside the project' "$REPO_ROOT/docs/guards.md"
+}

@@ -175,6 +175,7 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 - R174 [auto] vbw approve compares every section of the spec with the record, the Test results list included, so an edited list that was not synced cannot be approved as the record's list
 - R175 [auto] The proof's cause "nothing was committed since the last passing proof" fires only when the project's code is the code that proof proved (its recorded tree), never from the subject of the last commit, so a record commit landing after other commits does not re-run everything
 - R176 [auto] vbw fix done prints what it ran and what it reused, checks and test files, with the counts the proof summary prints, and saves the test files it ran in the run store so the next proof reuses them
+- R177 [auto] During a run, VBW's guards deny any write by an agent to a path outside the project folder (a file write or a shell redirect, /tmp included), saying where the run may write instead; outside runs and outside VBW projects nothing changes
 
 <!-- One requirement per line: an id, how it is proved, and a user-observable
      statement. [auto] = a check can prove it; [human] = only a person can judge it.

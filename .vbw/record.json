@@ -88,6 +88,7 @@
     "tests/guard-cost.bats",
     "tests/guard-fail-closed.bats",
     "tests/guard-interpreters.bats",
+    "tests/guard-outside.bats",
     "tests/guard-plan-writes.bats",
     "tests/guard-protected.bats",
     "tests/guard-reads-approval.bats",
@@ -3647,6 +3648,17 @@
       ],
       "files": [
         "tests/l3-costs.bats"
+      ]
+    },
+    {
+      "id": "C287",
+      "req": "R177",
+      "run": [
+        "bats",
+        "tests/guard-outside.bats"
+      ],
+      "files": [
+        "tests/guard-outside.bats"
       ]
     }
   ],
@@ -9510,6 +9522,35 @@
           "check": "C278"
         }
       ]
+    },
+    {
+      "id": "R177",
+      "text": "During a run, VBW's guards deny any write by an agent to a path outside the project folder (a file write or a shell redirect, /tmp included), saying where the run may write instead; outside runs and outside VBW projects nothing changes",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M24",
+      "rules": [
+        {
+          "text": "a file write to a path outside the project during a run is denied, naming the path, with a next step",
+          "check": "C287"
+        },
+        {
+          "text": "a shell redirect to a path outside the project during a run is denied the same way",
+          "check": "C287"
+        },
+        {
+          "text": "a relative path that climbs out of the project is denied; inside the project the lease rules decide as before",
+          "check": "C287"
+        },
+        {
+          "text": "no run open, or outside a VBW project: the guards give no answer",
+          "check": "C287"
+        },
+        {
+          "text": "docs/guards.md states the rule",
+          "check": "C287"
+        }
+      ]
     }
   ],
   "phases": [
@@ -14987,6 +15028,34 @@
         "tests: project test command"
       ],
       "predicted": "deep"
+    },
+    {
+      "id": "P126",
+      "title": "Agents write only inside the project",
+      "reqs": [
+        "R177"
+      ],
+      "milestone": "M24",
+      "goal": "During a run, a write by an agent to any path outside the project folder (file write or shell redirect) is denied with a reason naming the path and where the run may write; inside the project the lease rules decide as before; outside runs and outside VBW projects nothing changes",
+      "criteria": [
+        "a file write and a shell redirect to /tmp, to another folder outside the project, or through a relative path that climbs out are denied during a run, naming the path and ending with Next:",
+        "inside the project the lease rules are unchanged (the plan file allowed, another file refused as outside the run files)",
+        "no run open, or outside a VBW project: no answer",
+        "docs/guards.md states the rule; the Lead and Dev prompts say that debugging files go inside the project (a plan run writes test files, a build or fix run its plan files)",
+        "the guards stay within their CPU budget"
+      ],
+      "proposed": "standard",
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 6 (48105 bytes)",
+        "files: more than 2 in a repository tracking 879 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R15 (C14), R23 (C20), R24 (C23), R31 (C27), R39 (C36), R44 (C44, C45), R45 (C39, C40, C41), R61 (C73, C74, C75, C76, C77), R71 (C115, C121), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R95 (C149, C150), R96 (C151, C152), R99 (C155), R102 (C158, C159), R120 (C185), R128 (C200), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R157 (C244), R159 (C246), R160 (C247, C263, C264), R162 (C249), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -23562,6 +23631,47 @@
         "docs/statusline.md: a short section on the side file .vbw/runtime/cost.SESSION.json (its fields: session, usd, in, out, at; written on each render from Claude Code's figures to a temporary name and renamed, never the record; skipped quietly when the folder cannot be written) and who reads it (vbw run start and end, vbw show costs); the engineering list drops 'no temporary files' and says what is written instead; a link to docs/costs.md.",
         "docs/costs.md (new page): what is measured and how (D287: in the record; D288: a milestone's cost is everything spent in the project's sessions while it was open, the runs' share inside it), the commands `vbw show costs`, `vbw show costs --json` (the object's fields) and `vbw show costs --ceiling USD` with the three answers (under, reached, cannot tell) and their exit codes, and what 'unknown' means with its remedy (`vbw statusline on`); current-behaviour terms only. Run tests/cost-docs.bats and the docs rules in tests/standards.bats green."
       ]
+    },
+    {
+      "id": "P126.1",
+      "phase": "P126",
+      "title": "Guards deny outside writes",
+      "reqs": [
+        "R177"
+      ],
+      "files": [
+        "plugin/hooks/common.jq",
+        "plugin/hooks/guard-file.jq",
+        "plugin/hooks/guard-bash.jq"
+      ],
+      "after": [],
+      "status": "planned",
+      "tasks": [
+        "common.jq: a path that resolves outside the project (project_path gives null) is a denial during a run: the original path, outside the project, where the run may write (plan run: test files; build or fix run: its plan files; debugging files there too), Next:; today null means nothing to deny",
+        "guard-file.jq and guard-bash.jq: hand the original path to the rule so the reason can name it (write targets and redirect targets alike)",
+        "tools/bench-hooks.sh stays within budget"
+      ]
+    },
+    {
+      "id": "P126.2",
+      "phase": "P126",
+      "title": "Docs and prompts",
+      "reqs": [
+        "R177"
+      ],
+      "files": [
+        "docs/guards.md",
+        "plugin/agents/lead.md",
+        "plugin/agents/dev.md"
+      ],
+      "after": [
+        "P126.1"
+      ],
+      "status": "planned",
+      "tasks": [
+        "docs/guards.md: the rule, the reason text and where a run may write",
+        "lead.md and dev.md: debugging and scratch files go inside the project, never /tmp; prompts stay within their word budget"
+      ]
     }
   ],
   "fixes": [
@@ -26835,6 +26945,17 @@
       "text": "A milestone's cost is everything spent in this project's sessions while it was open, with the runs' share shown inside it; what VBW cannot see is reported as unknown, never guessed",
       "why": "owner, 2026-10-11, the Architect's recommendation: the true bill and the right number for a spending limit; accepted that unrelated work in the same window counts and that VBW must see Claude Code's figure regularly (status line or panel on)",
       "at": "2026-10-11T21:52:14Z"
+    },
+    {
+      "id": "D289",
+      "text": "Agents write nothing outside the project folder during a run: no scratch files in /tmp or anywhere else; a plan run writes test files, a build or fix run its plan's files, and that is where debugging files go too",
+      "why": "owner, 2026-10-11 23:30, after the Lead wrote /tmp/dbg.bats while planning M24: 'all project related files should be contained in the project folder'. Today the file guard lets a path outside the project through (project_path gives null and the lease rule treats null as nothing to deny), so the rule is unenforced",
+      "at": "2026-10-11T22:34:00Z"
+    },
+    {
+      "id": "D290",
+      "at": "2026-10-11T22:44:32Z",
+      "text": "Contract approved: 166 requirements, 282 checks, 370 plans (5b4416af8279); express: P124 (R174, C279, C280, P124.1)"
     }
   ],
   "commands": {
