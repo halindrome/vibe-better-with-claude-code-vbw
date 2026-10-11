@@ -40,6 +40,10 @@
 
 ### Fixed
 
+- A test-file form with nothing left to run (every file it matches already
+  runs as an approved check) no longer records a nameless unit: the proof
+  counts the test command as covered by those checks and says so; a form that
+  matches no committed file fails the test command and names the pathspecs.
 - `vbw fix done` right after a passing proof reuses that proof instead of
   re-running every check: "nothing committed since the last passing proof"
   makes only a second `vbw prove` run everything.
@@ -60,7 +64,8 @@
   everything every time, and the summary says so.
 - For contributors: `bash tools/test.sh --lint` runs the shellcheck stage
   alone; the release run (`--release`) adds only the timed speed checks and
-  the benchmarks when a passing full proof already covers the same code.
+  the benchmarks when a passing proof already covers the same code, results
+  it reused included.
 
 ## [2.0.31] - 2026-10-10
 
