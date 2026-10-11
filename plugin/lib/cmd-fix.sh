@@ -126,7 +126,11 @@ cmd_fix() {
   . "$VBW_LIB/proofcopy.sh"
   # shellcheck source=proofreuse.sh
   . "$VBW_LIB/proofreuse.sh"
-  local todo=() c at results='{}' held head noreads fp why served='[]' stamp
+  # shellcheck source=proofcauses.sh
+  . "$VBW_LIB/proofcauses.sh"
+  # shellcheck source=testfiles.sh
+  . "$VBW_LIB/testfiles.sh"
+  local todo=() c at results='{}' held head noreads causes fp why served='[]' tfres='{}' tfbad='' off
   if [ ${#ids[@]} -gt 0 ]; then
     for id in "${ids[@]}"; do
       served=$(printf '%s' "$served" | jq -c --slurpfile s <(cmd_fix_checks "$record" "$id" | jq -R . | jq -sc 'map(select(length > 0))') '. + $s[0] | unique')
@@ -135,8 +139,12 @@ cmd_fix() {
     cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
     mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
     noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
-    [ -z "$noreads" ] || printf 'every candidate check runs: %s\n' "$noreads"
     head=$(vbw_head_tree 2> /dev/null) || head=
+    # Any cause (R168) runs every candidate check, as it does in vbw prove.
+    causes=$(proofcauses_find "$record" 0 "$head")
+    while IFS= read -r c; do
+      [ -z "$c" ] || printf 'every candidate check runs: %s\n' "$c"
+    done <<< "$causes"
     PROOFREUSE_STORE=$(proofreuse_store_read)
     while IFS= read -r c; do
       [ -n "$c" ] || continue
@@ -147,7 +155,7 @@ cmd_fix() {
           "$(printf '%s' "$record" | jq -r --arg c "$c" '.checks[] | select(.id == $c) | .files | join(", ")')"
         continue
       fi
-      why=$noreads
+      why=$causes
       if [ -z "$why" ]; then
         fp=$(proofreuse_check_fp "$record" "$c")
         why=$(proofreuse_reason "check:$c" "$fp" "$head") || true
@@ -159,22 +167,44 @@ cmd_fix() {
       fi
     done < <(cmd_fix_finished_checks "$record")
   fi
-  if [ ${#todo[@]} -gt 0 ]; then
+  # A test command that failed as test files is re-run on its own, file by file,
+  # through the approved single-file form, never as the whole test command.
+  TF_TODO=()
+  if [ ${#ids[@]} -gt 0 ] && testfiles_on "$record"; then
+    for id in "${ids[@]}"; do
+      printf '%s' "$record" | jq -e --arg f "$id" 'any(.fixes[]; .id == $f and .command == "test")' > /dev/null || continue
+      while IFS= read -r -d '' c; do TF_TODO+=("$c"); done < <(printf '%s' "$record" | jq -j '(.evidence.test_files // {}) | to_entries[] | select(.value.status != "pass") | .key + "\u0000"')
+    done
+  fi
+  if [ ${#todo[@]} -gt 0 ] || [ ${#TF_TODO[@]} -gt 0 ]; then
     at=$(vbw_now)
+    off=false
+    [ -z "$noreads" ] || off=true
     checks_begin "$record"
-    proofcopy_create_slots "$(proofcopy_slots "${#todo[@]}")"
-    results=$(checks_run_all "$record" "${todo[@]}")
+    c=${#todo[@]}
+    [ "$c" -ge ${#TF_TODO[@]} ] || c=${#TF_TODO[@]}
+    proofcopy_create_slots "$(proofcopy_slots "$c")"
+    [ ${#todo[@]} -eq 0 ] || results=$(checks_run_all "$record" "${todo[@]}")
+    [ ${#TF_TODO[@]} -eq 0 ] || tfres=$(testfiles_run "$record")
     proofcopy_remove
     checks_end
-    results=$(printf '%s' "$results" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" \
-      'map_values(if $off or (.reads | type) != "object" then . + {reads: null} else . + {dirs: [.reads.dirs[].path], git: .reads.git, reads: .reads.files} end)')
+    results=$(printf '%s' "$results" | jq -c --argjson off "$off" "$PROVE_FLAT")
+    tfres=$(printf '%s' "$tfres" | jq -c --argjson off "$off" "$PROVE_FLAT")
+    # The form is kept as the last proof recorded it: a changed command is still a cause for vbw prove.
     proofreuse_save "$record" "$results" '{}' "$head" "$at" "$(proofreuse_store_form)"
+    [ "$tfres" = '{}' ] || testfiles_save "$record" "$tfres" "$head" "$at"
+    tfbad=$(printf '%s' "$tfres" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')
   fi
 
   # Each fix ends as it would alone. A failing check fails the named fixes whose
   # files serve it, or every named fix when it serves none of them.
   local closed=() failed human fixed='[]' humans='[]'
   for id in ${ids[@]+"${ids[@]}"}; do
+    if [ -n "$tfbad" ] && printf '%s' "$record" | jq -e --arg f "$id" 'any(.fixes[]; .id == $f and .command == "test")' > /dev/null; then
+      printf 'vbw: %s: these test files still do not pass: %s\n' "$id" "$tfbad" >&2
+      bad=1
+      continue
+    fi
     failed=$(printf '%s' "$results" | jq -r --slurpfile mine <(cmd_fix_checks "$record" "$id" | jq -R . | jq -sc 'map(select(length > 0))') --argjson all "$served" \
       '$mine[0] as $mine | [to_entries[] | select(.value.status != "pass" and (.key as $k | ($mine | index($k)) or (($all | index($k)) | not))) | "\(.key) \(.value.status)"] | join(", ")')
     if [ -n "$failed" ]; then

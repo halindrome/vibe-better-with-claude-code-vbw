@@ -16,11 +16,6 @@
 . "$VBW_LIB/cmd-next.sh"
 
 VBW_FIX_CAP=3
-# A run result's read list ({files, dirs: [{path, fp}], git}) as the store keeps it (null when none was written down).
-PROVE_FLAT='map_values(if $off or (.reads | type) != "object" then . + {reads: null}
-  else . + {dirs: [.reads.dirs[].path], git: .reads.git, reads: .reads.files} end)'
-# A project command (its test run above all) gets this many seconds unless settings.command_timeout says otherwise (R153).
-VBW_COMMAND_TIMEOUT=3600
 
 cmd_prove() {
   local full=0

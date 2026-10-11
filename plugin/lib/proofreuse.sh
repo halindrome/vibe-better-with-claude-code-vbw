@@ -4,6 +4,13 @@
 # test file) is run again only when something it depends on changed; its read
 # list, written down by the run itself, says what it depends on.
 
+# A run result's read list ({files, dirs: [{path, fp}], git}) as the store keeps it (null when none was written down).
+# A project command (its test run above all) gets this many seconds unless settings.command_timeout says otherwise (R153).
+VBW_COMMAND_TIMEOUT=3600
+# shellcheck disable=SC2034 # read by cmd_prove and cmd_fix
+PROVE_FLAT='map_values(if $off or (.reads | type) != "object" then . + {reads: null}
+  else . + {dirs: [.reads.dirs[].path], git: .reads.git, reads: .reads.files} end)'
+
 # proofreuse_check_fp RECORD ID: fingerprint of a check's approved definition.
 proofreuse_check_fp() {
   printf '%s' "$1" | jq -cS --arg id "$2" '.checks[] | select(.id == $id)
