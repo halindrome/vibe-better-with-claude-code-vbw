@@ -21919,7 +21919,7 @@
       "after": [
         "P116.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vbw prove: run the file-system test first; plan every check and project command with the one rule; run what must run in the slot copies; save results and read lists in the store; when the file system cannot record reads, reuse nothing, save no read lists and print 'ran everything: this file system does not record which files are read'",
