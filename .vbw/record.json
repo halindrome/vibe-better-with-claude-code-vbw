@@ -13774,7 +13774,15 @@
           "to": "deep",
           "reason": "Dev blocked P111.2: Tasks 1-3 are in plugin/lib/next.jq (tests 3,4,5,8 of tests/human-later.bats pass). Test 7 can never pass: it snapshots decisions containing 'R2' before ship, then requires them unchanged after ship + milestone start, but test 6 requires the ship decision (appended) to name R2. Both need a change to the protected check file tests/human-later.bats (history() must exclude the ship decision); I may not edit it."
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "4446963765de509f700707333465ef0109945c03a4f244ac44b77734cae3d369",
+        "at": "2026-10-11T11:42:45Z",
+        "note": "15/17 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P112",
@@ -23115,6 +23123,22 @@
       "attempts": 0,
       "status": "open",
       "note": "The refusal branches of vbw fix check (plugin/lib/cmd-fix.sh cmd_fix_check) are untested: unknown fix, closed fix, a fix not opened by QA, a test file that does not exist, and a malformed document. A regression test should run vbw fix check against each case, expect a non-zero exit with the stated what-to-do-instead text, and expect the record unchanged."
+    },
+    {
+      "id": "F111",
+      "req": "R161",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "docs/next.md line 118 (decision-table row 12, commit 52a18175 for P111.4) is a broken Markdown table row: the edit wrote \"...git history) |; when the only unfinished requirements are `human` ones you skipped, `detail.later` lists them: ... judge them now) | yes |\", so the row has an extra column and a stray \")\" and the detail.later explanation renders in the wrong cell. Fix: keep the detail.later sentence inside the third cell (before the final \"| yes |\"). A regression test should check that every row of the docs/next.md decision table has the same number of unescaped pipes as its header."
+    },
+    {
+      "id": "F112",
+      "req": "R161",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The new \"vbw req skip ID\" is not consistent across the surface: plugin/bin/vbw:38 (vbw --help) and the first usage line of \"vbw req --help\" (line 98) still list only \"req accept ID | req reject ID NOTE\"; line 99 describes skip as \"set a requirement aside\", a stale text from P114.1 that does not say it records \"Skip for now\" on a [human] requirement; tests/help-every-command.bats SUBCOMMANDS omits \"req skip\", so its help-does-no-work check never runs for it; plugin/hooks/panel-intent.js and panel-lines.js name accept/reject but not skip. A regression test should require that every req subcommand cmd-req.sh accepts appears in the top-level usage, in the req help with an accurate description, and in the help-every-command list."
     }
   ],
   "todos": [
