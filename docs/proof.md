@@ -712,9 +712,9 @@ To run everything fresh, use `vbw prove --full`, or prove again with
 nothing committed since a passing proof (a second `vbw prove` is a deliberate re-run).
 That last cause is `vbw prove`'s alone: `vbw fix done` right after a passing proof
 reuses what the rule allows, because a passing proof of the same code is exactly
-what it needs. VBW compares those trees and never the subject of the last
-commit, so a VBW record commit landing after code commits re-runs nothing it
-need not.
+what it needs. VBW compares those trees and
+never the subject of the last commit, so a VBW record commit landing after code
+commits re-runs nothing it need not.
 
 ### Fix items
 
