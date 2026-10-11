@@ -11,14 +11,14 @@
 # L3_JOBS at a time (default 4); each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, tools, legacy, nolegacy, smallchange. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, tools, legacy, nolegacy, smallchange, costs. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel tools legacy nolegacy smallchange"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel tools legacy nolegacy smallchange costs"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -1439,6 +1439,44 @@ scenario_smallchange() {
   }
 }
 
+# costs (R173): one VBW run through the real TUI with the working tree's status
+# line on (L3_STATUSLINE, tools/l3.sh), then vbw show costs --json. The cost data
+# comes from the status line, so without it there is nothing to read.
+scenario_costs() {
+  new_project
+  export L3_STATUSLINE=1
+  fixture="greet.sh from an empty project (the greenfield request); the working tree's status line on; the user answers with VBW's recommendations"
+  start=$GREET
+  # Done when a build run has ended with a cost in the record, or the milestone shipped.
+  done_yet() {
+    shipped && return 0
+    jq -e '[(.costs.runs // [])[] | select(.kind == "build" and .cost != null)] | length > 0' "$dir/.vbw/record.json" > /dev/null 2>&1
+  }
+  checks() {
+    local passed=true sl=false doc run_id run_usd ms_usd unknown ratio="" ok=false r="$dir/.vbw/record.json"
+    ls "$dir"/.vbw/runtime/cost.*.json > /dev/null 2>&1 && sl=true
+    doc=$(cd "$dir" && "$VBW" show costs --json 2> /dev/null) || doc='{}'
+    run_id=$(printf '%s' "$doc" | jq -r '[.runs[]? | select(.cost != null)] | (map(select(.kind == "build")) + .) | .[0].id // ""')
+    run_usd=$(printf '%s' "$doc" | jq -r --arg i "$run_id" '[.runs[]? | select(.id == $i) | .cost.usd] | .[0] // 0')
+    ms_usd=$(printf '%s' "$doc" | jq -r --arg m "$(jq -r .milestone.id "$r" 2> /dev/null)" '[.milestones[]? | select(.id == $m) | .usd] | .[0] // 0')
+    unknown=$(printf '%s' "$doc" | jq -r '.unknown.runs // [] | length')
+    if jq -ne --argjson m "${ms_usd:-0}" --argjson s "${cost_usd:-0}" '$s > 0 and $m > 0 and ($m / $s) >= 0.2 and ($m / $s) <= 5' > /dev/null 2>&1; then
+      ok=true; ratio=$(jq -n --argjson m "$ms_usd" --argjson s "$cost_usd" '($m / $s * 100 | round) / 100')
+    fi
+    say "status line side file: $sl, run $run_id: \$$run_usd, milestone: \$$ms_usd, /cost: \$${cost_usd:-0} (ratio ${ratio:-n/a}), unknown runs: $unknown"
+    expect "the status line wrote a cost side file" [ "$sl" = true ]
+    expect "a run has a known cost" jq -ne --arg i "$run_id" --argjson c "$run_usd" '$i != "" and $c > 0'
+    expect "the milestone cost is known and above zero" jq -ne --argjson c "$ms_usd" '$c > 0'
+    expect "no run is unknown" [ "$unknown" -eq 0 ]
+    expect "the milestone cost is of the same order as /cost (0.2 to 5)" [ "$ok" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write costs "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson sl "$sl" --arg id "$run_id" --argjson r "${run_usd:-0}" --argjson m "${ms_usd:-0}" --argjson s "${cost_usd:-0}" --argjson u "${unknown:-0}" \
+        '{statusline_on: $sl, run_id: $id, run_cost_usd: $r, milestone_cost_usd: $m, session_cost_usd: $s, unknown_runs: $u}')" \
+      '["a session without the status line (cost unknown by design)","a ceiling reached mid-run","a project larger than the greet.sh fixture","Claude Code versions other than the one that ran","whether the figures equal the invoice (the suite compares VBW with /cost only)"]'
+  }
+}
+
 failed=0
 # shellcheck disable=SC2086 # the default list splits on purpose
 [ $# -gt 0 ] || set -- $ALL
@@ -1467,6 +1505,7 @@ for scenario in "$@"; do
   # Each scenario's result reflects its own checks; the suite's exit, all of them.
   suite_failed=$failed failed=0
   unset -f on_question on_idle done_yet checks idle
+  unset L3_STATUSLINE
   idle() { default_idle; }
   on_question() { return 1; }
   on_idle() { return 1; }
