@@ -23778,14 +23778,14 @@
       "id": "F119",
       "req": "R10",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C9 fail (exit 1)"
     },
     {
       "id": "F120",
       "command": "test",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "test fail"
     }
   ],
