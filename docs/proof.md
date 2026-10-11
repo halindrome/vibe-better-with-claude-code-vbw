@@ -152,10 +152,11 @@ The contract is the requirements (id, text, proof, and rules when listed), the c
 hash is SHA-256 over a canonical rendering of all of it.
 
 `vbw approve`, and `vbw next` before it offers the approval question, first
-compares every section of `.vbw/spec.md` with the record: Requirements,
-Commands, Test files and Test results. A spec that was edited and not synced
-cannot be approved; the refusal reads `spec.md and the record differ (vbw spec
-sync)`. Run `vbw spec sync`, then approve.
+compares every section of `.vbw/spec.md` with the record:
+Requirements, Commands, Test files and Test results. A spec that was edited and
+not synced cannot be approved; the refusal reads
+`spec.md and the record differ (vbw spec sync)`.
+Run `vbw spec sync`, then approve.
 
 ### Approving by choice
 
