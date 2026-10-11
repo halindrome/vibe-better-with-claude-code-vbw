@@ -1,6 +1,12 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261011T145749Z",
+    "kind": "qa",
+    "started_at": "2026-10-11T14:57:49Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-beside-started.bats",
@@ -13905,7 +13911,7 @@
         "A test lists every refusal path of vbw apply, vbw run start and the two guards and fails when one of them has no next step, so a new refusal without one cannot be added.",
         "This phase runs after P108, P109, P110 and P112, so it also covers the refusals those phases add or change."
       ],
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 7 (84128 bytes)",
@@ -13919,11 +13925,19 @@
       "qa": {
         "result": "fail",
         "tier": "standard",
-        "tree": "c51cd6dafdd17900aa65f7af5550ac6c673f8f31b590a173c07cb00d2714a67d",
-        "at": "2026-10-11T11:43:10Z",
-        "note": "17/18 checks",
-        "rounds": 1
-      }
+        "tree": "60564c040ea35e1e23f8de7602229275dc1a561c20cf43e3ecb72267cd3f3089",
+        "at": "2026-10-11T14:59:54Z",
+        "note": "15/16 checks",
+        "rounds": 2
+      },
+      "escalations": [
+        {
+          "at": "2026-10-11T14:59:54Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "QA needs a second round"
+        }
+      ]
     },
     {
       "id": "P114",
@@ -23288,7 +23302,7 @@
       "req": "R162",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "tests/refusal-next-step.bats is a hand-written list and omits vbw apply refusal paths that exist in plugin/lib/cmd-apply.sh: (1) --add of a requirement covered by a phase whose work has not started (a76e061b, 'whose work has not started') and by a phase of another milestone ('is already covered by'); (2) --add of a phase id that exists only in another milestone (a76e061b widened 'is already a phase'); (3) a malformed test_files (line 135, from P117.2). Phase criterion 4 says the test lists every refusal path and fails when one has no next step, and the file's own header says a new refusal path gets its line. A regression test should send each of these documents to vbw apply (--add, full) and assert the refusal ends with 'Next: ' and a step, and should preferably also fail on any vbw_die/apply_refuse in cmd-apply.sh and cmd-run.sh whose message lacks a Next arm. Run start/guard lists and all message text checked are otherwise complete."
     },
     {
@@ -23306,6 +23320,14 @@
       "attempts": 0,
       "status": "fixed",
       "note": "A check that listed a folder is reused when a commit adds a new sub-folder (or removes a folder's last file) inside it, although the folder's listing changed. plugin/lib/proofreuse.sh proofreuse_reason only compares the changed file's own parent folder (sub(\"/[^/]*$\"; \"\")) against the listed folders, so adding a/sub/g when the check listed a/ yields no reason. Probed in a scratch repo: store entry dirs:[a], tree before/after adding a/sub/g, proofreuse_reason returns 0 (reuse). The collector's fingerprint (reads.sh) already includes sub-folder names but the stored fp is dropped by PROVE_FLAT and never compared, and tests/proofreuse-rule.bats:149 only pins that a file in a sub-folder is not in the listing. Criterion 2 says reuse only when no file was added to or removed from a listed folder; a folder appearing or vanishing changes what ls shows. A regression test should list a/, add a/sub/g in a commit and expect the reason 'a listing changed' (and the same when the last file of a/sub is deleted)."
+    },
+    {
+      "id": "F116",
+      "req": "R162",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Declined reasoning of F113 does not hold: plugin/lib/cmd-apply.sh apply_write_test_files (lines 107-108, added by 6e17611e, P117.2) calls vbw_die directly, bypassing apply_refuse and its catch-all: 'no .vbw/spec.md (run /vbw:init)' has a hint but no 'Next:' line, and 'cannot create a temporary file in $VBW_RUNTIME' has no next step at all. Both are refusals of vbw apply with test_files, so criterion 1 (every refusal ends with a next step) and criterion 4 (a new refusal without one cannot be added) are unmet; tests/refusal-next-step.bats covers neither and has no check that fails on a vbw_die in cmd-apply.sh or cmd-run.sh without a Next arm. Regression test: a test that greps cmd-apply.sh and cmd-run.sh for vbw_die calls outside apply_refuse/apply_internal and fails unless the message carries 'Next: ', plus a case sending test_files with no .vbw/spec.md and asserting the refusal ends with Next:. The three F113 paths themselves (cases in ef4aa06b) are closed: they exist and pass."
     }
   ],
   "todos": [
