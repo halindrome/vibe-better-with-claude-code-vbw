@@ -14088,12 +14088,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "8f5fbe1e7cdeb9f57c7c342a12432910d9dade776ed1399cdb5a596780bcf0d0",
-        "at": "2026-10-11T11:43:46Z",
-        "note": "31/32 checks",
-        "rounds": 1
+        "tree": "d8162c0d4b96316dca087f9086b6b69071b0ab12713d3d9c9a1aa69c917292a6",
+        "at": "2026-10-11T15:07:33Z",
+        "note": "31/32"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 1,
+        "qa_findings": 1,
+        "escalations": 2
       }
     },
     {
@@ -23333,7 +23340,7 @@
       "req": "R166",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "A check that listed a folder is reused when a commit adds a new sub-folder (or removes a folder's last file) inside it, although the folder's listing changed. plugin/lib/proofreuse.sh proofreuse_reason only compares the changed file's own parent folder (sub(\"/[^/]*$\"; \"\")) against the listed folders, so adding a/sub/g when the check listed a/ yields no reason. Probed in a scratch repo: store entry dirs:[a], tree before/after adding a/sub/g, proofreuse_reason returns 0 (reuse). The collector's fingerprint (reads.sh) already includes sub-folder names but the stored fp is dropped by PROVE_FLAT and never compared, and tests/proofreuse-rule.bats:149 only pins that a file in a sub-folder is not in the listing. Criterion 2 says reuse only when no file was added to or removed from a listed folder; a folder appearing or vanishing changes what ls shows. A regression test should list a/, add a/sub/g in a commit and expect the reason 'a listing changed' (and the same when the last file of a/sub is deleted)."
     },
     {
