@@ -13983,7 +13983,15 @@
           "to": "deep",
           "reason": "Dev blocked P116.4: Code is committed (prove and fix done wired to the one rule; C253, C255 and tests/prove-reads.bats pass). Two approved checks cannot pass inside this plan's files. (1) C254 tests/reads-traced.bats test 1 (first_proof 2): C4 reads gen/out.txt built by C3, but with check_jobs 2 and slot copies they run in different copies, so C4 fails every time; the test needs C3/C4 out of the concurrency test or one copy. (2) C256 tests/reads-docs.bats test 16: plugin/hooks/common.jq consent_reason contains 'vbw/runs.json', which the test forbids in hooks. Also outside the plan: C171 tests/proof-quick.bats (5 tests) assume lint/test commands rerun after a change they do not read; tests/check-wait-patient.bats R94 kills the process just below vbw main, which is now the runner holder."
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "8f5fbe1e7cdeb9f57c7c342a12432910d9dade776ed1399cdb5a596780bcf0d0",
+        "at": "2026-10-11T11:43:46Z",
+        "note": "31/32 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P117",
@@ -14060,7 +14068,22 @@
           "to": "deep",
           "reason": "Dev blocked P118.2: Blocked (DEVN-04): wiring causes into plugin/lib/cmd-prove.sh works for the run-everything part, but the saved commands fingerprint cannot be read back. proofreuse_save (plugin/lib/proofreuse.sh, outside this plan) stores its FORM argument with jq --arg, i.e. as a JSON string, while proofcauses_form_causes (P118.1) only compares an old form that is a JSON object, so 'command X changed', 'single-file form changed' and 'list of test files changed' never fire (C261 tests 1-3 fail). Needed: add plugin/lib/proofreuse.sh to this plan's files and store the form as an object (form: ($form | fromjson? // null)), plus check kernel tests that pin the store shape. cmd-prove.sh changes I made then reverted: source proofcauses.sh; causes=$(proofcauses_find \"$record\" \"$full\" \"$(vbw_head_tree)\") after proofreuse_plan, run everything when causes is non-empty; proofreuse_save form arg = \"$(proofcauses_form \"$record\")\"; prove_summary takes causes, one prints 'ran everything: X', several print 'ran everything, because:' then '  - X' lines."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "ee0eaf7e985d8387b7f434b5635df8cb7e9cc6a0eef60da6792df217be357246",
+        "at": "2026-10-11T11:43:45Z",
+        "note": "30/30 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 1
+      }
     }
   ],
   "plans": [
@@ -23201,6 +23224,14 @@
       "attempts": 0,
       "status": "open",
       "note": "Criterion 8 is unmet: no measurement of a one-kernel-file proof (e.g. a change to plugin/lib/cmd-todo.sh) exists. The progress log (a_non_prod_docs/v2_progress_log.md) records only the first full proof (2183 s, 257 checks and 51 test files all ran, nothing reused) and no before/after pair against the under-10-minute target. A task or check should run vbw prove after a one-file kernel change on the owner's Mac and log both times."
+    },
+    {
+      "id": "F115",
+      "req": "R166",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "A check that listed a folder is reused when a commit adds a new sub-folder (or removes a folder's last file) inside it, although the folder's listing changed. plugin/lib/proofreuse.sh proofreuse_reason only compares the changed file's own parent folder (sub(\"/[^/]*$\"; \"\")) against the listed folders, so adding a/sub/g when the check listed a/ yields no reason. Probed in a scratch repo: store entry dirs:[a], tree before/after adding a/sub/g, proofreuse_reason returns 0 (reuse). The collector's fingerprint (reads.sh) already includes sub-folder names but the stored fp is dropped by PROVE_FLAT and never compared, and tests/proofreuse-rule.bats:149 only pins that a file in a sub-folder is not in the listing. Criterion 2 says reuse only when no file was added to or removed from a listed folder; a folder appearing or vanishing changes what ls shows. A regression test should list a/, add a/sub/g in a commit and expect the reason 'a listing changed' (and the same when the last file of a/sub is deleted)."
     }
   ],
   "todos": [
