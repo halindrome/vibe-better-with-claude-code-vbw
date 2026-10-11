@@ -3,6 +3,9 @@
 # vbw prove. Nothing runs unless the current contract is approved; every argv
 # is executed directly, never through a shell, with stdin closed and a timeout.
 
+# shellcheck source=reads.sh
+. "$VBW_LIB/reads.sh"
+
 # checks_begin RECORD [strict]: die unless the contract is approved. Check
 # files edited since the approval wait for it (CHECK_WAITING): the checks still
 # run and the files are named, but with "strict" (proof) it dies. A check a fix
@@ -11,6 +14,7 @@
 # (parallel Devs each get their own). Called directly, never in $(...).
 checks_begin() {
   local waiting
+  # shellcheck disable=SC2034 # read by the commands that source this file
   CHECK_HASH=$(contract_hash "$1")
   CHECK_WAITING=$(contract_waiting "$1") \
     || vbw_die "the contract is not approved, or changed since it was approved: review it (vbw show contract), then ask the user with the approval menu (AskUserQuestion)"
@@ -187,30 +191,143 @@ checks_gate_leave() {
   vbw_guard_drop "$VBW_RUNTIME/gate/reg.$$.$1"
 }
 
-# checks_lost ID: the result of a check whose runner ended without leaving one.
+# The runner of units. A unit is one thing to run: a check, a project command
+# or (later) a test file. It is a JSON object {name, out, argv, timeout, exit,
+# output, alone}: name keys its result and its place in the gate, out is the
+# file (in CHECK_OUT) that keeps its output, argv is the command, timeout the
+# seconds it may take, exit and output (a regex, "" for none) what a pass is,
+# alone whether nothing else may run beside it.
+#
+# Without slot copies (PROOF_COPIES empty) a unit runs where the caller is.
+# With them (proofcopy_create_slots) each unit takes a free slot copy for its
+# run, with that copy's access times reset before it and its read list
+# collected after it (reads.sh); the result then carries that list as "reads"
+# ({files, dirs, git}, null when it could not be written down). A copy serves
+# one unit at a time, so read lists of units running together stay apart.
+
+# checks_gate_forget NAME: drop the gate places this process holds for a unit
+# whose runner is gone (killed, so it could not release them itself).
+checks_gate_forget() {
+  rm -f "$VBW_RUNTIME/gate/reg.$$.$1" "$VBW_RUNTIME/gate/want.$$.$1"
+}
+
+# checks_lost NAME: the result of a unit whose runner ended without leaving one.
 checks_lost() {
   jq -n --arg id "$1" '{status: "skipped", exit: null, seconds: 0,
     tail: "not run: the runner of \($id) ended without a result (it was killed or crashed)"}'
 }
 
-# checks_run RECORD ID: run one check; print its result object.
-checks_run() {
-  local record="$1" id="$2" argv=() a t want re
-  while IFS= read -r -d '' a; do argv+=("$a"); done \
-    < <(printf '%s' "$record" | jq -j --arg id "$id" '.checks[] | select(.id == $id) | .run[] + "\u0000"')
-  t=$(printf '%s' "$record" | jq -r --arg id "$id" '.checks[] | select(.id == $id) | .timeout // 300')
-  want=$(printf '%s' "$record" | jq -r --arg id "$id" '.checks[] | select(.id == $id) | .exit // 0')
-  re=$(printf '%s' "$record" | jq -r --arg id "$id" '.checks[] | select(.id == $id) | .output // ""')
-  checks_gate_enter "$id" "$(printf '%s' "$record" | jq -r --arg id "$id" '.checks[] | select(.id == $id) | .alone // false')"
-  checks_exec "$t" "$CHECK_OUT/$id.out" "${argv[@]}"
-  checks_gate_leave "$id"
-  checks_result "$CHECK_OUT/$id.out" "$t" "$want" "$re"
+# checks_unit RECORD ID: the unit of a check.
+checks_unit() {
+  printf '%s' "$1" | jq -c --arg id "$2" '.checks[] | select(.id == $id)
+    | {name: .id, out: "\(.id).out", argv: .run, timeout: (.timeout // 300), exit: (.exit // 0),
+       output: (.output // ""), alone: (.alone // false)}'
+}
+
+# checks_unit_run UNIT [SLOT]: run one unit, in slot copy number SLOT when
+# given; print its result object.
+checks_unit_run() {
+  local f=() a name out t want re alone copy st="" reads=true res
+  while IFS= read -r -d '' a; do f+=("$a"); done \
+    < <(printf '%s' "$1" | jq -j '[.name, .out, (.timeout | tostring), (.exit | tostring), .output, (.alone | tostring)] + .argv | .[] + "\u0000"')
+  name=${f[0]} out=$CHECK_OUT/${f[1]} t=${f[2]} want=${f[3]} re=${f[4]} alone=${f[5]}
+  if [ -n "${2:-}" ]; then
+    copy=${PROOF_COPIES[$2]}
+    st="$(dirname "$copy")/reads"
+    cd "$copy" || return 1
+    reads_reset "$copy" "$st" || reads=false
+  fi
+  checks_gate_enter "$name" "$alone"
+  checks_exec "$t" "$out" ${f[@]+"${f[@]:6}"}
+  checks_gate_leave "$name"
+  res=$(checks_result "$out" "$t" "$want" "$re")
+  if [ -z "$st" ]; then
+    printf '%s\n' "$res"
+  elif [ "$reads" = true ] && reads_collect "$copy" "$st" > "$st/result.json"; then
+    printf '%s' "$res" | jq -c --slurpfile r "$st/result.json" '. + {reads: $r[0]}'
+  else
+    printf '%s' "$res" | jq -c '. + {reads: null}'
+  fi
+}
+
+# checks_run_units UNITS: {name: result} for the units (a JSON array), at most
+# check_jobs at a time and never more than there are slot copies; a unit that
+# is alone still runs by itself (the gate). Results are in the units' order.
+checks_run_units() {
+  local units="$1" count jobs slots cap n=0 i k pid pids=() unit name res all='{}' slot running found
+  local slot_pid=() names=() j
+  count=$(printf '%s' "$units" | jq 'length')
+  [ "$count" -gt 0 ] || { printf '{}\n'; return 0; }
+  jobs=$(vbw_check_jobs) || jobs=1
+  CHECKS_LIMIT=$jobs
+  slots=0
+  [ -z "${PROOF_COPIES+x}" ] || slots=${#PROOF_COPIES[@]}
+  cap=$jobs
+  [ "$slots" -eq 0 ] || [ "$slots" -ge "$cap" ] || cap=$slots
+  if [ "$cap" -le 1 ] || [ "$count" -le 1 ]; then
+    slot=""
+    [ "$slots" -eq 0 ] || slot=0
+    for ((i = 0; i < count; i++)); do
+      unit=$(printf '%s' "$units" | jq -c --argjson i "$i" '.[$i]')
+      name=$(printf '%s' "$unit" | jq -r '.name')
+      res=$(checks_unit_run "$unit" "$slot") || res=
+      [ -n "$res" ] || { res=$(checks_lost "$name"); checks_gate_forget "$name"; }
+      all=$(printf '%s' "$all" | jq -c --arg id "$name" --argjson r "$res" '. + {($id): $r}')
+    done
+    printf '%s\n' "$all"
+    return 0
+  fi
+  # In parallel (bash 3.2 has no wait -n: finished jobs are counted with jobs
+  # -r). Each unit runs in its own subshell, owning no guard of the parent, and
+  # leaves its result in a file. A slot copy is free when its last job is gone.
+  for ((i = 0; i < count; i++)); do
+    unit=$(printf '%s' "$units" | jq -c --argjson i "$i" '.[$i]')
+    name=$(printf '%s' "$unit" | jq -r '.name')
+    slot=""
+    while :; do
+      running=$(jobs -r | wc -l)
+      if [ "$running" -lt "$cap" ]; then
+        [ "$slots" -gt 0 ] || break
+        found=""
+        for ((k = 0; k < slots; k++)); do
+          if [ -z "${slot_pid[$k]:-}" ] || ! kill -0 "${slot_pid[$k]}" 2> /dev/null; then found=$k; break; fi
+        done
+        if [ -n "$found" ]; then slot=$found; break; fi
+      fi
+      # A runner killed without a result leaves its place in the gate: freed here.
+      for ((j = 0; j < n; j++)); do
+        kill -0 "${pids[$j]}" 2> /dev/null || [ -s "$CHECK_OUT/$((j + 1)).res" ] || checks_gate_forget "${names[$j]}"
+      done
+      sleep 0.05
+    done
+    n=$((n + 1))
+    names+=("$name")
+    (
+      vbw_guard_reset
+      res=$(checks_unit_run "$unit" "$slot") || exit 1
+      printf '%s\n' "$res" > "$CHECK_OUT/$n.res.tmp" && mv "$CHECK_OUT/$n.res.tmp" "$CHECK_OUT/$n.res"
+    ) &
+    pid=$!
+    pids+=("$pid")
+    [ -z "$slot" ] || slot_pid[$slot]=$pid
+    # An alone unit is at the gate before the next one starts, so a shared
+    # unit launched after it never runs first.
+    [ "$(printf '%s' "$unit" | jq -r '.alone')" != true ] || while kill -0 "$pid" 2> /dev/null && [ ! -e "$VBW_RUNTIME/gate/reg.$$.$name" ] && [ ! -e "$VBW_RUNTIME/gate/want.$$.$name" ]; do sleep 0.05; done
+  done
+  # Job notices (Killed, not a child) are the shell's own: silenced here.
+  for pid in "${pids[@]}"; do { wait "$pid" || true; } 2> /dev/null; done
+  for ((i = 0; i < count; i++)); do
+    name=$(printf '%s' "$units" | jq -r --argjson i "$i" '.[$i].name')
+    [ -s "$CHECK_OUT/$((i + 1)).res" ] || { checks_lost "$name" > "$CHECK_OUT/$((i + 1)).res"; checks_gate_forget "$name"; }
+    all=$(printf '%s' "$all" | jq -c --arg id "$name" --slurpfile r "$CHECK_OUT/$((i + 1)).res" '. + {($id): $r[0]}')
+  done
+  printf '%s\n' "$all"
 }
 
 # checks_run_all RECORD [ID...]: {C1: result, ...} for the given checks (all
 # when none are given); dies on an unknown id before running anything.
 checks_run_all() {
-  local record="$1" id all='{}' res
+  local record="$1" id all='{}' units='[]' res
   shift
   local ids=("$@")
   if [ ${#ids[@]} -eq 0 ]; then
@@ -221,132 +338,18 @@ checks_run_all() {
     printf '%s' "$record" | jq -e --arg id "$id" 'any(.checks[]; .id == $id)' > /dev/null || vbw_die "unknown check $id"
   done
   # A check a fix added waits for the user's approval: it is reported, never run.
-  local run=()
   for id in "${ids[@]}"; do
     if printf '%s\n' "${CHECK_HELD:-}" | grep -qx -- "$id"; then
       all=$(printf '%s' "$all" | jq -c --arg id "$id" '. + {($id): {status: "waiting", exit: null, seconds: 0,
         tail: "not run: a check a fix added waits for the user'"'"'s approval"}}')
     else
-      run+=("$id")
+      units=$(printf '%s' "$units" | jq -c --argjson u "$(checks_unit "$record" "$id")" '. + [$u]')
     fi
   done
-  ids=(${run[@]+"${run[@]}"})
-  [ ${#ids[@]} -gt 0 ] || { printf '%s\n' "$all"; return 0; }
-  local jobs
-  jobs=$(vbw_check_jobs) || jobs=1
-  CHECKS_LIMIT=$jobs
-  if [ "$jobs" -le 1 ] || [ ${#ids[@]} -le 1 ]; then
-    for id in "${ids[@]}"; do
-      res=$(checks_run "$record" "$id") || res=
-      [ -n "$res" ] || res=$(checks_lost "$id")
-      all=$(printf '%s' "$all" | jq -c --arg id "$id" --argjson r "$res" '. + {($id): $r}')
-    done
-    printf '%s\n' "$all"
-    return 0
-  fi
-  # In parallel, at most $jobs at a time (bash 3.2 has no wait -n: finished
-  # jobs are counted with jobs -r). Each check runs in its own subshell, owning
-  # no guard of the parent, and leaves its result in a file; the gate still
-  # keeps alone checks by themselves. Results are joined in the checks' own order.
-  local n=0 pid pids=()
-  for id in "${ids[@]}"; do
-    while [ "$(jobs -r | wc -l)" -ge "$jobs" ]; do sleep 0.05; done
-    n=$((n + 1))
-    (
-      vbw_guard_reset
-      res=$(checks_run "$record" "$id") || exit 1
-      printf '%s\n' "$res" > "$CHECK_OUT/$n.res.tmp" && mv "$CHECK_OUT/$n.res.tmp" "$CHECK_OUT/$n.res"
-    ) &
-    pids+=($!)
-    # An alone check is at the gate before the next check starts, so a shared
-    # check launched after it never runs first.
-    [ "$(printf '%s' "$record" | jq -r --arg id "$id" '.checks[] | select(.id == $id) | .alone // false')" != true ] || while kill -0 "$!" 2> /dev/null && [ ! -e "$VBW_RUNTIME/gate/reg.$$.$id" ] && [ ! -e "$VBW_RUNTIME/gate/want.$$.$id" ]; do sleep 0.05; done
-  done
-  # Job notices (Killed, not a child) are the shell's own: silenced here.
-  for pid in "${pids[@]}"; do { wait "$pid" || true; } 2> /dev/null; done
-  n=0
-  for id in "${ids[@]}"; do
-    n=$((n + 1))
-    [ -s "$CHECK_OUT/$n.res" ] || checks_lost "$id" > "$CHECK_OUT/$n.res"
-    all=$(printf '%s' "$all" | jq -c --arg id "$id" --slurpfile r "$CHECK_OUT/$n.res" '. + {($id): $r[0]}')
-  done
-  printf '%s\n' "$all"
-}
-
-# Recorded passes (R43). A check's served files are its own files and the files
-# of every plan that serves its requirement. Its fingerprint is the committed
-# content of those paths (HEAD), so it moves only when a served file changes in
-# a commit. A check with no declared files, or a served path that is not in
-# HEAD, has no fingerprint: it is always run and never recorded.
-
-# checks_served RECORD ID: the check's served paths, one per line.
-checks_served() {
-  printf '%s' "$1" | jq -r --arg id "$2" '. as $r | .checks[] | select(.id == $id and ((.files // []) | length) > 0)
-    | .req as $q | ((.files) + [$r.plans[] | select(any(.reqs[]; . == $q)) | .files[]]) | unique[]'
-}
-
-# checks_fingerprint RECORD ID: print the fingerprint, or return 1 when there is none.
-checks_fingerprint() {
-  local p sha lines=""
-  while IFS= read -r p; do
-    sha=$(git -C "$VBW_ROOT" rev-parse --verify -q "HEAD:$p") || return 1
-    lines="$lines$p $sha"$'\n'
-  done < <(checks_served "$1" "$2")
-  [ -n "$lines" ] || return 1
-  printf '%s' "$lines" | vbw_sha256
-}
-
-# checks_served_dirty RECORD ID: succeed when a served file has uncommitted changes.
-checks_served_dirty() {
-  local files=() p
-  while IFS= read -r p; do files+=("$p"); done < <(checks_served "$1" "$2")
-  [ -n "$(vbw_dirty_files ${files[@]+"${files[@]}"})" ]
-}
-
-# checks_unchanged RECORD ID: print the time of the recorded pass and succeed
-# when it matches the current contract hash and fingerprint, with nothing dirty.
-checks_unchanged() {
-  local fp pass hash
-  fp=$(checks_fingerprint "$1" "$2") || return 1
-  checks_served_dirty "$1" "$2" && return 1
-  hash=$(contract_hash "$1")
-  contract_approved "$hash" || return 1
-  pass=$(jq -r --arg id "$2" --arg h "$hash" --arg fp "$fp" \
-    '.[$id] // empty | select(type == "object" and .contract == $h and .tree == $fp) | .at // empty' "$(checks_passes_file)" 2> /dev/null) || return 1
-  [ -n "$pass" ] && printf '%s\n' "$pass"
-}
-
-# The passes live in the clone, never in the record (they change on every run
-# and would make the record's history noise): $(git common dir)/vbw/passes.json,
-# {check id: {at, contract, tree}}. A missing or damaged file means no reuse.
-checks_passes_file() {
-  local common
-  common=$(git -C "$VBW_ROOT" rev-parse --path-format=absolute --git-common-dir 2> /dev/null) || vbw_die "not a git repository"
-  printf '%s/vbw/passes.json\n' "$common"
-}
-
-# checks_record_passes RECORD RESULTS HASH: record a pass for each passing
-# check whose served files are all committed; drop the entry of every other
-# check that ran.
-checks_record_passes() {
-  local id fp at new='{}' ran file lock cur tmp
-  at=$(vbw_now)
-  ran=$(printf '%s' "$2" | jq -c 'keys')
-  while IFS= read -r id; do
-    [ -n "$id" ] || continue
-    fp=$(checks_fingerprint "$1" "$id") || continue
-    checks_served_dirty "$1" "$id" && continue
-    new=$(printf '%s' "$new" | jq -c --arg id "$id" --arg at "$at" --arg h "$3" --arg fp "$fp" '. + {($id): {at: $at, contract: $h, tree: $fp}}')
-  done < <(printf '%s' "$2" | jq -r 'to_entries[] | select(.value.status == "pass") | .key')
-  file=$(checks_passes_file)
-  mkdir -p "${file%/*}" || vbw_die "cannot create ${file%/*}"
-  lock="${file%.json}.lock"
-  vbw_lock_take "$lock" "passes"
-  cur=$(jq -c 'if type == "object" then . else {} end' "$file" 2> /dev/null) || cur='{}'
-  tmp=$(mktemp "${file%/*}/passes.XXXXXX") || vbw_die "cannot create a temporary file in ${file%/*}"
-  printf '%s' "$cur" | jq -c --slurpfile rn <(printf '%s' "$ran") --slurpfile nw <(printf '%s' "$new") \
-    '$rn[0] as $ran | $nw[0] as $new | with_entries(select(.key as $k | $ran | index($k) | not)) + $new' > "$tmp" && mv "$tmp" "$file"
-  vbw_guard_drop "$lock"
+  res=$(checks_run_units "$units")
+  # The checks' own order, the waiting ones among them.
+  printf '%s' "$res" | jq -c --slurpfile w <(printf '%s' "$all") --argjson ids "$(printf '%s\n' "${ids[@]}" | jq -R . | jq -sc .)" \
+    '. + $w[0] | . as $m | reduce $ids[] as $i ({}; . + {($i): $m[$i]})'
 }
 
 # checks_must_pass RECORD WHAT CHECK...: run the checks now and die with
@@ -359,7 +362,6 @@ checks_must_pass() {
   checks_begin "$record"
   results=$(checks_run_all "$record" "$@")
   checks_end
-  checks_record_passes "$record" "$results" "$CHECK_HASH"
   printf '%s' "$results" | jq -e 'all(.[]; .status == "pass")' > /dev/null \
     || vbw_die "$what: $(printf '%s' "$results" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')"
 }
