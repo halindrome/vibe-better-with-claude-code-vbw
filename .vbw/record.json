@@ -29950,5 +29950,19 @@
       "tests/*.bats",
       ":!tests/timed-*.bats"
     ]
+  },
+  "costs": {
+    "runs": [
+      {
+        "id": "plan-20261011T235304Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-11T23:53:04Z",
+        "ended": "2026-10-11T23:55:26Z",
+        "cost": null
+      }
+    ],
+    "milestones": {}
   }
 }
