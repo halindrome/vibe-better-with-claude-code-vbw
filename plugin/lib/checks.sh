@@ -40,21 +40,26 @@ checks_end() {
 checks_kept() {
   case "$1" in
     check) printf '%s/output/%s.log\n' "${VBW_RUNTIME#"$VBW_ROOT"/}" "$2" ;;
+    file) printf '%s/output/file-%s.log\n' "${VBW_RUNTIME#"$VBW_ROOT"/}" "$2" ;;
     *) printf '%s/output/command-%s.log\n' "${VBW_RUNTIME#"$VBW_ROOT"/}" "$2" ;;
   esac
 }
 
-# checks_keep CHECKS COMMANDS: the results ({name: result}) of the checks and
+# checks_keep CHECKS COMMANDS [FILES]: the results ({name: result}) of the checks and
 # project commands that just ran, their output still in CHECK_OUT. Each failure
 # or timeout moves its complete output to its kept file, replacing the older
 # one (renamed from a temporary file in the same folder, so a reader never sees
 # half a file); a pass removes it. Reused results are not in CHECKS or COMMANDS,
 # and a check or command that did not run (skipped) leaves its file as it is.
 checks_keep() {
-  local kind name status out kept dir tmp
+  local kind name status out kept dir tmp files=${3:-}
+  [ -n "$files" ] || files='{}'
   dir="$VBW_RUNTIME/output"
   while IFS=$'\x1f' read -r -d '' kind name status; do
-    if [ "$kind" = check ]; then out="$CHECK_OUT/$name.out"; else out="$CHECK_OUT/cmd-$name.out"; fi
+    case "$kind" in
+      check | file) out="$CHECK_OUT/$name.out" ;;
+      *) out="$CHECK_OUT/cmd-$name.out" ;;
+    esac
     kept="$VBW_ROOT/$(checks_kept "$kind" "$name")"
     case "$status" in
       fail | timeout)
@@ -65,8 +70,9 @@ checks_keep() {
         ;;
       pass) rm -f "$kept" ;;
     esac
-  done < <(jq -n -j --slurpfile cs <(printf '%s' "$1") --slurpfile ms <(printf '%s' "$2") \
-    '$cs[0] as $c | $ms[0] as $m | ($c | to_entries[] | "check\u001f\(.key)\u001f\(.value.status)\u0000"), ($m | to_entries[] | "command\u001f\(.key)\u001f\(.value.status)\u0000")')
+  done < <(jq -n -j --slurpfile cs <(printf '%s' "$1") --slurpfile ms <(printf '%s' "$2") --slurpfile fs <(printf '%s' "$files") \
+    '$cs[0] as $c | $ms[0] as $m | ($c | to_entries[] | "check\u001f\(.key)\u001f\(.value.status)\u0000"), ($m | to_entries[] | "command\u001f\(.key)\u001f\(.value.status)\u0000"),
+      ($fs[0] | to_entries[] | "file\u001f\(.value.id)\u001f\(.value.status)\u0000")')
 }
 
 # checks_exec TIMEOUT OUTFILE ARGV...: run ARGV from the project root, output to
