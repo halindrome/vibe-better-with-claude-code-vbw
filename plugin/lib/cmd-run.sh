@@ -61,9 +61,20 @@ cmd_run() {
       | "run \(.run) belongs to another session\(if $me == "" then " (this session is unknown)" else "" end). Next: wait for it, or if the user says that session is closed, vbw run end --owner-closed"')
     [ -z "$refusal" ] || vbw_die "$refusal"
     run=$(record_read | jq -r '.lease.run // "no run"')
-    local lease
+    local lease sid opening closing cost
     lease=$(record_read | jq -c '.lease // empty')
-    record_update '.lease = null | (.plans[] | select(.status == "building")).status = "planned"'
+    # The run's cost: this session's end figures minus the opening figures; null
+    # (unknown, never 0) when either is missing or the run has no session.
+    # shellcheck source=costs.sh
+    . "$VBW_LIB/costs.sh"
+    sid=$(printf '%s' "$lease" | jq -r '.session // empty')
+    opening=$(printf '%s' "$lease" | jq -c '.cost // null')
+    closing=$(costs_figures "$sid")
+    cost=$(costs_diff "$closing" "$opening")
+    record_update '(.lease | {id: .run, kind, session: (.session // null), milestone: $m, started: .started_at, ended: $at, cost: $cost}) as $r
+      | .lease = null | (.plans[] | select(.status == "building")).status = "planned"
+      | .costs.runs = ((.costs.runs // []) + [$r]) | .costs.milestones = (.costs.milestones // {})' \
+      --arg m "$(record_read | jq -r .milestone.id)" --arg at "$(vbw_now)" --argjson cost "$cost"
     record_commit "chore(vbw): record after $run"
     [ -z "$lease" ] || vbw_step_add "$lease"
     printf 'run ended\n'
@@ -109,6 +120,8 @@ cmd_run() {
     else empty end] | .[0] // empty')
   [ -z "$problem" ] || vbw_die "$problem"
 
+  # shellcheck source=costs.sh
+  . "$VBW_LIB/costs.sh"
   record_update '
     (if $k == "build" then [.plans[] | select(.id as $i | any($ids[]; . == $i)) | .files[]] | unique
      elif $k == "fix" then
@@ -128,7 +141,8 @@ cmd_run() {
        else {} end) as $qa
     | .lease = {run: "\($k)-\($at | gsub("[-:]"; ""))", kind: $k, started_at: $at, files: $files}
        + (if $me == "" then {} else {session: $me} end) + $qa
+       + (if $cost == null then {} else {cost: $cost} end)
     | if $k == "build" then (.plans[] | select(.id as $i | any($ids[]; . == $i))).status = "building" else . end' \
-    --arg k "$kind" --arg me "$(vbw_session)" --argjson ids "$ids" --arg at "$(vbw_now)"
+    --arg k "$kind" --arg me "$(vbw_session)" --argjson ids "$ids" --arg at "$(vbw_now)" --argjson cost "$(costs_figures "$(vbw_session)")"
   jq -r '.lease | "run \(.run) started; agents may write: \(if .files == null then "any file (protected checks excepted)" else (.files | join(", ")) end)"' "$VBW_RECORD"
 }
