@@ -140,8 +140,9 @@ cmd_fix() {
     mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
     noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
     head=$(vbw_head_tree 2> /dev/null) || head=
-    # Any cause (R168) runs every candidate check, as it does in vbw prove.
-    causes=$(proofcauses_find "$record" 0 "$head")
+    # Any cause (R168) runs every candidate check, as it does in vbw prove, except
+    # "nothing committed since the last passing proof": that proof is what fix done wants.
+    causes=$(proofcauses_find "$record" 0 "$head" fix)
     while IFS= read -r c; do
       [ -z "$c" ] || printf 'every candidate check runs: %s\n' "$c"
     done <<< "$causes"

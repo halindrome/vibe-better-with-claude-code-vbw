@@ -50,8 +50,9 @@ edit_record() {
 }
 
 # causes [FULL]: the causes for the committed code, one per line.
+# causes [FULL] [KIND]: the causes proofcauses_find prints for this project (KIND: prove or fix).
 causes() {
-  vbw_kernel '. "$VBW_LIB/proofcauses.sh"; VBW_COMMAND_TIMEOUT=3600; mkdir -p "$VBW_RUNTIME"; proofcauses_find "$(record_read)" "'"${1:-0}"'" "$(vbw_head_tree)"'
+  vbw_kernel '. "$VBW_LIB/proofcauses.sh"; VBW_COMMAND_TIMEOUT=3600; mkdir -p "$VBW_RUNTIME"; proofcauses_find "$(record_read)" "'"${1:-0}"'" "$(vbw_head_tree)" "'"${2:-prove}"'"'
 }
 
 change() {
@@ -100,6 +101,12 @@ noreads() {
   git commit -q --allow-empty -m "chore(vbw): proof passed"
   run causes
   [ "$output" = "nothing was committed since the last passing proof" ] || { echo "$output"; false; }
+}
+
+@test "R168: for vbw fix done, nothing committed since the last passing proof is no cause: that proof is what it wants" {
+  git commit -q --allow-empty -m "chore(vbw): proof passed"
+  run causes 0 fix
+  [ -z "$output" ] || { echo "$output"; false; }
 }
 
 @test "R168: a changed approved command, single-file form or list of test files is no cause: each unit re-runs by its own definition" {

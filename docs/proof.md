@@ -653,7 +653,7 @@ The causes, with the text the summary shows:
 | The clone has no earlier recorded run | `this clone has no earlier recorded run` |
 | The last proof was cut short | `the last proof was cut short` |
 | `vbw prove --full` | `vbw prove --full` |
-| Nothing was committed since the last passing proof | `nothing was committed since the last passing proof` |
+| Nothing was committed since the last passing proof (`vbw prove` only; `vbw fix done` reuses that proof) | `nothing was committed since the last passing proof` |
 
 A content change to a file no recorded run read runs nothing: it affects
 nothing that was run. An added or deleted file no recorded run saw (none read
@@ -692,6 +692,9 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
 
 To run everything fresh, use `vbw prove --full`, or prove again with
 nothing committed since a passing proof (a second `vbw prove` is a deliberate re-run).
+That last cause is `vbw prove`'s alone: `vbw fix done` right after a passing proof
+reuses what the rule allows, because a passing proof of the same code is exactly
+what it needs.
 
 ### Fix items
 

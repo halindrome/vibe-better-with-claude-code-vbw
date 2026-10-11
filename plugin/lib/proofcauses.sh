@@ -85,9 +85,12 @@ proofcauses_files() {
     | sort | .[]'
 }
 
-# proofcauses_find RECORD FULL HEAD: every cause for this proof, one per line,
-# in a fixed order; nothing when the reuse rule may decide alone. FULL is 1 for
-# vbw prove --full. HEAD is the tree of the committed code.
+# proofcauses_find RECORD FULL HEAD [KIND]: every cause for this proof, one per
+# line, in a fixed order; nothing when the reuse rule may decide alone. FULL is
+# 1 for vbw prove --full. HEAD is the tree of the committed code. KIND is
+# "prove" (the default) or "fix": a second vbw prove with nothing committed
+# since a passing proof is a deliberate re-run and a cause; vbw fix done after
+# that proof is not, a passing proof of the same code is exactly what it needs.
 proofcauses_find() {
   local store probe
   store=$(proofreuse_store_read)
@@ -96,7 +99,7 @@ proofcauses_find() {
   printf '%s' "$store" | jq -e '(.runs | length) > 0' > /dev/null || printf 'this clone has no earlier recorded run\n'
   mkdir -p "$VBW_RUNTIME" 2> /dev/null || true
   probe=$(reads_probe "$VBW_RUNTIME" 2>&1) || printf '%s\n' "$probe"
-  if [ "$(git -C "$VBW_ROOT" log -1 --format=%s 2> /dev/null)" = 'chore(vbw): proof passed' ] \
+  if [ "${4:-prove}" != fix ] && [ "$(git -C "$VBW_ROOT" log -1 --format=%s 2> /dev/null)" = 'chore(vbw): proof passed' ] \
     && [ -z "$(git -C "$VBW_ROOT" status --porcelain -z -- .vbw 2> /dev/null | tr -d '\000')" ] \
     && [ "$(vbw_code_tree)" = "$3" ]; then
     printf 'nothing was committed since the last passing proof\n'

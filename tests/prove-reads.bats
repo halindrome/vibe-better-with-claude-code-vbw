@@ -154,6 +154,17 @@ open_fix() {
   jq -e '.runs["check:C1"].tree != null' "$STORE"
 }
 
+@test "R166: vbw fix done right after a passing proof reuses every unchanged check: nothing committed is vbw prove's cause alone" {
+  open_fix
+  git commit -q --allow-empty -m "chore(vbw): proof passed"
+  vbw_run fix "done" F1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^C1 unchanged since its pass \(' || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^C2 unchanged since its pass \(' || { echo "$output"; false; }
+  [[ "$output" != *"every candidate check runs"* ]] || { echo "$output"; false; }
+}
+
 @test "R166: vbw fix done runs its checks in clean copies" {
   open_fix
   change src/pay.txt
