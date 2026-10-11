@@ -154,7 +154,7 @@ part() { jq -cS "$1" .vbw/record.json; }
     and any(.checks[]; .id == "C3") and ((.requirements[] | select(.id == "R3")).rules | length) == 1' .vbw/record.json
 }
 
-@test "R116: vbw apply --add refuses a phase that exists, a requirement that already has a phase, and changes nothing" {
+@test "R116: vbw apply --add refuses a phase that exists and changes nothing; a requirement a started phase covers may get a new phase beside it (R157)" {
   big_repo
   prior 'R3 [auto] greet.sh prints HELLO, ANA! for --shout Ana'
   local before
@@ -162,10 +162,11 @@ part() { jq -cS "$1" .vbw/record.json; }
   run bash -c 'printf "%s" "{\"phases\": [{\"id\": \"P1\", \"title\": \"Shout\", \"reqs\": [\"R3\"]}], \"plans\": [{\"id\": \"P1.9\", \"phase\": \"P1\", \"title\": \"x\", \"reqs\": [\"R3\"], \"files\": [\"greet.sh\"], \"after\": []}], \"checks\": [], \"rules\": []}" | "$1" apply --add' _ "$VBW"
   [ "$status" -ne 0 ]
   [[ "$output" == *P1* ]] || { echo "$output"; false; }
-  run bash -c 'printf "%s" "{\"phases\": [{\"id\": \"P2\", \"title\": \"Again\", \"reqs\": [\"R2\"]}], \"plans\": [{\"id\": \"P2.1\", \"phase\": \"P2\", \"title\": \"x\", \"reqs\": [\"R2\"], \"files\": [\"src/x.txt\"], \"after\": []}], \"checks\": [], \"rules\": []}" | "$1" apply --add' _ "$VBW"
-  [ "$status" -ne 0 ]
-  [[ "$output" == *R2* || "$output" == *P2* ]] || { echo "$output"; false; }
   [ "$(cksum < .vbw/record.json)" = "$before" ]
+  # P1 has started (P1.1 is done): further work on R2 goes in a new phase beside it.
+  run bash -c 'printf "%s" "{\"phases\": [{\"id\": \"P2\", \"title\": \"Again\", \"reqs\": [\"R2\"]}], \"plans\": [{\"id\": \"P2.1\", \"phase\": \"P2\", \"title\": \"x\", \"reqs\": [\"R2\"], \"files\": [\"src/x.txt\"], \"after\": []}], \"checks\": [], \"rules\": []}" | "$1" apply --add' _ "$VBW"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  jq -e '[.phases[].id] == ["P1", "P2"] and ([.plans[] | select(.id == "P1.1")][0].status == "done")' .vbw/record.json
 }
 
 # add_refused DOC TEXT: vbw apply --add of DOC fails, names TEXT, and the record is unchanged.

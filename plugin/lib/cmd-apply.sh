@@ -72,8 +72,9 @@ apply_next() {
     "test_files must be"*) echo "give test_files as {\"run\": [argv naming {file} once], \"files\": [git pathspecs]}, or leave it out" ;;
     "apply needs a JSON object"*) echo "pipe one JSON object into vbw apply: {\"phases\": [], \"plans\": [], \"checks\": []}" ;;
     "apply needs phases"*) echo "give phases, plans and checks as arrays, and rules as [{req, text, check}] if present" ;;
-    *"is already a phase of this milestone"*) echo "give the new phase an unused id, or change the existing phase with a full apply" ;;
+    *"is already a phase"*) echo "give the new phase an unused id, or change the existing phase with a full apply" ;;
     *"is already a plan"* | *"is already a check"*) echo "give it an unused id, or change the existing one with vbw apply --patch" ;;
+    *"whose work has not started"*) echo "change that phase with a full apply (vbw apply); add a phase beside it only once its work has started" ;;
     *"is already covered by"* | *"belongs to milestone"*) echo "take that requirement out of the phases in the document; plan only requirements of this milestone that have no phase yet" ;;
     *"not a phase this --add brings"*) echo "set the plan's phase to one of the phases of this --add, or send the plan with vbw apply --patch" ;;
     *"not a requirement of the phases this --add brings"*) echo "set its req to a requirement of the new phases, or send it with vbw apply --patch" ;;
@@ -145,7 +146,14 @@ cmd_apply() {
     pdoc=$(printf '%s' "$doc" | jq -c '{phases, plans: (.plans // []), checks: (.checks // []), rules: (.rules // [])}')
     problem=$(record_read | jq -r --slurpfile f_p <(printf '%s' "$pdoc") "$FOREIGN_REQS_JQ"'$f_p[0] as $p | . as $r | .milestone.id as $m
       | ([.phases[] | select(.milestone == $m)]) as $ph | [$p.phases[].id] as $new | [$p.phases[].reqs[]] as $newreqs
-      | [($p.phases[] | select(.id as $i | any($ph[]; .id == $i)) | "\(.id) is already a phase of this milestone: --add takes new phases only"),
+      | [($p.phases[] | .id as $i | select(any($r.phases[]; .id == $i)) | "\($i) is already a phase\(if any($ph[]; .id == $i) then " of this milestone" else "" end): --add takes new phases only"),
+         # A new phase may sit beside a started phase that covers the same requirement (R157);
+         # before any work started, the existing phase is the one to change (R116).
+         ($p.phases[] | (.reqs // [])[] | . as $q
+           | ([$ph[] | select(any(.reqs[]; . == $q)) | . as $cp
+                | select((($cp.escalations // []) == []) and (([$r.plans[] | select(.phase == $cp.id and .status != "planned")]) | length) == 0)][0]) as $cover
+           | select($cover != null)
+           | "\($q) is already covered by \($cover.id), whose work has not started: change \($cover.id) with a full apply; a new phase beside it is for work that has started"),
          foreign_reqs($r; $m; $p; "add"; "--add")[],
          ($p.plans[] | select(.phase as $x | $new | index($x) | not) | "\(.id // "a plan") is for \(.phase // "no phase"), not a phase this --add brings"),
          ($p.plans[] | select(.id as $i | any(($r.plans // [])[]; .id == $i)) | "\(.id) is already a plan: --add takes new plans only"),
@@ -215,7 +223,7 @@ cmd_apply() {
     | [.plans[] | select(.status != "planned") | .phase] as $began
     | [$d.phases[] | . as $n | ([$old[] | select(.id == $n.id)][0]) as $o | select($o != null)
         | select(($o.escalations // []) != [] or any($began[]; . == $o.id))
-        | select(($o.goal // null) != ($n.goal // null) or ($o.criteria // null) != ($n.criteria // null))
+        | select((($n | has("goal")) and $o.goal != null and $o.goal != $n.goal) or (($n | has("criteria")) and $o.criteria != null and $o.criteria != $n.criteria))
         | "\($n.id) has work started: its goal and criteria stay as they are; add a new phase for the further work"]
     | .[0] // empty')
   [ -z "$problem" ] || apply_refuse "$problem"
@@ -290,7 +298,10 @@ cmd_apply() {
                   | (if $forced then $mode else $a.tier end) as $want
                   | ($locked and ($o.tier != null)) as $keep
                   | (if $keep then $o.tier else $want end) as $tier
-                  | {id, title, reqs, milestone: $m} + (with_entries(select(.key | IN("goal", "criteria"))))
+                  | {id, title, reqs, milestone: $m}
+                    # A started phase keeps its goal and criteria when the document leaves them out (R158).
+                    + (if $locked then ($o | with_entries(select(.key | IN("goal", "criteria")))) else {} end)
+                    + (with_entries(select(.key | IN("goal", "criteria"))))
                     + (if $keep then ($o | with_entries(select(.key == "proposed")))
                        elif $sub != null then {proposed: $sub} else {} end)
                     + {tier: $tier,

@@ -263,9 +263,13 @@ already has work: the document holds one new phase, for requirements that
 have no phase yet, with its plans, checks and rules, in the same shape as a
 full apply. The milestone's other phases, plans, checks and rules stay as
 they were, started or not. `vbw apply --add` refuses, and writes nothing, a
-phase whose id already exists, a requirement that a phase of any milestone
-already covers (`R1 is already covered by P1`), or a requirement of an earlier
-milestone (`R2 belongs to milestone M1`). These are the same refusals the full `vbw apply` makes. Every rule of a full apply holds, including the express file limit:
+phase whose id already exists in any milestone, a requirement that a phase of
+another milestone covers, a requirement that a phase of this milestone covers
+while that phase's work has not started (`R1 is already covered by P1, whose
+work has not started`: change P1 with a full apply instead), or a requirement
+of an earlier milestone (`R2 belongs to milestone M1`). Once a phase's work has
+started, a new phase for further work on a requirement it covers is accepted
+beside it (R157). The other refusals are the ones the full `vbw apply` makes. Every rule of a full apply holds, including the express file limit:
 in a repository tracking more than 30 files, an express phase over more than
 two files is refused (`its signals set the floor at standard`). The new phase
 changes the contract, so you approve it once.
@@ -335,7 +339,7 @@ Each refusal below ends with `Next: ` and the step in the right column
 | `vbw apply`: a document that is not a JSON object, or has no phases, plans and checks arrays | Send one JSON object with those arrays |
 | `vbw apply`: an unknown field, or a tier that is not `express`, `standard` or `deep` | Remove the field, or set a valid tier |
 | `vbw apply`: a phase or plan or check id already in use (`--add`) | Use an unused id, or change the existing one with `--patch` or a full apply |
-| `vbw apply`: a requirement of another milestone, or already covered by a phase | Take it out of the document |
+| `vbw apply`: a requirement of another milestone, or already covered by a phase | Take it out of the document; for `--add`, when the covering phase of this milestone has not started, change that phase with a full apply instead |
 | `vbw apply`: a started plan or phase changed or dropped | Put it back as the record has it (`vbw show plan ID`) and add a new plan or phase for further work |
 | `vbw apply`: a missing rule, or a rule naming no check of its requirement | Add one rule per condition, each with its check |
 | `vbw apply`: a tier below its floor, or an express phase with two plans | Raise the tier, or merge the plans |

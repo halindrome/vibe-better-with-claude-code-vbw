@@ -58,6 +58,14 @@ rest() { replan_part "{phase: (.phases[] | select(.id == \"$1\") | {id, title, r
   [[ "$output" == *"new phase"* ]] || { echo "$output"; false; }
 }
 
+@test "R158: a full apply that omits a started phase's goal and criteria keeps them as recorded" {
+  local before
+  before=$(replan_part '.phases[] | select(.id == "P1") | {goal, criteria}')
+  [ "$before" != '{"criteria":null,"goal":null}' ] || { echo "the fixture's P1 has no goal to keep"; false; }
+  replan_accepted full "$(replan_doc '(.phases[] | select(.id == "P1")) |= del(.goal, .criteria)')"
+  [ "$(replan_part '.phases[] | select(.id == "P1") | {goal, criteria}')" = "$before" ]
+}
+
 @test "R158: a phase with an escalation counts as started even when every plan is planned" {
   "$VBW" tier raise P2 deep "a test raised it" > /dev/null
   replan_refused full "$(replan_doc '(.phases[] | select(.id == "P2")).goal = "Customers get a receipt by mail"')"
