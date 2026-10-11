@@ -13944,7 +13944,7 @@
         "A proof that was cut short reuses nothing the next time (the existing unfinished marker), and the summary says so.",
         "docs/proof.md lists every 'run everything' cause with the message the user sees."
       ],
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 5 (49810 bytes)",
@@ -13954,7 +13954,15 @@
         "guarded: R12 (C11), R25 (C24), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "escalations": [
+        {
+          "at": "2026-10-11T08:39:56Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "Dev blocked P118.2: Blocked (DEVN-04): wiring causes into plugin/lib/cmd-prove.sh works for the run-everything part, but the saved commands fingerprint cannot be read back. proofreuse_save (plugin/lib/proofreuse.sh, outside this plan) stores its FORM argument with jq --arg, i.e. as a JSON string, while proofcauses_form_causes (P118.1) only compares an old form that is a JSON object, so 'command X changed', 'single-file form changed' and 'list of test files changed' never fire (C261 tests 1-3 fail). Needed: add plugin/lib/proofreuse.sh to this plan's files and store the form as an object (form: ($form | fromjson? // null)), plus check kernel tests that pin the store shape. cmd-prove.sh changes I made then reverted: source proofcauses.sh; causes=$(proofcauses_find \"$record\" \"$full\" \"$(vbw_head_tree)\") after proofreuse_plan, run everything when causes is non-empty; proofreuse_save form arg = \"$(proofcauses_form \"$record\")\"; prove_summary takes causes, one prints 'ran everything: X', several print 'ran everything, because:' then '  - X' lines."
+        }
+      ]
     }
   ],
   "plans": [
@@ -22176,14 +22184,15 @@
         "P117.3",
         "P118.1"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "Wire the causes into vbw prove (and the fix done selection): any cause runs every check, test file and command, and saves the commands fingerprint for the next proof",
         "One cause prints '  ran everything: <cause>'; several print '  ran everything, because:' and one '  - <cause>' line each",
         "Every summary prints 'checks: N ran, M reused' and 'test files: N ran, M reused'; every reused line names the proof it came from",
         "tests/prove-summary.bats for the wiring"
-      ]
+      ],
+      "note": "Blocked (DEVN-04): wiring causes into plugin/lib/cmd-prove.sh works for the run-everything part, but the saved commands fingerprint cannot be read back. proofreuse_save (plugin/lib/proofreuse.sh, outside this plan) stores its FORM argument with jq --arg, i.e. as a JSON string, while proofcauses_form_causes (P118.1) only compares an old form that is a JSON object, so 'command X changed', 'single-file form changed' and 'list of test files changed' never fire (C261 tests 1-3 fail). Needed: add plugin/lib/proofreuse.sh to this plan's files and store the form as an object (form: ($form | fromjson? // null)), plus check kernel tests that pin the store shape. cmd-prove.sh changes I made then reverted: source proofcauses.sh; causes=$(proofcauses_find \"$record\" \"$full\" \"$(vbw_head_tree)\") after proofreuse_plan, run everything when causes is non-empty; proofreuse_save form arg = \"$(proofcauses_form \"$record\")\"; prove_summary takes causes, one prints 'ran everything: X', several print 'ran everything, because:' then '  - X' lines."
     },
     {
       "id": "P118.3",
