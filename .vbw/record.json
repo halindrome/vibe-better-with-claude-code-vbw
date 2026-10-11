@@ -25126,6 +25126,11 @@
       "text": "Proofs skip a check or test file only when none of the files it actually loaded or read during its last passing run has changed (recorded at run time, never guessed from names); fix rounds, QA and shipping reuse those results; the one complete run of every test per release is the pre-push release run; a change VBW cannot attribute (commands, test setup, a file no recorded run read) runs everything and says why. Replaces D178's complete run at QA and shipping",
       "why": "owner, 2026-10-11: exact, no guessing and no shortcuts; fixes and QA prove in minutes; the complete run already happens before every push, so it adds no wait",
       "at": "2026-10-10T23:45:52Z"
+    },
+    {
+      "id": "D261",
+      "at": "2026-10-11T00:41:20Z",
+      "text": "Contract approved: 157 requirements, 257 checks, 353 plans (9d1498438f18)"
     }
   ],
   "commands": {
