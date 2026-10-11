@@ -63,9 +63,10 @@ twin_project() {
       | .todos = [range(1; 31) | {id: "T\(.)", text: ("Old idea \(.)" | p), status: "done"}]
       | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end' \
       .vbw/record.json > .vbw/runtime/fixture.json || exit 1
-    # The fixture is written as a project restored from git would hold it, not through vbw.
+    # The fixture is written as a project restored from git would hold it, not through vbw:
+    # no glance beside it either (a kernel write refreshes the glance; a restore has none).
     cat .vbw/runtime/fixture.json > .vbw/record.json
-    rm -f .vbw/runtime/fixture.json
+    rm -f .vbw/runtime/fixture.json .vbw/runtime/glance.json
     {
       printf '# Twin\n\n## Requirements\n\n'
       jq -r '.requirements[] | "- \(.id) [\(.proof)] \(.text)"' .vbw/record.json

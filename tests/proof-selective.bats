@@ -86,7 +86,8 @@ change() {
 decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null; }
 
 # line ID: the proof summary line of one check or command.
-line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
+# line NAME: NAME's result line of the summary (never the counts line "test files: N ran").
+line() { printf '%s\n' "$output" | grep -E "^ +$1 (pass|fail|timeout|skipped|waiting)( |:|$)" || true; }
 
 @test "R110: a commit that changes only a file two checks read runs those checks and reuses the rest, commands included" {
   change src/refund.txt

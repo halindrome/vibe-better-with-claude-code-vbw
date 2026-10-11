@@ -78,7 +78,8 @@ commit_change() {
   git add -- "$@" && git commit -q -m "change: $*"
 }
 
-line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
+# line NAME: NAME's result line of the summary (never the counts line "test files: N ran").
+line() { printf '%s\n' "$output" | grep -E "^ +$1 (pass|fail|timeout|skipped|waiting)( |:|$)" || true; }
 
 # test_ran, test_reused: the test command really ran, or did not run, since
 # the log was last emptied.

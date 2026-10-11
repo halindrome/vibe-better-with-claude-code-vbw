@@ -71,7 +71,8 @@ named_quick() {
   "$VBW" approve > /dev/null
 }
 
-line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
+# line NAME: NAME's result line of the summary (never the counts line "test files: N ran").
+line() { printf '%s\n' "$output" | grep -E "^ +$1 (pass|fail|timeout|skipped|waiting)( |:|$)" || true; }
 
 @test "R111: a project without a quick command runs its test command as before, and a proof that ran everything is full" {
   vbw_run prove
