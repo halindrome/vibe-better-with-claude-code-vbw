@@ -244,7 +244,8 @@ reason() {
   [[ "$output" == *'"reused":true'* ]]
   git add -A .vbw && git commit -q -m "chore(vbw): state"
   code=$(pr 'vbw_code_tree')
-  rec='{"checks":[{"id":"C1","run":["true"]}],"commands":{},"evidence":{"passed":true,"tree":"'"$code"'","head":"'"$tree"'"}}'
+  rec='{"requirements":[],"plans":[],"checks":[{"id":"C1","run":["true"]}],"commands":{},"evidence":{"passed":true,"tree":"'"$code"'","head":"'"$tree"'"}}'
+  rec=$(printf '%s' "$rec" | jq -c --arg c "$(pr 'contract_hash '"'$rec'")" '.evidence.contract = $c')
   run pr 'proofreuse_plan '"'$rec'"'; printf "%s\n" "$WHY_CHECKS"'
   [ "$output" = '{"C1":"proving again with nothing committed"}' ]
 }

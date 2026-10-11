@@ -37,11 +37,20 @@ proofreuse_marker() { printf '%s/prove.unfinished\n' "$VBW_RUNTIME"; }
 # (evidence.passed), the project's files have the fingerprint it recorded
 # (vbw_code_tree equals evidence.tree) and the committed code is the tree it
 # ran on (HEAD, the committed code's tree, equals evidence.head, when the
-# evidence carries one). It reads trees only, never a commit subject, so a
+# evidence carries one) and it was a proof of the contract now approved
+# (evidence.contract) with every project command as it last ran (the contract
+# holds the checks, the store's fingerprint holds the argv): a changed approved
+# command or check is a change, so only its own units re-run (D291). It reads trees only, never a commit subject, so a
 # record commit landing after other commits changes nothing (R175).
 proofreuse_proved() {
-  local tree ev_head
+  local tree ev_head store name fp
   printf '%s' "$1" | jq -e '.evidence.passed == true' > /dev/null 2>&1 || return 1
+  [ "$(printf '%s' "$1" | jq -r '.evidence.contract // empty')" = "$(contract_hash "$1")" ] || return 1
+  store=$(proofreuse_store_read)
+  while IFS= read -r -d '' name; do
+    fp=$(printf '%s' "$store" | jq -r --arg k "command:$name" '.runs[$k].fp // empty')
+    [ -z "$fp" ] || [ "$fp" = "$(proofreuse_command_fp "$1" "$name")" ] || return 1
+  done < <(printf '%s' "$1" | jq -j '(.commands // {}) | keys[] + "\u0000"')
   tree=$(printf '%s' "$1" | jq -r '.evidence.tree // empty')
   [ -n "$tree" ] && [ "$(vbw_code_tree 2> /dev/null)" = "$tree" ] || return 1
   ev_head=$(printf '%s' "$1" | jq -r '.evidence.head // empty')
