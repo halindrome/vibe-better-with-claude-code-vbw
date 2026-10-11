@@ -23349,7 +23349,7 @@
       "req": "R162",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Declined reasoning of F113 does not hold: plugin/lib/cmd-apply.sh apply_write_test_files (lines 107-108, added by 6e17611e, P117.2) calls vbw_die directly, bypassing apply_refuse and its catch-all: 'no .vbw/spec.md (run /vbw:init)' has a hint but no 'Next:' line, and 'cannot create a temporary file in $VBW_RUNTIME' has no next step at all. Both are refusals of vbw apply with test_files, so criterion 1 (every refusal ends with a next step) and criterion 4 (a new refusal without one cannot be added) are unmet; tests/refusal-next-step.bats covers neither and has no check that fails on a vbw_die in cmd-apply.sh or cmd-run.sh without a Next arm. Regression test: a test that greps cmd-apply.sh and cmd-run.sh for vbw_die calls outside apply_refuse/apply_internal and fails unless the message carries 'Next: ', plus a case sending test_files with no .vbw/spec.md and asserting the refusal ends with Next:. The three F113 paths themselves (cases in ef4aa06b) are closed: they exist and pass."
     },
     {
@@ -23357,7 +23357,7 @@
       "req": "R165",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Plan P112.1 promises a run-open marker that exists exactly while a run lease is open, outlives a record that becomes unreadable, and goes away when the run ends (plugin/lib/record.sh:72 record_open_marker). No test asserts the marker itself: grep for run-open finds only an allow-list entry in tests/big-record-scratch.bats and a hook-command sample in tests/standards-selftest.bats. tests/guard-fail-closed.bats never ends a run and then checks that guards go quiet again, and never checks the marker is absent before a run starts. A regression test should: run start then assert .vbw/runtime/run-open exists; corrupt the record and write nothing, assert it still exists; vbw run end then assert it is gone and a broken guard lets a call through; also assert no marker in a fresh project. Also note: P112.2 plan files list tests/hooks-guard.bats, but the commits put the tests in tests/guard-fail-closed.bats (not in the plan files)."
     }
   ],
@@ -25519,6 +25519,12 @@
       "text": "The cause 'nothing was committed since the last passing proof' belongs to vbw prove alone (a deliberate second proof); vbw fix done after that proof reuses what the reuse rule allows",
       "why": "a passing proof of the same code is exactly what fix done needs; honouring the cause re-ran the whole suite (33 min) after a fix that changed no code (F114, 2026-10-11)",
       "at": "2026-10-11T14:33:30Z"
+    },
+    {
+      "id": "D271",
+      "text": "R165's fail-closed guard tests live in tests/guard-fail-closed.bats (check C252), their own file; tests/hooks-guard.bats keeps the guards' ordinary answers. P112.2's file list named hooks-guard.bats before the file split",
+      "why": "one file per behaviour reads better than one file for every guard test; recorded so the plan-versus-commit comparison stops counting it as a deviation (F117, QA round 2)",
+      "at": "2026-10-11T15:12:17Z"
     }
   ],
   "commands": {
