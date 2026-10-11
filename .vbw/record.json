@@ -14993,7 +14993,7 @@
         "R174: one hermetic test per spec section (Requirements, Commands, Test files, Test results) shows an unsynced edit is refused, so \"every section\" is pinned, not only the new one.",
         "R174: docs/proof.md's approval section names the four sections compared and says that an unsynced spec cannot be approved."
       ],
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 2 (51432 bytes)",
@@ -15009,6 +15009,12 @@
           "from": "express",
           "to": "standard",
           "reason": "the kernel's floor for P124 rose to standard during the build: docs/proof.md grew with P123.3's documentation and the R43 check file changed in this milestone (a patch to P123.1 was refused until the tier matches the floor)"
+        },
+        {
+          "at": "2026-10-11T23:29:15Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "Dev blocked P124.1: Code and docs are done and committed (C280 passes; the refusal works). C279 stays red on tests 4 and 5 of tests/approve-whole-spec.bats: each approves the contract first, then edits the spec and calls refused(), whose last line asserts '! approved' (show contract first line is not '(approved)'). The record is unchanged by a spec edit, so its contract hash stays approved and that assertion cannot hold; the refusal output, exit code, no decision and no commit all pass before it. The protected test needs that final assertion dropped in those two cases (or the check made against a not-yet-approved contract)."
         }
       ]
     },
@@ -23438,7 +23444,7 @@
         "tests/proofreuse-rule.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "proofreuse.sh: one shared function, proofreuse_proved RECORD HEAD, that succeeds only when the record's last proof passed (evidence.passed true), the project's files have the fingerprint that proof recorded (vbw_code_tree equals evidence.tree) and the committed code is the tree it ran on (evidence.head equals HEAD, when the evidence carries a head). It reads trees only: no git log, no commit subject.",
         "proofreuse.sh: proofreuse_allowed RECORD [KIND] gets its 'proving again with nothing committed' reason from proofreuse_proved (KIND fix: the reason never applies, as D270 says for vbw fix done); the commit-subject test and the '.vbw is clean' test go.",
@@ -23504,14 +23510,15 @@
       "after": [
         "P123.3"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "cmd-approve.sh, approve_problems: the spec-versus-record comparison also compares the saved test results folders: the record's project.results (absent read as null) must equal the parsed spec's results (null when the spec has no '## Test results' section), same folders in the same order. The message stays 'spec.md and the record differ (vbw spec sync)'.",
         "The same function serves vbw next's contract-readiness answer (R171): confirm cmd-next.sh and next.jq keep no comparison of their own, so the Test results difference reaches the 'not ready' answer with 'vbw spec sync' as its step. Run tests/approve-whole-spec.bats and tests/next-contract-ready.bats green.",
         "docs/proof.md, section 'The contract and approval': say that vbw approve (and vbw next before it offers the approval question) first compares every section of .vbw/spec.md with the record: Requirements, Commands, Test files and Test results; a spec that was edited and not synced cannot be approved, and the refusal reads 'spec.md and the record differ (vbw spec sync)'. Section 'Saved test results': one sentence that the list is compared at approval like the other sections. tests/approve-whole-spec-docs.bats green.",
         "Run the approval, spec and docs test files (approve-*.bats, kernel-approval.bats, kernel-spec.bats, testfiles-spec.bats, l3-results.bats, proof-causes-docs, fix-reuse-docs, testfiles-docs) under /bin/bash 3.2 to see nothing else moved; vbw approve after vbw spec sync still approves or says the contract is already approved."
-      ]
+      ],
+      "note": "Code and docs are done and committed (C280 passes; the refusal works). C279 stays red on tests 4 and 5 of tests/approve-whole-spec.bats: each approves the contract first, then edits the spec and calls refused(), whose last line asserts '! approved' (show contract first line is not '(approved)'). The record is unchanged by a spec edit, so its contract hash stays approved and that assertion cannot hold; the refusal output, exit code, no decision and no commit all pass before it. The protected test needs that final assertion dropped in those two cases (or the check made against a not-yet-approved contract)."
     },
     {
       "id": "P125.1",
@@ -23569,7 +23576,7 @@
       "after": [
         "P125.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "cmd-run.sh, vbw run start: the lease gets `cost`, the opening session's figures from its side file (costs_figures with the lease's session id); null when there is no session id or no file.",
@@ -23593,7 +23600,7 @@
       "after": [
         "P125.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "cmd-show.sh: a `costs` view. Plain words: one line per milestone, the active one computed on demand and each shipped one from its frozen total ('M1 First milestone (active): $3.00, 1.5K tokens in, 150 out, 2 sessions seen'); then each run's share ('  qa-2026...: $0.25 (M1)'); whatever VBW did not see prints as 'unknown' with the remedy 'turn the VBW status line on: vbw statusline on', never a guess and never $0.00.",
@@ -23683,7 +23690,7 @@
       "after": [
         "P126.1"
       ],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "docs/guards.md: the rule, the reason text and where a run may write",
         "lead.md and dev.md: debugging and scratch files go inside the project, never /tmp; prompts stay within their word budget"
