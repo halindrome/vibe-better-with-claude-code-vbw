@@ -22,6 +22,8 @@
     "tests/approve-commit-fails.bats",
     "tests/approve-fingerprint.bats",
     "tests/approve-once.bats",
+    "tests/approve-whole-spec-docs.bats",
+    "tests/approve-whole-spec.bats",
     "tests/auto-gate-background.bats",
     "tests/baseline-cases.bats",
     "tests/baseline-results.bats",
@@ -54,6 +56,11 @@
     "tests/config-rigor-bash32.bats",
     "tests/contract-waves.bats",
     "tests/contributor-files.bats",
+    "tests/cost-docs.bats",
+    "tests/cost-milestones.bats",
+    "tests/cost-record.bats",
+    "tests/cost-runs.bats",
+    "tests/cost-sidefile.bats",
     "tests/doc-definition.bats",
     "tests/docs-workflows-count.bats",
     "tests/effort-profile.bats",
@@ -61,6 +68,9 @@
     "tests/fix-check-refusals.bats",
     "tests/fix-commit-qa.bats",
     "tests/fix-commit.bats",
+    "tests/fix-done-docs.bats",
+    "tests/fix-done-output.bats",
+    "tests/fix-done-testfiles.bats",
     "tests/fix-many-docs.bats",
     "tests/fix-many.bats",
     "tests/fix-regression-test.bats",
@@ -106,6 +116,7 @@
     "tests/kernel-safety.bats",
     "tests/kernel-sessions.bats",
     "tests/l3-approval.bats",
+    "tests/l3-costs.bats",
     "tests/l3-greeting.bats",
     "tests/l3-interview.bats",
     "tests/l3-legacy.bats",
@@ -170,6 +181,8 @@
     "tests/profile-lead-opus.bats",
     "tests/profile-levels.bats",
     "tests/proof-build-dirs.bats",
+    "tests/proof-cause-tree-docs.bats",
+    "tests/proof-cause-tree.bats",
     "tests/proof-causes-docs.bats",
     "tests/proof-causes.bats",
     "tests/proof-copy-docs.bats",
@@ -3487,6 +3500,154 @@
         "tests/no-bats-on-generated.bats"
       ],
       "fix": "F121"
+    },
+    {
+      "id": "C274",
+      "req": "R175",
+      "run": [
+        "bats",
+        "tests/proof-cause-tree.bats"
+      ],
+      "files": [
+        "tests/proof-cause-tree.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C275",
+      "req": "R175",
+      "run": [
+        "bats",
+        "tests/proof-cause-tree-docs.bats"
+      ],
+      "files": [
+        "tests/proof-cause-tree-docs.bats"
+      ]
+    },
+    {
+      "id": "C276",
+      "req": "R176",
+      "run": [
+        "bats",
+        "tests/fix-done-output.bats"
+      ],
+      "files": [
+        "tests/fix-done-output.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C277",
+      "req": "R176",
+      "run": [
+        "bats",
+        "tests/fix-done-testfiles.bats"
+      ],
+      "files": [
+        "tests/fix-done-testfiles.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C278",
+      "req": "R176",
+      "run": [
+        "bats",
+        "tests/fix-done-docs.bats"
+      ],
+      "files": [
+        "tests/fix-done-docs.bats"
+      ]
+    },
+    {
+      "id": "C279",
+      "req": "R174",
+      "run": [
+        "bats",
+        "tests/approve-whole-spec.bats"
+      ],
+      "files": [
+        "tests/approve-whole-spec.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C280",
+      "req": "R174",
+      "run": [
+        "bats",
+        "tests/approve-whole-spec-docs.bats"
+      ],
+      "files": [
+        "tests/approve-whole-spec-docs.bats"
+      ]
+    },
+    {
+      "id": "C281",
+      "req": "R173",
+      "run": [
+        "bats",
+        "tests/cost-sidefile.bats"
+      ],
+      "files": [
+        "tests/cost-sidefile.bats"
+      ]
+    },
+    {
+      "id": "C282",
+      "req": "R173",
+      "run": [
+        "bats",
+        "tests/cost-runs.bats"
+      ],
+      "files": [
+        "tests/cost-runs.bats"
+      ]
+    },
+    {
+      "id": "C283",
+      "req": "R173",
+      "run": [
+        "bats",
+        "tests/cost-milestones.bats"
+      ],
+      "files": [
+        "tests/cost-milestones.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C284",
+      "req": "R173",
+      "run": [
+        "bats",
+        "tests/cost-record.bats"
+      ],
+      "files": [
+        "tests/cost-record.bats"
+      ]
+    },
+    {
+      "id": "C285",
+      "req": "R173",
+      "run": [
+        "bats",
+        "tests/cost-docs.bats"
+      ],
+      "files": [
+        "tests/cost-docs.bats"
+      ]
+    },
+    {
+      "id": "C286",
+      "req": "R173",
+      "run": [
+        "bats",
+        "tests/l3-costs.bats"
+      ],
+      "files": [
+        "tests/l3-costs.bats"
+      ]
     }
   ],
   "project": {
@@ -9192,7 +9353,48 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M24",
-      "rules": []
+      "rules": [
+        {
+          "text": "each status line render in a VBW project writes the session's figures (session, usd, in, out, at) to .vbw/runtime/cost.SESSION.json by temporary name and rename, never the record; no cost field leaves it unchanged; an unwritable folder still renders; an unsafe session id writes nothing",
+          "check": "C281"
+        },
+        {
+          "text": "vbw run start keeps the opening figures on the lease; vbw run end appends the run with cost end minus start and commits it with the record",
+          "check": "C282"
+        },
+        {
+          "text": "a run with no figures at start or end, or no session id, is recorded with cost null, never 0",
+          "check": "C282"
+        },
+        {
+          "text": "the active milestone's total is the sum over sessions, from first figure without a baseline; vbw ship freezes it; vbw milestone start records baselines; no spend counts twice",
+          "check": "C283"
+        },
+        {
+          "text": "vbw show costs prints the totals, the sessions seen and each run's share in plain words; --json returns one object with milestones, runs and what is unknown, with the remedy, never a guess",
+          "check": "C283"
+        },
+        {
+          "text": "vbw show costs --ceiling USD: exit 0 under, exit 1 reached at or above, exit 1 cannot tell with no figure; a USD that is not a positive number is a usage error (exit 2) that changes nothing",
+          "check": "C283"
+        },
+        {
+          "text": "the validator accepts well-formed cost data (frozen total, unknown cost and lease.cost included) and refuses unknown keys, bad kinds, missing fields, bad times, negative or non-numeric figures and unknown milestone ids as corrupt; a record without cost data stays valid",
+          "check": "C284"
+        },
+        {
+          "text": "only kernel commands write cost data to the record: the status line script never names the record as a write target",
+          "check": "C284"
+        },
+        {
+          "text": "a real-session scenario with the status line on ends with vbw show costs --json reporting a known, non-zero cost for the run and the milestone, of the same order as /cost, saved under tools/l3-results",
+          "check": "C286"
+        },
+        {
+          "text": "docs/record.md documents the costs field, lease.cost and the schema; docs/statusline.md the side file; docs/costs.md the command, its JSON, the ceiling and unknown",
+          "check": "C285"
+        }
+      ]
     },
     {
       "id": "R174",
@@ -9200,7 +9402,32 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M24",
-      "rules": []
+      "rules": [
+        {
+          "text": "a Test results list that differs from the record (folder added, removed or renamed, section removed or added) is refused by vbw approve with exit 1 and both lines, and no decision, commit or consent is written",
+          "check": "C279"
+        },
+        {
+          "text": "the same unsynced edit makes vbw next say the contract is not ready and name vbw spec sync, never the approval question",
+          "check": "C279"
+        },
+        {
+          "text": "no section and no folders compare equal; the same folders in the same order compare equal; another order or a missing side does not",
+          "check": "C279"
+        },
+        {
+          "text": "after vbw spec sync the same vbw approve proceeds",
+          "check": "C279"
+        },
+        {
+          "text": "an unsynced edit in each section (Requirements, Commands, Test files, Test results) is refused, one test per section",
+          "check": "C279"
+        },
+        {
+          "text": "docs/proof.md names the four sections compared and says an unsynced spec cannot be approved",
+          "check": "C280"
+        }
+      ]
     },
     {
       "id": "R175",
@@ -9208,7 +9435,36 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M24",
-      "rules": []
+      "rules": [
+        {
+          "text": "the cause fires only when the last proof passed, the project's files equal evidence.tree and the committed code equals evidence.head; the commit subject is never read",
+          "check": "C274"
+        },
+        {
+          "text": "T116: a proof passes, code commits land, a record commit with the proof's subject lands last: the next vbw prove names no such cause and re-runs only the units that read the change",
+          "check": "C274"
+        },
+        {
+          "text": "a second vbw prove right after a passing proof with nothing changed names the cause and runs everything (D173)",
+          "check": "C274"
+        },
+        {
+          "text": "vbw fix done never names the cause and reuses every unchanged pass right after a passing proof (D270)",
+          "check": "C274"
+        },
+        {
+          "text": "the reuse rule's reason 'proving again with nothing committed' comes from the same tree comparison, and no code in plugin/lib reads the commit subject (the proof commit's words appear only where the commit message is written)",
+          "check": "C274"
+        },
+        {
+          "text": "with no evidence, or a last proof that did not pass, the cause never fires",
+          "check": "C274"
+        },
+        {
+          "text": "docs/proof.md's causes table and D173 paragraph state the rule as the trees of the last passing proof, never the commit subject",
+          "check": "C275"
+        }
+      ]
     },
     {
       "id": "R176",
@@ -9216,7 +9472,44 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M24",
-      "rules": []
+      "rules": [
+        {
+          "text": "one line per check that ran: id, status, seconds and 'ran: <reason>'; a failing one adds the last line of its output",
+          "check": "C276"
+        },
+        {
+          "text": "a reused check keeps its line with the time of the pass it reused",
+          "check": "C276"
+        },
+        {
+          "text": "one line per test file that ran, a passing one included; a failing one adds the last line of its output",
+          "check": "C277"
+        },
+        {
+          "text": "after the per-unit lines, 'checks: N ran, M reused' (N + M = candidate checks) and 'test files: N ran, M reused' print every time, as 0 ran, 0 reused when nothing was judged",
+          "check": "C276"
+        },
+        {
+          "text": "a fix of the test command judges every test file of the form by the one reuse rule: the failed file runs, a changed file runs, the rest are reused and counted",
+          "check": "C277"
+        },
+        {
+          "text": "every test file fix done runs is saved in the clone's run store and the next vbw prove shows it as reused (proof of <time>)",
+          "check": "C277"
+        },
+        {
+          "text": "a cause prints once as 'every candidate check runs: <cause>' and the count lines still print the true numbers",
+          "check": "C276"
+        },
+        {
+          "text": "closing outcomes and the exit code are unchanged: fixed, closed, broke finished work, still failing, non-zero when any fix could not close",
+          "check": "C276"
+        },
+        {
+          "text": "docs/proof.md's vbw fix done section shows the per-unit lines and the two count lines",
+          "check": "C278"
+        }
+      ]
     }
   ],
   "phases": [
@@ -14596,6 +14889,104 @@
         "qa_findings": 3,
         "escalations": 1
       }
+    },
+    {
+      "id": "P123",
+      "title": "Honest proof causes and fix output",
+      "reqs": [
+        "R175",
+        "R176"
+      ],
+      "milestone": "M24",
+      "goal": "A proof re-runs everything only when the project's code really is the code the last passing proof proved, and vbw fix done tells, line by line and in totals, what it ran and what it reused, for checks and test files alike.",
+      "criteria": [
+        "R175: the cause \"nothing was committed since the last passing proof\" fires only when the record's last proof passed (evidence.passed is true) and the project's files now have the same fingerprint (git tree id) that proof recorded (evidence.tree), and the committed code is the tree it ran on (evidence.head, when the evidence carries one). It never reads the subject line of the last commit.",
+        "R175: a test pins the failure scenario of T116: a proof passes, code commits land, then VBW's own record commit lands last (subject \"chore(vbw): proof passed\"), so the last commit looks like a proof commit; the next vbw prove names no such cause and reuses unit by unit (only the units whose read files changed run).",
+        "R175: a second vbw prove right after a passing proof with nothing changed (passed, both trees equal) still names the cause and runs everything (D173 kept).",
+        "R175: vbw fix done never names the cause (D270 kept; the existing test stays green).",
+        "R175: the reuse rule's sibling test \"proving again with nothing committed\" (proofreuse_allowed) uses the same tree comparison through one shared function; after the change no code in plugin/lib decides anything from a commit subject (a test greps plugin/lib for the literal \"chore(vbw): proof passed\" and finds it only where the commit message is written).",
+        "R175: with no evidence, or a last proof that did not pass, the cause never fires; the reuse rule alone decides.",
+        "R175: docs/proof.md's causes table and its D173 paragraph state the rule in these terms (trees of the last passing proof), not the commit subject.",
+        "R176: vbw fix done prints one line per check that ran: id, status (pass, fail or timeout), seconds and why it ran (\"ran: <reason>\", the proof summary's form); a failing one adds the last line of its output. The line per reused check keeps the time of the pass it reused.",
+        "R176: vbw fix done prints one line per test file it ran, in the same form, a passing one included (never silent); a failing one adds the last line of its output.",
+        "R176: after those lines, vbw fix done prints the proof summary's two count lines, \"checks: N ran, M reused\" and \"test files: N ran, M reused\"; for checks N + M equals the number of candidate checks (the checks of finished requirements); both lines print every time, as \"0 ran, 0 reused\" when fix done had nothing to judge.",
+        "R176: for a fix of the test command with an approved single-file form, fix done judges every test file of the form by the one reuse rule: a file that did not pass in the last proof runs, a file whose definition, own content or read list changed since its recorded pass runs, every other file is reused (counted, not run).",
+        "R176: every test file fix done runs is saved in the clone's run store (file:PATH with fingerprint, tree, status, time and read list), so the next vbw prove shows it as \"reused (proof of <time>)\" when nothing it read changed; a test runs fix done and then prove and checks the reuse line.",
+        "R176: when a cause (R168) runs every candidate, the cause line prints once (\"every candidate check runs: <cause>\"), and the count lines still print with the true numbers.",
+        "R176: closing outcomes and the exit code are unchanged: \"F<n> fixed: vbw prove decides\", \"F<n> closed: ...\", the broke-finished-work and still-failing refusals, non-zero exit when any fix could not close.",
+        "R176: docs/proof.md's vbw fix done section shows the output form with the per-unit lines and the two count lines."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 2",
+        "files: 7 (106689 bytes)",
+        "files: more than 2 in a repository tracking 866 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P124",
+      "title": "Approval compares the whole spec",
+      "reqs": [
+        "R174"
+      ],
+      "milestone": "M24",
+      "goal": "vbw approve, and vbw next's contract-readiness check, refuse to approve while any section of .vbw/spec.md differs from the record, the Test results list included, so an edited list that was not synced can never be approved as the record's list.",
+      "criteria": [
+        "R174: when the record's test results folders (project.results) differ from the spec's \"## Test results\" list (a folder added, removed or renamed, or the whole section removed or added), vbw approve exits 1, prints \"the contract is not ready for approval:\" and the line \"spec.md and the record differ (vbw spec sync)\"; no decision, no commit and no consent is written.",
+        "R174: the same unsynced edit makes vbw next report the contract is not ready and name vbw spec sync as the step, never offering the approval question (R171 behaviour, through the same shared function).",
+        "R174: no \"## Test results\" section and no folders recorded compare equal; the same folders in the same order compare equal; any other difference (a folder, the order, a missing side) does not. Order follows the spec, as vbw spec sync writes it.",
+        "R174: after vbw spec sync, the same vbw approve proceeds (approves, or says the contract is already approved).",
+        "R174: one hermetic test per spec section (Requirements, Commands, Test files, Test results) shows an unsynced edit is refused, so \"every section\" is pinned, not only the new one.",
+        "R174: docs/proof.md's approval section names the four sections compared and says that an unsynced spec cannot be approved."
+      ],
+      "tier": "express",
+      "reasons": [
+        "requirements: 1",
+        "files: 2 (51432 bytes)",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R24 (C23), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269)",
+        "tests: project test command"
+      ],
+      "predicted": "express"
+    },
+    {
+      "id": "P125",
+      "title": "Cost per run and per milestone",
+      "reqs": [
+        "R173"
+      ],
+      "milestone": "M24",
+      "goal": "VBW records in the project's record what each run and each milestone cost in tokens and dollars, from the figures Claude Code reports, and one kernel command reads the totals and judges them against a spending ceiling, saying \"unknown\" for whatever VBW did not see.",
+      "criteria": [
+        "R173: while the VBW status line is on, each render writes the session's latest figures Claude Code sent it (session id, total cost in dollars, total input tokens, total output tokens, the time) to one small file per session under .vbw/runtime, written to a temporary name and renamed (never half-written), and never to .vbw/record.json. When the folder cannot be written the status line still renders. The status line stays within its budget (tools/bench-hooks.sh: 60 ms) with the write in place.",
+        "R173: vbw run start stores the opening session's figures with the run (from that session's file, matched by the lease's session id); vbw run end computes the run's cost as the end figures minus the start figures (dollars, tokens in, tokens out) and appends the finished run (id, kind, session, started, ended, cost) to a list in the record, committed by the run's existing record commit. A run whose session had no figures at start or at end, or no session id, is recorded with cost unknown (null): never 0, never an estimate.",
+        "R173: a milestone's cost is everything spent in this project's sessions while it was open (D288): vbw milestone start records each known session's current figures as that milestone's baseline; a session first seen later counts from its first figure; vbw ship freezes the total (sum over sessions of last seen minus baseline) on the shipped milestone; the active milestone's total is computed on demand from the baselines and the current session files. No session's spend counts in two milestones.",
+        "R173: vbw show costs prints in plain words the active milestone's total (dollars, tokens in and out, how many sessions were seen), each shipped milestone's frozen total, and each run's cost as its share; vbw show costs --json returns the same as one object (milestones, runs, and which sessions or runs are unknown). What VBW did not see is printed and returned as unknown with the remedy (\"turn the VBW status line on: vbw statusline on\"), never a guess.",
+        "R173: vbw show costs --ceiling USD compares the active milestone's known spend with the ceiling: exit 0 and \"under\" with both figures when below; exit 1 and \"reached\" when at or above; exit 1 and \"cannot tell\" when no figure was ever seen for the milestone (fail closed: a night shift stops rather than spend blind). USD must be a positive number; anything else is a usage error (exit 2) that changes nothing.",
+        "R173: the record validator accepts the new data strictly (known shapes, dollars and tokens non-negative numbers or null, ISO-8601 UTC times, milestone ids that exist, no unknown keys) and refuses malformed data as corrupt; a record without any cost data stays valid; docs/record.md documents the field, its rules and what the schema number is.",
+        "R173: only kernel commands (vbw run start, vbw run end, vbw ship, vbw milestone start) write cost data to the record; the status line, hooks and panel never write it (the single-writer standards test still passes).",
+        "R173: hermetic tests cover: the side file written from fed status line JSON and unchanged by a render with no cost field; a run's cost from two figures; unknown when a figure is missing; milestone totals across two sessions and across a ship/start boundary; the three ceiling answers and the usage error; the validator's refusals.",
+        "R173: one real-session scenario (tools/l3-suite.sh, status line on) drives a VBW run and ends with vbw show costs --json reporting a known, non-zero cost for that run and for the milestone, of the same order as the /cost figure the suite already captures; its result is saved under tools/l3-results and the progress report names it.",
+        "R173: user docs describe the data and the command (docs/record.md for the field, docs/statusline.md for the side file, and the command in docs/proof.md or a new costs page), in current-behaviour terms."
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 15 (194036 bytes)",
+        "files: more than 2 in a repository tracking 866 files",
+        "risk: none",
+        "breaks: R41",
+        "guarded: R3 (C3), R4 (C4), R5 (C5), R8 (C8), R13 (C12), R14 (C13), R16 (C15), R18 (C18), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R29 (C26), R31 (C27), R33 (C29), R34 (C30), R35 (C31), R38 (C33, C34), R40 (C37), R42 (C38), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R51 (C52, C53, C66), R58 (C62, C63, C64, C67), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R72 (C116, C118), R75 (C101), R78 (C105, C106), R80 (C108), R81 (C109, C111, C112, C113), R99 (C155), R101 (C179), R102 (C158, C159), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R144 (C208, C209), R147 (C212, C215, C237), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -22946,6 +23337,231 @@
       "tasks": [
         "vbw_setup: gc.auto 0 and maintenance.auto false in the test gitconfig"
       ]
+    },
+    {
+      "id": "P123.1",
+      "phase": "P123",
+      "title": "The 'nothing was committed' cause comes from the proved trees, not the last commit's subject",
+      "reqs": [
+        "R175"
+      ],
+      "files": [
+        "plugin/lib/proofreuse.sh",
+        "plugin/lib/proofcauses.sh",
+        "plugin/lib/testfiles.sh",
+        "tests/proofcauses-lib.bats",
+        "tests/proofreuse-rule.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "proofreuse.sh: one shared function, proofreuse_proved RECORD HEAD, that succeeds only when the record's last proof passed (evidence.passed true), the project's files have the fingerprint that proof recorded (vbw_code_tree equals evidence.tree) and the committed code is the tree it ran on (evidence.head equals HEAD, when the evidence carries a head). It reads trees only: no git log, no commit subject.",
+        "proofreuse.sh: proofreuse_allowed RECORD [KIND] gets its 'proving again with nothing committed' reason from proofreuse_proved (KIND fix: the reason never applies, as D270 says for vbw fix done); the commit-subject test and the '.vbw is clean' test go.",
+        "proofcauses.sh: proofcauses_find names 'nothing was committed since the last passing proof' only through proofreuse_proved, for KIND prove; KIND fix still never names it. testfiles.sh: testfiles_plan hands the record (and the kind) to proofreuse_allowed, as proofreuse_plan does.",
+        "tests/proofcauses-lib.bats and tests/proofreuse-rule.bats: the two tests that pinned the old rule (an empty commit with the proof's subject) now pin the new one: their fixture gains a passing evidence of the committed tree (evidence.passed, evidence.tree, evidence.head), and the expected cause or reason stays. Then tests/proof-cause-tree.bats, both older files, fix-reuse, prove-reads and prove-summary all green under /bin/bash 3.2."
+      ]
+    },
+    {
+      "id": "P123.2",
+      "phase": "P123",
+      "title": "vbw fix done says what it ran, what it reused and the totals, for checks and test files",
+      "reqs": [
+        "R176"
+      ],
+      "files": [
+        "plugin/lib/cmd-fix.sh",
+        "plugin/lib/testfiles.sh"
+      ],
+      "after": [
+        "P123.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "cmd-fix.sh: for a fix of the test command with an approved single-file form, the test files are planned by testfiles_plan with kind fix (never the proof's 'nothing committed' cause): a file that did not pass in the last proof (evidence.test_files) runs, and the one reuse rule decides the rest (changed definition, own content or read list runs; everything else is reused and counted). Every file that runs is still saved in the clone's run store (testfiles_save) so the next vbw prove reuses it.",
+        "cmd-fix.sh: one line, at column 0, per check and per test file that ran, in the proof summary's wording: 'ID STATUS Ns ran: REASON' (a failing or timed-out one adds ' (exit N)' after the status and ': LAST LINE OF ITS OUTPUT' at the end); when a cause ran every candidate, the lines carry no 'ran:' part (the cause line explains, once). A reused check or test file keeps today's line 'ID unchanged since its pass (TIME)'. Checks first, then test files, each in a steady order.",
+        "cmd-fix.sh: after the per-unit lines and before the closing outcomes, print the two count lines every time: 'checks: N ran, M reused' (N + M = the candidate checks, the checks of finished requirements) and 'test files: N ran, M reused' ('0 ran, 0 reused' when nothing was judged, for example when every named fix was refused). The cause line 'every candidate check runs: CAUSE' prints once with the true counts beside it.",
+        "Closing outcomes and the exit code stay exactly as they are ('F1 fixed: vbw prove decides', 'F3 closed: its requirement goes back to the user for acceptance', 'broke finished work', 'these test files still do not pass', non-zero when any fix could not close). Run tests/fix-done-output.bats, tests/fix-done-testfiles.bats and the older fix done tests (fix-reuse, fix-many, prove-reads, prove-summary, reads-gates, qa-recheck-scope) green under /bin/bash 3.2."
+      ]
+    },
+    {
+      "id": "P123.3",
+      "phase": "P123",
+      "title": "docs/proof.md: the cause rule in tree terms and the vbw fix done output",
+      "reqs": [
+        "R175",
+        "R176"
+      ],
+      "files": [
+        "docs/proof.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "Causes table, row 'nothing was committed since the last passing proof': the 'What happened' column says the project's files are the tree the last passing proof recorded (`evidence.tree`) and the committed code is the tree it ran on (`evidence.head`), with the record's last proof passed; the message text stays. The D173 paragraph ('To run everything fresh ...') says VBW compares those trees and never the subject of the last commit, so a VBW record commit landing after code commits re-runs nothing it need not.",
+        "Section 'Reusing an unchanged pass' (vbw fix done): show the output form in a code block at column 0: one line per check and per test file that ran in the proof summary's wording (for example 'C1 pass 2s ran: src/pay.txt changed' and 'tests/t_a.sh pass 3s ran: last result failed'), the reused line 'C2 unchanged since its pass (2026-10-04T20:30:00Z)', the cause line 'every candidate check runs: this clone has no earlier recorded run', then 'checks: 1 ran, 1 reused' and 'test files: 1 ran, 0 reused', and say both count lines print every time ('0 ran, 0 reused' when nothing was judged) before the closing outcome lines.",
+        "Sections 'Fix items' and 'Closing several fixes': a fix of the test command with a single-file form judges every test file by the same rule (the failed file and any changed file run, the rest are reused and counted), and the files it runs are saved for the next proof to reuse. Run tests/proof-cause-tree-docs.bats, tests/fix-done-docs.bats and the older docs tests (proof-causes-docs, fix-reuse-docs, fix-many-docs) green."
+      ]
+    },
+    {
+      "id": "P124.1",
+      "phase": "P124",
+      "title": "Approval compares the Test results list too, in code and in docs/proof.md",
+      "reqs": [
+        "R174"
+      ],
+      "files": [
+        "plugin/lib/cmd-approve.sh",
+        "docs/proof.md"
+      ],
+      "after": [
+        "P123.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "cmd-approve.sh, approve_problems: the spec-versus-record comparison also compares the saved test results folders: the record's project.results (absent read as null) must equal the parsed spec's results (null when the spec has no '## Test results' section), same folders in the same order. The message stays 'spec.md and the record differ (vbw spec sync)'.",
+        "The same function serves vbw next's contract-readiness answer (R171): confirm cmd-next.sh and next.jq keep no comparison of their own, so the Test results difference reaches the 'not ready' answer with 'vbw spec sync' as its step. Run tests/approve-whole-spec.bats and tests/next-contract-ready.bats green.",
+        "docs/proof.md, section 'The contract and approval': say that vbw approve (and vbw next before it offers the approval question) first compares every section of .vbw/spec.md with the record: Requirements, Commands, Test files and Test results; a spec that was edited and not synced cannot be approved, and the refusal reads 'spec.md and the record differ (vbw spec sync)'. Section 'Saved test results': one sentence that the list is compared at approval like the other sections. tests/approve-whole-spec-docs.bats green.",
+        "Run the approval, spec and docs test files (approve-*.bats, kernel-approval.bats, kernel-spec.bats, testfiles-spec.bats, l3-results.bats, proof-causes-docs, fix-reuse-docs, testfiles-docs) under /bin/bash 3.2 to see nothing else moved; vbw approve after vbw spec sync still approves or says the contract is already approved."
+      ]
+    },
+    {
+      "id": "P125.1",
+      "phase": "P125",
+      "title": "The status line writes each session's cost figures to a small side file",
+      "reqs": [
+        "R173"
+      ],
+      "files": [
+        "plugin/scripts/vbw-statusline.sh",
+        "plugin/scripts/statusline.jq"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "statusline.jq: when Claude Code's JSON carries cost.total_cost_usd, print one extra last line holding the side-file record as compact JSON: {session: the session id, usd: cost.total_cost_usd, in: context_window.total_input_tokens, out: context_window.total_output_tokens, at: now as an ISO-8601 UTC time}; with no cost field, no extra line. One jq process still renders everything (the status line's 60 ms budget).",
+        "vbw-statusline.sh: in a VBW project (.vbw/record.json present) with a safe session id, split that last line off the render, write it to a temporary name beside the target (.vbw/runtime/cost.SESSION.json.$$) and rename it over .vbw/runtime/cost.SESSION.json, so the file is never half-written; a render without the cost line leaves the file as it was; when .vbw/runtime cannot be written the write is skipped quietly and the status line still prints; the record is never touched; the header comment no longer claims 'no temporary files'.",
+        "Measure with bash tools/bench-hooks.sh: the status line stays within 60 ms, plain and on the large record. Run tests/cost-sidefile.bats, tests/statusline.bats and tests/standards.bats green under /bin/bash 3.2."
+      ]
+    },
+    {
+      "id": "P125.2",
+      "phase": "P125",
+      "title": "Cost data in the record: its shape, the validator and one shared library",
+      "reqs": [
+        "R173"
+      ],
+      "files": [
+        "plugin/lib/record.jq",
+        "plugin/lib/costs.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "record.jq: an optional top-level `costs` object, {runs: [...], milestones: {...}}, no other keys. Each run: exactly {id, kind (plan, build, fix, qa or map), session (string or null), milestone (an id that exists), started, ended (ISO-8601 UTC), cost} where cost is null or exactly {usd, in, out}, each a non-negative number. Each milestones entry, keyed by an existing milestone id: exactly {baseline, total?}; baseline maps a session id to exactly {usd, in, out, at}; total, when present, is exactly {usd, in, out, sessions} with non-negative numbers. Every refusal names `costs`. Add `costs` to the known top-level keys; the schema stays 4 and a record without costs stays valid.",
+        "record.jq: the lease may carry `cost` on any run kind: null, or exactly {usd, in, out} non-negative numbers (the opening session's figures); add it to the lease's known fields.",
+        "costs.sh (new, sourced by the commands that need it, jq only): costs_figures SID (the session's side file .vbw/runtime/cost.SID.json as {usd, in, out}, or null when missing or malformed), costs_diff END START (END minus START per field, null when either is null), costs_sessions (every session id with a side file), costs_milestone_total RECORD M (the frozen total when the record has one; else the on-demand sum over the sessions of latest figures minus the milestone's baseline, a session without a baseline counted from its first figure, with the number of sessions counted; null when no session file exists), costs_remedy (the one remedy text: 'turn the VBW status line on: vbw statusline on'). Record-sized data reaches jq by pipe or --slurpfile, never --arg.",
+        "Run tests/cost-record.bats, tests/record.bats, tests/record-args-rule.bats and tests/standards.bats green under /bin/bash 3.2."
+      ]
+    },
+    {
+      "id": "P125.3",
+      "phase": "P125",
+      "title": "Runs, ship and milestone start write the cost data",
+      "reqs": [
+        "R173"
+      ],
+      "files": [
+        "plugin/lib/cmd-run.sh",
+        "plugin/lib/cmd-ship.sh",
+        "plugin/lib/cmd-milestone.sh"
+      ],
+      "after": [
+        "P125.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "cmd-run.sh, vbw run start: the lease gets `cost`, the opening session's figures from its side file (costs_figures with the lease's session id); null when there is no session id or no file.",
+        "cmd-run.sh, vbw run end: in the same record_update that releases the lease, append {id: the run's id, kind, session (null when none), milestone: the current milestone's id, started: the lease's started_at, ended: now, cost: end figures minus the opening figures, or null when either side is missing} to costs.runs, so the existing record commit ('chore(vbw): record after RUN') carries it. Never 0 in place of unknown, never an estimate.",
+        "cmd-ship.sh: in the ship's record_update, freeze costs.milestones[M].total for the shipped milestone (sum over the sessions of latest figures minus that milestone's baseline, with the sessions counted; a session without a baseline from its first figure); when no session file exists, no total is written (the milestone stays unknown).",
+        "cmd-milestone.sh, vbw milestone start: costs.milestones[NEW].baseline gets each known session's current figures with the time (every side file), so no session's spend counts in two milestones.",
+        "Run tests/cost-runs.bats green, the writing parts of tests/cost-milestones.bats (ship freeze, baselines), and the older run tests (glance-write, run-confirm, workflows-run-end, kernel-sessions, human-later) under /bin/bash 3.2."
+      ]
+    },
+    {
+      "id": "P125.4",
+      "phase": "P125",
+      "title": "vbw show costs: plain words, --json and --ceiling",
+      "reqs": [
+        "R173"
+      ],
+      "files": [
+        "plugin/lib/cmd-show.sh",
+        "plugin/bin/vbw"
+      ],
+      "after": [
+        "P125.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "cmd-show.sh: a `costs` view. Plain words: one line per milestone, the active one computed on demand and each shipped one from its frozen total ('M1 First milestone (active): $3.00, 1.5K tokens in, 150 out, 2 sessions seen'); then each run's share ('  qa-2026...: $0.25 (M1)'); whatever VBW did not see prints as 'unknown' with the remedy 'turn the VBW status line on: vbw statusline on', never a guess and never $0.00.",
+        "cmd-show.sh: `--json` returns one object: {milestones: [{id, title, status, usd, in, out, sessions}] (null figures and sessions 0 when unknown), runs: [{id, kind, milestone, session, started, ended, cost}], unknown: {runs: [ids whose cost is null], milestones: [ids with no figure seen]}, remedy}.",
+        "cmd-show.sh: `--ceiling USD`: USD must be a positive number, else a usage error (exit 2) that changes nothing. Compare the active milestone's known spend: below the ceiling prints 'under: $X spent of a $USD ceiling (Mn)' and exits 0; at or above prints 'reached: ...' and exits 1; no figure ever seen prints 'cannot tell: no figure was seen for Mn (turn the VBW status line on: vbw statusline on)' and exits 1 (fail closed).",
+        "bin/vbw: the usage lines list `show costs [--json | --ceiling USD]`. The read-only parts can be checked with a hand-edited record while P125.3 is still being built; with P125.3 built, tests/cost-milestones.bats, help-every-command.bats and kernel-show.bats are green under /bin/bash 3.2."
+      ]
+    },
+    {
+      "id": "P125.5",
+      "phase": "P125",
+      "title": "Real-session proof: the costs scenario in the L3 suite",
+      "reqs": [
+        "R173"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3.sh",
+        "tools/l3-results/costs.json"
+      ],
+      "after": [
+        "P125.1",
+        "P125.3",
+        "P125.4"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/l3.sh start: when L3_STATUSLINE=1 is set, the session's --settings also carries a statusLine that runs the working tree's plugin/scripts/vbw-statusline.sh (the user's own setting runs the installed plugin-cache copy, which is not the code under test); every other scenario keeps a real user's settings.",
+        "tools/l3-suite.sh: scenario_costs (added to ALL): the greet.sh fixture, status line on through that switch, drives one VBW run as a user would (/vbw:vibe up to a built and proved plan or at least one finished run), then reads vbw show costs --json. Facts: statusline_on, run_id, run_cost_usd, milestone_cost_usd, session_cost_usd (the /cost figure the suite already reads), unknown_runs. It passes when the run's and the milestone's costs are known and above zero, no run is unknown, and the milestone's cost is of the same order as /cost (ratio between 0.2 and 5).",
+        "Run `L3_JOBS=1 bash tools/l3-suite.sh costs` (a real Claude Code session, about $1-3), which saves tools/l3-results/costs.json; tests/l3-costs.bats and tests/l3-scenarios.bats green; name the result and what it did not cover in the progress report. If the real session cannot be started from this environment, block the plan with the exact command for the owner to run by hand."
+      ]
+    },
+    {
+      "id": "P125.6",
+      "phase": "P125",
+      "title": "User docs: the cost data, the side file and vbw show costs",
+      "reqs": [
+        "R173"
+      ],
+      "files": [
+        "docs/record.md",
+        "docs/statusline.md",
+        "docs/costs.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/record.md: a `costs` row in the field table (the shape: runs with id, kind, session, milestone, started, ended, cost or null; milestones with baseline per session and a frozen total once shipped; the rules: exact keys, non-negative numbers, ISO-8601 UTC times, existing milestone ids; the writers: vbw run start, vbw run end, vbw ship, vbw milestone start; the status line, hooks and panel never write it) and the lease's `lease.cost` (the opening session's figures or null); the sentence 'Added within schema 4: a record without it stays valid, so the schema stays 4'.",
+        "docs/statusline.md: a short section on the side file .vbw/runtime/cost.SESSION.json (its fields: session, usd, in, out, at; written on each render from Claude Code's figures to a temporary name and renamed, never the record; skipped quietly when the folder cannot be written) and who reads it (vbw run start and end, vbw show costs); the engineering list drops 'no temporary files' and says what is written instead; a link to docs/costs.md.",
+        "docs/costs.md (new page): what is measured and how (D287: in the record; D288: a milestone's cost is everything spent in the project's sessions while it was open, the runs' share inside it), the commands `vbw show costs`, `vbw show costs --json` (the object's fields) and `vbw show costs --ceiling USD` with the three answers (under, reached, cannot tell) and their exit codes, and what 'unknown' means with its remedy (`vbw statusline on`); current-behaviour terms only. Run tests/cost-docs.bats and the docs rules in tests/standards.bats green."
+      ]
     }
   ],
   "fixes": [
@@ -26207,6 +26823,18 @@
       "id": "D286",
       "at": "2026-10-11T21:02:38Z",
       "text": "Shipped M23 Express path: write and see the check fail before approval: 2 requirements proven or accepted"
+    },
+    {
+      "id": "D287",
+      "text": "Cost data lives in the record, per run and per milestone (.vbw/record.json, committed with the project)",
+      "why": "owner, 2026-10-11, the Architect's recommendation: the figures follow the project to any computer or copy, and the night shift's spending limit holds across sessions and computers; accepted that anyone with the project files sees the spend",
+      "at": "2026-10-11T21:52:13Z"
+    },
+    {
+      "id": "D288",
+      "text": "A milestone's cost is everything spent in this project's sessions while it was open, with the runs' share shown inside it; what VBW cannot see is reported as unknown, never guessed",
+      "why": "owner, 2026-10-11, the Architect's recommendation: the true bill and the right number for a spending limit; accepted that unrelated work in the same window counts and that VBW must see Claude Code's figure regularly (status line or panel on)",
+      "at": "2026-10-11T21:52:14Z"
     }
   ],
   "commands": {

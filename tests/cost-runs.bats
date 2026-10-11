@@ -1,0 +1,89 @@
+#!/usr/bin/env bats
+# R173 (docs/record.md, docs/costs.md): vbw run start stores the opening
+# session's figures with the run (lease.cost, from that session's side file,
+# matched by the lease's session id); vbw run end computes the run's cost as the
+# end figures minus the start figures and appends the finished run to
+# costs.runs in the record, committed by the run's record commit. A run whose
+# session had no figures at start or at end, or no session id, is recorded with
+# cost null: never 0, never an estimate. L1.
+
+load helper
+
+setup() {
+  vbw_setup
+  vbw_git_project
+  "$VBW" init > /dev/null
+  git add -A && git commit -q -m "chore(vbw): init"
+}
+
+teardown() { vbw_teardown; }
+
+# figures SID USD IN OUT: the session's side file, as the status line writes it.
+figures() {
+  mkdir -p .vbw/runtime
+  jq -nc --arg s "$1" --argjson u "$2" --argjson i "$3" --argjson o "$4" --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    '{session: $s, usd: $u, in: $i, out: $o, at: $at}' > ".vbw/runtime/cost.$1.json"
+}
+
+last_run() { jq -c '.costs.runs[-1]' .vbw/record.json; }
+
+@test "R173: the run keeps the opening figures; its cost is end minus start, appended and committed" {
+  figures s1 1.25 100 10
+  VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
+  jq -e '.lease.cost == {usd: 1.25, in: 100, out: 10}' .vbw/record.json || { jq .lease .vbw/record.json; false; }
+  local id
+  id=$(jq -r '.lease.run' .vbw/record.json)
+  figures s1 1.75 300 40
+  VBW_SESSION_ID=s1 vbw_run run end
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  last_run | jq -e --arg id "$id" '.id == $id and .kind == "plan" and .session == "s1" and .milestone == "M1"
+    and .cost == {usd: 0.5, in: 200, out: 30}
+    and (.started | test("^[0-9]{4}-")) and (.ended | test("^[0-9]{4}-"))
+    and (keys == ["cost", "ended", "id", "kind", "milestone", "session", "started"])' || { last_run; false; }
+  [ -z "$(git status --porcelain -- .vbw/record.json)" ] || { git status --porcelain; false; }
+  [ "$(git log -1 --format=%s)" = "chore(vbw): record after $id" ]
+  jq -e '.lease == null' .vbw/record.json
+}
+
+@test "R173: every finished run is appended in order, each with its own cost" {
+  figures s1 1 100 10
+  VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
+  figures s1 2 200 20
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" run start qa > /dev/null
+  figures s1 2.5 260 29
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  jq -e '.costs.runs | length == 2 and .[0].kind == "plan" and .[0].cost.usd == 1 and .[1].kind == "qa" and .[1].cost == {usd: 0.5, in: 60, out: 9}' .vbw/record.json || { jq .costs .vbw/record.json; false; }
+}
+
+@test "R173: no figures at the start: the run's cost is unknown (null), never 0" {
+  VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
+  jq -e '.lease.cost == null' .vbw/record.json
+  figures s1 1.75 300 40
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  last_run | jq -e '.session == "s1" and .cost == null' || { last_run; false; }
+}
+
+@test "R173: no figures at the end: the run's cost is unknown (null)" {
+  figures s1 1.25 100 10
+  VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
+  rm .vbw/runtime/cost.s1.json
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  last_run | jq -e '.session == "s1" and .cost == null' || { last_run; false; }
+}
+
+@test "R173: no session id: the run is recorded with session null and cost unknown" {
+  figures s1 1.25 100 10
+  "$VBW" run start plan > /dev/null
+  "$VBW" run end > /dev/null
+  last_run | jq -e '.session == null and .cost == null and .kind == "plan"' || { last_run; false; }
+}
+
+@test "R173: another session's figures never count for this run" {
+  figures s2 9 900 90
+  VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
+  jq -e '.lease.cost == null' .vbw/record.json
+  figures s2 9.5 950 95
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  last_run | jq -e '.cost == null' || { last_run; false; }
+}
