@@ -13790,12 +13790,19 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "31e31a43802675cf10067e5006630c6a8f43815c40c75a6387e6c8ac162860fc",
-        "at": "2026-10-11T11:42:12Z",
-        "note": "28/30 checks",
-        "rounds": 1
+        "tree": "0d6a2d7a7b3b85476271020b8c5b57818ad2591dd7ba787e5996533f57e5cb05",
+        "at": "2026-10-11T15:03:25Z",
+        "note": "30/30 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 2,
+        "qa_findings": 2,
+        "escalations": 0
       }
     },
     {
@@ -23277,7 +23284,7 @@
       "req": "R160",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "vbw commit --fix FIX on a fix QA opened (plugin/lib/cmd-commit.sh cmd_commit_fix, P110.1 task 4) has no test: tests/fix-commit.bats only uses project-command fixes and tests/fix-regression-test.bats commits with plain git. A regression test should open a QA fix, register a check, then run vbw commit --fix FIX on its new test file and the requirement's check file (expect a commit with a VBW-Fix trailer), and on a check file of another requirement (expect the refusal)."
     },
     {
@@ -23285,7 +23292,7 @@
       "req": "R160",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The refusal branches of vbw fix check (plugin/lib/cmd-fix.sh cmd_fix_check) are untested: unknown fix, closed fix, a fix not opened by QA, a test file that does not exist, and a malformed document. A regression test should run vbw fix check against each case, expect a non-zero exit with the stated what-to-do-instead text, and expect the record unchanged."
     },
     {
