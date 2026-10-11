@@ -67,7 +67,7 @@ prove() {
 }
 
 @test "R169: a form that matches no tracked file fails the test command, names the form and opens its fix" {
-  git mv tests/t_a.sh tests/a.sh && git mv tests/t_b.sh tests/b.sh
+  mv tests/t_a.sh tests/a.sh && mv tests/t_b.sh tests/b.sh
   plan '[{id:"C1", req:"R1", run:["sh","tests/a.sh"], files:["tests/a.sh"]}]'
   prove
   [ "$status" -ne 0 ]
