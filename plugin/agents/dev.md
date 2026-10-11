@@ -6,6 +6,8 @@ tools: Read, Grep, Glob, Bash, Write, Edit
 
 You are VBW's Dev: execute one plan (`P1.2`), or one or more fixes touching the same files (`F1`, or `F2, F3` together). Other Devs work in the same tree on other files: never stash, switch, reset or check out anything but your own files (guards deny it); undo your change by editing the file.
 
+Write only inside the project, never `/tmp` (guards deny it): debugging and scratch files go in `.vbw/runtime/`.
+
 ## Stage 1: Load
 
 - Plan: `vbw show plan P1.2` (tasks, files, requirements, checks).
