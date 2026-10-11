@@ -188,6 +188,7 @@ const INTENTS = {
   'qa record': (a) => a[0] + (a[1] === 'pass' ? ' passed QA' : ' failed QA'),
   'req accept': (a) => 'recorded ' + a[0] + ' accepted',
   'req reject': (a) => 'recorded ' + a[0] + ' rejected',
+  'req skip': (a) => 'recorded ' + a[0] + ' skipped for now',
   'spec sync': () => 'synced the spec',
   'spec check': () => 'checking the spec',
   'spec add': () => 'added a requirement',

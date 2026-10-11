@@ -33,7 +33,7 @@ commands() {
 }
 
 # Subcommands whose help must not do their work.
-SUBCOMMANDS='run start|run end|run confirm|todo add|todo sort|todo done|todo drop|spec sync|spec add|plan done|plan reset|fix done|fix retry|req accept|req reject|qa finding|qa record|milestone start|milestone rename|config set|auto on|auto off|tier raise|legacy remove|legacy choose|interview set|interview keep|suggest decline'
+SUBCOMMANDS='run start|run end|run confirm|todo add|todo sort|todo done|todo drop|spec sync|spec add|plan done|plan reset|fix done|fix retry|fix check|req accept|req reject|req skip|qa finding|qa record|milestone start|milestone rename|config set|auto on|auto off|tier raise|legacy remove|legacy choose|interview set|interview keep|suggest decline'
 
 # state: the bytes of every file under .vbw, git HEAD and the index.
 state() {

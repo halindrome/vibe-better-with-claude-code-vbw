@@ -54,6 +54,7 @@ const VBW = {
   'qa record': () => 'recording a QA verdict',
   'req accept': (a) => 'recording ' + (ids(a)[0] || 'a requirement') + ' accepted',
   'req reject': (a) => 'recording ' + (ids(a)[0] || 'a requirement') + ' rejected',
+  'req skip': (a) => 'recording ' + (ids(a)[0] || 'a requirement') + ' skipped for now',
   'spec sync': () => 'syncing the spec',
   'spec check': () => 'checking the spec',
   'spec add': () => 'adding a requirement',
