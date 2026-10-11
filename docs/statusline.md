@@ -58,6 +58,24 @@ the plugin cache, because the plugin's directory changes with every update and
 settings cannot use `${CLAUDE_PLUGIN_ROOT}`. It is the same setting VBW 1 used,
 so updating from VBW 1 switches the status line over with no change.
 
+## The cost side file
+
+On each render in a VBW project, the status line writes the session's figures
+from Claude Code to `.vbw/runtime/cost.SESSION.json`:
+
+```json
+{ "session": "s1", "usd": 1.4234, "in": 62000, "out": 1200, "at": "2026-10-11T21:52:15Z" }
+```
+
+`usd` is the session's total cost, `in` and `out` its total input and output
+tokens, `at` the time of the render. The file goes to a temporary name and is
+renamed, so a reader never sees half of it. A render with no cost figures leaves
+the file as it was, and a folder that cannot be written is skipped quietly: the
+status line still renders. It never writes `.vbw/record.json`.
+
+`vbw run start` and `vbw run end` read it to work out what a run cost, and
+`vbw show costs` reads it for the milestone totals (docs/costs.md).
+
 ## Engineering
 
 - One jq program renders all the lines from Claude Code's JSON, the record,
@@ -70,8 +88,9 @@ so updating from VBW 1 switches the status line over with no change.
   the record otherwise (docs/record.md). The glance holds only what the status
   line shows, so the 60 ms limit holds on a record over 2 MB. Any `vbw` command
   refreshes a missing or stale glance.
-- No network, no temporary files, no git process (the branch is read from
-  `.git/HEAD`, also in linked worktrees).
+- No network, no git process (the branch is read from
+  `.git/HEAD`, also in linked worktrees). The one thing it writes is the cost side
+  file below, never the record.
 - It reads stdin with a timeout (Claude Code may send nothing on the first
   render) and never fails: a bad render prints `[VBW] status line unavailable`.
 - `NO_COLOR` turns the colors off.
