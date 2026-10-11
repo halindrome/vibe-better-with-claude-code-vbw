@@ -13,38 +13,30 @@
 # with), mark (just before the run started: "written since"), wlist (written
 # files the reset set back) and written.json (path -> read list).
 
-# The old date, for touch -t (local time), and its epoch bound: a set-back time
-# is before 1 January 2001 whatever the time zone.
+# The old date, for touch -t (local time): a set-back time is a day before the
+# yardstick file (READS_OLD_DAY) that "read since" is compared with.
 READS_OLD=200001010000
 READS_OLD_DAY=200001020000
-READS_OLD_BOUND=978307200
-
-# reads_atime PATH: access time in epoch seconds (GNU stat first; BSD's
-# `stat -f` means file system status on Linux). Only a number, 0 when unreadable.
-reads_atime() {
-  local t
-  t=$(stat -c %X "$1" 2> /dev/null) || t=$(stat -f %a "$1" 2> /dev/null) || t=0
-  case "$t" in "" | *[!0-9]*) t=0 ;; esac
-  printf '%s\n' "$t"
-}
 
 # reads_probe DIR: the start-of-proof test of the file system DIR is on. A
-# file's access time is set back and must stay there; reading the file and
-# listing a folder must then move it forward.
+# file's access time is set back and must stay behind the yardstick; reading
+# the file and listing a folder must then move it past it. The same comparison
+# (find -anewer) the collector uses, so the probe proves what the proof relies on.
 reads_probe() {
-  local p ok=0 a
+  local p ok=0
   p=$(mktemp -d "$1/probe.XXXXXX" 2> /dev/null) || ok=1
   if [ "$ok" -eq 0 ]; then
-    printf 'x\n' > "$p/f" 2> /dev/null || ok=1
-    touch -a -t "$READS_OLD" "$p/f" "$p" 2> /dev/null || ok=1
-    a=$(reads_atime "$p/f")
-    [ "$ok" -ne 0 ] || [ "$a" -lt "$READS_OLD_BOUND" ] || ok=1
-    [ "$(reads_atime "$p")" -lt "$READS_OLD_BOUND" ] || ok=1
+    # "now", made before the probed file: a set-back that silently did nothing leaves the file newer than it.
+    : > "$p/now" 2> /dev/null || ok=1
+    mkdir "$p/d" 2> /dev/null && printf 'x\n' > "$p/d/f" 2> /dev/null || ok=1
+    : > "$p/ref" && touch -t "$READS_OLD_DAY" "$p/ref" 2> /dev/null || ok=1
+    touch -a -t "$READS_OLD" "$p/d/f" "$p/d" 2> /dev/null || ok=1
+    [ "$ok" -ne 0 ] || [ -z "$(find "$p/d/f" "$p/d" -maxdepth 0 -anewer "$p/now" 2> /dev/null)" ] || ok=1
     if [ "$ok" -eq 0 ]; then
-      cat "$p/f" > /dev/null 2>&1
-      [ "$(reads_atime "$p/f")" -ge "$READS_OLD_BOUND" ] || ok=1
-      ls "$p" > /dev/null 2>&1
-      [ "$(reads_atime "$p")" -ge "$READS_OLD_BOUND" ] || ok=1
+      cat "$p/d/f" > /dev/null 2>&1
+      [ -n "$(find "$p/d/f" -maxdepth 0 -anewer "$p/ref" 2> /dev/null)" ] || ok=1
+      ls "$p/d" > /dev/null 2>&1
+      [ -n "$(find "$p/d" -maxdepth 0 -anewer "$p/ref" 2> /dev/null)" ] || ok=1
     fi
   fi
   [ -z "${p:-}" ] || { chmod -R u+rwx "$p" 2> /dev/null; rm -rf "$p"; }

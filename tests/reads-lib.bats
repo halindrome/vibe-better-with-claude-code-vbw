@@ -44,8 +44,9 @@ lib() {
 
 @test "R166: the probe reports a file system that does not record reads (access time never moves)" {
   mkdir -p "$TEST_ROOT/stub"
-  printf '#!/bin/sh\necho 946684800\n' > "$TEST_ROOT/stub/stat"
-  chmod +x "$TEST_ROOT/stub/stat"
+  # A find that never sees an access time past the yardstick: nothing reads as read.
+  printf '#!/bin/sh\nexit 0\n' > "$TEST_ROOT/stub/find"
+  chmod +x "$TEST_ROOT/stub/find"
   run lib 'PATH="'"$TEST_ROOT"'/stub:$PATH"; reads_probe "$VBW_RUNTIME"'
   [ "$status" -ne 0 ]
   [[ "$output" == *'this file system does not record which files are read'* ]]
