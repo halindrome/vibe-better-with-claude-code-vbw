@@ -21919,15 +21919,14 @@
       "after": [
         "P116.3"
       ],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "vbw prove: run the file-system test first; plan every check and project command with the one rule; run what must run in the slot copies; save results and read lists in the store; when the file system cannot record reads, reuse nothing, save no read lists and print 'ran everything: this file system does not record which files are read'",
         "Evidence and summary: full is true only when nothing was reused; a reused line keeps 'reused (proof of <time it really ran>)'; a line that ran adds 'ran: <reason>'; 'checks: N ran, M reused' is printed on every proof, --full included",
         "vbw fix done: the candidates are the checks of every finished requirement; the one rule picks which run (a reused one prints '<id> unchanged since its pass (<time>)'); they run on clean copies through the same runner and their read lists are saved; a failing check fails the named fixes whose files serve it, or every named fix when it serves none",
         "Update the suite's tests that are not approved checks and pinned the old behaviour, and add tests/prove-reads.bats for the wiring"
-      ],
-      "note": "Code is committed (prove and fix done wired to the one rule; C253, C255 and tests/prove-reads.bats pass). Two approved checks cannot pass inside this plan's files. (1) C254 tests/reads-traced.bats test 1 (first_proof 2): C4 reads gen/out.txt built by C3, but with check_jobs 2 and slot copies they run in different copies, so C4 fails every time; the test needs C3/C4 out of the concurrency test or one copy. (2) C256 tests/reads-docs.bats test 16: plugin/hooks/common.jq consent_reason contains 'vbw/runs.json', which the test forbids in hooks. Also outside the plan: C171 tests/proof-quick.bats (5 tests) assume lint/test commands rerun after a change they do not read; tests/check-wait-patient.bats R94 kills the process just below vbw main, which is now the runner holder."
+      ]
     },
     {
       "id": "P116.5",
@@ -25159,6 +25158,11 @@
       "id": "D263",
       "at": "2026-10-11T00:58:19Z",
       "text": "Contract approved: 157 requirements, 257 checks, 353 plans (1e2fd2ac90a1)"
+    },
+    {
+      "id": "D264",
+      "at": "2026-10-11T08:02:06Z",
+      "text": "Contract approved: 157 requirements, 257 checks, 353 plans (19e7f07bd766)"
     }
   ],
   "commands": {
