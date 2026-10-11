@@ -9185,6 +9185,38 @@
           "check": "C272"
         }
       ]
+    },
+    {
+      "id": "R173",
+      "text": "VBW records what each run and each milestone cost in tokens and money, from the facts Claude Code provides, so the kernel can read the totals per run and per milestone and compare them with a ceiling",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M24",
+      "rules": []
+    },
+    {
+      "id": "R174",
+      "text": "vbw approve compares every section of the spec with the record, the Test results list included, so an edited list that was not synced cannot be approved as the record's list",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M24",
+      "rules": []
+    },
+    {
+      "id": "R175",
+      "text": "The proof's cause \"nothing was committed since the last passing proof\" fires only when the project's code is the code that proof proved (its recorded tree), never from the subject of the last commit, so a record commit landing after other commits does not re-run everything",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M24",
+      "rules": []
+    },
+    {
+      "id": "R176",
+      "text": "vbw fix done prints what it ran and what it reused, checks and test files, with the counts the proof summary prints, and saves the test files it ran in the run store so the next proof reuses them",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M24",
+      "rules": []
     }
   ],
   "phases": [
