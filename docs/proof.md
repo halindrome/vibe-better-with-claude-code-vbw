@@ -451,8 +451,10 @@ all of these hold; otherwise it is partial:
 - it ran the test command, and not the quick command, and
 - every project command ran (none was skipped as not approved).
 
-A proof that reused anything is never the release run's full proof: the
-release run (`bash tools/test.sh --release`) uses `vbw prove --full`.
+The release run of VBW itself (`bash tools/test.sh --release`) reuses a passing
+proof whether or not it reused results: a reused result is one the read lists
+still vouch for. It does not reuse a proof that skipped a command or let the
+quick command stand in.
 
 The summary ends with `proof: full` or `proof: partial`, and the evidence
 records the same in its `full` field (docs/record.md).
