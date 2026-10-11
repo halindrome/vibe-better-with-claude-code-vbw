@@ -20,6 +20,8 @@ setup() {
           {id:"P1.2", phase:"P1", title:"Receipt", reqs:["R1"], files:["b.js"], after:["P1.1"], status:"done"},
           {id:"P1.3", phase:"P1", title:"Email", reqs:["R1"], files:["c.js"], after:[], status:"done"}]' \
     .vbw/record.json > "$BASE"
+  # The spec says what the base record says: an unsynced spec is "not ready for approval" (R171), not a gate.
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] Pay\n- R2 [human] Trustworthy\n' > .vbw/spec.md
 }
 
 teardown() { vbw_teardown; }
