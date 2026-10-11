@@ -241,6 +241,7 @@
     "tests/suggestions.bats",
     "tests/test-shards.bats",
     "tests/testfiles-docs.bats",
+    "tests/testfiles-empty.bats",
     "tests/testfiles-form.bats",
     "tests/testfiles-run.bats",
     "tests/testfiles-vbw.bats",
@@ -3410,6 +3411,17 @@
         "tests/reads-listing.bats"
       ],
       "fix": "F115"
+    },
+    {
+      "id": "C268",
+      "req": "R169",
+      "run": [
+        "bats",
+        "tests/testfiles-empty.bats"
+      ],
+      "files": [
+        "tests/testfiles-empty.bats"
+      ]
     }
   ],
   "project": {
@@ -9010,6 +9022,27 @@
           "check": "C262"
         }
       ]
+    },
+    {
+      "id": "R169",
+      "text": "When the declared test-file form leaves no file to run as a unit of its own (every file it matches already runs as an approved check), the proof records no nameless unit, counts the test command as covered by those checks, and says so; when the form matches no tracked file at all, the proof fails the test command and names the form",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M22",
+      "rules": [
+        {
+          "text": "every file the form matches runs as an approved check: the proof passes the test command as covered, records no nameless unit, and the summary says why no test file ran",
+          "check": "C268"
+        },
+        {
+          "text": "the form matches no tracked file: the proof fails the test command, names the pathspecs and opens the fix",
+          "check": "C268"
+        },
+        {
+          "text": "a matching file added later runs as a unit of its own",
+          "check": "C268"
+        }
+      ]
     }
   ],
   "phases": [
@@ -14206,6 +14239,33 @@
         "qa_findings": 0,
         "escalations": 1
       }
+    },
+    {
+      "id": "P119",
+      "title": "The test-file form with nothing left to run",
+      "reqs": [
+        "R169"
+      ],
+      "milestone": "M22",
+      "goal": "A proof with a declared test-file form never records a nameless unit: when every matching file runs as an approved check the test command counts as covered and the summary says so; when the form matches no tracked file the test command fails and the form is named",
+      "criteria": [
+        "every matching file runs as a check: evidence.test_files is empty, commands.test passes with of_files and a tail naming the checks, the summary explains, no jq error, no file: unit in the store",
+        "the form matches no tracked file: commands.test fails with exit 1 and a tail naming the pathspecs, the summary says so, a fix for the test command opens",
+        "a matching file added later runs as a unit",
+        "docs/proof.md states both cases"
+      ],
+      "proposed": "standard",
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 3 (66952 bytes)",
+        "files: more than 2 in a repository tracking 861 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R25 (C24), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -22462,6 +22522,27 @@
         "Say that a content change to a file no recorded run read runs nothing, while an added or deleted file no run saw runs everything",
         "Show both counts every summary prints: 'checks: N ran, M reused' and 'test files: N ran, M reused'"
       ]
+    },
+    {
+      "id": "P119.1",
+      "phase": "P119",
+      "title": "Empty test-file list",
+      "reqs": [
+        "R169"
+      ],
+      "files": [
+        "plugin/lib/testfiles.sh",
+        "plugin/lib/cmd-prove.sh",
+        "docs/proof.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "tasks": [
+        "testfiles_finish: an empty TF_PATHS gives an empty order (printf with no arguments printed one NUL, making a unit named \"\")",
+        "testfiles_command: with no unit, pass with exit 0 and a tail saying every matching file runs as an approved check when the pathspecs match tracked files, else fail with exit 1 and a tail naming the pathspecs",
+        "prove_summary: when the test command stands for zero test files, print its tail as the reason",
+        "docs/proof.md Test files: both cases in one sentence each"
+      ]
     }
   ],
   "fixes": [
@@ -25546,6 +25627,11 @@
       "id": "D273",
       "at": "2026-10-11T15:51:17Z",
       "text": "Shipped M21 Projects that change: 13 requirements proven or accepted"
+    },
+    {
+      "id": "D274",
+      "at": "2026-10-11T17:00:23Z",
+      "text": "Contract approved: 158 requirements, 263 checks, 354 plans (b333134ac7f4)"
     }
   ],
   "commands": {
