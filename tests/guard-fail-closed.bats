@@ -55,15 +55,14 @@ break_guard() {
 }
 
 # hook TOOL INPUT_JSON [PATH]: the copy's hooks.json command for TOOL, run as
-# Claude Code runs it, with PATH as given (default: this PATH). Sets CODE, OUT,
-# ERR and SECS (wall-clock seconds).
+# Claude Code runs it, with PATH as given (default: this PATH). Sets CODE, OUT
+# and ERR. The time limit is CPU time (ulimit -t), so no wall clock is measured
+# here: a stopped guard shows as a blocked call, however loaded the machine is.
 hook() {
-  local cmd start
+  local cmd
   cmd=$(jq -r --arg t "$1" '[.hooks.PreToolUse[] | select((.matcher // "") as $m | $t | test("^(" + $m + ")$"))][0].hooks[0].command' "$COPY/hooks/hooks.json")
   CODE=0
-  start=$(date +%s)
   OUT=$(printf '%s' "$2" | env PATH="${3:-$PATH}" CLAUDE_PLUGIN_ROOT="$COPY" CLAUDE_PROJECT_DIR="${HOOK_DIR:-$PROJECT}" sh -c "$cmd" 2> "$TEST_ROOT/err") || CODE=$?
-  SECS=$(($(date +%s) - start))
   ERR=$(cat "$TEST_ROOT/err")
 }
 
@@ -149,10 +148,8 @@ nojq() {
   break_guard hang
   hook Bash "$(bash_in vbw:dev)"
   blocked
-  [ "$SECS" -le 30 ] || { echo "the hang lasted $SECS s"; false; }
   hook Write "$(write_in)"
   blocked
-  [ "$SECS" -le 30 ] || { echo "the hang lasted $SECS s"; false; }
 }
 
 @test "R165: during a run a record that cannot be parsed blocks the action when the guard must read it" {

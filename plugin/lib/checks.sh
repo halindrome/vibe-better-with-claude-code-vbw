@@ -95,9 +95,12 @@ checks_exec() {
 }
 
 # checks_result OUTFILE TIMEOUT EXPECT_EXIT [OUTPUT_REGEX]: the result object.
-# A run that lasted its whole timeout and failed was stopped by it.
+# A run that lasted its whole timeout and failed was stopped by it. A run that
+# left no output file (its wrapper died) reads as empty output.
 checks_result() {
-  jq -n --rawfile out "$1" --argjson code "$CHECK_CODE" --argjson secs "$CHECK_SECONDS" \
+  local out="$1"
+  [ -f "$out" ] || out=/dev/null
+  jq -n --rawfile out "$out" --argjson code "$CHECK_CODE" --argjson secs "$CHECK_SECONDS" \
     --argjson t "$2" --argjson want "$3" --arg re "${4:-}" '
     ($out | split("\n") | map(select(length > 0)) | .[-20:] | join("\n") | .[-2000:]) as $tail
     | if $code != 0 and $secs >= $t then {status: "timeout", exit: null, seconds: $secs, tail: $tail}
@@ -309,6 +312,9 @@ checks_run_units() {
     n=$((n + 1))
     names+=("$name")
     (
+      # The unit's own diagnostics go to its log, never to the proof's output: a
+      # runner that outlives its slot (killed, its children still running) prints nowhere.
+      exec 2> "$CHECK_OUT/$n.err"
       vbw_guard_reset
       res=$(checks_unit_run "$unit" "$slot") || exit 1
       printf '%s\n' "$res" > "$CHECK_OUT/$n.res.tmp" && mv "$CHECK_OUT/$n.res.tmp" "$CHECK_OUT/$n.res"
@@ -349,7 +355,8 @@ checks_run_all() {
       all=$(printf '%s' "$all" | jq -c --arg id "$id" '. + {($id): {status: "waiting", exit: null, seconds: 0,
         tail: "not run: a check a fix added waits for the user'"'"'s approval"}}')
     else
-      units=$(printf '%s' "$units" | jq -c --argjson u "$(checks_unit "$record" "$id")" '. + [$u]')
+      unit=$(checks_unit "$record" "$id")
+      units=$(printf '%s' "$units" | jq -c --argjson u "$unit" '. + [$u]')
     fi
   done
   res=$(checks_run_units "$units")
