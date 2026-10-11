@@ -26125,6 +26125,11 @@
       "text": "The suite's nested bats runs stay: a dozen tests start the real bats on an existing file of the suite with --filter, and standards-selftest.bats starts it on standards.bats; they have passed on Linux and macOS in every CI run. What failed in 2.0.32 was a real bats run over a bats file the test had just written (tests/helper-quiet-git.bats, cause not proven); tests/no-bats-on-generated.bats keeps any test from writing a bats file and also starting the real bats. The cause of the one macOS teardown failure (Directory not empty on .git/objects) is likewise not proven; the helper turns off gc and maintenance as the candidate removal",
       "why": "QA findings F121 and F122, 2026-10-11: the finding overstated the nested runs (they are the proven pattern) and rightly asked that the unproven cause be stated as unproven",
       "at": "2026-10-11T20:17:26Z"
+    },
+    {
+      "id": "D284",
+      "at": "2026-10-11T20:20:02Z",
+      "text": "Contract approved: 161 requirements, 268 checks, 358 plans (9f18c5fc7176)"
     }
   ],
   "commands": {
