@@ -22008,7 +22008,7 @@
       "after": [
         "P116.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tests/release-reads.bats: a real vbw prove that reused results is recorded as not full, and tools/test.sh --release then runs everything (a scratch repository, as in tests/release-reuse.bats)",
@@ -22084,7 +22084,7 @@
         "P116.4",
         "P117.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "testfiles.sh: the test files are the committed files the declared pathspecs match (git ls-files -z), minus every file an approved check's run names, so no test file runs twice in one proof (D179)",
