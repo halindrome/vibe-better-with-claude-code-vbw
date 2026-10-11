@@ -19,6 +19,10 @@ unset CLAUDE_SESSION_ID CLAUDE_CODE_SESSION_ID CLAUDE_PLUGIN_ROOT CLAUDE_PLUGIN_
 vbw_setup() {
   TEST_ROOT="$(mktemp -d)"
   export TEST_ROOT
+  # Leave the repository first: a git command run from inside it, even one that
+  # reads nothing of the project (git config --global), still finds and opens the
+  # repository, and a proof then counts the test as reading the project through git.
+  cd "$TEST_ROOT" || return 1
   export HOME="$TEST_ROOT/home"
   export CLAUDE_CONFIG_DIR="$HOME/.claude"
   export CLAUDE_PLUGIN_DATA="$TEST_ROOT/plugin-data"

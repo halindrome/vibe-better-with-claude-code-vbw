@@ -684,7 +684,11 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
   changed.
 - A check that only looks whether a file exists, or at its size, without
   opening it, does not put that file on its read list.
-- Reads through git always run again.
+- Reads through git always run again. Any git command whose working directory
+  is inside the project counts, even one that reads nothing of the project
+  (`git config --global` run from the project folder): git opens the
+  repository before it does anything else. A test suite that runs such
+  commands from another folder keeps its results reusable.
 
 To run everything fresh, use `vbw prove --full`, or prove again with
 nothing committed since a passing proof (a second `vbw prove` is a deliberate re-run).
