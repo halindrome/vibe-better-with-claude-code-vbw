@@ -9,3 +9,10 @@ load helper
   run vbw_teardown
   [ "$status" -eq 0 ]
 }
+
+@test "R172: the helper turns off background git work, so teardown never races a detached gc or maintenance" {
+  vbw_setup
+  [ "$(git config --global --get gc.auto)" = 0 ]
+  [ "$(git config --global --get maintenance.auto)" = false ]
+  vbw_teardown
+}

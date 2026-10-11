@@ -82,6 +82,9 @@
     "tests/guard-protected.bats",
     "tests/guard-reads-approval.bats",
     "tests/help-every-command.bats",
+    "tests/helper-quiet-git.bats",
+    "tests/helper.bash",
+    "tests/helper.bats",
     "tests/helpers/run-workflow-all.js",
     "tests/helpers/run-workflow.js",
     "tests/hook-answers.bats",
@@ -122,6 +125,7 @@
     "tests/legacy-review-linux.bats",
     "tests/legacy-review.bats",
     "tests/next-blocked.bats",
+    "tests/next-contract-ready.bats",
     "tests/next-phase.bats",
     "tests/next-table.bats",
     "tests/panel-compat.bats",
@@ -3435,6 +3439,40 @@
       "files": [
         "tests/release-reuse-partial.bats",
         "tests/release-reuse-helper.bash"
+      ]
+    },
+    {
+      "id": "C270",
+      "req": "R171",
+      "run": [
+        "bats",
+        "tests/next-contract-ready.bats"
+      ],
+      "files": [
+        "tests/next-contract-ready.bats"
+      ]
+    },
+    {
+      "id": "C271",
+      "req": "R172",
+      "run": [
+        "bats",
+        "tests/helper-quiet-git.bats"
+      ],
+      "files": [
+        "tests/helper-quiet-git.bats",
+        "tests/helper.bash"
+      ]
+    },
+    {
+      "id": "C272",
+      "req": "R172",
+      "run": [
+        "bats",
+        "tests/helper.bats"
+      ],
+      "files": [
+        "tests/helper.bats"
       ]
     }
   ],
@@ -9083,6 +9121,52 @@
           "check": "C269"
         }
       ]
+    },
+    {
+      "id": "R171",
+      "text": "While the contract cannot be approved yet (a check file is missing, the spec and the record differ), vbw next does not offer the approval question: it says the contract is not ready, names each problem and the step that fixes it, so the user is never asked to approve a contract that approval would refuse",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M23",
+      "rules": [
+        {
+          "text": "a check file that does not exist yet gives no approval question: action contract, not gated, the problem and the next step named",
+          "check": "C270"
+        },
+        {
+          "text": "a spec edited and not synced gives no approval question and names vbw spec sync",
+          "check": "C270"
+        },
+        {
+          "text": "several problems are all listed",
+          "check": "C270"
+        },
+        {
+          "text": "once every problem is fixed the approval question comes as before, and an approved contract is not examined again",
+          "check": "C270"
+        },
+        {
+          "text": "vbw approve still refuses an unready contract",
+          "check": "C270"
+        }
+      ]
+    },
+    {
+      "id": "R172",
+      "text": "The test helper leaves the repository before its git calls and turns off background git work (garbage collection, maintenance), and the test that checks this runs the helper in a plain shell, never a bats run inside a bats run, so the suite gives the same result on macOS bash 3.2 and on Linux bash 5",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M23",
+      "rules": [
+        {
+          "text": "a helper that reads the repository it runs from is seen and fails the check, and the current helper passes it, run in a plain shell",
+          "check": "C271"
+        },
+        {
+          "text": "the helper turns off gc and maintenance in the test gitconfig",
+          "check": "C272"
+        }
+      ]
     }
   ],
   "phases": [
@@ -14363,6 +14447,58 @@
         "qa_findings": 0,
         "escalations": 0
       }
+    },
+    {
+      "id": "P121",
+      "title": "No approval question for an unready contract",
+      "reqs": [
+        "R171"
+      ],
+      "milestone": "M23",
+      "goal": "vbw next never offers the approval question while approval would refuse the contract: it answers contract, names each problem and the step that fixes it",
+      "criteria": [
+        "a missing check file: action contract, not gated, the file and the next step named",
+        "a spec edited and not synced: the sync step named; several problems all listed",
+        "once fixed, the approval question as before; an approved contract is not examined again",
+        "docs/next.md and the router state the new row and step"
+      ],
+      "proposed": "standard",
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 4 (36978 bytes)",
+        "files: more than 2 in a repository tracking 864 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R13 (C12), R14 (C13), R22 (C19), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R35 (C31), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R65 (C86, C87, C88, C89, C90), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R98 (C154), R100 (C156), R102 (C158, C159), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R121 (C187, C188), R122 (C189), R123 (C190, C191), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R145 (C210), R149 (C217, C218, C219, C220, C221, C222), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P122",
+      "title": "Helper tests that agree on Linux and macOS",
+      "reqs": [
+        "R172"
+      ],
+      "milestone": "M23",
+      "goal": "The helper tests give the same result on Linux bash 5 and macOS bash 3.2: no nested bats run, the helper opens no repository and starts no background git work",
+      "criteria": [
+        "the helper check runs the helper in a plain shell, traces git, and fails on a helper that reads the repository",
+        "the helper turns off gc and maintenance in the test gitconfig",
+        "docs/proof.md still states that a git command inside the project counts"
+      ],
+      "proposed": "standard",
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 1 (3709 bytes)",
+        "risk: none",
+        "breaks: none",
+        "tests: project test command",
+        "raised by the Architect"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -22675,6 +22811,44 @@
       "tasks": [
         "the release-run sentence in each document states the new rule"
       ]
+    },
+    {
+      "id": "P121.1",
+      "phase": "P121",
+      "title": "The contract row of vbw next",
+      "reqs": [
+        "R171"
+      ],
+      "files": [
+        "plugin/lib/cmd-next.sh",
+        "plugin/lib/next.jq",
+        "plugin/skills/vibe/SKILL.md",
+        "docs/next.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "tasks": [
+        "cmd-next.sh: compute the approval problems (approve_problems) when the contract is not approved and pass them to next.jq",
+        "next.jq: row 3a before the approval row: action contract, not gated, instruction naming each problem and its step, detail.problems",
+        "router: one step for contract, words kept within the budget",
+        "docs/next.md: row 3a"
+      ]
+    },
+    {
+      "id": "P122.1",
+      "phase": "P122",
+      "title": "Helper",
+      "reqs": [
+        "R172"
+      ],
+      "files": [
+        "tests/helper.bash"
+      ],
+      "after": [],
+      "status": "planned",
+      "tasks": [
+        "vbw_setup: gc.auto 0 and maintenance.auto false in the test gitconfig"
+      ]
     }
   ],
   "fixes": [
@@ -25853,6 +26027,11 @@
       "text": "T82 (prebuilt test template) moves down to the tooling items and T74 (mutation check of a plan's own tests) moves up, within D279",
       "why": "owner's point, 2026-10-11: the release is much faster; a normal proof now runs few test files, so the per-test setup saving of T82 is small, while QA rounds finding weak tests are what is left to wait for",
       "at": "2026-10-11T19:24:13Z"
+    },
+    {
+      "id": "D281",
+      "at": "2026-10-11T19:31:17Z",
+      "text": "Contract approved: 161 requirements, 267 checks, 358 plans (8fe8bb22a0a8)"
     }
   ],
   "commands": {
