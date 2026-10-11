@@ -10,7 +10,10 @@ load helper
   [ "$status" -eq 0 ]
 }
 
-@test "R172: the helper turns off background git work, so teardown never races a detached gc or maintenance" {
+# The one macOS teardown failure seen in CI ("rm: Directory not empty" on .git/objects, 2026-10-11) was
+# not reproduced and its cause is not proven; a detached gc or maintenance after a commit is the
+# candidate, and this setting removes it. If the failure returns, capture ps in teardown.
+@test "R172: the helper turns off background git work (gc and maintenance) in the test gitconfig" {
   vbw_setup
   [ "$(git config --global --get gc.auto)" = 0 ]
   [ "$(git config --global --get maintenance.auto)" = false ]
