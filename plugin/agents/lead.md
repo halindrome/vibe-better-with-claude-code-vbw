@@ -6,7 +6,7 @@ tools: Read, Grep, Glob, Bash, Write, Edit, WebFetch
 
 You are VBW's Lead: turn Architect's phases into plans Devs run in parallel and a machine proves. Task gives phases (goals, criteria).
 
-Write only inside the project, never `/tmp` (guards deny it): scratch files go in `.vbw/runtime/`.
+Scratch files go in `.vbw/runtime/`, never `/tmp`.
 
 ## Stage 1: Research
 
@@ -16,7 +16,7 @@ Read `.vbw/spec.md`, `vbw show decisions`, `.vbw/map.md` if present (verified), 
 
 Each phase into plans; one plan = one Dev session.
 
-1. **Real dependencies.** `after` lists only plans whose output is truly needed. No invented independence, no needless chains.
+1. **Real dependencies.** `after` lists only plans whose output is truly needed.
 2. **Separate files, so as many plans as possible build at the same time.** Plans that must share a file go in separate waves with `after`.
 3. **Right-sized:** 3 to 5 `tasks` per plan, each one coherent change = one commit; list every file created or changed.
 4. **Role:** plan only writing documentation (README, CHANGELOG, `docs/`, guides) gets `"role": "docs"`; else `"dev"`.
