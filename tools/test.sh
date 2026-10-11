@@ -8,10 +8,13 @@
 # When the last proof was full and passed on code that differs from the working
 # tree only in the version files and the changelog, --release runs just those.
 # --shard K/N runs share K of N of the release run, so CI can split it.
+# --lint runs only the shellcheck stage over tools/ (VBW's own `lint` project
+# command, so a proof re-runs it only when tools/ changed).
 set -euo pipefail
 
-usage='usage: tools/test.sh [--quick [--list]] | --release | --shard K/N [--list]'
+usage='usage: tools/test.sh [--quick [--list]] | --lint | --release | --shard K/N [--list]'
 quick=0
+lint=0
 release=0
 list=0
 shard=0
@@ -35,6 +38,7 @@ else
   case "$#:${1-}:${2-}" in
     0::) ;;
     1:--quick:) quick=1 ;;
+    1:--lint:) lint=1 ;;
     1:--release:) release=1 ;;
     2:--quick:--list) quick=1 list=1 ;;
     *) bad_usage ;;
@@ -208,6 +212,8 @@ if command -v shellcheck >/dev/null 2>&1; then
 else
   echo "shellcheck not installed; skipping tool lint" >&2
 fi
+
+if [ "$lint" = 1 ]; then exit 0; fi
 
 if [ "$quick" = 1 ]; then
   quick_list=()

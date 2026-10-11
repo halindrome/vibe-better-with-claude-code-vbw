@@ -166,7 +166,7 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 - R165 [auto] During a VBW run, a VBW guard that crashes, cannot start or times out blocks the action it guards instead of letting it through; outside VBW projects and outside runs nothing changes
 - R166 [auto] Every proof, including the full proof that QA and shipping require, re-runs only the checks a change can affect and reuses the passing result of every other check; a check is affected when a file it lists or a project file it reads has changed since its last pass
 - R167 [auto] The project's test command re-runs only the test files a change can affect when the project's test runner can run single test files; otherwise it runs whole; a one-file fix in VBW itself proves in minutes, not the whole suite
-- R168 [auto] When VBW cannot know what a change affects (the test setup, a shared helper every test loads, or a file no check or test is known to read), the proof runs everything and says why; a changed approved command or single-file form re-runs only what runs through it, never every check; the proof summary says how many checks and test files ran and how many were reused
+- R168 [auto] When VBW cannot know what a change reaches, the proof runs everything and says why: the file system records no reads, this clone has no recorded run, the last proof was cut short, nothing was committed since the last passing proof, or a file was added or deleted that no recorded run read or listed the folder of; a changed approved command, single-file form or list of test files re-runs only what runs through it; the proof summary says how many checks and test files ran and how many were reused
 
 <!-- One requirement per line: an id, how it is proved, and a user-observable
      statement. [auto] = a check can prove it; [human] = only a person can judge it.
@@ -178,6 +178,12 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 
 - test: bash tools/test.sh
 - quick: bash tools/test.sh --quick
+- lint: bash tools/test.sh --lint
+
+## Test files
+
+- run: bats --print-output-on-failure {file}
+- files: tests/*.bats :!tests/timed-*.bats
 
 ## Test results
 
