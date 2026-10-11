@@ -83,9 +83,9 @@ def lease_write_denial($lease; $record):
   elif $lease.files == [] then
     "\(.) cannot be written during a \($lease.kind) run: its agents only read\nNext: leave \(.) as it is; report the change you need in your result for the session that started the run"
   elif $lease.kind == "plan" and test_path then empty
-  elif $lease.new_tests == true and (. as $p | any($lease.checks[]?; . == $p)) then empty
+  elif $lease.new_tests == true and (. as $p | any($lease.editable[]?; . == $p)) then empty
   elif $lease.new_tests == true and (. as $p | any($record.protected[]?; . == $p)) then
-    "\(.) is a protected check file of another requirement: the fix may edit only the check files of its own requirement (\($lease.checks | join(", ")))\nNext: leave \(.) as it is; put the regression test in a new test file and register it with vbw fix check"
+    "\(.) is a protected check file of another requirement: the fix may edit only the check files of its own requirement (\($lease.editable | join(", ")))\nNext: leave \(.) as it is; put the regression test in a new test file and register it with vbw fix check"
   elif $lease.new_tests == true and test_path then empty
   elif $lease.files != null and (. as $p | any($lease.files[]; covers($p)) | not) then
     "\(.) is outside this run's files (\($lease.files | join(", "))): agents write only their plan's files\nNext: leave \(.) as it is; report that the plan needs it, so the plan can be replanned with vbw apply"
@@ -103,7 +103,7 @@ def foreign_denial($f):
 
 def secret_reason: "\(basename) may hold secrets; VBW never reads or writes secret files\nNext: do not open \(basename); ask the user for the value you need, or use an example file such as .env.example";
 def record_reason: ".vbw/record.json is written only by vbw (vbw help lists the commands)\nNext: run the vbw command that makes this change (vbw help lists them); read the record with vbw show or vbw status";
-def consent_reason: "the consent file is written only by /vbw:approve, and the store of recorded runs (vbw/runs.json) only by vbw\nNext: ask the user to run /vbw:approve themselves; leave the run store alone, vbw rewrites it by itself";
+def consent_reason: "the consent file is written only by /vbw:approve, and the store of recorded runs (vbw/runs.json) only by vbw\nNext: the user approves through the approval menu (vbw next asks); leave the run store alone, vbw rewrites it by itself";
 
 # A reason string becomes the hook's deny decision.
 def deny: {hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny",

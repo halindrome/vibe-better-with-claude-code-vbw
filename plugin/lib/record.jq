@@ -274,11 +274,11 @@ if type != "object" then ["record must be a JSON object"] else
           ( select(((.run | nonempty) and (.kind | one_of(["plan","build","fix","qa","map"])) and (.started_at | iso)
                     and (.files == null or (.files | type == "array" and all(.[]; safe_path)))
                     and ((has("session") | not) or (.session | type == "string" and length > 0))
-                    and ((has("checks") | not) or (.checks | type == "array" and all(.[]; safe_path)))
+                    and ((has("editable") | not) or (.editable | type == "array" and all(.[]; safe_path)))
                     and ((has("new_tests") | not) or (.new_tests | type == "boolean"))) | not)
-            | "lease needs run, kind (plan, build, fix, qa or map), started_at (ISO-8601 UTC) and files (null or relative paths) and optionally a session (string), checks (relative paths) and new_tests (true or false)" ),
-          ( select((has("checks") or has("new_tests")) and .kind != "fix") | "only a fix run carries checks and new_tests" ),
-          ( . as $l | keys[] | select(one_of(["run","kind","started_at","files","session","checks","new_tests"]) | not) | "lease has an unknown field: \(.)" )
+            | "lease needs run, kind (plan, build, fix, qa or map), started_at (ISO-8601 UTC) and files (null or relative paths) and optionally a session (string), editable (relative paths) and new_tests (true or false)" ),
+          ( select((has("editable") or has("new_tests")) and .kind != "fix") | "only a fix run carries editable and new_tests" ),
+          ( . as $l | keys[] | select(one_of(["run","kind","started_at","files","session","editable","new_tests"]) | not) | "lease has an unknown field: \(.)" )
         end )
   ]
 end

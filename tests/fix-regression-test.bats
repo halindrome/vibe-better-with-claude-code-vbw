@@ -91,6 +91,17 @@ fixed_and_ended() {
   VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
 }
 
+@test "R160: a fix run for a QA finding starts when some check lists no files" {
+  built refund
+  # A check may declare no files (its run is enough); the lease must still be computed.
+  jq '.checks += [{id: "C9", req: "R2", run: ["true"]}] | .protected = ([.checks[].files // [] | .[]] | unique)' .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
+  "$VBW" qa finding R1 "a payment of zero is accepted" > /dev/null
+  F_QA=$(jq -r '[.fixes[] | select(.source == "qa")][-1].id' .vbw/record.json)
+  VBW_SESSION_ID=s1 run "$VBW" run start fix "$F_QA"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  jq -e '.lease.new_tests == true and (.lease.editable | index("tests/c1.sh"))' .vbw/record.json > /dev/null || { jq .lease .vbw/record.json; false; }
+}
+
 @test "R160: during a fix run for a QA finding the Dev may create a new test file" {
   built refund
   qa_fix_run

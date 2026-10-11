@@ -122,8 +122,8 @@ cmd_run() {
          # files of the findings requirements that no other requirement uses.
          ([.fixes[] | select(.id as $i | any($ids[]; . == $i)) | .req] | unique) as $qs
          | {new_tests: true,
-            checks: (([.checks[] | select(.req as $q | any($qs[]; . == $q)) | .files[]] | unique) as $mine
-              | ([.checks[] | select(.req as $q | any($qs[]; . == $q) | not) | .files[]] | unique) as $others
+            editable: (([.checks[] | select(.req as $q | any($qs[]; . == $q)) | (.files // [])[]] | unique) as $mine
+              | ([.checks[] | select(.req as $q | any($qs[]; . == $q) | not) | (.files // [])[]] | unique) as $others
               | $mine - $others)}
        else {} end) as $qa
     | .lease = {run: "\($k)-\($at | gsub("[-:]"; ""))", kind: $k, started_at: $at, files: $files}
