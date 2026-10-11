@@ -8,6 +8,8 @@
 . "$VBW_LIB/qa-inputs.sh"
 # shellcheck source=effort.sh
 . "$VBW_LIB/effort.sh"
+# shellcheck source=cmd-approve.sh
+. "$VBW_LIB/cmd-approve.sh"
 
 # qa_state RECORD [DIGESTS]: lib/qa.jq's answer (closure, recheck, standing, problems).
 # The one judgment of whether a pass stands; a pass of another fingerprint
@@ -31,11 +33,13 @@ qa_combined() {
 
 cmd_next() {
   vbw_require_project
-  local effort record hash counts approved=false changed=false legacy=false next qa waiting profile
+  local effort record hash counts approved=false changed=false legacy=false next qa waiting profile problems=""
   record=$(record_read)
   hash=$(contract_hash "$record")
   # Check files edited since the approval wait: the build goes on, the one approval comes before proof.
   waiting=$(contract_waiting "$record") && commands_approved "$record" && approved=true
+  # An unapproved contract that approval would refuse is not offered for approval (R171).
+  [ "$approved" = true ] || problems=$(approve_problems "$record")
   next_code_changed "$record" && changed=true
   # A VBW 1 plan not yet converted (docs/convert.md).
   [ -d "$VBW_ROOT/.vbw-planning" ] && ! printf '%s' "$record" | jq -e 'has("converted") or .project.legacy.choice == "fresh"' > /dev/null && legacy=true
@@ -48,7 +52,7 @@ cmd_next() {
   # The profile's effort table; a wrong table stops here, before any answer.
   effort=$(effort_table "$(printf '%s' "$record" | jq -r '.settings.profile')") || exit 1
   profile=$(interview_effective "$record")
-  next=$(printf '%s' "$record" | jq -c --argjson effort "$effort" --argjson tracked "$counts" --argjson approved "$approved" --arg waiting "$waiting" --arg contract "$hash" \
+  next=$(printf '%s' "$record" | jq -c --argjson effort "$effort" --argjson tracked "$counts" --argjson approved "$approved" --arg waiting "$waiting" --arg problems "$problems" --arg contract "$hash" \
     --argjson code_changed "$changed" --argjson legacy "$legacy" --slurpfile qa <(printf '%s' "$qa") --argjson profile "$profile" --arg session "$(vbw_session)" --slurpfile tiers "$VBW_LIB/tiers.json" "$VBW_JQ_DEFS$(cat "$VBW_LIB/next.jq")")
   # The status line shows the last answer (docs/statusline.md).
   printf '%s\n' "$next" > "$VBW_RUNTIME/next.json.$$" && mv "$VBW_RUNTIME/next.json.$$" "$VBW_RUNTIME/next.json"

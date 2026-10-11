@@ -42,7 +42,7 @@ Last line above = how much VBW does alone. Approval, `accept` and shipping alway
 ## Loop
 
 Do step for `action`, run `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw next --json`, do next step. Stop when `gate` is
-true, or a workflow runs in background (its result wakes you; continue).
+true, or a workflow runs in background (its result wakes you).
 At a stop, say what happened.
 Every stop ends with a last line, **What I need from you:** <the one thing user must do now>, or "nothing".
 Claim only what kernel shows.
@@ -97,6 +97,8 @@ each: `vbw decide "<what was decided>" "<their reason, or the trade-off they acc
 `{"requirements": <requirements>, "next_phase": <next_phase>, "decided": true, "models": ...}`. Planned: give Lead's summary, its
 `choices` (any can change) and Architect's `notes` (offer `vbw todo add`); then the approval menu, never a typed command.
 
+**contract**: not ready for approval: do what `instruction` says (write the named check files, `vbw spec sync`), then `vbw next --json`.
+
 **approve** (needs user): `vbw show contract --changes` (after an earlier approval: explain just those). Else
 `vbw show contract`: explain each requirement, how checked, plans, files, commands that will run. Follow `vbw:suggest`, then AskUserQuestion with the approval question `vbw show contract` prints: "Approve" (first), "Not yet". Only this menu; never ask the user to type /vbw:approve (typing it still works). Approve: hook recorded it; continue. Not yet: ask what to change. User's own words (own-answer slot): what to change, or a question. You cannot approve.
 Test files edited during the build wait for one approval just before proof (`detail.files`): say which and why, then ask the same way.
@@ -119,14 +121,14 @@ Another session's run: never end it. Ask once (AskUserQuestion): "Still running:
 
 **unblock** (needs user): `vbw show plan <id>` per blocked plan; say what Dev needs. Resolved: `vbw plan reset <id>`.
 
-**escalate** (needs user): `vbw show fix <id>`; explain what failed. Ask: try
+**escalate** (needs user): `vbw show fix <id>`; explain the failure. Ask: try
 once more (`vbw fix retry <id>`), or change the requirement or its check
 (contract then needs approval again).
 
 **scope** (needs user): `vbw show evidence`; say which commits changed files outside their plan; ask how to proceed; never rewrite history.
 
 **accept** (needs user): per requirement in `detail.requirements`, show the
-thing to judge: run it yourself when you can; put its output, or one concrete thing to try, in the question and the
+thing to judge: run it yourself when you can; put its output, or one thing to try, in the question and the
 `preview` of "Works". Visual: screenshot into `.vbw/runtime/` and open it. Ask with AskUserQuestion: "Works",
 "Something's wrong", "Skip for now". Works: `vbw req accept <id>`. Something's
 wrong: ask what, then `vbw req reject <id> "<their words>"`. Skip for now: `vbw req skip <id>`.
