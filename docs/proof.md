@@ -365,9 +365,8 @@ clone (`vbw approve` keeps a copy of what it approved in `.vbw/runtime/`).
 3. Runs every check (up to `check_jobs` at a time, `alone` checks by themselves),
    and every project command whose argv is approved, from the
    root of that copy; an unapproved command is skipped and reported, never run.
-   A check whose served files, definition and last result are unchanged since
-   its last pass is reused, not run again
-   ([Reusing results in `vbw prove`](#reusing-results-in-vbw-prove)).
+   A check whose last pass is still valid for the files it read is reused, not
+   run again ([Reusing results in `vbw prove`](#reusing-results-in-vbw-prove)).
    Then it removes the copy, also when interrupted.
 4. Scope: every commit with a `VBW-Plan:` trailer naming a plan in the record
    must change only that plan's files.
@@ -388,55 +387,36 @@ without `--release` runs the same lint and tests the proof runs, without them.
 usage: vbw prove [--full]
 ```
 
-`vbw prove --full` reuses no check and no other command. It runs every
-approved check and project command, and never the quick command. It reuses one
-thing: the test command's latest passing run, when only documentation (`.md`,
-`.markdown`, `.rst`) or VBW's own `.vbw/` files changed since that run (a
-documentation-only change). The summary then marks the line
-`test pass 41s reused (proof of 2026-10-09T20:01:12Z): only documentation changed since`,
-and the proof stays full. Any other argument is refused with the usage line,
-and nothing runs.
+`vbw prove --full` runs everything fresh: every approved check and every
+approved project command, and never the quick command. It reuses nothing. Any
+other argument is refused with the usage line, and nothing runs.
 
-These still run the test command:
+A plain `vbw prove` may reuse results
+([Reusing results](#reusing-results-in-vbw-prove)). A proof is full only when
+all of these hold; otherwise it is partial:
 
-- a code file changed, or a test file, even a Markdown one such as
-  `tests/fixtures/sample.md`,
-- a file an approved check lists or runs changed, even a Markdown one,
-- uncommitted code,
-- changed test command words,
-- the latest run failed,
-- a quick command run stood in for it (no real test run to reuse),
-- nothing was committed since a passing proof (D173: a second proof is a
-  deliberate re-run), or
-- the earlier proof was unfinished or interrupted (it recorded no run).
-
-Limit: a test that reads a documentation file not listed by any check is not
-re-run by a documentation-only change, because VBW cannot see what a test
-reads. To make such a file count, list it in that check's `files`.
-
-A proof is full only when all of these hold; otherwise it is partial:
-
-- it reused no check or other command result, and the only reused result is
-  the test command's after a documentation-only change
-  ([Reusing results](#reusing-results-in-vbw-prove)),
-- it ran the test command, or reused its passing run as above, and not the
-  quick command, and
+- it reused no check or other command result,
+- it ran the test command, and not the quick command, and
 - every project command ran (none was skipped as not approved).
+
+A proof that reused anything is never the release run's full proof: the
+release run (`bash tools/test.sh --release`) uses `vbw prove --full`.
 
 The summary ends with `proof: full` or `proof: partial`, and the evidence
 records the same in its `full` field (docs/record.md).
 
-A full proof is needed at two points, QA and shipping. Both refuse a partial
-proof and change nothing:
+QA and shipping accept a proof that reused results. `vbw qa record` and
+`vbw ship` need a proof that covers the current contract and code and passed.
+A reused result is taken only when nothing its check read has changed, so a
+proof that reused passing results counts as much as one that ran them. They
+refuse a proof that is out of date or failed:
 
-- `vbw qa record` prints:
-  `the last proof was partial: run vbw prove --full, then record the verdict again`
-- `vbw next` returns the `prove` step before QA or shipping, with an
-  instruction that starts `Run vbw prove --full: ...`; `vbw ship` refuses with
-  the same advice.
+- `vbw qa record` prints the reason and asks for `vbw prove` first;
+- `vbw next` returns the `prove` step before QA or shipping when the last
+  proof is out of date.
 
-Build and fix rounds use the plain, faster `vbw prove`. The test result QA
-agents receive always comes from the full proof.
+For every check run fresh, use `vbw prove --full` (see
+[Limits](#limits-of-reusing-results)).
 
 ### Proof in the background during an autonomous run
 
@@ -537,10 +517,9 @@ otherwise. Human requirements are untouched.
 
 ### Reusing results in `vbw prove`
 
-Most commits after a passing proof touch only part of the code. Running every
-check again would prove nothing new for the checks whose files did not change.
-`vbw prove` runs again only the checks that can have changed, and reuses the
-rest.
+Most commits after a passing proof touch only part of the code. `vbw prove`
+runs again only the checks a change can affect, and reuses the passing result
+of every other check.
 
 ```text
 C1 pass 2s reused (proof of 2026-10-07T20:49:55Z)
@@ -549,38 +528,45 @@ lint pass 9s reused (proof of 2026-10-07T20:49:55Z)
 checks: 1 ran, 1 reused
 ```
 
-Each line shows the seconds the result took when it ran and the time it
-really ran. A reused result keeps the time and fingerprint of the run it came
-from, so reuse can chain across proofs without losing the original time. In the
-evidence, reused results carry `"reused": true`. The last line counts the
-checks: `checks: N ran, M reused`.
+Each line shows the seconds the result took when it ran and, for a reused
+result, the time of the proof that really ran it. A reused result keeps the
+time and fingerprint of that run, so reuse can chain across proofs. In the
+evidence, reused results carry `"reused": true`, and the last line counts
+`checks: N ran, M reused`.
 
-A check runs again when any of these holds:
+**The read list.** While a check runs, VBW records its read list: the files it
+opened and the folders it listed. The list comes from the run itself,
+never from file names, and not from the `files` a check declares.
 
-- Its served files changed since its last pass. Served files are the check's
-  own `files` plus the files of every plan that serves its requirement.
+**When a result is reused.** A check's last pass is reused when the check has a
+read list and nothing on it has changed since that pass.
+
+**When a check runs again.** Every reason:
+
 - Its approved definition changed (its command, expected exit and output,
   timeout, `alone`, `files` or requirement).
-- Its last result was fail, timeout or lost (never recorded).
-- It is new since the last proof.
+- A file on its read list was changed, deleted or renamed.
+- A file was added to or removed from a folder on its read list.
+- Its last result failed (fail, timeout or lost).
+- It never passed: it is new, or no earlier proof ran it.
+- It has no read list (for example, the earlier run recorded none).
 
-Every other check is reused. A check removed from the contract is left out of
-the new proof.
+A check removed from the contract is left out of the new proof.
 
-A check that declares no files always runs: VBW cannot know what it depends
-on, so it cannot know that nothing it depends on changed. A check with a
-served path that is missing from the committed code always runs too.
+**Where read lists are kept.** In `vbw/runs.json` in the clone's git directory
+(`git rev-parse --git-common-dir`), never in the record. A lost or damaged
+file only makes the checks run again. The store is protected
+(docs/guards.md).
 
-Some things to know:
+**Speed.** Checks still run several at a time (`check_jobs`), each in its own
+clean copy of the committed code.
 
-- A change in the working folder that is not committed
-  does not make a check run again, and is never counted as proven: the proof reads only the committed
-  code. Commit the work, then run `vbw prove`.
-- An interrupted proof reuses nothing: it recorded no evidence, so the next
-  proof runs every check.
-- A second `vbw prove` with no commit since a passing proof runs everything
-  fresh. It is a deliberate re-run, for when something outside the committed
-  code changed, such as installed dependencies.
+Other things to know:
+
+- A change in the working folder that is not committed does not make a check
+  run again, and is never counted as proven: the proof reads only the
+  committed code. Commit the work, then run `vbw prove`.
+- An interrupted proof recorded no evidence, so the next proof runs every check.
 - Project commands keep their own rule: a command's result is reused only when
   the committed code is identical to the last passing proof's (only
   `.vbw/record.json` or `.vbw/spec.md` differ), the working folder has no
@@ -588,8 +574,19 @@ Some things to know:
 
 A proof that reuses results records the current contract and code. `passed` is
 set from every result, reused or new, and requirements become `proven` as
-usual. It is a partial proof: `vbw qa record` and `vbw ship` need a full one
-([`vbw prove --full`](#full-and-partial-proofs-vbw-prove---full)).
+usual.
+
+#### Limits of reusing results
+
+- What lies outside the project is not tracked: installed tools, the network
+  and the clock. A check that depends on them can pass from reuse after they
+  changed.
+- A check that only looks whether a file exists, or at its size, without
+  opening it, does not put that file on its read list.
+- Reads through git always run again.
+
+To run everything fresh, use `vbw prove --full`, or prove again with
+nothing committed since a passing proof (a second proof is a deliberate re-run).
 
 ### Fix items
 
@@ -642,31 +639,18 @@ that could not close keeps its status and `attempts`; fix the cause and run
 
 ### Reusing an unchanged pass
 
-`vbw fix done` does not rerun a check that already passed on the same project
-files under the same approved contract. It prints one line per skipped check
-and runs the rest:
+`vbw fix done` follows the same rule as `vbw prove`
+([Reusing results](#reusing-results-in-vbw-prove)): a check whose last pass is
+still valid for its read list is not run again. It prints one line per skipped
+check and runs the rest:
 
 ```text
 C1 unchanged since its pass (2026-10-04T20:30:00Z)
 ```
 
-The time is when that check passed. A check is skipped only when all of these hold:
-
-- A recorded pass exists in the clone's cache, `vbw/passes.json` in the git
-  directory (`git rev-parse --git-common-dir`). It is never in the record. `vbw prove`
-  and `vbw fix done` record one for every check that passes. A lost or damaged
-  file only makes the checks run again.
-- The contract hash of that pass is the current, approved contract hash.
-- The committed content of the check's served files is the same as at the pass.
-  Served files are the check's own `files` plus the `files` of every plan that
-  serves its requirement.
-- None of those files has uncommitted changes.
-
-A check with no `files`, or with a served path that is not committed, always
-runs and is never recorded. A check that fails loses its recorded pass.
-`vbw prove` does not use this cache: it still runs every check, except for
-the reuse described in
-[Reusing results in `vbw prove`](#reusing-results-in-vbw-prove).
+The time is when that check passed. A check runs again for any reason listed
+there: a changed approved definition, a changed file on its read list, a last
+result that failed, no earlier pass or no read list.
 
 An escalated fix is a human gate (`vbw next`).
 

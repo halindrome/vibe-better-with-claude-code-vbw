@@ -18,6 +18,7 @@ steps is in docs/workflows.md ("Every refusal and its next step").
 |---|---|
 | `vbw approve`, however it is spelled (`"$X/bin/vbw" approve`, `bash bin/vbw approve`, inside `$(...)` or `sh -c`) | Approving the contract is the user's decision: `/vbw:approve` |
 | Writing the consent file (`<git-dir>/vbw/consent.json`) by redirect, by a non-reading program, or with a file tool | The same |
+| Writing the store of recorded runs (`<git-dir>/vbw/runs.json`, the read lists that decide which check results are reused) the same ways | A forged read list could make a check pass without running; only the kernel writes it |
 
 Naming the approval command in text (a commit message, `echo`, `grep`, a doc)
 is not approving: only a command the shell would actually run is refused.
