@@ -3499,7 +3499,7 @@
   "milestone": {
     "id": "M23",
     "title": "Express path: write and see the check fail before approval",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -3611,6 +3611,11 @@
       "id": "M22",
       "title": "Release fix: a test-file form with nothing left to run",
       "at": "2026-10-11T18:11:51Z"
+    },
+    {
+      "id": "M23",
+      "title": "Express path: write and see the check fail before approval",
+      "at": "2026-10-11T21:02:38Z"
     }
   ],
   "requirements": [
@@ -26165,6 +26170,11 @@
       "id": "D285",
       "at": "2026-10-11T20:54:57Z",
       "text": "Contract approved: 161 requirements, 268 checks, 358 plans (6f6f6d5cf7f2)"
+    },
+    {
+      "id": "D286",
+      "at": "2026-10-11T21:02:38Z",
+      "text": "Shipped M23 Express path: write and see the check fail before approval: 2 requirements proven or accepted"
     }
   ],
   "commands": {
