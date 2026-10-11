@@ -24283,6 +24283,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T116",
+      "text": "proofcauses_find: the cause \"nothing was committed since the last passing proof\" judges by HEAD's commit subject; compare the code tree with the proof's own tree (evidence.tree, evidence.passed) instead. A record commit landing after commits made during a running proof made P6 re-run everything (2026-10-11 18:35, 33 min)",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
