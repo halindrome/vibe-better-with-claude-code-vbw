@@ -158,6 +158,32 @@ nojq() {
   each_blocked "corrupt record"
 }
 
+@test "R165: the run-open marker exists exactly while a run is open, outlives a record that cannot be read, and a broken guard goes quiet when the run ends" {
+  local m=.vbw/runtime/run-open
+  [ ! -e "$m" ]
+  "$VBW" status > /dev/null
+  [ ! -e "$m" ] || { echo "a marker with no run open"; false; }
+  open_run
+  [ -e "$m" ] || { echo "no marker while a run is open"; false; }
+  # The record becomes unreadable: the kernel fails, the marker stays, a crashing guard blocks.
+  cp .vbw/record.json "$TEST_ROOT/record.bak"
+  printf 'not json\n' > .vbw/record.json
+  run "$VBW" status
+  [ "$status" -ne 0 ]
+  [ -e "$m" ] || { echo "the marker went away with an unreadable record"; false; }
+  break_guard crash
+  hook Write "$(write_in vbw:dev)"
+  blocked
+  # The run ends: the marker goes, and the same broken guard lets the call through.
+  cp "$TEST_ROOT/record.bak" .vbw/record.json
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  [ ! -e "$m" ] || { echo "the marker outlived the run"; false; }
+  hook Write "$(write_in vbw:dev)"
+  through
+  hook Bash "$(bash_in)"
+  through
+}
+
 @test "R165: in a VBW project with no open run a failing guard lets the action through as before" {
   local how
   for how in crash missing; do
