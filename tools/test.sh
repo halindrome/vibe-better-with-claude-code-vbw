@@ -151,17 +151,22 @@ fi
 
 echo "bash: $(bash -c 'echo "$BASH_VERSION"')"
 
-# release_reuse: succeed when the last proof in .vbw/record.json was full, passed,
-# and the project's files differ from the code it proved only in the version
-# files and the changelog; print the proof's time. Otherwise fail, printing why
-# (naming the differing files) on stdout.
+# release_reuse: succeed when the last proof in .vbw/record.json passed, left no
+# command skipped and no quick command standing in for the test command (a
+# reused result counts: the read lists still vouch for it, R170), and the
+# project's files differ from the code it proved only in the version files and
+# the changelog; print the proof's time. Otherwise fail, printing why (naming
+# the differing files) on stdout.
 release_reuse() {
   local ev at head idx now diff other f
   [ -f .vbw/record.json ] && ev=$(jq -c '.evidence // empty | select(type == "object")' .vbw/record.json 2>/dev/null) && [ -n "$ev" ] \
     || { echo "no proof recorded"; return 1; }
   at=$(jq -r '.at // "unknown time"' <<< "$ev")
-  jq -e '.full == true' >/dev/null <<< "$ev" || { echo "the last proof (of $at) was not a full one"; return 1; }
-  jq -e '.passed == true' >/dev/null <<< "$ev" || { echo "the last full proof (of $at) failed"; return 1; }
+  jq -e '.passed == true' >/dev/null <<< "$ev" || { echo "the last proof (of $at) failed"; return 1; }
+  jq -e '[(.commands // {})[] | select(.status == "skipped")] | length == 0' >/dev/null <<< "$ev" \
+    || { echo "the last proof (of $at) skipped a command that was not approved"; return 1; }
+  jq -e '(.commands // {}) | (has("test") or (has("quick") | not))' >/dev/null <<< "$ev" \
+    || { echo "in the last proof (of $at) the quick command stood in for the test command"; return 1; }
   head=$(jq -r '.head // empty' <<< "$ev")
   [ -n "$head" ] || { echo "the last proof (of $at) names no proved code"; return 1; }
   git rev-parse -q --verify HEAD >/dev/null 2>&1 || { echo "not a git repository with a commit; no proof to compare"; return 1; }
@@ -186,13 +191,13 @@ release_reuse() {
       *) other="${other:+$other, }$f" ;;
     esac
   done <<< "$diff"
-  [ -z "$other" ] || { echo "files changed since the last full proof (of $at): $other"; return 1; }
+  [ -z "$other" ] || { echo "files changed since the last proof (of $at): $other"; return 1; }
   echo "$at"
 }
 
 if [ "$release" = 1 ]; then
   if why=$(release_reuse); then
-    echo "release: reusing the full passing proof of $why (only the version files and the changelog changed since); running the benchmarks and the timed tests only"
+    echo "release: reusing the passing proof of $why (only the version files and the changelog changed since); running the benchmarks and the timed tests only"
     bash tools/bench-hooks.sh
     if command -v node >/dev/null 2>&1; then
       bash tools/bench-panel.sh
