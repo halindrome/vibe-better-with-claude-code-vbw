@@ -3422,7 +3422,7 @@
   "milestone": {
     "id": "M21",
     "title": "Projects that change",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -3524,6 +3524,11 @@
       "id": "M20",
       "title": "Release fix: bash 3.2",
       "at": "2026-10-10T20:17:05Z"
+    },
+    {
+      "id": "M21",
+      "title": "Projects that change",
+      "at": "2026-10-11T15:51:17Z"
     }
   ],
   "requirements": [
@@ -25536,6 +25541,11 @@
       "id": "D272",
       "at": "2026-10-11T15:35:42Z",
       "text": "Contract approved: 157 requirements, 262 checks, 353 plans (abcb43aaa225)"
+    },
+    {
+      "id": "D273",
+      "at": "2026-10-11T15:51:17Z",
+      "text": "Shipped M21 Projects that change: 13 requirements proven or accepted"
     }
   ],
   "commands": {
