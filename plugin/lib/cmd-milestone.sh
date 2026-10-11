@@ -21,10 +21,20 @@ cmd_milestone() {
   fi
   record_read | jq -e '.milestone.status == "shipped"' > /dev/null \
     || vbw_die "$(record_read | jq -r '"\(.milestone.id) is not shipped yet: finish it first (vbw next)"')"
+  # Every known session's current figures become the new milestone's baseline.
+  local base="{}" sid figs
+  # shellcheck source=costs.sh
+  . "$VBW_LIB/costs.sh"
+  while IFS= read -r sid; do
+    [ -n "$sid" ] || continue
+    figs=$(costs_figures "$sid")
+    [ "$figs" = null ] || base=$(printf '%s' "$base" | jq -c --arg s "$sid" --arg at "$(vbw_now)" --argjson f "$figs" '.[$s] = $f + {at: $at}')
+  done < <(costs_sessions)
   record_update '"M\((.milestone.id | ltrimstr("M") | tonumber) + 1)" as $n
     | .milestone = {id: $n, title: $t, status: "active"}
+    | .costs.runs = (.costs.runs // []) | .costs.milestones = ((.costs.milestones // {}) + {($n): {baseline: $base}})
     | (.requirements[] | select(.later == true)) |= (.milestone = $n | .status = "open" | del(.skipped, .later))' \
-    --arg t "$2"
+    --arg t "$2" --argjson base "$base"
   record_commit "chore(vbw): start $(jq -r .milestone.id "$VBW_RECORD")"
   jq -r '"started \(.milestone.id) \(.milestone.title): add its requirements to .vbw/spec.md (vbw spec add)"' "$VBW_RECORD"
 }
