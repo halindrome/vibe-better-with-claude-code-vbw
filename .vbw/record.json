@@ -25525,6 +25525,11 @@
       "text": "R165's fail-closed guard tests live in tests/guard-fail-closed.bats (check C252), their own file; tests/hooks-guard.bats keeps the guards' ordinary answers. P112.2's file list named hooks-guard.bats before the file split",
       "why": "one file per behaviour reads better than one file for every guard test; recorded so the plan-versus-commit comparison stops counting it as a deviation (F117, QA round 2)",
       "at": "2026-10-11T15:12:17Z"
+    },
+    {
+      "id": "D272",
+      "at": "2026-10-11T15:35:42Z",
+      "text": "Contract approved: 157 requirements, 262 checks, 353 plans (abcb43aaa225)"
     }
   ],
   "commands": {
