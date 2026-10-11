@@ -33,20 +33,34 @@ proofreuse_command_fp() {
 # left behind by one that was interrupted or failed to record).
 proofreuse_marker() { printf '%s/prove.unfinished\n' "$VBW_RUNTIME"; }
 
-# proofreuse_allowed: succeed when this proof may reuse anything; print why
-# not otherwise. Not while an earlier proof is unfinished, and (D173) not when
-# nothing at all changed since the last proof (it is the last commit, VBW's own
-# files are clean and the working folder is the committed code): a second
-# prove is a deliberate re-run, as when something outside the committed code
-# (installed dependencies, ignored files) changed.
+# proofreuse_proved RECORD HEAD: succeed when the record's last proof passed
+# (evidence.passed), the project's files have the fingerprint it recorded
+# (vbw_code_tree equals evidence.tree) and the committed code is the tree it
+# ran on (HEAD, the committed code's tree, equals evidence.head, when the
+# evidence carries one). It reads trees only, never a commit subject, so a
+# record commit landing after other commits changes nothing (R175).
+proofreuse_proved() {
+  local tree ev_head
+  printf '%s' "$1" | jq -e '.evidence.passed == true' > /dev/null 2>&1 || return 1
+  tree=$(printf '%s' "$1" | jq -r '.evidence.tree // empty')
+  [ -n "$tree" ] && [ "$(vbw_code_tree 2> /dev/null)" = "$tree" ] || return 1
+  ev_head=$(printf '%s' "$1" | jq -r '.evidence.head // empty')
+  [ -z "$ev_head" ] || [ "$ev_head" = "$2" ]
+}
+
+# proofreuse_allowed RECORD [KIND]: succeed when this proof may reuse anything;
+# print why not otherwise. Not while an earlier proof is unfinished, and (D173)
+# not when the code is the code the last passing proof proved
+# (proofreuse_proved): a second prove is a deliberate re-run, as when something
+# outside the committed code (installed dependencies, ignored files) changed.
+# KIND fix: that reason never applies (D270), a passing proof of the same code
+# is exactly what vbw fix done needs.
 proofreuse_allowed() {
   if [ -e "$(proofreuse_marker)" ]; then
     printf 'the last proof was cut short\n'
     return 1
   fi
-  if [ "$(git -C "$VBW_ROOT" log -1 --format=%s 2> /dev/null)" = 'chore(vbw): proof passed' ] \
-    && [ -z "$(git -C "$VBW_ROOT" status --porcelain -z -- .vbw 2> /dev/null | tr -d '\000')" ] \
-    && [ "$(vbw_code_tree)" = "$(vbw_head_tree)" ]; then
+  if [ "${2:-prove}" != fix ] && proofreuse_proved "$1" "$(vbw_head_tree 2> /dev/null)"; then
     printf 'proving again with nothing committed\n'
     return 1
   fi
@@ -197,7 +211,7 @@ proofreuse_plan() {
   proofreuse_names "$record" "${2:-0}"
   REUSE_CHECKS='{}' REUSE_COMMANDS='{}' TODO_CHECKS=() TODO_COMMANDS='[]' WHY_CHECKS='{}' WHY_COMMANDS='{}'
   PROOFREUSE_STORE=$(proofreuse_store_read)
-  off=$(proofreuse_allowed) || true
+  off=$(proofreuse_allowed "$record") || true
   if [ -z "$off" ]; then
     head=$(vbw_head_tree) || head=
     [ -n "$head" ] || off='no committed code'
