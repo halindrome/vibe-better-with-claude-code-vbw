@@ -217,6 +217,8 @@
     "tests/record-protected.bats",
     "tests/record-v4-compat.bats",
     "tests/refusal-next-step.bats",
+    "tests/release-reuse-helper.bash",
+    "tests/release-reuse-partial.bats",
     "tests/release-reuse.bats",
     "tests/release-run-docs.bats",
     "tests/release-run.bats",
@@ -3220,9 +3222,9 @@
         "tests/release-reuse.bats"
       ],
       "files": [
-        "tests/release-reuse.bats"
-      ],
-      "timeout": 600
+        "tests/release-reuse.bats",
+        "tests/release-reuse-helper.bash"
+      ]
     },
     {
       "id": "C252",
@@ -3421,6 +3423,18 @@
       ],
       "files": [
         "tests/testfiles-empty.bats"
+      ]
+    },
+    {
+      "id": "C269",
+      "req": "R170",
+      "run": [
+        "bats",
+        "tests/release-reuse-partial.bats"
+      ],
+      "files": [
+        "tests/release-reuse-partial.bats",
+        "tests/release-reuse-helper.bash"
       ]
     }
   ],
@@ -9043,6 +9057,27 @@
           "check": "C268"
         }
       ]
+    },
+    {
+      "id": "R170",
+      "text": "Before a push, the release run reuses the last proof when it passed, left no command skipped and no quick command standing in, and only the version files and the changelog changed since, whether or not it reused earlier results (a reused result is one the read lists still vouch for); it then runs only the benchmarks and the timed speed checks; otherwise it runs everything and says why",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M22",
+      "rules": [
+        {
+          "text": "a passing proof that reused results is reused by the release run: only the benchmarks and the timed files run, and the proof is named",
+          "check": "C269"
+        },
+        {
+          "text": "a proof that skipped a command not yet approved is not reused, and the reason says so",
+          "check": "C269"
+        },
+        {
+          "text": "a proof where the quick command stood in for the test command is not reused, and the reason says so",
+          "check": "C269"
+        }
+      ]
     }
   ],
   "phases": [
@@ -14263,6 +14298,33 @@
         "risk: none",
         "breaks: none",
         "guarded: R12 (C11), R25 (C24), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P120",
+      "title": "The release run trusts a proof that reused results",
+      "reqs": [
+        "R170"
+      ],
+      "milestone": "M22",
+      "goal": "Before a push the release run reuses the last passing proof whether or not it reused results, runs only the benchmarks and the timed speed checks, and still runs everything when a command was skipped or the quick command stood in, saying why",
+      "criteria": [
+        "a passing proof that reused results is reused: only the benchmarks and the timed files run, the proof is named",
+        "a proof with a skipped command or the quick stand-in is not reused and the reason says which",
+        "the end-to-end case holds with a real vbw prove (tests/release-reads.bats)",
+        "AGENTS.md (CLAUDE.md), CONTRIBUTING.md, the vbw-release skill and docs/proof.md state the rule"
+      ],
+      "proposed": "standard",
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 5 (88328 bytes)",
+        "files: more than 2 in a repository tracking 862 files",
+        "risk: none",
+        "breaks: R164",
+        "guarded: R12 (C11), R21 (C16), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R55 (C56, C57), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R128 (C200), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R142 (C204, C205), R143 (C206, C207), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262)",
         "tests: project test command"
       ],
       "predicted": "standard"
@@ -22543,6 +22605,41 @@
         "prove_summary: when the test command stands for zero test files, print its tail as the reason",
         "docs/proof.md Test files: both cases in one sentence each"
       ]
+    },
+    {
+      "id": "P120.1",
+      "phase": "P120",
+      "title": "release_reuse",
+      "reqs": [
+        "R170"
+      ],
+      "files": [
+        "tools/test.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "tasks": [
+        "release_reuse: reuse when passed, no skipped command, no quick stand-in; reused results count; the refusal reasons name the skipped command or the quick stand-in; messages say passing proof"
+      ]
+    },
+    {
+      "id": "P120.2",
+      "phase": "P120",
+      "title": "Docs",
+      "reqs": [
+        "R170"
+      ],
+      "files": [
+        "AGENTS.md",
+        "CONTRIBUTING.md",
+        ".claude/skills/vbw-release/SKILL.md",
+        "docs/proof.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "tasks": [
+        "the release-run sentence in each document states the new rule"
+      ]
     }
   ],
   "fixes": [
@@ -25637,6 +25734,17 @@
       "id": "D275",
       "at": "2026-10-11T17:06:57Z",
       "text": "Contract approved: 158 requirements, 263 checks, 354 plans (d21983437482)"
+    },
+    {
+      "id": "D276",
+      "text": "The release run reuses the last passing proof whether or not it reused results (a reused result is one the read lists still vouch for), and refuses only a proof that skipped a command or let the quick command stand in; CI's runs on bash 5 and macOS bash 3.2 after the push stay the complete runs. Replaces the 'one complete run per release is the pre-push release run' clause of D260",
+      "why": "owner's question at 18:11 (is a full release run still the right approach?): with R166 every proof reuses something, so D260's clause made every release pay a 31-minute full run that re-ran what the read lists already vouched for; CI still runs everything before the owner updates",
+      "at": "2026-10-11T17:28:19Z"
+    },
+    {
+      "id": "D277",
+      "at": "2026-10-11T17:32:58Z",
+      "text": "Contract approved: 159 requirements, 264 checks, 356 plans (b9415de54293)"
     }
   ],
   "commands": {
