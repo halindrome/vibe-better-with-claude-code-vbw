@@ -22617,7 +22617,7 @@
         "tools/test.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "release_reuse: reuse when passed, no skipped command, no quick stand-in; reused results count; the refusal reasons name the skipped command or the quick stand-in; messages say passing proof"
       ]
@@ -22636,7 +22636,7 @@
         "docs/proof.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "the release-run sentence in each document states the new rule"
       ]
