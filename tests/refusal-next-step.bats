@@ -51,6 +51,17 @@ apply_refusal() {
 full_with() { printf '%s' "$FULL" | jq -c "$1"; }
 add_with() { printf '%s' "$ADD" | jq -c "$1"; }
 
+@test "R162: every refusal written out in cmd-apply.sh and cmd-run.sh carries its next step" {
+  # A vbw_die with a message written in the code (not built from a variable that
+  # already carries one) must hold "Next: " itself, or go through apply_refuse or
+  # apply_internal, which add it. A new direct refusal without a next step fails here.
+  local bad
+  bad=$(grep -nE 'vbw_die "[^$]' "$PLUGIN_ROOT/lib/cmd-apply.sh" "$PLUGIN_ROOT/lib/cmd-run.sh" | grep -v 'Next: ' || true)
+  [ -z "$bad" ] || { printf 'refusals without a next step:\n%s\n' "$bad"; false; }
+  grep -q 'Next: ' <(grep -n '^apply_refuse()' "$PLUGIN_ROOT/lib/cmd-apply.sh")
+  grep -q 'Next: ' <(grep -n '^apply_internal()' "$PLUGIN_ROOT/lib/cmd-apply.sh")
+}
+
 @test "R162: every refusal of a full apply ends with its next step" {
   replan_start P1.1
   apply_refusal full "not JSON" 'not json {'
@@ -74,6 +85,9 @@ add_with() { printf '%s' "$ADD" | jq -c "$1"; }
   apply_refusal full "a tier below its floor" "$(full_with '(.plans[] | select(.id == "P2.2")).files = ["src/payments/charge.js"]')"
   apply_refusal full "an express phase with two plans" "$(full_with '(.phases[] | select(.id == "P2")).tier = "express"')"
   apply_refusal full "a malformed single-file test form" "$(full_with '.test_files = {run: ["bats"], files: ["tests/*.bats"]}')"
+  mv .vbw/spec.md "$TEST_ROOT/spec.md"
+  apply_refusal full "a test-file form with no .vbw/spec.md to write it into" "$(full_with '.test_files = {run: ["bats", "{file}"], files: ["tests/*.bats"]}')"
+  mv "$TEST_ROOT/spec.md" .vbw/spec.md
   replan_edit '(.requirements[] | select(.id == "R3")).milestone = "M0"'
   apply_refusal full "a requirement of another milestone" "$(full_with '.phases += [{id: "P3", title: "Refund", reqs: ["R3"], goal: "g", criteria: ["c"], tier: "standard"}]
     | .plans += [{id: "P3.1", phase: "P3", title: "Refund", reqs: ["R3"], files: ["src/r.txt"], after: []}]')"
