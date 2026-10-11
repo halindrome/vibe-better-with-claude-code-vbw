@@ -13814,7 +13814,22 @@
         "tests: project test command",
         "raised by the Architect"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "qa": {
+        "result": "pass",
+        "tier": "standard",
+        "tree": "54d2876d86365b94e6ad4e313bbdddbdd19e8d9f2afee5e4f99d8f1ba2824809",
+        "at": "2026-10-11T11:44:24Z",
+        "note": "16/16 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 0
+      }
     },
     {
       "id": "P113",
