@@ -1,6 +1,12 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261011T113931Z",
+    "kind": "qa",
+    "started_at": "2026-10-11T11:39:31Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-beside-started.bats",
@@ -13625,7 +13631,22 @@
         "guarded: R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R39 (C36), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R50 (C51), R60 (C72, C94), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R81 (C109, C111, C112, C113), R95 (C149, C150), R96 (C151, C152), R99 (C155), R101 (C179), R106 (C164, C165), R107 (C166, C167), R116 (C182, C183), R118 (C184), R123 (C190, C191), R129 (C196), R134 (C201), R135 (C202), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "qa": {
+        "result": "pass",
+        "tier": "quick",
+        "tree": "f1567a34d099f2dac875a8bc2c2be654280865f8555eec16f773ee0e78556273",
+        "at": "2026-10-11T11:42:06Z",
+        "note": "8/8 checks"
+      },
+      "outcome": {
+        "tier": "standard",
+        "predicted": "standard",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 0
+      }
     },
     {
       "id": "P109",
@@ -23055,6 +23076,22 @@
       "attempts": 0,
       "status": "closed",
       "note": "The stop report prints how long the command actually ran, not the limit in use. plugin/lib/cmd-prove.sh prove_summary prints '(\\(.value.seconds | floor) s)'; seconds is the whole-second wall clock measured by checks_exec (bash SECONDS), which is >= the limit and can be limit+1 on a loaded machine (the exact case this phase is about). So the line can say '(3601 s)' for a 3600 s limit, or '(3 s)' for a limit of 2, though the criterion says the report names the limit in use. tests/command-timeout.bats test 3 checks only for '2 s' and would fail intermittently when the run reads 3. Fix: print the effective limit (settings.command_timeout // 3600, the same value prove_commands uses) in the summary line, and pin it in the test with a run that reports seconds above the limit."
+    },
+    {
+      "id": "F109",
+      "req": "R160",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "vbw commit --fix FIX on a fix QA opened (plugin/lib/cmd-commit.sh cmd_commit_fix, P110.1 task 4) has no test: tests/fix-commit.bats only uses project-command fixes and tests/fix-regression-test.bats commits with plain git. A regression test should open a QA fix, register a check, then run vbw commit --fix FIX on its new test file and the requirement's check file (expect a commit with a VBW-Fix trailer), and on a check file of another requirement (expect the refusal)."
+    },
+    {
+      "id": "F110",
+      "req": "R160",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The refusal branches of vbw fix check (plugin/lib/cmd-fix.sh cmd_fix_check) are untested: unknown fix, closed fix, a fix not opened by QA, a test file that does not exist, and a malformed document. A regression test should run vbw fix check against each case, expect a non-zero exit with the stated what-to-do-instead text, and expect the record unchanged."
     }
   ],
   "todos": [
