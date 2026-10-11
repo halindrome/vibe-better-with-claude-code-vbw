@@ -105,6 +105,7 @@ input names an `agent_type`) is also held to the lease. The main session never i
 | Call | Why |
 |---|---|
 | Writing a project file outside `lease.files` (file tools, shell redirects; paths resolved, `..` included) | Builders write only their plan's files |
+| Writing any path outside the project folder (file tools, shell redirects, programs that write files; `/tmp` included; `/dev/null`, `/dev/stdout`, `/dev/stderr` and `/dev/tty` excepted) | A run writes only inside the project, and there only where the lease allows: nothing for a read-only run, the project's test files and `.vbw/` while planning, the plan's files while building. The refusal says so and ends with `Next: write inside the project folder instead, or put scratch work in .vbw/runtime/` |
 | During `plan`, writing a project file that is neither under `.vbw/` nor a test file (`tests/`, `test/`, `spec/` or `__tests__/` folders; `*.test.*`, `*_test.*`, `test_*.py`) | Planning writes the spec, plans and tests, never product code |
 | Writing `.vbw/runtime/glance.json` | Under any run, an agent's write is refused: only `vbw` writes the glance, like the record |
 | Writing a protected check file (any check's `files`) during `build` or `fix` | The contract is fixed while building. The Lead runs the project's formatter and linter on check files before approval, and Devs format only their own files, so a formatter never changes an approved file |
