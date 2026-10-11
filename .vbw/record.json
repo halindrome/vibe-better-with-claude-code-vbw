@@ -24233,7 +24233,7 @@
     {
       "id": "T108",
       "text": "Release run adds only what the proof did not run: when a passing full proof covers the same code (only version files and the changelog changed since), the pre-push run executes the timed speed checks and the benchmarks, not the whole suite again (2.0.31 release: about 25 minutes duplicated); bash 3.2 coverage stays in CI's macOS shards",
-      "status": "open",
+      "status": "done",
       "sort": "next",
       "size": "small"
     },
