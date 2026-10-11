@@ -33,8 +33,9 @@ vbw_setup() {
   git config --global user.email "test@example.com"
   git config --global user.name "VBW Test"
   git config --global init.defaultBranch main
-  # No background git work: a detached gc or maintenance after a commit can still be
-  # writing into .git/objects when teardown removes the folder ("Directory not empty").
+  # No background git work. One macOS CI teardown failed with "Directory not empty" on
+  # .git/objects; its cause is not proven, and a detached gc or maintenance after a commit
+  # is the candidate this removes.
   git config --global gc.auto 0
   git config --global maintenance.auto false
   PROJECT="$TEST_ROOT/project with space"
