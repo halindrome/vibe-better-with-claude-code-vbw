@@ -58,6 +58,8 @@
     "tests/docs-workflows-count.bats",
     "tests/effort-profile.bats",
     "tests/effort-workflows.bats",
+    "tests/fix-check-refusals.bats",
+    "tests/fix-commit-qa.bats",
     "tests/fix-commit.bats",
     "tests/fix-many-docs.bats",
     "tests/fix-many.bats",
@@ -121,6 +123,7 @@
     "tests/legacy-review.bats",
     "tests/next-blocked.bats",
     "tests/next-phase.bats",
+    "tests/next-table.bats",
     "tests/panel-compat.bats",
     "tests/panel-glance.bats",
     "tests/panel-light.bats",
@@ -201,6 +204,7 @@
     "tests/quick-mode.bats",
     "tests/reads-docs.bats",
     "tests/reads-gates.bats",
+    "tests/reads-listing.bats",
     "tests/reads-reuse.bats",
     "tests/reads-traced.bats",
     "tests/recommend-flow.bats",
@@ -217,6 +221,7 @@
     "tests/release-run-docs.bats",
     "tests/release-run.bats",
     "tests/replan-helper.bash",
+    "tests/req-surface.bats",
     "tests/rigor-config.bats",
     "tests/rigor-escalation.bats",
     "tests/rigor-express.bats",
@@ -3345,6 +3350,66 @@
       "files": [
         "tests/proof-causes-docs.bats"
       ]
+    },
+    {
+      "id": "C263",
+      "req": "R160",
+      "run": [
+        "bats",
+        "tests/fix-commit-qa.bats"
+      ],
+      "files": [
+        "tests/fix-commit-qa.bats"
+      ],
+      "fix": "F109"
+    },
+    {
+      "id": "C264",
+      "req": "R160",
+      "run": [
+        "bats",
+        "tests/fix-check-refusals.bats"
+      ],
+      "files": [
+        "tests/fix-check-refusals.bats"
+      ],
+      "fix": "F110"
+    },
+    {
+      "id": "C265",
+      "req": "R161",
+      "run": [
+        "bats",
+        "tests/next-table.bats"
+      ],
+      "files": [
+        "tests/next-table.bats"
+      ],
+      "fix": "F111"
+    },
+    {
+      "id": "C266",
+      "req": "R161",
+      "run": [
+        "bats",
+        "tests/req-surface.bats"
+      ],
+      "files": [
+        "tests/req-surface.bats"
+      ],
+      "fix": "F112"
+    },
+    {
+      "id": "C267",
+      "req": "R166",
+      "run": [
+        "bats",
+        "tests/reads-listing.bats"
+      ],
+      "files": [
+        "tests/reads-listing.bats"
+      ],
+      "fix": "F115"
     }
   ],
   "project": {
@@ -23191,7 +23256,7 @@
       "req": "R160",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "vbw commit --fix FIX on a fix QA opened (plugin/lib/cmd-commit.sh cmd_commit_fix, P110.1 task 4) has no test: tests/fix-commit.bats only uses project-command fixes and tests/fix-regression-test.bats commits with plain git. A regression test should open a QA fix, register a check, then run vbw commit --fix FIX on its new test file and the requirement's check file (expect a commit with a VBW-Fix trailer), and on a check file of another requirement (expect the refusal)."
     },
     {
@@ -23199,7 +23264,7 @@
       "req": "R160",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The refusal branches of vbw fix check (plugin/lib/cmd-fix.sh cmd_fix_check) are untested: unknown fix, closed fix, a fix not opened by QA, a test file that does not exist, and a malformed document. A regression test should run vbw fix check against each case, expect a non-zero exit with the stated what-to-do-instead text, and expect the record unchanged."
     },
     {
@@ -23207,7 +23272,7 @@
       "req": "R161",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/next.md line 118 (decision-table row 12, commit 52a18175 for P111.4) is a broken Markdown table row: the edit wrote \"...git history) |; when the only unfinished requirements are `human` ones you skipped, `detail.later` lists them: ... judge them now) | yes |\", so the row has an extra column and a stray \")\" and the detail.later explanation renders in the wrong cell. Fix: keep the detail.later sentence inside the third cell (before the final \"| yes |\"). A regression test should check that every row of the docs/next.md decision table has the same number of unescaped pipes as its header."
     },
     {
@@ -23215,7 +23280,7 @@
       "req": "R161",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The new \"vbw req skip ID\" is not consistent across the surface: plugin/bin/vbw:38 (vbw --help) and the first usage line of \"vbw req --help\" (line 98) still list only \"req accept ID | req reject ID NOTE\"; line 99 describes skip as \"set a requirement aside\", a stale text from P114.1 that does not say it records \"Skip for now\" on a [human] requirement; tests/help-every-command.bats SUBCOMMANDS omits \"req skip\", so its help-does-no-work check never runs for it; plugin/hooks/panel-intent.js and panel-lines.js name accept/reject but not skip. A regression test should require that every req subcommand cmd-req.sh accepts appears in the top-level usage, in the req help with an accurate description, and in the help-every-command list."
     },
     {
@@ -23223,7 +23288,7 @@
       "req": "R162",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "tests/refusal-next-step.bats is a hand-written list and omits vbw apply refusal paths that exist in plugin/lib/cmd-apply.sh: (1) --add of a requirement covered by a phase whose work has not started (a76e061b, 'whose work has not started') and by a phase of another milestone ('is already covered by'); (2) --add of a phase id that exists only in another milestone (a76e061b widened 'is already a phase'); (3) a malformed test_files (line 135, from P117.2). Phase criterion 4 says the test lists every refusal path and fails when one has no next step, and the file's own header says a new refusal path gets its line. A regression test should send each of these documents to vbw apply (--add, full) and assert the refusal ends with 'Next: ' and a step, and should preferably also fail on any vbw_die/apply_refuse in cmd-apply.sh and cmd-run.sh whose message lacks a Next arm. Run start/guard lists and all message text checked are otherwise complete."
     },
     {
@@ -23239,7 +23304,7 @@
       "req": "R166",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "A check that listed a folder is reused when a commit adds a new sub-folder (or removes a folder's last file) inside it, although the folder's listing changed. plugin/lib/proofreuse.sh proofreuse_reason only compares the changed file's own parent folder (sub(\"/[^/]*$\"; \"\")) against the listed folders, so adding a/sub/g when the check listed a/ yields no reason. Probed in a scratch repo: store entry dirs:[a], tree before/after adding a/sub/g, proofreuse_reason returns 0 (reuse). The collector's fingerprint (reads.sh) already includes sub-folder names but the stored fp is dropped by PROVE_FLAT and never compared, and tests/proofreuse-rule.bats:149 only pins that a file in a sub-folder is not in the listing. Criterion 2 says reuse only when no file was added to or removed from a listed folder; a folder appearing or vanishing changes what ls shows. A regression test should list a/, add a/sub/g in a commit and expect the reason 'a listing changed' (and the same when the last file of a/sub is deleted)."
     }
   ],
