@@ -14195,8 +14195,8 @@
       "qa": {
         "result": "pass",
         "tier": "deep",
-        "tree": "e311d919b3f9e852e13785f3009e38df0d50378acd578e78652ab191803d06cd",
-        "at": "2026-10-11T15:09:56Z",
+        "tree": "06019fa61ab51f9e556f08c4aee36a1c5d5831f03b98e32755bbedb8c865c3a5",
+        "at": "2026-10-11T15:49:17Z",
         "note": "30/30 checks"
       },
       "outcome": {
