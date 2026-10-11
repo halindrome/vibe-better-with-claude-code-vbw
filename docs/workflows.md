@@ -214,6 +214,19 @@ An accepted document stores each requirement's rules in the record
 the key on a first plan, nothing changes (see docs/proof.md for the approval
 consequence).
 
+### The single-file test form
+
+When the project's test runner can run one test file, the Lead adds
+`test_files` to the document, with that runner's documented syntax:
+
+```json
+{"test_files": {"run": ["bats", "{file}"], "files": ["tests/*.bats"]}}
+```
+
+`vbw apply` writes it into the spec's `## Test files` section. It changes
+nothing else about the document, and it takes effect only after the user
+approves it, like a command (see docs/proof.md, Test files).
+
 ### Changing one thing: `vbw apply --patch`
 
 ```

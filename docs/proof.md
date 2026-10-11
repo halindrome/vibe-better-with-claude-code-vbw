@@ -357,6 +357,47 @@ re-approves it. `vbw show contract` renders what is being approved, and
 `vbw show contract --changes` only what changed since the last approval in this
 clone (`vbw approve` keeps a copy of what it approved in `.vbw/runtime/`).
 
+## Test files
+
+A project whose test runner can run one test file at a time can say how, so a
+change re-runs only the test files it can affect. The form is a `## Test files`
+section in `.vbw/spec.md`, beside `## Commands`:
+
+```markdown
+## Test files
+
+- run: bats {file}
+- files: tests/*.bats
+```
+
+`run` is the command for one test file; it names `{file}` exactly once, and VBW
+puts each test file's path there. `files` lists the git pathspecs of the test
+files, one or more per line. The Lead proposes the form with the runner's
+documented syntax (`vbw apply`, see docs/workflows.md). `vbw init` never writes
+one: VBW never guesses a form.
+
+The form is approved like a command. It is part of the contract, and
+`vbw prove` never runs an edited form before the user approves it again. Without a
+form (no section, or one not approved), the test command runs whole.
+
+With an approved form, `vbw prove` runs each test file on its own, several at a
+time, and reuses a test file's result like a check's (see
+[Reusing results in `vbw prove`](#reusing-results-in-vbw-prove)). A test file
+runs again when it is new or changed, when a file it read changed or was
+deleted, when a folder it listed gained a file, or when its last result
+failed. The summary counts them, as `test files: N ran, M reused`:
+
+```
+  test files: 3 ran, 41 reused
+```
+
+A failing test file fails the proof, and the proof names it. `vbw prove --full`
+runs every test file on its own and reuses none.
+
+A test file that an approved check runs runs only as that check, not a second
+time as a test file. The quick command never stands in for an approved form:
+with a form, neither the test command nor the quick command runs.
+
 ## `vbw prove`
 
 1. Refuses unless the current contract hash is approved.
