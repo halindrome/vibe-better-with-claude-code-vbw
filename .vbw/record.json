@@ -1,21 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "fix-20261011T202423Z",
-    "kind": "fix",
-    "started_at": "2026-10-11T20:24:23Z",
-    "files": [
-      "tests/helper.bash"
-    ],
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
-    "new_tests": true,
-    "editable": [
-      "tests/helper-quiet-git.bats",
-      "tests/helper.bash",
-      "tests/helper.bats",
-      "tests/no-bats-on-generated.bats"
-    ]
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-beside-started.bats",
@@ -23868,7 +23853,7 @@
       "req": "R172",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "tests/helper.bash lines 36-37 state the macOS teardown cause as a mechanism without saying it is unproven: \"a detached gc or maintenance after a commit can still be writing into .git/objects when teardown removes the folder (Directory not empty)\". tests/helper.bats lines 13-15 and decision D283 say \"cause not proven\"; the helper comment must carry the same wording (for example \"candidate cause, not proven\"), since the F122 criterion is unproven wording everywhere it appears."
     }
   ],
