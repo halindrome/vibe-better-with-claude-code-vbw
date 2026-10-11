@@ -22826,7 +22826,7 @@
         "docs/next.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "cmd-next.sh: compute the approval problems (approve_problems) when the contract is not approved and pass them to next.jq",
         "next.jq: row 3a before the approval row: action contract, not gated, instruction naming each problem and its step, detail.problems",
@@ -22845,7 +22845,7 @@
         "tests/helper.bash"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "vbw_setup: gc.auto 0 and maintenance.auto false in the test gitconfig"
       ]
