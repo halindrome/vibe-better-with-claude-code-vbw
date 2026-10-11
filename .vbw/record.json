@@ -13678,7 +13678,22 @@
         "guarded: R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R31 (C27), R35 (C31), R39 (C36), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R50 (C51), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R81 (C109, C111, C112, C113), R95 (C149, C150), R96 (C151, C152), R99 (C155), R101 (C179), R102 (C158, C159), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R116 (C182, C183), R118 (C184), R123 (C190, C191), R129 (C196), R134 (C201), R135 (C202), R145 (C210), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "qa": {
+        "result": "pass",
+        "tier": "standard",
+        "tree": "344ef7ac0747d5c208c57faafe89b604415fe7a925a259e1dc546ca40678d57a",
+        "at": "2026-10-11T11:42:30Z",
+        "note": "16/16 checks"
+      },
+      "outcome": {
+        "tier": "standard",
+        "predicted": "standard",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 0
+      }
     },
     {
       "id": "P110",
