@@ -662,7 +662,7 @@ The causes, with the text the summary shows:
 | The clone has no earlier recorded run | `this clone has no earlier recorded run` |
 | The last proof was cut short | `the last proof was cut short` |
 | `vbw prove --full` | `vbw prove --full` |
-| Nothing was committed since the last passing proof (`vbw prove` only; `vbw fix done` reuses that proof) | `nothing was committed since the last passing proof` |
+| Nothing was committed since the last passing proof (`vbw prove` only; `vbw fix done` reuses that proof): the project's files are the tree the last passing proof recorded (`evidence.tree`), the committed code is the tree it ran on (`evidence.head`), and the record's last proof passed | `nothing was committed since the last passing proof` |
 
 A content change to a file no recorded run read runs nothing: it affects
 nothing that was run. An added or deleted file no recorded run saw (none read
@@ -703,7 +703,9 @@ To run everything fresh, use `vbw prove --full`, or prove again with
 nothing committed since a passing proof (a second `vbw prove` is a deliberate re-run).
 That last cause is `vbw prove`'s alone: `vbw fix done` right after a passing proof
 reuses what the rule allows, because a passing proof of the same code is exactly
-what it needs.
+what it needs. VBW compares those trees and never the subject of the last
+commit, so a VBW record commit landing after code commits re-runs nothing it
+need not.
 
 ### Fix items
 
@@ -723,7 +725,10 @@ failing check is work in progress, not a defect, and opens nothing.
 `vbw fix done` is verified, not claimed: none of the files the fix may touch has
 uncommitted changes, and the checks of every finished requirement (all its plans
 `done`) that those files serve pass now. A fix cannot quietly break other work.
-A project command's fix is left to `vbw prove`, which runs the command.
+A project command's fix is left to `vbw prove`, which runs the command. A fix of
+the test command with a single-file form is the exception: it judges every test
+file by the reuse rule (the failed file and any changed file run, the rest are
+reused and counted), and saves the files it ran for the next proof to reuse.
 
 `vbw show fix F1` names each failing check's or project command's kept full output
 file (`full output: .vbw/runtime/output/C1.log`), listed under it. When no file is
@@ -742,6 +747,10 @@ One command closes several fixes. The checks that their files serve run once
 below. Each fix ends as it would if closed alone: `fixed` and awaiting
 `vbw prove`, or, for a `[human]` requirement, `closed` with the requirement
 back to the user for acceptance. Naming an id twice closes it once.
+
+A fix of the test command with a single-file form judges every test file by the
+same rule: the failed file and any changed file run, the rest are reused and
+counted. The files it runs are saved for the next proof to reuse.
 
 A fix that cannot close is named, and the others still close. The cases:
 
@@ -762,10 +771,19 @@ still valid for its read list is not run again. It prints one line per skipped
 check and runs the rest:
 
 ```text
-C1 unchanged since its pass (2026-10-04T20:30:00Z)
+C1 pass 2s ran: src/pay.txt changed
+tests/t_a.sh pass 3s ran: last result failed
+C2 unchanged since its pass (2026-10-04T20:30:00Z)
+every candidate check runs: this clone has no earlier recorded run
+checks: 1 ran, 1 reused
+test files: 1 ran, 0 reused
 ```
 
-The time is when that check passed. A check runs again for any reason listed
+Each check and test file that ran gets a line in the proof summary's wording,
+with the reason it ran. The cause line appears when the rule runs every
+candidate. Both count lines print every time (`0 ran, 0 reused` when nothing
+was judged), before the closing outcome lines. The time on a reused line is
+when that check passed. A check runs again for any reason listed
 there: a changed approved definition, a changed file on its read list, a last
 result that failed, no earlier pass or no read list.
 
