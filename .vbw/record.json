@@ -24290,6 +24290,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T117",
+      "text": "vbw fix done prints what it ran and the counts (checks and test files ran/reused) as the proof summary does; today it prints only the reused lines, and test-file units it re-runs pass silently (2026-10-11 15:52, 18 min with no line)",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
