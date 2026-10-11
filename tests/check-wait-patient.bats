@@ -32,22 +32,29 @@ touch "$MARK/shared.$$"
 SH
   # quick.sh: ends at once.
   printf 'true\n' > tests/quick.sh
-  # killrunner.sh: kills the runner vbw prove started for this check (the
-  # ancestor just below the process that holds all runners), so the check ends
-  # without a result.
-  cat > tests/killrunner.sh << 'SH'
-for i in $(seq 1 50); do [ -s "$MARK/main" ] && break; sleep 0.1; done
-main=$(cat "$MARK/main")
+  # mark.sh: ends at once, leaving the chain of its ancestor processes.
+  cat > tests/mark.sh << 'SH'
 p=$$
-prev=
+while [ -n "$p" ] && [ "$p" -gt 1 ]; do
+  printf '%s\n' "$p"
+  p=$(ps -o ppid= -p "$p" | tr -d ' ')
+done > "$MARK/chain.tmp.$$" && mv "$MARK/chain.tmp.$$" "$MARK/chain.$$"
+SH
+  # killrunner.sh: kills the runner vbw prove started for this check alone: its
+  # ancestor just below the first ancestor it shares with the mark check (the
+  # runner that holds every check), so this check ends without a result while
+  # the runner of the others lives on.
+  cat > tests/killrunner.sh << 'SH'
+for i in $(seq 1 50); do ls "$MARK"/chain.[0-9]* > /dev/null 2>&1 && break; sleep 0.1; done
+other=$(ls "$MARK"/chain.[0-9]* | head -n 1)
+p=$$
 while :; do
   pp=$(ps -o ppid= -p "$p" | tr -d ' ')
-  [ -n "$pp" ] || exit 0
-  [ "$pp" != "$main" ] || break
-  prev=$p
+  [ -n "$pp" ] && [ "$pp" -gt 1 ] || exit 0
+  ! grep -qx "$pp" "$other" || break
   p=$pp
 done
-[ -z "$prev" ] || kill -9 "$prev"
+[ "$p" = $$ ] || kill -9 "$p"
 sleep 1
 SH
 }
@@ -112,20 +119,22 @@ noise() {
 }
 
 @test "R94: a check whose runner ends without a result is reported not run with the reason; every other result stands; the proof fails without dying" {
-  project "[$(check C1 quick), $(check C2 killrunner), $(check C3 quick)]"
-  "$VBW" prove > "$TEST_ROOT/out" 2>&1 < /dev/null 3>&- &
-  local pid=$!
-  printf '%s\n' "$pid" > "$MARK/main"
-  local code=0
-  wait "$pid" || code=$?
-  local out
-  out=$(cat "$TEST_ROOT/out")
-  [ "$code" -eq 1 ] || { echo "exit $code: $out"; false; }
-  jq -e '.evidence.checks.C1.status == "pass" and .evidence.checks.C3.status == "pass"' .vbw/record.json
-  jq -e '.evidence.checks.C2.status == "skipped" and (.evidence.checks.C2.tail | startswith("not run")) and (.evidence.checks.C2.tail | length) > 8' .vbw/record.json
-  jq -e '.evidence.passed == false' .vbw/record.json
-  [[ "$out" == *"C2 skipped"* ]]
-  noise "$out" || { echo "$out"; false; }
+  local jobs code out
+  project "[$(check C1 mark), $(check C2 killrunner), $(check C3 mark)]"
+  # One at a time and several at a time; --full so that nothing is reused.
+  for jobs in 1 3; do
+    "$VBW" config set check_jobs "$jobs" > /dev/null
+    rm -f "$MARK"/chain.*
+    code=0
+    "$VBW" prove --full > "$TEST_ROOT/out" 2>&1 < /dev/null 3>&- || code=$?
+    out=$(cat "$TEST_ROOT/out")
+    [ "$code" -eq 1 ] || { echo "check_jobs $jobs, exit $code: $out"; false; }
+    jq -e '.evidence.checks.C1.status == "pass" and .evidence.checks.C3.status == "pass"' .vbw/record.json || { echo "check_jobs $jobs: $out"; false; }
+    jq -e '.evidence.checks.C2.status == "skipped" and (.evidence.checks.C2.tail | startswith("not run")) and (.evidence.checks.C2.tail | length) > 8' .vbw/record.json
+    jq -e '.evidence.passed == false' .vbw/record.json
+    [[ "$out" == *"C2 skipped"* ]] || { echo "check_jobs $jobs: $out"; false; }
+    noise "$out" || { echo "check_jobs $jobs: $out"; false; }
+  done
 }
 
 @test "R94: many quick checks run a few at a time print no shell job warning, in bash 3.2 and bash 5" {

@@ -1,11 +1,13 @@
 #!/usr/bin/env bats
 # R111 (docs/proof.md): a project may name a quick test command (a Commands
 # entry called quick); a plain vbw prove runs it in place of the test command,
-# vbw prove --full runs every check and every full project command and, after a
-# code change, reuses nothing (after a documentation-only change it may reuse
-# the test command's passing result: R144, tests/proof-doc-reuse.bats), and the
-# evidence records whether the proof was full. Every check and command logs its
-# own name to $RANLOG when it really runs. L1.
+# vbw prove --full runs every check and every full project command and reuses
+# nothing, and the evidence records whether the proof was full. A plain proof
+# reuses a check's or command's pass under the one reuse rule (D260, R166): it
+# runs again only when a file it read changed. Here the commands read every
+# file under src/, C1 reads src/pay.txt, C2 reads src/refund.txt and nothing
+# reads notes.txt. Every check and command logs its own name to $RANLOG when it
+# really runs. L1.
 
 load helper
 
@@ -18,16 +20,20 @@ setup() {
   mkdir -p src tests
   printf 'paid\n' > src/pay.txt
   printf 'refunded\n' > src/refund.txt
+  printf 'notes\n' > notes.txt
   cat > tests/c1.sh << 'SH'
 echo "C1" >> "$RANLOG"
 grep -qx paid src/pay.txt
 SH
   cat > tests/c2.sh << 'SH'
 echo "C2" >> "$RANLOG"
+grep -qx refunded src/refund.txt
 SH
-  # The quick command fails when QUICKFAIL is set.
+  # Every command reads the code under src/; the quick one fails when
+  # QUICKFAIL is set.
   cat > tests/cmd.sh << 'SH'
 echo "cmd-$1" >> "$RANLOG"
+cat src/*.txt > /dev/null
 [ -z "${QUICKFAIL:-}" ] || [ "$1" != quick ]
 SH
   export RANLOG="$TEST_ROOT/ran.log"
@@ -115,7 +121,8 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   vbw_run prove --full
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(ran)" = "C1 C2 cmd-lint cmd-test " ] || { echo "ran: $(ran)"; false; }
-  [[ "$output" != *reused* ]] || { echo "$output"; false; }
+  [[ "$output" != *"reused ("* ]] || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +checks: 2 ran, 0 reused$' || { echo "$output"; false; }
   [ -z "$(line quick)" ] || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -qE '^ +proof: full$' || { echo "$output"; false; }
   jq -e '.evidence.full == true and (.evidence.commands | has("quick") | not)' .vbw/record.json
@@ -150,6 +157,20 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   [[ "$(line extra)" == *"not approved"* ]] || { echo "$output"; false; }
   jq -e '.evidence.full == false' .vbw/record.json
   printf '%s\n' "$output" | grep -qE '^ +proof: partial' || { echo "$output"; false; }
+}
+
+@test "R111: a plain proof runs a project command or check again only when a file it read changed" {
+  change notes.txt
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  [[ "$(line lint)" == *"reused ("* && "$(line test)" == *"reused ("* ]] || { echo "$output"; false; }
+  : > "$RANLOG"
+  change src/refund.txt
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "C2 cmd-lint cmd-test " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  [[ "$(line C1)" == *"reused ("* ]] || { echo "$output"; false; }
 }
 
 @test "R111: a failing quick command opens a fix for it, and a passing full proof closes that fix" {

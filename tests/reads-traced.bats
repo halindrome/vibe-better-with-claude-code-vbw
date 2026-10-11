@@ -2,7 +2,10 @@
 # R166 (docs/proof.md): read lists are recorded while checks still run several
 # at a time (up to check_jobs), never one by one. A check that reads a file an
 # earlier run of the same proof wrote (build output, a cache) depends on what
-# that run read. A check that reads the project through git (git show, git
+# that run read. Checks are independent: run together, each runs in its own
+# slot copy and never sees another's output, so that rule applies to runs that
+# follow one another in one copy (reads.sh keeps written files' lists per
+# slot), shown with check_jobs 1. A check that reads the project through git (git show, git
 # ls-files, ...) has reads VBW cannot see, so it always runs. Each check logs
 # its name to $RANLOG when it really runs. L1.
 
@@ -33,7 +36,9 @@ while [ ! -e "$SYNC/$2" ]; do
   sleep 0.1
 done
 SH
-  # C3 builds gen/out.txt from src/a.txt; C4 reads only what C3 built.
+  # C3 builds gen/out.txt from src/a.txt; C4 reads only what C3 built. Run
+  # together (no $SYNC/off) C4 is in another copy and has no gen/out.txt, so
+  # it then passes without depending on C3.
   cat > tests/build.sh << 'SH'
 echo C3 >> "$RANLOG"
 mkdir -p gen
@@ -41,6 +46,7 @@ cat src/a.txt > gen/out.txt
 SH
   cat > tests/report.sh << 'SH'
 echo C4 >> "$RANLOG"
+[ -e "$SYNC/off" ] || exit 0
 grep -q . gen/out.txt
 SH
   # C5 reads committed content through git, never opening the file itself.
