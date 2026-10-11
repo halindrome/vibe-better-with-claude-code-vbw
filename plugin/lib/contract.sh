@@ -54,15 +54,16 @@ contract_waiting() {
   local f d old="$VBW_RUNTIME/approved-contract.json" out="" all="" held=""
   contract_approved "$(contract_hash "$1")" && return 0
   consent_has shape "$(contract_shape "$1")" || return 1
-  held=$(printf '%s' "$1" | jq -j --slurpfile old "$old" '.checks[] | select(has("fix")) | . as $c
-    | select($old[0].checks[$c.id] != $c) | .files[]? | . + "\u0000"' 2> /dev/null) \
-    || held=$(printf '%s' "$1" | jq -j '.checks[] | select(has("fix")) | .files[]? | . + "\u0000"')
+  # One path per line: a shell variable cannot hold NUL bytes (bash 5 warns, bash 3.2 drops them).
+  held=$(printf '%s' "$1" | jq -r --slurpfile old "$old" '.checks[] | select(has("fix")) | . as $c
+    | select($old[0].checks[$c.id] != $c) | .files[]?' 2> /dev/null) \
+    || held=$(printf '%s' "$1" | jq -r '.checks[] | select(has("fix")) | .files[]?')
   while IFS= read -r -d '' f; do
     all="$all$f"$'\n'
     d=missing
     [ ! -f "$VBW_ROOT/$f" ] || d=$(vbw_sha256 < "$VBW_ROOT/$f")
     if [ "$(jq -r --arg f "$f" '.files[$f] // "new"' "$old" 2> /dev/null)" != "$d" ] \
-      || printf '%s' "$held" | tr '\0' '\n' | grep -qxF -- "$f"; then
+      || printf '%s\n' "$held" | grep -qxF -- "$f"; then
       out="$out$f"$'\n'
     fi
   done < <(printf '%s' "$1" | jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"')
