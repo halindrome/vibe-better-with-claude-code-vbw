@@ -125,9 +125,10 @@ testfiles_save() {
 # evidence, in the files' order: the new ones stamped with their definition's
 # fingerprint, the time and the reason they ran, joined with the reused ones.
 testfiles_finish() {
-  local p out="$2" order
+  local p out="$2" order fp
   while IFS= read -r -d '' p; do
-    out=$(printf '%s' "$out" | jq -c --arg p "$p" --arg fp "$(testfiles_fp "$1" "$p")" --arg at "$3" --slurpfile w <(printf '%s' "$TF_WHY") \
+    fp=$(testfiles_fp "$1" "$p")
+    out=$(printf '%s' "$out" | jq -c --arg p "$p" --arg fp "$fp" --arg at "$3" --slurpfile w <(printf '%s' "$TF_WHY") \
       '.[$p] += ({fp: $fp, at: $at} + (if $w[0][$p] and .[$p].status != "skipped" then {why: $w[0][$p]} else {} end))')
   done < <(printf '%s' "$2" | jq -j 'keys[] | . + "\u0000"')
   order=$(printf '%s\0' ${TF_PATHS[@]+"${TF_PATHS[@]}"} | jq -Rsc 'split("\u0000")[:-1]')
