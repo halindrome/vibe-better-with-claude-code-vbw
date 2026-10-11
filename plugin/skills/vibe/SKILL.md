@@ -32,7 +32,7 @@ then `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw next --json` again.
 
 ## Autonomy
 
-Last line above = how much VBW does alone (`/vbw:profile` changes it). Approval, `accept` and shipping always stop for user.
+Last line above = how much VBW does alone. Approval, `accept` and shipping always stop for user.
 
 - **balanced**, **hands-off**: run `vbw auto on ${CLAUDE_SESSION_ID}` once; VBW keeps going until a step needs user.
 - **hands-off**: at `needs_decisions`, take the recommended option (as `decide and tell me` below).
@@ -48,7 +48,7 @@ Every stop ends with a last line, **What I need from you:** <the one thing user 
 Claim only what kernel shows.
 
 `plan`, `build`, `fix` need the **Workflow** tool (the `workflows` line above turned it on). None: say why, stop. Pass
-`session` (`${CLAUDE_SESSION_ID}`: the workflow confirms what its agents recorded and ends its own run), `models` (from `vbw config models`), the next JSON's top-level `rigor`, `effort` and its `profile` in every workflow's args.
+`session` (`${CLAUDE_SESSION_ID}`, so the workflow confirms and ends its own run), `models` (from `vbw config models`), the next JSON's top-level `rigor`, `effort` and its `profile` in every workflow's args.
 
 Before `spec` or a workflow `plan`: code and no `.vbw/map.md` → map first:
 `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start map`, Workflow `vbw:mapping` (args as above),
@@ -77,15 +77,15 @@ recommendation, question); convert runs `vbw:convert`, fresh records `vbw legacy
 **spec** (needs user): agree what to build. Existing code: start from map, say
 what it does, propose improvements. Else ask what it is for and who uses it. Propose user-observable,
 testable requirements: `[auto]` when a check can prove it, `[human]` when only a person can
-judge it (look, feel, tone); a document that must contain something is `[auto]`, how it reads is `[human]`. Propose what, not how: leave sign-in, storage, hosting, paid services
-to the decision round; write a constraint only if user stated it. Recommend; don't interrogate. Follow `vbw:suggest`. Add each
+judge it (look, feel, tone); a document that must contain something is `[auto]`, how it reads is `[human]`. Propose what, not how (sign-in, storage, hosting, paid services go
+to the decision round); write a constraint only if user stated it. Recommend; don't interrogate. Follow `vbw:suggest`. Add each
 agreed requirement: `vbw spec add auto|human "statement"` (goals and constraints go in `.vbw/spec.md`, then `vbw spec sync`). Default milestone title → `vbw milestone rename "<title>"`. Check
 `## Commands` in `.vbw/spec.md` (what every proof runs) fits what was agreed (right sub-project, right interpreter); fix there, then `vbw spec sync`.
 
 **plan** with `detail.tier` express or `detail.small`: no mapping, no planning workflow. Read the
-files the request names, then `vbw apply --add` (with or without earlier phases) one phase at `detail.tier` with one
+files the request names, then `vbw apply --add` one phase at `detail.tier` with one
 plan (one or two files, tasks), one check that fails today, and the `rules` (each condition, edge and error case the requirement states, each with its check); go to **approve**.
-New ids start at P<next_phase>; `"tier"` is `detail.tier` (here express).
+New ids start at P<next_phase>; `"tier"` is `detail.tier`.
 Example: `vbw apply --add` with `{"phases":[{"id":"P1","title":"Fix add","reqs":["R1"],"tier":"express"}],"plans":[{"id":"P1.1","phase":"P1","title":"Fix add","reqs":["R1"],"files":["calc.sh"],"after":[],"tasks":["add returns the sum"]}],"checks":[{"id":"C1","req":"R1","run":["sh","test.sh"],"files":["test.sh"]}],"rules":[{"req":"R1","text":"add returns the sum","check":"C1"}]}`
 Over two files, a risk path or a tier: apply refuses; use the planning workflow.
 
@@ -94,23 +94,23 @@ Over two files, a risk path or a tier: apply refuses; use the planning workflow.
 decides first. Ask each with AskUserQuestion, one at a time (why it matters in the question, each option's
 trade-off as description, recommended first, "(Recommended)"). Record
 each: `vbw decide "<what was decided>" "<their reason, or the trade-off they accepted>"`. Plan again: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start plan`, workflow with
-`{"requirements": <requirements>, "next_phase": <next_phase>, "decided": true, "models": ...}`. Planned: give Lead's summary, the
-`choices` it made itself (any can change), Architect's `notes` (offer `vbw todo add`). Then the approval menu, never a typed command.
+`{"requirements": <requirements>, "next_phase": <next_phase>, "decided": true, "models": ...}`. Planned: give Lead's summary, its
+`choices` (any can change) and Architect's `notes` (offer `vbw todo add`); then the approval menu, never a typed command.
 
 **approve** (needs user): `vbw show contract --changes` (after an earlier approval: explain just those). Else
 `vbw show contract`: explain each requirement, how checked, plans, files, commands that will run. Follow `vbw:suggest`, then AskUserQuestion with the approval question `vbw show contract` prints: "Approve" (first), "Not yet". Only this menu; never ask the user to type /vbw:approve (typing it still works). Approve: hook recorded it; continue. Not yet: ask what to change. User's own words (own-answer slot): what to change, or a question. You cannot approve.
 Test files edited during the build wait for one approval just before proof (`detail.files`): say which and why, then ask the same way.
 
 **build**: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start build <detail.plans>`, Workflow `vbw:building` with
-args `{"plans": <detail.plans>, "docs": <detail.docs>, "models": ..., "rigor": ...}` Returns: report each plan's result in one line (quote blockers, notes) and anything not recorded, then `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw prove`.
+args `{"plans": <detail.plans>, "docs": <detail.docs>, "models": ..., "rigor": ...}` Returns: one line per plan (quote blockers, notes), anything not recorded, then `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw prove`.
 
 **fix**: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start fix <detail.fixes>`, Workflow `vbw:fixing` with args
-`{"groups": <detail.groups>, "models": ..., "rigor": ...}` Returns: report anything it says was not recorded, then `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw prove`.
+`{"groups": <detail.groups>, "models": ..., "rigor": ...}` Returns: anything not recorded, then `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw prove`.
 
 **prove**: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw prove --full` when `detail.full` is true, else `vbw prove`; report what passed and failed.
 
 **qa**: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start qa`, Workflow `vbw:verifying` with args
-`{"phases": <detail.phases>, "tier": <detail.tier>, "round": <round, as in vbw next --json>, "models": ..., "rigor": ...}`. QA records each phase's verdict; findings become fixes. Report verdicts, failed checks, anything not recorded.
+`{"phases": <detail.phases>, "tier": <detail.tier>, "round": <round, as in vbw next --json>, "models": ..., "rigor": ...}`. Report verdicts, failed checks, anything not recorded.
 
 **run**: a run is open. This session's workflow still running: wait. Else
 interrupted: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run end`, continue.
@@ -131,13 +131,12 @@ thing to judge: run it yourself when you can; put its output, or one concrete th
 "Something's wrong", "Skip for now". Works: `vbw req accept <id>`. Something's
 wrong: ask what, then `vbw req reject <id> "<their words>"`. Skip for now: `vbw req skip <id>`.
 
-**ship** (needs user): summarize what was delivered (`vbw status`, `vbw show roadmap`); with `detail.later`, name them and ask once: ship now and judge them in the next milestone, or judge them now (nothing changes; ask the verdicts). Otherwise ask whether to ship. Yes: `vbw ship`; then follow `vbw:whats-next` (the ship never waits for it).
+**ship** (needs user): summarize what was delivered (`vbw status`, `vbw show roadmap`); with `detail.later`, name them and ask once: ship now and judge them in the next milestone, or judge them now. Otherwise ask whether to ship. Yes: `vbw ship`; then follow `vbw:whats-next` (the ship never waits for it).
 
 **milestone** (needs user): ask what next milestone is about,
 `vbw milestone start "<title>"`, then `spec`.
 
-**Changing the plan** (add, change or drop mid-way): `vbw spec add`, or edit `.vbw/spec.md` and `vbw spec sync` (a dropped
-requirement removes its checks and unstarted plans). `vbw next` then asks for planning again (Lead keeps finished work); the approval menu follows.
+**Changing the plan** (add, change or drop mid-way): `vbw spec add`, or edit `.vbw/spec.md` and `vbw spec sync`. `vbw next` then asks for planning again; the approval menu follows.
 
 ## Rules
 
