@@ -1,6 +1,14 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "plan-20261011T002413Z",
+    "kind": "plan",
+    "started_at": "2026-10-11T00:24:13Z",
+    "files": [
+      ".vbw/"
+    ],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-beside-started.bats",
@@ -23678,6 +23686,13 @@
       "text": "No shortcuts, for every VBW user (owner, 2026-10-11: 'this must NEVER happen to ANYONE using VBW, NO SHORTCUTS EVER ALLOWED'): the Architect and Lead choose the optimal, future-proof design, never the merely safe or simple one, and name any known cost or debt instead of hiding it behind a fallback; their self-review refuses a design that pays a recurring cost (time, tokens, re-runs) to avoid thinking; QA fails a phase that introduces such a shortcut or unnamed debt. Applies to plans for users' projects and to VBW itself",
       "sort": "next",
       "size": "medium",
+      "status": "open"
+    },
+    {
+      "id": "T112",
+      "text": "After 2.0.32 is installed: reword the shipped requirements R43, R103, R110, R111 and R144 (reopened into the current milestone, which 2.0.32 can re-plan) so their text states D260's rule: proofs skip what a change cannot reach, QA and shipping reuse those results, the pre-push release run is the one complete run; 2.0.31 refused dropping them and cannot re-plan reopened requirements (2026-10-11)",
+      "sort": "next",
+      "size": "small",
       "status": "open"
     }
   ],
