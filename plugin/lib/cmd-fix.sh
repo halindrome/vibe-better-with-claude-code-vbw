@@ -37,6 +37,15 @@ cmd_fix_checks() {
     | .checks[] | select(.req as $q | any($reqs[]; . == $q)) | .id'
 }
 
+# cmd_fix_finished_checks RECORD: the checks of every finished requirement (it
+# has plans and all are done).
+cmd_fix_finished_checks() {
+  printf '%s' "$1" | jq -r '. as $r
+    | [.requirements[] | .id as $q | [$r.plans[] | select(any(.reqs[]; . == $q))] as $ps
+       | select(($ps | length) > 0 and all($ps[]; .status == "done")) | $q] as $reqs
+    | .checks[] | select(.req as $q | any($reqs[]; . == $q)) | .id'
+}
+
 # cmd_fix_check FIX: the check document on stdin becomes a check of the finding's requirement.
 cmd_fix_check() {
   [ $# -eq 1 ] || vbw_usage_error "usage: vbw fix check FIX < CHECK  (a JSON object: run, files and optionally exit, output, timeout, alone)"
@@ -110,45 +119,67 @@ cmd_fix() {
     ids+=("$id")
   done
 
-  # The union of the served checks runs once; a pass on unchanged files is reused.
+  # The checks of every finished requirement are the candidates; the one reuse
+  # rule of vbw prove picks which run, on clean copies, and their read lists are kept.
   # shellcheck source=checks.sh
   . "$VBW_LIB/checks.sh"
-  local union=() todo=() c at results='{}'
-  for id in ${ids[@]+"${ids[@]}"}; do
+  # shellcheck source=proofcopy.sh
+  . "$VBW_LIB/proofcopy.sh"
+  # shellcheck source=proofreuse.sh
+  . "$VBW_LIB/proofreuse.sh"
+  local todo=() c at results='{}' held head noreads fp why served='[]' stamp
+  if [ ${#ids[@]} -gt 0 ]; then
+    for id in "${ids[@]}"; do
+      served=$(printf '%s' "$served" | jq -c --slurpfile s <(cmd_fix_checks "$record" "$id" | jq -R . | jq -sc 'map(select(length > 0))') '. + $s[0] | unique')
+    done
+    held=$(contract_held "$record")
+    cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
+    mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
+    noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
+    [ -z "$noreads" ] || printf 'every candidate check runs: %s\n' "$noreads"
+    head=$(vbw_head_tree 2> /dev/null) || head=
+    PROOFREUSE_STORE=$(proofreuse_store_read)
     while IFS= read -r c; do
       [ -n "$c" ] || continue
-      case " ${union[*]-} " in *" $c "*) ;; *) union+=("$c") ;; esac
-    done < <(cmd_fix_checks "$record" "$id")
-  done
-  # A check a fix added waits for the user's approval: the fix closes with the approved checks.
-  local held
-  held=$(contract_held "$record")
-  for c in ${union[@]+"${union[@]}"}; do
-    if printf '%s\n' "$held" | grep -qx -- "$c"; then
-      printf '%s waits for the user'"'"'s approval (a check %s added: %s); vbw next asks, then vbw prove runs it\n' "$c" \
-        "$(printf '%s' "$record" | jq -r --arg c "$c" '.checks[] | select(.id == $c) | .fix')" \
-        "$(printf '%s' "$record" | jq -r --arg c "$c" '.checks[] | select(.id == $c) | .files | join(", ")')"
-    elif at=$(checks_unchanged "$record" "$c"); then
-      printf '%s unchanged since its pass (%s)\n' "$c" "$at"
-    else
-      todo+=("$c")
-    fi
-  done
+      if printf '%s\n' "$held" | grep -qx -- "$c"; then
+        # A check a fix added waits for the user's approval: the fix closes with the approved checks.
+        printf '%s waits for the user'"'"'s approval (a check %s added: %s); vbw next asks, then vbw prove runs it\n' "$c" \
+          "$(printf '%s' "$record" | jq -r --arg c "$c" '.checks[] | select(.id == $c) | .fix')" \
+          "$(printf '%s' "$record" | jq -r --arg c "$c" '.checks[] | select(.id == $c) | .files | join(", ")')"
+        continue
+      fi
+      why=$noreads
+      if [ -z "$why" ]; then
+        fp=$(proofreuse_check_fp "$record" "$c")
+        why=$(proofreuse_reason "check:$c" "$fp" "$head") || true
+      fi
+      if [ -z "$why" ]; then
+        printf '%s unchanged since its pass (%s)\n' "$c" "$(printf '%s' "$PROOFREUSE_STORE" | jq -r --arg k "check:$c" '.runs[$k].at')"
+      else
+        todo+=("$c")
+      fi
+    done < <(cmd_fix_finished_checks "$record")
+  fi
   if [ ${#todo[@]} -gt 0 ]; then
-    cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
+    at=$(vbw_now)
     checks_begin "$record"
+    proofcopy_create_slots "$(proofcopy_slots "${#todo[@]}")"
     results=$(checks_run_all "$record" "${todo[@]}")
+    proofcopy_remove
     checks_end
-    checks_record_passes "$record" "$results" "$CHECK_HASH"
+    results=$(printf '%s' "$results" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" \
+      'map_values(if $off or (.reads | type) != "object" then . + {reads: null} else . + {dirs: [.reads.dirs[].path], git: .reads.git, reads: .reads.files} end)')
+    proofreuse_save "$record" "$results" '{}' "$head" "$at" "$(proofreuse_store_form)"
   fi
 
-  # Each fix ends as it would alone; a failing check fails only the fixes it serves.
+  # Each fix ends as it would alone. A failing check fails the named fixes whose
+  # files serve it, or every named fix when it serves none of them.
   local closed=() failed human fixed='[]' humans='[]'
   for id in ${ids[@]+"${ids[@]}"}; do
-    failed=$(printf '%s' "$results" | jq -r --slurpfile mine <(cmd_fix_checks "$record" "$id" | jq -R . | jq -sc 'map(select(length > 0))') \
-      '$mine[0] as $mine | [to_entries[] | select(.value.status != "pass" and (.key as $k | $mine | index($k))) | "\(.key) \(.value.status)"] | join(", ")')
+    failed=$(printf '%s' "$results" | jq -r --slurpfile mine <(cmd_fix_checks "$record" "$id" | jq -R . | jq -sc 'map(select(length > 0))') --argjson all "$served" \
+      '$mine[0] as $mine | [to_entries[] | select(.value.status != "pass" and (.key as $k | ($mine | index($k)) or (($all | index($k)) | not))) | "\(.key) \(.value.status)"] | join(", ")')
     if [ -n "$failed" ]; then
-      printf 'vbw: %s broke finished work: these checks of requirements its files serve do not pass: %s\n' "$id" "$failed" >&2
+      printf 'vbw: %s broke finished work: these checks of finished requirements do not pass: %s\n' "$id" "$failed" >&2
       bad=1
       continue
     fi
