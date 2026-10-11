@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Reuse of the last proof's results by vbw prove (docs/proof.md, R103, R110).
-# A check's pass is reused when its approved definition and the committed
-# content of its served files are unchanged; a command's, when the committed
-# code is the proof's own. Anything else runs.
+# The one reuse rule of vbw prove and vbw fix done (docs/proof.md, R166) and
+# the clone's store of recorded runs. A unit (a check, a project command or a
+# test file) is run again only when something it depends on changed; its read
+# list, written down by the run itself, says what it depends on.
 
 # proofreuse_check_fp RECORD ID: fingerprint of a check's approved definition.
 proofreuse_check_fp() {
@@ -24,30 +24,108 @@ proofreuse_command_fp() {
 # left behind by one that was interrupted or failed to record).
 proofreuse_marker() { printf '%s/prove.unfinished\n' "$VBW_RUNTIME"; }
 
-# proofreuse_last RECORD: print the last proof's evidence when its results may
-# be looked at for reuse (passed or not); fail when it may not.
-proofreuse_last() {
-  [ ! -e "$(proofreuse_marker)" ] || return 1
-  # Nothing at all changed since that proof (it is the last commit, VBW's own
-  # files are clean and the working folder is the committed code): a second
-  # prove is a deliberate re-run, as when something outside the committed code
-  # (installed dependencies, ignored files) changed.
+# proofreuse_allowed: succeed when this proof may reuse anything; print why
+# not otherwise. Not while an earlier proof is unfinished, and (D173) not when
+# nothing at all changed since the last proof (it is the last commit, VBW's own
+# files are clean and the working folder is the committed code): a second
+# prove is a deliberate re-run, as when something outside the committed code
+# (installed dependencies, ignored files) changed.
+proofreuse_allowed() {
+  if [ -e "$(proofreuse_marker)" ]; then
+    printf 'the last proof was cut short\n'
+    return 1
+  fi
   if [ "$(git -C "$VBW_ROOT" log -1 --format=%s 2> /dev/null)" = 'chore(vbw): proof passed' ] \
     && [ -z "$(git -C "$VBW_ROOT" status --porcelain -z -- .vbw 2> /dev/null | tr -d '\000')" ] \
     && [ "$(vbw_code_tree)" = "$(vbw_head_tree)" ]; then
+    printf 'proving again with nothing committed\n'
     return 1
   fi
-  printf '%s' "$1" | jq -ce '.evidence | select(type == "object")'
 }
 
-# proofreuse_commands_ok EVIDENCE: succeed when the committed code is the very
-# code of that passing proof (R103), which is what project commands need.
-proofreuse_commands_ok() {
-  local head tree
-  head=$(vbw_head_tree) && [ -n "$head" ] || return 1
-  tree=$(vbw_code_tree) || return 1
-  [ "$tree" = "$head" ] || return 1
-  printf '%s' "$1" | jq -e --arg head "$head" '.passed == true and .head == $head' > /dev/null
+# The store of recorded runs lives in the clone, never in the record (it
+# changes on every run and would make the record's history noise):
+# $(git common dir)/vbw/runs.json, {runs: {"check:ID" | "command:NAME" |
+# "file:PATH": {fp, tree, status, at, seconds, tail, reads, dirs, git}}, form}.
+# fp: fingerprint of the unit's approved definition; tree: the committed code
+# it ran on; reads: the project files it opened (null: none was written down);
+# dirs: the folders it listed; git: it read the project through git. form: the
+# fingerprint of the approved commands and test-file form of the last recorded
+# run. A missing or damaged store means nothing is reused.
+proofreuse_store_file() {
+  local common
+  common=$(git -C "$VBW_ROOT" rev-parse --path-format=absolute --git-common-dir 2> /dev/null) || vbw_die "not a git repository"
+  printf '%s/vbw/runs.json\n' "$common"
+}
+
+# proofreuse_store_read: the store, or an empty one when it is missing or damaged.
+proofreuse_store_read() {
+  jq -c 'if type == "object" and (.runs | type) == "object" then {runs, form: (.form // null)} else error("shape") end' \
+    "$(proofreuse_store_file)" 2> /dev/null || printf '{"runs":{},"form":null}\n'
+}
+
+# proofreuse_store_form: the form fingerprint of the last recorded run, or nothing.
+proofreuse_store_form() { proofreuse_store_read | jq -r '.form // empty'; }
+
+# proofreuse_save RECORD CHECKS COMMANDS TREE AT FORM: record the runs that
+# really happened (CHECKS and COMMANDS: JSON objects name -> result, with the
+# read list the runner collected) on the committed code TREE. A unit that was
+# not run (skipped, waiting) leaves its earlier run alone. The read-modify-write
+# runs under a lock beside the file and ends in an atomic move.
+proofreuse_save() {
+  local file lock tmp new='{}' kind name fp res
+  for kind in check command; do
+    res="$2"
+    [ "$kind" = check ] || res="$3"
+    while IFS= read -r -d '' name; do
+      if [ "$kind" = check ]; then fp=$(proofreuse_check_fp "$1" "$name"); else fp=$(proofreuse_command_fp "$1" "$name"); fi
+      new=$(printf '%s' "$new" | jq -c --slurpfile r <(printf '%s' "$res") --arg k "$kind:$name" --arg n "$name" --arg fp "$fp" --arg tree "$4" --arg at "$5" \
+        '$r[0][$n] as $x | if $x.status == "skipped" or $x.status == "waiting" then . else
+          . + {($k): {fp: $fp, tree: $tree, status: $x.status, at: $at, seconds: $x.seconds, tail: ($x.tail // ""),
+            reads: ($x.reads // null), dirs: ($x.dirs // []), git: ($x.git // false)}} end')
+    done < <(printf '%s' "$res" | jq -j 'keys[] | . + "\u0000"')
+  done
+  file=$(proofreuse_store_file)
+  mkdir -p "${file%/*}" || vbw_die "cannot create ${file%/*}"
+  lock="${file%.json}.lock"
+  vbw_lock_take "$lock" "runs"
+  tmp=$(mktemp "${file%/*}/runs.XXXXXX") || vbw_die "cannot create a temporary file in ${file%/*}"
+  vbw_guard_add file "$tmp"
+  proofreuse_store_read | jq -c --slurpfile nw <(printf '%s' "$new") --arg form "$6" \
+    '{runs: (.runs + $nw[0]), form: $form}' > "$tmp" && mv "$tmp" "$file"
+  vbw_guard_drop "$tmp"
+  vbw_guard_drop "$lock"
+}
+
+# proofreuse_reason KEY FP HEAD: the one reuse rule. Succeeds, printing
+# nothing, when the unit's pass may be reused: its last result passed, its
+# definition fingerprint FP is unchanged, it has a read list and did not read
+# through git, and one git diff-tree between the tree it ran on and the
+# committed code HEAD shows no file of its read list changed or deleted and no
+# file added to or removed from a folder it listed. Otherwise fails and prints
+# the reason. Reads the store from PROOFREUSE_STORE (a JSON text).
+proofreuse_reason() {
+  local entry reason diff
+  entry=$(printf '%s' "$PROOFREUSE_STORE" | jq -c --arg k "$1" '.runs[$k] // empty | select(type == "object")') || entry=
+  if [ -z "$entry" ]; then printf 'never passed\n'; return 1; fi
+  reason=$(printf '%s' "$entry" | jq -r --arg fp "$2" '
+    if .status != "pass" then "last result failed"
+    elif (.reads | type) != "array" then "no read list"
+    elif .fp != $fp then "definition changed"
+    elif .git == true then "reads the project through git"
+    else empty end') || reason='no read list'
+  if [ -n "$reason" ]; then printf '%s\n' "$reason"; return 1; fi
+  diff=$(git -C "$VBW_ROOT" diff-tree -z -r --no-renames --name-status "$(printf '%s' "$entry" | jq -r .tree)" "$3" 2> /dev/null | tr '\0' '\n'; exit "${PIPESTATUS[0]}") \
+    || { printf 'the code it ran on is unknown\n'; return 1; }
+  [ -n "$diff" ] || return 0
+  reason=$(printf '%s\n' "$diff" | jq -R -s -r --slurpfile e <(printf '%s' "$entry") '
+    $e[0] as $e | ($e.reads | map({key: ., value: true}) | from_entries) as $reads | $e.dirs as $dirs
+    | [split("\n")[] | select(length > 0)] as $l
+    | [range(0; $l | length; 2) | {s: $l[.][0:1], p: $l[. + 1]}]
+    | (map(select($reads[.p]) | if .s == "D" then "\(.p) deleted" else "\(.p) changed" end)
+       + map(select(.s == "A" or .s == "D") | (.p | if test("/") then sub("/[^/]*$"; "") else "." end) as $d
+             | select($dirs | index($d)) | "\($d) listing changed")) | first // empty')
+  if [ -n "$reason" ]; then printf '%s\n' "$reason"; return 1; fi
 }
 
 # proofreuse_names RECORD FULL: sets PROVE_NAMES (JSON array of the command
@@ -74,102 +152,50 @@ proofreuse_names() {
   fi
 }
 
-# proofreuse_plan RECORD [FULL]: with FULL = 1 nothing is reused. Sets REUSE_CHECKS and REUSE_COMMANDS (the reused
-# results, as JSON objects), and TODO_CHECKS (array) and TODO_COMMANDS (JSON
-# array of names), which are what has to run. A check is reused when its last
-# result passed and both its approved definition and the committed content of
-# the files it depends on (R110) are what they were; a command, by R103.
+# proofreuse_plan RECORD [FULL]: FULL (1) only picks which commands belong to a
+# full proof; the reuse rule is the same. Sets REUSE_CHECKS and REUSE_COMMANDS
+# (the reused results, as JSON objects), TODO_CHECKS (array) and TODO_COMMANDS
+# (JSON array of names), which are what has to run, and WHY_CHECKS and
+# WHY_COMMANDS (JSON objects name -> the reason it has to run).
 proofreuse_plan() {
-  local record="$1" ev='' id fp sp old name
+  local record="$1" id name fp why head='' off=''
   proofreuse_names "$record" "${2:-0}"
-  REUSE_CHECKS='{}' REUSE_COMMANDS='{}' TODO_CHECKS=() TODO_COMMANDS='[]'
-  if [ "${2:-0}" = 1 ]; then ev=; else ev=$(proofreuse_last "$record") || ev=; fi
+  REUSE_CHECKS='{}' REUSE_COMMANDS='{}' TODO_CHECKS=() TODO_COMMANDS='[]' WHY_CHECKS='{}' WHY_COMMANDS='{}'
+  PROOFREUSE_STORE=$(proofreuse_store_read)
+  off=$(proofreuse_allowed) || true
+  if [ -z "$off" ]; then
+    head=$(vbw_head_tree) || head=
+    [ -n "$head" ] || off='no committed code'
+  fi
   while IFS= read -r id; do
     [ -n "$id" ] || continue
     fp=$(proofreuse_check_fp "$record" "$id")
-    old=
-    if [ -n "$ev" ] && sp=$(checks_fingerprint "$record" "$id"); then
-      old=$(printf '%s' "$ev" | jq -c --arg id "$id" --arg fp "$fp" --arg sp "$sp" \
-        '.checks[$id] // empty | select(.status == "pass" and .fp == $fp and .served == $sp)')
-    fi
-    if [ -n "$old" ]; then
-      REUSE_CHECKS=$(printf '%s' "$REUSE_CHECKS" | jq -c --arg id "$id" --argjson r "$old" '. + {($id): ($r + {reused: true})}')
+    why=$off
+    [ -n "$why" ] || why=$(proofreuse_reason "check:$id" "$fp" "$head") || true
+    if [ -z "$why" ]; then
+      REUSE_CHECKS=$(printf '%s' "$REUSE_CHECKS" | jq -c --arg id "$id" --argjson r "$(proofreuse_result "check:$id")" '. + {($id): $r}')
     else
       TODO_CHECKS+=("$id")
+      WHY_CHECKS=$(printf '%s' "$WHY_CHECKS" | jq -c --arg id "$id" --arg w "$why" '. + {($id): $w}')
     fi
   done < <(printf '%s' "$record" | jq -r '.checks[].id')
-  if [ -n "$ev" ] && ! proofreuse_commands_ok "$ev"; then ev=; fi
   while IFS= read -r -d '' name; do
     fp=$(proofreuse_command_fp "$record" "$name")
-    old=
-    [ -z "$ev" ] || old=$(printf '%s' "$ev" | jq -c --arg n "$name" --arg fp "$fp" \
-      '.commands[$n] // empty | select(.status == "pass" and .fp == $fp)')
-    if [ -n "$old" ]; then
-      REUSE_COMMANDS=$(printf '%s' "$REUSE_COMMANDS" | jq -c --arg n "$name" --argjson r "$old" '. + {($n): ($r + {reused: true})}')
+    why=$off
+    [ -n "$why" ] || why=$(proofreuse_reason "command:$name" "$fp" "$head") || true
+    if [ -z "$why" ]; then
+      REUSE_COMMANDS=$(printf '%s' "$REUSE_COMMANDS" | jq -c --arg n "$name" --argjson r "$(proofreuse_result "command:$name")" '. + {($n): $r}')
     else
       TODO_COMMANDS=$(printf '%s' "$TODO_COMMANDS" | jq -c --arg n "$name" '. + [$n]')
+      WHY_COMMANDS=$(printf '%s' "$WHY_COMMANDS" | jq -c --arg n "$name" --arg w "$why" '. + {($n): $w}')
     fi
   done < <(printf '%s' "$PROVE_NAMES" | jq -j '.[] + "\u0000"')
-  [ "${2:-0}" != 1 ] || proofreuse_docs "$record"
 }
 
-# proofreuse_docs RECORD: in a full proof, move the test command from the
-# commands to run to the reused ones when its latest real run (evidence.test_run)
-# passed with today's argv, nothing is unfinished, uncommitted or (D173)
-# re-run on purpose, and every file committed since is documentation or
-# VBW's own, neither a test file nor one an approved check lists or runs (R144).
-proofreuse_docs() {
-  local ev run head old argv=() a paths
-  printf '%s' "$TODO_COMMANDS" | jq -e 'index("test")' > /dev/null || return 0
-  ev=$(proofreuse_last "$1") || return 0
-  run=$(printf '%s' "$ev" | jq -c '.test_run // empty | select(.status == "pass" and (.head // "") != "")') || return 0
-  [ -n "$run" ] || return 0
-  [ "$(printf '%s' "$run" | jq -r .fp)" = "$(proofreuse_command_fp "$1" test)" ] || return 0
-  while IFS= read -r -d '' a; do argv+=("$a"); done \
-    < <(printf '%s' "$1" | jq -j '.commands.test[] + "\u0000"')
-  consent_has command "$(vbw_sha256_argv "${argv[@]}")" || return 0
-  head=$(vbw_head_tree) && [ -n "$head" ] && [ "$(vbw_code_tree)" = "$head" ] || return 0
-  old=$(printf '%s' "$run" | jq -r .head)
-  paths=$(git -C "$VBW_ROOT" diff-tree -z -r --name-only "$old" "$head" 2> /dev/null | tr '\0' '\n') || return 0
-  printf '%s' "$paths" | jq -R -s -e --slurpfile rec <(printf '%s' "$1") "$VBW_JQ_DEFS"'
-    $rec[0] as $r
-    | def is_test: test("(^|/)(test|tests|__tests__|spec|fixtures)/") or (split("/") | last | test("\\.test\\.|_test\\.|\\.spec\\.|^test_"));
-    [$r.checks[] | (.files // [])[]] as $listed | [$r.checks[] | (.run // [])[]] as $ran
-    | [split("\n")[] | select(length > 0)]
-    | all(.[]; . as $f | startswith(".vbw/") or (is_doc and (is_test | not)
-        and (any($listed[]; . as $l | $l | covers($f)) | not) and (any($ran[]; . == $f) | not)))' > /dev/null || return 0
-  REUSE_COMMANDS=$(printf '%s' "$REUSE_COMMANDS" | jq -c --argjson r "$run" '. + {test: (($r | del(.head)) + {reused: true, reuse: "docs"})}')
-  TODO_COMMANDS=$(printf '%s' "$TODO_COMMANDS" | jq -c '. - ["test"]')
-}
-
-# proofreuse_test_run RECORD COMMANDS HEAD TREE: the latest real run of the test
-# command, to keep in the evidence: this proof's own when it ran the command
-# (tied to the committed code only when it ran on exactly that), else the
-# previous one, carried forward unchanged.
-proofreuse_test_run() {
-  local run
-  run=$(printf '%s' "$2" | jq -c '.test // empty | select(.status != "skipped" and (.reused | not))')
-  if [ -n "$run" ]; then
-    if [ "$3" = "$4" ]; then run=$(printf '%s' "$run" | jq -c --arg h "$3" '. + {head: $h}'); fi
-    printf '%s\n' "$run"
-  else
-    printf '%s' "$1" | jq -c '.evidence.test_run // empty'
-  fi
-}
-
-# proofreuse_stamp RECORD KIND RESULTS AT: add each new result's fingerprint
-# (KIND check or command), for a check also the fingerprint of the committed
-# content of the files it depends on, and the time it really ran.
-proofreuse_stamp() {
-  local name fp sp out="$3"
-  while IFS= read -r -d '' name; do
-    if [ "$2" = check ]; then fp=$(proofreuse_check_fp "$1" "$name"); else fp=$(proofreuse_command_fp "$1" "$name"); fi
-    out=$(printf '%s' "$out" | jq -c --arg n "$name" --arg fp "$fp" --arg at "$4" '.[$n] += {fp: $fp, at: $at}')
-    if [ "$2" = check ] && sp=$(checks_fingerprint "$1" "$name"); then
-      out=$(printf '%s' "$out" | jq -c --arg n "$name" --arg sp "$sp" '.[$n] += {served: $sp}')
-    fi
-  done < <(printf '%s' "$3" | jq -j 'keys[] | . + "\u0000"')
-  printf '%s\n' "$out"
+# proofreuse_result KEY: a stored run as a reused result (it keeps the time it
+# really ran, and its read list for the next proof).
+proofreuse_result() {
+  printf '%s' "$PROOFREUSE_STORE" | jq -c --arg k "$1" '.runs[$k] | {status, exit: null, seconds, tail, at, fp, reads, dirs, git, reused: true}'
 }
 
 # proofreuse_join ORDER REUSED NEW: one object in ORDER (a JSON array of names).
