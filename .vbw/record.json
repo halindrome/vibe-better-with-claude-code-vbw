@@ -22116,7 +22116,7 @@
       "after": [
         "P118.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/test.sh --lint runs only the shellcheck stage over tools/; its usage line names --lint; every other mode stays as it is",
