@@ -3,8 +3,9 @@
 # program from Claude Code's JSON, the project's record and VBW's runtime
 # state. This path is the one the statusLine setting looks for in the newest
 # installed VBW, so an update switches the status line over by itself.
-# No network, no temporary files, and no git process: the branch is read from
-# .git/HEAD directly. It never fails: a broken render prints a single line.
+# No network and no git process: the branch is read from .git/HEAD directly.
+# The one file it writes is the session's cost side file (.vbw/runtime/
+# cost.SESSION.json, R173), through a temporary name and a rename. It never fails: a broken render prints a single line.
 
 here="$(cd "$(dirname "$0")" && pwd)"
 plugin="$here/.."
@@ -89,4 +90,15 @@ auto="$root/.vbw/runtime/auto.${sid:-none}.json"
 out=$(jq -nr --argjson cc "$input" --arg branch "$branch" --arg color "$color" --arg legacy "$legacy" --argjson agents "$agents" --slurpfile profiles "$plugin/lib/profiles.json" -f "$here/statusline.jq" \
   "$plugin/.claude-plugin/plugin.json" "$recfile" "$end" \
   "$root/.vbw/runtime/next.json" "$end" "$auto" 2> /dev/null)
+# The cost record is the render's last line when Claude Code sent a cost: split
+# it off and store it atomically. A failed write is skipped quietly.
+last=${out##*$'\n'}
+case "$last" in
+  '{"session":'*)
+    if [ "$out" = "$last" ]; then out=""; else out=${out%$'\n'*}; fi
+    if [ -n "$sid" ] && [ -f "$root/.vbw/record.json" ]; then
+      side="$root/.vbw/runtime/cost.$sid.json"
+      { mkdir -p "$root/.vbw/runtime" && printf '%s\n' "$last" > "$side.$$" && mv -f "$side.$$" "$side"; } 2> /dev/null || rm -f "$side.$$" 2> /dev/null
+    fi ;;
+esac
 if [ -n "$out" ]; then printf '%s\n' "$out"; else printf '[VBW] status line unavailable\n'; fi

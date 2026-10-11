@@ -7,7 +7,8 @@
 # $legacy (a VBW 1 plan, not converted), $agents (the workflow agents working
 # now: [{role, label, model}]), $profiles ([lib/profiles.json]). Output: 4
 # lines; in a VBW project under Claude Code older than 2.1.287, 5 (the team or
-# its working agents on line 2).
+# its working agents on line 2); then, when $cc carries a cost, one last line of
+# compact JSON for the cost side file.
 
 def c($code; $s): if $color == "1" then "\u001b[\($code)m\($s)\u001b[0m" else $s end;
 def dim: c("2"; .);
@@ -114,4 +115,10 @@ def progress($done; $total): (if $total > 0 then $done * 100 / $total else 0 end
   ( ($cc.model.display_name // "model ?") + sep
     + "\($cc.cost.total_duration_ms | dur) (API \($cc.cost.total_api_duration_ms | dur))"
     + (if $branch != "" then sep + $branch else "" end)
-    + sep + "VBW \($plugin.version // "?")" + sep + "CC \($cc.version // "?")" )
+    + sep + "VBW \($plugin.version // "?")" + sep + "CC \($cc.version // "?")" ),
+
+# Last line, only when Claude Code sent a cost: the side-file record as compact
+# JSON ({session, usd, in, out, at}); the script splits it off and stores it.
+  ( select($cc.cost.total_cost_usd != null)
+    | {session: $cc.session_id, usd: $cc.cost.total_cost_usd, in: $cc.context_window.total_input_tokens,
+       out: $cc.context_window.total_output_tokens, at: ($now | strftime("%Y-%m-%dT%H:%M:%SZ"))} | tojson )
