@@ -62,5 +62,9 @@ next_action() { vbw_run next --json; echo "$output" | jq -r '.action'; }
   jq '.checks[0].run = ["sh", "tests/other.sh"]' .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
   [ "$(next_action)" = "approve" ]
   jq '.checks[0].run = ["sh", "tests/pay.sh"] | .requirements[0].text = "changed"' .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
+  # The spec and the record differ: the contract is not ready for approval yet (R171) ...
+  [ "$(next_action)" = "contract" ]
+  # ... and once the spec says the same, the changed requirement asks for approval again.
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] changed\n' > .vbw/spec.md
   [ "$(next_action)" = "approve" ]
 }
