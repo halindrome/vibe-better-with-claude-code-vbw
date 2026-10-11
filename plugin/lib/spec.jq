@@ -5,13 +5,18 @@
 # ("- name: words" or "- name: [\"json\", \"array\"]"), or null without one,
 # and results is the Test results section's folders of saved test results
 # ("- <folder>/": relative, no "." or "..", outside .vbw/, "/" added when
-# missing), or null when the spec names none.
+# missing), or null when the spec names none,
+# and test_files is the Test files section's {run, files} ("- run: <argv>" naming
+# {file} exactly once; "- files: <git pathspecs>", any number of lines), or null
+# without that section.
 
 def heading: test("^#{1,2}\\s");
 # The argv of one command line: a JSON array of strings, or words split on spaces.
 def argv_of: if startswith("[") then (try fromjson catch null)
   | if type == "array" and length > 0 and all(.[]; type == "string" and length > 0) then . else null end
   else [splits("\\s+") | select(length > 0)] end;
+# The number of times "{file}" appears in an argv.
+def file_slots: [.[] | [match("\\{file\\}"; "g")] | length] | add;
 # A results folder as given, with its trailing "/", or null when it is unsafe.
 def folder_of: (if endswith("/") then . else . + "/" end) as $f
   | ($f | rtrimstr("/") | split("/")) as $s
@@ -19,7 +24,7 @@ def folder_of: (if endswith("/") then . else . + "/" end) as $f
 
 split("\n") | map(sub("\r$"; ""))
 | reduce to_entries[] as $e (
-    {in: false, seen: false, comment: false, reqs: [], errors: [], end: null, cmds: false, commands: null, res: false, results: []};
+    {in: false, seen: false, comment: false, reqs: [], errors: [], end: null, cmds: false, commands: null, res: false, results: [], tf: false, tfline: null, test_files: null};
     ($e.value) as $l | ($e.key + 1) as $n
     | if .comment then .comment = ($l | test("-->") | not)
       elif $l | test("^\\s*<!--") then .comment = ($l | test("-->") | not)
@@ -27,6 +32,8 @@ split("\n") | map(sub("\r$"; ""))
         .in = ($l | test("^##\\s+Requirements\\s*$"))
         | .cmds = ($l | test("^##\\s+Commands\\s*$"))
         | .res = ($l | test("^##\\s+Test results\\s*$"; "i"))
+        | .tf = ($l | test("^##\\s+Test files\\s*$"; "i"))
+        | if .tf then .tfline = $n | .test_files = (.test_files // {run: null, files: []}) else . end
         | if .cmds and .commands == null then .commands = {} else . end
         | if .in then .seen = true | .end = $n else . end
       elif .cmds and ($l | test("^[-*+]\\s")) then
@@ -37,6 +44,18 @@ split("\n") | map(sub("\r$"; ""))
           elif .commands | has($m.name) then
             .errors += ["line \($n): command \($m.name) is defined twice"]
           else .commands[$m.name] = $a end
+      elif .tf and ($l | test("^[-*+]\\s")) then
+        ($l | [capture("^- (?<key>run|files): +(?<val>\\S.*?)\\s*$")] | first) as $m
+        | if $m == null then
+            .errors += ["line \($n): expected '- run: <command with {file}>' or '- files: <git pathspecs>', got: \($l)"]
+          elif $m.key == "files" then .test_files.files += [$m.val | splits("\\s+") | select(length > 0)]
+          else
+            ($m.val | argv_of) as $a
+            | if .test_files.run != null then .errors += ["line \($n): the Test files section has two run lines"]
+              elif $a == null or ($a | file_slots) != 1 then
+                .errors += ["line \($n): the Test files run line must name {file} exactly once (words, or a JSON array of strings), got: \($l)"]
+              else .test_files.run = $a end
+          end
       elif .res and ($l | test("^[-*+]\\s")) then
         ($l | [capture("^- +(?<p>\\S+)\\s*$")] | first | .p // null | if . == null then null else folder_of end) as $f
         | if $f == null then
@@ -55,4 +74,10 @@ split("\n") | map(sub("\r$"; ""))
       elif ($l | test("^\\s+\\S")) and .end != null and ($n - 1) == .end then .end = $n
       else . end )
 | if .seen then . else .errors += ["no '## Requirements' section"] end
-| {requirements: .reqs, commands: .commands, results: (if .results == [] then null else .results end), errors: .errors, end: .end}
+| if .test_files == null or (.errors | length) > 0 then .
+  elif .test_files.run == null then
+    .errors += ["line \(.tfline): the Test files section needs a '- run: <command with {file}>' line"]
+  elif (.test_files.files | length) == 0 then
+    .errors += ["line \(.tfline): the Test files section needs a '- files: <git pathspecs>' line"]
+  else . end
+| {requirements: .reqs, commands: .commands, results: (if .results == [] then null else .results end), test_files: .test_files, errors: .errors, end: .end}
