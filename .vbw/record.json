@@ -13895,12 +13895,11 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "standard",
-        "tree": "837f92e64d1cae92307391dda14610a208edf8aebff37bdb5a7af4571f6e827f",
-        "at": "2026-10-11T15:03:51Z",
-        "note": "15/16 checks",
-        "rounds": 1
+        "tree": "2fbaa28811c286fd26de6f6e659002e7a891b8b212e993a64d59802855e48b8c",
+        "at": "2026-10-11T15:42:39Z",
+        "note": "18/18 checks"
       },
       "outcome": {
         "tier": "deep",
@@ -23370,7 +23369,7 @@
       "req": "R165",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Plan P112.1 promises a run-open marker that exists exactly while a run lease is open, outlives a record that becomes unreadable, and goes away when the run ends (plugin/lib/record.sh:72 record_open_marker). No test asserts the marker itself: grep for run-open finds only an allow-list entry in tests/big-record-scratch.bats and a hook-command sample in tests/standards-selftest.bats. tests/guard-fail-closed.bats never ends a run and then checks that guards go quiet again, and never checks the marker is absent before a run starts. A regression test should: run start then assert .vbw/runtime/run-open exists; corrupt the record and write nothing, assert it still exists; vbw run end then assert it is gone and a broken guard lets a call through; also assert no marker in a fresh project. Also note: P112.2 plan files list tests/hooks-guard.bats, but the commits put the tests in tests/guard-fail-closed.bats (not in the plan files)."
     }
   ],
