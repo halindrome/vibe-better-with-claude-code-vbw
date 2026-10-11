@@ -162,6 +162,8 @@
     "tests/profile-lead-opus.bats",
     "tests/profile-levels.bats",
     "tests/proof-build-dirs.bats",
+    "tests/proof-causes-docs.bats",
+    "tests/proof-causes.bats",
     "tests/proof-copy-docs.bats",
     "tests/proof-doc-reuse-docs.bats",
     "tests/proof-doc-reuse.bats",
@@ -197,6 +199,10 @@
     "tests/qa-suite-once.bats",
     "tests/qa-vbw-files.bats",
     "tests/quick-mode.bats",
+    "tests/reads-docs.bats",
+    "tests/reads-gates.bats",
+    "tests/reads-reuse.bats",
+    "tests/reads-traced.bats",
     "tests/recommend-flow.bats",
     "tests/recommend-source.bats",
     "tests/recommend-store.bats",
@@ -229,6 +235,10 @@
     "tests/stop-line.bats",
     "tests/suggestions.bats",
     "tests/test-shards.bats",
+    "tests/testfiles-docs.bats",
+    "tests/testfiles-form.bats",
+    "tests/testfiles-run.bats",
+    "tests/testfiles-vbw.bats",
     "tests/todo-commit.bats",
     "tests/todo-sort.bats",
     "tests/tools-docs.bats",
@@ -3219,6 +3229,122 @@
         "tests/guard-fail-closed.bats"
       ],
       "timeout": 600
+    },
+    {
+      "id": "C253",
+      "req": "R166",
+      "run": [
+        "bats",
+        "tests/reads-reuse.bats"
+      ],
+      "files": [
+        "tests/reads-reuse.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C254",
+      "req": "R166",
+      "run": [
+        "bats",
+        "tests/reads-traced.bats"
+      ],
+      "files": [
+        "tests/reads-traced.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C255",
+      "req": "R166",
+      "run": [
+        "bats",
+        "tests/reads-gates.bats"
+      ],
+      "files": [
+        "tests/reads-gates.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C256",
+      "req": "R166",
+      "run": [
+        "bats",
+        "tests/reads-docs.bats"
+      ],
+      "files": [
+        "tests/reads-docs.bats"
+      ]
+    },
+    {
+      "id": "C257",
+      "req": "R167",
+      "run": [
+        "bats",
+        "tests/testfiles-form.bats"
+      ],
+      "files": [
+        "tests/testfiles-form.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C258",
+      "req": "R167",
+      "run": [
+        "bats",
+        "tests/testfiles-run.bats"
+      ],
+      "files": [
+        "tests/testfiles-run.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C259",
+      "req": "R167",
+      "run": [
+        "bats",
+        "tests/testfiles-vbw.bats"
+      ],
+      "files": [
+        "tests/testfiles-vbw.bats"
+      ]
+    },
+    {
+      "id": "C260",
+      "req": "R167",
+      "run": [
+        "bats",
+        "tests/testfiles-docs.bats"
+      ],
+      "files": [
+        "tests/testfiles-docs.bats"
+      ]
+    },
+    {
+      "id": "C261",
+      "req": "R168",
+      "run": [
+        "bats",
+        "tests/proof-causes.bats"
+      ],
+      "files": [
+        "tests/proof-causes.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C262",
+      "req": "R168",
+      "run": [
+        "bats",
+        "tests/proof-causes-docs.bats"
+      ],
+      "files": [
+        "tests/proof-causes-docs.bats"
+      ]
     }
   ],
   "project": {
@@ -8598,7 +8724,84 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M21",
-      "rules": []
+      "rules": [
+        {
+          "text": "A check whose test reads a project file it does not declare runs again when a commit changes only that file (the case D181 missed)",
+          "check": "C253"
+        },
+        {
+          "text": "A commit that changes only files no check read reuses every check, each naming the proof it came from",
+          "check": "C253"
+        },
+        {
+          "text": "A check that declares no files is reused when nothing it read changed, and runs when a file it read changed",
+          "check": "C253"
+        },
+        {
+          "text": "Deleting or renaming a file a check read runs that check again",
+          "check": "C253"
+        },
+        {
+          "text": "Adding a file to, or removing one from, a folder a check listed runs that check again; a content change inside that folder to a file it never opened does not",
+          "check": "C253"
+        },
+        {
+          "text": "A changed approved definition, or a change to the check's own test file, runs that check again",
+          "check": "C253"
+        },
+        {
+          "text": "A check whose last result failed, that never passed, or that has no read list always runs, and its summary line names which",
+          "check": "C253"
+        },
+        {
+          "text": "When the file system cannot record reads, the proof reuses nothing, runs every check and says so",
+          "check": "C253"
+        },
+        {
+          "text": "A clone with no recorded runs, as after an older VBW, opens the record and runs every check",
+          "check": "C253"
+        },
+        {
+          "text": "vbw prove --full runs every check, reuses nothing and is recorded as full; a proof that reused any result is recorded as not full, so it never counts as the release run's full proof",
+          "check": "C253"
+        },
+        {
+          "text": "Checks still run several at a time while their read lists are recorded",
+          "check": "C254"
+        },
+        {
+          "text": "A check that reads a file another run of the same proof wrote runs again when what that run read changes",
+          "check": "C254"
+        },
+        {
+          "text": "A check that reads the project through git always runs, and its summary line says why",
+          "check": "C254"
+        },
+        {
+          "text": "vbw qa record, vbw next and vbw ship accept a proof that reused results and no longer demand vbw prove --full",
+          "check": "C255"
+        },
+        {
+          "text": "vbw fix done picks checks with the same rule: a finished requirement's check runs when a file it read changed, even one no plan of the fix lists, and an unaffected check is reused",
+          "check": "C255"
+        },
+        {
+          "text": "docs/proof.md explains the read list, when a result is reused, where read lists are kept, the limits (installed tools, network, clock) and how to run everything fresh",
+          "check": "C256"
+        },
+        {
+          "text": "The served-files rule, the passes cache and the documentation-only rule are gone from the documentation, leaving one reuse rule",
+          "check": "C256"
+        },
+        {
+          "text": "Recording read lists adds no tracing tool as a runtime dependency",
+          "check": "C256"
+        },
+        {
+          "text": "The guards and the status line never read the read lists, so their cost does not grow with them",
+          "check": "C256"
+        }
+      ]
     },
     {
       "id": "R167",
@@ -8606,7 +8809,80 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M21",
-      "rules": []
+      "rules": [
+        {
+          "text": "With an approved single-file form each test file runs on its own and the whole test command does not run",
+          "check": "C257"
+        },
+        {
+          "text": "An edited form never runs before the user approves it again, and runs once approved",
+          "check": "C257"
+        },
+        {
+          "text": "Without a declared form the test command runs whole and the proof summary says so",
+          "check": "C257"
+        },
+        {
+          "text": "VBW never guesses a form: vbw init writes no Test files section",
+          "check": "C257"
+        },
+        {
+          "text": "A form whose run does not name {file} exactly once, or that lists no test files, is refused when the spec is synced",
+          "check": "C257"
+        },
+        {
+          "text": "The Lead's proposal through vbw apply is written into the spec's Test files section for the user to approve",
+          "check": "C257"
+        },
+        {
+          "text": "A change to a file read by one test file runs only that test file and reuses the others, naming their proof (a one-file fix proves in minutes, not the whole suite)",
+          "check": "C258"
+        },
+        {
+          "text": "A new or changed test file runs",
+          "check": "C258"
+        },
+        {
+          "text": "A test file whose last result failed runs again though nothing it read changed",
+          "check": "C258"
+        },
+        {
+          "text": "Deleting a file a test file read, or adding a file to a folder it listed, runs that test file",
+          "check": "C258"
+        },
+        {
+          "text": "Test files run several at a time",
+          "check": "C258"
+        },
+        {
+          "text": "A failing test file fails the proof and the proof names it",
+          "check": "C258"
+        },
+        {
+          "text": "A test file an approved check runs runs only as that check, and neither the test command nor the quick command runs beside an approved form",
+          "check": "C258"
+        },
+        {
+          "text": "vbw prove --full runs every test file on its own and reuses none",
+          "check": "C258"
+        },
+        {
+          "text": "VBW's spec declares bats on one file over every tracked tests/*.bats except the timed speed files",
+          "check": "C259"
+        },
+        {
+          "text": "VBW's shell lint stays watched as its own project command, bash tools/test.sh --lint, which runs only shellcheck over tools/",
+          "check": "C259"
+        },
+        {
+          "text": "The Lead proposes the single-file form through vbw apply, with the runner's documented syntax",
+          "check": "C260"
+        },
+        {
+          "text": "docs/proof.md and docs/workflows.md explain the form, its approval, what happens without it and how test files are counted",
+          "check": "C260"
+        }
+      ]
     },
     {
       "id": "R168",
@@ -8614,7 +8890,44 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M21",
-      "rules": []
+      "rules": [
+        {
+          "text": "A changed approved command, single-file form or list of test files runs every check and test file and names the cause",
+          "check": "C261"
+        },
+        {
+          "text": "A change to a file every test file reads runs everything and names that file",
+          "check": "C261"
+        },
+        {
+          "text": "An added or deleted file that no recorded run read and no recorded run listed the folder of runs everything and is named",
+          "check": "C261"
+        },
+        {
+          "text": "A file system that cannot record reads, or a clone with no earlier recorded run, runs everything and says so",
+          "check": "C261"
+        },
+        {
+          "text": "A content change to a file no recorded run read runs nothing",
+          "check": "C261"
+        },
+        {
+          "text": "Every summary, full or not, prints 'checks: N ran, M reused' and 'test files: N ran, M reused', and each reused result names the proof it came from",
+          "check": "C261"
+        },
+        {
+          "text": "One cause is given in one line; several causes are each listed",
+          "check": "C261"
+        },
+        {
+          "text": "A proof that was cut short reuses nothing the next time, and the summary says so",
+          "check": "C261"
+        },
+        {
+          "text": "docs/proof.md lists every 'run everything' cause with the message the user sees",
+          "check": "C262"
+        }
+      ]
     }
   ],
   "phases": [
@@ -13516,6 +13829,103 @@
         "risk: none",
         "breaks: none",
         "guarded: R21 (C16), R55 (C56, C57), R111 (C171, C172, C173, C174, C175), R128 (C200), R142 (C204, C205), R143 (C206, C207), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P116",
+      "title": "Checks re-run only when a file they read has changed",
+      "reqs": [
+        "R166"
+      ],
+      "milestone": "M21",
+      "goal": "Every proof, including the proofs that QA verdicts and shipping need, re-runs only the checks that a change can reach, and reuses the passing result of every other check.",
+      "criteria": [
+        "When a check runs during vbw prove, VBW writes down every project file that the check actually opened or listed while it ran (its 'read list'). The list comes from the run itself, never from file names and never only from the files the check declares.",
+        "A later proof reuses a check's passing result only when all of these hold: the check's approved definition is unchanged, no file on its read list was changed, deleted or renamed since that pass, and no file was added to or removed from a folder it listed. In every other case the check runs again.",
+        "Regression test: a check whose test reads a project file that the check does not declare runs again when a commit changes only that file. This is the case that D181's served-files rule missed.",
+        "A change to a check's own test file makes that check run again.",
+        "A check always runs when its last result failed, when it has never passed, or when it has no read list (for example, results saved by an older VBW). The proof summary names which of these reasons applied.",
+        "When the computer's file system cannot record which files were read (VBW tests this at the start of each proof), the proof reuses nothing and runs every check.",
+        "vbw qa record and vbw ship accept a proof that reused results under this rule and no longer demand vbw prove --full. vbw prove --full still runs every check, reuses nothing, and is recorded as a full proof.",
+        "Closing a fix (vbw fix done) picks which checks to run with the same rule. The kernel has exactly one reuse rule: the served-files rule (R110) and the documentation-only rule (R144) are replaced by it, not kept alongside it.",
+        "Checks still run several at a time, up to the configured check_jobs. Recording read lists never forces them to run one by one.",
+        "Recording works on macOS (APFS) and on Linux with its default mount settings, using only bash, jq and git. No new runtime dependency is added.",
+        "A proof that reused any result does not count as the passing full proof for the pre-push release run (R164). The release run then runs every test.",
+        "With read lists stored for every check of VBW's own project, each guard call stays at or under 20 ms and the status line at or under 60 ms (tools/bench-hooks.sh), and older records still open as before.",
+        "docs/proof.md explains, in plain words, when a result is reused. It also names the limit: something outside the project (installed tools, network, the clock) is not tracked, and vbw prove --full or proving again with nothing committed (D173) runs everything fresh."
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 19 (132714 bytes)",
+        "files: more than 2 in a repository tracking 829 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R13 (C12), R14 (C13), R15 (C14), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R32 (C28), R35 (C31), R37 (C35), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R61 (C73, C74, C75, C76, C77), R66 (C95), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R120 (C185), R128 (C200), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R145 (C210), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234), R153 (C235, C236, C239)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P117",
+      "title": "The test command runs only the test files a change can reach",
+      "reqs": [
+        "R167"
+      ],
+      "milestone": "M21",
+      "goal": "When the project's test runner can run one test file at a time, a proof runs only the test files a change can reach and reuses the passing result of every other test file. Otherwise it runs the whole test command, as it does today.",
+      "criteria": [
+        "A project can declare, together with its approved commands, how its test runner runs a single test file and which files are its test files. The user approves this like any command (consent by content hash), VBW never runs an unapproved form, and VBW never guesses one.",
+        "With a declared form, each test file that has to run is run on its own, and VBW records its read list in the same way as for checks (P116).",
+        "A test file runs when any of these is true: it is new or changed, its last result failed, it has never passed, it has no read list, a file on its read list was changed, deleted or renamed, or a file was added to or removed from a folder it listed. Every other test file reuses its passing result.",
+        "Test files still run several at a time, as the runner allowed before.",
+        "A failing test file fails the proof, and the proof names that file.",
+        "Without a declared form, or when the runner cannot run a single file, the test command runs whole, exactly as today, and the proof summary says so.",
+        "VBW's own project declares its form. Everything its test command checked before (the shell lint, the engineering rules, every test file) is still checked by every proof that a change can affect. Nothing goes unwatched, and no test file runs twice in one proof (D179).",
+        "In VBW's own repository, take a commit that changes one kernel file read by only a few test files (for example plugin/lib/cmd-todo.sh). vbw prove runs only those test files and the checks that read that file, and finishes in under 10 minutes on the owner's Mac, compared with about 45 minutes today. Both times are measured and written in the progress log.",
+        "When planning a project whose test runner can run single test files, the Lead proposes the single-file form for approval, with that runner's documented syntax.",
+        "docs/proof.md and the commands documentation explain the single-file form, how it is approved, and what happens without it."
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 18 (233425 bytes)",
+        "files: more than 2 in a repository tracking 829 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R10 (C9), R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R55 (C56, C57), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R121 (C187, C188), R123 (C190, C191), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R142 (C204, C205), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R152 (C233, C234), R153 (C235, C236, C239)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P118",
+      "title": "The proof says what it ran, what it reused, and why it ran everything",
+      "reqs": [
+        "R168"
+      ],
+      "milestone": "M21",
+      "goal": "Whenever VBW cannot know what a change affects, the proof runs every check and test file and says why. Every proof says how much ran and how much was reused.",
+      "criteria": [
+        "The proof runs every check and every test file, and names the cause in plain words, when any of these happened: an approved command changed (its argv, the single-file form or the list of test files); a file read by every test file changed (for example tests/helper.bash; the message names the file); a file was added or deleted that no recorded run read and no recorded run listed the folder of; the file system cannot record reads; or this clone has no earlier recorded run.",
+        "A content change to a file that no recorded run read does not by itself make anything run. A file that is added or deleted without being seen by any recorded run always counts as unknown, so everything runs.",
+        "Every proof summary, full or not, prints 'checks: N ran, M reused' and 'test files: N ran, M reused'. Each reused result names the proof it came from.",
+        "When everything ran because of one cause, the summary gives that cause in one line. When it ran because of several causes, it lists each one.",
+        "A proof that was cut short reuses nothing the next time (the existing unfinished marker), and the summary says so.",
+        "docs/proof.md lists every 'run everything' cause with the message the user sees."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 5 (49810 bytes)",
+        "files: more than 2 in a repository tracking 829 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R25 (C24), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239)",
         "tests: project test command"
       ],
       "predicted": "standard"
@@ -21399,6 +21809,373 @@
         "README.md loop step 3 (Approve): one sentence: you can change your mind any time; VBW re-plans without touching finished work, and a check you are not ready to judge can wait for the next milestone when it is all that holds up shipping",
         "State current behaviour only, never what changed or was fixed (no 'now', 'no longer', 'fixed'); keep the README's tone and length"
       ]
+    },
+    {
+      "id": "P116.1",
+      "phase": "P116",
+      "title": "Write down what each run opens and lists, in its own clean copy",
+      "reqs": [
+        "R166"
+      ],
+      "files": [
+        "plugin/lib/reads.sh",
+        "plugin/lib/proofcopy.sh",
+        "tests/reads-lib.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "reads.sh: a start-of-proof test of the copy's file system. A file's access time (the time the system notes when a file is read) is set back with touch -a to an old date and must stay there; reading the file and listing a folder must then move it forward. If any step fails, report 'this file system does not record which files are read'",
+        "proofcopy.sh: one clean copy of the committed code per parallel slot (as many as check_jobs allows and the work needs), each made like today's copy (a git worktree of HEAD plus the copied ignored paths), all removed on exit or interrupt",
+        "reads.sh: before each run, set back with touch -a the access times of every tracked file and folder of its slot copy and of that copy's own git HEAD and index files; after it, collect the tracked files it opened, the tracked folders it listed (each with a fingerprint of the names of the tracked files in it) and whether it read the project through git (git show, git ls-files and the like)",
+        "reads.sh: a file a run writes into its slot copy (build output, a cache) remembers that run's read list; a later run in the same copy that reads it adds that list to its own",
+        "tests/reads-lib.bats: the probe, the reset, the collection, the folder fingerprints, the git flag and the inherited lists, under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P116.2",
+      "phase": "P116",
+      "title": "One reuse rule and the clone's store of recorded runs",
+      "reqs": [
+        "R166"
+      ],
+      "files": [
+        "plugin/lib/proofreuse.sh",
+        "tests/proofreuse-rule.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "The store of recorded runs: $(git rev-parse --git-common-dir)/vbw/runs.json, locked and written atomically like the consent file, never in the record. Per run unit (a check, a project command or a test file): the fingerprint of its approved definition, the committed code tree it ran on, status, time, seconds, output tail, read list, listed folders and the git flag; plus the fingerprint of the approved commands and test-file form of the last recorded run. A missing or damaged store means nothing is reused",
+        "The one rule: a unit's pass is reused only when its last result passed, its definition fingerprint is unchanged, it has a read list and did not read through git, and one git diff-tree -r --no-renames between the tree it ran on and the committed code shows no file of its read list changed or deleted and no file added to or removed from a folder it listed. Otherwise return the reason: never passed, last result failed, no read list, definition changed, <path> changed, <path> deleted, <folder> listing changed, reads the project through git",
+        "Remove the served-files rule, the documentation-only rule (proofreuse_docs, test_run, served stamps) and the reuse of check results from the record's evidence; keep the unfinished marker and D173 (proving again with nothing committed reuses nothing)",
+        "tests/proofreuse-rule.bats: every reuse condition and every reason, a store from a clone with no runs, a damaged store"
+      ]
+    },
+    {
+      "id": "P116.3",
+      "phase": "P116",
+      "title": "Checks still run several at a time while their read lists are recorded",
+      "reqs": [
+        "R166"
+      ],
+      "files": [
+        "plugin/lib/checks.sh",
+        "tests/runner-reads.bats"
+      ],
+      "after": [
+        "P116.1",
+        "P116.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "checks_run_all becomes a runner of units (a check, a project command and later a test file: name, argv, timeout, expected exit and output, alone). Each unit takes a free slot copy; still at most check_jobs at a time, and the alone gate is kept",
+        "Around each unit: reset, run, collect its read list (with any inherited lists); return the result together with its read list",
+        "Remove the passes cache (checks_unchanged, checks_record_passes, checks_passes_file) and the served-files fingerprint (checks_served, checks_fingerprint, checks_served_dirty); vbw check keeps running in the working folder and records nothing",
+        "tests/runner-reads.bats: the parallel limit, alone checks, read lists kept apart across slots, a runner that dies without a result"
+      ]
+    },
+    {
+      "id": "P116.4",
+      "phase": "P116",
+      "title": "vbw prove and vbw fix done use the one reuse rule",
+      "reqs": [
+        "R166"
+      ],
+      "files": [
+        "plugin/lib/cmd-prove.sh",
+        "plugin/lib/cmd-fix.sh",
+        "tests/prove-reads.bats"
+      ],
+      "after": [
+        "P116.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "vbw prove: run the file-system test first; plan every check and project command with the one rule; run what must run in the slot copies; save results and read lists in the store; when the file system cannot record reads, reuse nothing, save no read lists and print 'ran everything: this file system does not record which files are read'",
+        "Evidence and summary: full is true only when nothing was reused; a reused line keeps 'reused (proof of <time it really ran>)'; a line that ran adds 'ran: <reason>'; 'checks: N ran, M reused' is printed on every proof, --full included",
+        "vbw fix done: the candidates are the checks of every finished requirement; the one rule picks which run (a reused one prints '<id> unchanged since its pass (<time>)'); they run on clean copies through the same runner and their read lists are saved; a failing check fails the named fixes whose files serve it, or every named fix when it serves none",
+        "Update the suite's tests that are not approved checks and pinned the old behaviour, and add tests/prove-reads.bats for the wiring"
+      ]
+    },
+    {
+      "id": "P116.5",
+      "phase": "P116",
+      "title": "QA verdicts and shipping accept a proof that reused results",
+      "reqs": [
+        "R166"
+      ],
+      "files": [
+        "plugin/lib/cmd-qa.sh",
+        "plugin/lib/next.jq",
+        "plugin/lib/cmd-ship.sh",
+        "tests/qa-reused-proof.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "vbw qa record accepts a current proof whose results ran or were reused; it refuses a stale proof (vbw prove) and a proof in which the quick command stood in for the test command or an approved full command was skipped (vbw prove --full)",
+        "vbw next asks for vbw prove --full (detail.full) only in that incomplete case; after a proof that reused results it goes on to QA and to shipping",
+        "vbw ship accepts the same proofs QA accepts",
+        "tests/qa-reused-proof.bats: reused proof accepted by qa record, next and ship; quick stand-in still refused with vbw prove --full; a proof recorded before these fields existed still accepted"
+      ]
+    },
+    {
+      "id": "P116.6",
+      "phase": "P116",
+      "title": "Agents cannot write the store of recorded runs",
+      "reqs": [
+        "R166"
+      ],
+      "files": [
+        "plugin/hooks/common.jq",
+        "tests/guard-run-store.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "The file and Bash guards refuse an agent's write to vbw/runs.json in the git directory, as they refuse the consent file, with a next step (a forged store would let a failing check be skipped)",
+        "tests/guard-run-store.bats pins the new answer (the hook-answers rule) for Write, Edit and a Bash redirect",
+        "Keep the guard's cost flat (one pattern, no file read) and confirm with tools/bench-hooks.sh"
+      ]
+    },
+    {
+      "id": "P116.7",
+      "phase": "P116",
+      "title": "Explain in docs/proof.md when a check's result is reused",
+      "reqs": [
+        "R166"
+      ],
+      "files": [
+        "docs/proof.md",
+        "docs/guards.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "Rewrite 'Reusing results in vbw prove': a check's read list is the files it opened and the folders it listed while it ran, from the run itself, never from file names; when a pass is reused and every reason a check runs again; read lists are kept in vbw/runs.json in the clone's git directory; checks still run several at a time, each in its own clean copy (tests/reads-docs.bats lists the phrases it checks)",
+        "Rewrite 'Full and partial proofs': QA verdicts and shipping accept a proof that reused results; vbw prove --full runs everything fresh; a proof that reused anything is never the release run's full proof",
+        "Rewrite 'Reusing an unchanged pass' for vbw fix done under the same rule, and remove the served-files rule, the passes cache and the documentation-only rule",
+        "Name the limits: what lies outside the project (installed tools, the network, the clock) is not tracked; a check that only looks whether a file exists, or at its size, without opening it; reads through git always run again; how to run everything fresh (vbw prove --full, or proving again with nothing committed); docs/guards.md: the store of recorded runs is protected"
+      ]
+    },
+    {
+      "id": "P116.8",
+      "phase": "P116",
+      "title": "The release run and the speed limits with read lists",
+      "reqs": [
+        "R166"
+      ],
+      "files": [
+        "tests/release-reads.bats"
+      ],
+      "after": [
+        "P116.4"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tests/release-reads.bats: a real vbw prove that reused results is recorded as not full, and tools/test.sh --release then runs everything (a scratch repository, as in tests/release-reuse.bats)",
+        "Measure tools/bench-hooks.sh on VBW's own project with a store holding read lists for every check (from a proof of a scratch clone under .vbw/runtime, or a store of the same size): every guard call at or under 20 ms, the status line at or under 60 ms, and an older record still opens",
+        "Report the measured times, the evidence level and what was not tested in the plan result, for the progress log (it lives in the main checkout, outside this project)"
+      ]
+    },
+    {
+      "id": "P117.1",
+      "phase": "P117",
+      "title": "A project declares how its test runner runs one test file",
+      "reqs": [
+        "R167"
+      ],
+      "files": [
+        "plugin/lib/spec.jq",
+        "plugin/lib/cmd-spec.sh",
+        "plugin/lib/record.jq",
+        "plugin/lib/contract.sh",
+        "plugin/lib/cmd-approve.sh",
+        "plugin/lib/cmd-show.sh",
+        "tests/testfiles-spec.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "spec.jq: read a '## Test files' section: '- run: <words or JSON array>' holding the word {file} exactly once, and one or more '- files: <git pathspecs>'; vbw spec sync refuses a run without exactly one {file} or a section without files, naming the line",
+        "record.jq: a test_files field ({run, files}) beside commands; older records without it open as before; vbw spec sync writes it from the spec and removes it when the section goes",
+        "contract.sh and cmd-approve.sh: the form is part of the contract hash and vbw approve grants it like a command (consent by content hash); nothing ever runs an unapproved form",
+        "cmd-show.sh: vbw show contract lists the form among the commands that will run",
+        "tests/testfiles-spec.bats: parsing, refusals, approval, older records"
+      ]
+    },
+    {
+      "id": "P117.2",
+      "phase": "P117",
+      "title": "The Lead proposes the single-file form through vbw apply",
+      "reqs": [
+        "R167"
+      ],
+      "files": [
+        "plugin/lib/cmd-apply.sh",
+        "plugin/agents/lead.md",
+        "tests/apply-test-files.bats"
+      ],
+      "after": [
+        "P117.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "vbw apply (full, --patch and --add) takes an optional test_files {run, files}, refuses a bad one, writes it as the spec's '## Test files' section (replacing an older one) and syncs; the user approves it with the contract",
+        "lead.md: when the project's test runner can run one test file, propose test_files with that runner's documented syntax; never invent one; stay within the agent's 1.5k-token budget",
+        "tests/apply-test-files.bats: each apply mode, a refused form, a replaced section"
+      ]
+    },
+    {
+      "id": "P117.3",
+      "phase": "P117",
+      "title": "Run each test file on its own and reuse the ones a change cannot reach",
+      "reqs": [
+        "R167"
+      ],
+      "files": [
+        "plugin/lib/testfiles.sh",
+        "plugin/lib/cmd-prove.sh",
+        "plugin/lib/checks.sh",
+        "plugin/lib/cmd-show.sh",
+        "tests/prove-testfiles.bats"
+      ],
+      "after": [
+        "P116.4",
+        "P117.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "testfiles.sh: the test files are the committed files the declared pathspecs match (git ls-files -z), minus every file an approved check's run names, so no test file runs twice in one proof (D179)",
+        "With an approved form each test file is a run unit: {file} replaced by its path, run in a slot copy, read list saved, judged by the one rule (a new or changed test file runs); the test command and the quick command do not run",
+        "Without a form the test command runs whole as one unit and the summary says 'test command ran whole: no single-file form is declared'",
+        "Summary and evidence: one line per test file named by its path, 'test files: N ran, M reused' on every proof (0 and 0 without a form), a failing test file fails the proof and is named; vbw show evidence shows them",
+        "tests/prove-testfiles.bats for the wiring"
+      ]
+    },
+    {
+      "id": "P117.4",
+      "phase": "P117",
+      "title": "VBW declares its own single-file form and keeps its shell lint watched",
+      "reqs": [
+        "R167"
+      ],
+      "files": [
+        "tools/test.sh",
+        ".vbw/spec.md"
+      ],
+      "after": [
+        "P118.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/test.sh --lint runs only the shellcheck stage over tools/; its usage line names --lint; every other mode stays as it is",
+        "VBW's spec: add '- lint: bash tools/test.sh --lint' under Commands, keeping test and quick as they are",
+        "VBW's spec: add a '## Test files' section: '- run: bats --print-output-on-failure {file}' and '- files: tests/*.bats :!tests/timed-*.bats'; run vbw spec sync (if the run refuses it, report it so the session runs it after the run); the user approves the form when vbw next asks"
+      ]
+    },
+    {
+      "id": "P117.5",
+      "phase": "P117",
+      "title": "Explain the single-file form in the commands documentation",
+      "reqs": [
+        "R167"
+      ],
+      "files": [
+        "docs/proof.md",
+        "docs/workflows.md"
+      ],
+      "after": [
+        "P116.7"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/proof.md, project commands: the '## Test files' section with its run and files lines and {file}; it is approved like a command and never guessed; without it the test command runs whole (tests/testfiles-docs.bats lists the phrases it checks)",
+        "docs/proof.md: each test file runs on its own and is reused like a check; 'test files: N ran, M reused'; a test file an approved check runs runs only as that check; the quick command never stands in for an approved form",
+        "docs/workflows.md: vbw apply takes the Lead's proposed test_files"
+      ]
+    },
+    {
+      "id": "P118.1",
+      "phase": "P118",
+      "title": "Know when a change cannot be traced to what it affects",
+      "reqs": [
+        "R168"
+      ],
+      "files": [
+        "plugin/lib/proofcauses.sh",
+        "tests/proofcauses-lib.bats"
+      ],
+      "after": [
+        "P116.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "proofcauses.sh: the causes that make a proof run everything, each with its message: 'vbw prove --full', 'the last proof was cut short', 'this clone has no earlier recorded run', 'this file system does not record which files are read', 'the approved command <name> changed', 'the single-file form changed', 'the list of test files changed', 'nothing was committed since the last passing proof' (D173)",
+        "'<path> changed, and every test file reads it' when a changed file is on the read list of every recorded test file (two or more)",
+        "'<path> was added, and no recorded run read it or listed its folder' and '<path> was deleted, ...' for an added or deleted committed file no recorded run read or saw in a listed folder; a new test file or a new check file is a run of its own, not unknown; a content change to a file no run read is no cause",
+        "tests/proofcauses-lib.bats: every cause and every non-cause"
+      ]
+    },
+    {
+      "id": "P118.2",
+      "phase": "P118",
+      "title": "The proof summary says what ran, what was reused, and why everything ran",
+      "reqs": [
+        "R168"
+      ],
+      "files": [
+        "plugin/lib/cmd-prove.sh",
+        "tests/prove-summary.bats"
+      ],
+      "after": [
+        "P117.3",
+        "P118.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Wire the causes into vbw prove (and the fix done selection): any cause runs every check, test file and command, and saves the commands fingerprint for the next proof",
+        "One cause prints '  ran everything: <cause>'; several print '  ran everything, because:' and one '  - <cause>' line each",
+        "Every summary prints 'checks: N ran, M reused' and 'test files: N ran, M reused'; every reused line names the proof it came from",
+        "tests/prove-summary.bats for the wiring"
+      ]
+    },
+    {
+      "id": "P118.3",
+      "phase": "P118",
+      "title": "List every 'ran everything' cause in docs/proof.md",
+      "reqs": [
+        "R168"
+      ],
+      "files": [
+        "docs/proof.md"
+      ],
+      "after": [
+        "P117.5"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "List each cause with the exact message the user sees, with the one-line and the list form (tests/proof-causes-docs.bats lists the phrases it checks)",
+        "Say that a content change to a file no recorded run read runs nothing, while an added or deleted file no run saw runs everything",
+        "Show both counts every summary prints: 'checks: N ran, M reused' and 'test files: N ran, M reused'"
+      ]
     }
   ],
   "fixes": [
@@ -24324,6 +25101,12 @@
       "text": "Next milestone after M21 is 'proofs re-run only what a change can affect' (T110), ahead of /vbw:loop and everything else",
       "why": "owner, 2026-10-11: #1 priority; full re-runs after small fixes cost about 45 minutes each",
       "at": "2026-10-10T23:34:42Z"
+    },
+    {
+      "id": "D260",
+      "text": "Proofs skip a check or test file only when none of the files it actually loaded or read during its last passing run has changed (recorded at run time, never guessed from names); fix rounds, QA and shipping reuse those results; the one complete run of every test per release is the pre-push release run; a change VBW cannot attribute (commands, test setup, a file no recorded run read) runs everything and says why. Replaces D178's complete run at QA and shipping",
+      "why": "owner, 2026-10-11: exact, no guessing and no shortcuts; fixes and QA prove in minutes; the complete run already happens before every push, so it adds no wait",
+      "at": "2026-10-10T23:45:52Z"
     }
   ],
   "commands": {
