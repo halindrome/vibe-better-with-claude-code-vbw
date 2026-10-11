@@ -61,7 +61,7 @@ if type != "object" then ["record must be a JSON object"] else
       | "protected must be the sorted list of every file the checks protect, each once" ),
     ( $r | keys[]
       | select(one_of(["schema","project","milestone","requirements","checks","phases","plans",
-                       "fixes","todos","decisions","commands","settings","evidence","lease","shipped","converted","recommendation","protected"]) | not)
+                       "fixes","todos","decisions","commands","test_files","settings","evidence","lease","shipped","converted","recommendation","protected"]) | not)
       | "unknown key: \(.)" ),
     ( ["requirements","checks","phases","plans","fixes","todos","decisions","shipped"][]
       | select(($r[.] | type) != "array") | "\(.) must be an array" ),
@@ -252,6 +252,12 @@ if type != "object" then ["record must be a JSON object"] else
           to_entries[] | select((.value | argv) | not)
           | "command \(.key) must be a non-empty argv array"
         end ),
+    ( $r.test_files
+      | select(. != null)
+      | select((type == "object" and (keys == ["files","run"]) and (.run | argv)
+                and ((.run | [.[] | [match("\\{file\\}"; "g")] | length] | add) == 1)
+                and (.files | type == "array" and length > 0 and all(.[]; type == "string" and length > 0))) | not)
+      | "test_files must be {run, files}: run an argv naming {file} exactly once, files a non-empty array of git pathspecs" ),
     ( $r.evidence
       | select(. != null)
       | if type != "object" then "evidence must be null or an object" else

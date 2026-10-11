@@ -95,6 +95,7 @@ spec_sync() {
   vbw_guard_drop "$sf"
   spec_sync_commands "$(printf '%s' "$1" | jq -c '.commands')"
   spec_sync_results "$(printf '%s' "$1" | jq -c '.results')"
+  spec_sync_test_files "$(printf '%s' "$1" | jq -c '.test_files')"
   printf 'record has %s requirements\n' "$(jq '.requirements | length' "$VBW_RECORD")"
 }
 
@@ -123,6 +124,20 @@ spec_sync_results() {
   vbw_scratch lf "$1"
   record_update '$f_l[0] as $l | if $l == null then .project |= del(.results) else .project.results = $l end' --slurpfile f_l "$lf"
   vbw_guard_drop "$lf"
+}
+
+# The record's test_files becomes the spec's Test files form, and goes when the
+# spec has no such section. A changed form needs the user's approval, like a command.
+spec_sync_test_files() {
+  local tf
+  record_read | jq -r --slurpfile f_t <(printf '%s' "$1") '$f_t[0] as $t | (.test_files // null) as $o
+    | select($o != $t)
+    | if $t == null then "removed test file form"
+      elif $o == null then "added test file form"
+      else "changed test file form" end'
+  vbw_scratch tf "$1"
+  record_update '$f_t[0] as $t | if $t == null then del(.test_files) else .test_files = $t end' --slurpfile f_t "$tf"
+  vbw_guard_drop "$tf"
 }
 
 # Insert "- R<next> [PROOF] TEXT" at the end of the Requirements section, then sync.
