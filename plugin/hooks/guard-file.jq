@@ -13,6 +13,6 @@ guard_context(.tool_name | test("^(Write|Edit|MultiEdit|NotebookEdit)$")) as $g
   elif $writes and $g.foreign != null and ($path | project_path($g.hook.cwd // $root; $root) | foreign_denial($g.foreign)) then
     $path | project_path($g.hook.cwd // $root; $root) | foreign_denial($g.foreign)
   elif $writes and $g.lease != null then
-    $path | project_path($g.hook.cwd // $root; $root) | lease_write_denial($g.lease; $g.record)
+    $path | run_write_denial($g)
   else empty end
 | deny

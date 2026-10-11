@@ -165,7 +165,7 @@ def heredoc_programs:
   match("(?:^|\\n)[^\\n]*(?:\\b(?:python[0-9.]*|node|perl|ruby|php|deno|bun|lua)\\b[^\\n]*<<|<<[^\\n]*\\b(?:python[0-9.]*|node|perl|ruby|php|deno|bun|lua)\\b)-?[ \\t]*(['\\\"]?)(\\w+)\\1[^\\n]*\\n(.*?)\\n[ \\t]*\\2[ \\t]*(?:\\n|$)"; "gp") | .captures[2].string;
 
 def program_denial($g):
-  (.[] | project_path($g.hook.cwd // $root; $root) | lease_write_denial($g.lease; $g.record));
+  (.[] | run_write_denial($g));
 
 # A subagent during a run (docs/workflows.md): commits go through vbw commit;
 # builders share one working tree, so nothing may move HEAD or other builders'
@@ -180,8 +180,8 @@ def in_run($g):
         | "git \($s) by a builder changes the working tree other builders share: undo your own change by editing your files" ),
       ( select($s == "checkout" or ($s == "restore" and ((any($a[]; . == "--staged") and (any($a[]; test("^(--worktree|-W)$")) | not)) | not)))
         | (if $s == "checkout" then $a[(($a | index("--")) + 1):] else [$a[] | select(startswith("-") | not)] end)[]
-        | project_path($g.hook.cwd // $root; $root) | lease_write_denial($g.lease; $g.record) ) ),
-  ( .out[] | project_path($g.hook.cwd // $root; $root) | lease_write_denial($g.lease; $g.record) ),
+        | run_write_denial($g) ) ),
+  ( .out[] | run_write_denial($g) ),
   ( select(.cmd | interpreter) | [((.args | join("\n")) | program_writes), inplace_files] | add | program_denial($g) );
 
 # Another session's open run (D11): shell writes of the files it writes.

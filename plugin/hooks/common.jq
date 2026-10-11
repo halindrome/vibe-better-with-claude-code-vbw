@@ -95,6 +95,21 @@ def lease_write_denial($lease; $record):
     "\(.) is a protected check file: the contract is fixed while building\nNext: leave \(.) as it is; if the check is wrong, report it so the user can change the contract"
   else empty end;
 
+# Why a subagent may not write ORIGINAL (the path as given), which lies outside
+# the project, during a run, naming where the run may write instead (R177).
+def outside_denial($lease):
+  (if $lease.files == [] then "nothing: its agents only read"
+   elif $lease.kind == "plan" then "the project's test files and .vbw/"
+   elif $lease.files == null then "project files"
+   else "its plan files (\($lease.files | join(", ")))" end) as $where
+  | "\(.) is outside the project: during a \($lease.kind) run agents write only inside it, and there only \($where)\nNext: write inside the project folder instead, or put scratch work in .vbw/runtime/";
+
+# Why a subagent may not write ORIGINAL (the path as given) under LEASE: a
+# path outside the project is denied (R177), one inside goes to the lease rules.
+def run_write_denial($g):
+  . as $o | project_path($g.hook.cwd // $root; $root) as $p
+  | if $p == null then (if $o | test("^/dev/(null|stdout|stderr|tty)$") then empty else $o | outside_denial($g.lease) end) else $p | lease_write_denial($g.lease; $g.record) end;
+
 # Why another session may not write PATH (project-relative) while FOREIGN's run
 # is open, or empty: it writes lease.files (null: any project file, []: none).
 def foreign_denial($f):
