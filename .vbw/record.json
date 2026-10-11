@@ -1,6 +1,21 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "fix-20261011T202423Z",
+    "kind": "fix",
+    "started_at": "2026-10-11T20:24:23Z",
+    "files": [
+      "tests/helper.bash"
+    ],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "new_tests": true,
+    "editable": [
+      "tests/helper-quiet-git.bats",
+      "tests/helper.bash",
+      "tests/helper.bats",
+      "tests/no-bats-on-generated.bats"
+    ]
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-beside-started.bats",
@@ -24589,6 +24604,13 @@
       "text": "FOR DISCUSSION with the owner before any work (2026-10-11): smaller shared kernel files so a change re-runs fewer tests. Today 207 of 314 recorded test units read bin/vbw and the four eagerly loaded libraries (core, record, consent, contract), and tests/helper.bash is read by every test, so a change to any of them re-runs most of the suite (33 min); these changed in about 9% of commits since 2026-10-01 (63 of 736), the helper in 3. Research first, no code: which functions each test really uses (from the run store), whether the pieces could load lazily like the cmd-*.sh files, the per-call startup cost against the 20 ms hook budget, and the saving per release. Benefit is for building VBW, not for users' projects. Decide after /vbw:loop",
       "sort": "later",
       "size": "medium",
+      "status": "open"
+    },
+    {
+      "id": "T122",
+      "text": "Blast radius before a change (owner, 2026-10-11 21:40: 'make sure this doesn't happen again' after three edits to tests/helper.bash each re-ran the whole suite): the kernel knows from the run store how many units read each file. (1) vbw show reach FILE...: units that read each file and the minutes their last runs took, from .git/vbw/runs.json. (2) The Lead's plan and the Dev's and fix brief name the files of the plan read by many units ('tests/helper.bash: read by 293 of 316 units, about 33 min per change: make every change to it in one commit, reviewed before the proof'). (3) The approval menu shows the proof cost of the plan's files. For every VBW user: their shared test setup files have the same cost",
+      "sort": "next",
+      "size": "small",
       "status": "open"
     }
   ],
