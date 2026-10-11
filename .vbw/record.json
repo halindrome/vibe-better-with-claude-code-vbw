@@ -13841,12 +13841,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "4446963765de509f700707333465ef0109945c03a4f244ac44b77734cae3d369",
-        "at": "2026-10-11T11:42:45Z",
-        "note": "15/17 checks",
-        "rounds": 1
+        "tree": "b03f01509c11918cf3fbcba96feba66f88dab02170cad842dca1675abec1ed99",
+        "at": "2026-10-11T15:02:43Z",
+        "note": "30/30 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 2,
+        "qa_findings": 2,
+        "escalations": 2
       }
     },
     {
@@ -23286,7 +23293,7 @@
       "req": "R161",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "docs/next.md line 118 (decision-table row 12, commit 52a18175 for P111.4) is a broken Markdown table row: the edit wrote \"...git history) |; when the only unfinished requirements are `human` ones you skipped, `detail.later` lists them: ... judge them now) | yes |\", so the row has an extra column and a stray \")\" and the detail.later explanation renders in the wrong cell. Fix: keep the detail.later sentence inside the third cell (before the final \"| yes |\"). A regression test should check that every row of the docs/next.md decision table has the same number of unescaped pipes as its header."
     },
     {
@@ -23294,7 +23301,7 @@
       "req": "R161",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The new \"vbw req skip ID\" is not consistent across the surface: plugin/bin/vbw:38 (vbw --help) and the first usage line of \"vbw req --help\" (line 98) still list only \"req accept ID | req reject ID NOTE\"; line 99 describes skip as \"set a requirement aside\", a stale text from P114.1 that does not say it records \"Skip for now\" on a [human] requirement; tests/help-every-command.bats SUBCOMMANDS omits \"req skip\", so its help-does-no-work check never runs for it; plugin/hooks/panel-intent.js and panel-lines.js name accept/reject but not skip. A regression test should require that every req subcommand cmd-req.sh accepts appears in the top-level usage, in the req help with an accurate description, and in the help-every-command list."
     },
     {
