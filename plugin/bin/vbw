@@ -25,7 +25,7 @@ usage: vbw <command> [args]
   spec add auto|human TEXT   append a requirement to the spec and sync
   status [--json]   where the project stands
   next [--json]     the next lifecycle step and whether it needs you
-  show VIEW [ID]    roadmap | phase ID | req ID | plan ID | fix ID | contract [--changes] | evidence | decisions | requirements
+  show VIEW [ID]    roadmap | phase ID | req ID | plan ID | fix ID | contract [--changes] | evidence | decisions | requirements | costs [--json | --ceiling USD]
   approve [--hash FINGERPRINT]   approve the contract and project commands (the user, via /vbw:approve; --hash only if it is still that contract)
   check [--expect-red] [CHECK...]   run approved checks and report (writes nothing)
   prove [--full]    run the approved checks and commands, record the evidence
@@ -77,7 +77,7 @@ vbw_cmd_usage() {
       echo "       vbw todo done ID | vbw todo drop ID   the backlog" ;;
     commit) echo "usage: vbw commit PLAN MSG [FILE...]   commit a plan's declared files (or only FILEs) with trailers" ;;
     next) echo "usage: vbw next [--json]   the next lifecycle step and whether it needs you" ;;
-    show) echo "usage: vbw show VIEW [ID]   VIEW: roadmap | phase ID | req ID | plan ID | fix ID | contract [--changes] | evidence | decisions | requirements" ;;
+    show) echo "usage: vbw show VIEW [ID]   VIEW: roadmap | phase ID | req ID | plan ID | fix ID | contract [--changes] | evidence | decisions | requirements | costs [--json | --ceiling USD]" ;;
     spec)
       echo "usage: vbw spec check|sync   validate .vbw/spec.md; sync its requirements into the record"
       echo "       vbw spec add auto|human TEXT   append a requirement to the spec and sync" ;;

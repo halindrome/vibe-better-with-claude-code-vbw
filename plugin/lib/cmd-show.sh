@@ -7,8 +7,12 @@
 cmd_show() {
   local view="${1:-}" record cf
   [ $# -gt 0 ] && shift
-  case "$view" in roadmap|phase|req|plan|fix|contract|evidence|decisions|requirements|rigor|qa) ;; *) vbw_usage_error "usage: vbw show roadmap | phase ID | req ID | plan ID [--json] | fix ID [--json] | contract [--changes] | evidence | decisions | requirements | rigor | qa" ;; esac
+  case "$view" in roadmap|phase|req|plan|fix|contract|evidence|decisions|requirements|rigor|qa|costs) ;; *) vbw_usage_error "usage: vbw show roadmap | phase ID | req ID | plan ID [--json] | fix ID [--json] | contract [--changes] | evidence | decisions | requirements | rigor | qa | costs [--json | --ceiling USD]" ;; esac
   vbw_require_project
+  if [ "$view" = costs ]; then
+    show_costs "$@"
+    return
+  fi
   # shellcheck source=cmd-next.sh
   . "$VBW_LIB/cmd-next.sh"
   record=$(record_read)
@@ -135,6 +139,60 @@ cmd_show() {
               (.value.tail | select(length > 0) | split("\n")[] | "    | " + .)),
           (.scope[] | "  scope: " + .)
         end'
+      ;;
+  esac
+}
+
+# show_costs [--json | --ceiling USD]: what each milestone and run cost (R173; docs/costs.md).
+# What VBW did not see prints as unknown with the remedy, never as a guess and never as $0.00.
+show_costs() {
+  local mode=text ceiling='' ids m totals='{}' t doc
+  case "${1:-}" in
+    '') [ $# -eq 0 ] || vbw_usage_error "usage: vbw show costs [--json | --ceiling USD]" ;;
+    --json) [ $# -eq 1 ] || vbw_usage_error "usage: vbw show costs [--json | --ceiling USD]"; mode=json ;;
+    --ceiling)
+      [ $# -eq 2 ] || vbw_usage_error "usage: vbw show costs --ceiling USD"
+      printf '%s' "$2" | grep -Eq '^([0-9]+[.]?[0-9]*|[.][0-9]+)$' \
+        && jq -ne --argjson c "$2" '$c > 0' > /dev/null 2>&1 \
+        || vbw_usage_error "the ceiling must be a positive number of dollars (vbw show costs --ceiling USD)"
+      mode=ceiling; ceiling=$2 ;;
+    *) vbw_usage_error "usage: vbw show costs [--json | --ceiling USD]" ;;
+  esac
+  # shellcheck source=costs.sh
+  . "$VBW_LIB/costs.sh"
+  ids=$(jq -r '[(.shipped[].id), .milestone.id] | unique[]' "$VBW_RECORD")
+  for m in $ids; do
+    t=$(costs_milestone_total "$VBW_RECORD" "$m")
+    totals=$(printf '%s' "$totals" | jq -c --arg m "$m" --argjson t "$t" '.[$m] = $t')
+  done
+  doc=$(jq -c --argjson totals "$totals" --arg remedy "$(costs_remedy)" '
+    . as $r
+    | ([.shipped[] | {id, title, status: "shipped"}]
+       + (if any(.shipped[]; .id == $r.milestone.id) then [] else [{id: .milestone.id, title: .milestone.title, status: .milestone.status}] end)
+       | map(. + ($totals[.id] // null | {usd: (.usd // null), in: (.in // null), out: (.out // null), sessions: (.sessions // 0)}))) as $ms
+    | {milestones: $ms,
+       runs: [(.costs.runs // [])[] | {id, kind, milestone, session: (.session // null), started, ended, cost: (.cost // null)}],
+       remedy: $remedy}
+    | .unknown = {runs: [.runs[] | select(.cost == null) | .id], milestones: [.milestones[] | select(.usd == null) | .id]}' "$VBW_RECORD")
+  case "$mode" in
+    json) printf '%s\n' "$doc" | jq '{milestones, runs, unknown, remedy}' ;;
+    ceiling)
+      t=$(printf '%s' "$doc" | jq -r --argjson c "$ceiling" --arg raw "$ceiling" --arg active "$(jq -r .milestone.id "$VBW_RECORD")" '
+        def usd: ((. * 100 | round) as $n | "$\($n / 100 | floor).\(($n % 100) | tostring | if length < 2 then "0" + . else . end)");
+        (.milestones[] | select(.id == $active)) as $m
+        | if $m.usd == null then "cannot tell: no figure was seen for \($active) (\(.remedy))"
+          elif $m.usd >= $c then "reached: \($m.usd | usd) spent of a $\($raw) ceiling (\($active))"
+          else "under: \($m.usd | usd) spent of a $\($raw) ceiling (\($active))" end' ) || vbw_die "cannot read the costs"
+      printf '%s\n' "$t"
+      [ "${t%%:*}" = under ] ;;
+    text)
+      printf '%s' "$doc" | jq -r '
+        def usd: ((. * 100 | round) as $n | "$\($n / 100 | floor).\(($n % 100) | tostring | if length < 2 then "0" + . else . end)");
+        def k: if . >= 1000000 then "\((. / 100000 | round) / 10)M" elif . >= 1000 then "\((. / 100 | round) / 10)K" else tostring end;
+        (.milestones[] | "\(.id) \(.title) (\(.status)): "
+          + (if .usd == null then "unknown" else "\(.usd | usd), \(.in | k) tokens in, \(.out | k) out, \(.sessions) session\(if .sessions == 1 then "" else "s" end) seen" end)),
+        (if (.runs | length) > 0 then "runs:", (.runs[] | "  \(.id): \(if .cost == null then "unknown" else .cost.usd | usd end) (\(.milestone))") else empty end),
+        (if (.unknown.runs | length) + (.unknown.milestones | length) > 0 then "unknown means VBW did not see the figures: " + .remedy else empty end)'
       ;;
   esac
 }
