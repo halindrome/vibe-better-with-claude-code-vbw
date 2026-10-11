@@ -24492,6 +24492,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T121",
+      "text": "FOR DISCUSSION with the owner before any work (2026-10-11): smaller shared kernel files so a change re-runs fewer tests. Today 207 of 314 recorded test units read bin/vbw and the four eagerly loaded libraries (core, record, consent, contract), and tests/helper.bash is read by every test, so a change to any of them re-runs most of the suite (33 min); these changed in about 9% of commits since 2026-10-01 (63 of 736), the helper in 3. Research first, no code: which functions each test really uses (from the run store), whether the pieces could load lazily like the cmd-*.sh files, the per-call startup cost against the 20 ms hook budget, and the saving per release. Benefit is for building VBW, not for users' projects. Decide after /vbw:loop",
+      "sort": "later",
+      "size": "medium",
+      "status": "open"
     }
   ],
   "decisions": [
