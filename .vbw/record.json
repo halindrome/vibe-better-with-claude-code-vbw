@@ -14993,7 +14993,7 @@
         "R174: one hermetic test per spec section (Requirements, Commands, Test files, Test results) shows an unsynced edit is refused, so \"every section\" is pinned, not only the new one.",
         "R174: docs/proof.md's approval section names the four sections compared and says that an unsynced spec cannot be approved."
       ],
-      "tier": "express",
+      "tier": "standard",
       "reasons": [
         "requirements: 1",
         "files: 2 (51432 bytes)",
@@ -15002,7 +15002,15 @@
         "guarded: R12 (C11), R24 (C23), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269)",
         "tests: project test command"
       ],
-      "predicted": "express"
+      "predicted": "express",
+      "escalations": [
+        {
+          "at": "2026-10-11T23:06:09Z",
+          "from": "express",
+          "to": "standard",
+          "reason": "the kernel's floor for P124 rose to standard during the build: docs/proof.md grew with P123.3's documentation and the R43 check file changed in this milestone (a patch to P123.1 was refused until the tier matches the floor)"
+        }
+      ]
     },
     {
       "id": "P125",
@@ -23430,15 +23438,14 @@
         "tests/proofreuse-rule.bats"
       ],
       "after": [],
-      "status": "blocked",
-      "role": "dev",
+      "status": "planned",
       "tasks": [
         "proofreuse.sh: one shared function, proofreuse_proved RECORD HEAD, that succeeds only when the record's last proof passed (evidence.passed true), the project's files have the fingerprint that proof recorded (vbw_code_tree equals evidence.tree) and the committed code is the tree it ran on (evidence.head equals HEAD, when the evidence carries a head). It reads trees only: no git log, no commit subject.",
         "proofreuse.sh: proofreuse_allowed RECORD [KIND] gets its 'proving again with nothing committed' reason from proofreuse_proved (KIND fix: the reason never applies, as D270 says for vbw fix done); the commit-subject test and the '.vbw is clean' test go.",
         "proofcauses.sh: proofcauses_find names 'nothing was committed since the last passing proof' only through proofreuse_proved, for KIND prove; KIND fix still never names it. testfiles.sh: testfiles_plan hands the record (and the kind) to proofreuse_allowed, as proofreuse_plan does.",
-        "tests/proofcauses-lib.bats and tests/proofreuse-rule.bats: the two tests that pinned the old rule (an empty commit with the proof's subject) now pin the new one: their fixture gains a passing evidence of the committed tree (evidence.passed, evidence.tree, evidence.head), and the expected cause or reason stays. Then tests/proof-cause-tree.bats, both older files, fix-reuse, prove-reads and prove-summary all green under /bin/bash 3.2."
-      ],
-      "note": "Code and the two pinned tests are done and committed; C274 passes. Plan step 4 also wants tests/fix-reuse.bats (test 9, line 175) and tests/prove-summary.bats (test 29, line 65) green, and they fail under the tree rule. Both prove, then change only VBW's own files (a hand-added fix in the record, or a spec/approve change) with the code untouched, then run vbw prove expecting reuse. The old rule passed only because a dirty .vbw or a different last commit subject stopped the cause; the plan removes both tests. Under the new rule that prove is exactly 'nothing committed since the last passing proof' (D173) and runs everything. Those two test files are outside this plan's files; they must either be changed (fixture commits a code change after the proof, or expect the cause) or the rule needs a further condition (e.g. evidence.contract equals the approved contract would fix prove-summary but not fix-reuse). Also tests/proof-cause-tree-docs.bats (C275) fails until P123.3 adds the docs sentence."
+        "tests/proofcauses-lib.bats and tests/proofreuse-rule.bats: the two tests that pinned the old rule (an empty commit with the proof's subject) now pin the new one: their fixture gains a passing evidence of the committed tree (evidence.passed, evidence.tree, evidence.head), and the expected cause or reason stays. Then tests/proof-cause-tree.bats, both older files, fix-reuse, prove-reads and prove-summary all green under /bin/bash 3.2.",
+        "proofreuse_proved also requires the proof to be of the current contract (evidence.contract equals the contract hash now approved): a changed approved command or check is a change, so only its own units re-run and the cause stays quiet (D291). tests/prove-summary.bats test 29 then passes; tests/fix-reuse.bats test 9 now commits an unread file between its proofs (264731a3)."
+      ]
     },
     {
       "id": "P123.2",
@@ -26971,6 +26978,11 @@
       "text": "The cause 'nothing was committed since the last passing proof' fires only when the code tree AND the contract are the ones the last passing proof recorded (evidence.tree and evidence.contract); a changed approved command or check is a change, so only its own units re-run. A test that proves twice with nothing changed expects a full run, so tests/fix-reuse.bats test 9 commits an unrelated code change between its proofs",
       "why": "P123.1 blocked, 2026-10-12 00:01: two older fixtures passed under the subject rule by accident (a dirty .vbw switched the cause off); prove-summary test 29 changes a command's definition and rightly expects only that unit to run; fix-reuse test 9 reproves with nothing changed, which D173 defines as a deliberate full run",
       "at": "2026-10-11T23:01:56Z"
+    },
+    {
+      "id": "D292",
+      "at": "2026-10-11T23:23:26Z",
+      "text": "Contract approved: 166 requirements, 282 checks, 370 plans (2d8f515505f1)"
     }
   ],
   "commands": {
