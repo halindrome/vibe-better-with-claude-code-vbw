@@ -1,6 +1,12 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261011T154047Z",
+    "kind": "qa",
+    "started_at": "2026-10-11T15:40:47Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-beside-started.bats",
@@ -13932,12 +13938,11 @@
       ],
       "predicted": "standard",
       "qa": {
-        "result": "fail",
-        "tier": "standard",
-        "tree": "60564c040ea35e1e23f8de7602229275dc1a561c20cf43e3ecb72267cd3f3089",
-        "at": "2026-10-11T14:59:54Z",
-        "note": "15/16 checks",
-        "rounds": 2
+        "result": "pass",
+        "tier": "deep",
+        "tree": "5a0f51114800d91d28f4480ed03a93ead8e9ca0b566cdf95de25de1d42c7bc33",
+        "at": "2026-10-11T15:42:07Z",
+        "note": "30/30 checks"
       },
       "escalations": [
         {
@@ -13946,7 +13951,15 @@
           "to": "deep",
           "reason": "QA needs a second round"
         }
-      ]
+      ],
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 2,
+        "qa_findings": 2,
+        "escalations": 1
+      }
     },
     {
       "id": "P114",
@@ -23349,7 +23362,7 @@
       "req": "R162",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Declined reasoning of F113 does not hold: plugin/lib/cmd-apply.sh apply_write_test_files (lines 107-108, added by 6e17611e, P117.2) calls vbw_die directly, bypassing apply_refuse and its catch-all: 'no .vbw/spec.md (run /vbw:init)' has a hint but no 'Next:' line, and 'cannot create a temporary file in $VBW_RUNTIME' has no next step at all. Both are refusals of vbw apply with test_files, so criterion 1 (every refusal ends with a next step) and criterion 4 (a new refusal without one cannot be added) are unmet; tests/refusal-next-step.bats covers neither and has no check that fails on a vbw_die in cmd-apply.sh or cmd-run.sh without a Next arm. Regression test: a test that greps cmd-apply.sh and cmd-run.sh for vbw_die calls outside apply_refuse/apply_internal and fails unless the message carries 'Next: ', plus a case sending test_files with no .vbw/spec.md and asserting the refusal ends with Next:. The three F113 paths themselves (cases in ef4aa06b) are closed: they exist and pass."
     },
     {
