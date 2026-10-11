@@ -13879,7 +13879,15 @@
         "guarded: R12 (C11), R13 (C12), R14 (C13), R15 (C14), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R32 (C28), R35 (C31), R37 (C35), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R61 (C73, C74, C75, C76, C77), R66 (C95), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R120 (C185), R128 (C200), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R145 (C210), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234), R153 (C235, C236, C239)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-11T00:52:43Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P116.5: Needs plugin/lib/record.sh (not in the plan's files): the shared jq def proof_complete (proof not a quick stand-in, no approved full command skipped, or evidence.full != false) must live in VBW_JQ_DEFS so cmd-qa.sh and next.jq use one definition. Implemented and tests/qa-reused-proof.bats (9 tests) pass, uncommitted in the tree; add record.sh to the plan's files (or approve duplicating the def) and re-run. Checks C253-C256 are red only because prove is mid-rewrite by sibling plans (proofreuse_stamp missing)."
+        }
+      ]
     },
     {
       "id": "P117",
@@ -21835,7 +21843,7 @@
         "tests/reads-lib.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "reads.sh: a start-of-proof test of the copy's file system. A file's access time (the time the system notes when a file is read) is set back with touch -a to an old date and must stay there; reading the file and listing a folder must then move it forward. If any step fails, report 'this file system does not record which files are read'",
@@ -21857,7 +21865,7 @@
         "tests/proofreuse-rule.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "The store of recorded runs: $(git rev-parse --git-common-dir)/vbw/runs.json, locked and written atomically like the consent file, never in the record. Per run unit (a check, a project command or a test file): the fingerprint of its approved definition, the committed code tree it ran on, status, time, seconds, output tail, read list, listed folders and the git flag; plus the fingerprint of the approved commands and test-file form of the last recorded run. A missing or damaged store means nothing is reused",
@@ -21928,14 +21936,15 @@
         "tests/qa-reused-proof.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "vbw qa record accepts a current proof whose results ran or were reused; it refuses a stale proof (vbw prove) and a proof in which the quick command stood in for the test command or an approved full command was skipped (vbw prove --full)",
         "vbw next asks for vbw prove --full (detail.full) only in that incomplete case; after a proof that reused results it goes on to QA and to shipping",
         "vbw ship accepts the same proofs QA accepts",
         "tests/qa-reused-proof.bats: reused proof accepted by qa record, next and ship; quick stand-in still refused with vbw prove --full; a proof recorded before these fields existed still accepted"
-      ]
+      ],
+      "note": "Needs plugin/lib/record.sh (not in the plan's files): the shared jq def proof_complete (proof not a quick stand-in, no approved full command skipped, or evidence.full != false) must live in VBW_JQ_DEFS so cmd-qa.sh and next.jq use one definition. Implemented and tests/qa-reused-proof.bats (9 tests) pass, uncommitted in the tree; add record.sh to the plan's files (or approve duplicating the def) and re-run. Checks C253-C256 are red only because prove is mid-rewrite by sibling plans (proofreuse_stamp missing)."
     },
     {
       "id": "P116.6",
@@ -21949,7 +21958,7 @@
         "tests/guard-run-store.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "The file and Bash guards refuse an agent's write to vbw/runs.json in the git directory, as they refuse the consent file, with a next step (a forged store would let a failing check be skipped)",
@@ -21970,7 +21979,7 @@
         "docs/record.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "Rewrite 'Reusing results in vbw prove': a check's read list is the files it opened and the folders it listed while it ran, from the run itself, never from file names; when a pass is reused and every reason a check runs again; read lists are kept in vbw/runs.json in the clone's git directory; checks still run several at a time, each in its own clean copy (tests/reads-docs.bats lists the phrases it checks)",
@@ -22018,7 +22027,7 @@
         "tests/testfiles-spec.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "spec.jq: read a '## Test files' section: '- run: <words or JSON array>' holding the word {file} exactly once, and one or more '- files: <git pathspecs>'; vbw spec sync refuses a run without exactly one {file} or a section without files, naming the line",
