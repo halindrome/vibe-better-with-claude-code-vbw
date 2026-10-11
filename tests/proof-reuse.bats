@@ -1,10 +1,14 @@
 #!/usr/bin/env bats
-# R103 (docs/proof.md): when the committed project files are identical to those
-# of the last passing proof (only VBW's own record or spec changed), vbw prove
-# reuses that proof's results for every check and command whose approved
-# definition is unchanged, says so, and runs only the rest. Every check and
-# command logs its own name to $RANLOG when it really runs, so a reused result
-# shows as a missing line. L1.
+# R103 (docs/proof.md, D260): when nothing a check or command read in its last
+# passing run changed (only VBW's own record or spec changed, or a file no run
+# read), vbw prove reuses that result for every check and command whose
+# approved definition is unchanged, says so, and runs only the rest. A
+# committed change runs only the checks and commands that read the changed
+# file; uncommitted changes change nothing, because checks and commands run on
+# the committed code. A proof that reused results is current: vbw qa record
+# accepts it without vbw prove --full. Every check and command logs its own
+# name to $RANLOG when it really runs, so a reused result shows as a missing
+# line. L1.
 
 load helper
 
@@ -54,7 +58,6 @@ edit_record() {
 # ran: what really ran since the log was last emptied, sorted, one line.
 ran() { sort "$RANLOG" | tr '\n' ' '; }
 ALL='C1 C2 C2b cmd-lint cmd-test '
-CMDS='cmd-lint cmd-test '
 
 # decide: record a decision (only VBW's own record changes).
 decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null; }
@@ -129,12 +132,18 @@ decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
   [[ "$output" != *C4* ]]
 }
 
-@test "R103: a committed project file that differs runs every command (R110: no check, none of its files changed), and the next proof reuses that one" {
+@test "R103: a committed change to a file no check or command read runs nothing; one to a file a check read runs only that check" {
   printf 'more\n' >> README.md
   git add README.md && git commit -q -m "docs: more"
   vbw_run prove
-  [ "$status" -eq 0 ]
-  [ "$(ran)" = "$CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
+  : > "$RANLOG"
+  printf 'paid\n' >> src/pay.txt
+  git add src/pay.txt && git commit -q -m "feat: pay"
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "C1 " ] || { echo "ran: $(ran)"; false; }
   : > "$RANLOG"
   decide
   vbw_run prove
@@ -142,11 +151,16 @@ decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
   [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
 }
 
-@test "R103: uncommitted changes to a tracked project file make the commands run (R110: no check); with the folder clean again, reuse resumes" {
+@test "R103: uncommitted changes to a tracked project file run nothing, since checks and commands run on the committed code; with the folder clean again, reuse goes on" {
+  printf 'broken\n' > src/pay.txt
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
+  git checkout -q src/pay.txt
   printf 'more\n' >> README.md
   vbw_run prove
   [ "$status" -eq 0 ]
-  [ "$(ran)" = "$CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
   git checkout -q README.md
   : > "$RANLOG"
   decide
@@ -155,11 +169,11 @@ decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
   [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
 }
 
-@test "R103: an untracked project file in the working folder makes the commands run (R110: no check)" {
+@test "R103: an untracked project file in the working folder runs nothing" {
   printf 'buy milk\n' > todos.txt
   vbw_run prove
   [ "$status" -eq 0 ]
-  [ "$(ran)" = "$CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
   rm todos.txt
   : > "$RANLOG"
   decide
@@ -167,14 +181,14 @@ decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
   [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
 }
 
-@test "R103: when the last proof did not pass, its failed check and the commands run again and the passed checks are reused (R110); a later passing proof is reused again" {
+@test "R103: when the last proof did not pass, its failed checks run again and the passed checks and commands are reused; a later passing proof is reused again" {
   FAIL=1 vbw_run prove
   [ "$status" -eq 1 ]
   jq -e '.evidence.passed == false' .vbw/record.json
   : > "$RANLOG"
   vbw_run prove
   [ "$status" -eq 0 ]
-  [ "$(ran)" = "C2 C2b $CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "C2 C2b " ] || { echo "ran: $(ran)"; false; }
   : > "$RANLOG"
   decide
   vbw_run prove
@@ -208,7 +222,7 @@ decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
   [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
 }
 
-@test "R103: a proof that reused results is recorded as current: qa record accepts it and the requirements are proven" {
+@test "R103: a proof that reused results is recorded as current: qa record accepts it without vbw prove --full and the requirements are proven" {
   decide
   vbw_run prove
   [ "$status" -eq 0 ]
@@ -218,10 +232,11 @@ decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
   jq -e '.requirements | all(.[]; .status == "proven")' .vbw/record.json
   vbw_run status
   [[ "$output" == *"requirements: 2/2 proven"* ]]
-  vbw_run prove --full
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  vbw_run next --json
+  [ "$(printf '%s' "$output" | jq -r '.action')" = qa ] || { echo "$output"; false; }
   vbw_run qa record P1 pass standard
   [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
   vbw_run next --json
   [ "$(printf '%s' "$output" | jq -r '.action')" != prove ]
 }

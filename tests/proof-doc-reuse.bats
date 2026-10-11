@@ -1,14 +1,16 @@
 #!/usr/bin/env bats
-# R144 (docs/proof.md): when every file changed since the last proof whose
-# project test command passed is documentation (is_doc: .md, .markdown, .rst)
-# or VBW's own .vbw/ files, vbw prove --full reuses that passing test-command
-# result instead of running the command, says so, and still counts as a full
-# proof. Code, a test file, a file an approved check lists or runs (even a
-# Markdown one), uncommitted code, changed test-command words, a failed or
-# quick-only earlier result, nothing committed since the proof (D173) and an
-# unfinished proof all make the test command run. Every approved check and
-# every other command still runs. Each check and command logs its own name to
-# $RANLOG when it really runs, so a reused result shows as a missing line. L1.
+# R144 (docs/proof.md, D260): a change after QA that touches only files the
+# project test command did not read in its last passing run (documentation
+# included) lets the next proof reuse that passing result instead of running
+# the command again; QA verdicts and shipping accept that proof. What counts is
+# what the command read, never the kind of file: a documentation or fixture
+# file the test command read makes it run, and a code file it read does too.
+# A changed command, a failed or quick-only earlier result, nothing committed
+# since the proof (D173) and an unfinished proof all make it run. vbw prove
+# --full reuses nothing. Checks and commands run on the committed code, so
+# uncommitted changes make nothing run. Each check and command logs its own
+# name to $RANLOG when it really runs, so a reused result shows as a missing
+# line. L1.
 
 load helper
 
@@ -21,22 +23,28 @@ setup() {
   mkdir -p src tests/fixtures docs
   printf 'paid\n' > src/pay.txt
   printf '# Guide\n' > docs/guide.md
+  printf '# Manual\n' > docs/manual.md
   printf '# Listed by C2\n' > docs/listed.md
-  printf '# Read by C2\n' > docs/rules.md
+  printf '# Named by C2\n' > docs/rules.md
   printf 'Notes\n====\n' > docs/notes.rst
+  printf '# Changes\n' > CHANGES.markdown
   printf '# Sample\n' > tests/fixtures/sample.md
   printf 'plain data\n' > words.txt
   cat > tests/c1.sh << 'SH'
 echo "C1" >> "$RANLOG"
 grep -qx paid src/pay.txt
 SH
+  # C2 opens the file it lists; it only looks whether the file its run names exists.
   cat > tests/c2.sh << 'SH'
 echo "C2" >> "$RANLOG"
+cat docs/listed.md > /dev/null
 [ -f "$1" ]
 SH
-  # A command fails while the file $TEST_ROOT/fail-<name> exists.
+  # A command fails while the file $TEST_ROOT/fail-<name> exists. The test
+  # command reads the code, a documentation file and a test fixture.
   cat > tests/cmd.sh << 'SH'
 echo "cmd-$1" >> "$RANLOG"
+if [ "$1" = test ]; then cat src/pay.txt docs/manual.md tests/fixtures/sample.md > /dev/null; fi
 [ ! -e "$TEST_ROOT/fail-$1" ]
 SH
   export RANLOG="$TEST_ROOT/ran.log"
@@ -77,121 +85,118 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
 test_ran() { grep -qx 'cmd-test' "$RANLOG"; }
 test_reused() { [ -z "$(grep -x 'cmd-test' "$RANLOG")" ]; }
 
-@test "R144: after a documentation-only commit, prove --full reuses the passing test-command result, runs every check and every other command, and says so" {
+@test "R144: after a commit that changes only documentation the test command did not read, vbw prove reuses its passing result, and every check and command, and says so" {
   commit_change docs/guide.md
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 C2 cmd-lint " ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
   jq -e '.evidence.commands.test.status == "pass" and .evidence.commands.test.reused == true' .vbw/record.json \
     || { jq '.evidence.commands' .vbw/record.json; false; }
-  jq -e '.evidence.checks | all(.[]; (.reused // false) | not)' .vbw/record.json
-  jq -e '(.evidence.commands.lint.reused // false) | not' .vbw/record.json
   [[ "$(line test)" == *pass* && "$(line test)" == *reused* ]] || { echo "$output"; false; }
 }
 
-@test "R144: a proof whose only reused result is the test command under this rule is full, in the summary and in the evidence" {
+@test "R144: a proof that reused the test result passes, and is not counted as a full proof" {
   commit_change docs/guide.md
-  vbw_run prove --full
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  test_reused
-  printf '%s\n' "$output" | grep -qE '^ +proof: full$' || { echo "$output"; false; }
-  jq -e '.evidence.full == true and .evidence.passed == true' .vbw/record.json
-}
-
-@test "R144: Markdown, .markdown and .rst files anywhere outside tests count as documentation" {
-  printf '# Changes\n' > CHANGES.markdown
-  git add CHANGES.markdown && git commit -q -m "docs: changes"
-  commit_change README.md docs/notes.rst docs/guide.md
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   test_reused || { echo "ran: $(ran)"; false; }
+  jq -e '.evidence.passed == true and .evidence.full == false' .vbw/record.json
+  ! printf '%s\n' "$output" | grep -qE '^ +proof: full$' || { echo "$output"; false; }
+}
+
+@test "R144: the kind of file does not matter: Markdown, .markdown, .rst and plain text no run read all let the test result be reused" {
+  commit_change README.md docs/notes.rst CHANGES.markdown words.txt
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
 }
 
 @test "R144: VBW's own .vbw/ files, alone or with documentation, still let the test result be reused" {
   "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   test_reused || { echo "ran: $(ran)"; false; }
   : > "$RANLOG"
   commit_change docs/guide.md
   "$VBW" decide "Use round corners" "the owner prefers them" > /dev/null
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   test_reused || { echo "ran: $(ran)"; false; }
 }
 
-@test "R144: a committed change to a code file makes prove --full run the test command again" {
+@test "R144: a committed change to a code file the test command read makes it run again, with the checks that read it" {
   commit_change src/pay.txt
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 C2 cmd-lint cmd-test " ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "C1 cmd-test " ] || { echo "ran: $(ran)"; false; }
   jq -e '(.evidence.commands.test.reused // false) | not' .vbw/record.json
 }
 
 @test "R144: a code change committed before a documentation change still makes the test command run" {
   commit_change src/pay.txt
   commit_change docs/guide.md
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   test_ran || { echo "ran: $(ran)"; false; }
 }
 
-@test "R144: plain text is not documentation: a changed .txt file makes the test command run" {
-  commit_change words.txt
-  vbw_run prove --full
+@test "R144: a documentation file the test command read makes it run, though no check lists it" {
+  commit_change docs/manual.md
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  test_ran || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "cmd-test " ] || { echo "ran: $(ran)"; false; }
 }
 
-@test "R144: a changed test file makes the test command run, even when it is a Markdown file" {
+@test "R144: a test file the test command read makes it run, even when it is a Markdown file" {
   commit_change tests/fixtures/sample.md
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  test_ran || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "cmd-test " ] || { echo "ran: $(ran)"; false; }
 }
 
-@test "R144: a Markdown file an approved check lists in its files makes the test command run" {
+@test "R144: a Markdown file an approved check lists and reads makes that check run, and the test command, which did not read it, is reused" {
   commit_change docs/listed.md
   "$VBW" approve > /dev/null
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  test_ran || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "C2 " ] || { echo "ran: $(ran)"; false; }
 }
 
-@test "R144: a Markdown file an approved check runs (named in its run words) makes the test command run" {
+@test "R144: a Markdown file an approved check names in its run words but never opens makes nothing run" {
   commit_change docs/rules.md
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  test_ran || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
 }
 
-@test "R144: uncommitted changes to code in the working folder make the test command run" {
+@test "R144: uncommitted changes to code in the working folder make nothing run: the proof runs on the committed code" {
   commit_change docs/guide.md
   printf 'paid\n# not committed\n' > src/pay.txt
-  vbw_run prove --full
-  test_ran || { echo "ran: $(ran)"; echo "$output"; false; }
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
 }
 
 @test "R144: a change to the test command's words makes it run again" {
   edit_record '.commands.test = ["sh","tests/cmd.sh","test","--all"]'
   "$VBW" approve > /dev/null
   commit_change docs/guide.md
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   test_ran || { echo "ran: $(ran)"; false; }
 }
 
-@test "R144: when the latest test-command result failed, it is never reused: the full test command runs" {
+@test "R144: when the latest test-command result failed, it is never reused: the test command runs" {
   # Nothing committed since the passing proof: this proof runs fresh (D173), and the test command fails.
   touch "$TEST_ROOT/fail-test"
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -ne 0 ]
   test_ran
   jq -e '.evidence.commands.test.status == "fail"' .vbw/record.json
   rm -f "$TEST_ROOT/fail-test"
   : > "$RANLOG"
   commit_change docs/guide.md
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   test_ran || { echo "ran: $(ran)"; false; }
 }
@@ -212,24 +217,32 @@ test_reused() { [ -z "$(grep -x 'cmd-test' "$RANLOG")" ]; }
   [ -z "$(grep -x 'cmd-quick' "$RANLOG")" ]
 }
 
-@test "R144: a second prove --full with nothing committed since the passing proof runs everything fresh (D173)" {
-  vbw_run prove --full
+@test "R144: a second vbw prove with nothing committed since the passing proof runs everything fresh (D173)" {
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(ran)" = "C1 C2 cmd-lint cmd-test " ] || { echo "ran: $(ran)"; false; }
-  [[ "$output" != *reused* ]] || { echo "$output"; false; }
+  [[ "$output" != *"reused (proof of"* ]] || { echo "$output"; false; }
 }
 
 @test "R144: an unfinished earlier proof (its marker is left behind) is never reused" {
   commit_change docs/guide.md
   : > .vbw/runtime/prove.unfinished
-  vbw_run prove --full
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   test_ran || { echo "ran: $(ran)"; false; }
 }
 
-@test "R144: vbw qa record and vbw ship accept a full proof whose test result was reused under this rule" {
+@test "R144: vbw prove --full reuses nothing: after a documentation-only commit it runs every check and every command" {
   commit_change docs/guide.md
   vbw_run prove --full
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "C1 C2 cmd-lint cmd-test " ] || { echo "ran: $(ran)"; false; }
+  jq -e '.evidence.full == true and all(.evidence.commands[], .evidence.checks[]; (.reused // false) | not)' .vbw/record.json
+}
+
+@test "R144: vbw qa record and vbw ship accept a proof whose test result was reused" {
+  commit_change docs/guide.md
+  vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   test_reused
   vbw_run qa record P1 pass standard
@@ -240,7 +253,9 @@ test_reused() { [ -z "$(grep -x 'cmd-test' "$RANLOG")" ]; }
   [ "$status" -eq 0 ] || { echo "$output"; false; }
 }
 
-@test "R144: vbw qa record still refuses a proof that ran only part of the checks or commands" {
+@test "R144: vbw qa record still refuses a proof in which the quick command stood in for the test command" {
+  edit_record '.commands.quick = ["sh","tests/cmd.sh","quick"]'
+  "$VBW" approve > /dev/null
   commit_change docs/guide.md
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }

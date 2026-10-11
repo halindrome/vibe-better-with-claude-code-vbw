@@ -1,14 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "plan-20261011T002413Z",
-    "kind": "plan",
-    "started_at": "2026-10-11T00:24:13Z",
-    "files": [
-      ".vbw/"
-    ],
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-beside-started.bats",
@@ -3989,19 +3981,19 @@
       "milestone": "M7",
       "rules": [
         {
-          "text": "after a check passes the record keeps the pass with the file fingerprint, the contract hash and the time",
+          "text": "after a check passes, the clone's store of recorded runs (vbw/runs.json in the git directory) keeps the pass with the files it read, never the record",
           "check": "C42"
         },
         {
-          "text": "vbw fix done does not run a check whose recorded pass has the same file fingerprint and contract hash, and says it is unchanged since its pass with the date of that pass",
+          "text": "vbw fix done does not run a check whose approved definition is unchanged and none of whose read files changed since its last pass, and says it is unchanged since its pass with the time of that pass",
           "check": "C42"
         },
         {
-          "text": "a committed change to a served file reruns the check",
+          "text": "a committed change to a file a check read reruns that check, and only that check",
           "check": "C42"
         },
         {
-          "text": "a changed contract hash reruns the check",
+          "text": "a changed approved definition reruns that check, and a check whose definition is unchanged is reused though the contract changed",
           "check": "C42"
         },
         {
@@ -4009,7 +4001,11 @@
           "check": "C42"
         },
         {
-          "text": "a check with no declared files, or whose served files cannot be fingerprinted, is always rerun",
+          "text": "a check that declares no files is judged by the files it read, like any other",
+          "check": "C42"
+        },
+        {
+          "text": "checks run on the committed code: an uncommitted change outside the fix's files neither fails them nor stops their reuse",
           "check": "C42"
         },
         {
@@ -4017,7 +4013,7 @@
           "check": "C42"
         },
         {
-          "text": "vbw prove runs every check regardless of recorded passes, and a failing check still fails the proof",
+          "text": "vbw prove and vbw fix done use the same store and the same reuse rule: each reuses the other's passes, and a failing check still fails the proof",
           "check": "C42"
         },
         {
@@ -4025,7 +4021,7 @@
           "check": "C42"
         },
         {
-          "text": "a record without recorded passes reads fine and the new field is validated by the record writer",
+          "text": "a missing or damaged store only means the checks run again, and the record never holds passes or read lists",
           "check": "C42"
         },
         {
@@ -4033,7 +4029,7 @@
           "check": "C42"
         },
         {
-          "text": "the docs describe the reuse rule and its wording, and the kernel stays within its line budget",
+          "text": "the docs describe the reuse rule of vbw fix done (read lists) and its wording, name the store of recorded runs instead of passes.json, and the kernel stays within its line budget",
           "check": "C43"
         }
       ]
@@ -6076,15 +6072,15 @@
           "check": "C160"
         },
         {
-          "text": "a committed project file that differs from the last passing proof runs every check and command, as before",
+          "text": "a committed change to a file no check or command read runs nothing; a committed change to a file a check read runs only that check",
           "check": "C160"
         },
         {
-          "text": "uncommitted changes to project files (tracked edits or untracked files) reuse nothing and run every check and command",
+          "text": "uncommitted changes to project files (tracked edits or untracked files) run nothing, because checks and commands run on the committed code",
           "check": "C160"
         },
         {
-          "text": "when the last proof did not pass, nothing is reused and every check and command runs",
+          "text": "when the last proof did not pass, its failed checks run again and its passed checks and commands are reused",
           "check": "C160"
         },
         {
@@ -6092,7 +6088,7 @@
           "check": "C160"
         },
         {
-          "text": "the proof that reuses results is recorded as current for the present code: vbw qa record accepts it and vbw status shows the requirements as proven",
+          "text": "the proof that reuses results is recorded as current for the present code: vbw next goes on to QA, vbw qa record accepts it without vbw prove --full, and vbw status shows the requirements as proven",
           "check": "C160"
         },
         {
@@ -6398,27 +6394,31 @@
       "milestone": "M14",
       "rules": [
         {
-          "text": "a check whose own file, or a file of a plan serving its requirement, changed since its last pass runs again, and the checks that do not serve that file are reused",
+          "text": "a check one of whose read files changed in a commit since its last pass runs again, and the checks that did not read that file are reused, project commands included",
           "check": "C169"
         },
         {
-          "text": "a check that declares no files runs on every proof and is never reused",
+          "text": "a change to a file of a plan serving the requirement that no check read runs nothing",
           "check": "C169"
         },
         {
-          "text": "a check whose approved definition changed runs again, and a check whose definition and served files are unchanged is reused even though the contract changed",
+          "text": "a check that declares no files is reused while nothing it read changed, and runs again when a file it read changes",
           "check": "C169"
         },
         {
-          "text": "a check whose last result was fail, timeout or lost runs again even when none of its files changed",
+          "text": "a check whose approved definition changed runs again, and a check whose definition and read files are unchanged is reused even though the contract changed",
           "check": "C169"
         },
         {
-          "text": "after a proof in which one check failed and the others passed, the next proof runs the failed check and the checks with changed files and reuses the other passes",
+          "text": "a check whose last result was fail, timeout or lost runs again even when none of its read files changed",
           "check": "C169"
         },
         {
-          "text": "a check with a served path that is not in the committed code runs on every proof",
+          "text": "after a proof in which one check failed and the others passed, the next proof runs the failed check and the checks whose read files changed and reuses the other passes",
+          "check": "C169"
+        },
+        {
+          "text": "deleting a file a check read runs that check once, and the next proof reuses its new pass",
           "check": "C169"
         },
         {
@@ -6438,15 +6438,15 @@
           "check": "C169"
         },
         {
-          "text": "project commands keep the R103 rule: reused only when the committed code is the same as at the passing proof",
+          "text": "project commands follow the same rule: reused while nothing they read changed, run when a file they read changed",
           "check": "C169"
         },
         {
-          "text": "selective reuse adds no ledger or state file",
+          "text": "read lists are kept in the clone's store of recorded runs (vbw/runs.json in the git directory), never in the record, VBW's tracked files or another state file",
           "check": "C169"
         },
         {
-          "text": "docs/proof.md explains which checks run again, which are reused, and why a check with no declared files always runs",
+          "text": "docs/proof.md explains which checks run again (a changed read file, a changed definition, a last result that was not a pass), which are reused, and that a check that declares no files is judged by what it read, with no served-files rule left",
           "check": "C170"
         }
       ]
@@ -6491,15 +6491,19 @@
           "check": "C171"
         },
         {
-          "text": "vbw qa record refuses a proof that is not full, without changing the record, saying to run vbw prove --full, and the refusal for changed code still applies",
+          "text": "vbw qa record refuses a proof in which the quick command stood in for the test command, without changing the record, saying to run vbw prove --full, and the refusal for changed code still applies first",
           "check": "C172"
         },
         {
-          "text": "vbw ship refuses a proof that is not full, without changing the record, saying to run vbw prove --full",
+          "text": "vbw ship refuses a proof in which the quick command stood in for the test command, without changing the record, saying to run vbw prove --full",
           "check": "C172"
         },
         {
-          "text": "when QA or shipping is next and the latest proof is not full, vbw next asks for vbw prove --full and the --json detail marks it as full",
+          "text": "when QA or shipping is next and the quick command stood in for the test command in the latest proof, vbw next asks for vbw prove --full and the --json detail marks it as full",
+          "check": "C172"
+        },
+        {
+          "text": "a proof that reused results under the read-list rule is accepted: vbw next goes on to QA without marking the detail as full, vbw qa record records the verdict and vbw ship ships",
           "check": "C172"
         },
         {
@@ -7600,15 +7604,15 @@
       "milestone": "M19",
       "rules": [
         {
-          "text": "after a documentation-only commit, vbw prove --full reuses the test command's latest passing run instead of running it",
+          "text": "after a commit that changes only documentation the test command did not read, vbw prove reuses the test command's latest passing result, and every check and command that did not read it, instead of running them",
           "check": "C208"
         },
         {
-          "text": "the summary line marks the test command as reused, and the proof stays full in the summary and the evidence",
+          "text": "the summary line marks the test command as reused, and a proof that reused it passes but is not a full proof",
           "check": "C208"
         },
         {
-          "text": ".md, .markdown and .rst files count as documentation; a plain .txt file does not",
+          "text": "the kind of file does not matter: .md, .markdown, .rst and .txt files no run read all let the result be reused",
           "check": "C208"
         },
         {
@@ -7616,19 +7620,19 @@
           "check": "C208"
         },
         {
-          "text": "a committed change to any code file since that run makes the test command run, even with documentation changes after it",
+          "text": "a committed change to a code file the test command read makes it run, even with documentation changes after it",
           "check": "C208"
         },
         {
-          "text": "a changed test file makes the test command run, even when it is a Markdown file",
+          "text": "a documentation or test file the test command read makes it run, even when it is a Markdown file no check lists",
           "check": "C208"
         },
         {
-          "text": "a changed file an approved check lists in its files or names in its run words makes the test command run, even when it is a Markdown file",
+          "text": "a Markdown file an approved check lists and reads makes that check run, and a file a check names in its run words but never opens makes nothing run",
           "check": "C208"
         },
         {
-          "text": "uncommitted changes to code in the working folder make the test command run",
+          "text": "uncommitted changes to code in the working folder make nothing run: the proof runs on the committed code",
           "check": "C208"
         },
         {
@@ -7644,7 +7648,7 @@
           "check": "C208"
         },
         {
-          "text": "a second vbw prove --full with nothing committed since the passing proof runs everything fresh (D173)",
+          "text": "a second vbw prove with nothing committed since the passing proof runs everything fresh (D173)",
           "check": "C208"
         },
         {
@@ -7652,15 +7656,15 @@
           "check": "C208"
         },
         {
-          "text": "every approved check and every other project command still runs in the full proof",
+          "text": "vbw prove --full reuses nothing: after a documentation-only commit it runs every check and every command",
           "check": "C208"
         },
         {
-          "text": "vbw qa record and vbw ship accept a full proof with the reused test result, and vbw qa record still refuses a partial proof",
+          "text": "vbw qa record and vbw ship accept a proof with the reused test result, and vbw qa record still refuses a proof in which the quick command stood in",
           "check": "C208"
         },
         {
-          "text": "docs/proof.md explains the rule and what still runs the test command, and that a test reading a documentation file not listed by any check is not re-run",
+          "text": "docs/proof.md explains that a proof reuses the test command's result when nothing it read changed, never by the kind of file, what still makes it run, and that vbw prove --full reuses nothing, with the documentation-only rule and its limit gone",
           "check": "C209"
         },
         {

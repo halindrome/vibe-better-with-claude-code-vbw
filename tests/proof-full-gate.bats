@@ -1,8 +1,10 @@
 #!/usr/bin/env bats
-# R111 (docs/proof.md): QA verdicts and shipping are accepted only after a full
-# proof (vbw prove --full): vbw qa record and vbw ship refuse a proof that is
-# not full without changing the record, vbw next asks for a full proof before
-# QA or shipping, and QA agents are given the full proof's test result. L1.
+# R111 (docs/proof.md, D260): QA verdicts and shipping accept a proof whose
+# checks and commands ran or were reused under the read-list rule. They refuse,
+# without changing the record, only a proof that skipped part of the work: one
+# in which the quick command stood in for the test command. vbw next asks for
+# vbw prove --full before QA or shipping only then, and QA agents are given the
+# test command's own result, never the quick command's. L1.
 
 load helper
 
@@ -28,14 +30,31 @@ setup() {
 
 teardown() { vbw_teardown; }
 
-set_full() {
+edit_record() {
   jq "$1" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
 }
 
-# partial: the proof ran only part of the work (the record names it, as vbw prove does).
-partial() { set_full '.evidence.full = false'; }
+# with_quick: the project gets an approved test command and an approved quick command.
+with_quick() {
+  edit_record '.commands = {test: ["sh","tests/cmd.sh","full-suite"], quick: ["sh","tests/cmd.sh","quick-suite"]}'
+  "$VBW" approve > /dev/null
+}
 
-@test "R111: vbw qa record refuses a proof that is not full, changes nothing, and says to run vbw prove --full" {
+# partial: a plain proof in which the approved quick command stands in for the test command.
+partial() {
+  "$VBW" prove > /dev/null || return 1
+  jq -e '.evidence.commands | has("quick") and (has("test") | not)' .vbw/record.json > /dev/null
+}
+
+# reused: a proof that reused results (only VBW's own record changed since the last one).
+reused() {
+  "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
+  "$VBW" prove > /dev/null || return 1
+  jq -e '.evidence.full == false and any(.evidence.checks[]; .reused == true)' .vbw/record.json > /dev/null
+}
+
+@test "R111: vbw qa record refuses a proof in which the quick command stood in for the test command, changes nothing, and says to run vbw prove --full" {
+  with_quick
   partial
   local before
   before=$(shasum .vbw/record.json)
@@ -46,6 +65,7 @@ partial() { set_full '.evidence.full = false'; }
 }
 
 @test "R111: the refusal for code that changed since the proof still applies first" {
+  with_quick
   partial
   printf 'paid\nmore\n' > src/pay.txt
   git add src/pay.txt && git commit -q -m "fix(pay): more"
@@ -54,11 +74,13 @@ partial() { set_full '.evidence.full = false'; }
   [[ "$output" == *"the code changed since the last proof"* ]] || { echo "$output"; false; }
 }
 
-@test "R111: vbw ship refuses a proof that is not full, changes nothing, and says to run vbw prove --full" {
+@test "R111: vbw ship refuses a proof in which the quick command stood in, changes nothing, and says to run vbw prove --full" {
+  with_quick
+  "$VBW" prove --full > /dev/null
   vbw_run qa record P1 pass standard
-  [ "$status" -eq 0 ]
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
   vbw_run next --json
-  [ "$(printf '%s' "$output" | jq -r '.action')" = ship ]
+  [ "$(printf '%s' "$output" | jq -r '.action')" = ship ] || { echo "$output"; false; }
   partial
   local before
   before=$(shasum .vbw/record.json)
@@ -68,18 +90,22 @@ partial() { set_full '.evidence.full = false'; }
   [ "$(shasum .vbw/record.json)" = "$before" ]
 }
 
-@test "R111: before QA, vbw next asks for a full proof when the latest proof is not full, and --json marks it" {
+@test "R111: before QA, vbw next asks for a full proof when the quick command stood in, and --json marks it" {
+  with_quick
   partial
   vbw_run next --json
   [ "$status" -eq 0 ]
-  printf '%s' "$output" | jq -e '.action == "prove" and .detail.full == true and (.instruction | contains("Run vbw prove --full") and contains("a proof that ran every check"))' \
+  printf '%s' "$output" | jq -e '.action == "prove" and .detail.full == true and (.instruction | contains("Run vbw prove --full"))' \
     || { echo "$output"; false; }
   vbw_run next
   [[ "$output" == *"Run vbw prove --full"* ]]
 }
 
-@test "R111: before shipping, vbw next asks for a full proof when the latest proof is not full" {
+@test "R111: before shipping, vbw next asks for a full proof when the quick command stood in" {
+  with_quick
+  "$VBW" prove --full > /dev/null
   vbw_run qa record P1 pass standard
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
   partial
   vbw_run next --json
   printf '%s' "$output" | jq -e '.action == "prove" and .detail.full == true and (.instruction | contains("vbw prove --full"))' \
@@ -91,9 +117,24 @@ partial() { set_full '.evidence.full = false'; }
   printf '%s' "$output" | jq -e '.action == "qa" and (.detail.full // false) == false' || { echo "$output"; false; }
 }
 
+@test "R111: a proof that reused results is accepted: vbw next goes on to QA, vbw qa record records the verdict and vbw ship ships" {
+  reused
+  vbw_run next --json
+  printf '%s' "$output" | jq -e '.action == "qa" and (.detail.full // false) == false' || { echo "$output"; false; }
+  vbw_run qa record P1 pass standard
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" != *"vbw prove --full"* ]] || { echo "$output"; false; }
+  jq -e '.phases[0].qa.result == "pass"' .vbw/record.json
+  reused
+  vbw_run next --json
+  [ "$(printf '%s' "$output" | jq -r '.action')" = ship ] || { echo "$output"; false; }
+  vbw_run ship
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+}
+
 @test "R111: a refused verdict, then vbw prove --full, then the verdict is recorded" {
-  "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
-  "$VBW" prove > /dev/null
+  with_quick
+  partial
   jq -e '.evidence.full == false' .vbw/record.json
   vbw_run qa record P1 pass standard
   [ "$status" -ne 0 ]
@@ -106,15 +147,13 @@ partial() { set_full '.evidence.full = false'; }
 }
 
 @test "R111: a proof recorded before the full flag existed counts as full" {
-  set_full 'del(.evidence.full)'
+  edit_record 'del(.evidence.full)'
   vbw_run qa record P1 pass standard
   [ "$status" -eq 0 ] || { echo "$output"; false; }
 }
 
 @test "R111: the test-command result QA agents are given comes from the full proof, never from the quick command" {
-  jq '.commands = {test: ["sh","tests/cmd.sh","full-suite"], quick: ["sh","tests/cmd.sh","quick-suite"]}' .vbw/record.json > "$TEST_ROOT/edit.json" \
-    && cp "$TEST_ROOT/edit.json" .vbw/record.json
-  "$VBW" approve > /dev/null
+  with_quick
   vbw_run prove --full
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   vbw_run next --json

@@ -1,10 +1,15 @@
 #!/usr/bin/env bats
-# R110 (docs/proof.md): vbw prove runs again only the approved checks whose
-# served files (the check's own files and the files of the plans serving its
-# requirement) changed since their last pass, every check that declares no
-# files, and every check whose definition changed; it reuses every other
-# result and says so. Every check and command logs its own name to $RANLOG when
-# it really runs, so a reused result shows as a missing line. L1.
+# R110 (docs/proof.md, D260): vbw prove runs again only the approved checks a
+# change can reach: a check whose approved definition changed, whose last
+# result was not a pass, or one of whose read files (the files it opened and
+# the folders it listed in its last passing run) changed since; it reuses
+# every other result and says so. Project commands follow the same rule. A
+# check is judged by what it read, never by the files it or its plans declare:
+# a check that declares no files is reused like any other, and a plan file no
+# check read runs nothing. Read lists are kept in the clone's store of
+# recorded runs, never in the record. Every check and command logs its own
+# name to $RANLOG when it really runs, so a reused result shows as a missing
+# line. L1.
 
 load helper
 
@@ -18,18 +23,23 @@ setup() {
   printf 'paid\n' > src/pay.txt
   printf 'refunded\n' > src/refund.txt
   printf 'invoiced\n' > src/invoice.txt
-  # Each script logs "<name><argument>" when it runs. C2 (no argument) fails
-  # when FAIL is set; C5 sleeps past its timeout when the file named by SLOW5 exists.
+  printf 'notes\n' > src/notes.txt
+  # Each script logs "<name><argument>" when it runs and reads its
+  # requirement's file. C2 (no argument) fails when FAIL is set; C5 sleeps past
+  # its timeout when the file named by SLOW5 exists. src/notes.txt is a file of
+  # the Pay plan that no check reads.
   cat > tests/c1.sh << 'SH'
 echo "C1$1" >> "$RANLOG"
 grep -qx paid src/pay.txt
 SH
   cat > tests/c2.sh << 'SH'
 echo "C2$1" >> "$RANLOG"
+grep -q refunded src/refund.txt || exit 1
 [ -z "${FAIL:-}" ] || [ -n "$1" ]
 SH
   cat > tests/c5.sh << 'SH'
 echo "C5" >> "$RANLOG"
+cat src/invoice.txt > /dev/null 2>&1 || true
 [ ! -e "${SLOW5:-/nonexistent}" ] || sleep 6
 SH
   cat > tests/c6.sh << 'SH'
@@ -46,7 +56,7 @@ SH
       {id:"C5", req:"R3", run:["sh","tests/c5.sh"], files:["tests/c5.sh"], timeout:2}]
     | .commands = {lint: ["sh","tests/cmd.sh","lint"], test: ["sh","tests/cmd.sh","test"]}
     | .phases = [{id:"P1", title:"Shop", reqs:["R1","R2","R3"], milestone:"M1"}]
-    | .plans = [{id:"P1.1", phase:"P1", title:"Pay", reqs:["R1"], files:["src/pay.txt"], after:[], status:"done"},
+    | .plans = [{id:"P1.1", phase:"P1", title:"Pay", reqs:["R1"], files:["src/pay.txt","src/notes.txt"], after:[], status:"done"},
                 {id:"P1.2", phase:"P1", title:"Refund", reqs:["R2"], files:["src/refund.txt"], after:[], status:"done"},
                 {id:"P1.3", phase:"P1", title:"Invoice", reqs:["R3"], files:["src/invoice.txt"], after:[], status:"done"}]'
   git add -A && git commit -q -m "chore(vbw): plan"
@@ -65,7 +75,6 @@ edit_record() {
 # ran: what really ran since the log was last emptied, sorted, one line.
 ran() { sort "$RANLOG" | tr '\n' ' '; }
 ALL='C1 C2 C2b C5 cmd-lint cmd-test '
-CMDS='cmd-lint cmd-test '
 
 # change FILE: commit a change to one project file.
 change() {
@@ -79,17 +88,17 @@ decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
 # line ID: the proof summary line of one check or command.
 line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
 
-@test "R110: a commit that changes only a file served by one requirement runs that requirement's checks and reuses the rest" {
+@test "R110: a commit that changes only a file two checks read runs those checks and reuses the rest, commands included" {
   change src/refund.txt
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C2 C2b $CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "C2 C2b " ] || { echo "ran: $(ran)"; false; }
   local id l
-  for id in C1 C5; do
+  for id in C1 C5 lint test; do
     l=$(line "$id")
     [[ "$l" == *reused* && "$l" == *"$FIRST"* ]] || { echo "$id: '$l'"; echo "$output"; false; }
   done
-  for id in C2 C4 lint test; do
+  for id in C2 C4; do
     l=$(line "$id")
     [[ -n "$l" && "$l" != *reused* ]] || { echo "$id: '$l'"; echo "$output"; false; }
   done
@@ -112,11 +121,19 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   jq -e '.evidence.checks.C1.reused == true and (.evidence.checks.C2.reused // false) == false' .vbw/record.json
 }
 
-@test "R110: a commit that changes a file of a plan serving the requirement runs that requirement's check only" {
+@test "R110: a commit that changes a file a check read runs that check only" {
   change src/pay.txt
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 $CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "C1 " ] || { echo "ran: $(ran)"; false; }
+}
+
+@test "R110: a commit that changes a file of a plan serving the requirement, which no check read, runs nothing" {
+  change src/notes.txt
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
+  [[ "$(line C1)" == *reused* ]] || { echo "$output"; false; }
 }
 
 @test "R110: a commit that changes a check's own file, approved again, runs the checks that file belongs to" {
@@ -125,7 +142,7 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   "$VBW" approve > /dev/null
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 $CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "C1 " ] || { echo "ran: $(ran)"; false; }
 }
 
 @test "R110: a check whose last result failed runs again though none of its files changed; the other passes are reused" {
@@ -136,7 +153,7 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   : > "$RANLOG"
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C2 $CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "C2 " ] || { echo "ran: $(ran)"; false; }
   [[ "$(line C4)" == *reused* ]] || { echo "$output"; false; }
   [[ "$(line C1)" == *reused* ]] || { echo "$output"; false; }
 }
@@ -149,7 +166,7 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   change src/pay.txt
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 C2 $CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "C1 C2 " ] || { echo "ran: $(ran)"; false; }
   [[ "$(line C4)" == *reused* ]] || { echo "$output"; false; }
   [[ "$(line C5)" == *reused* ]] || { echo "$output"; false; }
   jq -e '.evidence.passed == true' .vbw/record.json
@@ -164,10 +181,10 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   : > "$RANLOG"
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C5 $CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "C5 " ] || { echo "ran: $(ran)"; false; }
 }
 
-@test "R110: a check that declares no files runs on every proof and is never reused" {
+@test "R110: a check that declares no files is judged by what it read: reused while that is unchanged, run again when it changes" {
   edit_record '.checks += [{id:"C6", req:"R3", run:["sh","tests/c6.sh"]}]'
   "$VBW" approve > /dev/null
   vbw_run prove
@@ -177,27 +194,32 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   decide
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C6 " ] || { echo "ran: $(ran)"; false; }
-  [[ "$(line C6)" != *reused* ]] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
+  [[ "$(line C6)" == *reused* ]] || { echo "$output"; false; }
   [[ "$(line C1)" == *reused* ]] || { echo "$output"; false; }
   : > "$RANLOG"
   change README.md
   vbw_run prove
-  [ "$(ran)" = "C6 $CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
+  : > "$RANLOG"
+  change tests/c6.sh
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "C6 " ] || { echo "ran: $(ran)"; false; }
 }
 
-@test "R110: a check with a served path that is not in the committed code runs on every proof" {
+@test "R110: deleting a file a check read runs that check once, and the next proof reuses its new pass" {
   git rm -q src/invoice.txt
   git commit -q -m "chore: drop the invoice file"
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C5 $CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "C5 " ] || { echo "ran: $(ran)"; false; }
   : > "$RANLOG"
   decide
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C5 " ] || { echo "ran: $(ran)"; false; }
-  [[ "$(line C5)" != *reused* ]] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
+  [[ "$(line C5)" == *reused* ]] || { echo "$output"; false; }
 }
 
 @test "R110: a changed approved definition runs that check, and a check whose definition and files are unchanged is reused though the contract changed" {
@@ -206,16 +228,16 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   change README.md
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C2x $CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "C2x " ] || { echo "ran: $(ran)"; false; }
   [[ "$(line C1)" == *reused* ]] || { echo "$output"; false; }
   [[ "$(line C4)" == *reused* ]] || { echo "$output"; false; }
 }
 
-@test "R110: a served file changed in the working folder but not committed runs nothing again, and the commit that follows makes the proof stale" {
+@test "R110: a file a check read, changed in the working folder but not committed, runs nothing again, and the commit that follows makes the proof stale" {
   printf 'more\n' >> src/pay.txt
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "$CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
   [[ "$(line C1)" == *reused* ]] || { echo "$output"; false; }
   git add src/pay.txt && git commit -q -m "feat: pay more"
   vbw_run next --json
@@ -223,7 +245,7 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   : > "$RANLOG"
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 $CMDS" ] || { echo "ran: $(ran)"; false; }
+  [ "$(ran)" = "C1 " ] || { echo "ran: $(ran)"; false; }
 }
 
 @test "R110: an interrupted proof (its unfinished marker is left behind) reuses nothing" {
@@ -245,10 +267,16 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   printf '%s\n' "$output" | grep -qE '^ +checks: 4 ran, 0 reused$' || { echo "$output"; false; }
 }
 
-@test "R110: project commands keep the R103 rule: they run when the committed code differs, whatever the checks reuse" {
+@test "R110: project commands follow the same rule: reused while nothing they read changed, run when a file they read changed" {
   change src/refund.txt
   vbw_run prove
   [ "$status" -eq 0 ]
+  [[ "$(line lint)" == *reused* && "$(line test)" == *reused* ]] || { echo "$output"; false; }
+  : > "$RANLOG"
+  change tests/cmd.sh
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "cmd-lint cmd-test " ] || { echo "ran: $(ran)"; false; }
   [[ "$(line lint)" != *reused* && "$(line test)" != *reused* ]] || { echo "$output"; false; }
   : > "$RANLOG"
   decide
@@ -258,14 +286,17 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   [[ "$(line lint)" == *reused* ]] || { echo "$output"; false; }
 }
 
-@test "R110: selective reuse adds no ledger or state file: the record's evidence is the only source" {
+@test "R110: read lists are kept in the clone's store of recorded runs, never in the record or another state file" {
   local common
   common=$(git rev-parse --path-format=absolute --git-common-dir)
-  { git ls-files .vbw; find "$common/vbw" -type f; } | sort > "$TEST_ROOT/before.txt"
+  [ -f "$common/vbw/runs.json" ] || { echo "no store of recorded runs"; false; }
+  jq -e 'any(.. | strings; . == "src/refund.txt" or endswith("/src/refund.txt"))' "$common/vbw/runs.json" > /dev/null
+  { git ls-files .vbw; find "$common/vbw" -type f ! -name '*.lock'; } | sort > "$TEST_ROOT/before.txt"
   change src/refund.txt
   vbw_run prove
   [ "$status" -eq 0 ]
-  { git ls-files .vbw; find "$common/vbw" -type f; } | sort > "$TEST_ROOT/after.txt"
+  { git ls-files .vbw; find "$common/vbw" -type f ! -name '*.lock'; } | sort > "$TEST_ROOT/after.txt"
   diff "$TEST_ROOT/before.txt" "$TEST_ROOT/after.txt"
+  jq -e '[.evidence | .. | strings] | index("src/refund.txt") | not' .vbw/record.json
   [ "$(find .vbw/runtime -maxdepth 1 -type f \( -name '*reuse*' -o -name '*ledger*' -o -name 'served*' \) | wc -l | tr -d ' ')" = 0 ]
 }
