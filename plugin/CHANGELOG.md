@@ -1,5 +1,67 @@
 # Changelog
 
+## [2.0.32] - 2026-10-11
+
+### Changed
+
+- **Proofs run only what a change can reach.** Every `vbw prove`, the full
+  proof before QA and shipping included, re-runs a check only when a file it
+  read or a folder it listed has changed since its last pass, and reuses every
+  other passing result, naming the proof it came from. VBW learns what each
+  check reads by running it in a clean copy of the committed code and keeps
+  those read lists in your clone (`.git/vbw/runs.json`), never in the record.
+  When VBW cannot know what a change reaches, it runs everything and says why
+  (a new file no recorded run read, a proof that was cut short, a file system
+  that does not record reads, ...). Every summary prints how many checks and
+  test files ran and how many were reused.
+- **One test file at a time.** When your test runner can run a single file,
+  declare it in `.vbw/spec.md` under `## Test files` (`- run: bats {file}` and
+  `- files: tests/*.bats`); the Lead proposes it when planning and you approve
+  it with the contract. Your test command then runs as one unit per test file,
+  so a change re-runs only the files it reaches.
+- **Fix rounds add their own regression tests.** After a QA finding, the fix
+  may create new test files and register them as checks of the finding's
+  requirement (`vbw fix check FIX`); edits to an approved check file wait for
+  one approval from you before the proof.
+- **Judge it later.** A `[human]` requirement you are not ready to judge can be
+  skipped ("Skip for now" in the acceptance menu, `vbw req skip ID`); when
+  skipped requirements are all that holds up shipping, they move to the next
+  milestone with their id, checks and history.
+- **Plans change without surprises.** A milestone can re-plan a requirement it
+  reopened from a shipped milestone; a new phase can sit beside a started phase
+  for more work on the same requirement; an unstarted phase can change its goal
+  and criteria; a re-plan never raises the tier of a phase that has started;
+  and every refusal while a plan changes ends with what to do instead.
+- **`--help` on every command.** `vbw CMD --help` (or `-h`) prints that
+  command's usage and changes nothing.
+- **Guards fail closed.** During a VBW run, a guard that crashes, cannot start
+  or times out blocks the action it guards instead of letting it through.
+  Outside VBW projects nothing changes.
+
+### Fixed
+
+- `vbw fix done` right after a passing proof reuses that proof instead of
+  re-running every check: "nothing committed since the last passing proof"
+  makes only a second `vbw prove` run everything.
+- `vbw apply --add` refuses a phase id that already exists in any milestone,
+  and a requirement that an unstarted phase of this milestone already covers
+  (change that phase with a full apply instead).
+- `vbw req skip` is listed in `vbw --help` and `vbw req --help`, and the panel
+  names it.
+- `vbw next` no longer prints "ignored null byte in input" under bash 5 while
+  a check a fix added waits for approval.
+- The ship row of the `vbw next` decision table in docs/next.md renders.
+
+### What you need to know
+
+- **The first proof after this update runs everything once** (your clone has
+  no recorded runs yet). From then on, proofs reuse what a change does not
+  reach. A clone on a file system that does not record file reads runs
+  everything every time, and the summary says so.
+- For contributors: `bash tools/test.sh --lint` runs the shellcheck stage
+  alone; the release run (`--release`) adds only the timed speed checks and
+  the benchmarks when a passing full proof already covers the same code.
+
 ## [2.0.31] - 2026-10-10
 
 ### Changed
