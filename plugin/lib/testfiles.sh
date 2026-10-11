@@ -131,21 +131,41 @@ testfiles_finish() {
     out=$(printf '%s' "$out" | jq -c --arg p "$p" --arg fp "$fp" --arg at "$3" --slurpfile w <(printf '%s' "$TF_WHY") \
       '.[$p] += ({fp: $fp, at: $at} + (if $w[0][$p] and .[$p].status != "skipped" then {why: $w[0][$p]} else {} end))')
   done < <(printf '%s' "$2" | jq -j 'keys[] | . + "\u0000"')
-  order=$(printf '%s\0' ${TF_PATHS[@]+"${TF_PATHS[@]}"} | jq -Rsc 'split("\u0000")[:-1]')
+  # No test file left to run gives an empty order: printf with no argument would print one NUL.
+  if [ ${#TF_PATHS[@]} -eq 0 ]; then order='[]'
+  else order=$(printf '%s\0' "${TF_PATHS[@]}" | jq -Rsc 'split("\u0000")[:-1]'); fi
   proofreuse_join "$order" "$TF_REUSE" "$out" \
     | jq -c 'map_values(del(.reads, .dirs, .git, .id) | if .reused and .status == "pass" then .exit = 0 else . end)'
+}
+
+# testfiles_matches RECORD: how many committed files the form's pathspecs match,
+# before the files an approved check runs are taken out.
+testfiles_matches() {
+  local specs=() a
+  while IFS= read -r -d '' a; do specs+=("$a"); done < <(printf '%s' "$1" | jq -j '.test_files.files[] + "\u0000"')
+  [ ${#specs[@]} -gt 0 ] || { printf '0\n'; return 0; }
+  git -C "$VBW_ROOT" ls-files -z -- ${specs[@]+"${specs[@]}"} | tr -cd '\000' | wc -c | tr -d ' '
 }
 
 # testfiles_command RECORD RESULTS: the test command's place in the evidence when the
 # test files ran in its stead: one result, passing when every test file passed
 # (reused when every one was), so a failing test file fails the proof, opens a
-# fix for the test command and QA sees the suite's state.
+# fix for the test command and QA sees the suite's state. With no test file left
+# to run (R169): a pass that says every matching file runs as an approved check,
+# or, when the pathspecs match no committed file, a failure that names them.
 testfiles_command() {
-  printf '%s' "$2" | jq -c --arg run "$(printf '%s' "$1" | jq -r '.test_files.run | join(" ")')" '
+  printf '%s' "$2" | jq -c --arg run "$(printf '%s' "$1" | jq -r '.test_files.run | join(" ")')" \
+    --argjson matches "$(testfiles_matches "$1")" --arg specs "$(printf '%s' "$1" | jq -r '.test_files.files | join(" ")')" '
     [.[]] as $r | [$r[] | select(.status != "pass")] as $bad
-    | {status: (if ($bad | length) == 0 then "pass" elif all($bad[]; .status == "timeout") then "timeout" else "fail" end),
-       exit: (if ($bad | length) == 0 then 0 else null end), seconds: ([$r[].seconds // 0] | add // 0),
-       tail: ([to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join("\n")),
-       command: ($run + " (one test file per run)"), of_files: true}
-      + (if ($r | length) > 0 and all($r[]; .reused) then {reused: true, at: ([$r[].at] | max)} else {} end)'
+    | if ($r | length) == 0 then
+        (if $matches > 0 then {status: "pass", exit: 0, seconds: 0, tail: "every file the form matches runs as an approved check; nothing is left to run as a test file"}
+         else {status: "fail", exit: 1, seconds: 0, tail: "the test-file form matches no tracked file (\($specs)): add the test files, or change the form in .vbw/spec.md"} end)
+        + {command: ($run + " (one test file per run)"), of_files: true}
+      else
+        {status: (if ($bad | length) == 0 then "pass" elif all($bad[]; .status == "timeout") then "timeout" else "fail" end),
+         exit: (if ($bad | length) == 0 then 0 else null end), seconds: ([$r[].seconds // 0] | add // 0),
+         tail: ([to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join("\n")),
+         command: ($run + " (one test file per run)"), of_files: true}
+        + (if all($r[]; .reused) then {reused: true, at: ([$r[].at] | max)} else {} end)
+      end'
 }

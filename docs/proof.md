@@ -402,6 +402,13 @@ A test file that an approved check runs runs only as that check, not a second
 time as a test file. The quick command never stands in for an approved form:
 with a form, neither the test command nor the quick command runs.
 
+When that leaves no test file to run (every file the form matches is run by
+an approved check), the test command counts as covered by those checks: it
+passes with `test files: 0 ran, 0 reused`, and the summary says so. When the
+form matches no committed file at all, the test command fails, the summary
+names the pathspecs, and a fix opens for it: add the test files, or change the
+form in `.vbw/spec.md`.
+
 ## `vbw prove`
 
 1. Refuses unless the current contract hash is approved.
