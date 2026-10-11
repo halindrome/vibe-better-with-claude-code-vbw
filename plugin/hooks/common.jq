@@ -57,7 +57,7 @@ def secret_path: basename
 def record_path: test("(^|/)\\.vbw/record\\.json$");
 def glance_reason: ".vbw/runtime/glance.json is written only by vbw (vbw help lists the commands)\nNext: leave it as it is; vbw rewrites it with every change to the record";
 def glance_path: test("(^|/)\\.vbw/runtime/glance\\.json$");
-def consent_path: test("(^|/)vbw/consent\\.json$");
+def consent_path: test("(^|/)vbw/(consent|runs)\\.json$");
 
 # PATH (relative to $cwd unless absolute) as a project-relative path, or null
 # when it lies outside $root. "." and ".." segments are resolved.
@@ -103,7 +103,7 @@ def foreign_denial($f):
 
 def secret_reason: "\(basename) may hold secrets; VBW never reads or writes secret files\nNext: do not open \(basename); ask the user for the value you need, or use an example file such as .env.example";
 def record_reason: ".vbw/record.json is written only by vbw (vbw help lists the commands)\nNext: run the vbw command that makes this change (vbw help lists them); read the record with vbw show or vbw status";
-def consent_reason: "the consent file is written only by /vbw:approve\nNext: ask the user to run /vbw:approve themselves";
+def consent_reason: "the consent file is written only by /vbw:approve, and the store of recorded runs (vbw/runs.json) only by vbw\nNext: ask the user to run /vbw:approve themselves; leave the run store alone, vbw rewrites it by itself";
 
 # A reason string becomes the hook's deny decision.
 def deny: {hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny",
