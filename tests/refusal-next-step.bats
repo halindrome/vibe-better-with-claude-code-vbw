@@ -73,6 +73,7 @@ add_with() { printf '%s' "$ADD" | jq -c "$1"; }
   apply_refusal full "a rule naming no check of its requirement" "$(full_with '.rules += [{req: "R2", text: "x", check: "C1"}]')"
   apply_refusal full "a tier below its floor" "$(full_with '(.plans[] | select(.id == "P2.2")).files = ["src/payments/charge.js"]')"
   apply_refusal full "an express phase with two plans" "$(full_with '(.phases[] | select(.id == "P2")).tier = "express"')"
+  apply_refusal full "a malformed single-file test form" "$(full_with '.test_files = {run: ["bats"], files: ["tests/*.bats"]}')"
   replan_edit '(.requirements[] | select(.id == "R3")).milestone = "M0"'
   apply_refusal full "a requirement of another milestone" "$(full_with '.phases += [{id: "P3", title: "Refund", reqs: ["R3"], goal: "g", criteria: ["c"], tier: "standard"}]
     | .plans += [{id: "P3.1", phase: "P3", title: "Refund", reqs: ["R3"], files: ["src/r.txt"], after: []}]')"
@@ -93,9 +94,16 @@ add_with() { printf '%s' "$ADD" | jq -c "$1"; }
   apply_refusal add "a check for a requirement it does not bring" "$(add_with '.checks += [{id: "C4", req: "R2", run: ["true"]}]')"
   apply_refusal add "a missing rule" "$(add_with '.rules = []')"
   apply_refusal add "a tier below its floor" "$(add_with '.plans[0].files = ["src/payments/refund.js"]')"
+  apply_refusal add "a malformed single-file test form" "$(add_with '.test_files = {run: ["bats"], files: ["tests/*.bats"]}')"
+  # P2 has not started: a requirement it covers is changed there, not planned again beside it.
+  apply_refusal add "a requirement a phase of this milestone covers while that phase has not started" "$(add_with '.phases[0].reqs = ["R2"] | .plans[0].reqs = ["R2"] | .checks[0].req = "R2" | .rules[0].req = "R2"')"
   replan_edit '(.requirements[] | select(.id == "R3")).milestone = "M0"'
   apply_refusal add "a requirement of another milestone" "$ADD"
   replan_edit '(.requirements[] | select(.id == "R3")).milestone = "M1"'
+  replan_edit '(.phases[] | select(.id == "P2")).milestone = "M0"'
+  apply_refusal add "a requirement a phase of another milestone covers" "$(add_with '.phases[0].reqs = ["R2"] | .plans[0].reqs = ["R2"] | .checks[0].req = "R2" | .rules[0].req = "R2"')"
+  apply_refusal add "a phase id that exists in another milestone" "$(add_with '.phases[0].id = "P2" | .plans[0].phase = "P2"')"
+  replan_edit '(.phases[] | select(.id == "P2")).milestone = "M1"'
   "$VBW" run start build P2.1 > /dev/null
   apply_refusal add "an open run" "$ADD"
 }
