@@ -63,6 +63,16 @@ allowed() { [ -z "$1" ] || { echo "not allowed: $1"; return 1; }; }
   denied_outside "$out" /tmp/scratch.txt
 }
 
+@test "R177 (F156): the clobber redirect >| is a redirect like any other: outside the project it is denied naming the path, and the plan's own file stays allowed" {
+  open_run
+  out=$(printf '%s' "$(bash_in 'echo a >| /tmp/x.txt')" | vbw_hook PreToolUse Bash)
+  denied_outside "$out" /tmp/x.txt
+  out=$(printf '%s' "$(bash_in 'echo a >|/tmp/y.txt')" | vbw_hook PreToolUse Bash)
+  denied_outside "$out" /tmp/y.txt
+  allowed "$(printf '%s' "$(bash_in 'echo a >| src/pay.txt')" | vbw_hook PreToolUse Bash)"
+  allowed "$(printf '%s' "$(bash_in 'cat src/pay.txt | wc -l')" | vbw_hook PreToolUse Bash)"
+}
+
 @test "R177 (F149): bash's >&FILE and >& FILE forms write a file and are denied outside the project; >&1, 2>&1 and >&- are descriptors and pass" {
   open_run
   out=$(printf '%s' "$(bash_in 'echo a >&/tmp/a.txt')" | vbw_hook PreToolUse Bash)
