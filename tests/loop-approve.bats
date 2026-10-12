@@ -92,3 +92,17 @@ consent() { cat "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/co
   [ "$(jq '.decisions | length' .vbw/record.json)" -eq "$n" ]
   [ "$(consent | jq '[.granted[] | select(.kind == "contract")] | length')" -eq 2 ]
 }
+
+@test "R178 (F174): the approval of edited test files (vbw next row 4a, detail.files) is never delegated: the loop waits for the user" {
+  run loop_next s1
+  [ "$(contract_state)" = approved ]
+  local n
+  loop_build P2
+  n=$(jq '.decisions | length' .vbw/record.json)
+  printf '# edited after the approval\n' >> tests/greet.sh
+  git commit -q -am "test: the check file edited after the approval"
+  VBW_SESSION_ID=s1 "$VBW" next --json < /dev/null | jq -e '.action == "approve" and (.detail.files | length) > 0' || { VBW_SESSION_ID=s1 "$VBW" next --json < /dev/null; false; }
+  run loop_next s1
+  [ "$(jq '.decisions | length' .vbw/record.json)" = "$n" ] || { jq '.decisions[-1]' .vbw/record.json; false; }
+  VBW_SESSION_ID=s1 "$VBW" next --json < /dev/null | jq -e '.action == "approve" and (.detail.files | length) > 0'
+}
