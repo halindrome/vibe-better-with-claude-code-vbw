@@ -24705,28 +24705,28 @@
       "id": "F125",
       "req": "R103",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C160 fail (exit 1)"
     },
     {
       "id": "F126",
       "req": "R110",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C169 fail (exit 1)"
     },
     {
       "id": "F127",
       "req": "R111",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C172 fail (exit 1)"
     },
     {
       "id": "F128",
       "req": "R144",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C208 fail (exit 1)"
     },
     {
@@ -24740,7 +24740,7 @@
       "id": "F130",
       "req": "R168",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C261 fail (exit 1)"
     },
     {
@@ -27128,6 +27128,18 @@
       "text": "Record unchanged since the proof is judged by a fingerprint, never a commit subject (R175, C274): the proof stores in its evidence the fingerprint of the record without its evidence (evidence.record), and the cause fires only when the record's fingerprint now equals it, with the code tree and the contract and commands unchanged; a decision, a verdict or a backlog item changes the fingerprint",
       "why": "D294's mechanism; the first idea (the record's last commit is the proof's own) would read a commit subject, which R175 forbids",
       "at": "2026-10-12T00:53:53Z"
+    },
+    {
+      "id": "D297",
+      "text": "Supersedes D295: a run with no cost figure is still recorded (cost null, unknown, never 0), as R173's check C282 pins and as the Lead designed; the costs section is a record field by D287. R58's check C63 (no record field is added by a step) meant the steps history, written before costs existed: it compares the record's keys without costs",
+      "why": "the fix round of M24: D295 would have broken C282; the steps history and the costs section are different things",
+      "at": "2026-10-12T00:55:31Z"
+    },
+    {
+      "id": "D298",
+      "text": "The fix round of M24 leaves tests/helper.bash alone: the proof's units run without the session's VBW_SESSION_ID through the kernel (checks_exec clears it), which is what the proof needs; the helper's own unset of VBW_SESSION_ID (hermetic tests run by hand) waits for the next unavoidable helper edit",
+      "why": "a helper edit re-runs every recorded unit (about 33 minutes); the owner's rule since 2026-10-11 21:40: never edit a shared file twice in one milestone, measure the blast radius first",
+      "at": "2026-10-12T01:04:42Z"
     }
   ],
   "commands": {
@@ -30233,6 +30245,15 @@
         "milestone": "M24",
         "started": "2026-10-11T23:56:50Z",
         "ended": "2026-10-12T00:11:33Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T005450Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-12T00:54:50Z",
+        "ended": "2026-10-12T01:51:42Z",
         "cost": null
       }
     ],
