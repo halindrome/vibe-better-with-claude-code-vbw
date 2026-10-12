@@ -24953,7 +24953,7 @@
       "req": "R176",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "plugin/lib/cmd-fix.sh (end of cmd_fix, the block after proofreuse_save/testfiles_save) prints 'checks: N ran, M reused' BEFORE the test file lines, then the test file lines, then 'test files: N ran, M reused'. The criterion and plan P123.2 say the two count lines print after all per-unit lines (checks and test files), as the proof summary prints both counts together. For a fix of the test command (checks and test files both judged) the output is: check lines, 'checks:' count, test file lines, 'test files:' count. No test pins the order with test files present: tests/fix-done-output.bats test 'the count lines come after the per-unit lines' only has checks, and tests/fix-done-testfiles.bats only greps the count lines for presence. Regression test: a fix done of the test command with an approved single-file form where at least one check and one test file run; assert the line numbers of every check line and every test-file line are smaller than the line numbers of both 'checks:' and 'test files:', and 'checks:' comes just before 'test files:'."
     },
     {
@@ -24961,7 +24961,7 @@
       "req": "R176",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "docs/proof.md 'Reusing an unchanged pass' (the text block at about line 786) shows an output that vbw fix done cannot print. It shows the cause line 'every candidate check runs: this clone has no earlier recorded run' AFTER the unit lines (the code prints it BEFORE them, cmd_fix right after proofcauses_find), shows 'C2 unchanged since its pass' reused while a cause is active (a cause makes every candidate run, so nothing is reused), shows 'ran: <reason>' parts under a cause (the code leaves them out under a cause: wmap is filled only when no cause), and puts a test file line between check lines (the code prints all check lines, the checks count, then test file lines). tests/fix-done-docs.bats only greps single lines for presence, so it cannot catch the contradiction. Regression test: tests/fix-done-docs.bats should check the example's line order and coherence (cause line first; no 'ran:' part and no reused line in an example that has a cause; or show two separate examples, one without a cause and one with), ideally by comparing against output a fixture really prints."
     },
     {
@@ -24969,7 +24969,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "During a plan run, a shell redirect to a path outside the project that begins with ~ or $HOME is not denied. The guard reads the text of the redirect target, not what the shell turns it into, so it treats ~/tests/a.test.js or \"$HOME/tests/a.test.js\" as a project-relative test file and lets it through; bash writes it into the home folder. Probe (guard-bash.jq, plan lease, Dev agent): \"echo a > ~/tests/a.test.js\", \"echo a > $HOME/tests/a.test.js\" and echo a > \"$HOME/tests/a.test.js\" all give no answer (allowed). Under a build lease the same forms are denied, but only by accident and with the wrong reason (\"~/src/pay.txt is outside this run's files\"), not the R177 outside-the-project reason. The goal says any redirect outside the project is denied, so this is a gap. Fix: treat a redirect or write target that starts with ~, or contains $ or a backtick or $( (an expansion the guard cannot resolve), as outside the project during a run (refuse with the outside-the-project reason). Regression test (tests/guard-outside.bats): under a plan lease, a Dev Bash call with a redirect to ~/tests/a.test.js, $HOME/tests/a.test.js and \"$HOME/tests/a.test.js\" must be denied with \"outside the project\" and Next:; the same redirect to tests/a.test.js stays allowed."
     },
     {
@@ -24977,7 +24977,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "The device-file exception in run_write_denial (plugin/hooks/common.jq: /dev/null, /dev/stdout, /dev/stderr, /dev/tty are not refused) is a rule docs/guards.md promises, but only /dev/null is exercised (indirectly, tests/hooks-guard.bats line 200: npm test > /dev/null 2>&1 && ...). Nothing tests /dev/stdout, /dev/stderr or /dev/tty, and tests/guard-outside.bats has no test that a redirect such as 2>/dev/null is still allowed under a run, so narrowing or widening the regex would pass every test. Also not in plan task 1 or any recorded decision (D289, D300 say nothing of devices); a /dev/null exception is clearly needed, but the plan or a decision should record it. Regression test (tests/guard-outside.bats): under a build lease, \"ls 2>/dev/null\", \"echo x > /dev/stderr\", \"echo x > /dev/stdout\", \"echo x > /dev/tty\" are allowed, while \"echo x > /dev/sda\" and \"echo x > /dev/null/x\" are denied with \"outside the project\". Also record the exception in a decision. Minor wording: for a read-only run with an empty file list the refusal reads \"there only nothing: its agents only read\"; say \"there nothing\" instead."
     }
   ],
@@ -27418,6 +27418,12 @@
       "id": "D303",
       "at": "2026-10-12T07:38:36Z",
       "text": "Contract approved: 166 requirements, 284 checks, 370 plans (deffeb5b64d0)"
+    },
+    {
+      "id": "D304",
+      "text": "Round 4 of M24 (owner: retry all four). A redirect or write target the guard cannot resolve (one that starts with ~, or contains $, a backtick or $( ) is refused during a run as a path outside the project, with the R177 reason; the device files /dev/null, /dev/stdout, /dev/stderr and /dev/tty stay allowed and are recorded here; vbw fix done prints both count lines after every per-unit line, in the proof summary's order",
+      "why": "the guard reads text, never what the shell expands, so it fails closed on what it cannot resolve (F147); the device exception existed without a decision (F148); the counts-last order keeps the 'same as the proof summary' promise (F145)",
+      "at": "2026-10-12T07:58:06Z"
     }
   ],
   "commands": {
@@ -30632,6 +30638,15 @@
         "milestone": "M24",
         "started": "2026-10-12T07:45:17Z",
         "ended": "2026-10-12T07:51:07Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T075813Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-12T07:58:13Z",
+        "ended": "2026-10-12T08:33:37Z",
         "cost": null
       }
     ],
