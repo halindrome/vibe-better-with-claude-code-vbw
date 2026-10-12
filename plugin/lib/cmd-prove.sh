@@ -100,6 +100,9 @@ cmd_prove() {
   vbw_scratch_json evf "$ev"
   vbw_scratch_json curf "$(qa_combined "$record")"
   record_update "$VBW_JQ_DEFS$(cat "$VBW_LIB/prove.jq")" --slurpfile ev "$evf" --argjson cap "$VBW_FIX_CAP" --slurpfile cur "$curf" --arg at "$at"
+  # The record as this proof leaves it, without the evidence (D296): the next prove's
+  # "nothing committed" cause fires only while this fingerprint still holds (R175, R103).
+  record_update '.evidence.record = $fp' --arg fp "$(jq -c 'del(.evidence)' "$VBW_RECORD" | vbw_sha256)"
   vbw_guard_drop "$evf"
   vbw_guard_drop "$curf"
   rm -f "$(proofreuse_marker)"

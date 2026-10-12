@@ -73,6 +73,16 @@ no_reads() {
   [ "$(basename "$(cat "$TEST_ROOT/c1.pwd")")" = tree ]
 }
 
+@test "R175: a passing proof records the fingerprint of the record without its evidence, so a later record change is no 'nothing committed'" {
+  [ "$(jq -r '.evidence.record' .vbw/record.json)" = "$(jq -c 'del(.evidence)' .vbw/record.json | vbw_kernel 'vbw_sha256')" ]
+  "$VBW" decide "Pay by card" "the owner's choice" > /dev/null
+  change src/other.txt
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  [[ "$output" != *"nothing was committed"* ]] || { echo "$output"; false; }
+}
+
 @test "R166: a change to a file no check or command read reuses everything, and every proof prints both counts" {
   change src/other.txt
   vbw_run prove

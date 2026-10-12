@@ -40,11 +40,17 @@ proofreuse_marker() { printf '%s/prove.unfinished\n' "$VBW_RUNTIME"; }
 # evidence carries one) and it was a proof of the contract now approved
 # (evidence.contract) with every project command as it last ran (the contract
 # holds the checks, the store's fingerprint holds the argv): a changed approved
-# command or check is a change, so only its own units re-run (D291). It reads trees only, never a commit subject, so a
-# record commit landing after other commits changes nothing (R175).
+# command or check is a change, so only its own units re-run (D291), and the
+# record is as that proof left it (its fingerprint without the evidence equals
+# evidence.record): a decision, a verdict or a backlog item is a change too, so
+# the next proof reuses what the read lists allow (R103, D294, D296). It reads
+# trees and fingerprints only, never a commit subject, so a record commit landing
+# after other commits changes nothing (R175).
 proofreuse_proved() {
-  local tree ev_head store name fp
+  local tree ev_head store name fp ev_rec
   printf '%s' "$1" | jq -e '.evidence.passed == true' > /dev/null 2>&1 || return 1
+  ev_rec=$(printf '%s' "$1" | jq -r '.evidence.record // empty')
+  [ -n "$ev_rec" ] && [ "$ev_rec" = "$(printf '%s' "$1" | jq -c 'del(.evidence)' | vbw_sha256)" ] || return 1
   [ "$(printf '%s' "$1" | jq -r '.evidence.contract // empty')" = "$(contract_hash "$1")" ] || return 1
   store=$(proofreuse_store_read)
   while IFS= read -r -d '' name; do

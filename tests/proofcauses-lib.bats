@@ -97,19 +97,37 @@ noreads() {
   [ "$output" = "this file system does not record which files are read" ] || { echo "$output"; false; }
 }
 
-# prove_passed: the record says a proof passed on the project as it is now (R175).
+# prove_passed: the record says a proof passed on the project as it is now (R175):
+# code tree, committed tree, contract and the record itself (its fingerprint
+# without the evidence, evidence.record) are as that proof left them.
 prove_passed() {
-  local code head con
+  local code head con fp
   code=$(vbw_kernel 'vbw_code_tree'); head=$(vbw_kernel 'vbw_head_tree')
   edit_record '.evidence = {at: "2026-10-11T00:00:00Z", contract: "0000000000000000000000000000000000000000000000000000000000000000", passed: true, checks: {}, commands: {}, scope: [], tree: "'"$code"'", head: "'"$head"'"}'
   con=$(vbw_kernel 'contract_hash "$(record_read)"')
   edit_record '.evidence.contract = "'"$con"'"'
+  fp=$(vbw_kernel 'jq -c "del(.evidence)" "$VBW_RECORD" | vbw_sha256')
+  edit_record '.evidence.record = "'"$fp"'"'
 }
 
 @test "R168: nothing committed since the last passing proof is a cause" {
   prove_passed
   run causes
   [ "$output" = "nothing was committed since the last passing proof" ] || { echo "$output"; false; }
+}
+
+@test "R175: a record changed since the last passing proof (a decision, a verdict, a backlog item) is no cause: the proof reuses by read lists" {
+  prove_passed
+  edit_record '.phases[0].title = "Shop and pay"'
+  run causes
+  [ -z "$output" ] || { echo "$output"; false; }
+}
+
+@test "R175: a passing proof that recorded no fingerprint of the record (an older VBW) is no cause" {
+  prove_passed
+  edit_record 'del(.evidence.record)'
+  run causes
+  [ -z "$output" ] || { echo "$output"; false; }
 }
 
 @test "R168: for vbw fix done, nothing committed since the last passing proof is no cause: that proof is what it wants" {

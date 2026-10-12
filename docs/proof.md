@@ -671,7 +671,7 @@ The causes, with the text the summary shows:
 | The clone has no earlier recorded run | `this clone has no earlier recorded run` |
 | The last proof was cut short | `the last proof was cut short` |
 | `vbw prove --full` | `vbw prove --full` |
-| Nothing was committed since the last passing proof (`vbw prove` only; `vbw fix done` reuses that proof): the project's files are the tree the last passing proof recorded (`evidence.tree`), the committed code is the tree it ran on (`evidence.head`), and the record's last proof passed | `nothing was committed since the last passing proof` |
+| Nothing was committed since the last passing proof (`vbw prove` only; `vbw fix done` reuses that proof): the project's files are the tree the last passing proof recorded (`evidence.tree`), the committed code is the tree it ran on (`evidence.head`), the record is as that proof left it (its fingerprint without the evidence is `evidence.record`: a decision, a verdict or a backlog item recorded since is a change, and the proof reuses by read lists), and the record's last proof passed | `nothing was committed since the last passing proof` |
 
 A content change to a file no recorded run read runs nothing: it affects
 nothing that was run. An added or deleted file no recorded run saw (none read
