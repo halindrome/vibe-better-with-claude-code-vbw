@@ -1,6 +1,12 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261012T021332Z",
+    "kind": "qa",
+    "started_at": "2026-10-12T02:13:32Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/apply-beside-started.bats",
@@ -15062,7 +15068,22 @@
           "to": "deep",
           "reason": "Dev blocked P124.1: Code and docs are done and committed (C280 passes; the refusal works). C279 stays red on tests 4 and 5 of tests/approve-whole-spec.bats: each approves the contract first, then edits the spec and calls refused(), whose last line asserts '! approved' (show contract first line is not '(approved)'). The record is unchanged by a spec edit, so its contract hash stays approved and that assertion cannot hold; the refusal output, exit code, no decision and no commit all pass before it. The protected test needs that final assertion dropped in those two cases (or the check made against a not-yet-approved contract)."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "24c6553360b11338334e79d2d551bdd393c2d5b5407a5ff91b3b2a83c7da4202",
+        "at": "2026-10-12T02:15:41Z",
+        "note": "14/14 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "express",
+        "held": false,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 2
+      }
     },
     {
       "id": "P125",
