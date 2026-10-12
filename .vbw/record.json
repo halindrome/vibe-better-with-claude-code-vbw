@@ -15064,10 +15064,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "4c8aab4c3747f8a957925ccd92456dc4aa63c32d6cf171c26ab3ad23b6b742ca",
-        "at": "2026-10-12T08:51:30Z",
-        "note": "28/32 checks",
-        "rounds": 4
+        "tree": "a156f4a4c67a94aecba41213cef380bd60de8cc15817ff3b01160341161981eb",
+        "at": "2026-10-12T09:29:20Z",
+        "note": "31/32 checks",
+        "rounds": 5
       }
     },
     {
@@ -25007,7 +25007,7 @@
       "req": "R175",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/lib/proofreuse.sh proofreuse_proved: the clause that the project's files equal evidence.tree ('[ -n \"$tree\" ] && [ \"$(vbw_code_tree ...)\" = \"$tree\" ] || return 1') is named in the R175 criterion but no test can fail on it. Read of tests/proof-cause-tree.bats, tests/proofcauses-lib.bats (prove_passed fixture), tests/proofreuse-rule.bats and tests/prove-reads.bats: every case that makes the working tree differ from evidence.tree also commits, so evidence.head differs from HEAD and the head clause (or the record fingerprint) decides alone; test 8 of proof-cause-tree.bats is the reverse case (head differs, tree equal). Deleting the tree clause leaves every test green (not mutation-run: QA may not write). Regression test: after a passing proof, make an uncommitted edit to a tracked file (and, second case, add an untracked file) with HEAD and the record unchanged; proofcauses_find prove and proofreuse_allowed must name no 'nothing was committed' cause/reason."
     },
     {
@@ -25015,7 +25015,7 @@
       "req": "R176",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/lib/cmd-fix.sh calls 'testfiles_plan \"$record\" 0 fix' so a fix of the test command never meets the proof's 'nothing committed' reason (plan P123.2 task 1), but no test can fail on the 'fix' argument. tests/fix-done-testfiles.bats always sets up a FAILED last proof (evidence.passed false), so proofreuse_proved is false whatever the kind; tests/proof-cause-tree.bats test 5 uses a requirement fix with no command: test, so tfwant stays 0 and testfiles_plan is not called. Dropping the argument leaves the suite green. Regression test: in the fix-done-testfiles fixture, record a passing proof of the current code (evidence.passed, tree, head, record fingerprint as prove_passed in tests/proofcauses-lib.bats builds them) with an open fix whose command is 'test'; vbw fix done must reuse every test file whose read list did not change ('test files: 0 ran, N reused') instead of running them all with 'ran: proving again with nothing committed'."
     },
     {
@@ -25023,7 +25023,7 @@
       "req": "R176",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "docs/proof.md line 783, section 'Reusing an unchanged pass': the lead-in still says 'It prints one line per skipped check and runs the rest', but vbw fix done now prints one line per check and per test file that ran and one per reused unit, plus both count lines. A reader is told the old, narrower output right above the new example. Regression test: tests/fix-done-docs.bats should fail while the section contains 'one line per skipped check', and require the lead-in to name checks and test files, ran and reused."
     },
     {
@@ -25031,8 +25031,16 @@
       "req": "R176",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "tests/fix-done-docs.bats, test 'R176 (F146)' calls a bare 'mktemp -d' (host temp folder) and never removes it; the file does not load vbw_setup, so no teardown runs. Each run leaves a directory in the host temp, against the hermetic-test rule (helper.bash TEST_ROOT, vbw_setup/vbw_teardown; no writes outside the project) that tests/record-args-rule.bats and tests/qa-depth-escalated.bats follow. Regression test: tests/standards.bats (or this file) should fail for a test file that calls mktemp without a path under $TEST_ROOT, or this test should use vbw_setup/vbw_teardown and $TEST_ROOT."
+    },
+    {
+      "id": "F155",
+      "req": "R176",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "plugin/lib/cmd-fix.sh line 196 calls 'testfiles_plan \"$record\" 0 fix' so a fix of the test command never meets the proof's 'nothing committed' reason (plan P123.2 task 1), but no test can fail if the 'fix' argument is dropped there. The test added for F152 (tests/fix-done-testfiles.bats 'R176 (F152)') calls testfiles_plan directly through plan_why with kind fix or prove, so it pins the library's parameter, not what cmd_fix passes. Every test that runs 'vbw fix done' for a fix of the test command (tests/fix-done-testfiles.bats setup, tests/prove-summary.bats lines 81-94) first makes a FAILED proof (evidence.passed false), where proofreuse_proved is false whatever the kind, so the 'fix' argument is never the deciding one. F152's own regression text asked for a run of vbw fix done that reuses the files after a passing proof. Regression test needed: in the fix-done-testfiles fixture record a passing proof of the current state (the proved_now helper) with the open fix whose command is 'test', run 'vbw fix done F1' and assert 'test files: 0 ran, 3 reused' and no 'nothing committed' text; it must fail when line 196 drops 'fix'."
     }
   ],
   "todos": [
