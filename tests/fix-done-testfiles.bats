@@ -68,6 +68,19 @@ plan_why() {
     r=$(record_read); proofreuse_plan "$r" 0 '"$1"'; testfiles_plan "$r" 0 '"$1"'; printf "%s\n" "$TF_WHY"'
 }
 
+@test "R176 (F155): vbw fix done right after a passing proof of this very state reuses every unchanged test file: the nothing-committed reason is vbw prove's alone" {
+  rm -f "$TEST_ROOT/fail_a"
+  proved_now
+  vbw_run fix done "$FIX"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" != *"nothing committed"* && "$output" != *"every candidate"* ]] || { echo "$output"; false; }
+  line '^tests/t_a\.sh pass [0-9.]+s ran: last result failed$'
+  line "^tests/t_b\\.sh unchanged since its pass \\($FAILED_AT\\)\$"
+  line "^tests/t_c\\.sh unchanged since its pass \\($FAILED_AT\\)\$"
+  line '^test files: 1 ran, 2 reused$'
+  [ "$(ran)" = "t_a " ] || { echo "ran: $(ran)"; false; }
+}
+
 @test "R176 (F152): for vbw fix done the test files never meet the proof's nothing-committed reason: with a passing proof of this very state, fix reuses them and prove would not" {
   proved_now
   run plan_why fix
