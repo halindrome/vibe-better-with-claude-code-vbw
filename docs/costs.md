@@ -50,6 +50,13 @@ positive number; anything else is a usage error (exit 2).
 `cannot tell` exits 1 on purpose: a check that cannot see the spend does not
 pass.
 
+## The loop's spend
+
+`vbw loop status` shows what a running loop has spent (docs/loop.md). It uses
+the same arithmetic as a milestone's total: each session's current figures
+minus the figures at the loop's start, summed. It is unknown when no session
+has a figure, and VBW then shows `cannot tell`, never 0.
+
 ## Unknown costs
 
 `unknown` means VBW did not see the figures: the status line was off, the
