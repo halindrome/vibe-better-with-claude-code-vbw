@@ -3699,7 +3699,7 @@
   "milestone": {
     "id": "M24",
     "title": "Before the night shift: cost data, approval completeness, honest proof and fix output",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -3816,6 +3816,11 @@
       "id": "M23",
       "title": "Express path: write and see the check fail before approval",
       "at": "2026-10-11T21:02:38Z"
+    },
+    {
+      "id": "M24",
+      "title": "Before the night shift: cost data, approval completeness, honest proof and fix output",
+      "at": "2026-10-12T11:06:34Z"
     }
   ],
   "requirements": [
@@ -27596,6 +27601,11 @@
       "id": "D312",
       "at": "2026-10-12T10:56:26Z",
       "text": "Contract approved: 166 requirements, 284 checks, 370 plans (9d750c51f836)"
+    },
+    {
+      "id": "D313",
+      "at": "2026-10-12T11:06:34Z",
+      "text": "Shipped M24 Before the night shift: cost data, approval completeness, honest proof and fix output: 5 requirements proven or accepted"
     }
   ],
   "commands": {
