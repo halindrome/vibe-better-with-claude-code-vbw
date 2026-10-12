@@ -15808,11 +15808,19 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "c8bfa27067af28acdec224f1554d91adb4b8eeac53272e48915c4e5e53b18779",
-        "at": "2026-10-12T22:56:43Z",
-        "note": "26/30 checks",
-        "rounds": 1
-      }
+        "tree": "802c9ad57dc20406ce4989945acb08ed1c9b3c8648b5fa3fc7f3d52dfe88cc13",
+        "at": "2026-10-12T23:50:35Z",
+        "note": "28/30 checks",
+        "rounds": 2
+      },
+      "escalations": [
+        {
+          "at": "2026-10-12T23:50:35Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "QA needs a second round"
+        }
+      ]
     }
   ],
   "plans": [
@@ -26022,7 +26030,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "P129.4 task 3 not done. The plan says to run 'bash tools/l3-suite.sh loop' if Claude Code is available and commit tools/l3-results/loop.json, or else state in the plan's notes that it could not run. Neither happened: tools/l3-results/loop.json does not exist, P129.4 has no note in .vbw/record.json, and 'claude' is installed (/Users/tiagoserodio/.local/bin/claude). tests/l3-loop.bats test 3 'skips' when the file is missing, so nothing fails. The scenario code (tools/l3-suite.sh scenario_loop, commit e60e63a2) has therefore never run once. Regression test: either commit a loop.json that tests/l3-loop.bats test 3 validates (scenario loop, passed true, evidence_level L3), or record the reason in the plan note and make the bats test read that note instead of skipping silently."
     },
     {
@@ -26030,7 +26038,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The loop guard misses 'git push' when git's global option takes its value as a separate word. plugin/hooks/guard-bash.jq git_words only skips the value of -C and -c, so 'git --git-dir .git push', 'git --work-tree . push' and 'git --namespace x push' are ALLOWED with a loop on (I ran the guard with a loop record: 'git --git-dir=.git push' and 'git -c a=b push' are denied, the space forms return nothing = allow). The criterion says git push 'in any form'. Regression test: add these three commands to tests/loop-outward-guard.bats 'every form of git push' with denied_as, and make git_words skip the value of --git-dir, --work-tree, --namespace, --exec-path, --super-prefix, --config-env when given without '='."
     },
     {
@@ -26038,7 +26046,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Test gap: 'heroku pipelines:promote' is denied by plugin/hooks/guard-bash.jq and listed in docs/guards.md, but no test in tests/loop-outward-guard.bats runs it, so its pinned text is not pinned (only container:push and container:release are). The criterion says every denial text is pinned by a test. Deleting that line in guard-bash.jq leaves all tests green. Regression test: add denied_as 'heroku pipelines:promote' 'heroku pipelines:promote' 'deploy' (and 'heroku pipelines:promote staging' form) to the 'releases, publishes and deploys' test."
     },
     {
@@ -26112,6 +26120,22 @@
       "attempts": 0,
       "status": "open",
       "note": "Untested branch in the delegated approval: loop_delegate (plugin/lib/loop-step.sh) refuses to approve when vbw next's approve answer carries detail.files (docs/next.md row 4a, the approval of edited test files), and the plan (P127.2 task 2) and docs/loop.md both promise 'never the test-files-edited approval of row 4a'. No test exercises it: grep for '4a' or 'detail.files' in tests/loop-*.bats finds nothing, and tests/loop-approve-waits.bats covers only text differences, extra requirement, unlisted item, no loop, stopping, missing check file and spec/record drift. Removing the '(.detail.files == null)' clause would leave every loop test green, and the loop would then approve changed test files on the user's behalf. Regression test: in tests/loop-approve-waits.bats, make the contract approved except for an edit to a check's test file bytes with a built phase (row 4a), run the loop step with a loop whose items match, and assert nothing is approved, no consent is granted, no decision is recorded and vbw next still answers approve with detail.files; it must fail when the clause is removed."
+    },
+    {
+      "id": "F175",
+      "req": "R180",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The loop's outward guard (plugin/hooks/guard-bash.jq, def loop_outward) only skips global options for git (git_words). For every other command it takes the first word that does not start with '-' as the subcommand, so an option VALUE or a toolchain selector before the subcommand hides the publish. I ran the def on parsed commands: 'cargo +nightly publish', 'npm --tag next publish', 'docker --context x push img' and 'gh -R a/b release create v1' all come out ALLOWED, while 'npm publish --tag next' and 'git --no-pager push' are denied. The phase says these commands are denied for every caller while a loop is on, and 'cargo +nightly publish' is a normal way to type it. Regression test to add in tests/loop-outward-guard.bats: under a loop, denied_as for 'cargo +nightly publish', 'npm --registry https://r.example publish', 'docker --context x push img', 'gh -R a/b release create v1', each with the pinned text; and the allowed list must still pass (gh -R a/b release list, cargo +nightly build)."
+    },
+    {
+      "id": "F176",
+      "req": "R180",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The L3 loop scenario (tools/l3-suite.sh scenario_loop, committed tools/l3-results/loop.json) never exercised a real revert. The committed result has facts.revert_commits = 0, so the check 'the revert commits are in git' and the report check for revert hashes loop over an empty list and cannot fail. The plan (P129.4) asks for the revert commits present in git and the report naming them; commit 6667f15e changed the scenario so T2 fails by construction before any code commit, and allowed zero reverts. The result's not_tested list does not say that the git-revert path of a park was not run at L3 (it lists a remote, a mid-item ceiling, a [human] item, more than two items, Claude Code versions). The revert path is covered at L1 only (tests/loop-retry-park.bats). Regression test to add: either the scenario gives T2 a code commit so the park must revert it and the check fails when n_rev is 0, or loop.json/not_tested must say 'a park that reverts committed code' whenever facts.revert_commits is 0, pinned in tests/l3-loop.bats (a result with revert_commits 0 and no such not_tested entry fails)."
     }
   ],
   "todos": [
