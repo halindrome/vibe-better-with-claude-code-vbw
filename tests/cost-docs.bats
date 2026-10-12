@@ -25,3 +25,17 @@ load helper
   grep -qF 'unknown' "$REPO_ROOT/docs/costs.md"
   grep -qF 'vbw statusline on' "$REPO_ROOT/docs/costs.md"
 }
+
+@test "R173: docs/costs.md names every field of milestones[] and runs[] in a real vbw show costs --json" {
+  load rigor-helper
+  rigor_flow_setup
+  rigor_flow_build
+  "$VBW" qa record P1 pass quick > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" run start qa > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  local k
+  for k in $("$VBW" show costs --json < /dev/null | jq -r '(.milestones[0], .runs[0]) | keys_unsorted[]' | sort -u); do
+    grep -qF "\`$k\`" "$REPO_ROOT/docs/costs.md" || { echo "docs/costs.md lacks \`$k\`"; false; }
+  done
+  vbw_teardown
+}
