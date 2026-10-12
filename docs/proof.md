@@ -785,20 +785,31 @@ check and runs the rest:
 
 ```text
 C1 pass 2s ran: src/pay.txt changed
-tests/t_a.sh pass 3s ran: last result failed
 C2 unchanged since its pass (2026-10-04T20:30:00Z)
-every candidate check runs: this clone has no earlier recorded run
+tests/t_a.sh pass 3s ran: last result failed
+tests/t_b.sh unchanged since its pass (2026-10-04T20:30:00Z)
 checks: 1 ran, 1 reused
-test files: 1 ran, 0 reused
+test files: 1 ran, 1 reused
 ```
 
 Each check and test file that ran gets a line in the proof summary's wording,
-with the reason it ran. The cause line appears when the rule runs every
-candidate. Both count lines print every time (`0 ran, 0 reused` when nothing
-was judged), before the closing outcome lines. The time on a reused line is
-when that check passed. A check runs again for any reason listed
-there: a changed approved definition, a changed file on its read list, a last
-result that failed, no earlier pass or no read list.
+with the reason it ran; a reused one keeps the time of the pass it reuses.
+Both count lines print after every per-unit line, every time (`0 ran, 0
+reused` when nothing was judged), before the closing outcome lines. A check
+runs again for any reason listed there: a changed approved definition, a
+changed file on its read list, a last result that failed, no earlier pass or
+no read list. When a cause ([Causes](#causes)) makes the rule run every
+candidate, the cause line comes first and every unit ran, with no reason of
+its own:
+
+```text
+every candidate check runs: this clone has no earlier recorded run
+C1 pass 2s
+C2 pass 1s
+tests/t_a.sh pass 3s
+checks: 2 ran, 0 reused
+test files: 1 ran, 0 reused
+```
 
 An escalated fix is a human gate (`vbw next`).
 
