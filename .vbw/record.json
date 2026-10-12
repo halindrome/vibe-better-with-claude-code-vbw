@@ -15161,11 +15161,19 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "5ea97f5be9f11ad283e824a7bf04436384b1731dd0d46bf4f36671e2fa0eccb8",
-        "at": "2026-10-12T02:19:09Z",
-        "note": "17/20 checks",
-        "rounds": 1
-      }
+        "tree": "c13a41bcf9e3af0f2dc329f9cf099aef823eda52e7fdf82ade1b5553d5a1a97a",
+        "at": "2026-10-12T04:18:15Z",
+        "note": "31/32 checks",
+        "rounds": 2
+      },
+      "escalations": [
+        {
+          "at": "2026-10-12T04:18:15Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "QA needs a second round"
+        }
+      ]
     },
     {
       "id": "P126",
@@ -24872,7 +24880,7 @@
       "req": "R173",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "A shipped milestone whose ship saw no figures (no frozen total) is not kept unknown: costs_milestone_total (plugin/lib/costs.sh) has no status check, so vbw show costs (cmd-show.sh show_costs loops over every shipped id) recomputes it from the current side files minus a baseline that does not exist, i.e. from each session's first figure. Once the status line is turned on, every old shipped milestone that has no total (in this project M1 to M23) would show the whole session spend, and the same dollars would also count in the active milestone. That breaks the criterion 'no session's spend counts in two milestones' and 'never a guess'. tests/cost-milestones.bats only covers a shipped milestone WITH a frozen total. Regression test: ship a milestone with no side file, then write a side file (figures s1 2 1000 100), start the next milestone? no: just run 'vbw show costs --json': the shipped milestone must stay usd null and sessions 0 and be listed in unknown.milestones, and the sum of the milestones' usd must not exceed what the sessions report."
     },
     {
@@ -24880,7 +24888,7 @@
       "req": "R173",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The benchmark does not measure the status line with the cost write in place. tools/bench-hooks.sh statusline() feeds {session_id, workspace, cwd, model} with no cost or context_window, so the new side-file branch (select in statusline.jq, split and mv in vbw-statusline.sh) never runs in the 60 ms measurement, yet the criterion and plan P125.1 say the budget holds 'with the write in place'. I measured by hand with a cost field and a bad session id (jq part only, no write allowed in a QA run): about 27 ms per call with and without cost, so the budget is probably fine, but the promised measurement cannot show a regression in the write. Regression test: make bench-hooks.sh feed total_cost_usd and token totals for the status line cases (and a safe session id in a project with the record), and fail if the side file was not written."
     },
     {
@@ -24888,7 +24896,7 @@
       "req": "R173",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "docs/costs.md lists the JSON fields of 'vbw show costs --json' incompletely and contradicts the output: milestones[] also carries title (the table omits it), and runs[] also carries session, started and ended (the table lists only id, kind, milestone, cost). The criterion and plan P125.6 ask the page to describe the command's object; plan P125.4 fixes those fields. Regression test: tests/cost-docs.bats should compare the field names in docs/costs.md with the keys of a real 'vbw show costs --json' (milestones[0] and runs[0]) and fail on any missing."
     },
     {
@@ -24896,7 +24904,7 @@
       "req": "R173",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Two runs started within the same second get the same run id (kind plus the start time to the second), so .costs.runs holds two entries with one id and vbw show costs cannot tell them apart. Seen in tests/cost-milestones.bats test 3 on an idle machine: both qa runs became qa-20261012T030650Z and the test fails; under load it passes by timing. Run ids must be unique: a run that would repeat an id of .costs.runs gets a numbered suffix. Regression test with a fixed clock, and test 3 then deterministic."
     },
     {
@@ -24914,6 +24922,14 @@
       "attempts": 0,
       "status": "open",
       "note": "docs/proof.md line 677 (causes table row) and the D173 paragraph (~line 714) state the cause's conditions as tree, head, record fingerprint and passed, but not the conditions D291 added and the code enforces: the proof must be of the contract now approved (evidence.contract) and every project command as it last ran. A reader who edits an approved check or command and proves again cannot tell from this row why no cause fires. Regression test: tests/proof-cause-tree-docs.bats should grep the row for 'evidence.contract' (or whatever wording replaces it once the redundant clause question in the other finding is decided) and for 'evidence.record'."
+    },
+    {
+      "id": "F143",
+      "req": "R173",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "A figure that goes down makes the record unwritable. costs_diff (plugin/lib/costs.sh) is plain END minus START and nothing checks the sign: with an opening figure above the closing one it returns {usd:-1,in:-200,out:-30} (I ran it). vbw run end (plugin/lib/cmd-run.sh) puts that into costs.runs, and record_update then refuses it ('refused: costs.runs entries need ... non-negative numbers'), so the run can never be ended and the lease stays open. The same applies to vbw ship: costs_milestone_total subtracts the baseline from the latest figure per session with no floor, so a session whose figure fell below its baseline gives a negative total that the validator refuses, and the milestone cannot be shipped. A fall can come from a side file replaced by a restarted or resumed session, or a hand-edited file. For a night shift that means a stuck project, not an 'unknown' cost. Fix: a decrease means VBW cannot tell, so costs_diff returns null (cost unknown) when any field of END is below START, and costs_milestone_total counts a session whose latest figure is below its baseline from its first figure (or leaves it out) instead of going negative. Regression test (tests/cost-runs.bats and tests/cost-milestones.bats): write a side file at 2.00 USD, run start, rewrite it at 1.00 USD, run end must succeed with cost null; then a milestone with a baseline above the latest figure must ship and show a non-negative total."
     }
   ],
   "todos": [
