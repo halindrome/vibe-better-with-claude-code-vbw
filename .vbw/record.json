@@ -25056,7 +25056,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "Test gap: the 'where the run may write' part of the outside-the-project refusal is pinned for only 2 of its 4 wordings. plugin/hooks/common.jq outside_denial has four branches: plan run ('the project's test files and .vbw/'), fix run for a failed proof command (files null, 'project files'), build/fix with plan files, and read-only (files []). tests/guard-outside.bats pins only the build wording (via denied_outside, which checks the path, 'outside the project', 'Next: ' and the scratch advice, never the 'there only ...' clause) and the read-only wording (map run). grep -rn \"project's test files and\" tests returns nothing, and no test sends a plain /tmp file write or redirect under a plan run, the run the Lead was in when the incident happened (the plan-run test only uses ~ and $HOME forms). Probed by hand against the guard: plan-run /tmp/dbg.bats is denied with the right text today, so behavior is correct; changing the plan branch to say 'project files' would pass every test. Regression test: in tests/guard-outside.bats start a plan run and require a Write to /tmp/dbg.bats be denied naming the path, containing \"there only the project's test files and .vbw/\" and the scratch Next line; do the same for a fix run for a failed proof command (files null) expecting 'there only project files'. Minor, same file: the first 'out=' line of the test 'outside a VBW project the guards say nothing' calls vbw_hook inside bash -c (a function bash -c cannot see), errors are swallowed and the value is overwritten on the next line, so it is dead code; drop it."
     }
   ],
@@ -30820,6 +30820,15 @@
         "milestone": "M24",
         "started": "2026-10-12T10:03:02Z",
         "ended": "2026-10-12T10:08:20Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T101127Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-12T10:11:27Z",
+        "ended": "2026-10-12T10:13:18Z",
         "cost": null
       }
     ],
