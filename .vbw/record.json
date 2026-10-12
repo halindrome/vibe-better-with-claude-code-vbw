@@ -15684,7 +15684,15 @@
         "guarded: R3 (C3), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R49 (C48), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R71 (C115, C121), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R99 (C155), R101 (C179), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R131 (C198), R132 (C199), R133 (C195), R144 (C208, C209), R147 (C212, C215, C237), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R177 (C287, C288)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-12T19:21:07Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P127.2: Code done and committed (2d8ff5d2, 901214f9, 0ab70375); approve tests green; loop-stop, loop-start, status-spend, help-docs, 6 of 8 waits and 3 of 4 approve tests pass. Two approved checks cannot pass as written, both test defects outside my files: (1) tests/loop-approve.bats test 1 line 51 asserts no decision starts with 'Contract approved:', but loop_project (tests/loop-helper.bash) approves M1 with vbw approve, which records exactly that decision; (2) tests/loop-approve-waits.bats 'an extra requirement' test: planned() runs jq -c without -n and no input, so it emits nothing and vbw apply --add refuses an empty document. Needs the test files corrected and re-approved."
+        }
+      ]
     },
     {
       "id": "P128",
@@ -24405,14 +24413,15 @@
       "after": [
         "P127.1"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "cmd-approve.sh: move the writes of an approval into one function, approve_record RECORD HASH DECISION_TEXT (the decision with that text, the strict commit `chore(vbw): approve contract FP` with the rollback of the decision when the commit fails, consent for the contract hash, then the shape consent, the approved-contract.json snapshot and approve_commands); cmd_approve calls it with today's `Contract approved: ...` text and keeps every behaviour (tests/approve-*.bats stay green)",
         "plugin/lib/loop-step.sh: loop_matches RECORD, one jq rule: the current milestone's requirements, minus the [human] ones built in a phase of an earlier milestone (carried over by a ship), are at least one and every one's loop_norm text equals the loop_norm requirement text (loop_item_text) of a distinct loop item on this loop's list; and loop_delegate: when the loop is on, not stopping and not ended, vbw next answers approve with gate true and no detail.files (never the test-files-edited approval of row 4a), the contract has no approve_problems, and loop_matches holds, call approve_record with the text `Contract approved by the loop on the user's behalf (loop started AT, items T1, T2): N requirements, N checks, N plans (FP)`; otherwise change nothing",
         "`vbw loop next --json` in cmd-loop.sh (the kernel's loop step, grown by P128): no loop → {action: off, reason}; a lease open in the caller's session → vbw next's run answer unchanged; stopping → write ended {at, reason: `stopped by the user (session S)`} (commit) and answer {action: stopped, reason}; an ended loop → the same answer again, nothing written; else loop_delegate, then print vbw next --json with a `loop` object added ({item: {id, text, n, of} for the item in progress or null, spend, ceiling, word}). Idempotent: a second call approves nothing again and adds no decision",
         "Run tests/loop-approve.bats, tests/loop-approve-waits.bats and tests/loop-stop.bats; then every approve-*.bats and tests/approval-*.bats to show vbw approve itself is unchanged"
-      ]
+      ],
+      "note": "Code done and committed (2d8ff5d2, 901214f9, 0ab70375); approve tests green; loop-stop, loop-start, status-spend, help-docs, 6 of 8 waits and 3 of 4 approve tests pass. Two approved checks cannot pass as written, both test defects outside my files: (1) tests/loop-approve.bats test 1 line 51 asserts no decision starts with 'Contract approved:', but loop_project (tests/loop-helper.bash) approves M1 with vbw approve, which records exactly that decision; (2) tests/loop-approve-waits.bats 'an extra requirement' test: planned() runs jq -c without -n and no input, so it emits nothing and vbw apply --add refuses an empty document. Needs the test files corrected and re-approved."
     },
     {
       "id": "P127.3",
@@ -24539,7 +24548,7 @@
       "after": [
         "P127.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "The one message after the preamble, at the user's level, depth and involvement (from vbw loop status or the interview line): the items in order, the ceiling and its mode, that approval is delegated for these items only, what never happens (no push, release or publish; no work beyond the items; a [human] requirement waits for the user), and how to stop (/vbw:loop stop, from any session). When the preamble refused, say exactly why and what to do, and stop. When $ARGUMENTS is `stop`: run `vbw loop stop`, then say what the loop was doing (vbw loop status) and that it stops before its next step",
@@ -24564,7 +24573,7 @@
       "after": [
         "P127.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/loop.md: `## The cycle` (what /vbw:loop does with the user's arguments and the one message; what `vbw loop next` does in one call: the milestone opened with vbw milestone start or renamed, the requirement added, approval by delegation, vbw ship also with skipped [human] requirements (D256), the backlog entry done; which steps come back for an agent or a proof; needs_decisions taken with the recommended option and recorded as chosen by the loop; vbw req skip for a [human] requirement; the Stop hook driving the session, not counted against autonomy_cap)",
@@ -24590,7 +24599,7 @@
       "after": [
         "P127.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "record.jq: milestone.status may be `parked`; a top-level `parked` list of {id M<n>, title, at (ISO), reason (non-empty)}, each id once; the ids known to requirements, phases and costs are the shipped, parked and current milestones; the current milestone is parked exactly when it is in `parked` (as shipped works); a parked milestone has no requirement, phase or plan left (the park removed them)",
@@ -24642,7 +24651,7 @@
       "after": [
         "P127.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "record.sh record_glance_write: the glance carries `loop` as {session, started_at, ended} when the record has a loop (null otherwise), so a guard reads the loop's state from the glance at the same cost as the lease; common.jq guard_context: `loop_on` is true when the record (or glance) holds a loop object with no `ended`",
@@ -28487,6 +28496,12 @@
       "id": "D318",
       "at": "2026-10-12T18:55:43Z",
       "text": "Contract approved: 169 requirements, 305 checks, 384 plans (cae420b9015c)"
+    },
+    {
+      "id": "D319",
+      "text": "The shipped-plugin size cap (2 MB, raised from 1 MB on 2026-10-05) is removed: VBW grows as it needs to; the test that enforced it goes, with its self-test",
+      "why": "owner, 2026-10-12 20:10: remove this cap entirely",
+      "at": "2026-10-12T19:10:10Z"
     }
   ],
   "commands": {
@@ -31849,6 +31864,15 @@
         "milestone": "M25",
         "started": "2026-10-12T19:06:49Z",
         "ended": "2026-10-12T19:07:14Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261012T190731Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T19:07:31Z",
+        "ended": "2026-10-12T19:24:16Z",
         "cost": null
       }
     ],
