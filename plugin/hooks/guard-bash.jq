@@ -139,8 +139,15 @@ def approve_call:
   (if .cmd | shell then {cmd: ((.args[0] // "") | basename), args: .args[1:]} else . end)
   | select(.cmd == "vbw" and (.args[0] // "") == "approve");
 
+def loop_call:
+  (if .cmd | shell then {cmd: ((.args[0] // "") | basename), args: .args[1:]} else . end)
+  | select(.cmd == "vbw" and (.args[0] // "") == "loop" and (any(.args[]; test("^(--help|-h)$")) | not))
+  | (.args[1] // "");
+
 def everywhere:
   ( approve_call | "only the user approves the contract: ask with the approval menu (AskUserQuestion, the question vbw show contract prints; vbw show contract shows what they approve); /vbw:approve is the user's own command\nNext: ask the user with the approval menu (AskUserQuestion) instead of running vbw approve" ),
+  ( loop_call | select(. == "start") | "only the user arms the loop: /vbw:loop ITEM... --ceiling USD is the user's own command, like /vbw:approve\nNext: ask the user to run /vbw:loop with the items and the ceiling they choose; never run vbw loop start yourself" ),
+  ( loop_call | select(. == "next" or . == "park") | "vbw loop next and vbw loop park are the kernel's own loop steps: the Stop hook of /vbw:loop runs them, never a tool call\nNext: end your turn; the loop's Stop hook gives the next step" ),
   ( select((.out | any(.[]; consent_path)) or ((.cmd | reader) | not) and any(.args[]; consent_path)) | consent_reason );
 
 def in_project:
