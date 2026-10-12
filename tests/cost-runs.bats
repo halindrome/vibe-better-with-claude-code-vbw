@@ -116,3 +116,12 @@ seed_run() {
   VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
   last_run | jq -e '.cost == null' || { last_run; false; }
 }
+
+@test "R173 (F143): a figure that fell during the run makes its cost unknown (null), and the run still ends" {
+  figures s1 2 200 20
+  VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
+  figures s1 1 100 10
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  jq -e '.lease == null' .vbw/record.json
+  last_run | jq -e '.cost == null and .session == "s1"' || { last_run; false; }
+}

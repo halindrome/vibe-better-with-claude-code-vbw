@@ -126,3 +126,13 @@ milestone() { costs_json | jq -c --arg m "$1" '.milestones[] | select(.id == $m)
   run "$VBW" show --help
   [[ "$output" == *"costs"* ]] || { echo "$output"; false; }
 }
+
+@test "R173 (F143): a session whose figure fell below its baseline counts from its first figure; the milestone ships with a non-negative total" {
+  figures s1 1 100 10
+  jq '.costs = {runs: [], milestones: {M1: {baseline: {s1: {usd: 2, in: 200, out: 20, at: "2026-10-12T03:00:00Z"}}}}}' \
+    .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
+  milestone M1 | jq -e '.usd == 1 and .in == 100 and .out == 10 and .sessions == 1' || { costs_json; false; }
+  run "$VBW" ship
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  jq -e '.costs.milestones.M1.total | .usd >= 0 and .in >= 0 and .out >= 0' .vbw/record.json
+}
