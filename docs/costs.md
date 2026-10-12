@@ -12,7 +12,8 @@ vbw show costs --ceiling 20
 ## What is measured
 
 - **A run:** what its session spent between `vbw run start` and `vbw run end`
-  (the end figures minus the start figures).
+  (the end figures minus the start figures). Every `vbw run end` adds the run
+  to the record and commits it, cost known or not.
 - **A milestone:** everything spent in the project's sessions while the
   milestone was open. The runs' costs are the share of it that went through
   VBW's runs; the rest (your own conversation) counts in the milestone too.

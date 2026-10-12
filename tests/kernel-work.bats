@@ -374,15 +374,17 @@ prove_all_green() {
   git status --porcelain | grep -q '^?? user-unstaged.txt'
 }
 
-@test "approval and ship commit the record; nothing changed means no commit" {
+@test "approval commits the record once; a run end commits the run it records (R173), and nothing else" {
   apply_plan
   "$VBW" run start plan > /dev/null && "$VBW" run end > /dev/null
   local before
   before=$(git rev-parse HEAD)
   "$VBW" run start plan > /dev/null && "$VBW" run end > /dev/null
+  [[ "$(git log -1 --format=%s)" == "chore(vbw): record after plan-"* ]]
+  [ "$(git rev-list --count "$before"..HEAD)" -eq 1 ]
   "$VBW" approve > /dev/null
   [[ "$(git log -1 --format=%s)" == "chore(vbw): approve contract "* ]]
-  [ "$(git rev-list --count "$before"..HEAD)" -eq 1 ]
+  [ "$(git rev-list --count "$before"..HEAD)" -eq 2 ]
 }
 
 @test "VBW never edits or commits the user's .gitignore" {
