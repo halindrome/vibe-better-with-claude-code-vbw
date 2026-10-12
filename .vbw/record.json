@@ -27584,6 +27584,11 @@
       "text": "The unresolved-path rule of D304 applies to shell text only (redirect targets, git checkout paths, a program's file names): a file tool's path is never expanded, so the guard takes it as written and a plan file named app/routes/$id.tsx is written through the file tool",
       "why": "QA F159: the rule as first written refused a Dev's own plan file with a dollar sign in its name; shells expand text, file tools do not",
       "at": "2026-10-12T10:45:38Z"
+    },
+    {
+      "id": "D312",
+      "at": "2026-10-12T10:56:26Z",
+      "text": "Contract approved: 166 requirements, 284 checks, 370 plans (9d750c51f836)"
     }
   ],
   "commands": {
