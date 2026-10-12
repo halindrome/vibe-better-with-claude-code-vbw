@@ -24673,7 +24673,7 @@
         "P129.2",
         "P129.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "scenario_loop: new_project with the status line on (L3_STATUSLINE=1), two backlog items added with vbw todo add before the session starts (one the greet.sh request that ships; one whose requirement no check can satisfy, so its fix escalates twice and the item parks: for example a file that must say both `yes` and `no` as its whole content), the user types `/vbw:loop T1 T2 --ceiling 3`, answers no question (the loop asks none; on_question fails the scenario), and done_yet is the loop's end in the record (loop.ended)",
@@ -31921,6 +31921,15 @@
         "milestone": "M25",
         "started": "2026-10-12T20:06:43Z",
         "ended": "2026-10-12T20:41:40Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261012T204207Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T20:42:07Z",
+        "ended": "2026-10-12T21:14:24Z",
         "cost": null
       }
     ],
