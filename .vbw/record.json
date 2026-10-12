@@ -15027,7 +15027,15 @@
           "to": "deep",
           "reason": "Dev blocked P123.1: Code and the two pinned tests are done and committed; C274 passes. Plan step 4 also wants tests/fix-reuse.bats (test 9, line 175) and tests/prove-summary.bats (test 29, line 65) green, and they fail under the tree rule. Both prove, then change only VBW's own files (a hand-added fix in the record, or a spec/approve change) with the code untouched, then run vbw prove expecting reuse. The old rule passed only because a dirty .vbw or a different last commit subject stopped the cause; the plan removes both tests. Under the new rule that prove is exactly 'nothing committed since the last passing proof' (D173) and runs everything. Those two test files are outside this plan's files; they must either be changed (fixture commits a code change after the proof, or expect the cause) or the rule needs a further condition (e.g. evidence.contract equals the approved contract would fix prove-summary but not fix-reuse). Also tests/proof-cause-tree-docs.bats (C275) fails until P123.3 adds the docs sentence."
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "b87a240c260dc649f84ab7628f903aceb87e12c5b1daf271f5ed16f9bf025e0c",
+        "at": "2026-10-12T02:17:32Z",
+        "note": "28/30 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P124",
@@ -24777,6 +24785,22 @@
       "attempts": 0,
       "status": "closed",
       "note": "test fail"
+    },
+    {
+      "id": "F133",
+      "req": "R175",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "plugin/lib/proofreuse.sh proofreuse_proved has a clause 'evidence.head equals the committed tree (when the evidence carries one)' (last line of the function) that no test can fail. Every fixture (tests/proofcauses-lib.bats prove_passed, tests/proofreuse-rule.bats test at line ~243, tests/proof-cause-tree.bats) records evidence.head equal to the current HEAD tree, and the commit-after-proof case changes the code tree first, so the head clause is never the deciding one. Deleting that line would leave every test green. Regression test needed: a passing proof recorded on an uncommitted edit (evidence.tree = working tree, evidence.head = older committed tree), then commit that edit so the working tree still equals evidence.tree but HEAD differs: proofcauses_find and proofreuse_allowed must name no 'nothing was committed' cause/reason."
+    },
+    {
+      "id": "F134",
+      "req": "R176",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "No test runs vbw fix done for a fix of the test command (single-file form) while a cause (R168) is active. cmd_fix calls testfiles_plan with ALL=1 in that case (plugin/lib/cmd-fix.sh, the 'if [ -n \"$causes\" ]' branch), so every test file must run, its line must carry no 'ran:' part, the cause line must print once, and 'test files: N ran, 0 reused' must show the true N. tests/fix-done-output.bats pins the cause case for checks only, and tests/fix-done-testfiles.bats has no cause case. Regression test needed: fix-done-testfiles fixture with a cause (e.g. a clone with an empty run store or vbw prove --full not yet run) asserting the one cause line, 'tests/t_X.sh pass Ns' lines without 'ran:', and 'test files: <all> ran, 0 reused'."
     }
   ],
   "todos": [
