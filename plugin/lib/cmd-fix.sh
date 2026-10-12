@@ -186,6 +186,7 @@ cmd_fix() {
   # files are planned as a proof plans them (a file that did not pass runs, the
   # one reuse rule decides the rest), except for the proof's "nothing committed" cause.
   TF_PATHS=() TF_TODO=() TF_REUSE='{}' TF_WHY='{}'
+  # shellcheck disable=SC2034 # read by testfiles_plan
   PROVE_NAMES='[]' TODO_COMMANDS='[]' REUSE_COMMANDS='{}' WHY_COMMANDS='{}'
   if [ ${#ids[@]} -gt 0 ] && testfiles_on "$record"; then
     for id in "${ids[@]}"; do
