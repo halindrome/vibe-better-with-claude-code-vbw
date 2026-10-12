@@ -31841,6 +31841,15 @@
           "in": 4149,
           "out": 567
         }
+      },
+      {
+        "id": "plan-20261012T190649Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T19:06:49Z",
+        "ended": "2026-10-12T19:07:14Z",
+        "cost": null
       }
     ],
     "milestones": {
