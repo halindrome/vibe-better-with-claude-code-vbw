@@ -15159,12 +15159,11 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "c13a41bcf9e3af0f2dc329f9cf099aef823eda52e7fdf82ade1b5553d5a1a97a",
-        "at": "2026-10-12T04:18:15Z",
-        "note": "31/32 checks",
-        "rounds": 2
+        "tree": "c86113f8e2dbd513aad877da4b119045a871847b672e23bff3e29f0bec47544c",
+        "at": "2026-10-12T07:47:37Z",
+        "note": "30/30 checks"
       },
       "escalations": [
         {
@@ -15173,7 +15172,15 @@
           "to": "deep",
           "reason": "QA needs a second round"
         }
-      ]
+      ],
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 6,
+        "qa_findings": 5,
+        "escalations": 1
+      }
     },
     {
       "id": "P126",
@@ -24936,7 +24943,7 @@
       "req": "R173",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "A figure that goes down makes the record unwritable. costs_diff (plugin/lib/costs.sh) is plain END minus START and nothing checks the sign: with an opening figure above the closing one it returns {usd:-1,in:-200,out:-30} (I ran it). vbw run end (plugin/lib/cmd-run.sh) puts that into costs.runs, and record_update then refuses it ('refused: costs.runs entries need ... non-negative numbers'), so the run can never be ended and the lease stays open. The same applies to vbw ship: costs_milestone_total subtracts the baseline from the latest figure per session with no floor, so a session whose figure fell below its baseline gives a negative total that the validator refuses, and the milestone cannot be shipped. A fall can come from a side file replaced by a restarted or resumed session, or a hand-edited file. For a night shift that means a stuck project, not an 'unknown' cost. Fix: a decrease means VBW cannot tell, so costs_diff returns null (cost unknown) when any field of END is below START, and costs_milestone_total counts a session whose latest figure is below its baseline from its first figure (or leaves it out) instead of going negative. Regression test (tests/cost-runs.bats and tests/cost-milestones.bats): write a side file at 2.00 USD, run start, rewrite it at 1.00 USD, run end must succeed with cost null; then a milestone with a baseline above the latest figure must ship and show a non-negative total."
     },
     {
