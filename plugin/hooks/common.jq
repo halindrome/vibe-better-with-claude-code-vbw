@@ -123,11 +123,18 @@ def unresolved_path: test("^~|[$`]");
 # Why a subagent may not write ORIGINAL (the path as given) under LEASE: a
 # path outside the project is denied (R177), one inside goes to the lease rules.
 def run_write_denial($g):
+  . as $o | project_path($g.hook.cwd // $root; $root) as $p
+  | if $p == null then (if $o | test("^/dev/(null|stdout|stderr|tty)$") then empty else $o | outside_denial($g.lease) end) else $p | lease_write_denial($g.lease; $g.record) end;
+
+# The same for a path in shell text (a redirect target, a git checkout path, a
+# program's file): the shell would expand ~, $VAR, $(...) and backticks and the
+# guard cannot, so such a path counts as outside (D304). A file tool's path is
+# never expanded, so run_write_denial takes it as written (D311: app/routes/$id.tsx
+# is a plan file like any other).
+def shell_write_denial($g):
   . as $o
   | if $o | unresolved_path then $o | outside_denial($g.lease; "cannot be resolved by the guard (~ or a shell expansion), so it counts as outside the project")
-    else project_path($g.hook.cwd // $root; $root) as $p
-    | if $p == null then (if $o | test("^/dev/(null|stdout|stderr|tty)$") then empty else $o | outside_denial($g.lease) end) else $p | lease_write_denial($g.lease; $g.record) end
-    end;
+    else run_write_denial($g) end;
 
 # Why another session may not write PATH (project-relative) while FOREIGN's run
 # is open, or empty: it writes lease.files (null: any project file, []: none).
