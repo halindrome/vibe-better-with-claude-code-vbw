@@ -35,7 +35,8 @@ def read_record:
       | {project: ($rec != "vbw-guard-end"), record: (if $rec | type == "object" then $rec else {} end)}
     end;
 
-# {hook, project, record, lease, foreign}: foreign is the open run lease (under
+# {hook, project, record, loop_on, lease, foreign}: loop_on is true while the
+# record (or glance) holds a loop that has not ended; foreign is the open run lease (under
 # 24 hours, with an owning session) when the hook input comes from a different
 # session, main conversation or agent alike (D11), else null. lease is the active run lease when this call
 # comes from a subagent (the hook input names an agent_type) during a run of
@@ -47,6 +48,7 @@ def guard_context(writes):
   | ($r.record) as $record
   | (($record.lease | select(type == "object" and (try (now - (.started_at | fromdateiso8601) < 86400) catch false))) // null) as $live
   | {hook: $hook, project: $r.project, record: $record,
+     loop_on: ($record.loop | type == "object" and (.ended // null) == null),
      lease: (if ($hook.agent_type // "") != "" then $live else null end),
      foreign: (($live | select((.session // "") != "" and ($hook.session_id // .session) != .session)) // null)};
 

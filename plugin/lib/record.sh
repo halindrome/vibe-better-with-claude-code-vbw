@@ -41,7 +41,8 @@ record_refuse_newer() {
 # The glance: the record cut down to what the status line and the guards read
 # (R149, R150): schema, lease and protected exactly as the record has them
 # (protected left out only when the record has none, as an older VBW wrote it),
-# besides the status line's fields. Both read it instead of the record, so
+# besides the loop (session, started_at, ended; null without one), which the Bash
+# guard reads, and the status line's fields. Both read it instead of the record, so
 # neither parses a record of megabytes. It is never a source of truth (D238):
 # the guards trust it only while it is strictly newer than the record, and
 # otherwise read the record. Call with the record lock held. It is built in a
@@ -52,7 +53,8 @@ record_glance_write() {
   vbw_guard_add file "$tmp"
   if jq -c '.milestone.id as $m | {schema, lease}
       + (if has("protected") then {protected} else {} end)
-      + {project, milestone, settings,
+      + {loop: (.loop | if type == "object" then {session, started_at, ended} else null end),
+      project, milestone, settings,
       requirements: [.requirements[]? | select(.milestone == $m)],
       plans: [.plans[]? | select(.status == "building")]}' \
     "$VBW_RECORD" > "$tmp" 2> /dev/null; then
