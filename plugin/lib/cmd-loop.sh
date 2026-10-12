@@ -19,8 +19,52 @@ cmd_loop() {
     status)
       [ $# -eq 0 ] || { [ $# -eq 1 ] && [ "$1" = --json ]; } || vbw_usage_error "usage: vbw loop status [--json]"
       loop_status "${1:-}" ;;
+    next)
+      [ $# -eq 1 ] && [ "$1" = --json ] || vbw_usage_error "usage: vbw loop next --json"
+      loop_next ;;
     *) vbw_usage_error "$LOOP_USAGE" ;;
   esac
+}
+
+# loop_next: the kernel's loop step (grown by the cycle): off, a lease of this session (vbw next's
+# answer), stopped (written once as the loop's end), or the delegated approval and then vbw next's
+# answer with the loop's state added.
+loop_next() {
+  vbw_require_project
+  # shellcheck source=cmd-next.sh
+  . "$VBW_LIB/cmd-next.sh"
+  # shellcheck source=loop-step.sh
+  . "$VBW_LIB/loop-step.sh"
+  local rec next spend word
+  rec=$(record_read)
+  if ! printf '%s' "$rec" | jq -e '.loop != null' > /dev/null; then
+    printf '{"action":"off","reason":"no loop is on"}\n'; return 0
+  fi
+  if printf '%s' "$rec" | jq -e '.loop.ended != null' > /dev/null; then
+    printf '%s' "$rec" | jq -c '{action: "stopped", reason: .loop.ended.reason}'; return 0
+  fi
+  if printf '%s' "$rec" | jq -e --arg s "$(vbw_session)" '.lease != null and (.lease.session == null or .lease.session == $s)' > /dev/null; then
+    next=$(cmd_next --json) || exit $?
+    printf '%s\n' "$next"; return 0
+  fi
+  if printf '%s' "$rec" | jq -e '.loop.stopping != null' > /dev/null; then
+    local reason
+    reason=$(printf '%s' "$rec" | jq -r '.loop.stopping | "stopped by the user (\(if .session == null then "no session" else "session \(.session)" end))"')
+    record_update '.loop.ended = {at: $at, reason: $r}' --arg at "$(vbw_now)" --arg r "$reason"
+    record_commit "chore(vbw): loop ended" .vbw/record.json
+    jq -nc --arg r "$reason" '{action: "stopped", reason: $r}'; return 0
+  fi
+  next=$(cmd_next --json) || exit $?
+  loop_delegate "$rec" "$next"
+  next=$(cmd_next --json) || exit $?
+  rec=$(record_read)
+  spend=$(loop_spend "$VBW_RECORD")
+  word=$(loop_word "$VBW_RECORD" "$spend")
+  printf '%s' "$next" | jq -c --slurpfile r <(printf '%s' "$rec") --argjson spend "$spend" --arg word "$word" '
+    $r[0].loop as $l
+    | ([$l.items | to_entries[] | select(.value.status == "in_progress")][0]) as $cur
+    | . + {loop: {item: (if $cur == null then null else {id: $cur.value.id, text: $cur.value.text, n: ($cur.key + 1), of: ($l.items | length)} end),
+        spend: $spend, ceiling: $l.ceiling, word: (if $word == "null" then null else $word end)}}'
 }
 
 # loop_start ARGS...: validates the usage first (exit 2), then the state (exit 1), then writes.
@@ -67,7 +111,8 @@ loop_start() {
   done
   printf '%s' "$rec" | jq -e '.loop != null and .loop.ended == null' > /dev/null \
     && vbw_die "a loop is already on. Next: run vbw loop status to see it, or vbw loop stop to end it"
-  printf '%s' "$rec" | jq -e '.milestone.status != "shipped" and (.milestone.id as $m | any(.requirements[]; .milestone == $m))' > /dev/null \
+  printf '%s' "$rec" | jq -e '.milestone.status != "shipped" and (. as $r | .milestone.id as $m
+      | any($r.requirements[]; .milestone == $m and ((.proof == "human" and (.id as $i | any($r.phases[]; .milestone != $m and any(.reqs[]; . == $i)))) | not)))' > /dev/null \
     && vbw_die "$(printf '%s' "$rec" | jq -r .milestone.id) has requirements and is not shipped. Next: finish or ship it first (vbw next): each item gets its own milestone"
   # Every known session's current figures are the loop's baseline.
   local base="{}" sid figs
