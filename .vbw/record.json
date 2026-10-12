@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261012T234610Z",
+    "kind": "qa",
+    "started_at": "2026-10-12T23:46:10Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 889.570133,
+      "in": 850910,
+      "out": 503
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -15742,12 +15753,19 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "1781c3215a19a6477aad747ae6084e1234d4cfbdad54450d527d4d91735493ea",
-        "at": "2026-10-12T22:57:31Z",
-        "note": "29/31 checks",
-        "rounds": 1
+        "tree": "edc847b1250c501144827ae2144d86109cffc3964e894b3f568777f1e0cc6508",
+        "at": "2026-10-12T23:48:49Z",
+        "note": "30/30 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 3,
+        "qa_findings": 3,
+        "escalations": 0
       }
     },
     {
@@ -26022,7 +26040,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "loop_park_reverts (plugin/lib/loop-park.sh) skips every commit that touches ANY .vbw/ file, even one that also changes code. The variable is outside=1 and is set to 0 on the first '.vbw/*' path, so a commit changing src/x and .vbw/map.md is silently not reverted and not named in the 'left unreverted' list. The plan and the comment above the function say: revert the commits that touch any file outside .vbw/. The park would then leave the item's code in the tree while the record says the item is gone. No test covers a mixed commit. Regression test: in tests/loop-retry-park.bats add an item commit that changes tests/greet.sh (or src) and .vbw/map.md together; after the park, assert it is reverted (a Revert commit exists, the code file is gone)."
     },
     {
@@ -26062,7 +26080,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The Stop hook gate does not tell the loop step which session it runs for. auto_gate (plugin/lib/cmd-auto.sh) reads the session id from the hook's stdin but calls auto_loop_gate -> loop_next -> loop_step without exporting it; loop_step (plugin/lib/loop-step.sh) decides 'my own run' with vbw_session, which is VBW_SESSION_ID or CLAUDE_CODE_SESSION_ID only (plugin/lib/core.sh:88). The skill's hook command (plugin/skills/loop/SKILL.md frontmatter) sets neither, and every other call in the skills passes VBW_SESSION_ID=${CLAUDE_SESSION_ID} because the environment cannot be relied on. When the variable is empty, a build/plan/fix/QA run that this same session opened (lease.session = s1) is judged 'a lease of another session', and the loop ends with 'a run of another session (s1) is open' while its own workflow is still running. The criterion 'asks for nothing while this session's proof or workflow still runs' is therefore only met for the proof mark. tests/loop-gate.bats has no case with an open lease, and its gate helper pipes JSON to 'vbw auto gate' with no session in the environment, so this path is untested. Regression test: in tests/loop-gate.bats, start a loop for s1, open 'vbw run start build P2.1' as s1, then run the gate with session_id s1 and no VBW_SESSION_ID/CLAUDE_CODE_SESSION_ID in the environment: it must print nothing and leave .loop.ended null (red today by reading the code; fix: auto_gate exports VBW_SESSION_ID=$session before the loop step)."
     },
     {
@@ -26070,8 +26088,24 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The loop report's Shipped section prints the requirement id as 'none' for an item whose backlog text carries a marker. plugin/lib/loop-report.sh looks the requirement up with '.text == $i.text', but a loop item keeps its text with the '[human] ' (or '[auto] ') marker (loop_start stores loop_norm of the whole backlog text) while the requirement's text has the marker stripped (loop_item_text). Checked with the report's own expression on {item text '[human] The greeting feels friendly', requirement R2 'The greeting feels friendly'}: it returns \"none\". The criterion says the report names, for each shipped item, the item, milestone, requirement and commits. tests/loop-human-skip.bats and tests/loop-cycle.bats never read the requirement id on a Shipped line of a marked item. Regression test: ship a '[human] ...' item (and an '[auto] ...' item) through the loop and assert the Shipped line contains the requirement id (for example 'R2') and not 'none'; fix: compare against loop_item_text of the item's text."
+    },
+    {
+      "id": "F173",
+      "req": "R178",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "A second 'vbw loop stop' no longer 'changes nothing'. The criterion and the plan (P127.1 task 4) say a loop already stopping prints that and changes nothing (no write, no commit). Since commit ec8cbf77 (the fix for QA finding F170) the second stop ends the loop: plugin/lib/cmd-loop.sh loop_stop calls loop_end, which writes .loop.ended, writes .vbw/loop-report.md and commits. docs/loop.md (line 68) and tests/loop-stop.bats (last test) describe the new behaviour, but R178's rule text still says 'a second stop changes nothing', and the test named 'stop with no loop on says so and exits 0; a second stop changes nothing' now asserts the opposite (.loop.ended != null). No recorded decision amends the criterion, so spec, test name and code disagree. Options: (a) recommended: record a decision that a second stop on a stopping loop ends it (the way out when its session is gone) and reword the R178 rule and that test's name; (b) revert to 'changes nothing' and instead let 'vbw loop start' replace a stopping loop whose session is gone. Regression test: one that fails if the requirement text, test names and loop_stop disagree, i.e. rename the test to say a second stop ends a stopping loop, and keep a separate test that stop on an ended or absent loop changes nothing (project_sum equal before and after)."
+    },
+    {
+      "id": "F174",
+      "req": "R178",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Untested branch in the delegated approval: loop_delegate (plugin/lib/loop-step.sh) refuses to approve when vbw next's approve answer carries detail.files (docs/next.md row 4a, the approval of edited test files), and the plan (P127.2 task 2) and docs/loop.md both promise 'never the test-files-edited approval of row 4a'. No test exercises it: grep for '4a' or 'detail.files' in tests/loop-*.bats finds nothing, and tests/loop-approve-waits.bats covers only text differences, extra requirement, unlisted item, no loop, stopping, missing check file and spec/record drift. Removing the '(.detail.files == null)' clause would leave every loop test green, and the loop would then approve changed test files on the user's behalf. Regression test: in tests/loop-approve-waits.bats, make the contract approved except for an edit to a check's test file bytes with a built phase (row 4a), run the loop step with a loop whose items match, and assert nothing is approved, no consent is granted, no decision is recorded and vbw next still answers approve with detail.files; it must fail when the clause is removed."
     }
   ],
   "todos": [
