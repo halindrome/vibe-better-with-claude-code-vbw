@@ -150,7 +150,33 @@ def everywhere:
   ( loop_call | select(. == "next" or . == "park") | "vbw loop next and vbw loop park are the kernel's own loop steps: the Stop hook of /vbw:loop runs them, never a tool call\nNext: end your turn; the loop's Stop hook gives the next step" ),
   ( select((.out | any(.[]; consent_path)) or ((.cmd | reader) | not) and any(.args[]; consent_path)) | consent_reason );
 
-def in_project:
+# While a loop is on, nothing leaves the project (R180): pushes, releases,
+# publishes and deploys wait for the user, for every caller.
+def loop_outward:
+  (if .cmd | test("^(npx|bunx)$") then (.args | skip_options) as $a | {cmd: ($a[0] // "" | basename), args: $a[1:]} else . end)
+  | ([.args[] | select(startswith("-") | not)]) as $w | ($w[0] // "") as $s | ($w[1] // "") as $t
+  | ( select(.cmd == "git") | git_words as $g | select(($g[0] // "") == "push") | ["git push", "push"] ),
+    ( select(.cmd == "gh" and $s == "release" and ($t | test("^(list|view|download)$") | not)) | ["gh release", "release"] ),
+    ( select(.cmd == "gh" and $s == "pr" and $t == "create") | ["gh pr create", "open the pull request"] ),
+    ( select(.cmd == "npm" and $s == "publish") | ["npm publish", "publish"] ),
+    ( select(.cmd == "cargo" and $s == "publish") | ["cargo publish", "publish"] ),
+    ( select(.cmd == "twine" and $s == "upload") | ["twine upload", "upload"] ),
+    ( select(.cmd == "gem" and $s == "push") | ["gem push", "push"] ),
+    ( select(.cmd == "docker" and $s == "push") | ["docker push", "push"] ),
+    ( select(.cmd == "vercel" and ((.args[0] // "-") | startswith("-")) and (any(.args[]; test("^(-h|--help|-v|--version)$")) | not)
+             or .cmd == "vercel" and $s == "deploy") | ["vercel deploy", "deploy"] ),
+    ( select(.cmd == "netlify" and $s == "deploy") | ["netlify deploy", "deploy"] ),
+    ( select(.cmd == "fly" and $s == "deploy") | ["fly deploy", "deploy"] ),
+    ( select(.cmd == "flyctl" and $s == "deploy") | ["flyctl deploy", "deploy"] ),
+    ( select(.cmd == "heroku" and $s == "container:push") | ["heroku container:push", "deploy"] ),
+    ( select(.cmd == "heroku" and $s == "container:release") | ["heroku container:release", "deploy"] ),
+    ( select(.cmd == "heroku" and $s == "pipelines:promote") | ["heroku pipelines:promote", "deploy"] ),
+    ( select(.cmd == "wrangler" and $s == "deploy") | ["wrangler deploy", "deploy"] ),
+    ( select(.cmd == "wrangler" and $s == "publish") | ["wrangler publish", "deploy"] )
+  | "the loop never leaves the project: \(.[0]) is not run while a loop is on\nNext: wait for the loop to end, or stop it with /vbw:loop stop, then \(.[1]) yourself";
+
+def in_project($g):
+  ( select($g.loop_on) | loop_outward ),
   destructive,
   ( select(.cmd | test("^(ls|stat|test|\\[\\[?)$") | not) | [paths | select(secret_path)][0] // empty | secret_reason ),
   ( select(written(record_path)) | record_reason );
@@ -208,7 +234,7 @@ def foreign_run($g):
 # Outside a run, every rule needs one of these words in the raw command,
 # wherever it appears (strings and heredocs included), so a command without any
 # is allowed unread. During a run a subagent's every command is read.
-def may_matter: test("rm|git|vbw|consent|record\\.json|\\.env|\\.(pem|key|p12|pfx|kdbx|keystore|jks)|id_(rsa|dsa|ecdsa|ed25519)|netrc|pgpass|npmrc|pypirc|credentials");
+def may_matter: test("rm|git|vbw|gh|npm|cargo|twine|gem|docker|vercel|netlify|fly|heroku|wrangler|publish|push|deploy|consent|record\\.json|\\.env|\\.(pem|key|p12|pfx|kdbx|keystore|jks)|id_(rsa|dsa|ecdsa|ed25519)|netrc|pgpass|npmrc|pypirc|credentials");
 
 guard_context(true) as $g
 | ($g.hook.tool_input.command // "") as $c
@@ -217,7 +243,7 @@ guard_context(true) as $g
 | ( [$cmds[] | everywhere][0]
     // (select($g.project and $g.foreign != null) | [$cmds[] | foreign_run($g)][0])
     // (select($g.project)
-        | [$cmds[] | in_project][0]
+        | [$cmds[] | in_project($g)][0]
           // (select($g.lease != null)
               | [$cmds[] | in_run($g)][0]
                 // (select($c | test("<<")) | [$c | heredoc_programs | program_writes | program_denial($g)][0]))) )
