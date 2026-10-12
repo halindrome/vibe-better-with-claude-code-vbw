@@ -51,7 +51,8 @@ testfiles_fp() {
 # and quick commands out of the proof and sets TF_PATHS (the test files, an
 # array), TF_REUSE (reused results, JSON path -> result), TF_TODO (array of
 # the paths that run) and TF_WHY (JSON path -> why it runs). ALL (1): nothing
-# is reused. Without a form all of them are empty.
+# is reused. KIND (third argument) is "fix" for vbw fix done, which the proof's
+# "nothing committed" cause does not apply to. Without a form all of them are empty.
 testfiles_plan() {
   local record="$1" off='' head='' p fp why
   TF_PATHS=() TF_TODO=() TF_REUSE='{}' TF_WHY='{}'
@@ -64,7 +65,7 @@ testfiles_plan() {
   QUICK_STANDIN=false
   while IFS= read -r -d '' p; do TF_PATHS+=("$p"); done < <(testfiles_list "$record")
   if [ "$2" != 1 ]; then
-    off=$(proofreuse_allowed "$record") || true
+    off=$(proofreuse_allowed "$record" "${3:-prove}") || true
     if [ -z "$off" ]; then
       head=$(vbw_head_tree) || head=
       [ -n "$head" ] || off='no committed code'

@@ -70,6 +70,17 @@ cmd_fix_check() {
   jq -r --arg f "$id" '.checks[-1] | "\(.id) added to \(.req) by \($f)"' "$VBW_RECORD"
 }
 
+# fix_unit_lines RESULTS ORDER WHY REUSED: one line per unit, in ORDER (a JSON
+  # array of names): a reused one says since when it passed, one that ran gives
+  # the proof summary's line (status, exit, seconds, why it ran, the last line of
+  # a failing one's output). WHY and REUSED map a name to text.
+fix_unit_lines() {
+  printf '%s' "$1" | jq -r --argjson order "$2" --argjson w "$3" --argjson re "$4" '. as $r | $order[] | . as $k
+    | if $re[$k] then "\($k) unchanged since its pass (\($re[$k]))"
+      elif $r[$k] then $r[$k] | "\($k) \(.status)\(if .status == "fail" or .status == "timeout" then " (exit \(.exit // "none"))" else "" end) \(.seconds)s\(if $w[$k] then " ran: \($w[$k])" else "" end)\(if .status == "pass" then "" else ": " + ((.tail // "") | split("\n") | last // "") end)"
+      else empty end'
+}
+
 cmd_fix() {
   local mode="${1:-}"
   [ "$mode" != check ] || { shift; cmd_fix_check "$@"; return; }
@@ -130,7 +141,7 @@ cmd_fix() {
   . "$VBW_LIB/proofcauses.sh"
   # shellcheck source=testfiles.sh
   . "$VBW_LIB/testfiles.sh"
-  local todo=() c at results='{}' held head noreads causes fp why served='[]' tfres='{}' tfbad='' off
+  local todo=() cands=() c at results='{}' held head noreads causes fp why served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0
   if [ ${#ids[@]} -gt 0 ]; then
     for id in "${ids[@]}"; do
       served=$(printf '%s' "$served" | jq -c --slurpfile s <(cmd_fix_checks "$record" "$id" | jq -R . | jq -sc 'map(select(length > 0))') '. + $s[0] | unique')
@@ -161,21 +172,28 @@ cmd_fix() {
         fp=$(proofreuse_check_fp "$record" "$c")
         why=$(proofreuse_reason "check:$c" "$fp" "$head") || true
       fi
+      cands+=("$c")
       if [ -z "$why" ]; then
-        printf '%s unchanged since its pass (%s)\n' "$c" "$(printf '%s' "$PROOFREUSE_STORE" | jq -r --arg k "check:$c" '.runs[$k].at')"
+        rmap=$(printf '%s' "$rmap" | jq -c --arg c "$c" --slurpfile s <(printf '%s' "$PROOFREUSE_STORE") '. + {($c): $s[0].runs["check:" + $c].at}')
       else
         todo+=("$c")
+        [ -n "$causes" ] || wmap=$(printf '%s' "$wmap" | jq -c --arg c "$c" --arg w "$why" '. + {($c): $w}')
       fi
     done < <(cmd_fix_finished_checks "$record")
   fi
   # A test command that failed as test files is re-run on its own, file by file,
-  # through the approved single-file form, never as the whole test command.
-  TF_TODO=()
+  # through the approved single-file form, never as the whole test command. The
+  # files are planned as a proof plans them (a file that did not pass runs, the
+  # one reuse rule decides the rest), except for the proof's "nothing committed" cause.
+  TF_PATHS=() TF_TODO=() TF_REUSE='{}' TF_WHY='{}'
+  PROVE_NAMES='[]' TODO_COMMANDS='[]' REUSE_COMMANDS='{}' WHY_COMMANDS='{}'
   if [ ${#ids[@]} -gt 0 ] && testfiles_on "$record"; then
     for id in "${ids[@]}"; do
-      printf '%s' "$record" | jq -e --arg f "$id" 'any(.fixes[]; .id == $f and .command == "test")' > /dev/null || continue
-      while IFS= read -r -d '' c; do TF_TODO+=("$c"); done < <(printf '%s' "$record" | jq -j '(.evidence.test_files // {}) | to_entries[] | select(.value.status != "pass") | .key + "\u0000"')
+      printf '%s' "$record" | jq -e --arg f "$id" 'any(.fixes[]; .id == $f and .command == "test")' > /dev/null && tfwant=1
     done
+    if [ "$tfwant" = 1 ]; then
+      if [ -n "$causes" ]; then testfiles_plan "$record" 1 fix; else testfiles_plan "$record" 0 fix; fi
+    fi
   fi
   if [ ${#todo[@]} -gt 0 ] || [ ${#TF_TODO[@]} -gt 0 ]; then
     at=$(vbw_now)
@@ -195,6 +213,16 @@ cmd_fix() {
     [ "$tfres" = '{}' ] || testfiles_save "$record" "$tfres" "$head" "$at"
     tfbad=$(printf '%s' "$tfres" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')
   fi
+
+  # What ran and what was reused, checks first and then test files, each in its
+  # record's order, in the proof summary's wording; then the counts, every time.
+  local order
+  order=$(printf '%s\n' ${cands[@]+"${cands[@]}"} | jq -R . | jq -sc 'map(select(length > 0))')
+  fix_unit_lines "$results" "$order" "$wmap" "$rmap"
+  printf 'checks: %s ran, %s reused\n' "${#todo[@]}" "$(printf '%s' "$rmap" | jq 'length')"
+  if [ ${#TF_PATHS[@]} -gt 0 ]; then order=$(printf '%s\n' "${TF_PATHS[@]}" | jq -R . | jq -sc 'map(select(length > 0))'); else order='[]'; fi
+  fix_unit_lines "$tfres" "$order" "$TF_WHY" "$(printf '%s' "$TF_REUSE" | jq -c 'map_values(.at)')"
+  printf 'test files: %s ran, %s reused\n' "${#TF_TODO[@]}" "$(printf '%s' "$TF_REUSE" | jq 'length')"
 
   # Each fix ends as it would alone. A failing check fails the named fixes whose
   # files serve it, or every named fix when it serves none of them.
