@@ -156,25 +156,30 @@ def everywhere:
 # publishes and deploys wait for the user, for every caller.
 def loop_outward:
   (if .cmd | test("^(npx|bunx)$") then (.args | skip_options) as $a | {cmd: ($a[0] // "" | basename), args: $a[1:]} else . end)
-  | ([.args[] | select(startswith("-") | not)]) as $w | ($w[0] // "") as $s | ($w[1] // "") as $t
-  | ( select(.cmd == "git") | git_words as $g | select(($g[0] // "") == "push") | ["git push", "push"] ),
-    ( select(.cmd == "gh" and $s == "release" and ($t | test("^(list|view|download)$") | not)) | ["gh release", "release"] ),
-    ( select(.cmd == "gh" and $s == "pr" and $t == "create") | ["gh pr create", "open the pull request"] ),
-    ( select(.cmd == "npm" and $s == "publish") | ["npm publish", "publish"] ),
-    ( select(.cmd == "cargo" and $s == "publish") | ["cargo publish", "publish"] ),
-    ( select(.cmd == "twine" and $s == "upload") | ["twine upload", "upload"] ),
-    ( select(.cmd == "gem" and $s == "push") | ["gem push", "push"] ),
-    ( select(.cmd == "docker" and $s == "push") | ["docker push", "push"] ),
+  # The words that are not options (nor a cargo +toolchain): the subcommand is any of them, wherever an
+  # option's value pushed it (npm --tag next publish, docker --context x push, gh -R a/b release create):
+  # a guard that fails closed while a loop is on (F175).
+  | ([.args[] | select((startswith("-") or startswith("+")) | not)]) as $w
+  | def has($x): any($w[]; . == $x);
+    def after($x): ([range(0; $w | length) | select($w[.] == $x)] | first) as $i | if $i == null then "" else ($w[$i + 1] // "") end;
+    ( select(.cmd == "git") | git_words as $g | select(($g[0] // "") == "push") | ["git push", "push"] ),
+    ( select(.cmd == "gh" and has("release") and (after("release") | test("^(list|view|download)$") | not)) | ["gh release", "release"] ),
+    ( select(.cmd == "gh" and has("pr") and after("pr") == "create") | ["gh pr create", "open the pull request"] ),
+    ( select(.cmd == "npm" and has("publish")) | ["npm publish", "publish"] ),
+    ( select(.cmd == "cargo" and has("publish")) | ["cargo publish", "publish"] ),
+    ( select(.cmd == "twine" and has("upload")) | ["twine upload", "upload"] ),
+    ( select(.cmd == "gem" and has("push")) | ["gem push", "push"] ),
+    ( select(.cmd == "docker" and has("push")) | ["docker push", "push"] ),
     ( select(.cmd == "vercel" and ((.args[0] // "-") | startswith("-")) and (any(.args[]; test("^(-h|--help|-v|--version)$")) | not)
-             or .cmd == "vercel" and $s == "deploy") | ["vercel deploy", "deploy"] ),
-    ( select(.cmd == "netlify" and $s == "deploy") | ["netlify deploy", "deploy"] ),
-    ( select(.cmd == "fly" and $s == "deploy") | ["fly deploy", "deploy"] ),
-    ( select(.cmd == "flyctl" and $s == "deploy") | ["flyctl deploy", "deploy"] ),
-    ( select(.cmd == "heroku" and $s == "container:push") | ["heroku container:push", "deploy"] ),
-    ( select(.cmd == "heroku" and $s == "container:release") | ["heroku container:release", "deploy"] ),
-    ( select(.cmd == "heroku" and $s == "pipelines:promote") | ["heroku pipelines:promote", "deploy"] ),
-    ( select(.cmd == "wrangler" and $s == "deploy") | ["wrangler deploy", "deploy"] ),
-    ( select(.cmd == "wrangler" and $s == "publish") | ["wrangler publish", "deploy"] )
+             or .cmd == "vercel" and has("deploy")) | ["vercel deploy", "deploy"] ),
+    ( select(.cmd == "netlify" and has("deploy")) | ["netlify deploy", "deploy"] ),
+    ( select(.cmd == "fly" and has("deploy")) | ["fly deploy", "deploy"] ),
+    ( select(.cmd == "flyctl" and has("deploy")) | ["flyctl deploy", "deploy"] ),
+    ( select(.cmd == "heroku" and has("container:push")) | ["heroku container:push", "deploy"] ),
+    ( select(.cmd == "heroku" and has("container:release")) | ["heroku container:release", "deploy"] ),
+    ( select(.cmd == "heroku" and has("pipelines:promote")) | ["heroku pipelines:promote", "deploy"] ),
+    ( select(.cmd == "wrangler" and has("deploy")) | ["wrangler deploy", "deploy"] ),
+    ( select(.cmd == "wrangler" and has("publish")) | ["wrangler publish", "deploy"] )
   | "the loop never leaves the project: \(.[0]) is not run while a loop is on\nNext: wait for the loop to end, or stop it with /vbw:loop stop, then \(.[1]) yourself";
 
 def in_project($g):
