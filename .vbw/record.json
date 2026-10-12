@@ -25818,6 +25818,13 @@
       "sort": "later",
       "size": "medium",
       "status": "open"
+    },
+    {
+      "id": "T130",
+      "text": "Stale proof copies: a process killed outright leaves its .vbw/runtime/proof.* copy (13 MB seen 2026-10-12 05:26 from a killed duplicate fix done); the next proof removes copies whose owner process is gone (record the owner pid in the copy folder, as the gate's mutex does), with a test. Part of the machine-wide limit milestone (T128)",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
