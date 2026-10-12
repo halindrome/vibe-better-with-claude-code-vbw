@@ -25498,6 +25498,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T123",
+      "text": "Build and fix briefs carry the decisions recorded since the contract was approved (vbw show decisions --since APPROVAL, or the workflow passes them in the Dev's prompt): tonight D291, D294, D295 and D296 corrected plans mid-milestone and no Dev could see them; only the Lead reads decisions (2026-10-12)",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
@@ -27103,6 +27110,24 @@
       "id": "D293",
       "at": "2026-10-11T23:56:18Z",
       "text": "Contract approved: 166 requirements, 282 checks, 370 plans (1c1a2564ab69)"
+    },
+    {
+      "id": "D294",
+      "text": "The cause 'nothing was committed since the last passing proof' fires only when nothing changed at all since that proof: the code tree, the contract and commands, AND the record (its last change is the proof's own commit and .vbw is clean). A record-only change (a decision, a verdict, a backlog item) is a change: the next proof reuses what the read lists allow (R103). A record commit landing after code commits still never fires it, because the code tree differs (R175)",
+      "why": "proof of M24, 2026-10-12 01:50: P123.1 dropped the record conditions with the commit-subject one and broke R103's check (C160, proof-reuse test 1: a decision then prove must reuse everything); D291 refined",
+      "at": "2026-10-12T00:53:11Z"
+    },
+    {
+      "id": "D295",
+      "text": "The record gets a costs section only once a figure exists: a run that ends with no cost figure (status line off) adds nothing to the record, and vbw show costs says no figure was seen; a project that never shows the status line keeps the record it had",
+      "why": "proof of M24: C63 (panel-steps test 5, R58: a step adds no record field) failed because every run end wrote costs.runs with cost null; nulls in every user's record are noise, and 'unknown' is said by vbw show costs",
+      "at": "2026-10-12T00:53:12Z"
+    },
+    {
+      "id": "D296",
+      "text": "Record unchanged since the proof is judged by a fingerprint, never a commit subject (R175, C274): the proof stores in its evidence the fingerprint of the record without its evidence (evidence.record), and the cause fires only when the record's fingerprint now equals it, with the code tree and the contract and commands unchanged; a decision, a verdict or a backlog item changes the fingerprint",
+      "why": "D294's mechanism; the first idea (the record's last commit is the proof's own) would read a commit subject, which R175 forbids",
+      "at": "2026-10-12T00:53:53Z"
     }
   ],
   "commands": {
