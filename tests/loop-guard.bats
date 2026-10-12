@@ -80,3 +80,16 @@ Next: end your turn; the loop'"'"'s Stop hook gives the next step'
   done < <(find "$PLUGIN_ROOT/skills" -name SKILL.md | LC_ALL=C sort)
   grep -qF 'vbw loop start' "$REPO_ROOT/docs/guards.md"
 }
+
+@test "R178 (F167): --help as a value arms nothing: only a bare help form passes the guard" {
+  run bash_call 'vbw loop start --session --help T1 --no-ceiling'
+  denied || { echo "not denied: $output"; false; }
+  [ "$(reason)" = "$START_TEXT" ] || { reason; false; }
+  run bash_call 'vbw loop start T1 --no-ceiling -h'
+  denied || { echo "not denied: $output"; false; }
+  local c
+  for c in 'vbw loop --help' 'vbw loop -h' 'vbw loop start --help' 'vbw loop start -h'; do
+    run bash_call "$c"
+    [ -z "$output" ] || { echo "refused: $c -> $output"; false; }
+  done
+}
