@@ -25649,6 +25649,13 @@
       "sort": "later",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T126",
+      "text": "tests/helper.bash: unset VBW_SESSION_ID with the CLAUDE_* variables, at the next unavoidable helper edit (D298, 2026-10-12): the kernel already clears it for every proof unit (checks_exec), so only hand-run tests can still inherit it",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
