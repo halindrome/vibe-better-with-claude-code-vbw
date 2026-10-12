@@ -37,10 +37,19 @@ loop_ended_answer() {
     | {action: (if ($r | startswith("end of the list")) then "done" else "stopped" end), reason: $r}'
 }
 
-# loop_end REASON: the loop ends here: written once, committed, and answered.
+# loop_commit_report MESSAGE: the report written from the record and committed with it (and the spec).
+loop_commit_report() {
+  # shellcheck source=loop-report.sh
+  . "$VBW_LIB/loop-report.sh"
+  record_update '.loop.report = ".vbw/loop-report.md"'
+  loop_report_write "$VBW_RECORD"
+  record_commit "$1" .vbw/record.json .vbw/spec.md .vbw/loop-report.md
+}
+
+# loop_end REASON: the loop ends here: written once, committed with the report, and answered.
 loop_end() {
   record_update '.loop.ended = {at: $at, reason: $r}' --arg at "$(vbw_now)" --arg r "$1"
-  record_commit "chore(vbw): loop ended" .vbw/record.json
+  loop_commit_report "chore(vbw): loop ended"
   loop_ended_answer "$(record_read)"
 }
 
@@ -109,7 +118,7 @@ loop_ship_item() {
   cost=$(loop_spend "$VBW_RECORD" "$id" | jq -c 'if . == null then null else del(.sessions) end')
   record_update '(.loop.items[] | select(.id == $i)) |= (.status = "shipped" | .cost = $c | .at = $at)
     | (.todos[] | select(.id == $i)).status = "done"' --arg i "$id" --argjson c "$cost" --arg at "$(vbw_now)"
-  loop_commit "$id" ship
+  loop_commit_report "chore(vbw): loop $id ship"
 }
 
 # loop_step: one call of vbw loop next. Stops come first (a run of this session is vbw next's answer,
