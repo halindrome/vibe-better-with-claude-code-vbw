@@ -7,6 +7,9 @@ load helper
 
 DOC="$REPO_ROOT/docs/proof.md"
 
+setup() { vbw_setup; }
+teardown() { vbw_teardown; }
+
 @test "R176: docs/proof.md shows a check line and a test file line that ran, with why" {
   grep -qE '^C[0-9]+ pass [0-9]+s ran: ' "$DOC"
   grep -qE '^tests/[A-Za-z0-9_.-]+ pass [0-9]+s ran: ' "$DOC"
@@ -24,8 +27,7 @@ DOC="$REPO_ROOT/docs/proof.md"
 }
 
 @test "R176 (F146): every example block of the fix done section is output the code can produce: the count lines come after every unit line, and a cause line comes first" {
-  local tmp
-  tmp=$(mktemp -d)
+  local tmp="$TEST_ROOT"
   awk '/^### Reusing an unchanged pass/{on=1} on && /^### /{if (!/Reusing/) exit} on' "$DOC" \
     | awk 'BEGIN{b=0} /^```text/{b++; next} /^```/{next} b>0{print b": "$0}' > "$tmp/blocks.txt"
   [ "$(cut -d: -f1 "$tmp/blocks.txt" | sort -u | wc -l | tr -d " ")" -ge 2 ]

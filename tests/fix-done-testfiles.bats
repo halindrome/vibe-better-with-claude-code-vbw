@@ -51,6 +51,31 @@ edit_record() {
 }
 
 ran() { sort "$RANLOG" | tr '\n' ' '; }
+
+# proved_now: the record says a proof passed on the project exactly as it is now
+# (trees and the record fingerprint, R175), the way a passing vbw prove leaves it.
+proved_now() {
+  local code head fp
+  code=$(vbw_kernel 'vbw_code_tree'); head=$(vbw_kernel 'vbw_head_tree')
+  edit_record '.evidence.passed = true | .evidence.tree = "'"$code"'" | .evidence.head = "'"$head"'"'
+  fp=$(vbw_kernel 'jq -c "del(.evidence)" "$VBW_RECORD" | vbw_sha256')
+  edit_record '.evidence.record = "'"$fp"'"'
+}
+
+# plan_why KIND: the reasons testfiles_plan gives the test files, for a run of KIND (fix or prove).
+plan_why() {
+  vbw_kernel '. "$VBW_LIB/checks.sh"; . "$VBW_LIB/testfiles.sh"; VBW_COMMAND_TIMEOUT=3600; mkdir -p "$VBW_RUNTIME"
+    r=$(record_read); proofreuse_plan "$r" 0 '"$1"'; testfiles_plan "$r" 0 '"$1"'; printf "%s\n" "$TF_WHY"'
+}
+
+@test "R176 (F152): for vbw fix done the test files never meet the proof's nothing-committed reason: with a passing proof of this very state, fix reuses them and prove would not" {
+  proved_now
+  run plan_why fix
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(printf '%s' "$output" | tail -1 | jq -c 'to_entries | map(select(.value | test("nothing committed")))')" = "[]" ] || { echo "$output"; false; }
+  run plan_why prove
+  [ "$(printf '%s' "$output" | tail -1 | jq -c '[.[] | select(test("nothing committed"))] | length')" = "3" ] || { echo "$output"; false; }
+}
 store() { cat "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json"; }
 
 # line REGEX: exactly one line of $output matches REGEX.
