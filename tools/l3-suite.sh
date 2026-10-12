@@ -1486,14 +1486,14 @@ scenario_loop() {
   new_project
   export L3_STATUSLINE=1
   item1='A command-line script greet.sh: "./greet.sh Ana" prints "Hello, Ana!" and without a name prints "Hello, world!"'
-  item2='Running "sh tests/never.sh" exits 0; tests/never.sh is the project'"'"'s own acceptance script, already committed, and must be kept exactly as it is (never edited or replaced)'
+  item2='The file hello.txt holds exactly the word hello, and running "sh tests/never.sh" exits 0; tests/never.sh is the project'"'"'s own acceptance script, already committed, and must be kept exactly as it is (never edited or replaced)'
   (cd "$dir" && mkdir -p tests && printf '#!/bin/sh\n# The acceptance script: it fails on purpose.\nexit 1\n' > tests/never.sh \
     && git add tests/never.sh && git commit -q -m "chore: the acceptance script" \
     && "$VBW" init > /dev/null && "$VBW" config rigor auto > /dev/null \
     && "$VBW" todo add "$item1" > /dev/null \
     && "$VBW" todo add "$item2" > /dev/null) \
     || { say "setup failed: could not add the two backlog items"; return 1; }
-  fixture="two backlog items (T1: greet.sh, ships; T2: the committed tests/never.sh must exit 0 and may not be edited, so its check cannot pass: its fix escalates twice, or its plan blocks twice, and the item parks); the working tree's status line on; /vbw:loop T1 T2 --ceiling 3; no question answered"
+  fixture="two backlog items (T1: greet.sh, ships; T2: hello.txt (a commit to revert) plus the committed tests/never.sh exiting 0, which may not be edited, so its check cannot pass: its fix escalates twice, or its plan blocks twice, and the item parks); the working tree's status line on; /vbw:loop T1 T2 --ceiling 3; no question answered"
   start='/vbw:loop T1 T2 --ceiling 3'
   # The loop asks nothing: a question on screen fails the scenario.
   asked=false
