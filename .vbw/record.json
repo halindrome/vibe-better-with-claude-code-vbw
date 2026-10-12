@@ -1,6 +1,12 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261012T103643Z",
+    "kind": "qa",
+    "started_at": "2026-10-12T10:36:43Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -15213,10 +15219,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "b599c2e491f1bb82caa9bd0c301b8b4ddc916add4d52c618db7269adf7237a9b",
-        "at": "2026-10-12T10:25:04Z",
+        "tree": "2ea63e433f30feaf5e2121e7caa8eb4a518c32f4b24312c9144a9220189e4009",
+        "at": "2026-10-12T10:39:40Z",
         "note": "29/30 checks",
-        "rounds": 7
+        "rounds": 8
       },
       "escalations": [
         {
@@ -25064,8 +25070,16 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Dead code is still in tests/guard-outside.bats, in the test 'R177: outside a VBW project the guards say nothing'. Its first 'out=' line runs vbw_hook inside 'bash -c', but vbw_hook is a shell function that bash -c cannot see (tests/helper.bash has no export -f; probe: bash -c 'type vbw_hook' gives 'not found'). The error is swallowed by '2> /dev/null || true' and the value is overwritten by the next 'out=' line, so the line checks nothing. Finding F157 asked for it to be dropped and was marked fixed, but commit e4532e3d only added 25 lines and removed none. Regression test: not a behavior test; remove the line, and keep a check (for example in tests/standards.bats or this file) that no bats test calls a helper function from inside 'bash -c' without exporting it."
+    },
+    {
+      "id": "F159",
+      "req": "R177",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "A file-tool write (Write/Edit) to a project file whose name holds a dollar sign, a backtick, or starts with a tilde is denied during a run as \"outside the project\", even when the file is listed in the plan. Probe (build lease, files [src/pay.txt, app/routes/$id.tsx], Dev agent, plugin/hooks/guard-file.jq with project root /proj): Write /proj/app/routes/$id.tsx gives deny \"…/$id.tsx cannot be resolved by the guard (~ or a shell expansion), so it counts as outside the project: … there only its plan files (src/pay.txt, app/routes/$id.tsx)\". The reason contradicts itself (the file is in the plan list), and the Dev cannot write its own plan file. Remix / React Router route files are named $param.tsx, so this blocks real builds. Before this phase the same write was allowed (covered by lease.files). Cause: run_write_denial in plugin/hooks/common.jq applies unresolved_path (^~|[$`]) to every path, but the file tools receive a literal absolute path that no shell ever expands; the \"guard reads text, never expands\" reasoning of D304 only holds for Bash redirect targets and git checkout arguments. The same false denial hits a single-quoted redirect target (echo x > 'app/routes/$id.tsx' is shell-literal) because simple() restores the quotes before the test. Not pinned: tests/guard-outside.bats F147 test only checks a ~ file write is refused, no test writes a plan-listed file with $ in its name. Fix: apply unresolved_path only to Bash-derived targets (pass a flag from guard-bash.jq, or call it there), and keep file-tool paths on project_path; optionally let a quoted target count as literal. Record the narrowing in a decision (D304 says \"write target\"). Regression test (tests/guard-outside.bats): under a build lease whose files include app/routes/$id.tsx, a Write to <project>/app/routes/$id.tsx is allowed, a Write to <project>/app/other/$x.tsx is refused as outside the run files (not as unresolvable), while an unquoted Bash redirect to $HOME/x stays denied."
     }
   ],
   "todos": [
