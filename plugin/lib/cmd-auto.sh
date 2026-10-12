@@ -55,6 +55,11 @@ auto_gate() {
   session=$(printf '%s' "$1" | jq -r '.session_id // empty' 2> /dev/null || true)
   [[ "$session" =~ ^[A-Za-z0-9_-]+$ ]] || return 0
   file="$VBW_RUNTIME/auto.$session.json"
+  # The loop of this session (R179): its own path, never the autonomous run's file or cap.
+  if jq -e --arg s "$session" '.loop != null and .loop.ended == null and .loop.session == $s' "$VBW_RECORD" > /dev/null 2>&1; then
+    auto_loop_gate "$session"
+    return 0
+  fi
   [ -f "$file" ] || return 0
   # This session's proof is running in the background: ask for nothing, spend nothing.
   # A mark of a dead process is stale and ignored.
@@ -80,4 +85,25 @@ auto_gate() {
   auto_write "$file" "$(jq -c --argjson n "$steps" '.steps = $n' "$file")"
   printf '%s' "$next" | jq -c --argjson n "$steps" --argjson c "$cap" \
     '{decision: "block", reason: "VBW autonomous run, step \($n) of \($c). Next: \(.action): \(.instruction). Do this step now as /vbw:vibe describes, then stop."}'
+}
+
+# auto_loop_gate SESSION: the loop is on in this session. A live background proof asks for nothing;
+# else the loop step runs in-process: a run wakes the session by its result, an end is told once,
+# any other step blocks the stop with the step.
+auto_loop_gate() {
+  local mark="$VBW_RUNTIME/proving.$1" step action
+  [ -f "$mark" ] && kill -0 "$(cat "$mark")" 2> /dev/null && return 0
+  # shellcheck source=loop.sh
+  . "$VBW_LIB/loop.sh"
+  # shellcheck source=cmd-loop.sh
+  . "$VBW_LIB/cmd-loop.sh"
+  step=$(loop_next)
+  action=$(printf '%s' "$step" | jq -r .action)
+  case "$action" in
+    run) ;;
+    done | stopped | off)
+      printf '%s' "$step" | jq -c '{systemMessage: "VBW loop ended: \(.reason). Report: .vbw/loop-report.md"}' ;;
+    *)
+      printf '%s' "$step" | jq -c '"\(.loop.item.id // "-")" as $i | {decision: "block", reason: "VBW loop, item \($i) (\(.loop.item.n // 0) of \(.loop.item.of // 0)). Next: \(.action): \(.instruction). Do this step now as /vbw:vibe describes, then stop."}' ;;
+  esac
 }
