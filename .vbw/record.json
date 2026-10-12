@@ -25064,7 +25064,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "Dead code is still in tests/guard-outside.bats, in the test 'R177: outside a VBW project the guards say nothing'. Its first 'out=' line runs vbw_hook inside 'bash -c', but vbw_hook is a shell function that bash -c cannot see (tests/helper.bash has no export -f; probe: bash -c 'type vbw_hook' gives 'not found'). The error is swallowed by '2> /dev/null || true' and the value is overwritten by the next 'out=' line, so the line checks nothing. Finding F157 asked for it to be dropped and was marked fixed, but commit e4532e3d only added 25 lines and removed none. Regression test: not a behavior test; remove the line, and keep a check (for example in tests/standards.bats or this file) that no bats test calls a helper function from inside 'bash -c' without exporting it."
     }
   ],
@@ -30851,6 +30851,15 @@
         "milestone": "M24",
         "started": "2026-10-12T10:20:24Z",
         "ended": "2026-10-12T10:26:31Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T102943Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-12T10:29:43Z",
+        "ended": "2026-10-12T10:31:34Z",
         "cost": null
       }
     ],
