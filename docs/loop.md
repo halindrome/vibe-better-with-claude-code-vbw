@@ -201,11 +201,56 @@ Two cases the loop settles itself:
   for it. It never accepts or rejects for you, and accepts no suggestion for
   you. The requirement waits in the next milestone, and the report lists it.
 
-An escalated fix is retried once (`vbw fix retry`). A second escalation of the
-same item, a plan blocked again, or a scope violation parks the item
-(`vbw loop park`): its commits since its milestone began are reverted with new
-revert commits (history is kept), its work leaves the record and the spec, the
-backlog entry stays open, and the loop moves to the next item.
+An escalated fix is retried once, then the item is parked: see
+"Retry once, then park" below.
+
+## Retry once, then park
+
+When the loop cannot get an item through, it tries once more, then gives the
+item up and moves on. It never stops the whole loop for one bad item.
+
+**The retry.** The first time an item escalates (`vbw next` answers
+`escalate`), the loop runs `vbw fix retry` for each escalated fix, and the fix
+is open again for one more attempt. A plan the Dev blocked is reset once with
+`vbw plan reset`. Each retry is recorded on the item (`retried`, docs/record.md),
+so the loop retries an item once, never twice.
+
+**The park.** The loop parks the item (`vbw loop park`) when:
+
+- a fix escalates again after its retry;
+- a plan is blocked again after its reset;
+- a scope violation shows up (a commit touched a file outside its plan).
+
+`vbw loop park` does these steps, in order:
+
+1. Reverts the item's commits made since its milestone began, newest first,
+   each with `git revert`. History is kept: nothing is rewritten, and each
+   revert is a new commit.
+2. Leaves alone any file you staged or edited by hand, and any file git does
+   not track. There is no `git reset --hard` and no `git clean`.
+3. Removes the item's requirement, phases, plans, checks, rules and fixes from
+   the record, and its line from `.vbw/spec.md`. The project then proves as it
+   did before the item started.
+4. Marks the milestone `parked`, with the reason and the time, and freezes its
+   cost the way a ship does (docs/costs.md). The milestone goes in the
+   record's `parked` list (docs/record.md).
+5. Records a decision: the item, the reason, the revert commits and how to
+   bring the work back.
+6. Leaves the item's backlog entry open, and sets the item to `parked` in the
+   loop with its reverts, reason and cost.
+7. Commits the record. The loop then starts the next item.
+
+Run by hand with no item in progress, `vbw loop park` refuses, changes nothing
+and ends with `Next: `. Only the loop's own step runs it; the guard denies it
+to any tool call (docs/guards.md).
+
+**Bringing the work back.** The report and the decision both list the revert
+commits. Either:
+
+- revert the reverts (`git revert REVERT_COMMIT`, newest first) to get the
+  code back, or
+- run the item again: its backlog entry is still open, so
+  `/vbw:loop THE_ITEM --ceiling USD` starts it over from a clean milestone.
 
 ## Where the loop stops
 
@@ -242,3 +287,23 @@ running shows as in progress. The sections:
 A cost VBW did not see is written `unknown`, never `0` and never an estimate.
 The record stores the same facts. After the end, `vbw loop status` says the loop
 ended, why, and names the report.
+
+## The promise
+
+Two sentences hold for every loop.
+
+**Nothing is approved without a record of who approved it.** Either you
+approved through `/vbw:approve`, or the loop approved by the delegation you
+gave when you started it. A delegated approval writes the decision (`Contract
+approved by the loop on the user's behalf ...`) and the consent entry for the
+contract's fingerprint (see "Approval by delegation"). Claude and agents cannot
+approve: the guard denies it.
+
+**Nothing the loop does leaves the project.** While a loop is on, no push,
+release, publish or deploy runs, from the loop's workflows or from anyone in
+the session: the guard denies them (docs/guards.md, "While a loop is on").
+Every ship is local, a commit for you to review; you push when you choose. The
+guards that hold for any run (protected checks, the record, secrets, the
+run's files) hold unchanged for the loop's runs.
+
+To push or release, stop the loop with `/vbw:loop stop`, then do it yourself.
