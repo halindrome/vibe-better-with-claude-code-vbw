@@ -15751,7 +15751,15 @@
         "guarded: R3 (C3), R13 (C12), R14 (C13), R16 (C15), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R37 (C35), R39 (C36), R40 (C37), R44 (C44, C45), R47 (C47), R49 (C48), R50 (C51), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R57 (C59, C70, C71), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R95 (C149, C150), R96 (C151, C152), R98 (C154), R99 (C155), R101 (C179), R102 (C158, C159), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R122 (C189), R123 (C190, C191), R129 (C196), R130 (C197), R134 (C201), R135 (C202), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R165 (C252), R167 (C257, C258, C259, C260), R171 (C270)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "1781c3215a19a6477aad747ae6084e1234d4cfbdad54450d527d4d91735493ea",
+        "at": "2026-10-12T22:57:31Z",
+        "note": "29/31 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P129",
@@ -26059,6 +26067,22 @@
       "attempts": 0,
       "status": "open",
       "note": "A stopping loop whose session is gone cannot be ended or replaced, and the refusal's advice goes in a circle. Only the starting session's Stop hook (cmd-auto.sh line 59, .loop.session == session) runs loop_next, which is what turns 'stopping' into 'ended'. vbw loop start then refuses with 'a loop is already on. Next: run vbw loop status ... or vbw loop stop', and vbw loop stop answers 'already stopping' and changes nothing (I ran both in a scratch project). The criterion says each refusal names what to do instead; here the named remedy does nothing. Regression test: with a loop stopping and its session no longer running, the user has a documented command that ends it (or vbw loop start replaces a stopping loop), and the refusal text names it."
+    },
+    {
+      "id": "F171",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The Stop hook gate does not tell the loop step which session it runs for. auto_gate (plugin/lib/cmd-auto.sh) reads the session id from the hook's stdin but calls auto_loop_gate -> loop_next -> loop_step without exporting it; loop_step (plugin/lib/loop-step.sh) decides 'my own run' with vbw_session, which is VBW_SESSION_ID or CLAUDE_CODE_SESSION_ID only (plugin/lib/core.sh:88). The skill's hook command (plugin/skills/loop/SKILL.md frontmatter) sets neither, and every other call in the skills passes VBW_SESSION_ID=${CLAUDE_SESSION_ID} because the environment cannot be relied on. When the variable is empty, a build/plan/fix/QA run that this same session opened (lease.session = s1) is judged 'a lease of another session', and the loop ends with 'a run of another session (s1) is open' while its own workflow is still running. The criterion 'asks for nothing while this session's proof or workflow still runs' is therefore only met for the proof mark. tests/loop-gate.bats has no case with an open lease, and its gate helper pipes JSON to 'vbw auto gate' with no session in the environment, so this path is untested. Regression test: in tests/loop-gate.bats, start a loop for s1, open 'vbw run start build P2.1' as s1, then run the gate with session_id s1 and no VBW_SESSION_ID/CLAUDE_CODE_SESSION_ID in the environment: it must print nothing and leave .loop.ended null (red today by reading the code; fix: auto_gate exports VBW_SESSION_ID=$session before the loop step)."
+    },
+    {
+      "id": "F172",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The loop report's Shipped section prints the requirement id as 'none' for an item whose backlog text carries a marker. plugin/lib/loop-report.sh looks the requirement up with '.text == $i.text', but a loop item keeps its text with the '[human] ' (or '[auto] ') marker (loop_start stores loop_norm of the whole backlog text) while the requirement's text has the marker stripped (loop_item_text). Checked with the report's own expression on {item text '[human] The greeting feels friendly', requirement R2 'The greeting feels friendly'}: it returns \"none\". The criterion says the report names, for each shipped item, the item, milestone, requirement and commits. tests/loop-human-skip.bats and tests/loop-cycle.bats never read the requirement id on a Shipped line of a marked item. Regression test: ship a '[human] ...' item (and an '[auto] ...' item) through the loop and assert the Shipped line contains the requirement id (for example 'R2') and not 'none'; fix: compare against loop_item_text of the item's text."
     }
   ],
   "todos": [
