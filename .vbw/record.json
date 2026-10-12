@@ -3,6 +3,7 @@
   "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
+    "tests/agent-scratch.bats",
     "tests/apply-beside-started.bats",
     "tests/apply-foreign-req.bats",
     "tests/apply-narrow.bats",
@@ -30,6 +31,7 @@
     "tests/bench-limits-docs.bats",
     "tests/bench-limits.bats",
     "tests/bench-protected.bats",
+    "tests/bench-statusline-cost.bats",
     "tests/big-record-commands.bats",
     "tests/big-record-docs.bats",
     "tests/big-record-helper.bash",
@@ -3660,6 +3662,31 @@
       "files": [
         "tests/guard-outside.bats"
       ]
+    },
+    {
+      "id": "C288",
+      "req": "R177",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/agent-scratch.bats"
+      ],
+      "files": [
+        "tests/agent-scratch.bats"
+      ],
+      "fix": "F135"
+    },
+    {
+      "id": "C289",
+      "req": "R173",
+      "run": [
+        "bats",
+        "tests/bench-statusline-cost.bats"
+      ],
+      "files": [
+        "tests/bench-statusline-cost.bats"
+      ],
+      "fix": "F138"
     }
   ],
   "project": {
@@ -24801,7 +24828,7 @@
       "req": "R175",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "plugin/lib/proofreuse.sh proofreuse_proved has a clause 'evidence.head equals the committed tree (when the evidence carries one)' (last line of the function) that no test can fail. Every fixture (tests/proofcauses-lib.bats prove_passed, tests/proofreuse-rule.bats test at line ~243, tests/proof-cause-tree.bats) records evidence.head equal to the current HEAD tree, and the commit-after-proof case changes the code tree first, so the head clause is never the deciding one. Deleting that line would leave every test green. Regression test needed: a passing proof recorded on an uncommitted edit (evidence.tree = working tree, evidence.head = older committed tree), then commit that edit so the working tree still equals evidence.tree but HEAD differs: proofcauses_find and proofreuse_allowed must name no 'nothing was committed' cause/reason."
     },
     {
@@ -24809,7 +24836,7 @@
       "req": "R176",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "No test runs vbw fix done for a fix of the test command (single-file form) while a cause (R168) is active. cmd_fix calls testfiles_plan with ALL=1 in that case (plugin/lib/cmd-fix.sh, the 'if [ -n \"$causes\" ]' branch), so every test file must run, its line must carry no 'ran:' part, the cause line must print once, and 'test files: N ran, 0 reused' must show the true N. tests/fix-done-output.bats pins the cause case for checks only, and tests/fix-done-testfiles.bats has no cause case. Regression test needed: fix-done-testfiles fixture with a cause (e.g. a clone with an empty run store or vbw prove --full not yet run) asserting the one cause line, 'tests/t_X.sh pass Ns' lines without 'ran:', and 'test files: <all> ran, 0 reused'."
     },
     {
@@ -24817,7 +24844,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The refusal's 'Next:' line (plugin/hooks/common.jq outside_denial), docs/guards.md line 108 and plugin/agents/dev.md all tell agents to put scratch/debugging files in .vbw/runtime/. In a build or fix run that same guard denies .vbw/runtime/ because lease.files is only the plan's files. Probe: build lease files [src/pay.txt], Write to .vbw/runtime/x.txt -> 'is outside this run's files (src/pay.txt)'. So a Dev (who only runs in build/fix runs) following the prompt or the Next advice is refused again; the criterion said a build or fix run writes its plan files. Regression test should: open a build run, take the path named in the outside-denial's Next line (or in dev.md), write to it, and require it is allowed; or require the Next text for build/fix runs to name only the plan files. Existing tests/guard-outside.bats checks only that 'Next: ' exists, so it cannot catch this."
     },
     {
@@ -24825,7 +24852,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "plugin/agents/lead.md: commit e32afe22 (P126.2) cut 'No invented independence, no needless chains.' from the Lead's rule 1 (Real dependencies) to fit the word budget. That is an unplanned change to an unrelated quality rule; the plan only asked for scratch-file wording and staying within budget. Restore the sentence and make the room elsewhere (shorten the new scratch sentence or a different line). Regression test: a standards/prompt test pinning that the Lead prompt still contains the 'needless chains' rule."
     },
     {
@@ -24833,7 +24860,7 @@
       "req": "R173",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "A shipped milestone whose ship saw no figures (no frozen total) is not kept unknown: costs_milestone_total (plugin/lib/costs.sh) has no status check, so vbw show costs (cmd-show.sh show_costs loops over every shipped id) recomputes it from the current side files minus a baseline that does not exist, i.e. from each session's first figure. Once the status line is turned on, every old shipped milestone that has no total (in this project M1 to M23) would show the whole session spend, and the same dollars would also count in the active milestone. That breaks the criterion 'no session's spend counts in two milestones' and 'never a guess'. tests/cost-milestones.bats only covers a shipped milestone WITH a frozen total. Regression test: ship a milestone with no side file, then write a side file (figures s1 2 1000 100), start the next milestone? no: just run 'vbw show costs --json': the shipped milestone must stay usd null and sessions 0 and be listed in unknown.milestones, and the sum of the milestones' usd must not exceed what the sessions report."
     },
     {
@@ -24841,7 +24868,7 @@
       "req": "R173",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The benchmark does not measure the status line with the cost write in place. tools/bench-hooks.sh statusline() feeds {session_id, workspace, cwd, model} with no cost or context_window, so the new side-file branch (select in statusline.jq, split and mv in vbw-statusline.sh) never runs in the 60 ms measurement, yet the criterion and plan P125.1 say the budget holds 'with the write in place'. I measured by hand with a cost field and a bad session id (jq part only, no write allowed in a QA run): about 27 ms per call with and without cost, so the budget is probably fine, but the promised measurement cannot show a regression in the write. Regression test: make bench-hooks.sh feed total_cost_usd and token totals for the status line cases (and a safe session id in a project with the record), and fail if the side file was not written."
     },
     {
@@ -24849,7 +24876,7 @@
       "req": "R173",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/costs.md lists the JSON fields of 'vbw show costs --json' incompletely and contradicts the output: milestones[] also carries title (the table omits it), and runs[] also carries session, started and ended (the table lists only id, kind, milestone, cost). The criterion and plan P125.6 ask the page to describe the command's object; plan P125.4 fixes those fields. Regression test: tests/cost-docs.bats should compare the field names in docs/costs.md with the keys of a real 'vbw show costs --json' (milestones[0] and runs[0]) and fail on any missing."
     }
   ],
@@ -27240,6 +27267,12 @@
       "id": "D299",
       "at": "2026-10-12T02:09:44Z",
       "text": "Contract approved: 166 requirements, 282 checks, 370 plans (78414e0d8432)"
+    },
+    {
+      "id": "D300",
+      "text": "Agents get one scratch folder inside the project, .vbw/runtime/scratch/: writable by agents under plan, build and fix leases, refused under read-only leases (QA, map); vbw's own runtime files (glance.json, run-open, cost.*.json, proof outputs) stay out of reach; the R177 refusal, the Dev and Lead briefs and docs/guards.md name that folder. Chosen over QA's option of pointing build and fix agents to their plan files only",
+      "why": "Devs lost /tmp with R177 and need somewhere for a debugging script or a log; a gitignored folder the proof never reads keeps the record of work untouched, and a subfolder cannot collide with vbw's own files (owner, 2026-10-11: all project related files inside the project folder)",
+      "at": "2026-10-12T02:22:02Z"
     }
   ],
   "commands": {
@@ -30391,6 +30424,15 @@
         "milestone": "M24",
         "started": "2026-10-12T02:13:32Z",
         "ended": "2026-10-12T02:22:01Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T022243Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-12T02:22:43Z",
+        "ended": "2026-10-12T03:02:53Z",
         "cost": null
       }
     ],
