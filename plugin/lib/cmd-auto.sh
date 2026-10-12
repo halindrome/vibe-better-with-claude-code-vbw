@@ -97,7 +97,7 @@ auto_loop_gate() {
   . "$VBW_LIB/loop.sh"
   # shellcheck source=cmd-loop.sh
   . "$VBW_LIB/cmd-loop.sh"
-  step=$(loop_next)
+  step=$(VBW_SESSION_ID="$1" loop_next)
   action=$(printf '%s' "$step" | jq -r .action)
   case "$action" in
     run) ;;
