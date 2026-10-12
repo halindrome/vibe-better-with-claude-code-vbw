@@ -15710,15 +15710,21 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P127.2: Code done and committed (2d8ff5d2, 901214f9, 0ab70375); approve tests green; loop-stop, loop-start, status-spend, help-docs, 6 of 8 waits and 3 of 4 approve tests pass. Two approved checks cannot pass as written, both test defects outside my files: (1) tests/loop-approve.bats test 1 line 51 asserts no decision starts with 'Contract approved:', but loop_project (tests/loop-helper.bash) approves M1 with vbw approve, which records exactly that decision; (2) tests/loop-approve-waits.bats 'an extra requirement' test: planned() runs jq -c without -n and no input, so it emits nothing and vbw apply --add refuses an empty document. Needs the test files corrected and re-approved."
+        },
+        {
+          "at": "2026-10-12T23:48:51Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "QA needs a second round"
         }
       ],
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "ef8778a4f5166feca806e004e9cee68fb560460115624008c5e73fae5e46cf66",
-        "at": "2026-10-12T22:57:04Z",
-        "note": "34/38 checks",
-        "rounds": 1
+        "tree": "a776e8f7dea35faa54dfbee88b6a09d06b6c03de5a695653c2f269ee9aa41f18",
+        "at": "2026-10-12T23:48:51Z",
+        "note": "36/38 checks",
+        "rounds": 2
       }
     },
     {
@@ -26048,7 +26054,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The Bash guard can be walked around, so a tool call can arm the loop. guard-bash.jq loop_call (line 142-146) lets any command through that has --help or -h anywhere in its arguments, but 'vbw loop start' treats the next word after --session as a session id. I ran, in a scratch VBW project, the hook on 'vbw loop start --session --help T1 --no-ceiling': the hook allowed it, and running that command armed the loop ('loop on: T1; no ceiling; session --help'). The criterion says the guard denies vbw loop start from any tool call. Regression test to add in tests/loop-guard.bats: 'vbw loop start --session --help T1 --no-ceiling' and the same with -h must be denied with the pinned START_TEXT (fix: only a --help/-h that is the sub-command's own first argument is exempt, or the kernel refuses a --session value that starts with a dash)."
     },
     {
@@ -26056,7 +26062,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Two of the 'waits for the user' tests never reach the matching rule they claim to test. In tests/loop-approve-waits.bats, 'differs by one character' and 'matches an item not on this loop's list' put a requirement in the milestone whose text is not the item's; vbw loop next then ends the loop inside loop_open_item ('M1 has requirements of its own and is not shipped ... step open', action stopped) before loop_delegate/loop_matches run. I reproduced this in a scratch project: loop next answered stopped with that reason. These two tests would still pass if loop_matches always returned true, so the criterion 'one character differs / item not on the list waits' is not pinned. Regression test: reach the delegate step with the item in progress (let vbw loop next open the item, then change the requirement text by one character, or swap it for another backlog item's text, and re-plan) and assert nothing is approved, with a mutation check that loop_matches returning true makes it fail."
     },
     {
@@ -26064,7 +26070,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Unplanned behavior in vbw loop start: the 'current milestone has requirements and is not shipped' refusal now ignores a [human] requirement carried over by an earlier ship (cmd-loop.sh lines ~114-116, added in commit 0ab70375 under P127.2, whose plan lists no change to loop start). P127.1's plan and the criterion say the refusal applies to any requirement of the current milestone. No test in tests/loop-start.bats covers the exception (only tests/loop-approve.bats uses a carried-over human requirement, after start), and docs/loop.md's refusal table does not mention it. Either record the decision and document it, or remove it. Regression test: in a loop_project human fixture, 'vbw loop start T1 --no-ceiling' succeeds (or is refused, per the decision), and docs/loop.md states which."
     },
     {
@@ -26072,7 +26078,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "A stopping loop whose session is gone cannot be ended or replaced, and the refusal's advice goes in a circle. Only the starting session's Stop hook (cmd-auto.sh line 59, .loop.session == session) runs loop_next, which is what turns 'stopping' into 'ended'. vbw loop start then refuses with 'a loop is already on. Next: run vbw loop status ... or vbw loop stop', and vbw loop stop answers 'already stopping' and changes nothing (I ran both in a scratch project). The criterion says each refusal names what to do instead; here the named remedy does nothing. Regression test: with a loop stopping and its session no longer running, the user has a documented command that ends it (or vbw loop start replaces a stopping loop), and the refusal text names it."
     },
     {
