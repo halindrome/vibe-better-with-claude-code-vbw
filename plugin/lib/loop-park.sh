@@ -120,7 +120,7 @@ loop_park() {
   keep=(.vbw/record.json .vbw/spec.md)
   for f in ${drop[@]+"${drop[@]}"}; do
     rm -f "$VBW_ROOT/$f"
-    git -C "$VBW_ROOT" ls-files --error-unmatch -- "$f" > /dev/null 2>&1 && keep+=("$f")
+    git -C "$VBW_ROOT" cat-file -e "HEAD:$f" 2> /dev/null && keep+=("$f")
   done
   (
     vbw_guard_reset
