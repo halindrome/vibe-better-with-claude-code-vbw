@@ -44,11 +44,10 @@ teardown() { vbw_teardown; }
   [ "$(project_sum)" = "$before" ]
   VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
   VBW_SESSION_ID=s1 "$VBW" loop stop > /dev/null
-  before=$(project_sum)
   run env VBW_SESSION_ID=s9 "$VBW" loop stop
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(project_sum)" = "$before" ]
-  jq -e '.loop.stopping.session == "s1"' .vbw/record.json
+  # A second stop ends the stopping loop (F170): the stop that asked is kept, the end is recorded.
+  jq -e '.loop.stopping.session == "s1" and .loop.ended != null' .vbw/record.json
 }
 
 @test "R178: the stop is read from the record: the loop step of the session running the loop answers stopped before its next step" {
@@ -80,4 +79,18 @@ teardown() { vbw_teardown; }
   [ "$status" -eq 0 ]
   [[ "$output" == "usage: vbw loop"* ]]
   [ "$(project_sum)" = "$before" ]
+}
+
+@test "R178 (F170): a second stop while the loop is still stopping ends it at once, with the report: the way out when the loop's session is gone" {
+  VBW_SESSION_ID=s9 "$VBW" loop stop > /dev/null
+  run env VBW_SESSION_ID=s9 "$VBW" loop stop
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" == *"ended now"* ]] || { echo "$output"; false; }
+  jq -e '.loop.ended != null and (.loop.ended.reason | test("second vbw loop stop"))' .vbw/record.json || { jq .loop .vbw/record.json; false; }
+  [ -f .vbw/loop-report.md ]
+  [ -z "$(git status --porcelain -- .vbw)" ] || { git status --porcelain; false; }
+  run "$VBW" loop stop
+  [[ "$output" == *"no loop is on"* ]] || { echo "$output"; false; }
+  run "$VBW" loop status
+  [[ "$output" == *"ended"* ]] || { echo "$output"; false; }
 }
