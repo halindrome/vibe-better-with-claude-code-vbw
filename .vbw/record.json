@@ -15062,12 +15062,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "a156f4a4c67a94aecba41213cef380bd60de8cc15817ff3b01160341161981eb",
-        "at": "2026-10-12T09:29:20Z",
-        "note": "31/32 checks",
-        "rounds": 5
+        "tree": "648a28c789bb2a850fdba85e719d7000802020b8c75fa08f28cda3553b230c9f",
+        "at": "2026-10-12T10:06:11Z",
+        "note": "32/32 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 11,
+        "qa_findings": 11,
+        "escalations": 2
       }
     },
     {
@@ -25039,7 +25046,7 @@
       "req": "R176",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/lib/cmd-fix.sh line 196 calls 'testfiles_plan \"$record\" 0 fix' so a fix of the test command never meets the proof's 'nothing committed' reason (plan P123.2 task 1), but no test can fail if the 'fix' argument is dropped there. The test added for F152 (tests/fix-done-testfiles.bats 'R176 (F152)') calls testfiles_plan directly through plan_why with kind fix or prove, so it pins the library's parameter, not what cmd_fix passes. Every test that runs 'vbw fix done' for a fix of the test command (tests/fix-done-testfiles.bats setup, tests/prove-summary.bats lines 81-94) first makes a FAILED proof (evidence.passed false), where proofreuse_proved is false whatever the kind, so the 'fix' argument is never the deciding one. F152's own regression text asked for a run of vbw fix done that reuses the files after a passing proof. Regression test needed: in the fix-done-testfiles fixture record a passing proof of the current state (the proved_now helper) with the open fix whose command is 'test', run 'vbw fix done F1' and assert 'test files: 0 ran, 3 reused' and no 'nothing committed' text; it must fail when line 196 drops 'fix'."
     },
     {
