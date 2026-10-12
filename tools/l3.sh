@@ -48,7 +48,7 @@ case "$cmd" in
       settings=$(printf '%s' "$settings" | jq -c --arg c "bash \"$ROOT/plugin/scripts/vbw-statusline.sh\"" \
         '.statusLine = {type: "command", command: $c, refreshInterval: 5}')
     fi
-    plugin="--plugin-dir '$ROOT/plugin'"
+    plugin="--plugin-dir '$ROOT/plugin' --add-dir '$ROOT/plugin'"
     [ "$mode" = vbw ] || plugin=""
     # A session launched from inside Claude Code inherits its PATH, which puts
     # that session's installed plugins' bin/ (an older vbw) ahead of the code
