@@ -24479,7 +24479,7 @@
       "after": [
         "P127.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Opening an item (loop-step.sh): with no item in progress and a waiting item next, the step opens its milestone: `vbw milestone start TITLE` when the current one is shipped (or parked, P129), or `vbw milestone rename TITLE` when it is active with no requirements, TITLE being the item's requirement text (loop_item_text); then `vbw spec add auto|human TEXT` (loop_item_proof), `vbw todo` status in_progress, and the item becomes in_progress with milestone, head (git rev-parse HEAD after the commits) and its own cost baseline (every session's current figures). The functions of cmd-milestone.sh, cmd-spec.sh and cmd-todo.sh are called in-process, never a second vbw",
@@ -31894,6 +31894,15 @@
         "milestone": "M25",
         "started": "2026-10-12T19:27:33Z",
         "ended": "2026-10-12T19:32:53Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261012T193328Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T19:33:28Z",
+        "ended": "2026-10-12T19:59:19Z",
         "cost": null
       }
     ],
