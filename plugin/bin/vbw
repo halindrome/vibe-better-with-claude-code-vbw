@@ -46,6 +46,7 @@ usage: vbw <command> [args]
   workflows [status | on]   Claude Code's Dynamic workflows, which VBW plans and builds with
   triage [--json]   the facts for sorting a new idea: milestone, open requirements, run, sorted backlog
   todo [list] | add [--sort next|later --size small|medium|large] TEXT | sort ID next|later small|medium|large | done ID | drop ID   the backlog
+  loop start [--session ID] ITEM... --ceiling USD [--finish-item] | --no-ceiling | loop stop | loop status [--json]   work through backlog items on its own (the user starts it)
   decide TEXT [WHY]   record a decision the user made, and why
   tier raise PHASE TIER REASON   raise a phase's rigor tier and record why (never lowered during a run)
   legacy [facts] | review | choose | done | remove   a VBW 1 project (.vbw-planning/): facts, review and recommendation, record convert or fresh, mark converted, remove
@@ -111,6 +112,10 @@ vbw_cmd_usage() {
     milestone)
       echo "usage: vbw milestone start TITLE   open the next milestone after shipping"
       echo "       vbw milestone rename TITLE   name the current milestone" ;;
+    loop)
+      echo "usage: vbw loop start [--session ID] ITEM... --ceiling USD [--finish-item] | --no-ceiling"
+      echo "       vbw loop stop   stop before the next step, from any session"
+      echo "       vbw loop status [--json]   the items, the ceiling, the spend; the ceiling is your choice: --ceiling USD (stop at the next step), --ceiling USD --finish-item, or --no-ceiling" ;;
     decide) echo "usage: vbw decide TEXT [WHY]   record a decision the user made, and why" ;;
     legacy) echo "usage: vbw legacy [facts] | review | choose | done | remove   a VBW 1 project (.vbw-planning/): facts, review, record convert or fresh, mark converted, remove" ;;
     tier) echo "usage: vbw tier raise PHASE TIER REASON   raise a phase's rigor tier and record why (never lowered during a run)" ;;
@@ -138,7 +143,7 @@ done
 case "$cmd" in
   version) jq -r .version "$VBW_PLUGIN/.claude-plugin/plugin.json" ;;
   help|-h|--help) vbw_help ;;
-  init|status|triage|todo|commit|next|show|spec|approve|check|prove|apply|run|plan|fix|req|qa|ship|config|auto|statusline|workflows|doctor|rtk|report|milestone|decide|legacy|tier|interview|suggest|recommend|tools)
+  init|status|triage|todo|commit|next|show|spec|approve|check|prove|apply|run|plan|fix|req|qa|ship|config|auto|statusline|workflows|doctor|rtk|report|milestone|loop|decide|legacy|tier|interview|suggest|recommend|tools)
     # shellcheck source=/dev/null
     . "$VBW_LIB/cmd-$cmd.sh"
     "cmd_$cmd" "$@"
