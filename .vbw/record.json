@@ -24985,7 +24985,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "A shell redirect written as >&FILE or >& FILE (bash's 'stdout and stderr to FILE', the same as &> FILE) to a path outside the project is not denied during a run. Probe (guard-bash.jq, build lease and plan lease, Dev/Lead agent): 'echo a >&/tmp/a', 'echo a >& /tmp/a.test.js' give no answer (allowed), while 'echo a &> /tmp/x' and 'echo a > /tmp/x' are denied. Cause: simple() in plugin/hooks/guard-bash.jq drops any redirect whose rest starts with & (meant for fd copies like 2>&1 and >&2), so a >& redirect to a file is dropped whole (D304 'fd redirects stay whole' only covers the numeric form). The criterion says a shell redirect to /tmp or another outside folder is denied. Fix: treat >&WORD (and >& WORD) as a file redirect unless WORD is digits or -. Regression test (tests/guard-outside.bats): under a build lease and a plan lease, a Dev Bash call 'echo a >&/tmp/a' and 'echo a >& /tmp/a' is denied with 'outside the project' and Next:; 'ls 2>&1', 'echo a >&2' and 'echo a >&-' stay allowed."
     },
     {
@@ -24993,7 +24993,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "tests/guard-outside.bats does not check that the refusal names the path for a shell redirect, a relative climb or an interpreter write. The criterion says each denial names the path; only the first test (Write to /tmp/scratch.txt) asserts that the output holds the path. denied_outside checks 'outside the project', 'Next:' and the scratch advice, never the path, so a change that makes the guard-bash redirect rule pass a different string (for example the project-relative form, or the empty string) to the denial would pass every test. Regression test: make denied_outside take the expected path as a second argument and assert the reason contains it, for 'echo hi > /tmp/scratch.txt', the '../outside.txt' write, the python3/node writes to /tmp/q and /tmp/q.js, and the '../outside.txt' interpreter write."
     },
     {
@@ -25001,7 +25001,7 @@
       "req": "R175",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "plugin/lib/proofreuse.sh proofreuse_proved: the clause that the project's files equal evidence.tree ('[ -n \"$tree\" ] && [ \"$(vbw_code_tree ...)\" = \"$tree\" ] || return 1') is named in the R175 criterion but no test can fail on it. Read of tests/proof-cause-tree.bats, tests/proofcauses-lib.bats (prove_passed fixture), tests/proofreuse-rule.bats and tests/prove-reads.bats: every case that makes the working tree differ from evidence.tree also commits, so evidence.head differs from HEAD and the head clause (or the record fingerprint) decides alone; test 8 of proof-cause-tree.bats is the reverse case (head differs, tree equal). Deleting the tree clause leaves every test green (not mutation-run: QA may not write). Regression test: after a passing proof, make an uncommitted edit to a tracked file (and, second case, add an untracked file) with HEAD and the record unchanged; proofcauses_find prove and proofreuse_allowed must name no 'nothing was committed' cause/reason."
     },
     {
@@ -25009,7 +25009,7 @@
       "req": "R176",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "plugin/lib/cmd-fix.sh calls 'testfiles_plan \"$record\" 0 fix' so a fix of the test command never meets the proof's 'nothing committed' reason (plan P123.2 task 1), but no test can fail on the 'fix' argument. tests/fix-done-testfiles.bats always sets up a FAILED last proof (evidence.passed false), so proofreuse_proved is false whatever the kind; tests/proof-cause-tree.bats test 5 uses a requirement fix with no command: test, so tfwant stays 0 and testfiles_plan is not called. Dropping the argument leaves the suite green. Regression test: in the fix-done-testfiles fixture, record a passing proof of the current code (evidence.passed, tree, head, record fingerprint as prove_passed in tests/proofcauses-lib.bats builds them) with an open fix whose command is 'test'; vbw fix done must reuse every test file whose read list did not change ('test files: 0 ran, N reused') instead of running them all with 'ran: proving again with nothing committed'."
     },
     {
@@ -25017,7 +25017,7 @@
       "req": "R176",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "docs/proof.md line 783, section 'Reusing an unchanged pass': the lead-in still says 'It prints one line per skipped check and runs the rest', but vbw fix done now prints one line per check and per test file that ran and one per reused unit, plus both count lines. A reader is told the old, narrower output right above the new example. Regression test: tests/fix-done-docs.bats should fail while the section contains 'one line per skipped check', and require the lead-in to name checks and test files, ran and reused."
     },
     {
@@ -25025,7 +25025,7 @@
       "req": "R176",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "tests/fix-done-docs.bats, test 'R176 (F146)' calls a bare 'mktemp -d' (host temp folder) and never removes it; the file does not load vbw_setup, so no teardown runs. Each run leaves a directory in the host temp, against the hermetic-test rule (helper.bash TEST_ROOT, vbw_setup/vbw_teardown; no writes outside the project) that tests/record-args-rule.bats and tests/qa-depth-escalated.bats follow. Regression test: tests/standards.bats (or this file) should fail for a test file that calls mktemp without a path under $TEST_ROOT, or this test should use vbw_setup/vbw_teardown and $TEST_ROOT."
     }
   ],
@@ -30743,6 +30743,15 @@
         "milestone": "M24",
         "started": "2026-10-12T08:46:03Z",
         "ended": "2026-10-12T08:52:36Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T085459Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-12T08:54:59Z",
+        "ended": "2026-10-12T09:16:39Z",
         "cost": null
       }
     ],
