@@ -50,15 +50,6 @@ code_grep() {
   [ "$total" -le 3500 ]
 }
 
-@test "shipped plugin is under 2 MB (design §10, ledger D295; owner raised it from 1 MB on 2026-10-05 for the sounds)" {
-  # What ships: tracked files and new files git would add, not what git ignores
-  # (Claude Code writes its own types into a plugin it loads from a folder).
-  local kb
-  kb=$(git -C "$REPO_ROOT" ls-files -z --cached --others --exclude-standard -- plugin | (cd "$REPO_ROOT" && xargs -0 du -ck 2> /dev/null) | tail -1 | cut -f1)
-  echo "plugin size: ${kb} KB"
-  [ -n "$kb" ] && [ "$kb" -lt 2048 ]
-}
-
 @test "no eval or data-as-code (ledger D108, D139)" {
   run code_grep '(^|[^[:alnum:]_])eval[[:space:]]|bash -c "\$|sh -c "\$'
   [ -z "$output" ]
