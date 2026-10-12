@@ -24624,7 +24624,7 @@
         "P128.3",
         "P129.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "loop-step.sh, retry: at escalate, for each escalated fix not yet in the item's retried.fixes, `vbw fix retry` (in-process) and record it, then continue (the fix workflow runs again); at unblock, for each blocked plan not yet in retried.plans, `vbw plan reset` and record it, then continue; a fix or plan already retried, or a scope violation, parks the item",
@@ -31912,6 +31912,15 @@
         "milestone": "M25",
         "started": "2026-10-12T19:59:49Z",
         "ended": "2026-10-12T20:06:15Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261012T200643Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T20:06:43Z",
+        "ended": "2026-10-12T20:41:40Z",
         "cost": null
       }
     ],
