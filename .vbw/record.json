@@ -25072,7 +25072,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "A file-tool write (Write/Edit) to a project file whose name holds a dollar sign, a backtick, or starts with a tilde is denied during a run as \"outside the project\", even when the file is listed in the plan. Probe (build lease, files [src/pay.txt, app/routes/$id.tsx], Dev agent, plugin/hooks/guard-file.jq with project root /proj): Write /proj/app/routes/$id.tsx gives deny \"…/$id.tsx cannot be resolved by the guard (~ or a shell expansion), so it counts as outside the project: … there only its plan files (src/pay.txt, app/routes/$id.tsx)\". The reason contradicts itself (the file is in the plan list), and the Dev cannot write its own plan file. Remix / React Router route files are named $param.tsx, so this blocks real builds. Before this phase the same write was allowed (covered by lease.files). Cause: run_write_denial in plugin/hooks/common.jq applies unresolved_path (^~|[$`]) to every path, but the file tools receive a literal absolute path that no shell ever expands; the \"guard reads text, never expands\" reasoning of D304 only holds for Bash redirect targets and git checkout arguments. The same false denial hits a single-quoted redirect target (echo x > 'app/routes/$id.tsx' is shell-literal) because simple() restores the quotes before the test. Not pinned: tests/guard-outside.bats F147 test only checks a ~ file write is refused, no test writes a plan-listed file with $ in its name. Fix: apply unresolved_path only to Bash-derived targets (pass a flag from guard-bash.jq, or call it there), and keep file-tool paths on project_path; optionally let a quoted target count as literal. Record the narrowing in a decision (D304 says \"write target\"). Regression test (tests/guard-outside.bats): under a build lease whose files include app/routes/$id.tsx, a Write to <project>/app/routes/$id.tsx is allowed, a Write to <project>/app/other/$x.tsx is refused as outside the run files (not as unresolvable), while an unquoted Bash redirect to $HOME/x stays denied."
     }
   ],
@@ -27578,6 +27578,12 @@
       "id": "D310",
       "at": "2026-10-12T10:33:50Z",
       "text": "Contract approved: 166 requirements, 284 checks, 370 plans (2d4daaff6155)"
+    },
+    {
+      "id": "D311",
+      "text": "The unresolved-path rule of D304 applies to shell text only (redirect targets, git checkout paths, a program's file names): a file tool's path is never expanded, so the guard takes it as written and a plan file named app/routes/$id.tsx is written through the file tool",
+      "why": "QA F159: the rule as first written refused a Dev's own plan file with a dollar sign in its name; shells expand text, file tools do not",
+      "at": "2026-10-12T10:45:38Z"
     }
   ],
   "commands": {
@@ -30882,6 +30888,15 @@
         "milestone": "M24",
         "started": "2026-10-12T10:36:43Z",
         "ended": "2026-10-12T10:40:39Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T104706Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-12T10:47:06Z",
+        "ended": "2026-10-12T10:54:59Z",
         "cost": null
       }
     ],
