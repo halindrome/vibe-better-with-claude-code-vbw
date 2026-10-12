@@ -13,7 +13,7 @@ setup() {
 teardown() { vbw_teardown; }
 
 bash_call() {
-  jq -nc --arg c "$1" --arg d "$PROJECT" --argjson x "${2:-{\}}" '{hook_event_name: "PreToolUse", session_id: "s1", tool_name: "Bash", cwd: $d, tool_input: {command: $c}} + $x' \
+  jq -nc --arg c "$1" --arg d "$PROJECT" --argjson x "${2:-null}" '{hook_event_name: "PreToolUse", session_id: "s1", tool_name: "Bash", cwd: $d, tool_input: {command: $c}} + $x' \
     | vbw_hook PreToolUse Bash
 }
 reason() { printf '%s' "$output" | jq -r '.hookSpecificOutput.permissionDecisionReason'; }
