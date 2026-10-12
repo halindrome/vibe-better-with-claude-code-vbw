@@ -50,8 +50,8 @@ Each refusal exits 1, changes nothing and ends with `Next:` and what to do.
 | Unknown item (`stop` as an item says to run `vbw loop stop`) | Use an id from `vbw todo list`. |
 | Item already done or dropped | Pick an open item. |
 | Same item twice | Name each item once. |
-| A loop is already on and not ended | `vbw loop stop` first. |
-| The current milestone has requirements and is not shipped | Finish or ship it first: each item gets its own milestone. |
+| A loop is already on and not ended | `vbw loop stop` first (twice when it is already stopping and its session is gone). |
+| The current milestone has requirements and is not shipped | Finish or ship it first: each item gets its own milestone. A `[human]` requirement carried over from an earlier ship (skipped, waiting for you) does not count. |
 | `--ceiling` and no session has a cost figure | `vbw statusline on`, or use `--no-ceiling`. |
 
 A missing ceiling choice, `--finish-item` without `--ceiling`, both ceiling
@@ -65,7 +65,9 @@ loop. It records the time and the session that asked, and the loop stops
 before its next step (a run in progress ends first).
 
 - With no loop on, or an ended loop, it prints `no loop is on` and exits 0.
-- A second stop changes nothing.
+- A second stop, while the loop is still stopping, ends it at once and writes
+  the report: the way to end a loop whose own session is gone (only that
+  session's Stop hook ends a stopping loop otherwise).
 
 ## `vbw loop status`
 
