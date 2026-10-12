@@ -32,7 +32,7 @@ Prints each milestone's total (dollars, tokens, sessions) and each run's share.
 | Field | Meaning |
 |---|---|
 | `milestones[]` | `id`, `title`, `status` (`active` or `shipped`), `usd`, `in`, `out`, `sessions`; `usd` is null when no figure was seen, and stays null for a milestone shipped without figures |
-| `runs[]` | `id`, `kind`, `milestone`, `session`, `started`, `ended`, `cost` (`{ usd, in, out }` or null) |
+| `runs[]` | `id` (the run's kind and start second, `qa-20260101T120000Z`; a second run started in that same second gets `-2`, a third `-3`, so no two runs share an id), `kind`, `milestone`, `session`, `started`, `ended`, `cost` (`{ usd, in, out }` or null) |
 | `unknown` | `{ runs, milestones }`: the ids whose cost VBW did not see |
 | `remedy` | what to do about unknown costs |
 
