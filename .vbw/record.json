@@ -15152,7 +15152,15 @@
         "guarded: R15 (C14), R23 (C20), R24 (C23), R31 (C27), R39 (C36), R44 (C44, C45), R45 (C39, C40, C41), R61 (C73, C74, C75, C76, C77), R71 (C115, C121), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R95 (C149, C150), R96 (C151, C152), R99 (C155), R102 (C158, C159), R120 (C185), R128 (C200), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R157 (C244), R159 (C246), R160 (C247, C263, C264), R162 (C249), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "qa": {
+        "result": "fail",
+        "tier": "standard",
+        "tree": "ee103e224f32875f9ced033bb40aed579a767a56ad599120ff4f2a256c62dbde",
+        "at": "2026-10-12T02:17:48Z",
+        "note": "15/17 checks",
+        "rounds": 1
+      }
     }
   ],
   "plans": [
@@ -24801,6 +24809,22 @@
       "attempts": 0,
       "status": "open",
       "note": "No test runs vbw fix done for a fix of the test command (single-file form) while a cause (R168) is active. cmd_fix calls testfiles_plan with ALL=1 in that case (plugin/lib/cmd-fix.sh, the 'if [ -n \"$causes\" ]' branch), so every test file must run, its line must carry no 'ran:' part, the cause line must print once, and 'test files: N ran, 0 reused' must show the true N. tests/fix-done-output.bats pins the cause case for checks only, and tests/fix-done-testfiles.bats has no cause case. Regression test needed: fix-done-testfiles fixture with a cause (e.g. a clone with an empty run store or vbw prove --full not yet run) asserting the one cause line, 'tests/t_X.sh pass Ns' lines without 'ran:', and 'test files: <all> ran, 0 reused'."
+    },
+    {
+      "id": "F135",
+      "req": "R177",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The refusal's 'Next:' line (plugin/hooks/common.jq outside_denial), docs/guards.md line 108 and plugin/agents/dev.md all tell agents to put scratch/debugging files in .vbw/runtime/. In a build or fix run that same guard denies .vbw/runtime/ because lease.files is only the plan's files. Probe: build lease files [src/pay.txt], Write to .vbw/runtime/x.txt -> 'is outside this run's files (src/pay.txt)'. So a Dev (who only runs in build/fix runs) following the prompt or the Next advice is refused again; the criterion said a build or fix run writes its plan files. Regression test should: open a build run, take the path named in the outside-denial's Next line (or in dev.md), write to it, and require it is allowed; or require the Next text for build/fix runs to name only the plan files. Existing tests/guard-outside.bats checks only that 'Next: ' exists, so it cannot catch this."
+    },
+    {
+      "id": "F136",
+      "req": "R177",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "plugin/agents/lead.md: commit e32afe22 (P126.2) cut 'No invented independence, no needless chains.' from the Lead's rule 1 (Real dependencies) to fit the word budget. That is an unplanned change to an unrelated quality rule; the plan only asked for scratch-file wording and staying within budget. Restore the sentence and make the room elsewhere (shorten the new scratch sentence or a different line). Regression test: a standards/prompt test pinning that the Lead prompt still contains the 'needless chains' rule."
     }
   ],
   "todos": [
