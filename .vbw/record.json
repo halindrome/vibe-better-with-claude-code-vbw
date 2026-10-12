@@ -27302,6 +27302,11 @@
       "text": "Agents get one scratch folder inside the project, .vbw/runtime/scratch/: writable by agents under plan, build and fix leases, refused under read-only leases (QA, map); vbw's own runtime files (glance.json, run-open, cost.*.json, proof outputs) stay out of reach; the R177 refusal, the Dev and Lead briefs and docs/guards.md name that folder. Chosen over QA's option of pointing build and fix agents to their plan files only",
       "why": "Devs lost /tmp with R177 and need somewhere for a debugging script or a log; a gitignored folder the proof never reads keeps the record of work untouched, and a subfolder cannot collide with vbw's own files (owner, 2026-10-11: all project related files inside the project folder)",
       "at": "2026-10-12T02:22:02Z"
+    },
+    {
+      "id": "D301",
+      "at": "2026-10-12T04:09:49Z",
+      "text": "Contract approved: 166 requirements, 284 checks, 370 plans (28100f18c8fc)"
     }
   ],
   "commands": {
