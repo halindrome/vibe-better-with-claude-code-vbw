@@ -48,7 +48,7 @@ def simple($q):
   [splits("\\s+") | select(length > 0)]
   | reduce .[] as $w ({words: [], out: [], in: [], next: null};
       if .next != null then .[.next] += [$w | restore($q)] | .next = null
-      else ([$w | capture("^[0-9]*&?(?<op>>>?|>\\||<)(?<rest>.*)$")] | first) as $r
+      else ([$w | capture("^[0-9]*&?(?<op>>\\||>>?|<)(?<rest>.*)$")] | first) as $r
         | if $r == null then .words += [$w | restore($q)]
           else (if $r.op == "<" then "in" else "out" end) as $k
             | if $r.rest == "" or $r.rest == "&" then .next = $k
@@ -79,7 +79,7 @@ def substitutions:
 # Every simple command the shell would run.
 def commands($depth):
   strip_heredocs | mask as $m
-  | ( [$m.text | splits("\\|\\||&&|;;?|\\||(?<![<>])&(?!>)|\\n|\\(|\\)|\\{|\\}|`") | select(test("\\S"))][]
+  | ( [$m.text | splits("\\|\\||&&|;;?|(?<!>)\\||(?<![<>])&(?!>)|\\n|\\(|\\)|\\{|\\}|`") | select(test("\\S"))][]
       | simple($m.q) as $c
       | $c,
         ( select($depth > 0)
