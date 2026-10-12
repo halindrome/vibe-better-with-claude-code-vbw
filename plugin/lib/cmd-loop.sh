@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # vbw loop start [--session ID] ITEM... (--ceiling USD [--finish-item] | --no-ceiling)
-#   | stop | status [--json]: the loop through the backlog (R178; docs/loop.md). The loop's state
+#   | stop | status [--json] | park [REASON]: the loop through the backlog (R178; docs/loop.md). The loop's state
 # lives in the record (loop), so any session can read it or stop it.
 
 LOOP_USAGE="usage: vbw loop start [--session ID] ITEM... --ceiling USD [--finish-item] | --no-ceiling   |   vbw loop stop   |   vbw loop status [--json]"
@@ -22,8 +22,30 @@ cmd_loop() {
     next)
       [ $# -eq 1 ] && [ "$1" = --json ] || vbw_usage_error "usage: vbw loop next --json"
       loop_next ;;
+    park)
+      [ $# -le 1 ] || vbw_usage_error "usage: vbw loop park [REASON]"
+      loop_park_cmd "${1:-parked by hand (vbw loop park)}" ;;
     *) vbw_usage_error "$LOOP_USAGE" ;;
   esac
+}
+
+# loop_park_cmd REASON: parks the item in progress (the kernel's own step, like vbw loop next).
+loop_park_cmd() {
+  vbw_require_project
+  # shellcheck source=cmd-next.sh
+  . "$VBW_LIB/cmd-next.sh"
+  # shellcheck source=loop-step.sh
+  . "$VBW_LIB/loop-step.sh"
+  local rec cur
+  rec=$(record_read)
+  printf '%s' "$rec" | jq -e '.loop != null and .loop.ended == null' > /dev/null \
+    || vbw_die "no loop is on. Next: start one with /vbw:loop"
+  printf '%s' "$rec" | jq -e '.lease == null' > /dev/null \
+    || vbw_die "a run is open. Next: wait for it to end (vbw status), then run vbw loop park again"
+  cur=$(printf '%s' "$rec" | jq -r '[.loop.items[] | select(.status == "in_progress")][0].id // empty')
+  [ -n "$cur" ] || vbw_die "no item is in progress. Next: see the loop with vbw loop status"
+  loop_park_item "$cur" "$1"
+  printf 'parked %s: %s\n' "$cur" "$1"
 }
 
 # loop_next: the kernel's loop step (loop-step.sh): off, the end's answer again, or the step.
