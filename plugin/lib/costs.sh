@@ -20,10 +20,12 @@ costs_figures() {
     then {usd: (.usd | r), in, out} else null end' "$f" 2> /dev/null || printf 'null\n'
 }
 
-# costs_diff END START: END minus START per field (JSON figures), null when either is null.
+# costs_diff END START: END minus START per field (JSON figures), null when either is null or when
+# any field fell (a restarted session or a replaced file: VBW cannot tell what was spent).
 costs_diff() {
   jq -nc "$COSTS_ROUND"' $ARGS.positional[0] as $e | $ARGS.positional[1] as $s
-    | if $e == null or $s == null then null
+    | if $e == null or $s == null
+        or $e.usd < $s.usd or $e.in < $s.in or $e.out < $s.out then null
       else {usd: (($e.usd - $s.usd) | r), in: ($e.in - $s.in), out: ($e.out - $s.out)} end' \
     --jsonargs "${1:-null}" "${2:-null}"
 }
@@ -41,7 +43,7 @@ costs_sessions() {
 # when the record (a file) has one; null for a shipped milestone without one (its ship saw no
 # figures, and what is spent since belongs to the milestones after it); else the sum over the sessions with a side file of the latest
 # figures minus the milestone's baseline for that session (a session without a baseline counts from
-# its first figure, that is whole), with the number of sessions counted. null when no session has
+# its first figure, that is whole; so does a session whose latest figure fell below its baseline), with the number of sessions counted. null when no session has
 # figures.
 costs_milestone_total() {
   local rec=${1:-} m=${2:-} sid figs lines=""
@@ -62,6 +64,7 @@ costs_milestone_total() {
   printf '%s' "$lines" | jq -sc --slurpfile rec "$rec" --arg m "$m" "$COSTS_ROUND"'
     ($rec[0].costs.milestones[$m].baseline // {}) as $b
     | [.[] | .f as $f | ($b[.s] // {usd: 0, in: 0, out: 0}) as $z
+        | (if $f.usd < $z.usd or $f.in < $z.in or $f.out < $z.out then {usd: 0, in: 0, out: 0} else $z end) as $z
         | {usd: ($f.usd - $z.usd), in: ($f.in - $z.in), out: ($f.out - $z.out)}]
     | {usd: (map(.usd) | add | r), in: (map(.in) | add), out: (map(.out) | add), sessions: length}'
 }
