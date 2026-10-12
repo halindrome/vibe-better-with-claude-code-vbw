@@ -15212,10 +15212,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "a440040341ab0358c98f19c59bde459f4735029a8357d6ff7df8eea4bcf344a7",
-        "at": "2026-10-12T07:50:12Z",
-        "note": "27/29 checks",
-        "rounds": 3
+        "tree": "dcf4f6f7935ccc74e7863d50c2bed92cc012fd77ce95431572f5acb842dd8c85",
+        "at": "2026-10-12T08:50:45Z",
+        "note": "28/30 checks",
+        "rounds": 4
       },
       "escalations": [
         {
@@ -24975,7 +24975,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "During a plan run, a shell redirect to a path outside the project that begins with ~ or $HOME is not denied. The guard reads the text of the redirect target, not what the shell turns it into, so it treats ~/tests/a.test.js or \"$HOME/tests/a.test.js\" as a project-relative test file and lets it through; bash writes it into the home folder. Probe (guard-bash.jq, plan lease, Dev agent): \"echo a > ~/tests/a.test.js\", \"echo a > $HOME/tests/a.test.js\" and echo a > \"$HOME/tests/a.test.js\" all give no answer (allowed). Under a build lease the same forms are denied, but only by accident and with the wrong reason (\"~/src/pay.txt is outside this run's files\"), not the R177 outside-the-project reason. The goal says any redirect outside the project is denied, so this is a gap. Fix: treat a redirect or write target that starts with ~, or contains $ or a backtick or $( (an expansion the guard cannot resolve), as outside the project during a run (refuse with the outside-the-project reason). Regression test (tests/guard-outside.bats): under a plan lease, a Dev Bash call with a redirect to ~/tests/a.test.js, $HOME/tests/a.test.js and \"$HOME/tests/a.test.js\" must be denied with \"outside the project\" and Next:; the same redirect to tests/a.test.js stays allowed."
     },
     {
@@ -24983,8 +24983,24 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The device-file exception in run_write_denial (plugin/hooks/common.jq: /dev/null, /dev/stdout, /dev/stderr, /dev/tty are not refused) is a rule docs/guards.md promises, but only /dev/null is exercised (indirectly, tests/hooks-guard.bats line 200: npm test > /dev/null 2>&1 && ...). Nothing tests /dev/stdout, /dev/stderr or /dev/tty, and tests/guard-outside.bats has no test that a redirect such as 2>/dev/null is still allowed under a run, so narrowing or widening the regex would pass every test. Also not in plan task 1 or any recorded decision (D289, D300 say nothing of devices); a /dev/null exception is clearly needed, but the plan or a decision should record it. Regression test (tests/guard-outside.bats): under a build lease, \"ls 2>/dev/null\", \"echo x > /dev/stderr\", \"echo x > /dev/stdout\", \"echo x > /dev/tty\" are allowed, while \"echo x > /dev/sda\" and \"echo x > /dev/null/x\" are denied with \"outside the project\". Also record the exception in a decision. Minor wording: for a read-only run with an empty file list the refusal reads \"there only nothing: its agents only read\"; say \"there nothing\" instead."
+    },
+    {
+      "id": "F149",
+      "req": "R177",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "A shell redirect written as >&FILE or >& FILE (bash's 'stdout and stderr to FILE', the same as &> FILE) to a path outside the project is not denied during a run. Probe (guard-bash.jq, build lease and plan lease, Dev/Lead agent): 'echo a >&/tmp/a', 'echo a >& /tmp/a.test.js' give no answer (allowed), while 'echo a &> /tmp/x' and 'echo a > /tmp/x' are denied. Cause: simple() in plugin/hooks/guard-bash.jq drops any redirect whose rest starts with & (meant for fd copies like 2>&1 and >&2), so a >& redirect to a file is dropped whole (D304 'fd redirects stay whole' only covers the numeric form). The criterion says a shell redirect to /tmp or another outside folder is denied. Fix: treat >&WORD (and >& WORD) as a file redirect unless WORD is digits or -. Regression test (tests/guard-outside.bats): under a build lease and a plan lease, a Dev Bash call 'echo a >&/tmp/a' and 'echo a >& /tmp/a' is denied with 'outside the project' and Next:; 'ls 2>&1', 'echo a >&2' and 'echo a >&-' stay allowed."
+    },
+    {
+      "id": "F150",
+      "req": "R177",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "tests/guard-outside.bats does not check that the refusal names the path for a shell redirect, a relative climb or an interpreter write. The criterion says each denial names the path; only the first test (Write to /tmp/scratch.txt) asserts that the output holds the path. denied_outside checks 'outside the project', 'Next:' and the scratch advice, never the path, so a change that makes the guard-bash redirect rule pass a different string (for example the project-relative form, or the empty string) to the denial would pass every test. Regression test: make denied_outside take the expected path as a second argument and assert the reason contains it, for 'echo hi > /tmp/scratch.txt', the '../outside.txt' write, the python3/node writes to /tmp/q and /tmp/q.js, and the '../outside.txt' interpreter write."
     }
   ],
   "todos": [
