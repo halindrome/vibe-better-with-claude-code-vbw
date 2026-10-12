@@ -93,7 +93,7 @@ def commands($depth):
 # --- rules -------------------------------------------------------------------
 
 def git_words: .args | until(length == 0 or (.[0] | startswith("-") | not);
-  if .[0] | test("^-[Cc]$") then .[2:] else .[1:] end);
+  if .[0] | test("^(-[Cc]|--git-dir|--work-tree|--namespace|--exec-path|--super-prefix|--config-env)$") then .[2:] else .[1:] end);
 
 def destructive:
   ( select(.cmd == "rm" and any(.args[]; test("^-[A-Za-z]*[rR]|^--recursive$")))
@@ -141,7 +141,9 @@ def approve_call:
 
 def loop_call:
   (if .cmd | shell then {cmd: ((.args[0] // "") | basename), args: .args[1:]} else . end)
-  | select(.cmd == "vbw" and (.args[0] // "") == "loop" and (any(.args[]; test("^(--help|-h)$")) | not))
+  | select(.cmd == "vbw" and (.args[0] // "") == "loop")
+  # A bare help form (vbw loop --help, vbw loop start -h) is read, not run; --help anywhere else is a value.
+  | select((.args[1:] | (. == ["--help"] or . == ["-h"] or (length == 2 and (.[1] | test("^(--help|-h)$"))))) | not)
   | (.args[1] // "");
 
 def everywhere:
