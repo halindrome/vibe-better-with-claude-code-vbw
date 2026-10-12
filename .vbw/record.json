@@ -24380,7 +24380,7 @@
         "plugin/bin/vbw"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "record.jq: validate a top-level `loop` field (unknown keys refused): items (non-empty array of {id T<n>, text, proof auto|human, status waiting|in_progress|shipped|parked, optional milestone M<n>, head (40-hex), baseline (per-session {usd,in,out,at}), retried {fixes:[],plans:[]}, reverts (array of strings), cost (null or {usd,in,out}), reason, at}), ceiling (null or {usd > 0, finish_item boolean}), session (string or null), started_at (ISO), baseline (per-session {usd,in,out,at} like a milestone's), optional stopping {at, session}, ended {at, reason}, report (relative path). tests/loop-help-docs.bats lists the malformed loops that must be refused (exit 3)",
@@ -24427,7 +24427,7 @@
         "docs/guards.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "guard-bash.jq, in `everywhere` beside approve_call: a loop_call rule on the command position (through sh -c, $(...) and wrappers as approve_call is) denying `vbw loop start` with exactly `only the user arms the loop: /vbw:loop ITEM... --ceiling USD is the user's own command, like /vbw:approve\\nNext: ask the user to run /vbw:loop with the items and the ceiling they choose; never run vbw loop start yourself`, and `vbw loop next` or `vbw loop park` with exactly `vbw loop next and vbw loop park are the kernel's own loop steps: the Stop hook of /vbw:loop runs them, never a tool call\\nNext: end your turn; the loop's Stop hook gives the next step`; `vbw loop stop`, `status`, `--help` and the words inside quoted text stay allowed (tests/loop-guard.bats)",
@@ -24448,7 +24448,7 @@
         "docs/costs.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/loop.md (new): what the loop is for in plain words, then `vbw loop start ITEM...` with the three ceiling forms (D317: --ceiling USD stops before the next step, --ceiling USD --finish-item lets the item finish, --no-ceiling is an explicit choice), every refusal and its remedy (vbw statusline on or --no-ceiling when no figure is seen), `vbw loop stop` (from any session, the time and session recorded, no loop is on, a second stop changes nothing), `vbw loop status` and `--json` (the spend as a milestone's total, the words under, reached, cannot tell, and that cannot tell counts as reached except with --no-ceiling)",
@@ -31828,6 +31828,19 @@
         "started": "2026-10-12T18:02:35Z",
         "ended": "2026-10-12T18:54:28Z",
         "cost": null
+      },
+      {
+        "id": "build-20261012T185617Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T18:56:17Z",
+        "ended": "2026-10-12T19:05:31Z",
+        "cost": {
+          "usd": 2.560199,
+          "in": 4149,
+          "out": 567
+        }
       }
     ],
     "milestones": {
