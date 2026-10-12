@@ -25642,6 +25642,13 @@
       "sort": "later",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T125",
+      "text": "Read-only runs (QA, map) and the agents' scratch folder: P125's QA could not run an experiment for F137 because its lease allows no write at all (D300 gives .vbw/runtime/scratch/ to plan, build and fix only). Decide whether a QA or Scout may write scratch files there; QA's mandate (changes nothing) weighs against, its need to probe weighs for",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
