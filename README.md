@@ -299,6 +299,14 @@ Full reference: [docs/workflows.md](docs/workflows.md).
 
 ---
 
+## Night shift
+
+`/vbw:loop` works through todo items you name while you are away: for each it plans, builds, proves and ships on its own, approving only a contract that is exactly the item you named. You set a spend ceiling, or choose none on purpose. An item that fails twice is reverted with `git revert` and parked, and the loop moves on; a `[human]` requirement waits for you. It stops at the ceiling, at the end of the list, or on `vbw loop stop`, and leaves `.vbw/loop-report.md`: what shipped, what was parked and why, what it cost. Details: [docs/loop.md](docs/loop.md).
+
+The promise: nothing is approved without a record of who approved it, and nothing the loop does leaves the project. The loop never leaves the project: it never pushes, releases, publishes or deploys; every ship is a local commit for you to review.
+
+---
+
 ## How It Stays Safe
 
 | What could go wrong | What stops it |
