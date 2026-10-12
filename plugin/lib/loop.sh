@@ -27,17 +27,35 @@ loop_item_text() {
   esac
 }
 
-# loop_spend RECORD: the loop's spend as {usd, in, out, sessions}: the sum over the sessions with a
-# side file of the current figures minus the loop's baseline, exactly as a milestone's total is
-# (costs_milestone_total reads a baseline from the record it is given, so it is given the loop's as a
-# one-milestone record). null when no session has a figure.
+# LOOP_USD_JQ: the jq definition of usd, a dollar amount to the cent ("$5.00").
+# shellcheck disable=SC2034 # used by the loop commands that source this file
+LOOP_USD_JQ='def usd: "$" + (. * 100 | round | tostring | if length < 3 then ("000" + .)[-3:] else . end | .[:-2] + "." + .[-2:]);'
+
+# loop_figures_now: every known session's current figures as {SID: {usd, in, out, at}}, the baseline
+# of a loop, an item or a milestone.
+loop_figures_now() {
+  local base="{}" sid figs
+  # shellcheck source=costs.sh
+  . "$VBW_LIB/costs.sh"
+  while IFS= read -r sid; do
+    [ -n "$sid" ] || continue
+    figs=$(costs_figures "$sid")
+    [ "$figs" = null ] || base=$(printf '%s' "$base" | jq -c --arg s "$sid" --arg at "$(vbw_now)" --argjson f "$figs" '.[$s] = $f + {at: $at}')
+  done < <(costs_sessions)
+  printf '%s\n' "$base"
+}
+
+# loop_spend RECORD [ITEM]: the spend as {usd, in, out, sessions}: the sum over the sessions with a
+# side file of the current figures minus the baseline (the loop's, or the item's own), exactly as a
+# milestone's total is (costs_milestone_total reads a baseline from the record it is given, so it is
+# given the baseline as a one-milestone record). null when no session has a figure.
 loop_spend() {
   local tmp out
   # shellcheck source=costs.sh
   . "$VBW_LIB/costs.sh"
   tmp=$(mktemp "$VBW_RUNTIME/loop.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"
   vbw_guard_add file "$tmp"
-  jq '{costs: {milestones: {loop: {baseline: (.loop.baseline // {})}}}}' "$1" > "$tmp"
+  jq --arg i "${2:-}" '{costs: {milestones: {loop: {baseline: (if $i == "" then .loop.baseline else ([.loop.items[] | select(.id == $i)][0].baseline) end // {})}}}}' "$1" > "$tmp"
   out=$(costs_milestone_total "$tmp" loop)
   vbw_guard_drop "$tmp"
   rm -f "$tmp"

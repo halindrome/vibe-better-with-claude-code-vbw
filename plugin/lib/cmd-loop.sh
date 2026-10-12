@@ -26,45 +26,22 @@ cmd_loop() {
   esac
 }
 
-# loop_next: the kernel's loop step (grown by the cycle): off, a lease of this session (vbw next's
-# answer), stopped (written once as the loop's end), or the delegated approval and then vbw next's
-# answer with the loop's state added.
+# loop_next: the kernel's loop step (loop-step.sh): off, the end's answer again, or the step.
 loop_next() {
   vbw_require_project
   # shellcheck source=cmd-next.sh
   . "$VBW_LIB/cmd-next.sh"
   # shellcheck source=loop-step.sh
   . "$VBW_LIB/loop-step.sh"
-  local rec next spend word
+  local rec
   rec=$(record_read)
   if ! printf '%s' "$rec" | jq -e '.loop != null' > /dev/null; then
     printf '{"action":"off","reason":"no loop is on"}\n'; return 0
   fi
   if printf '%s' "$rec" | jq -e '.loop.ended != null' > /dev/null; then
-    printf '%s' "$rec" | jq -c '{action: "stopped", reason: .loop.ended.reason}'; return 0
+    loop_ended_answer "$rec"; return 0
   fi
-  if printf '%s' "$rec" | jq -e --arg s "$(vbw_session)" '.lease != null and (.lease.session == null or .lease.session == $s)' > /dev/null; then
-    next=$(cmd_next --json) || exit $?
-    printf '%s\n' "$next"; return 0
-  fi
-  if printf '%s' "$rec" | jq -e '.loop.stopping != null' > /dev/null; then
-    local reason
-    reason=$(printf '%s' "$rec" | jq -r '.loop.stopping | "stopped by the user (\(if .session == null then "no session" else "session \(.session)" end))"')
-    record_update '.loop.ended = {at: $at, reason: $r}' --arg at "$(vbw_now)" --arg r "$reason"
-    record_commit "chore(vbw): loop ended" .vbw/record.json
-    jq -nc --arg r "$reason" '{action: "stopped", reason: $r}'; return 0
-  fi
-  next=$(cmd_next --json) || exit $?
-  loop_delegate "$rec" "$next"
-  next=$(cmd_next --json) || exit $?
-  rec=$(record_read)
-  spend=$(loop_spend "$VBW_RECORD")
-  word=$(loop_word "$VBW_RECORD" "$spend")
-  printf '%s' "$next" | jq -c --slurpfile r <(printf '%s' "$rec") --argjson spend "$spend" --arg word "$word" '
-    $r[0].loop as $l
-    | ([$l.items | to_entries[] | select(.value.status == "in_progress")][0]) as $cur
-    | . + {loop: {item: (if $cur == null then null else {id: $cur.value.id, text: $cur.value.text, n: ($cur.key + 1), of: ($l.items | length)} end),
-        spend: $spend, ceiling: $l.ceiling, word: (if $word == "null" then null else $word end)}}'
+  loop_step
 }
 
 # loop_start ARGS...: validates the usage first (exit 2), then the state (exit 1), then writes.
@@ -105,7 +82,7 @@ loop_start() {
     seen="$seen$id "
     text=$(printf '%s' "$rec" | jq -r --arg t "$id" '.todos[] | select(.id == $t) | .text')
     proof=$(loop_item_proof "$text")
-    text=$(loop_norm "$(loop_item_text "$text")")
+    text=$(loop_norm "$text")
     built=$(printf '%s' "$built" | jq -c --arg i "$id" --arg t "$text" --arg p "$proof" '. += [{id: $i, text: $t, proof: $p, status: "waiting"}]')
     list="$list${list:+, }$id"
   done
@@ -115,14 +92,8 @@ loop_start() {
       | any($r.requirements[]; .milestone == $m and ((.proof == "human" and (.id as $i | any($r.phases[]; .milestone != $m and any(.reqs[]; . == $i)))) | not)))' > /dev/null \
     && vbw_die "$(printf '%s' "$rec" | jq -r .milestone.id) has requirements and is not shipped. Next: finish or ship it first (vbw next): each item gets its own milestone"
   # Every known session's current figures are the loop's baseline.
-  local base="{}" sid figs
-  # shellcheck source=costs.sh
-  . "$VBW_LIB/costs.sh"
-  while IFS= read -r sid; do
-    [ -n "$sid" ] || continue
-    figs=$(costs_figures "$sid")
-    [ "$figs" = null ] || base=$(printf '%s' "$base" | jq -c --arg s "$sid" --arg at "$(vbw_now)" --argjson f "$figs" '.[$s] = $f + {at: $at}')
-  done < <(costs_sessions)
+  local base
+  base=$(loop_figures_now)
   if [ -n "$ceiling" ] && [ "$base" = "{}" ]; then
     vbw_die "no session has a cost figure, so a ceiling cannot be measured. Next: run vbw statusline on, or start with --no-ceiling"
   fi
@@ -170,8 +141,7 @@ loop_status() {
          stopping: ($l.stopping // null), ended: ($l.ended // null), report: ($l.report // null)}' "$VBW_RECORD"
     return 0
   fi
-  jq -r --argjson spend "$spend" --arg word "$word" '
-    def usd: "$" + (. * 100 | round | tostring | if length < 3 then ("000" + .)[-3:] else . end | .[:-2] + "." + .[-2:]);
+  jq -r --argjson spend "$spend" --arg word "$word" "$LOOP_USD_JQ"'
     .loop as $l
     | "loop \(if $l.ended != null then "ended" elif $l.stopping != null then "stopping" else "on" end)",
       ($l.items[] | "  \(.id) [\(.status)\(if .proof == "human" then ", human" else "" end)] \(.text)"),
