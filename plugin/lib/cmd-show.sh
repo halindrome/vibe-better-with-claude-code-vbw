@@ -20,8 +20,10 @@ cmd_show() {
     roadmap)
       printf '%s' "$record" | jq -r "$SHOW_JQ_DEFS"'
         . as $r
-        | (.shipped[] | "\(.id) \(.title) [shipped \(.at[0:10])]"),
-          (if .milestone.status == "shipped" then empty else
+        | ([.shipped[] | {id, title, at, line: "\(.id) \(.title) [shipped \(.at[0:10])]"}]
+           + [(.parked // [])[] | {id, title, at, line: "\(.id) \(.title) [parked \(.at[0:10]): \(.reason)]"}]
+           | sort_by(.id[1:] | tonumber) | .[].line),
+          (if .milestone.status == "shipped" or .milestone.status == "parked" then empty else
              "\(.milestone.id) \(.milestone.title) [\(.milestone.status)]",
              ((.phases[] | select(.milestone == $r.milestone.id)) as $ph
                | "  \($ph.id) \($ph.title) [\($ph | phase_status($r))]",
@@ -160,15 +162,15 @@ show_costs() {
   esac
   # shellcheck source=costs.sh
   . "$VBW_LIB/costs.sh"
-  ids=$(jq -r '[(.shipped[].id), .milestone.id] | unique[]' "$VBW_RECORD")
+  ids=$(jq -r '[(.shipped[].id), ((.parked // [])[].id), .milestone.id] | unique[]' "$VBW_RECORD")
   for m in $ids; do
     t=$(costs_milestone_total "$VBW_RECORD" "$m")
     totals=$(printf '%s' "$totals" | jq -c --arg m "$m" --argjson t "$t" '.[$m] = $t')
   done
   doc=$(jq -c --argjson totals "$totals" --arg remedy "$(costs_remedy)" '
     . as $r
-    | ([.shipped[] | {id, title, status: "shipped"}]
-       + (if any(.shipped[]; .id == $r.milestone.id) then [] else [{id: .milestone.id, title: .milestone.title, status: .milestone.status}] end)
+    | ([.shipped[] | {id, title, status: "shipped"}] + [(.parked // [])[] | {id, title, status: "parked"}]
+       + (if any(.shipped[], (.parked // [])[]; .id == $r.milestone.id) then [] else [{id: .milestone.id, title: .milestone.title, status: .milestone.status}] end)
        | map(. + ($totals[.id] // null | {usd: (.usd // null), in: (.in // null), out: (.out // null), sessions: (.sessions // 0)}))) as $ms
     | {milestones: $ms,
        runs: [(.costs.runs // [])[] | {id, kind, milestone, session: (.session // null), started, ended, cost: (.cost // null)}],

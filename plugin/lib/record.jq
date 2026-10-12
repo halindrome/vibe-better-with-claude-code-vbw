@@ -64,7 +64,7 @@ if type != "object" then ["record must be a JSON object"] else
 | (arr("checks")) as $checks
 | (arr("phases")) as $phases
 | (arr("plans")) as $plans
-| ([($r.shipped // [])[]?.id] + [$r.milestone.id?]) as $milestones
+| ([($r.shipped // [])[]?.id] + [($r.parked // [])[]?.id] + [$r.milestone.id?]) as $milestones
 | ($plans | map({key: .id, value: (.after // [])}) | from_entries) as $graph
 | [
     ( select(($r | has("protected") | not) and $r.schema == 4)
@@ -80,10 +80,11 @@ if type != "object" then ["record must be a JSON object"] else
       | "protected must be the sorted list of every file the checks protect, each once" ),
     ( $r | keys[]
       | select(one_of(["schema","project","milestone","requirements","checks","phases","plans",
-                       "fixes","todos","decisions","commands","test_files","settings","evidence","lease","shipped","converted","recommendation","protected","costs","loop"]) | not)
+                       "fixes","todos","decisions","commands","test_files","settings","evidence","lease","shipped","parked","converted","recommendation","protected","costs","loop"]) | not)
       | "unknown key: \(.)" ),
     ( ["requirements","checks","phases","plans","fixes","todos","decisions","shipped"][]
       | select(($r[.] | type) != "array") | "\(.) must be an array" ),
+    ( select($r | has("parked")) | select(($r.parked | type) != "array") | "parked must be an array" ),
 
     ( select(($r.project.name? | nonempty) | not) | "project.name must be a non-empty string" ),
     ( ($ARGS.named.interview[0]? // null) as $allowed
@@ -126,7 +127,7 @@ if type != "object" then ["record must be a JSON object"] else
     ( $r.milestone
       | ( select((.id? | type == "string" and test("^M[0-9]+$")) | not) | "milestone.id must look like M1" ),
         ( select((.title? | nonempty) | not) | "milestone.title must be a non-empty string" ),
-        ( select((.status? | one_of(["active","shipped"])) | not) | "milestone.status must be active or shipped" ) ),
+        ( select((.status? | one_of(["active","shipped","parked"])) | not) | "milestone.status must be active, shipped or parked" ) ),
     ( arr("shipped")[]
       | ( select(((.id | type == "string" and test("^M[0-9]+$")) and (.title | nonempty) and (.at | iso)) | not)
           | "shipped milestones need an id, a title and an ISO-8601 UTC time" ),
@@ -134,6 +135,17 @@ if type != "object" then ["record must be a JSON object"] else
     ( arr("shipped") | [.[].id] | group_by(.) | map(select(length > 1) | "milestone \(.[0]) is shipped twice") | .[] ),
     ( select(($r.milestone.status == "shipped") != any(arr("shipped")[]; .id == $r.milestone.id))
       | "the current milestone is shipped exactly when it is in shipped" ),
+    ( arr("parked")[]
+      | ( select(((.id | type == "string" and test("^M[0-9]+$")) and (.title | nonempty) and (.at | iso) and (.reason | nonempty)) | not)
+          | "parked milestones need an id, a title, an ISO-8601 UTC time and a reason" ),
+        ( keys[] | select(one_of(["id","title","at","reason"]) | not) | "a parked milestone has an unknown field: \(.)" ) ),
+    ( arr("parked") | [.[].id] | group_by(.) | map(select(length > 1) | "milestone \(.[0]) is parked twice") | .[] ),
+    ( arr("parked")[] | .id as $p
+      | select(any(arr("shipped")[]; .id == $p)) | "milestone \($p) cannot be both shipped and parked" ),
+    ( select(($r.milestone.status == "parked") != any(arr("parked")[]; .id == $r.milestone.id))
+      | "the current milestone is parked exactly when it is in parked" ),
+    ( arr("parked")[].id as $p
+      | ( (arr("requirements")[], arr("phases")[], arr("plans")[]) | select(.milestone? == $p) | "\(.id) belongs to parked milestone \($p): a park leaves no requirement, phase or plan" ) ),
 
     id_rules($reqs; "^R[0-9]+$"),
     id_rules($checks; "^C[0-9]+$"),

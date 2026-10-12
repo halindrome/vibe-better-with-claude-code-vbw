@@ -90,6 +90,8 @@ def fix_files($r): if .command then ["*"]
     result("run"; false; "A VBW \(.lease.kind) run (\(.lease.run)) belongs to another session: wait for it, or check vbw status"; {lease: .lease})
   elif .lease != null then
     result("run"; false; "A VBW \(.lease.kind) run (\(.lease.run)) is open: if its workflow is still running in this session, wait for it; otherwise run vbw run end"; {lease: .lease})
+  elif .milestone.status == "parked" then
+    result("milestone"; true; "Milestone \(.milestone.id) is parked (\([.parked[]? | select(.id == $m) | .reason] | first // "")): start the next milestone (vbw milestone start TITLE)"; {})
   elif .milestone.status == "shipped" then
     result("milestone"; true; "Milestone \(.milestone.id) is shipped: start the next milestone (vbw milestone start TITLE)"; {})
   elif ($current | length) == 0 and $legacy then

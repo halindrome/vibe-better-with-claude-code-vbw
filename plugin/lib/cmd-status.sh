@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # vbw status [--json]: where the project stands, rendered from the record (zero
 # tokens). Progress counts the current milestone's requirements; earlier
-# milestones are listed as shipped.
+# milestones are listed as shipped or parked.
 
 # shellcheck source=interview.sh
 . "$VBW_LIB/interview.sh"
@@ -15,6 +15,7 @@ cmd_status() {
     printf '%s\n' "$record" | jq --argjson iv "$interview" '.milestone.id as $m | [.requirements[] | select(.milestone == $m)] as $cur | {
       milestone: .milestone,
       shipped: [.shipped[].id],
+      parked: [(.parked // [])[].id],
       requirements: {total: ($cur | length),
                      proven: ([$cur[] | select(.status == "proven" or .status == "accepted")] | length)},
       phases: ([.phases[] | select(.milestone == $m)] | length),
@@ -30,6 +31,7 @@ cmd_status() {
     "requirements: \([$cur[] | select(.status == "proven" or .status == "accepted")] | length)/\($cur | length) proven",
     "phases: \([.phases[] | select(.milestone == $m)] | length) · open fixes: \([.fixes[] | select(.status == "open")] | length) · open todos: \([.todos[] | select(.status == "open" or .status == "in_progress")] | length)",
     (if (.shipped | length) > 0 then "shipped: \([.shipped[] | "\(.id) \(.title)"] | join(", "))" else empty end),
+    (if ((.parked // []) | length) > 0 then "parked: \([.parked[] | "\(.id) (\(.reason))"] | join(", "))" else empty end),
     (if $iv.interviewed then "interview (kept \($iv.kept)): level \($iv.level) · depth \($iv.depth) · involvement \($iv.involvement)" else "interview: the interview has not been done" end),
     (.recommendation as $r | if $r == null then "what\u0027s next: none yet (ask /vbw:vibe what\u0027s next)"
       elif $r.empty then "what\u0027s next: the backlog is empty (written \($r.at[0:10]))"

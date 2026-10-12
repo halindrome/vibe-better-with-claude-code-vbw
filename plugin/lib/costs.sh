@@ -40,7 +40,7 @@ costs_sessions() {
 }
 
 # costs_milestone_total RECORD M: the milestone's cost as {usd, in, out, sessions}. The frozen total
-# when the record (a file) has one; null for a shipped milestone without one (its ship saw no
+# when the record (a file) has one; null for a shipped or parked milestone without one (its ship saw no
 # figures, and what is spent since belongs to the milestones after it); else the sum over the sessions with a side file of the latest
 # figures minus the milestone's baseline for that session (a session without a baseline counts from
 # its first figure, that is whole; so does a session whose latest figure fell below its baseline), with the number of sessions counted. null when no session has
@@ -51,7 +51,7 @@ costs_milestone_total() {
   if jq -e --arg m "$m" '.costs.milestones[$m].total? != null' "$rec" > /dev/null 2>&1; then
     jq -c --arg m "$m" '.costs.milestones[$m].total' "$rec"; return 0
   fi
-  if jq -e --arg m "$m" 'any(.shipped[]?; .id == $m)' "$rec" > /dev/null 2>&1; then
+  if jq -e --arg m "$m" 'any(.shipped[]?, .parked[]?; .id == $m)' "$rec" > /dev/null 2>&1; then
     printf 'null\n'; return 0
   fi
   while IFS= read -r sid; do

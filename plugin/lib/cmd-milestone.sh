@@ -6,20 +6,21 @@
 # milestone starts with no requirements (vbw next: spec), except the [human]
 # ones the user skipped at ship (later): they move in, open, with their history.
 # rename names the current milestone (vbw init calls M1 "First milestone");
-# a shipped milestone keeps the name it shipped with.
+# a shipped or parked milestone keeps the name it left with. A parked milestone
+# (the loop gave it up, with a reason) is left behind exactly like a shipped one.
 
 cmd_milestone() {
   [ $# -eq 2 ] && { [ "$1" = start ] || [ "$1" = rename ]; } && [ -n "$2" ] \
     || vbw_usage_error "usage: vbw milestone start TITLE | milestone rename TITLE"
   vbw_require_project
   if [ "$1" = rename ]; then
-    record_read | jq -e '.milestone.status != "shipped"' > /dev/null \
-      || vbw_die "$(record_read | jq -r '"\(.milestone.id) has shipped: start the next one (vbw milestone start TITLE)"')"
+    record_read | jq -e '(.milestone.status == "active")' > /dev/null \
+      || vbw_die "$(record_read | jq -r '"\(.milestone.id) has \(if .milestone.status == "parked" then "been parked" else "shipped" end): start the next one (vbw milestone start TITLE)"')"
     record_update '.milestone.title = $t' --arg t "$2"
     jq -r '"\(.milestone.id) is now \(.milestone.title)"' "$VBW_RECORD"
     return 0
   fi
-  record_read | jq -e '.milestone.status == "shipped"' > /dev/null \
+  record_read | jq -e '(.milestone.status == "shipped" or .milestone.status == "parked")' > /dev/null \
     || vbw_die "$(record_read | jq -r '"\(.milestone.id) is not shipped yet: finish it first (vbw next)"')"
   # Every known session's current figures become the new milestone's baseline.
   local base="{}" sid figs
