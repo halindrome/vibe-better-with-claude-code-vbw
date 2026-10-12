@@ -191,9 +191,17 @@ guards() {
 # startup included) for a session in the project at DIR.
 statusline() {
   local dir="$1" label="$2" cmd total line
-  jq -nc --arg d "$dir" '{session_id: "bench", workspace: {project_dir: $d}, cwd: $d, model: {display_name: "Opus"}}' > "$work/statusline.json"
+  # With the cost fields Claude Code sends, so the side file write (R173) is inside the measure.
+  jq -nc --arg d "$dir" '{session_id: "bench", workspace: {project_dir: $d}, cwd: $d, model: {display_name: "Opus"},
+    cost: {total_cost_usd: 1.25}, context_window: {total_input_tokens: 12000, total_output_tokens: 3400, context_window_size: 200000}}' > "$work/statusline.json"
+  rm -f "$dir/.vbw/runtime/cost.bench.json"
   cmd="NO_COLOR=1 bash '$PLUGIN/scripts/vbw-statusline.sh'"
   read -r _ total < <(cpu_pair "$work/statusline.json" true "$cmd")
+  if ! jq -e '.session == "bench" and .usd == 1.25 and .in == 12000 and .out == 3400' "$dir/.vbw/runtime/cost.bench.json" > /dev/null 2>&1; then
+    printf 'status line%s: the cost side file was not written, so the measure left the write out\n' "$label" >&2
+    status=1
+  fi
+  rm -f "$dir/.vbw/runtime/cost.bench.json"
   line=$(printf 'status line%s: %s ms CPU per call; budget %s ms' "$label" "$total" "$STATUS_MS")
   if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$total" "$STATUS_MS"; then
     printf '%s\n' "$line"
