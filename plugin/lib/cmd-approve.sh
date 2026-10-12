@@ -27,18 +27,32 @@ cmd_approve() {
   hash=$(contract_hash "$record")
   [ -z "$want" ] || [ "$want" = "${hash:0:12}" ] \
     || vbw_die "the contract changed since you were asked (now ${hash:0:12}): review it again (vbw show contract); nothing was approved"
+  approve_record "$record" "$hash" "$(approve_text "$record" "$hash")"
+}
+
+# approve_text RECORD HASH: the decision's words for the user's approval.
+approve_text() {
+  printf '%s' "$1" | jq -r "$VBW_JQ_DEFS"'
+    def express_text: . as $r | [.phases[] | select(.milestone == $r.milestone.id and .tier == "express") | .id as $p | .reqs as $q
+        | "express: \($p) (\([$q[], ($r.checks[] | select(.req as $c | any($q; . == $c)) | .id), ($r.plans[] | select(.phase == $p) | .id)] | join(", ")))"]
+      | if length > 0 then "; " + join("; ") else "" end;
+    "Contract approved: \(.requirements | length) requirements, \(.checks | length) checks, \(.plans | length) plans (\($h[0:12]))\(express_text)"' --arg h "$2"
+}
+
+# approve_record RECORD HASH DECISION_TEXT: every write of an approval, whoever gives it (the user's
+# vbw approve; the loop on the user's behalf, lib/loop-step.sh): the decision with that text and its
+# strict commit (taken back when the commit fails), consent for the contract, then the shape, the
+# approved-contract snapshot and the project commands.
+approve_record() {
+  local record=$1 hash=$2
   if contract_approved "$hash"; then
     printf 'contract %s is already approved\n' "${hash:0:12}"
   else
     local before
     before=$(cat "$VBW_RECORD")
     record_update "$VBW_JQ_DEFS"'
-      def express_text: . as $r | [.phases[] | select(.milestone == $r.milestone.id and .tier == "express") | .id as $p | .reqs as $q
-          | "express: \($p) (\([$q[], ($r.checks[] | select(.req as $c | any($q[]; . == $c)) | .id), ($r.plans[] | select(.phase == $p) | .id)] | join(", ")))"]
-        | if length > 0 then "; " + join("; ") else "" end;
-      .decisions += [{id: (.decisions | next_id("D")), at: $at,
-        text: "Contract approved: \(.requirements | length) requirements, \(.checks | length) checks, \(.plans | length) plans (\($h[0:12]))\(express_text)"}]' \
-      --arg h "$hash" --arg at "$(vbw_now)"
+      .decisions += [{id: (.decisions | next_id("D")), at: $at, text: $text}]' \
+      --arg text "$3" --arg at "$(vbw_now)"
     if ! record_commit --strict "chore(vbw): approve contract ${hash:0:12}"; then
       # Take the decision back: no approval without its commit.
       record_update '.decisions |= map(select(.id != $d))' --arg d "$(printf '%s' "$before" | jq -r '.decisions | (map(.id | ltrimstr("D") | tonumber) | max // 0) + 1 | "D\(.)"')"
