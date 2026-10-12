@@ -199,11 +199,14 @@ where() { [[ "$1" == *"agents write only inside the project, and there only $2"*
 
 @test "R177: outside a VBW project the guards say nothing" {
   mkdir -p "$TEST_ROOT/plain"
-  out=$(HOOK_DIR="$TEST_ROOT/plain" HOOK_PROJECT_DIR="$TEST_ROOT/plain" bash -c 'printf "%s" "$1" | vbw_hook PreToolUse Write' _ "$(HOOK_DIR="$TEST_ROOT/plain" write_in /tmp/scratch.txt)" 2> /dev/null || true)
   out=$(cd "$TEST_ROOT/plain" && printf '%s' "$(HOOK_DIR="$TEST_ROOT/plain" write_in /tmp/scratch.txt)" | HOOK_PROJECT_DIR="$TEST_ROOT/plain" vbw_hook PreToolUse Write)
   [ -z "$out" ] || { echo "$out"; false; }
 }
 
 @test "R177: docs/guards.md states that a run writes only inside the project and where" {
   grep -qi 'outside the project' "$REPO_ROOT/docs/guards.md"
+}
+
+@test "R177 (F158): no test of this file runs a helper function inside bash -c, where it would not exist and its error would be swallowed" {
+  ! grep -nE "bash -c '[^']*(vbw_hook|write_in|bash_in|denied_outside|allowed)" "$BATS_TEST_FILENAME"
 }
