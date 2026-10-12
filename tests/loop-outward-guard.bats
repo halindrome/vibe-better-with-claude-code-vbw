@@ -114,3 +114,12 @@ denied_as() {
 @test "R180 (F165): heroku pipelines:promote is denied with its pinned text" {
   denied_as 'heroku pipelines:promote -a app' 'heroku pipelines:promote' 'deploy'
 }
+
+@test "R180 (F175): an option's value or a toolchain word before the subcommand hides nothing: cargo +nightly publish, npm --tag next publish, docker --context x push, gh -R a/b release create" {
+  denied_as 'cargo +nightly publish' 'cargo publish' 'publish'
+  denied_as 'npm --tag next publish' 'npm publish' 'publish'
+  denied_as 'docker --context x push img:1' 'docker push' 'push'
+  denied_as 'gh -R a/b release create v1' 'gh release' 'release'
+  denied_as 'gh --repo a/b pr create --fill' 'gh pr create' 'open the pull request'
+  denied_as 'wrangler --env prod deploy' 'wrangler deploy' 'deploy'
+}
