@@ -167,8 +167,23 @@ where() { [[ "$1" == *"agents write only inside the project, and there only $2"*
     denied_outside "$out" "$p" || { echo "let through or unnamed: $c"; false; }
     [[ "$out" == *"cannot be resolved by the guard"* ]] || { echo "$out"; false; }
   done
+  # A file tool never expands ~: that is a folder named ~ inside the project, judged by the lease like any file.
   out=$(printf '%s' "$(write_in '~/notes.md')" | vbw_hook PreToolUse Write)
-  denied_outside "$out" '~/notes.md'
+  printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' > /dev/null || { echo "allowed: $out"; false; }
+  [[ "$(printf '%s' "$out" | jq -r .hookSpecificOutput.permissionDecisionReason)" == *"outside this run's files"* ]] || { echo "$out"; false; }
+}
+
+@test "R177 (F159): a plan file with a \$ in its name is written through the file tool; a shell redirect to it is refused as unresolved, naming the file" {
+  jq '.plans[0].files += ["src/$id.txt"]' .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
+  git add -A && git commit -q -m "chore(test): a plan file named with a dollar sign"
+  "$VBW" approve > /dev/null
+  open_run
+  jq -e '.lease.files | index("src/$id.txt") != null' .vbw/record.json > /dev/null
+  allowed "$(printf '%s' "$(write_in 'src/$id.txt')" | vbw_hook PreToolUse Write)"
+  allowed "$(printf '%s' "$(write_in "$PROJECT/src/\$id.txt")" | vbw_hook PreToolUse Write)"
+  out=$(printf '%s' "$(bash_in 'echo x > src/$id.txt')" | vbw_hook PreToolUse Bash)
+  denied_outside "$out" 'src/$id.txt'
+  [[ "$out" == *"cannot be resolved by the guard"* ]] || { echo "$out"; false; }
 }
 
 @test "R177 (F148): the device files stay writable under a run, and nothing else under /dev is" {
