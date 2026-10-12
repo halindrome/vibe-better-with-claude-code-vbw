@@ -780,8 +780,8 @@ that could not close keeps its status and `attempts`; fix the cause and run
 
 `vbw fix done` follows the same rule as `vbw prove`
 ([Reusing results](#reusing-results-in-vbw-prove)): a check whose last pass is
-still valid for its read list is not run again. It prints one line per skipped
-check and runs the rest:
+still valid for its read list is not run again. It prints one line per check
+and per test file, reused or run, and then both counts:
 
 ```text
 C1 pass 2s ran: src/pay.txt changed
