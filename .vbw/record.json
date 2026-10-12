@@ -15053,15 +15053,21 @@
           "from": "standard",
           "to": "deep",
           "reason": "Dev blocked P123.1: Code and the two pinned tests are done and committed; C274 passes. Plan step 4 also wants tests/fix-reuse.bats (test 9, line 175) and tests/prove-summary.bats (test 29, line 65) green, and they fail under the tree rule. Both prove, then change only VBW's own files (a hand-added fix in the record, or a spec/approve change) with the code untouched, then run vbw prove expecting reuse. The old rule passed only because a dirty .vbw or a different last commit subject stopped the cause; the plan removes both tests. Under the new rule that prove is exactly 'nothing committed since the last passing proof' (D173) and runs everything. Those two test files are outside this plan's files; they must either be changed (fixture commits a code change after the proof, or expect the cause) or the rule needs a further condition (e.g. evidence.contract equals the approved contract would fix prove-summary but not fix-reuse). Also tests/proof-cause-tree-docs.bats (C275) fails until P123.3 adds the docs sentence."
+        },
+        {
+          "at": "2026-10-12T04:17:24Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "QA needs a second round"
         }
       ],
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "b87a240c260dc649f84ab7628f903aceb87e12c5b1daf271f5ed16f9bf025e0c",
-        "at": "2026-10-12T02:17:32Z",
+        "tree": "5d3c6b0d9e1808d93eb371ddd6465b42dea8e79565b81be4e65c5976fa49f4eb",
+        "at": "2026-10-12T04:17:24Z",
         "note": "28/30 checks",
-        "rounds": 1
+        "rounds": 2
       }
     },
     {
@@ -24834,7 +24840,7 @@
       "req": "R175",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/lib/proofreuse.sh proofreuse_proved has a clause 'evidence.head equals the committed tree (when the evidence carries one)' (last line of the function) that no test can fail. Every fixture (tests/proofcauses-lib.bats prove_passed, tests/proofreuse-rule.bats test at line ~243, tests/proof-cause-tree.bats) records evidence.head equal to the current HEAD tree, and the commit-after-proof case changes the code tree first, so the head clause is never the deciding one. Deleting that line would leave every test green. Regression test needed: a passing proof recorded on an uncommitted edit (evidence.tree = working tree, evidence.head = older committed tree), then commit that edit so the working tree still equals evidence.tree but HEAD differs: proofcauses_find and proofreuse_allowed must name no 'nothing was committed' cause/reason."
     },
     {
@@ -24842,7 +24848,7 @@
       "req": "R176",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "No test runs vbw fix done for a fix of the test command (single-file form) while a cause (R168) is active. cmd_fix calls testfiles_plan with ALL=1 in that case (plugin/lib/cmd-fix.sh, the 'if [ -n \"$causes\" ]' branch), so every test file must run, its line must carry no 'ran:' part, the cause line must print once, and 'test files: N ran, 0 reused' must show the true N. tests/fix-done-output.bats pins the cause case for checks only, and tests/fix-done-testfiles.bats has no cause case. Regression test needed: fix-done-testfiles fixture with a cause (e.g. a clone with an empty run store or vbw prove --full not yet run) asserting the one cause line, 'tests/t_X.sh pass Ns' lines without 'ran:', and 'test files: <all> ran, 0 reused'."
     },
     {
@@ -24892,6 +24898,22 @@
       "attempts": 0,
       "status": "fixed",
       "note": "Two runs started within the same second get the same run id (kind plus the start time to the second), so .costs.runs holds two entries with one id and vbw show costs cannot tell them apart. Seen in tests/cost-milestones.bats test 3 on an idle machine: both qa runs became qa-20261012T030650Z and the test fails; under load it passes by timing. Run ids must be unique: a run that would repeat an id of .costs.runs gets a numbered suffix. Regression test with a fixed clock, and test 3 then deterministic."
+    },
+    {
+      "id": "F141",
+      "req": "R175",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "plugin/lib/proofreuse.sh proofreuse_proved has two clauses no test can fail on: 'evidence.contract equals contract_hash now' and the per-command 'store fp equals proofreuse_command_fp' loop (D291). Every fixture (tests/proofcauses-lib.bats prove_passed, tests/proofreuse-rule.bats ~line 248, tests/proof-cause-tree.bats) records a contract and record fingerprint that match, and no test records a mismatching evidence.contract or a drifted command fingerprint with tree, head and record otherwise equal. Deleting either clause leaves the suite green. They also look redundant since D296: the contract hash is made of the record's structure plus the check files (already in evidence.record and evidence.tree), and commands live in the record. Regression test (or remove the clause): a prove_passed fixture with only evidence.contract changed, and one with a command's store fingerprint changed (tree, head, record equal), both asserting proofcauses_find and proofreuse_allowed name no 'nothing was committed' cause/reason."
+    },
+    {
+      "id": "F142",
+      "req": "R175",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "docs/proof.md line 677 (causes table row) and the D173 paragraph (~line 714) state the cause's conditions as tree, head, record fingerprint and passed, but not the conditions D291 added and the code enforces: the proof must be of the contract now approved (evidence.contract) and every project command as it last ran. A reader who edits an approved check or command and proves again cannot tell from this row why no cause fires. Regression test: tests/proof-cause-tree-docs.bats should grep the row for 'evidence.contract' (or whatever wording replaces it once the redundant clause question in the other finding is decided) and for 'evidence.record'."
     }
   ],
   "todos": [
