@@ -57,6 +57,10 @@ def secret_path: basename
 def record_path: test("(^|/)\\.vbw/record\\.json$");
 def glance_reason: ".vbw/runtime/glance.json is written only by vbw (vbw help lists the commands)\nNext: leave it as it is; vbw rewrites it with every change to the record";
 def glance_path: test("(^|/)\\.vbw/runtime/glance\\.json$");
+# The agents' scratch folder (project-relative), the one place a build or fix
+# run writes besides its plan files (R177, D300): debugging scripts and logs,
+# ignored by git and never read by a proof. The rest of .vbw/runtime/ is vbw's.
+def scratch_path: test("^\\.vbw/runtime/scratch(/|$)");
 def consent_path: test("(^|/)vbw/(consent|runs)\\.json$");
 
 # PATH (relative to $cwd unless absolute) as a project-relative path, or null
@@ -82,6 +86,7 @@ def lease_write_denial($lease; $record):
   elif glance_path then glance_reason
   elif $lease.files == [] then
     "\(.) cannot be written during a \($lease.kind) run: its agents only read\nNext: leave \(.) as it is; report the change you need in your result for the session that started the run"
+  elif scratch_path then empty
   elif $lease.kind == "plan" and test_path then empty
   elif $lease.new_tests == true and (. as $p | any($lease.editable[]?; . == $p)) then empty
   elif $lease.new_tests == true and (. as $p | any($record.protected[]?; . == $p)) then
@@ -102,7 +107,9 @@ def outside_denial($lease):
    elif $lease.kind == "plan" then "the project's test files and .vbw/"
    elif $lease.files == null then "project files"
    else "its plan files (\($lease.files | join(", ")))" end) as $where
-  | "\(.) is outside the project: during a \($lease.kind) run agents write only inside it, and there only \($where)\nNext: write inside the project folder instead, or put scratch work in .vbw/runtime/";
+  | (if $lease.files == [] then "leave it; report what you needed in your result, this run's agents write nothing"
+     else "write inside the project folder instead, or put scratch work in .vbw/runtime/scratch/" end) as $next
+  | "\(.) is outside the project: during a \($lease.kind) run agents write only inside it, and there only \($where)\nNext: \($next)";
 
 # Why a subagent may not write ORIGINAL (the path as given) under LEASE: a
 # path outside the project is denied (R177), one inside goes to the lease rules.
