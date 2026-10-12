@@ -10,7 +10,7 @@
 # left and named. A revert runs on a private index, so what the user staged stays staged. Sets
 # LOOP_PARK_REVERTED (full hashes, newest first) and LOOP_PARK_LEFT (what was left and why).
 loop_park_reverts() {
-  local c f d hand outside idx files=() dirty=() hash
+  local c f d hand code vbwfiles idx files=() dirty=() hash
   LOOP_PARK_REVERTED=""
   LOOP_PARK_LEFT=""
   idx="$VBW_RUNTIME/park.index"
@@ -18,12 +18,18 @@ loop_park_reverts() {
   while IFS= read -r c; do
     [ -n "$c" ] || continue
     files=()
-    outside=1
+    code=0 vbwfiles=0
     while IFS= read -r -d '' f; do
       files+=("$f")
-      case "$f" in .vbw/*) outside=0 ;; esac
+      case "$f" in .vbw/*) vbwfiles=1 ;; *) code=1 ;; esac
     done < <(git -C "$VBW_ROOT" diff-tree --no-commit-id --name-only -r -z --root "$c")
-    [ "$outside" = 1 ] && [ ${#files[@]} -gt 0 ] || continue
+    # A record-only commit (vbw's own) is not the item's work; one that changes code and the record
+    # together cannot be reverted without touching the record, so it is left and named.
+    [ "$code" = 1 ] || continue
+    if [ "$vbwfiles" = 1 ]; then
+      LOOP_PARK_LEFT="$LOOP_PARK_LEFT${LOOP_PARK_LEFT:+; }${c:0:7} (changes the record too)"
+      continue
+    fi
     hand=""
     for f in "${files[@]}"; do
       for d in ${dirty[@]+"${dirty[@]}"}; do [ "$f" = "$d" ] && hand=$f; done
