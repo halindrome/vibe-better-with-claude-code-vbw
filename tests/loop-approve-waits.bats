@@ -96,3 +96,17 @@ waits() {
   sed -i.bak 's/Visitors can read a greeting/Visitors can read a greeting now/' .vbw/spec.md && rm -f .vbw/spec.md.bak
   waits contract
 }
+
+# matches: what loop_matches says of the record as it stands (yes or no).
+matches() { vbw_kernel '. "$VBW_LIB/checks.sh"; . "$VBW_LIB/cmd-next.sh"; . "$VBW_LIB/loop.sh"; . "$VBW_LIB/loop-step.sh"; loop_matches "$(record_read)" && echo yes || echo no'; }
+
+@test "R178 (F168): the matching rule itself refuses a text one character off and an item not on this loop's list, and accepts the item's own text" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
+  "$VBW" spec add auto "Visitors can read a greeting!" > /dev/null
+  [ "$(matches)" = no ] || { jq '{loop: .loop.items, reqs: [.requirements[] | .text]}' .vbw/record.json; false; }
+  "$VBW" spec sync > /dev/null 2>&1 || true
+  edit_record '.requirements |= map(if .text == "Visitors can read a greeting!" then .text = "Visitors can read a farewell" else . end)'
+  [ "$(matches)" = no ]
+  edit_record '.requirements |= map(if .text == "Visitors can read a farewell" then .text = "Visitors can read a greeting" else . end)'
+  [ "$(matches)" = yes ] || { jq '{loop: .loop.items, reqs: [.requirements[] | {text, milestone}]}' .vbw/record.json; false; }
+}
