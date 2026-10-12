@@ -25998,7 +25998,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "P129.4 task 3 not done. The plan says to run 'bash tools/l3-suite.sh loop' if Claude Code is available and commit tools/l3-results/loop.json, or else state in the plan's notes that it could not run. Neither happened: tools/l3-results/loop.json does not exist, P129.4 has no note in .vbw/record.json, and 'claude' is installed (/Users/tiagoserodio/.local/bin/claude). tests/l3-loop.bats test 3 'skips' when the file is missing, so nothing fails. The scenario code (tools/l3-suite.sh scenario_loop, commit e60e63a2) has therefore never run once. Regression test: either commit a loop.json that tests/l3-loop.bats test 3 validates (scenario loop, passed true, evidence_level L3), or record the reason in the plan note and make the bats test read that note instead of skipping silently."
     },
     {
@@ -26006,7 +26006,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The loop guard misses 'git push' when git's global option takes its value as a separate word. plugin/hooks/guard-bash.jq git_words only skips the value of -C and -c, so 'git --git-dir .git push', 'git --work-tree . push' and 'git --namespace x push' are ALLOWED with a loop on (I ran the guard with a loop record: 'git --git-dir=.git push' and 'git -c a=b push' are denied, the space forms return nothing = allow). The criterion says git push 'in any form'. Regression test: add these three commands to tests/loop-outward-guard.bats 'every form of git push' with denied_as, and make git_words skip the value of --git-dir, --work-tree, --namespace, --exec-path, --super-prefix, --config-env when given without '='."
     },
     {
@@ -26014,7 +26014,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Test gap: 'heroku pipelines:promote' is denied by plugin/hooks/guard-bash.jq and listed in docs/guards.md, but no test in tests/loop-outward-guard.bats runs it, so its pinned text is not pinned (only container:push and container:release are). The criterion says every denial text is pinned by a test. Deleting that line in guard-bash.jq leaves all tests green. Regression test: add denied_as 'heroku pipelines:promote' 'heroku pipelines:promote' 'deploy' (and 'heroku pipelines:promote staging' form) to the 'releases, publishes and deploys' test."
     },
     {
@@ -26022,7 +26022,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "loop_park_reverts (plugin/lib/loop-park.sh) skips every commit that touches ANY .vbw/ file, even one that also changes code. The variable is outside=1 and is set to 0 on the first '.vbw/*' path, so a commit changing src/x and .vbw/map.md is silently not reverted and not named in the 'left unreverted' list. The plan and the comment above the function say: revert the commits that touch any file outside .vbw/. The park would then leave the item's code in the tree while the record says the item is gone. No test covers a mixed commit. Regression test: in tests/loop-retry-park.bats add an item commit that changes tests/greet.sh (or src) and .vbw/map.md together; after the park, assert it is reverted (a Revert commit exists, the code file is gone)."
     },
     {
@@ -26030,7 +26030,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The Bash guard can be walked around, so a tool call can arm the loop. guard-bash.jq loop_call (line 142-146) lets any command through that has --help or -h anywhere in its arguments, but 'vbw loop start' treats the next word after --session as a session id. I ran, in a scratch VBW project, the hook on 'vbw loop start --session --help T1 --no-ceiling': the hook allowed it, and running that command armed the loop ('loop on: T1; no ceiling; session --help'). The criterion says the guard denies vbw loop start from any tool call. Regression test to add in tests/loop-guard.bats: 'vbw loop start --session --help T1 --no-ceiling' and the same with -h must be denied with the pinned START_TEXT (fix: only a --help/-h that is the sub-command's own first argument is exempt, or the kernel refuses a --session value that starts with a dash)."
     },
     {
@@ -26038,7 +26038,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Two of the 'waits for the user' tests never reach the matching rule they claim to test. In tests/loop-approve-waits.bats, 'differs by one character' and 'matches an item not on this loop's list' put a requirement in the milestone whose text is not the item's; vbw loop next then ends the loop inside loop_open_item ('M1 has requirements of its own and is not shipped ... step open', action stopped) before loop_delegate/loop_matches run. I reproduced this in a scratch project: loop next answered stopped with that reason. These two tests would still pass if loop_matches always returned true, so the criterion 'one character differs / item not on the list waits' is not pinned. Regression test: reach the delegate step with the item in progress (let vbw loop next open the item, then change the requirement text by one character, or swap it for another backlog item's text, and re-plan) and assert nothing is approved, with a mutation check that loop_matches returning true makes it fail."
     },
     {
@@ -26046,7 +26046,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Unplanned behavior in vbw loop start: the 'current milestone has requirements and is not shipped' refusal now ignores a [human] requirement carried over by an earlier ship (cmd-loop.sh lines ~114-116, added in commit 0ab70375 under P127.2, whose plan lists no change to loop start). P127.1's plan and the criterion say the refusal applies to any requirement of the current milestone. No test in tests/loop-start.bats covers the exception (only tests/loop-approve.bats uses a carried-over human requirement, after start), and docs/loop.md's refusal table does not mention it. Either record the decision and document it, or remove it. Regression test: in a loop_project human fixture, 'vbw loop start T1 --no-ceiling' succeeds (or is refused, per the decision), and docs/loop.md states which."
     },
     {
@@ -26054,7 +26054,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "A stopping loop whose session is gone cannot be ended or replaced, and the refusal's advice goes in a circle. Only the starting session's Stop hook (cmd-auto.sh line 59, .loop.session == session) runs loop_next, which is what turns 'stopping' into 'ended'. vbw loop start then refuses with 'a loop is already on. Next: run vbw loop status ... or vbw loop stop', and vbw loop stop answers 'already stopping' and changes nothing (I ran both in a scratch project). The criterion says each refusal names what to do instead; here the named remedy does nothing. Regression test: with a loop stopping and its session no longer running, the user has a documented command that ends it (or vbw loop start replaces a stopping loop), and the refusal text names it."
     },
     {
@@ -26062,7 +26062,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The Stop hook gate does not tell the loop step which session it runs for. auto_gate (plugin/lib/cmd-auto.sh) reads the session id from the hook's stdin but calls auto_loop_gate -> loop_next -> loop_step without exporting it; loop_step (plugin/lib/loop-step.sh) decides 'my own run' with vbw_session, which is VBW_SESSION_ID or CLAUDE_CODE_SESSION_ID only (plugin/lib/core.sh:88). The skill's hook command (plugin/skills/loop/SKILL.md frontmatter) sets neither, and every other call in the skills passes VBW_SESSION_ID=${CLAUDE_SESSION_ID} because the environment cannot be relied on. When the variable is empty, a build/plan/fix/QA run that this same session opened (lease.session = s1) is judged 'a lease of another session', and the loop ends with 'a run of another session (s1) is open' while its own workflow is still running. The criterion 'asks for nothing while this session's proof or workflow still runs' is therefore only met for the proof mark. tests/loop-gate.bats has no case with an open lease, and its gate helper pipes JSON to 'vbw auto gate' with no session in the environment, so this path is untested. Regression test: in tests/loop-gate.bats, start a loop for s1, open 'vbw run start build P2.1' as s1, then run the gate with session_id s1 and no VBW_SESSION_ID/CLAUDE_CODE_SESSION_ID in the environment: it must print nothing and leave .loop.ended null (red today by reading the code; fix: auto_gate exports VBW_SESSION_ID=$session before the loop step)."
     },
     {
@@ -26070,7 +26070,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The loop report's Shipped section prints the requirement id as 'none' for an item whose backlog text carries a marker. plugin/lib/loop-report.sh looks the requirement up with '.text == $i.text', but a loop item keeps its text with the '[human] ' (or '[auto] ') marker (loop_start stores loop_norm of the whole backlog text) while the requirement's text has the marker stripped (loop_item_text). Checked with the report's own expression on {item text '[human] The greeting feels friendly', requirement R2 'The greeting feels friendly'}: it returns \"none\". The criterion says the report names, for each shipped item, the item, milestone, requirement and commits. tests/loop-human-skip.bats and tests/loop-cycle.bats never read the requirement id on a Shipped line of a marked item. Regression test: ship a '[human] ...' item (and an '[auto] ...' item) through the loop and assert the Shipped line contains the requirement id (for example 'R2') and not 'none'; fix: compare against loop_item_text of the item's text."
     }
   ],
@@ -32284,6 +32284,15 @@
         "milestone": "M25",
         "started": "2026-10-12T22:54:03Z",
         "ended": "2026-10-12T22:58:21Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T230003Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T23:00:03Z",
+        "ended": "2026-10-12T23:42:15Z",
         "cost": null
       }
     ],
