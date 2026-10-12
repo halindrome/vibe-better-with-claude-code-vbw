@@ -1478,19 +1478,22 @@ scenario_costs() {
 }
 
 # loop (R180): the loop through the real TUI. Two backlog items, added before the session starts:
-# T1 ships (greet.sh); T2 asks for a file that must be two things at once, so its fix escalates, is
-# retried once, escalates again and the item parks. The user types /vbw:loop and answers nothing:
+# T1 ships (greet.sh); T2 asks that the project's own acceptance script tests/never.sh (committed,
+# it reads exit 1, and the item says it must not be edited) exit 0: its check is protected, so no
+# Dev can make it pass; the fix escalates, is retried once, escalates again and the item parks. The user types /vbw:loop and answers nothing:
 # the loop asks no question. Checked in the record, in the report file and in git.
 scenario_loop() {
   new_project
   export L3_STATUSLINE=1
   item1='A command-line script greet.sh: "./greet.sh Ana" prints "Hello, Ana!" and without a name prints "Hello, world!"'
-  item2='A file answer.txt whose whole content is exactly the word yes and, at the same time, exactly the word no'
-  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor auto > /dev/null \
+  item2='Running "sh tests/never.sh" exits 0; tests/never.sh is the project'"'"'s own acceptance script, already committed, and must be kept exactly as it is (never edited or replaced)'
+  (cd "$dir" && mkdir -p tests && printf '#!/bin/sh\n# The acceptance script: it fails on purpose.\nexit 1\n' > tests/never.sh \
+    && git add tests/never.sh && git commit -q -m "chore: the acceptance script" \
+    && "$VBW" init > /dev/null && "$VBW" config rigor auto > /dev/null \
     && "$VBW" todo add "$item1" > /dev/null \
     && "$VBW" todo add "$item2" > /dev/null) \
     || { say "setup failed: could not add the two backlog items"; return 1; }
-  fixture="two backlog items (T1: greet.sh, ships; T2: a file that must say both yes and no, whose fix escalates twice and parks); the working tree's status line on; /vbw:loop T1 T2 --ceiling 3; no question answered"
+  fixture="two backlog items (T1: greet.sh, ships; T2: the committed tests/never.sh must exit 0 and may not be edited, so its check cannot pass: its fix escalates twice, or its plan blocks twice, and the item parks); the working tree's status line on; /vbw:loop T1 T2 --ceiling 3; no question answered"
   start='/vbw:loop T1 T2 --ceiling 3'
   # The loop asks nothing: a question on screen fails the scenario.
   asked=false
@@ -1507,7 +1510,7 @@ scenario_loop() {
     local delegated own remotes tags reverts
     check "the loop ended" '.loop.ended != null'
     check "T1 shipped" '[.loop.items[] | select(.id == "T1" and .status == "shipped")] | length == 1'
-    check "T2 parked, with a reason naming the escalation" '[.loop.items[] | select(.id == "T2" and .status == "parked" and ((.reason // "") | test("escalat"; "i")))] | length == 1'
+    check "T2 parked, with a reason naming the escalation or the twice-blocked plan" '[.loop.items[] | select(.id == "T2" and .status == "parked" and ((.reason // "") | test("escalat|blocked"; "i")))] | length == 1'
     check "the parked item's milestone is in parked" '. as $r | [.loop.items[] | select(.status == "parked") | .milestone] as $m | ($m | length) > 0 and all($m[]; . as $x | any($r.parked[]?; .id == $x))'
     delegated=$(jq '[.decisions[] | select(.text | startswith("Contract approved by the loop on the user"))] | length' "$r" 2> /dev/null || echo 0)
     own=$(jq '[.decisions[] | select(.text | startswith("Contract approved:"))] | length' "$r" 2> /dev/null || echo 0)
@@ -1523,7 +1526,7 @@ scenario_loop() {
       git -C "$dir" cat-file -e "$h^{commit}" 2> /dev/null || reverts_ok=false
       git -C "$dir" log -1 --format=%s "$h" 2> /dev/null | grep -q '^Revert' || reverts_ok=false
     done
-    [ "$n_rev" -gt 0 ] || reverts_ok=false
+    # An item parked before any commit of its own (a plan blocked twice) has nothing to revert: zero is right then.
     expect ".vbw/loop-report.md names the shipped and the parked item with its revert commits" [ "$report_ok" = true ]
     expect "the revert commits are in git ($n_rev)" [ "$reverts_ok" = true ]
     [ -n "$(git -C "$dir" log --format=%B | grep '^VBW-Plan: ')" ] && shipped_commit=true
