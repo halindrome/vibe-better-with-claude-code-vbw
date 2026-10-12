@@ -156,14 +156,14 @@ sized() {
 }
 for n in 51 500 2000; do sized "$n"; done
 
-# guards DIR LABEL: measure every input against the project at DIR; LABEL is
-# the empty string, or ", large record".
+# guards DIR LABEL [INPUTS]: measure every input (default: all but loop) against
+# the project at DIR; LABEL is the empty string, or ", large record".
 status=0
 guards() {
-  local dir="$1" label="$2" input tool event hook shell total own line baseline file
+  local dir="$1" label="$2" inputs="${3:-git npm big interp read answer}" input tool event hook shell total own line baseline file
   export CLAUDE_PROJECT_DIR="$dir"
   baseline="jq -nc 'input | empty' - \"$dir/.vbw/record.json\" \"$CLAUDE_PLUGIN_ROOT/hooks/end.json\" 2>/dev/null || true"
-  for input in git npm big interp read answer; do
+  for input in $inputs; do
     tool=$(jq -r .tool_name "$work/$input.json")
     event=PreToolUse
     [ "$input" != answer ] || event=PostToolUse
@@ -213,6 +213,20 @@ statusline() {
 
 guards "$work" ""
 guards "$large" ", large record"
+# A loop on and no lease: the main session's push, judged like the others.
+jq -nc --arg d "$work" '{tool_name: "Bash", cwd: $d, session_id: "bench", tool_input: {command: "git push origin main"}}' > "$work/loop.json"
+loopproj() {
+  local d="$1" src="$2"
+  mkdir -p "$d/.vbw"
+  git -C "$d" init -q
+  jq -c --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" 'del(.lease) | .loop = {items: [{id: "T1", text: "Bench", proof: "auto", status: "waiting"}], ceiling: null, session: "bench", started_at: $t, baseline: {}}' "$src/.vbw/record.json" > "$d/.vbw/record.json"
+  # The large record is rewritten by the kernel (its glance); the small one stands as written, like the other small cases.
+  [ "$src" = "$work" ] || (cd "$d" && "$PLUGIN/bin/vbw" decide "Benchmark record written by the kernel" > /dev/null)
+}
+loopproj "$work/loop-small" "$work"
+loopproj "$work/loop-large" "$large"
+guards "$work/loop-small" "" loop
+guards "$work/loop-large" ", large record" loop
 for n in 51 500 2000; do guards "$work/checks-$n" ", $n checks"; done
 statusline "$work" ""
 statusline "$large" " (large record)"
