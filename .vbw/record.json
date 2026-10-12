@@ -24698,7 +24698,7 @@
       "id": "F124",
       "req": "R58",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C63 fail (exit 1)"
     },
     {
@@ -24733,7 +24733,7 @@
       "id": "F129",
       "req": "R149",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C220 fail (exit 1)"
     },
     {
@@ -24747,14 +24747,14 @@
       "id": "F131",
       "req": "R173",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C282 fail (exit 1)"
     },
     {
       "id": "F132",
       "command": "test",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "test fail"
     }
   ],
@@ -30263,6 +30263,15 @@
         "milestone": "M24",
         "started": "2026-10-12T01:51:44Z",
         "ended": "2026-10-12T01:52:23Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T015259Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-12T01:52:59Z",
+        "ended": "2026-10-12T01:56:21Z",
         "cost": null
       }
     ],
