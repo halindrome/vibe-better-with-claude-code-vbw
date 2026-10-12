@@ -27438,6 +27438,17 @@
       "text": "Round 4 of M24 (owner: retry all four). A redirect or write target the guard cannot resolve (one that starts with ~, or contains $, a backtick or $( ) is refused during a run as a path outside the project, with the R177 reason; the device files /dev/null, /dev/stdout, /dev/stderr and /dev/tty stay allowed and are recorded here; vbw fix done prints both count lines after every per-unit line, in the proof summary's order",
       "why": "the guard reads text, never what the shell expands, so it fails closed on what it cannot resolve (F147); the device exception existed without a decision (F148); the counts-last order keeps the 'same as the proof summary' promise (F145)",
       "at": "2026-10-12T07:58:06Z"
+    },
+    {
+      "id": "D305",
+      "text": "Order after 2.0.34 (owner): the machine-wide limit with one fix done per round first, then the loop (T99); the Portfolium Rust/Python measurement waits until after 2.1.0",
+      "why": "the owner works on several projects at once and the laptop pegged at 100 percent today; VBW 2.1.0 ships first, then the owner returns to the Rust codebase",
+      "at": "2026-10-12T08:40:15Z"
+    },
+    {
+      "id": "D306",
+      "at": "2026-10-12T08:40:53Z",
+      "text": "Contract approved: 166 requirements, 284 checks, 370 plans (a9a016bc8877)"
     }
   ],
   "commands": {
