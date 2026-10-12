@@ -35,11 +35,13 @@ write_in() { jq -nc --arg d "${HOOK_DIR:-$PROJECT}" --arg p "$1" --arg a "${2:-v
 # bash_in COMMAND: a Bash call by a Dev agent.
 bash_in() { jq -nc --arg d "${HOOK_DIR:-$PROJECT}" --arg c "$1" '{hook_event_name: "PreToolUse", session_id: "s1", cwd: $d, tool_name: "Bash", agent_id: "a1", agent_type: "vbw:dev", tool_input: {command: $c}}'; }
 
-# denied_outside OUTPUT: a deny whose reason says the path is outside the project and where to write.
+# denied_outside OUTPUT PATH: a deny whose reason names PATH, says it is outside the project and where to write.
 denied_outside() {
   printf '%s' "$1" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' > /dev/null || { echo "not denied: $1"; return 1; }
   local why
   why=$(printf '%s' "$1" | jq -r '.hookSpecificOutput.permissionDecisionReason')
+  [ -n "${2:-}" ] || { echo "denied_outside needs the path the refusal must name"; return 1; }
+  [[ "$why" == *"$2"* ]] || { echo "the refusal does not name $2: $why"; return 1; }
   [[ "$why" == *"outside the project"* ]] || { echo "the reason does not say outside the project: $why"; return 1; }
   [[ "$why" == *"Next: "* ]] || { echo "no next step: $why"; return 1; }
   # The place the advice names must be one the lease really allows (F135).
@@ -52,32 +54,45 @@ allowed() { [ -z "$1" ] || { echo "not allowed: $1"; return 1; }; }
 @test "R177: during a run a file write to /tmp is denied, naming the path and where the run may write" {
   open_run
   out=$(printf '%s' "$(write_in /tmp/scratch.txt)" | vbw_hook PreToolUse Write)
-  denied_outside "$out"
-  [[ "$out" == *"/tmp/scratch.txt"* ]] || { echo "$out"; false; }
+  denied_outside "$out" /tmp/scratch.txt
 }
 
 @test "R177: during a run a shell redirect to /tmp is denied the same way" {
   open_run
   out=$(printf '%s' "$(bash_in 'echo hi > /tmp/scratch.txt')" | vbw_hook PreToolUse Bash)
-  denied_outside "$out"
+  denied_outside "$out" /tmp/scratch.txt
+}
+
+@test "R177 (F149): bash's >&FILE and >& FILE forms write a file and are denied outside the project; >&1, 2>&1 and >&- are descriptors and pass" {
+  open_run
+  out=$(printf '%s' "$(bash_in 'echo a >&/tmp/a.txt')" | vbw_hook PreToolUse Bash)
+  denied_outside "$out" /tmp/a.txt
+  out=$(printf '%s' "$(bash_in 'echo a >& /tmp/b.txt')" | vbw_hook PreToolUse Bash)
+  denied_outside "$out" /tmp/b.txt
+  out=$(printf '%s' "$(bash_in 'echo a &> /tmp/c.txt')" | vbw_hook PreToolUse Bash)
+  denied_outside "$out" /tmp/c.txt
+  local c
+  for c in 'echo a >&1' 'echo a 2>&1' 'echo a >&-' 'cat <&0' 'npm test 2>&1 | tail -1'; do
+    allowed "$(printf '%s' "$(bash_in "$c")" | vbw_hook PreToolUse Bash)" || { echo "refused: $c"; false; }
+  done
 }
 
 @test "R177: a path outside the project that is not /tmp, and a relative path that climbs out, are denied too" {
   open_run
   out=$(printf '%s' "$(write_in "$TEST_ROOT/elsewhere.txt")" | vbw_hook PreToolUse Write)
-  denied_outside "$out"
+  denied_outside "$out" "$TEST_ROOT/elsewhere.txt"
   out=$(printf '%s' "$(write_in ../outside.txt)" | vbw_hook PreToolUse Write)
-  denied_outside "$out"
+  denied_outside "$out" ../outside.txt
 }
 
 @test "R177: an inline interpreter program that writes outside the project is denied, by absolute path and by a relative climb; the scratch folder stays allowed" {
   open_run
   out=$(printf '%s' "$(bash_in "python3 -c \"open('/tmp/q', 'w').write('x')\"")" | vbw_hook PreToolUse Bash)
-  denied_outside "$out"
+  denied_outside "$out" /tmp/q
   out=$(printf '%s' "$(bash_in "node -e \"require('fs').writeFileSync('/tmp/q.js', 'x')\"")" | vbw_hook PreToolUse Bash)
-  denied_outside "$out"
+  denied_outside "$out" /tmp/q.js
   out=$(printf '%s' "$(bash_in "python3 -c \"open('../outside.txt', 'w').write('x')\"")" | vbw_hook PreToolUse Bash)
-  denied_outside "$out"
+  denied_outside "$out" ../outside.txt
   allowed "$(printf '%s' "$(bash_in "python3 -c \"open('.vbw/runtime/scratch/x', 'w').write('x')\"")" | vbw_hook PreToolUse Bash)"
 }
 
@@ -109,13 +124,16 @@ allowed() { [ -z "$1" ] || { echo "not allowed: $1"; return 1; }; }
 @test "R177 (F147): a path the guard cannot resolve counts as outside: ~ and \$HOME redirects during a plan run, and a ~ file write, are refused" {
   VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
   local c
+  local p
   for c in 'echo a > ~/tests/a.test.js' 'echo a > $HOME/tests/a.test.js' 'echo a > "$HOME/tests/a.test.js"' 'echo a > `pwd`/../x.test.js' 'echo a > $(pwd)/tests/x.test.js'; do
     out=$(printf '%s' "$(bash_in "$c")" | vbw_hook PreToolUse Bash)
-    denied_outside "$out" || { echo "let through: $c"; false; }
+    # The refusal names the target as the guard read it: the text after >, unquoted; a cut-off backtick target as `...`.
+    case "$c" in *'`'*) p='`...`' ;; *'$('*) p='$(...)' ;; *'"'*) p='$HOME/tests/a.test.js' ;; *) p=${c#*> } ;; esac
+    denied_outside "$out" "$p" || { echo "let through or unnamed: $c"; false; }
     [[ "$out" == *"cannot be resolved by the guard"* ]] || { echo "$out"; false; }
   done
   out=$(printf '%s' "$(write_in '~/notes.md')" | vbw_hook PreToolUse Write)
-  denied_outside "$out"
+  denied_outside "$out" '~/notes.md'
 }
 
 @test "R177 (F148): the device files stay writable under a run, and nothing else under /dev is" {
@@ -125,9 +143,9 @@ allowed() { [ -z "$1" ] || { echo "not allowed: $1"; return 1; }; }
     allowed "$(printf '%s' "$(bash_in "$c")" | vbw_hook PreToolUse Bash)" || { echo "refused: $c"; false; }
   done
   out=$(printf '%s' "$(bash_in 'echo x > /dev/sda')" | vbw_hook PreToolUse Bash)
-  denied_outside "$out"
+  denied_outside "$out" /dev/sda
   out=$(printf '%s' "$(write_in /dev/shm/x)" | vbw_hook PreToolUse Write)
-  denied_outside "$out"
+  denied_outside "$out" /dev/shm/x
 }
 
 @test "R177: inside the project the lease rules decide as before: the plan's file is allowed, another file is refused as outside the run's files" {
