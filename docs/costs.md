@@ -52,8 +52,9 @@ pass.
 
 ## Unknown costs
 
-`unknown` means VBW did not see the figures: the status line was off, or the
-run had no session. VBW never shows 0 or an estimate in that case. Turn the
+`unknown` means VBW did not see the figures: the status line was off, the
+run had no session, or a figure went down during the run (a session restarted
+or its file was replaced), so VBW cannot tell what was spent. VBW never shows 0 or an estimate in that case. Turn the
 status line on and later runs are measured:
 
 ```
