@@ -24914,7 +24914,7 @@
       "req": "R175",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "plugin/lib/proofreuse.sh proofreuse_proved has two clauses no test can fail on: 'evidence.contract equals contract_hash now' and the per-command 'store fp equals proofreuse_command_fp' loop (D291). Every fixture (tests/proofcauses-lib.bats prove_passed, tests/proofreuse-rule.bats ~line 248, tests/proof-cause-tree.bats) records a contract and record fingerprint that match, and no test records a mismatching evidence.contract or a drifted command fingerprint with tree, head and record otherwise equal. Deleting either clause leaves the suite green. They also look redundant since D296: the contract hash is made of the record's structure plus the check files (already in evidence.record and evidence.tree), and commands live in the record. Regression test (or remove the clause): a prove_passed fixture with only evidence.contract changed, and one with a command's store fingerprint changed (tree, head, record equal), both asserting proofcauses_find and proofreuse_allowed name no 'nothing was committed' cause/reason."
     },
     {
@@ -24922,7 +24922,7 @@
       "req": "R175",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/proof.md line 677 (causes table row) and the D173 paragraph (~line 714) state the cause's conditions as tree, head, record fingerprint and passed, but not the conditions D291 added and the code enforces: the proof must be of the contract now approved (evidence.contract) and every project command as it last ran. A reader who edits an approved check or command and proves again cannot tell from this row why no cause fires. Regression test: tests/proof-cause-tree-docs.bats should grep the row for 'evidence.contract' (or whatever wording replaces it once the redundant clause question in the other finding is decided) and for 'evidence.record'."
     },
     {
@@ -24930,7 +24930,7 @@
       "req": "R173",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "A figure that goes down makes the record unwritable. costs_diff (plugin/lib/costs.sh) is plain END minus START and nothing checks the sign: with an opening figure above the closing one it returns {usd:-1,in:-200,out:-30} (I ran it). vbw run end (plugin/lib/cmd-run.sh) puts that into costs.runs, and record_update then refuses it ('refused: costs.runs entries need ... non-negative numbers'), so the run can never be ended and the lease stays open. The same applies to vbw ship: costs_milestone_total subtracts the baseline from the latest figure per session with no floor, so a session whose figure fell below its baseline gives a negative total that the validator refuses, and the milestone cannot be shipped. A fall can come from a side file replaced by a restarted or resumed session, or a hand-edited file. For a night shift that means a stuck project, not an 'unknown' cost. Fix: a decrease means VBW cannot tell, so costs_diff returns null (cost unknown) when any field of END is below START, and costs_milestone_total counts a session whose latest figure is below its baseline from its first figure (or leaves it out) instead of going negative. Regression test (tests/cost-runs.bats and tests/cost-milestones.bats): write a side file at 2.00 USD, run start, rewrite it at 1.00 USD, run end must succeed with cost null; then a milestone with a baseline above the latest figure must ship and show a non-negative total."
     },
     {
@@ -24938,7 +24938,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/guards.md (line 108) promises that programs which write files (python, node, perl, ruby run inline) are also refused outside the project, and commit 2daad4b9 changed program_denial, the git checkout/restore path and the shell-redirect path in plugin/hooks/guard-bash.jq to go through run_write_denial. tests/guard-outside.bats covers only a Write tool call, a shell redirect, a relative climb, the scratch folder, read-only runs and no-run cases. No test sends an interpreter program that writes /tmp (e.g. python3 -c \"open('/tmp/q','w')\") or a git checkout/restore to an outside path under a lease; tests/guard-interpreters.bats (R76) checks only paths inside the project. I ran the guard by hand and the program case is denied today, but putting program_denial back to the old project_path + lease_write_denial would pass every test. Regression test: under an open build lease, a Dev Bash call with an inline python3 or node program writing to /tmp (and one writing via a relative path that climbs out) must be denied with a reason naming the path, 'outside the project' and 'Next:'; the same program writing .vbw/runtime/scratch/x stays allowed. Alternative if you prefer to narrow the promise: remove 'programs that write files' from the docs row."
     }
   ],
@@ -27361,6 +27361,12 @@
       "id": "D301",
       "at": "2026-10-12T04:09:49Z",
       "text": "Contract approved: 166 requirements, 284 checks, 370 plans (28100f18c8fc)"
+    },
+    {
+      "id": "D302",
+      "text": "Supersedes the two clauses D291 added to the nothing-committed rule (the contract hash and each command's fingerprint): the record fingerprint of D296 already covers the contract and the commands, since both live in the record. proofreuse_proved keeps four conditions: the last proof passed, the code tree, the committed tree and the record fingerprint are as that proof left them. docs/proof.md states exactly these",
+      "why": "two clauses no test could fail on (QA F141), redundant since D296; fewer conditions, each pinned, and the documentation accurate as written",
+      "at": "2026-10-12T04:19:45Z"
     }
   ],
   "commands": {
@@ -30557,6 +30563,15 @@
         "milestone": "M24",
         "started": "2026-10-12T04:14:33Z",
         "ended": "2026-10-12T04:19:44Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T041952Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-12T04:19:52Z",
+        "ended": "2026-10-12T05:50:53Z",
         "cost": null
       }
     ],
