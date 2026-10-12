@@ -14,6 +14,7 @@ hooks:
 The user ran `/vbw:loop`. Result:
 
 ```!
+"${CLAUDE_PLUGIN_ROOT}/bin/vbw" interview 2>&1 || true
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" loop start --session ${CLAUDE_SESSION_ID} $ARGUMENTS 2>&1 || true
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" loop status 2>&1 || true
 ```
