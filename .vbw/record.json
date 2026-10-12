@@ -1,6 +1,12 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261012T102024Z",
+    "kind": "qa",
+    "started_at": "2026-10-12T10:20:24Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -15213,10 +15219,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "386d397941d9c2592c998d309febcc6ba2eee761d54c620cc9579c32618fe2ac",
-        "at": "2026-10-12T10:06:51Z",
+        "tree": "b599c2e491f1bb82caa9bd0c301b8b4ddc916add4d52c618db7269adf7237a9b",
+        "at": "2026-10-12T10:25:04Z",
         "note": "29/30 checks",
-        "rounds": 6
+        "rounds": 7
       },
       "escalations": [
         {
@@ -25056,8 +25062,16 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Test gap: the 'where the run may write' part of the outside-the-project refusal is pinned for only 2 of its 4 wordings. plugin/hooks/common.jq outside_denial has four branches: plan run ('the project's test files and .vbw/'), fix run for a failed proof command (files null, 'project files'), build/fix with plan files, and read-only (files []). tests/guard-outside.bats pins only the build wording (via denied_outside, which checks the path, 'outside the project', 'Next: ' and the scratch advice, never the 'there only ...' clause) and the read-only wording (map run). grep -rn \"project's test files and\" tests returns nothing, and no test sends a plain /tmp file write or redirect under a plan run, the run the Lead was in when the incident happened (the plan-run test only uses ~ and $HOME forms). Probed by hand against the guard: plan-run /tmp/dbg.bats is denied with the right text today, so behavior is correct; changing the plan branch to say 'project files' would pass every test. Regression test: in tests/guard-outside.bats start a plan run and require a Write to /tmp/dbg.bats be denied naming the path, containing \"there only the project's test files and .vbw/\" and the scratch Next line; do the same for a fix run for a failed proof command (files null) expecting 'there only project files'. Minor, same file: the first 'out=' line of the test 'outside a VBW project the guards say nothing' calls vbw_hook inside bash -c (a function bash -c cannot see), errors are swallowed and the value is overwritten on the next line, so it is dead code; drop it."
+    },
+    {
+      "id": "F158",
+      "req": "R177",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Dead code is still in tests/guard-outside.bats, in the test 'R177: outside a VBW project the guards say nothing'. Its first 'out=' line runs vbw_hook inside 'bash -c', but vbw_hook is a shell function that bash -c cannot see (tests/helper.bash has no export -f; probe: bash -c 'type vbw_hook' gives 'not found'). The error is swallowed by '2> /dev/null || true' and the value is overwritten by the next 'out=' line, so the line checks nothing. Finding F157 asked for it to be dropped and was marked fixed, but commit e4532e3d only added 25 lines and removed none. Regression test: not a behavior test; remove the line, and keep a check (for example in tests/standards.bats or this file) that no bats test calls a helper function from inside 'bash -c' without exporting it."
     }
   ],
   "todos": [
