@@ -24,7 +24,7 @@ loop_report_write() {
     ( [$l.items[] | select(.status == "shipped")] as $s
       | if ($s | length) == 0 then "none yet" else
         $s[] | . as $i
-        | ([$r.requirements[] | select(.milestone == $i.milestone and .text == $i.text)][0].id // "none") as $q
+        | ([$r.requirements[] | select(.milestone == $i.milestone and .text == ($i.text | sub("^\\[(human|auto)\\] "; "")))][0].id // "none") as $q
         | "- \($i.id) \($i.text) (\($i.milestone), \($q)): \(commits_of($i.milestone) | map("\(.hash) \(.subject)") | join("; "))" end ),
     "",
     "## Parked",
