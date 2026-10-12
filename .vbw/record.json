@@ -25763,6 +25763,13 @@
       "sort": "next",
       "size": "medium",
       "status": "open"
+    },
+    {
+      "id": "T129",
+      "text": "Measurement milestone on the owner's Portfolium Rust/Python codebase (owner, 2026-10-12: later, after 2.1.0): proof time and where it goes (kernel share vs the tests), and the clean-copy recompile question (the proof's copy never carries target/, so cargo rebuilds from scratch: a shared build cache outside the copy, with the parallel-check lock contention measured), before VBW is relied on there",
+      "sort": "later",
+      "size": "medium",
+      "status": "open"
     }
   ],
   "decisions": [
