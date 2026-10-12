@@ -48,11 +48,12 @@ teardown() { vbw_teardown; }
 
 @test "R58: the history is in the clone's git directory: no tracked file and no record field is added" {
   local keys schema
-  keys=$(jq -c 'keys' .vbw/record.json)
+  # costs is the one key a run adds, by design (R173, docs/costs.md): the history adds none.
+  keys=$(jq -c 'keys - ["costs"]' .vbw/record.json)
   schema=$(jq -c '.schema' .vbw/record.json)
   "$VBW" run start plan > /dev/null
   "$VBW" run end > /dev/null
-  [ "$(jq -c 'keys' .vbw/record.json)" = "$keys" ]
+  [ "$(jq -c 'keys - ["costs"]' .vbw/record.json)" = "$keys" ]
   [ "$(jq -c '.schema' .vbw/record.json)" = "$schema" ]
   [ -z "$(git status --porcelain)" ] || { git status --porcelain; false; }
   [ -z "$(git ls-files | grep steps.json || true)" ]
