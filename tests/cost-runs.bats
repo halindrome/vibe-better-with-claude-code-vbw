@@ -27,6 +27,35 @@ figures() {
 
 last_run() { jq -c '.costs.runs[-1]' .vbw/record.json; }
 
+# seed_run ID: the record already holds a finished run with this id.
+seed_run() {
+  jq --arg id "$1" '.costs = {runs: ((.costs.runs // []) + [{id: $id, kind: "qa", milestone: "M1", session: null, started: "2026-10-12T03:06:50Z", ended: "2026-10-12T03:06:50Z", cost: null}]), milestones: (.costs.milestones // {})}' \
+    .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
+}
+
+@test "R173 (F140): a run id is the kind and its start second, and a second run in that second gets -2, a third -3: no two runs share an id" {
+  run vbw_kernel '. "$VBW_LIB/cmd-run.sh"; run_id qa 2026-10-12T03:06:50Z'
+  [ "$output" = qa-20261012T030650Z ] || { echo "$output"; false; }
+  seed_run qa-20261012T030650Z
+  run vbw_kernel '. "$VBW_LIB/cmd-run.sh"; run_id qa 2026-10-12T03:06:50Z'
+  [ "$output" = qa-20261012T030650Z-2 ] || { echo "$output"; false; }
+  seed_run qa-20261012T030650Z-2
+  run vbw_kernel '. "$VBW_LIB/cmd-run.sh"; run_id qa 2026-10-12T03:06:50Z'
+  [ "$output" = qa-20261012T030650Z-3 ] || { echo "$output"; false; }
+  run vbw_kernel '. "$VBW_LIB/cmd-run.sh"; run_id build 2026-10-12T03:06:50Z'
+  [ "$output" = build-20261012T030650Z ] || { echo "$output"; false; }
+  # Runs started back to back, within one second or not, never share an id, and the lease carries the id the run was recorded under.
+  git add -A && git commit -q -m "chore(test): seeded runs"
+  local i lease
+  for i in 1 2 3; do
+    VBW_SESSION_ID=s1 "$VBW" run start qa > /dev/null
+    lease=$(jq -r '.lease.run' .vbw/record.json)
+    VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+    [ "$(last_run | jq -r .id)" = "$lease" ] || { last_run; false; }
+  done
+  [ "$(jq '[.costs.runs[].id] | unique | length' .vbw/record.json)" -eq 5 ] || { jq '[.costs.runs[].id]' .vbw/record.json; false; }
+}
+
 @test "R173: the run keeps the opening figures; its cost is end minus start, appended and committed" {
   figures s1 1.25 100 10
   VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
