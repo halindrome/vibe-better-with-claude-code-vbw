@@ -130,3 +130,16 @@ commit_record() { git add -A .vbw && git commit -q -m "$1"; }
   run grep -nE 'git[^|&;]*\blog\b' "$PLUGIN_ROOT/lib/proofreuse.sh" "$PLUGIN_ROOT/lib/proofcauses.sh"
   [ -z "$output" ] || { echo "$output"; false; }
 }
+
+@test "R175: a proof recorded on an uncommitted edit, then that edit committed: the working tree still matches the proof but HEAD is not the tree it ran on, so no 'nothing was committed' cause or reason" {
+  printf 'more\n' >> src/a.txt
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  jq -e '.evidence.passed == true and (.evidence.head != .evidence.tree)' .vbw/record.json > /dev/null || { jq .evidence .vbw/record.json; false; }
+  git commit -q -am "feat: a"
+  run causes
+  [ "$status" -eq 0 ]
+  printf '%s\n' "$output" | grep -qF 'nothing was committed' && { echo "$output"; false; }
+  run allowed
+  [ -z "$output" ] || { echo "$output"; false; }
+}
