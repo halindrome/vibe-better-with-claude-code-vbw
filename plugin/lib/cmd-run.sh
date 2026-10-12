@@ -71,10 +71,12 @@ cmd_run() {
     opening=$(printf '%s' "$lease" | jq -c '.cost // null')
     closing=$(costs_figures "$sid")
     cost=$(costs_diff "$closing" "$opening")
+    local m
+    m=$(record_read | jq -r .milestone.id)
     record_update '(.lease | {id: .run, kind, session: (.session // null), milestone: $m, started: .started_at, ended: $at, cost: $cost}) as $r
       | .lease = null | (.plans[] | select(.status == "building")).status = "planned"
       | .costs.runs = ((.costs.runs // []) + [$r]) | .costs.milestones = (.costs.milestones // {})' \
-      --arg m "$(record_read | jq -r .milestone.id)" --arg at "$(vbw_now)" --argjson cost "$cost"
+      --arg m "$m" --arg at "$(vbw_now)" --argjson cost "$cost"
     record_commit "chore(vbw): record after $run"
     [ -z "$lease" ] || vbw_step_add "$lease"
     printf 'run ended\n'
