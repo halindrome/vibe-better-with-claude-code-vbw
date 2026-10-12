@@ -1,5 +1,50 @@
 # Changelog
 
+## [2.0.34] - 2026-10-12
+
+### Added
+
+- **What a run and a milestone cost.** With the VBW status line on, each
+  session's spend (dollars, tokens in and out, from the figures Claude Code
+  gives the status line) is noted in `.vbw/runtime/cost.<session>.json`. Every
+  `vbw run end` records the run's cost in the record; a run VBW saw no figures
+  for, or whose figures went down, is recorded as unknown, never as zero or a
+  negative number. `vbw milestone start` notes where each session stood and
+  `vbw ship` freezes the milestone's total, so a dollar counts in one
+  milestone only. `vbw show costs` prints every milestone and every run's
+  share in plain words, `--json` returns one object and `--ceiling USD` judges
+  the active milestone's known spend (exit 0 under, 1 reached or cannot tell,
+  2 for a bad number). See docs/costs.md.
+- **One scratch folder for agents.** During a run, VBW's agents write only
+  inside the project: a write to `/tmp` or to any path outside it, by a file
+  tool, a shell redirect or an inline program, is refused and the refusal names
+  where the run may write. A path the guard cannot resolve (one starting with
+  `~` or holding a shell expansion such as `$HOME`) counts as outside.
+  Debugging scripts and logs go in `.vbw/runtime/scratch/`, which plan,
+  build and fix runs may write and git ignores; a read-only run (QA, mapping)
+  writes nothing.
+
+### Changed
+
+- **"Nothing was committed since the last passing proof" means nothing at
+  all.** That cause of a full proof fires only when the code, the contract
+  and the record are exactly as the last passing proof left them: a recorded
+  decision, a verdict or a backlog item is a change, and the next proof then
+  reuses what the read lists allow. It never reads a commit message.
+- **`vbw fix done` says what it ran and what it reused**, one line per check
+  and per test file with the reason it ran, then the same two count lines a
+  proof prints. The test files it ran are saved in your clone, so the proof
+  after it reuses them.
+- **Approval compares every section of the spec with the record**, the Test
+  results list included: an edited list that was not synced cannot be approved
+  as the record's list.
+- A run's id is its kind and its start second (`qa-20260101T120000Z`); a second
+  run started in that same second gets a numbered suffix, so no two runs share
+  an id.
+- For contributors: every check and project command of a proof runs without
+  the proving session's `VBW_SESSION_ID`; the release benchmark feeds the status
+  line cost figures, so the side-file write is measured.
+
 ## [2.0.33] - 2026-10-11
 
 ### Fixed
