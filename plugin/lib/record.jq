@@ -23,6 +23,23 @@ def tier: one_of(["express","standard","deep"]);
 def count: type == "number" and . == floor and . >= 0;
 def nonneg: type == "number" and . >= 0;
 def figures: type == "object" and (keys | sort) == ["in","out","usd"] and all(.[]; nonneg);
+def session_figures: type == "object"
+  and all(.[]; type == "object" and (keys | sort) == ["at","in","out","usd"]
+               and (.at | iso) and (.usd | nonneg) and (.in | nonneg) and (.out | nonneg));
+def strings_array: type == "array" and all(.[]; type == "string");
+def loop_item: type == "object"
+  and (keys - ["id","text","proof","status","milestone","head","baseline","retried","reverts","cost","reason","at"] == [])
+  and (.id | type == "string" and test("^T[0-9]+$")) and (.text | nonempty)
+  and (.proof | one_of(["auto","human"])) and (.status | one_of(["waiting","in_progress","shipped","parked"]))
+  and ((has("milestone") | not) or (.milestone | type == "string" and test("^M[0-9]+$")))
+  and ((has("head") | not) or (.head | type == "string" and test("^[0-9a-f]{40}$")))
+  and ((has("baseline") | not) or (.baseline | session_figures))
+  and ((has("retried") | not) or (.retried | type == "object" and (keys | sort) == ["fixes","plans"]
+                                  and (.fixes | strings_array) and (.plans | strings_array)))
+  and ((has("reverts") | not) or (.reverts | strings_array))
+  and ((has("cost") | not) or .cost == null or (.cost | figures))
+  and ((has("reason") | not) or (.reason | nonempty))
+  and ((has("at") | not) or (.at | iso));
 
 # Plan ids reachable from $n through "after" edges ($g: id -> [ids]).
 def reachable($g; $n):
@@ -63,7 +80,7 @@ if type != "object" then ["record must be a JSON object"] else
       | "protected must be the sorted list of every file the checks protect, each once" ),
     ( $r | keys[]
       | select(one_of(["schema","project","milestone","requirements","checks","phases","plans",
-                       "fixes","todos","decisions","commands","test_files","settings","evidence","lease","shipped","converted","recommendation","protected","costs"]) | not)
+                       "fixes","todos","decisions","commands","test_files","settings","evidence","lease","shipped","converted","recommendation","protected","costs","loop"]) | not)
       | "unknown key: \(.)" ),
     ( ["requirements","checks","phases","plans","fixes","todos","decisions","shipped"][]
       | select(($r[.] | type) != "array") | "\(.) must be an array" ),
@@ -296,6 +313,30 @@ if type != "object" then ["record must be a JSON object"] else
                      or (.total | type == "object" and (keys | sort) == ["in","out","sessions","usd"]
                          and all(.[]; nonneg)))) | not)
             | "costs.milestones.\($k) needs a baseline of {usd, in, out, at} per session and, optionally, a total of {usd, in, out, sessions}, all non-negative numbers" )
+        end ),
+    ( $r.loop
+      | select(. != null)
+      | if type != "object" then "loop must be an object" else
+          ( keys[] | select(one_of(["items","ceiling","session","started_at","baseline","stopping","ended","report"]) | not) | "loop has an unknown field: \(.)" ),
+          ( select((has("items") and has("ceiling") and has("session") and has("started_at") and has("baseline")) | not)
+            | "loop needs items, ceiling, session, started_at and baseline" ),
+          ( select(has("items") and ((.items | type == "array" and length > 0 and all(.[]; loop_item)) | not))
+            | "loop.items must be a non-empty array of {id: T<n>, text, proof: auto|human, status: waiting|in_progress|shipped|parked, and optionally milestone, head, baseline, retried, reverts, cost, reason, at}" ),
+          ( select(has("items") and (.items | type == "array") and ((.items | map(.id? // null) | length) != (.items | map(.id? // null) | unique | length)))
+            | "loop.items names an item twice" ),
+          ( select(has("ceiling") and (.ceiling != null) and ((.ceiling | type == "object" and (keys | sort) == ["finish_item","usd"]
+                and (.usd | type == "number" and . > 0) and (.finish_item | type == "boolean")) | not))
+            | "loop.ceiling must be null or {usd: a number above 0, finish_item: true or false}" ),
+          ( select(has("session") and (.session != null) and (.session | type != "string")) | "loop.session must be a string or null" ),
+          ( select(has("started_at") and ((.started_at | iso) | not)) | "loop.started_at must be an ISO-8601 UTC time" ),
+          ( select(has("baseline") and ((.baseline | session_figures) | not))
+            | "loop.baseline needs, per session, {usd, in, out, at} with non-negative numbers" ),
+          ( select(has("stopping") and ((.stopping | type == "object" and (keys | sort) == ["at","session"] and (.at | iso)
+                and (.session == null or (.session | type == "string"))) | not))
+            | "loop.stopping must be {at: an ISO-8601 UTC time, session: a string or null}" ),
+          ( select(has("ended") and ((.ended | type == "object" and (keys | sort) == ["at","reason"] and (.at | iso) and (.reason | nonempty)) | not))
+            | "loop.ended must be {at: an ISO-8601 UTC time, reason}" ),
+          ( select(has("report") and ((.report | safe_path) | not)) | "loop.report must be a relative path" )
         end ),
     ( $r.lease
       | select(. != null)
