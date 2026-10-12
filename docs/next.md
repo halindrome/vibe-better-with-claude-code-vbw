@@ -118,6 +118,14 @@ adding the one phase with `vbw apply --add` (docs/rigor.md).
 | 11 | a `human` requirement is `open` and not skipped, or one moved from a shipped milestone is `open` | `accept` (one scenario at a time) | yes |
 | 12 | otherwise | `ship` (`vbw ship`, which refuses while the proven work is not committed: the proof reads files on disk, a shipped milestone must be in git history); when the only unfinished requirements are `human` ones you skipped, `detail.later` lists them: ship now and judge them in the next milestone, or judge them now | yes |
 
+## The loop step
+
+`vbw loop next` is the loop's step (docs/loop.md). It runs the actions that
+need no agent (open the milestone, approve by delegation, ship, mark the backlog
+entry done) and returns the first that does. `vbw next` itself is unchanged: a
+pure reading of the record, and the loop's answers carry the same `action`,
+`instruction` and `detail`.
+
 ## Build waves
 
 `vbw show contract` prints one line under `plans:`, before the approval

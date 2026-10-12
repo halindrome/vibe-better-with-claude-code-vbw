@@ -355,6 +355,12 @@ Each refusal below ends with `Next: ` and the step in the right column
 
 An unknown option prints the usage line for the three modes and exits 2.
 
+## The loop and `autonomy_cap`
+
+The steps of `/vbw:loop` (docs/loop.md) are not counted against
+`autonomy_cap`. The loop's ceiling is its cap. Its workflows take a lease like
+any other run.
+
 ## Agents
 
 Agents are specifications of good output, not procedures (design §4). Each

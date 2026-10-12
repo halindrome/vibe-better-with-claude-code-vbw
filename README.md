@@ -263,6 +263,7 @@ You need one: `/vbw:vibe`. The rest exist for people who like to feel in control
 | **Always** | `/vbw:vibe [what you want]` | The next step, every time. This is the whole product |
 | **Deciding** | `/vbw:approve` | Approve the plan and its checks. Only you can |
 | | `/vbw:discuss`, `/vbw:research` | Think a decision through; get a sourced answer to a question |
+| | `/vbw:loop ITEM... --ceiling USD` | Work through named todo items while you are away, within a spend ceiling; leaves `.vbw/loop-report.md` ([docs/loop.md](docs/loop.md)) |
 | | `/vbw:todo [idea]`, `/vbw:list-todos` | Park an idea; see the list. Where "we should really..." goes instead of dying in a terminal tab |
 | **Checking** | `/vbw:status` | Where the project stands |
 | | `/vbw:qa`, `/vbw:verify` | Run every check now; judge what only you can |
@@ -331,7 +332,7 @@ Approval, checking and shipping always stop for you, whatever the preset. Autono
 | `profile` | `quality` / `balanced` / `budget` | Which models the agents run on |
 | `model.<role>` | `opus` / `sonnet` / `haiku` / a model id / `default` | Override one agent. QA never runs on Haiku: whatever judges your work doesn't get the cheap seat |
 | `autonomy` | `guided` / `balanced` / `hands-off` | How much `/vbw:vibe` does on its own |
-| `autonomy_cap` | a number | Steps one autonomous run takes before stopping |
+| `autonomy_cap` | a number | Steps one autonomous run takes before stopping. `/vbw:loop` steps are not counted: its ceiling is its cap |
 | `rigor` | `auto` / `express` / `standard` / `deep` | How thorough each phase is: sized to the work (`auto`, the default) or forced |
 | `check_jobs` | `1` to `64` | How many checks run at once. Default: about three quarters of the processor cores, at least 1. Kept in this clone |
 | `command_timeout` | `1` to `86400` seconds | How long the project's own commands may run in a proof. Default: 3600 |
