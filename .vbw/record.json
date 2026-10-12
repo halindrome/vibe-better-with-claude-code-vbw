@@ -32154,6 +32154,15 @@
         "started": "2026-10-12T20:42:07Z",
         "ended": "2026-10-12T21:14:24Z",
         "cost": null
+      },
+      {
+        "id": "fix-20261012T220644Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T22:06:44Z",
+        "ended": "2026-10-12T22:18:50Z",
+        "cost": null
       }
     ],
     "milestones": {
