@@ -141,3 +141,104 @@ loop's list, a loop that is stopping or not on, a contract that is not ready
 **Who can approve.** Only the kernel's own loop step approves. The guard
 denies `vbw loop start`, `vbw loop next` and `vbw loop park` to any tool call,
 so neither Claude nor an agent can approve on your behalf.
+
+## The cycle
+
+```
+/vbw:loop T4 T7 --ceiling 20
+/vbw:loop T4 --ceiling 20 --finish-item
+/vbw:loop T4 T7 --no-ceiling
+/vbw:loop stop
+```
+
+`/vbw:loop` takes the same arguments as `vbw loop start`, runs it with them and
+shows one message: the items in order, the ceiling and its form, that approval
+is delegated for these items only, what never happens (no push, release or
+publish, no work beyond the items, a `[human]` requirement waits for you), and
+how to stop. `/vbw:loop stop` runs `vbw loop stop` and says what the loop was
+doing. Only you can run `/vbw:loop`; Claude cannot start it.
+
+After that message the **Stop hook** drives the session. Each time Claude would
+stop, the hook (`vbw auto gate`) blocks the stop and hands it the next loop
+step, until the loop is done or stopped. Only the session that started the loop
+is driven; any other session ignores it. The loop's steps are not counted
+against `autonomy_cap` (the steps of an ordinary autonomous run); the loop's
+own ceiling is its cap. While this session's proof runs in the background the
+hook asks for nothing.
+
+### `vbw loop next`
+
+Each step is one kernel call, `vbw loop next --json`. Only the loop's hook calls
+it; the guard denies it to any tool call. It does every step that needs no
+agent, then returns the first one that does.
+
+For the next waiting item it:
+
+1. opens a milestone titled with the item (`vbw milestone start`), or renames
+   the current milestone when it has no requirements yet;
+2. adds the item's recorded text as that milestone's one requirement (`[auto]`,
+   or `[human]` when the backlog text starts with `[human] `) and marks the
+   item in progress;
+3. approves the contract by delegation when `vbw next` says `approve`
+   (see below). It never calls `vbw approve` and never asks the approval menu;
+4. runs `vbw ship` when `vbw next` says `ship`. `vbw ship` also ships with
+   skipped `[human]` requirements: they move on to the next milestone (D256);
+5. marks the shipped item's backlog entry done, then starts the next item.
+
+When the list is finished it answers `done` and records the loop as ended.
+
+A step that needs an agent or a proof comes back as `vbw next` would give it,
+with the same `detail`, `rigor`, `effort` and `profile` fields: `plan`,
+`build`, `fix`, `qa` (run the workflow) and `prove` (run `vbw prove`). A run the
+loop opens carries the usual lease and ends through `vbw run end`.
+
+Two cases the loop settles itself:
+
+- **A decision.** When planning returns `needs_decisions`, the loop takes the
+  recommended option for each and records the decision as chosen by the loop.
+  The `guided` autonomy setting never makes the loop ask.
+- **A `[human]` requirement** at the accept step. The loop runs `vbw req skip`
+  for it. It never accepts or rejects for you, and accepts no suggestion for
+  you. The requirement waits in the next milestone, and the report lists it.
+
+An escalated fix is retried once (`vbw fix retry`). A second escalation of the
+same item, a plan blocked again, or a scope violation parks the item
+(`vbw loop park`): its commits since its milestone began are reverted with new
+revert commits (history is kept), its work leaves the record and the spec, the
+backlog entry stays open, and the loop moves to the next item.
+
+## Where the loop stops
+
+Before each step the loop compares its spend with the ceiling (the spend and
+its words are under `vbw loop status` above).
+
+| Case | What happens |
+|---|---|
+| `--ceiling USD`, spend `reached` | Stops before the next step. |
+| `--ceiling USD`, spend `cannot tell` | Counts as reached: stops before the step. |
+| `--ceiling USD --finish-item`, `reached` | The current item runs on to its ship, then the loop stops. |
+| `--no-ceiling` | No comparison, even with no cost figure. |
+| End of the list | Stops after the last item's ship. |
+| `/vbw:loop stop` or `vbw loop stop`, from any session | Stops before the next step. The reason names you and the session. |
+| A run open in another session | Stops, with that reason. |
+| An action the loop cannot do | Stops with the reason, the item and the step, recorded in the loop state. |
+
+A workflow or proof already running is never killed: the loop stops once its
+result is recorded. The stop reason is in `vbw loop status` and in the report.
+
+## The report
+
+`.vbw/loop-report.md` is written when the loop ends and refreshed each time an
+item ends, so a machine that died overnight still leaves one. An item still
+running shows as in progress. The sections:
+
+| Section | Holds |
+|---|---|
+| Shipped | Each item, its milestone, its requirement and its commits. |
+| Parked | Each parked item, the reason, its revert commits and how to bring the work back. |
+| Waiting for you | Skipped `[human]` requirements, and why the loop stopped (for example `end of the list` or `stopped by the user` with the session). |
+| Cost | The loop's total and each item's cost, in dollars and tokens (parked items included). |
+
+A cost VBW did not see is written `unknown`, never `0` and never an estimate.
+The record stores the same facts. After the end, `vbw loop status` says the loop
+ended, why, and names the report.
