@@ -33,30 +33,21 @@ proofreuse_command_fp() {
 # left behind by one that was interrupted or failed to record).
 proofreuse_marker() { printf '%s/prove.unfinished\n' "$VBW_RUNTIME"; }
 
-# proofreuse_proved RECORD HEAD: succeed when the record's last proof passed
-# (evidence.passed), the project's files have the fingerprint it recorded
+# proofreuse_proved RECORD HEAD: succeed when nothing changed since the
+# record's last passing proof (evidence.passed): the record is as that proof
+# left it (its fingerprint without the evidence equals evidence.record, so the
+# contract, the commands and every decision, verdict or backlog item are as
+# proved: D296, D302), the project's files have the fingerprint it recorded
 # (vbw_code_tree equals evidence.tree) and the committed code is the tree it
 # ran on (HEAD, the committed code's tree, equals evidence.head, when the
-# evidence carries one) and it was a proof of the contract now approved
-# (evidence.contract) with every project command as it last ran (the contract
-# holds the checks, the store's fingerprint holds the argv): a changed approved
-# command or check is a change, so only its own units re-run (D291), and the
-# record is as that proof left it (its fingerprint without the evidence equals
-# evidence.record): a decision, a verdict or a backlog item is a change too, so
-# the next proof reuses what the read lists allow (R103, D294, D296). It reads
-# trees and fingerprints only, never a commit subject, so a record commit landing
-# after other commits changes nothing (R175).
+# evidence carries one). Any change makes the next proof reuse what the read
+# lists allow (R103). It reads trees and fingerprints only, never a commit
+# subject, so a record commit landing after other commits changes nothing (R175).
 proofreuse_proved() {
-  local tree ev_head store name fp ev_rec
+  local tree ev_head ev_rec
   printf '%s' "$1" | jq -e '.evidence.passed == true' > /dev/null 2>&1 || return 1
   ev_rec=$(printf '%s' "$1" | jq -r '.evidence.record // empty')
   [ -n "$ev_rec" ] && [ "$ev_rec" = "$(printf '%s' "$1" | jq -c 'del(.evidence)' | vbw_sha256)" ] || return 1
-  [ "$(printf '%s' "$1" | jq -r '.evidence.contract // empty')" = "$(contract_hash "$1")" ] || return 1
-  store=$(proofreuse_store_read)
-  while IFS= read -r -d '' name; do
-    fp=$(printf '%s' "$store" | jq -r --arg k "command:$name" '.runs[$k].fp // empty')
-    [ -z "$fp" ] || [ "$fp" = "$(proofreuse_command_fp "$1" "$name")" ] || return 1
-  done < <(printf '%s' "$1" | jq -j '(.commands // {}) | keys[] + "\u0000"')
   tree=$(printf '%s' "$1" | jq -r '.evidence.tree // empty')
   [ -n "$tree" ] && [ "$(vbw_code_tree 2> /dev/null)" = "$tree" ] || return 1
   ev_head=$(printf '%s' "$1" | jq -r '.evidence.head // empty')

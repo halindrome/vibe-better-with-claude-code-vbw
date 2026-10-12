@@ -123,6 +123,17 @@ prove_passed() {
   [ -z "$output" ] || { echo "$output"; false; }
 }
 
+@test "R175 (D302): the cause has no condition beyond the trees and the record fingerprint: a stale evidence.contract or a stale command fingerprint in the store still names it" {
+  prove_passed
+  edit_record '.evidence.contract = "1111111111111111111111111111111111111111111111111111111111111111"'
+  run causes
+  [ "$output" = "nothing was committed since the last passing proof" ] || { echo "$output"; false; }
+  common=$(git rev-parse --path-format=absolute --git-common-dir)
+  jq '.runs["command:lint"] = {fp: "stale", tree: "t", status: "pass", at: "t", seconds: 1, tail: "", reads: [], dirs: [], git: false}' "$common/vbw/runs.json" > "$TEST_ROOT/s.json" && cp "$TEST_ROOT/s.json" "$common/vbw/runs.json"
+  run causes
+  [ "$output" = "nothing was committed since the last passing proof" ] || { echo "$output"; false; }
+}
+
 @test "R175: a passing proof that recorded no fingerprint of the record (an older VBW) is no cause" {
   prove_passed
   edit_record 'del(.evidence.record)'
