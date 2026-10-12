@@ -15219,10 +15219,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "635d6af84f2b9201c182de63390c5e911ce945e718c54c4044b29d8f90553aa9",
-        "at": "2026-10-12T09:30:44Z",
+        "tree": "386d397941d9c2592c998d309febcc6ba2eee761d54c620cc9579c32618fe2ac",
+        "at": "2026-10-12T10:06:51Z",
         "note": "29/30 checks",
-        "rounds": 5
+        "rounds": 6
       },
       "escalations": [
         {
@@ -25054,8 +25054,16 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The clobber redirect >| (bash noclobber override) is mishandled by the guard in plugin/hooks/guard-bash.jq (simple() / commands()). commands() splits the command on |, so \"echo a >| /tmp/x\" becomes \"echo a >\" and \" /tmp/x\"; simple() then ends with .next set and no target, and the D304 fallback adds the placeholder \"`...`\". Probes (build lease, files [src/pay.txt], Dev agent, guard-bash.jq run with the hook inputs): \"echo a >| /tmp/x\" is denied but the refusal reads \"`...` cannot be resolved by the guard (~ or a shell expansion), so it counts as outside the project\" instead of naming /tmp/x (criterion 1: the denial names the path). Worse, \"echo a >| src/pay.txt\", a write to the plan file itself, is also denied with that wrong reason, although criterion 2 says inside the project the lease rules decide as before (before this phase the target was silently dropped, so it was allowed). Fix: do not split on the | of a >| token (or treat >| as a redirect operator before splitting) so the real target is read. Regression test (tests/guard-outside.bats): under a build lease a Dev Bash call \"echo a >| /tmp/x\" is denied and the reason names /tmp/x and says outside the project; \"echo a >| src/pay.txt\" is allowed. Low severity (>| is rare). Not a finding, noted for the summary: tee, cp, mv, dd of=, curl -o, touch, mkdir and sed -i aimed outside the project are not refused during a run; the goal and docs/guards.md scope this rule to file-tool writes, shell redirects and inline interpreter programs, so this matches the agreement."
+    },
+    {
+      "id": "F157",
+      "req": "R177",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Test gap: the 'where the run may write' part of the outside-the-project refusal is pinned for only 2 of its 4 wordings. plugin/hooks/common.jq outside_denial has four branches: plan run ('the project's test files and .vbw/'), fix run for a failed proof command (files null, 'project files'), build/fix with plan files, and read-only (files []). tests/guard-outside.bats pins only the build wording (via denied_outside, which checks the path, 'outside the project', 'Next: ' and the scratch advice, never the 'there only ...' clause) and the read-only wording (map run). grep -rn \"project's test files and\" tests returns nothing, and no test sends a plain /tmp file write or redirect under a plan run, the run the Lead was in when the incident happened (the plan-run test only uses ~ and $HOME forms). Probed by hand against the guard: plan-run /tmp/dbg.bats is denied with the right text today, so behavior is correct; changing the plan branch to say 'project files' would pass every test. Regression test: in tests/guard-outside.bats start a plan run and require a Write to /tmp/dbg.bats be denied naming the path, containing \"there only the project's test files and .vbw/\" and the scratch Next line; do the same for a fix run for a failed proof command (files null) expecting 'there only project files'. Minor, same file: the first 'out=' line of the test 'outside a VBW project the guards say nothing' calls vbw_hook inside bash -c (a function bash -c cannot see), errors are swallowed and the value is overwritten on the next line, so it is dead code; drop it."
     }
   ],
   "todos": [
