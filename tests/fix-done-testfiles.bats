@@ -73,6 +73,12 @@ line() {
   line '^test files: 2 ran, 1 reused$'
   line "^$FIX fixed: vbw prove decides\$"
   [ "$(ran)" = "t_a t_c " ] || { echo "ran: $(ran)"; false; }
+  # Both count lines come after every per-unit line, checks and test files alike (F145).
+  local last_unit counts
+  last_unit=$(printf '%s\n' "$output" | grep -nE '^(C[0-9]+|tests/[^ ]+) ' | cut -d: -f1 | sort -n | tail -1)
+  counts=$(printf '%s\n' "$output" | grep -nE '^checks: ' | cut -d: -f1)
+  [ -n "$last_unit" ] && [ "$last_unit" -lt "$counts" ] || { echo "$output"; false; }
+  [ "$counts" -lt "$(printf '%s\n' "$output" | grep -nE '^test files: ' | cut -d: -f1)" ] || { echo "$output"; false; }
 }
 
 @test "R176: a test file that still fails adds the last line of its output; the fix stays open and the exit code is non-zero" {

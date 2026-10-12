@@ -22,3 +22,25 @@ DOC="$REPO_ROOT/docs/proof.md"
   grep -qE '^test files: [0-9]+ ran, [0-9]+ reused$' "$DOC"
   grep -qF '0 ran, 0 reused' "$DOC"
 }
+
+@test "R176 (F146): every example block of the fix done section is output the code can produce: the count lines come after every unit line, and a cause line comes first" {
+  local tmp
+  tmp=$(mktemp -d)
+  awk '/^### Reusing an unchanged pass/{on=1} on && /^### /{if (!/Reusing/) exit} on' "$DOC" \
+    | awk 'BEGIN{b=0} /^```text/{b++; next} /^```/{next} b>0{print b": "$0}' > "$tmp/blocks.txt"
+  [ "$(cut -d: -f1 "$tmp/blocks.txt" | sort -u | wc -l | tr -d " ")" -ge 2 ]
+  local b
+  for b in $(cut -d: -f1 "$tmp/blocks.txt" | sort -u); do
+    grep "^$b: " "$tmp/blocks.txt" | cut -d' ' -f2- > "$tmp/block.txt"
+    local units counts cause
+    units=$(grep -nE '^(C[0-9]+|tests/[^ ]+) ' "$tmp/block.txt" | cut -d: -f1 | sort -n | tail -1)
+    counts=$(grep -nE '^checks: ' "$tmp/block.txt" | cut -d: -f1)
+    [ -n "$units" ] && [ -n "$counts" ] && [ "$units" -lt "$counts" ] || { cat "$tmp/block.txt"; false; }
+    [ "$counts" -lt "$(grep -nE '^test files: ' "$tmp/block.txt" | cut -d: -f1)" ] || { cat "$tmp/block.txt"; false; }
+    cause=$(grep -nE '^every candidate check runs: ' "$tmp/block.txt" | cut -d: -f1 || true)
+    if [ -n "$cause" ]; then
+      [ "$cause" -eq 1 ] || { cat "$tmp/block.txt"; false; }
+      ! grep -qE ' ran: | unchanged since its pass' "$tmp/block.txt" || { cat "$tmp/block.txt"; false; }
+    fi
+  done
+}
