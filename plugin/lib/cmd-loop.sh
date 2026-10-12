@@ -25,7 +25,7 @@ cmd_loop() {
 
 # loop_start ARGS...: validates the usage first (exit 2), then the state (exit 1), then writes.
 loop_start() {
-  local session="" ceiling="" finish=0 none=0 item items=() id
+  local session="" ceiling="" finish=0 none=0 items=() id
   session=$(vbw_session)
   while [ $# -gt 0 ]; do
     case "$1" in
