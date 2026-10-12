@@ -27374,6 +27374,11 @@
       "text": "Supersedes the two clauses D291 added to the nothing-committed rule (the contract hash and each command's fingerprint): the record fingerprint of D296 already covers the contract and the commands, since both live in the record. proofreuse_proved keeps four conditions: the last proof passed, the code tree, the committed tree and the record fingerprint are as that proof left them. docs/proof.md states exactly these",
       "why": "two clauses no test could fail on (QA F141), redundant since D296; fewer conditions, each pinned, and the documentation accurate as written",
       "at": "2026-10-12T04:19:45Z"
+    },
+    {
+      "id": "D303",
+      "at": "2026-10-12T07:38:36Z",
+      "text": "Contract approved: 166 requirements, 284 checks, 370 plans (deffeb5b64d0)"
     }
   ],
   "commands": {
