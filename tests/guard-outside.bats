@@ -70,6 +70,17 @@ allowed() { [ -z "$1" ] || { echo "not allowed: $1"; return 1; }; }
   denied_outside "$out"
 }
 
+@test "R177: an inline interpreter program that writes outside the project is denied, by absolute path and by a relative climb; the scratch folder stays allowed" {
+  open_run
+  out=$(printf '%s' "$(bash_in "python3 -c \"open('/tmp/q', 'w').write('x')\"")" | vbw_hook PreToolUse Bash)
+  denied_outside "$out"
+  out=$(printf '%s' "$(bash_in "node -e \"require('fs').writeFileSync('/tmp/q.js', 'x')\"")" | vbw_hook PreToolUse Bash)
+  denied_outside "$out"
+  out=$(printf '%s' "$(bash_in "python3 -c \"open('../outside.txt', 'w').write('x')\"")" | vbw_hook PreToolUse Bash)
+  denied_outside "$out"
+  allowed "$(printf '%s' "$(bash_in "python3 -c \"open('.vbw/runtime/scratch/x', 'w').write('x')\"")" | vbw_hook PreToolUse Bash)"
+}
+
 @test "R177: the place the refusal names is writable: under a build lease a Dev writes under .vbw/runtime/scratch/, by file tool and by shell redirect, the folder itself included" {
   open_run
   allowed "$(printf '%s' "$(write_in .vbw/runtime/scratch/debug.log)" | vbw_hook PreToolUse Write)"
