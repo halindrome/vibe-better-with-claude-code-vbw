@@ -27584,10 +27584,10 @@
     }
   },
   "evidence": {
-    "at": "2026-10-12T10:01:29Z",
-    "contract": "b53abe6704aa708bb3e9228a29e06a80bdc596d0890b2f5bfc9dc26ff9d1be9e",
-    "tree": "8a18ca4294451ff69b79fa2a60dade5aef2d8730",
-    "head": "8a18ca4294451ff69b79fa2a60dade5aef2d8730",
+    "at": "2026-10-12T10:18:55Z",
+    "contract": "ea0a1f07da3995c1d9c82aa60c92a02817633af10f9a0d8cb802a77c212f2b6e",
+    "tree": "698a817eb16783f8d8ed6f7b7c101bf1d64893ef",
+    "head": "698a817eb16783f8d8ed6f7b7c101bf1d64893ef",
     "checks": {
       "C1": {
         "status": "pass",
@@ -29374,9 +29374,9 @@
       "C204": {
         "status": "pass",
         "exit": 0,
-        "seconds": 58,
+        "seconds": 40,
         "tail": "1..8\nok 1 R142: for 1 to 5 shards, together the shards list every tests/*.bats file exactly once\nok 2 R142: the same inputs give the same shares\nok 3 R142: shares are balanced by test count: no shard of 4 holds much more than a quarter of the tests\nok 4 R142: a newly added test file lands in exactly one shard, with no list to edit\nok 5 R142: the tool lint and the hook and panel benchmarks are listed by shard 1 only\nok 6 R142: a shard runs its share in one parallel batch, then its timed files alone, and only shard 1 lints and benchmarks\nok 7 R142: a failing test file in a shard makes the shard fail, in the batch and in the timed files\nok 8 R142: an invalid shard argument exits 2 with the usage line and runs nothing",
-        "at": "2026-10-12T09:42:37Z",
+        "at": "2026-10-12T10:12:23Z",
         "fp": "a7a168580dd6010bf07effe9337ea968f9b2d34565451af92b8c3264f462f124",
         "reused": true
       },
@@ -29635,9 +29635,9 @@
       "C233": {
         "status": "pass",
         "exit": 0,
-        "seconds": 14,
+        "seconds": 10,
         "tail": "1..8\nok 1 R152: bash tools/test.sh with no option runs the lint and every test file except the timed ones, and neither benchmark\nok 2 R152: bash tools/test.sh --release runs the lint, both benchmarks, the suite in one parallel batch, then the timed files alone\nok 3 R152: the release run fails when a benchmark, the batch or a timed file fails\nok 4 R152: --quick still runs without the benchmarks and without any timed file\nok 5 R152: the CI shards together make one release run: shard 1 runs both benchmarks, each shard runs its timed files alone after its batch\nok 6 R152: tools/test.sh refuses --release with other arguments, naming the release way in its usage line, and runs nothing\nok 7 R152: CI runs the release way: the jobs without a shard run --release, the shard jobs run their share\nok 8 R152: no test file of the default run measures a duration; the timed tests live in tests/timed-*.bats",
-        "at": "2026-10-12T09:42:37Z",
+        "at": "2026-10-12T10:12:23Z",
         "fp": "d6a91300a2cc3c178950148fe6689a3b3301183cc8e7951d2509592e254757f9",
         "reused": true
       },
@@ -29872,7 +29872,7 @@
         "seconds": 1,
         "tail": "1..5\nok 1 R167: VBW's spec declares its single-file form: bats on one file\nok 2 R167: VBW's declared test files are every tracked tests/*.bats except the timed ones\nok 3 R167: VBW's spec names the shell lint as its own project command\nok 4 R167: bash tools/test.sh --lint runs shellcheck on every shell file under tools/ and runs no test file\nok 5 R167: tools/test.sh keeps its usage line and documents --lint in it",
         "fp": "a4c3fc4a1c937f7ed83dbad83a14a23b4a955b4576464496a0b301351ed0b484",
-        "at": "2026-10-12T10:01:29Z",
+        "at": "2026-10-12T10:18:55Z",
         "why": "reads the project through git"
       },
       "C260": {
@@ -29995,9 +29995,9 @@
       "C273": {
         "status": "pass",
         "exit": 0,
-        "seconds": 5,
+        "seconds": 3,
         "tail": "1..2\nok 1 R172: no test file writes a bats file and also starts the real bats\nok 2 R172: the rule sees the pattern that failed on Linux, and passes the filter form and the stand-in form",
-        "at": "2026-10-12T09:42:37Z",
+        "at": "2026-10-12T10:12:23Z",
         "fp": "ab7e91af533b5933eea6fff46b276d511c63f30112f526ece27beda6a441b2d5",
         "reused": true
       },
@@ -30121,9 +30121,9 @@
       "C287": {
         "status": "pass",
         "exit": 0,
-        "seconds": 45,
-        "tail": "1..15\nok 1 R177: during a run a file write to /tmp is denied, naming the path and where the run may write\nok 2 R177: during a run a shell redirect to /tmp is denied the same way\nok 3 R177 (F156): the clobber redirect >| is a redirect like any other: outside the project it is denied naming the path, and the plan's own file stays allowed\nok 4 R177 (F149): bash's >&FILE and >& FILE forms write a file and are denied outside the project; >&1, 2>&1 and >&- are descriptors and pass\nok 5 R177: a path outside the project that is not /tmp, and a relative path that climbs out, are denied too\nok 6 R177: an inline interpreter program that writes outside the project is denied, by absolute path and by a relative climb; the scratch folder stays allowed\nok 7 R177: the place the refusal names is writable: under a build lease a Dev writes under .vbw/runtime/scratch/, by file tool and by shell redirect, the folder itself included\nok 8 R177: the rest of .vbw/runtime/ is vbw's own: under a build lease the run marker and the glance stay refused\nok 9 R177: a read-only run promises no scratch folder: its refusal says the run writes nothing, and the scratch write is refused too\nok 10 R177 (F147): a path the guard cannot resolve counts as outside: ~ and $HOME redirects during a plan run, and a ~ file write, are refused\nok 11 R177 (F148): the device files stay writable under a run, and nothing else under /dev is\nok 12 R177: inside the project the lease rules decide as before: the plan's file is allowed, another file is refused as outside the run's files\nok 13 R177: with no run open a write outside the project gets no answer from VBW\nok 14 R177: outside a VBW project the guards say nothing\nok 15 R177: docs/guards.md states that a run writes only inside the project and where",
-        "at": "2026-10-12T09:42:37Z",
+        "seconds": 34,
+        "tail": "1..16\nok 1 R177: during a run a file write to /tmp is denied, naming the path and where the run may write\nok 2 R177 (F157): the refusal says where each kind of run may write: a plan run its test files and .vbw/, a fix of a failed project command any project file, a build its plan files\nok 3 R177: during a run a shell redirect to /tmp is denied the same way\nok 4 R177 (F156): the clobber redirect >| is a redirect like any other: outside the project it is denied naming the path, and the plan's own file stays allowed\nok 5 R177 (F149): bash's >&FILE and >& FILE forms write a file and are denied outside the project; >&1, 2>&1 and >&- are descriptors and pass\nok 6 R177: a path outside the project that is not /tmp, and a relative path that climbs out, are denied too\nok 7 R177: an inline interpreter program that writes outside the project is denied, by absolute path and by a relative climb; the scratch folder stays allowed\nok 8 R177: the place the refusal names is writable: under a build lease a Dev writes under .vbw/runtime/scratch/, by file tool and by shell redirect, the folder itself included\nok 9 R177: the rest of .vbw/runtime/ is vbw's own: under a build lease the run marker and the glance stay refused\nok 10 R177: a read-only run promises no scratch folder: its refusal says the run writes nothing, and the scratch write is refused too\nok 11 R177 (F147): a path the guard cannot resolve counts as outside: ~ and $HOME redirects during a plan run, and a ~ file write, are refused\nok 12 R177 (F148): the device files stay writable under a run, and nothing else under /dev is\nok 13 R177: inside the project the lease rules decide as before: the plan's file is allowed, another file is refused as outside the run's files\nok 14 R177: with no run open a write outside the project gets no answer from VBW\nok 15 R177: outside a VBW project the guards say nothing\nok 16 R177: docs/guards.md states that a run writes only inside the project and where",
+        "at": "2026-10-12T10:12:23Z",
         "fp": "c90943a4e411f852445c853bfadf595a081447b48af5b2c49ec1bfbf333f13b1",
         "reused": true
       },
@@ -30159,7 +30159,7 @@
       "test": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1346,
+        "seconds": 1344,
         "tail": "",
         "command": "bats --print-output-on-failure {file} (one test file per run)",
         "of_files": true
@@ -30252,18 +30252,18 @@
         "exit": 0,
         "seconds": 7,
         "tail": "1..3\nok 1 the file guard refuses Write and Edit of vbw/runs.json with a next step\nok 2 the Bash guard refuses a redirect into vbw/runs.json with a next step\nok 3 the consent file keeps its answer and an ordinary file stays allowed",
-        "fp": "6daa183d711f38f52a7842e184684cafa97de154bb31d6a57880c2eb0945da6b",
         "at": "2026-10-12T10:01:29Z",
-        "why": "plugin/hooks/guard-bash.jq changed"
+        "fp": "6daa183d711f38f52a7842e184684cafa97de154bb31d6a57880c2eb0945da6b",
+        "reused": true
       },
       "tests/hooks-guard.bats": {
         "status": "pass",
         "exit": 0,
         "seconds": 11,
         "tail": "1..18\nok 1 destructive commands at command position are denied\nok 2 ordinary work is allowed\nok 3 heredoc bodies and quoted strings are data\nok 4 what the shell executes inside strings is judged\nok 5 secrets are never read or written, by the shell or the file tools\nok 6 the record is written only by vbw\nok 7 only the user approves: vbw approve and consent writes are denied everywhere\nok 8 project rules apply only when the session's project is a VBW project\nok 9 a corrupt record still counts as a VBW project\nok 10 a guard error allows the call and never exits non-zero (exit 2 would block it)\nok 11 a large heredoc is data, and the command around it is still judged\nok 12 during a build, a subagent writes only the run's files\nok 13 during a build, protected check files are read-only and commits go through vbw\nok 14 during a run, builders never move HEAD or other builders' changes in the shared tree\nok 15 during planning, subagents may write test files (no file list, nothing protected yet)\nok 16 the main session is never held to a lease, and an old lease holds no one\nok 17 commands rewritten by RTK are judged like the originals\nok 18 during a QA or mapping run, agents write nothing",
-        "fp": "e055a84ea648ec52ab7552f84b0e4522f3ceed44d2c4e94febe9cf39f2405a39",
         "at": "2026-10-12T10:01:29Z",
-        "why": "plugin/hooks/guard-bash.jq changed"
+        "fp": "e055a84ea648ec52ab7552f84b0e4522f3ceed44d2c4e94febe9cf39f2405a39",
+        "reused": true
       },
       "tests/kernel-commit.bats": {
         "status": "pass",
@@ -30369,9 +30369,9 @@
         "exit": 0,
         "seconds": 42,
         "tail": "ok 2 a rejection opens a fix; when it is done the requirement returns for acceptance\nok 3 ship is refused while the working folder has uncommitted files, naming them\nok 4 ship is refused until vbw next says ship, then marks the milestone shipped\nok 5 config resolves VBW 1's seven roles from the profile and per-role overrides\nok 6 overrides saved under the earlier role names move to VBW 1's names\nok 7 docs/rigor.md's balanced tier table gives the Lead, Scout, Dev and QA their profile models\nok 8 config refuses unknown keys and invalid values, and changes nothing\nok 9 auto on needs a well-formed session id and arms only that session\nok 10 the gate is silent when no run is armed\nok 11 the gate blocks the stop with the next step and counts it\nok 12 the gate lets the session wait while a workflow runs\nok 13 the gate stops and disarms at a decision that needs the user\nok 14 the gate stops and disarms at the step cap\nok 15 an escalated fix can be retried once by the user's decision\nok 16 the backlog: add, list, done and drop\nok 17 doctor checks the project and the guards, and changes nothing\nok 18 doctor fails on a corrupt record and names the fix\nok 19 doctor reports disabled workflows\nok 20 doctor works where Claude Code is not installed (CI machines)\nok 21 autonomy is balanced until set; guided and hands-off are the other levels",
-        "fp": "d9c10540341a04fad16ff05f085222890402631f9caa3e8be9ec7f82dc9279ca",
         "at": "2026-10-12T10:01:29Z",
-        "why": "plugin/hooks/guard-bash.jq changed"
+        "fp": "d9c10540341a04fad16ff05f085222890402631f9caa3e8be9ec7f82dc9279ca",
+        "reused": true
       },
       "tests/kernel-work.bats": {
         "status": "pass",
@@ -30586,16 +30586,16 @@
         "seconds": 53,
         "tail": "1..17\nok 1 eval is caught\nok 2 bash-4 features are caught\nok 3 process killing is caught\nok 4 the signal-free liveness probe kill -0 passes, any other kill is caught\nok 5 /tmp paths are caught\nok 6 git path listings without -z are caught, with -z pass\nok 7 plugin-root discovery is caught\nok 8 a clean file breaks no rule\nok 9 hooks naming a missing file are caught\nok 10 per-tool-call hooks that start a shell or can exit non-zero are caught\nok 11 per-tool-call hooks: only assignments and [ ] tests may come before jq, and the command must end in || true\nok 12 the vision rule check passes on the repository as it is\nok 13 the vision rule check catches the rule removed from a contributor file\nok 14 the vision rule check catches the rule moved below another rule in AGENTS.md\nok 15 the hook answer check passes on the repository as it is\nok 16 the hook answer check catches a new unpinned answer shape\nok 17 the hook answer check catches a hook that answers allow",
         "fp": "cea597da7e37298b1c50fd07c24fcfcd6ab9c1e90cc14912ac62ec844e47ba39",
-        "at": "2026-10-12T10:01:29Z",
+        "at": "2026-10-12T10:18:55Z",
         "why": "reads the project through git"
       },
       "tests/standards.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 9,
+        "seconds": 7,
         "tail": "1..18\nok 1 kernel stays within 7,600 lines of code (design §10; owner raised it to 3,300 on 2026-10-04, 3,500 on 2026-10-05, 3,800 on 2026-10-06 and 7,600 on 2026-10-07)\nok 2 workflows stay within 1,500 lines (design §10)\nok 3 mod JavaScript stays within 3,500 lines (owner raised it from 3,000 on 2026-10-07)\nok 4 shipped plugin is under 2 MB (design §10, ledger D295; owner raised it from 1 MB on 2026-10-05 for the sounds)\nok 5 no eval or data-as-code (ledger D108, D139)\nok 6 no bash-4-only features: macOS /bin/bash 3.2 is the floor (K2, ledger D294)\nok 7 never terminates processes (ledger D54, D285–D288)\nok 8 no predictable /tmp paths or writes outside the project (K3, ledger D296)\nok 9 git path listings are NUL-separated (ledger D293)\nok 10 no plugin-root discovery: paths come from ${CLAUDE_PLUGIN_ROOT} substitution or $0 (K4)\nok 11 shell files parse on the minimum bash and pass shellcheck\nok 12 plugin manifests are valid\nok 13 hooks.json is valid and every file a hook names exists in hooks/\nok 14 per-tool-call hooks run jq directly and never exit non-zero (K20)\nok 15 Claude Code's own validator accepts the plugin and the marketplace\nok 16 no brace-literal parameter defaults (a default of {} written inside the expansion): bash 3.2 keeps the backslash (tests and tools too)\nok 17 the vision rule is VBW's first development rule, and every contributor file states it (owner mandate, 2026-10-06)\nok 18 every answer a hook gives Claude Code has a test pinning its meaning, and no hook answers allow (R128)",
         "fp": "0081e8d9fb717ee39eded21e9282e34e071705efe4349f4a472013dd63d63d6c",
-        "at": "2026-10-12T10:01:29Z",
+        "at": "2026-10-12T10:18:55Z",
         "why": "reads the project through git"
       },
       "tests/statusline.bats": {
@@ -30603,9 +30603,9 @@
         "exit": 0,
         "seconds": 12,
         "tail": "1..16\nok 1 outside a VBW project it says how to start, and still shows the session\nok 2 in a VBW project it shows progress and the last next step\nok 3 a running build and an armed autonomous run are visible\nok 4 a gate that needs the user says so\nok 5 no data from Claude Code, or garbage, never breaks it\nok 6 the branch is read in a linked worktree too\nok 7 statusline on sets it without asking, and keeps the user's own to restore\nok 8 the setting finds the newest installed VBW and renders it\nok 9 workflows on turns Dynamic workflows on, keeps every other setting, and never overrides a deliberate off\nok 10 started in a subfolder it shows the project; a VBW 1 project is pointed to the conversion\nok 11 a running step shows how long it has run and how many agents are working\nok 12 the team line follows the profile and per-role models; tokens and prompt cache are shown\nok 13 statusline on asks Claude Code to refresh it every 5 seconds, and tops up a setting made without it\nok 14 from Claude Code 2.1.287 the agents and team line is dropped; line 1 keeps the agent count\nok 15 a session in a VBW project tops up the refresh interval of VBW's status line, and leaves any other status line alone\nok 16 doctor warns when VBW's status line has no refresh interval",
-        "fp": "4a4f96ffe59d490f5eacbb1ae1d4adf16d0a33c8851971ab35542efdf55174f2",
         "at": "2026-10-12T10:01:29Z",
-        "why": "plugin/hooks/guard-bash.jq changed"
+        "fp": "4a4f96ffe59d490f5eacbb1ae1d4adf16d0a33c8851971ab35542efdf55174f2",
+        "reused": true
       },
       "tests/testfiles-spec.bats": {
         "status": "pass",
@@ -30638,7 +30638,7 @@
     "scope": [],
     "full": false,
     "passed": true,
-    "record": "fe632422b9a33ed095654501e49999031c8d1fb035425325c4522f133dc349de"
+    "record": "2b35d8c686720b42966b2989d1ebae5531e147f8682e19aa49e26ffbbebe6a9b"
   },
   "recommendation": {
     "at": "2026-10-09T20:53:56Z",
