@@ -22,7 +22,7 @@ planned() {
   for t in "$@"; do "$VBW" spec add auto "$t" > /dev/null; done
   q=$(item_req "$1")
   loop_plan "$q" P2
-  [ $# -eq 1 ] || jq -c --arg q "$(item_req "$2")" '{phases: [{id: "P3", title: "More", reqs: [$q], goal: "more", criteria: ["more"]}],
+  [ $# -eq 1 ] || jq -nc --arg q "$(item_req "$2")" '{phases: [{id: "P3", title: "More", reqs: [$q], goal: "more", criteria: ["more"]}],
     plans: [{id: "P3.1", phase: "P3", title: "More", reqs: [$q], files: ["src/more.txt"], after: [], tasks: ["more"]}],
     checks: [{id: "C3", req: $q, run: ["sh", "tests/greet.sh"], files: ["tests/greet.sh"]}],
     rules: [{req: $q, text: "more", check: "C3"}]}' | "$VBW" apply --add > /dev/null

@@ -48,7 +48,8 @@ consent() { cat "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/co
   jq -e --arg fp "$fp" --arg at "$started" '.decisions[-1].text
     | test("approved by the loop on the user.s behalf") and contains($at) and contains("T1") and contains("T2") and contains($fp)' .vbw/record.json \
     || { jq '.decisions[-1]' .vbw/record.json; false; }
-  jq -e '[.decisions[] | select(.text | startswith("Contract approved:"))] | length == 0' .vbw/record.json
+  # The loop's approval is its own decision: no user-style "Contract approved:" decision since the loop started (the helper's own M1 approval is older).
+  jq -e --arg at "$started" '[.decisions[] | select(.at >= $at and (.text | startswith("Contract approved:")))] | length == 0' .vbw/record.json
   [ "$(git rev-parse HEAD)" != "$head" ]
   git log -1 --format=%s | grep -q "approve contract $fp"
   [ -z "$(git status --porcelain -- .vbw)" ]
