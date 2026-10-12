@@ -74,3 +74,14 @@ gate() { jq -nc --arg s "$1" '{hook_event_name: "Stop", session_id: $s, stop_hoo
   printf '%s' "$output" | jq -e '[.. | strings] | any(test("VBW loop")) | not' || { echo "$output"; false; }
   jq -e '.milestone.title == "Next" and .loop.items[0].status == "waiting"' .vbw/record.json
 }
+
+@test "R179 (F171): the gate hands its own session to the loop step: a run this session opened is its own, and the loop goes on" {
+  run gate s1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
+  run gate s1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  jq -e '.loop.ended == null' .vbw/record.json || { echo "$output"; jq .loop.ended .vbw/record.json; false; }
+  [[ "$output" != *"another session"* ]] || { echo "$output"; false; }
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+}
