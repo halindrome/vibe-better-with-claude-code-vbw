@@ -58,6 +58,36 @@ missing, unreadable, lacks one of the three fields or is not newer (after
 `git checkout`, `git reset`, a hand edit or a failed glance write). The answers
 are the same; only the cost differs. The glance is never the source of truth.
 
+## While a loop is on
+
+While `/vbw:loop` is on (docs/loop.md), the Bash guard also denies the commands
+that send work out of the project. The loop never leaves the project: every
+ship stays local for you to review.
+
+| Denied command | Then do it yourself |
+|---|---|
+| `git push` | push |
+| `gh release` (except `list`, `view`, `download`) | release |
+| `gh pr create` | open the pull request |
+| `npm publish`, `cargo publish` | publish |
+| `twine upload` | upload |
+| `gem push`, `docker push` | push |
+| `vercel` with options only, `vercel deploy`, `netlify deploy`, `fly deploy`, `flyctl deploy`, `wrangler deploy`, `wrangler publish` | deploy |
+| `heroku container:push`, `heroku container:release`, `heroku pipelines:promote` | deploy |
+
+`npx` and `bunx` in front of a command do not hide it. The answer is the same
+for each, with the command and the last word filled in:
+
+```
+the loop never leaves the project: git push is not run while a loop is on
+Next: wait for the loop to end, or stop it with /vbw:loop stop, then push yourself
+```
+
+It holds for every caller, including the main session and you through Claude:
+the guard sees the command, not who sent it. Outside a loop (no loop on, or
+after it ended or `/vbw:loop stop`), a plain `git push` stays allowed, as
+before. The other guards are unchanged while a loop is on.
+
 ## When a guard fails
 
 A guard can fail: it crashes, cannot start (`jq` or the guard's file is missing
