@@ -98,3 +98,46 @@ ceiling, the status then names `vbw statusline on`.
 `--json` carries `on`, `items`, `ceiling`, `session`, `started_at`,
 `baseline`, `spend` (null when unknown), `word` (null with no ceiling),
 `stopping`, `ended` and `report`.
+
+## Approval by delegation
+
+A contract normally waits for your approval (`vbw approve`). Starting a loop
+delegates that approval for the items you named, and only for them.
+
+**The rule.** While a loop is on and not stopping, the kernel approves the
+contract with no question when all of this holds:
+
+- every requirement of the current milestone has text equal to the recorded
+  text of one loop item (spacing normalised);
+- each item is matched at most once;
+- the milestone holds nothing else, except a `[human]` requirement an earlier
+  ship carried over;
+- the contract is ready to approve (no missing check file, spec and record in
+  line).
+
+A backlog text starting with `[human] ` becomes a `[human]` requirement with
+the rest as its text; `[auto] ` likewise; any other text is an `[auto]`
+requirement as written.
+
+**What is written.** The same as `vbw approve` (docs/proof.md), plus the
+loop's own record:
+
+- consent for the contract's fingerprint, the shape, and the approved-contract
+  snapshot;
+- consent for the project commands and the test-file form (D315);
+- a decision: `Contract approved by the loop on the user's behalf (loop started AT, items ...): ... (FP)`,
+  with `AT` the loop's start time, the item ids, and `FP` the contract's
+  fingerprint;
+- the approval commit, `chore(vbw): approve contract FP`.
+
+A second loop step approves nothing again and records no second decision.
+
+**What still waits for you.** When any condition fails, `vbw next` answers as
+docs/next.md rows 3a, 4 and 4a describe: a requirement whose text differs by
+one character, an extra requirement, a requirement for an item not on the
+loop's list, a loop that is stopping or not on, a contract that is not ready
+(row 3a), or a contract needing the approval of changed test files (row 4a).
+
+**Who can approve.** Only the kernel's own loop step approves. The guard
+denies `vbw loop start`, `vbw loop next` and `vbw loop park` to any tool call,
+so neither Claude nor an agent can approve on your behalf.
