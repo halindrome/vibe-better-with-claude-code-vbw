@@ -23467,7 +23467,7 @@
       "after": [
         "P123.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "cmd-fix.sh: for a fix of the test command with an approved single-file form, the test files are planned by testfiles_plan with kind fix (never the proof's 'nothing committed' cause): a file that did not pass in the last proof (evidence.test_files) runs, and the one reuse rule decides the rest (changed definition, own content or read list runs; everything else is reused and counted). Every file that runs is still saved in the clone's run store (testfiles_save) so the next vbw prove reuses it.",
@@ -23510,7 +23510,7 @@
       "after": [
         "P123.3"
       ],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "cmd-approve.sh, approve_problems: the spec-versus-record comparison also compares the saved test results folders: the record's project.results (absent read as null) must equal the parsed spec's results (null when the spec has no '## Test results' section), same folders in the same order. The message stays 'spec.md and the record differ (vbw spec sync)'.",
         "The same function serves vbw next's contract-readiness answer (R171): confirm cmd-next.sh and next.jq keep no comparison of their own, so the Test results difference reaches the 'not ready' answer with 'vbw spec sync' as its step. Run tests/approve-whole-spec.bats and tests/next-contract-ready.bats green.",
@@ -23625,7 +23625,7 @@
         "P125.3",
         "P125.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/l3.sh start: when L3_STATUSLINE=1 is set, the session's --settings also carries a statusLine that runs the working tree's plugin/scripts/vbw-statusline.sh (the user's own setting runs the installed plugin-cache copy, which is not the code under test); every other scenario keeps a real user's settings.",
@@ -29964,6 +29964,15 @@
         "milestone": "M24",
         "started": "2026-10-11T23:53:04Z",
         "ended": "2026-10-11T23:55:26Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261011T235650Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-11T23:56:50Z",
+        "ended": "2026-10-12T00:11:33Z",
         "cost": null
       }
     ],
