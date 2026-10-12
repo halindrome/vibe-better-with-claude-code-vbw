@@ -24502,7 +24502,7 @@
       "after": [
         "P128.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "auto_gate: after the session check and before the auto.SESSION.json logic, when the record's loop is on (not ended) and its session equals the hook's session: honour the proving mark as today (a live background proof → print nothing), else run the loop step (the same function `vbw loop next --json` runs, in-process) and answer: run → nothing (the workflow's result wakes the session); the loop ended during this call → {systemMessage: `VBW loop ended: REASON. Report: .vbw/loop-report.md`}; otherwise {decision: block, reason: `VBW loop, item T1 (1 of 2). Next: ACTION: INSTRUCTION. Do this step now as /vbw:vibe describes, then stop.`}. The loop path never reads, writes or counts auto.SESSION.json (settings.autonomy_cap does not apply)",
@@ -24525,7 +24525,7 @@
       "after": [
         "P128.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/loop-report.sh: loop_report_write RECORD renders .vbw/loop-report.md from the record alone: a title with the start time and the state (running, or ended with the reason), `## Shipped` (one line per shipped item: id, text, milestone, requirement id, the subjects and short hashes of the commits whose VBW-Plan trailer names a plan of that milestone), `## Parked` (none, or the lines P129 fills: id, text, reason, revert commits, how to bring the work back), `## Waiting for you` (every skipped [human] requirement with its id and text, and the stop reason when the loop ended), `## Cost` (the loop's total from loop_spend and each item's cost in dollars and tokens, each `unknown` when VBW saw no figure, never 0 or an estimate)",
@@ -31903,6 +31903,15 @@
         "milestone": "M25",
         "started": "2026-10-12T19:33:28Z",
         "ended": "2026-10-12T19:59:19Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261012T195949Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T19:59:49Z",
+        "ended": "2026-10-12T20:06:15Z",
         "cost": null
       }
     ],
