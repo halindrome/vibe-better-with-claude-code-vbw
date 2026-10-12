@@ -123,6 +123,7 @@
     "tests/l3-greeting.bats",
     "tests/l3-interview.bats",
     "tests/l3-legacy.bats",
+    "tests/l3-loop.bats",
     "tests/l3-panel.bats",
     "tests/l3-recheck.bats",
     "tests/l3-results.bats",
@@ -138,6 +139,27 @@
     "tests/legacy-interview.bats",
     "tests/legacy-review-linux.bats",
     "tests/legacy-review.bats",
+    "tests/loop-approve-waits.bats",
+    "tests/loop-approve.bats",
+    "tests/loop-cycle.bats",
+    "tests/loop-docs.bats",
+    "tests/loop-gate.bats",
+    "tests/loop-guard.bats",
+    "tests/loop-help-docs.bats",
+    "tests/loop-helper.bash",
+    "tests/loop-human-skip.bats",
+    "tests/loop-lease-guards.bats",
+    "tests/loop-outward-guard.bats",
+    "tests/loop-park-guard.bats",
+    "tests/loop-park-report.bats",
+    "tests/loop-report.bats",
+    "tests/loop-retry-park.bats",
+    "tests/loop-ship-local.bats",
+    "tests/loop-skill.bats",
+    "tests/loop-start.bats",
+    "tests/loop-status-spend.bats",
+    "tests/loop-stop.bats",
+    "tests/loop-stops.bats",
     "tests/next-blocked.bats",
     "tests/next-contract-ready.bats",
     "tests/next-phase.bats",
@@ -3687,6 +3709,276 @@
         "tests/bench-statusline-cost.bats"
       ],
       "fix": "F138"
+    },
+    {
+      "id": "C290",
+      "req": "R178",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-start.bats"
+      ],
+      "files": [
+        "tests/loop-start.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C291",
+      "req": "R178",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-stop.bats"
+      ],
+      "files": [
+        "tests/loop-stop.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C292",
+      "req": "R178",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-approve.bats"
+      ],
+      "files": [
+        "tests/loop-approve.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C293",
+      "req": "R178",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-approve-waits.bats"
+      ],
+      "files": [
+        "tests/loop-approve-waits.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C294",
+      "req": "R178",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-guard.bats"
+      ],
+      "files": [
+        "tests/loop-guard.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C295",
+      "req": "R178",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-status-spend.bats"
+      ],
+      "files": [
+        "tests/loop-status-spend.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C296",
+      "req": "R178",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-help-docs.bats"
+      ],
+      "files": [
+        "tests/loop-help-docs.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C297",
+      "req": "R179",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-skill.bats"
+      ],
+      "files": [
+        "tests/loop-skill.bats"
+      ]
+    },
+    {
+      "id": "C298",
+      "req": "R179",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-cycle.bats"
+      ],
+      "files": [
+        "tests/loop-cycle.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C299",
+      "req": "R179",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-gate.bats"
+      ],
+      "files": [
+        "tests/loop-gate.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C300",
+      "req": "R179",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-human-skip.bats"
+      ],
+      "files": [
+        "tests/loop-human-skip.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C301",
+      "req": "R179",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-stops.bats"
+      ],
+      "files": [
+        "tests/loop-stops.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C302",
+      "req": "R179",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-report.bats"
+      ],
+      "files": [
+        "tests/loop-report.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C303",
+      "req": "R179",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-docs.bats"
+      ],
+      "files": [
+        "tests/loop-docs.bats"
+      ]
+    },
+    {
+      "id": "C304",
+      "req": "R179",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-retry-park.bats"
+      ],
+      "files": [
+        "tests/loop-retry-park.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C305",
+      "req": "R179",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-park-guard.bats"
+      ],
+      "files": [
+        "tests/loop-park-guard.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C306",
+      "req": "R179",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-park-report.bats"
+      ],
+      "files": [
+        "tests/loop-park-report.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C307",
+      "req": "R180",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-outward-guard.bats"
+      ],
+      "files": [
+        "tests/loop-outward-guard.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C308",
+      "req": "R180",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-ship-local.bats"
+      ],
+      "files": [
+        "tests/loop-ship-local.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C309",
+      "req": "R180",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/loop-lease-guards.bats"
+      ],
+      "files": [
+        "tests/loop-lease-guards.bats",
+        "tests/loop-helper.bash"
+      ]
+    },
+    {
+      "id": "C310",
+      "req": "R180",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-loop.bats"
+      ],
+      "files": [
+        "tests/l3-loop.bats"
+      ]
     }
   ],
   "project": {
@@ -9590,7 +9882,48 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M25",
-      "rules": []
+      "rules": [
+        {
+          "text": "vbw loop start ITEM... with a ceiling choice records the loop in the record and commits it: the items in the order given with a snapshot of each one's backlog text, the ceiling and its mode, the session, the start time and every known session's figures as the baseline; vbw loop status prints all of it from any session",
+          "check": "C290"
+        },
+        {
+          "text": "the ceiling is the user's choice at start: --ceiling USD, --ceiling USD --finish-item or --no-ceiling; with none of them, with --finish-item alone, or with a USD that is not a positive number the loop refuses to start as a usage error (exit 2) and nothing changes",
+          "check": "C290"
+        },
+        {
+          "text": "no item, an unknown item, a closed item, the same item twice, a loop already on (naming vbw loop stop), a current milestone with requirements that is not shipped, or --ceiling with no cost figure (naming vbw statusline on or --no-ceiling) is refused with what to do instead, and nothing changes",
+          "check": "C290"
+        },
+        {
+          "text": "vbw loop stop from the starting session or any other session marks the loop stopping with the time and the session and vbw loop status says so; with no loop on it says so and exits 0; a second stop changes nothing; the loop step reads the stop from the record before its next step, after a running workflow of its own session has ended",
+          "check": "C291"
+        },
+        {
+          "text": "a contract whose requirements are exactly the loop's items (every requirement's text equals one item's recorded text, each item matched at most once, nothing else but a [human] requirement an earlier ship carried over) is approved by the kernel's loop step without a question: consent for the fingerprint, the shape, the approved-contract snapshot, the project commands and the test-file form, as vbw approve writes them",
+          "check": "C292"
+        },
+        {
+          "text": "the delegated approval is recorded as approved by the loop on the user's behalf: a decision naming the loop's start time, the items and the fingerprint, and the approval commit; vbw next then moves past approve, and a second step approves nothing again",
+          "check": "C292"
+        },
+        {
+          "text": "any other contract waits for the user as today: a text differing by one character, an extra requirement, a requirement matching an item not on this loop's list, no loop on, a stopping loop, or a contract that is not ready (a missing check file, spec and record differing); vbw next answers approve or contract, nothing is approved, no consent is granted, no decision is recorded",
+          "check": "C293"
+        },
+        {
+          "text": "the approval by delegation happens only inside the kernel's loop step: the Bash guard denies vbw loop start, vbw loop next and vbw loop park from any tool call with pinned texts while stop, status and help stay allowed; the /vbw:loop skill is user-invoked only and arms the loop in its preamble with the user's own arguments; no other skill arms it",
+          "check": "C294"
+        },
+        {
+          "text": "vbw loop status shows the spend so far (the sum over known sessions of the current figures minus the baseline, computed as a milestone's total), the ceiling, and one word: under, reached, or cannot tell; cannot tell counts as reached under a ceiling and not with --no-ceiling",
+          "check": "C295"
+        },
+        {
+          "text": "vbw loop --help and vbw help list the command, its sub-commands and the three ceiling forms; docs/loop.md documents start, stop, status, the ceiling modes and the exact delegated approval rule with its decision text and consent entry; the record's format validates the loop field and docs/record.md describes it",
+          "check": "C296"
+        }
+      ]
     },
     {
       "id": "R179",
@@ -9598,7 +9931,48 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M25",
-      "rules": []
+      "rules": [
+        {
+          "text": "/vbw:loop arms the loop with the user's own arguments and shows in one message the items in order, the ceiling and its mode, that approval is delegated for these items only, what never happens and how to stop from any session; /vbw:loop stop runs vbw loop stop and says what the loop was doing; the steps are the router's, run the same way; the loop never asks under guided autonomy, takes planning decisions with the recommended option recorded as chosen by the loop, accepts no suggestion, never runs vbw auto on, never approves and never asks the approval menu",
+          "check": "C297"
+        },
+        {
+          "text": "one kernel command, vbw loop next --json, does every step that needs no agent: it opens the item's milestone titled with the item (vbw milestone start, or renamed when empty), adds the item's text as its one requirement ([auto], or [human] for a backlog text starting with [human]), marks the item in progress, approves by delegation, ships, marks the backlog entry done, opens the next item and answers done at the end of the list; plan, build, fix, qa and prove come back as vbw next gives them with the same detail, rigor, effort and profile fields; vbw next stays pure; a run the loop opens carries the same lease as any run and ends through vbw run end; the loop never calls vbw approve",
+          "check": "C298"
+        },
+        {
+          "text": "the Stop hook gate drives the cycle in the loop's own session: it blocks the stop with the next loop step, never counts it against autonomy_cap, asks for nothing while this session's proof runs in the background, and lets the session stop with one message once the loop reports done or stopped; in any other session the gate ignores the loop",
+          "check": "C299"
+        },
+        {
+          "text": "a [human] requirement at the accept step is skipped by the loop, never accepted or rejected on the user's behalf; the ship moves it to the next milestone and the report lists it as waiting for the user's judgment",
+          "check": "C300"
+        },
+        {
+          "text": "with the default ceiling the loop stops before a step at or above the ceiling, or when the spend cannot be told, with that reason; with --finish-item the item runs on to its ship and then the loop stops; with --no-ceiling there is no comparison; the loop stops at the end of its list and on vbw loop stop from any session, naming the user and the session; a running workflow is never killed; an action the loop cannot do, or a run of another session, stops the loop with the reason, the item and the step, recorded in the loop state",
+          "check": "C301"
+        },
+        {
+          "text": ".vbw/loop-report.md is written when the loop ends and refreshed each time an item ends: what shipped (item, milestone, requirement, the commits), what waits for the user (skipped [human] requirements, the stop reason) and what it cost (the total and each item in dollars and tokens, unknown where no figure was seen, never 0 or an estimate); the record stores the same facts and vbw loop status after the end says the loop ended, why, and names the report",
+          "check": "C302"
+        },
+        {
+          "text": "docs/loop.md describes the cycle, the stops, the report and the skill; docs/next.md names the loop step and that vbw next is unchanged; docs/workflows.md and README say the loop's steps are not counted against autonomy_cap",
+          "check": "C303"
+        },
+        {
+          "text": "the first escalation of an item is retried with vbw fix retry and recorded against the item, and a blocked plan is reset once; a second escalation, a plan blocked again or a scope violation parks the item: its commits since the milestone began are reverted with git revert commits (history kept, a user-edited or untracked file left as it is), its requirement, phases, plans, checks, rules and fixes are removed with its spec line and check file, the milestone is parked with the reason and its cost frozen, a decision names the item, the reason, the revert commits and how to bring the work back, the backlog entry stays open, the record is committed and the next item starts; after a park vbw prove passes the earlier checks, vbw next offers the next milestone, vbw status and vbw show roadmap show the parked milestone, and vbw loop park by hand with no item in progress refuses",
+          "check": "C304"
+        },
+        {
+          "text": "vbw loop park is callable only by the loop step: the Bash guard denies it from any tool call, an agent's or the main session's, with the pinned text, with or without a loop on and with a stale glance",
+          "check": "C305"
+        },
+        {
+          "text": "the report's parked section names each parked item, its reason, its revert commits and how to bring the work back; the loop's total cost includes parked items' cost and the record stores the item's reverts and cost",
+          "check": "C306"
+        }
+      ]
     },
     {
       "id": "R180",
@@ -9606,7 +9980,24 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M25",
-      "rules": []
+      "rules": [
+        {
+          "text": "while a loop is on the Bash guard denies for every caller, the main session included, git push in any form, gh release, gh pr create, npm publish, cargo publish, twine upload, gem push, docker push and the deploy commands of vercel, netlify, fly, heroku and wrangler, each saying the loop never leaves the project and naming /vbw:loop stop with a pinned text, from the glance or the record alike; words in text, reads and the project's own commands stay allowed; once the loop has ended or outside a loop today's rules stand and a plain git push stays allowed; the hook bench measures the loop case",
+          "check": "C307"
+        },
+        {
+          "text": "vbw ship run by the loop makes no tag, no push and no call to a remote: with a remote configured the remote's refs and the tags are unchanged after a loop's ship",
+          "check": "C308"
+        },
+        {
+          "text": "the guards that hold for any run hold for the loop's runs: under a loop with a lease open a builder is denied the record, a path outside the project, a protected check file, vbw approve, git commit and git push, while the plan's own file stays writable",
+          "check": "C309"
+        },
+        {
+          "text": "tools/l3-suite.sh has a loop scenario (two backlog items, one that ships and one whose fix escalates twice and parks, a small ceiling) in its default list and header, writing its own honestly labelled result, with the outcome checked in the record, the report file and git; docs/loop.md, docs/guards.md and README describe the loop, its limits and the promise: nothing approved without a record of who approved it, nothing leaving the project",
+          "check": "C310"
+        }
+      ]
     }
   ],
   "phases": [
@@ -15262,6 +15653,102 @@
         "qa_findings": 11,
         "escalations": 1
       }
+    },
+    {
+      "id": "P127",
+      "title": "Arm the loop: start, stop, status, and approval by delegation",
+      "reqs": [
+        "R178"
+      ],
+      "milestone": "M25",
+      "goal": "The user hands named backlog items to the loop with a spending limit, and from then on the kernel approves a contract made of exactly those items on the user's behalf, records that it did, and still makes every other contract wait for the user.",
+      "criteria": [
+        "vbw loop start ITEM... with a ceiling choice records the loop in the project (the kernel is the only writer, so the loop lives in .vbw/record.json and is committed): the items in the order given, each item's text as the backlog records it at that moment (a snapshot, so a later edit of the backlog changes nothing), the ceiling and its mode, the session that started it, the start time, and the cost figures of every known session at that moment as the loop's baseline (its starting point for spend). vbw loop status prints all of it from any session of the project.",
+        "The ceiling is the user's choice at start (D317): --ceiling USD means stop before the next step once the limit is reached (the default mode); --ceiling USD --finish-item means the item in progress finishes first; --no-ceiling means no cap, chosen explicitly. With none of these, with --finish-item but no --ceiling, or with a USD that is not a positive number, the loop refuses to start as a usage error (exit 2) and nothing changes.",
+        "Each refusal names what to do instead and changes nothing: no item given; an unknown item id; a closed item (done or dropped); the same item twice; a loop already on (names vbw loop stop); the current milestone still has requirements and is not shipped (says to finish or ship it first, since each item gets its own milestone); --ceiling when no session has a cost figure (says vbw statusline on, or --no-ceiling), because a limit VBW cannot measure is no limit.",
+        "vbw loop stop, run from the session that started the loop or from any other session of the project, marks the loop as stopping with the time and the session, and vbw loop status then says so; stop with no loop on says so and exits 0; a second stop changes nothing. The loop state file is read, never guessed from a session file, so the stop is seen by the session running the loop before its next step.",
+        "Delegated approval: when a loop is on and not stopping, and vbw next would ask for approval, and the current milestone's requirements are exactly loop items (every requirement's text equals the recorded text of one loop item, each item matches at most once, and no other requirement is in the milestone, except a [human] requirement an earlier ship carried over for the user to judge), the kernel approves the contract with no question: consent is granted for the contract's fingerprint, the shape and the approved-contract snapshot are written exactly as vbw approve writes them, the project commands and the test-file form are approved too (D315), a decision is recorded whose text says the contract was approved by the loop on the user's behalf and names the loop's start time, the items and the fingerprint, and the approval commit is made. vbw next then moves past approve.",
+        "Any other contract waits for the user exactly as today: a requirement whose text differs from its item's recorded text by one character; an extra requirement in the milestone; a requirement that matches an item not on this loop's list; no loop on; a loop that is stopping; a contract that is not ready (a missing check file, spec and record differing). In each case vbw next answers approve (gate true) or contract as it does now, nothing is approved, no consent is granted and no decision is recorded.",
+        "The approval by delegation happens only inside the kernel's own loop step, never through a command Claude can run to approve: the Bash guard denies vbw loop start from any tool call in a VBW project (as it denies vbw approve, since arming the loop is the user's own act), its denial text is pinned by a test, and the /vbw:loop skill is marked user-invoked only (disable-model-invocation), running vbw loop start in its preamble with the user's own arguments.",
+        "vbw loop status shows the loop's spend so far (the sum over known sessions of the current figures minus the baseline, computed the way a milestone's total is), the ceiling, and one word: under, reached, or cannot tell (no figure seen); cannot tell counts as reached for the stop rule unless the loop runs with --no-ceiling.",
+        "vbw loop --help and vbw help list the command with its sub-commands and the three ceiling forms; docs/loop.md documents start, stop, status, the ceiling modes, the exact rule of the delegated approval and how it is recorded (the decision text and the consent entry); the record's format and docs/record.md describe the loop field."
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 12 (92620 bytes)",
+        "files: more than 2 in a repository tracking 886 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R3 (C3), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R49 (C48), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R71 (C115, C121), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R99 (C155), R101 (C179), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R131 (C198), R132 (C199), R133 (C195), R144 (C208, C209), R147 (C212, C215, C237), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R177 (C287, C288)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P128",
+      "title": "The unattended cycle: each item from milestone to ship, and where the loop stops",
+      "reqs": [
+        "R179"
+      ],
+      "milestone": "M25",
+      "goal": "/vbw:loop takes the loop's items in order through milestone, plan, approval by delegation, build, prove, fix, QA and ship without asking anyone, and stops at the cost ceiling, at the end of its list or on a stop from any session, leaving .vbw/loop-report.md.",
+      "criteria": [
+        "/vbw:loop ITEM... --ceiling USD (or --no-ceiling, or --ceiling USD --finish-item) arms the loop with the user's own arguments, then shows in one message what changed: the items in order, the ceiling and its mode, that approval is delegated for these items only, what never happens (no push, release or publish; no work beyond the items; a [human] requirement waits for the user), and how to stop (/vbw:loop stop, from any session); then the cycle begins. /vbw:loop stop runs vbw loop stop and says what the loop was doing.",
+        "One kernel command (recommended: vbw loop next --json) does every step that needs no agent and returns the first that does. For the next waiting item it opens a milestone titled with the item (vbw milestone start, or the current milestone renamed when it has no requirements), adds the item's recorded text as that milestone's one requirement ([auto] unless only a person can judge it, then [human]), and marks the item in progress; it approves by delegation (P127) when vbw next says approve; it runs vbw ship when vbw next says ship, also when skipped [human] requirements are all that is left (ship now, judge later: D256); it marks a shipped item's backlog entry done; it answers done when the list is finished and stopped with the reason otherwise. Steps that need an agent (plan, build, fix, qa) or a proof come back as vbw next gives them, with the same detail, rigor, effort and profile fields the router passes to workflows. vbw next itself stays a pure reading of the record.",
+        "The Stop hook gate drives the cycle in the loop's own session: while a loop is on in this session, the gate blocks the stop with the next loop step (as the autonomous gate does today), never counts the loop's steps against settings.autonomy_cap (the ceiling is the loop's cap), asks for nothing while this session's proof or workflow still runs in the background, and lets the session stop once the loop reports done or stopped. In any other session the gate ignores the loop. The loop's steps are the ones the /vbw:vibe router describes for each action, run the same way (same workflows, same arguments).",
+        "A [human] requirement at the accept step is skipped by the loop (vbw req skip), never accepted or rejected on the user's behalf; the ship moves it to the next milestone, and the report lists it as waiting for the user's judgment.",
+        "A decision that planning asks for (needs_decisions) is taken with the recommended option and recorded with vbw decide as chosen by the loop with the trade-off accepted; the guided autonomy setting never makes the loop ask; the loop accepts no suggestion (R40) on the user's behalf.",
+        "Stops. Default ceiling: before each step the loop compares its spend with the ceiling; at or above it, or when the spend cannot be told, the loop stops before that step with that reason (a workflow or proof already running is never killed; the loop stops once it has returned and its result is recorded). --finish-item: once reached, the current item runs on to its ship (or its park, P129) and then the loop stops. --no-ceiling: no comparison. End of list: the loop stops after the last item's ship. vbw loop stop from any session: the loop stops before its next step with the reason stopped by the user and the session that asked.",
+        "Anything the loop cannot do without the user stops the loop in this phase with the reason, the item and the step (an escalated fix, a blocked plan, a scope violation, an action the loop does not know); P129 replaces this with retry and park. The stop reason is recorded in the loop state and the report.",
+        ".vbw/loop-report.md is written when the loop ends and refreshed each time an item ends, so a machine that died overnight still leaves one. It says what shipped (item, milestone, requirement, the commits), what was parked and why (filled by P129), what waits for the user (skipped [human] requirements, the stop reason), and what it cost: the loop's total and each item's cost in dollars and tokens, unknown where VBW saw no figure, never 0 or an estimate. The record stores the same facts; vbw loop status after the end says the loop ended, why, and names the report.",
+        "The loop never calls vbw approve and never asks the approval menu; a run it opens carries the same lease as any run (same fields, same session) and ends through the workflow's own vbw run end; a test pins both on a fixture that drives the kernel's loop step through one item from milestone to ship.",
+        "docs/loop.md describes the cycle, the stops, the report and the skill; docs/next.md names the loop step and that vbw next is unchanged; docs/workflows.md and the autonomy section of docs say the loop's steps are not counted against autonomy_cap."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 10 (77285 bytes)",
+        "files: more than 2 in a repository tracking 886 files",
+        "risk: none",
+        "breaks: R20",
+        "guarded: R3 (C3), R13 (C12), R14 (C13), R16 (C15), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R37 (C35), R39 (C36), R40 (C37), R44 (C44, C45), R47 (C47), R49 (C48), R50 (C51), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R57 (C59, C70, C71), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R95 (C149, C150), R96 (C151, C152), R98 (C154), R99 (C155), R101 (C179), R102 (C158, C159), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R122 (C189), R123 (C190, C191), R129 (C196), R130 (C197), R134 (C201), R135 (C202), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R165 (C252), R167 (C257, C258, C259, C260), R171 (C270)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P129",
+      "title": "Retry once, then park; nothing leaves the project",
+      "reqs": [
+        "R179",
+        "R180"
+      ],
+      "milestone": "M25",
+      "goal": "An item whose fix escalates is retried once and then set aside cleanly so the loop moves on with the project back at its last proven state, and nothing the loop does can push, release or publish.",
+      "criteria": [
+        "At the escalate step, the first time for an item, the loop runs vbw fix retry for each escalated fix and continues (the fix workflow runs again); the loop state records the retry against the item. A blocked plan is likewise reset once (vbw plan reset) for a second attempt.",
+        "A second escalation of the same item, a plan blocked again, or a scope violation parks the item through one kernel command (vbw loop park, callable only by the loop step, denied to agents): it reverts the item's commits made since its milestone began with git revert commits (history kept, nothing rewritten, no git reset --hard, no git clean; a file the user staged or edited by hand is left as it is); removes the item's requirement, phases, plans, checks, rules and fixes from the record and its line from .vbw/spec.md, so the next proof and the next approval are not held up by parked work; marks the milestone parked with the reason and freezes its cost as a ship does; records a decision naming the item, the reason, the revert commits and how to bring the work back (revert the reverts, or run the item again); leaves the item's backlog entry open; commits the record; then the loop starts the next item.",
+        "After a park the project proves as before the item started: on a fixture, vbw prove passes the checks that passed before the item, vbw next offers the next milestone (a parked milestone is left behind like a shipped one), vbw status and vbw show roadmap show the milestone as parked with its reason, and the record stays valid (no requirement without a milestone, no check whose file is gone).",
+        "While a loop is on in the project, the Bash guard denies for every caller, the main session included: git push in any form, gh release, gh pr create, npm publish, cargo publish, twine upload, gem push, docker push, and the deploy commands of vercel, netlify, fly, heroku and wrangler; each denial says the loop never leaves the project and names /vbw:loop stop. Outside a loop today's rules stand (a plain git push by the user stays allowed). Every denial text is pinned by a test, and the guard's own cost stays within its budget (tools/bench-hooks.sh).",
+        "vbw ship run by the loop makes no tag, no push and no call to a remote: a test with a remote configured shows the remote and the tags unchanged after a loop's ship.",
+        "The guards that hold for any run hold for the loop's runs: under a loop, a run the loop opened denies the same writes as any run (the record, a path outside the project, a protected check file, a vbw approve call, a git push by a builder), pinned by tests that drive the guard with a loop on and a lease open.",
+        "The report's parked section names each parked item, its reason, its revert commits and how to bring the work back; the loop's total cost includes parked items' cost.",
+        "tools/l3-suite.sh gains a loop scenario (two backlog items, one that ships and one whose fix escalates twice and parks, a small ceiling) with its outcome checked in the record, the report file and git; tests/l3-scenarios.bats lists it. docs/loop.md, docs/guards.md and README describe the loop, its limits and the promise as it now stands: nothing is approved without a record of who approved it, and nothing the loop does leaves the project."
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 2",
+        "files: 20 (308937 bytes)",
+        "files: more than 2 in a repository tracking 886 files",
+        "risk: none",
+        "breaks: R20, R41",
+        "guarded: R1 (C1), R2 (C2), R3 (C3), R4 (C4), R5 (C5), R8 (C8), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R31 (C27), R33 (C29), R34 (C30), R35 (C31), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R42 (C38), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R57 (C59, C70, C71), R59 (C68, C92), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R95 (C149, C150), R96 (C151, C152), R99 (C155), R101 (C179), R102 (C158, C159), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R120 (C185), R121 (C187, C188), R122 (C189), R123 (C190, C191), R127 (C194), R128 (C200), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R145 (C210), R146 (C211), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R177 (C287, C288)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -23878,6 +24365,340 @@
         "docs/guards.md: the rule, the reason text and where a run may write",
         "lead.md and dev.md: debugging and scratch files go inside the project, never /tmp; prompts stay within their word budget"
       ]
+    },
+    {
+      "id": "P127.1",
+      "phase": "P127",
+      "title": "Kernel: vbw loop start, stop and status (the loop's state in the record)",
+      "reqs": [
+        "R178"
+      ],
+      "files": [
+        "plugin/lib/cmd-loop.sh",
+        "plugin/lib/loop.sh",
+        "plugin/lib/record.jq",
+        "plugin/bin/vbw"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "record.jq: validate a top-level `loop` field (unknown keys refused): items (non-empty array of {id T<n>, text, proof auto|human, status waiting|in_progress|shipped|parked, optional milestone M<n>, head (40-hex), baseline (per-session {usd,in,out,at}), retried {fixes:[],plans:[]}, reverts (array of strings), cost (null or {usd,in,out}), reason, at}), ceiling (null or {usd > 0, finish_item boolean}), session (string or null), started_at (ISO), baseline (per-session {usd,in,out,at} like a milestone's), optional stopping {at, session}, ended {at, reason}, report (relative path). tests/loop-help-docs.bats lists the malformed loops that must be refused (exit 3)",
+        "plugin/lib/loop.sh (sourced by the loop commands and, later, the loop step and the gate): loop_norm (whitespace collapsed and trimmed, the way vbw spec add writes text), loop_item_proof and loop_item_text (a backlog text starting with `[human] ` is a [human] requirement whose text is the rest; `[auto] ` likewise; else auto, text as is), loop_spend RECORD (the sum over sessions with a side file of the current figures minus the loop's baseline, exactly as costs_milestone_total treats a missing baseline or a fallen figure: reuse costs_figures/costs_sessions from costs.sh, never duplicate the arithmetic; null when no session has a figure) and loop_word (under, reached, cannot tell; null with no ceiling)",
+        "plugin/bin/vbw dispatch, vbw_cmd_usage and vbw_help entries for `loop`, and cmd-loop.sh: `vbw loop start [--session ID] ITEM... (--ceiling USD [--finish-item] | --no-ceiling)`. Usage errors (exit 2, vbw_usage_error naming the three forms): no ceiling form, --finish-item without --ceiling, both forms, a USD that is not a positive number. Refusals (exit 1, vbw_die, each ending with `Next: ` and what to do): no item (names vbw todo list), an unknown item (names vbw todo list; the word `stop` says to run vbw loop stop instead), a done or dropped item (says so), the same item twice, a loop already on and not ended (names vbw loop stop), a current milestone with requirements that is not shipped (says finish or ship it first: each item gets its own milestone), --ceiling with no session figure (says vbw statusline on, or --no-ceiling). On success: items in the order given with text snapshot, proof and status waiting; ceiling; session (--session, else vbw_session, else null); started_at; baseline from every cost side file; an ended loop is replaced; record committed (`chore(vbw): loop start`, record only) and one line printed",
+        "`vbw loop stop`: no loop or an ended loop prints `no loop is on` and exits 0; a loop already stopping prints that and changes nothing (no write, no commit); else writes stopping {at, session: the caller's or null} and commits the record",
+        "`vbw loop status [--json]`: no loop → `no loop is on` (JSON {on: false}), exit 0; else the items in order with status and text, the ceiling (`$5 (stop at the next step)`, `$5 (finish the item first)`, `none`), the session, the start time, the baseline per session, the spend (`$0.50`, tokens, sessions) with the word under/reached/cannot tell (with a ceiling and no figure: `cannot tell` and that it counts as reached, naming vbw statusline on; with --no-ceiling and no figure: cannot tell, no reached), `stopping since AT (asked by session S)` when stopping, and `ended AT: REASON (report: PATH)` when ended; --json carries on, items, ceiling, session, started_at, baseline, spend, word, stopping, ended, report. tests/loop-start.bats, loop-stop.bats, loop-status-spend.bats and loop-help-docs.bats pin the words"
+      ]
+    },
+    {
+      "id": "P127.2",
+      "phase": "P127",
+      "title": "Kernel: approval by delegation inside the loop step (vbw loop next)",
+      "reqs": [
+        "R178"
+      ],
+      "files": [
+        "plugin/lib/loop-step.sh",
+        "plugin/lib/cmd-loop.sh",
+        "plugin/lib/cmd-approve.sh"
+      ],
+      "after": [
+        "P127.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "cmd-approve.sh: move the writes of an approval into one function, approve_record RECORD HASH DECISION_TEXT (the decision with that text, the strict commit `chore(vbw): approve contract FP` with the rollback of the decision when the commit fails, consent for the contract hash, then the shape consent, the approved-contract.json snapshot and approve_commands); cmd_approve calls it with today's `Contract approved: ...` text and keeps every behaviour (tests/approve-*.bats stay green)",
+        "plugin/lib/loop-step.sh: loop_matches RECORD, one jq rule: the current milestone's requirements, minus the [human] ones built in a phase of an earlier milestone (carried over by a ship), are at least one and every one's loop_norm text equals the loop_norm requirement text (loop_item_text) of a distinct loop item on this loop's list; and loop_delegate: when the loop is on, not stopping and not ended, vbw next answers approve with gate true and no detail.files (never the test-files-edited approval of row 4a), the contract has no approve_problems, and loop_matches holds, call approve_record with the text `Contract approved by the loop on the user's behalf (loop started AT, items T1, T2): N requirements, N checks, N plans (FP)`; otherwise change nothing",
+        "`vbw loop next --json` in cmd-loop.sh (the kernel's loop step, grown by P128): no loop → {action: off, reason}; a lease open in the caller's session → vbw next's run answer unchanged; stopping → write ended {at, reason: `stopped by the user (session S)`} (commit) and answer {action: stopped, reason}; an ended loop → the same answer again, nothing written; else loop_delegate, then print vbw next --json with a `loop` object added ({item: {id, text, n, of} for the item in progress or null, spend, ceiling, word}). Idempotent: a second call approves nothing again and adds no decision",
+        "Run tests/loop-approve.bats, tests/loop-approve-waits.bats and tests/loop-stop.bats; then every approve-*.bats and tests/approval-*.bats to show vbw approve itself is unchanged"
+      ]
+    },
+    {
+      "id": "P127.3",
+      "phase": "P127",
+      "title": "Guard and skill: only the user arms the loop",
+      "reqs": [
+        "R178"
+      ],
+      "files": [
+        "plugin/hooks/guard-bash.jq",
+        "plugin/skills/loop/SKILL.md",
+        "docs/guards.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "guard-bash.jq, in `everywhere` beside approve_call: a loop_call rule on the command position (through sh -c, $(...) and wrappers as approve_call is) denying `vbw loop start` with exactly `only the user arms the loop: /vbw:loop ITEM... --ceiling USD is the user's own command, like /vbw:approve\\nNext: ask the user to run /vbw:loop with the items and the ceiling they choose; never run vbw loop start yourself`, and `vbw loop next` or `vbw loop park` with exactly `vbw loop next and vbw loop park are the kernel's own loop steps: the Stop hook of /vbw:loop runs them, never a tool call\\nNext: end your turn; the loop's Stop hook gives the next step`; `vbw loop stop`, `status`, `--help` and the words inside quoted text stay allowed (tests/loop-guard.bats)",
+        "plugin/skills/loop/SKILL.md: frontmatter name loop, a one-line description, argument-hint `ITEM... --ceiling USD [--finish-item] | ITEM... --no-ceiling | stop`, disable-model-invocation: true, allowed-tools as the vibe skill (the kernel by plugin path, vbw *, Workflow vbw:mapping, planning, building, fixing, verifying), the same Stop hook as the vibe skill (`\"${CLAUDE_PLUGIN_ROOT}/bin/vbw\" auto gate 2>/dev/null || true`); a preamble block with exactly two lines, `\"${CLAUDE_PLUGIN_ROOT}/bin/vbw\" loop start --session ${CLAUDE_SESSION_ID} $ARGUMENTS 2>&1 || true` and `\"${CLAUDE_PLUGIN_ROOT}/bin/vbw\" loop status 2>&1 || true`; a body that says what the kernel answered (armed, refused and why, or `stop` given) at the user's level; the cycle text is P128.4's. Keep tests/skills.bats green",
+        "docs/guards.md, Everywhere table: `vbw loop start` (arming the loop is the user's own act, like approving) and `vbw loop next` / `vbw loop park` (the kernel's loop steps, run by the Stop hook) with their next steps"
+      ]
+    },
+    {
+      "id": "P127.4",
+      "phase": "P127",
+      "title": "Docs: the loop command, its ceiling modes, and the record's loop field",
+      "reqs": [
+        "R178"
+      ],
+      "files": [
+        "docs/loop.md",
+        "docs/record.md",
+        "docs/costs.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/loop.md (new): what the loop is for in plain words, then `vbw loop start ITEM...` with the three ceiling forms (D317: --ceiling USD stops before the next step, --ceiling USD --finish-item lets the item finish, --no-ceiling is an explicit choice), every refusal and its remedy (vbw statusline on or --no-ceiling when no figure is seen), `vbw loop stop` (from any session, the time and session recorded, no loop is on, a second stop changes nothing), `vbw loop status` and `--json` (the spend as a milestone's total, the words under, reached, cannot tell, and that cannot tell counts as reached except with --no-ceiling)",
+        "docs/loop.md, Approval by delegation: the exact rule (every requirement of the current milestone equals the recorded text of one loop item, each item matched at most once, nothing else in the milestone except a [human] requirement an earlier ship carried over; a backlog text starting with `[human] ` becomes a [human] requirement), what is written (consent for the fingerprint, the shape, the approved-contract snapshot, the project commands and the test-file form, D315), the decision text `Contract approved by the loop on the user's behalf (loop started AT, items ...): ... (FP)` and the consent entry, the approval commit; and the cases that still wait for the user, as docs/next.md rows 3a, 4 and 4a describe them; that only the kernel's own loop step approves (the guard denies vbw loop start, next and park to any tool call)",
+        "docs/record.md: a `| \\`loop\\` |` row describing the field (items with their snapshot text, proof, status, milestone, head, baseline, retried, reverts, cost, reason, at; ceiling; session; started_at; baseline; stopping; ended; report), that only vbw loop start, stop and next write it, and that it is added within schema 4; docs/costs.md: a short section on the loop's spend (`vbw loop status`, the same arithmetic as a milestone's total, unknown when no figure)"
+      ]
+    },
+    {
+      "id": "P128.1",
+      "phase": "P128",
+      "title": "Kernel: the loop step takes an item from milestone to ship, and knows where to stop",
+      "reqs": [
+        "R179"
+      ],
+      "files": [
+        "plugin/lib/loop-step.sh",
+        "plugin/lib/loop.sh",
+        "plugin/lib/cmd-loop.sh"
+      ],
+      "after": [
+        "P127.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Opening an item (loop-step.sh): with no item in progress and a waiting item next, the step opens its milestone: `vbw milestone start TITLE` when the current one is shipped (or parked, P129), or `vbw milestone rename TITLE` when it is active with no requirements, TITLE being the item's requirement text (loop_item_text); then `vbw spec add auto|human TEXT` (loop_item_proof), `vbw todo` status in_progress, and the item becomes in_progress with milestone, head (git rev-parse HEAD after the commits) and its own cost baseline (every session's current figures). The functions of cmd-milestone.sh, cmd-spec.sh and cmd-todo.sh are called in-process, never a second vbw",
+        "Stops, judged in this order before anything else: a run lease of the caller's session → vbw next's run answer (a running workflow is never killed; the stop waits for its result); a lease of another session → stopped (`a run of another session (S) is open`); stopping → stopped (`stopped by the user (session S)`); with a ceiling in the default mode, the spend (loop_spend) at or above it → stopped (`ceiling reached: $X spent of a $Y ceiling`), or no figure → stopped (`cannot tell what was spent (no figure seen): vbw statusline on`); with --finish-item the comparison is made only before opening an item; with --no-ceiling never. A stop writes ended {at, reason} and commits",
+        "Actions: approve → loop_delegate (P127); accept → `vbw req skip` for each of detail.requirements (never accept, never reject); ship → `vbw ship` (also with detail.later: D256), the backlog entry done, the item shipped with its cost (loop_spend from the item's own baseline, null when no figure) and at, then the next item (opened the same call) or, with none waiting, ended {reason: `end of the list: N shipped, M parked`} and {action: done}; plan, build, fix, qa, prove and run → vbw next's answer plus the `loop` object (item {id, text, n, of}, spend, ceiling, word); escalate, unblock, scope, contract, convert, spec with an item in progress, or any other action → stopped with `ACTION needs you: INSTRUCTION (item T1, step ACTION)` (P129 replaces escalate, unblock and scope with retry and park)",
+        "The step loops over kernel-only actions inside one call until it reaches an agent step, a proof, done or stopped, reading the record afresh each time; every record change it makes is committed with the record (`chore(vbw): loop ITEM ACTION`); vbw next itself is never changed (tests/loop-cycle.bats compares the step's answer with vbw next --json and proves vbw next writes nothing)",
+        "`vbw loop status` after the end says ended, the reason and the report path (loop.report, written by P128.3); `vbw loop next` after the end answers done or stopped again with the same reason, writing nothing. Run tests/loop-cycle.bats, tests/loop-stops.bats, tests/loop-human-skip.bats (its report lines wait for P128.3) and the P127 files again"
+      ]
+    },
+    {
+      "id": "P128.2",
+      "phase": "P128",
+      "title": "The Stop hook gate drives the loop in its own session",
+      "reqs": [
+        "R179"
+      ],
+      "files": [
+        "plugin/lib/cmd-auto.sh"
+      ],
+      "after": [
+        "P128.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "auto_gate: after the session check and before the auto.SESSION.json logic, when the record's loop is on (not ended) and its session equals the hook's session: honour the proving mark as today (a live background proof → print nothing), else run the loop step (the same function `vbw loop next --json` runs, in-process) and answer: run → nothing (the workflow's result wakes the session); the loop ended during this call → {systemMessage: `VBW loop ended: REASON. Report: .vbw/loop-report.md`}; otherwise {decision: block, reason: `VBW loop, item T1 (1 of 2). Next: ACTION: INSTRUCTION. Do this step now as /vbw:vibe describes, then stop.`}. The loop path never reads, writes or counts auto.SESSION.json (settings.autonomy_cap does not apply)",
+        "A loop that had already ended before this call, or a loop of another session: the gate takes today's path unchanged (tests/loop-gate.bats: another session's autonomous gate still works, and takes no loop step)",
+        "Run tests/loop-gate.bats, tests/auto-gate-background.bats, tests/kernel-auto-sessions.bats and tests/hook-answers.bats (the gate's answer shapes are the ones already pinned: block with reason, and systemMessage)"
+      ]
+    },
+    {
+      "id": "P128.3",
+      "phase": "P128",
+      "title": "The loop report: .vbw/loop-report.md at each item's end and at the loop's end",
+      "reqs": [
+        "R179"
+      ],
+      "files": [
+        "plugin/lib/loop-report.sh",
+        "plugin/lib/loop-step.sh",
+        "plugin/lib/cmd-loop.sh"
+      ],
+      "after": [
+        "P128.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/loop-report.sh: loop_report_write RECORD renders .vbw/loop-report.md from the record alone: a title with the start time and the state (running, or ended with the reason), `## Shipped` (one line per shipped item: id, text, milestone, requirement id, the subjects and short hashes of the commits whose VBW-Plan trailer names a plan of that milestone), `## Parked` (none, or the lines P129 fills: id, text, reason, revert commits, how to bring the work back), `## Waiting for you` (every skipped [human] requirement with its id and text, and the stop reason when the loop ended), `## Cost` (the loop's total from loop_spend and each item's cost in dollars and tokens, each `unknown` when VBW saw no figure, never 0 or an estimate)",
+        "loop-step.sh calls loop_report_write whenever an item ends (shipped, later parked) and when the loop ends, sets loop.report to `.vbw/loop-report.md`, and commits the report together with the record (record_commit with both files named)",
+        "cmd-loop.sh: `vbw loop status` names the report after the end (`report: .vbw/loop-report.md`); run tests/loop-report.bats, tests/loop-human-skip.bats and tests/loop-cycle.bats",
+        "Keep the kernel within its line budget (tests/standards.bats, 7,600 lines): the rendering is one jq program fed the record by file, not a line per field in bash"
+      ]
+    },
+    {
+      "id": "P128.4",
+      "phase": "P128",
+      "title": "The /vbw:loop skill: the one message, then the cycle through the Stop hook",
+      "reqs": [
+        "R179"
+      ],
+      "files": [
+        "plugin/skills/loop/SKILL.md"
+      ],
+      "after": [
+        "P127.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "The one message after the preamble, at the user's level, depth and involvement (from vbw loop status or the interview line): the items in order, the ceiling and its mode, that approval is delegated for these items only, what never happens (no push, release or publish; no work beyond the items; a [human] requirement waits for the user), and how to stop (/vbw:loop stop, from any session). When the preamble refused, say exactly why and what to do, and stop. When $ARGUMENTS is `stop`: run `vbw loop stop`, then say what the loop was doing (vbw loop status) and that it stops before its next step",
+        "The cycle: after the message end the turn; the loop's Stop hook (vbw auto gate) answers with the next step, each time naming the action; do each step as the Steps section of `${CLAUDE_PLUGIN_ROOT}/skills/vibe/SKILL.md` describes it (read it once), with the same workflows and arguments (session, models, rigor, effort, profile from vbw next --json), then end the turn again. Differences from /vbw:vibe, stated as rules: never run `vbw auto on`; the guided autonomy setting never makes the loop ask; at needs_decisions take the recommended option and record each with `vbw decide \"<option>\" \"chosen by the loop: <the trade-off accepted>\"`, then plan again; follow no suggestion (vbw:suggest) on the user's behalf; never run vbw approve and never ask the approval menu (the kernel approves by delegation, or the loop stops); a [human] requirement is skipped by the kernel, never judged; never push, release or publish (the guard refuses it anyway)",
+        "At every stop (a gate answer with no step, or the loop's end message) say what happened and end with `What I need from you:` as /vbw:vibe does; after the loop ends, point to .vbw/loop-report.md",
+        "Keep the skill within 1,400 words (tests/loop-skill.bats) and tests/skills.bats green"
+      ]
+    },
+    {
+      "id": "P128.5",
+      "phase": "P128",
+      "title": "Docs: the cycle, the stops, the report, and autonomy_cap",
+      "reqs": [
+        "R179"
+      ],
+      "files": [
+        "docs/loop.md",
+        "docs/next.md",
+        "docs/workflows.md",
+        "README.md"
+      ],
+      "after": [
+        "P127.4"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/loop.md: `## The cycle` (what /vbw:loop does with the user's arguments and the one message; what `vbw loop next` does in one call: the milestone opened with vbw milestone start or renamed, the requirement added, approval by delegation, vbw ship also with skipped [human] requirements (D256), the backlog entry done; which steps come back for an agent or a proof; needs_decisions taken with the recommended option and recorded as chosen by the loop; vbw req skip for a [human] requirement; the Stop hook driving the session, not counted against autonomy_cap)",
+        "docs/loop.md: `## Where the loop stops` (the default ceiling before each step, cannot tell counting as reached, --finish-item, --no-ceiling, end of the list, /vbw:loop stop from any session, a running workflow never killed, an action the loop cannot do: the reason, the item and the step) and `## The report` (.vbw/loop-report.md: when it is written and refreshed, each section, costs unknown rather than 0, and `vbw loop status` after the end)",
+        "docs/next.md: a short section naming `vbw loop next` as the loop step that runs the kernel-only actions and that vbw next itself is unchanged (a pure reading of the record); docs/workflows.md and README.md (the settings table and the autonomy lines): the loop's steps are not counted against autonomy_cap, the ceiling is the loop's cap, and /vbw:loop in the commands table pointing to docs/loop.md"
+      ]
+    },
+    {
+      "id": "P129.1",
+      "phase": "P129",
+      "title": "Kernel: a parked milestone is left behind like a shipped one",
+      "reqs": [
+        "R179"
+      ],
+      "files": [
+        "plugin/lib/record.jq",
+        "plugin/lib/next.jq",
+        "plugin/lib/cmd-milestone.sh",
+        "plugin/lib/costs.sh",
+        "plugin/lib/cmd-show.sh",
+        "plugin/lib/cmd-status.sh"
+      ],
+      "after": [
+        "P127.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "record.jq: milestone.status may be `parked`; a top-level `parked` list of {id M<n>, title, at (ISO), reason (non-empty)}, each id once; the ids known to requirements, phases and costs are the shipped, parked and current milestones; the current milestone is parked exactly when it is in `parked` (as shipped works); a parked milestone has no requirement, phase or plan left (the park removed them)",
+        "next.jq row 1 and docs: a milestone whose status is `parked` answers {action: milestone, gate: true} with `Milestone M2 is parked (REASON): start the next milestone (vbw milestone start TITLE)`; cmd-milestone.sh: `vbw milestone start` accepts a parked current milestone like a shipped one and `rename` refuses it; costs.sh costs_milestone_total treats a parked milestone as a shipped one (its frozen total, else null)",
+        "cmd-show.sh roadmap lists parked milestones in order with `[parked AT: REASON]`; cmd-status.sh prints `parked: M2 (REASON)` beside shipped; `vbw status --json` carries parked ids",
+        "Run tests/loop-retry-park.bats (its park cases wait for P129.2; the parked-milestone commands can be driven by a hand-written record), tests/record-*.bats, tests/cost-milestones.bats and tests/next-*.bats"
+      ]
+    },
+    {
+      "id": "P129.2",
+      "phase": "P129",
+      "title": "Kernel: retry once, then vbw loop park",
+      "reqs": [
+        "R179"
+      ],
+      "files": [
+        "plugin/lib/loop-park.sh",
+        "plugin/lib/loop-step.sh",
+        "plugin/lib/cmd-loop.sh",
+        "plugin/lib/loop-report.sh"
+      ],
+      "after": [
+        "P128.3",
+        "P129.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "loop-step.sh, retry: at escalate, for each escalated fix not yet in the item's retried.fixes, `vbw fix retry` (in-process) and record it, then continue (the fix workflow runs again); at unblock, for each blocked plan not yet in retried.plans, `vbw plan reset` and record it, then continue; a fix or plan already retried, or a scope violation, parks the item",
+        "plugin/lib/loop-park.sh, loop_park REASON: the commits since the item's head that touch any file outside .vbw/ are reverted newest first with `git revert --no-edit` (one revert commit each, history kept; a commit touching a file the user has staged or edited by hand is left unreverted and named); then in one record update the item's requirement, its phases and plans, its checks and rules, its fixes and the evidence's references are removed, a carried [human] requirement of that milestone is marked skipped and later (so the next milestone takes it), the milestone becomes parked {at, reason} (status parked, listed in `parked`), its cost frozen as vbw ship freezes it, a decision `Parked ITEM (TEXT): REASON; reverted COMMITS; to bring the work back revert the reverts or run the item again` recorded; the item's spec line is removed from .vbw/spec.md; check files of the removed checks that no other check names are removed from the tree; the backlog entry stays open; the item becomes parked with reason, reverts (the revert commits' hashes) and cost; the record, the spec and the removed files are committed as `chore(vbw): park ITEM`. Never git reset --hard, never git clean, nothing rewritten",
+        "cmd-loop.sh: `vbw loop park` runs loop_park for the item in progress; with no loop, no item in progress, or an open lease it refuses with `Next: `; the loop step parks on a second escalation, a plan blocked again or a scope violation, then opens the next item or ends (`end of the list: N shipped, M parked`), the report refreshed",
+        "loop-report.sh: the `## Parked` section lists each parked item with its reason, its revert commits and how to bring the work back; the total includes parked items' cost (tests/loop-park-report.bats)",
+        "Run tests/loop-retry-park.bats, tests/loop-park-report.bats, tests/loop-park-guard.bats (its guard half is P127.3's) and the P127 and P128 loop tests again; a parked fixture must prove (vbw prove passes C1) and validate"
+      ]
+    },
+    {
+      "id": "P129.3",
+      "phase": "P129",
+      "title": "Guard: nothing leaves the project while a loop is on",
+      "reqs": [
+        "R180"
+      ],
+      "files": [
+        "plugin/hooks/guard-bash.jq",
+        "plugin/hooks/common.jq",
+        "plugin/lib/record.sh",
+        "tools/bench-hooks.sh"
+      ],
+      "after": [
+        "P127.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "record.sh record_glance_write: the glance carries `loop` as {session, started_at, ended} when the record has a loop (null otherwise), so a guard reads the loop's state from the glance at the same cost as the lease; common.jq guard_context: `loop_on` is true when the record (or glance) holds a loop object with no `ended`",
+        "guard-bash.jq, in in_project before the lease rules, when loop_on: deny `git push` (any arguments, through git -C and wrappers), `gh release` (except list, view, download), `gh pr create`, `npm publish`, `cargo publish`, `twine upload`, `gem push`, `docker push`, `vercel` (bare, with options only, or `deploy`), `netlify deploy`, `fly deploy`, `flyctl deploy`, `heroku container:push`, `heroku container:release`, `heroku pipelines:promote`, `wrangler deploy`, `wrangler publish` (also through `npx`), each with exactly `the loop never leaves the project: WHAT is not run while a loop is on\\nNext: wait for the loop to end, or stop it with /vbw:loop stop, then VERB yourself`, WHAT and VERB as tests/loop-outward-guard.bats pins them (`git push`/push, `gh release`/release, `gh pr create`/open the pull request, `npm publish`/publish, `cargo publish`/publish, `twine upload`/upload, `gem push`/push, `docker push`/push, `vercel deploy`, `netlify deploy`, `fly deploy`, `flyctl deploy`, `heroku container:push`, `heroku container:release`, `wrangler deploy`, `wrangler publish`/deploy). Outside a loop nothing changes; may_matter gains the words these commands need (gh, npm, cargo, twine, gem, docker, vercel, netlify, fly, heroku, wrangler, publish, push, deploy) so the fast path still skips unrelated commands",
+        "tools/bench-hooks.sh: a `guard (loop)` case (a loop on in the small record, the command `git push origin main`, no lease), judged against the hook budget like the others, on the small and the large record",
+        "Run tests/loop-outward-guard.bats, tests/loop-lease-guards.bats, tests/loop-ship-local.bats, tests/hooks-guard.bats, tests/guard-*.bats, tests/glance-guards.bats and tests/hook-answers.bats, then bash tools/bench-hooks.sh once to see the loop case within budget"
+      ]
+    },
+    {
+      "id": "P129.4",
+      "phase": "P129",
+      "title": "L3: the loop scenario in tools/l3-suite.sh",
+      "reqs": [
+        "R180"
+      ],
+      "files": [
+        "tools/l3-suite.sh"
+      ],
+      "after": [
+        "P129.2",
+        "P129.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "scenario_loop: new_project with the status line on (L3_STATUSLINE=1), two backlog items added with vbw todo add before the session starts (one the greet.sh request that ships; one whose requirement no check can satisfy, so its fix escalates twice and the item parks: for example a file that must say both `yes` and `no` as its whole content), the user types `/vbw:loop T1 T2 --ceiling 3`, answers no question (the loop asks none; on_question fails the scenario), and done_yet is the loop's end in the record (loop.ended)",
+        "checks: in the record (loop.items: one shipped, one parked with a reason naming the escalation; the delegated-approval decision present and no `Contract approved:` decision beyond the fixture's; the parked milestone in `parked`), in the report file (.vbw/loop-report.md exists, names the shipped item and the parked item with its revert commits), and in git (the revert commits present, the shipped item's commit present, nothing pushed: no remote configured so `git remote` is empty, no tags); result_write loop with the fixture, the cost, the facts and a not_tested list (a real remote, a ceiling reached mid-item, a [human] item)",
+        "ALL and the header comment name `loop`; tests/l3-loop.bats holds the structure (tests/l3-scenarios.bats is R34's frozen check file, so the loop scenario is listed there instead). Run the scenario once if Claude Code is available on this machine (bash tools/l3-suite.sh loop) and commit tools/l3-results/loop.json; if it cannot run here, say so in the plan's notes: the release run writes the result"
+      ]
+    },
+    {
+      "id": "P129.5",
+      "phase": "P129",
+      "title": "Docs: park, the guard's promise, and README",
+      "reqs": [
+        "R179",
+        "R180"
+      ],
+      "files": [
+        "docs/loop.md",
+        "docs/guards.md",
+        "README.md",
+        "docs/record.md",
+        "docs/workflows.md"
+      ],
+      "after": [
+        "P128.5",
+        "P127.3"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/loop.md: `## Retry once, then park` (vbw fix retry and vbw plan reset once per item, recorded; what `vbw loop park` does step by step: git revert of the item's commits newest first, history kept, a user-edited file left alone, the record and spec cleaned, the milestone parked with its cost frozen, the decision text, the backlog entry open; how to bring the work back: revert the reverts, or run the item again) and `## The promise` (nothing is approved without a record of who approved it: the user through /vbw:approve, or the loop by delegation with the decision and the consent entry; nothing the loop does leaves the project: no push, release, publish or deploy while a loop is on, every ship local for the user's review, the run guards unchanged)",
+        "docs/guards.md: a `While a loop is on` table with every denied command and the pinned text (`the loop never leaves the project: ... /vbw:loop stop`), that it holds for every caller including the main session, and that outside a loop a plain git push stays allowed; docs/workflows.md `Every refusal and its next step`: the loop's guard refusals (arming, the loop steps, leaving the project) with their next steps",
+        "docs/record.md: the `parked` list and the `parked` milestone status, and the loop item fields the park fills (reverts, reason, cost); README.md: /vbw:loop in the commands table and a short `Night shift` paragraph in current-behaviour terms (what it does, the ceiling, what never happens, docs/loop.md) with the promise sentence: nothing is approved without a record of who approved it, and nothing the loop does leaves the project"
+      ]
     }
   ],
   "fixes": [
@@ -27643,6 +28464,24 @@
       "text": "Loop v0 is release 2.0.35: delegated approval for named backlog items with a cost ceiling, the unattended cycle with one retry then park, never outward. The Runs-take-turns items (T128, T127, T130, T132) wait: the loop builds them on its first night. Built in that order",
       "why": "owner, 2026-10-12 18:50: only what is critical for the loop tonight, the rest looped overnight",
       "at": "2026-10-12T17:51:00Z"
+    },
+    {
+      "id": "D315",
+      "text": "While the loop runs alone it may approve new and changed project commands (the test command, the test-file form) along with the contract, not only commands the user approved before",
+      "why": "owner, 2026-10-12 19:00: more items finish overnight; accepted that a command written at night runs on this computer before anyone looks at it, with VBW's guards as the only brake (the recommendation was: only commands already approved)",
+      "at": "2026-10-12T17:59:49Z"
+    },
+    {
+      "id": "D316",
+      "text": "When the loop parks an item, it sets that item's changes aside before the next item: the project goes back to the last proven state, the undo stays in the history, and the morning report names the parked work and how to bring it back",
+      "why": "owner, 2026-10-12 19:02: each item starts clean, so one bad item cannot sink the rest; a little more to build",
+      "at": "2026-10-12T18:01:16Z"
+    },
+    {
+      "id": "D317",
+      "text": "The spending limit is the user's choice at loop start: vbw loop start takes --ceiling USD (the loop stops at the next step once the limit is reached, the default) or --ceiling USD --finish-item (the item in progress finishes first), or --no-ceiling, an explicit choice to run with no cap; with none of them the loop refuses to start",
+      "why": "owner, 2026-10-12 19:05: wants both behaviours as options to decide at start, and the choice of no cap; stop-at-next-step stays the default because VBW never guesses what an item still needs",
+      "at": "2026-10-12T18:02:34Z"
     }
   ],
   "commands": {
@@ -30974,6 +31813,15 @@
         "milestone": "M25",
         "started": "2026-10-12T17:51:15Z",
         "ended": "2026-10-12T17:58:53Z",
+        "cost": null
+      },
+      {
+        "id": "plan-20261012T180235Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T18:02:35Z",
+        "ended": "2026-10-12T18:54:28Z",
         "cost": null
       }
     ],
