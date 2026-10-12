@@ -28482,6 +28482,11 @@
       "text": "The spending limit is the user's choice at loop start: vbw loop start takes --ceiling USD (the loop stops at the next step once the limit is reached, the default) or --ceiling USD --finish-item (the item in progress finishes first), or --no-ceiling, an explicit choice to run with no cap; with none of them the loop refuses to start",
       "why": "owner, 2026-10-12 19:05: wants both behaviours as options to decide at start, and the choice of no cap; stop-at-next-step stays the default because VBW never guesses what an item still needs",
       "at": "2026-10-12T18:02:34Z"
+    },
+    {
+      "id": "D318",
+      "at": "2026-10-12T18:55:43Z",
+      "text": "Contract approved: 169 requirements, 305 checks, 384 plans (cae420b9015c)"
     }
   ],
   "commands": {
