@@ -9583,6 +9583,30 @@
           "check": "C287"
         }
       ]
+    },
+    {
+      "id": "R178",
+      "text": "With vbw loop start ITEM... --ceiling USD the user delegates approval to the loop for the named backlog items: a contract whose requirements are exactly those items (their recorded text, nothing more) is approved by the kernel without a question, recorded as approved by the loop on the user's behalf; any other contract still waits for the user",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M25",
+      "rules": []
+    },
+    {
+      "id": "R179",
+      "text": "/vbw:loop runs the unattended cycle for the loop's items in order (milestone, plan, approve by delegation, build, prove, fix, QA, ship): an escalated fix is retried once, then its item is parked with the reason and the loop moves to the next item; a [human] requirement is skipped for the user to judge later; the loop stops at the cost ceiling, at the end of its list, or when the user runs vbw loop stop from any session, and leaves .vbw/loop-report.md saying what shipped, what was parked and why, and what it cost",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M25",
+      "rules": []
+    },
+    {
+      "id": "R180",
+      "text": "The loop never pushes, releases or publishes: nothing it does leaves the project, every ship stays local for the user's review, and the guards that hold for any run hold for the loop's runs",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M25",
+      "rules": []
     }
   ],
   "phases": [
@@ -27613,6 +27637,12 @@
       "id": "D313",
       "at": "2026-10-12T11:06:34Z",
       "text": "Shipped M24 Before the night shift: cost data, approval completeness, honest proof and fix output: 5 requirements proven or accepted"
+    },
+    {
+      "id": "D314",
+      "text": "Loop v0 is release 2.0.35: delegated approval for named backlog items with a cost ceiling, the unattended cycle with one retry then park, never outward. The Runs-take-turns items (T128, T127, T130, T132) wait: the loop builds them on its first night. Built in that order",
+      "why": "owner, 2026-10-12 18:50: only what is critical for the loop tonight, the rest looped overnight",
+      "at": "2026-10-12T17:51:00Z"
     }
   ],
   "commands": {
@@ -30935,6 +30965,15 @@
         "milestone": "M24",
         "started": "2026-10-12T11:00:01Z",
         "ended": "2026-10-12T11:05:04Z",
+        "cost": null
+      },
+      {
+        "id": "plan-20261012T175115Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T17:51:15Z",
+        "ended": "2026-10-12T17:58:53Z",
         "cost": null
       }
     ],
