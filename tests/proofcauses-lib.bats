@@ -134,6 +134,15 @@ prove_passed() {
   [ "$output" = "nothing was committed since the last passing proof" ] || { echo "$output"; false; }
 }
 
+@test "R175 (F151): an uncommitted edit to a project file is no cause: the project's files differ from the tree the proof recorded while HEAD and the record are unchanged" {
+  prove_passed
+  run causes
+  [ "$output" = "nothing was committed since the last passing proof" ] || { echo "$output"; false; }
+  printf 'more\n' >> src/a.txt
+  run causes
+  [ -z "$output" ] || { echo "$output"; false; }
+}
+
 @test "R175: a passing proof that recorded no fingerprint of the record (an older VBW) is no cause" {
   prove_passed
   edit_record 'del(.evidence.record)'
