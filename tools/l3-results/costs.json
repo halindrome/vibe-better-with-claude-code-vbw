@@ -1,0 +1,23 @@
+{
+  "scenario": "costs",
+  "fixture": "greet.sh from an empty project (the greenfield request); the working tree's status line on; the user answers with VBW's recommendations",
+  "cost_usd": 0.83,
+  "evidence_level": "L3",
+  "at": "2026-10-12T00:06:29Z",
+  "passed": true,
+  "facts": {
+    "statusline_on": true,
+    "run_id": "build-20261012T000225Z",
+    "run_cost_usd": 0.367749,
+    "milestone_cost_usd": 0.827715,
+    "session_cost_usd": 0.83,
+    "unknown_runs": 0
+  },
+  "not_tested": [
+    "a session without the status line (cost unknown by design)",
+    "a ceiling reached mid-run",
+    "a project larger than the greet.sh fixture",
+    "Claude Code versions other than the one that ran",
+    "whether the figures equal the invoice (the suite compares VBW with /cost only)"
+  ]
+}
