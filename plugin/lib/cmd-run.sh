@@ -7,6 +7,17 @@
 
 VBW_LEASE_HOURS=24
 
+# run_id KIND AT: the id of a run of KIND started at AT (the time, to the
+# second): KIND-20260101T120000Z, unique among the runs the record holds. A
+# second run started in the same second gets -2, a third -3 (R173: a run's
+# cost is kept by its id, so two runs never share one).
+run_id() {
+  local base
+  base="$1-$(printf '%s' "$2" | tr -d ':-')"
+  jq -r --arg b "$base" '[.costs.runs[]?.id | select(. == $b or startswith($b + "-"))] | length
+    | if . == 0 then $b else "\($b)-\(. + 1)" end' "$VBW_RECORD"
+}
+
 cmd_run() {
   local sub="${1:-}"
   [ $# -gt 0 ] && shift
@@ -124,6 +135,8 @@ cmd_run() {
 
   # shellcheck source=costs.sh
   . "$VBW_LIB/costs.sh"
+  local at
+  at=$(vbw_now)
   record_update '
     (if $k == "build" then [.plans[] | select(.id as $i | any($ids[]; . == $i)) | .files[]] | unique
      elif $k == "fix" then
@@ -141,10 +154,11 @@ cmd_run() {
               | ([.checks[] | select(.req as $q | any($qs[]; . == $q) | not) | (.files // [])[]] | unique) as $others
               | $mine - $others)}
        else {} end) as $qa
-    | .lease = {run: "\($k)-\($at | gsub("[-:]"; ""))", kind: $k, started_at: $at, files: $files}
+    | .lease = {run: $run, kind: $k, started_at: $at, files: $files}
        + (if $me == "" then {} else {session: $me} end) + $qa
        + (if $cost == null then {} else {cost: $cost} end)
     | if $k == "build" then (.plans[] | select(.id as $i | any($ids[]; . == $i))).status = "building" else . end' \
-    --arg k "$kind" --arg me "$(vbw_session)" --argjson ids "$ids" --arg at "$(vbw_now)" --argjson cost "$(costs_figures "$(vbw_session)")"
+    --arg k "$kind" --arg me "$(vbw_session)" --argjson ids "$ids" --arg at "$at" --arg run "$(run_id "$kind" "$at")" \
+    --argjson cost "$(costs_figures "$(vbw_session)")"
   jq -r '.lease | "run \(.run) started; agents may write: \(if .files == null then "any file (protected checks excepted)" else (.files | join(", ")) end)"' "$VBW_RECORD"
 }
