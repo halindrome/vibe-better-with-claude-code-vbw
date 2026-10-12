@@ -51,14 +51,19 @@ def simple($q):
       else ([$w | capture("^[0-9]*&?(?<op>>>?|>\\||<)(?<rest>.*)$")] | first) as $r
         | if $r == null then .words += [$w | restore($q)]
           else (if $r.op == "<" then "in" else "out" end) as $k
-            | if $r.rest == "" then .next = $k
-              elif $r.rest | startswith("&") then .
+            | if $r.rest == "" or $r.rest == "&" then .next = $k
+              # >&1, 2>&1, <&0, >&-: a descriptor, not a file; >&FILE writes FILE (D304).
+              elif $r.rest | test("^&([0-9]+|-)$") then .
+              elif $r.rest | startswith("&") then .[$k] += [$r.rest[1:] | restore($q)]
               else .[$k] += [$r.rest | restore($q)] end
           end
       end)
   # A redirect whose target the splitter cut off (a backtick substitution starts
   # it) has an unresolved target: refused under a run like any expansion (D304).
   | if .next != null then .[.next] += ["`...`"] else . end
+  # A target cut at the ( of an unquoted $(...) is named as $(...), the same way.
+  | .out |= map(if endswith("$") then . + "(...)" else . end)
+  | .in |= map(if endswith("$") then . + "(...)" else . end)
   | (.words | command_words) as $cw
   | {cmd: (($cw[0] // "") | basename), args: $cw[1:], out, in};
 
