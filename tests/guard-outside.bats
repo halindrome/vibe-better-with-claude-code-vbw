@@ -55,6 +55,31 @@ allowed() { [ -z "$1" ] || { echo "not allowed: $1"; return 1; }; }
   open_run
   out=$(printf '%s' "$(write_in /tmp/scratch.txt)" | vbw_hook PreToolUse Write)
   denied_outside "$out" /tmp/scratch.txt
+  [[ "$out" == *"there only its plan files (src/pay.txt)"* ]] || { echo "$out"; false; }
+}
+
+# where OUTPUT TEXT: the refusal says the run writes only inside the project, and there only TEXT.
+where() { [[ "$1" == *"agents write only inside the project, and there only $2"* ]] || { echo "the refusal does not say where ($2): $1"; return 1; }; }
+
+@test "R177 (F157): the refusal says where each kind of run may write: a plan run its test files and .vbw/, a fix of a failed project command any project file, a build its plan files" {
+  VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
+  out=$(printf '%s' "$(write_in /tmp/dbg.bats vbw:lead)" | vbw_hook PreToolUse Write)
+  denied_outside "$out" /tmp/dbg.bats
+  where "$out" "the project's test files and .vbw/"
+  out=$(printf '%s' "$(bash_in 'echo x > /tmp/dbg.log')" | vbw_hook PreToolUse Bash)
+  denied_outside "$out" /tmp/dbg.log
+  where "$out" "the project's test files and .vbw/"
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  jq '.commands = {test: ["sh", "tests/c1.sh"]} | .fixes = [{id: "F1", command: "test", attempts: 0, status: "open", note: "test fail"}]' .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
+  VBW_SESSION_ID=s1 "$VBW" run start fix F1 > /dev/null
+  jq -e '.lease.files == null' .vbw/record.json > /dev/null
+  out=$(printf '%s' "$(write_in /tmp/scratch.txt)" | vbw_hook PreToolUse Write)
+  denied_outside "$out" /tmp/scratch.txt
+  where "$out" "project files"
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  open_run
+  out=$(printf '%s' "$(bash_in 'echo x > /tmp/scratch.txt')" | vbw_hook PreToolUse Bash)
+  where "$out" "its plan files (src/pay.txt)"
 }
 
 @test "R177: during a run a shell redirect to /tmp is denied the same way" {
