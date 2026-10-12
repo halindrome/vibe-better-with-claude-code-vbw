@@ -216,13 +216,14 @@ cmd_fix() {
   fi
 
   # What ran and what was reused, checks first and then test files, each in its
-  # record's order, in the proof summary's wording; then the counts, every time.
+  # record's order, in the proof summary's wording; then both counts, after
+  # every per-unit line as the proof summary prints them, every time (D304).
   local order
   order=$(printf '%s\n' ${cands[@]+"${cands[@]}"} | jq -R . | jq -sc 'map(select(length > 0))')
   fix_unit_lines "$results" "$order" "$wmap" "$rmap"
-  printf 'checks: %s ran, %s reused\n' "${#todo[@]}" "$(printf '%s' "$rmap" | jq 'length')"
   if [ ${#TF_PATHS[@]} -gt 0 ]; then order=$(printf '%s\n' "${TF_PATHS[@]}" | jq -R . | jq -sc 'map(select(length > 0))'); else order='[]'; fi
   fix_unit_lines "$tfres" "$order" "$TF_WHY" "$(printf '%s' "$TF_REUSE" | jq -c 'map_values(.at)')"
+  printf 'checks: %s ran, %s reused\n' "${#todo[@]}" "$(printf '%s' "$rmap" | jq 'length')"
   printf 'test files: %s ran, %s reused\n' "${#TF_TODO[@]}" "$(printf '%s' "$TF_REUSE" | jq 'length')"
 
   # Each fix ends as it would alone. A failing check fails the named fixes whose
