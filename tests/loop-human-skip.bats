@@ -39,6 +39,9 @@ step() { loop_next s1 > "$TEST_ROOT/step.json"; jq -r .action "$TEST_ROOT/step.j
   grep -qi 'waiting' .vbw/loop-report.md
   grep -q "$q" .vbw/loop-report.md
   grep -q 'The greeting feels friendly' .vbw/loop-report.md
+  # The Shipped line of the marked item names its requirement id, never "none" (F172).
+  awk '/^## Shipped/,/^## Parked/' .vbw/loop-report.md | grep -q "$q" || { cat .vbw/loop-report.md; false; }
+  ! awk '/^## Shipped/,/^## Parked/' .vbw/loop-report.md | grep -q ', none)' || { cat .vbw/loop-report.md; false; }
 }
 
 @test "R179: the loop never accepts or rejects on the user's behalf: no acceptance, no rejection, no fix from a rejection" {
