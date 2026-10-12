@@ -24878,6 +24878,14 @@
       "attempts": 0,
       "status": "fixed",
       "note": "docs/costs.md lists the JSON fields of 'vbw show costs --json' incompletely and contradicts the output: milestones[] also carries title (the table omits it), and runs[] also carries session, started and ended (the table lists only id, kind, milestone, cost). The criterion and plan P125.6 ask the page to describe the command's object; plan P125.4 fixes those fields. Regression test: tests/cost-docs.bats should compare the field names in docs/costs.md with the keys of a real 'vbw show costs --json' (milestones[0] and runs[0]) and fail on any missing."
+    },
+    {
+      "id": "F140",
+      "req": "R173",
+      "source": "qa",
+      "attempts": 0,
+      "status": "fixed",
+      "note": "Two runs started within the same second get the same run id (kind plus the start time to the second), so .costs.runs holds two entries with one id and vbw show costs cannot tell them apart. Seen in tests/cost-milestones.bats test 3 on an idle machine: both qa runs became qa-20261012T030650Z and the test fails; under load it passes by timing. Run ids must be unique: a run that would repeat an id of .costs.runs gets a numbered suffix. Regression test with a fixed clock, and test 3 then deterministic."
     }
   ],
   "todos": [
@@ -30433,6 +30441,15 @@
         "milestone": "M24",
         "started": "2026-10-12T02:22:43Z",
         "ended": "2026-10-12T03:02:53Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T030908Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-12T03:09:08Z",
+        "ended": "2026-10-12T03:28:13Z",
         "cost": null
       }
     ],
