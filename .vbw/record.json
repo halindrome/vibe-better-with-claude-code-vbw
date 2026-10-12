@@ -25825,6 +25825,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T131",
+      "text": "FOR DISCUSSION (2026-10-12): QA re-check rounds. Four deep rounds on M24 each found new, smaller things (a clause without a test that can fail, a stale sentence), because every round re-runs the whole deep sweep with a fresh mind. Proposal: a re-check round verifies the round's fixes and what their changed files reach, plus the goal; the whole-phase sweep runs once, at round 1, unless the goal, criteria or plans changed. Owner decides: it trades some depth for convergence",
+      "sort": "later",
+      "size": "medium",
+      "status": "open"
     }
   ],
   "decisions": [
