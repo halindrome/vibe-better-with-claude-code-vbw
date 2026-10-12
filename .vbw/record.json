@@ -1,6 +1,12 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261012T110001Z",
+    "kind": "qa",
+    "started_at": "2026-10-12T11:00:01Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -15211,12 +15217,11 @@
       ],
       "predicted": "standard",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "2ea63e433f30feaf5e2121e7caa8eb4a518c32f4b24312c9144a9220189e4009",
-        "at": "2026-10-12T10:39:40Z",
-        "note": "29/30 checks",
-        "rounds": 8
+        "tree": "dcfb5757d9c0234eadb943d045f809b24486e2c7301278e1d816bbdada4dfbab",
+        "at": "2026-10-12T11:03:39Z",
+        "note": "30/30 checks"
       },
       "escalations": [
         {
@@ -15225,7 +15230,15 @@
           "to": "deep",
           "reason": "QA needs a second round"
         }
-      ]
+      ],
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 11,
+        "qa_findings": 11,
+        "escalations": 1
+      }
     }
   ],
   "plans": [
@@ -25072,7 +25085,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "A file-tool write (Write/Edit) to a project file whose name holds a dollar sign, a backtick, or starts with a tilde is denied during a run as \"outside the project\", even when the file is listed in the plan. Probe (build lease, files [src/pay.txt, app/routes/$id.tsx], Dev agent, plugin/hooks/guard-file.jq with project root /proj): Write /proj/app/routes/$id.tsx gives deny \"…/$id.tsx cannot be resolved by the guard (~ or a shell expansion), so it counts as outside the project: … there only its plan files (src/pay.txt, app/routes/$id.tsx)\". The reason contradicts itself (the file is in the plan list), and the Dev cannot write its own plan file. Remix / React Router route files are named $param.tsx, so this blocks real builds. Before this phase the same write was allowed (covered by lease.files). Cause: run_write_denial in plugin/hooks/common.jq applies unresolved_path (^~|[$`]) to every path, but the file tools receive a literal absolute path that no shell ever expands; the \"guard reads text, never expands\" reasoning of D304 only holds for Bash redirect targets and git checkout arguments. The same false denial hits a single-quoted redirect target (echo x > 'app/routes/$id.tsx' is shell-literal) because simple() restores the quotes before the test. Not pinned: tests/guard-outside.bats F147 test only checks a ~ file write is refused, no test writes a plan-listed file with $ in its name. Fix: apply unresolved_path only to Bash-derived targets (pass a flag from guard-bash.jq, or call it there), and keep file-tool paths on project_path; optionally let a quoted target count as literal. Record the narrowing in a decision (D304 says \"write target\"). Regression test (tests/guard-outside.bats): under a build lease whose files include app/routes/$id.tsx, a Write to <project>/app/routes/$id.tsx is allowed, a Write to <project>/app/other/$x.tsx is refused as outside the run files (not as unresolvable), while an unquoted Bash redirect to $HOME/x stays denied."
     }
   ],
