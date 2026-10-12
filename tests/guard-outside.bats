@@ -101,9 +101,33 @@ allowed() { [ -z "$1" ] || { echo "not allowed: $1"; return 1; }; }
   out=$(printf '%s' "$(write_in /tmp/scratch.txt vbw:scout)" | vbw_hook PreToolUse Write)
   printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' > /dev/null || { echo "not denied: $out"; false; }
   why=$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecisionReason')
-  [[ "$why" == *"outside the project"* && "$why" == *"Next: leave it; report what you needed in your result, this run's agents write nothing" ]] || { echo "$why"; false; }
+  [[ "$why" == *"is outside the project: during a map run agents write nothing"* && "$why" == *"Next: leave it; report what you needed in your result, this run's agents write nothing" ]] || { echo "$why"; false; }
   out=$(printf '%s' "$(write_in .vbw/runtime/scratch/x.txt vbw:scout)" | vbw_hook PreToolUse Write)
   printf '%s' "$out" | jq -e '.hookSpecificOutput.permissionDecision == "deny"' > /dev/null || { echo "a read-only run wrote scratch: $out"; false; }
+}
+
+@test "R177 (F147): a path the guard cannot resolve counts as outside: ~ and \$HOME redirects during a plan run, and a ~ file write, are refused" {
+  VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
+  local c
+  for c in 'echo a > ~/tests/a.test.js' 'echo a > $HOME/tests/a.test.js' 'echo a > "$HOME/tests/a.test.js"' 'echo a > `pwd`/../x.test.js' 'echo a > $(pwd)/tests/x.test.js'; do
+    out=$(printf '%s' "$(bash_in "$c")" | vbw_hook PreToolUse Bash)
+    denied_outside "$out" || { echo "let through: $c"; false; }
+    [[ "$out" == *"cannot be resolved by the guard"* ]] || { echo "$out"; false; }
+  done
+  out=$(printf '%s' "$(write_in '~/notes.md')" | vbw_hook PreToolUse Write)
+  denied_outside "$out"
+}
+
+@test "R177 (F148): the device files stay writable under a run, and nothing else under /dev is" {
+  open_run
+  local c
+  for c in 'ls 2>/dev/null' 'echo x > /dev/stderr' 'echo x > /dev/stdout' 'echo x > /dev/tty' 'npm test > /dev/null 2>&1'; do
+    allowed "$(printf '%s' "$(bash_in "$c")" | vbw_hook PreToolUse Bash)" || { echo "refused: $c"; false; }
+  done
+  out=$(printf '%s' "$(bash_in 'echo x > /dev/sda')" | vbw_hook PreToolUse Bash)
+  denied_outside "$out"
+  out=$(printf '%s' "$(write_in /dev/shm/x)" | vbw_hook PreToolUse Write)
+  denied_outside "$out"
 }
 
 @test "R177: inside the project the lease rules decide as before: the plan's file is allowed, another file is refused as outside the run's files" {
