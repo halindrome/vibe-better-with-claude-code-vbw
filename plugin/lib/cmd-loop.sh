@@ -109,7 +109,7 @@ loop_start() {
     list="$list${list:+, }$id"
   done
   printf '%s' "$rec" | jq -e '.loop != null and .loop.ended == null' > /dev/null \
-    && vbw_die "a loop is already on. Next: run vbw loop status to see it, or vbw loop stop to end it"
+    && vbw_die "a loop is already on. Next: run vbw loop status to see it, or vbw loop stop to end it (twice when it is already stopping and its session is gone)"
   printf '%s' "$rec" | jq -e '.milestone.status != "shipped" and (. as $r | .milestone.id as $m
       | any($r.requirements[]; .milestone == $m and ((.proof == "human" and (.id as $i | any($r.phases[]; .milestone != $m and any(.reqs[]; . == $i)))) | not)))' > /dev/null \
     && vbw_die "$(printf '%s' "$rec" | jq -r .milestone.id) has requirements and is not shipped. Next: finish or ship it first (vbw next): each item gets its own milestone"
@@ -137,7 +137,14 @@ loop_stop() {
     printf 'no loop is on\n'; return 0
   fi
   if printf '%s' "$rec" | jq -e '.loop.stopping != null' > /dev/null; then
-    printf '%s' "$rec" | jq -r '.loop.stopping | "the loop is already stopping since \(.at) (asked by \(if .session == null then "no session" else "session \(.session)" end))"'
+    # A stopping loop ends at its session's next Stop hook; when that session is gone, nothing would
+    # end it, so a second stop ends it here, with the report (F170).
+    # shellcheck source=cmd-next.sh
+    . "$VBW_LIB/cmd-next.sh"
+    # shellcheck source=loop-step.sh
+    . "$VBW_LIB/loop-step.sh"
+    loop_end "stopped by the user (a second vbw loop stop while it was stopping)" > /dev/null
+    printf '%s' "$rec" | jq -r '.loop.stopping | "the loop was stopping since \(.at) (asked by \(if .session == null then "no session" else "session \(.session)" end)); it is ended now. Report: .vbw/loop-report.md"'
     return 0
   fi
   record_update '.loop.stopping = {at: $at, session: (if $s == "" then null else $s end)}' --arg at "$(vbw_now)" --arg s "$(vbw_session)"
