@@ -2,7 +2,7 @@
 # R178 (P127; docs/loop.md): vbw loop stop, from the session that started the
 # loop or from any other session of the project, marks the loop as stopping
 # with the time and the session; vbw loop status then says so. Stop with no
-# loop on says so and exits 0; a second stop changes nothing. The loop state is
+# loop on says so and exits 0; a second stop ends the stopping loop (D322). The loop state is
 # read from the record, never guessed from a session file, so the kernel's loop
 # step (vbw loop next) sees the stop before its next step. L1.
 
@@ -33,7 +33,7 @@ teardown() { vbw_teardown; }
   [[ "$output" == *"stopping"* ]] && [[ "$output" == *"s9"* ]] || { echo "$output"; false; }
 }
 
-@test "R178: stop with no loop on says so and exits 0; a second stop changes nothing" {
+@test "R178: stop with no loop on says so and exits 0; a second stop ends the stopping loop (D322)" {
   local before
   edit_record 'del(.loop)'
   git add .vbw/record.json && git commit -q -m "chore(test): no loop"
