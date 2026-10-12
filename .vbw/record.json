@@ -27140,6 +27140,11 @@
       "text": "The fix round of M24 leaves tests/helper.bash alone: the proof's units run without the session's VBW_SESSION_ID through the kernel (checks_exec clears it), which is what the proof needs; the helper's own unset of VBW_SESSION_ID (hermetic tests run by hand) waits for the next unavoidable helper edit",
       "why": "a helper edit re-runs every recorded unit (about 33 minutes); the owner's rule since 2026-10-11 21:40: never edit a shared file twice in one milestone, measure the blast radius first",
       "at": "2026-10-12T01:04:42Z"
+    },
+    {
+      "id": "D299",
+      "at": "2026-10-12T02:09:44Z",
+      "text": "Contract approved: 166 requirements, 282 checks, 370 plans (78414e0d8432)"
     }
   ],
   "commands": {
