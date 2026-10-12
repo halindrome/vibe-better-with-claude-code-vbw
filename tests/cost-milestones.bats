@@ -85,6 +85,14 @@ milestone() { costs_json | jq -c --arg m "$1" '.milestones[] | select(.id == $m)
   [[ "$output" != *'$0.00'* ]] || { echo "$output"; false; }
 }
 
+@test "R173: a milestone shipped without figures stays unknown when figures arrive later; no dollar counts twice" {
+  "$VBW" ship > /dev/null
+  figures s1 2 1000 100
+  costs_json | jq -e '(.milestones[] | select(.id == "M1") | .status == "shipped" and .usd == null and .sessions == 0)
+    and (.unknown.milestones | index("M1") != null)
+    and ([.milestones[].usd // 0] | add) <= 2' || { costs_json; false; }
+}
+
 @test "R173: --ceiling: under (exit 0, both figures), reached at or above (exit 1), cannot tell with no figure (exit 1)" {
   run "$VBW" show costs --ceiling 5
   [ "$status" -eq 1 ]
