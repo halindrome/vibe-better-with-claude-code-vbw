@@ -15212,10 +15212,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "dcf4f6f7935ccc74e7863d50c2bed92cc012fd77ce95431572f5acb842dd8c85",
-        "at": "2026-10-12T08:50:45Z",
-        "note": "28/30 checks",
-        "rounds": 4
+        "tree": "635d6af84f2b9201c182de63390c5e911ce945e718c54c4044b29d8f90553aa9",
+        "at": "2026-10-12T09:30:44Z",
+        "note": "29/30 checks",
+        "rounds": 5
       },
       "escalations": [
         {
@@ -24991,7 +24991,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "A shell redirect written as >&FILE or >& FILE (bash's 'stdout and stderr to FILE', the same as &> FILE) to a path outside the project is not denied during a run. Probe (guard-bash.jq, build lease and plan lease, Dev/Lead agent): 'echo a >&/tmp/a', 'echo a >& /tmp/a.test.js' give no answer (allowed), while 'echo a &> /tmp/x' and 'echo a > /tmp/x' are denied. Cause: simple() in plugin/hooks/guard-bash.jq drops any redirect whose rest starts with & (meant for fd copies like 2>&1 and >&2), so a >& redirect to a file is dropped whole (D304 'fd redirects stay whole' only covers the numeric form). The criterion says a shell redirect to /tmp or another outside folder is denied. Fix: treat >&WORD (and >& WORD) as a file redirect unless WORD is digits or -. Regression test (tests/guard-outside.bats): under a build lease and a plan lease, a Dev Bash call 'echo a >&/tmp/a' and 'echo a >& /tmp/a' is denied with 'outside the project' and Next:; 'ls 2>&1', 'echo a >&2' and 'echo a >&-' stay allowed."
     },
     {
@@ -24999,7 +24999,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "tests/guard-outside.bats does not check that the refusal names the path for a shell redirect, a relative climb or an interpreter write. The criterion says each denial names the path; only the first test (Write to /tmp/scratch.txt) asserts that the output holds the path. denied_outside checks 'outside the project', 'Next:' and the scratch advice, never the path, so a change that makes the guard-bash redirect rule pass a different string (for example the project-relative form, or the empty string) to the denial would pass every test. Regression test: make denied_outside take the expected path as a second argument and assert the reason contains it, for 'echo hi > /tmp/scratch.txt', the '../outside.txt' write, the python3/node writes to /tmp/q and /tmp/q.js, and the '../outside.txt' interpreter write."
     },
     {
@@ -25041,6 +25041,14 @@
       "attempts": 0,
       "status": "escalated",
       "note": "plugin/lib/cmd-fix.sh line 196 calls 'testfiles_plan \"$record\" 0 fix' so a fix of the test command never meets the proof's 'nothing committed' reason (plan P123.2 task 1), but no test can fail if the 'fix' argument is dropped there. The test added for F152 (tests/fix-done-testfiles.bats 'R176 (F152)') calls testfiles_plan directly through plan_why with kind fix or prove, so it pins the library's parameter, not what cmd_fix passes. Every test that runs 'vbw fix done' for a fix of the test command (tests/fix-done-testfiles.bats setup, tests/prove-summary.bats lines 81-94) first makes a FAILED proof (evidence.passed false), where proofreuse_proved is false whatever the kind, so the 'fix' argument is never the deciding one. F152's own regression text asked for a run of vbw fix done that reuses the files after a passing proof. Regression test needed: in the fix-done-testfiles fixture record a passing proof of the current state (the proved_now helper) with the open fix whose command is 'test', run 'vbw fix done F1' and assert 'test files: 0 ran, 3 reused' and no 'nothing committed' text; it must fail when line 196 drops 'fix'."
+    },
+    {
+      "id": "F156",
+      "req": "R177",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "The clobber redirect >| (bash noclobber override) is mishandled by the guard in plugin/hooks/guard-bash.jq (simple() / commands()). commands() splits the command on |, so \"echo a >| /tmp/x\" becomes \"echo a >\" and \" /tmp/x\"; simple() then ends with .next set and no target, and the D304 fallback adds the placeholder \"`...`\". Probes (build lease, files [src/pay.txt], Dev agent, guard-bash.jq run with the hook inputs): \"echo a >| /tmp/x\" is denied but the refusal reads \"`...` cannot be resolved by the guard (~ or a shell expansion), so it counts as outside the project\" instead of naming /tmp/x (criterion 1: the denial names the path). Worse, \"echo a >| src/pay.txt\", a write to the plan file itself, is also denied with that wrong reason, although criterion 2 says inside the project the lease rules decide as before (before this phase the target was silently dropped, so it was allowed). Fix: do not split on the | of a >| token (or treat >| as a redirect operator before splitting) so the real target is read. Regression test (tests/guard-outside.bats): under a build lease a Dev Bash call \"echo a >| /tmp/x\" is denied and the reason names /tmp/x and says outside the project; \"echo a >| src/pay.txt\" is allowed. Low severity (>| is rare). Not a finding, noted for the summary: tee, cp, mv, dd of=, curl -o, touch, mkdir and sed -i aimed outside the project are not refused during a run; the goal and docs/guards.md scope this rule to file-tool writes, shell redirects and inline interpreter programs, so this matches the agreement."
     }
   ],
   "todos": [
