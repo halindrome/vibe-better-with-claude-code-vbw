@@ -102,3 +102,15 @@ denied_as() {
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -qE '^guard \(loop\): -?[0-9.]+ ms own CPU per call' || { echo "$output"; false; }
 }
+
+@test "R180 (F164): git's global options with their value as the next word hide no push: --git-dir, --work-tree, --namespace" {
+  denied_as 'git --git-dir .git push' 'git push' 'push'
+  denied_as 'git --work-tree . push origin main' 'git push' 'push'
+  denied_as 'git --namespace x push' 'git push' 'push'
+  denied_as 'git --git-dir=.git push' 'git push' 'push'
+  denied_as 'git -C . --git-dir .git push' 'git push' 'push'
+}
+
+@test "R180 (F165): heroku pipelines:promote is denied with its pinned text" {
+  denied_as 'heroku pipelines:promote -a app' 'heroku pipelines:promote' 'deploy'
+}
