@@ -102,20 +102,32 @@ def lease_write_denial($lease; $record):
 
 # Why a subagent may not write ORIGINAL (the path as given), which lies outside
 # the project, during a run, naming where the run may write instead (R177).
-def outside_denial($lease):
-  (if $lease.files == [] then "nothing: its agents only read"
-   elif $lease.kind == "plan" then "the project's test files and .vbw/"
+# HOW says what the path is: outside the project, or one the guard cannot
+# resolve (D304: a path starting with ~ or holding a shell expansion is read as
+# text, never expanded, so it counts as outside).
+def outside_denial($lease; $how):
+  (if $lease.kind == "plan" then "the project's test files and .vbw/"
    elif $lease.files == null then "project files"
    else "its plan files (\($lease.files | join(", ")))" end) as $where
-  | (if $lease.files == [] then "leave it; report what you needed in your result, this run's agents write nothing"
-     else "write inside the project folder instead, or put scratch work in .vbw/runtime/scratch/" end) as $next
-  | "\(.) is outside the project: during a \($lease.kind) run agents write only inside it, and there only \($where)\nNext: \($next)";
+  | if $lease.files == [] then
+      "\(.) \($how): during a \($lease.kind) run agents write nothing\nNext: leave it; report what you needed in your result, this run's agents write nothing"
+    else
+      "\(.) \($how): during a \($lease.kind) run agents write only inside the project, and there only \($where)\nNext: write inside the project folder instead, or put scratch work in .vbw/runtime/scratch/"
+    end;
+def outside_denial($lease): outside_denial($lease; "is outside the project");
+# A path the guard cannot resolve: ~ (bash expands it, the guard does not) or a
+# shell expansion ($VAR, $(...), backticks). Read as text it would pass for a
+# project path; it counts as outside (D304).
+def unresolved_path: test("^~|[$`]");
 
 # Why a subagent may not write ORIGINAL (the path as given) under LEASE: a
 # path outside the project is denied (R177), one inside goes to the lease rules.
 def run_write_denial($g):
-  . as $o | project_path($g.hook.cwd // $root; $root) as $p
-  | if $p == null then (if $o | test("^/dev/(null|stdout|stderr|tty)$") then empty else $o | outside_denial($g.lease) end) else $p | lease_write_denial($g.lease; $g.record) end;
+  . as $o
+  | if $o | unresolved_path then $o | outside_denial($g.lease; "cannot be resolved by the guard (~ or a shell expansion), so it counts as outside the project")
+    else project_path($g.hook.cwd // $root; $root) as $p
+    | if $p == null then (if $o | test("^/dev/(null|stdout|stderr|tty)$") then empty else $o | outside_denial($g.lease) end) else $p | lease_write_denial($g.lease; $g.record) end
+    end;
 
 # Why another session may not write PATH (project-relative) while FOREIGN's run
 # is open, or empty: it writes lease.files (null: any project file, []: none).

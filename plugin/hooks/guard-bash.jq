@@ -56,6 +56,9 @@ def simple($q):
               else .[$k] += [$r.rest | restore($q)] end
           end
       end)
+  # A redirect whose target the splitter cut off (a backtick substitution starts
+  # it) has an unresolved target: refused under a run like any expansion (D304).
+  | if .next != null then .[.next] += ["`...`"] else . end
   | (.words | command_words) as $cw
   | {cmd: (($cw[0] // "") | basename), args: $cw[1:], out, in};
 
@@ -71,7 +74,7 @@ def substitutions:
 # Every simple command the shell would run.
 def commands($depth):
   strip_heredocs | mask as $m
-  | ( [$m.text | splits("\\|\\||&&|;;?|\\||&|\\n|\\(|\\)|\\{|\\}|`") | select(test("\\S"))][]
+  | ( [$m.text | splits("\\|\\||&&|;;?|\\||(?<![<>])&(?!>)|\\n|\\(|\\)|\\{|\\}|`") | select(test("\\S"))][]
       | simple($m.q) as $c
       | $c,
         ( select($depth > 0)
