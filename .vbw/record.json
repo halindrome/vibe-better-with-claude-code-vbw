@@ -15124,7 +15124,15 @@
         "guarded: R3 (C3), R4 (C4), R5 (C5), R8 (C8), R13 (C12), R14 (C13), R16 (C15), R18 (C18), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R29 (C26), R31 (C27), R33 (C29), R34 (C30), R35 (C31), R38 (C33, C34), R40 (C37), R42 (C38), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R51 (C52, C53, C66), R58 (C62, C63, C64, C67), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R72 (C116, C118), R75 (C101), R78 (C105, C106), R80 (C108), R81 (C109, C111, C112, C113), R99 (C155), R101 (C179), R102 (C158, C159), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R144 (C208, C209), R147 (C212, C215, C237), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "5ea97f5be9f11ad283e824a7bf04436384b1731dd0d46bf4f36671e2fa0eccb8",
+        "at": "2026-10-12T02:19:09Z",
+        "note": "17/20 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P126",
@@ -24825,6 +24833,30 @@
       "attempts": 0,
       "status": "open",
       "note": "plugin/agents/lead.md: commit e32afe22 (P126.2) cut 'No invented independence, no needless chains.' from the Lead's rule 1 (Real dependencies) to fit the word budget. That is an unplanned change to an unrelated quality rule; the plan only asked for scratch-file wording and staying within budget. Restore the sentence and make the room elsewhere (shorten the new scratch sentence or a different line). Regression test: a standards/prompt test pinning that the Lead prompt still contains the 'needless chains' rule."
+    },
+    {
+      "id": "F137",
+      "req": "R173",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "A shipped milestone whose ship saw no figures (no frozen total) is not kept unknown: costs_milestone_total (plugin/lib/costs.sh) has no status check, so vbw show costs (cmd-show.sh show_costs loops over every shipped id) recomputes it from the current side files minus a baseline that does not exist, i.e. from each session's first figure. Once the status line is turned on, every old shipped milestone that has no total (in this project M1 to M23) would show the whole session spend, and the same dollars would also count in the active milestone. That breaks the criterion 'no session's spend counts in two milestones' and 'never a guess'. tests/cost-milestones.bats only covers a shipped milestone WITH a frozen total. Regression test: ship a milestone with no side file, then write a side file (figures s1 2 1000 100), start the next milestone? no: just run 'vbw show costs --json': the shipped milestone must stay usd null and sessions 0 and be listed in unknown.milestones, and the sum of the milestones' usd must not exceed what the sessions report."
+    },
+    {
+      "id": "F138",
+      "req": "R173",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The benchmark does not measure the status line with the cost write in place. tools/bench-hooks.sh statusline() feeds {session_id, workspace, cwd, model} with no cost or context_window, so the new side-file branch (select in statusline.jq, split and mv in vbw-statusline.sh) never runs in the 60 ms measurement, yet the criterion and plan P125.1 say the budget holds 'with the write in place'. I measured by hand with a cost field and a bad session id (jq part only, no write allowed in a QA run): about 27 ms per call with and without cost, so the budget is probably fine, but the promised measurement cannot show a regression in the write. Regression test: make bench-hooks.sh feed total_cost_usd and token totals for the status line cases (and a safe session id in a project with the record), and fail if the side file was not written."
+    },
+    {
+      "id": "F139",
+      "req": "R173",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "docs/costs.md lists the JSON fields of 'vbw show costs --json' incompletely and contradicts the output: milestones[] also carries title (the table omits it), and runs[] also carries session, started and ended (the table lists only id, kind, milestone, cost). The criterion and plan P125.6 ask the page to describe the command's object; plan P125.4 fixes those fields. Regression test: tests/cost-docs.bats should compare the field names in docs/costs.md with the keys of a real 'vbw show costs --json' (milestones[0] and runs[0]) and fail on any missing."
     }
   ],
   "todos": [
