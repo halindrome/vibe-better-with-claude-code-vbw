@@ -299,7 +299,7 @@ approved by the loop on the user's behalf ...`) and the consent entry for the
 contract's fingerprint (see "Approval by delegation"). Claude and agents cannot
 approve: the guard denies it.
 
-**Nothing the loop does leaves the project.** While a loop is on, no push,
+**Nothing the loop does leaves the project: the loop never leaves the project.** While a loop is on, no push,
 release, publish or deploy runs, from the loop's workflows or from anyone in
 the session: the guard denies them (docs/guards.md, "While a loop is on").
 Every ship is local, a commit for you to review; you push when you choose. The
