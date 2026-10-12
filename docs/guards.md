@@ -17,6 +17,8 @@ steps is in docs/workflows.md ("Every refusal and its next step").
 | Call | Why |
 |---|---|
 | `vbw approve`, however it is spelled (`"$X/bin/vbw" approve`, `bash bin/vbw approve`, inside `$(...)` or `sh -c`) | Approving the contract is the user's decision: `/vbw:approve` |
+| `vbw loop start`, spelled any of those ways | Arming the loop is the user's own act, like approving: `/vbw:loop ITEM... --ceiling USD`. Next: ask the user to run it with the items and the ceiling they choose |
+| `vbw loop next`, `vbw loop park` | The kernel's loop steps, run by the Stop hook of `/vbw:loop`, never a tool call. Next: end your turn; the Stop hook gives the next step |
 | Writing the consent file (`<git-dir>/vbw/consent.json`) by redirect, by a non-reading program, or with a file tool | The same |
 | Writing the store of recorded runs (`<git-dir>/vbw/runs.json`, the read lists that decide which check results are reused) the same ways | A forged read list could make a check pass without running; only the kernel writes it |
 
