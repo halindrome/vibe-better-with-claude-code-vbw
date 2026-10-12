@@ -150,3 +150,22 @@ parked_clean() {
   [[ "$output" == *"Next: "* ]] || { echo "$output"; false; }
   jq -e '.loop.items[0].status == "waiting" and (has("parked") | not)' .vbw/record.json
 }
+
+@test "R179 (F166): a commit that changes code and a .vbw file together is left in place and named, never skipped in silence" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 --ceiling 50 > /dev/null
+  built_and_broken
+  printf 'other\n' > src/other.txt
+  printf 'note\n' > .vbw/notes.md
+  git add -f src/other.txt .vbw/notes.md && git commit -q -m "chore: code and record together"
+  escalated
+  [ "$(step)" = fix ] || { cat "$TEST_ROOT/step.json"; false; }
+  escalated
+  figures s1 4 2000 200
+  [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; false; }
+  # The item's own commits are reverted; the mixed one stays, its code in place, and the decision names it.
+  git log --format=%s | grep -q '^Revert "feat(greet): bye"'
+  ! git log --format=%s | grep -q 'Revert "chore: code and record together"'
+  [ -f src/other.txt ] && grep -q other src/other.txt
+  jq -e '[.decisions[] | select(.text | test("park"))] | last | .text | test("changes the record too")' .vbw/record.json \
+    || { jq '.decisions[-2:]' .vbw/record.json; false; }
+}
