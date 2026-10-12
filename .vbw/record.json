@@ -3697,9 +3697,9 @@
     ]
   },
   "milestone": {
-    "id": "M24",
-    "title": "Before the night shift: cost data, approval completeness, honest proof and fix output",
-    "status": "shipped"
+    "id": "M25",
+    "title": "Loop v0: the night shift runs alone",
+    "status": "active"
   },
   "shipped": [
     {
@@ -30938,6 +30938,41 @@
         "cost": null
       }
     ],
-    "milestones": {}
+    "milestones": {
+      "M25": {
+        "baseline": {
+          "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
+            "usd": 811.322233,
+            "in": 630729,
+            "out": 2681,
+            "at": "2026-10-12T17:50:44Z"
+          },
+          "689c5465-3aa1-49af-9115-8192ae092ecf": {
+            "usd": 31.912831,
+            "in": 154074,
+            "out": 847,
+            "at": "2026-10-12T17:50:44Z"
+          },
+          "69afb011-3850-41d9-8620-9b59aa9fe082": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-12T17:50:44Z"
+          },
+          "868abfef-9fb7-492e-afba-751d9042e56a": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-12T17:50:44Z"
+          },
+          "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-12T17:50:44Z"
+          }
+        }
+      }
+    }
   }
 }
