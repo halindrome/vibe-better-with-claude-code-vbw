@@ -121,6 +121,34 @@ loop_ship_item() {
   loop_commit_report "chore(vbw): loop $id ship"
 }
 
+# loop_park_item ITEM REASON: the item in progress is parked (loop-park.sh), the report refreshed.
+loop_park_item() {
+  # shellcheck source=loop-park.sh
+  . "$VBW_LIB/loop-park.sh"
+  loop_park "$2" > /dev/null
+  loop_commit_report "chore(vbw): loop $1 park"
+}
+
+# loop_retry ITEM NEXT_JSON: at escalate (fixes) or unblock (plans), each one the item has not retried
+# yet is retried once (vbw fix retry, vbw plan reset) and recorded; one already retried parks the item.
+loop_retry() {
+  local cur=$1 next=$2 key id ids why
+  case "$(printf '%s' "$next" | jq -r .action)" in escalate) key=fixes ;; *) key=plans ;; esac
+  ids=$(printf '%s' "$next" | jq -r --arg k "$key" '.detail[$k][]')
+  for id in $ids; do
+    if record_read | jq -e --arg i "$cur" --arg k "$key" --arg x "$id" '.loop.items[] | select(.id == $i) | ((.retried[$k] // []) | index($x)) != null' > /dev/null; then
+      if [ "$key" = fixes ]; then why="fix $id escalated again after one retry"
+      else why="plan $id blocked again after one reset: $(record_read | jq -r --arg x "$id" '.plans[] | select(.id == $x) | .note // "no note"')"; fi
+      loop_park_item "$cur" "$why"; return 0
+    fi
+  done
+  for id in $ids; do
+    if [ "$key" = fixes ]; then cmd_fix retry "$id" > /dev/null; else cmd_plan reset "$id" > /dev/null; fi
+    record_update '(.loop.items[] | select(.id == $i)).retried |= ((. // {fixes: [], plans: []}) | .[$k] += [$x])' --arg i "$cur" --arg k "$key" --arg x "$id"
+  done
+  loop_commit "$cur" retry
+}
+
 # loop_step: one call of vbw loop next. Stops come first (a run of this session is vbw next's answer,
 # never killed); then the kernel-only actions are done one after the other, the record read afresh each
 # time, until an agent step or a proof is due (vbw next's answer with the loop object), the list is
@@ -134,6 +162,10 @@ loop_step() {
   . "$VBW_LIB/cmd-req.sh"
   # shellcheck source=cmd-ship.sh
   . "$VBW_LIB/cmd-ship.sh"
+  # shellcheck source=cmd-fix.sh
+  . "$VBW_LIB/cmd-fix.sh"
+  # shellcheck source=cmd-plan.sh
+  . "$VBW_LIB/cmd-plan.sh"
   local rec next cur waiting action why n
   while :; do
     rec=$(record_read)
@@ -177,6 +209,10 @@ loop_step() {
         loop_commit "$cur" accept ;;
       ship)
         loop_ship_item "$cur" ;;
+      escalate | unblock)
+        loop_retry "$cur" "$next" ;;
+      scope)
+        loop_park_item "$cur" "scope violation: $(printf '%s' "$next" | jq -r '.detail.violations[0]')" ;;
       plan | build | fix | qa | prove | run)
         loop_emit "$next"; return 0 ;;
       *)
