@@ -31874,6 +31874,19 @@
         "started": "2026-10-12T19:07:31Z",
         "ended": "2026-10-12T19:24:16Z",
         "cost": null
+      },
+      {
+        "id": "plan-20261012T192512Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T19:25:12Z",
+        "ended": "2026-10-12T19:27:08Z",
+        "cost": {
+          "usd": 0,
+          "in": 0,
+          "out": 0
+        }
       }
     ],
     "milestones": {
