@@ -45,7 +45,8 @@ loop_figures_now() {
   printf '%s\n' "$base"
 }
 
-# loop_spend RECORD [ITEM]: the spend as {usd, in, out, sessions}: the sum over the sessions with a
+# loop_spend FILE [ITEM]: FILE is the record's path (never its data: jq reads it). The spend as
+# {usd, in, out, sessions}: the sum over the sessions with a
 # side file of the current figures minus the baseline (the loop's, or the item's own), exactly as a
 # milestone's total is (costs_milestone_total reads a baseline from the record it is given, so it is
 # given the baseline as a one-milestone record). null when no session has a figure.
