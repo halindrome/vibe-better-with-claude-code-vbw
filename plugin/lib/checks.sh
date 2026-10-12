@@ -85,10 +85,12 @@ checks_exec() {
   # A signal ignored by the environment stays ignored in its children (some CI
   # runners start everything with SIGALRM/SIGTERM ignored). So timeout escalates
   # to SIGKILL, which cannot be ignored, and perl resets SIGALRM before the alarm.
+  # A unit never sees the session that runs the proof (VBW_SESSION_ID): a project's
+  # tests must give one result whoever proves them.
   if command -v timeout > /dev/null 2>&1; then
-    timeout -k 5 "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
+    env -u VBW_SESSION_ID timeout -k 5 "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
   else
-    perl -e '$SIG{ALRM} = "DEFAULT"; alarm shift @ARGV; exec { $ARGV[0] } @ARGV or do { print STDERR "cannot run $ARGV[0]: $!\n"; exit 127 }' \
+    env -u VBW_SESSION_ID perl -e '$SIG{ALRM} = "DEFAULT"; alarm shift @ARGV; exec { $ARGV[0] } @ARGV or do { print STDERR "cannot run $ARGV[0]: $!\n"; exit 127 }' \
       "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
   fi
   CHECK_SECONDS=$SECONDS

@@ -89,7 +89,10 @@ A check proves one `auto` requirement. It lives in the record:
 `vbw prove` runs checks from the root of a clean copy of the committed code,
 `vbw check` from the project root; both close stdin. A run that reaches its
 timeout is stopped (by `timeout` where available, otherwise by `perl`'s alarm)
-and fails.
+and fails. Every check and project command runs without `VBW_SESSION_ID`, the
+session that is proving: a project's tests give one result whoever proves them,
+and the figures a test records under a session id are its own, never the
+prover's (docs/costs.md).
 
 ### Checks run in parallel
 
