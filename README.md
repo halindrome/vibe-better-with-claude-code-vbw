@@ -379,7 +379,9 @@ Your AI-managed project now has more structure than most startups that raised a 
 
 ## Token Efficiency
 
-> **Coming soon.** VBW 2's token and cost analysis ships with **2.1.0**.
+VBW records what each run and each milestone cost ([docs/costs.md](docs/costs.md)).
+
+> **Coming soon.** The benchmark of VBW 2 against VBW 1.x and plain Claude Code ships with **2.1.0**.
 
 ### VBW 1.x vs stock Opus 4.6 Agent Teams
 
@@ -422,6 +424,7 @@ Every capability was shell-only: 85 scripts ran as bash subprocesses at zero mod
 | [docs/guards.md](docs/guards.md) | The safety guards |
 | [docs/interview.md](docs/interview.md) | The questions about you, and how they shape every message |
 | [docs/record.md](docs/record.md) | The plan of record (`.vbw/record.json`) |
+| [docs/costs.md](docs/costs.md) | What each run and each milestone cost (`vbw show costs`) |
 | [docs/statusline.md](docs/statusline.md), [docs/panel.md](docs/panel.md) | The status line and the panel |
 | [docs/diagnostics.md](docs/diagnostics.md) | `vbw report` for bug reports, and `vbw rtk` |
 | [docs/tools.md](docs/tools.md) | Finding the best tools for your project (nothing installed without your approval) |
