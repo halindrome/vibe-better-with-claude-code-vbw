@@ -11,14 +11,14 @@
 # L3_JOBS at a time (default 4); each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, tools, legacy, nolegacy, smallchange, costs. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, tools, legacy, nolegacy, smallchange, costs, loop. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel tools legacy nolegacy smallchange costs"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel tools legacy nolegacy smallchange costs loop"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -1474,6 +1474,70 @@ scenario_costs() {
       "$(jq -n --argjson sl "$sl" --arg id "$run_id" --argjson r "${run_usd:-0}" --argjson m "${ms_usd:-0}" --argjson s "${cost_usd:-0}" --argjson u "${unknown:-0}" \
         '{statusline_on: $sl, run_id: $id, run_cost_usd: $r, milestone_cost_usd: $m, session_cost_usd: $s, unknown_runs: $u}')" \
       '["a session without the status line (cost unknown by design)","a ceiling reached mid-run","a project larger than the greet.sh fixture","Claude Code versions other than the one that ran","whether the figures equal the invoice (the suite compares VBW with /cost only)"]'
+  }
+}
+
+# loop (R180): the loop through the real TUI. Two backlog items, added before the session starts:
+# T1 ships (greet.sh); T2 asks for a file that must be two things at once, so its fix escalates, is
+# retried once, escalates again and the item parks. The user types /vbw:loop and answers nothing:
+# the loop asks no question. Checked in the record, in the report file and in git.
+scenario_loop() {
+  new_project
+  export L3_STATUSLINE=1
+  item1='A command-line script greet.sh: "./greet.sh Ana" prints "Hello, Ana!" and without a name prints "Hello, world!"'
+  item2='A file answer.txt whose whole content is exactly the word yes and, at the same time, exactly the word no'
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor auto > /dev/null \
+    && "$VBW" todo add "$item1" > /dev/null \
+    && "$VBW" todo add "$item2" > /dev/null) \
+    || { say "setup failed: could not add the two backlog items"; return 1; }
+  fixture="two backlog items (T1: greet.sh, ships; T2: a file that must say both yes and no, whose fix escalates twice and parks); the working tree's status line on; /vbw:loop T1 T2 --ceiling 3; no question answered"
+  start='/vbw:loop T1 T2 --ceiling 3'
+  # The loop asks nothing: a question on screen fails the scenario.
+  asked=false
+  on_question() { asked=true; return 1; }
+  # The Stop hook drives the session; while the loop runs the user types nothing.
+  on_idle() {
+    jq -e '.loop != null and .loop.ended == null' "$dir/.vbw/record.json" > /dev/null 2>&1 || return 1
+    sleep 15
+    return 0
+  }
+  done_yet() { jq -e '.loop.ended != null' "$dir/.vbw/record.json" > /dev/null 2>&1; }
+  checks() {
+    local passed=true r="$dir/.vbw/record.json" rep="$dir/.vbw/loop-report.md" h reverts_ok=true n_rev=0 shipped_commit=false report_ok=false
+    local delegated own remotes tags reverts
+    check "the loop ended" '.loop.ended != null'
+    check "T1 shipped" '[.loop.items[] | select(.id == "T1" and .status == "shipped")] | length == 1'
+    check "T2 parked, with a reason naming the escalation" '[.loop.items[] | select(.id == "T2" and .status == "parked" and ((.reason // "") | test("escalat"; "i")))] | length == 1'
+    check "the parked item's milestone is in parked" '. as $r | [.loop.items[] | select(.status == "parked") | .milestone] as $m | ($m | length) > 0 and all($m[]; . as $x | any($r.parked[]?; .id == $x))'
+    delegated=$(jq '[.decisions[] | select(.text | startswith("Contract approved by the loop on the user"))] | length' "$r" 2> /dev/null || echo 0)
+    own=$(jq '[.decisions[] | select(.text | startswith("Contract approved:"))] | length' "$r" 2> /dev/null || echo 0)
+    expect "the delegated approval is recorded ($delegated)" [ "$delegated" -ge 1 ]
+    expect "no approval by the user beyond the fixture's ($own)" [ "$own" -eq 0 ]
+    expect "no question was asked" [ "$asked" = false ]
+    # The report names both items and the parked item's revert commits.
+    reverts=$(jq -r '[.loop.items[] | select(.status == "parked") | (.reverts // [])[] | if type == "object" then (.hash // .sha // tostring) else tostring end] | .[]' "$r" 2> /dev/null)
+    if [ -f "$rep" ] && grep -qF "$item1" "$rep" && grep -qF "$item2" "$rep" && grep -q '^## Parked' "$rep" && grep -q '^## Shipped' "$rep"; then report_ok=true; fi
+    for h in $reverts; do
+      n_rev=$((n_rev + 1))
+      grep -q "${h:0:7}" "$rep" 2> /dev/null || report_ok=false
+      git -C "$dir" cat-file -e "$h^{commit}" 2> /dev/null || reverts_ok=false
+      git -C "$dir" log -1 --format=%s "$h" 2> /dev/null | grep -q '^Revert' || reverts_ok=false
+    done
+    [ "$n_rev" -gt 0 ] || reverts_ok=false
+    expect ".vbw/loop-report.md names the shipped and the parked item with its revert commits" [ "$report_ok" = true ]
+    expect "the revert commits are in git ($n_rev)" [ "$reverts_ok" = true ]
+    [ -n "$(git -C "$dir" log --format=%B | grep '^VBW-Plan: ')" ] && shipped_commit=true
+    expect "the shipped item's plan commit is in git" [ "$shipped_commit" = true ]
+    remotes=$(git -C "$dir" remote)
+    tags=$(git -C "$dir" tag)
+    expect "nothing pushed: no remote ($remotes)" [ -z "$remotes" ]
+    expect "no tag ($tags)" [ -z "$tags" ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write loop "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson d "$delegated" --argjson o "$own" --argjson q "$asked" --argjson r "$report_ok" --argjson n "$n_rev" \
+        --arg s "$(jq -r '[.loop.items[] | "\(.id)=\(.status)"] | join(",")' "$r" 2> /dev/null)" --arg e "$(jq -r '.loop.ended.reason // ""' "$r" 2> /dev/null)" \
+        '{items: $s, ended: $e, delegated_approvals: $d, user_approvals: $o, question_asked: $q, report_names_items_and_reverts: $r, revert_commits: $n, remotes: 0, tags: 0}')" \
+      '["a real remote configured","a ceiling reached mid-item","a [human] item","a loop of more than two items","Claude Code versions other than the one that ran"]'
   }
 }
 
