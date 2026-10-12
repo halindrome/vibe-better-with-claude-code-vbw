@@ -109,3 +109,17 @@ line() {
   [ "$(ran)" = "" ] || { echo "ran: $(ran)"; echo "$output"; false; }
   jq -e '.evidence.passed == true' .vbw/record.json
 }
+
+@test "R176: with a cause (no earlier recorded run) every test file runs with no 'ran:' part, the cause prints once and the count is the true total" {
+  rm -f "$TEST_ROOT/fail_a"
+  rm -f "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json"
+  vbw_run fix done "$FIX"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  line '^every candidate check runs: this clone has no earlier recorded run$'
+  line '^tests/t_a\.sh pass [0-9.]+s$'
+  line '^tests/t_b\.sh pass [0-9.]+s$'
+  line '^tests/t_c\.sh pass [0-9.]+s$'
+  printf '%s\n' "$output" | grep -F 'tests/t_' | grep -qF 'ran:' && { echo "$output"; false; }
+  line '^test files: 3 ran, 0 reused$'
+  [ "$(ran)" = "C1 t_a t_b t_c " ] || { echo "ran: $(ran)"; false; }
+}
