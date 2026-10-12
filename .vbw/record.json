@@ -25033,7 +25033,7 @@
       "req": "R176",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "plugin/lib/cmd-fix.sh line 196 calls 'testfiles_plan \"$record\" 0 fix' so a fix of the test command never meets the proof's 'nothing committed' reason (plan P123.2 task 1), but no test can fail if the 'fix' argument is dropped there. The test added for F152 (tests/fix-done-testfiles.bats 'R176 (F152)') calls testfiles_plan directly through plan_why with kind fix or prove, so it pins the library's parameter, not what cmd_fix passes. Every test that runs 'vbw fix done' for a fix of the test command (tests/fix-done-testfiles.bats setup, tests/prove-summary.bats lines 81-94) first makes a FAILED proof (evidence.passed false), where proofreuse_proved is false whatever the kind, so the 'fix' argument is never the deciding one. F152's own regression text asked for a run of vbw fix done that reuses the files after a passing proof. Regression test needed: in the fix-done-testfiles fixture record a passing proof of the current state (the proved_now helper) with the open fix whose command is 'test', run 'vbw fix done F1' and assert 'test files: 0 ran, 3 reused' and no 'nothing committed' text; it must fail when line 196 drops 'fix'."
     },
     {
@@ -25041,7 +25041,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "The clobber redirect >| (bash noclobber override) is mishandled by the guard in plugin/hooks/guard-bash.jq (simple() / commands()). commands() splits the command on |, so \"echo a >| /tmp/x\" becomes \"echo a >\" and \" /tmp/x\"; simple() then ends with .next set and no target, and the D304 fallback adds the placeholder \"`...`\". Probes (build lease, files [src/pay.txt], Dev agent, guard-bash.jq run with the hook inputs): \"echo a >| /tmp/x\" is denied but the refusal reads \"`...` cannot be resolved by the guard (~ or a shell expansion), so it counts as outside the project\" instead of naming /tmp/x (criterion 1: the denial names the path). Worse, \"echo a >| src/pay.txt\", a write to the plan file itself, is also denied with that wrong reason, although criterion 2 says inside the project the lease rules decide as before (before this phase the target was silently dropped, so it was allowed). Fix: do not split on the | of a >| token (or treat >| as a redirect operator before splitting) so the real target is read. Regression test (tests/guard-outside.bats): under a build lease a Dev Bash call \"echo a >| /tmp/x\" is denied and the reason names /tmp/x and says outside the project; \"echo a >| src/pay.txt\" is allowed. Low severity (>| is rare). Not a finding, noted for the summary: tee, cp, mv, dd of=, curl -o, touch, mkdir and sed -i aimed outside the project are not refused during a run; the goal and docs/guards.md scope this rule to file-tool writes, shell redirects and inline interpreter programs, so this matches the agreement."
     }
   ],
@@ -30782,6 +30782,15 @@
         "milestone": "M24",
         "started": "2026-10-12T09:26:21Z",
         "ended": "2026-10-12T09:32:18Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T093328Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M24",
+        "started": "2026-10-12T09:33:28Z",
+        "ended": "2026-10-12T09:49:17Z",
         "cost": null
       }
     ],
