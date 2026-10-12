@@ -15191,7 +15191,7 @@
         "the guards stay within their CPU budget"
       ],
       "proposed": "standard",
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 6 (48105 bytes)",
@@ -15205,11 +15205,19 @@
       "qa": {
         "result": "fail",
         "tier": "standard",
-        "tree": "ee103e224f32875f9ced033bb40aed579a767a56ad599120ff4f2a256c62dbde",
-        "at": "2026-10-12T02:17:48Z",
-        "note": "15/17 checks",
-        "rounds": 1
-      }
+        "tree": "16bf392b42fed1155f78597c2c2fffc39614411efcf764e3a71da2c1047bb02f",
+        "at": "2026-10-12T04:18:23Z",
+        "note": "16/17 checks",
+        "rounds": 2
+      },
+      "escalations": [
+        {
+          "at": "2026-10-12T04:18:23Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "QA needs a second round"
+        }
+      ]
     }
   ],
   "plans": [
@@ -24864,7 +24872,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The refusal's 'Next:' line (plugin/hooks/common.jq outside_denial), docs/guards.md line 108 and plugin/agents/dev.md all tell agents to put scratch/debugging files in .vbw/runtime/. In a build or fix run that same guard denies .vbw/runtime/ because lease.files is only the plan's files. Probe: build lease files [src/pay.txt], Write to .vbw/runtime/x.txt -> 'is outside this run's files (src/pay.txt)'. So a Dev (who only runs in build/fix runs) following the prompt or the Next advice is refused again; the criterion said a build or fix run writes its plan files. Regression test should: open a build run, take the path named in the outside-denial's Next line (or in dev.md), write to it, and require it is allowed; or require the Next text for build/fix runs to name only the plan files. Existing tests/guard-outside.bats checks only that 'Next: ' exists, so it cannot catch this."
     },
     {
@@ -24872,7 +24880,7 @@
       "req": "R177",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/agents/lead.md: commit e32afe22 (P126.2) cut 'No invented independence, no needless chains.' from the Lead's rule 1 (Real dependencies) to fit the word budget. That is an unplanned change to an unrelated quality rule; the plan only asked for scratch-file wording and staying within budget. Restore the sentence and make the room elsewhere (shorten the new scratch sentence or a different line). Regression test: a standards/prompt test pinning that the Lead prompt still contains the 'needless chains' rule."
     },
     {
@@ -24930,6 +24938,14 @@
       "attempts": 0,
       "status": "open",
       "note": "A figure that goes down makes the record unwritable. costs_diff (plugin/lib/costs.sh) is plain END minus START and nothing checks the sign: with an opening figure above the closing one it returns {usd:-1,in:-200,out:-30} (I ran it). vbw run end (plugin/lib/cmd-run.sh) puts that into costs.runs, and record_update then refuses it ('refused: costs.runs entries need ... non-negative numbers'), so the run can never be ended and the lease stays open. The same applies to vbw ship: costs_milestone_total subtracts the baseline from the latest figure per session with no floor, so a session whose figure fell below its baseline gives a negative total that the validator refuses, and the milestone cannot be shipped. A fall can come from a side file replaced by a restarted or resumed session, or a hand-edited file. For a night shift that means a stuck project, not an 'unknown' cost. Fix: a decrease means VBW cannot tell, so costs_diff returns null (cost unknown) when any field of END is below START, and costs_milestone_total counts a session whose latest figure is below its baseline from its first figure (or leaves it out) instead of going negative. Regression test (tests/cost-runs.bats and tests/cost-milestones.bats): write a side file at 2.00 USD, run start, rewrite it at 1.00 USD, run end must succeed with cost null; then a milestone with a baseline above the latest figure must ship and show a non-negative total."
+    },
+    {
+      "id": "F144",
+      "req": "R177",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "docs/guards.md (line 108) promises that programs which write files (python, node, perl, ruby run inline) are also refused outside the project, and commit 2daad4b9 changed program_denial, the git checkout/restore path and the shell-redirect path in plugin/hooks/guard-bash.jq to go through run_write_denial. tests/guard-outside.bats covers only a Write tool call, a shell redirect, a relative climb, the scratch folder, read-only runs and no-run cases. No test sends an interpreter program that writes /tmp (e.g. python3 -c \"open('/tmp/q','w')\") or a git checkout/restore to an outside path under a lease; tests/guard-interpreters.bats (R76) checks only paths inside the project. I ran the guard by hand and the program case is denied today, but putting program_denial back to the old project_path + lease_write_denial would pass every test. Regression test: under an open build lease, a Dev Bash call with an inline python3 or node program writing to /tmp (and one writing via a relative path that climbs out) must be denied with a reason naming the path, 'outside the project' and 'Next:'; the same program writing .vbw/runtime/scratch/x stays allowed. Alternative if you prefer to narrow the promise: remove 'programs that write files' from the docs row."
     }
   ],
   "todos": [
