@@ -29137,6 +29137,12 @@
       "text": "Roadmap after 2.0.35 (owner confirmed 2026-10-13 17:20): three core releases, then the cosmetic leg, then the benchmark and 2.1.0. 2.0.36 Runs take turns: T128, T127, T130, T132, the session runs the loaded plugin's kernel (T133, replaces T54), B4 and B2 from the brainstorm. 2.0.37 Cheaper QA rounds: T74, T118 with T45, T131 decided, T123, T111. 2.0.38 Re-planning and release hygiene: B3, F3, T115, T120, T112, T56, T61, T114, T122, T107, T105, T19, T27, T98, T82. Cosmetic leg (cosmetic.md): T92, T94, T95, T96, T5, T102 with the ETA note, T78, T81, T87, F4, T52, T64, T21, T28, T18. Then the benchmark, README images, v2 to main, 2.1.0. After 2.1.0: T129, T100, T101, T119, T124, T125, T126, T12 and T13 (research first), T7, T1",
       "why": "Core before cosmetics (owner rule): contention and the QA-round cost are paid by every later milestone (M25: 11 QA rounds, about $980), so they come first; the cosmetic leg is cheaper once they ship. The alternative, cosmetics right after 2.0.36, was offered and not taken",
       "at": "2026-10-13T16:26:09Z"
+    },
+    {
+      "id": "D338",
+      "text": "Correction to D337: the backlog ids given at recording are T133 for B2 (config knows check_jobs), T134 for B3, T135 for B4, T136 for F3, T137 for the session-runs-the-loaded-kernel item that replaces T54, T138 for F4 and T139 for the ETA note; the order of D337 stands",
+      "why": "D337 named T133 for the kernel item before the ids were assigned",
+      "at": "2026-10-13T16:27:04Z"
     }
   ],
   "commands": {
@@ -33044,6 +33050,105 @@
           "out": 1432,
           "sessions": 5
         }
+      }
+    }
+  },
+  "loop": {
+    "items": [
+      {
+        "id": "T128",
+        "text": "Machine-wide limit (owner, 2026-10-12 09:40): VBW as a whole never takes more than about three quarters of the machine's cores, however many projects, sessions and runs are proving at once: one shared budget per machine (a slot store in the user's Claude config folder, each unit of a proof or fix done takes a slot, a run that finds none waits its turn), so runs take turns instead of fighting (today a 12-minute fix done took 87 under four concurrent runs). Same tests, same results, no thrash; the check_jobs setting stays as a per-run cap below it. Goes with T127 (one fix done per fix round). First item after 2.0.34, before the loop",
+        "proof": "auto",
+        "status": "waiting"
+      },
+      {
+        "id": "T127",
+        "text": "Several vbw fix done runs at once slow each other down (2026-10-12: three in parallel plus another session's run took a 12-minute run to 87 minutes). The fixing workflow has every Dev run its own fix done, so a round with several groups already runs several at once. Decide: the kernel serialises fix done runs (one proof lock per clone, the later ones wait and reuse), or the workflow runs one fix done for all groups at the end; measure first",
+        "proof": "auto",
+        "status": "waiting"
+      },
+      {
+        "id": "T130",
+        "text": "Stale proof copies: a process killed outright leaves its .vbw/runtime/proof.* copy (13 MB seen 2026-10-12 05:26 from a killed duplicate fix done); the next proof removes copies whose owner process is gone (record the owner pid in the copy folder, as the gate's mutex does), with a test. Part of the machine-wide limit milestone (T128)",
+        "proof": "auto",
+        "status": "waiting"
+      },
+      {
+        "id": "T132",
+        "text": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
+        "proof": "auto",
+        "status": "waiting"
+      },
+      {
+        "id": "T137",
+        "text": "The session must run the loaded plugin's kernel (2026-10-13 14:54): in the v2 worktree the vbw on PATH was the installed release (2.0.34), put there by the SessionStart hook, so every kernel command of the session ran the released code and the record became unreadable to it once an agent wrote a new field through plugin/bin/vbw; with claude --plugin-dir ./plugin the loaded plugin's bin must be the one on PATH and the status line must show the loaded version (replaces T54: --plugin-dir did not override the installed copy); document the local-dev path",
+        "proof": "auto",
+        "status": "waiting"
+      },
+      {
+        "id": "T135",
+        "text": "Brainstorm B4: every workflow's close-run step (vbw run confirm + run end) is a vbw:lead agent on model.lead, so Fable or Opus is paid once per run for two commands; give the step its own cheap model or let the workflow end the run itself",
+        "proof": "auto",
+        "status": "waiting"
+      },
+      {
+        "id": "T133",
+        "text": "Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09)",
+        "proof": "auto",
+        "status": "waiting"
+      }
+    ],
+    "ceiling": null,
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "started_at": "2026-10-13T16:35:58Z",
+    "baseline": {
+      "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
+        "usd": 997.226463,
+        "in": 656256,
+        "out": 159,
+        "at": "2026-10-13T16:35:58Z"
+      },
+      "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
+        "usd": 0,
+        "in": 0,
+        "out": 0,
+        "at": "2026-10-13T16:35:58Z"
+      },
+      "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
+        "usd": 0,
+        "in": 0,
+        "out": 0,
+        "at": "2026-10-13T16:35:58Z"
+      },
+      "689c5465-3aa1-49af-9115-8192ae092ecf": {
+        "usd": 33.71675,
+        "in": 170476,
+        "out": 406,
+        "at": "2026-10-13T16:35:58Z"
+      },
+      "69afb011-3850-41d9-8620-9b59aa9fe082": {
+        "usd": 0,
+        "in": 0,
+        "out": 0,
+        "at": "2026-10-13T16:35:58Z"
+      },
+      "868abfef-9fb7-492e-afba-751d9042e56a": {
+        "usd": 0,
+        "in": 0,
+        "out": 0,
+        "at": "2026-10-13T16:35:58Z"
+      },
+      "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
+        "usd": 0,
+        "in": 0,
+        "out": 0,
+        "at": "2026-10-13T16:35:58Z"
+      },
+      "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
+        "usd": 0,
+        "in": 0,
+        "out": 0,
+        "at": "2026-10-13T16:35:58Z"
       }
     }
   }
