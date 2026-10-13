@@ -125,6 +125,33 @@ takes about as long as its slowest checks, not the sum of all of them. Checks
 that share a resource and are not marked `alone` (a database, a fixed port) can
 disturb each other: mark them `alone`, or set `check_jobs` to 1.
 
+### The computer-wide limit
+
+VBW as a whole never runs more than the machine limit at once: three quarters
+of the processor cores, rounded down, at least 1 and at most 64.
+Every VBW project on this computer shares it, however many projects, sessions and runs
+prove at the same time. It is not a setting. `check_jobs` stays as a per-run
+cap below it; a run never goes above either number. `vbw config` prints a
+`machine limit:` line with the number and says when it applies instead of
+`check_jobs`.
+
+Each check, each project command and each test file takes one slot while it
+runs. The slots live in `<claude-config-dir>/vbw/slots.json`, where
+`<claude-config-dir>` is `CLAUDE_CONFIG_DIR` if set, else `~/.config/claude-code`
+if that folder exists, else `~/.claude`. The file exists only while runs use it.
+
+Runs take equal turns: when slots free up, the waiting run holding the fewest
+goes first; between equals, the one that waited longest. A run that waits
+prints `waited ... for other VBW runs on this computer`. Waiting changes
+nothing else: the same result as without it, and a timeout counts from when its command really starts.
+
+If a run is killed, the next run takes over its slots. Ctrl-C gives them back
+at once. A lock left by a dead process is taken over too.
+
+If the store cannot be written (a read-only folder, the Claude Code sandbox)
+or is damaged, the run goes on under `check_jobs` alone and prints
+`the computer-wide limit was not in force` with the reason.
+
 ### Checks that run alone
 
 ```json

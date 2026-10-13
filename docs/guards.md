@@ -264,3 +264,5 @@ In a VBW project, one line of context: the project state and `vbw next`.
 Started in a subdirectory of a VBW project, it says the guards are off and
 where to start instead. It never writes and never injects resume directives
 (ledger D289).
+
+VBW itself writes nothing outside the project except the slot store (`<claude-config-dir>/vbw/slots.json`, the computer-wide limit in docs/proof.md) and the user's `settings.json`.
