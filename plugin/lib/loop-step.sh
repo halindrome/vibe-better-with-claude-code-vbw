@@ -198,8 +198,9 @@ loop_step() {
     fi
     cur=$(printf '%s' "$rec" | jq -r '[.loop.items[] | select(.status == "in_progress")][0].id // empty')
     waiting=$(printf '%s' "$rec" | jq -r '[.loop.items[] | select(.status == "waiting")][0].id // empty')
-    # The ceiling: before every step, or with --finish-item only before an item is opened.
-    if printf '%s' "$rec" | jq -e '.loop.ceiling != null' > /dev/null \
+    # The ceiling: before every step, or with --finish-item only before an item is opened; never once the
+    # list is finished (no item in progress, none waiting): that is the end of the list, not a stop (F205).
+    if { [ -n "$cur" ] || [ -n "$waiting" ]; } && printf '%s' "$rec" | jq -e '.loop.ceiling != null' > /dev/null \
       && { printf '%s' "$rec" | jq -e '.loop.ceiling.finish_item | not' > /dev/null || { [ -z "$cur" ] && [ -n "$waiting" ]; }; }; then
       if why=$(loop_ceiling_reason); then loop_end "$why"; return 0; fi
     fi
