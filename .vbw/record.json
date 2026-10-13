@@ -27281,28 +27281,28 @@
       "id": "F212",
       "req": "R39",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C36 fail (exit 1)"
     },
     {
       "id": "F213",
       "req": "R95",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C149 fail (exit 1)"
     },
     {
       "id": "F214",
       "req": "R102",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C159 fail (exit 1)"
     },
     {
       "id": "F215",
       "req": "R177",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C288 fail (exit 1)"
     }
   ],
@@ -34252,6 +34252,15 @@
         "milestone": "M27",
         "started": "2026-10-13T21:54:54Z",
         "ended": "2026-10-13T21:57:53Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261013T220719Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M27",
+        "started": "2026-10-13T22:07:19Z",
+        "ended": "2026-10-13T22:13:14Z",
         "cost": null
       }
     ],
