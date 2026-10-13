@@ -27804,6 +27804,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T142",
+      "text": "Slot store notes (QA round 3 of P130, 2026-10-13, no criterion broken): vbw plan done also takes slots through the unit runner but may print the 'not in force' line twice on an unwritable store and never prints the end-of-run waited/lost line; a waiting entry left by a unit that lost the store stays until its run exits; each waiting unit polls the store every 0.1 s with several jq calls (CPU under heavy waiting). Judge with T141",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
