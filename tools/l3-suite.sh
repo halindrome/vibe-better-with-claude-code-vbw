@@ -1528,7 +1528,8 @@ scenario_loop() {
     done
     # An item parked before any commit of its own (a plan blocked twice) has nothing to revert: zero is right then.
     expect ".vbw/loop-report.md names the shipped and the parked item with its revert commits" [ "$report_ok" = true ]
-    expect "the revert commits are in git ($n_rev)" [ "$reverts_ok" = true ]
+    if [ "$n_rev" -gt 0 ]; then expect "the revert commits are in git ($n_rev)" [ "$reverts_ok" = true ]
+    else expect "no commit of the parked item to revert: the result's not_tested says so" true; fi
     [ -n "$(git -C "$dir" log --format=%B | grep '^VBW-Plan: ')" ] && shipped_commit=true
     expect "the shipped item's plan commit is in git" [ "$shipped_commit" = true ]
     remotes=$(git -C "$dir" remote)
