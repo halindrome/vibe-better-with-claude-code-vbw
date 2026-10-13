@@ -25132,7 +25132,7 @@
         "plugin/lib/cmd-statusline.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Add vbw_claude_dir to core.sh: CLAUDE_CONFIG_DIR when set, else ~/.config/claude-code when that folder exists, else ~/.claude (the order of tools/resolve-claude-dir.sh)",
@@ -33475,6 +33475,15 @@
         "milestone": "M26",
         "started": "2026-10-13T16:57:38Z",
         "ended": "2026-10-13T17:27:12Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261013T172851Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M26",
+        "started": "2026-10-13T17:28:51Z",
+        "ended": "2026-10-13T17:36:04Z",
         "cost": null
       }
     ],
