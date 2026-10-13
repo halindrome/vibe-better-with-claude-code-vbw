@@ -231,6 +231,7 @@
     "tests/prove-signal.bats",
     "tests/qa-depth-docs.bats",
     "tests/qa-depth-escalated.bats",
+    "tests/qa-finding-phase.bats",
     "tests/qa-fp-version.bats",
     "tests/qa-model.bats",
     "tests/qa-prompt-suite.bats",
@@ -3993,6 +3994,19 @@
         "tests/approve-commands.bats"
       ],
       "fix": "F202"
+    },
+    {
+      "id": "C312",
+      "req": "R179",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/qa-finding-phase.bats"
+      ],
+      "files": [
+        "tests/qa-finding-phase.bats"
+      ],
+      "fix": "F204"
     }
   ],
   "project": {
@@ -26378,6 +26392,22 @@
       "attempts": 0,
       "status": "closed",
       "note": "When the last item ships with the spend at or above the ceiling (default mode, no --finish-item), the loop reports 'ceiling reached' and answers 'stopped' instead of 'end of the list: N shipped, M parked' and 'done'. Evidence: plugin/lib/loop-step.sh lines 187-209: after loop_ship_item returns, the while loop re-runs; the ceiling check at lines 202-205 runs before the 'no waiting item' end-of-list branch at lines 207-209, and the check is skipped only for --finish-item. P128.1 task 3 and the criterion 'End of list: the loop stops after the last item's ship' say the ship with none waiting ends the loop with the end-of-list reason and {action: done}. Effect: nothing was cut off, yet the Stop hook message, 'vbw loop status', the record's ended.reason and the report ('Waiting for you': 'the loop stopped: ceiling reached') say a limit stopped work, and the answer is 'stopped', not 'done'. No test covers it: tests/loop-stops.bats has the ceiling cases only with an item still waiting (--finish-item case ends 'stopped' with T2 waiting, which is right). A regression test should: start a loop with one item and --ceiling 5, drive it to the prove step, raise the session figures above 5, run the proof, and assert the step answers done with reason matching 'end of the list: 1 shipped, 0 parked' and loop.ended.reason is that text. Fix: judge the ceiling only when a step or an item opening is still due (skip it when no item is in progress and none is waiting)."
+    },
+    {
+      "id": "F204",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "fixed",
+      "note": "QA verdicts of phases that share a requirement interfere: the pass of P129 (R179, R180) at 12:51:03 closed F203, opened two seconds earlier by the fail of P128 (R179), because vbw qa record PHASE pass closes every open QA fix on the phase's requirements (plugin/lib/cmd-qa.sh, the .fixes map) whatever phase found it; a fail likewise closes another phase's fixed fixes. In a loop this repeats every round (P128 re-files, P129 closes) until the ceiling. Fix: a finding belongs to the phase whose QA found it (vbw qa finding PHASE REQ TEXT; a fail verdict adopts the untagged open findings on its requirements), a verdict changes only its own phase's findings (an untagged one keeps today's rule), the record allows and validates the fix's phase field, docs/proof.md and docs/record.md and the QA agent's instructions name the form. Regression test: two phases sharing a requirement; a finding of the first and then the second's pass leave it open; the first's pass closes it; the fail verdict tags an untagged finding."
+    },
+    {
+      "id": "F205",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "fixed",
+      "note": "Re-filed F203, which P129's pass closed (see F204): when the last item ships with the spend at or above the ceiling (default mode, no --finish-item), the loop ends with 'ceiling reached' and answers stopped instead of 'end of the list: N shipped, M parked' and done, because loop_step judges the ceiling before the end-of-list branch (plugin/lib/loop-step.sh). Fix: judge the ceiling only when a step or an item opening is still due, never when no item is in progress and none is waiting. Regression test in tests/loop-stops.bats: one item, --ceiling 5, session figures above 5 before the proof; the step after the proof answers done with the reason 'end of the list: 1 shipped, 0 parked', and loop.ended.reason is that text; the report says the loop ended on the end of the list."
     }
   ],
   "todos": [
@@ -29003,6 +29033,12 @@
       "id": "D331",
       "at": "2026-10-13T12:45:24Z",
       "text": "Contract approved: 169 requirements, 306 checks, 384 plans (f1e971a2acec)"
+    },
+    {
+      "id": "D332",
+      "text": "A QA finding belongs to the phase whose QA found it: vbw qa finding takes the phase (vbw qa finding PHASE REQ TEXT; the old REQ TEXT form stays and a fail verdict adopts such untagged findings on its requirements), and a verdict changes only its own phase's findings, so phases that share a requirement and are verified in parallel never close each other's findings (an untagged finding keeps the old rule, by requirement)",
+      "why": "F204: P129's pass closed F203 two seconds after P128 opened it; in a loop this would repeat every round until the ceiling. Chosen by VBW: a phase tag is exact and cheap; the alternative, skipping fixes while another phase fails, depends on the order two agents record in",
+      "at": "2026-10-13T12:57:11Z"
     }
   ],
   "commands": {
@@ -32801,6 +32837,15 @@
         "milestone": "M25",
         "started": "2026-10-13T12:48:45Z",
         "ended": "2026-10-13T12:52:57Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261013T125710Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-13T12:57:10Z",
+        "ended": "2026-10-13T13:39:36Z",
         "cost": null
       }
     ],
