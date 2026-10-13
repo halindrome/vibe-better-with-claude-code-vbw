@@ -27,3 +27,8 @@ load helper
   grep -i 'loop' "$REPO_ROOT/docs/workflows.md" | grep -q 'autonomy_cap'
   grep -i 'loop' "$REPO_ROOT/README.md" | grep -q 'autonomy_cap'
 }
+
+@test "R179 (F187): docs/next.md row 1 names a parked milestone beside a shipped one" {
+  grep -E '^\| 1 \|' "$REPO_ROOT/docs/next.md" | grep -q 'shipped'
+  grep -E '^\| 1 \|' "$REPO_ROOT/docs/next.md" | grep -q 'parked'
+}
