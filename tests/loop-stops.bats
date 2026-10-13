@@ -145,3 +145,23 @@ untouched() { jq -e '.milestone.title == "Next" and ([.requirements[] | select(.
   ! grep -q 'not counted yet' .vbw/loop-report.md || { cat .vbw/loop-report.md; false; }
   grep -qE '^- T1 \(in_progress\): .* so far \(cut off when the loop ended\)' .vbw/loop-report.md || { cat .vbw/loop-report.md; false; }
 }
+
+@test "R179 (F205): a step resumed after the last item's ship ends the loop on the end of the list, not the ceiling, whatever the spend" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 --ceiling 5 > /dev/null
+  [ "$(step)" = plan ]
+  loop_plan "$(item_req "Visitors can read a greeting")" P2
+  [ "$(step)" = build ] || { cat "$TEST_ROOT/step.json"; false; }
+  loop_build P2
+  [ "$(step)" = prove ] || { cat "$TEST_ROOT/step.json"; false; }
+  loop_prove
+  [ "$(step)" = done ] || { cat "$TEST_ROOT/step.json"; false; }
+  # A step cut off right after the last ship (its record committed, the loop not yet ended), resumed once the
+  # spend is above the ceiling: nothing was cut off, so the loop ends on the end of its list (F205).
+  edit_record 'del(.loop.ended)'
+  figures s1 9 5000 500
+  [ "$(step)" = done ] || { cat "$TEST_ROOT/step.json"; false; }
+  [ "$(reason)" = "end of the list: 1 shipped, 0 parked" ] || { reason; false; }
+  jq -e '.loop.ended.reason == "end of the list: 1 shipped, 0 parked" and .loop.items[0].status == "shipped"' .vbw/record.json
+  grep -q 'end of the list' .vbw/loop-report.md
+  ! grep -q 'ceiling reached' .vbw/loop-report.md
+}
