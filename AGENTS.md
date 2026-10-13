@@ -27,108 +27,7 @@ VBW 2 is a Claude Code plugin that gives Claude Code an executable definition of
 
 ## Debugging VBW Behavior
 
-When the user reports VBW misbehavior — pasting Claude Code session output, describing incorrect command behavior, or showing unexpected file state — first resolve the contributor's **local debug target repo** instead of guessing a maintainer-specific path.
-
-### Local debug target configuration (private, not committed)
-
-Preferred setup in the VBW clone's shared Git common dir:
-
-```text
-$(git rev-parse --git-common-dir)/info/vbw-debug-target.txt
-```
-
-In a standard non-worktree clone, this usually resolves to:
-
-```text
-.git/info/vbw-debug-target.txt
-```
-
-The first non-empty, non-comment line must be the absolute path to the contributor's primary VBW consumer/test repo.
-Relative paths are rejected so the resolver produces the same result regardless of the caller's current working directory.
-
-Example local file content:
-
-```text
-/absolute/path/to/your-test-repo
-```
-
-This file lives under the clone's shared Git metadata, so it stays private and all worktrees created from that clone can read it automatically.
-
-Legacy fallback for a single checkout only:
-
-```text
-.claude/vbw-debug-target.txt
-```
-
-That legacy file remains supported and gitignored, but it is scoped to one checkout/worktree and will not be copied into new worktrees.
-
-Resolution order:
-1. `VBW_DEBUG_TARGET_REPO` env var (one-off override, absolute path only)
-2. `$(git rev-parse --git-common-dir)/info/vbw-debug-target.txt` in the current clone (preferred persistent local config, shared across worktrees)
-3. `./.claude/vbw-debug-target.txt` in the current checkout/worktree (legacy fallback, absolute path only)
-4. `<claude-config-dir>/vbw/debug-target.txt` (user-global fallback, absolute path only; `<claude-config-dir>` is resolved by `tools/resolve-claude-dir.sh`: `CLAUDE_CONFIG_DIR` if set, else `$HOME/.config/claude-code` when that directory exists, else `$HOME/.claude`)
-5. If none are configured, **ask the user for the target repo path** — do not guess.
-
-Use the shared resolver when debugging:
-
-```bash
-TARGET_REPO=$(bash tools/resolve-debug-target.sh repo)
-TARGET_PLANNING=$(bash tools/resolve-debug-target.sh planning-dir)
-ENCODED_PATH=$(bash tools/resolve-debug-target.sh encoded-path)
-CLAUDE_PROJECT_DIR=$(bash tools/resolve-debug-target.sh claude-project-dir)
-```
-
-If the resolver exits non-zero, stop guessing and ask the user to configure a debug target.
-
-### Claude Code Log Locations (canonical Claude config root)
-
-In the paths below, `<claude-config-dir>` means the same Claude config root resolved by `tools/resolve-claude-dir.sh`: `CLAUDE_CONFIG_DIR` if set, else `$HOME/.config/claude-code` when that directory exists, else `$HOME/.claude`.
-
-After resolving the target repo, derive the encoded Claude project path by replacing `/` with `-` in the absolute target-repo path. For an absolute path, the result begins with `-`.
-
-Example rule:
-
-```text
-/absolute/path/to/project  ->  -absolute-path-to-project
-```
-
-When debugging, search these directories for evidence of what actually happened:
-
-| Path | Contents | Use When |
-| ------ | ---------- | ---------- |
-| `<target-repo>/.vbw/` | Project state: `spec.md`, `record.json` (inspect with `vbw status` / `vbw show`) | Ground the investigation in actual workflow state |
-| `<claude-config-dir>/projects/{encoded-path}/*.jsonl` | Session transcripts | Replaying what the LLM said/did in a session |
-| `<claude-config-dir>/projects/{encoded-path}/{session-id}/subagents/agent-*.jsonl` | Subagent transcripts | Checking what VBW agent team members did |
-| `<claude-config-dir>/projects/{encoded-path}/{session-id}/tool-results/` | Tool output snapshots | Seeing exact tool outputs from a session |
-| `<claude-config-dir>/debug/{session-id}.txt` | Debug logs (`[DEBUG]`/`[WARN]`) | Startup issues, plugin loading, hook execution failures |
-| `<claude-config-dir>/sessions/{pid}.json` | Active session metadata | Mapping a PID to a session ID |
-| `<claude-config-dir>/session-env/{session-id}/` | Hook-exported env vars | Verifying `CLAUDE_SESSION_ID` and other env vars |
-| `<claude-config-dir>/tasks/{session-id}/` | Task/subagent lock files | Checking for stuck or concurrent task issues |
-| `<claude-config-dir>/settings.json` | User-level Claude Code settings and hooks | Verifying hook definitions, permissions, MCP config |
-
-### Common search patterns
-
-```bash
-TARGET_REPO=$(bash tools/resolve-debug-target.sh repo)
-CLAUDE_PROJECT_DIR=$(bash tools/resolve-debug-target.sh claude-project-dir)
-CLAUDE_CONFIG_ROOT="$(dirname "$(dirname "$CLAUDE_PROJECT_DIR")")"
-
-# Find sessions for the configured target repo
-ls "$CLAUDE_PROJECT_DIR"/*.jsonl
-
-# Search session transcripts for a VBW hook or command
-grep -l 'vbw' "$CLAUDE_PROJECT_DIR"/*.jsonl
-
-# Find hook errors in debug logs
-grep -El 'hook.*error|hook.*fail' "$CLAUDE_CONFIG_ROOT"/debug/*.txt
-
-# Search for a specific tool invocation across sessions
-grep -Erl 'vbw (next|apply|prove|run start)' "$CLAUDE_PROJECT_DIR"/*.jsonl
-
-# Check what a subagent did in a specific session
-cat "$CLAUDE_PROJECT_DIR"/<session-id>/subagents/agent-*.jsonl
-```
-
+When the user reports VBW misbehavior (pasted session output, a command behaving wrongly, unexpected `.vbw` state), follow the `vbw-debug-target` skill (`.claude/skills/vbw-debug-target/SKILL.md`): resolve the contributor's local debug target repo first with `bash tools/resolve-debug-target.sh repo`, never guess a path (ask when it is not configured), then read the session, subagent, hook and debug logs the skill names.
 
 ## Architecture (three layers, no fourth)
 
@@ -140,10 +39,8 @@ cat "$CLAUDE_PROJECT_DIR"/<session-id>/subagents/agent-*.jsonl
 
 ## Repository layout
 
-- `plugin/`: the only shipped tree (marketplace source `./plugin`). It holds `.claude-plugin/`, `bin/`, `lib/`, `hooks/`, `plugin/scripts/` (the status line), `skills/`, `workflows/`, `agents/` and `output-styles/`.
-- `tests/`: bats suites. `helper.bash` is hermetic. `standards.bats` holds the engineering rules as tests, and `standards-selftest.bats` proves each rule fails on a violation.
-- `tools/`: maintainer tooling (`test.sh`, `bump-version.sh`, `install-hooks.sh`, `baseline/`, …). Never shipped.
-- `docs/`: user documentation. `a_non_prod_docs/`: maintainer-local working documents (design, plan, ledger, progress log), kept in the main checkout and never committed.
+- `plugin/` is the only shipped tree (marketplace source `./plugin`); `tools/` is maintainer tooling, never shipped.
+- `a_non_prod_docs/` holds the maintainer-local working documents (design, plan, ledger, progress log): kept in the main checkout and never committed.
 
 ## Kernel and hook rules (each is enforced by `tests/standards.bats`)
 
@@ -219,46 +116,3 @@ Load the plugin from the working tree with `claude --plugin-dir ./plugin`. Nothi
 - Root-cause fixes only. A mitigation without its root-cause fix in the same work item is incomplete.
 - Update user docs (`docs/`, `README.md`) whenever behavior changes.
 - Discuss first before any change that adds a runtime dependency or grows a budget.
-
-# GitNexus — Code Intelligence
-
-This project is indexed by GitNexus as **vibe-better-with-claude-code-vbw** (1666 symbols, 1659 relationships, 0 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
-
-> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
-
-## Always Do
-
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
-
-## Never Do
-
-- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
-- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
-
-## Resources
-
-| Resource | Use for |
-|----------|---------|
-| `gitnexus://repo/vibe-better-with-claude-code-vbw/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/vibe-better-with-claude-code-vbw/clusters` | All functional areas |
-| `gitnexus://repo/vibe-better-with-claude-code-vbw/processes` | All execution flows |
-| `gitnexus://repo/vibe-better-with-claude-code-vbw/process/{name}` | Step-by-step execution trace |
-
-## CLI
-
-| Task | Read this skill file |
-|------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
-
-<!-- gitnexus:end -->
