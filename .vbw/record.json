@@ -15824,10 +15824,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "54191c43812d59632f208cd96009ac2f2ffc7c73839a46e458abaa62ad6cbaf3",
-        "at": "2026-10-13T00:20:05Z",
-        "note": "28/32 checks",
-        "rounds": 3
+        "tree": "8fcd100abfe7dbbf3c5350c6854cf43519e8cb6ba6c19cd195205c3706c85315",
+        "at": "2026-10-13T01:25:43Z",
+        "note": "26/32 checks",
+        "rounds": 4
       },
       "escalations": [
         {
@@ -26182,7 +26182,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The loop's outward guard now blocks harmless reads and the project's own commands that merely contain a trigger word anywhere after the command name. Since b1df6d14 (the F175 fix), loop_outward in plugin/hooks/guard-bash.jq (has($x) over every non-option word) matches the word at any position, not only as the subcommand. I drove the guard with a loop on (guard-bash.jq with a record holding .loop) and these are all DENIED: 'cargo test publish' (denied as cargo publish), 'cargo build -p publish', 'npm run publish', 'npm test -- publish', 'gh issue list --label release' and 'gh pr list --label release' (denied as gh release), 'docker run --name push ubuntu' (denied as docker push). The R180 rule says words in text, reads and the project's own commands stay allowed; a builder who runs a test filtered by the word 'publish' is blocked with a text claiming it ran cargo publish, which can park a good item. 'npm run publish' and 'gh issue list' were allowed before the F175 fix, so this is a regression. docs/guards.md says nothing of it. Regression test for tests/loop-outward-guard.bats: under a loop the allowed list also holds 'cargo test publish', 'npm run publish', 'gh issue list --label release', 'docker run --name push ubuntu', while 'cargo +nightly publish', 'npm --tag next publish', 'docker --context x push img' and 'gh -R a/b release create v1' stay denied (the subcommand is the first word after the command's own options and their values, not any word)."
     },
     {
@@ -26206,7 +26206,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The L3 loop scenario's git check for revert commits can still pass with none, and the honest-labelling branch is unpinned. After F176 the scenario (tools/l3-suite.sh scenario_loop) loops over the parked item's reverts, so with zero reverts 'the revert commits are in git' passes vacuously (reverts_ok stays true); only when n_rev is 0 does the result's not_tested gain the line saying the revert path was not run. No test in tests/l3-loop.bats reads that branch: a result with facts.revert_commits 0 and without that not_tested line, or the line deleted from the script, leaves tests/l3-loop.bats green. The committed loop.json has revert_commits 1, so today's result is honest, but the guard against a future dishonest one is missing. Regression test in tests/l3-loop.bats: every committed tools/l3-results/loop.json with facts.revert_commits == 0 must have a not_tested entry naming the revert path; and the scenario body must hold that conditional."
     },
     {
@@ -26214,8 +26214,56 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "escalated",
       "note": "The loop report cannot be trusted for an item that was still running when the loop ended. plugin/lib/loop-report.sh line 43 prints every in-progress item's cost as 'in progress, not counted yet', also after the loop has ended (a ceiling stop, vbw loop stop, an unknown action, a refused ship all end the loop with the item still in progress). But the 'Loop total' line above it is loop_spend, which does count that item's spend (baseline to now). So after such a stop the report shows a total that no item line explains, and the item that cost the most (the one the loop was working on when it stopped) shows no dollars and no tokens, though VBW has the figure. The criterion says the report gives the loop's total and each item's cost in dollars and tokens, unknown only where VBW saw no figure. The same item also appears nowhere else (not in Shipped, Parked or Waiting for you), and the ceiling stop reason does not name it, so the morning reader cannot tell which item was left half done. Regression test, in tests/loop-report.bats: start a loop with two items and a ceiling, take the first to a point where figures exist and the ceiling is reached while T1 is in progress, let the step stop the loop, then assert the report's Cost section gives T1 a dollar and token figure that equals what vbw loop status shows (not 'not counted yet'), and that it names T1 as left in progress; with no figures it must say unknown."
+    },
+    {
+      "id": "F185",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Untested branches of the park remain after the F181 fix. plugin/lib/loop-park.sh decides what to leave alone from 'git diff --name-only HEAD' (staged and unstaged changes), leaves a check file the user changed ('left in place (you changed it)') and leaves a commit that 'does not revert cleanly'. The only added test (tests/loop-retry-park.bats, the F181 test, commit ffcdcfe0) appends to a file with a plain unstaged edit. Nothing stages a file, nothing edits a check file, nothing makes a revert conflict (grep 'staged', 'left in place (you', 'revert cleanly' in tests/loop-*.bats finds nothing but comments). The criterion says a file the user STAGED or edited is left as it is. Changing the dirty list to plain 'git diff --name-only' (unstaged only), dropping the vbw_dirty_files test on check files, or removing the conflict branch keeps every loop test green, and the park would then revert over the user's staged work. Regression tests to add in tests/loop-retry-park.bats: (1) stage (git add) a change to a file an item commit touched, park, assert the commit is not reverted, the file keeps the staged content and stays staged, and the decision names 'you changed FILE'; also stage an unrelated file and assert it stays staged after the reverts; (2) edit a check file of the item by hand, park, assert the file stays and the decision says 'left in place (you changed it)'; (3) make a later commit conflict with an earlier item commit, park, assert the decision says 'does not revert cleanly' and no half-done revert is left (git status clean of conflict markers)."
+    },
+    {
+      "id": "F186",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Untested P129.1 behaviour remains after the F182 fix: 'vbw milestone rename' refusing a parked milestone. plugin/lib/cmd-milestone.sh refuses with '<M> has been parked: start the next one (vbw milestone start TITLE)', but no test runs 'milestone rename' on a parked milestone (grep 'milestone rename' in tests/ finds only kernel-work.bats, which uses a shipped milestone). The test named 'a parked milestone keeps its name, and vbw status --json lists the parked ids' in tests/loop-park-report.bats never calls rename and never checks the title after the park, so its name promises more than it checks. Removing 'parked' from the refusal branch would leave the suite green. Regression test: after a park, 'vbw milestone rename Other' exits 1 with a message containing 'parked' and 'vbw milestone start', and .milestone.title is unchanged."
+    },
+    {
+      "id": "F187",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Plan task left out: P129.1 task 2 says 'next.jq row 1 and docs', but docs/next.md row 1 still reads 'milestone shipped' only (line 103) and says nothing of a parked milestone (grep -i parked docs/next.md finds nothing); lines 16-18 about requirements of shipped milestones are likewise unchanged. next.jq line 93 answers action milestone for status parked, so the documentation of the decision table is now wrong for users who read it. Regression test: tests/loop-docs.bats (or a next-docs test) asserts docs/next.md row 1 names both shipped and parked."
+    },
+    {
+      "id": "F188",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Unrecorded change to the plan, and undocumented. P129.2 task 2 says the commits since the item's head that touch a file outside .vbw/ are reverted, leaving unreverted only a commit touching a file the user staged or edited. plugin/lib/loop-park.sh (commit f6d1c7c1) also leaves a commit that changes code and a .vbw file together ('changes the record too') and a commit that 'does not revert cleanly', so a parked item can keep part of its code in the tree. 'vbw show decisions' has no decision for it (D322 and D324 are the only loop decisions after D317), and docs/loop.md 'Retry once, then park' step 2 does not say a commit can be left and named; a user reading it expects the item's code to be gone. The behaviour is defensible (reverting a record-touching commit would corrupt the record) but it is a deviation until decided. Fix: record one decision (vbw decide) for the mixed-commit and conflict cases, and add a sentence to docs/loop.md step 1 that a commit it cannot revert is left, named in the decision and the report. Regression test: tests/loop-docs.bats asserts docs/loop.md mentions that such a commit is left and named."
+    },
+    {
+      "id": "F189",
+      "req": "R180",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "tests/loop-lease-guards.bats cannot tell whether the protected-check-file rule works under a loop. The test (first test, line ~38) writes tests/notes.sh, which is protected but not among the build lease's files (src/greet.txt), and accepts either 'protected check file' or 'outside this run's files'. lease_write_denial in plugin/hooks/common.jq checks the plan's files first, so the denial always comes from the outside-files rule and the protected rule is never reached. Deleting the protected rule leaves this test green. The criterion lists 'a protected check file' among the writes a loop's run still denies. Regression test: a lease whose files include a protected check file (a fix run with new_tests, or a build whose plan file list holds it) must be denied with 'protected check file', asserted without the either-or."
+    },
+    {
+      "id": "F190",
+      "req": "R180",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "The L3 loop scenario writes facts it did not measure. tools/l3-suite.sh scenario_loop passes the constants 'remotes: 0, tags: 0' into result_write instead of the counts it read (, ), so a failing run (a remote or tag present, passed=false) would still publish 'remotes: 0, tags: 0' in tools/l3-results/loop.json. Also the committed result (at 2026-10-13T00:13:07Z) predates commits e31332b7 (loop_kernel) and 469ef59c (guard change), so it describes older code. Regression test in tests/l3-loop.bats: the scenario body builds the facts from the measured remote and tag counts (no literal 'remotes: 0'), and a run with a remote present would write a nonzero fact."
     }
   ],
   "todos": [
