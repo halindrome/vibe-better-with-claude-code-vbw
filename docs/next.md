@@ -100,7 +100,7 @@ adding the one phase with `vbw apply --add` (docs/rigor.md).
 | # | Condition | action | gate |
 |---|---|---|---|
 | 0 | a run lease is open | `run` (wait for its workflow if it is running in this session; otherwise `vbw run end`; a run owned by another session: wait or check `vbw status`, never end it) | no |
-| 1 | milestone `shipped` | `milestone` (start the next one: `vbw milestone start TITLE`) | yes |
+| 1 | milestone `shipped` or `parked` (a parked one is left behind like a shipped one, docs/loop.md) | `milestone` (start the next one: `vbw milestone start TITLE`) | yes |
 | 2a | no requirements in the current milestone, and a VBW 1 plan (`.vbw-planning/`) not converted yet | `convert` (`/vbw:convert`, or start fresh; docs/convert.md) | yes |
 | 2 | no requirements in the current milestone | `spec` (write its requirements in `.vbw/spec.md`) | yes |
 | 3 | the current milestone has no phases, an `auto` requirement has no check (a documentation-only requirement needs none: docs/rigor.md), or a current `auto` requirement is in no plan | `plan` (`detail.tier`: the early tier; plan workflow: phases, plans, contract checks, or direct `vbw apply` when express) | no |
