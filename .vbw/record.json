@@ -224,6 +224,7 @@
     "tests/proof-cause-tree.bats",
     "tests/proof-causes-docs.bats",
     "tests/proof-causes.bats",
+    "tests/proof-copy-cleanup.bats",
     "tests/proof-copy-docs.bats",
     "tests/proof-doc-reuse-docs.bats",
     "tests/proof-doc-reuse.bats",
@@ -4210,6 +4211,19 @@
         "tests/fix-round-once.bats"
       ],
       "fix": "F216"
+    },
+    {
+      "id": "C327",
+      "req": "R183",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/proof-copy-cleanup.bats"
+      ],
+      "files": [
+        "tests/proof-copy-cleanup.bats"
+      ],
+      "timeout": 600
     }
   ],
   "project": {
@@ -10505,7 +10519,52 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M28",
-      "rules": []
+      "rules": [
+        {
+          "text": "every new proof copy names its owner process (pid) in its folder name, made in one step before anything is copied",
+          "check": "C327"
+        },
+        {
+          "text": "after a proof is killed with kill -9, the next vbw prove removes the copy whose owner has ended",
+          "check": "C327"
+        },
+        {
+          "text": "vbw fix done removes a copy whose owner has ended, before making its own",
+          "check": "C327"
+        },
+        {
+          "text": "a copy whose owner process is still running is never removed or changed, also while another cleanup runs at the same moment",
+          "check": "C327"
+        },
+        {
+          "text": "removing a dead copy deletes its git worktree entry: git worktree list and .git/worktrees no longer name it",
+          "check": "C327"
+        },
+        {
+          "text": "read-only folders inside a dead copy are removed, and removal never follows a link out of the copy",
+          "check": "C327"
+        },
+        {
+          "text": "a copy with no owner recorded is removed when older than 24 hours and kept when newer, even when its name is all digits",
+          "check": "C327"
+        },
+        {
+          "text": "two cleanups at once never make a proof fail or print an error, and a half-removed copy is finished by the next proof",
+          "check": "C327"
+        },
+        {
+          "text": "a dead copy that cannot be removed leaves the proof's result unchanged and prints one warning line naming the folder left",
+          "check": "C327"
+        },
+        {
+          "text": "the proof's result (pass or fail, and which checks ran) is the same with and without leftover copies",
+          "check": "C327"
+        },
+        {
+          "text": "docs/proof.md says copies record their owner and the next proof removes leftover copies, with the 24-hour rule for owner-less ones",
+          "check": "C327"
+        }
+      ]
     }
   ],
   "phases": [
@@ -16512,6 +16571,38 @@
         "qa_findings": 1,
         "escalations": 0
       }
+    },
+    {
+      "id": "P133",
+      "title": "Leftover proof copies are cleaned up",
+      "reqs": [
+        "R183"
+      ],
+      "milestone": "M28",
+      "goal": "When a VBW proof is killed outright, the full project copy it was checking in (under .vbw/runtime/proof.*) no longer stays on disk: the next vbw prove or vbw fix done removes every copy whose owning process has ended, and never one still in use.",
+      "criteria": [
+        "Every proof copy records which process owns it (its process id, or pid) when it is created and before anything is copied into it, so no copy exists without an owner for longer than that first step. Example: the pid goes in the copy folder's name (proof.PID.XXXXXX, made in one step by mktemp) or in a file inside the folder, as the gate's mutex/pid does.",
+        "Before it makes its own copies, vbw prove removes every .vbw/runtime/proof.* copy whose owner process is no longer running (checked with kill -0, as checks_gate_live does). The same happens in vbw fix done, because both make copies through the same proofcopy code path.",
+        "A copy whose owner process is still running is never removed or changed, even when another vbw prove or vbw fix done in the same clone is cleaning up at the same moment. Test: start a live process, give it a copy, run a proof, and the copy is still whole afterwards.",
+        "Removing a dead copy also deletes its git worktree entry: afterwards `git worktree list` does not show it and .git/worktrees has no entry for it. Read-only folders inside the copy are removed too, and the removal never follows a link out of the copy.",
+        "An older copy with no owner recorded (made by a VBW version before this change, like the 13 MB one seen on 2026-10-12) is removed when it is more than 24 hours old, and kept when it is newer, because it might belong to a run of an older VBW still going.",
+        "Two cleanups running at once, or a cleanup killed partway through, never make a proof fail or print an error. A copy already removed by someone else is skipped, and a half-removed copy is finished by the next proof.",
+        "If a dead copy cannot be removed (for example, a file there cannot be deleted), the proof still runs and gives the same result. A one-line warning names the folder that is left.",
+        "The proof's result (pass or fail, and which checks ran) is the same with and without leftover copies present.",
+        "A bats test (hermetic, using tests/helper.bash) kills a proof with kill -9 after its copy exists, then runs the next proof. It shows the dead copy and its worktree entry are gone, and a live process's copy is still there. Run without the fix, the test fails.",
+        "docs/proof.md says that copies record their owner and that the next proof removes copies left by a process that has ended.",
+        "Bash 3.2 rules hold, the kernel stays within its 7,600-line budget, and bash tools/test.sh passes under /bin/bash."
+      ],
+      "tier": "express",
+      "reasons": [
+        "requirements: 1",
+        "files: 2 (57794 bytes)",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326)",
+        "tests: project test command"
+      ],
+      "predicted": "express"
     }
   ],
   "plans": [
@@ -25666,6 +25757,28 @@
         "Compare it with before.txt: 'ran more than once' must be 0; note the change in minutes and in checks and test files run. If it is not 0, stop and report it (vbw plan block), never adjust the figures.",
         "Record the decision that supersedes the before one, in the exact form tests/fix-round-measure.bats reads: vbw decide \"Supersedes D<before id>: one vbw fix done per fix round, run by the workflow after every Dev returns. Fixture tools/measure-fix-round.sh (<same parameters>), 3 groups. Before, each Dev its own vbw fix done: <the before figures, exactly as recorded>. After, one vbw fix done per round: Y minutes, N checks and M test files run, 0 ran more than once. Rejected: a kernel lock that makes vbw fix done runs in one clone wait for each other\" \"<why, from the figures: why one vbw fix done per round wins (minutes and runs saved) and why the lock loses (it still runs the overlapping work, one after another, and reuses only by chance); name 'one vbw fix done', 'lock' and the minutes>\"."
       ]
+    },
+    {
+      "id": "P133.1",
+      "phase": "P133",
+      "title": "Name each proof copy after its owner, clear away copies whose owner has ended, and explain it in the proof guide",
+      "reqs": [
+        "R183"
+      ],
+      "files": [
+        "plugin/lib/proofcopy.sh",
+        "docs/proof.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Record the owner when the copy is made: in proofcopy_make, create the folder in one step as .vbw/runtime/proof.$$.XXXXXX (mktemp -d), where $$ is the process id (pid) of the running vbw, so a copy never exists without its owner's pid in its name. The proof's own copy handling (proofcopy_remove, the interrupt guard, the proof.* patterns of proofcopy_warn_stale) keeps working unchanged.",
+        "Add proofcopy_sweep and call it at the start of proofcopy_create_slots, so vbw prove and vbw fix done both clean up before they make their own copies. For each .vbw/runtime/proof.* folder: a name proof.PID.REST (PID all digits, then a further part) belongs to PID; it is skipped while kill -0 PID succeeds (alive) and removed when it fails. A name with no owner part (proof.XXXXXX from an older VBW, even when XXXXXX is all digits) is removed only when it is more than 24 hours old (find FOLDER -maxdepth 0 -mmin +1440, which works on macOS and Linux), and kept otherwise.",
+        "Remove a dead copy safely: first claim it with one atomic mv to a new folder named after this process (.vbw/runtime/proof.$$.<unique part>), so a second cleanup running at the same moment sees a live owner and leaves it, and a cleanup killed partway leaves a folder whose owner has ended, which the next proof finishes. A failed mv (someone else took or removed it) is skipped without a word. Then chmod -R u+rwx (never follows links), rm -rf (never follows a link out of the copy) and git worktree prune, so git worktree list and .git/worktrees no longer name it; nothing from rm or git reaches the screen. If the folder is still there afterwards (a locked file), print exactly one stderr line, 'vbw: cannot remove the leftover proof copy <path from the project root>; remove it by hand', and go on with the proof. Keep the claim name, the 24-hour rule and the warning in proofcopy.sh's header comment.",
+        "docs/proof.md: in the 'vbw prove' steps, say the clean copy's folder is named after the process that made it (its owner, by process id), e.g. .vbw/runtime/proof.48213.k3Xa9Q; add a short section 'Leftover proof copies' next to 'Links left pointing into a proof copy': a proof killed outright can leave its copy; the next vbw prove or vbw fix done removes every leftover copy whose owner has ended, with its git worktree entry, never one whose owner still runs; a copy without an owner (older VBW) goes once more than 24 hours old; a copy that cannot be removed leaves the result unchanged and prints the one warning line.",
+        "Run bats tests/proof-copy-cleanup.bats and the other proof copy tests (proof-selfcontained, prove-signal, proof-stale-links, proof-copy-docs, fix-many) under /bin/bash; check shellcheck and the kernel's 7,600-line budget (tests/standards.bats)."
+      ]
     }
   ],
   "fixes": [
@@ -34357,6 +34470,15 @@
         "milestone": "M27",
         "started": "2026-10-13T22:30:51Z",
         "ended": "2026-10-13T22:32:41Z",
+        "cost": null
+      },
+      {
+        "id": "plan-20261013T223326Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M28",
+        "started": "2026-10-13T22:33:26Z",
+        "ended": "2026-10-13T22:43:22Z",
         "cost": null
       }
     ],
