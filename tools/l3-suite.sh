@@ -1540,7 +1540,7 @@ scenario_loop() {
       "$(jq -n --argjson d "$delegated" --argjson o "$own" --argjson q "$asked" --argjson r "$report_ok" --argjson n "$n_rev" \
         --arg s "$(jq -r '[.loop.items[] | "\(.id)=\(.status)"] | join(",")' "$r" 2> /dev/null)" --arg e "$(jq -r '.loop.ended.reason // ""' "$r" 2> /dev/null)" \
         '{items: $s, ended: $e, delegated_approvals: $d, user_approvals: $o, question_asked: $q, report_names_items_and_reverts: $r, revert_commits: $n, remotes: 0, tags: 0}')" \
-      '["a park that reverts commits: the Dev blocked the contradictory plan before any commit, so nothing was there to revert (the revert path is proved at L1 by tests/loop-retry-park.bats)","a real remote configured","a ceiling reached mid-item","a [human] item","a loop of more than two items","Claude Code versions other than the one that ran"]'
+      "$(if [ "$n_rev" -eq 0 ]; then printf '%s' '["a park that reverts commits: the Dev blocked the contradictory plan before any commit, so nothing was there to revert (the revert path is proved at L1 by tests/loop-retry-park.bats)",'; else printf '['; fi)\"a real remote configured\",\"a ceiling reached mid-item\",\"a [human] item\",\"a loop of more than two items\",\"Claude Code versions other than the one that ran\"]"
   }
 }
 
