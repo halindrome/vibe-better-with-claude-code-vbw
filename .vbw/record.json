@@ -27739,7 +27739,7 @@
       "text": "Machine-wide limit (owner, 2026-10-12 09:40): VBW as a whole never takes more than about three quarters of the machine's cores, however many projects, sessions and runs are proving at once: one shared budget per machine (a slot store in the user's Claude config folder, each unit of a proof or fix done takes a slot, a run that finds none waits its turn), so runs take turns instead of fighting (today a 12-minute fix done took 87 under four concurrent runs). Same tests, same results, no thrash; the check_jobs setting stays as a per-run cap below it. Goes with T127 (one fix done per fix round). First item after 2.0.34, before the loop",
       "sort": "next",
       "size": "medium",
-      "status": "in_progress"
+      "status": "done"
     },
     {
       "id": "T129",
@@ -33925,7 +33925,7 @@
         "id": "T128",
         "text": "Machine-wide limit (owner, 2026-10-12 09:40): VBW as a whole never takes more than about three quarters of the machine's cores, however many projects, sessions and runs are proving at once: one shared budget per machine (a slot store in the user's Claude config folder, each unit of a proof or fix done takes a slot, a run that finds none waits its turn), so runs take turns instead of fighting (today a 12-minute fix done took 87 under four concurrent runs). Same tests, same results, no thrash; the check_jobs setting stays as a per-run cap below it. Goes with T127 (one fix done per fix round). First item after 2.0.34, before the loop",
         "proof": "auto",
-        "status": "in_progress",
+        "status": "shipped",
         "milestone": "M26",
         "head": "a18a231c8634e80f91d48922f82f680929b931ca",
         "baseline": {
@@ -33978,7 +33978,13 @@
             "at": "2026-10-13T16:36:30Z"
           }
         },
-        "req": "R181"
+        "req": "R181",
+        "cost": {
+          "usd": 1041.248097,
+          "in": 651086,
+          "out": 311
+        },
+        "at": "2026-10-13T21:23:30Z"
       },
       {
         "id": "T127",
@@ -34069,6 +34075,7 @@
         "out": 0,
         "at": "2026-10-13T16:35:58Z"
       }
-    }
+    },
+    "report": ".vbw/loop-report.md"
   }
 }
