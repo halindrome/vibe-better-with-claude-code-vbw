@@ -111,3 +111,34 @@ untouched() { jq -e '.milestone.title == "Next" and ([.requirements[] | select(.
   [ "$(step)" = stopped ] || { cat "$TEST_ROOT/step.json"; false; }
   [[ "$(reason)" == *"s9"* ]] || { reason; false; }
 }
+
+@test "R179 (F179): a kernel step the loop runs itself that refuses (a ship on a dirty tree) ends the loop with the reason, the item and the step, and the report" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 --no-ceiling > /dev/null
+  [ "$(step)" = plan ]
+  loop_plan "$(item_req "Visitors can read a greeting")" "$(jq -r .next_phase "$TEST_ROOT/step.json" | sed 's/^/P/')"
+  [ "$(step)" = build ] || { cat "$TEST_ROOT/step.json"; false; }
+  jq -e '.decisions[-1].text | test("approved by the loop")' .vbw/record.json
+  jq -e '.detail.plans == ["P2.1"] and .loop.item.id == "T1"' "$TEST_ROOT/step.json"
+  # A run the loop's session opens carries the same lease as any run and ends through vbw run end.
+  VBW_SESSION_ID=s1 "$VBW" run start build P2.1 > /dev/null
+  jq -e '.lease | .kind == "build" and .session == "s1" and .files == ["src/greet.txt"] and (.run | startswith("build-")) and (.started_at | type == "string")' .vbw/record.json
+  [ "$(step)" = run ]
+  printf 'hello\n' > src/greet.txt
+  "$VBW" commit P2.1 "feat(greet): hello" > /dev/null
+  "$VBW" plan done P2.1 > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  jq -e '.lease == null and (.costs.runs | length) == 1 and .costs.runs[0].kind == "build"' .vbw/record.json
+  [ "$(step)" = prove ] || { cat "$TEST_ROOT/step.json"; false; }
+  loop_prove
+  # A stray file outside .vbw makes vbw ship refuse: the loop must say so, not go quiet.
+  : > stray.txt
+  # The working tree changed, so the kernel asks for a proof first; the proof passes (a stray file is no test), then the ship refuses.
+  [ "$(step)" = prove ] || { cat "$TEST_ROOT/step.json"; false; }
+  loop_prove
+  [ "$(step)" = stopped ] || { cat "$TEST_ROOT/step.json"; false; }
+  jq -e '.loop.ended != null and (.loop.ended.reason | test("the ship was refused") and test("T1") and test("step ship"))' .vbw/record.json \
+    || { jq .loop.ended .vbw/record.json; false; }
+  [ -f .vbw/loop-report.md ]
+  grep -q 'ship was refused' .vbw/loop-report.md
+  [ -f stray.txt ]
+}
