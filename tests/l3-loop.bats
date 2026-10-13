@@ -56,3 +56,11 @@ RESULTS="$REPO_ROOT/tools/l3-results"
   grep -qiE 'who approved' "$REPO_ROOT/docs/loop.md"
   grep -qF 'parked' "$REPO_ROOT/docs/record.md"
 }
+
+@test "R180 (F183): the scenario judges reverts only when the parked item had commits, and names the gap in not_tested when it had none; a committed result keeps that promise" {
+  local s="$REPO_ROOT/tools/l3-suite.sh" f="$RESULTS/loop.json"
+  grep -q 'if \[ "\$n_rev" -gt 0 \]; then expect "the revert commits are in git' "$s"
+  grep -q 'if \[ "\$n_rev" -eq 0 \]; then printf .%s. .\["a park that reverts commits' "$s"
+  [ -f "$f" ] || skip "no loop result committed yet"
+  jq -e '(.facts.revert_commits > 0) or any(.not_tested[]; test("revert"))' "$f"
+}
