@@ -93,16 +93,36 @@ untouched() { jq -e '.milestone.title == "Next" and ([.requirements[] | select(.
   [[ "$(reason)" == *"ceiling"* ]] || { reason; false; }
 }
 
-@test "R179: an action the loop does not know stops it with the reason, the item and the step" {
+@test "R179 (F207): a contract not ready yet is handed back to the session once, with the instruction; the same unsatisfied contract again ends the loop" {
   VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
   [ "$(step)" = plan ]
   loop_plan "$(item_req "Visitors can read a greeting")" P2
   rm -f tests/greet.sh
   [ "$(next_action)" = contract ]
+  [ "$(step)" = contract ] || { cat "$TEST_ROOT/step.json"; false; }
+  jq -e '.instruction | test("check file missing: tests/greet.sh")' "$TEST_ROOT/step.json"
+  jq -e '.loop.item.id == "T1" and .loop.spend != null' "$TEST_ROOT/step.json" || { cat "$TEST_ROOT/step.json"; false; }
+  jq -e '.loop.asked.item == "T1" and (.loop.asked.instruction | test("check file missing")) and .loop.ended == null' .vbw/record.json || { jq .loop .vbw/record.json; false; }
+  [ "$(git log -1 --format=%s)" = "chore(vbw): loop T1 contract" ]
+  [ -z "$(git status --porcelain -- .vbw)" ]
+  # Nothing changed: the same instruction again ends the loop, saying it asked once already.
   [ "$(step)" = stopped ] || { cat "$TEST_ROOT/step.json"; false; }
-  [[ "$(reason)" == *"T1"* ]] && [[ "$(reason)" == *"contract"* ]] || { reason; false; }
-  jq -e '.loop.ended.reason | test("T1") and test("contract")' .vbw/record.json
+  [[ "$(reason)" == *"contract needs you"* && "$(reason)" == *"T1"* && "$(reason)" == *"asked once already"* ]] || { reason; false; }
+  jq -e '.loop.ended.reason | test("asked once already") and test("check file missing: tests/greet.sh")' .vbw/record.json
   jq -e '.loop.items[0].status == "in_progress"' .vbw/record.json
+}
+
+@test "R179 (F207): the check file written after the hand-back lets the next step approve by delegation and go on" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
+  [ "$(step)" = plan ]
+  loop_plan "$(item_req "Visitors can read a greeting")" P2
+  rm -f tests/greet.sh
+  [ "$(step)" = contract ] || { cat "$TEST_ROOT/step.json"; false; }
+  printf 'grep -qx hello src/greet.txt\n' > tests/greet.sh
+  [ "$(step)" = build ] || { cat "$TEST_ROOT/step.json"; false; }
+  jq -e '(.loop | has("asked") | not) and .loop.ended == null and .loop.items[0].status == "in_progress"' .vbw/record.json || { jq .loop .vbw/record.json; false; }
+  jq -e '.decisions[-1].text | test("approved by the loop")' .vbw/record.json
+  [ -z "$(git status --porcelain -- .vbw)" ]
 }
 
 @test "R179: a run open in another session stops the loop with the reason" {

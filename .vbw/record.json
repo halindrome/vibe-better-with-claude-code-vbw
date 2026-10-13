@@ -26414,9 +26414,18 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The loop's outward guard (plugin/hooks/guard-bash.jq, loop_outward) lets a push through when the redirect is written against the subcommand with no space: with a loop on, 'git push>out.log' and 'npm publish>log' are not denied (probed by piping the hook input through guard-bash.jq with a loop record: 'git push', 'git push origin main>/dev/null 2>&1', 'git push </dev/null' are denied, 'git push>/dev/null' and 'git push>out.log' are allowed). Cause: simple() in guard-bash.jq only splits a redirect off a word when the word starts with the operator, so 'push>out.log' stays one word and git_words reads it as an unknown subcommand. R180 and the plan say git push in any form is denied while a loop is on, and every outward command shares this reading. Regression test: in tests/loop-outward-guard.bats, with a loop on, 'git push>/dev/null', 'git push>out.log', 'npm publish>log' and 'docker push>x' must be denied with the pinned text (and 'echo hi>out.log' must stay allowed).",
       "phase": "P129"
+    },
+    {
+      "id": "F207",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Found by L3 loop scenario run 12 (15:05): the session applied T1's contract with vbw apply --add and ended its turn before writing the check file tests/greet_test.sh (a model slip the small-change plan path allows); the Stop hook ran the loop step, vbw next answered contract (the contract is not ready: check file missing), and loop_step treats contract as an action it does not know, so the loop ended at 14:06:00 with 'contract needs you' after 29 seconds, T1 in progress and T2 waiting. A not-ready contract during the plan step is the session's own unfinished work, not a stop: the loop must hand it back to the session once (emit the contract step through the gate), and end only when the same unsatisfied contract comes back unchanged (asked once already). Regression test: a loop whose contract names a check file not yet written answers contract with the instruction and records what it asked; the same step again ends the loop naming that it asked once already; with the check file written after the first ask, the next step approves by delegation and moves to build.",
+      "phase": "P128"
     }
   ],
   "todos": [
@@ -29053,6 +29062,12 @@
       "id": "D333",
       "at": "2026-10-13T13:41:01Z",
       "text": "Contract approved: 169 requirements, 307 checks, 384 plans (1a7104005b72)"
+    },
+    {
+      "id": "D334",
+      "text": "An action the loop step does not know still ends the loop, with one exception: a contract that is not ready yet (vbw next answers contract: a check file missing, a spec unsynced, a rule missing) during an item's plan step is the session's unfinished work; the loop hands it to the session once, recorded as loop.asked {item, instruction}, and ends with 'contract needs you ... (asked once already)' only when the same unsatisfied instruction comes back for the same item; any other action clears loop.asked",
+      "why": "F207: scenario run 12 ended after 29 s because the session stopped between applying the contract and writing its check file. Chosen by VBW: one second chance is bounded (no spin without progress) and matches how the loop treats a blocked plan (reset once)",
+      "at": "2026-10-13T14:09:47Z"
     }
   ],
   "commands": {
@@ -32883,6 +32898,15 @@
           "in": 11582,
           "out": 2265
         }
+      },
+      {
+        "id": "fix-20261013T135635Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-13T13:56:35Z",
+        "ended": "2026-10-13T14:12:22Z",
+        "cost": null
       }
     ],
     "milestones": {
