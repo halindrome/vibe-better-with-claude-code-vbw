@@ -28771,6 +28771,11 @@
       "text": "Two refinements of the P127 plan stand: vbw loop start ignores a [human] requirement an earlier ship carried over when it judges the current milestone unfinished (the same rule the matcher applies), and the /vbw:loop preamble has three lines, the first reading the user's interview answers as every skill must (R39)",
       "why": "QA F178: both behaviours are right and tested; the plan text said otherwise",
       "at": "2026-10-13T00:43:56Z"
+    },
+    {
+      "id": "D325",
+      "at": "2026-10-13T01:15:52Z",
+      "text": "Contract approved: 169 requirements, 305 checks, 384 plans (760fefef3c1c)"
     }
   ],
   "commands": {
