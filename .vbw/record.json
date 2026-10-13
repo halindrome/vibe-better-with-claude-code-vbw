@@ -15794,12 +15794,11 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "7e4a4205381553adee4ce65e7165e630df4e786e482be3bdeceecc64f296a376",
-        "at": "2026-10-13T12:51:01Z",
-        "note": "32/33 checks",
-        "rounds": 1
+        "tree": "043dff637fd4d209e1a61af7eed0590a0edaeebbcaf5a9fe3be13de08d8ee205",
+        "at": "2026-10-13T13:49:46Z",
+        "note": "33/33 checks"
       },
       "outcome": {
         "tier": "deep",
@@ -26409,7 +26408,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "QA verdicts of phases that share a requirement interfere: the pass of P129 (R179, R180) at 12:51:03 closed F203, opened two seconds earlier by the fail of P128 (R179), because vbw qa record PHASE pass closes every open QA fix on the phase's requirements (plugin/lib/cmd-qa.sh, the .fixes map) whatever phase found it; a fail likewise closes another phase's fixed fixes. In a loop this repeats every round (P128 re-files, P129 closes) until the ceiling. Fix: a finding belongs to the phase whose QA found it (vbw qa finding PHASE REQ TEXT; a fail verdict adopts the untagged open findings on its requirements), a verdict changes only its own phase's findings (an untagged one keeps today's rule), the record allows and validates the fix's phase field, docs/proof.md and docs/record.md and the QA agent's instructions name the form. Regression test: two phases sharing a requirement; a finding of the first and then the second's pass leave it open; the first's pass closes it; the fail verdict tags an untagged finding."
     },
     {
@@ -26417,7 +26416,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Re-filed F203, which P129's pass closed (see F204): when the last item ships with the spend at or above the ceiling (default mode, no --finish-item), the loop ends with 'ceiling reached' and answers stopped instead of 'end of the list: N shipped, M parked' and done, because loop_step judges the ceiling before the end-of-list branch (plugin/lib/loop-step.sh). Fix: judge the ceiling only when a step or an item opening is still due, never when no item is in progress and none is waiting. Regression test in tests/loop-stops.bats: one item, --ceiling 5, session figures above 5 before the proof; the step after the proof answers done with the reason 'end of the list: 1 shipped, 0 parked', and loop.ended.reason is that text; the report says the loop ended on the end of the list."
     }
   ],
