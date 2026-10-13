@@ -4151,9 +4151,9 @@
     ]
   },
   "milestone": {
-    "id": "M26",
-    "title": "Machine-wide limit (owner, 2026-10-12 09:40): VBW as a whole never takes more than about three quarters of the machine's cores, however many projects, sessions and runs are proving at once: one shared budget per machine (a slot store in the user's Claude config folder, each unit of a proof or fix done takes a slot, a run that finds none waits its turn), so runs take turns instead of fighting (today a 12-minute fix done took 87 under four concurrent runs). Same tests, same results, no thrash; the check_jobs setting stays as a per-run cap below it. Goes with T127 (one fix done per fix round). First item after 2.0.34, before the loop",
-    "status": "shipped"
+    "id": "M27",
+    "title": "Several vbw fix done runs at once slow each other down (2026-10-12: three in parallel plus another session's run took a 12-minute run to 87 minutes). The fixing workflow has every Dev run its own fix done, so a round with several groups already runs several at once. Decide: the kernel serialises fix done runs (one proof lock per clone, the later ones wait and reuse), or the workflow runs one fix done for all groups at the end; measure first",
+    "status": "active"
   },
   "shipped": [
     {
@@ -33915,6 +33915,58 @@
           "in": 651086,
           "out": 311,
           "sessions": 8
+        }
+      },
+      "M27": {
+        "baseline": {
+          "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
+            "usd": 1039.900193,
+            "in": 647004,
+            "out": 117,
+            "at": "2026-10-13T21:23:33Z"
+          },
+          "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T21:23:33Z"
+          },
+          "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T21:23:33Z"
+          },
+          "689c5465-3aa1-49af-9115-8192ae092ecf": {
+            "usd": 35.064654,
+            "in": 174558,
+            "out": 600,
+            "at": "2026-10-13T21:23:33Z"
+          },
+          "69afb011-3850-41d9-8620-9b59aa9fe082": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T21:23:33Z"
+          },
+          "868abfef-9fb7-492e-afba-751d9042e56a": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T21:23:33Z"
+          },
+          "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T21:23:33Z"
+          },
+          "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T21:23:33Z"
+          }
         }
       }
     }
