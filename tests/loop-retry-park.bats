@@ -169,3 +169,18 @@ parked_clean() {
   jq -e '[.decisions[] | select(.text | test("park"))] | last | .text | test("changes the record too")' .vbw/record.json \
     || { jq '.decisions[-2:]' .vbw/record.json; false; }
 }
+
+@test "R179 (F181): a commit touching a file the user edited by hand is left in place and named; the user's edit stays" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 --ceiling 50 > /dev/null
+  built_and_broken
+  escalated
+  [ "$(step)" = fix ] || { cat "$TEST_ROOT/step.json"; false; }
+  escalated
+  figures s1 4 2000 200
+  printf 'mine\n' >> src/greet.txt
+  [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; false; }
+  grep -q mine src/greet.txt
+  ! git log --format=%s | grep -q '^Revert "feat(greet): bye"'
+  jq -e '[.decisions[] | select(.text | test("park"))] | last | .text | test("you changed src/greet.txt")' .vbw/record.json \
+    || { jq '.decisions[-2:]' .vbw/record.json; false; }
+}
