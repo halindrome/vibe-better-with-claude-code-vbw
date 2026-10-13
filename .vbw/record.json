@@ -26099,7 +26099,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "A second 'vbw loop stop' no longer 'changes nothing'. The criterion and the plan (P127.1 task 4) say a loop already stopping prints that and changes nothing (no write, no commit). Since commit ec8cbf77 (the fix for QA finding F170) the second stop ends the loop: plugin/lib/cmd-loop.sh loop_stop calls loop_end, which writes .loop.ended, writes .vbw/loop-report.md and commits. docs/loop.md (line 68) and tests/loop-stop.bats (last test) describe the new behaviour, but R178's rule text still says 'a second stop changes nothing', and the test named 'stop with no loop on says so and exits 0; a second stop changes nothing' now asserts the opposite (.loop.ended != null). No recorded decision amends the criterion, so spec, test name and code disagree. Options: (a) recommended: record a decision that a second stop on a stopping loop ends it (the way out when its session is gone) and reword the R178 rule and that test's name; (b) revert to 'changes nothing' and instead let 'vbw loop start' replace a stopping loop whose session is gone. Regression test: one that fails if the requirement text, test names and loop_stop disagree, i.e. rename the test to say a second stop ends a stopping loop, and keep a separate test that stop on an ended or absent loop changes nothing (project_sum equal before and after)."
     },
     {
@@ -26107,7 +26107,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Untested branch in the delegated approval: loop_delegate (plugin/lib/loop-step.sh) refuses to approve when vbw next's approve answer carries detail.files (docs/next.md row 4a, the approval of edited test files), and the plan (P127.2 task 2) and docs/loop.md both promise 'never the test-files-edited approval of row 4a'. No test exercises it: grep for '4a' or 'detail.files' in tests/loop-*.bats finds nothing, and tests/loop-approve-waits.bats covers only text differences, extra requirement, unlisted item, no loop, stopping, missing check file and spec/record drift. Removing the '(.detail.files == null)' clause would leave every loop test green, and the loop would then approve changed test files on the user's behalf. Regression test: in tests/loop-approve-waits.bats, make the contract approved except for an edit to a check's test file bytes with a built phase (row 4a), run the loop step with a loop whose items match, and assert nothing is approved, no consent is granted, no decision is recorded and vbw next still answers approve with detail.files; it must fail when the clause is removed."
     },
     {
@@ -26115,7 +26115,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The loop's outward guard (plugin/hooks/guard-bash.jq, def loop_outward) only skips global options for git (git_words). For every other command it takes the first word that does not start with '-' as the subcommand, so an option VALUE or a toolchain selector before the subcommand hides the publish. I ran the def on parsed commands: 'cargo +nightly publish', 'npm --tag next publish', 'docker --context x push img' and 'gh -R a/b release create v1' all come out ALLOWED, while 'npm publish --tag next' and 'git --no-pager push' are denied. The phase says these commands are denied for every caller while a loop is on, and 'cargo +nightly publish' is a normal way to type it. Regression test to add in tests/loop-outward-guard.bats: under a loop, denied_as for 'cargo +nightly publish', 'npm --registry https://r.example publish', 'docker --context x push img', 'gh -R a/b release create v1', each with the pinned text; and the allowed list must still pass (gh -R a/b release list, cargo +nightly build)."
     },
     {
@@ -26123,7 +26123,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The L3 loop scenario (tools/l3-suite.sh scenario_loop, committed tools/l3-results/loop.json) never exercised a real revert. The committed result has facts.revert_commits = 0, so the check 'the revert commits are in git' and the report check for revert hashes loop over an empty list and cannot fail. The plan (P129.4) asks for the revert commits present in git and the report naming them; commit 6667f15e changed the scenario so T2 fails by construction before any code commit, and allowed zero reverts. The result's not_tested list does not say that the git-revert path of a park was not run at L3 (it lists a remote, a mid-item ceiling, a [human] item, more than two items, Claude Code versions). The revert path is covered at L1 only (tests/loop-retry-park.bats). Regression test to add: either the scenario gives T2 a code commit so the park must revert it and the check fails when n_rev is 0, or loop.json/not_tested must say 'a park that reverts committed code' whenever facts.revert_commits is 0, pinned in tests/l3-loop.bats (a result with revert_commits 0 and no such not_tested entry fails)."
     }
   ],
@@ -28697,6 +28697,12 @@
       "id": "D321",
       "at": "2026-10-12T23:42:47Z",
       "text": "Contract approved: 169 requirements, 305 checks, 384 plans (086ca3fb0d3d)"
+    },
+    {
+      "id": "D322",
+      "text": "A second vbw loop stop, while the loop is still stopping, ends it at once with the report: the way to end a loop whose own session is gone (P127.1 task 4 said a second stop changes nothing; superseded)",
+      "why": "QA F170 and F173: a stopping loop whose session is gone could not be ended by anyone, and the refusal sent the user in a circle",
+      "at": "2026-10-12T23:52:15Z"
     }
   ],
   "commands": {
@@ -32360,6 +32366,15 @@
         "milestone": "M25",
         "started": "2026-10-12T23:46:10Z",
         "ended": "2026-10-12T23:51:20Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261012T235214Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-12T23:52:14Z",
+        "ended": "2026-10-13T00:11:23Z",
         "cost": null
       }
     ],
