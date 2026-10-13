@@ -141,4 +141,7 @@ untouched() { jq -e '.milestone.title == "Next" and ([.requirements[] | select(.
   [ -f .vbw/loop-report.md ]
   grep -q 'ship was refused' .vbw/loop-report.md
   [ -f stray.txt ]
+  # The cut-off item's cost line shows its spend so far, never "not counted yet" once the loop has ended (F184).
+  ! grep -q 'not counted yet' .vbw/loop-report.md || { cat .vbw/loop-report.md; false; }
+  grep -qE '^- T1 \(in_progress\): .* so far \(cut off when the loop ended\)' .vbw/loop-report.md || { cat .vbw/loop-report.md; false; }
 }
