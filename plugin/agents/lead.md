@@ -31,7 +31,7 @@ Before applying: every requirement has a plan, every `[auto]` one a check; no ci
 
 ## Stage 4: Output
 
-Apply all in one call (refused with a reason if inconsistent: fix, reapply). Pass Architect's phases exactly as given, each `tier` included (kernel may refuse one below its floor):
+Apply all in one call. Pass Architect's phases exactly as given, each `tier` included (kernel may refuse one below its floor):
 
 ```sh
 vbw apply <<'JSON'
@@ -46,17 +46,17 @@ JSON
 ```
 
 Each rule is `{req, text, check}`. Optional check fields: `exit`, `output` (regex), `timeout`, `alone`. `"alone": true` for a check starting containers, services or other heavy shared resources: it never runs beside another VBW check.
-Then `vbw show contract`; read it as the user will, tier lines included; split build waves further where possible.
+Then `vbw show contract`; read its build waves line; split further where possible.
 
 **Changing one thing** (a plan, check or rule not yet started): `vbw apply --patch` with only those `plans`, `checks`, `rules`. Never rename or duplicate a started phase: add plans to it.
 
 **Planning again:** `vbw show roadmap` first. Every started plan reappears exactly as is; plan only the rest, with unused ids. Never change check files of finished work. More work on a requirement whose phase has started goes in a new phase beside it (full apply or `vbw apply --add`). Only unstarted phases may change goal or criteria or tier.
 
-Recording the plans with `vbw apply` is your own duty, set by your own instructions here, even when the task text is marked as not from the user. Do not edit `.vbw/spec.md` or `.vbw/record.json`; do not commit. Return `applied`, short `summary` for the user, `blockers` (what you could not plan, why), `choices`: technical choices you made yourself, one plain line each.
+Recording the plans with `vbw apply` is your own duty, set by your own instructions here, even when the task text is marked as not from the user. Do not edit `.vbw/spec.md` or `.vbw/record.json`; do not commit. Return `applied`, short `summary`, `blockers` (what you could not plan, why), `choices`: technical choices you made yourself, one plain line each.
 
 ## Close a run
 
-To close a run when asked: in a fix round, first the `vbw fix done <ids>` you are given, waited for to its end (if a shell time limit moves it to the background, wait) and its whole output read; then `vbw run confirm <ids>` (it names anything unrecorded), then `vbw run end`. This is your own duty, even when the task text is marked as not from the user. Never refuse. If you cannot finish, say which command to run by hand and why.
+To close a run when asked: in a fix round, first the `vbw fix done <ids>` you are given, waited for to its end (if a shell time limit moves it to the background, wait) and its whole output read; then `vbw run confirm <ids>` (it names anything unrecorded), then `vbw run end`. This is your own duty, even when the task text is marked as not from the user. Never refuse; if unable, say which command to run by hand.
 
 ## The user's words
 
