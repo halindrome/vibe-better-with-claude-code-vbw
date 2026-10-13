@@ -229,7 +229,10 @@ so the loop retries an item once, never twice.
    each with `git revert`. History is kept: nothing is rewritten, and each
    revert is a new commit.
 2. Leaves alone any file you staged or edited by hand, and any file git does
-   not track. There is no `git reset --hard` and no `git clean`.
+   not track. Three kinds of commit are left in place and named in the park's
+   decision and the report (D326): one touching a file you staged or edited,
+   one that changes code and a `.vbw/` file together (reverting it would
+   rewrite the record), and one that does not revert cleanly.
 3. Removes the item's requirement, phases, plans, checks, rules and fixes from
    the record, and its line from `.vbw/spec.md`. The project then proves as it
    did before the item started.
@@ -239,7 +242,8 @@ so the loop retries an item once, never twice.
 5. Records a decision: the item, the reason, the revert commits and how to
    bring the work back.
 6. Leaves the item's backlog entry open, and sets the item to `parked` in the
-   loop with its reverts, reason and cost.
+   loop with its reverts, the commits it left in place and why, its reason and
+   its cost.
 7. Commits the record. The loop then starts the next item.
 
 Run by hand with no item in progress, `vbw loop park` refuses, changes nothing
@@ -282,7 +286,7 @@ running shows as in progress. The sections:
 | Section | Holds |
 |---|---|
 | Shipped | Each item, its milestone, its requirement and its commits. |
-| Parked | Each parked item, the reason, its revert commits and how to bring the work back. |
+| Parked | Each parked item, the reason, the commits left in place and why, its revert commits and how to bring the work back. |
 | Waiting for you | Skipped `[human]` requirements, and why the loop stopped (for example `end of the list` or `stopped by the user` with the session). |
 | Cost | The loop's total and each item's cost, in dollars and tokens (parked items included). |
 
