@@ -29068,6 +29068,11 @@
       "text": "An action the loop step does not know still ends the loop, with one exception: a contract that is not ready yet (vbw next answers contract: a check file missing, a spec unsynced, a rule missing) during an item's plan step is the session's unfinished work; the loop hands it to the session once, recorded as loop.asked {item, instruction}, and ends with 'contract needs you ... (asked once already)' only when the same unsatisfied instruction comes back for the same item; any other action clears loop.asked",
       "why": "F207: scenario run 12 ended after 29 s because the session stopped between applying the contract and writing its check file. Chosen by VBW: one second chance is bounded (no spin without progress) and matches how the loop treats a blocked plan (reset once)",
       "at": "2026-10-13T14:09:47Z"
+    },
+    {
+      "id": "D335",
+      "at": "2026-10-13T14:55:58Z",
+      "text": "Contract approved: 169 requirements, 307 checks, 384 plans (67635ad270b6)"
     }
   ],
   "commands": {
