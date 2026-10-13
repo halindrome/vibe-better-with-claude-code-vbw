@@ -36,7 +36,7 @@ usage: vbw <command> [args]
   plan done|block|reset ID   a plan's outcome (done is verified)
   fix done ID [ID...] | retry ID   fixes committed (checks they serve run once); retry an escalated fix
   req accept ID | req reject ID NOTE | req skip ID   the user's verdict on a [human] requirement, or Skip for now
-  qa finding REQ TEXT | qa record PHASE pass|fail TIER [NOTE]   the QA agent's findings and verdict on a built phase
+  qa finding [PHASE] REQ TEXT | qa record PHASE pass|fail TIER [NOTE]   the QA agent's findings and verdict on a built phase
   ship              mark the milestone shipped (when vbw next says ship)
   milestone start TITLE   open the next milestone after shipping
   milestone rename TITLE  name the current milestone
@@ -99,7 +99,7 @@ vbw_cmd_usage() {
       echo "usage: vbw req accept ID | req reject ID NOTE | req skip ID   the user's verdict on a [human] requirement"
       echo "       vbw req skip ID   record Skip for now on a [human] requirement: it waits, and when skipped ones are all that holds up shipping, vbw next offers to move them to the next milestone" ;;
     qa)
-      echo "usage: vbw qa finding REQ TEXT   the QA agent's finding on a requirement"
+      echo "usage: vbw qa finding [PHASE] REQ TEXT   the QA agent's finding on a requirement"
       echo "       vbw qa record PHASE pass|fail TIER [NOTE]   its verdict on a built phase" ;;
     ship) echo "usage: vbw ship   mark the milestone shipped (when vbw next says ship)" ;;
     config) echo "usage: vbw config [set KEY VALUE | models | autonomy | rigor [MODE]]   settings (vbw help lists the keys)" ;;

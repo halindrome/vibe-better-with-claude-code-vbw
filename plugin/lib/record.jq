@@ -237,8 +237,9 @@ if type != "object" then ["record must be a JSON object"] else
         ( select(.id as $id | reachable($graph; $id) | any(.[]; . == $id)) | "plan dependency cycle through \(.id)" ) ),
 
     ( arr("fixes")[]
-      | field_rule(["id","req","command","attempts","status","note","source"]),
+      | field_rule(["id","req","command","attempts","status","note","source","phase"]),
         ( select(has("source") and (.source != "qa" or has("command"))) | "\(.id) source must be qa, for a requirement" ),
+        ( . as $o | select(has("phase") and ((.phase | type) != "string" or (any($r.phases[]; .id == $o.phase) | not))) | "\(.id) references unknown phase \(.phase)" ),
         ( select(has("req") == has("command")) | "\(.id) needs exactly one of req or command" ),
         ( . as $o | select(has("req") and (($reqs | has_id($o.req)) | not)) | "\(.id) references unknown requirement \(.req)" ),
         ( . as $o | select(has("command") and (($r.commands | type == "object" and has($o.command | tostring)) | not))
