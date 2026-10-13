@@ -29151,6 +29151,24 @@
       "text": "Correction to D337: the backlog ids given at recording are T133 for B2 (config knows check_jobs), T134 for B3, T135 for B4, T136 for F3, T137 for the session-runs-the-loaded-kernel item that replaces T54, T138 for F4 and T139 for the ETA note; the order of D337 stands",
       "why": "D337 named T133 for the kernel item before the ids were assigned",
       "at": "2026-10-13T16:27:04Z"
+    },
+    {
+      "id": "D339",
+      "text": "Equal turns: when a machine slot frees it goes to the run holding the fewest, so every run keeps moving; a small run finishes early, a big one a little later than alone",
+      "why": "chosen by the loop: a bit more bookkeeping in the slot store, accepted so a two-minute fix in another project never waits an hour behind a big proof",
+      "at": "2026-10-13T16:41:39Z"
+    },
+    {
+      "id": "D340",
+      "text": "One slot per check now: a heavy test command is capped with its project's check_jobs or the alone marker; a per-check core count is revisited after the Rust measurement (T129), when there are numbers",
+      "why": "chosen by the loop: the limit is a promise about how many checks VBW runs, not what each does inside; a core-count field without measured numbers would be as bad as none",
+      "at": "2026-10-13T16:41:39Z"
+    },
+    {
+      "id": "D341",
+      "text": "The machine-wide limit is fixed at about three quarters of the cores: no per-machine setting; check_jobs stays the per-project cap",
+      "why": "chosen by the loop: no new setting to document and keep; a knob for the whole machine can be added the day someone needs it",
+      "at": "2026-10-13T16:41:40Z"
     }
   ],
   "commands": {
@@ -33024,6 +33042,15 @@
         "milestone": "M26",
         "started": "2026-10-13T16:36:57Z",
         "ended": "2026-10-13T16:41:22Z",
+        "cost": null
+      },
+      {
+        "id": "plan-20261013T164150Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M26",
+        "started": "2026-10-13T16:41:50Z",
+        "ended": "2026-10-13T16:57:03Z",
         "cost": null
       }
     ],
