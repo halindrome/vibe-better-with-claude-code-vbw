@@ -1,9 +1,9 @@
 {
   "scenario": "loop",
   "fixture": "two backlog items (T1: greet.sh, ships; T2: hello.txt (a commit to revert) plus the committed tests/never.sh exiting 0, which may not be edited, so its check cannot pass: its fix escalates twice, or its plan blocks twice, and the item parks); the working tree's status line on; /vbw:loop T1 T2 --ceiling 3; no question answered",
-  "cost_usd": 0.88,
+  "cost_usd": 1.00,
   "evidence_level": "L3",
-  "at": "2026-10-13T10:26:51Z",
+  "at": "2026-10-13T13:14:22Z",
   "passed": true,
   "facts": {
     "items": "T1=shipped,T2=parked",
