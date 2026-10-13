@@ -4153,7 +4153,7 @@
   "milestone": {
     "id": "M26",
     "title": "Machine-wide limit (owner, 2026-10-12 09:40): VBW as a whole never takes more than about three quarters of the machine's cores, however many projects, sessions and runs are proving at once: one shared budget per machine (a slot store in the user's Claude config folder, each unit of a proof or fix done takes a slot, a run that finds none waits its turn), so runs take turns instead of fighting (today a 12-minute fix done took 87 under four concurrent runs). Same tests, same results, no thrash; the check_jobs setting stays as a per-run cap below it. Goes with T127 (one fix done per fix round). First item after 2.0.34, before the loop",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -4280,6 +4280,11 @@
       "id": "M25",
       "title": "Loop v0: the night shift runs alone",
       "at": "2026-10-13T15:08:02Z"
+    },
+    {
+      "id": "M26",
+      "title": "Machine-wide limit (owner, 2026-10-12 09:40): VBW as a whole never takes more than about three quarters of the machine's cores, however many projects, sessions and runs are proving at once: one shared budget per machine (a slot store in the user's Claude config folder, each unit of a proof or fix done takes a slot, a run that finds none waits its turn), so runs take turns instead of fighting (today a 12-minute fix done took 87 under four concurrent runs). Same tests, same results, no thrash; the check_jobs setting stays as a per-run cap below it. Goes with T127 (one fix done per fix round). First item after 2.0.34, before the loop",
+      "at": "2026-10-13T21:23:29Z"
     }
   ],
   "requirements": [
@@ -29734,6 +29739,11 @@
       "id": "D347",
       "at": "2026-10-13T21:17:23Z",
       "text": "Contract approved: 170 requirements, 316 checks, 389 plans (124558b8e80a)"
+    },
+    {
+      "id": "D348",
+      "at": "2026-10-13T21:23:29Z",
+      "text": "Shipped M26 Machine-wide limit (owner, 2026-10-12 09:40): VBW as a whole never takes more than about three quarters of the machine's cores, however many projects, sessions and runs are proving at once: one shared budget per machine (a slot store in the user's Claude config folder, each unit of a proof or fix done takes a slot, a run that finds none waits its turn), so runs take turns instead of fighting (today a 12-minute fix done took 87 under four concurrent runs). Same tests, same results, no thrash; the check_jobs setting stays as a per-run cap below it. Goes with T127 (one fix done per fix round). First item after 2.0.34, before the loop: 1 requirement proven or accepted"
     }
   ],
   "commands": {
@@ -33899,6 +33909,12 @@
             "out": 0,
             "at": "2026-10-13T16:36:24Z"
           }
+        },
+        "total": {
+          "usd": 1041.248097,
+          "in": 651086,
+          "out": 311,
+          "sessions": 8
         }
       }
     }
