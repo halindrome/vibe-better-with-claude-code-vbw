@@ -10307,6 +10307,14 @@
           "check": "C319"
         }
       ]
+    },
+    {
+      "id": "R182",
+      "text": "Several vbw fix done runs at once slow each other down (2026-10-12: three in parallel plus another session's run took a 12-minute run to 87 minutes). The fixing workflow has every Dev run its own fix done, so a round with several groups already runs several at once. Decide: the kernel serialises fix done runs (one proof lock per clone, the later ones wait and reuse), or the workflow runs one fix done for all groups at the end; measure first",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M27",
+      "rules": []
     }
   ],
   "phases": [
@@ -27732,7 +27740,7 @@
       "text": "Several vbw fix done runs at once slow each other down (2026-10-12: three in parallel plus another session's run took a 12-minute run to 87 minutes). The fixing workflow has every Dev run its own fix done, so a round with several groups already runs several at once. Decide: the kernel serialises fix done runs (one proof lock per clone, the later ones wait and reuse), or the workflow runs one fix done for all groups at the end; measure first",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "in_progress"
     },
     {
       "id": "T128",
@@ -34042,7 +34050,60 @@
         "id": "T127",
         "text": "Several vbw fix done runs at once slow each other down (2026-10-12: three in parallel plus another session's run took a 12-minute run to 87 minutes). The fixing workflow has every Dev run its own fix done, so a round with several groups already runs several at once. Decide: the kernel serialises fix done runs (one proof lock per clone, the later ones wait and reuse), or the workflow runs one fix done for all groups at the end; measure first",
         "proof": "auto",
-        "status": "waiting"
+        "status": "in_progress",
+        "milestone": "M27",
+        "head": "f00cb47404f505ace8e6841d95c52f7b227304ec",
+        "baseline": {
+          "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
+            "usd": 1039.900193,
+            "in": 647004,
+            "out": 117,
+            "at": "2026-10-13T21:23:40Z"
+          },
+          "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T21:23:40Z"
+          },
+          "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T21:23:40Z"
+          },
+          "689c5465-3aa1-49af-9115-8192ae092ecf": {
+            "usd": 35.064654,
+            "in": 174558,
+            "out": 600,
+            "at": "2026-10-13T21:23:40Z"
+          },
+          "69afb011-3850-41d9-8620-9b59aa9fe082": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T21:23:40Z"
+          },
+          "868abfef-9fb7-492e-afba-751d9042e56a": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T21:23:40Z"
+          },
+          "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T21:23:40Z"
+          },
+          "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T21:23:40Z"
+          }
+        },
+        "req": "R182"
       },
       {
         "id": "T130",
