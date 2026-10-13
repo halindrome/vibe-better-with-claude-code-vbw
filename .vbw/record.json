@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261013T195734Z",
+    "kind": "qa",
+    "started_at": "2026-10-13T19:57:34Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1031.679699,
+      "in": 609284,
+      "out": 233
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -16185,12 +16196,19 @@
       ],
       "predicted": "standard",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "standard",
-        "tree": "f556899db51021f3466b92b3b3dde1166de39eb90d24fe12c86ab06f4ade3cf1",
-        "at": "2026-10-13T18:53:52Z",
-        "note": "15/17 checks",
-        "rounds": 1
+        "tree": "f30bc99e63794f6ce96d0e7d8365e2e2150fd744ce24a40a48ec50eb990672ca",
+        "at": "2026-10-13T19:58:56Z",
+        "note": "17/17 checks"
+      },
+      "outcome": {
+        "tier": "standard",
+        "predicted": "standard",
+        "held": true,
+        "fix_rounds": 2,
+        "qa_findings": 2,
+        "escalations": 0
       }
     }
   ],
@@ -26877,7 +26895,7 @@
       "req": "R181",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Test gap: the 'N min' form of the waited line (from 60 s up, slots_say in plugin/lib/slots.sh) is part of the required wording and of plan P131.1 task 2, but no test pins it: tests/machine-wait-line.bats only matches the 'N s' form (regex '^waited ([0-9]+) s ...'), and no other test greps 'min for other VBW runs'. Changing '/ 60 ... min' to anything else, or removing the branch, still passes. Regression test: set SLOTS_WAITED to 59 and to 60/240 (sourcing slots.sh, or a wait file) and assert the exact lines 'waited 59 s ...' and 'waited 4 min for other VBW runs on this computer (limit L of C cores)', also with an unreadable core count. Also pin that several units' waits are ADDED (two units that wait 3 s and 4 s give 7 s): every current test has one waiting unit, so a max-instead-of-sum bug would pass.",
       "phase": "P131"
     },
@@ -26886,7 +26904,7 @@
       "req": "R181",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Test gap: P131.1 task 1 promises the wait 'stays out of the evidence, the record and the store of recorded runs'. Code complies (the wait goes only to $CHECK_OUT/waits, removed by checks_end), but no test can fail on it: tests/machine-wait-line.bats never inspects .vbw/record.json evidence or the stored runs after a run that waited. A change that wrote the wait into evidence (which would make an unchanged proof differ between shared and alone machines) would pass. Regression test: after a vbw prove whose unit waited, assert that evidence.checks/commands/test_files hold no wait/seconds-waited field beyond the alone-run shape, and that the record and the proofreuse store are byte-identical in keys to those of an alone run.",
       "phase": "P131"
     }
