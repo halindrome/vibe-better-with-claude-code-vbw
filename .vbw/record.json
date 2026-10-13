@@ -27242,6 +27242,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T133",
+      "text": "Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09)",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
@@ -29082,6 +29089,12 @@
       "id": "D336",
       "at": "2026-10-13T15:08:02Z",
       "text": "Shipped M25 Loop v0: the night shift runs alone: 3 requirements proven or accepted"
+    },
+    {
+      "id": "D337",
+      "text": "Roadmap after 2.0.35 (owner confirmed 2026-10-13 17:20): three core releases, then the cosmetic leg, then the benchmark and 2.1.0. 2.0.36 Runs take turns: T128, T127, T130, T132, the session runs the loaded plugin's kernel (T133, replaces T54), B4 and B2 from the brainstorm. 2.0.37 Cheaper QA rounds: T74, T118 with T45, T131 decided, T123, T111. 2.0.38 Re-planning and release hygiene: B3, F3, T115, T120, T112, T56, T61, T114, T122, T107, T105, T19, T27, T98, T82. Cosmetic leg (cosmetic.md): T92, T94, T95, T96, T5, T102 with the ETA note, T78, T81, T87, F4, T52, T64, T21, T28, T18. Then the benchmark, README images, v2 to main, 2.1.0. After 2.1.0: T129, T100, T101, T119, T124, T125, T126, T12 and T13 (research first), T7, T1",
+      "why": "Core before cosmetics (owner rule): contention and the QA-round cost are paid by every later milestone (M25: 11 QA rounds, about $980), so they come first; the cosmetic leg is cheaper once they ship. The alternative, cosmetics right after 2.0.36, was offered and not taken",
+      "at": "2026-10-13T16:26:09Z"
     }
   ],
   "commands": {
