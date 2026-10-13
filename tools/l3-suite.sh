@@ -11,14 +11,14 @@
 # L3_JOBS at a time (default 4); each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, tools, legacy, nolegacy, smallchange, costs, loop. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel tools legacy nolegacy smallchange costs loop"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel pluginoff tools legacy nolegacy smallchange costs loop"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -901,6 +901,52 @@ scenario_panel() {
   }
 }
 
+# pluginoff (R184): a VBW project whose own .claude/settings.json turns the VBW
+# plugin off. VBW runs as the user's installed marketplace plugin (L3_MODE=installed:
+# --plugin-dir may not honour enabledPlugins "vbw@vbw-marketplace"), with the
+# working tree's status line on, in a window wide enough for the panel. The
+# facts: Claude Code itself reports VBW off (debug log), whether it still
+# loaded the panel module, and whether anything of VBW is on the screen.
+scenario_pluginoff() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null \
+    && printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"\n' > .vbw/spec.md \
+    && "$VBW" spec sync > /dev/null \
+    && mkdir -p .claude \
+    && jq -n '{enabledPlugins: {"vbw@vbw-marketplace": false}}' > .claude/settings.json \
+    && git add -A && git commit -qm "chore: VBW project that turns the VBW plugin off") \
+    || { say "setup failed: could not seed the project"; return 1; }
+  export L3_STATUSLINE=1 L3_MODE=installed
+  fixture="a small VBW project (vbw init, one-requirement spec) whose .claude/settings.json sets enabledPlugins vbw@vbw-marketplace to false; VBW is the installed marketplace plugin, the session shows the working tree's status line; window 200 columns wide"
+  start="Reply with the single word ok."
+  seen=""
+  done_yet() {
+    sleep 20
+    seen=$(screen | sed 's/[[:space:]][[:space:]]*/ /g')
+    printf '%s\n' "$seen" > "$dir.pluginoff.screen.txt"
+    return 0
+  }
+  checks() {
+    local log off=false module=false panel=false line=false passed
+    log=$(l3 debuglog "$dir")
+    [ -f "$log" ] || log=/dev/null
+    grep -qiE 'vbw[^ ]*.{0,80}(disabled|not enabled|is off)|(disabled|skipping).{0,80}vbw' "$log" && off=true
+    grep -q 'hooks/panel\.js' "$log" && module=true
+    printf '%s' "$seen" | grep -qE 'Working on|VBW is idle|VBW next:|VBW needs you|VBW building|No VBW project is open' && panel=true
+    printf '%s' "$seen" | grep -qF '[VBW]' && line=true
+    expect "Claude Code reports VBW turned off in the project" [ "$off" = true ]
+    expect "no panel on screen" [ "$panel" = false ]
+    expect "no VBW status line on screen" [ "$line" = false ]
+    passed=true
+    [ "$off" = true ] && [ "$panel" = false ] && [ "$line" = false ] || passed=false
+    [ "$passed" = true ] || failed=1
+    result_write pluginoff "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson o "$off" --argjson m "$module" --argjson p "$panel" --argjson l "$line" \
+        '{plugin_disabled_confirmed: $o, panel_module_loaded: $m, panel_shown: $p, vbw_statusline_shown: $l}')" \
+      '["the hand-back to an earlier status line through the installed setting (this session shows the working tree script directly)","the installed plugin version, which is not the working tree'"'"'s","user-level settings that turn VBW off (the project'"'"'s own file only)","a narrow window","a project that turns VBW off while a VBW run is live"]'
+  }
+}
+
 # Agent types of every subagent the session ran (their .meta.json), one per line.
 agent_types() {
   local f
@@ -1573,7 +1619,7 @@ for scenario in "$@"; do
   # Each scenario's result reflects its own checks; the suite's exit, all of them.
   suite_failed=$failed failed=0
   unset -f on_question on_idle done_yet checks idle
-  unset L3_STATUSLINE
+  unset L3_STATUSLINE L3_MODE
   idle() { default_idle; }
   on_question() { return 1; }
   on_idle() { return 1; }
