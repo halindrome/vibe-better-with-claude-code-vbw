@@ -10,7 +10,9 @@
 # standard|deep: auto computes each phase's tier, the others force it),
 # motion (full|calm|off: the panel's animation; "default" removes it and the
 # panel picks by the interview level), check_jobs (1 to 64; without a setting three quarters of the processor cores: checks run at the same time; kept in this
-# clone's own settings file in the git directory, not in the record),
+# clone's own settings file in the git directory, not in the record; the line
+# after check_jobs, "machine limit: L (...)", names the computer-wide limit
+# shared by every VBW project, not a setting, and says when it overrides check_jobs),
 # command_timeout (1 to 86400 seconds a project command may run under vbw prove; 3600 when unset, "default" removes it).
 
 # Profiles name a model per workflow role (lib/profiles.json, shared with the
@@ -67,6 +69,21 @@ config_rigor() {
   printf 'rigor = %s\n' "$mode"
 }
 
+# config_machine_limit_line: the computer-wide limit in plain words; when the
+# check_jobs in force is above it, it says the limit applies.
+config_machine_limit_line() {
+  local limit cores jobs tail="; shared by every VBW project on this computer; not a setting)"
+  limit=$(vbw_machine_limit)
+  jobs=$(vbw_check_jobs)
+  if cores=$(vbw_cores); then
+    printf "machine limit: %s (three quarters of this computer's processor cores (%s), rounded down, at least 1 and at most 64%s" "$limit" "$cores" "$tail"
+  else
+    printf "machine limit: %s (this computer's processor core count could not be read%s" "$limit" "$tail"
+  fi
+  if [ "$jobs" -gt "$limit" ]; then printf ' - it applies, not check_jobs %s' "$jobs"; fi
+  printf '\n'
+}
+
 cmd_config() {
   local sub="${1:-}"
   case "$sub" in
@@ -81,6 +98,7 @@ cmd_config() {
   case "$sub" in
     "")
       printf 'check_jobs: %s (%s)\n' "$(vbw_check_jobs)" "$(vbw_check_jobs_source)"
+      config_machine_limit_line
       record_read | jq -r --argjson p "$VBW_PROFILES" '.settings as $s
         | "profile: \($s.profile)", "autonomy: \($s.autonomy // "balanced")", "autonomy_cap: \($s.autonomy_cap)", "rigor: \($s.rigor // "auto")", "motion: \($s.motion // "default")", "command_timeout: \($s.command_timeout // 3600) seconds",
           ($p[$s.profile] + ($s.models // {}) | (if ((.qa // "") | ascii_downcase | contains("haiku")) then .qa = "sonnet" else . end) | to_entries[] | "model.\(.key): \(.value)")'
