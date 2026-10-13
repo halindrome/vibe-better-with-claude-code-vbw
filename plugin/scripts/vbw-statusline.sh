@@ -5,7 +5,16 @@
 # installed VBW, so an update switches the status line over by itself.
 # No network and no git process: the branch is read from .git/HEAD directly.
 # The one file it writes is the session's cost side file (.vbw/runtime/
-# cost.SESSION.json, R173), through a temporary name and a rename. It never fails: a broken render prints a single line.
+# cost.SESSION.json, R173), through a temporary name and a rename. It never
+# fails: a broken render prints a single line.
+#
+# Where the VBW plugin is turned off (R184: enabledPlugins["vbw@vbw-marketplace"]
+# false in the project's .claude/settings.local.json, then its .claude/
+# settings.json, then the user's settings.json; the first file that sets it
+# decides, nothing decided means on) it prints nothing, writes nothing and exits
+# 3. Exit 3 is the hand-back signal the statusLine setting reads to run the
+# user's earlier status line (plan P134.2). This script itself never runs that
+# saved status line or any other command read from a file (D356).
 
 here="$(cd "$(dirname "$0")" && pwd)"
 plugin="$here/.."
@@ -33,6 +42,24 @@ root=${root:-$PWD}
 d=$root
 while [ "$d" != / ] && [ -n "$d" ] && [ ! -e "$d/.git" ]; do d=$(dirname "$d"); done
 [ ! -e "$d/.git" ] || root=$d
+
+# On or off, before any other work. The files that exist are read by one jq
+# (raw lines grouped by file, so a file that is not valid JSON decides nothing
+# and the next one still counts); no file, no jq.
+cdir=${CLAUDE_CONFIG_DIR:-}
+if [ -z "$cdir" ]; then
+  if [ -d "$HOME/.config/claude-code" ]; then cdir="$HOME/.config/claude-code"; else cdir="$HOME/.claude"; fi
+fi
+cfgs=()
+for f in "$root/.claude/settings.local.json" "$root/.claude/settings.json" "$cdir/settings.json"; do
+  [ -f "$f" ] && cfgs+=("$f")
+done
+if [ ${#cfgs[@]} -gt 0 ]; then
+  verdict=$(jq -nRr 'reduce inputs as $l ([]; if length > 0 and .[-1][0] == input_filename then .[-1][1] += $l + "\n" else . + [[input_filename, $l + "\n"]] end)
+    | [.[] | (.[1] | try (fromjson | .enabledPlugins["vbw@vbw-marketplace"] | select(type == "boolean")) catch empty)] | .[0] | if . == null then "" else tostring end' "${cfgs[@]}" 2> /dev/null)
+  if [ "$verdict" = false ]; then exit 3; fi
+fi
+
 legacy=""
 [ -f "$root/.vbw/record.json" ] || [ ! -d "$root/.vbw-planning" ] || legacy=1
 
