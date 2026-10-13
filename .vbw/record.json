@@ -4197,6 +4197,19 @@
         "tests/fix-round-measure.bats"
       ],
       "timeout": 600
+    },
+    {
+      "id": "C326",
+      "req": "R182",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/fix-round-once.bats"
+      ],
+      "files": [
+        "tests/fix-round-once.bats"
+      ],
+      "fix": "F216"
     }
   ],
   "project": {
@@ -27318,7 +27331,7 @@
       "req": "R182",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "plugin/workflows/fixing.js (commit 53fce21e) computes complete as interrupted===0 && !failed && open.length===0 && (...). Plan P132.2 task 3 says: set complete to false only when the fix-done agent stops or answers 'failed'; otherwise complete is computed as before. The added 'open.length === 0' term is not in the plan and no recorded decision covers it. Effect: with no args.session, a round where vbw fix done ran fine but left one fix open (e.g. uncommitted changes) now returns complete:false, while before this phase it returned true; a blocked Dev (left_out) still returns complete:true there, so the rule is also inconsistent. With a session the term is redundant (confirm.recorded is already false when a fix is open). Fix: either drop the term to follow the plan, or record a decision that an open fix makes the round incomplete and apply it for blocked/left-out fixes too. Regression test to add: in tests/fix-round-once.bats, a run with NO session where the fix-done agent answers fixdone:'ran' with a non-empty open list; assert the expected complete value matches the plan or the new decision, and that a blocked-Dev round without session gives the same complete value as an open-fix round.",
       "phase": "P132"
     }
@@ -34287,6 +34300,15 @@
         "milestone": "M27",
         "started": "2026-10-13T22:15:55Z",
         "ended": "2026-10-13T22:17:48Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261013T221807Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M27",
+        "started": "2026-10-13T22:18:07Z",
+        "ended": "2026-10-13T22:25:34Z",
         "cost": null
       }
     ],
