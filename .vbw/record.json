@@ -15733,12 +15733,11 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "4de36bc851f575ddde4f7e3efa1ab91c84115e4b2ad89aed99ef1e2029aa4962",
-        "at": "2026-10-13T11:05:58Z",
-        "note": "29/30 checks",
-        "rounds": 3
+        "tree": "7832efff319d98ba96b75b853c9e7b40fd749f0732a37075ac2eba30494f0f78",
+        "at": "2026-10-13T12:52:07Z",
+        "note": "30/30 checks"
       },
       "outcome": {
         "tier": "deep",
@@ -26380,7 +26379,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The F200 fix (commit 59a47def) also changed the user's own vbw approve, not only the loop: when the contract is already approved and a project command or the test-file form is new, plugin/lib/cmd-approve.sh approve_record now writes a decision 'Project commands approved: NAME (ARGV)' and a commit 'chore(vbw): approve commands' (empty WHO). Before, the user path wrote only consent. The only test of this (tests/loop-approve.bats 'F200') drives the loop; grep for 'Project commands approved' and 'approve commands' in tests/ finds nothing for the user path, and approve_decide's failure branch for this case ('the commands are not approved' after a failed commit) has no test either. docs/loop.md line 137-139 says 'vbw approve records the same decision without the loop's words', but docs/proof.md (Approve section, 'An approval whose commit fails') does not describe the new user behaviour. Regression test to add (tests/approve-*.bats): approve a contract with vbw approve, change a project command in the spec, spec sync, run vbw approve again, and assert exit 0, one new decision starting 'Project commands approved: ' with no 'by the loop', the commit subject 'chore(vbw): approve commands', a command consent for the new argv, and a second vbw approve adding no decision; plus a failing commit hook leaves no decision and no command consent. Also add the sentence to docs/proof.md."
     },
     {
