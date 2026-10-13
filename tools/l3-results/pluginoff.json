@@ -1,0 +1,21 @@
+{
+  "scenario": "pluginoff",
+  "fixture": "a small VBW project (vbw init, one-requirement spec) whose .claude/settings.json sets enabledPlugins vbw@vbw-marketplace to false; VBW is the installed marketplace plugin, the session shows the working tree's status line; window 200 columns wide",
+  "cost_usd": 0.0826,
+  "evidence_level": "L3",
+  "at": "2026-10-13T23:43:17Z",
+  "passed": true,
+  "facts": {
+    "plugin_disabled_confirmed": true,
+    "panel_module_loaded": false,
+    "panel_shown": false,
+    "vbw_statusline_shown": false
+  },
+  "not_tested": [
+    "the hand-back to an earlier status line through the installed setting (this session shows the working tree script directly)",
+    "the installed plugin version, which is not the working tree's",
+    "user-level settings that turn VBW off (the project's own file only)",
+    "a narrow window",
+    "a project that turns VBW off while a VBW run is live"
+  ]
+}
