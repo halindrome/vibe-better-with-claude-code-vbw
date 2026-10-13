@@ -106,3 +106,44 @@ consent() { cat "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/co
   [ "$(jq '.decisions | length' .vbw/record.json)" = "$n" ] || { jq '.decisions[-1]' .vbw/record.json; false; }
   VBW_SESSION_ID=s1 "$VBW" next --json < /dev/null | jq -e '.action == "approve" and (.detail.files | length) > 0'
 }
+
+@test "R178 (F199): the loop grants the consents for a project command and a shape that had none before" {
+  local shapes h
+  printf 'true\n' > tests/lint.sh
+  printf -- '- lint: sh tests/lint.sh\n' >> .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  git add -A && git commit -q -m "chore(test): a lint command"
+  consent | jq -e 'any(.granted[]; .kind == "command" and .detail.name == "lint") | not'
+  shapes=$(consent | jq '[.granted[] | select(.kind == "shape")] | length')
+  consent | jq -e --arg s "$(vbw_kernel 'contract_shape "$(cat "$VBW_RECORD")"')" 'any(.granted[]; .kind == "shape" and .hash == $s) | not'
+  [ "$(next_action)" = approve ]
+  loop_next s1 > /dev/null
+  h=$(vbw_kernel 'vbw_sha256_argv sh tests/lint.sh')
+  consent | jq -e --arg h "$h" 'any(.granted[]; .kind == "command" and .detail.name == "lint" and .hash == $h)' || { consent; false; }
+  consent | jq -e --arg s "$(vbw_kernel 'contract_shape "$(cat "$VBW_RECORD")"')" 'any(.granted[]; .kind == "shape" and .hash == $s)' || { consent; false; }
+  [ "$(consent | jq '[.granted[] | select(.kind == "shape")] | length')" -eq $((shapes + 1)) ]
+  [ "$(next_action)" = build ]
+}
+
+@test "R178 (F200): a project command changed after the contract's approval is approved by the loop with its own decision and commit, never by a consent alone" {
+  loop_next s1 > /dev/null
+  [ "$(next_action)" = build ]
+  local d n h
+  sed -i.bak 's|^- test: sh tests/run.sh$|- test: sh tests/run.sh all|' .vbw/spec.md && rm -f .vbw/spec.md.bak
+  grep -q 'tests/run.sh all' .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  git add -A && git commit -q -m "chore(test): the test command changed"
+  [ "$(next_action)" = approve ]
+  d=$(jq '.decisions | length' .vbw/record.json)
+  n=$(consent | jq '.granted | length')
+  loop_next s1 > /dev/null
+  h=$(vbw_kernel 'vbw_sha256_argv sh tests/run.sh all')
+  consent | jq -e --arg h "$h" 'any(.granted[]; .kind == "command" and .hash == $h)' || { consent; false; }
+  [ "$(consent | jq '.granted | length')" -eq $((n + 1)) ]
+  jq -e --argjson d "$d" --arg at "$(jq -r .loop.started_at .vbw/record.json)" '(.decisions | length) == $d + 1 and (.decisions[-1].text
+    | startswith("Project commands approved by the loop on the user") and contains($at) and contains("T1") and contains("test (sh tests/run.sh all)"))' .vbw/record.json \
+    || { jq '.decisions[-2:]' .vbw/record.json; false; }
+  git log -1 --format=%s | grep -q '^chore(vbw): approve commands$' || { git log -3 --format=%s; false; }
+  [ -z "$(git status --porcelain -- .vbw)" ]
+  [ "$(next_action)" = build ]
+}
