@@ -27757,6 +27757,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T141",
+      "text": "Slot store hardening (QA of P130, 2026-10-13, no criterion broken): (1) a store that fails mid-run (disk full, folder deleted) turns the limit off for that unit silently; say so once from the parent; (2) two runs finding the same dead lock owner can both delete the lock, briefly over-allocating a slot (same shape as the project gate's lock; take over with an atomic rename instead); (3) when the lock cannot be made but the folder reports writable (a sandbox, a full disk), the open step retries about 30 s before the cannot-write line; detect it at once. Tests for each, the mid-run failure and the sandbox case included",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
