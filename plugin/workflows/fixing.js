@@ -113,5 +113,5 @@ const closed = fd && fixCmd && Array.isArray(fd.closed) ? fd.closed : []
 const open = fd && fixCmd && Array.isArray(fd.open) ? fd.open : []
 open.forEach(o => log(`${o.fix} stays open: ${o.reason}`))
 const fixdone = { command: fixCmd || null, closed, open, left_out: leftOut }
-const complete = interrupted === 0 && !failed && open.length === 0 && (!session || Boolean(confirmation && confirmation.recorded && confirmation.ended))
+const complete = interrupted === 0 && !failed && (!session || Boolean(confirmation && confirmation.recorded && confirmation.ended))
 return confirmation ? { results: out, complete, fixdone, confirmation } : { results: out, complete, fixdone }
