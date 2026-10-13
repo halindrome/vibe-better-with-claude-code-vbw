@@ -15759,11 +15759,12 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "pass",
+        "result": "fail",
         "tier": "deep",
-        "tree": "edc847b1250c501144827ae2144d86109cffc3964e894b3f568777f1e0cc6508",
-        "at": "2026-10-12T23:48:49Z",
-        "note": "30/30 checks"
+        "tree": "d6c9cb1f6768c7ca9d5fdf52fa72e20c531982043f173397834fd8655bbece3b",
+        "at": "2026-10-13T00:19:36Z",
+        "note": "29/30 checks",
+        "rounds": 1
       },
       "outcome": {
         "tier": "deep",
@@ -26152,6 +26153,14 @@
       "attempts": 0,
       "status": "escalated",
       "note": "Two behaviours differ from the P127 plan text with no recorded decision. (1) plugin/lib/cmd-loop.sh loop_start (lines ~114-116) ignores a [human] requirement carried over by an earlier ship when it checks 'current milestone has requirements and is not shipped'; P127.1 and the criterion list that refusal without the exception. Found as F169, closed by documenting it (docs/loop.md) and adding a test, but 'vbw show decisions' has no decision for it (D322 is the only loop decision after D317). The test tests/loop-start.bats 'F169' also asserts '.milestone == .milestone' in jq, which compares a value to itself and cannot fail; it should check that R2 sits in the current milestone M2. (2) plugin/skills/loop/SKILL.md preamble has three lines (the 'vbw interview' line was added in commit 32ff7493 for R39, under P128.4); P127.3 says the preamble block has 'exactly two lines' and tests/loop-guard.bats does not pin the count. The R39 reason is sound, but it is an unrecorded change to P127.3's agreement. Fix: record one decision per item (vbw decide) naming the carried-human exception and the interview line, and make the F169 test assert the requirement is in M2. Regression test: tests/loop-start.bats F169 test must fail if R2 is not in the current milestone; tests/loop-guard.bats should pin the preamble's lines (interview, loop start, loop status)."
+    },
+    {
+      "id": "F179",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The loop stalls silently, with no stop reason and no report, when a kernel step it runs in-process refuses. Evidence (read from code, not executed; a scratch test could not be written under the QA guard): plugin/lib/loop-step.sh loop_ship_item calls cmd_ship directly, and plugin/lib/cmd-ship.sh line 20 does vbw_die 'the proven work is not committed' for ANY untracked or modified file outside .vbw (git status --untracked-files=all), while vbw next still answers ship because the proof runs on a clean copy of HEAD. vbw_die ends the whole process (core.sh exit). In the Stop hook, plugin/lib/cmd-auto.sh auto_loop_gate takes 'step=$(loop_next)', which comes back empty, so the case falls to the block branch, jq reads nothing and prints nothing: the session stops, loop.ended stays null, .vbw/loop-report.md is not refreshed, and the next stop does the same. Same for the open step: loop_open_item's die text goes to stderr inside $(...), so the stop reason becomes ' (item T1, step open)' with the real cause lost. This breaks the phase criterion 'anything the loop cannot do without the user stops the loop with the reason, the item and the step, recorded in the loop state and the report' (P128.1 stops line). No tests/loop-*.bats test drives a failing ship/open (grep for 'not committed' in tests/loop-*.bats finds nothing). Regression test to add: in a loop fixture, leave an untracked file (e.g. stray.log) after the proof, run vbw loop next as the loop's session and through vbw auto gate; assert loop.ended.reason names 'not committed' with the item and step ship, the gate prints a systemMessage ending the loop, and .vbw/loop-report.md exists. Fix direction: have the loop step run the kernel action so a die is caught (run it in a subshell and capture stderr) and call loop_end with 'ACTION needs you: <message> (item T, step ACTION)'."
     }
   ],
   "todos": [
