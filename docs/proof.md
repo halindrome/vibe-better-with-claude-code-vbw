@@ -462,7 +462,8 @@ form in `.vbw/spec.md`.
 
 1. Refuses unless the current contract hash is approved.
 2. Makes a clean copy of the committed code (`HEAD`) inside the project, under
-   `.vbw/runtime/`.
+   `.vbw/runtime/`. The copy's folder is named after the process that made it
+   (its owner, by process id), for example `.vbw/runtime/proof.48213.k3Xa9Q`.
 3. Runs every check (up to `check_jobs` at a time, `alone` checks by themselves),
    and every project command whose argv is approved, from the
    root of that copy; an unapproved command is skipped and reported, never run.
@@ -560,6 +561,16 @@ The copy builds its own, so a proof never reads stale output from the working
 folder, and nothing it builds lands in the working folder or in another copy.
 Untracked files that are not ignored never enter the copy (D54): to make one
 count, commit it or ignore it.
+
+#### Leftover proof copies
+
+A proof killed outright can leave its copy behind. The next `vbw prove` or
+`vbw fix done` removes every leftover copy whose owner (the process named in
+the folder) has ended, together with its git worktree entry. It never removes a
+copy whose owner still runs. A copy without an owner in its name (made by an
+older VBW) goes once it is more than 24 hours old. A copy that cannot be
+removed (a locked file) leaves the result unchanged and prints one line:
+`vbw: cannot remove the leftover proof copy <path>; remove it by hand`.
 
 #### Links left pointing into a proof copy
 

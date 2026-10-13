@@ -6,6 +6,15 @@
 # where it refuses), so the copy shares no writable folder with the working
 # folder. Build output is not environment: the copy builds its own, so no
 # artifact of a proof points into the working folder or another copy.
+#
+# A copy's folder is .vbw/runtime/proof.PID.XXXXXX: PID is the vbw process that
+# made it. The next proof (proofcopy_create_slots) removes each copy whose owner
+# has ended (kill -0 fails), never one whose owner runs. A copy without an owner
+# part (proof.XXXXXX, an older VBW) goes only when over 24 hours old. A dead
+# copy is first claimed by one atomic mv to proof.$$.swept-<its name>, so a
+# second cleanup sees a live owner and leaves it, and a cleanup killed partway
+# leaves a folder whose owner has ended. A copy that will not go prints one
+# warning line and the proof goes on.
 
 # Build-output folder names (Node, Python, Rust, Go and the like), at any depth.
 PROOFCOPY_BUILD_DIRS='target dist build bin out __pycache__ .pytest_cache .mypy_cache .ruff_cache .tox .next .nuxt .gradle coverage'
@@ -41,14 +50,39 @@ proofcopy_create() {
 proofcopy_create_slots() {
   local i
   PROOF_COPIES=()
+  proofcopy_sweep
   for ((i = 0; i < $1; i++)); do proofcopy_make; done
   PROOF_COPY=${PROOF_COPIES[0]}
+}
+
+# proofcopy_sweep: remove the proof copies whose owner has ended. Never fails.
+proofcopy_sweep() {
+  local d n rest pid claim
+  for d in "$VBW_RUNTIME"/proof.*; do
+    [ -d "$d" ] && [ ! -L "$d" ] || continue
+    n=${d##*/}
+    rest=${n#proof.}
+    pid=${rest%%.*}
+    if [ "$pid" != "$rest" ] && [ -n "${rest#*.}" ] && [ -n "$pid" ] && [ -z "${pid//[0-9]/}" ]; then
+      ! kill -0 "$pid" 2> /dev/null || continue
+    else
+      [ -n "$(find "$d" -maxdepth 0 -mmin +1440 -print 2> /dev/null)" ] || continue
+    fi
+    claim="$VBW_RUNTIME/proof.$$.swept-$n"
+    [ ! -e "$claim" ] || continue
+    mv "$d" "$claim" 2> /dev/null || continue
+    chmod -R u+rwx "$claim" > /dev/null 2>&1 || true
+    rm -rf "$claim" > /dev/null 2>&1 || true
+    git -C "$VBW_ROOT" worktree prune > /dev/null 2>&1 || true
+    [ ! -e "$claim" ] || printf 'vbw: cannot remove the leftover proof copy %s; remove it by hand\n' ".vbw/runtime/${claim##*/}" >&2
+  done
+  return 0
 }
 
 # proofcopy_make: one more copy, added to PROOF_COPIES.
 proofcopy_make() {
   local dir p l t real copy
-  dir=$(mktemp -d "$VBW_RUNTIME/proof.XXXXXX") || vbw_die "cannot create a directory in $VBW_RUNTIME"
+  dir=$(mktemp -d "$VBW_RUNTIME/proof.$$.XXXXXX") || vbw_die "cannot create a directory in $VBW_RUNTIME"
   vbw_guard_add dir "$dir"
   copy="$dir/tree"
   PROOF_COPIES+=("$copy")
