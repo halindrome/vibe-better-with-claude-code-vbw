@@ -27012,7 +27012,7 @@
       "text": "/vbw:loop, the night shift (brainstorm F1): unattended runs with delegated approval by an independent reviewer agent, a scope fence (new requirements parked as todos), never ship/push/deploy/delete/overspend unattended, human-judged items queued for the morning, a budget ceiling, and a morning report. README promise changes to 'nothing is approved without a record of who approved it, and you can undo it'. After machine load and the Costs tab; full design in a_non_prod_docs/brainstorm-2026-10-09.md",
       "sort": "next",
       "size": "large",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T100",
