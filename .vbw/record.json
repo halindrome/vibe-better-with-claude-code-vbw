@@ -161,6 +161,14 @@
     "tests/loop-status-spend.bats",
     "tests/loop-stop.bats",
     "tests/loop-stops.bats",
+    "tests/machine-config-line.bats",
+    "tests/machine-helper.bash",
+    "tests/machine-limit-docs.bats",
+    "tests/machine-limit.bats",
+    "tests/machine-recovery.bats",
+    "tests/machine-slots.bats",
+    "tests/machine-turns.bats",
+    "tests/machine-wait-line.bats",
     "tests/next-blocked.bats",
     "tests/next-contract-ready.bats",
     "tests/next-phase.bats",
@@ -4007,6 +4015,103 @@
         "tests/qa-finding-phase.bats"
       ],
       "fix": "F204"
+    },
+    {
+      "id": "C313",
+      "req": "R181",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/machine-limit.bats"
+      ],
+      "files": [
+        "tests/machine-limit.bats",
+        "tests/machine-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C314",
+      "req": "R181",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/machine-slots.bats"
+      ],
+      "files": [
+        "tests/machine-slots.bats",
+        "tests/machine-helper.bash"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C315",
+      "req": "R181",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/machine-turns.bats"
+      ],
+      "files": [
+        "tests/machine-turns.bats",
+        "tests/machine-helper.bash"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C316",
+      "req": "R181",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/machine-recovery.bats"
+      ],
+      "files": [
+        "tests/machine-recovery.bats",
+        "tests/machine-helper.bash"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C317",
+      "req": "R181",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/machine-wait-line.bats"
+      ],
+      "files": [
+        "tests/machine-wait-line.bats",
+        "tests/machine-helper.bash"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C318",
+      "req": "R181",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/machine-config-line.bats"
+      ],
+      "files": [
+        "tests/machine-config-line.bats",
+        "tests/machine-helper.bash"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C319",
+      "req": "R181",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/machine-limit-docs.bats"
+      ],
+      "files": [
+        "tests/machine-limit-docs.bats"
+      ],
+      "timeout": 120
     }
   ],
   "project": {
@@ -10038,7 +10143,136 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M26",
-      "rules": []
+      "rules": [
+        {
+          "text": "the machine limit is three quarters of the processor cores (vbw_cores), rounded down, at least 1 and at most 64",
+          "check": "C313"
+        },
+        {
+          "text": "a core count that cannot be read gives a machine limit of 1",
+          "check": "C313"
+        },
+        {
+          "text": "the machine limit is not a setting: vbw config refuses one and check_jobs does not change it",
+          "check": "C313"
+        },
+        {
+          "text": "the slot store is <claude-config-dir>/vbw/slots.json: CLAUDE_CONFIG_DIR, else ~/.config/claude-code when it exists, else ~/.claude",
+          "check": "C313"
+        },
+        {
+          "text": "one kernel function (vbw_claude_dir) finds the Claude config folder and the status line's settings lookup uses it",
+          "check": "C313"
+        },
+        {
+          "text": "a run writes nothing outside the project but the slot store, and leaves no store behind once nothing holds or waits",
+          "check": "C313"
+        },
+        {
+          "text": "tests use a CLAUDE_CONFIG_DIR inside their own folder, never the host's Claude config folder",
+          "check": "C313"
+        },
+        {
+          "text": "the slot store code holds to the bash 3.2 floor and works under /bin/bash",
+          "check": "C313"
+        },
+        {
+          "text": "a run whose check_jobs is above the limit runs exactly as many units at once as the limit",
+          "check": "C313"
+        },
+        {
+          "text": "across two projects each proving 6 units plus a vbw fix done, never more unit commands run at once than the limit (3 with 4 cores)",
+          "check": "C314"
+        },
+        {
+          "text": "project commands and test files each take a slot like checks",
+          "check": "C314"
+        },
+        {
+          "text": "check_jobs stays a per-run cap below the limit: check_jobs 2 never runs more than 2 units at once",
+          "check": "C314"
+        },
+        {
+          "text": "a check_jobs above the machine limit never lifts a proof above the limit",
+          "check": "C314"
+        },
+        {
+          "text": "a unit gives its slot back when its command passes, fails or times out",
+          "check": "C314"
+        },
+        {
+          "text": "a freed slot goes to the waiting run holding the fewest slots",
+          "check": "C315"
+        },
+        {
+          "text": "between waiting runs holding the same number of slots, the one that waited longest goes first",
+          "check": "C315"
+        },
+        {
+          "text": "an alone check keeps its per-project meaning, takes one machine slot, and an alone check in one project with shared checks in another both finish at limit 1",
+          "check": "C315"
+        },
+        {
+          "text": "a vbw run inside a unit's command, on the same store, takes no slot of its own and never waits for its parent",
+          "check": "C315"
+        },
+        {
+          "text": "a unit that waited reports the same status, exit code and output as alone, and its timeout counts from its command's start",
+          "check": "C315"
+        },
+        {
+          "text": "the slots of a run killed outright are taken over by the next run to look at the store",
+          "check": "C316"
+        },
+        {
+          "text": "a run interrupted with Ctrl-C ends and gives its slots back at once",
+          "check": "C316"
+        },
+        {
+          "text": "the store's lock is taken over when its owner process is gone",
+          "check": "C316"
+        },
+        {
+          "text": "when the store cannot be written, prove, check and fix done run to the end under check_jobs alone, results unaffected, and print once 'vbw: the computer-wide limit was not in force: cannot write PATH; this run was limited by check_jobs (N) alone'",
+          "check": "C316"
+        },
+        {
+          "text": "a damaged store never stops a run: it runs under check_jobs, prints once 'vbw: the computer-wide limit was not in force: PATH is damaged (delete it to restore the limit); this run was limited by check_jobs (N) alone', and the file is left as it was",
+          "check": "C316"
+        },
+        {
+          "text": "vbw prove, vbw check and vbw fix done whose units waited end with 'waited N s for other VBW runs on this computer (limit L of C cores)'",
+          "check": "C317"
+        },
+        {
+          "text": "with an unreadable core count the waited line reads '(limit 1, as this computer's core count could not be read)'",
+          "check": "C317"
+        },
+        {
+          "text": "a run that never waited prints no waited line: its output is unchanged",
+          "check": "C317"
+        },
+        {
+          "text": "vbw config prints the machine limit right after check_jobs: three quarters of the cores, shared by every VBW project on this computer, not a setting",
+          "check": "C318"
+        },
+        {
+          "text": "with check_jobs above the machine limit, the vbw config line says the machine limit applies; at or below it, it says nothing more",
+          "check": "C318"
+        },
+        {
+          "text": "with an unreadable core count the vbw config line names limit 1 and why",
+          "check": "C318"
+        },
+        {
+          "text": "docs/proof.md explains the limit, what takes a slot, where the store lives, equal turns, unchanged results and timeouts, recovery of gone runs, the unwritable or damaged store and the lines a run prints",
+          "check": "C319"
+        },
+        {
+          "text": "CLAUDE.md names the slot store in <claude-config-dir>/vbw/ as the second exception to 'Nothing outside the project', with R181 as its source, and the user docs say the same",
+          "check": "C319"
+        }
+      ]
     }
   ],
   "phases": [
@@ -15873,6 +16107,68 @@
         "qa_findings": 27,
         "escalations": 1
       }
+    },
+    {
+      "id": "P130",
+      "title": "Runs take turns: one shared limit per computer",
+      "reqs": [
+        "R181"
+      ],
+      "milestone": "M26",
+      "goal": "However many VBW projects, sessions and runs prove at once on one computer, VBW never runs more checks at the same time than about three quarters of its processor cores, and a run that finds the limit reached waits its turn, then gets the same results it would have got alone.",
+      "criteria": [
+        "R181: the machine limit is three quarters of the processor cores, rounded down, at least 1 and at most 64, from the same core count check_jobs already uses (vbw_cores); when the core count cannot be read the limit is 1. There is no setting for it (D341).",
+        "R181: the shared slot store lives in <claude-config-dir>/vbw/ (CLAUDE_CONFIG_DIR if set, else ~/.config/claude-code when that folder exists, else ~/.claude: the same order as tools/resolve-claude-dir.sh, read by one kernel function that the status line's settings lookup also uses). Nothing else is written outside the project.",
+        "R181: every unit that vbw prove, vbw fix done and vbw check run (a check, a project command such as the full test command, a test file) takes one slot from the shared store for exactly as long as its command runs, and gives it back when the command ends, passes, fails or times out (D340: one slot per unit, whatever it does inside).",
+        "R181: with a faked core count of 4 (limit 3), two projects each proving 6 units at once, plus a vbw fix done in one of them, never have more than 3 unit commands running at the same moment across all of them (each unit's command logs its start and end with a timestamp to a file the test owns, and the overlap is counted from that log).",
+        "R181: check_jobs stays a per-run cap below the machine limit: a run with check_jobs 2 never runs more than 2 units at once even when slots are free; a check_jobs above the machine limit never lifts a run above the machine limit.",
+        "R181: a check marked alone keeps its per-project meaning (R45: nothing else of the same project runs beside it) and takes one machine slot like any unit; a unit waits for its project's gate before it asks for a machine slot and never holds a machine slot while it waits for anything else, so two projects can never block each other forever (a test runs an alone check in one project and shared checks in another at limit 1 and both finish).",
+        "R181: equal turns (D339): when a slot frees and several runs wait, it goes to the waiting run that holds the fewest slots; between runs holding the same number, to the one that has waited longest. Test: limit 3, run A queued with 6 units holds 3, run B starts with 1 unit; B's unit starts before A's fourth unit.",
+        "R181: waiting changes no result: a unit's timeout counts from when its command starts, never from when it began waiting; a unit that waited reports pass, fail, exit code and output exactly as it would alone, and never fails, times out or is skipped because it waited.",
+        "R181: slots of a run that is gone are given back: a run killed outright (its process no longer exists) leaves slots that the next run to look at the store takes over; a run interrupted with Ctrl-C gives back its slots at once (the existing exit guard). The short lock that makes looking and taking one step is taken over when its owner process is gone, as the project gate's lock is today.",
+        "R181: when the store cannot be created, read or written (a read-only folder, or the Claude Code sandbox refusing writes outside the project), the proof, fix done or check still runs to the end with only check_jobs as its cap, its results are unaffected, and its output says once, in one plain line, that the computer-wide limit was not in force and why. A damaged store file is treated the same way and never stops a proof.",
+        "R181: tests set CLAUDE_CONFIG_DIR to a folder inside the test's own directory; no test reads or writes the host's real Claude config folder. The suite passes under macOS /bin/bash 3.2 and bash 5 (no wait -n, no associative arrays), and every kernel and standards rule in tests/standards.bats still passes."
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 4 (33955 bytes)",
+        "files: more than 2 in a repository tracking 918 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R32 (C28), R33 (C29), R43 (C42, C43), R45 (C39, C40, C41), R46 (C46), R58 (C62, C63, C64, C67), R69 (C110, C120, C122), R79 (C107), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R118 (C184), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R160 (C247, C263, C264), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260)",
+        "tests: project test command",
+        "raised by the Architect"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P131",
+      "title": "The user can see when runs take turns",
+      "reqs": [
+        "R181"
+      ],
+      "milestone": "M26",
+      "goal": "A user whose proof was slowed by other VBW runs on the same computer is told so in plain words, can see the computer-wide limit, and finds it explained in the documentation.",
+      "criteria": [
+        "R181: when any unit of a vbw prove, vbw fix done or vbw check waited for a machine slot, the run's summary ends with one line naming the total time its units waited and the limit (for example: 'waited 4 min for other VBW runs on this computer (limit 6 of 8 cores)'); a run that never waited prints no such line, so the output of an unshared run is unchanged.",
+        "R181: vbw config prints the machine limit beside check_jobs, in plain words (the number, that it is three quarters of the computer's cores, that every VBW project on this computer shares it, and that it is not a setting); when check_jobs is above the machine limit the line says the machine limit is the one that applies.",
+        "R181: docs/proof.md explains, in current-behaviour terms only, the shared limit: what it counts (each check or test unit, one slot each), where the slot store lives, how turns are shared (fewest-held first), that waiting never changes results or timeouts, how slots of a killed run are recovered, and what happens when the store cannot be written (the sandbox case) and how to tell from the output.",
+        "R181: the 'Nothing outside the project' rule in CLAUDE.md names the slot store in <claude-config-dir>/vbw/ as its second exception beside the user's settings.json, with this requirement as its source; docs/guards.md or docs/proof.md states the same for users.",
+        "R181: each new output line and the vbw config line has a test pinning its exact wording and the condition that prints it (waited versus never waited; limit applies versus check_jobs lower; store unavailable)."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 9 (124561 bytes)",
+        "files: more than 2 in a repository tracking 918 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R15 (C14), R23 (C20), R25 (C24), R27 (C21), R31 (C27), R32 (C28), R35 (C31), R36 (C32), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R119 (C180), R120 (C185), R128 (C200), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234), R153 (C235, C236, C239), R154 (C240), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R164 (C251), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -24823,6 +25119,120 @@
         "docs/guards.md: a `While a loop is on` table with every denied command and the pinned text (`the loop never leaves the project: ... /vbw:loop stop`), that it holds for every caller including the main session, and that outside a loop a plain git push stays allowed; docs/workflows.md `Every refusal and its next step`: the loop's guard refusals (arming, the loop steps, leaving the project) with their next steps",
         "docs/record.md: the `parked` list and the `parked` milestone status, and the loop item fields the park fills (reverts, reason, cost); README.md: /vbw:loop in the commands table and a short `Night shift` paragraph in current-behaviour terms (what it does, the ceiling, what never happens, docs/loop.md) with the promise sentence: nothing is approved without a record of who approved it, and nothing the loop does leaves the project"
       ]
+    },
+    {
+      "id": "P130.1",
+      "phase": "P130",
+      "title": "One place that finds the Claude config folder, and the machine limit",
+      "reqs": [
+        "R181"
+      ],
+      "files": [
+        "plugin/lib/core.sh",
+        "plugin/lib/cmd-statusline.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Add vbw_claude_dir to core.sh: CLAUDE_CONFIG_DIR when set, else ~/.config/claude-code when that folder exists, else ~/.claude (the order of tools/resolve-claude-dir.sh)",
+        "Make statusline_settings in cmd-statusline.sh call vbw_claude_dir, with no lookup of its own left (VBW_STATUSLINE_CMD keeps its cache search: it runs outside the kernel); status line behaviour unchanged",
+        "Add vbw_machine_limit to core.sh: three quarters of vbw_cores, rounded down, at least 1 and at most 64, and 1 when the core count cannot be read; no setting and no environment override (D341)"
+      ]
+    },
+    {
+      "id": "P130.2",
+      "phase": "P130",
+      "title": "The shared slot store: every unit takes turns across the computer",
+      "reqs": [
+        "R181"
+      ],
+      "files": [
+        "plugin/lib/slots.sh",
+        "plugin/lib/checks.sh"
+      ],
+      "after": [
+        "P130.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "New plugin/lib/slots.sh: the store is <vbw_claude_dir>/vbw/slots.json, one JSON document of held slots and waiting units, each naming its run (the vbw process, $$) and a wait order number; every change is one step under a short lock directory slots.lock/ holding its owner's pid in slots.lock/pid, taken over when that process is gone and, when the pid file is empty, only after a wait (as the gate's mutex); written atomically (temporary file in the same folder, then mv); the file is removed when nothing holds or waits, so an idle computer keeps no store",
+        "Turns (D339): a unit registers as waiting; on each look it drops the entries of runs whose process is gone, and takes a slot only when fewer than vbw_machine_limit are held and it is the chosen waiter: the waiting run holding the fewest slots, between equals the one that has waited longest; bash 3.2 only (no wait -n, no associative arrays)",
+        "Wire it into checks_unit_run: the slot is taken after checks_gate_enter and before checks_exec (the timeout starts with the command, never with the wait) and given back right after checks_exec, on pass, fail or timeout; the runner starts at most the smaller of check_jobs and the machine limit, so a unit only ever waits for other runs; the run's exit guard (Ctrl-C, TERM, vbw_die) removes this run's entries at once, and a runner lost without a result frees its entry like its gate places",
+        "Nested runs: each unit's command gets an environment marker naming the store it holds a slot in; a vbw run that finds the marker naming its own store takes no slot (the parent's unit covers it, D340) and so never waits for its parent; a run on another store (a test's own CLAUDE_CONFIG_DIR) takes slots as usual",
+        "Store unavailable: open the store once per command (checks_begin); when it cannot be created, read or written, or is damaged (not JSON, or not the store's shape), run with check_jobs as the only cap, never rewrite a damaged file, and print once on stderr 'vbw: the computer-wide limit was not in force: cannot write PATH; this run was limited by check_jobs (N) alone' or 'vbw: the computer-wide limit was not in force: PATH is damaged (delete it to restore the limit); this run was limited by check_jobs (N) alone'; then run the existing parallel suites (check-jobs-*, check-alone-*, check-wait-patient, gate-race, prove-parallel, prove-signal, runner-reads) under /bin/bash and bash 5"
+      ]
+    },
+    {
+      "id": "P131.1",
+      "phase": "P131",
+      "title": "Say when a run waited for other VBW runs",
+      "reqs": [
+        "R181"
+      ],
+      "files": [
+        "plugin/lib/slots.sh",
+        "plugin/lib/checks.sh",
+        "plugin/lib/cmd-prove.sh",
+        "plugin/lib/cmd-fix.sh",
+        "plugin/lib/cmd-check.sh"
+      ],
+      "after": [
+        "P130.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Measure each unit's wait for a machine slot (whole seconds, at least 1 for a unit that found no free slot at its first look) and add it up per command; the wait stays out of the evidence, the record and the store of recorded runs",
+        "vbw prove, vbw check and vbw fix done end their output with 'waited N s for other VBW runs on this computer (limit L of C cores)' when any unit waited (from a minute up 'N min'; with an unreadable core count the parenthesis reads '(limit 1, as this computer's core count could not be read)'); a run that never waited prints nothing new",
+        "Keep every exit status as it is: prove on evidence.passed, check on its results, fix done on its fixes"
+      ]
+    },
+    {
+      "id": "P131.2",
+      "phase": "P131",
+      "title": "vbw config shows the computer-wide limit",
+      "reqs": [
+        "R181"
+      ],
+      "files": [
+        "plugin/lib/cmd-config.sh"
+      ],
+      "after": [
+        "P130.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Right after the check_jobs line print 'machine limit: L (three quarters of this computer's processor cores (C), rounded down, at least 1 and at most 64; shared by every VBW project on this computer; not a setting)'",
+        "With an unreadable core count print 'machine limit: 1 (this computer's processor core count could not be read; shared by every VBW project on this computer; not a setting)'",
+        "When check_jobs is above the machine limit, end the line with ' - it applies, not check_jobs N'; update the header comment of cmd-config.sh to name the line"
+      ]
+    },
+    {
+      "id": "P131.3",
+      "phase": "P131",
+      "title": "Document the computer-wide limit",
+      "reqs": [
+        "R181"
+      ],
+      "files": [
+        "docs/proof.md",
+        "docs/guards.md",
+        "CLAUDE.md"
+      ],
+      "after": [
+        "P130.2"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/proof.md, beside 'Checks run in parallel': the computer-wide limit (machine limit: three quarters of the cores, every VBW project on this computer shares it, not a setting; check_jobs a per-run cap below it), what takes one slot (each check, project command or test file) and where the slot store lives (<claude-config-dir>/vbw/slots.json, the CLAUDE_CONFIG_DIR, ~/.config/claude-code, ~/.claude order, present only while runs use it)",
+        "docs/proof.md: equal turns (the waiting run holding the fewest goes first, between equals the one that waited longest), the same result whether a unit waited or not (a timeout counts from when its command starts), slots of a killed run taken over, Ctrl-C giving them back, the lock taken over; the 'waited ... for other VBW runs on this computer' line and the 'machine limit:' line of vbw config",
+        "docs/proof.md: a store that cannot be written (a read-only folder, the Claude Code sandbox) or is damaged: the run goes on under check_jobs and prints 'the computer-wide limit was not in force' with the reason; docs/guards.md: VBW itself writes nothing outside the project but the slot store and the user's settings.json",
+        "CLAUDE.md 'Nothing outside the project': the slot store in <claude-config-dir>/vbw/ becomes the second exception beside settings.json, with R181 as its source"
+      ]
     }
   ],
   "fixes": [
@@ -29191,8 +29601,8 @@
     "profile": "balanced",
     "autonomy_cap": 25,
     "models": {
-      "architect": "fable",
-      "lead": "fable"
+      "architect": "opus",
+      "lead": "opus"
     }
   },
   "evidence": {
@@ -33051,6 +33461,15 @@
         "milestone": "M26",
         "started": "2026-10-13T16:41:50Z",
         "ended": "2026-10-13T16:57:03Z",
+        "cost": null
+      },
+      {
+        "id": "plan-20261013T165738Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M26",
+        "started": "2026-10-13T16:57:38Z",
+        "ended": "2026-10-13T17:27:12Z",
         "cost": null
       }
     ],
