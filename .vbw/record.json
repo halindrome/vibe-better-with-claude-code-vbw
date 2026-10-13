@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261013T011855Z",
+    "kind": "qa",
+    "started_at": "2026-10-13T01:18:55Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 909.679443,
+      "in": 935739,
+      "out": 492
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -15750,10 +15761,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "d6c9cb1f6768c7ca9d5fdf52fa72e20c531982043f173397834fd8655bbece3b",
-        "at": "2026-10-13T00:19:36Z",
-        "note": "29/30 checks",
-        "rounds": 1
+        "tree": "4f7a3ede8d6bd5f7b845d7a39f7b337a8e4088a913823236346a42e520e6b22d",
+        "at": "2026-10-13T01:21:37Z",
+        "note": "30/31 checks",
+        "rounds": 2
       },
       "outcome": {
         "tier": "deep",
@@ -15762,7 +15773,15 @@
         "fix_rounds": 3,
         "qa_findings": 3,
         "escalations": 0
-      }
+      },
+      "escalations": [
+        {
+          "at": "2026-10-13T01:21:37Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "QA needs a second round"
+        }
+      ]
     },
     {
       "id": "P129",
@@ -26148,7 +26167,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The loop stalls silently, with no stop reason and no report, when a kernel step it runs in-process refuses. Evidence (read from code, not executed; a scratch test could not be written under the QA guard): plugin/lib/loop-step.sh loop_ship_item calls cmd_ship directly, and plugin/lib/cmd-ship.sh line 20 does vbw_die 'the proven work is not committed' for ANY untracked or modified file outside .vbw (git status --untracked-files=all), while vbw next still answers ship because the proof runs on a clean copy of HEAD. vbw_die ends the whole process (core.sh exit). In the Stop hook, plugin/lib/cmd-auto.sh auto_loop_gate takes 'step=$(loop_next)', which comes back empty, so the case falls to the block branch, jq reads nothing and prints nothing: the session stops, loop.ended stays null, .vbw/loop-report.md is not refreshed, and the next stop does the same. Same for the open step: loop_open_item's die text goes to stderr inside $(...), so the stop reason becomes ' (item T1, step open)' with the real cause lost. This breaks the phase criterion 'anything the loop cannot do without the user stops the loop with the reason, the item and the step, recorded in the loop state and the report' (P128.1 stops line). No tests/loop-*.bats test drives a failing ship/open (grep for 'not committed' in tests/loop-*.bats finds nothing). Regression test to add: in a loop fixture, leave an untracked file (e.g. stray.log) after the proof, run vbw loop next as the loop's session and through vbw auto gate; assert loop.ended.reason names 'not committed' with the item and step ship, the gate prints a systemMessage ending the loop, and .vbw/loop-report.md exists. Fix direction: have the loop step run the kernel action so a die is caught (run it in a subshell and capture stderr) and call loop_end with 'ACTION needs you: <message> (item T, step ACTION)'."
     },
     {
@@ -26164,7 +26183,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Untested branches of the park (plugin/lib/loop-park.sh). The criterion says a file the user staged or edited by hand is left as it is. The only test, tests/loop-retry-park.bats test 1, edits README.md and adds scratch.txt, files no commit of the item touched, so it passes whether or not the protection exists. Nothing exercises: a commit touching a file the user edited or staged (left unreverted and named 'you changed F'), a check file the user changed (kept, 'left in place'), a revert that conflicts ('does not revert cleanly'), or the user's staged file staying staged after a revert. Deleting the 'hand' comparison or the vbw_dirty_files test would leave every loop test green, and the park would then revert over the user's work. Regression test in tests/loop-retry-park.bats: build an item, then edit (unstaged) and separately stage a file that an item commit touched, park, and assert that commit is not reverted, the file keeps the user's content and stays staged, the decision names it, and the other commits are reverted; plus one with a user-edited check file that survives the park."
     },
     {
@@ -26172,7 +26191,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Untested P129.1 behaviour. The validation rules for the parked list in plugin/lib/record.jq lines 138-148 (non-empty reason, unknown field, parked twice, both shipped and parked, current milestone parked exactly when in parked, a parked milestone owning a requirement, phase or plan) have no test that makes any of them fire (grep of tests/ finds none; the park tests only build valid records). The same holds for 'vbw milestone rename' refusing a parked milestone (cmd-milestone.sh) and for 'vbw status --json' carrying the parked ids (cmd-status.sh line 18). Removing any of these would leave the suite green. Regression test: in tests/record.bats a hand-edited record for each rule must fail validation with its message; 'vbw milestone rename X' on a parked milestone exits non-zero with a Next line; 'vbw status --json | jq .parked' lists M2 after a park."
     },
     {
@@ -26182,6 +26201,14 @@
       "attempts": 0,
       "status": "fixed",
       "note": "The L3 loop scenario's git check for revert commits can still pass with none, and the honest-labelling branch is unpinned. After F176 the scenario (tools/l3-suite.sh scenario_loop) loops over the parked item's reverts, so with zero reverts 'the revert commits are in git' passes vacuously (reverts_ok stays true); only when n_rev is 0 does the result's not_tested gain the line saying the revert path was not run. No test in tests/l3-loop.bats reads that branch: a result with facts.revert_commits 0 and without that not_tested line, or the line deleted from the script, leaves tests/l3-loop.bats green. The committed loop.json has revert_commits 1, so today's result is honest, but the guard against a future dishonest one is missing. Regression test in tests/l3-loop.bats: every committed tools/l3-results/loop.json with facts.revert_commits == 0 must have a not_tested entry naming the revert path; and the scenario body must hold that conditional."
+    },
+    {
+      "id": "F184",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The loop report cannot be trusted for an item that was still running when the loop ended. plugin/lib/loop-report.sh line 43 prints every in-progress item's cost as 'in progress, not counted yet', also after the loop has ended (a ceiling stop, vbw loop stop, an unknown action, a refused ship all end the loop with the item still in progress). But the 'Loop total' line above it is loop_spend, which does count that item's spend (baseline to now). So after such a stop the report shows a total that no item line explains, and the item that cost the most (the one the loop was working on when it stopped) shows no dollars and no tokens, though VBW has the figure. The criterion says the report gives the loop's total and each item's cost in dollars and tokens, unknown only where VBW saw no figure. The same item also appears nowhere else (not in Shipped, Parked or Waiting for you), and the ceiling stop reason does not name it, so the morning reader cannot tell which item was left half done. Regression test, in tests/loop-report.bats: start a loop with two items and a ceiling, take the first to a point where figures exist and the ceiling is reached while T1 is in progress, let the step stop the loop, then assert the report's Cost section gives T1 a dollar and token figure that equals what vbw loop status shows (not 'not counted yet'), and that it names T1 as left in progress; with no figures it must say unknown."
     }
   ],
   "todos": [
