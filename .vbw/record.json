@@ -4222,7 +4222,7 @@
   "milestone": {
     "id": "M27",
     "title": "Several vbw fix done runs at once slow each other down (2026-10-12: three in parallel plus another session's run took a 12-minute run to 87 minutes). The fixing workflow has every Dev run its own fix done, so a round with several groups already runs several at once. Decide: the kernel serialises fix done runs (one proof lock per clone, the later ones wait and reuse), or the workflow runs one fix done for all groups at the end; measure first",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -4354,6 +4354,11 @@
       "id": "M26",
       "title": "Machine-wide limit (owner, 2026-10-12 09:40): VBW as a whole never takes more than about three quarters of the machine's cores, however many projects, sessions and runs are proving at once: one shared budget per machine (a slot store in the user's Claude config folder, each unit of a proof or fix done takes a slot, a run that finds none waits its turn), so runs take turns instead of fighting (today a 12-minute fix done took 87 under four concurrent runs). Same tests, same results, no thrash; the check_jobs setting stays as a per-run cap below it. Goes with T127 (one fix done per fix round). First item after 2.0.34, before the loop",
       "at": "2026-10-13T21:23:29Z"
+    },
+    {
+      "id": "M27",
+      "title": "Several vbw fix done runs at once slow each other down (2026-10-12: three in parallel plus another session's run took a 12-minute run to 87 minutes). The fixing workflow has every Dev run its own fix done, so a round with several groups already runs several at once. Decide: the kernel serialises fix done runs (one proof lock per clone, the later ones wait and reuse), or the workflow runs one fix done for all groups at the end; measure first",
+      "at": "2026-10-13T22:32:59Z"
     }
   ],
   "requirements": [
@@ -30151,6 +30156,11 @@
       "id": "D352",
       "at": "2026-10-13T22:27:19Z",
       "text": "Contract approved: 171 requirements, 321 checks, 393 plans (3f9872a08313)"
+    },
+    {
+      "id": "D353",
+      "at": "2026-10-13T22:32:59Z",
+      "text": "Shipped M27 Several vbw fix done runs at once slow each other down (2026-10-12: three in parallel plus another session's run took a 12-minute run to 87 minutes). The fixing workflow has every Dev run its own fix done, so a round with several groups already runs several at once. Decide: the kernel serialises fix done runs (one proof lock per clone, the later ones wait and reuse), or the workflow runs one fix done for all groups at the end; measure first: 1 requirement proven or accepted"
     }
   ],
   "commands": {
@@ -34491,6 +34501,12 @@
             "out": 0,
             "at": "2026-10-13T21:23:33Z"
           }
+        },
+        "total": {
+          "usd": 15.481134,
+          "in": 50374,
+          "out": 75,
+          "sessions": 8
         }
       }
     }
