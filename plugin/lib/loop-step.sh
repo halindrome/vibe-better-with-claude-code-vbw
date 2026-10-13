@@ -215,6 +215,11 @@ loop_step() {
     fi
     next=$(cmd_next --json) || exit $?
     action=$(printf '%s' "$next" | jq -r .action)
+    # A step other than the contract one answers what the loop asked of the session (D334).
+    if [ "$action" != contract ] && printf '%s' "$rec" | jq -e '.loop.asked != null' > /dev/null; then
+      record_update 'del(.loop.asked)'
+      rec=$(record_read)
+    fi
     if [ "$action" = approve ]; then
       loop_delegate "$rec" "$next"
       next=$(cmd_next --json) || exit $?
@@ -232,6 +237,17 @@ loop_step() {
       scope)
         loop_park_item "$cur" "scope violation: $(printf '%s' "$next" | jq -r '.detail.violations[0]')" ;;
       plan | build | fix | qa | prove | run)
+        loop_emit "$next"; return 0 ;;
+      contract)
+        # The contract is not ready (a check file not written yet, a spec not synced, a rule missing): the
+        # session's unfinished plan step. It is handed back once; the same unsatisfied instruction for the
+        # same item a second time ends the loop (D334).
+        why=$(printf '%s' "$next" | jq -r .instruction)
+        if [ -z "$cur" ] || printf '%s' "$rec" | jq -e --arg i "$cur" --arg t "$why" '.loop.asked != null and .loop.asked.item == $i and .loop.asked.instruction == $t' > /dev/null; then
+          loop_end "contract needs you: $why (item ${cur:-none}, step contract${cur:+; asked once already})"; return 0
+        fi
+        record_update '.loop.asked = {item: $i, instruction: $t}' --arg i "$cur" --arg t "$why"
+        loop_commit "$cur" contract
         loop_emit "$next"; return 0 ;;
       *)
         loop_end "$(printf '%s' "$next" | jq -r --arg t "$cur" '"\(.action) needs you: \(.instruction) (item \($t), step \(.action))"')"; return 0 ;;
