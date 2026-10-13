@@ -15849,12 +15849,11 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "e91288f500bdae610a93494fe2959ca369da245d3a75b3f1862bcecd9e4a5789",
-        "at": "2026-10-13T13:52:41Z",
-        "note": "31/32 checks",
-        "rounds": 1
+        "tree": "76c682b4442129e98df70f1d44db012dc965a3b3845eac25c31252a64bed7c64",
+        "at": "2026-10-13T15:03:32Z",
+        "note": "32/32 checks"
       },
       "escalations": [
         {
@@ -26425,7 +26424,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The loop's outward guard (plugin/hooks/guard-bash.jq, loop_outward) lets a push through when the redirect is written against the subcommand with no space: with a loop on, 'git push>out.log' and 'npm publish>log' are not denied (probed by piping the hook input through guard-bash.jq with a loop record: 'git push', 'git push origin main>/dev/null 2>&1', 'git push </dev/null' are denied, 'git push>/dev/null' and 'git push>out.log' are allowed). Cause: simple() in guard-bash.jq only splits a redirect off a word when the word starts with the operator, so 'push>out.log' stays one word and git_words reads it as an unknown subcommand. R180 and the plan say git push in any form is denied while a loop is on, and every outward command shares this reading. Regression test: in tests/loop-outward-guard.bats, with a loop on, 'git push>/dev/null', 'git push>out.log', 'npm publish>log' and 'docker push>x' must be denied with the pinned text (and 'echo hi>out.log' must stay allowed).",
       "phase": "P129"
     },
