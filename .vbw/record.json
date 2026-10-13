@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261013T212054Z",
+    "kind": "qa",
+    "started_at": "2026-10-13T21:20:54Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1038.704572,
+      "in": 640048,
+      "out": 233
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -16214,12 +16225,11 @@
       ],
       "predicted": "standard",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "standard",
-        "tree": "43c03f1327ee25f363fce1fca36e8bc1cc9d12d33cfdfa15263ddfac9ff94965",
-        "at": "2026-10-13T21:10:41Z",
-        "note": "16/17 checks",
-        "rounds": 1
+        "tree": "c20570f5f7446ab8426a6148c432fce61489604ff3dd9f3881b84cb6c17186d5",
+        "at": "2026-10-13T21:22:03Z",
+        "note": "17/17 checks"
       },
       "outcome": {
         "tier": "standard",
@@ -26941,7 +26951,7 @@
       "req": "R181",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The output line added by commit 9aacd2ca (slots_say in plugin/lib/slots.sh:219, 'vbw: the computer-wide limit was not in force: <reason>; this run was limited by check_jobs (N) alone from then on', printed once at the end when the store fails mid-run) has no test pinning its exact wording. tests/machine-midrun.bats only counts lines containing 'computer-wide limit was not in force' (one per run), so changing the reason text, the check_jobs number or the 'from then on' ending would not fail any test. Criterion 5 of R181 requires each new output line to have a test pinning its exact wording and the condition that prints it. Regression test should assert the full line for both reasons: 'cannot write <store path>' (read-only folder case) and '<store path> is damaged (delete it to restore the limit)' (junk file case), with the real check_jobs value, in check, prove and fix done; and that the line is on stderr and printed once.",
       "phase": "P131"
     }
