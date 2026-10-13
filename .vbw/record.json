@@ -15809,10 +15809,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "802c9ad57dc20406ce4989945acb08ed1c9b3c8648b5fa3fc7f3d52dfe88cc13",
-        "at": "2026-10-12T23:50:35Z",
-        "note": "28/30 checks",
-        "rounds": 2
+        "tree": "54191c43812d59632f208cd96009ac2f2ffc7c73839a46e458abaa62ad6cbaf3",
+        "at": "2026-10-13T00:20:05Z",
+        "note": "28/32 checks",
+        "rounds": 3
       },
       "escalations": [
         {
@@ -26127,7 +26127,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The loop's outward guard (plugin/hooks/guard-bash.jq, def loop_outward) only skips global options for git (git_words). For every other command it takes the first word that does not start with '-' as the subcommand, so an option VALUE or a toolchain selector before the subcommand hides the publish. I ran the def on parsed commands: 'cargo +nightly publish', 'npm --tag next publish', 'docker --context x push img' and 'gh -R a/b release create v1' all come out ALLOWED, while 'npm publish --tag next' and 'git --no-pager push' are denied. The phase says these commands are denied for every caller while a loop is on, and 'cargo +nightly publish' is a normal way to type it. Regression test to add in tests/loop-outward-guard.bats: under a loop, denied_as for 'cargo +nightly publish', 'npm --registry https://r.example publish', 'docker --context x push img', 'gh -R a/b release create v1', each with the pinned text; and the allowed list must still pass (gh -R a/b release list, cargo +nightly build)."
     },
     {
@@ -26135,7 +26135,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The L3 loop scenario (tools/l3-suite.sh scenario_loop, committed tools/l3-results/loop.json) never exercised a real revert. The committed result has facts.revert_commits = 0, so the check 'the revert commits are in git' and the report check for revert hashes loop over an empty list and cannot fail. The plan (P129.4) asks for the revert commits present in git and the report naming them; commit 6667f15e changed the scenario so T2 fails by construction before any code commit, and allowed zero reverts. The result's not_tested list does not say that the git-revert path of a park was not run at L3 (it lists a remote, a mid-item ceiling, a [human] item, more than two items, Claude Code versions). The revert path is covered at L1 only (tests/loop-retry-park.bats). Regression test to add: either the scenario gives T2 a code commit so the park must revert it and the check fails when n_rev is 0, or loop.json/not_tested must say 'a park that reverts committed code' whenever facts.revert_commits is 0, pinned in tests/l3-loop.bats (a result with revert_commits 0 and no such not_tested entry fails)."
     },
     {
@@ -26159,8 +26159,40 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "escalated",
       "note": "The loop stalls silently, with no stop reason and no report, when a kernel step it runs in-process refuses. Evidence (read from code, not executed; a scratch test could not be written under the QA guard): plugin/lib/loop-step.sh loop_ship_item calls cmd_ship directly, and plugin/lib/cmd-ship.sh line 20 does vbw_die 'the proven work is not committed' for ANY untracked or modified file outside .vbw (git status --untracked-files=all), while vbw next still answers ship because the proof runs on a clean copy of HEAD. vbw_die ends the whole process (core.sh exit). In the Stop hook, plugin/lib/cmd-auto.sh auto_loop_gate takes 'step=$(loop_next)', which comes back empty, so the case falls to the block branch, jq reads nothing and prints nothing: the session stops, loop.ended stays null, .vbw/loop-report.md is not refreshed, and the next stop does the same. Same for the open step: loop_open_item's die text goes to stderr inside $(...), so the stop reason becomes ' (item T1, step open)' with the real cause lost. This breaks the phase criterion 'anything the loop cannot do without the user stops the loop with the reason, the item and the step, recorded in the loop state and the report' (P128.1 stops line). No tests/loop-*.bats test drives a failing ship/open (grep for 'not committed' in tests/loop-*.bats finds nothing). Regression test to add: in a loop fixture, leave an untracked file (e.g. stray.log) after the proof, run vbw loop next as the loop's session and through vbw auto gate; assert loop.ended.reason names 'not committed' with the item and step ship, the gate prints a systemMessage ending the loop, and .vbw/loop-report.md exists. Fix direction: have the loop step run the kernel action so a die is caught (run it in a subshell and capture stderr) and call loop_end with 'ACTION needs you: <message> (item T, step ACTION)'."
+    },
+    {
+      "id": "F180",
+      "req": "R180",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "The loop's outward guard now blocks harmless reads and the project's own commands that merely contain a trigger word anywhere after the command name. Since b1df6d14 (the F175 fix), loop_outward in plugin/hooks/guard-bash.jq (has($x) over every non-option word) matches the word at any position, not only as the subcommand. I drove the guard with a loop on (guard-bash.jq with a record holding .loop) and these are all DENIED: 'cargo test publish' (denied as cargo publish), 'cargo build -p publish', 'npm run publish', 'npm test -- publish', 'gh issue list --label release' and 'gh pr list --label release' (denied as gh release), 'docker run --name push ubuntu' (denied as docker push). The R180 rule says words in text, reads and the project's own commands stay allowed; a builder who runs a test filtered by the word 'publish' is blocked with a text claiming it ran cargo publish, which can park a good item. 'npm run publish' and 'gh issue list' were allowed before the F175 fix, so this is a regression. docs/guards.md says nothing of it. Regression test for tests/loop-outward-guard.bats: under a loop the allowed list also holds 'cargo test publish', 'npm run publish', 'gh issue list --label release', 'docker run --name push ubuntu', while 'cargo +nightly publish', 'npm --tag next publish', 'docker --context x push img' and 'gh -R a/b release create v1' stay denied (the subcommand is the first word after the command's own options and their values, not any word)."
+    },
+    {
+      "id": "F181",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Untested branches of the park (plugin/lib/loop-park.sh). The criterion says a file the user staged or edited by hand is left as it is. The only test, tests/loop-retry-park.bats test 1, edits README.md and adds scratch.txt, files no commit of the item touched, so it passes whether or not the protection exists. Nothing exercises: a commit touching a file the user edited or staged (left unreverted and named 'you changed F'), a check file the user changed (kept, 'left in place'), a revert that conflicts ('does not revert cleanly'), or the user's staged file staying staged after a revert. Deleting the 'hand' comparison or the vbw_dirty_files test would leave every loop test green, and the park would then revert over the user's work. Regression test in tests/loop-retry-park.bats: build an item, then edit (unstaged) and separately stage a file that an item commit touched, park, and assert that commit is not reverted, the file keeps the user's content and stays staged, the decision names it, and the other commits are reverted; plus one with a user-edited check file that survives the park."
+    },
+    {
+      "id": "F182",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Untested P129.1 behaviour. The validation rules for the parked list in plugin/lib/record.jq lines 138-148 (non-empty reason, unknown field, parked twice, both shipped and parked, current milestone parked exactly when in parked, a parked milestone owning a requirement, phase or plan) have no test that makes any of them fire (grep of tests/ finds none; the park tests only build valid records). The same holds for 'vbw milestone rename' refusing a parked milestone (cmd-milestone.sh) and for 'vbw status --json' carrying the parked ids (cmd-status.sh line 18). Removing any of these would leave the suite green. Regression test: in tests/record.bats a hand-edited record for each rule must fail validation with its message; 'vbw milestone rename X' on a parked milestone exits non-zero with a Next line; 'vbw status --json | jq .parked' lists M2 after a park."
+    },
+    {
+      "id": "F183",
+      "req": "R180",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "The L3 loop scenario's git check for revert commits can still pass with none, and the honest-labelling branch is unpinned. After F176 the scenario (tools/l3-suite.sh scenario_loop) loops over the parked item's reverts, so with zero reverts 'the revert commits are in git' passes vacuously (reverts_ok stays true); only when n_rev is 0 does the result's not_tested gain the line saying the revert path was not run. No test in tests/l3-loop.bats reads that branch: a result with facts.revert_commits 0 and without that not_tested line, or the line deleted from the script, leaves tests/l3-loop.bats green. The committed loop.json has revert_commits 1, so today's result is honest, but the guard against a future dishonest one is missing. Regression test in tests/l3-loop.bats: every committed tools/l3-results/loop.json with facts.revert_commits == 0 must have a not_tested entry naming the revert path; and the scenario body must hold that conditional."
     }
   ],
   "todos": [
