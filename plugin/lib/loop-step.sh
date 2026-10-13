@@ -100,7 +100,7 @@ loop_kernel() {
 # the milestone already holds it), and marks it and its backlog entry in progress. Status 1 and the reason on stdout when the milestone
 # cannot be opened.
 loop_open_item() {
-  local rec=$1 id=$2 text proof title m head base
+  local rec=$1 id=$2 text proof title m head base q
   text=$(printf '%s' "$rec" | jq -r --arg i "$id" '.loop.items[] | select(.id == $i) | .text')
   proof=$(loop_item_proof "$text")
   title=$(loop_item_text "$text")
@@ -117,10 +117,14 @@ loop_open_item() {
   fi
   # Otherwise the milestone already holds the item's requirement (asked for before the loop took it up).
   m=$(jq -r .milestone.id "$VBW_RECORD")
+  # The requirement's id is kept on the item: a later milestone start carries a skipped [human]
+  # requirement away from this milestone, and the report still has to name it (F191).
+  q=$(jq -r --arg m "$m" --arg t "$(loop_norm "$title")" '[.requirements[] | select(.milestone == $m and .text == $t)][0].id // empty' "$VBW_RECORD")
   head=$(git -C "$VBW_ROOT" rev-parse HEAD)
   base=$(loop_figures_now)
-  record_update '(.loop.items[] | select(.id == $i)) |= (.status = "in_progress" | .milestone = $m | .head = $h | .baseline = $b)
-    | (.todos[] | select(.id == $i)).status = "in_progress"' --arg i "$id" --arg m "$m" --arg h "$head" --argjson b "$base"
+  record_update '(.loop.items[] | select(.id == $i)) |= (.status = "in_progress" | .milestone = $m | .head = $h | .baseline = $b
+      | if $q == "" then . else .req = $q end)
+    | (.todos[] | select(.id == $i)).status = "in_progress"' --arg i "$id" --arg m "$m" --arg h "$head" --argjson b "$base" --arg q "$q"
   loop_commit "$id" open
 }
 

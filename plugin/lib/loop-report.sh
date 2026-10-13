@@ -18,8 +18,11 @@ loop_report_write() {
     def cost: if . == null then "unknown" else "\(.usd | usd) (\(.in) in, \(.out) out)" end;
     . as $r | .loop as $l
     | ([$log | split("\n")[] | select(length > 0) | split("\u001f") | {hash: .[0], subject: .[1], plans: ((.[2] // "") | split(" "))}]) as $commits
-    | def plans_of($m): [$r.plans[] | select(.reqs as $q | any($r.requirements[]; .milestone == $m and (.id as $i | $q | index($i) != null))) | .id];
+    | def plans_of($m): [$r.plans[] | select(.phase as $p | any($r.phases[]; .id == $p and .milestone == $m)) | .id];
       def commits_of($m): plans_of($m) as $p | [$commits[] | select(any(.plans[]; . as $x | $p | index($x) != null))];
+      # The requirement of an item: by the id kept at its open; else the one of its milestone with its text (F191).
+      def req_of($i): (if $i.req then [$r.requirements[] | select(.id == $i.req)][0] else null end)
+        // ([$r.requirements[] | select(.milestone == $i.milestone and .text == ($i.text | sub("^\\[(human|auto)\\] "; "")))][0]);
     "# Loop report",
     "",
     "Started \($l.started_at). \(if $l.ended == null then "State: running (an item still in progress shows as in progress)."
@@ -29,7 +32,7 @@ loop_report_write() {
     ( [$l.items[] | select(.status == "shipped")] as $s
       | if ($s | length) == 0 then "none yet" else
         $s[] | . as $i
-        | ([$r.requirements[] | select(.milestone == $i.milestone and .text == ($i.text | sub("^\\[(human|auto)\\] "; "")))][0].id // "none") as $q
+        | (req_of($i) | .id // "none") as $q
         | "- \($i.id) \($i.text) (\($i.milestone), \($q)): \(commits_of($i.milestone) | map("\(.hash) \(.subject)") | join("; "))" end ),
     "",
     "## Parked",
@@ -38,7 +41,8 @@ loop_report_write() {
         $p[] | "- \(.id) \(.text) (\(.milestone // "no milestone")): \(.reason // "no reason recorded")\(if .left then "; left unreverted: \(.left)" else "" end); revert commits: \((.reverts // []) | map(if type == "object" then (.hash // .sha // tostring) else tostring end | .[0:7]) | join(", ")); to bring the work back, revert the reverts (git revert, newest first) or run the item again with /vbw:loop \(.id)" end ),
     "",
     "## Waiting for you",
-    ( [$r.requirements[] | select(.proof == "human" and .skipped == true and .status == "open")] as $w
+    ( ([$l.items[] | select(.status == "shipped" and .proof == "human") | req_of(.) | select(. != null and .status != "accepted" and .status != "rejected")]
+        + [$r.requirements[] | select(.proof == "human" and .skipped == true and .status == "open")] | unique_by(.id)) as $w
       | if ($w | length) == 0 then "no skipped [human] requirement" else $w[] | "- \(.id) \(.text) (skipped for you to judge)" end ),
     ( if $l.ended == null then "the loop is still running" else "the loop stopped: \($l.ended.reason)" end ),
     "",
