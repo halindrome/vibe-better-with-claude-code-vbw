@@ -1,17 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "qa-20261013T025700Z",
-    "kind": "qa",
-    "started_at": "2026-10-13T02:57:00Z",
-    "files": [],
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
-    "cost": {
-      "usd": 923.135634,
-      "in": 142845,
-      "out": 444
-    }
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -32617,6 +32606,15 @@
         "milestone": "M25",
         "started": "2026-10-13T01:39:05Z",
         "ended": "2026-10-13T02:44:52Z",
+        "cost": null
+      },
+      {
+        "id": "qa-20261013T025700Z",
+        "kind": "qa",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-13T02:57:00Z",
+        "ended": "2026-10-13T03:04:30Z",
         "cost": null
       }
     ],
