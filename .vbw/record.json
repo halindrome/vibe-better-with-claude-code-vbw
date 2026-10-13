@@ -15719,12 +15719,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "dfb65a502ba11de48eb22c072497ba05b12960caab071eefe418184d5a39c1ad",
-        "at": "2026-10-13T00:19:15Z",
-        "note": "30/33 checks",
-        "rounds": 3
+        "tree": "e7225a40929ecf357aafa017ff631849767197d3c105f8919bb0c737efbe6864",
+        "at": "2026-10-13T01:21:41Z",
+        "note": "33/33 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 8,
+        "qa_findings": 8,
+        "escalations": 2
       }
     },
     {
@@ -26151,7 +26158,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Untested criterion: 'each item matches at most once'. plugin/lib/loop-step.sh loop_matches implements it (a requirement text may appear no more often than the loop has items with that text; I ran the rule on one item 'a b' and two requirements 'a b' and 'a  b': it answers no, correct). But no test exercises it: tests/loop-approve.bats, tests/loop-approve-waits.bats and the matches() test (F168) never put two requirements with the same text in the milestone, and 'vbw spec add' does not refuse duplicate texts, so the case is reachable. Replacing the count comparison with a plain 'every wanted text is in the item list' keeps every loop test green and would let the loop approve a contract that has an extra requirement duplicating an item's text. Regression test: in tests/loop-approve-waits.bats, loop with T1 only, add 'Visitors can read a greeting' twice, plan it, run the loop step; assert nothing is approved, no consent, no decision, vbw next still answers approve (and a second item with the same text makes it approve)."
     },
     {
@@ -26159,7 +26166,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Two behaviours differ from the P127 plan text with no recorded decision. (1) plugin/lib/cmd-loop.sh loop_start (lines ~114-116) ignores a [human] requirement carried over by an earlier ship when it checks 'current milestone has requirements and is not shipped'; P127.1 and the criterion list that refusal without the exception. Found as F169, closed by documenting it (docs/loop.md) and adding a test, but 'vbw show decisions' has no decision for it (D322 is the only loop decision after D317). The test tests/loop-start.bats 'F169' also asserts '.milestone == .milestone' in jq, which compares a value to itself and cannot fail; it should check that R2 sits in the current milestone M2. (2) plugin/skills/loop/SKILL.md preamble has three lines (the 'vbw interview' line was added in commit 32ff7493 for R39, under P128.4); P127.3 says the preamble block has 'exactly two lines' and tests/loop-guard.bats does not pin the count. The R39 reason is sound, but it is an unrecorded change to P127.3's agreement. Fix: record one decision per item (vbw decide) naming the carried-human exception and the interview line, and make the F169 test assert the requirement is in M2. Regression test: tests/loop-start.bats F169 test must fail if R2 is not in the current milestone; tests/loop-guard.bats should pin the preamble's lines (interview, loop start, loop status)."
     },
     {
