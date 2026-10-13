@@ -28,7 +28,7 @@ def session_figures: type == "object"
                and (.at | iso) and (.usd | nonneg) and (.in | nonneg) and (.out | nonneg));
 def strings_array: type == "array" and all(.[]; type == "string");
 def loop_item: type == "object"
-  and (keys - ["id","text","proof","status","milestone","head","baseline","retried","reverts","left","cost","reason","at"] == [])
+  and (keys - ["id","text","proof","status","milestone","req","head","baseline","retried","reverts","left","cost","reason","at"] == [])
   and (.id | type == "string" and test("^T[0-9]+$")) and (.text | nonempty)
   and (.proof | one_of(["auto","human"])) and (.status | one_of(["waiting","in_progress","shipped","parked"]))
   and ((has("milestone") | not) or (.milestone | type == "string" and test("^M[0-9]+$")))
@@ -38,6 +38,7 @@ def loop_item: type == "object"
                                   and (.fixes | strings_array) and (.plans | strings_array)))
   and ((has("reverts") | not) or (.reverts | strings_array))
   and ((has("left") | not) or (.left | nonempty))
+  and ((has("req") | not) or (.req | nonempty))
   and ((has("cost") | not) or .cost == null or (.cost | figures))
   and ((has("reason") | not) or (.reason | nonempty))
   and ((has("at") | not) or (.at | iso));
