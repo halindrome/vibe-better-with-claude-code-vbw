@@ -1,5 +1,62 @@
 # Changelog
 
+## [2.0.35] - 2026-10-13
+
+### Added
+
+- **The loop: a night shift that works through your backlog.** `/vbw:loop T4
+  T7 --ceiling 20` (or `--ceiling 20 --finish-item`, or `--no-ceiling`) takes
+  the named todo items in order and, for each, opens a milestone, plans,
+  approves the contract on your behalf only when it is exactly the item you
+  named (recorded as the loop's own decision and commit, the project commands
+  and the test-file form included), builds, proves, fixes, verifies and ships.
+  A `[human]` requirement is skipped for you to judge and stays listed until
+  you do. The loop stops at the ceiling, at the end of its list, on
+  `vbw loop stop` from any session, or when a step needs you; a contract not
+  ready yet (a check file not written) is handed back to the session once.
+  `vbw loop status` shows the items, the spend and the ceiling from any
+  session. A ceiling needs cost figures, which the VBW status line provides
+  (`vbw statusline on`); without any figure the loop stops before its first
+  step, unless you chose `--no-ceiling`. See docs/loop.md.
+- **Retry once, then park.** A fix escalated or a plan blocked a second time
+  parks the item: its commits since the item began are reverted with revert
+  commits (one touching a file you staged or edited, one that changes code and
+  a `.vbw/` file together, or one that does not revert cleanly is left in place
+  and named), its requirement, plans and checks leave the record and the spec,
+  the milestone is marked `parked` with its cost frozen, the backlog entry
+  stays open, and the loop goes on to the next item. `vbw loop park` does the
+  same by hand.
+- **Nothing leaves the project while a loop is on.** The Bash guard denies
+  `git push`, releases, publishes and deploys (gh, npm, cargo, docker, heroku
+  and the like, in any spelling, with a redirect glued to the word too) for
+  every caller, the main session included, with a pinned text. Outside a loop
+  a plain `git push` by you stays allowed.
+- **The loop report.** `.vbw/loop-report.md` is written at each item's end
+  and at the loop's end: what shipped with its commits, what was parked and
+  why, what waits for you, and what each item cost. `vbw show costs` prices a
+  parked milestone by its frozen total, or unknown when no figure was seen.
+
+### Changed
+
+- **A QA finding belongs to the phase whose QA found it** (`vbw qa finding
+  PHASE REQ TEXT`; a finding given without the phase is adopted by that
+  phase's fail verdict). A verdict changes only its own phase's findings, so
+  phases that share a requirement can be verified in parallel without closing
+  each other's findings.
+- **A project command or test-file form changed after the contract's
+  approval is approved on its own**, with its decision (`Project commands
+  approved: ...`) and its commit, by you or by the loop. A consent is never
+  granted without its decision.
+- **A parked milestone is left behind like a shipped one:** `vbw next` asks
+  for the next milestone, the parked one keeps its name, and `vbw status`
+  lists it.
+- The Bash guard reads a redirect glued to a word (`cmd>out.log`) as the shell
+  does, so every rule that reads a command's words or its redirect targets
+  sees them.
+- For contributors: the plugin size cap test is gone (VBW grows as it needs
+  to); the loop's state (`loop`, `parked`, a fix's `phase`) is documented in
+  docs/record.md.
+
 ## [2.0.34] - 2026-10-12
 
 ### Added
