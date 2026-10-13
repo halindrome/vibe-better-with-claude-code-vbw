@@ -15824,10 +15824,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "8fcd100abfe7dbbf3c5350c6854cf43519e8cb6ba6c19cd195205c3706c85315",
-        "at": "2026-10-13T01:25:43Z",
-        "note": "26/32 checks",
-        "rounds": 4
+        "tree": "00ef6d2e4ecbff8e76d518c3a7005ccfd9a5c9686f060074f1be01b7fbb2aeef",
+        "at": "2026-10-13T03:03:40Z",
+        "note": "30/34 checks",
+        "rounds": 5
       },
       "escalations": [
         {
@@ -26254,7 +26254,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "tests/loop-lease-guards.bats cannot tell whether the protected-check-file rule works under a loop. The test (first test, line ~38) writes tests/notes.sh, which is protected but not among the build lease's files (src/greet.txt), and accepts either 'protected check file' or 'outside this run's files'. lease_write_denial in plugin/hooks/common.jq checks the plan's files first, so the denial always comes from the outside-files rule and the protected rule is never reached. Deleting the protected rule leaves this test green. The criterion lists 'a protected check file' among the writes a loop's run still denies. Regression test: a lease whose files include a protected check file (a fix run with new_tests, or a build whose plan file list holds it) must be denied with 'protected check file', asserted without the either-or."
     },
     {
@@ -26262,7 +26262,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The L3 loop scenario writes facts it did not measure. tools/l3-suite.sh scenario_loop passes the constants 'remotes: 0, tags: 0' into result_write instead of the counts it read (, ), so a failing run (a remote or tag present, passed=false) would still publish 'remotes: 0, tags: 0' in tools/l3-results/loop.json. Also the committed result (at 2026-10-13T00:13:07Z) predates commits e31332b7 (loop_kernel) and 469ef59c (guard change), so it describes older code. Regression test in tests/l3-loop.bats: the scenario body builds the facts from the measured remote and tag counts (no literal 'remotes: 0'), and a run with a remote present would write a nonzero fact."
     },
     {
@@ -26272,6 +26272,38 @@
       "attempts": 0,
       "status": "escalated",
       "note": "The loop report loses a [human] item's requirement and commits, and its 'Waiting for you' entry, as soon as a later item opens. Cause: vbw milestone start (plugin/lib/cmd-milestone.sh line 37) moves every 'later' requirement into the new milestone (.milestone = new id, and del(.skipped, .later)). The loop opens the next item's milestone in the same step that ships the first (loop_open_item, plugin/lib/loop-step.sh), so for a list like T3 ([human]) then T1 the report (plugin/lib/loop-report.sh) looks up the shipped item's requirement by '.milestone == $i.milestone' (line 32) and its commits through plans_of($i.milestone) (line 21): both now find nothing. I ran those two jq expressions on a record shaped as the kernel leaves it (R2 [human] moved to M3, item T3 shipped in M2): output 'T3 milestone M2 req none plans []', so the Shipped line reads '(M2, none): ' with no commits. The Waiting section selects '.skipped == true' (line 41), which the move deleted, so it prints 'no skipped [human] requirement' while the user's judgment is still owed; if the loop then stops (ceiling, vbw loop stop) before item 2 reaches accept, the report never lists it. The criterion says the report names, for what shipped, the item, milestone, requirement and commits, and lists skipped [human] requirements as waiting for the user; docs/loop.md 'The report' says the same. Existing tests only use one [human] item at the end of the list (tests/loop-human-skip.bats) or a [human] requirement carried in before the loop (loop_project human), so none moves it. Regression test: in tests/loop-human-skip.bats start a loop with the [human] item first and an [auto] item second, take the first to its ship, let the step open the second item's milestone, then assert that .vbw/loop-report.md's Shipped line for the [human] item names its requirement id (not 'none') and its commits, and that 'Waiting for you' lists the carried [human] requirement; the fix has to keep the requirement and plans attributed to the milestone the item shipped in (for example by recording the requirement id and the commit list on the item when it ships) and to find waiting [human] requirements by their state (open, proof human, built in an earlier milestone), not by the skipped flag."
+    },
+    {
+      "id": "F192",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "The sentence in docs/loop.md (Retry once, then park, step 2) that says three kinds of commit are left in place and named (you staged or edited the file, it changes code and a .vbw file together, it does not revert cleanly) has no test. Fix F188 asked for a regression test in tests/loop-docs.bats that fails if the sentence is removed. grep for 'left in place', 'revert cleanly', 'left and named' and 'D326' across tests/*.bats finds nothing in loop-docs.bats or any other docs test (the only hits are the behaviour tests in loop-retry-park.bats). Deleting the sentence from docs/loop.md keeps every test green, so the documentation can drift back to saying the item's code is always gone. Regression test: in tests/loop-docs.bats, assert docs/loop.md contains the three phrases (staged or edited, code and a .vbw file together, does not revert cleanly) and 'named'."
+    },
+    {
+      "id": "F193",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "The F185 conflict test does not prove what F185 asked for. tests/loop-retry-park.bats 'a commit that does not revert cleanly is left in place and named; the clean ones are reverted' (line ~206) is titled as if clean commits get reverted, but its own comment and its assertion '! git log | grep ^Revert' show none is. It also never checks that a failed revert leaves no half-done state: no assertion on .git/REVERT_HEAD, conflict markers in src/greet.txt, or a clean 'git status --porcelain' (grep for REVERT_HEAD, '<<<<<<<', unmerged and porcelain finds only .vbw checks in parked_clean, which this test does not call). F185 listed 'no half-done revert is left (git status clean of conflict markers)' explicitly. The revert --abort in plugin/lib/loop-park.sh (the else branch) can be removed without this test noticing. Regression test: after the park, assert no .git/REVERT_HEAD, no '<<<<<<<' in src/greet.txt, 'git status --porcelain' empty for tracked files, and that the park commit exists; and add a case where one item commit conflicts and another reverts cleanly so the title is true (or rename the test)."
+    },
+    {
+      "id": "F194",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "vbw loop park refuses when a run (lease) is open, but nothing tests that branch. P129.2 task 3 says the command refuses with Next: for no loop, no item in progress, or an open lease. plugin/lib/cmd-loop.sh loop_park_cmd has the 'a run is open. Next: wait for it to end' branch; the only test of by-hand refusals (tests/loop-retry-park.bats line 143) covers the no-loop and no-item cases. grep 'a run is open' in tests finds nothing for loop park. Deleting the lease check lets a park revert commits and rewrite the record while a Dev is still writing. Regression test: start a loop, get an item in progress, open a run (vbw run start build ...), run vbw loop park, assert exit 1, 'Next: ', the item still in_progress, no Revert commit, and the record unchanged."
+    },
+    {
+      "id": "F195",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "The cost half of P129.1 has no test. A parked milestone is treated like a shipped one in plugin/lib/costs.sh (costs_milestone_total returns the frozen total, else null, for an id in .parked) and in plugin/lib/cmd-show.sh (vbw show costs lists parked ids with status parked). No test file under tests/ that mentions parked runs vbw show costs or costs_milestone_total (parked appears only in l3-loop, loop-docs, loop-report, loop-park-report, loop-retry-park; none calls show costs). The park test only checks the frozen total in the record at park time. If the .parked branch in costs_milestone_total were removed, a parked milestone with no frozen figure would be priced as a live milestone and its cost would keep changing after the park, and vbw show costs would be wrong, with every test still green. Regression test in tests/cost-milestones.bats or loop-park-report.bats: park an item (a) with figures, assert vbw show costs --json lists the milestone as parked with the frozen total and that later spend in the session does not change it; (b) without figures, assert the parked milestone's total is null (unknown) and stays null after more spend."
     }
   ],
   "todos": [
