@@ -10031,6 +10031,14 @@
           "check": "C310"
         }
       ]
+    },
+    {
+      "id": "R181",
+      "text": "Machine-wide limit (owner, 2026-10-12 09:40): VBW as a whole never takes more than about three quarters of the machine's cores, however many projects, sessions and runs are proving at once: one shared budget per machine (a slot store in the user's Claude config folder, each unit of a proof or fix done takes a slot, a run that finds none waits its turn), so runs take turns instead of fighting (today a 12-minute fix done took 87 under four concurrent runs). Same tests, same results, no thrash; the check_jobs setting stays as a per-run cap below it. Goes with T127 (one fix done per fix round). First item after 2.0.34, before the loop",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M26",
+      "rules": []
     }
   ],
   "phases": [
@@ -27213,7 +27221,7 @@
       "text": "Machine-wide limit (owner, 2026-10-12 09:40): VBW as a whole never takes more than about three quarters of the machine's cores, however many projects, sessions and runs are proving at once: one shared budget per machine (a slot store in the user's Claude config folder, each unit of a proof or fix done takes a slot, a run that finds none waits its turn), so runs take turns instead of fighting (today a 12-minute fix done took 87 under four concurrent runs). Same tests, same results, no thrash; the check_jobs setting stays as a per-run cap below it. Goes with T127 (one fix done per fix round). First item after 2.0.34, before the loop",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "in_progress"
     },
     {
       "id": "T129",
@@ -33111,7 +33119,60 @@
         "id": "T128",
         "text": "Machine-wide limit (owner, 2026-10-12 09:40): VBW as a whole never takes more than about three quarters of the machine's cores, however many projects, sessions and runs are proving at once: one shared budget per machine (a slot store in the user's Claude config folder, each unit of a proof or fix done takes a slot, a run that finds none waits its turn), so runs take turns instead of fighting (today a 12-minute fix done took 87 under four concurrent runs). Same tests, same results, no thrash; the check_jobs setting stays as a per-run cap below it. Goes with T127 (one fix done per fix round). First item after 2.0.34, before the loop",
         "proof": "auto",
-        "status": "waiting"
+        "status": "in_progress",
+        "milestone": "M26",
+        "head": "a18a231c8634e80f91d48922f82f680929b931ca",
+        "baseline": {
+          "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
+            "usd": 997.504586,
+            "in": 659235,
+            "out": 1089,
+            "at": "2026-10-13T16:36:30Z"
+          },
+          "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T16:36:30Z"
+          },
+          "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T16:36:30Z"
+          },
+          "689c5465-3aa1-49af-9115-8192ae092ecf": {
+            "usd": 33.71675,
+            "in": 170476,
+            "out": 406,
+            "at": "2026-10-13T16:36:30Z"
+          },
+          "69afb011-3850-41d9-8620-9b59aa9fe082": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T16:36:30Z"
+          },
+          "868abfef-9fb7-492e-afba-751d9042e56a": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T16:36:30Z"
+          },
+          "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T16:36:30Z"
+          },
+          "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T16:36:30Z"
+          }
+        },
+        "req": "R181"
       },
       {
         "id": "T127",
