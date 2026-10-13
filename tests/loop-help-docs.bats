@@ -49,12 +49,20 @@ teardown() { vbw_teardown; }
   "$VBW" status > /dev/null
   local bad
   for bad in '.loop = {}' '.loop.items = "T1"' '.loop.items[0].status = "flying"' '.loop.ceiling = {usd: -1, finish_item: false}' \
-             '.loop.ceiling = {usd: 5}' '.loop.started_at = "yesterday"' '.loop.extra = 1' '.loop.items[0].id = "R1"'; do
+             '.loop.ceiling = {usd: 5}' '.loop.started_at = "yesterday"' '.loop.extra = 1' '.loop.items[0].id = "R1"' \
+             '.loop.items[0].req = ""' '.loop.items[0].left = ""' '.loop.items[0].head = "abc"' '.loop.items[0].milestone = "X1"' \
+             '.loop.items[0].retried = {fixes: []}' '.loop.items[0].reverts = [1]' '.loop.items[0].cost = {usd: -1, in: 0, out: 0}' \
+             '.loop.items[0].reason = ""' '.loop.items[0].at = "soon"' '.loop.items[0].baseline = {s: {usd: 1}}' '.loop.items[0].unknown = 1' \
+             '.loop.items[0].text = ""' '.loop.items[0].proof = "maybe"'; do
     edit_record "$bad"
     run "$VBW" status
     [ "$status" -eq 3 ] || { echo "accepted a malformed loop ($bad): $output"; false; }
     git checkout -q -- .vbw/record.json
     rm -f .vbw/runtime/glance.json
   done
+  "$VBW" status > /dev/null
+  # A valid item carrying every optional field (F196) is read.
+  edit_record '.loop.items[0] += {milestone: "M2", req: "R2", head: ("0" * 40), baseline: {s1: {usd: 1, in: 10, out: 1, at: "2026-01-01T00:00:00Z"}},
+    retried: {fixes: ["F1"], plans: []}, reverts: ["0123abc"], left: "4567def (does not revert cleanly)", cost: {usd: 1, in: 10, out: 1}, reason: "escalated twice", at: "2026-01-01T00:00:00Z"}'
   "$VBW" status > /dev/null
 }
