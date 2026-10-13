@@ -64,3 +64,18 @@ RESULTS="$REPO_ROOT/tools/l3-results"
   [ -f "$f" ] || skip "no loop result committed yet"
   jq -e '(.facts.revert_commits > 0) or any(.not_tested[]; test("revert"))' "$f"
 }
+
+@test "R180 (F190): the loop result's remote and tag counts are the ones the scenario measured, never constants" {
+  local body prog
+  body=$(sed -n '/^scenario_loop()/,/^}/p' "$SUITE")
+  [ "$(printf '%s' "$body" | grep -c 'remotes: 0')" -eq 0 ]
+  [ "$(printf '%s' "$body" | grep -c 'tags: 0')" -eq 0 ]
+  printf '%s' "$body" | grep -q -- '--arg rm "\$remotes" --arg tg "\$tags"'
+  # The facts expression as the scenario runs it: one remote and two tags measured give 1 and 2; none give 0.
+  prog=$(printf '%s' "$body" | grep -o "'{items: .*}'" | tr -d "'")
+  [ -n "$prog" ]
+  jq -n --argjson d 0 --argjson o 0 --argjson q false --argjson r true --argjson n 0 --arg s '' --arg e '' \
+    --arg rm 'origin' --arg tg "$(printf 'v1\nv2\n')" "$prog" | jq -e '.remotes == 1 and .tags == 2'
+  jq -n --argjson d 0 --argjson o 0 --argjson q false --argjson r true --argjson n 0 --arg s '' --arg e '' \
+    --arg rm '' --arg tg '' "$prog" | jq -e '.remotes == 0 and .tags == 0'
+}
