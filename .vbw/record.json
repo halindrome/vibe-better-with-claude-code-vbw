@@ -26811,7 +26811,7 @@
     {
       "id": "T68",
       "text": "vbw approve compares the spec with the record but not the new '## Test results' list (P81.1 note): an edited, unsynced list approves the record's list; add it to the comparison with the commands",
-      "status": "open",
+      "status": "done",
       "sort": "next",
       "size": "small"
     },
