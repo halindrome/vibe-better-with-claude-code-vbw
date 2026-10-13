@@ -82,6 +82,19 @@ loop_ceiling_reason() {
   esac
 }
 
+# loop_kernel CMD...: runs a kernel step the loop takes itself (milestone start, spec add, ship) in a
+# subshell, so a refusal (vbw_die exits) cannot end the step in silence: the refusal's words come
+# back on stdout with status 1, for the loop to end with that reason (F179).
+loop_kernel() {
+  local err out
+  err=$(mktemp "$VBW_RUNTIME/loop-kernel.XXXXXX") || { printf 'cannot create a temporary file in %s\n' "$VBW_RUNTIME"; return 1; }
+  if ( "$@" ) > /dev/null 2> "$err"; then rm -f "$err"; return 0; fi
+  out=$(sed 's/^vbw: //' "$err" | tr '\n' ' ' | cut -c1-300)
+  rm -f "$err"
+  printf '%s\n' "${out:-refused without a reason}"
+  return 1
+}
+
 # loop_open_item RECORD ITEM: opens the item's milestone (started when the current one is shipped or
 # parked, renamed when it is active with no requirements of its own), adds its requirement (unless
 # the milestone already holds it), and marks it and its backlog entry in progress. Status 1 and the reason on stdout when the milestone
@@ -92,12 +105,12 @@ loop_open_item() {
   proof=$(loop_item_proof "$text")
   title=$(loop_item_text "$text")
   if printf '%s' "$rec" | jq -e '.milestone.status != "active"' > /dev/null; then
-    cmd_milestone start "$title" > /dev/null
-    cmd_spec add "$proof" "$title" > /dev/null
+    loop_kernel cmd_milestone start "$title" || return 1
+    loop_kernel cmd_spec add "$proof" "$title" || return 1
   elif printf '%s' "$rec" | jq -e '. as $r | .milestone.id as $m | any($r.requirements[]; .milestone == $m
       and ((.proof == "human" and (.id as $i | any($r.phases[]; .milestone != $m and any(.reqs[]; . == $i)))) | not)) | not' > /dev/null; then
-    cmd_milestone rename "$title" > /dev/null
-    cmd_spec add "$proof" "$title" > /dev/null
+    loop_kernel cmd_milestone rename "$title" || return 1
+    loop_kernel cmd_spec add "$proof" "$title" || return 1
   elif ! printf '%s' "$rec" | jq -e --arg t "$(loop_norm "$title")" '.milestone.id as $m | any(.requirements[]; .milestone == $m and .text == $t)' > /dev/null; then
     printf '%s has requirements of its own and is not shipped: finish or ship it first (vbw next)\n' "$(printf '%s' "$rec" | jq -r .milestone.id)"
     return 1
@@ -113,8 +126,8 @@ loop_open_item() {
 
 # loop_ship_item ITEM: vbw ship, then the item shipped with its own cost and its backlog entry done.
 loop_ship_item() {
-  local id=$1 cost
-  cmd_ship > /dev/null
+  local id=$1 cost why
+  if ! why=$(loop_kernel cmd_ship); then loop_end "the ship was refused: $why (item $id, step ship)"; return 1; fi
   cost=$(loop_spend "$VBW_RECORD" "$id" | jq -c 'if . == null then null else del(.sessions) end')
   record_update '(.loop.items[] | select(.id == $i)) |= (.status = "shipped" | .cost = $c | .at = $at)
     | (.todos[] | select(.id == $i)).status = "done"' --arg i "$id" --argjson c "$cost" --arg at "$(vbw_now)"
@@ -208,7 +221,7 @@ loop_step() {
         for n in $(printf '%s' "$next" | jq -r '.detail.requirements[]'); do cmd_req skip "$n" > /dev/null; done
         loop_commit "$cur" accept ;;
       ship)
-        loop_ship_item "$cur" ;;
+        loop_ship_item "$cur" || return 0 ;;
       escalate | unblock)
         loop_retry "$cur" "$next" ;;
       scope)
