@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261013T134733Z",
+    "kind": "qa",
+    "started_at": "2026-10-13T13:47:33Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 966.046775,
+      "in": 409466,
+      "out": 442
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -15738,8 +15749,8 @@
       "qa": {
         "result": "pass",
         "tier": "deep",
-        "tree": "7832efff319d98ba96b75b853c9e7b40fd749f0732a37075ac2eba30494f0f78",
-        "at": "2026-10-13T12:52:07Z",
+        "tree": "601dd10a7f7f95bd6625757fde0ef74a544b3cc565601cbb6c5c75d5762e7d5e",
+        "at": "2026-10-13T13:49:35Z",
         "note": "30/30 checks"
       },
       "outcome": {
