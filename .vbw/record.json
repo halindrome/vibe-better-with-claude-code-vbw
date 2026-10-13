@@ -26052,7 +26052,7 @@
         "plugin/scripts/vbw-statusline.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Decide on or off once the project folder is known (after the existing walk up to the folder holding .git): read enabledPlugins[\"vbw@vbw-marketplace\"] from <project>/.claude/settings.local.json, then <project>/.claude/settings.json, then the user's settings.json (CLAUDE_CONFIG_DIR, else ~/.config/claude-code when that folder exists, else ~/.claude, as vbw_claude_dir in plugin/lib/core.sh does). The first file that sets it to true or false decides; a missing file, a file that is not valid JSON, or no entry decides nothing; nothing decided means on. One jq call for the files that exist, none when no file exists.",
@@ -26074,7 +26074,7 @@
         "plugin/hooks/session-start.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "The statusLine command vbw statusline on writes: it still finds the newest installed VBW's scripts/vbw-statusline.sh in the plugin cache (the plugin-cache standards exception stays on the one line starting VBW_STATUSLINE_CMD= in cmd-statusline.sh), reads Claude Code's input with a timeout as the script does (Claude Code may send nothing and leave stdin open), and gives it to the script. When the script exits 3 (VBW turned off in this project), it runs the user's earlier status line with that same input; with none saved it prints nothing and exits 0. Any other exit passes through as today.",
@@ -34912,6 +34912,19 @@
         "started": "2026-10-13T23:20:44Z",
         "ended": "2026-10-13T23:36:49Z",
         "cost": null
+      },
+      {
+        "id": "build-20261013T233725Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M29",
+        "started": "2026-10-13T23:37:25Z",
+        "ended": "2026-10-13T23:39:32Z",
+        "cost": {
+          "usd": 0.958985,
+          "in": 1910,
+          "out": 29
+        }
       }
     ],
     "milestones": {
