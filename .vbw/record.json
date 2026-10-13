@@ -26423,7 +26423,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Found by L3 loop scenario run 12 (15:05): the session applied T1's contract with vbw apply --add and ended its turn before writing the check file tests/greet_test.sh (a model slip the small-change plan path allows); the Stop hook ran the loop step, vbw next answered contract (the contract is not ready: check file missing), and loop_step treats contract as an action it does not know, so the loop ended at 14:06:00 with 'contract needs you' after 29 seconds, T1 in progress and T2 waiting. A not-ready contract during the plan step is the session's own unfinished work, not a stop: the loop must hand it back to the session once (emit the contract step through the gate), and end only when the same unsatisfied contract comes back unchanged (asked once already). Regression test: a loop whose contract names a check file not yet written answers contract with the instruction and records what it asked; the same step again ends the loop naming that it asked once already; with the check file written after the first ask, the next step approves by delegation and moves to build.",
       "phase": "P128"
     }
@@ -32907,6 +32907,19 @@
         "started": "2026-10-13T13:56:35Z",
         "ended": "2026-10-13T14:12:22Z",
         "cost": null
+      },
+      {
+        "id": "fix-20261013T141243Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-13T14:12:43Z",
+        "ended": "2026-10-13T14:47:52Z",
+        "cost": {
+          "usd": 1.991133,
+          "in": 8845,
+          "out": 92
+        }
       }
     ],
     "milestones": {
