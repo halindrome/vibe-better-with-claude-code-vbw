@@ -112,3 +112,48 @@ corrupt() {
   [[ "$output" == *"has been parked"* ]] || { echo "$output"; false; }
   jq -e '.milestone.title != "Another name"' .vbw/record.json
 }
+
+# parked_with_figures: T1 parked after the figures reach $4 (its milestone froze at $2 over its $2 baseline), T2 open.
+parked_with_figures() {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 "$@" > /dev/null
+  [ "$(step)" = plan ]
+  loop_plan "$(item_req "Visitors can read a greeting")" P2
+  [ "$(step)" = build ]
+  loop_build P2
+  loop_break P2
+  [ "$(step)" = prove ]
+  loop_prove
+  [ "$(step)" = fix ]
+  edit_record '(.fixes[] | select(.id == "F1")).status = "escalated"'
+  [ "$(step)" = fix ]
+  edit_record '(.fixes[] | select(.id == "F1")).status = "escalated"'
+}
+
+@test "R179 (F195): vbw show costs prices a parked milestone by its frozen total, which later spend does not change" {
+  parked_with_figures --ceiling 50
+  figures s1 4 2000 200
+  [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; false; }
+  local m frozen
+  m=$(jq -r '.parked[0].id' .vbw/record.json)
+  frozen=$(jq -c --arg m "$m" '.costs.milestones[$m].total' .vbw/record.json)
+  [ "$(printf '%s' "$frozen" | jq -r .usd)" = 2 ] || { jq .costs .vbw/record.json; false; }
+  "$VBW" show costs --json | jq -e --arg m "$m" --argjson f "$frozen" '.milestones[] | select(.id == $m) | .status == "parked" and .usd == $f.usd and .in == $f.in and .out == $f.out' \
+    || { "$VBW" show costs --json; false; }
+  "$VBW" show costs | grep -q "$m"
+  figures s1 9 5000 500
+  "$VBW" show costs --json | jq -e --arg m "$m" '.milestones[] | select(.id == $m) | .usd == 2' || { "$VBW" show costs --json; false; }
+  # The live milestone counts the new spend; the parked one does not.
+  "$VBW" show costs --json | jq -e '.milestones[] | select(.status == "active") | .usd == 5' || { "$VBW" show costs --json; false; }
+}
+
+@test "R179 (F195): a milestone parked with no figure seen is unknown in vbw show costs, and stays unknown after spend" {
+  no_figures
+  parked_with_figures --no-ceiling
+  [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; false; }
+  local m
+  m=$(jq -r '.parked[0].id' .vbw/record.json)
+  "$VBW" show costs --json | jq -e --arg m "$m" '(.milestones[] | select(.id == $m) | .status == "parked" and .usd == null) and (.unknown.milestones | index($m) != null)' \
+    || { "$VBW" show costs --json; false; }
+  figures s1 9 5000 500
+  "$VBW" show costs --json | jq -e --arg m "$m" '.milestones[] | select(.id == $m) | .usd == null' || { "$VBW" show costs --json; false; }
+}
