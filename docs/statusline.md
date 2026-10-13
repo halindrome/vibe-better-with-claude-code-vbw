@@ -78,6 +78,9 @@ above).
 VBW's script only says "off" (it exits with code 3). The setting itself then
 runs the earlier status line with the same input; VBW never runs it.
 
+Only a setting made by this version can hand back. If `vbw doctor` says the
+status line was set by an older VBW, run `vbw statusline on` to update it.
+
 ## The cost side file
 
 On each render in a VBW project, the status line writes the session's figures
