@@ -28853,6 +28853,11 @@
       "text": "A park reverts, newest first, the item's commits that touch files outside .vbw/; a commit that also changes a .vbw file, one that does not revert cleanly, and one touching a file the user staged or edited are left in place and named in the park's decision and report (P129.2 task 2 named only the user's files; the other two cases cannot be reverted without touching the record or the user's work)",
       "why": "QA F166 and F188: leaving and naming beats a silent skip or a revert that rewrites the record",
       "at": "2026-10-13T01:39:06Z"
+    },
+    {
+      "id": "D327",
+      "at": "2026-10-13T02:51:03Z",
+      "text": "Contract approved: 169 requirements, 305 checks, 384 plans (20292ffce965)"
     }
   ],
   "commands": {
