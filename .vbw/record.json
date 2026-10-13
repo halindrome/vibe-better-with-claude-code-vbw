@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261013T185231Z",
+    "kind": "qa",
+    "started_at": "2026-10-13T18:52:31Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1028.328984,
+      "in": 592155,
+      "out": 253
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -16176,7 +16187,15 @@
         "guarded: R12 (C11), R15 (C14), R23 (C20), R25 (C24), R27 (C21), R31 (C27), R32 (C28), R35 (C31), R36 (C32), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R119 (C180), R120 (C185), R128 (C200), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234), R153 (C235, C236, C239), R154 (C240), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R164 (C251), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "qa": {
+        "result": "fail",
+        "tier": "standard",
+        "tree": "f556899db51021f3466b92b3b3dde1166de39eb90d24fe12c86ab06f4ade3cf1",
+        "at": "2026-10-13T18:53:52Z",
+        "note": "15/17 checks",
+        "rounds": 1
+      }
     }
   ],
   "plans": [
@@ -26856,6 +26875,24 @@
       "status": "closed",
       "note": "Found by L3 loop scenario run 12 (15:05): the session applied T1's contract with vbw apply --add and ended its turn before writing the check file tests/greet_test.sh (a model slip the small-change plan path allows); the Stop hook ran the loop step, vbw next answered contract (the contract is not ready: check file missing), and loop_step treats contract as an action it does not know, so the loop ended at 14:06:00 with 'contract needs you' after 29 seconds, T1 in progress and T2 waiting. A not-ready contract during the plan step is the session's own unfinished work, not a stop: the loop must hand it back to the session once (emit the contract step through the gate), and end only when the same unsatisfied contract comes back unchanged (asked once already). Regression test: a loop whose contract names a check file not yet written answers contract with the instruction and records what it asked; the same step again ends the loop naming that it asked once already; with the check file written after the first ask, the next step approves by delegation and moves to build.",
       "phase": "P128"
+    },
+    {
+      "id": "F208",
+      "req": "R181",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Test gap: the 'N min' form of the waited line (from 60 s up, slots_say in plugin/lib/slots.sh) is part of the required wording and of plan P131.1 task 2, but no test pins it: tests/machine-wait-line.bats only matches the 'N s' form (regex '^waited ([0-9]+) s ...'), and no other test greps 'min for other VBW runs'. Changing '/ 60 ... min' to anything else, or removing the branch, still passes. Regression test: set SLOTS_WAITED to 59 and to 60/240 (sourcing slots.sh, or a wait file) and assert the exact lines 'waited 59 s ...' and 'waited 4 min for other VBW runs on this computer (limit L of C cores)', also with an unreadable core count. Also pin that several units' waits are ADDED (two units that wait 3 s and 4 s give 7 s): every current test has one waiting unit, so a max-instead-of-sum bug would pass.",
+      "phase": "P131"
+    },
+    {
+      "id": "F209",
+      "req": "R181",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Test gap: P131.1 task 1 promises the wait 'stays out of the evidence, the record and the store of recorded runs'. Code complies (the wait goes only to $CHECK_OUT/waits, removed by checks_end), but no test can fail on it: tests/machine-wait-line.bats never inspects .vbw/record.json evidence or the stored runs after a run that waited. A change that wrote the wait into evidence (which would make an unchanged proof differ between shared and alone machines) would pass. Regression test: after a vbw prove whose unit waited, assert that evidence.checks/commands/test_files hold no wait/seconds-waited field beyond the alone-run shape, and that the record and the proofreuse store are byte-identical in keys to those of an alone run.",
+      "phase": "P131"
     }
   ],
   "todos": [
