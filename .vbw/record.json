@@ -27263,6 +27263,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T136",
+      "text": "Brainstorm F3: users are not told when a new VBW is out (VBW 2 makes no network call; VBW 1's status line checked hourly). Check first whether Claude Code's marketplace auto-update covers it and whether it shows a notice; then either a doc line or a once-a-day check off the hot path (cached in the clone's git dir, silent offline, opt-out), shown in the status line, Mission Control and /vbw:doctor; after an update offer /vbw:whats-new once",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
