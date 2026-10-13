@@ -8,7 +8,7 @@ load helper
 load loop-helper
 
 setup() {
-  loop_project
+  case "$BATS_TEST_DESCRIPTION" in *"carried in"*) loop_project human ;; *) loop_project ;; esac
   "$VBW" todo add "[human] The greeting feels friendly" > /dev/null
 }
 teardown() { vbw_teardown; }
@@ -97,4 +97,38 @@ shipped_human_named() {
   [ "$(step)" = stopped ] || { cat "$TEST_ROOT/step.json"; false; }
   jq -e '.loop.ended != null' .vbw/record.json
   shipped_human_named "$q"
+}
+
+# carried_to_m3: with loop_project human (R2 [human] skipped in M1 and carried into M2), the loop runs T1 and T2
+# (both [auto]): T1 ships (P2 is express with one [auto] requirement, so no QA is due; R2 is skipped at accept) and
+# T2's milestone opens, which carries R2 on to M3 and removes its skipped flag.
+carried_to_m3() {
+  jq -e '.requirements[] | select(.id == "R2") | .milestone == "M2" and .status == "open" and (has("skipped") | not)' .vbw/record.json
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 --no-ceiling > /dev/null
+  [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; return 1; }
+  loop_plan "$(item_req "Visitors can read a greeting")" P2
+  [ "$(step)" = build ] || { cat "$TEST_ROOT/step.json"; return 1; }
+  loop_build P2
+  [ "$(step)" = prove ] || { cat "$TEST_ROOT/step.json"; return 1; }
+  loop_prove
+  [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; return 1; }
+  jq -e '.requirements[] | select(.id == "R2") | .milestone == "M3" and .status == "open" and (has("skipped") | not)' .vbw/record.json || { jq .requirements .vbw/record.json; return 1; }
+  jq -e '.loop.items[0].status == "shipped" and .loop.items[1].status == "in_progress"' .vbw/record.json
+}
+
+@test "R179 (F197): a [human] requirement carried in from a ship before the loop stays in Waiting for you after the next item's milestone opens" {
+  carried_to_m3
+  VBW_SESSION_ID=s2 "$VBW" loop stop > /dev/null
+  [ "$(step)" = stopped ] || { cat "$TEST_ROOT/step.json"; false; }
+  awk '/^## Waiting for you/,/^## Cost/' .vbw/loop-report.md | grep -q 'R2 The notes page feels calm' || { cat .vbw/loop-report.md; false; }
+  ! grep -q 'no skipped \[human\] requirement' .vbw/loop-report.md
+}
+
+@test "R179 (F197): a [human] requirement carried in and then judged by the user is no longer in Waiting for you" {
+  carried_to_m3
+  "$VBW" req accept R2 > /dev/null
+  VBW_SESSION_ID=s2 "$VBW" loop stop > /dev/null
+  [ "$(step)" = stopped ] || { cat "$TEST_ROOT/step.json"; false; }
+  ! awk '/^## Waiting for you/,/^## Cost/' .vbw/loop-report.md | grep -q 'R2 '
+  grep -q 'no skipped \[human\] requirement' .vbw/loop-report.md || { cat .vbw/loop-report.md; false; }
 }
