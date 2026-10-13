@@ -26098,7 +26098,7 @@
         "P134.1",
         "P134.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "First run bats tests/statusline-off-e2e.bats (the real setting with this plugin installed). A failure there is a defect in P134.1's or P134.2's files: do not edit them here; block this plan (vbw plan block) naming the file and the failing test.",
@@ -26122,7 +26122,7 @@
       "after": [
         "P134.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Add scenario_pluginoff to tools/l3-suite.sh (in ALL and the header's list): a small VBW project (vbw init, a short spec) whose own .claude/settings.json sets enabledPlugins \"vbw@vbw-marketplace\": false, opened in the real Claude Code app with the working tree's status line (L3_STATUSLINE=1) in a window wide enough for the panel (144 columns or more).",
@@ -30678,6 +30678,12 @@
       "id": "D357",
       "at": "2026-10-13T23:37:07Z",
       "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-13T16:35:58Z, items T128, T127, T130, T132, T137, T135, T133: 173 requirements, 328 checks, 399 plans (e057ac0e36c9))"
+    },
+    {
+      "id": "D358",
+      "text": "Panel where VBW is turned off: Claude Code does not load the panel module (L3, tools/l3-results/pluginoff.json, Claude Code 2.1.296)",
+      "why": "In a project whose .claude/settings.json sets vbw@vbw-marketplace to false, the debug log reads VBW's hooks.json with enabled=false and 'will NOT register, plugin is disabled'; hooks/panel.js is never loaded, no panel and no [VBW] line showed (the status line script exited 3). So no panel code change is needed. The installed plugin (2.0.35) was used because --plugin-dir sessions are not named vbw@vbw-marketplace.",
+      "at": "2026-10-13T23:43:28Z"
     }
   ],
   "commands": {
@@ -34925,6 +34931,15 @@
           "in": 1910,
           "out": 29
         }
+      },
+      {
+        "id": "build-20261013T234018Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M29",
+        "started": "2026-10-13T23:40:18Z",
+        "ended": "2026-10-13T23:47:38Z",
+        "cost": null
       }
     ],
     "milestones": {
