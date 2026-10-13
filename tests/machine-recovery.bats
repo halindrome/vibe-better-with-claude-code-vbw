@@ -93,6 +93,11 @@ unforced() {
   "$VBW" config set check_jobs 2 > /dev/null
   mkdir -p "$CLAUDE_CONFIG_DIR/vbw"
   chmod 555 "$CLAUDE_CONFIG_DIR/vbw"
+  # fix done first: a passing proof closes F1, after which fix done has nothing to do.
+  run within 120 "$VBW" fix "done" F1 < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  unforced unwritable "$output"
+  [[ "$output" == *"F1 fixed"* ]]
   run within 120 "$VBW" prove < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; show; false; }
   unforced unwritable "$output"
@@ -103,9 +108,6 @@ unforced() {
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   unforced unwritable "$output"
   [[ "$output" == *"C4 pass"* ]]
-  run within 120 "$VBW" fix "done" F1 < /dev/null
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [[ "$output" == *"F1 fixed"* ]]
   [ ! -e "$CLAUDE_CONFIG_DIR/vbw/slots.json" ]
 }
 

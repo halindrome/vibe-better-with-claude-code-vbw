@@ -25162,7 +25162,7 @@
       "after": [
         "P130.1"
       ],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "New plugin/lib/slots.sh: the store is <vbw_claude_dir>/vbw/slots.json, one JSON document of held slots and waiting units, each naming its run (the vbw process, $$) and a wait order number; every change is one step under a short lock directory slots.lock/ holding its owner's pid in slots.lock/pid, taken over when that process is gone and, when the pid file is empty, only after a wait (as the gate's mutex); written atomically (temporary file in the same folder, then mv); the file is removed when nothing holds or waits, so an idle computer keeps no store",
@@ -25170,8 +25170,7 @@
         "Wire it into checks_unit_run: the slot is taken after checks_gate_enter and before checks_exec (the timeout starts with the command, never with the wait) and given back right after checks_exec, on pass, fail or timeout; the runner starts at most the smaller of check_jobs and the machine limit, so a unit only ever waits for other runs; the run's exit guard (Ctrl-C, TERM, vbw_die) removes this run's entries at once, and a runner lost without a result frees its entry like its gate places",
         "Nested runs: each unit's command gets an environment marker naming the store it holds a slot in; a vbw run that finds the marker naming its own store takes no slot (the parent's unit covers it, D340) and so never waits for its parent; a run on another store (a test's own CLAUDE_CONFIG_DIR) takes slots as usual",
         "Store unavailable: open the store once per command (checks_begin); when it cannot be created, read or written, or is damaged (not JSON, or not the store's shape), run with check_jobs as the only cap, never rewrite a damaged file, and print once on stderr 'vbw: the computer-wide limit was not in force: cannot write PATH; this run was limited by check_jobs (N) alone' or 'vbw: the computer-wide limit was not in force: PATH is damaged (delete it to restore the limit); this run was limited by check_jobs (N) alone'; then run the existing parallel suites (check-jobs-*, check-alone-*, check-wait-patient, gate-race, prove-parallel, prove-signal, runner-reads) under /bin/bash and bash 5"
-      ],
-      "note": "Slot store built and committed (09a8c7d6); C313, C314, C315 pass and 4 of 5 tests in C316 (tests/machine-recovery.bats) pass. Test 4 of that file cannot pass whatever the code does: it runs 'vbw prove' (which passes and closes fix F1, see prove.jq 'Fixes: close on pass') and then 'vbw fix done F1', which dies with 'F1 is not open'. Reproduced with no store problem at all. The test file is approved and protected, so it needs a replan: either run 'fix done F1' before 'prove', or give the project a second open fix. C317 (waited line), C318, C319 belong to P131.x and were not touched."
+      ]
     },
     {
       "id": "P131.1",
@@ -29600,6 +29599,12 @@
       "id": "D342",
       "at": "2026-10-13T17:28:32Z",
       "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-13T16:35:58Z, items T128, T127, T130, T132, T137, T135, T133: 170 requirements, 314 checks, 389 plans (5c659ea6f0d9))"
+    },
+    {
+      "id": "D343",
+      "text": "The C316 test (tests/machine-recovery.bats, test 4) runs vbw fix done F1 before vbw prove: a passing proof closes F1, so the order the Lead wrote could never pass; corrected by the main session, same assertions",
+      "why": "Dev blocker DEVN-04 on P130.2: an impossible test order, not a defect of the slot store; option (a) of the Dev, the test file edit waits for one user approval before proof",
+      "at": "2026-10-13T18:03:30Z"
     }
   ],
   "commands": {
@@ -33509,6 +33514,15 @@
         "milestone": "M26",
         "started": "2026-10-13T17:36:27Z",
         "ended": "2026-10-13T18:02:27Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261013T180422Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M26",
+        "started": "2026-10-13T18:04:22Z",
+        "ended": "2026-10-13T18:07:13Z",
         "cost": null
       }
     ],
