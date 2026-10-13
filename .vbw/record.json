@@ -16162,11 +16162,12 @@
         }
       ],
       "qa": {
-        "result": "pass",
+        "result": "fail",
         "tier": "deep",
-        "tree": "0bf99953b2c9572931b7ab9124d3d671446d93f89b19dc1105fdfc42a2c34d60",
-        "at": "2026-10-13T18:55:11Z",
-        "note": "30/30 checks"
+        "tree": "7c8edaf5084b7fecbc0557c7d08db551124958b07d25a878d11e29a58ad2d5af",
+        "at": "2026-10-13T20:00:19Z",
+        "note": "29/30 checks",
+        "rounds": 1
       }
     },
     {
@@ -26907,6 +26908,15 @@
       "status": "closed",
       "note": "Test gap: P131.1 task 1 promises the wait 'stays out of the evidence, the record and the store of recorded runs'. Code complies (the wait goes only to $CHECK_OUT/waits, removed by checks_end), but no test can fail on it: tests/machine-wait-line.bats never inspects .vbw/record.json evidence or the stored runs after a run that waited. A change that wrote the wait into evidence (which would make an unchanged proof differ between shared and alone machines) would pass. Regression test: after a vbw prove whose unit waited, assert that evidence.checks/commands/test_files hold no wait/seconds-waited field beyond the alone-run shape, and that the record and the proofreuse store are byte-identical in keys to those of an alone run.",
       "phase": "P131"
+    },
+    {
+      "id": "F210",
+      "req": "R181",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The computer-wide limit can be lost in the middle of a run without a word, which the criterion forbids ('its output says once, in one plain line, that the limit was not in force and why'). The line is printed only by slots_open, when the run starts (plugin/lib/slots.sh lines 118-140). Later failures go through slots_take (line ~163: 'slots_apply ... || { SLOTS_STATE=off; return 0; }') and slots_give (line ~213: '|| SLOTS_STATE=off'); both turn the limit off and print nothing. slots_apply can fail mid-run in three ways: slots_lock gives up after 600 tries (about 30 s) when the lock stays busy (a waiting unit polls the store every 0.1 s and each locked step runs about 6 jq calls, so many waiting units across many sessions queue up on it, which is the heavy-load case this phase exists for); the folder becomes unwritable; another process leaves the file damaged. In each case the unit then runs with no slot and the user is never told. In a parallel run it is worse: slots_take runs in a runner subshell, so SLOTS_STATE=off stays inside that one runner and its stderr goes to the hidden N.err file. Also the 'lock gave up' branch is untested. Regression test: with the limit at 1 and the store made unwritable or replaced by junk after a run has started (for example by a unit of that run, or a hook between the first and second unit), prove/check/fix done must still pass and print exactly one 'vbw: the computer-wide limit was not in force: ...' line on the user-visible output; and a lock held by a live process for over 30 s must either keep waiting or print that line, never run silently without a slot. Fix direction: turn the failure into one shared signal (a marker file in CHECK_OUT that the runners write and the parent reads) and have slots_say print the line once at the end, and make the lock wait unbounded while its owner is alive (a live owner is not an error).",
+      "phase": "P130"
     }
   ],
   "todos": [
