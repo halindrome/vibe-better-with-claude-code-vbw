@@ -25189,7 +25189,7 @@
       "after": [
         "P130.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Measure each unit's wait for a machine slot (whole seconds, at least 1 for a unit that found no free slot at its first look) and add it up per command; the wait stays out of the evidence, the record and the store of recorded runs",
@@ -25233,7 +25233,7 @@
       "after": [
         "P130.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md, beside 'Checks run in parallel': the computer-wide limit (machine limit: three quarters of the cores, every VBW project on this computer shares it, not a setting; check_jobs a per-run cap below it), what takes one slot (each check, project command or test file) and where the slot store lives (<claude-config-dir>/vbw/slots.json, the CLAUDE_CONFIG_DIR, ~/.config/claude-code, ~/.claude order, present only while runs use it)",
@@ -33523,6 +33523,15 @@
         "milestone": "M26",
         "started": "2026-10-13T18:04:22Z",
         "ended": "2026-10-13T18:07:13Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261013T180808Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M26",
+        "started": "2026-10-13T18:08:08Z",
+        "ended": "2026-10-13T18:13:13Z",
         "cost": null
       }
     ],
