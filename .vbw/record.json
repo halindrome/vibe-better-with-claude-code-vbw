@@ -25550,7 +25550,7 @@
       "after": [
         "P132.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "fixing.js, the Dev's fix prompt: commit your fix, check it with vbw check on your fixes' checks, then return; 'Do not run vbw fix done: the workflow runs it once for the round, after every Dev returns.' Keep the R148 wording (Do not run the project's test command or its quick command; only your fixes' checks; runs once, in the proof after this round; only the failing tests). No Dev prompt may contain 'vbw fix done F...'.",
@@ -25573,7 +25573,7 @@
       "after": [
         "P132.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/workflows.md, the workflow table and the commands table: the vbw:fixing row says a Dev per group, groups in parallel, then, after every Dev returns, one vbw fix done for every fix whose Dev reported done; the vbw fix done row names the Lead (the fix round's closing step, run by the workflow) instead of the Dev, and keeps the 'vbw fix done F8 F9' example.",
@@ -34142,6 +34142,15 @@
         "milestone": "M27",
         "started": "2026-10-13T21:47:32Z",
         "ended": "2026-10-13T21:51:10Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261013T215133Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M27",
+        "started": "2026-10-13T21:51:33Z",
+        "ended": "2026-10-13T21:54:31Z",
         "cost": null
       }
     ],
