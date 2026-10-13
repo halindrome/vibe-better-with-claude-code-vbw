@@ -8,6 +8,7 @@
 # not an error, and no unit runs without its slot meanwhile. L1: unit commands
 # log their start and end to $LOG (tests/machine-helper.bash).
 
+bats_require_minimum_version 1.5.0
 load helper
 load machine-helper
 
@@ -40,6 +41,34 @@ damage_check() {
       esac
       [ "$status" -eq 0 ] || { echo "$mode $kind: $output"; show; false; }
       [ "$(printf '%s\n' "$output" | grep -c 'computer-wide limit was not in force')" = 1 ] || { echo "$mode $kind: not one limit line:"; echo "$output"; false; }
+      chmod -R u+rwx "$CLAUDE_CONFIG_DIR" 2> /dev/null || true
+      cd "$TEST_ROOT" && rm -rf "$PROJECT" "$CLAUDE_CONFIG_DIR/vbw" && mkdir -p "$PROJECT" && cd "$PROJECT"
+      : > "$LOG"
+    done
+  done
+}
+
+@test "R181: the lost-limit line has its exact wording, on stderr, once, with the real check_jobs, in check, prove and fix done" {
+  [ "$(id -u)" != 0 ] || skip "root writes into a read-only folder"
+  local mode kind store="$CLAUDE_CONFIG_DIR/vbw/slots.json" why want
+  for mode in junk readonly; do
+    case "$mode" in
+      junk) why="$store is damaged (delete it to restore the limit)" ;;
+      readonly) why="cannot write $store" ;;
+    esac
+    want="vbw: the computer-wide limit was not in force: $why; this run was limited by check_jobs (2) alone from then on"
+    for kind in check prove fix; do
+      cores 2
+      machine_project "$PROJECT" A 3 0 "$(damage_check C0 "$mode")"
+      "$VBW" config set check_jobs 2 > /dev/null
+      case "$kind" in
+        check) run --separate-stderr within 60 "$VBW" check C0 C1 C2 C3 < /dev/null ;;
+        prove) run --separate-stderr within 60 "$VBW" prove --full < /dev/null ;;
+        fix) run --separate-stderr within 60 "$VBW" fix "done" F1 < /dev/null ;;
+      esac
+      [ "$status" -eq 0 ] || { echo "$mode $kind: $output $stderr"; show; false; }
+      [ "$(printf '%s\n' "$stderr" | grep -cxF "$want")" = 1 ] || { echo "$mode $kind: wanted on stderr: $want"; echo "stderr: $stderr"; false; }
+      ! printf '%s\n' "$output" | grep -q 'computer-wide limit was not in force' || { echo "$mode $kind: line on stdout"; false; }
       chmod -R u+rwx "$CLAUDE_CONFIG_DIR" 2> /dev/null || true
       cd "$TEST_ROOT" && rm -rf "$PROJECT" "$CLAUDE_CONFIG_DIR/vbw" && mkdir -p "$PROJECT" && cd "$PROJECT"
       : > "$LOG"
