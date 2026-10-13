@@ -56,7 +56,7 @@ loop_park_reverts() {
 # loop_park REASON: parks the item in progress (see the top of this file). The record changes in one
 # update; the record, the spec and the removed check files are committed as chore(vbw): park ITEM.
 loop_park() {
-  local reason=$1 rec id text head m cost total reverts left said rmreq spec files=() f tmp keep=() drop=() stay=""
+  local reason=$1 rec id text head m cost total reverts left leftrec said rmreq spec files=() f tmp keep=() drop=() stay=""
   rec=$(record_read)
   id=$(printf '%s' "$rec" | jq -r '[.loop.items[] | select(.status == "in_progress")][0].id')
   text=$(printf '%s' "$rec" | jq -r --arg i "$id" '.loop.items[] | select(.id == $i) | .text')
@@ -87,6 +87,7 @@ loop_park() {
     if [ -n "$(vbw_dirty_files "$f")" ]; then stay="$stay${stay:+, }$f"; else drop+=("$f"); fi
   done
   [ -z "$stay" ] || left="$left; left in place (you changed it): $stay"
+  leftrec="${left#; }"
   said=""
   for f in $LOOP_PARK_REVERTED; do said="$said${said:+, }${f:0:7}"; done
   said="reverted ${said:-nothing}"
@@ -104,7 +105,8 @@ loop_park() {
     | .fixes |= map(select(.id as $f | has_it($fx; $f) | not))
     | (if (.evidence | type) == "object"
        then .evidence.checks |= with_entries(select(.key as $k | has_it($ck; $k) | not)) | .evidence.scope = [] else . end)
-    | (.loop.items[] | select(.id == $id)) |= (.status = "parked" | .reason = $reason | .reverts = $reverts | .cost = $cost | .at = $at)
+    | (.loop.items[] | select(.id == $id)) |= (.status = "parked" | .reason = $reason | .reverts = $reverts | .cost = $cost | .at = $at
+        | if $leftrec == "" then . else .left = $leftrec end)
     | (.todos[] | select(.id == $id)).status = "open"
     | .milestone.status = "parked"
     | .parked = ((.parked // []) + [{id: $m, title: .milestone.title, at: $at, reason: $reason}])
@@ -112,7 +114,7 @@ loop_park() {
     | .decisions += [{id: (.decisions | next_id("D")), at: $at,
         text: ("Parked \($id) (\($text)): \($reason); \($said)\($left); milestone \($m) is parked, the backlog entry stays open; to bring the work back revert the reverts or run the item again")}]' \
     --argjson rm "$rmreq" --arg id "$id" --arg reason "$reason" --argjson reverts "$reverts" --argjson cost "$cost" \
-    --argjson total "$total" --arg at "$(vbw_now)" --arg text "$text" --arg said "$said" --arg left "$left"
+    --argjson total "$total" --arg at "$(vbw_now)" --arg text "$text" --arg said "$said" --arg left "$left" --arg leftrec "$leftrec"
   # The item's lines leave the spec; the removed check files leave the tree.
   spec="$VBW_ROOT/.vbw/spec.md"
   if [ -f "$spec" ]; then
