@@ -47,16 +47,36 @@ user's `settings.json` (`$CLAUDE_CONFIG_DIR`, else `~/.config/claude-code`, else
 The setting also asks Claude Code to re-run the status line every 5 seconds
 (`statusLine.refreshInterval: 5`), on top of its event-driven redraws, so a
 run's time and its working agents stay current while nothing else happens.
-A run is budgeted at 60 ms (no network, no git process). `vbw statusline on` on a
-VBW status line set by an older VBW (or by VBW 1) adds the interval and changes
-nothing else; an interval the user set is kept. `vbw statusline status` says
-when the interval is missing, `vbw doctor` warns about it, and a session that
-starts in a VBW project adds it on its own (only to VBW's own status line).
+A run is budgeted at 60 ms (no network, no git process).
+
+The setting changed with this version. `vbw statusline on`, and a session that
+starts in a VBW project, update a setting made by an older VBW (or by VBW 1) in
+place, keeping the refresh interval and the saved status line. `vbw statusline
+status` says when the setting is an older one, and `vbw doctor` flags it with
+`vbw statusline on` as the fix.
 
 The setting runs the newest installed VBW's `scripts/vbw-statusline.sh` from
 the plugin cache, because the plugin's directory changes with every update and
-settings cannot use `${CLAUDE_PLUGIN_ROOT}`. It is the same setting VBW 1 used,
-so updating from VBW 1 switches the status line over with no change.
+settings cannot use `${CLAUDE_PLUGIN_ROOT}`.
+
+## Projects where VBW is turned off
+
+When a project's settings turn the plugin off, the status line does not show
+VBW there. It shows the status line you had before `vbw statusline on` (the
+earlier status line), or nothing shows if you had none. Nothing is written in
+that project.
+
+```json
+{ "enabledPlugins": { "vbw@vbw-marketplace": false } }
+```
+
+Claude Code reads these files in this order, and the first one that sets the
+plugin decides: `.claude/settings.local.json`, then `.claude/settings.json`
+(both in the project), then your own `settings.json` (in the folder named
+above).
+
+VBW's script only says "off" (it exits with code 3). The setting itself then
+runs the earlier status line with the same input; VBW never runs it.
 
 ## The cost side file
 
@@ -93,4 +113,7 @@ status line still renders. It never writes `.vbw/record.json`.
   file below, never the record.
 - It reads stdin with a timeout (Claude Code may send nothing on the first
   render) and never fails: a bad render prints `[VBW] status line unavailable`.
+- Exit 3 is the hand-back signal: the script prints nothing and exits 3 where
+  VBW is turned off. `tools/bench-hooks.sh` measures it as `status line (VBW
+  off)`, within the same 60 ms.
 - `NO_COLOR` turns the colors off.
