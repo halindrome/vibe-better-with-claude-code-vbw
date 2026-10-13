@@ -32,3 +32,10 @@ load helper
   grep -E '^\| 1 \|' "$REPO_ROOT/docs/next.md" | grep -q 'shipped'
   grep -E '^\| 1 \|' "$REPO_ROOT/docs/next.md" | grep -q 'parked'
 }
+
+@test "R179 (F192): docs/loop.md names the three kinds of commit a park leaves in place, and says they are named" {
+  grep -q 'left in place and named' "$REPO_ROOT/docs/loop.md"
+  grep -q 'staged or edited' "$REPO_ROOT/docs/loop.md"
+  grep -q 'code and a `.vbw/` file together' "$REPO_ROOT/docs/loop.md"
+  grep -q 'does not revert cleanly' "$REPO_ROOT/docs/loop.md"
+}
