@@ -857,10 +857,13 @@ work matches the plan that was agreed. After a passing proof, VBW 1's QA agent
 verifies each built phase goal-backward, at the profile's tier, against its goal
 and criteria (the Architect's) and its plans' tasks (the Lead's): test gaps and
 every deviation from the plan are failures. Each failure is recorded with
-`vbw qa finding REQ TEXT`, a fix item with `source: "qa"` that a proof never
-closes; the verdict with `vbw qa record PHASE pass|fail TIER`, against the
-phase's inputs (see "Which phases QA checks again"). A pass closes the phase's
-QA fixes; three failed rounds in a row escalate.
+`vbw qa finding PHASE REQ TEXT` (the phase whose QA found it; a finding given
+without the phase is adopted by that phase's fail verdict), a fix item with
+`source: "qa"` that a proof never closes; the verdict with `vbw qa record PHASE
+pass|fail TIER`, against the phase's inputs (see "Which phases QA checks
+again"). A verdict changes only its own phase's findings: a pass closes them,
+never another phase's, so phases that share a requirement can be verified in
+parallel (D332); three failed rounds in a row escalate.
 
 The project's test command is not run again for QA. The proof runs it once
 (a project command, above) and `vbw next` hands that one result to the QA round
