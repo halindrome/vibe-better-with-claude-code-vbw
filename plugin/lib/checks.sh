@@ -5,6 +5,8 @@
 
 # shellcheck source=reads.sh
 . "$VBW_LIB/reads.sh"
+# shellcheck source=slots.sh
+. "$VBW_LIB/slots.sh"
 
 # checks_begin RECORD [strict]: die unless the contract is approved. Check
 # files edited since the approval wait for it (CHECK_WAITING): the checks still
@@ -27,6 +29,7 @@ Next: review them, then ask the user to approve them once (vbw next asks), and r
   CHECK_HELD=$(contract_held "$1")
   CHECK_OUT=$(mktemp -d "$VBW_RUNTIME/run.XXXXXX") || vbw_die "cannot create a directory in $VBW_RUNTIME"
   vbw_guard_add dir "$CHECK_OUT"
+  slots_open
 }
 
 # Removes the output directory (also on error or interrupt, through the guard).
@@ -88,9 +91,9 @@ checks_exec() {
   # A unit never sees the session that runs the proof (VBW_SESSION_ID): a project's
   # tests must give one result whoever proves them.
   if command -v timeout > /dev/null 2>&1; then
-    env -u VBW_SESSION_ID timeout -k 5 "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
+    env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} timeout -k 5 "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
   else
-    env -u VBW_SESSION_ID perl -e '$SIG{ALRM} = "DEFAULT"; alarm shift @ARGV; exec { $ARGV[0] } @ARGV or do { print STDERR "cannot run $ARGV[0]: $!\n"; exit 127 }' \
+    env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} perl -e '$SIG{ALRM} = "DEFAULT"; alarm shift @ARGV; exec { $ARGV[0] } @ARGV or do { print STDERR "cannot run $ARGV[0]: $!\n"; exit 127 }' \
       "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
   fi
   CHECK_SECONDS=$SECONDS
@@ -220,6 +223,7 @@ checks_gate_leave() {
 # whose runner is gone (killed, so it could not release them itself).
 checks_gate_forget() {
   rm -f "$VBW_RUNTIME/gate/reg.$$.$1" "$VBW_RUNTIME/gate/want.$$.$1"
+  slots_give "$1"
 }
 
 # checks_lost NAME: the result of a unit whose runner ended without leaving one.
@@ -249,7 +253,11 @@ checks_unit_run() {
     reads_reset "$copy" "$st" || reads=false
   fi
   checks_gate_enter "$name" "$alone"
+  # The slot is taken after the gate and before the command: the timeout counts
+  # from the command's start, never from the wait.
+  slots_take "$name"
   checks_exec "$t" "$out" ${f[@]+"${f[@]:6}"}
+  slots_give "$name"
   checks_gate_leave "$name"
   res=$(checks_result "$out" "$t" "$want" "$re")
   if [ -z "$st" ]; then
@@ -270,6 +278,9 @@ checks_run_units() {
   count=$(printf '%s' "$units" | jq 'length')
   [ "$count" -gt 0 ] || { printf '{}\n'; return 0; }
   jobs=$(vbw_check_jobs) || jobs=1
+  # A unit only ever waits for other runs: never more runners than the machine limit.
+  [ "$SLOTS_STATE" != on ] || [ "$jobs" -le "$SLOTS_LIMIT" ] || jobs=$SLOTS_LIMIT
+  [ "$SLOTS_STATE" != on ] || slots_traps
   CHECKS_LIMIT=$jobs
   slots=0
   [ -z "${PROOF_COPIES+x}" ] || slots=${#PROOF_COPIES[@]}
@@ -288,7 +299,7 @@ checks_run_units() {
     printf '%s\n' "$all"
     return 0
   fi
-  # In parallel (bash 3.2 has no wait -n: finished jobs are counted with jobs
+  # In parallel (bash 3.2 cannot wait for any one job: finished jobs are counted with jobs
   # -r). Each unit runs in its own subshell, owning no guard of the parent, and
   # leaves its result in a file. A slot copy is free when its last job is gone.
   for ((i = 0; i < count; i++)); do
@@ -318,6 +329,8 @@ checks_run_units() {
       # runner that outlives its slot (killed, its children still running) prints nowhere.
       exec 2> "$CHECK_OUT/$n.err"
       vbw_guard_reset
+      # shellcheck disable=SC2034 # read by slots.sh
+      SLOTS_SUB=1
       res=$(checks_unit_run "$unit" "$slot") || exit 1
       printf '%s\n' "$res" > "$CHECK_OUT/$n.res.tmp" && mv "$CHECK_OUT/$n.res.tmp" "$CHECK_OUT/$n.res"
     ) &
