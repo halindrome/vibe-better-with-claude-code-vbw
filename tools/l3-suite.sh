@@ -1538,9 +1538,9 @@ scenario_loop() {
     expect "no tag ($tags)" [ -z "$tags" ]
     [ "$failed" -eq 0 ] || passed=false
     result_write loop "$fixture" "${cost_usd:-0}" "$passed" \
-      "$(jq -n --argjson d "$delegated" --argjson o "$own" --argjson q "$asked" --argjson r "$report_ok" --argjson n "$n_rev" \
+      "$(jq -n --argjson d "$delegated" --argjson o "$own" --argjson q "$asked" --argjson r "$report_ok" --argjson n "$n_rev" --arg rm "$remotes" --arg tg "$tags" \
         --arg s "$(jq -r '[.loop.items[] | "\(.id)=\(.status)"] | join(",")' "$r" 2> /dev/null)" --arg e "$(jq -r '.loop.ended.reason // ""' "$r" 2> /dev/null)" \
-        '{items: $s, ended: $e, delegated_approvals: $d, user_approvals: $o, question_asked: $q, report_names_items_and_reverts: $r, revert_commits: $n, remotes: 0, tags: 0}')" \
+        '{items: $s, ended: $e, delegated_approvals: $d, user_approvals: $o, question_asked: $q, report_names_items_and_reverts: $r, revert_commits: $n, remotes: ($rm | split("\n") | map(select(length > 0)) | length), tags: ($tg | split("\n") | map(select(length > 0)) | length)}')" \
       "$(if [ "$n_rev" -eq 0 ]; then printf '%s' '["a park that reverts commits: the Dev blocked the contradictory plan before any commit, so nothing was there to revert (the revert path is proved at L1 by tests/loop-retry-park.bats)",'; else printf '['; fi)\"a real remote configured\",\"a ceiling reached mid-item\",\"a [human] item\",\"a loop of more than two items\",\"Claude Code versions other than the one that ran\"]"
   }
 }
