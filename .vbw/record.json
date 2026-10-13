@@ -26729,7 +26729,7 @@
     {
       "id": "T54",
       "text": "claude --plugin-dir ./plugin did not override the installed 2.0.21 plugin (status line showed VBW 2.0.21); docs and CLAUDE.md say --plugin-dir is the local-dev path: find how to load the working tree over an installed copy, and document it",
-      "status": "open",
+      "status": "dropped",
       "sort": "next",
       "size": "small"
     },
