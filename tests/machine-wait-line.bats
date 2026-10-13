@@ -104,3 +104,54 @@ waited_ok() {
   # The store was in force (a unit saw it), and still nothing was said.
   seen_store
 }
+
+# say WAITS: the lines slots_say prints when the units' waits files hold WAITS (one per line).
+say() {
+  local out="$TEST_ROOT/say-out"
+  mkdir -p "$out"
+  printf '%s' "$1" > "$out/waits"
+  bash -c 'VBW_LIB="$1/lib"; . "$VBW_LIB/core.sh"; . "$VBW_LIB/slots.sh"; SLOTS_LIMIT=1; CHECK_OUT=$2; slots_total; slots_say' _ "$PLUGIN_ROOT" "$out"
+}
+
+@test "R181: the waited line names seconds under a minute and whole minutes from 60 s up" {
+  cores 2
+  [ "$(say $'59\n')" = "waited 59 s for other VBW runs on this computer (limit 1 of 2 cores)" ]
+  [ "$(say $'60\n')" = "waited 1 min for other VBW runs on this computer (limit 1 of 2 cores)" ]
+  [ "$(say $'240\n')" = "waited 4 min for other VBW runs on this computer (limit 1 of 2 cores)" ]
+  [ "$(say $'0\n')" = "" ]
+  cores none
+  [ "$(say $'59\n')" = "waited 59 s for other VBW runs on this computer (limit 1, as this computer's core count could not be read)" ]
+  [ "$(say $'240\n')" = "waited 4 min for other VBW runs on this computer (limit 1, as this computer's core count could not be read)" ]
+}
+
+@test "R181: the waits of several units are added, not the longest taken" {
+  cores 2
+  [ "$(say $'3\n4\n')" = "waited 7 s for other VBW runs on this computer (limit 1 of 2 cores)" ]
+  [ "$(say $'30\n31\n')" = "waited 1 min for other VBW runs on this computer (limit 1 of 2 cores)" ]
+}
+
+# shape FILE FILTER: the sorted set of key paths (array positions as *) of FILTER applied to the JSON in FILE.
+shape() {
+  jq -c "$2 | [paths | map(if type == \"number\" then \"*\" else . end)] | unique" "$1"
+}
+
+@test "R181: a wait never reaches the evidence, the record or the stored runs: they have the shape of an alone run" {
+  cores 2
+  ALONE="$TEST_ROOT/alone project"
+  machine_project "$ALONE" A 1 0
+  (cd "$ALONE" && "$VBW" prove < /dev/null > /dev/null)
+  A_EVIDENCE=$(shape "$ALONE/.vbw/record.json" .evidence)
+  A_RECORD=$(shape "$ALONE/.vbw/record.json" 'del(.evidence)')
+  A_RUNS=$(shape "$(git -C "$ALONE" rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json" .)
+  [ "$A_EVIDENCE" != null ] && [ "$A_RUNS" != null ]
+  machine_project "$PROJECT" A 1 0
+  hold 5
+  run within 60 "$VBW" prove < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; show; false; }
+  [[ "$output" == *"for other VBW runs"* ]] || { echo "the unit did not wait: $output"; false; }
+  wait_ok "$HOLDER"
+  [ "$(shape "$PROJECT/.vbw/record.json" .evidence)" = "$A_EVIDENCE" ]
+  [ "$(shape "$PROJECT/.vbw/record.json" 'del(.evidence)')" = "$A_RECORD" ]
+  [ "$(shape "$(git -C "$PROJECT" rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json" .)" = "$A_RUNS" ]
+  ! grep -rqi 'wait' "$PROJECT/.vbw/record.json" || { grep -i 'wait' "$PROJECT/.vbw/record.json"; false; }
+}
