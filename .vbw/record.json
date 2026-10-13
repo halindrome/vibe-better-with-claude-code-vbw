@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261013T100601Z",
+    "kind": "qa",
+    "started_at": "2026-10-13T10:06:01Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 940.84417,
+      "in": 276569,
+      "out": 388
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -15812,12 +15823,11 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "eaefbee3cc96a717e0198e2c6947a3d8c1272cb11a98e5fc16ab56ba2753927d",
-        "at": "2026-10-13T09:35:12Z",
-        "note": "33/34 checks",
-        "rounds": 6
+        "tree": "a47a6f5c0e9826d36f72e1e18f55779171930a72a8995b5b2bf53bfa43c0771e",
+        "at": "2026-10-13T10:08:15Z",
+        "note": "32/32 checks"
       },
       "escalations": [
         {
@@ -15826,7 +15836,15 @@
           "to": "deep",
           "reason": "QA needs a second round"
         }
-      ]
+      ],
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 27,
+        "qa_findings": 27,
+        "escalations": 1
+      }
     }
   ],
   "plans": [
@@ -26308,7 +26326,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The loop report's 'Waiting for you' section drops a [human] requirement that an earlier ship carried into the loop's milestone (not one of the loop's own items) as soon as the next item's milestone opens. Trace: such a requirement (loop_project human: R2) is open, proof human, in the current milestone, so vbw next says accept and the loop skips it (plugin/lib/loop-step.sh, accept case; skipped=true). vbw ship marks it later; the next item's 'vbw milestone start' (plugin/lib/cmd-milestone.sh line 38) moves it on and deletes .skipped and .later. plugin/lib/loop-report.sh then lists waiting requirements only from (a) shipped loop items with proof human, or (b) '.skipped == true and .status == \"open\"'. R2 is neither, so a report written after that point (a ceiling stop, vbw loop stop, a refused step or a park while the second item is in progress) prints 'no skipped [human] requirement' while the judgment is still owed. This is the second half of F191's instruction (find waiting [human] requirements by their state, not by the skipped flag), which the fix covered only for the loop's own [human] items; docs/loop.md line 290 promises 'the [human] requirements the loop skipped and you have not judged yet'. Found by reading the code paths; I could not run the scenario because the QA run's guard allows no scratch files. Regression test, in tests/loop-human-skip.bats: loop_project human, loop start T1 T2 (both [auto]), take T1 to its ship so the step opens T2's milestone (R2 moves, skipped removed), run vbw loop stop from another session, then assert .vbw/loop-report.md's Waiting section lists R2 with its text. Fix direction: select waiting [human] requirements by state (proof human, status open, built in a phase of an earlier milestone, or skipped), the same predicate loop_matches uses for carried requirements."
     },
     {
@@ -26316,7 +26334,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Same defect as F197, confirmed by my own read of the code, and it is still unfixed after the F191 fix: the loop report's 'Waiting for you' section forgets a [human] requirement that an earlier ship carried into the loop's milestone (not one of the loop's own items). In plain words: if you left a 'does it feel right' check for yourself before the loop started, the report stops listing it as soon as the loop opens its next item, so the report says 'no skipped [human] requirement' while your judgment is still owed. Trace: plugin/lib/cmd-milestone.sh line 38 moves every 'later' requirement into the new milestone and deletes its .skipped and .later flags when the loop opens the next item; plugin/lib/loop-report.sh (Waiting section) then lists only (a) shipped loop items whose proof is human, found through req_of, and (b) requirements with .skipped == true and status open. A carried requirement is neither after the move, so it is dropped. docs/loop.md (The report, Waiting for you) promises 'the [human] requirements the loop skipped and you have not judged yet'. The F191 fix (7edaa75b) covered only the loop's own [human] items, as F191 asked for state-based lookup. Regression test, in tests/loop-human-skip.bats: loop_project human, loop start T1 T2 (both auto), take T1 to its ship so the step opens T2's milestone, run vbw loop stop from another session, then assert .vbw/loop-report.md's Waiting section lists R2 with its text. Fix direction: select waiting [human] requirements by state (proof human, status open, built in a phase of an earlier milestone, or skipped), the same test loop_match uses for carried requirements. Merge with F197 so one fix closes both."
     }
   ],
