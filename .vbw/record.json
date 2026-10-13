@@ -4126,6 +4126,21 @@
         "tests/machine-midrun.bats"
       ],
       "fix": "F210"
+    },
+    {
+      "id": "C321",
+      "req": "R181",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "-f",
+        "exact wording",
+        "tests/machine-midrun.bats"
+      ],
+      "files": [
+        "tests/machine-midrun.bats"
+      ],
+      "fix": "F211"
     }
   ],
   "project": {
@@ -26926,7 +26941,7 @@
       "req": "R181",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The output line added by commit 9aacd2ca (slots_say in plugin/lib/slots.sh:219, 'vbw: the computer-wide limit was not in force: <reason>; this run was limited by check_jobs (N) alone from then on', printed once at the end when the store fails mid-run) has no test pinning its exact wording. tests/machine-midrun.bats only counts lines containing 'computer-wide limit was not in force' (one per run), so changing the reason text, the check_jobs number or the 'from then on' ending would not fail any test. Criterion 5 of R181 requires each new output line to have a test pinning its exact wording and the condition that prints it. Regression test should assert the full line for both reasons: 'cannot write <store path>' (read-only folder case) and '<store path> is damaged (delete it to restore the limit)' (junk file case), with the real check_jobs value, in check, prove and fix done; and that the line is on stderr and printed once.",
       "phase": "P131"
     }
@@ -33751,6 +33766,15 @@
         "milestone": "M26",
         "started": "2026-10-13T21:09:28Z",
         "ended": "2026-10-13T21:11:59Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261013T211225Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M26",
+        "started": "2026-10-13T21:12:25Z",
+        "ended": "2026-10-13T21:16:30Z",
         "cost": null
       }
     ],
