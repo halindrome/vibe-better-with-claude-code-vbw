@@ -30139,6 +30139,11 @@
       "text": "Supersedes D350: one vbw fix done per fix round, run by the workflow after every Dev returns. Fixture tools/measure-fix-round.sh (3 finished requirements with 2 checks each, 4 test files, 10 seconds per check and per test file), 3 groups. Before, each Dev its own vbw fix done: 0.72 minutes, 18 checks and 4 test files run, 6 ran more than once. After, one vbw fix done per round: 0.40 minutes, 6 checks and 4 test files run, 0 ran more than once. Rejected: a kernel lock that makes vbw fix done runs in one clone wait for each other",
       "why": "One vbw fix done per round cut the measured round from 0.72 to 0.40 minutes and the checks run from 18 to 6, with nothing run twice (6 runs repeated before). A lock would only make the three runs wait for each other: each still runs its overlapping checks, one after another, and reuses earlier results only by chance, so it saves no work and the minutes stay near 0.72 or worse. Running the work once removes the overlap instead of queuing it.",
       "at": "2026-10-13T21:55:58Z"
+    },
+    {
+      "id": "D352",
+      "at": "2026-10-13T22:27:19Z",
+      "text": "Contract approved: 171 requirements, 321 checks, 393 plans (3f9872a08313)"
     }
   ],
   "commands": {
