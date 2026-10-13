@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261013T221555Z",
+    "kind": "qa",
+    "started_at": "2026-10-13T22:15:55Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1051.823345,
+      "in": 677847,
+      "out": 243
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -16470,7 +16481,15 @@
         "guarded: R12 (C11), R13 (C12), R14 (C13), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R32 (C28), R39 (C36), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R123 (C190, C191), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R152 (C233, C234), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "qa": {
+        "result": "fail",
+        "tier": "standard",
+        "tree": "e0afdd5b606d58c34b6c485f97f4e90cff607eaec97aa0e8885882b5dd611109",
+        "at": "2026-10-13T22:17:25Z",
+        "note": "15/16 checks",
+        "rounds": 1
+      }
     }
   ],
   "plans": [
@@ -27304,6 +27323,15 @@
       "attempts": 0,
       "status": "closed",
       "note": "C288 fail (exit 1)"
+    },
+    {
+      "id": "F216",
+      "req": "R182",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "plugin/workflows/fixing.js (commit 53fce21e) computes complete as interrupted===0 && !failed && open.length===0 && (...). Plan P132.2 task 3 says: set complete to false only when the fix-done agent stops or answers 'failed'; otherwise complete is computed as before. The added 'open.length === 0' term is not in the plan and no recorded decision covers it. Effect: with no args.session, a round where vbw fix done ran fine but left one fix open (e.g. uncommitted changes) now returns complete:false, while before this phase it returned true; a blocked Dev (left_out) still returns complete:true there, so the rule is also inconsistent. With a session the term is redundant (confirm.recorded is already false when a fix is open). Fix: either drop the term to follow the plan, or record a decision that an open fix makes the round incomplete and apply it for blocked/left-out fixes too. Regression test to add: in tests/fix-round-once.bats, a run with NO session where the fix-done agent answers fixdone:'ran' with a non-empty open list; assert the expected complete value matches the plan or the new decision, and that a blocked-Dev round without session gives the same complete value as an open-fix round.",
+      "phase": "P132"
     }
   ],
   "todos": [
