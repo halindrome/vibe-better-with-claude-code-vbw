@@ -287,7 +287,7 @@ running shows as in progress. The sections:
 |---|---|
 | Shipped | Each item, its milestone, its requirement and its commits. |
 | Parked | Each parked item, the reason, the commits left in place and why, its revert commits and how to bring the work back. |
-| Waiting for you | The `[human]` requirements the loop skipped and you have not judged yet (a shipped `[human]` item stays listed wherever a later milestone carried its requirement), and why the loop stopped (for example `end of the list` or `stopped by the user` with the session). |
+| Waiting for you | Every `[human]` requirement still owed to you: one the loop skipped, one of a shipped `[human]` item, and one carried into the loop's milestones from a ship before it, each listed until you judge it, wherever a later milestone carried it; and why the loop stopped (for example `end of the list` or `stopped by the user` with the session). |
 | Cost | The loop's total and each item's cost, in dollars and tokens (parked items included). |
 
 A cost VBW did not see is written `unknown`, never `0` and never an estimate.
