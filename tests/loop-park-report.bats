@@ -90,3 +90,25 @@ corrupt() {
   "$VBW" status --json < /dev/null | jq -e --arg p "$p" '.parked | index($p) != null' || { "$VBW" status --json < /dev/null; false; }
   "$VBW" show roadmap | grep -q "parked"
 }
+
+@test "R179 (F186): a parked milestone keeps its name: vbw milestone rename refuses and says to start the next one" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 --ceiling 50 > /dev/null
+  [ "$(step)" = plan ]
+  loop_plan "$(item_req "Visitors can read a greeting")" P2
+  [ "$(step)" = build ]
+  loop_build P2
+  loop_break P2
+  [ "$(step)" = prove ]
+  loop_prove
+  [ "$(step)" = fix ]
+  edit_record '(.fixes[] | select(.id == "F1")).status = "escalated"'
+  [ "$(step)" = fix ]
+  edit_record '(.fixes[] | select(.id == "F1")).status = "escalated"'
+  figures s1 4 2000 200
+  step > /dev/null
+  jq -e '.milestone.status == "parked"' .vbw/record.json || { jq .milestone .vbw/record.json; false; }
+  run "$VBW" milestone rename "Another name"
+  [ "$status" -ne 0 ] || { echo "$output"; false; }
+  [[ "$output" == *"has been parked"* ]] || { echo "$output"; false; }
+  jq -e '.milestone.title != "Another name"' .vbw/record.json
+}
