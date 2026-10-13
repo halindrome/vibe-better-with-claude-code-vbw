@@ -112,7 +112,10 @@ cmd_prove() {
   # shellcheck disable=SC2034
   VBW_DIE_HOOK=; proofcopy_warn_stale
   [ -z "$mark" ] || vbw_guard_drop "$mark"
-  prove_summary "$causes"
+  local rc=0
+  prove_summary "$causes" || rc=$?
+  slots_say
+  return "$rc"
 }
 
 # Project commands: run only those whose exact argv the user approved, each as

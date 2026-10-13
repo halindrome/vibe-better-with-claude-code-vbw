@@ -264,5 +264,6 @@ cmd_fix() {
       fi
     done
   fi
+  slots_say
   return "$bad"
 }

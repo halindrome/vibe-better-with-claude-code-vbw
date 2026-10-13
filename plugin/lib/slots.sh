@@ -27,6 +27,7 @@ SLOTS_MARK=
 SLOTS_UNIT=
 SLOTS_SUB=
 SLOTS_RESULT=
+SLOTS_WAITED=0
 
 # One step over a store already stripped of dead runs ($dead): the programs of
 # slots_apply, each giving {store, result}.
@@ -161,12 +162,46 @@ slots_take() {
   [ "$SLOTS_STATE" = on ] || return 0
   [ -z "$SLOTS_SUB" ] || SLOTS_UNIT=$1
   slots_traps
+  local since=""
   while :; do
     slots_apply "$SLOTS_TAKE" --argjson run "$$" --arg id "$1" --argjson limit "$SLOTS_LIMIT" || { SLOTS_STATE=off; return 0; }
     [ "$SLOTS_RESULT" != true ] || break
+    [ -n "$since" ] || since=$(date +%s)
     sleep 0.1
   done
+  slots_waited "$since"
   SLOTS_MARK="VBW_SLOT_STORE=$SLOTS_FILE"
+}
+
+# slots_waited SINCE: note how long a unit waited for its slot (SINCE: the
+# second it first found none, empty when it found one at once): whole seconds,
+# at least 1, one line in the run's waits file. The wait is told to the user
+# only (slots_say): it never reaches evidence, the record or the stored runs.
+slots_waited() {
+  local n
+  [ -n "$1" ] || return 0
+  n=$(($(date +%s) - $1))
+  [ "$n" -ge 1 ] || n=1
+  printf '%s\n' "$n" >> "$CHECK_OUT/waits" 2> /dev/null || true
+}
+
+# slots_total: the seconds all units of this command waited, taken before
+# checks_end removes the run's folder (SLOTS_WAITED).
+slots_total() {
+  SLOTS_WAITED=0
+  [ ! -f "$CHECK_OUT/waits" ] || SLOTS_WAITED=$(awk '{ n += $1 } END { print n + 0 }' "$CHECK_OUT/waits")
+}
+
+# slots_say: the last line of a command whose units waited, nothing otherwise.
+slots_say() {
+  local cores t
+  [ "${SLOTS_WAITED:-0}" -gt 0 ] || return 0
+  if [ "$SLOTS_WAITED" -ge 60 ]; then t="$((SLOTS_WAITED / 60)) min"; else t="$SLOTS_WAITED s"; fi
+  if cores=$(vbw_cores); then
+    printf "waited %s for other VBW runs on this computer (limit %s of %s cores)\n" "$t" "$SLOTS_LIMIT" "$cores"
+  else
+    printf "waited %s for other VBW runs on this computer (limit %s, as this computer's core count could not be read)\n" "$t" "$SLOTS_LIMIT"
+  fi
 }
 
 # slots_give UNIT: give the slot back (also the place of a unit still waiting).

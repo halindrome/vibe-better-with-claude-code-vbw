@@ -34,6 +34,7 @@ Next: review them, then ask the user to approve them once (vbw next asks), and r
 
 # Removes the output directory (also on error or interrupt, through the guard).
 checks_end() {
+  slots_total
   vbw_guard_drop "$CHECK_OUT"
 }
 

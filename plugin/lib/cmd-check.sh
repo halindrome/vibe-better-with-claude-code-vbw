@@ -29,6 +29,7 @@ cmd_check() {
         "\(.key) \(.value.status) \(.value.seconds)s" + (if .value.status == "pass" then ""
           else ": " + (.value.tail | split("\n") | last // "") end)
       end'
+  slots_say
   if [ $red -eq 1 ]; then
     printf '%s' "$results" | jq -e 'all(.[]; .status != "pass")' > /dev/null
   else
