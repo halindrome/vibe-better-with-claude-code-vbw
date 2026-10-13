@@ -10570,6 +10570,14 @@
           "check": "C327"
         }
       ]
+    },
+    {
+      "id": "R184",
+      "text": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M29",
+      "rules": []
     }
   ],
   "phases": [
@@ -28291,7 +28299,7 @@
       "text": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "in_progress"
     },
     {
       "id": "T133",
@@ -34993,7 +35001,60 @@
         "id": "T132",
         "text": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
         "proof": "auto",
-        "status": "waiting"
+        "status": "in_progress",
+        "milestone": "M29",
+        "head": "f57000c173b4b06f27aac75f7c9a1815286b6f20",
+        "baseline": {
+          "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
+            "usd": 1059.970958,
+            "in": 710023,
+            "out": 85,
+            "at": "2026-10-13T23:18:16Z"
+          },
+          "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T23:18:16Z"
+          },
+          "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T23:18:16Z"
+          },
+          "689c5465-3aa1-49af-9115-8192ae092ecf": {
+            "usd": 35.064654,
+            "in": 174558,
+            "out": 600,
+            "at": "2026-10-13T23:18:16Z"
+          },
+          "69afb011-3850-41d9-8620-9b59aa9fe082": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T23:18:16Z"
+          },
+          "868abfef-9fb7-492e-afba-751d9042e56a": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T23:18:16Z"
+          },
+          "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T23:18:16Z"
+          },
+          "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-13T23:18:16Z"
+          }
+        },
+        "req": "R184"
       },
       {
         "id": "T137",
