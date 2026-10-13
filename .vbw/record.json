@@ -26330,7 +26330,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The loop-approval test cannot show that the loop approves the project commands and the shape (the D315 clause of the criterion). tests/loop-approve.bats test 1 asserts consent | any(kind==\"command\" and detail.name==\"test\") and any(kind==\"shape\"), but loop_project (tests/loop-helper.bash) already ran vbw approve for M1 with the same unchanged command (sh tests/run.sh), so both consents exist before the loop step runs; the asserts pass even if the loop granted neither. Only the test_files form (test 2) is new in the test and is really pinned. Regression test to add in tests/loop-approve.bats: before the loop step, add or change a project command in the spec (e.g. a new 'lint: sh tests/lint.sh' line, spec sync, commit), then after vbw loop next assert a command consent for that new argv hash (vbw_sha256_argv) and a shape consent equal to contract_shape of the current record, neither present before the step."
     },
     {
@@ -26338,7 +26338,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Delegated approval grants consent with no decision and no commit when the contract is already approved but a project command is not. plugin/lib/cmd-next.sh sets approved only when contract_waiting AND commands_approved hold, so vbw next answers approve for a changed command alone. loop_delegate then calls approve_record (plugin/lib/cmd-approve.sh); its 'contract_approved' branch only prints 'already approved' and skips the decision and the approval commit, yet approve_commands still grants consent for the new argv. So the loop approves a changed command (D315) and nothing in the record or git says so, against the criterion that the loop records that it approved on the user's behalf. Regression test (tests/loop-approve.bats): loop approves the contract, then the spec's test command is changed and spec sync run; after vbw loop next either a decision naming the loop and the command exists with an approval commit, or no command consent is granted; assert one of the two, and that the consent count never grows without a decision."
     },
     {
@@ -26346,7 +26346,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The refusal for the word stop as an item has no test. plugin/lib/cmd-loop.sh (loop_start) dies with 'stop is not an item. Next: run vbw loop stop to stop a loop' and P127.1 task 3 names it; tests/loop-start.bats only tests T99. Deleting the branch leaves every test green (the word would get the generic 'stop is not in the backlog' text). Note the branch is reached only with a ceiling form (vbw loop start stop --no-ceiling), since the ceiling usage check runs first. Regression test in tests/loop-start.bats: run vbw loop start stop --no-ceiling, expect exit 1, output naming 'vbw loop stop' after 'Next: ', and an unchanged project (project_sum)."
     }
   ],
@@ -32716,6 +32716,15 @@
         "milestone": "M25",
         "started": "2026-10-13T10:06:01Z",
         "ended": "2026-10-13T10:10:40Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261013T101136Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-13T10:11:36Z",
+        "ended": "2026-10-13T10:57:28Z",
         "cost": null
       }
     ],
