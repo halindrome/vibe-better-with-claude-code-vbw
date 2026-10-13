@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261013T092831Z",
+    "kind": "qa",
+    "started_at": "2026-10-13T09:28:31Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 934.514433,
+      "in": 222751,
+      "out": 659
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -15708,11 +15719,12 @@
         }
       ],
       "qa": {
-        "result": "pass",
+        "result": "fail",
         "tier": "deep",
-        "tree": "589cd90df2fdb80cc48b0e97d3e28f3f30daf11e1e06515d8cf5e653e31bac6f",
-        "at": "2026-10-13T02:59:15Z",
-        "note": "32/32 checks"
+        "tree": "b4084ff835579c12bf64c7495c92e76dd02b21f599b620dc88e1290221db4831",
+        "at": "2026-10-13T09:30:50Z",
+        "note": "30/31 checks",
+        "rounds": 1
       },
       "outcome": {
         "tier": "deep",
@@ -26293,6 +26305,14 @@
       "attempts": 0,
       "status": "fixed",
       "note": "The cost half of P129.1 has no test. A parked milestone is treated like a shipped one in plugin/lib/costs.sh (costs_milestone_total returns the frozen total, else null, for an id in .parked) and in plugin/lib/cmd-show.sh (vbw show costs lists parked ids with status parked). No test file under tests/ that mentions parked runs vbw show costs or costs_milestone_total (parked appears only in l3-loop, loop-docs, loop-report, loop-park-report, loop-retry-park; none calls show costs). The park test only checks the frozen total in the record at park time. If the .parked branch in costs_milestone_total were removed, a parked milestone with no frozen figure would be priced as a live milestone and its cost would keep changing after the park, and vbw show costs would be wrong, with every test still green. Regression test in tests/cost-milestones.bats or loop-park-report.bats: park an item (a) with figures, assert vbw show costs --json lists the milestone as parked with the frozen total and that later spend in the session does not change it; (b) without figures, assert the parked milestone's total is null (unknown) and stays null after more spend."
+    },
+    {
+      "id": "F196",
+      "req": "R178",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The record format check for a loop item's own fields has no test that can fail. plugin/lib/record.jq (loop_item) validates milestone, head (40 hex), baseline, retried, reverts, left, req, cost, reason and at, but the only test of malformed loops, tests/loop-help-docs.bats test 4, edits just 8 things (.loop = {}, items not an array, a bad status, a bad ceiling, started_at, an extra loop key, a bad item id). P127.1 task 1 promised that this test 'lists the malformed loops that must be refused'. The newest clause, req (added in d6ba592f for F191: '(has(\"req\")|not) or (.req|nonempty)'), and the earlier left clause can be deleted or loosened and every test stays green; the only req test (loop-human-skip.bats line 93) checks the valid case. Regression test to add: in tests/loop-help-docs.bats extend the bad-loop list with one entry per item field, each must make 'vbw status' exit 3: .loop.items[0].req = \"\", .loop.items[0].left = \"\", .loop.items[0].head = \"abc\", .loop.items[0].milestone = \"X1\", .loop.items[0].retried = {fixes: []}, .loop.items[0].reverts = [1], .loop.items[0].cost = {usd: -1, in: 0, out: 0}, .loop.items[0].reason = \"\", .loop.items[0].at = \"soon\", .loop.items[0].baseline = {s: {usd: 1}}, .loop.items[0].unknown = 1; and one valid item carrying req and left that status accepts."
     }
   ],
   "todos": [
