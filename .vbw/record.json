@@ -15721,10 +15721,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "b4084ff835579c12bf64c7495c92e76dd02b21f599b620dc88e1290221db4831",
-        "at": "2026-10-13T09:30:50Z",
-        "note": "30/31 checks",
-        "rounds": 1
+        "tree": "fa0b4e59fa3fb38296bccb65e188cd96c59e98de61e83def2265a619a4497308",
+        "at": "2026-10-13T10:09:59Z",
+        "note": "28/31 checks",
+        "rounds": 2
       },
       "outcome": {
         "tier": "deep",
@@ -26317,7 +26317,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The record format check for a loop item's own fields has no test that can fail. plugin/lib/record.jq (loop_item) validates milestone, head (40 hex), baseline, retried, reverts, left, req, cost, reason and at, but the only test of malformed loops, tests/loop-help-docs.bats test 4, edits just 8 things (.loop = {}, items not an array, a bad status, a bad ceiling, started_at, an extra loop key, a bad item id). P127.1 task 1 promised that this test 'lists the malformed loops that must be refused'. The newest clause, req (added in d6ba592f for F191: '(has(\"req\")|not) or (.req|nonempty)'), and the earlier left clause can be deleted or loosened and every test stays green; the only req test (loop-human-skip.bats line 93) checks the valid case. Regression test to add: in tests/loop-help-docs.bats extend the bad-loop list with one entry per item field, each must make 'vbw status' exit 3: .loop.items[0].req = \"\", .loop.items[0].left = \"\", .loop.items[0].head = \"abc\", .loop.items[0].milestone = \"X1\", .loop.items[0].retried = {fixes: []}, .loop.items[0].reverts = [1], .loop.items[0].cost = {usd: -1, in: 0, out: 0}, .loop.items[0].reason = \"\", .loop.items[0].at = \"soon\", .loop.items[0].baseline = {s: {usd: 1}}, .loop.items[0].unknown = 1; and one valid item carrying req and left that status accepts."
     },
     {
@@ -26335,6 +26335,30 @@
       "attempts": 0,
       "status": "closed",
       "note": "Same defect as F197, confirmed by my own read of the code, and it is still unfixed after the F191 fix: the loop report's 'Waiting for you' section forgets a [human] requirement that an earlier ship carried into the loop's milestone (not one of the loop's own items). In plain words: if you left a 'does it feel right' check for yourself before the loop started, the report stops listing it as soon as the loop opens its next item, so the report says 'no skipped [human] requirement' while your judgment is still owed. Trace: plugin/lib/cmd-milestone.sh line 38 moves every 'later' requirement into the new milestone and deletes its .skipped and .later flags when the loop opens the next item; plugin/lib/loop-report.sh (Waiting section) then lists only (a) shipped loop items whose proof is human, found through req_of, and (b) requirements with .skipped == true and status open. A carried requirement is neither after the move, so it is dropped. docs/loop.md (The report, Waiting for you) promises 'the [human] requirements the loop skipped and you have not judged yet'. The F191 fix (7edaa75b) covered only the loop's own [human] items, as F191 asked for state-based lookup. Regression test, in tests/loop-human-skip.bats: loop_project human, loop start T1 T2 (both auto), take T1 to its ship so the step opens T2's milestone, run vbw loop stop from another session, then assert .vbw/loop-report.md's Waiting section lists R2 with its text. Fix direction: select waiting [human] requirements by state (proof human, status open, built in a phase of an earlier milestone, or skipped), the same test loop_match uses for carried requirements. Merge with F197 so one fix closes both."
+    },
+    {
+      "id": "F199",
+      "req": "R178",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The loop-approval test cannot show that the loop approves the project commands and the shape (the D315 clause of the criterion). tests/loop-approve.bats test 1 asserts consent | any(kind==\"command\" and detail.name==\"test\") and any(kind==\"shape\"), but loop_project (tests/loop-helper.bash) already ran vbw approve for M1 with the same unchanged command (sh tests/run.sh), so both consents exist before the loop step runs; the asserts pass even if the loop granted neither. Only the test_files form (test 2) is new in the test and is really pinned. Regression test to add in tests/loop-approve.bats: before the loop step, add or change a project command in the spec (e.g. a new 'lint: sh tests/lint.sh' line, spec sync, commit), then after vbw loop next assert a command consent for that new argv hash (vbw_sha256_argv) and a shape consent equal to contract_shape of the current record, neither present before the step."
+    },
+    {
+      "id": "F200",
+      "req": "R178",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Delegated approval grants consent with no decision and no commit when the contract is already approved but a project command is not. plugin/lib/cmd-next.sh sets approved only when contract_waiting AND commands_approved hold, so vbw next answers approve for a changed command alone. loop_delegate then calls approve_record (plugin/lib/cmd-approve.sh); its 'contract_approved' branch only prints 'already approved' and skips the decision and the approval commit, yet approve_commands still grants consent for the new argv. So the loop approves a changed command (D315) and nothing in the record or git says so, against the criterion that the loop records that it approved on the user's behalf. Regression test (tests/loop-approve.bats): loop approves the contract, then the spec's test command is changed and spec sync run; after vbw loop next either a decision naming the loop and the command exists with an approval commit, or no command consent is granted; assert one of the two, and that the consent count never grows without a decision."
+    },
+    {
+      "id": "F201",
+      "req": "R178",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The refusal for the word stop as an item has no test. plugin/lib/cmd-loop.sh (loop_start) dies with 'stop is not an item. Next: run vbw loop stop to stop a loop' and P127.1 task 3 names it; tests/loop-start.bats only tests T99. Deleting the branch leaves every test green (the word would get the generic 'stop is not in the backlog' text). Note the branch is reached only with a ceiling form (vbw loop start stop --no-ceiling), since the ceiling usage check runs first. Regression test in tests/loop-start.bats: run vbw loop start stop --no-ceiling, expect exit 1, output naming 'vbw loop stop' after 'Next: ', and an unchanged project (project_sum)."
     }
   ],
   "todos": [
