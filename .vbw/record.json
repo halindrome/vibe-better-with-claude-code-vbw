@@ -15839,8 +15839,8 @@
       "qa": {
         "result": "pass",
         "tier": "deep",
-        "tree": "daceaf6f5f70e49552cf9b29372ca6a40edad065cdcb1cfc43f601d9a7221d6e",
-        "at": "2026-10-13T11:07:46Z",
+        "tree": "8b264c36bb5848f0d583bccc44d2dbfdd1ebaebdcca42fad3bc531e317215f88",
+        "at": "2026-10-13T12:51:03Z",
         "note": "30/30 checks"
       },
       "escalations": [
@@ -26388,7 +26388,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "closed",
       "note": "When the last item ships with the spend at or above the ceiling (default mode, no --finish-item), the loop reports 'ceiling reached' and answers 'stopped' instead of 'end of the list: N shipped, M parked' and 'done'. Evidence: plugin/lib/loop-step.sh lines 187-209: after loop_ship_item returns, the while loop re-runs; the ceiling check at lines 202-205 runs before the 'no waiting item' end-of-list branch at lines 207-209, and the check is skipped only for --finish-item. P128.1 task 3 and the criterion 'End of list: the loop stops after the last item's ship' say the ship with none waiting ends the loop with the end-of-list reason and {action: done}. Effect: nothing was cut off, yet the Stop hook message, 'vbw loop status', the record's ended.reason and the report ('Waiting for you': 'the loop stopped: ceiling reached') say a limit stopped work, and the answer is 'stopped', not 'done'. No test covers it: tests/loop-stops.bats has the ceiling cases only with an item still waiting (--finish-item case ends 'stopped' with T2 waiting, which is right). A regression test should: start a loop with one item and --ceiling 5, drive it to the prove step, raise the session figures above 5, run the proof, and assert the step answers done with reason matching 'end of the list: 1 shipped, 0 parked' and loop.ended.reason is that text. Fix: judge the ceiling only when a step or an item opening is still due (skip it when no item is in progress and none is waiting)."
     }
   ],
