@@ -28,6 +28,7 @@ SLOTS_UNIT=
 SLOTS_SUB=
 SLOTS_RESULT=
 SLOTS_WAITED=0
+SLOTS_LOST=
 
 # One step over a store already stripped of dead runs ($dead): the programs of
 # slots_apply, each giving {store, result}.
@@ -60,10 +61,16 @@ slots_lock() {
     elif [ ! -d "$lock" ] && [ ! -w "$SLOTS_DIR" ]; then
       return 2
     fi
-    idle=$((idle + 1))
-    [ "$idle" -le 600 ] || return 2
     # The owner is read once: empty means a handover in progress, never a dead owner.
     owner=$(cat "$lock/pid" 2> /dev/null)
+    # A live owner is not an error: the wait for it has no end. Only a lock
+    # that cannot be taken over (no live owner) gives up, after 600 tries.
+    if [ -n "$owner" ] && slots_live "$owner"; then
+      idle=0
+    else
+      idle=$((idle + 1))
+      [ "$idle" -le 600 ] || return 2
+    fi
     if [ -n "$owner" ]; then
       slots_live "$owner" || rm -rf "$lock" 2> /dev/null
     elif [ "$idle" -gt 50 ]; then
@@ -157,14 +164,26 @@ slots_gone() {
   slots_apply "$SLOTS_DROP" --argjson run "$$" --arg id "${1:-}" > /dev/null 2>&1 || true
 }
 
+# slots_lose RC: the store failed in the middle of the run (RC of slots_apply):
+# this process goes on without slots, and the run's marker file tells the parent
+# (a runner is a subshell whose stderr is hidden), which says it once at the end.
+slots_lose() {
+  local why="cannot write $SLOTS_FILE"
+  SLOTS_STATE=off
+  SLOTS_MARK=
+  [ "$1" -ne 3 ] || why="$SLOTS_FILE is damaged (delete it to restore the limit)"
+  { [ -f "$CHECK_OUT/lost" ] || printf '%s\n' "$why" > "$CHECK_OUT/lost"; } 2> /dev/null || true
+}
+
 # slots_take UNIT: wait for a slot of the store, then hold it (the mark names the store for the unit's command).
 slots_take() {
   [ "$SLOTS_STATE" = on ] || return 0
   [ -z "$SLOTS_SUB" ] || SLOTS_UNIT=$1
   slots_traps
-  local since=""
+  local since="" rc
   while :; do
-    slots_apply "$SLOTS_TAKE" --argjson run "$$" --arg id "$1" --argjson limit "$SLOTS_LIMIT" || { SLOTS_STATE=off; return 0; }
+    slots_apply "$SLOTS_TAKE" --argjson run "$$" --arg id "$1" --argjson limit "$SLOTS_LIMIT" && rc=0 || rc=$?
+    if [ "$rc" -ne 0 ]; then slots_lose "$rc"; return 0; fi
     [ "$SLOTS_RESULT" != true ] || break
     [ -n "$since" ] || since=$(date +%s)
     sleep 0.1
@@ -188,13 +207,17 @@ slots_waited() {
 # slots_total: the seconds all units of this command waited, taken before
 # checks_end removes the run's folder (SLOTS_WAITED).
 slots_total() {
-  SLOTS_WAITED=0
+  SLOTS_WAITED=0 SLOTS_LOST=
+  [ ! -f "$CHECK_OUT/lost" ] || SLOTS_LOST=$(head -n 1 "$CHECK_OUT/lost")
   [ ! -f "$CHECK_OUT/waits" ] || SLOTS_WAITED=$(awk '{ n += $1 } END { print n + 0 }' "$CHECK_OUT/waits")
 }
 
 # slots_say: the last line of a command whose units waited, nothing otherwise.
 slots_say() {
   local cores t
+  if [ -n "$SLOTS_LOST" ]; then
+    printf "vbw: the computer-wide limit was not in force: %s; this run was limited by check_jobs (%s) alone from then on\n" "$SLOTS_LOST" "$(vbw_check_jobs || printf 1)" >&2
+  fi
   [ "${SLOTS_WAITED:-0}" -gt 0 ] || return 0
   if [ "$SLOTS_WAITED" -ge 60 ]; then t="$((SLOTS_WAITED / 60)) min"; else t="$SLOTS_WAITED s"; fi
   if cores=$(vbw_cores); then
@@ -206,9 +229,11 @@ slots_say() {
 
 # slots_give UNIT: give the slot back (also the place of a unit still waiting).
 slots_give() {
+  local rc
   # shellcheck disable=SC2034 # read by checks_exec
   SLOTS_MARK=
   [ "$SLOTS_STATE" = on ] || return 0
-  slots_apply "$SLOTS_DROP" --argjson run "$$" --arg id "$1" || SLOTS_STATE=off
+  slots_apply "$SLOTS_DROP" --argjson run "$$" --arg id "$1" && rc=0 || rc=$?
+  [ "$rc" -eq 0 ] || slots_lose "$rc"
   return 0
 }
