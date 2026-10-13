@@ -29039,6 +29039,11 @@
       "text": "A QA finding belongs to the phase whose QA found it: vbw qa finding takes the phase (vbw qa finding PHASE REQ TEXT; the old REQ TEXT form stays and a fail verdict adopts such untagged findings on its requirements), and a verdict changes only its own phase's findings, so phases that share a requirement and are verified in parallel never close each other's findings (an untagged finding keeps the old rule, by requirement)",
       "why": "F204: P129's pass closed F203 two seconds after P128 opened it; in a loop this would repeat every round until the ceiling. Chosen by VBW: a phase tag is exact and cheap; the alternative, skipping fixes while another phase fails, depends on the order two agents record in",
       "at": "2026-10-13T12:57:11Z"
+    },
+    {
+      "id": "D333",
+      "at": "2026-10-13T13:41:01Z",
+      "text": "Contract approved: 169 requirements, 307 checks, 384 plans (1a7104005b72)"
     }
   ],
   "commands": {
