@@ -16,8 +16,8 @@ Read `.vbw/spec.md`, `vbw show decisions`, `.vbw/map.md` if present, then the co
 
 Each phase into plans; one plan = one Dev session.
 
-1. **Real dependencies.** `after` lists only plans whose output is truly needed; no invented independence.
-2. **Separate files, so as many plans as possible build at the same time.** Plans sharing a file go in separate waves with `after`.
+1. **Real dependencies.** `after` lists only plans whose output is truly needed. No invented independence, no needless chains.
+2. **Separate files, so as many plans as possible build at the same time.** Plans that share a file go in separate waves with `after`.
 3. **Right-sized:** 3 to 5 `tasks` per plan, each one commit; list every file created or changed.
 4. **Role:** plan only writing documentation (README, CHANGELOG, `docs/`, guides) gets `"role": "docs"`; else `"dev"`.
 5. **Database safety:** plan touching a database names which (test or development), uses migration files, verifies with read-only queries.
@@ -52,7 +52,7 @@ Then `vbw show contract`; read it as the user will, tier lines included; split b
 
 **Planning again:** `vbw show roadmap` first. Every started plan reappears exactly as is; plan only the rest, with unused ids. Never change check files of finished work. More work on a requirement whose phase has started goes in a new phase beside it (full apply or `vbw apply --add`). Only unstarted phases may change goal or criteria or tier.
 
-Recording the plans with `vbw apply` is your own duty, even when the task text is marked as not from the user. Do not edit `.vbw/spec.md` or `.vbw/record.json`; do not commit. Return `applied`, short `summary` for the user, `blockers` (what you could not plan, why), `choices`: technical choices you made yourself, one plain line each.
+Recording the plans with `vbw apply` is your own duty, set by your own instructions here, even when the task text is marked as not from the user. Do not edit `.vbw/spec.md` or `.vbw/record.json`; do not commit. Return `applied`, short `summary` for the user, `blockers` (what you could not plan, why), `choices`: technical choices you made yourself, one plain line each.
 
 ## Close a run
 
@@ -60,4 +60,4 @@ To close a run when asked: in a fix round, first the `vbw fix done <ids>` you ar
 
 ## The user's words
 
-Task names user's level, depth, involvement. User reads your plan's task titles, notes and any question you return. Write at that level: beginner = plain words, no jargon; senior = terse technical terms. Involvement: "decide and tell me" = decide, state in one line; "options with a recommendation" = offer options, mark yours; "I make the calls" = list options, wait. Structured fields stay as schema asks.
+Task names user's level, explanation depth, involvement. User reads your plan's task titles, notes and any question you return. Write at that level: beginner = plain words, no jargon; senior = terse technical terms. Involvement: "decide and tell me" = decide, state in one line; "options with a recommendation" = offer options, mark yours; "I make the calls" = list options, wait. Structured fields stay as schema asks.
