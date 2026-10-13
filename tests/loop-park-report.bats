@@ -45,3 +45,48 @@ step() { loop_next s1 > "$TEST_ROOT/step.json"; jq -r .action "$TEST_ROOT/step.j
     || { jq .loop .vbw/record.json; false; }
   [ -z "$(git status --porcelain -- .vbw/loop-report.md)" ]
 }
+
+# corrupt FILTER: the record edited by FILTER is refused by the kernel, with the rule's words on stdout.
+corrupt() {
+  edit_record "$1"
+  run "$VBW" status
+  [ "$status" -ne 0 ] || { echo "accepted: $1"; echo "$output"; return 1; }
+  [[ "$output" == *"$2"* ]] || { echo "$1 -> $output"; return 1; }
+}
+
+@test "R179 (F182): the record's rules for parked milestones: fields, parked twice, shipped and parked, a parked milestone that keeps work, the current milestone parked exactly when listed" {
+  corrupt '.parked = [{id: "M9", title: "Old", at: "2026-10-12T00:00:00Z", reason: ""}]' "need an id, a title, an ISO-8601 UTC time and a reason"
+  git checkout -q -- .vbw/record.json
+  corrupt '.parked = [{id: "M9", title: "Old", at: "2026-10-12T00:00:00Z", reason: "x", extra: 1}]' "unknown field"
+  git checkout -q -- .vbw/record.json
+  corrupt '.parked = [{id: "M9", title: "Old", at: "2026-10-12T00:00:00Z", reason: "x"}, {id: "M9", title: "Old", at: "2026-10-12T00:00:00Z", reason: "x"}]' "parked twice"
+  git checkout -q -- .vbw/record.json
+  corrupt '.parked = [{id: (.shipped[0].id), title: "Old", at: "2026-10-12T00:00:00Z", reason: "x"}]' "cannot be both shipped and parked"
+  git checkout -q -- .vbw/record.json
+  corrupt '.parked = [{id: (.milestone.id), title: "Old", at: "2026-10-12T00:00:00Z", reason: "x"}]' "parked exactly when it is in parked"
+  git checkout -q -- .vbw/record.json
+  corrupt '.parked = [{id: "M9", title: "Old", at: "2026-10-12T00:00:00Z", reason: "x"}] | .requirements[0].milestone = "M9"' "belongs to parked milestone"
+  git checkout -q -- .vbw/record.json
+}
+
+@test "R179 (F182): a parked milestone keeps its name, and vbw status --json lists the parked ids" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 --ceiling 50 > /dev/null
+  [ "$(step)" = plan ]
+  loop_plan "$(item_req "Visitors can read a greeting")" P2
+  [ "$(step)" = build ]
+  loop_build P2
+  loop_break P2
+  [ "$(step)" = prove ]
+  loop_prove
+  [ "$(step)" = fix ]
+  edit_record '(.fixes[] | select(.id == "F1")).status = "escalated"'
+  [ "$(step)" = fix ]
+  edit_record '(.fixes[] | select(.id == "F1")).status = "escalated"'
+  figures s1 4 2000 200
+  step > /dev/null
+  jq -e '.parked | length == 1' .vbw/record.json || { jq '{parked, milestone}' .vbw/record.json; false; }
+  local p
+  p=$(jq -r '.parked[0].id' .vbw/record.json)
+  "$VBW" status --json < /dev/null | jq -e --arg p "$p" '.parked | index($p) != null' || { "$VBW" status --json < /dev/null; false; }
+  "$VBW" show roadmap | grep -q "parked"
+}
