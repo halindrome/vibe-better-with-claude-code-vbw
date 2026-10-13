@@ -28122,7 +28122,7 @@
       "text": "Several vbw fix done runs at once slow each other down (2026-10-12: three in parallel plus another session's run took a 12-minute run to 87 minutes). The fixing workflow has every Dev run its own fix done, so a round with several groups already runs several at once. Decide: the kernel serialises fix done runs (one proof lock per clone, the later ones wait and reuse), or the workflow runs one fix done for all groups at the end; measure first",
       "sort": "next",
       "size": "medium",
-      "status": "in_progress"
+      "status": "done"
     },
     {
       "id": "T128",
@@ -34582,7 +34582,7 @@
         "id": "T127",
         "text": "Several vbw fix done runs at once slow each other down (2026-10-12: three in parallel plus another session's run took a 12-minute run to 87 minutes). The fixing workflow has every Dev run its own fix done, so a round with several groups already runs several at once. Decide: the kernel serialises fix done runs (one proof lock per clone, the later ones wait and reuse), or the workflow runs one fix done for all groups at the end; measure first",
         "proof": "auto",
-        "status": "in_progress",
+        "status": "shipped",
         "milestone": "M27",
         "head": "f00cb47404f505ace8e6841d95c52f7b227304ec",
         "baseline": {
@@ -34635,7 +34635,13 @@
             "at": "2026-10-13T21:23:40Z"
           }
         },
-        "req": "R182"
+        "req": "R182",
+        "cost": {
+          "usd": 15.481134,
+          "in": 50374,
+          "out": 75
+        },
+        "at": "2026-10-13T22:33:00Z"
       },
       {
         "id": "T130",
