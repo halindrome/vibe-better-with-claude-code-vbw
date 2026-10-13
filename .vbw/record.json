@@ -28277,7 +28277,7 @@
       "text": "Stale proof copies: a process killed outright leaves its .vbw/runtime/proof.* copy (13 MB seen 2026-10-12 05:26 from a killed duplicate fix done); the next proof removes copies whose owner process is gone (record the owner pid in the copy folder, as the gate's mutex does), with a test. Part of the machine-wide limit milestone (T128)",
       "sort": "next",
       "size": "small",
-      "status": "in_progress"
+      "status": "done"
     },
     {
       "id": "T131",
@@ -34876,7 +34876,7 @@
         "id": "T130",
         "text": "Stale proof copies: a process killed outright leaves its .vbw/runtime/proof.* copy (13 MB seen 2026-10-12 05:26 from a killed duplicate fix done); the next proof removes copies whose owner process is gone (record the owner pid in the copy folder, as the gate's mutex does), with a test. Part of the machine-wide limit milestone (T128)",
         "proof": "auto",
-        "status": "in_progress",
+        "status": "shipped",
         "milestone": "M28",
         "head": "5c621a946cc6fc0c2af7a0e60ae98bf8cca10d76",
         "baseline": {
@@ -34929,7 +34929,13 @@
             "at": "2026-10-13T22:33:11Z"
           }
         },
-        "req": "R183"
+        "req": "R183",
+        "cost": {
+          "usd": 1059.970958,
+          "in": 710023,
+          "out": 85
+        },
+        "at": "2026-10-13T23:18:06Z"
       },
       {
         "id": "T132",
