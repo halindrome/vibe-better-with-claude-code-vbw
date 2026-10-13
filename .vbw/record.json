@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261013T150111Z",
+    "kind": "qa",
+    "started_at": "2026-10-13T15:01:11Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 977.585491,
+      "in": 483596,
+      "out": 403
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -15785,9 +15796,9 @@
       "qa": {
         "result": "pass",
         "tier": "deep",
-        "tree": "043dff637fd4d209e1a61af7eed0590a0edaeebbcaf5a9fe3be13de08d8ee205",
-        "at": "2026-10-13T13:49:46Z",
-        "note": "33/33 checks"
+        "tree": "97bc094c7e68c02b75ab21371dd3dce0657e55f2e8e3e4c09dd98cdb30404e11",
+        "at": "2026-10-13T15:03:29Z",
+        "note": "32/32 checks"
       },
       "outcome": {
         "tier": "deep",
@@ -26423,7 +26434,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Found by L3 loop scenario run 12 (15:05): the session applied T1's contract with vbw apply --add and ended its turn before writing the check file tests/greet_test.sh (a model slip the small-change plan path allows); the Stop hook ran the loop step, vbw next answered contract (the contract is not ready: check file missing), and loop_step treats contract as an action it does not know, so the loop ended at 14:06:00 with 'contract needs you' after 29 seconds, T1 in progress and T2 waiting. A not-ready contract during the plan step is the session's own unfinished work, not a stop: the loop must hand it back to the session once (emit the contract step through the gate), and end only when the same unsatisfied contract comes back unchanged (asked once already). Regression test: a loop whose contract names a check file not yet written answers contract with the instruction and records what it asked; the same step again ends the loop naming that it asked once already; with the check file written after the first ask, the next step approves by delegation and moves to build.",
       "phase": "P128"
     }
