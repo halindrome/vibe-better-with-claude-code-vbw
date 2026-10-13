@@ -79,6 +79,10 @@
     "tests/fix-regression-test.bats",
     "tests/fix-reuse-docs.bats",
     "tests/fix-reuse.bats",
+    "tests/fix-round-close.bats",
+    "tests/fix-round-docs.bats",
+    "tests/fix-round-measure.bats",
+    "tests/fix-round-once.bats",
     "tests/fix-suite-once.bats",
     "tests/fixtures/records/future.json",
     "tests/fixtures/records/v1.json",
@@ -4141,6 +4145,58 @@
         "tests/machine-midrun.bats"
       ],
       "fix": "F211"
+    },
+    {
+      "id": "C322",
+      "req": "R182",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/fix-round-once.bats"
+      ],
+      "files": [
+        "tests/fix-round-once.bats"
+      ],
+      "timeout": 180
+    },
+    {
+      "id": "C323",
+      "req": "R182",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/fix-round-close.bats"
+      ],
+      "files": [
+        "tests/fix-round-close.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C324",
+      "req": "R182",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/fix-round-docs.bats"
+      ],
+      "files": [
+        "tests/fix-round-docs.bats"
+      ],
+      "timeout": 60
+    },
+    {
+      "id": "C325",
+      "req": "R182",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/fix-round-measure.bats"
+      ],
+      "files": [
+        "tests/fix-round-measure.bats"
+      ],
+      "timeout": 600
     }
   ],
   "project": {
@@ -10314,7 +10370,116 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M27",
-      "rules": []
+      "rules": [
+        {
+          "text": "Before any change, a measurement is recorded as a decision naming the fixture (tools/measure-fix-round.sh with its parameters) and, for three groups each running its own vbw fix done, the wall-clock minutes, the checks and test files run, and how many ran more than once",
+          "check": "C325"
+        },
+        {
+          "text": "The measuring tool runs one fix round on its fixture either per group (each group's own vbw fix done, all at once) or as one vbw fix done, and prints the minutes, the checks and test files run, and the count that ran more than once (0 for one vbw fix done)",
+          "check": "C325"
+        },
+        {
+          "text": "The measuring tool refuses a missing or unknown mode and a group count below 1",
+          "check": "C325"
+        },
+        {
+          "text": "After the change, a later decision supersedes the before measurement with the same fixture and the same before figures, plus the after figures of the same round, where 0 ran more than once",
+          "check": "C325"
+        },
+        {
+          "text": "The decision names the chosen approach (one vbw fix done per round, run by the workflow after every Dev returns) and the rejected kernel lock, with reasons drawn from the measured figures",
+          "check": "C325"
+        },
+        {
+          "text": "With N groups (N of 1 or more) the fixing workflow runs vbw fix done exactly once per round, after every Dev has returned",
+          "check": "C322"
+        },
+        {
+          "text": "In a stubbed run with three groups the prompts hold exactly one instruction to run vbw fix done, and it lists every fix whose Dev reported done",
+          "check": "C322"
+        },
+        {
+          "text": "No Dev prompt tells the Dev to run vbw fix done; each tells it to commit its fix and check it with vbw check on its own fixes' checks only, never the whole test command",
+          "check": "C322"
+        },
+        {
+          "text": "plugin/agents/dev.md never tells the Dev to run vbw fix done, says the workflow runs it once for the round, and tells a fixing Dev to commit and check with vbw check",
+          "check": "C322"
+        },
+        {
+          "text": "The closing Lead's own instructions (Close a run) include the round's vbw fix done, waited for to its end",
+          "check": "C322"
+        },
+        {
+          "text": "A fix whose Dev reported blocked or stopped before reporting is left out of vbw fix done, and the workflow result and log name it with its status",
+          "check": "C322"
+        },
+        {
+          "text": "When no Dev reported done, no vbw fix done runs",
+          "check": "C322"
+        },
+        {
+          "text": "A blocked Dev's fix left out of the round's real vbw fix done stays open, and vbw run confirm names it",
+          "check": "C323"
+        },
+        {
+          "text": "In the round's one vbw fix done, a fix with uncommitted changes stays open and is named, and the other fixes close",
+          "check": "C323"
+        },
+        {
+          "text": "In the round's one vbw fix done, a fix whose files serve a failing check of finished work stays open and is named, and the other fixes close",
+          "check": "C323"
+        },
+        {
+          "text": "In the round's one vbw fix done, a test-command fix whose test files still fail stays open and is named, and it closes once they pass",
+          "check": "C323"
+        },
+        {
+          "text": "The workflow result says which fixes closed and which stayed open, each open fix with its reason, also in the log",
+          "check": "C322"
+        },
+        {
+          "text": "Without a session (args.session missing) the one vbw fix done still runs, by an agent of its own, before the workflow returns",
+          "check": "C322"
+        },
+        {
+          "text": "When the agent running the round's vbw fix done stops or reports a failure, with or without a session, the log gives the exact vbw fix done with the fix ids to run by hand, and the round is not complete",
+          "check": "C322"
+        },
+        {
+          "text": "The instruction to run vbw fix done says it may pass one shell command's 10-minute limit, to wait for it in the background and read its whole output, and it comes before vbw run confirm and vbw run end",
+          "check": "C322"
+        },
+        {
+          "text": "After the round, vbw run confirm counts every closed fix as recorded and names every fix still open",
+          "check": "C323"
+        },
+        {
+          "text": "The vbw prove after the round reuses the results the round's vbw fix done saved: no check runs twice",
+          "check": "C323"
+        },
+        {
+          "text": "The output of vbw fix done is unchanged: one line per check or test file, then both count lines, then one line per fix",
+          "check": "C323"
+        },
+        {
+          "text": "docs/workflows.md's vbw:fixing row says the workflow runs one vbw fix done after every Dev returns, and its vbw fix done row names the Lead's closing step, not the Dev",
+          "check": "C324"
+        },
+        {
+          "text": "docs/workflows.md's run-closing text says the fixing workflow's closing Lead runs vbw fix done before vbw run confirm, that it still runs without a session, and that a stopped closing agent leaves the vbw fix done to run by hand",
+          "check": "C324"
+        },
+        {
+          "text": "No user doc still says a Dev runs vbw fix done (the recording section and the one-test-run section of docs/workflows.md, and docs/proof.md)",
+          "check": "C324"
+        },
+        {
+          "text": "The workflows stay within 1,500 lines of JavaScript, every agent within 900 words, and all prompts within 22,800 words",
+          "check": "C322"
+        }
+      ]
     }
   ],
   "phases": [
@@ -16249,6 +16414,41 @@
         "qa_findings": 2,
         "escalations": 0
       }
+    },
+    {
+      "id": "P132",
+      "title": "One fix done per fix round",
+      "reqs": [
+        "R182"
+      ],
+      "milestone": "M27",
+      "goal": "A fix round with several groups of fixes runs VBW's \"did this break finished work\" check (vbw fix done) once, for all the round's fixes together, after every Dev has returned. The round no longer runs several overlapping copies at once, and before/after measurements show what changed.",
+      "criteria": [
+        "Before any change, a measurement is recorded as a decision. It names the fixture. On that fixture, one fix round with three groups of fixes, where each Dev runs its own vbw fix done, gives the wall-clock minutes, the number of checks and test files run, and how many of those ran more than once across groups.",
+        "After the change, the same fixture and round are measured again and recorded in the same decision: the wall-clock minutes, the checks and test files run, and the count that ran more than once, which is 0.",
+        "The decision names the chosen approach (one vbw fix done per round, run by the workflow after all Devs return) and the rejected one (a kernel lock that makes fix done runs wait for each other in one clone), each with its reason based on the measurement.",
+        "With N groups (N of 1 or more), the fixing workflow runs vbw fix done exactly once per round, after every Dev has returned. It names every fix whose Dev reported done. In a stubbed workflow run with three groups, the prompts contain exactly one instruction to run vbw fix done, and it lists all done fixes.",
+        "No Dev runs vbw fix done. The Dev fix prompt and plugin/agents/dev.md tell the Dev to commit its fix and check it with vbw check on its own fixes' checks only, never the whole test command or vbw fix done. The workflow then records the result.",
+        "A fix whose Dev reported blocked, or stopped before reporting, is left out of the round's vbw fix done. It stays open, and the workflow result names it with its status.",
+        "Each fix in the shared vbw fix done still ends as it would on its own. A fix with uncommitted changes, one whose files serve a failing check of finished work, or a test-command fix whose test files still fail stays open and is named with its reason. The other fixes close, and the workflow result says which fixes closed and which stayed open.",
+        "When the round has no session (args.session missing), the one vbw fix done still runs before the workflow returns.",
+        "If the agent running the round's vbw fix done stops or reports a failure, the workflow log prints the exact command to run by hand (vbw fix done followed by the fix ids). The round is not reported complete.",
+        "A vbw fix done that runs longer than one shell command's time limit in Claude Code (10 minutes) still runs to the end, and its result is read before the run is confirmed and ended.",
+        "Afterwards, vbw run confirm counts every closed fix as recorded and names every fix still open. The router's vbw prove after the round runs as before and reuses the results the round's vbw fix done saved.",
+        "The output of vbw fix done is unchanged: one line per check or test file, then both count lines.",
+        "docs/workflows.md (the vbw:fixing row, the vbw fix done row and the run-closing text) and plugin/agents/dev.md describe the new order. The workflows stay within their 1,500-line JavaScript budget, and all prompts stay within their word budget."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 8 (100131 bytes)",
+        "files: more than 2 in a repository tracking 930 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R13 (C12), R14 (C13), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R32 (C28), R39 (C36), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R123 (C190, C191), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R152 (C233, C234), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -25313,6 +25513,96 @@
         "docs/proof.md: a store that cannot be written (a read-only folder, the Claude Code sandbox) or is damaged: the run goes on under check_jobs and prints 'the computer-wide limit was not in force' with the reason; docs/guards.md: VBW itself writes nothing outside the project but the slot store and the user's settings.json",
         "AGENTS.md (CLAUDE.md links to it) 'Nothing outside the project': the slot store in <claude-config-dir>/vbw/ becomes the second exception beside settings.json, with R181 as its source"
       ]
+    },
+    {
+      "id": "P132.1",
+      "phase": "P132",
+      "title": "Measure a fix round before anything changes",
+      "reqs": [
+        "R182"
+      ],
+      "files": [
+        "tools/measure-fix-round.sh",
+        "tools/baseline/results/fix-round/before.txt"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/measure-fix-round.sh, a measuring script for maintainers: usage 'measure-fix-round.sh per-group|round GROUPS' (GROUPS a whole number of 1 or more; anything else prints a line with 'usage' on stderr and exits 2). Bash 3.2, clean under 'bash tools/test.sh --lint'. It builds a fresh practice project (the fixture) in VBW_MEASURE_DIR (default .vbw/runtime/scratch/measure-fix-round in this repository, never /tmp), driven by this repository's plugin/bin/vbw found from $0: finished requirements whose approved checks each take VBW_MEASURE_SECONDS seconds (pick a default that resembles a real round), a single-file test form, and GROUPS open fixes in GROUPS groups, each with its change committed; one group is a fix of the test command, so test files are measured too. Build it the way tests/fix-many.bats and tests/fix-done-testfiles.bats build theirs.",
+        "The two ways to run the round: per-group starts each group's own vbw fix done at the same time and waits for all of them (what every Dev did until now); round runs one vbw fix done naming every fix (what the workflow will do). Time the round on the wall clock.",
+        "Print exactly these lines: 'fixture: <its parameters>', 'mode: <mode>', 'groups: <n>', 'minutes: <decimal>', 'checks run: <n>', 'test files run: <n>', 'ran more than once: <n>'. Count from each vbw fix done's own per-unit lines (a unit that ran, not one 'unchanged since its pass'); a check or test file that ran in more than one vbw fix done counts once in 'ran more than once'.",
+        "Run 'bash tools/measure-fix-round.sh per-group 3' with the default fixture, save its output to tools/baseline/results/fix-round/before.txt and commit it. Then record the before measurement: vbw decide \"Fix round before the change: fixture tools/measure-fix-round.sh (<the fixture line's parameters, no parentheses inside>), 3 groups, each Dev its own vbw fix done: X minutes, N checks and M test files run, K ran more than once\" \"R182: measured before any change\" (the exact form tests/fix-round-measure.bats reads)."
+      ]
+    },
+    {
+      "id": "P132.2",
+      "phase": "P132",
+      "title": "The fix round runs one vbw fix done, after every Dev returns",
+      "reqs": [
+        "R182"
+      ],
+      "files": [
+        "plugin/workflows/fixing.js",
+        "plugin/agents/dev.md",
+        "plugin/agents/lead.md"
+      ],
+      "after": [
+        "P132.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "fixing.js, the Dev's fix prompt: commit your fix, check it with vbw check on your fixes' checks, then return; 'Do not run vbw fix done: the workflow runs it once for the round, after every Dev returns.' Keep the R148 wording (Do not run the project's test command or its quick command; only your fixes' checks; runs once, in the proof after this round; only the failing tests). No Dev prompt may contain 'vbw fix done F...'.",
+        "fixing.js, after every Dev has returned: the fixes of groups whose Dev reported done, in group order, go into one command, vbw fix done <ids> (with the VBW_SESSION_ID=<session> prefix when there is a session). With a session it is the first step of the closing Lead's prompt (label 'close run', effort lead.close), before vbw run confirm (still every fix of every group) and vbw run end; without a session a Lead agent of its own, labelled 'fix done', runs it before the workflow returns; with no done fix nothing runs it. The prompt says it may run past one shell command's 10-minute limit: if Claude Code moves it to the background, wait for it to finish and read its whole output (it ends with the two count lines) before anything else. The agent's schema adds fixdone ('ran' or 'failed'), closed (fix ids) and open ([{fix, reason}]); the workflow treats only an explicit 'failed' or no answer as a failure, so tests/workflow-closing.bats and tests/effort-workflows.bats keep passing.",
+        "fixing.js, the result: fixdone: {command, closed, open, left_out}, where left_out lists each fix of a blocked or interrupted group as {fix, status}; log each left-out fix with its status and each open fix with its reason. When the agent stops or answers fixdone 'failed', log 'run by hand:' with the exact vbw fix done command and set complete to false; otherwise complete is computed as before. Stay within the 1,500-line workflow budget.",
+        "plugin/agents/dev.md: in a fix, commit the fix and check it with vbw check on your fixes' checks, then return; never run vbw fix done: the workflow runs `vbw fix done F2 F3` once for the round, after every Dev returns (keep that multi-id example: tests/fix-many-docs.bats reads it); the recording line asks a plan for vbw plan done and a fix for its commit. plugin/agents/lead.md, Close a run: in a fix round, first the given vbw fix done, waited for to its end past a shell time limit, its whole output read, then confirm and end. Each agent stays at 900 words or fewer (lead.md is at 899 today: trim elsewhere without losing meaning)."
+      ]
+    },
+    {
+      "id": "P132.3",
+      "phase": "P132",
+      "title": "Explain the new fix round order in the user docs",
+      "reqs": [
+        "R182"
+      ],
+      "files": [
+        "docs/workflows.md",
+        "docs/proof.md"
+      ],
+      "after": [
+        "P132.1"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/workflows.md, the workflow table and the commands table: the vbw:fixing row says a Dev per group, groups in parallel, then, after every Dev returns, one vbw fix done for every fix whose Dev reported done; the vbw fix done row names the Lead (the fix round's closing step, run by the workflow) instead of the Dev, and keeps the 'vbw fix done F8 F9' example.",
+        "docs/workflows.md, how a workflow closes its run: in vbw:fixing the closing Lead first runs one vbw fix done for the done fixes, waited for to its end, before vbw run confirm and vbw run end; without args.session vbw:fixing still runs it, with an agent of its own; a fix whose Dev was blocked or stopped is left out and named with its status; the result's fixdone field says which fixes closed and which stayed open. In 'The closing agent never refuses', the commands to run by hand start with the round's vbw fix done.",
+        "docs/workflows.md, 'Who records' and 'One test run per fix round': a fixing Dev commits its fix and runs vbw check on its own fixes' checks; it never runs vbw fix done; the Lead runs the round's vbw fix done once, after every Dev returns.",
+        "docs/proof.md, where the shared check limit lists who runs checks at once: drop 'parallel Devs each running vbw fix done' (Devs now run only vbw check; the round's one vbw fix done runs beside other runs)."
+      ]
+    },
+    {
+      "id": "P132.4",
+      "phase": "P132",
+      "title": "Measure the same round after the change and record the decision",
+      "reqs": [
+        "R182"
+      ],
+      "files": [
+        "tools/baseline/results/fix-round/after.txt"
+      ],
+      "after": [
+        "P132.1",
+        "P132.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Run 'bash tools/measure-fix-round.sh round 3' with the same fixture parameters as before.txt, save its output to tools/baseline/results/fix-round/after.txt and commit it.",
+        "Compare it with before.txt: 'ran more than once' must be 0; note the change in minutes and in checks and test files run. If it is not 0, stop and report it (vbw plan block), never adjust the figures.",
+        "Record the decision that supersedes the before one, in the exact form tests/fix-round-measure.bats reads: vbw decide \"Supersedes D<before id>: one vbw fix done per fix round, run by the workflow after every Dev returns. Fixture tools/measure-fix-round.sh (<same parameters>), 3 groups. Before, each Dev its own vbw fix done: <the before figures, exactly as recorded>. After, one vbw fix done per round: Y minutes, N checks and M test files run, 0 ran more than once. Rejected: a kernel lock that makes vbw fix done runs in one clone wait for each other\" \"<why, from the figures: why one vbw fix done per round wins (minutes and runs saved) and why the lock loses (it still runs the overlapping work, one after another, and reuses only by chance); name 'one vbw fix done', 'lock' and the minutes>\"."
+      ]
     }
   ],
   "fixes": [
@@ -33823,6 +34113,15 @@
         "milestone": "M26",
         "started": "2026-10-13T21:20:54Z",
         "ended": "2026-10-13T21:23:08Z",
+        "cost": null
+      },
+      {
+        "id": "plan-20261013T212356Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M27",
+        "started": "2026-10-13T21:23:56Z",
+        "ended": "2026-10-13T21:46:56Z",
         "cost": null
       }
     ],
