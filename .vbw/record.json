@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261013T001627Z",
+    "kind": "qa",
+    "started_at": "2026-10-13T00:16:27Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 900.114121,
+      "in": 891212,
+      "out": 503
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -15710,10 +15721,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "a776e8f7dea35faa54dfbee88b6a09d06b6c03de5a695653c2f269ee9aa41f18",
-        "at": "2026-10-12T23:48:51Z",
-        "note": "36/38 checks",
-        "rounds": 2
+        "tree": "dfb65a502ba11de48eb22c072497ba05b12960caab071eefe418184d5a39c1ad",
+        "at": "2026-10-13T00:19:15Z",
+        "note": "30/33 checks",
+        "rounds": 3
       }
     },
     {
@@ -26099,7 +26110,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "A second 'vbw loop stop' no longer 'changes nothing'. The criterion and the plan (P127.1 task 4) say a loop already stopping prints that and changes nothing (no write, no commit). Since commit ec8cbf77 (the fix for QA finding F170) the second stop ends the loop: plugin/lib/cmd-loop.sh loop_stop calls loop_end, which writes .loop.ended, writes .vbw/loop-report.md and commits. docs/loop.md (line 68) and tests/loop-stop.bats (last test) describe the new behaviour, but R178's rule text still says 'a second stop changes nothing', and the test named 'stop with no loop on says so and exits 0; a second stop changes nothing' now asserts the opposite (.loop.ended != null). No recorded decision amends the criterion, so spec, test name and code disagree. Options: (a) recommended: record a decision that a second stop on a stopping loop ends it (the way out when its session is gone) and reword the R178 rule and that test's name; (b) revert to 'changes nothing' and instead let 'vbw loop start' replace a stopping loop whose session is gone. Regression test: one that fails if the requirement text, test names and loop_stop disagree, i.e. rename the test to say a second stop ends a stopping loop, and keep a separate test that stop on an ended or absent loop changes nothing (project_sum equal before and after)."
     },
     {
@@ -26107,7 +26118,7 @@
       "req": "R178",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Untested branch in the delegated approval: loop_delegate (plugin/lib/loop-step.sh) refuses to approve when vbw next's approve answer carries detail.files (docs/next.md row 4a, the approval of edited test files), and the plan (P127.2 task 2) and docs/loop.md both promise 'never the test-files-edited approval of row 4a'. No test exercises it: grep for '4a' or 'detail.files' in tests/loop-*.bats finds nothing, and tests/loop-approve-waits.bats covers only text differences, extra requirement, unlisted item, no loop, stopping, missing check file and spec/record drift. Removing the '(.detail.files == null)' clause would leave every loop test green, and the loop would then approve changed test files on the user's behalf. Regression test: in tests/loop-approve-waits.bats, make the contract approved except for an edit to a check's test file bytes with a built phase (row 4a), run the loop step with a loop whose items match, and assert nothing is approved, no consent is granted, no decision is recorded and vbw next still answers approve with detail.files; it must fail when the clause is removed."
     },
     {
@@ -26125,6 +26136,22 @@
       "attempts": 0,
       "status": "fixed",
       "note": "The L3 loop scenario (tools/l3-suite.sh scenario_loop, committed tools/l3-results/loop.json) never exercised a real revert. The committed result has facts.revert_commits = 0, so the check 'the revert commits are in git' and the report check for revert hashes loop over an empty list and cannot fail. The plan (P129.4) asks for the revert commits present in git and the report naming them; commit 6667f15e changed the scenario so T2 fails by construction before any code commit, and allowed zero reverts. The result's not_tested list does not say that the git-revert path of a park was not run at L3 (it lists a remote, a mid-item ceiling, a [human] item, more than two items, Claude Code versions). The revert path is covered at L1 only (tests/loop-retry-park.bats). Regression test to add: either the scenario gives T2 a code commit so the park must revert it and the check fails when n_rev is 0, or loop.json/not_tested must say 'a park that reverts committed code' whenever facts.revert_commits is 0, pinned in tests/l3-loop.bats (a result with revert_commits 0 and no such not_tested entry fails)."
+    },
+    {
+      "id": "F177",
+      "req": "R178",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Untested criterion: 'each item matches at most once'. plugin/lib/loop-step.sh loop_matches implements it (a requirement text may appear no more often than the loop has items with that text; I ran the rule on one item 'a b' and two requirements 'a b' and 'a  b': it answers no, correct). But no test exercises it: tests/loop-approve.bats, tests/loop-approve-waits.bats and the matches() test (F168) never put two requirements with the same text in the milestone, and 'vbw spec add' does not refuse duplicate texts, so the case is reachable. Replacing the count comparison with a plain 'every wanted text is in the item list' keeps every loop test green and would let the loop approve a contract that has an extra requirement duplicating an item's text. Regression test: in tests/loop-approve-waits.bats, loop with T1 only, add 'Visitors can read a greeting' twice, plan it, run the loop step; assert nothing is approved, no consent, no decision, vbw next still answers approve (and a second item with the same text makes it approve)."
+    },
+    {
+      "id": "F178",
+      "req": "R178",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Two behaviours differ from the P127 plan text with no recorded decision. (1) plugin/lib/cmd-loop.sh loop_start (lines ~114-116) ignores a [human] requirement carried over by an earlier ship when it checks 'current milestone has requirements and is not shipped'; P127.1 and the criterion list that refusal without the exception. Found as F169, closed by documenting it (docs/loop.md) and adding a test, but 'vbw show decisions' has no decision for it (D322 is the only loop decision after D317). The test tests/loop-start.bats 'F169' also asserts '.milestone == .milestone' in jq, which compares a value to itself and cannot fail; it should check that R2 sits in the current milestone M2. (2) plugin/skills/loop/SKILL.md preamble has three lines (the 'vbw interview' line was added in commit 32ff7493 for R39, under P128.4); P127.3 says the preamble block has 'exactly two lines' and tests/loop-guard.bats does not pin the count. The R39 reason is sound, but it is an unrecorded change to P127.3's agreement. Fix: record one decision per item (vbw decide) naming the carried-human exception and the interview line, and make the F169 test assert the requirement is in M2. Regression test: tests/loop-start.bats F169 test must fail if R2 is not in the current milestone; tests/loop-guard.bats should pin the preamble's lines (interview, loop start, loop status)."
     }
   ],
   "todos": [
