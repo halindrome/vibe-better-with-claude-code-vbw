@@ -24,6 +24,12 @@
 # field. The small record is format 4 too. Every guard input takes the path a real
 # project takes, and the lines 'guard (NAME, N checks)' share one budget: a guard's
 # cost does not climb with the number of checks.
+# The hand-back (R184) is measured on a line of its own, 'status line (VBW off)':
+# the statusLine setting `vbw statusline on` writes, run as Claude Code runs it
+# (sh -c, in a project whose .claude/settings.json turns the plugin off, the status
+# line JSON on stdin), with the bench's plugin in a Claude config folder of the
+# bench's own and a small earlier status line saved first. It is judged against the
+# same limit, and the bench fails if the earlier status line's marker did not show.
 # VBW_BENCH_RUNS and VBW_BENCH_PLUGIN_ROOT override the runs and the plugin (tests).
 set -euo pipefail
 
@@ -211,6 +217,36 @@ statusline() {
   fi
 }
 
+# handback: the setting of `vbw statusline on` in a project that turns VBW off.
+handback() {
+  local proj="$work/off-project" cfg="$work/off-config" cmd total line out
+  mkdir -p "$proj/.claude" "$cfg/plugins/cache/vbw-marketplace/vbw"
+  git -C "$proj" init -q
+  printf '{"enabledPlugins": {"vbw@vbw-marketplace": false}}\n' > "$proj/.claude/settings.json"
+  ln -s "$PLUGIN" "$cfg/plugins/cache/vbw-marketplace/vbw/0.0.0"
+  printf '#!/bin/sh\necho "earlier status line (bench)"\n' > "$work/earlier.sh"
+  jq -nc --arg c "sh '$work/earlier.sh'" '{statusLine: {type: "command", command: $c}}' > "$cfg/settings.json"
+  CLAUDE_CONFIG_DIR="$cfg" "$PLUGIN/bin/vbw" statusline on > /dev/null
+  jq -r '.statusLine.command' "$cfg/settings.json" > "$work/setting.sh"
+  jq -nc --arg d "$proj" '{session_id: "bench", workspace: {project_dir: $d}, cwd: $d, model: {display_name: "Opus"},
+    cost: {total_cost_usd: 1.25}, context_window: {total_input_tokens: 12000, total_output_tokens: 3400, context_window_size: 200000}}' > "$work/handback.json"
+  cmd="cd '$proj' && CLAUDE_CONFIG_DIR='$cfg' NO_COLOR=1 sh '$work/setting.sh'"
+  out=$(sh -c "$cmd" < "$work/handback.json" 2> /dev/null || true)
+  if [ "$out" != "earlier status line (bench)" ]; then
+    printf 'status line (VBW off): the earlier status line did not show, so the measure left the hand-back out\n' >&2
+    status=1
+    return 0
+  fi
+  read -r _ total < <(cpu_pair "$work/handback.json" true "$cmd")
+  line=$(printf 'status line (VBW off): %s ms CPU per call; budget %s ms' "$total" "$STATUS_MS")
+  if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$total" "$STATUS_MS"; then
+    printf '%s\n' "$line"
+  else
+    printf '%s: OVER\n' "$line" >&2
+    status=1
+  fi
+}
+
 guards "$work" ""
 guards "$large" ", large record"
 # A loop on and no lease: the main session's push, judged like the others.
@@ -230,4 +266,5 @@ guards "$work/loop-large" ", large record" loop
 for n in 51 500 2000; do guards "$work/checks-$n" ", $n checks"; done
 statusline "$work" ""
 statusline "$large" " (large record)"
+handback
 exit $status
