@@ -110,3 +110,12 @@ matches() { vbw_kernel '. "$VBW_LIB/checks.sh"; . "$VBW_LIB/cmd-next.sh"; . "$VB
   edit_record '.requirements |= map(if .text == "Visitors can read a farewell" then .text = "Visitors can read a greeting" else . end)'
   [ "$(matches)" = yes ] || { jq '{loop: .loop.items, reqs: [.requirements[] | {text, milestone}]}' .vbw/record.json; false; }
 }
+
+@test "R178 (F177): each item matches at most once: a requirement text present twice in the milestone, with one item of that text, does not match" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
+  "$VBW" spec add auto "Visitors can read a greeting" > /dev/null
+  [ "$(matches)" = yes ] || { jq '{loop: .loop.items, reqs: [.requirements[] | {text, milestone}]}' .vbw/record.json; false; }
+  "$VBW" spec add auto "Visitors can read a greeting" > /dev/null
+  [ "$(jq '[.requirements[] | select(.text == "Visitors can read a greeting")] | length' .vbw/record.json)" -eq 2 ]
+  [ "$(matches)" = no ] || { jq '{loop: .loop.items, reqs: [.requirements[] | {text, milestone}]}' .vbw/record.json; false; }
+}
