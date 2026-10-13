@@ -332,7 +332,10 @@ if type != "object" then ["record must be a JSON object"] else
     ( $r.loop
       | select(. != null)
       | if type != "object" then "loop must be an object" else
-          ( keys[] | select(one_of(["items","ceiling","session","started_at","baseline","stopping","ended","report"]) | not) | "loop has an unknown field: \(.)" ),
+          ( keys[] | select(one_of(["items","ceiling","session","started_at","baseline","stopping","ended","report","asked"]) | not) | "loop has an unknown field: \(.)" ),
+          ( select(has("asked") and ((.asked | type == "object" and (keys | sort) == ["instruction","item"] and (.item | type == "string" and test("^T[0-9]+$"))
+                and (.instruction | nonempty)) | not))
+            | "loop.asked must be {item: T<n>, instruction: a non-empty string}" ),
           ( select((has("items") and has("ceiling") and has("session") and has("started_at") and has("baseline")) | not)
             | "loop needs items, ceiling, session, started_at and baseline" ),
           ( select(has("items") and ((.items | type == "array" and length > 0 and all(.[]; loop_item)) | not))
