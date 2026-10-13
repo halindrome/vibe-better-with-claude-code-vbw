@@ -140,6 +140,18 @@ vbw_cores() {
   return 1
 }
 
+# vbw_claude_dir: the user's Claude config folder: CLAUDE_CONFIG_DIR when set,
+# else ~/.config/claude-code when that folder exists, else ~/.claude.
+vbw_claude_dir() {
+  if [ -n "${CLAUDE_CONFIG_DIR:-}" ]; then
+    printf '%s\n' "$CLAUDE_CONFIG_DIR"
+  elif [ -d "$HOME/.config/claude-code" ]; then
+    printf '%s\n' "$HOME/.config/claude-code"
+  else
+    printf '%s\n' "$HOME/.claude"
+  fi
+}
+
 # vbw_check_jobs_set_value: the check_jobs value set in this clone's settings,
 # or nothing when missing, damaged or out of range.
 vbw_check_jobs_set_value() {

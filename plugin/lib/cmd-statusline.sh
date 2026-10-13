@@ -13,16 +13,9 @@
 
 VBW_STATUSLINE_CMD='bash -c '"'"'for _d in "${CLAUDE_CONFIG_DIR:-}" "$HOME/.config/claude-code" "$HOME/.claude"; do [ -z "$_d" ] && continue; f=$(ls -1 "$_d"/plugins/cache/vbw-marketplace/vbw/*/scripts/vbw-statusline.sh 2>/dev/null | sort -V | tail -1 || true); [ -f "$f" ] && exec bash "$f"; done'"'"' '
 
-# The user's settings file: $CLAUDE_CONFIG_DIR, else ~/.config/claude-code if
-# present, else ~/.claude (the same resolution Claude Code uses).
+# The user's settings file, in the Claude config folder (vbw_claude_dir).
 statusline_settings() {
-  if [ -n "${CLAUDE_CONFIG_DIR:-}" ]; then
-    printf '%s/settings.json\n' "$CLAUDE_CONFIG_DIR"
-  elif [ -d "$HOME/.config/claude-code" ]; then
-    printf '%s/.config/claude-code/settings.json\n' "$HOME"
-  else
-    printf '%s/.claude/settings.json\n' "$HOME"
-  fi
+  printf '%s/settings.json\n' "$(vbw_claude_dir)"
 }
 
 cmd_statusline() {
