@@ -200,3 +200,13 @@ all_done() { jq -nc --argjson d "$DONE" --argjson k "${1:-$OK}" --argjson a "${2
   done
   [ "$total" -le 22800 ] || { echo "all prompts: $total words"; false; }
 }
+
+@test "R182: without a session, complete follows the plan: an open fix and a blocked Dev give the same value, true" {
+  local k='{"fixdone":"ran","closed":["F1"],"open":[{"fix":"F2","reason":"uncommitted changes"}],"report":"F2 open"}'
+  run wf '{"groups":[["F1"],["F2"]]}' "$(jq -nc --argjson d "$DONE" --argjson k "$k" '{"F1": $d, "F2": $d, "fix done": $k}')"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s' "$output" | jq -e '.result.fixdone.open == [{fix: "F2", reason: "uncommitted changes"}] and .result.complete == true' > /dev/null || { echo "$output"; false; }
+  run wf '{"groups":[["F1"],["F2"]]}' "$(jq -nc --argjson d "$DONE" --argjson b "$BLOCKED" --argjson a "$ALONE" '{"F1": $d, "F2": $b, "fix done": $a}')"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s' "$output" | jq -e '(.result.fixdone.left_out | length) == 1 and .result.complete == true' > /dev/null || { echo "$output"; false; }
+}
