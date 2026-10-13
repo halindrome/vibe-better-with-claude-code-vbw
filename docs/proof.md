@@ -150,7 +150,9 @@ at once. A lock left by a dead process is taken over too.
 
 If the store cannot be written (a read-only folder, the Claude Code sandbox)
 or is damaged, the run goes on under `check_jobs` alone and prints
-`the computer-wide limit was not in force` with the reason.
+`the computer-wide limit was not in force` with the reason (at the start, or
+once at the end when the store failed in the middle of the run). A store lock
+held by a live process is waited for, however long.
 
 ### Checks that run alone
 
