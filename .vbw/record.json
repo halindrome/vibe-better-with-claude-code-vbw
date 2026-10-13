@@ -27284,6 +27284,13 @@
       "sort": "later",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T139",
+      "text": "ETA quality for T102 (cosmetic leg, brainstorm inbox 2026-10-10): estimate per unit of work (plan, task, check by tier from .git/vbw/steps.json) times the work size, and the whole road (build, proof, QA, likely fix rounds from this machine's history), not only the current step",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
