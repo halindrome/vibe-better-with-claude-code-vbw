@@ -4019,7 +4019,7 @@
   "milestone": {
     "id": "M25",
     "title": "Loop v0: the night shift runs alone",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -4141,6 +4141,11 @@
       "id": "M24",
       "title": "Before the night shift: cost data, approval completeness, honest proof and fix output",
       "at": "2026-10-12T11:06:34Z"
+    },
+    {
+      "id": "M25",
+      "title": "Loop v0: the night shift runs alone",
+      "at": "2026-10-13T15:08:02Z"
     }
   ],
   "requirements": [
@@ -29072,6 +29077,11 @@
       "id": "D335",
       "at": "2026-10-13T14:55:58Z",
       "text": "Contract approved: 169 requirements, 307 checks, 384 plans (67635ad270b6)"
+    },
+    {
+      "id": "D336",
+      "at": "2026-10-13T15:08:02Z",
+      "text": "Shipped M25 Loop v0: the night shift runs alone: 3 requirements proven or accepted"
     }
   ],
   "commands": {
@@ -32972,6 +32982,12 @@
             "out": 0,
             "at": "2026-10-12T17:50:44Z"
           }
+        },
+        "total": {
+          "usd": 980.515601,
+          "in": 495398,
+          "out": 1432,
+          "sessions": 5
         }
       }
     }
