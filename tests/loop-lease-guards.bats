@@ -35,9 +35,14 @@ denied() { [ "$(printf '%s' "$output" | jq -r '.hookSpecificOutput.permissionDec
   denied && [[ "$(reason)" == *"written only by vbw"* ]] || { echo "$output"; false; }
   run file_call Write /tmp/notes.txt
   denied && [[ "$(reason)" == *"outside the project"* ]] || { echo "$output"; false; }
-  # A protected check file of another requirement: refused as protected, or as outside the plan's files, whichever rule comes first.
-  run file_call Edit "$PROJECT/tests/notes.sh"
-  denied && { [[ "$(reason)" == *"protected check file"* ]] || [[ "$(reason)" == *"outside this run's files"* ]]; } || { echo "$output"; false; }
+  # A protected check file inside the lease's own files: only the protected rule can answer (F189).
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  edit_record '(.plans[] | select(.id == "P2.1")).files += ["tests/greet.sh"]'
+  VBW_SESSION_ID=s1 "$VBW" run start build P2.1 > /dev/null
+  jq -e '.lease.files | index("tests/greet.sh") != null' .vbw/record.json
+  jq -e '.protected | index("tests/greet.sh") != null' .vbw/record.json
+  run file_call Edit "$PROJECT/tests/greet.sh"
+  denied && [[ "$(reason)" == *"protected check file"* ]] || { echo "$output"; false; }
   run bash_call 'echo x > .vbw/record.json'
   denied || { echo "$output"; false; }
   run bash_call 'echo x > /tmp/notes.txt'
