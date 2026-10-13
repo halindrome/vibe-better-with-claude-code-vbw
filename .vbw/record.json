@@ -16176,12 +16176,11 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "7c8edaf5084b7fecbc0557c7d08db551124958b07d25a878d11e29a58ad2d5af",
-        "at": "2026-10-13T20:00:19Z",
-        "note": "29/30 checks",
-        "rounds": 1
+        "tree": "969bede7cb14242b1a9a1d5c5d448783d8d4a47863c12b9f043175f08bef8424",
+        "at": "2026-10-13T21:11:19Z",
+        "note": "30/30 checks"
       }
     },
     {
@@ -26929,7 +26928,7 @@
       "req": "R181",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The computer-wide limit can be lost in the middle of a run without a word, which the criterion forbids ('its output says once, in one plain line, that the limit was not in force and why'). The line is printed only by slots_open, when the run starts (plugin/lib/slots.sh lines 118-140). Later failures go through slots_take (line ~163: 'slots_apply ... || { SLOTS_STATE=off; return 0; }') and slots_give (line ~213: '|| SLOTS_STATE=off'); both turn the limit off and print nothing. slots_apply can fail mid-run in three ways: slots_lock gives up after 600 tries (about 30 s) when the lock stays busy (a waiting unit polls the store every 0.1 s and each locked step runs about 6 jq calls, so many waiting units across many sessions queue up on it, which is the heavy-load case this phase exists for); the folder becomes unwritable; another process leaves the file damaged. In each case the unit then runs with no slot and the user is never told. In a parallel run it is worse: slots_take runs in a runner subshell, so SLOTS_STATE=off stays inside that one runner and its stderr goes to the hidden N.err file. Also the 'lock gave up' branch is untested. Regression test: with the limit at 1 and the store made unwritable or replaced by junk after a run has started (for example by a unit of that run, or a hook between the first and second unit), prove/check/fix done must still pass and print exactly one 'vbw: the computer-wide limit was not in force: ...' line on the user-visible output; and a lock held by a live process for over 30 s must either keep waiting or print that line, never run silently without a slot. Fix direction: turn the failure into one shared signal (a marker file in CHECK_OUT that the runners write and the parent reads) and have slots_say print the line once at the end, and make the lock wait unbounded while its owner is alive (a live owner is not an error).",
       "phase": "P130"
     },
