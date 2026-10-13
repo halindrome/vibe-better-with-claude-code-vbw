@@ -25770,7 +25770,7 @@
         "docs/proof.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Record the owner when the copy is made: in proofcopy_make, create the folder in one step as .vbw/runtime/proof.$$.XXXXXX (mktemp -d), where $$ is the process id (pid) of the running vbw, so a copy never exists without its owner's pid in its name. The proof's own copy handling (proofcopy_remove, the interrupt guard, the proof.* patterns of proofcopy_warn_stale) keeps working unchanged.",
@@ -34484,6 +34484,15 @@
         "milestone": "M28",
         "started": "2026-10-13T22:33:26Z",
         "ended": "2026-10-13T22:43:22Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261013T224359Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M28",
+        "started": "2026-10-13T22:43:59Z",
+        "ended": "2026-10-13T22:52:05Z",
         "cost": null
       }
     ],
