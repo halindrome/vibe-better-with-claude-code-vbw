@@ -30171,10 +30171,10 @@
     }
   },
   "evidence": {
-    "at": "2026-10-13T22:14:55Z",
-    "contract": "e97034d21e976c83de4dbe2346af42a4ffd10e8372b157fbfdf322a621e08f3d",
-    "tree": "f4c2e7d056ba1968800f97d9ddd665b34e7f24f4",
-    "head": "f4c2e7d056ba1968800f97d9ddd665b34e7f24f4",
+    "at": "2026-10-13T22:29:02Z",
+    "contract": "3f9872a083136fb25a7c2f8b23cc5cae44a5b4d478830ba76e2ef66217aabf70",
+    "tree": "8240268bb0497e49f42493e2c148321a5c144e05",
+    "head": "8240268bb0497e49f42493e2c148321a5c144e05",
     "checks": {
       "C1": {
         "status": "pass",
@@ -30350,11 +30350,11 @@
       "C22": {
         "status": "pass",
         "exit": 0,
-        "seconds": 10,
+        "seconds": 9,
         "tail": "1..6\nok 1 the profile defines, for each tier, the agents with their count, the QA tier and the models\nok 2 express is one Dev; standard and deep keep the profile's models and QA tiers as before\nok 3 vbw next --json gives each phase exactly its profile cell, for every profile and tier\nok 4 a user's model override still wins over the tier's models\nok 5 a phase planned before tiers existed counts as standard\nok 6 the workflows and the router pass the tier's models and QA tier through",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "171d11d3a2126a14155e79ecb13941153e233153e2c0d238fef4758a3bf507a2",
-        "reused": true
+        "at": "2026-10-13T22:29:02Z",
+        "why": "reads the project through git"
       },
       "C23": {
         "status": "pass",
@@ -30476,11 +30476,11 @@
       "C36": {
         "status": "pass",
         "exit": 0,
-        "seconds": 11,
+        "seconds": 9,
         "tail": "1..11\nok 1 R39: vbw next --json carries the user's level, explanation depth and involvement\nok 2 R39: with no answers it carries an explicit neutral default\nok 3 R39: a partly answered interview fills the gaps with the neutral default\nok 4 R39: machine-read output does not change with the level: only the profile field differs\nok 5 R39: every skill hands the user's three values to its prompt, and none is skipped\nok 6 R39: every agent that can reach the user receives and applies the three values\nok 7 R39: involvement is honored: the three settings each name what VBW does with a decision\nok 8 R39: every workflow agent call carries the profile in its task text and still passes a schema\nok 9 R39: the router hands the profile to every workflow it starts\nok 10 R39: prompts stay within their budgets: agents 1.5k tokens, mode prompts 3k, router 2k, all prompts 16k (owner raised it from 15k on 2026-10-04)\nok 11 R39: the workflows stay within 1,500 lines of JavaScript",
-        "at": "2026-10-13T22:10:27Z",
         "fp": "63414c456d25a0fe1df0e51bea8b9b7ea2e99398e5e7cc2478c5169ce075ff8b",
-        "reused": true
+        "at": "2026-10-13T22:29:02Z",
+        "why": "reads the project through git"
       },
       "C37": {
         "status": "pass",
@@ -30647,20 +30647,20 @@
       "C55": {
         "status": "pass",
         "exit": 0,
-        "seconds": 4,
+        "seconds": 3,
         "tail": "1..5\nok 1 R53: the panel is a mod named by hooks.json, next to the hooks it had, which are unchanged\nok 2 R53: Claude Code's own validator reads the module and lists the hooks the panel registers\nok 3 R53: the status line is byte for byte what it is without the panel, in a VBW project\nok 4 R53: the status line is byte for byte what it is without the panel, outside a VBW project, with colour too\nok 5 R53: the status line and the kernel know nothing of the panel, so an older Claude Code prints nothing extra",
-        "at": "2026-10-13T22:10:27Z",
         "fp": "99b0b5dfc176cee0cb0aac0aaba7deaddcbf8b4074c02958b48278313fd54b6e",
-        "reused": true
+        "at": "2026-10-13T22:29:02Z",
+        "why": "reads the project through git"
       },
       "C56": {
         "status": "pass",
         "exit": 0,
         "seconds": 3,
         "tail": "1..8\nok 1 R55: the bench measures the CPU of a refresh that found nothing new and of one that redraws, against the stated budget\nok 2 R55: the budget is enforced: a budget no refresh can meet fails the bench\nok 3 R55: the budget is stated for people too, in docs/panel.md\nok 4 R55: the panel's code reaches no network and no credentials and never writes\nok 5 mods plan: the one process the panel starts is the kernel, and it reads two environment names only\nok 6 R55: the panel never names the record as something to write\nok 7 R55: the kernel stays within its budget and the workflows within theirs\nok 8 R55: the panel's node tests are part of the suite, so a regression fails bash tools/test.sh",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "1413102b73d30469f3e66a8bb6362dc933f8ce755daf88f190d94bcb9822dff1",
-        "reused": true
+        "at": "2026-10-13T22:29:02Z",
+        "why": "reads the project through git"
       },
       "C57": {
         "status": "pass",
@@ -31088,11 +31088,11 @@
       "C106": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..5\nok 1 R78: the build workflow confirms its plans and ends its run as its last step\nok 2 R78: a plan whose Dev recorded nothing is named in the output\nok 3 R78: when everything was recorded, nothing is reported as missing\nok 4 R78: the fix workflow confirms every fix of every group\nok 5 R78: the QA workflow confirms every phase verdict",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "ca4e65d53ba91cba474cdc6c0e06bdf2fb3170bd787921257580094d6d089259",
-        "reused": true
+        "at": "2026-10-13T22:29:02Z",
+        "why": "reads the project through git"
       },
       "C107": {
         "status": "pass",
@@ -31207,9 +31207,9 @@
         "exit": 0,
         "seconds": 2,
         "tail": "1..3\nok 1 R83: no text VBW hands Claude says to type or run /vbw:approve\nok 2 R83: when Claude tries to approve, the guard refuses and tells it to ask with the approval menu\nok 3 R83: the router asks for approval only with the menu and never asks the user to type the command",
-        "at": "2026-10-13T22:10:27Z",
         "fp": "bb1596fe035817bd4eaa46b97e826a3915ebd4c4d6066bb3b0acd1ebc50ab441",
-        "reused": true
+        "at": "2026-10-13T22:29:02Z",
+        "why": "reads the project through git"
       },
       "C120": {
         "status": "pass",
@@ -31468,9 +31468,9 @@
         "exit": 0,
         "seconds": 2,
         "tail": "1..1\nok 1 R94: the wait setting VBW_CHECK_WAIT_SECONDS is gone from the code and the docs no longer say it ends a wait",
-        "at": "2026-10-13T22:10:27Z",
         "fp": "2ed97e5d717f44f17f3acfc62ad02946f6c63db9ed0f63290d362963ff046d77",
-        "reused": true
+        "at": "2026-10-13T22:29:02Z",
+        "why": "reads the project through git"
       },
       "C149": {
         "status": "pass",
@@ -31486,7 +31486,7 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..5\nok 1 R95: QA is told the project's test command and its result when it ran\nok 2 R95: when the project has no test command, QA is told so plainly instead of being left to guess\nok 3 R95: a workflow whose agents all recorded reports complete: build, fix and QA\nok 4 R95: a workflow with an unrecorded result is not reported as complete, and the closing report names it\nok 5 R95: an agent that stopped before reporting makes the workflow incomplete, even when the closing agent finds nothing else missing",
-        "at": "2026-10-13T21:59:35Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "4d7f9e901a7ecc7b39c09fea871b6acc451b02b8e9b09c0def8cacace30e745c",
         "reused": true
       },
@@ -31502,9 +31502,9 @@
       "C152": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..4\nok 1 R96: every workflow that closes a run does it with the Lead, not the Scout\nok 2 R96: when the closing agent stops, the output names the exact commands to run by hand, with the session\nok 3 R96: when the run could not be ended, the output names the end command to run by hand\nok 4 R96: the planning workflow confirms each planned phase and does not report planned when one has no plans",
-        "at": "2026-10-13T21:59:35Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "59672a5200a1a2a3ddde19c1a3bd8dbbcc8c08ead2f865ac2d623ae7089dfb1d",
         "reused": true
       },
@@ -31619,9 +31619,9 @@
       "C166": {
         "status": "pass",
         "exit": 0,
-        "seconds": 12,
+        "seconds": 13,
         "tail": "1..13\nok 1 R107: the profile file has a table for each profile, and every role and step the workflows use has a value Claude Code accepts\nok 2 R107: closing a run and documentation get a lower effort than building, planning and QA a higher one, in every profile\nok 3 R107: vbw config effort prints the table of the current profile, and follows a profile change\nok 4 R107: vbw next --json carries the same table, so the router can pass it to every workflow\nok 5 R107: a value Claude Code does not accept is refused with the role and the step, by vbw config effort and by vbw next\nok 6 R107: a value that is not text is refused the same way\nok 7 R107: a missing role or step is refused with its name, so no workflow starts with a gap\nok 8 R107: only the profile in use is judged: a bad value in another profile does not stop this one\nok 9 R107: the router and every skill that starts a workflow pass the effort table in the workflow's args\nok 10 R107: the effort table is described for people: the effort levels, the steps and where the table lives\nok 11 R107: the router and the prompts stay within their budgets\nok 12 F88: a missing or invalid architect recommend step is refused like every other step\nok 13 F89: docs/workflows.md lists the architect recommend step in the table and the example",
-        "at": "2026-10-13T22:10:27Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "ccdb89baa82f463ca04b47659bf6e485ed4405ac953f454d10bc2c8b942f46b6",
         "reused": true
       },
@@ -31630,7 +31630,7 @@
         "exit": 0,
         "seconds": 2,
         "tail": "1..14\nok 1 R107: planning passes each step's effort: decide, scope, plan and close\nok 2 R107: planning again (decided) passes the efforts too\nok 3 R107: building passes the Dev's and the Docs agent's effort, and the close step's\nok 4 R107: fixing passes the Dev's fix effort and the close step's\nok 5 R107: verifying passes QA's effort and the close step's\nok 6 R107: mapping passes the Scouts' survey and merge efforts and the close step's\nok 7 R107: researching passes the Scouts' survey and answer efforts\nok 8 R107: tool search passes the Scouts' survey effort\nok 9 R107: investigating passes the Debuggers' investigate and diagnose efforts\nok 10 R107: fixing a bug with a diagnosis passes the Debugger's fix effort\nok 11 R107: the effort is the only new option on a call; the model, label and schema stay as they were\nok 12 R107: with no effort table, agents run as before: no effort option, no error, nothing logged about it\nok 13 R107: a gap in the table leaves that call as before, and the others still get theirs\nok 14 R107: an effort that is not a table (text, null, a list) is ignored without an error",
-        "at": "2026-10-13T21:59:35Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "0684176ad88bca4304bc6824b42ed6becd9017f9c012511708fddfe22251fabf",
         "reused": true
       },
@@ -31808,9 +31808,9 @@
       "C187": {
         "status": "pass",
         "exit": 0,
-        "seconds": 21,
+        "seconds": 25,
         "tail": "1..11\nok 1 R121: vbw triage --json names the active milestone, its open requirements, the run and the sorted backlog in one call\nok 2 R121: vbw triage shows an open run, and leaves out accepted requirements and closed backlog items\nok 3 R121: after ship there is no active milestone and no open requirement\nok 4 R121: vbw triage (text) prints the same facts and writes nothing\nok 5 R121: vbw todo add keeps the sort and size, and vbw todo list shows them, next before later\nok 6 R121: backlog items added before sorting existed still list as before, without a sort or size, and nothing about them changes\nok 7 R121: a sort or size outside the allowed values, or one without the other, is refused and nothing is added\nok 8 R121: the record validator accepts sorted items and refuses a bad sort or size\nok 9 R121: a sorted backlog item raises the schema to 3 or above, so an older VBW asks for an update instead of calling the record corrupt\nok 10 R121: a 'now' idea added while a run is open is recorded at once, and planning waits for the run to end\nok 11 R121: the kernel help lists vbw triage and the sort and size of vbw todo add",
-        "at": "2026-10-13T22:10:27Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "9a3b037c82f6e23518475860fbc46760c87b2e8a98ce9b9e8dca5ac3adcf8a06",
         "reused": true
       },
@@ -31835,9 +31835,9 @@
       "C190": {
         "status": "pass",
         "exit": 0,
-        "seconds": 31,
+        "seconds": 36,
         "tail": "1..14\nok 1 R123: vbw recommend stores the top pick, its reason and size, the runners-up and the time it was written\nok 2 R123: zero runners-up is fine, and a pick may have no source\nok 3 R123: a new recommendation replaces the earlier one, so only one is kept\nok 4 R123: every malformed recommendation is refused with a message naming what is wrong, and the earlier one stays\nok 5 R123: a pick whose source is not open is refused: a shipped or proven requirement, a closed or unknown todo\nok 6 R123: a pick that is a declined suggestion is refused\nok 7 R123: with no open requirement and an empty backlog the stored recommendation says the backlog is empty; with work open, 'empty' is refused\nok 8 R123: while a run is open the kernel stores no recommendation and says so\nok 9 R123: the validator accepts a record with and without a recommendation, and refuses a damaged one\nok 10 R123: a stored recommendation raises the schema to 3 or above; an older VBW asks for an update; without one and without sorted todos the schema stays as before\nok 11 R123: vbw status shows the what's-next part: the top pick, its reason and size, each runner-up with its size, and the date\nok 12 R123: with none stored, vbw status says there is none yet and how to ask for one\nok 13 R123: vbw status --json carries the recommendation, or null when none is stored\nok 14 R123: the kernel help lists vbw recommend",
-        "at": "2026-10-13T22:10:27Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "1298cf4f726813ed091d7c7cd224c97eafc08e4e8d56837e310e1c52709b6d91",
         "reused": true
       },
@@ -31916,9 +31916,9 @@
       "C199": {
         "status": "pass",
         "exit": 0,
-        "seconds": 63,
+        "seconds": 76,
         "tail": "1..8\nok 1 R132: the fingerprint stored for a passed phase carries the version of how it was computed, in the clone's QA cache\nok 2 R132: after an update that changes the fingerprint's version, an unchanged passed phase still stands\nok 3 R132: at the same version, a different stored fingerprint is a change, as today\nok 4 R132: a fingerprint written by an older VBW with no version is an older version, not a change\nok 5 R132: after an update, a real change to the phase's files sends it back to QA\nok 6 R132: a change to the phase's files made before the update still sends it back to QA after it\nok 7 R132: after an update, a change to the phase's tests, plan or requirements sends it back to QA\nok 8 R132: a change to the phase's requirement made before an update of a version-less fingerprint sends it back to QA",
-        "at": "2026-10-13T22:10:27Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "aa6f03034434abe1895e674e456d849a5fbff135a921984c8e7694be26905cba",
         "reused": true
       },
@@ -31961,9 +31961,9 @@
       "C204": {
         "status": "pass",
         "exit": 0,
-        "seconds": 51,
+        "seconds": 63,
         "tail": "1..8\nok 1 R142: for 1 to 5 shards, together the shards list every tests/*.bats file exactly once\nok 2 R142: the same inputs give the same shares\nok 3 R142: shares are balanced by test count: no shard of 4 holds much more than a quarter of the tests\nok 4 R142: a newly added test file lands in exactly one shard, with no list to edit\nok 5 R142: the tool lint and the hook and panel benchmarks are listed by shard 1 only\nok 6 R142: a shard runs its share in one parallel batch, then its timed files alone, and only shard 1 lints and benchmarks\nok 7 R142: a failing test file in a shard makes the shard fail, in the batch and in the timed files\nok 8 R142: an invalid shard argument exits 2 with the usage line and runs nothing",
-        "at": "2026-10-13T21:59:35Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "a7a168580dd6010bf07effe9337ea968f9b2d34565451af92b8c3264f462f124",
         "reused": true
       },
@@ -32053,7 +32053,7 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..5\nok 1 R148: every Dev of a fix round is told not to run the project's test command or its quick command\nok 2 R148: every Dev of a fix round is told to run its own checks with vbw check\nok 3 R148: every Dev of a fix round is told the whole test command runs once, in the proof after the round\nok 4 R148: a Dev fixing a failure of the test command itself may run only the failing tests it needs\nok 5 R148: the Dev instructions say a fix never runs the test command or quick command, and the round's proof runs it once",
-        "at": "2026-10-13T21:59:35Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "2eab860dcc5bd0903aa7f3c22f5e83368ee683ab1112bfcccf2848fc547e1e11",
         "reused": true
       },
@@ -32141,9 +32141,9 @@
       "C224": {
         "status": "pass",
         "exit": 0,
-        "seconds": 24,
+        "seconds": 28,
         "tail": "1..6\nok 1 R150: the schema-4 fixture loads and shows correctly in this VBW\nok 2 R150: a VBW that reads up to schema 3 asks for a newer VBW on the schema-4 fixture, never calling it corrupt\nok 3 R150: a VBW that reads up to schema 3 asks for a newer VBW on every record this VBW writes: 0, 1, 3 and 51 checks\nok 4 R150: the status line shows the same on a format-4 record with 0 and 60 checks as on an older one, idle and during a run, with no error\nok 5 R150: the session-start hook says the same on a format-4 record as on an older one, with no error\nok 6 R150: the panel shows the same on a format-4 record with 0 and 60 checks as on an older one",
-        "at": "2026-10-13T22:10:27Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "9546374c2244d2d507a4683c474557bb6a5653d90a82065dbd248f02e95b030d",
         "reused": true
       },
@@ -32204,9 +32204,9 @@
       "C231": {
         "status": "pass",
         "exit": 0,
-        "seconds": 129,
+        "seconds": 137,
         "tail": "1..7\nok 1 R151: a guard whose own cost is above 20 ms per call fails the bench, and the line names the input, the cost and the 20 ms limit\nok 2 R151: a guard whose own cost is at or below 20 ms passes, however it compares with the startup (the old 1x limit no longer fails)\nok 3 R151: the status line above 60 ms per call fails the bench on the small and the large record, naming the cost and the 60 ms limit\nok 4 R151: without settings the limits are 20 ms per guard call and 60 ms for the status line, also in the bench's defaults\nok 5 R151: a machine too busy to measure is reported with its startup and the run passes without judging any guard\nok 6 R151: the same run with a startup below the limit judges the guards and the status line as usual\nok 7 R151: VBW_HOOK_BUDGET_MS and VBW_STATUSLINE_BUDGET_MS override the two limits, the busy threshold following the hook limit",
-        "at": "2026-10-13T22:10:27Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "e793b124a2853ca98406f9890c1b9dfdad8f49b126f175a6b723f4671450cecf",
         "reused": true
       },
@@ -32222,9 +32222,9 @@
       "C233": {
         "status": "pass",
         "exit": 0,
-        "seconds": 10,
+        "seconds": 12,
         "tail": "1..8\nok 1 R152: bash tools/test.sh with no option runs the lint and every test file except the timed ones, and neither benchmark\nok 2 R152: bash tools/test.sh --release runs the lint, both benchmarks, the suite in one parallel batch, then the timed files alone\nok 3 R152: the release run fails when a benchmark, the batch or a timed file fails\nok 4 R152: --quick still runs without the benchmarks and without any timed file\nok 5 R152: the CI shards together make one release run: shard 1 runs both benchmarks, each shard runs its timed files alone after its batch\nok 6 R152: tools/test.sh refuses --release with other arguments, naming the release way in its usage line, and runs nothing\nok 7 R152: CI runs the release way: the jobs without a shard run --release, the shard jobs run their share\nok 8 R152: no test file of the default run measures a duration; the timed tests live in tests/timed-*.bats",
-        "at": "2026-10-13T21:59:35Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "d6a91300a2cc3c178950148fe6689a3b3301183cc8e7951d2509592e254757f9",
         "reused": true
       },
@@ -32366,9 +32366,9 @@
       "C249": {
         "status": "pass",
         "exit": 0,
-        "seconds": 26,
+        "seconds": 31,
         "tail": "1..7\nok 1 R162: every refusal written out in cmd-apply.sh and cmd-run.sh carries its next step\nok 2 R162: every refusal of a full apply ends with its next step\nok 3 R162: every refusal of vbw apply --add ends with its next step\nok 4 R162: every refusal of vbw apply --patch ends with its next step\nok 5 R162: every refusal of vbw run start ends with its next step\nok 6 R162: every block of the file guard and the Bash guard ends with its next step\nok 7 R162: a guard that failed during a run blocks with a next step",
-        "at": "2026-10-13T22:10:27Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "519896c0dfda601738e1bd71b8b65877e664a9d86e471d0b96c2aef1efda7c2e",
         "reused": true
       },
@@ -32384,18 +32384,18 @@
       "C251": {
         "status": "pass",
         "exit": 0,
-        "seconds": 16,
+        "seconds": 17,
         "tail": "1..8\nok 1 R164: with only the version files and the changelog changed since a passing proof, the release run reuses it\nok 2 R164: the same holds when the version change is committed\nok 3 R164: any other changed file, committed or not, runs everything and says why\nok 4 R164: a new untracked file runs everything and says why\nok 5 R164: with no proof recorded, the release run runs everything and says why\nok 6 R164: when the last proof failed, the release run runs everything and says why\nok 7 R164: when the proof is reused, a failing benchmark or timed check still fails the run\nok 8 R164: the CI shards run their whole share whatever proof is recorded",
-        "at": "2026-10-13T22:10:27Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "80591fb718986fab415be8f70c38cc801722e12ccc05aad150c6441f83794838",
         "reused": true
       },
       "C252": {
         "status": "pass",
         "exit": 0,
-        "seconds": 42,
+        "seconds": 47,
         "tail": "1..9\nok 1 R165: during a run a guard that crashes blocks the write or command, saying the guard failed and to run vbw doctor\nok 2 R165: during a run a guard that cannot start blocks: the guard file missing or unreadable\nok 3 R165: during a run a guard that cannot start because jq is missing blocks\nok 4 R165: during a run a guard that runs past its time limit is stopped and the action blocked; docs/guards.md states the limit\nok 5 R165: during a run a record that cannot be parsed blocks the action when the guard must read it\nok 6 R165: the run-open marker exists exactly while a run is open, outlives a record that cannot be read, and a broken guard goes quiet when the run ends\nok 7 R165: in a VBW project with no open run a failing guard lets the action through as before\nok 8 R165: outside VBW projects a failing or missing guard changes nothing and prints nothing\nok 9 R165: with the guards intact a run still gets their ordinary answers, and the doctor's guard self-test passes",
-        "at": "2026-10-13T22:10:27Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "3974be14db366f168f2e9b291226dfca3486024f14d0076397606898b8e370f2",
         "reused": true
       },
@@ -32456,10 +32456,10 @@
       "C259": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..5\nok 1 R167: VBW's spec declares its single-file form: bats on one file\nok 2 R167: VBW's declared test files are every tracked tests/*.bats except the timed ones\nok 3 R167: VBW's spec names the shell lint as its own project command\nok 4 R167: bash tools/test.sh --lint runs shellcheck on every shell file under tools/ and runs no test file\nok 5 R167: tools/test.sh keeps its usage line and documents --lint in it",
         "fp": "a4c3fc4a1c937f7ed83dbad83a14a23b4a955b4576464496a0b301351ed0b484",
-        "at": "2026-10-13T22:14:55Z",
+        "at": "2026-10-13T22:29:02Z",
         "why": "reads the project through git"
       },
       "C260": {
@@ -32546,9 +32546,9 @@
       "C269": {
         "status": "pass",
         "exit": 0,
-        "seconds": 6,
+        "seconds": 7,
         "tail": "1..3\nok 1 R170: a passing proof that reused results is reused by the release run\nok 2 R170: a proof that skipped a command not yet approved is not reused, and the reason says so\nok 3 R170: a proof where the quick command stood in for the test command is not reused, and the reason says so",
-        "at": "2026-10-13T22:10:27Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "cca5744f1bf77d15e4a186f9542f9b6d64295f4334e6d2f6ac8581598920a628",
         "reused": true
       },
@@ -32582,9 +32582,9 @@
       "C273": {
         "status": "pass",
         "exit": 0,
-        "seconds": 3,
+        "seconds": 5,
         "tail": "1..2\nok 1 R172: no test file writes a bats file and also starts the real bats\nok 2 R172: the rule sees the pattern that failed on Linux, and passes the filter form and the stand-in form",
-        "at": "2026-10-13T21:59:35Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "ab7e91af533b5933eea6fff46b276d511c63f30112f526ece27beda6a441b2d5",
         "reused": true
       },
@@ -32726,9 +32726,9 @@
       "C289": {
         "status": "pass",
         "exit": 0,
-        "seconds": 26,
+        "seconds": 31,
         "tail": "1..2\nok 1 R173: the bench's status line cases write the cost side file, and pass\nok 2 R173: a status line that never writes the side file fails the bench, on both records",
-        "at": "2026-10-13T22:10:27Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "fbe13635ca6021b4583a358cf68ff6ab8e9119a2fe8377ba7eb14d6645ccb075",
         "reused": true
       },
@@ -33024,8 +33024,8 @@
         "status": "pass",
         "exit": 0,
         "seconds": 2,
-        "tail": "1..18\nok 1 R182: three groups: the prompts hold exactly one instruction to run vbw fix done, naming every done fix\nok 2 R182: the round's vbw fix done comes after every Dev has returned\nok 3 R182: with one group (N = 1) the round still runs vbw fix done exactly once\nok 4 R182: with a session, the closing Lead runs vbw fix done first, then vbw run confirm and vbw run end\nok 5 R182: a vbw fix done past one shell command's 10-minute limit is waited for, and its output read, before the run is confirmed\nok 6 R182: without a session the round's vbw fix done still runs, by an agent of its own, before the workflow returns\nok 7 R182: no Dev is told to run vbw fix done: each commits its fix and checks it with vbw check on its own fixes' checks\nok 8 R182: a blocked fix and a fix whose Dev stopped are left out of vbw fix done and named with their status\nok 9 R182: when no Dev reported done, no vbw fix done runs\nok 10 R182: the result says which fixes closed and which stayed open, each open one with its reason\nok 11 R182: the agent answering for vbw fix done is asked which fixes closed and which stayed open\nok 12 R182: when the closing Lead stops, the log gives the exact vbw fix done to run by hand, and the round is not complete\nok 13 R182: when the agent reports that vbw fix done failed, the log gives the command to run by hand, and the round is not complete\nok 14 R182: without a session, a stopped or failed vbw fix done agent leaves the command to run by hand, and the round is not complete\nok 15 R182: dev.md never tells the Dev to run vbw fix done: the workflow runs it once for the round\nok 16 R182: dev.md tells a fixing Dev to commit its fix and check it with vbw check on its own fixes' checks\nok 17 R182: the Lead's own Close a run instructions include the fix round's vbw fix done, waited for to its end\nok 18 R182: the workflows stay within 1,500 lines and every agent within 900 words, all prompts within 22,800",
-        "at": "2026-10-13T22:10:27Z",
+        "tail": "exactly one instruction to run vbw fix done, naming every done fix\nok 2 R182: the round's vbw fix done comes after every Dev has returned\nok 3 R182: with one group (N = 1) the round still runs vbw fix done exactly once\nok 4 R182: with a session, the closing Lead runs vbw fix done first, then vbw run confirm and vbw run end\nok 5 R182: a vbw fix done past one shell command's 10-minute limit is waited for, and its output read, before the run is confirmed\nok 6 R182: without a session the round's vbw fix done still runs, by an agent of its own, before the workflow returns\nok 7 R182: no Dev is told to run vbw fix done: each commits its fix and checks it with vbw check on its own fixes' checks\nok 8 R182: a blocked fix and a fix whose Dev stopped are left out of vbw fix done and named with their status\nok 9 R182: when no Dev reported done, no vbw fix done runs\nok 10 R182: the result says which fixes closed and which stayed open, each open one with its reason\nok 11 R182: the agent answering for vbw fix done is asked which fixes closed and which stayed open\nok 12 R182: when the closing Lead stops, the log gives the exact vbw fix done to run by hand, and the round is not complete\nok 13 R182: when the agent reports that vbw fix done failed, the log gives the command to run by hand, and the round is not complete\nok 14 R182: without a session, a stopped or failed vbw fix done agent leaves the command to run by hand, and the round is not complete\nok 15 R182: dev.md never tells the Dev to run vbw fix done: the workflow runs it once for the round\nok 16 R182: dev.md tells a fixing Dev to commit its fix and check it with vbw check on its own fixes' checks\nok 17 R182: the Lead's own Close a run instructions include the fix round's vbw fix done, waited for to its end\nok 18 R182: the workflows stay within 1,500 lines and every agent within 900 words, all prompts within 22,800\nok 19 R182: without a session, complete follows the plan: an open fix and a blocked Dev give the same value, true",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "803f0983124e78b253ff1f30ee1ca79d1aaebd20c65fec4fba7392bceb6759cb",
         "reused": true
       },
@@ -33034,7 +33034,7 @@
         "exit": 0,
         "seconds": 46,
         "tail": "1..7\nok 1 R182: the round's one vbw fix done closes every clean fix, and vbw run confirm counts each as recorded\nok 2 R182: a fix with uncommitted changes stays open and is named, the other closes, and vbw run confirm names it\nok 3 R182: a fix whose files serve a failing check of finished work stays open and is named, the other closes\nok 4 R182: a fix whose Dev was blocked is left out of the round's vbw fix done and stays open; vbw run confirm names it\nok 5 R182: the round's vbw fix done prints one line per check, then both count lines, as before\nok 6 R182: the next vbw prove reuses what the round's vbw fix done ran\nok 7 R182: a test-command fix whose test files still fail stays open and is named; once they pass it closes",
-        "at": "2026-10-13T21:59:35Z",
+        "at": "2026-10-13T22:22:13Z",
         "fp": "2022062df747e78caf2b8e5e6d6191a6ed3d58699c2f97d23f52622a6167c875",
         "reused": true
       },
@@ -33055,6 +33055,15 @@
         "at": "2026-10-13T21:59:35Z",
         "fp": "00455b2ea5acf2fce190a6e37bb8c378fee48f54f25feb4ecd5443c06db1aef9",
         "reused": true
+      },
+      "C326": {
+        "status": "pass",
+        "exit": 0,
+        "seconds": 2,
+        "tail": "exactly one instruction to run vbw fix done, naming every done fix\nok 2 R182: the round's vbw fix done comes after every Dev has returned\nok 3 R182: with one group (N = 1) the round still runs vbw fix done exactly once\nok 4 R182: with a session, the closing Lead runs vbw fix done first, then vbw run confirm and vbw run end\nok 5 R182: a vbw fix done past one shell command's 10-minute limit is waited for, and its output read, before the run is confirmed\nok 6 R182: without a session the round's vbw fix done still runs, by an agent of its own, before the workflow returns\nok 7 R182: no Dev is told to run vbw fix done: each commits its fix and checks it with vbw check on its own fixes' checks\nok 8 R182: a blocked fix and a fix whose Dev stopped are left out of vbw fix done and named with their status\nok 9 R182: when no Dev reported done, no vbw fix done runs\nok 10 R182: the result says which fixes closed and which stayed open, each open one with its reason\nok 11 R182: the agent answering for vbw fix done is asked which fixes closed and which stayed open\nok 12 R182: when the closing Lead stops, the log gives the exact vbw fix done to run by hand, and the round is not complete\nok 13 R182: when the agent reports that vbw fix done failed, the log gives the command to run by hand, and the round is not complete\nok 14 R182: without a session, a stopped or failed vbw fix done agent leaves the command to run by hand, and the round is not complete\nok 15 R182: dev.md never tells the Dev to run vbw fix done: the workflow runs it once for the round\nok 16 R182: dev.md tells a fixing Dev to commit its fix and check it with vbw check on its own fixes' checks\nok 17 R182: the Lead's own Close a run instructions include the fix round's vbw fix done, waited for to its end\nok 18 R182: the workflows stay within 1,500 lines and every agent within 900 words, all prompts within 22,800\nok 19 R182: without a session, complete follows the plan: an open fix and a blocked Dev give the same value, true",
+        "fp": "077d866f059c5c7adfd9a2b44634dd0ca21d54241d70c56b1a3e86d609100bf9",
+        "at": "2026-10-13T22:29:02Z",
+        "why": "never passed"
       }
     },
     "commands": {
@@ -33070,7 +33079,7 @@
       "test": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1127,
+        "seconds": 1130,
         "tail": "",
         "command": "bats --print-output-on-failure {file} (one test file per run)",
         "of_files": true
@@ -33082,9 +33091,9 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..2\nok 1 the Lead runs the project's formatter and linter on every check file before vbw apply\nok 2 the Dev never lets a formatter rewrite a check file",
-        "fp": "9c7cb6d12749ce7277ec8251de8e73e90e72d188c76809d7c3fb77c63d06dee9",
         "at": "2026-10-13T22:14:55Z",
-        "why": "plugin/agents/lead.md changed"
+        "fp": "9c7cb6d12749ce7277ec8251de8e73e90e72d188c76809d7c3fb77c63d06dee9",
+        "reused": true
       },
       "tests/apply-test-files.bats": {
         "status": "pass",
@@ -33460,9 +33469,9 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..3\nok 1 the Lead lists each [auto] requirement's rules, each with its check, and self-reviews them\nok 2 the Architect states conditions and edge cases in the criteria\nok 3 the router's express apply example carries rules",
-        "fp": "4ddfe12907cb7d6de7804ccaf0241ea2c1b2dfc1cc7fbf1671ea60b4a82030d8",
         "at": "2026-10-13T22:14:55Z",
-        "why": "plugin/agents/lead.md changed"
+        "fp": "4ddfe12907cb7d6de7804ccaf0241ea2c1b2dfc1cc7fbf1671ea60b4a82030d8",
+        "reused": true
       },
       "tests/runner-reads.bats": {
         "status": "pass",
@@ -33496,27 +33505,27 @@
         "exit": 0,
         "seconds": 48,
         "tail": "1..17\nok 1 eval is caught\nok 2 bash-4 features are caught\nok 3 process killing is caught\nok 4 the signal-free liveness probe kill -0 passes, any other kill is caught\nok 5 /tmp paths are caught\nok 6 git path listings without -z are caught, with -z pass\nok 7 plugin-root discovery is caught\nok 8 a clean file breaks no rule\nok 9 hooks naming a missing file are caught\nok 10 per-tool-call hooks that start a shell or can exit non-zero are caught\nok 11 per-tool-call hooks: only assignments and [ ] tests may come before jq, and the command must end in || true\nok 12 the vision rule check passes on the repository as it is\nok 13 the vision rule check catches the rule removed from a contributor file\nok 14 the vision rule check catches the rule moved below another rule in AGENTS.md\nok 15 the hook answer check passes on the repository as it is\nok 16 the hook answer check catches a new unpinned answer shape\nok 17 the hook answer check catches a hook that answers allow",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "cea597da7e37298b1c50fd07c24fcfcd6ab9c1e90cc14912ac62ec844e47ba39",
-        "reused": true
+        "at": "2026-10-13T22:29:02Z",
+        "why": "tests/fix-round-once.bats changed"
       },
       "tests/standards.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 8,
+        "seconds": 9,
         "tail": "1..17\nok 1 kernel stays within 7,600 lines of code (design §10; owner raised it to 3,300 on 2026-10-04, 3,500 on 2026-10-05, 3,800 on 2026-10-06 and 7,600 on 2026-10-07)\nok 2 workflows stay within 1,500 lines (design §10)\nok 3 mod JavaScript stays within 3,500 lines (owner raised it from 3,000 on 2026-10-07)\nok 4 no eval or data-as-code (ledger D108, D139)\nok 5 no bash-4-only features: macOS /bin/bash 3.2 is the floor (K2, ledger D294)\nok 6 never terminates processes (ledger D54, D285–D288)\nok 7 no predictable /tmp paths or writes outside the project (K3, ledger D296)\nok 8 git path listings are NUL-separated (ledger D293)\nok 9 no plugin-root discovery: paths come from ${CLAUDE_PLUGIN_ROOT} substitution or $0 (K4)\nok 10 shell files parse on the minimum bash and pass shellcheck\nok 11 plugin manifests are valid\nok 12 hooks.json is valid and every file a hook names exists in hooks/\nok 13 per-tool-call hooks run jq directly and never exit non-zero (K20)\nok 14 Claude Code's own validator accepts the plugin and the marketplace\nok 15 no brace-literal parameter defaults (a default of {} written inside the expansion): bash 3.2 keeps the backslash (tests and tools too)\nok 16 the vision rule is VBW's first development rule, and every contributor file states it (owner mandate, 2026-10-06)\nok 17 every answer a hook gives Claude Code has a test pinning its meaning, and no hook answers allow (R128)",
         "fp": "0081e8d9fb717ee39eded21e9282e34e071705efe4349f4a472013dd63d63d6c",
-        "at": "2026-10-13T22:14:55Z",
+        "at": "2026-10-13T22:29:02Z",
         "why": "reads the project through git"
       },
       "tests/statusline.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 11,
+        "seconds": 12,
         "tail": "1..16\nok 1 outside a VBW project it says how to start, and still shows the session\nok 2 in a VBW project it shows progress and the last next step\nok 3 a running build and an armed autonomous run are visible\nok 4 a gate that needs the user says so\nok 5 no data from Claude Code, or garbage, never breaks it\nok 6 the branch is read in a linked worktree too\nok 7 statusline on sets it without asking, and keeps the user's own to restore\nok 8 the setting finds the newest installed VBW and renders it\nok 9 workflows on turns Dynamic workflows on, keeps every other setting, and never overrides a deliberate off\nok 10 started in a subfolder it shows the project; a VBW 1 project is pointed to the conversion\nok 11 a running step shows how long it has run and how many agents are working\nok 12 the team line follows the profile and per-role models; tokens and prompt cache are shown\nok 13 statusline on asks Claude Code to refresh it every 5 seconds, and tops up a setting made without it\nok 14 from Claude Code 2.1.287 the agents and team line is dropped; line 1 keeps the agent count\nok 15 a session in a VBW project tops up the refresh interval of VBW's status line, and leaves any other status line alone\nok 16 doctor warns when VBW's status line has no refresh interval",
         "fp": "4a4f96ffe59d490f5eacbb1ae1d4adf16d0a33c8851971ab35542efdf55174f2",
-        "at": "2026-10-13T22:14:55Z",
-        "why": "plugin/agents/lead.md changed"
+        "at": "2026-10-13T22:29:02Z",
+        "why": "plugin/workflows/fixing.js changed"
       },
       "tests/testfiles-spec.bats": {
         "status": "pass",
@@ -33539,17 +33548,17 @@
       "tests/workflows.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 4,
+        "seconds": 5,
         "tail": "1..12\nok 1 the workflows and VBW 1's seven agents exist, and nothing else\nok 2 each workflow starts with a pure-literal meta naming itself after its file\nok 3 workflows never use what breaks resume or is unavailable (time, randomness, modules)\nok 4 every phase() title is declared in meta.phases\nok 5 every agentType names an agent this plugin ships\nok 6 agents have a name matching the file, a single-line description and a tool list\nok 7 agents stay within their size budget (about 1.5k tokens)\nok 8 agents only use vbw commands that exist\nok 9 agents that plan or judge the plan load the user's recorded decisions\nok 10 workflow scripts parse as JavaScript (when node is available)\nok 11 workflow schemas are objects whose required keys are all properties\nok 12 no workflow shares its name with a skill (/vbw:NAME would start the workflow)",
         "fp": "0cb1f79644094a1dab67e2a08a9e711ff4d467cd57702aaa3747bab08e6cf643",
-        "at": "2026-10-13T22:14:55Z",
-        "why": "plugin/agents/lead.md changed"
+        "at": "2026-10-13T22:29:02Z",
+        "why": "plugin/workflows/fixing.js changed"
       }
     },
     "scope": [],
     "full": false,
     "passed": true,
-    "record": "519f18b9ac354e11eb1e58061925a2618ff771b6bc507bd95a109262ff37a167"
+    "record": "77b51378d79ff284b1ae54158875def53f452c84d702eb9e46f3ecdd1e486b02"
   },
   "recommendation": {
     "at": "2026-10-09T20:53:56Z",
