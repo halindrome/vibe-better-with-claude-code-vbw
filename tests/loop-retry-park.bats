@@ -184,3 +184,41 @@ parked_clean() {
   jq -e '[.decisions[] | select(.text | test("park"))] | last | .text | test("you changed src/greet.txt")' .vbw/record.json \
     || { jq '.decisions[-2:]' .vbw/record.json; false; }
 }
+
+@test "R179 (F185): a file you staged stays staged and the commit touching it is left and named; a check file you edited by hand stays" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 --ceiling 50 > /dev/null
+  built_and_broken
+  escalated
+  [ "$(step)" = fix ] || { cat "$TEST_ROOT/step.json"; false; }
+  escalated
+  figures s1 4 2000 200
+  printf 'staged\n' >> src/greet.txt && git add src/greet.txt
+  printf '# mine\n' >> tests/greet.sh
+  [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; false; }
+  git diff --cached --name-only | grep -qx src/greet.txt
+  grep -q staged src/greet.txt
+  [ -f tests/greet.sh ] && grep -q '# mine' tests/greet.sh
+  ! git log --format=%s | grep -q '^Revert "feat(greet): bye"'
+  jq -e '[.decisions[] | select(.text | test("park"))] | last | .text | test("you changed src/greet.txt")' .vbw/record.json \
+    || { jq '.decisions[-2:]' .vbw/record.json; false; }
+}
+
+@test "R179 (F185): a commit that does not revert cleanly is left in place and named; the clean ones are reverted" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 --ceiling 50 > /dev/null
+  built_and_broken
+  # A later commit on the same file, changing code and a .vbw file together: left (D326), and it makes the oldest revert conflict.
+  printf 'extra\n' >> src/greet.txt
+  printf 'note\n' > .vbw/notes.md
+  git add -f src/greet.txt .vbw/notes.md && git commit -q -m "chore: code and record together"
+  escalated
+  [ "$(step)" = fix ] || { cat "$TEST_ROOT/step.json"; false; }
+  escalated
+  figures s1 4 2000 200
+  [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; false; }
+  # The mixed commit is left; the two older ones conflict with it (git treats a change next to another as a conflict) and are left too, each named.
+  ! git log --format=%s | grep -q '^Revert '
+  grep -q extra src/greet.txt
+  jq -e '[.decisions[] | select(.text | test("park"))] | last | .text | test("does not revert cleanly") and test("changes the record too")' .vbw/record.json \
+    || { jq '.decisions[-2:]' .vbw/record.json; false; }
+  grep -q 'does not revert cleanly' .vbw/loop-report.md
+}
