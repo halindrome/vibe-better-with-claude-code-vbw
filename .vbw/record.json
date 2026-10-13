@@ -25596,7 +25596,7 @@
         "P132.1",
         "P132.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Run 'bash tools/measure-fix-round.sh round 3' with the same fixture parameters as before.txt, save its output to tools/baseline/results/fix-round/after.txt and commit it.",
@@ -30053,6 +30053,12 @@
       "text": "Fix round before the change: fixture tools/measure-fix-round.sh (3 finished requirements with 2 checks each, 4 test files, 10 seconds per check and per test file), 3 groups, each Dev its own vbw fix done: 0.72 minutes, 18 checks and 4 test files run, 6 ran more than once",
       "why": "R182: measured before any change",
       "at": "2026-10-13T21:50:35Z"
+    },
+    {
+      "id": "D351",
+      "text": "Supersedes D350: one vbw fix done per fix round, run by the workflow after every Dev returns. Fixture tools/measure-fix-round.sh (3 finished requirements with 2 checks each, 4 test files, 10 seconds per check and per test file), 3 groups. Before, each Dev its own vbw fix done: 0.72 minutes, 18 checks and 4 test files run, 6 ran more than once. After, one vbw fix done per round: 0.40 minutes, 6 checks and 4 test files run, 0 ran more than once. Rejected: a kernel lock that makes vbw fix done runs in one clone wait for each other",
+      "why": "One vbw fix done per round cut the measured round from 0.72 to 0.40 minutes and the checks run from 18 to 6, with nothing run twice (6 runs repeated before). A lock would only make the three runs wait for each other: each still runs its overlapping checks, one after another, and reuses earlier results only by chance, so it saves no work and the minutes stay near 0.72 or worse. Running the work once removes the overlap instead of queuing it.",
+      "at": "2026-10-13T21:55:58Z"
     }
   ],
   "commands": {
@@ -34151,6 +34157,15 @@
         "milestone": "M27",
         "started": "2026-10-13T21:51:33Z",
         "ended": "2026-10-13T21:54:31Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261013T215454Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M27",
+        "started": "2026-10-13T21:54:54Z",
+        "ended": "2026-10-13T21:57:53Z",
         "cost": null
       }
     ],
