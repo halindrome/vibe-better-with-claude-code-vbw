@@ -27,14 +27,20 @@ const effortOf = (role, step) => {
 }
 if (groups.length === 0) return { results: [], error: 'no fix groups given: pass args.groups from vbw next --json (detail.groups)' }
 
+const FIXDONE_PROPS = {
+  fixdone: { type: 'string', enum: ['ran', 'failed'] },
+  closed: { type: 'array', items: { type: 'string' } },
+  open: { type: 'array', items: { type: 'object', required: ['fix', 'reason'], properties: { fix: { type: 'string' }, reason: { type: 'string' } } } },
+}
 const CLOSE_RESULT = {
   type: 'object',
-  required: ['ended', 'recorded', 'report'],
-  properties: {
-    ended: { type: 'boolean' },
-    recorded: { type: 'boolean' },
-    report: { type: 'string' },
-  },
+  required: ['fixdone', 'closed', 'open', 'ended', 'recorded', 'report'],
+  properties: Object.assign({ ended: { type: 'boolean' }, recorded: { type: 'boolean' }, report: { type: 'string' } }, FIXDONE_PROPS),
+}
+const ALONE_RESULT = {
+  type: 'object',
+  required: ['fixdone', 'closed', 'open', 'report'],
+  properties: Object.assign({ report: { type: 'string' } }, FIXDONE_PROPS),
 }
 
 const FIX_RESULT = {
@@ -47,17 +53,21 @@ const FIX_RESULT = {
   },
 }
 
-// The run's own last step (R78, R81): confirm what the agents recorded, say plainly
-// what was not, and end the run. Only when the router passed args.session.
+// The round's one vbw fix done (R182), run after every Dev has returned, for the fixes whose Dev
+// reported done. It may outlast one shell command's 10-minute limit.
 const session = (args && args.session) || ''
-const closeRun = async ids => {
-  if (!session) return null
-  const sh = c => `VBW_SESSION_ID=${session} ${c}`
+const sh = c => (session ? `VBW_SESSION_ID=${session} ${c}` : c)
+const WAIT = 'It may run past one shell command\'s 10-minute limit: if Claude Code moves it to the background, wait for it to finish and read its whole output (it ends with the two count lines) before anything else.'
+const FIXDONE_ANSWER = 'Answer fixdone ("ran" when it ran, "failed" when it stopped with an error), closed (the fix ids it closed) and open (each fix it left open: {fix, reason})'
+// The run's own last step (R78, R81): the round's vbw fix done, then confirm what the agents
+// recorded, say plainly what was not, and end the run. Only when the router passed args.session.
+const closeRun = async (ids, fixCmd) => {
   const confirm = sh(`vbw run confirm ${ids.join(' ')}`)
   const end = sh('vbw run end')
-  const done = await agent(`Close this VBW run (your own instructions, Close a run, allow it). Run ${confirm} (it exits 1 when some fixes were not recorded), then, whatever it said, run ${end}. Answer ended (run end succeeded), recorded (confirm exited 0) and report (the lines for what was not recorded, else "all recorded; run ended"). Change nothing else.${voice}`,
+  const first = fixCmd ? `First run ${fixCmd}. ${WAIT} ` : ''
+  const done = await agent(`Close this VBW run (your own instructions, Close a run, allow it). ${first}Then run ${confirm} (it exits 1 when some fixes were not recorded), then, whatever it said, run ${end}. ${FIXDONE_ANSWER}${fixCmd ? '' : ' (no fix is to be closed: answer "ran" with empty lists)'}, ended (run end succeeded), recorded (confirm exited 0) and report (the lines for what was not recorded, else "all recorded; run ended"). Change nothing else.${voice}`,
     Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, models.lead ? { model: models.lead } : {}, effortOf('lead', 'close')))
-  if (!done) log(`the closing agent stopped: run by hand: ${confirm} ; then ${end}`)
+  if (!done) log(`the closing agent stopped: run by hand: ${fixCmd ? fixCmd + ' ; then ' : ''}${confirm} ; then ${end}`)
   else {
     if (!done.recorded || !done.ended) log(done.report)
     if (!done.recorded) log(`not everything was recorded: check by hand with ${confirm}`)
@@ -65,9 +75,16 @@ const closeRun = async ids => {
   }
   return done
 }
+// Without a session there is no closing Lead: an agent of its own runs the round's vbw fix done.
+const fixDoneAlone = async fixCmd => {
+  const done = await agent(`Close the fixes of this VBW round (your own instructions, Close a run, allow it). Run ${fixCmd}. ${WAIT} ${FIXDONE_ANSWER}, and report (what it printed for fixes left open). Change nothing else.${voice}`,
+    Object.assign({ agentType: 'vbw:lead', label: 'fix done', schema: ALONE_RESULT }, models.lead ? { model: models.lead } : {}, effortOf('lead', 'close')))
+  if (!done) log(`the fix done agent stopped: run by hand: ${fixCmd}`)
+  return done
+}
 
 phase('Fix')
-const NO_SUITE = ' Do not run the project\'s test command or its quick command: run only your fixes\' checks (vbw check). The whole test command runs once, in the proof after this round. If your fix is for a failure of the test command itself, run only the failing tests you need to fix.'
+const NO_SUITE = ' Do not run the project\'s test command or its quick command: run only your fixes\' checks (vbw check). Commit your fix, check it with vbw check, then return. Do not run vbw fix done: the workflow runs it once for the round, after every Dev returns. The whole test command runs once, in the proof after this round. If your fix is for a failure of the test command itself, run only the failing tests you need to fix.'
 // A fix a QA finding opened is a gap in the tests too: the Dev adds the regression test (R160).
 const QA_TEST = ' If a fix came from a QA finding (its source says qa), first write a test that fails while the problem exists (it may create new test files), register it with vbw fix check FIX (a check document on stdin), and commit it with the fix. Edits to an approved check file of the finding\'s requirement wait for one approval by the user before the proof: say so in notes, never approve.'
 const results = await pipeline(groups, ids =>
@@ -82,6 +99,19 @@ const out = groups.map((ids, i) => results[i]
   : { fixes: ids, status: 'interrupted', summary: 'the Dev stopped before reporting', notes: [] })
 const interrupted = out.filter(r => r.status === 'interrupted').length
 if (interrupted > 0) log(`${interrupted} fixer(s) stopped before reporting; their fixes stay open`)
-const confirmation = await closeRun(groups.flat())
-const complete = interrupted === 0 && (!session || Boolean(confirmation && confirmation.recorded && confirmation.ended))
-return confirmation ? { results: out, complete, confirmation } : { results: out, complete }
+const doneIds = out.filter(r => r.status === 'done').flatMap(r => r.fixes)
+const leftOut = out.filter(r => r.status !== 'done').flatMap(r => r.fixes.map(fix => ({ fix, status: r.status })))
+leftOut.forEach(l => log(`${l.fix} is left open: its Dev ${l.status}`))
+const fixCmd = doneIds.length ? sh(`vbw fix done ${doneIds.join(' ')}`) : ''
+let confirmation = null
+let fd = null
+if (session) { confirmation = await closeRun(groups.flat(), fixCmd); fd = confirmation }
+else if (fixCmd) fd = await fixDoneAlone(fixCmd)
+const failed = Boolean(fixCmd) && (!fd || fd.fixdone === 'failed')
+if (failed) log(`vbw fix done did not finish: run by hand: ${fixCmd}`)
+const closed = fd && fixCmd && Array.isArray(fd.closed) ? fd.closed : []
+const open = fd && fixCmd && Array.isArray(fd.open) ? fd.open : []
+open.forEach(o => log(`${o.fix} stays open: ${o.reason}`))
+const fixdone = { command: fixCmd || null, closed, open, left_out: leftOut }
+const complete = interrupted === 0 && !failed && open.length === 0 && (!session || Boolean(confirmation && confirmation.recorded && confirmation.ended))
+return confirmation ? { results: out, complete, fixdone, confirmation } : { results: out, complete, fixdone }
