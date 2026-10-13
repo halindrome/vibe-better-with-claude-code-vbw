@@ -16160,7 +16160,14 @@
           "to": "deep",
           "reason": "Dev blocked P130.2: Slot store built and committed (09a8c7d6); C313, C314, C315 pass and 4 of 5 tests in C316 (tests/machine-recovery.bats) pass. Test 4 of that file cannot pass whatever the code does: it runs 'vbw prove' (which passes and closes fix F1, see prove.jq 'Fixes: close on pass') and then 'vbw fix done F1', which dies with 'F1 is not open'. Reproduced with no store problem at all. The test file is approved and protected, so it needs a replan: either run 'fix done F1' before 'prove', or give the project a second open fix. C317 (waited line), C318, C319 belong to P131.x and were not touched."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "0bf99953b2c9572931b7ab9124d3d671446d93f89b19dc1105fdfc42a2c34d60",
+        "at": "2026-10-13T18:55:11Z",
+        "note": "30/30 checks"
+      }
     },
     {
       "id": "P131",
