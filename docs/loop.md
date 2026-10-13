@@ -132,6 +132,13 @@ loop's own record:
   fingerprint;
 - the approval commit, `chore(vbw): approve contract FP`.
 
+When the contract is already approved and only a project command or the
+test-file form changed, the loop approves that alone the same way: a decision
+`Project commands approved by the loop on the user's behalf (loop started AT,
+items ...): name (argv); ...` and its commit `chore(vbw): approve commands`
+come first, then the consent; `vbw approve` records the same decision without
+the loop's words. A consent is never granted without its decision.
+
 A second loop step approves nothing again and records no second decision.
 
 **What still waits for you.** When any condition fails, `vbw next` answers as
