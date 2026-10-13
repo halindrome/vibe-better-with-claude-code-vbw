@@ -131,3 +131,16 @@ denied_as() {
     [ -z "$output" ] || { echo "refused: $c -> $output"; false; }
   done
 }
+
+@test "R180 (F206): a redirect glued to the subcommand hides no push or publish: git push>out.log, npm publish>log, docker push>x; a descriptor number stays with its redirect" {
+  denied_as 'git push>/dev/null' 'git push' 'push'
+  denied_as 'git push>out.log' 'git push' 'push'
+  denied_as 'git push&>out.log' 'git push' 'push'
+  denied_as 'git push>>out.log 2>&1' 'git push' 'push'
+  denied_as 'npm publish>log' 'npm publish' 'publish'
+  denied_as 'docker push>x' 'docker push' 'push'
+  run bash_call 'echo hi>out.log'
+  ! denied || { echo "denied: $output"; false; }
+  run bash_call 'git log 2>&1'
+  ! denied || { echo "denied: $output"; false; }
+}
