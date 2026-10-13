@@ -203,7 +203,7 @@ parked_clean() {
     || { jq '.decisions[-2:]' .vbw/record.json; false; }
 }
 
-@test "R179 (F185): a commit that does not revert cleanly is left in place and named; the clean ones are reverted" {
+@test "R179 (F185): a commit that does not revert cleanly is left in place and named, and so are the older ones its change sits next to; no half-done revert remains" {
   VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 --ceiling 50 > /dev/null
   built_and_broken
   # A later commit on the same file, changing code and a .vbw file together: left (D326), and it makes the oldest revert conflict.
@@ -221,4 +221,47 @@ parked_clean() {
   jq -e '[.decisions[] | select(.text | test("park"))] | last | .text | test("does not revert cleanly") and test("changes the record too")' .vbw/record.json \
     || { jq '.decisions[-2:]' .vbw/record.json; false; }
   grep -q 'does not revert cleanly' .vbw/loop-report.md
+  # No half-done revert (F193): no revert in progress, no conflict markers, the tree as committed, and the park committed.
+  [ ! -e "$(git rev-parse --git-path REVERT_HEAD)" ]
+  ! grep -q '<<<<<<<' src/greet.txt
+  [ -z "$(git status --porcelain --untracked-files=no)" ] || { git status --porcelain; false; }
+  git log --format=%s | grep -q '^chore(vbw): park T1$'
+}
+
+@test "R179 (F193): beside a commit that does not revert cleanly, the one that does is reverted" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 --ceiling 50 > /dev/null
+  built_and_broken
+  # A commit on another file reverts cleanly; the mixed commit after it is left and makes the greet.txt reverts conflict.
+  printf 'other\n' > src/other.txt
+  git add src/other.txt && git commit -q -m "feat(greet): other file"
+  printf 'extra\n' >> src/greet.txt
+  printf 'note\n' > .vbw/notes.md
+  git add -f src/greet.txt .vbw/notes.md && git commit -q -m "chore: code and record together"
+  escalated
+  [ "$(step)" = fix ] || { cat "$TEST_ROOT/step.json"; false; }
+  escalated
+  figures s1 4 2000 200
+  [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; false; }
+  git log --format=%s | grep -q '^Revert "feat(greet): other file"'
+  [ ! -f src/other.txt ]
+  ! git log --format=%s | grep -q '^Revert "feat(greet): bye"'
+  grep -q extra src/greet.txt
+  [ ! -e "$(git rev-parse --git-path REVERT_HEAD)" ]
+  ! grep -q '<<<<<<<' src/greet.txt
+  [ -z "$(git status --porcelain --untracked-files=no)" ] || { git status --porcelain; false; }
+  jq -e '.loop.items[0] | (.reverts | length == 1) and (.left | test("does not revert cleanly"))' .vbw/record.json || { jq .loop .vbw/record.json; false; }
+}
+
+@test "R179 (F194): vbw loop park by hand while a run is open refuses, names what to do and changes nothing" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
+  [ "$(step)" = plan ]
+  VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
+  local before
+  before=$(record_sum)
+  run "$VBW" loop park
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"a run is open"* && "$output" == *"Next: "* ]] || { echo "$output"; false; }
+  [ "$(record_sum)" = "$before" ]
+  jq -e '.loop.items[0].status == "in_progress" and (has("parked") | not) and .lease != null' .vbw/record.json
+  ! git log --format=%s | grep -q '^Revert '
 }
