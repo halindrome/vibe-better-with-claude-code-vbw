@@ -33016,6 +33016,15 @@
           "in": 8416,
           "out": 576
         }
+      },
+      {
+        "id": "plan-20261013T163657Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M26",
+        "started": "2026-10-13T16:36:57Z",
+        "ended": "2026-10-13T16:41:22Z",
+        "cost": null
       }
     ],
     "milestones": {
