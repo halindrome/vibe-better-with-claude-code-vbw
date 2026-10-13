@@ -10517,7 +10517,7 @@
       "id": "R183",
       "text": "Stale proof copies: a process killed outright leaves its .vbw/runtime/proof.* copy (13 MB seen 2026-10-12 05:26 from a killed duplicate fix done); the next proof removes copies whose owner process is gone (record the owner pid in the copy folder, as the gate's mutex does), with a test. Part of the machine-wide limit milestone (T128)",
       "proof": "auto",
-      "status": "open",
+      "status": "proven",
       "milestone": "M28",
       "rules": [
         {
@@ -16602,7 +16602,15 @@
         "guarded: R12 (C11), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326)",
         "tests: project test command"
       ],
-      "predicted": "express"
+      "predicted": "express",
+      "outcome": {
+        "tier": "express",
+        "predicted": "express",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 0
+      }
     }
   ],
   "plans": [
@@ -30314,10 +30322,10 @@
     }
   },
   "evidence": {
-    "at": "2026-10-13T22:29:02Z",
-    "contract": "3f9872a083136fb25a7c2f8b23cc5cae44a5b4d478830ba76e2ef66217aabf70",
-    "tree": "8240268bb0497e49f42493e2c148321a5c144e05",
-    "head": "8240268bb0497e49f42493e2c148321a5c144e05",
+    "at": "2026-10-13T22:53:41Z",
+    "contract": "a6f64e5af82c23308e9959fef7484620f4c90d6e76e13be92194acea5cd43ac6",
+    "tree": "5d0c7619ad373935d2ff64b2b34dc3b33a788513",
+    "head": "5d0c7619ad373935d2ff64b2b34dc3b33a788513",
     "checks": {
       "C1": {
         "status": "pass",
@@ -30385,20 +30393,20 @@
       "C10": {
         "status": "pass",
         "exit": 0,
-        "seconds": 24,
+        "seconds": 21,
         "tail": "1..3\nok 1 R11: a user rejection opens a fix and a later accept of that requirement closes it\nok 2 R11: a fix opened by QA stays open after the user accepts the requirement\nok 3 R11: the QA-opened fix closes only when QA records a passing verdict for the phase",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "3a317ec5d4e6aa30a38d7d3f85c89f4ce9d9f786c63e9da9e9fbb965a19e69c2",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C11": {
         "status": "pass",
         "exit": 0,
-        "seconds": 24,
+        "seconds": 21,
         "tail": "1..3\nok 1 R12: after a code change since the last proof, qa record refuses, names vbw prove, writes nothing\nok 2 R12: after vbw prove, the same qa record succeeds\nok 3 R12: the QA agent and the verifying workflow run prove and retry when qa record refuses",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "3e7474f7d1fc57f459b4468a463551c6f61f4677c3c9f51d63f4a89f5c955a74",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C12": {
         "status": "pass",
@@ -30441,9 +30449,9 @@
         "exit": 0,
         "seconds": 2,
         "tail": "1..7\nok 1 the repository's contributor files name only what exists\nok 2 no contributor file mentions .vbw-planning\nok 3 selftest: a clean tree passes\nok 4 selftest: a nonexistent path fails and is named\nok 5 selftest: a nonexistent /vbw: command fails\nok 6 selftest: .vbw-planning fails\nok 7 selftest: a bad path in an issue template fails",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "42d52543809ac338e2220d67cea0076337b4c85be5d7b0a08e4efc2e6fc50fe2",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": ". listing changed"
       },
       "C17": {
         "status": "pass",
@@ -30495,36 +30503,36 @@
         "exit": 0,
         "seconds": 9,
         "tail": "1..6\nok 1 the profile defines, for each tier, the agents with their count, the QA tier and the models\nok 2 express is one Dev; standard and deep keep the profile's models and QA tiers as before\nok 3 vbw next --json gives each phase exactly its profile cell, for every profile and tier\nok 4 a user's model override still wins over the tier's models\nok 5 a phase planned before tiers existed counts as standard\nok 6 the workflows and the router pass the tier's models and QA tier through",
-        "fp": "171d11d3a2126a14155e79ecb13941153e233153e2c0d238fef4758a3bf507a2",
         "at": "2026-10-13T22:29:02Z",
-        "why": "reads the project through git"
+        "fp": "171d11d3a2126a14155e79ecb13941153e233153e2c0d238fef4758a3bf507a2",
+        "reused": true
       },
       "C23": {
         "status": "pass",
         "exit": 0,
-        "seconds": 41,
+        "seconds": 34,
         "tail": "1..9\nok 1 an express phase shows its requirement, check and plan together on one line\nok 2 a standard phase keeps the separate requirement, check and plan listing\nok 3 one approval records the requirement, check and plan of an express phase\nok 4 an express phase has exactly one plan; a higher tier may have several\nok 5 an express phase is built by one Dev\nok 6 an express phase with only [auto] requirements is not sent to QA once proven\nok 7 an express phase with a [human] requirement runs QA, at the express QA tier\nok 8 an express phase that has escalated runs QA\nok 9 a standard phase still goes to QA after its proof, as before",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "755c8ce4990e163a3d9429753a0ecb0702335bbdf8e4bce2ef49972ba4279995",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C24": {
         "status": "pass",
         "exit": 0,
-        "seconds": 65,
+        "seconds": 58,
         "tail": "1..12\nok 1 a Dev block raises the tier and records the reason\nok 2 a standard phase is raised to deep, and a deep phase records the event and stays deep\nok 3 a fix that needs a second round raises the tier, a first failure does not\nok 4 QA finding a problem in an express phase raises it; in a standard phase it does not\nok 5 QA failing a phase a second time raises the tier\nok 6 a commit that touches a risk path raises the phase to deep\nok 7 a commit that grows well beyond its plan raises the tier one step; a small commit does not\nok 8 a proven requirement that fails raises the tier\nok 9 vbw tier raise raises, records the reason, and refuses to lower or repeat\nok 10 nothing lowers a raised tier: planning again and changing the mode keep it\nok 11 after a raise, the later steps use the raised tier's agents, QA tier and models\nok 12 vbw show phase shows the tier, the reason it was raised and the tier it started at",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "8c3879da872ae8661280592d027d7f1f76bd9db10a5af57f9c49e2a8b7da6eea",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C25": {
         "status": "pass",
         "exit": 0,
-        "seconds": 50,
+        "seconds": 43,
         "tail": "1..8\nok 1 a proven express phase is finished with its predicted tier and outcome\nok 2 a standard phase is finished only once QA has passed it\nok 3 an express phase with a [human] requirement is finished once QA passed and the user accepted\nok 4 an escalated phase records that its prediction did not hold\nok 5 QA findings and fix rounds are counted\nok 6 the outcome of a finished phase is not rewritten by a later proof\nok 7 vbw show rigor says plainly when no phase is finished\nok 8 vbw show rigor reports how many finished phases held their predicted tier",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "4594adebfd53573a3bad9d0113f8be99749da5756ab633b9a55acbb4be757688",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C26": {
         "status": "pass",
@@ -30547,20 +30555,20 @@
       "C28": {
         "status": "pass",
         "exit": 0,
-        "seconds": 46,
+        "seconds": 44,
         "tail": "1..8\nok 1 R32: an untracked file that would flip a check changes no proof result\nok 2 R32: an uncommitted edit to a tracked file is not proved; the committed version is\nok 3 R32: git-ignored files are linked into the copy, so a project that needs them proves\nok 4 R32: project commands run on the clean copy too\nok 5 R32: vbw check still sees uncommitted and untracked files in the working folder\nok 6 R32: the copy lives inside the project, is gone after the proof, and the folder is unchanged\nok 7 R32: an interrupted proof removes its copy and leaves the folder unchanged\nok 8 R32: check files that are not committed as approved are refused, never run from the working folder",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "d5f11da22c3b914153711a7bf807d698f9b8781271cf6fd4692640fd40a5f533",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C29": {
         "status": "pass",
         "exit": 0,
-        "seconds": 6,
+        "seconds": 4,
         "tail": "1..5\nok 1 R33: a record with a newer schema exits non-zero and says the project needs a newer VBW\nok 2 R33: the message never calls a newer record corrupt\nok 3 R33: a newer record is not modified, rewritten or locked by the older VBW\nok 4 R33: a record that is damaged, not newer, is still reported as corrupt\nok 5 R33: the record of every earlier schema version still loads and shows correctly",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "b85a9d42eac1bde99d5aaf35b00109467ef6300095cebf37cbd7db91abf9a016",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C30": {
         "status": "pass",
@@ -30583,11 +30591,11 @@
       "C32": {
         "status": "pass",
         "exit": 0,
-        "seconds": 7,
+        "seconds": 6,
         "tail": "1..6\nok 1 model.qa haiku is a usage error that says QA needs Sonnet or stronger and changes nothing\nok 2 any value naming Haiku is refused for model.qa, whatever its case\nok 3 model.qa accepts sonnet, opus and a full non-Haiku id; default removes the override\nok 4 the other roles still accept haiku\nok 5 a refused set leaves an existing valid model.qa override as it was\nok 6 the config header and the config skill document the QA restriction; the kernel stays within its budget",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "6c88717e786edfd27e3f1a910323386105cea2c891944ef766d88f268ec78d7f",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C33": {
         "status": "pass",
@@ -30621,9 +30629,9 @@
         "exit": 0,
         "seconds": 9,
         "tail": "1..11\nok 1 R39: vbw next --json carries the user's level, explanation depth and involvement\nok 2 R39: with no answers it carries an explicit neutral default\nok 3 R39: a partly answered interview fills the gaps with the neutral default\nok 4 R39: machine-read output does not change with the level: only the profile field differs\nok 5 R39: every skill hands the user's three values to its prompt, and none is skipped\nok 6 R39: every agent that can reach the user receives and applies the three values\nok 7 R39: involvement is honored: the three settings each name what VBW does with a decision\nok 8 R39: every workflow agent call carries the profile in its task text and still passes a schema\nok 9 R39: the router hands the profile to every workflow it starts\nok 10 R39: prompts stay within their budgets: agents 1.5k tokens, mode prompts 3k, router 2k, all prompts 16k (owner raised it from 15k on 2026-10-04)\nok 11 R39: the workflows stay within 1,500 lines of JavaScript",
-        "fp": "63414c456d25a0fe1df0e51bea8b9b7ea2e99398e5e7cc2478c5169ce075ff8b",
         "at": "2026-10-13T22:29:02Z",
-        "why": "reads the project through git"
+        "fp": "63414c456d25a0fe1df0e51bea8b9b7ea2e99398e5e7cc2478c5169ce075ff8b",
+        "reused": true
       },
       "C37": {
         "status": "pass",
@@ -30655,92 +30663,92 @@
       "C40": {
         "status": "pass",
         "exit": 0,
-        "seconds": 98,
+        "seconds": 95,
         "tail": "1..11\nok 1 an alone check and another check started together never overlap\nok 2 an alone check waits for a running check, and checks wait while it runs\nok 3 checks that are not alone still run in parallel, with unchanged output\nok 4 vbw prove holds the exclusion too\nok 5 the checks vbw fix done runs hold the exclusion too\nok 6 a check that times out while alone releases the exclusion\nok 7 a crashed vbw process leaves no lock that blocks later checks\nok 8 a check waits for the check holding the gate, however long, and then runs\nok 9 checks of two different projects do not block each other\nok 10 the exclusion lives under .vbw/runtime and nothing is written outside the project\nok 11 without an alone marker behaviour is unchanged: no waiting, no lock left behind",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "f0bed1d54bb60e83a625a4694c437693fd1f036f3b738ac5c664dd9a8b3f9617",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C41": {
         "status": "pass",
         "exit": 0,
         "seconds": 2,
         "tail": "1..5\nok 1 docs/proof.md describes the alone marker of a check\nok 2 docs/record.md lists alone among a check's fields\nok 3 the kernel stays within its line budget\nok 4 the kernel code stays bash 3.2 compatible, without eval and without /tmp\nok 5 docs/record.md says a record whose checks use alone is schema 2, and why",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "5fe202fa9288cf93c06209123b69c26a2d5675dcd92e7dd7a6fce3852f311b1e",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C42": {
         "status": "pass",
         "exit": 0,
-        "seconds": 105,
+        "seconds": 92,
         "tail": "1..14\nok 1 a passing check is kept in the clone's store of recorded runs with the files it read, never in the record\nok 2 an unchanged pass is not rerun, and the output says so with the time of the pass\nok 3 a committed change to a file a check read reruns that check, and only that check\nok 4 a changed approved definition reruns that check, and a check whose definition is unchanged is reused though the contract changed\nok 5 a check that last failed is rerun even when the files it read match an earlier pass\nok 6 a check that never ran is run, and a check that declares no files is judged by what it read\nok 7 checks run on the committed code: an uncommitted change outside the fix's files neither fails them nor stops their reuse\nok 8 uncommitted changes in the fix's files still block closing, and nothing reruns\nok 9 vbw prove and vbw fix done share the store and the rule: each reuses the other's passes\nok 10 vbw prove still fails on a failing check whatever was recorded\nok 11 closing outcomes are the same when a check is skipped: fixed for code, closed for a human requirement\nok 12 a missing or damaged store of recorded runs only means the checks run again\nok 13 the record never holds passes or read lists, so VBW 2.0.16 still reads it, and closing a fix leaves no record change to commit\nok 14 a pass of a check the contract no longer has is never used, and the record stays readable",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "142842e374f5f45a907dfcc8f0ea2124810f0f942290b83d65f8b15530b1e46d",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C43": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
         "tail": "1..3\nok 1 docs/proof.md describes when vbw fix done skips a check and what it says\nok 2 docs/proof.md says passes are kept in the clone's store of recorded runs, outside the record, and a lost one only reruns checks\nok 3 the kernel stays within its line budget",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "820ec07b13ac3e134772ba3157fce270deb0d88470b98c9aa981d72535cb125d",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C44": {
         "status": "pass",
         "exit": 0,
-        "seconds": 65,
+        "seconds": 59,
         "tail": "1..11\nok 1 a single id behaves as it always did\nok 2 several fixes close in one command and a shared check runs once\nok 3 a code fix and a human requirement's fix each end as if closed alone\nok 4 an unknown id and a fix that is not open are named and the others still close\nok 5 a fix with uncommitted changes is named and the others still close\nok 6 a failing check fails only the fixes it serves, and is named\nok 7 a shared check that fails fails each fix it serves, not the fix of a human requirement\nok 8 the same id twice is closed once, without error\nok 9 checks that passed on unchanged files are reused across the named fixes\nok 10 checks marked alone still run alone while several fixes close\nok 11 fix retry still takes exactly one id, and fix done needs at least one",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "b5ce77165565ec0cc32ca4510cf43d33ec707395b2d1fd97258e4a3c8b4f22ed",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C45": {
         "status": "pass",
         "exit": 0,
-        "seconds": 2,
+        "seconds": 1,
         "tail": "1..4\nok 1 vbw help shows fix done with several ids\nok 2 docs/proof.md and docs/workflows.md show vbw fix done with several fixes\nok 3 the dev agent closes several fixes in one vbw fix done\nok 4 the kernel stays within its line budget",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "46a91bfc62915c056d902b68cb6ac27e164e2204ae665e8dc2adb94f05805174",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C46": {
         "status": "pass",
         "exit": 0,
-        "seconds": 14,
+        "seconds": 11,
         "tail": "1..3\nok 1 closing a fix, proving and keeping the interview answers in the project leave a record VBW 2.0.16 reads or asks to update for\nok 2 the fields 2.0.16 does not read raise the schema, never stay at schema 1\nok 3 a record carrying passes is refused as corrupt: passes belong to the clone, and no release wrote them",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "f08d70799a50e65facd55c090a95cf1f521e8f7c47ba2f14e7a6aacd78febf1c",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C47": {
         "status": "pass",
         "exit": 0,
-        "seconds": 168,
+        "seconds": 153,
         "tail": "1..15\nok 1 R47: a QA pass keeps one digest of the phase's own inputs in qa.tree; no new record field, the schema unchanged\nok 2 R47: a phase that has never passed QA is checked\nok 3 R47: after one phase passes and the other does not, only the other is checked\nok 4 R47: a phase whose last verdict was fail is checked again, and a passing phase keeps its pass\nok 5 R47: two phases passed and a fix touches one: only that one is in the next QA list\nok 6 R47: a pass that stands is still a pass on the proven code: it counts for finishing the phase\nok 7 R47: changing a file of the phase alone is enough to check it again\nok 8 R47: changing a test of the phase alone is enough to check it again\nok 9 R47: changing the goal of the phase alone is enough to check it again\nok 10 R47: changing the plan of the phase alone is enough to check it again\nok 11 R47: a change to a file that belongs to no phase checks no phase\nok 12 R47: fixes that close without touching any phase file leave every pass standing\nok 13 R47: a record written before this change (qa.tree held the whole-folder fingerprint) is read without error and its phases are checked again once\nok 14 R47: QA still refuses a verdict on a proof older than the current code (R12)\nok 15 R47: the verify workflow checks exactly the phases it is given and holds no selection of its own",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "3793047ee1fb62638d8dd2969257314b3b0d1d585d924ccb0d1585d6377aef7a",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C48": {
         "status": "pass",
         "exit": 0,
-        "seconds": 127,
+        "seconds": 112,
         "tail": "1..9\nok 1 R49: a phase that builds on a re-checked phase is checked again though its own inputs did not change\nok 2 R49: it is transitive: A changes, B builds on A, C builds on B, and all three are checked again\nok 3 R49: a change in the middle checks it and what builds on it, not what it builds on\nok 4 R49: a dependency on a phase that is not re-checked adds nothing\nok 5 R49: a dependent that has itself never passed is already included and listed once\nok 6 R49: when the changed phase passes again but its dependent was not recorded, the dependent is still checked\nok 7 R49: when both are checked again, every pass stands and the milestone can ship\nok 8 R49: phases that build on each other in a cycle do not hang or crash, and the kernel names them\nok 9 R49: a plan that comes after a plan or a phase that does not exist is reported by name, not silently dropped",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "b47c6a2b2fd7e4588aca832a13e805fc047d9766a43e793729a86964198de184",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C49": {
         "status": "pass",
         "exit": 0,
-        "seconds": 118,
+        "seconds": 125,
         "tail": "1..13\nok 1 R48: a phase that failed last time is named with that reason, and the phase that passed is listed as standing\nok 2 R48: a phase that was never checked is named with that reason\nok 3 R48: each changed input is named: files, tests, goal or plan\nok 4 R48: a phase that builds on a re-checked phase names it\nok 5 R48: a phase with several reasons shows all of them\nok 6 R48: the reasons list is exactly the list of phases sent to QA, and the instruction states each reason\nok 7 R48: when nothing needs checking again, the output says so and lists every phase as standing\nok 8 R48: vbw show qa reports each reason in text and each phase whose pass stands\nok 9 R48: the answer the status line reads carries the reasons\nok 10 R48: for a user at 'never' and 'plain with terms explained', the reasons carry no unexplained jargon\nok 11 R48: the qa skill reads the reasons, tells the user at their level which phases are checked again and why, and which keep their pass\nok 12 R48: the docs describe the re-check rule and where the reasons appear\nok 13 R48: on a clone without the cache of what each pass covered, a re-checked phase still gets a plain reason",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "e2d065d924f0bab992297d38ee0c252cf6a75f1b0a5ad3f6c7dd6ac10c5e58ff",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C50": {
         "status": "pass",
@@ -30793,8 +30801,8 @@
         "seconds": 3,
         "tail": "1..5\nok 1 R53: the panel is a mod named by hooks.json, next to the hooks it had, which are unchanged\nok 2 R53: Claude Code's own validator reads the module and lists the hooks the panel registers\nok 3 R53: the status line is byte for byte what it is without the panel, in a VBW project\nok 4 R53: the status line is byte for byte what it is without the panel, outside a VBW project, with colour too\nok 5 R53: the status line and the kernel know nothing of the panel, so an older Claude Code prints nothing extra",
         "fp": "99b0b5dfc176cee0cb0aac0aaba7deaddcbf8b4074c02958b48278313fd54b6e",
-        "at": "2026-10-13T22:29:02Z",
-        "why": "reads the project through git"
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C56": {
         "status": "pass",
@@ -30802,8 +30810,8 @@
         "seconds": 3,
         "tail": "1..8\nok 1 R55: the bench measures the CPU of a refresh that found nothing new and of one that redraws, against the stated budget\nok 2 R55: the budget is enforced: a budget no refresh can meet fails the bench\nok 3 R55: the budget is stated for people too, in docs/panel.md\nok 4 R55: the panel's code reaches no network and no credentials and never writes\nok 5 mods plan: the one process the panel starts is the kernel, and it reads two environment names only\nok 6 R55: the panel never names the record as something to write\nok 7 R55: the kernel stays within its budget and the workflows within theirs\nok 8 R55: the panel's node tests are part of the suite, so a regression fails bash tools/test.sh",
         "fp": "1413102b73d30469f3e66a8bb6362dc933f8ce755daf88f190d94bcb9822dff1",
-        "at": "2026-10-13T22:29:02Z",
-        "why": "reads the project through git"
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C57": {
         "status": "pass",
@@ -30954,18 +30962,18 @@
         "exit": 0,
         "seconds": 22,
         "tail": "1..7\nok 1 R61: a call to vbw approve from the model is still refused by the guard\nok 2 R61: an answer-shaped message that is not an AskUserQuestion answer approves nothing\nok 3 R61: a message written by the model that merely contains the answer does not approve\nok 4 R61: a question asked by a subagent approves nothing\nok 5 R61: the guard's rule and the hook are documented together: the hook does not appear as a way for agents\nok 6 R61: the answer hook's own cost on an unrelated answer is measured by the hook bench\nok 7 R61: the kernel stays within its budget (kept in one place: tests/standards.bats) and the router within 1,400 words",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "34ef9e9bae37f1bea2af836d3a5be9a0f3a4eff6f6a1e5fb5a00cf8fa2b218b0",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C76": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..7\nok 1 R61: the router's approve step asks with AskUserQuestion, Approve first and Not yet second, from the question vbw show contract prints\nok 2 R61: the router tells Claude what to do with each answer: Approve continues, Not yet asks what to change, own words are what to change\nok 3 R61: the prompts stay within their budgets: router 1,400 words, every skill 2,000, all prompts 16k tokens\nok 4 R61: the help lists the approval choice next to /vbw:approve\nok 5 R61: docs/proof.md describes the choice, that Approve comes first so Enter approves, Not yet, own words, and that /vbw:approve still works\nok 6 R61: docs/guards.md explains the answer hook and why the model cannot approve through it\nok 7 R61: the README says approval is a choice where Enter approves, and /vbw:approve still works",
-        "at": "2026-10-13T22:10:27Z",
         "fp": "7b2f3c8fd16b43a30bbb02ec8ea26bcd6eaa001391d3d84ccf1a14ee0a449aca",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C77": {
         "status": "pass",
@@ -31053,9 +31061,9 @@
         "exit": 0,
         "seconds": 12,
         "tail": "ok 1 R65: a project without a VBW 1 folder: legacy false, one line of JSON, exit 0, nothing else printed\nok 2 R65: the review works before VBW 2 is set up and reports no choice yet\nok 3 R65: how much was finished: plans with a summary against all readable plans\nok 4 R65: how recently it was used: the date and the days, from the commit that touched the folder\nok 5 R65: an untracked folder's last use comes from its newest file\nok 6 R65: whether the plans still match the code: the files and folders they name that still exist\nok 7 R65: a path that climbs out of the project or is absolute is never looked up\nok 8 R65: work half done: a phase started but not finished, and an unfinished build marker\nok 9 R65: a finished build marker is not half done work\nok 10 R65: a healthy folder is recommended for conversion, and the reasons name the numbers behind it\nok 11 R65: an old folder whose plans name files that are gone is recommended to start fresh, with the numbers\nok 12 R65: the same folder always gives the same review and recommendation\nok 13 R65: an empty folder: exit 0, valid JSON, says what could not be read, recommends fresh\nok 14 R65: plans that cannot be read (empty files) are named, never counted, and never recommended for conversion\nok 15 R65: a corrupt build marker and a missing project file are reported, the readable plans still count\nok 16 R65: a folder not in a git repository: exit 0, the last use from file times, the lack of git is said\nok 17 R65: the review writes nothing, runs nothing it finds in the folder, and changes no file\nok 18 R65: the recommended option comes first: recommendation is convert or fresh and the reasons are plain sentences\nok 19 R65: usage: review takes no argument and the help lists it\nok 20 R65: the kernel with the review stays within its budget (kept in one place: tests/standards.bats)",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "667f10c1c406aa0247367aaa0adf075d8522339dd8f7d5d8257d70da57f2fe74",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C87": {
         "status": "pass",
@@ -31132,11 +31140,11 @@
       "C95": {
         "status": "pass",
         "exit": 0,
-        "seconds": 28,
+        "seconds": 27,
         "tail": "1..2\nok 1 R66: adding a phase mid-milestone keeps the QA verdicts of the phases already checked\nok 2 R66: after the new phase is built, QA checks only the new phase",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "c1173e3c11511dbcb7c1ef85b8fda617b06e4096b7aeaba389df937296e265e8",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C96": {
         "status": "pass",
@@ -31150,20 +31158,20 @@
       "C97": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 2,
         "tail": "1..2\nok 1 R68: with GNU stat, an untracked folder is reviewed: readable, last use from its newest file\nok 2 R68: file times in the kernel come only from vbw_mtime",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "bb8ea38fec4360bc66b1d2cd7183b5a7fddd5c424ce6119cd0cae7f37a7c0eae",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C98": {
         "status": "pass",
         "exit": 0,
-        "seconds": 26,
+        "seconds": 23,
         "tail": "1..4\nok 1 R73: the build folders of Node, Python, Rust and Go style projects are not linked into the clean copy\nok 2 R73: the project's environment (dependency folders, env files) is still linked in\nok 3 R73: a proof never reads build output left in the working folder: deleting those folders does not change the result\nok 4 R73: build output the copy makes stays in the copy and the working folder's build output is untouched",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "543ca3cecd3db01a267b843f304f01171062773c53912b875343fa6c1b6bf055",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C99": {
         "status": "pass",
@@ -31233,18 +31241,18 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..5\nok 1 R78: the build workflow confirms its plans and ends its run as its last step\nok 2 R78: a plan whose Dev recorded nothing is named in the output\nok 3 R78: when everything was recorded, nothing is reported as missing\nok 4 R78: the fix workflow confirms every fix of every group\nok 5 R78: the QA workflow confirms every phase verdict",
-        "fp": "ca4e65d53ba91cba474cdc6c0e06bdf2fb3170bd787921257580094d6d089259",
         "at": "2026-10-13T22:29:02Z",
-        "why": "reads the project through git"
+        "fp": "ca4e65d53ba91cba474cdc6c0e06bdf2fb3170bd787921257580094d6d089259",
+        "reused": true
       },
       "C107": {
         "status": "pass",
         "exit": 0,
-        "seconds": 22,
+        "seconds": 20,
         "tail": "1..7\nok 1 R79: while only check-file bytes differ from what was approved, the build goes on\nok 2 R79: vbw check still runs, and names the test files that wait for approval\nok 3 R79: the one approval is asked for before the phase is proved, naming every edited test file\nok 4 R79: proof stops and says which test files are waiting; nothing is proved\nok 5 R79: one approval covers all the edits, and the proof then runs\nok 6 R79: a change to the contract's structure still needs approval before anything is built\nok 7 R79: a contract that was never approved still needs approval first, whatever its files",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "6bc73bccae7d1bf28d5c70e5f71caceb224cbb123a26255dd366bf0e8d6acf59",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C108": {
         "status": "pass",
@@ -31267,20 +31275,20 @@
       "C110": {
         "status": "pass",
         "exit": 0,
-        "seconds": 49,
+        "seconds": 44,
         "tail": "1..4\nok 1 R69: checks run in parallel, by default up to four at a time\nok 2 R69: a proof of 24 checks runs them side by side, so it takes a fraction of the sequential time, and all pass\nok 3 R69: checks marked alone run by themselves, never beside another check\nok 4 R69: the passed and failed checks and their recorded results equal those of a sequential run",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "3d5ab33dc76ac78aa2457ef799c2033d66542aea762fe82353a862ed98bb3c09",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C111": {
         "status": "pass",
         "exit": 0,
-        "seconds": 28,
+        "seconds": 27,
         "tail": "1..5\nok 1 R81: a limit of 1 behaves like sequential: never two at once\nok 2 R81: never more checks run at once than the setting says\nok 3 R81: the setting is shown by vbw config, remembered, and removed with default\nok 4 R81: an invalid value is refused with a clear message and changes nothing\nok 5 R81: the setting is the clone's own: it is not written into the shared record",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "acaca7bc63e0055dbfd0316add9154385e9b27d2a693b7e8327d54d02fccc3e7",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C112": {
         "status": "pass",
@@ -31312,20 +31320,20 @@
       "C115": {
         "status": "pass",
         "exit": 0,
-        "seconds": 28,
+        "seconds": 29,
         "tail": "1..14\nok 1 R71: a change of one or two files at low risk gets a quick check, even where the profile would give deep\nok 2 R71: a change of three to nine files at low risk gets at most a standard check\nok 3 R71: a larger change gets the deeper check its tier and profile give\nok 4 R71: a riskier change gets the deeper check, however few files it touches\nok 5 R71: the size never raises the check above what the profile gives\nok 6 R71: the QA workflow uses the depth chosen for each phase\nok 7 R71: a documentation-only requirement needs no check: the contract can be approved without one\nok 8 R71: a documentation-only change is built, proved and closed without a check, with no QA for a small one\nok 9 R71: a change to code still needs its check: approval is refused without one\nok 10 R71: a plan that changes documentation and code together is not exempt\nok 11 R71: a documentation requirement next to a code requirement: apply with rules accepts the documentation one without rules\nok 12 R71: when a project rule makes the Lead write a check for the documentation anyway, that check runs and decides\nok 13 R71: documentation alone is not 'standard' for lack of a project test command\nok 14 R71: the Lead is told the documentation exemption and that a project rule requiring a check overrides it",
-        "at": "2026-10-13T22:10:27Z",
         "fp": "54dd697524560d6e01364ed5dff45f76f1a0a3d5b89b0c7e501cbf83b6a32321",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C116": {
         "status": "pass",
         "exit": 0,
-        "seconds": 24,
+        "seconds": 22,
         "tail": "1..10\nok 1 R72: in a large repository a one-requirement, low-risk request is marked small, and its early tier is unchanged\nok 2 R72: two [auto] requirements with no risk word are still small\nok 3 R72: three requirements are not small\nok 4 R72: a [human] requirement is not small\nok 5 R72: a request that names a risk path (sign-in, payments, migrations, secrets, deletion, CI) is not small\nok 6 R72: a forced standard or deep rigor is never small\nok 7 R72: in a large repository an express phase of two files is accepted\nok 8 R72: in a large repository a change over more than two files is not small: express is refused, the tier is standard when left to the kernel\nok 9 R72: a small change goes from plan to done with one approval: build, check, close, ship\nok 10 R72: the router and docs tell the small path: plan it itself, no planning workflow, more than two files or a risk path plans normally",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "4bb723f9b60488219e9355b10b7dce181f39338593b50e410c526dd19642d10c",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C117": {
         "status": "pass",
@@ -31351,17 +31359,17 @@
         "seconds": 2,
         "tail": "1..3\nok 1 R83: no text VBW hands Claude says to type or run /vbw:approve\nok 2 R83: when Claude tries to approve, the guard refuses and tells it to ask with the approval menu\nok 3 R83: the router asks for approval only with the menu and never asks the user to type the command",
         "fp": "bb1596fe035817bd4eaa46b97e826a3915ebd4c4d6066bb3b0acd1ebc50ab441",
-        "at": "2026-10-13T22:29:02Z",
-        "why": "reads the project through git"
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C120": {
         "status": "pass",
         "exit": 0,
         "seconds": 10,
         "tail": "1..1\nvbw exited 143; started 2, ended 2\nok 1 R69: a TERM sent to vbw prove alone waits for its running checks, then cleans up; nothing outlives it",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "0939261f4efcee050ba053c32443cf1b9ebf57378107e0ef1472284cf64bac06",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C121": {
         "status": "pass",
@@ -31458,135 +31466,135 @@
         "exit": 0,
         "seconds": 6,
         "tail": "1..1\nok 1 R92: no git-ignored path of the copy is a link, and each has the working folder's content",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "0d7ee8a454c2a0678266f271244cea875faa829e3e94477bbe1d25e312106948",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C132": {
         "status": "pass",
         "exit": 0,
-        "seconds": 13,
+        "seconds": 10,
         "tail": "1..2\nok 1 R92: a write inside node_modules passes in the proof and never reaches the working folder\nok 2 R92: a check that fails when node_modules is a link (the pnpm 11 refusal) passes in vbw prove as in vbw check",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "1c7f9ef679547303cfec7ca5282f432ca362ebc7fdf8d135d16a9c69ba12ac45",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C133": {
         "status": "pass",
         "exit": 0,
-        "seconds": 6,
+        "seconds": 5,
         "tail": "1..1\nok 1 R92: after a proof every file and link of the working folder is byte-identical, workspace links in node_modules included",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "c25d58f0fe4eccf66289148ffb21879346e4db5a106ab792a497164324474077",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C134": {
         "status": "pass",
         "exit": 0,
-        "seconds": 6,
+        "seconds": 5,
         "tail": "1..1\nok 1 R92: links inside a copied folder stay links: a relative one resolves in the copy, an absolute one into the working folder is reported with its path",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "0c7301f53631035a4e9dbf7e882e90484dc0ea47a77129ec3f7613a7f828c6c8",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C135": {
         "status": "pass",
         "exit": 0,
-        "seconds": 9,
+        "seconds": 8,
         "tail": "1..1\nok 1 R92: the copy uses a copy-on-write clone first, and falls back to a plain copy where it is refused",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "6f482bf6d3570283302c47e6d09cc1af2082295c225c5ffd942fd0d81faa0af5",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C136": {
         "status": "pass",
         "exit": 0,
         "seconds": 6,
         "tail": "1..1\nok 1 R92: build output is not brought in, but a dist folder inside a copied folder is; .git and .vbw are never copied",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "9c60b1004fc07fe51d3515a528c6bc601f1d586d01b1315e492c61c2e4e5fd37",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C137": {
         "status": "pass",
         "exit": 0,
-        "seconds": 4,
+        "seconds": 3,
         "tail": "1..1\nok 1 R92: an ignored folder that cannot be read fails the proof before any check runs, naming it, with no copy left",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "d851e9a666012dd90c83790d5eecf3b7a7599e0b3c9d5692937f01a81ac50814",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C138": {
         "status": "pass",
         "exit": 0,
-        "seconds": 15,
+        "seconds": 13,
         "tail": "1..2\nok 1 R92: the copy is removed after a proof, read-only folders included, and nothing outside it is touched\nok 2 R92: an interrupted proof removes the whole copy and never deletes outside it",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "28e7c74e5f599cceaa44d7eceb00ea4a87aa3976f6e480bc7bf0c4eeb81b3fa6",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C139": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..1\nok 1 R92: docs/proof.md says git-ignored files are copied, not linked, with the pnpm example and the clone-or-copy fallback",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "1ee0750e8e439a95925dac7c8419c2d386314453431c9bad4340e424a967858a",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C140": {
         "status": "pass",
         "exit": 0,
-        "seconds": 20,
+        "seconds": 16,
         "tail": "1..4\nok 1 R93: each stale link, absolute or relative, in a git-ignored folder is named on its own line with its target and the pnpm repair\nok 2 R93: a project that is not pnpm is told to re-run its install command\nok 3 R93: with no such link a proof prints nothing but its own summary\nok 4 R93: a stale link never turns a passing proof into a failing one",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "3485214c64575b63a098ab4be5c02fe20bdd8cafd2ae251e11060f6179f9bbef",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C141": {
         "status": "pass",
         "exit": 0,
-        "seconds": 5,
+        "seconds": 4,
         "tail": "1..1\nok 1 R93: the scan changes nothing in the working folder, does not follow links, and skips .git",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "b11cfc0eff48d138e91bc53a6482a235f88453bdce9b8b9bed38792be0c6dd22",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C142": {
         "status": "pass",
         "exit": 0,
         "seconds": 5,
         "tail": "1..1\nok 1 R93: the scan runs when the proof stops early with an error, and a failing proof still fails the same way",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "387a25d87d9312520873d07c0187c16062b56b7dc81597c41dca5f96b9176e2b",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C143": {
         "status": "pass",
         "exit": 0,
-        "seconds": 17,
+        "seconds": 15,
         "tail": "1..1\nok 1 R93: on a working folder with 50,000 files the scan names the stale link and the proof passes",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "937d2be4eae16cb06c30cba600ffd68d6cb9fe18df8dac7765e0ce97736471dc",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C144": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..1\nok 1 R93: docs/proof.md describes the warning about links into a proof copy and the repair",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "dbf500deee673d2fd14c73eb4e169260da975956988ba2656921a0204677b1ae",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C145": {
         "status": "pass",
         "exit": 0,
-        "seconds": 21,
+        "seconds": 19,
         "tail": "1..2\nok 1 R94: shared checks wait for a long alone check beyond any time limit, then run and report; the proof prints no warning\nok 2 R94: an interrupt during a wait removes the wait registration and leaves no gate file behind",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "fd4cdeadd4ab2188ba4402ef69589f8b7db8f9408e28e4da58c11b08b22c1dba",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C146": {
         "status": "pass",
@@ -31600,20 +31608,20 @@
       "C147": {
         "status": "pass",
         "exit": 0,
-        "seconds": 27,
+        "seconds": 24,
         "tail": "1..2\nok 1 R94: a check whose runner ends without a result is reported not run with the reason; every other result stands; the proof fails without dying\nok 2 R94: many quick checks run a few at a time print no shell job warning, in bash 3.2 and bash 5",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "72edf31c1649d4a06de485f683272bfb9b7473de405672c9b21cba4240400757",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C148": {
         "status": "pass",
         "exit": 0,
-        "seconds": 2,
+        "seconds": 1,
         "tail": "1..1\nok 1 R94: the wait setting VBW_CHECK_WAIT_SECONDS is gone from the code and the docs no longer say it ends a wait",
         "fp": "2ed97e5d717f44f17f3acfc62ad02946f6c63db9ed0f63290d362963ff046d77",
-        "at": "2026-10-13T22:29:02Z",
-        "why": "reads the project through git"
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C149": {
         "status": "pass",
@@ -31663,20 +31671,20 @@
       "C154": {
         "status": "pass",
         "exit": 0,
-        "seconds": 42,
+        "seconds": 39,
         "tail": "1..5\nok 1 R98: while this session's proof runs in the background the hook asks for nothing and spends no step\nok 2 R98: another session's background proof does not suppress this session's hook\nok 3 R98: once the background proof has finished the hook resumes normally\nok 4 R98: a proof from a session that is gone leaves nothing behind that suppresses the hook\nok 5 R98: while this session's workflow run is open the hook asks for nothing and spends no step",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "19de77a53b7e7bdeb61b6de8f98a4b2fa087fd464f99a8cfb37024eafd47bc9d",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C155": {
         "status": "pass",
         "exit": 0,
-        "seconds": 9,
+        "seconds": 8,
         "tail": "1..10\nok 1 R99: a fix for a failing project command commits the files it changed, though no plan lists them\nok 2 R99: the commit names the fix\nok 3 R99: a changed file the fix did not name is not committed, and a file the user staged stays staged\nok 4 R99: a new file the fix created is committed\nok 5 R99: a named file that did not change commits nothing and is refused\nok 6 R99: naming no file is refused\nok 7 R99: the plan of record is never committed this way\nok 8 R99: a fix for a requirement is not committed this way: it goes through its plan\nok 9 R99: an unknown fix is refused, and an invalid message is refused\nok 10 R99: after the commit the fix closes",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "226216e9748ee186e52d8fa43fc824bb5d16f9cf7edc29df1a7d1060e3f228a7",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C156": {
         "status": "pass",
@@ -31708,29 +31716,29 @@
       "C160": {
         "status": "pass",
         "exit": 0,
-        "seconds": 164,
+        "seconds": 170,
         "tail": "1..15\nok 1 R103: after a passing proof, a recorded decision changes only the record: prove runs nothing\nok 2 R103: the output names each reused check and command and the time of the proof it came from\nok 3 R103: a change to spec.md alone (a new human requirement, approved again) reuses every result\nok 4 R103: a check added since the proof runs, and only it; the others are reused\nok 5 R103: changing one check's approved definition while the code is unchanged runs that check and reuses the rest\nok 6 R103: a project command whose approved argv changed runs, and the unchanged command is reused\nok 7 R103: a check removed from the contract does not appear in the new proof, and the others are reused\nok 8 R103: a committed change to a file no check or command read runs nothing; one to a file a check read runs only that check\nok 9 R103: uncommitted changes to a tracked project file run nothing, since checks and commands run on the committed code; with the folder clean again, reuse goes on\nok 10 R103: an untracked project file in the working folder runs nothing\nok 11 R103: when the last proof did not pass, its failed checks run again and the passed checks and commands are reused; a later passing proof is reused again\nok 12 R103: when the last proof was interrupted, nothing is reused\nok 13 R103: a proof that reused results is recorded as current: qa record accepts it without vbw prove --full and the requirements are proven\nok 14 R103: a changed check that fails still fails the proof, while the unchanged checks are reused and stay passing\nok 15 R103: docs/proof.md describes the reuse: when it applies, when nothing is reused, and how the output shows it",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "cd15c427848b8b4d36593810ba3c8bb3f6d5423c7abce2c540b3acbcdd1581d7",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C161": {
         "status": "pass",
         "exit": 0,
-        "seconds": 130,
+        "seconds": 116,
         "tail": "1..9\nok 1 R104: right after its pass, the phase stands\nok 2 R104: a newly recorded decision does not list the phase again\nok 3 R104: a finding closed with no code change does not list the phase again\nok 4 R104: removing one of the phase's [human] requirements does not list the phase again\nok 5 R104: a decision, a closed finding and a removed [human] requirement together still do not list the phase\nok 6 R104: a removed [human] requirement together with a code change lists the phase, with the reason\nok 7 R104: a removed [human] requirement together with a changed goal lists the phase\nok 8 R104: a decision together with a changed test lists the phase\nok 9 R104: a finding closed together with a code change lists the phase",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "291365e97c928d7eb165641db798d37f77366a746684cef33cdf71c2469a8d2a",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C162": {
         "status": "pass",
         "exit": 0,
-        "seconds": 80,
+        "seconds": 84,
         "tail": "1..7\nok 1 R104: a reworded [auto] requirement of the phase lists it again, naming the requirement as the reason\nok 2 R104: the reason for a reworded [auto] requirement reaches the QA instruction\nok 3 R104: an [auto] requirement added to the phase lists it again, naming the requirement\nok 4 R104: an [auto] requirement removed from the phase lists it again\nok 5 R104: a decision recorded together with a reworded [auto] requirement still lists the phase\nok 6 R104: rewording a [human] requirement alone is not an [auto] change: the phase stands\nok 7 R104: docs/proof.md says which changes do not list a passed phase again and which do",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "1fc65ad0a8fefb345322a10d7fd640d1e224018a52a8e99d597cc117854563a1",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C163": {
         "status": "pass",
@@ -31762,11 +31770,11 @@
       "C166": {
         "status": "pass",
         "exit": 0,
-        "seconds": 13,
+        "seconds": 11,
         "tail": "1..13\nok 1 R107: the profile file has a table for each profile, and every role and step the workflows use has a value Claude Code accepts\nok 2 R107: closing a run and documentation get a lower effort than building, planning and QA a higher one, in every profile\nok 3 R107: vbw config effort prints the table of the current profile, and follows a profile change\nok 4 R107: vbw next --json carries the same table, so the router can pass it to every workflow\nok 5 R107: a value Claude Code does not accept is refused with the role and the step, by vbw config effort and by vbw next\nok 6 R107: a value that is not text is refused the same way\nok 7 R107: a missing role or step is refused with its name, so no workflow starts with a gap\nok 8 R107: only the profile in use is judged: a bad value in another profile does not stop this one\nok 9 R107: the router and every skill that starts a workflow pass the effort table in the workflow's args\nok 10 R107: the effort table is described for people: the effort levels, the steps and where the table lives\nok 11 R107: the router and the prompts stay within their budgets\nok 12 F88: a missing or invalid architect recommend step is refused like every other step\nok 13 F89: docs/workflows.md lists the architect recommend step in the table and the example",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "ccdb89baa82f463ca04b47659bf6e485ed4405ac953f454d10bc2c8b942f46b6",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C167": {
         "status": "pass",
@@ -31789,38 +31797,38 @@
       "C169": {
         "status": "pass",
         "exit": 0,
-        "seconds": 264,
+        "seconds": 201,
         "tail": "1..16\nok 1 R110: a commit that changes only a file two checks read runs those checks and reuses the rest, commands included\nok 2 R110: the output says in one line how many checks ran and how many were reused, and vbw show evidence marks the reused ones\nok 3 R110: a commit that changes a file a check read runs that check only\nok 4 R110: a commit that changes a file of a plan serving the requirement, which no check read, runs nothing\nok 5 R110: a commit that changes a check's own file, approved again, runs the checks that file belongs to\nok 6 R110: a check whose last result failed runs again though none of its files changed; the other passes are reused\nok 7 R110: after a proof in which one check failed, the next one runs the failed check and the checks with changed files, and reuses the other passes\nok 8 R110: a check whose last result timed out runs again though none of its files changed\nok 9 R110: a check that declares no files is judged by what it read: reused while that is unchanged, run again when it changes\nok 10 R110: deleting a file a check read runs that check once, and the next proof reuses its new pass\nok 11 R110: a changed approved definition runs that check, and a check whose definition and files are unchanged is reused though the contract changed\nok 12 R110: a file a check read, changed in the working folder but not committed, runs nothing again, and the commit that follows makes the proof stale\nok 13 R110: an interrupted proof (its unfinished marker is left behind) reuses nothing\nok 14 R110: a second proof with no commit since the passing proof still runs everything fresh\nok 15 R110: project commands follow the same rule: reused while nothing they read changed, run when a file they read changed\nok 16 R110: read lists are kept in the clone's store of recorded runs, never in the record or another state file",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "a629f8887da1970a8f258e24f35f0c59e3bcbd41c99dcf0599e843611ad0e6f4",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C170": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..5\nok 1 R110: docs/proof.md says which checks run again: a changed read file, a changed definition, a last result that was not a pass\nok 2 R110: docs/proof.md says which checks are reused, and that a reused result keeps the time it really ran\nok 3 R110: docs/proof.md says a check that declares no files is judged by what it read, and no longer that it always runs\nok 4 R110: docs/proof.md says uncommitted changes change nothing, an interrupted proof reuses nothing, and a second proof is fresh\nok 5 R110: docs/proof.md no longer says a changed committed file reruns every check",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "09128d62383d9ecd852ee30376fed071dbf159998173167f86f5587e78b62500",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C171": {
         "status": "pass",
         "exit": 0,
-        "seconds": 119,
+        "seconds": 109,
         "tail": "1..10\nok 1 R111: a project without a quick command runs its test command as before, and a proof that ran everything is full\nok 2 R111: a named and approved quick command runs in place of the test command; every other command still runs\nok 3 R111: a proof that used the quick command in place of the test command is partial, in the summary and in the evidence\nok 4 R111: a quick command named but not approved is skipped, the full test command runs instead, and the summary says so\nok 5 R111: after a code change, vbw prove --full reuses nothing and runs every check, the test command and every other command, but not the quick command\nok 6 R111: vbw prove with any other argument is refused with the usage line and runs nothing\nok 7 R111: a proof is full only when nothing was reused: a plain proof that reused a result is partial\nok 8 R111: a full proof is not full when a project command was not approved and so did not run\nok 9 R111: a plain proof runs a project command or check again only when a file it read changed\nok 10 R111: a failing quick command opens a fix for it, and a passing full proof closes that fix",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "f1d480389b391aaf11885633fb685953d6db2ff659b2ff99d6259dbd2eb0ccbd",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C172": {
         "status": "pass",
         "exit": 0,
-        "seconds": 140,
+        "seconds": 112,
         "tail": "1..10\nok 1 R111: vbw qa record refuses a proof in which the quick command stood in for the test command, changes nothing, and says to run vbw prove --full\nok 2 R111: the refusal for code that changed since the proof still applies first\nok 3 R111: vbw ship refuses a proof in which the quick command stood in, changes nothing, and says to run vbw prove --full\nok 4 R111: before QA, vbw next asks for a full proof when the quick command stood in, and --json marks it\nok 5 R111: before shipping, vbw next asks for a full proof when the quick command stood in\nok 6 R111: with a full proof, vbw next goes on to QA and does not mark the detail as full\nok 7 R111: a proof that reused results is accepted: vbw next goes on to QA, vbw qa record records the verdict and vbw ship ships\nok 8 R111: a refused verdict, then vbw prove --full, then the verdict is recorded\nok 9 R111: a proof recorded before the full flag existed counts as full\nok 10 R111: the test-command result QA agents are given comes from the full proof, never from the quick command",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "034957b7335db669c48dc83613e6b23db40b207bf91d3906e85f125959646a09",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C173": {
         "status": "pass",
@@ -31834,20 +31842,20 @@
       "C174": {
         "status": "pass",
         "exit": 0,
-        "seconds": 16,
+        "seconds": 17,
         "tail": "1..5\nok 1 R111: tools/test.sh --quick --list names shellcheck and the engineering rules\nok 2 R111: the quick mode runs every test file no approved check runs, and none that a check runs\nok 3 R111: the quick mode leaves out the timing benchmarks\nok 4 R111: tools/test.sh refuses other arguments with its usage line and runs nothing\nok 5 R111: VBW's spec names the quick mode as its quick command, and the record carries it",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "ea8410462fa6587957008ad2de1329f5331f01d5fd1afc382372b9bc0886273a",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "tests listing changed"
       },
       "C175": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
         "tail": "1..6\nok 1 R111: docs/proof.md explains how a project names its quick command, and that it needs approval and is never detected\nok 2 R111: docs/proof.md says a plain proof runs the quick command in place of the test command, and the full test command when the quick one is not approved\nok 3 R111: docs/proof.md explains vbw prove --full, when a full proof is needed, and what makes a proof full or partial\nok 4 R111: docs/proof.md quotes the two refusal messages\nok 5 R111: docs/proof.md no longer says a proof that reuses results is a full proof\nok 6 R111: docs/next.md and docs/record.md describe the full-proof step and the evidence's full field",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "14584edac4beeddaa07cfb4ca8bfdb72f750c0b9be5043484d1ba0bd9c9a4430",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C176": {
         "status": "pass",
@@ -31861,11 +31869,11 @@
       "C177": {
         "status": "pass",
         "exit": 0,
-        "seconds": 19,
+        "seconds": 16,
         "tail": "1..2\nok 1 R113: an edit to .vbw/spec.md, listed in the plan, does not list the passed phase again\nok 2 R113: a change to the phase's own source file still lists it again",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "548a1d95512440f794136459ed171819cfd7d2bfc7eda8d65b4102346f12b780",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C178": {
         "status": "pass",
@@ -31897,20 +31905,20 @@
       "C181": {
         "status": "pass",
         "exit": 0,
-        "seconds": 153,
+        "seconds": 166,
         "tail": "1..12\nok 1 R115: a commit of only .md, .markdown and .rst files the phase lists leaves it off the list, in vbw next and vbw show qa\nok 2 R115: a plain .txt file the phase lists is data: changing it lists the phase again\nok 3 R115: naming a results folder in the spec makes the contract wait for approval, and vbw show contract shows it\nok 4 R115: with the results folder approved, a commit of only files inside it leaves the phase off the list\nok 5 R115: a spec that names no results folder gives no exemption: a saved result is a file like any other\nok 6 R115: until a changed results-folder list is approved, a change inside the new folder still lists the phase\nok 7 R115: a file the phase's check runs or lists is a test, even as Markdown or inside a results folder\nok 8 R115: a commit of documentation and one code file lists the phase again\nok 9 R115: a change to the phase's goal, success criteria or plans still lists it again\nok 10 R115: a phase built on another stays off the list when that phase changed only documentation or results, and is listed when its code changed\nok 11 R115: a phase whose every plan changes only documents is listed again when those documents change\nok 12 R115: docs/proof.md and docs/record.md describe the documentation and saved-results rule",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "e4a05d7337a2547944eadd28191c1e61d410a2c932e03a4b6c603166ee4bfe5d",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C182": {
         "status": "pass",
         "exit": 0,
-        "seconds": 55,
+        "seconds": 56,
         "tail": "1..15\nok 1 R116: one new [auto] requirement naming one file, added to a milestone with planned and proven requirements, is small\nok 2 R116: a [human] requirement already planned in the milestone does not make a new small request big\nok 3 R116: one or two new [auto] requirements naming one or two files and no risk are small\nok 4 R116: a request naming three or more files is not small\nok 5 R116: a request naming a risk-path file or a risk category is not small\nok 6 R116: three or more new requirements, or a new [human] one, are not small\nok 7 R116: rigor forced to standard or deep is never small; auto and express keep the rules\nok 8 R116: vbw apply --add adds one express phase to a milestone with started work; every other phase, plan, check and rule stays as it was\nok 9 R116: vbw apply --add refuses a phase that exists and changes nothing; a requirement a started phase covers may get a new phase beside it (R157)\nok 10 R116: in a milestone where no work has started, vbw apply --add refuses each conflict with its own reason and changes nothing\nok 11 R116: vbw apply --add refuses a requirement of an earlier milestone, covered there or not, and changes nothing\nok 12 R116: in a repository tracking more than 30 files, an express phase over more than two files is refused, through --add as through a full apply\nok 13 R116: vbw apply --add judges only the phases it brings: a finished express phase whose floor is now standard keeps its tier, plans and status\nok 14 R116: a small request added mid-milestone goes from plan to done with one approval\nok 15 R116: the router takes the small path with vbw apply --add numbered from next_phase and no planning workflow; anything else plans as before",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "e39821200ff1ad7ca18b2f20a8b3269f2e76ed5f1840a2be1950179bba93ea52",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C183": {
         "status": "pass",
@@ -31924,11 +31932,11 @@
       "C184": {
         "status": "pass",
         "exit": 0,
-        "seconds": 74,
+        "seconds": 77,
         "tail": "1..11\nok 1 R118: a check that fails on its exit code, and one that misses its expected output, each keep their complete output\nok 2 R118: a check that times out keeps its complete output\nok 3 R118: a project command that fails keeps its complete output\nok 4 R118: a project command that times out keeps its complete output\nok 5 R118: each check has one kept file holding its latest failure; a later pass removes it, a reused result leaves it\nok 6 R118: checks that fail in parallel each keep their own complete, uninterrupted output\nok 7 R118: vbw show fix names the kept file of every failing check of its requirement and of every failing project command, as text and as JSON\nok 8 R118: when a kept file is missing, vbw show fix says the full output is not kept and to run vbw prove again\nok 9 R118: vbw show fix does not list a project command that was skipped as not approved as a failing one\nok 10 R118: kept output is never committed and never written outside .vbw/runtime\nok 11 R118: docs/proof.md tells where a failure's full output is kept and that vbw show fix names it",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "2011b9451c74fcdbc28ab48473ed713a2c8807a19c29aeb42976742dd72df3d5",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C185": {
         "status": "pass",
@@ -31951,11 +31959,11 @@
       "C187": {
         "status": "pass",
         "exit": 0,
-        "seconds": 25,
+        "seconds": 22,
         "tail": "1..11\nok 1 R121: vbw triage --json names the active milestone, its open requirements, the run and the sorted backlog in one call\nok 2 R121: vbw triage shows an open run, and leaves out accepted requirements and closed backlog items\nok 3 R121: after ship there is no active milestone and no open requirement\nok 4 R121: vbw triage (text) prints the same facts and writes nothing\nok 5 R121: vbw todo add keeps the sort and size, and vbw todo list shows them, next before later\nok 6 R121: backlog items added before sorting existed still list as before, without a sort or size, and nothing about them changes\nok 7 R121: a sort or size outside the allowed values, or one without the other, is refused and nothing is added\nok 8 R121: the record validator accepts sorted items and refuses a bad sort or size\nok 9 R121: a sorted backlog item raises the schema to 3 or above, so an older VBW asks for an update instead of calling the record corrupt\nok 10 R121: a 'now' idea added while a run is open is recorded at once, and planning waits for the run to end\nok 11 R121: the kernel help lists vbw triage and the sort and size of vbw todo add",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "9a3b037c82f6e23518475860fbc46760c87b2e8a98ce9b9e8dca5ac3adcf8a06",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C188": {
         "status": "pass",
@@ -31978,11 +31986,11 @@
       "C190": {
         "status": "pass",
         "exit": 0,
-        "seconds": 36,
+        "seconds": 32,
         "tail": "1..14\nok 1 R123: vbw recommend stores the top pick, its reason and size, the runners-up and the time it was written\nok 2 R123: zero runners-up is fine, and a pick may have no source\nok 3 R123: a new recommendation replaces the earlier one, so only one is kept\nok 4 R123: every malformed recommendation is refused with a message naming what is wrong, and the earlier one stays\nok 5 R123: a pick whose source is not open is refused: a shipped or proven requirement, a closed or unknown todo\nok 6 R123: a pick that is a declined suggestion is refused\nok 7 R123: with no open requirement and an empty backlog the stored recommendation says the backlog is empty; with work open, 'empty' is refused\nok 8 R123: while a run is open the kernel stores no recommendation and says so\nok 9 R123: the validator accepts a record with and without a recommendation, and refuses a damaged one\nok 10 R123: a stored recommendation raises the schema to 3 or above; an older VBW asks for an update; without one and without sorted todos the schema stays as before\nok 11 R123: vbw status shows the what's-next part: the top pick, its reason and size, each runner-up with its size, and the date\nok 12 R123: with none stored, vbw status says there is none yet and how to ask for one\nok 13 R123: vbw status --json carries the recommendation, or null when none is stored\nok 14 R123: the kernel help lists vbw recommend",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "1298cf4f726813ed091d7c7cd224c97eafc08e4e8d56837e310e1c52709b6d91",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C191": {
         "status": "pass",
@@ -32059,11 +32067,11 @@
       "C199": {
         "status": "pass",
         "exit": 0,
-        "seconds": 76,
+        "seconds": 72,
         "tail": "1..8\nok 1 R132: the fingerprint stored for a passed phase carries the version of how it was computed, in the clone's QA cache\nok 2 R132: after an update that changes the fingerprint's version, an unchanged passed phase still stands\nok 3 R132: at the same version, a different stored fingerprint is a change, as today\nok 4 R132: a fingerprint written by an older VBW with no version is an older version, not a change\nok 5 R132: after an update, a real change to the phase's files sends it back to QA\nok 6 R132: a change to the phase's files made before the update still sends it back to QA after it\nok 7 R132: after an update, a change to the phase's tests, plan or requirements sends it back to QA\nok 8 R132: a change to the phase's requirement made before an update of a version-less fingerprint sends it back to QA",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "aa6f03034434abe1895e674e456d849a5fbff135a921984c8e7694be26905cba",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C200": {
         "status": "pass",
@@ -32079,9 +32087,9 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..4\nok 1 R134: docs/workflows.md lists every workflow file by its vbw:<name>, vbw:tooling included\nok 2 R134: every count of workflows in docs/workflows.md equals the number of workflow files\nok 3 R134: docs/proof.md says in its Test results section that a folder name cannot contain spaces\nok 4 R134: vbw spec sync refuses a Test results folder whose name contains a space, and changes nothing",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "89a573da6b30782d97cc673b2d99a94662a3dc37c1cdfa2236196f5a1cbdfaa8",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C202": {
         "status": "pass",
@@ -32104,11 +32112,11 @@
       "C204": {
         "status": "pass",
         "exit": 0,
-        "seconds": 63,
+        "seconds": 57,
         "tail": "1..8\nok 1 R142: for 1 to 5 shards, together the shards list every tests/*.bats file exactly once\nok 2 R142: the same inputs give the same shares\nok 3 R142: shares are balanced by test count: no shard of 4 holds much more than a quarter of the tests\nok 4 R142: a newly added test file lands in exactly one shard, with no list to edit\nok 5 R142: the tool lint and the hook and panel benchmarks are listed by shard 1 only\nok 6 R142: a shard runs its share in one parallel batch, then its timed files alone, and only shard 1 lints and benchmarks\nok 7 R142: a failing test file in a shard makes the shard fail, in the batch and in the timed files\nok 8 R142: an invalid shard argument exits 2 with the usage line and runs nothing",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "a7a168580dd6010bf07effe9337ea968f9b2d34565451af92b8c3264f462f124",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "tests listing changed"
       },
       "C205": {
         "status": "pass",
@@ -32140,29 +32148,29 @@
       "C208": {
         "status": "pass",
         "exit": 0,
-        "seconds": 273,
+        "seconds": 200,
         "tail": "r a commit that changes only documentation the test command did not read, vbw prove reuses its passing result, and every check and command, and says so\nok 2 R144: a proof that reused the test result passes, and is not counted as a full proof\nok 3 R144: the kind of file does not matter: Markdown, .markdown, .rst and plain text no run read all let the test result be reused\nok 4 R144: VBW's own .vbw/ files, alone or with documentation, still let the test result be reused\nok 5 R144: a committed change to a code file the test command read makes it run again, with the checks that read it\nok 6 R144: a code change committed before a documentation change still makes the test command run\nok 7 R144: a documentation file the test command read makes it run, though no check lists it\nok 8 R144: a test file the test command read makes it run, even when it is a Markdown file\nok 9 R144: a Markdown file an approved check lists and reads makes that check run, and the test command, which did not read it, is reused\nok 10 R144: a Markdown file an approved check names in its run words but never opens makes nothing run\nok 11 R144: uncommitted changes to code in the working folder make nothing run: the proof runs on the committed code\nok 12 R144: a change to the test command's words makes it run again\nok 13 R144: when the latest test-command result failed, it is never reused: the test command runs\nok 14 R144: a result of the quick command standing in for the test command is never reused as the test result\nok 15 R144: a second vbw prove with nothing committed since the passing proof runs everything fresh (D173)\nok 16 R144: an unfinished earlier proof (its marker is left behind) is never reused\nok 17 R144: vbw prove --full reuses nothing: after a documentation-only commit it runs every check and every command\nok 18 R144: vbw qa record and vbw ship accept a proof whose test result was reused\nok 19 R144: vbw qa record still refuses a proof in which the quick command stood in for the test command",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "0600f2c554fe733618572cb23462913026e9bb7ed3d0718a5c2e04d000ba7d56",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C209": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..5\nok 1 R144: docs/proof.md says a proof reuses the test command's passing result when nothing it read changed\nok 2 R144: docs/proof.md says vbw prove --full reuses nothing\nok 3 R144: docs/proof.md names what still makes the test command run\nok 4 R144: docs/proof.md no longer describes the documentation-only rule or its limit\nok 5 R144: docs/record.md describes how a reused test-command result is marked in the evidence",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "b4d1d53dcc2b7a2a9725397f5e9a82589af8dcbf6acc452ba62db840851602c4",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C210": {
         "status": "pass",
         "exit": 0,
-        "seconds": 52,
+        "seconds": 36,
         "tail": "1..10\nok 1 R145: the flow's phase is small and low-risk (one file, no risk path), so only an escalation can keep it from the quick check\nok 2 R145: a phase raised by a blocked plan is verified at its raised tier's depth, not quick\nok 3 R145: a phase raised by a fix needing a second round is verified at its raised tier's depth, not quick\nok 4 R145: a phase raised by a failed QA is verified at its raised tier's depth, not quick\nok 5 R145: an escalated phase of three to nine files with no risk path raised to deep is verified at deep, not capped at standard\nok 6 R145: an escalated phase of one or two files is never lowered to quick\nok 7 R145: the raised depth never exceeds what the profile's cell gives the raised tier\nok 8 R145: a phase that never escalated keeps the small-change discount\nok 9 R145: a tier forced with vbw config rigor, never escalated, keeps the small-change discount\nok 10 R145: the QA round's tier is the raised depth when an escalated phase is among those to verify",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "58a9abd235fd8128a45791e4153626d262c6cab5d11f348cba8df5227f9a74e8",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C211": {
         "status": "pass",
@@ -32176,20 +32184,20 @@
       "C212": {
         "status": "pass",
         "exit": 0,
-        "seconds": 68,
+        "seconds": 46,
         "tail": "1..8\nok 1 R147: with no setting, the limit is three quarters of the cores, rounded down, at least 1\nok 2 R147: the machine default is never more than 64\nok 3 R147: when the core count cannot be read, VBW uses 1 and keeps working\nok 4 R147: a proof with no setting runs at most the machine default at once\nok 5 R147: on a one-core machine checks run one at a time\nok 6 R147: check_jobs N overrides the machine default, is shown as set, and default returns to the machine's value\nok 7 R147: a set value is used by the proof in place of the machine default\nok 8 R147: values outside 1 to 64 are still refused and change nothing",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "231a3d3a9bb6bcf0fb0f90378e682d585967406ffb1e3d6092dbf4269caaa59f",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C213": {
         "status": "pass",
         "exit": 0,
-        "seconds": 48,
+        "seconds": 39,
         "tail": "1..6\nok 1 R148: three vbw check processes at once never run more checks together than check_jobs\nok 2 R148: vbw prove beside vbw check share the same limit\nok 3 R148: with check_jobs 1, only one check runs at a time across all processes\nok 4 R148: a check waiting for a free slot waits instead of failing, and its timeout counts from its real start\nok 5 R148: a slot held by a VBW process that died is freed, so later checks do not wait for it\nok 6 R148: a check marked alone still runs with nothing else beside checks from other processes (R45)",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "0606d76ecbe7da5dcf92341a40ea3bcb55dd0ce8a109339c6996c4ba9477f5a4",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C214": {
         "status": "pass",
@@ -32205,27 +32213,27 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..2\nok 1 R147: docs/proof.md describes the machine-sized default of check_jobs\nok 2 R147: the old default of 4 is gone from the docs, the help and the code comments",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "3604ac159300f6706a55c9bab17d99dc9eb295ab6407bd2ddd1c11d79567897f",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C216": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..2\nok 1 R148: docs/proof.md says the limit is shared by every VBW command running checks in the project at once\nok 2 R148: docs/workflows.md says a fix round runs the project test command once, at the proof after the round",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "2342407cbb9e2e0f230c60addfd4467d036dd2512433babe29a91b666cc2e82a",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C217": {
         "status": "pass",
         "exit": 0,
-        "seconds": 633,
+        "seconds": 529,
         "tail": "1..5\nok 1 R149: the reading commands and every show view answer the same on a record over 2 MB\nok 2 R149: spec sync, spec add, apply, apply --patch and approve work the same on a record over 2 MB\nok 3 R149: a whole build, check, prove and prove --full work the same on a record over 2 MB\nok 4 R149: QA findings and verdicts, tier raise, fixes and the user's verdicts work the same on a record over 2 MB\nok 5 R149: decisions, the backlog and the recommendation work the same on a record over 2 MB",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "bb43470ac2dac5b7f78d24f0f37ab3d544b7e00c6684d7343e82fd6415fab8f3",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C218": {
         "status": "pass",
@@ -32248,20 +32256,20 @@
       "C220": {
         "status": "pass",
         "exit": 0,
-        "seconds": 3,
+        "seconds": 2,
         "tail": "1..5\nok 1 R149: no shipped shell line passes record-sized data to jq as a command-line argument\nok 2 R149 self-test: the rule catches the record passed with --argjson or --arg\nok 3 R149 self-test: the rule catches values derived from the whole record\nok 4 R149 self-test: the rule catches a function's record parameter passed to jq or in a here-string\nok 5 R149 self-test: standard input, --slurpfile, --rawfile, small values and comments pass the rule",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "3b3e40c22a7555bda91ce1634757d284ba95cce72a7881bb567eb22962e922ba",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C221": {
         "status": "pass",
         "exit": 0,
-        "seconds": 348,
+        "seconds": 279,
         "tail": "1..4\nok 1 R149: every mktemp in shipped shell code names a folder, so no scratch file goes to the system's temporary folder\nok 2 R149: reads and writes of a record over 2 MB leave no scratch file behind and never use the system's temporary folder\nok 3 R149: a build, a proof and a QA verdict on a record over 2 MB leave no scratch file behind\nok 4 R149: commands that fail on a record over 2 MB leave no scratch file behind either",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "e857adbecdbc0f2e4144fbca3299c6326a9dc886b0c4cdfe05ccaa6682d65500",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C222": {
         "status": "pass",
@@ -32284,11 +32292,11 @@
       "C224": {
         "status": "pass",
         "exit": 0,
-        "seconds": 28,
+        "seconds": 24,
         "tail": "1..6\nok 1 R150: the schema-4 fixture loads and shows correctly in this VBW\nok 2 R150: a VBW that reads up to schema 3 asks for a newer VBW on the schema-4 fixture, never calling it corrupt\nok 3 R150: a VBW that reads up to schema 3 asks for a newer VBW on every record this VBW writes: 0, 1, 3 and 51 checks\nok 4 R150: the status line shows the same on a format-4 record with 0 and 60 checks as on an older one, idle and during a run, with no error\nok 5 R150: the session-start hook says the same on a format-4 record as on an older one, with no error\nok 6 R150: the panel shows the same on a format-4 record with 0 and 60 checks as on an older one",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "9546374c2244d2d507a4683c474557bb6a5653d90a82065dbd248f02e95b030d",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C225": {
         "status": "pass",
@@ -32340,18 +32348,18 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..4\nok 1 R150: docs/guards.md says the guards read the glance and read the record when it is missing or not newer\nok 2 R150: docs/guards.md and docs/record.md say the glance is never the source of truth\nok 3 R150: docs/record.md says the glance holds the record's schema, lease and protected list for the guards\nok 4 R150: no guide says the guards stream the record or read only its beginning",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "931236c6f466e60b04dd647e3ca23cb248f98899cd547bb9dae01a725e6feeb5",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C231": {
         "status": "pass",
         "exit": 0,
-        "seconds": 137,
+        "seconds": 158,
         "tail": "1..7\nok 1 R151: a guard whose own cost is above 20 ms per call fails the bench, and the line names the input, the cost and the 20 ms limit\nok 2 R151: a guard whose own cost is at or below 20 ms passes, however it compares with the startup (the old 1x limit no longer fails)\nok 3 R151: the status line above 60 ms per call fails the bench on the small and the large record, naming the cost and the 60 ms limit\nok 4 R151: without settings the limits are 20 ms per guard call and 60 ms for the status line, also in the bench's defaults\nok 5 R151: a machine too busy to measure is reported with its startup and the run passes without judging any guard\nok 6 R151: the same run with a startup below the limit judges the guards and the status line as usual\nok 7 R151: VBW_HOOK_BUDGET_MS and VBW_STATUSLINE_BUDGET_MS override the two limits, the busy threshold following the hook limit",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "e793b124a2853ca98406f9890c1b9dfdad8f49b126f175a6b723f4671450cecf",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C232": {
         "status": "pass",
@@ -32365,47 +32373,47 @@
       "C233": {
         "status": "pass",
         "exit": 0,
-        "seconds": 12,
+        "seconds": 11,
         "tail": "1..8\nok 1 R152: bash tools/test.sh with no option runs the lint and every test file except the timed ones, and neither benchmark\nok 2 R152: bash tools/test.sh --release runs the lint, both benchmarks, the suite in one parallel batch, then the timed files alone\nok 3 R152: the release run fails when a benchmark, the batch or a timed file fails\nok 4 R152: --quick still runs without the benchmarks and without any timed file\nok 5 R152: the CI shards together make one release run: shard 1 runs both benchmarks, each shard runs its timed files alone after its batch\nok 6 R152: tools/test.sh refuses --release with other arguments, naming the release way in its usage line, and runs nothing\nok 7 R152: CI runs the release way: the jobs without a shard run --release, the shard jobs run their share\nok 8 R152: no test file of the default run measures a duration; the timed tests live in tests/timed-*.bats",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "d6a91300a2cc3c178950148fe6689a3b3301183cc8e7951d2509592e254757f9",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "tests listing changed"
       },
       "C234": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..3\nok 1 R152: docs/proof.md says the timed speed checks run in the release run and vbw prove does not run them\nok 2 R152: the testing section of CLAUDE.md names the release run, says vbw prove does not run the timed checks, and runs it before a push\nok 3 R152: CONTRIBUTING.md names the release run as the local run before a push",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "2c72ea106d84e28ead2de57289dcfcd5a0121eaf37f7a196803c5a264e05d5ff",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C235": {
         "status": "pass",
         "exit": 0,
-        "seconds": 44,
+        "seconds": 40,
         "tail": "1..5\nok 1 R153: without a setting vbw config shows 3600 seconds and vbw prove gives the test command 3600 seconds, a check still 300\nok 2 R153: a project sets its own limit: vbw config shows it, later runs keep and use it, and default returns to 3600\nok 3 R153: vbw prove stops the test command at the project's limit, records timeout and says it was stopped by the limit, the limit and how to raise it\nok 4 R153: an invalid limit is refused with the allowed range and changes nothing\nok 5 R153: a test command that ends within the limit is recorded as before, and a check's own timeout still stops the check",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "13395909c2c73359177215ace55479a960a006ff148cb253f99380724bca8b1b",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C236": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..3\nok 1 R153: docs/proof.md states the default limit of the test command, 60 minutes\nok 2 R153: docs/proof.md says how a project sets its own limit and the allowed range\nok 3 R153: docs/proof.md says what a stop by the limit looks like and how to raise the limit",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "ef654bd17031700562097a5edd3d423b124a0f173c06c628be85bf4889ee6e32",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C237": {
         "status": "pass",
         "exit": 0,
-        "seconds": 19,
+        "seconds": 15,
         "tail": "1..2\nok 1 R147: a core count that is not a whole number gives a check limit of 1 and vbw config keeps working\nok 2 R147: with a core count that is not a whole number, a proof runs one check at a time without a shell error",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "88971b3a9887c9784054f58f64b3506f78b67a67bf5436a3d4eb27cc6aaa1ba5",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C238": {
         "status": "pass",
@@ -32419,11 +32427,11 @@
       "C239": {
         "status": "pass",
         "exit": 0,
-        "seconds": 13,
+        "seconds": 10,
         "tail": "1..1\nok 1 R153: a command stopped by a 2-second limit after a longer run is reported with the limit, not its measured seconds",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "7350b32350629c8950e6dc862c4534227654528866e8b340e33667bd72e36b82",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C240": {
         "status": "pass",
@@ -32437,11 +32445,11 @@
       "C241": {
         "status": "pass",
         "exit": 0,
-        "seconds": 118,
+        "seconds": 102,
         "tail": "ok 16 R145: a phase that never escalated keeps the small-change discount\nok 17 R145: a tier forced with vbw config rigor, never escalated, keeps the small-change discount\nok 18 R145: the QA round's tier is the raised depth when an escalated phase is among those to verify\nok 19 with no setting the mode is auto, and the config listing says so\nok 20 vbw config rigor sets each of auto, express, standard and deep\nok 21 an invalid mode is refused with the allowed list and the setting stays\nok 22 a forced mode overrides the computed tier when planning, up or down\nok 23 changing the mode re-tiers phases whose work has not started, and auto computes again\nok 24 a phase whose work has started keeps its tier when the mode changes\nok 25 changing the mode never makes the approved contract need approving again\nok 26 init writes the detected commands into spec.md and the record\nok 27 sync makes the record's commands exactly the spec's: changed, added and removed\nok 28 an empty Commands section removes every command\nok 29 a spec without a Commands section leaves the record's commands as they are\nok 30 a JSON array keeps an argument that contains spaces\nok 31 malformed command lines and duplicate names are errors with line numbers; nothing changes\nok 32 after the commands change, next asks for approval until the user approves them\nok 33 approval is refused while the spec's commands and the record's differ\nok 34 vbw config rigor re-tiers unstarted phases only, forced or recomputed\nok 35 a phase the Architect raised to deep is deep again after config rigor express then auto",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "c3836073bec4f93d2e4494fed8606d7db8de4dec09b7f9a14777f400792ec841",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C242": {
         "status": "pass",
@@ -32491,29 +32499,29 @@
       "C247": {
         "status": "pass",
         "exit": 0,
-        "seconds": 121,
+        "seconds": 108,
         "tail": "1..10\nok 1 R160: a fix run for a QA finding starts when some check lists no files\nok 2 R160: during a fix run for a QA finding the Dev may create a new test file\nok 3 R160: during that run the Dev may edit an approved check file of the finding's requirement\nok 4 R160: a check file of another requirement stays blocked, and the message names it and says what to do instead\nok 5 R160: the new test is registered as a check of the finding's requirement, and vbw show names the fix it came from\nok 6 R160: one approval question names every new or changed check file of the fix, and nothing runs them before it\nok 7 R160: without the approval vbw prove runs none of them, names the waiting files and the next step, and the fix stays open\nok 8 R160: once approved, vbw prove runs the new test\nok 9 R160: the approval is by content: a later change to the new test waits for a new approval\nok 10 R160: outside fix runs for QA findings check files stay protected as before",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "b6c59d164de30d38b01f899f576782c154c72579697fa79952c1cb5eb8a009f6",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C248": {
         "status": "pass",
         "exit": 0,
-        "seconds": 124,
+        "seconds": 110,
         "tail": "1..11\nok 1 R161: the verify and vibe skills keep the three answers, and Skip for now is recorded with vbw req skip\nok 2 R161: with nothing skipped, vbw next asks for the verdict as before\nok 3 R161: when only skipped [human] requirements remain, vbw next offers to ship and judge them in the next milestone\nok 4 R161: no such offer while other work remains\nok 5 R161: judging now changes nothing in the record\nok 6 R161: shipping now counts only what was proven or accepted and names the moved requirement\nok 7 R161: after vbw milestone start the moved requirement belongs to the new milestone, open, with the same id, text, proof, rules and history\nok 8 R161: in the new milestone vbw next offers the moved requirement for judgement\nok 9 R161: the spec line stays as it was, and vbw spec sync neither resets nor duplicates the moved requirement\nok 10 R161: an [auto] requirement is never skipped or moved\nok 11 R161: a [human] requirement with an open fix from the user's rejection does not move",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "3202a3a2596b00cc7a6113fb692ab4ef772898230cc9378a9953a402fbe2bf39",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C249": {
         "status": "pass",
         "exit": 0,
-        "seconds": 31,
+        "seconds": 30,
         "tail": "1..7\nok 1 R162: every refusal written out in cmd-apply.sh and cmd-run.sh carries its next step\nok 2 R162: every refusal of a full apply ends with its next step\nok 3 R162: every refusal of vbw apply --add ends with its next step\nok 4 R162: every refusal of vbw apply --patch ends with its next step\nok 5 R162: every refusal of vbw run start ends with its next step\nok 6 R162: every block of the file guard and the Bash guard ends with its next step\nok 7 R162: a guard that failed during a run blocks with a next step",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "519896c0dfda601738e1bd71b8b65877e664a9d86e471d0b96c2aef1efda7c2e",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C250": {
         "status": "pass",
@@ -32527,74 +32535,74 @@
       "C251": {
         "status": "pass",
         "exit": 0,
-        "seconds": 17,
+        "seconds": 15,
         "tail": "1..8\nok 1 R164: with only the version files and the changelog changed since a passing proof, the release run reuses it\nok 2 R164: the same holds when the version change is committed\nok 3 R164: any other changed file, committed or not, runs everything and says why\nok 4 R164: a new untracked file runs everything and says why\nok 5 R164: with no proof recorded, the release run runs everything and says why\nok 6 R164: when the last proof failed, the release run runs everything and says why\nok 7 R164: when the proof is reused, a failing benchmark or timed check still fails the run\nok 8 R164: the CI shards run their whole share whatever proof is recorded",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "80591fb718986fab415be8f70c38cc801722e12ccc05aad150c6441f83794838",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C252": {
         "status": "pass",
         "exit": 0,
-        "seconds": 47,
+        "seconds": 56,
         "tail": "1..9\nok 1 R165: during a run a guard that crashes blocks the write or command, saying the guard failed and to run vbw doctor\nok 2 R165: during a run a guard that cannot start blocks: the guard file missing or unreadable\nok 3 R165: during a run a guard that cannot start because jq is missing blocks\nok 4 R165: during a run a guard that runs past its time limit is stopped and the action blocked; docs/guards.md states the limit\nok 5 R165: during a run a record that cannot be parsed blocks the action when the guard must read it\nok 6 R165: the run-open marker exists exactly while a run is open, outlives a record that cannot be read, and a broken guard goes quiet when the run ends\nok 7 R165: in a VBW project with no open run a failing guard lets the action through as before\nok 8 R165: outside VBW projects a failing or missing guard changes nothing and prints nothing\nok 9 R165: with the guards intact a run still gets their ordinary answers, and the doctor's guard self-test passes",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "3974be14db366f168f2e9b291226dfca3486024f14d0076397606898b8e370f2",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C253": {
         "status": "pass",
         "exit": 0,
-        "seconds": 208,
+        "seconds": 184,
         "tail": "1..16\nok 1 R166: a check whose test reads a project file it does not declare runs again when a commit changes only that file (the case D181 missed)\nok 2 R166: a commit that changes only a file no check read reuses every check, each naming the proof it came from\nok 3 R166: a check that declares no files is reused when nothing it read changed, and runs when a file it read changed\nok 4 R166: deleting a file a check read runs that check again\nok 5 R166: renaming a file a check read runs that check again\nok 6 R166: adding a file to a folder a check listed runs that check again, and only it\nok 7 R166: removing a file from a folder a check listed runs that check again, and only it\nok 8 R166: a content change to a file in a listed folder that no check opened runs nothing\nok 9 R166: a changed approved definition runs that check again\nok 10 R166: a change to a check's own test file, approved again, runs that check again\nok 11 R166: a check whose last result failed runs again though nothing it read changed, and the summary says why\nok 12 R166: a check that never passed runs, and the summary says why\nok 13 R166: when the file system cannot record reads, the proof reuses nothing, runs every check and says so\nok 14 R166: results saved without a read list always run again, and the summary says why\nok 15 R166: a clone with no recorded runs, as after an older VBW, opens the record and runs every check\nok 16 R166: vbw prove --full runs every check, reuses nothing and is recorded as full; a proof that reused results is not full",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "4fd10815d16b00a8e3f550072664418550d8d9c4bb4e1d368983bbd5de9777ea",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C254": {
         "status": "pass",
         "exit": 0,
-        "seconds": 46,
+        "seconds": 40,
         "tail": "1..3\nok 1 R166: checks that must run at the same time still do while their read lists are recorded\nok 2 R166: a check that reads a file an earlier run of the same proof wrote runs again when what that run read changes\nok 3 R166: a check that reads the project through git always runs, and the summary says why",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "d2fd16b4bf699ae08e683243bf8187a83a85361523394581e3a90ab44c601d75",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C255": {
         "status": "pass",
         "exit": 0,
-        "seconds": 60,
+        "seconds": 57,
         "tail": "1..5\nok 1 R166: vbw qa record accepts a proof that reused results under the read-list rule\nok 2 R166: after a proof that reused results, vbw next goes on to QA and asks for no full proof\nok 3 R166: vbw ship accepts a proof that reused results under the read-list rule\nok 4 R166: vbw fix done runs a finished requirement's check when a file it read changed, though no plan of the fix lists that file\nok 5 R166: vbw fix done reuses a check none of whose read files changed since its pass, and says so",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "6fb1c216e720759e7b93b60c8e7252ae752e4887983858109df347ad3df0336d",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C256": {
         "status": "pass",
         "exit": 0,
-        "seconds": 4,
+        "seconds": 6,
         "tail": "1..9\nok 1 R166: docs/proof.md says what a read list is and that it comes from the run itself\nok 2 R166: docs/proof.md says when a result is reused and when the check runs again\nok 3 R166: docs/proof.md names where read lists are kept\nok 4 R166: docs/proof.md names the limits and how to run everything fresh\nok 5 R166: docs/proof.md says that QA and shipping accept a proof that reused results\nok 6 R166: docs/proof.md no longer describes the served-files rule, the passes cache or the documentation-only rule\nok 7 R166: recording read lists adds no tracing tool as a runtime dependency\nok 8 R166: the guards and the status line never read the read lists\nok 9 R166: the guards never open the store of recorded runs, even when they refuse a write to it",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "66fea21440b31ca4347a91b43a1ac9e4fcba994caae0c29a018400cf716b39ec",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C257": {
         "status": "pass",
         "exit": 0,
-        "seconds": 39,
+        "seconds": 31,
         "tail": "1..7\nok 1 R167: with an approved single-file form each test file runs on its own and the whole test command does not run\nok 2 R167: an edited form never runs before the user approves it again, and runs once approved\nok 3 R167: without a declared form the test command runs whole, and the proof summary says so\nok 4 R167: VBW never guesses a form: vbw init writes no Test files section\nok 5 R167: a form whose run does not name {file} exactly once is refused when the spec is synced\nok 6 R167: a form with no test files is refused when the spec is synced\nok 7 R167: the Lead's proposal through vbw apply writes the form into the spec's Test files section, for the user to approve",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "875a7405630edc98c8bacc0f6b33a396e30e9bc452eccf9d63ac666e9c729d86",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C258": {
         "status": "pass",
         "exit": 0,
-        "seconds": 154,
+        "seconds": 133,
         "tail": "1..10\nok 1 R167: each test file runs once on its own; the one a check runs runs only as that check; neither the test nor the quick command runs\nok 2 R167: test files run several at a time\nok 3 R167: a commit that changes a file one test file read runs only that test file and reuses the others, naming the proof\nok 4 R167: a new test file runs, and only it\nok 5 R167: a changed test file runs again, and only it\nok 6 R167: a test file whose last result failed runs again though nothing it read changed\nok 7 R167: deleting a file a test file read runs that test file\nok 8 R167: adding a file to a folder a test file listed runs that test file\nok 9 R167: a failing test file fails the proof, and the proof names it\nok 10 R167: vbw prove --full runs every test file on its own and reuses none",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "80248ca99712a35b1ba7003ff7f8be22a22f25b4db9fe3277be1ad3ba078e96b",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C259": {
         "status": "pass",
@@ -32602,7 +32610,7 @@
         "seconds": 1,
         "tail": "1..5\nok 1 R167: VBW's spec declares its single-file form: bats on one file\nok 2 R167: VBW's declared test files are every tracked tests/*.bats except the timed ones\nok 3 R167: VBW's spec names the shell lint as its own project command\nok 4 R167: bash tools/test.sh --lint runs shellcheck on every shell file under tools/ and runs no test file\nok 5 R167: tools/test.sh keeps its usage line and documents --lint in it",
         "fp": "a4c3fc4a1c937f7ed83dbad83a14a23b4a955b4576464496a0b301351ed0b484",
-        "at": "2026-10-13T22:29:02Z",
+        "at": "2026-10-13T22:53:41Z",
         "why": "reads the project through git"
       },
       "C260": {
@@ -32610,45 +32618,45 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..6\nok 1 R167: the Lead proposes the single-file form through vbw apply, with the runner's documented syntax\nok 2 R167: docs/proof.md shows the Test files section with its run and files lines\nok 3 R167: docs/proof.md says the form is approved like a command and never guessed\nok 4 R167: docs/proof.md says what happens without a form, and how the summary counts test files\nok 5 R167: docs/proof.md says a test file an approved check runs runs only as that check, and the quick command never stands in for a form\nok 6 R167: docs/workflows.md says vbw apply takes the Lead's proposed form",
-        "at": "2026-10-13T22:10:27Z",
         "fp": "583a094768906482f7c5e3e65d6db6b99f5d857562b81b83836e4ed577144086",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C261": {
         "status": "pass",
         "exit": 0,
-        "seconds": 188,
+        "seconds": 164,
         "tail": "1..12\nok 1 R168: a changed approved command re-runs that command only, and its line says why\nok 2 R168: a changed single-file form re-runs every test file and nothing else\nok 3 R168: a changed list of test files runs the files it adds and nothing else\nok 4 R168: a change to a file every test file reads re-runs those files and nothing else, and each line names the file\nok 5 R168: an added file that no recorded run read and no recorded run listed the folder of runs everything, and names it\nok 6 R168: a deleted file that no recorded run read and no recorded run listed the folder of runs everything, and names it\nok 7 R168: a content change to a file no recorded run read runs nothing\nok 8 R168: when the file system cannot record reads, everything runs and the summary says so\nok 9 R168: a clone with no earlier recorded run runs everything and says so\nok 10 R168: several causes at once are each listed\nok 11 R168: a proof that was cut short reuses nothing the next time, and the summary says so\nok 12 R168: every summary, full or not, counts the checks and the test files that ran and were reused, and each reused result names its proof",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "992ae02d7523f41a5a6bb86c89f829cd7303fbff22a1c2259e245f1b96573335",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C262": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..6\nok 1 R168: docs/proof.md shows the ran-everything line and the list form for several causes\nok 2 R168: docs/proof.md says a changed approved command, single-file form or list of test files re-runs only what runs through it, and lists none of them as a cause\nok 3 R168: docs/proof.md no longer lists a file every test file reads as a cause: each file re-runs by its own read list\nok 4 R168: docs/proof.md lists an added or deleted file no recorded run saw, with its messages\nok 5 R168: docs/proof.md lists a file system that cannot record reads, no earlier run in the clone and a proof cut short, with their messages\nok 6 R168: docs/proof.md says a content change to a file no recorded run read runs nothing, and shows both counts",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "a48292172d80e4afe6a23377b274e65442db64ed9a11ef650adaba17f7c3fac3",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C263": {
         "status": "pass",
         "exit": 0,
         "seconds": 37,
         "tail": "1..4\nok 1 R160: vbw commit --fix commits the fix's new test file and its requirement's check file, with a VBW-Fix trailer\nok 2 R160: vbw commit --fix refuses a check file of another requirement, and commits nothing\nok 3 R160: vbw commit --fix refuses a code file: code goes through its plan\nok 4 R160: a fix that QA did not open cannot commit check files this way",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "eec1644eb1aaebc308c9bf91929228595919d96e38dc7165038b547738e5e2a5",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C264": {
         "status": "pass",
         "exit": 0,
-        "seconds": 43,
+        "seconds": 42,
         "tail": "1..6\nok 1 R160: the fix QA opened registers its test; the check names the requirement and the fix\nok 2 R160: an unknown fix is refused\nok 3 R160: a fix that is no longer open is refused, saying QA opens a new one if the problem remains\nok 4 R160: a fix QA did not open is refused: a proof failure is fixed in the code its check already tests\nok 5 R160: a test file that does not exist is refused: create it first\nok 6 R160: a malformed check document is refused with the shape it needs",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "28c401b47e4b52c6d8fe3352710f91d3c5a4b330d66201cc170d6146c6b2f65f",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C265": {
         "status": "pass",
@@ -32671,29 +32679,29 @@
       "C267": {
         "status": "pass",
         "exit": 0,
-        "seconds": 92,
+        "seconds": 85,
         "tail": "1..8\nok 1 R166: a sub-folder that appears inside a listed folder runs the check again, naming the listing, and only it\nok 2 R166: once the check ran with the sub-folder, it is reused until the listing changes again\nok 3 R166: a sub-folder that vanishes from a listed folder (its last file deleted) runs the check again, and only it\nok 4 R166: a new sub-folder with several files, nested deeper, is seen through the listing once\nok 5 R166: a content change to a file in the listed folder that the check never read reuses it\nok 6 R166: a file added directly inside the listed folder still runs the check again, and only it\nok 7 R168: a file added to a sub-folder that already existed, which no run listed, is unseen: everything runs and the cause names it\nok 8 R168: a file deleted from a sub-folder that keeps other files, which no run listed, is unseen: everything runs",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "340378e93ff671f5b4a44d7a7ea0d2e37cf0c40184bfddbe3f423078b54afa15",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C268": {
         "status": "pass",
         "exit": 0,
-        "seconds": 23,
+        "seconds": 22,
         "tail": "1..3\nok 1 R169: every file the form matches runs as a check: no nameless unit, the test command counts as covered, the summary says so\nok 2 R169: a form that matches no tracked file fails the test command, names the form and opens its fix\nok 3 R169: a matching file added later runs as a unit of its own",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "c65aaa81ec2c1d22c37860bfc11ceaf7b2ac8ed87c5887e4a4bd5e977c431395",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C269": {
         "status": "pass",
         "exit": 0,
-        "seconds": 7,
+        "seconds": 6,
         "tail": "1..3\nok 1 R170: a passing proof that reused results is reused by the release run\nok 2 R170: a proof that skipped a command not yet approved is not reused, and the reason says so\nok 3 R170: a proof where the quick command stood in for the test command is not reused, and the reason says so",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "cca5744f1bf77d15e4a186f9542f9b6d64295f4334e6d2f6ac8581598920a628",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C270": {
         "status": "pass",
@@ -32725,56 +32733,56 @@
       "C273": {
         "status": "pass",
         "exit": 0,
-        "seconds": 5,
+        "seconds": 4,
         "tail": "1..2\nok 1 R172: no test file writes a bats file and also starts the real bats\nok 2 R172: the rule sees the pattern that failed on Linux, and passes the filter form and the stand-in form",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "ab7e91af533b5933eea6fff46b276d511c63f30112f526ece27beda6a441b2d5",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "tests listing changed"
       },
       "C274": {
         "status": "pass",
         "exit": 0,
-        "seconds": 91,
+        "seconds": 74,
         "tail": "1..8\nok 1 R175: a second vbw prove right after a passing proof with nothing changed names the cause and runs everything (D173)\nok 2 R175: T116: code commits land, then a record commit that reads like a proof commit lands last: no such cause, only the units that read the change run\nok 3 R175: with no evidence the cause never fires, whatever the last commit's subject says\nok 4 R175: when the last proof did not pass the cause never fires; the reuse rule alone decides\nok 5 R175: vbw fix done never names the cause: right after a passing proof it reuses every pass (D270)\nok 6 R175: the reuse rule's reason 'proving again with nothing committed' comes from the same tree comparison, not from the commit subject\nok 7 R175: no code in plugin/lib decides anything from a commit subject: the proof commit's words appear only where the commit message is written\nok 8 R175: a proof recorded on an uncommitted edit, then that edit committed: the working tree still matches the proof but HEAD is not the tree it ran on, so no 'nothing was committed' cause or reason",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "94e8b5bdce4d968025ca0dda423bf90948c9376667c4765f5033d46058570a89",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C275": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..2\nok 1 R175: the causes table keeps the message and states the rule as the trees of the last passing proof\nok 2 R175: the D173 paragraph says VBW compares trees and never the subject of the last commit",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "ddadc23ee1252245cd53819d74b8003eb2fc3e9dde2eebc8bad7faca26e99193",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C276": {
         "status": "pass",
         "exit": 0,
-        "seconds": 40,
+        "seconds": 34,
         "tail": "1..6\nok 1 R176: a cause runs every candidate: the cause line prints once, one line per check that ran, then both count lines with the true numbers\nok 2 R176: a check that ran says why in the proof summary's form; a reused check keeps its line with the time of the pass it reused\nok 3 R176: the count lines come after the per-unit lines\nok 4 R176: a failing check adds the last line of its output; the refusal and the exit code are unchanged\nok 5 R176: with nothing to judge the count lines still print, as 0 ran, 0 reused\nok 6 R176: closing outcomes are unchanged: fixed for a requirement proved by checks, closed for a [human] one",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "af5040924c847947a6748da60fb1686849d330d9675057b7523cdcfeee5f31ce",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C277": {
         "status": "pass",
         "exit": 0,
-        "seconds": 123,
+        "seconds": 110,
         "tail": "1..7\nok 1 R176 (F155): vbw fix done right after a passing proof of this very state reuses every unchanged test file: the nothing-committed reason is vbw prove's alone\nok 2 R176 (F152): for vbw fix done the test files never meet the proof's nothing-committed reason: with a passing proof of this very state, fix reuses them and prove would not\nok 3 R176: the failed file and a file whose read list changed run and are named; the rest are reused and counted\nok 4 R176: a test file that still fails adds the last line of its output; the fix stays open and the exit code is non-zero\nok 5 R176: a changed test file runs again on its own content\nok 6 R176: a test file fix done ran is saved in the run store and the next vbw prove reuses it\nok 7 R176: with a cause (no earlier recorded run) every test file runs with no 'ran:' part, the cause prints once and the count is the true total",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "745817a6b91177331a9b17c3cd0a46cfea2e9bda623fa98b63748d71beb44ef4",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C278": {
         "status": "pass",
         "exit": 0,
         "seconds": 2,
         "tail": "1..4\nok 1 R176: docs/proof.md shows a check line and a test file line that ran, with why\nok 2 R176: docs/proof.md shows the reused line with the time of the pass and the cause line\nok 3 R176: docs/proof.md shows both count lines in the fix done output, printed every time\nok 4 R176 (F146): every example block of the fix done section is output the code can produce: the count lines come after every unit line, and a cause line comes first",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "5ad9d472a951c256826d10456f8adbcd5bb4c5ac1b79a92537c24cb6c9449936",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C279": {
         "status": "pass",
@@ -32790,9 +32798,9 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..2\nok 1 R174: docs/proof.md names the four sections compared at approval\nok 2 R174: docs/proof.md says an unsynced spec cannot be approved and shows the refusal line",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "bdc77350affb36cf29dab1a7615b30610a2748d7e6935f95703eb76b708572c1",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C281": {
         "status": "pass",
@@ -32815,11 +32823,11 @@
       "C283": {
         "status": "pass",
         "exit": 0,
-        "seconds": 72,
+        "seconds": 71,
         "tail": "1..9\nok 1 R173: the active milestone's total is the sum over the sessions seen, each from its first figure when no baseline was recorded\nok 2 R173: vbw ship freezes the total; vbw milestone start records baselines; later spend counts in the new milestone only, a new session from its first figure\nok 3 R173: each run's cost is shown as its share; a run whose session had no figures is unknown with the remedy\nok 4 R173: a milestone with no figure seen is unknown, not 0\nok 5 R173: a milestone shipped without figures stays unknown when figures arrive later; no dollar counts twice\nok 6 R173: --ceiling: under (exit 0, both figures), reached at or above (exit 1), cannot tell with no figure (exit 1)\nok 7 R173: --ceiling with anything but a positive number is a usage error (exit 2) that changes nothing\nok 8 R173: vbw show lists costs in its usage\nok 9 R173 (F143): a session whose figure fell below its baseline counts from its first figure; the milestone ships with a non-negative total",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "fb1a14ebe1c03f54cf41967567dad1a2b12b3f8b1a5374bbb4e63a05ea12e216",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C284": {
         "status": "pass",
@@ -32833,11 +32841,11 @@
       "C285": {
         "status": "pass",
         "exit": 0,
-        "seconds": 9,
+        "seconds": 7,
         "tail": "1..4\nok 1 R173: docs/record.md documents the costs field, the lease's opening figures and the schema\nok 2 R173: docs/statusline.md documents the side file and no longer claims no temporary files\nok 3 R173: docs/costs.md documents the command, its JSON, the ceiling and what unknown means\nok 4 R173: docs/costs.md names every field of milestones[] and runs[] in a real vbw show costs --json",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "0f54032211f028e9c368357c45d13155079f461833645f181258d0913d86afa6",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C286": {
         "status": "pass",
@@ -32869,47 +32877,47 @@
       "C289": {
         "status": "pass",
         "exit": 0,
-        "seconds": 31,
+        "seconds": 35,
         "tail": "1..2\nok 1 R173: the bench's status line cases write the cost side file, and pass\nok 2 R173: a status line that never writes the side file fails the bench, on both records",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "fbe13635ca6021b4583a358cf68ff6ab8e9119a2fe8377ba7eb14d6645ccb075",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C290": {
         "status": "pass",
         "exit": 0,
-        "seconds": 139,
+        "seconds": 125,
         "tail": "1..12\nok 1 R178: loop start records the items in order, the ceiling, the session, the start time and the baseline, and commits the record\nok 2 R178: the items are a snapshot: a later edit of the backlog changes nothing in the loop\nok 3 R178: vbw loop status prints all of it from any session of the project\nok 4 R178: the three ceiling forms are recorded as the user chose them (D317)\nok 5 R178: no ceiling choice, --finish-item alone, or a USD that is not a positive number is a usage error (exit 2) and nothing changes\nok 6 R178: no item, an unknown item, a closed item or the same item twice is refused with what to do instead\nok 7 R178: a loop already on is refused and names vbw loop stop\nok 8 R178: a current milestone with requirements that is not shipped is refused: finish or ship it first\nok 9 R178: --ceiling when no session has a cost figure is refused: vbw statusline on, or --no-ceiling\nok 10 R178: a loop started outside any session records no session, and --help changes nothing\nok 11 R178 (F169): a [human] requirement an earlier ship carried over does not make the current milestone unfinished: the loop starts\nok 12 R178 (F201): the word stop given as an item is refused and points to vbw loop stop",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "f5842cc64e73dde038afb7c104365b103609b57c5c72471feba38c1a2ba10e54",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C291": {
         "status": "pass",
         "exit": 0,
-        "seconds": 87,
+        "seconds": 78,
         "tail": "1..7\nok 1 R178: stop from the session that started the loop marks it stopping with the time and the session\nok 2 R178: stop from any other session of the project works the same and names that session\nok 3 R178: stop with no loop on says so and exits 0; a second stop ends the stopping loop (D322)\nok 4 R178: the stop is read from the record: the loop step of the session running the loop answers stopped before its next step\nok 5 R178: a stop asked while the loop's own session has a run open is seen once that run has ended\nok 6 R178: vbw loop stop --help changes nothing\nok 7 R178 (F170): a second stop while the loop is still stopping ends it at once, with the report: the way out when the loop's session is gone",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "76f5f805d5d6dd42715e8d39f9ab7532b80f46ca9ba66f75a495b5a85b9fed19",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C292": {
         "status": "pass",
         "exit": 0,
-        "seconds": 126,
+        "seconds": 119,
         "tail": "1..7\nok 1 R178: the loop step approves a contract made of exactly its items: consent, shape, snapshot, commands, decision and commit, as vbw approve writes them\nok 2 R178: the test-file form is approved too (D315)\nok 3 R178: a [human] requirement an earlier ship carried over does not stop the delegation\nok 4 R178: the approval is idempotent: a second loop step approves nothing again and records no second decision\nok 5 R178 (F174): the approval of edited test files (vbw next row 4a, detail.files) is never delegated: the loop waits for the user\nok 6 R178 (F199): the loop grants the consents for a project command and a shape that had none before\nok 7 R178 (F200): a project command changed after the contract's approval is approved by the loop with its own decision and commit, never by a consent alone",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "31033674661df477b2810d54259104f7e8c0fe2c6beba134ffb2655830643f43",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C293": {
         "status": "pass",
         "exit": 0,
-        "seconds": 95,
+        "seconds": 112,
         "tail": "1..9\nok 1 R178: a requirement whose text differs from its item's by one character waits for the user\nok 2 R178: an extra requirement in the milestone waits for the user\nok 3 R178: a requirement that matches an item not on this loop's list waits for the user\nok 4 R178: with no loop on, nothing is approved and the loop step says the loop is off\nok 5 R178: a loop that is stopping approves nothing\nok 6 R178: a contract that is not ready (a missing check file) is not approved: vbw next answers contract as today\nok 7 R178: a contract whose spec and record differ is not approved: vbw next answers contract as today\nok 8 R178 (F168): the matching rule itself refuses a text one character off and an item not on this loop's list, and accepts the item's own text\nok 9 R178 (F177): each item matches at most once: a requirement text present twice in the milestone, with one item of that text, does not match",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "c6dfd85b3b4c397c71b27202abdf56155f0ee0b78bc4efefd2a8e95418fa9505",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C294": {
         "status": "pass",
@@ -32923,20 +32931,20 @@
       "C295": {
         "status": "pass",
         "exit": 0,
-        "seconds": 46,
+        "seconds": 47,
         "tail": "1..5\nok 1 R178: the spend is the sum over known sessions of the current figures minus the baseline, like a milestone's total\nok 2 R178: at or above the ceiling the word is reached\nok 3 R178: with no figure seen the word is cannot tell, which counts as reached under a ceiling\nok 4 R178: with --no-ceiling the status shows the spend or cannot tell, and no ceiling to compare with\nok 5 R178: status with no loop says so and exits 0",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "bcbf2e207167e432692603965464fae194411dbf9e5f0bdb9ca1bbe77d391f71",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C296": {
         "status": "pass",
         "exit": 0,
-        "seconds": 13,
+        "seconds": 12,
         "tail": "1..4\nok 1 R178: vbw loop --help and vbw help list start, stop and status with the three ceiling forms\nok 2 R178: docs/loop.md documents start, stop, status, the ceiling modes and the delegated approval rule and its records\nok 3 R178: docs/record.md describes the loop field and docs/costs.md the loop's spend\nok 4 R178: the record's format validates the loop field: a malformed loop is refused, a valid one is read",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "3a11d988ee117f3f972510e875271e9155285e65ea2191c11bb61c4ca23f686e",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C297": {
         "status": "pass",
@@ -32950,47 +32958,47 @@
       "C298": {
         "status": "pass",
         "exit": 0,
-        "seconds": 77,
+        "seconds": 73,
         "tail": "1..4\nok 1 R179: the first step opens the item's milestone (renamed when empty), adds its requirement, marks it in progress, and returns plan with the router's fields\nok 2 R179: a backlog item starting with [human] becomes a [human] requirement\nok 3 R179: through one item from milestone to ship: approve by delegation, build, prove, ship, backlog done, then the next item's milestone\nok 4 R179: done when the list is finished, and the loop is recorded as ended",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "a8af3d1f818030ae9d3f4f1b1cfeb152e393721b974439bf5cd2d68887b53271",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C299": {
         "status": "pass",
         "exit": 0,
-        "seconds": 56,
+        "seconds": 53,
         "tail": "1..5\nok 1 R179: in the loop's session the gate blocks the stop with the next loop step and never spends an autonomy step\nok 2 R179: while this session's proof runs in the background the gate asks for nothing\nok 3 R179: once the loop reports stopped or done the gate lets the session stop, with one message, then nothing\nok 4 R179: in any other session the gate ignores the loop\nok 5 R179 (F171): the gate hands its own session to the loop step: a run this session opened is its own, and the loop goes on",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "caea270b7b0d4fe8cbc4c7e9d24c6762fed19738abc7aecdd867a4b0ca754a5f",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C300": {
         "status": "pass",
         "exit": 0,
-        "seconds": 116,
+        "seconds": 131,
         "tail": "1..5\nok 1 R179: the loop skips a [human] requirement at accept, ships with it moved on, and the report says it waits for the user\nok 2 R179: the loop never accepts or rejects on the user's behalf: no acceptance, no rejection, no fix from a rejection\nok 3 R179 (F191): a [human] item followed by another keeps its requirement, its commits and its waiting line in the report after the next milestone carries the requirement over\nok 4 R179 (F197): a [human] requirement carried in from a ship before the loop stays in Waiting for you after the next item's milestone opens\nok 5 R179 (F197): a [human] requirement carried in and then judged by the user is no longer in Waiting for you",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "1fa4e3b1dd0b5e2e403fe382b899bc5c7944b4756a8c06cfd444116d4be2df6a",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C301": {
         "status": "pass",
         "exit": 0,
-        "seconds": 149,
+        "seconds": 174,
         "tail": "1..12\nok 1 R179: default ceiling: at or above it the loop stops before the next step with that reason; under it the step runs\nok 2 R179: under the ceiling the loop goes on\nok 3 R179: when the spend cannot be told the loop stops before the step\nok 4 R179: --finish-item: once reached, the item runs on to its ship and then the loop stops\nok 5 R179: --no-ceiling: no comparison, even with no figure at all\nok 6 R179: a stop asked from any session stops the loop before its next step, naming the user and the session\nok 7 R179: a workflow already running is never killed: the loop stops once the run has ended\nok 8 R179 (F207): a contract not ready yet is handed back to the session once, with the instruction; the same unsatisfied contract again ends the loop\nok 9 R179 (F207): the check file written after the hand-back lets the next step approve by delegation and go on\nok 10 R179: a run open in another session stops the loop with the reason\nok 11 R179 (F179): a kernel step the loop runs itself that refuses (a ship on a dirty tree) ends the loop with the reason, the item and the step, and the report\nok 12 R179 (F205): a step resumed after the last item's ship ends the loop on the end of the list, not the ceiling, whatever the spend",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "ac4b1280e62ec343402c4a389d7755be3f75d0ba28c290764c7160bb51ce96d8",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C302": {
         "status": "pass",
         "exit": 0,
-        "seconds": 72,
+        "seconds": 79,
         "tail": "1..4\nok 1 R179: at the loop's end the report names what shipped, with its commits, and what it cost in dollars and tokens\nok 2 R179: a cost VBW did not see is unknown, never 0 or an estimate\nok 3 R179: the report is refreshed each time an item ends, before the loop is over\nok 4 R179: a stop reason is in the report and in the record",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "701f6ca0c323bea9b5fc256c57694f14733b0d5d69263df80ff9cdf8e2d63d5b",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C303": {
         "status": "pass",
@@ -33004,56 +33012,56 @@
       "C304": {
         "status": "pass",
         "exit": 0,
-        "seconds": 209,
+        "seconds": 239,
         "tail": "1..11\nok 1 R179: the first escalation of an item is retried (vbw fix retry) and recorded; the second parks it\nok 2 R179: after a park the project proves as before the item started, and the parked milestone is left behind like a shipped one\nok 3 R179: a blocked plan is reset once; blocked again, the item is parked\nok 4 R179: a scope violation parks the item\nok 5 R179: vbw loop park by hand with no item in progress refuses and names what to do\nok 6 R179 (F166): a commit that changes code and a .vbw file together is left in place and named, never skipped in silence\nok 7 R179 (F181): a commit touching a file the user edited by hand is left in place and named; the user's edit stays\nok 8 R179 (F185): a file you staged stays staged and the commit touching it is left and named; a check file you edited by hand stays\nok 9 R179 (F185): a commit that does not revert cleanly is left in place and named, and so are the older ones its change sits next to; no half-done revert remains\nok 10 R179 (F193): beside a commit that does not revert cleanly, the one that does is reverted\nok 11 R179 (F194): vbw loop park by hand while a run is open refuses, names what to do and changes nothing",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "1bb48560eb334f2222f0248cf22c1a99ed3962ea7002348d9064d7561b47ef0b",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C305": {
         "status": "pass",
         "exit": 0,
-        "seconds": 16,
+        "seconds": 17,
         "tail": "1..2\nok 1 R179: vbw loop park is denied from any tool call with the pinned text\nok 2 R179: the denial holds with no loop on and in a project with a stale glance",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "1f0ec5ba29404b93254a8d1da3ebb87f5e1552b4bc39a275d1965618d9dbc017",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C306": {
         "status": "pass",
         "exit": 0,
-        "seconds": 123,
+        "seconds": 140,
         "tail": "1..6\nok 1 R179: the parked section names the item, the reason, the revert commits and the way back; the total includes the parked item's cost\nok 2 R179 (F182): the record's rules for parked milestones: fields, parked twice, shipped and parked, a parked milestone that keeps work, the current milestone parked exactly when listed\nok 3 R179 (F182): a parked milestone keeps its name, and vbw status --json lists the parked ids\nok 4 R179 (F186): a parked milestone keeps its name: vbw milestone rename refuses and says to start the next one\nok 5 R179 (F195): vbw show costs prices a parked milestone by its frozen total, which later spend does not change\nok 6 R179 (F195): a milestone parked with no figure seen is unknown in vbw show costs, and stays unknown after spend",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "aa34f1b1b42614e62d47b37ddce161cc689ca4ca6a97402135119f303725042f",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C307": {
         "status": "pass",
         "exit": 0,
-        "seconds": 120,
+        "seconds": 116,
         "tail": "1..11\nok 1 R180: under a loop every form of git push is denied for the main session and for agents\nok 2 R180: under a loop releases, publishes and deploys are denied with their pinned texts\nok 3 R180: the words in text, reads and the project's own commands stay allowed under a loop\nok 4 R180: the denial holds when the guard reads the record instead of the glance, and ends with the loop\nok 5 R180: outside a loop today's rules stand: a plain git push, a pull request and a publish stay allowed\nok 6 R180: the hook bench measures the guard with a loop on\nok 7 R180 (F164): git's global options with their value as the next word hide no push: --git-dir, --work-tree, --namespace\nok 8 R180 (F165): heroku pipelines:promote is denied with its pinned text\nok 9 R180 (F175): an option's value or a toolchain word before the subcommand hides nothing: cargo +nightly publish, npm --tag next publish, docker --context x push, gh -R a/b release create\nok 10 R180 (F180): a trigger word that is an argument, not the subcommand, is allowed while a loop is on: cargo test publish, npm run publish, gh issue list --label release, docker run --name push\nok 11 R180 (F206): a redirect glued to the subcommand hides no push or publish: git push>out.log, npm publish>log, docker push>x; a descriptor number stays with its redirect",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "ed92d94276e5d6e4e244c9bc9e25195d97802233c37c07095a6a627fad8bf79d",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C308": {
         "status": "pass",
         "exit": 0,
-        "seconds": 26,
+        "seconds": 23,
         "tail": "1..1\nok 1 R180: a loop's ship leaves the remote and the tags unchanged",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "2d51c303efb8b4bc24d9809302fb2a76d8d3930a4c796b49a88db8e1103cb448",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C309": {
         "status": "pass",
         "exit": 0,
-        "seconds": 30,
+        "seconds": 28,
         "tail": "1..2\nok 1 R180: under a loop a builder may not write the record, a path outside the project or a protected check file\nok 2 R180: under a loop a builder may not approve and may not push",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "0985aa4787ecb2f2bd5546878952e71b15e687c957ca972f549bb497062522eb",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C310": {
         "status": "pass",
@@ -33067,65 +33075,65 @@
       "C311": {
         "status": "pass",
         "exit": 0,
-        "seconds": 10,
+        "seconds": 11,
         "tail": "1..3\nok 1 R178 (F202): a project command changed after the approval is approved on its own by vbw approve, with its decision and commit; a second approve adds nothing\nok 2 R178 (F202): when the commit of a command's approval fails, no decision and no consent are kept, and the next try starts clean\nok 3 R178 (F202): docs/proof.md describes the approval of a changed command and its failing commit",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "18ad8dfdcd4bb8fd12a69704e2964b9eb3e265f00a10ddfbcf62de414939c932",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C312": {
         "status": "pass",
         "exit": 0,
-        "seconds": 33,
+        "seconds": 36,
         "tail": "1..4\nok 1 R179 (F204): a finding names its phase; the pass of another phase sharing the requirement leaves it open; its own phase's pass closes it\nok 2 R179 (F204): a finding given without its phase is adopted by the phase's fail verdict; a fail needs a finding of its own phase\nok 3 R179 (F204): a finding for a phase that does not have the requirement, or does not exist, is refused; the record refuses a fix whose phase is unknown\nok 4 R179 (F204): docs/proof.md and the QA agent name the finding's phase and the one-phase rule",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "d4031bcebb4a25816329137919f3632f423f299d3b209f29ec96e7e371b58847",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C313": {
         "status": "pass",
         "exit": 0,
-        "seconds": 35,
+        "seconds": 34,
         "tail": "1..10\nok 1 R181: the machine limit is three quarters of the cores, rounded down, at least 1 and at most 64; 1 when the count cannot be read\nok 2 R181: the machine limit is not a setting: vbw config refuses one, and check_jobs does not change it\nok 3 R181: one run whose check_jobs is above the limit runs exactly as many units at once as the limit\nok 4 R181: the slot store is <CLAUDE_CONFIG_DIR>/vbw/slots.json, inside this test's own folder, while a run uses it\nok 5 R181: without CLAUDE_CONFIG_DIR the store is in ~/.config/claude-code/vbw when that folder exists\nok 6 R181: without CLAUDE_CONFIG_DIR or ~/.config/claude-code the store is in ~/.claude/vbw\nok 7 R181: one kernel function finds the Claude config folder, and the status line's settings lookup uses it\nok 8 R181: a proof writes nothing outside the project but the slot store, and leaves nothing there when done\nok 9 R181: the slot store code holds to the bash 3.2 floor: no wait -n, associative arrays, mapfile or case-changing expansions\nok 10 R181: under /bin/bash the kernel takes and gives back slots",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "3ca77d05b48f55f5bca94a710f830f798929985870ba8024c3b1d141285984ff",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C314": {
         "status": "pass",
         "exit": 0,
-        "seconds": 83,
+        "seconds": 81,
         "tail": "1..5\nok 1 R181: two projects each proving 6 units, plus a vbw fix done in one of them, never run more than 3 at once with 4 cores\nok 2 R181: a run with check_jobs 2 never runs more than 2 units at once, even with free slots\nok 3 R181: a check_jobs above the machine limit never lifts a proof above it\nok 4 R181: project commands and test files take a slot like checks: at limit 1, nothing of another project runs beside them\nok 5 R181: a unit gives its slot back when it fails or times out, so later units and runs are not held up",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "f7174ff04c3ae4de554d4da77090f87bfcbf67e8ee4670252414ad665afcb418",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C315": {
         "status": "pass",
         "exit": 0,
-        "seconds": 61,
+        "seconds": 63,
         "tail": "1..5\nok 1 R181: a freed slot goes to the waiting run holding the fewest: B's one unit starts before A's fourth\nok 2 R181: between waiting runs holding the same number of slots, the one that waited longest goes first\nok 3 R181: an alone check in one project and shared checks in another both finish at limit 1, the alone one still by itself in its project\nok 4 R181: a vbw run inside a unit's command, on the same store, takes no slot of its own and never waits for its parent\nok 5 R181: a unit that waited reports what it would alone, and its timeout counts from its command's start",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "9e3611d1fc11027e1f5f3c79dfa7640d9bb15fc6e70f423bc29934da620e83bb",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C316": {
         "status": "pass",
         "exit": 0,
-        "seconds": 35,
+        "seconds": 38,
         "tail": "1..5\nok 1 R181: the slot of a run killed outright is taken over by the next run\nok 2 R181: a run interrupted with Ctrl-C ends and gives its slot back at once\nok 3 R181: the store's lock is taken over when its owner process is gone\nok 4 R181: when the store cannot be written, prove, check and fix done run to the end under check_jobs and say so once\nok 5 R181: a damaged store never stops a run: it runs under check_jobs, says so once, and the store is left as it was",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "2a1a4a6c7ffa31b6d4fa2bd2c044c34a9e7d3ea27f600047e5975ad2e3020c03",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C317": {
         "status": "pass",
         "exit": 0,
-        "seconds": 57,
+        "seconds": 61,
         "tail": "1..8\nok 1 R181: vbw prove whose unit waited ends with the waited line, after its verdict\nok 2 R181: vbw check whose unit waited ends with the waited line, after its results\nok 3 R181: vbw fix done whose unit waited ends with the waited line, after its fixes\nok 4 R181: with an unreadable core count the waited line names limit 1 and why\nok 5 R181: a run that never waited prints no waited line: prove, check and fix done output is unchanged\nok 6 R181: the waited line names seconds under a minute and whole minutes from 60 s up\nok 7 R181: the waits of several units are added, not the longest taken\nok 8 R181: a wait never reaches the evidence, the record or the stored runs: they have the shape of an alone run",
-        "at": "2026-10-13T20:10:36Z",
         "fp": "abfe7c3f759d7fd43b9ae7fa93b77394125d32f46b5cb3a45e5e2c0c298ecb0f",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C318": {
         "status": "pass",
@@ -33139,29 +33147,29 @@
       "C319": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..7\nok 1 R181: docs/proof.md names the computer-wide limit: three quarters of the cores, shared by every project, not a setting\nok 2 R181: docs/proof.md says what takes a slot and where the slot store lives\nok 3 R181: docs/proof.md explains equal turns and that waiting changes no result or timeout\nok 4 R181: docs/proof.md explains how slots of a killed or interrupted run come back\nok 5 R181: docs/proof.md explains the unwritable or damaged store, the sandbox case, and the lines a run prints\nok 6 R181: CLAUDE.md names the slot store as the second exception to 'Nothing outside the project', with R181 as its source\nok 7 R181: the user docs say VBW writes the slot store outside the project and nothing else",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "367e575c96b629305ef9f55a0d19284b36db414541c6480080500f5dfc03622e",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C320": {
         "status": "pass",
         "exit": 0,
-        "seconds": 78,
+        "seconds": 86,
         "tail": "1..3\nok 1 R181: a store damaged after the run started is told once at the end, in check, prove and fix done\nok 2 R181: the lost-limit line has its exact wording, on stderr, once, with the real check_jobs, in check, prove and fix done\nok 3 R181: a store lock held by a live process for over 30 s is waited for, never skipped",
-        "at": "2026-10-13T21:14:44Z",
         "fp": "9749353b90beb5b1a6d5c8025788050bc97fab6650c85d737f05e39c12cbff38",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C321": {
         "status": "pass",
         "exit": 0,
-        "seconds": 21,
+        "seconds": 24,
         "tail": "1..1\nok 1 R181: the lost-limit line has its exact wording, on stderr, once, with the real check_jobs, in check, prove and fix done",
-        "at": "2026-10-13T21:19:04Z",
         "fp": "9f246f09314e26676d965e59ba13108526fc793e382b5d94b7a6ffeedbbe59b2",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C322": {
         "status": "pass",
@@ -33175,37 +33183,46 @@
       "C323": {
         "status": "pass",
         "exit": 0,
-        "seconds": 46,
+        "seconds": 48,
         "tail": "1..7\nok 1 R182: the round's one vbw fix done closes every clean fix, and vbw run confirm counts each as recorded\nok 2 R182: a fix with uncommitted changes stays open and is named, the other closes, and vbw run confirm names it\nok 3 R182: a fix whose files serve a failing check of finished work stays open and is named, the other closes\nok 4 R182: a fix whose Dev was blocked is left out of the round's vbw fix done and stays open; vbw run confirm names it\nok 5 R182: the round's vbw fix done prints one line per check, then both count lines, as before\nok 6 R182: the next vbw prove reuses what the round's vbw fix done ran\nok 7 R182: a test-command fix whose test files still fail stays open and is named; once they pass it closes",
-        "at": "2026-10-13T22:22:13Z",
         "fp": "2022062df747e78caf2b8e5e6d6191a6ed3d58699c2f97d23f52622a6167c875",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C324": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
         "tail": "1..7\nok 1 R182: the vbw:fixing row says the workflow runs one vbw fix done after every Dev returns\nok 2 R182: the vbw fix done row names the fix round's workflow, not the Dev, as who runs it\nok 3 R182: the run-closing text says the fixing workflow's closing Lead runs vbw fix done before vbw run confirm, and that it still runs without a session\nok 4 R182: the docs no longer say a Dev runs vbw fix done; the Lead's closing step does\nok 5 R182: when the closing agent stops, the docs give the vbw fix done to run by hand\nok 6 R182: the one-test-run section says each Dev commits and runs vbw check, and the round's vbw fix done runs once after every Dev returns\nok 7 R182: docs/proof.md no longer describes parallel Devs each running vbw fix done",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "6f0259b52e8483d06abfcb36d23467061ba7a01f1350ccf80ea51d3a8c92f3cd",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "C325": {
         "status": "pass",
         "exit": 0,
-        "seconds": 17,
+        "seconds": 19,
         "tail": "1..6\nok 1 R182: the tool measures a round run as one vbw fix done: its minutes, checks and test files run, and 0 ran more than once\nok 2 R182: the tool measures a round where each group runs its own vbw fix done at the same time\nok 3 R182: the tool refuses a missing or unknown mode and a group count below 1\nok 4 R182: VBW's record holds the measurement taken before the change, naming the fixture and its figures\nok 5 R182: a later decision supersedes the before measurement with the same fixture and figures, and the after figures with 0 ran more than once\nok 6 R182: the decision names the chosen approach and the rejected kernel lock, with reasons drawn from the measurement",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "00455b2ea5acf2fce190a6e37bb8c378fee48f54f25feb4ecd5443c06db1aef9",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "C326": {
         "status": "pass",
         "exit": 0,
         "seconds": 2,
         "tail": "exactly one instruction to run vbw fix done, naming every done fix\nok 2 R182: the round's vbw fix done comes after every Dev has returned\nok 3 R182: with one group (N = 1) the round still runs vbw fix done exactly once\nok 4 R182: with a session, the closing Lead runs vbw fix done first, then vbw run confirm and vbw run end\nok 5 R182: a vbw fix done past one shell command's 10-minute limit is waited for, and its output read, before the run is confirmed\nok 6 R182: without a session the round's vbw fix done still runs, by an agent of its own, before the workflow returns\nok 7 R182: no Dev is told to run vbw fix done: each commits its fix and checks it with vbw check on its own fixes' checks\nok 8 R182: a blocked fix and a fix whose Dev stopped are left out of vbw fix done and named with their status\nok 9 R182: when no Dev reported done, no vbw fix done runs\nok 10 R182: the result says which fixes closed and which stayed open, each open one with its reason\nok 11 R182: the agent answering for vbw fix done is asked which fixes closed and which stayed open\nok 12 R182: when the closing Lead stops, the log gives the exact vbw fix done to run by hand, and the round is not complete\nok 13 R182: when the agent reports that vbw fix done failed, the log gives the command to run by hand, and the round is not complete\nok 14 R182: without a session, a stopped or failed vbw fix done agent leaves the command to run by hand, and the round is not complete\nok 15 R182: dev.md never tells the Dev to run vbw fix done: the workflow runs it once for the round\nok 16 R182: dev.md tells a fixing Dev to commit its fix and check it with vbw check on its own fixes' checks\nok 17 R182: the Lead's own Close a run instructions include the fix round's vbw fix done, waited for to its end\nok 18 R182: the workflows stay within 1,500 lines and every agent within 900 words, all prompts within 22,800\nok 19 R182: without a session, complete follows the plan: an open fix and a blocked Dev give the same value, true",
-        "fp": "077d866f059c5c7adfd9a2b44634dd0ca21d54241d70c56b1a3e86d609100bf9",
         "at": "2026-10-13T22:29:02Z",
+        "fp": "077d866f059c5c7adfd9a2b44634dd0ca21d54241d70c56b1a3e86d609100bf9",
+        "reused": true
+      },
+      "C327": {
+        "status": "pass",
+        "exit": 0,
+        "seconds": 47,
+        "tail": "1..9\nok 1 R183: a new proof copy names its owner process in its folder name\nok 2 R183: after a proof killed with kill -9, the next proof removes its copy and worktree entry; a live process's copy stays whole\nok 3 R183: vbw fix done removes a dead process's copy and keeps a live one\nok 4 R183: a copy with no owner (an older VBW's) is removed past 24 hours and kept when newer\nok 5 R183: removing a dead copy deletes read-only folders, never follows a link out, and finishes a half-removed copy\nok 6 R183: two cleanups at once never fail or print an error, and a live copy stays whole\nok 7 R183: a dead copy that cannot be removed leaves the proof's result unchanged and one warning naming the folder\nok 8 R183: the proof's result is the same with and without leftover copies, passing or failing\nok 9 R183: docs/proof.md says copies record their owner and the next proof removes copies left by an ended process",
+        "fp": "d9f6f38536bb5f50c3159267ef6bf7747d5e24fb47a25f72a9aab3b8fe4c286b",
+        "at": "2026-10-13T22:53:41Z",
         "why": "never passed"
       }
     },
@@ -33215,14 +33232,14 @@
         "exit": 0,
         "seconds": 3,
         "tail": "bash: 5.3.20(1)-release",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "065b393b71dee4232b9b45e3d96e4a1a6552ad444e6fa87346b5ac33b420c740",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "tests listing changed"
       },
       "test": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1130,
+        "seconds": 1152,
         "tail": "",
         "command": "bats --print-output-on-failure {file} (one test file per run)",
         "of_files": true
@@ -33297,9 +33314,9 @@
         "exit": 0,
         "seconds": 8,
         "tail": "1..3\nok 1 R160: no kernel script captures NUL-separated jq output in a shell variable\nok 2 R160: the rule catches the capture it is for\nok 3 R160: vbw next says nothing on its error output while a check a fix added waits for approval",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "13d0308412ff06c063f30376d73ffc6682d133daeadb25270741bc237b656833",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/contributor-tools.bats": {
         "status": "pass",
@@ -33378,27 +33395,27 @@
         "exit": 0,
         "seconds": 10,
         "tail": "1..4\nok 1 an agent may write any file under a directory its plan lists, and nothing beside it\nok 2 another session cannot write under a directory a live run lists\nok 3 a VBW commit of a file under its plan's directory is in scope\nok 4 a directory and a file inside it never build in the same wave",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "76998dff64ccbca04e8afd8cd95677bce366a6ffbf1e86cb0e712bc807a67201",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/kernel-prove.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 107,
+        "seconds": 109,
         "tail": "ok 4 approve consents to the project commands by exact argv\nok 5 hostile repository: a fresh clone runs nothing until its user approves\nok 6 hostile update: a command added after approval never runs\nok 7 argv is executed directly, never through a shell\nok 8 tamper: editing a protected check file after approval fails prove\nok 9 tamper: editing a check or widening a plan in the record withdraws approval\nok 10 red-first: checks fail before building; a vacuous check is flagged\nok 11 fix cap: three failed attempts escalate to a person\nok 12 a passing proof proves the requirement and records the evidence\nok 13 expected exit status and output are both enforced\nok 14 a check that hangs is stopped at its timeout\nok 15 a missing program is a failure, not a crash\nok 16 approved project commands run; a failing one becomes a fix\nok 17 scope: a VBW commit that touches files outside its plan fails proof\nok 18 show contract renders what is approved, and whether it is\nok 19 a requirement still being built fails without opening a fix\nok 20 a hanging check is stopped even when the environment ignores the stop signals\nok 21 a proof commits its evidence: VBW's own files are never left modified\nok 22 an edit proved while uncommitted, then committed, needs a new proof\nok 23 committing VBW's own record after a proof keeps the proof fresh",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "bdd139fe7b3750578865614d352f5483bdcf3c55bd8ffddfd664575fedc2cbb4",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/kernel-qa.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 37,
+        "seconds": 40,
         "tail": "1..4\nok 1 after the proof, QA is next; a pass on the proven code lets the milestone ship\nok 2 a failed verdict needs findings; findings become fixes only QA closes, and a pass closes them\nok 3 code that changes after QA needs QA again; three failed rounds escalate\nok 4 show phase gives QA the goal, criteria, tasks and verdict; show plan gives a Dev its tasks",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "463e6550a316b90e2a04d520d0cbd7152dfd33d89221f61e0beace2db17a7f8e",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/kernel-rtk.bats": {
         "status": "pass",
@@ -33430,20 +33447,20 @@
       "tests/kernel-surface.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 49,
+        "seconds": 51,
         "tail": "ok 2 a rejection opens a fix; when it is done the requirement returns for acceptance\nok 3 ship is refused while the working folder has uncommitted files, naming them\nok 4 ship is refused until vbw next says ship, then marks the milestone shipped\nok 5 config resolves VBW 1's seven roles from the profile and per-role overrides\nok 6 overrides saved under the earlier role names move to VBW 1's names\nok 7 docs/rigor.md's balanced tier table gives the Lead, Scout, Dev and QA their profile models\nok 8 config refuses unknown keys and invalid values, and changes nothing\nok 9 auto on needs a well-formed session id and arms only that session\nok 10 the gate is silent when no run is armed\nok 11 the gate blocks the stop with the next step and counts it\nok 12 the gate lets the session wait while a workflow runs\nok 13 the gate stops and disarms at a decision that needs the user\nok 14 the gate stops and disarms at the step cap\nok 15 an escalated fix can be retried once by the user's decision\nok 16 the backlog: add, list, done and drop\nok 17 doctor checks the project and the guards, and changes nothing\nok 18 doctor fails on a corrupt record and names the fix\nok 19 doctor reports disabled workflows\nok 20 doctor works where Claude Code is not installed (CI machines)\nok 21 autonomy is balanced until set; guided and hands-off are the other levels",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "d9c10540341a04fad16ff05f085222890402631f9caa3e8be9ec7f82dc9279ca",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/kernel-work.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 97,
+        "seconds": 99,
         "tail": "ok 15 plan done is verified: it needs a commit and no uncommitted changes\nok 16 plan block records the reason and gates; reset returns it to the plan\nok 17 fix done moves an open fix to fixed, and nothing else\nok 18 fix done is verified: no uncommitted changes, and finished work its files serve still passes\nok 19 check runs approved checks, reports, and writes nothing\nok 20 show plan gives a builder its plan, requirements, checks and commands\nok 21 show fix gives a builder the failure and the files it may touch\nok 22 evidence is stale when code changes after the proof\nok 23 committing proved work or the record never makes evidence stale\nok 24 files a check creates do not make its own evidence stale\nok 25 computing the fingerprint leaves the user's index untouched\nok 26 a run's end commits the spec, the record and the check files, and nothing else\nok 27 approval commits the record once; a run end commits the run it records (R173), and nothing else\nok 28 VBW never edits or commits the user's .gitignore\nok 29 the codebase map is committed with VBW's own files\nok 30 after an approval, show contract --changes lists only what changed since\nok 31 a kept VBW 1 folder changing never makes the evidence stale\nok 32 accepting a requirement closes a fix still open from its earlier rejection\nok 33 apply keeps the Architect's phase goals and criteria and the Lead's tasks and roles\nok 34 QA and mapping runs hold a lease that lets their agents write nothing",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "1b729dc8a264b0b21f9f42a44c7a901837591fdecf90cd1e8597f0ad249c44bd",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/l3-wait.bats": {
         "status": "pass",
@@ -33493,47 +33510,47 @@
       "tests/prove-reads.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 136,
+        "seconds": 140,
         "tail": "1..14\nok 1 R166: a proof saves the read list of every check and project command in the store, and none in the record\nok 2 R166: a check runs in a clean copy of the committed code, not in the working folder\nok 3 R175: a passing proof records the fingerprint of the record without its evidence, so a later record change is no 'nothing committed'\nok 4 R166: a change to a file no check or command read reuses everything, and every proof prints both counts\nok 5 R166: a change to a file a check and the test command read runs both and nobody else, each saying why\nok 6 R166: a reused line keeps the time of the proof that really ran it, across proofs\nok 7 R166: vbw prove --full runs everything, is recorded as full and still prints the counts\nok 8 R166: where the file system records no reads nothing is reused, no read list is saved and the summary says so\nok 9 R166: a failed check is run again by the next proof even when nothing it read changed\nok 10 R166: vbw fix done takes the checks of every finished requirement as candidates, reuses the unchanged ones and saves read lists\nok 11 R166: vbw fix done right after a passing proof reuses every unchanged check: nothing committed is vbw prove's cause alone\nok 12 R166: vbw fix done runs its checks in clean copies\nok 13 R166: a failing check that no named fix's files serve fails every named fix\nok 14 R166: a failing check that a named fix's files serve fails that fix and not another",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "c1f7d8ec43c090de3bc189f3db54b5262a1af52f29d80dfb2b5e060b7c150d5d",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/prove-summary.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 49,
+        "seconds": 50,
         "tail": "1..5\nok 1 R168: the clone's store holds the recorded runs and nothing else\nok 2 R168: a changed approved command re-runs that command only: vbw fix done re-runs no check for it, the next vbw prove runs the command and says why\nok 3 R168: vbw fix done re-runs a failing test file on its own, never the whole test command, and closes the fix when it passes\nok 4 R168: vbw fix done leaves the fix open and names the test file when it still fails\nok 5 R168: both savers of the store go through one locking function",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "9bec1eff298393fe4912f6bd0f2e5b45773cbad3a0e7414f71e4e3d1f9000805",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/prove-testfiles.bats": {
         "status": "pass",
         "exit": 0,
         "seconds": 30,
         "tail": "1..5\nok 1 R167: the evidence holds one entry per test file and the test command's place is one aggregate that fails with them\nok 2 R167: the summary names the failing test file and counts the test files\nok 3 R167: vbw show evidence lists the test files, not the aggregate\nok 4 R167: a failing test file's complete output is kept under the runtime folder\nok 5 R167: a test file an approved check runs is not a test file of its own",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "1a4e655b65e4ec8146fcfb59941335098afed69e4447df8060adfff3a2f2e045",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/prove-units-env.bats": {
         "status": "pass",
         "exit": 0,
         "seconds": 15,
         "tail": "1..2\nok 1 R173: a check and a project command run without the VBW_SESSION_ID of the session that proves\nok 2 R173: vbw fix done runs its checks the same way",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "a0756d1ed758819d051db42405321a18a520e8f687ffd39c9c1518f170af7115",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/qa-refusal-wording.bats": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..3\nok 1 vbw help shows prove with its --full option\nok 2 the qa record refusal for changed code and the proof docs name vbw prove --full\nok 3 the docs name the approval-menu hook that adds the fingerprint (R114)",
-        "at": "2026-10-13T21:59:35Z",
         "fp": "1b5af615b0da59c3548eca6d43770348a3929315e1a56aa14dc604774edf2cd3",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "docs/proof.md changed"
       },
       "tests/qa-reused-proof.bats": {
         "status": "pass",
@@ -33547,11 +33564,11 @@
       "tests/qa-state.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 37,
+        "seconds": 40,
         "tail": "1..15\nok 1 qa.jq: untouched phases keep their pass; the record's passes stand\nok 2 qa.jq: never checked, failed last time\nok 3 qa.jq: several reasons at once, each named: files, tests, goal or plan, and what it builds on\nok 4 qa.jq: a phase that builds on a changed phase is checked again, transitively, and the one it builds on is not\nok 5 qa.jq: a change that is checked again and passed leaves the dependent re-checked until it passes too\nok 6 qa.jq: a cycle terminates and is named, with the phases in it\nok 7 qa.jq: a plan after a plan or a phase that does not exist is a problem, by name\nok 8 qa.jq: without the clone cache the only change reason is the plain one\nok 9 qa.jq: only the built phases of the active milestone are judged\nok 10 qa.jq: without digests it still reports the closure and the problems\nok 11 qa_digests: files, tests, plan and combined digests per phase, from the committed content\nok 12 qa_digests: an uncommitted edit changes nothing; a commit changes that phase and what builds on it only\nok 13 qa_digests: a changed check file changes tests, a changed goal changes plan, other phases are untouched\nok 14 qa cache: written for a phase, read back, and a damaged or missing file reads as no cache\nok 15 the digests, the cache and the record give the reasons; a pass recorded in the cache stands",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "cf637965487d0b456bca65d60264e1bb280c2f051e9173344ab5c5f8e7f137cb",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/readme.bats": {
         "status": "pass",
@@ -33565,11 +33582,11 @@
       "tests/reads-lib.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 17,
+        "seconds": 15,
         "tail": "1..17\nok 1 R166: the probe passes on a file system that records reads\nok 2 R166: the probe leaves nothing behind\nok 3 R166: the probe reports a file system that does not record reads (access time never moves)\nok 4 R166: the probe reports a file system where the access time cannot be set back\nok 5 R166: the probe reports a folder it cannot write to\nok 6 R166: one clean copy per slot, as many as check_jobs allows and the work needs\nok 7 R166: each slot copy is made like the single copy and all are removed on exit\nok 8 R166: one slot is what proofcopy_create makes, and proofcopy_remove removes every slot\nok 9 R166: the reset sets back the access time of every tracked file and folder, and of the copy's HEAD and index\nok 10 R166: a run's reads are collected: files it opened, folders it listed with a fingerprint, no git\nok 11 R166: the next run starts from a clean slate\nok 12 R166: a run that reads nothing lists nothing\nok 13 R166: reading the project through git sets the git flag\nok 14 R166: a folder's fingerprint follows the names of its tracked files, not their content\nok 15 R166: a file a run writes remembers that run's read list, and a later run that reads it inherits it\nok 16 R166: inherited lists pass on through a chain of runs\nok 17 R166: the library is bash 3.2 clean and writes nothing outside the slot",
-        "at": "2026-10-13T18:15:25Z",
         "fp": "ce6797b14fb541c427e75e7ffe24bb0785897581f2a5160b114024b0f7e05b1f",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/recommend-commit.bats": {
         "status": "pass",
@@ -33592,20 +33609,20 @@
       "tests/release-reads.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 13,
+        "seconds": 12,
         "tail": "1..2\nok 1 R170: a proof that reused results is recorded as not full, and the release run reuses it all the same\nok 2 R166: after a full proof of the same code, the release run reuses it",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "6073cc11dd724c6ab88cacfb65c558c9d9bb92b1b0c62f8f13fc5a5218e19601",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/rigor-early.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 44,
+        "seconds": 45,
         "tail": "ok 2 three requirements are standard, as at apply (C20: 2 express, 3 standard)\nok 3 a [human] requirement is standard\nok 4 a requirement text naming a risk category is standard\nok 5 a repository tracking more than 30 files is standard\nok 6 a repository tracking at most 30 files stays express\nok 7 rigor deep forces deep\nok 8 rigor standard forces standard\nok 9 a forced express on a bigger request still says express\nok 10 detail.tier appears only at the plan step\nok 11 express at the plan step holds at apply: one plan of four small files is express\nok 12 an existing codebase with no project test command is standard at both steps\nok 13 an existing codebase with a project test command stays express at both steps\nok 14 the router's express example is a document vbw apply accepts as express\nok 15 two [auto] risk-free requirements are express before planning, as at apply\nok 16 a project check command counts as the project's tests\nok 17 a document is never a risk path, however it is named\nok 18 re-planning re-tiers an unstarted phase from its signals; a started phase keeps its tier (D49)\nok 19 a re-tier before work moves the predicted tier, so the outcome holds\nok 20 planning an unstarted phase again moves its predicted tier with its tier\nok 21 an escalated express phase is not finished until QA passes",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "4f066e816105ab5d42b0b324bd591fdffd4dc5182a1d959f5bd9787579611264",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/rules-prompts.bats": {
         "status": "pass",
@@ -33621,9 +33638,9 @@
         "exit": 0,
         "seconds": 30,
         "tail": "1..15\nok 1 R166: at most check_jobs units run together, and they do run together\nok 2 R166: with slot copies at most as many units run together as there are copies\nok 3 R166: an alone unit runs by itself and the others still run together\nok 4 R166: an alone unit stays alone when it runs in a slot copy\nok 5 R166: read lists of units running together in two copies stay apart\nok 6 R166: units after one another in one copy get a list each, not the earlier one's\nok 7 R166: without slot copies a unit runs where the caller is and carries no read list\nok 8 R166: a unit in a slot copy runs inside that copy\nok 9 R166: a failing unit and a timed out unit report their status and carry their read lists\nok 10 R166: a runner that dies without a result leaves a skipped result and the others finish (in parallel)\nok 11 R166: a runner that dies without a result leaves a skipped result (one at a time)\nok 12 R166: a runner that dies in a slot copy leaves a skipped result and frees the copy\nok 13 R166: checks_run_all runs the checks of a record in order and reports a held check as waiting\nok 14 R166: the passes cache and the served-files fingerprint are gone from the runner\nok 15 R166: vbw check runs in the working folder and records nothing",
-        "at": "2026-10-13T21:02:39Z",
         "fp": "cc5e89c7a756e0ff449799e6b6a066b4ef95ef6618d775c58933cb0c3e5001ff",
-        "reused": true
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/skills-workflow-profile.bats": {
         "status": "pass",
@@ -33646,19 +33663,19 @@
       "tests/standards-selftest.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 48,
+        "seconds": 54,
         "tail": "1..17\nok 1 eval is caught\nok 2 bash-4 features are caught\nok 3 process killing is caught\nok 4 the signal-free liveness probe kill -0 passes, any other kill is caught\nok 5 /tmp paths are caught\nok 6 git path listings without -z are caught, with -z pass\nok 7 plugin-root discovery is caught\nok 8 a clean file breaks no rule\nok 9 hooks naming a missing file are caught\nok 10 per-tool-call hooks that start a shell or can exit non-zero are caught\nok 11 per-tool-call hooks: only assignments and [ ] tests may come before jq, and the command must end in || true\nok 12 the vision rule check passes on the repository as it is\nok 13 the vision rule check catches the rule removed from a contributor file\nok 14 the vision rule check catches the rule moved below another rule in AGENTS.md\nok 15 the hook answer check passes on the repository as it is\nok 16 the hook answer check catches a new unpinned answer shape\nok 17 the hook answer check catches a hook that answers allow",
         "fp": "cea597da7e37298b1c50fd07c24fcfcd6ab9c1e90cc14912ac62ec844e47ba39",
-        "at": "2026-10-13T22:29:02Z",
-        "why": "tests/fix-round-once.bats changed"
+        "at": "2026-10-13T22:53:41Z",
+        "why": "tests listing changed"
       },
       "tests/standards.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 9,
+        "seconds": 10,
         "tail": "1..17\nok 1 kernel stays within 7,600 lines of code (design §10; owner raised it to 3,300 on 2026-10-04, 3,500 on 2026-10-05, 3,800 on 2026-10-06 and 7,600 on 2026-10-07)\nok 2 workflows stay within 1,500 lines (design §10)\nok 3 mod JavaScript stays within 3,500 lines (owner raised it from 3,000 on 2026-10-07)\nok 4 no eval or data-as-code (ledger D108, D139)\nok 5 no bash-4-only features: macOS /bin/bash 3.2 is the floor (K2, ledger D294)\nok 6 never terminates processes (ledger D54, D285–D288)\nok 7 no predictable /tmp paths or writes outside the project (K3, ledger D296)\nok 8 git path listings are NUL-separated (ledger D293)\nok 9 no plugin-root discovery: paths come from ${CLAUDE_PLUGIN_ROOT} substitution or $0 (K4)\nok 10 shell files parse on the minimum bash and pass shellcheck\nok 11 plugin manifests are valid\nok 12 hooks.json is valid and every file a hook names exists in hooks/\nok 13 per-tool-call hooks run jq directly and never exit non-zero (K20)\nok 14 Claude Code's own validator accepts the plugin and the marketplace\nok 15 no brace-literal parameter defaults (a default of {} written inside the expansion): bash 3.2 keeps the backslash (tests and tools too)\nok 16 the vision rule is VBW's first development rule, and every contributor file states it (owner mandate, 2026-10-06)\nok 17 every answer a hook gives Claude Code has a test pinning its meaning, and no hook answers allow (R128)",
         "fp": "0081e8d9fb717ee39eded21e9282e34e071705efe4349f4a472013dd63d63d6c",
-        "at": "2026-10-13T22:29:02Z",
+        "at": "2026-10-13T22:53:41Z",
         "why": "reads the project through git"
       },
       "tests/statusline.bats": {
@@ -33667,8 +33684,8 @@
         "seconds": 12,
         "tail": "1..16\nok 1 outside a VBW project it says how to start, and still shows the session\nok 2 in a VBW project it shows progress and the last next step\nok 3 a running build and an armed autonomous run are visible\nok 4 a gate that needs the user says so\nok 5 no data from Claude Code, or garbage, never breaks it\nok 6 the branch is read in a linked worktree too\nok 7 statusline on sets it without asking, and keeps the user's own to restore\nok 8 the setting finds the newest installed VBW and renders it\nok 9 workflows on turns Dynamic workflows on, keeps every other setting, and never overrides a deliberate off\nok 10 started in a subfolder it shows the project; a VBW 1 project is pointed to the conversion\nok 11 a running step shows how long it has run and how many agents are working\nok 12 the team line follows the profile and per-role models; tokens and prompt cache are shown\nok 13 statusline on asks Claude Code to refresh it every 5 seconds, and tops up a setting made without it\nok 14 from Claude Code 2.1.287 the agents and team line is dropped; line 1 keeps the agent count\nok 15 a session in a VBW project tops up the refresh interval of VBW's status line, and leaves any other status line alone\nok 16 doctor warns when VBW's status line has no refresh interval",
         "fp": "4a4f96ffe59d490f5eacbb1ae1d4adf16d0a33c8851971ab35542efdf55174f2",
-        "at": "2026-10-13T22:29:02Z",
-        "why": "plugin/workflows/fixing.js changed"
+        "at": "2026-10-13T22:53:41Z",
+        "why": "plugin/lib/proofcopy.sh changed"
       },
       "tests/testfiles-spec.bats": {
         "status": "pass",
@@ -33693,15 +33710,15 @@
         "exit": 0,
         "seconds": 5,
         "tail": "1..12\nok 1 the workflows and VBW 1's seven agents exist, and nothing else\nok 2 each workflow starts with a pure-literal meta naming itself after its file\nok 3 workflows never use what breaks resume or is unavailable (time, randomness, modules)\nok 4 every phase() title is declared in meta.phases\nok 5 every agentType names an agent this plugin ships\nok 6 agents have a name matching the file, a single-line description and a tool list\nok 7 agents stay within their size budget (about 1.5k tokens)\nok 8 agents only use vbw commands that exist\nok 9 agents that plan or judge the plan load the user's recorded decisions\nok 10 workflow scripts parse as JavaScript (when node is available)\nok 11 workflow schemas are objects whose required keys are all properties\nok 12 no workflow shares its name with a skill (/vbw:NAME would start the workflow)",
-        "fp": "0cb1f79644094a1dab67e2a08a9e711ff4d467cd57702aaa3747bab08e6cf643",
         "at": "2026-10-13T22:29:02Z",
-        "why": "plugin/workflows/fixing.js changed"
+        "fp": "0cb1f79644094a1dab67e2a08a9e711ff4d467cd57702aaa3747bab08e6cf643",
+        "reused": true
       }
     },
     "scope": [],
     "full": false,
     "passed": true,
-    "record": "77b51378d79ff284b1ae54158875def53f452c84d702eb9e46f3ecdd1e486b02"
+    "record": "061f3c169720a8251be8128cd64b89cf83a5595672d62df9989f67f6ef361b9b"
   },
   "recommendation": {
     "at": "2026-10-09T20:53:56Z",
