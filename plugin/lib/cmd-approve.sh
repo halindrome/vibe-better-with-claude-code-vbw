@@ -39,25 +39,20 @@ approve_text() {
     "Contract approved: \(.requirements | length) requirements, \(.checks | length) checks, \(.plans | length) plans (\($h[0:12]))\(express_text)"' --arg h "$2"
 }
 
-# approve_record RECORD HASH DECISION_TEXT: every write of an approval, whoever gives it (the user's
+# approve_record RECORD HASH DECISION_TEXT [WHO]: every write of an approval, whoever gives it (the user's
 # vbw approve; the loop on the user's behalf, lib/loop-step.sh): the decision with that text and its
 # strict commit (taken back when the commit fails), consent for the contract, then the shape, the
-# approved-contract snapshot and the project commands.
+# approved-contract snapshot and the project commands. With the contract already approved, a project
+# command or test-file form not consented to yet is approved on its own, with its decision ("Project
+# commands approved WHO: ...", WHO the approver's words, empty for the user) and commit first (F200).
 approve_record() {
-  local record=$1 hash=$2
+  local record=$1 hash=$2 who="${4:-}" pending
   if contract_approved "$hash"; then
     printf 'contract %s is already approved\n' "${hash:0:12}"
+    pending=$(approve_pending "$record")
+    [ -z "$pending" ] || approve_decide "Project commands approved${who:+ $who}: $pending" "chore(vbw): approve commands" "the commands are"
   else
-    local before
-    before=$(cat "$VBW_RECORD")
-    record_update "$VBW_JQ_DEFS"'
-      .decisions += [{id: (.decisions | next_id("D")), at: $at, text: $text}]' \
-      --arg text "$3" --arg at "$(vbw_now)"
-    if ! record_commit --strict "chore(vbw): approve contract ${hash:0:12}"; then
-      # Take the decision back: no approval without its commit.
-      record_update '.decisions |= map(select(.id != $d))' --arg d "$(printf '%s' "$before" | jq -r '.decisions | (map(.id | ltrimstr("D") | tonumber) | max // 0) + 1 | "D\(.)"')"
-      vbw_die "the approval commit failed (reason above); the contract is not approved"
-    fi
+    approve_decide "$3" "chore(vbw): approve contract ${hash:0:12}" "the contract is"
     consent_grant contract "$hash" "$(printf '%s' "$record" | jq -c \
       '{requirements: (.requirements | length), checks: (.checks | length), plans: (.plans | length)}')"
     printf 'approved contract %s\n' "${hash:0:12}"
@@ -69,6 +64,36 @@ approve_record() {
   contract_doc "$record" > "$VBW_RUNTIME/approved-contract.json.$$" \
     && mv "$VBW_RUNTIME/approved-contract.json.$$" "$VBW_RUNTIME/approved-contract.json"
   approve_commands "$record"
+}
+
+# approve_decide TEXT SUBJECT WHAT: the approval's decision with TEXT and its strict commit with SUBJECT;
+# the decision is taken back when the commit fails (no approval without its commit), naming WHAT is not approved.
+approve_decide() {
+  local before
+  before=$(cat "$VBW_RECORD")
+  record_update "$VBW_JQ_DEFS"'
+    .decisions += [{id: (.decisions | next_id("D")), at: $at, text: $text}]' \
+    --arg text "$1" --arg at "$(vbw_now)"
+  if ! record_commit --strict "$2"; then
+    record_update '.decisions |= map(select(.id != $d))' --arg d "$(printf '%s' "$before" | jq -r '.decisions | (map(.id | ltrimstr("D") | tonumber) | max // 0) + 1 | "D\(.)"')"
+    vbw_die "the approval commit failed (reason above); $3 not approved"
+  fi
+}
+
+# approve_pending RECORD: the project commands and the test-file form not consented to yet,
+# "name (argv)" each, joined by "; "; empty when every one is approved.
+approve_pending() {
+  local name argv a out=""
+  while IFS= read -r -d '' name; do
+    argv=()
+    while IFS= read -r -d '' a; do argv+=("$a"); done \
+      < <(printf '%s' "$1" | jq -j --arg n "$name" '.commands[$n][] + "\u0000"')
+    consent_has command "$(vbw_sha256_argv ${argv[@]+"${argv[@]}"})" || out="$out${out:+; }$name (${argv[*]+"${argv[*]}"})"
+  done < <(printf '%s' "$1" | jq -j '.commands | keys[] | . + "\u0000"')
+  if printf '%s' "$1" | jq -e 'has("test_files")' > /dev/null && ! consent_has test_files "$(test_files_hash "$1")"; then
+    out="$out${out:+; }test files ($(printf '%s' "$1" | jq -r '.test_files.run | join(" ")'); $(printf '%s' "$1" | jq -r '.test_files.files | join(" ")'))"
+  fi
+  printf '%s' "$out"
 }
 
 # One line per reason the contract cannot be approved yet (empty = ready).

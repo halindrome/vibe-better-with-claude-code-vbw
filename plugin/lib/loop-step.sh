@@ -28,7 +28,7 @@ loop_delegate() {
   hash=$(contract_hash "$record")
   text=$(printf '%s' "$record" | jq -r --arg h "${hash:0:12}" '
     "Contract approved by the loop on the user'"'"'s behalf (loop started \(.loop.started_at), items \([.loop.items[].id] | join(", ")): \(.requirements | length) requirements, \(.checks | length) checks, \(.plans | length) plans (\($h)))"')
-  approve_record "$record" "$hash" "$text" > /dev/null
+  approve_record "$record" "$hash" "$text" "$(printf '%s' "$record" | jq -r '"by the loop on the user'"'"'s behalf (loop started \(.loop.started_at), items \([.loop.items[].id] | join(", ")))"')" > /dev/null
 }
 
 # loop_ended_answer RECORD: what an ended loop answers: done at the end of its list, else stopped.
