@@ -271,6 +271,14 @@ no consent is kept. `vbw show contract` still says `NOT APPROVED` and `vbw next`
 asks again. Fix the cause (for example, make the hook pass) and approve again.
 Other VBW commits still only warn, with git's reason.
 
+A project command or the test-file form changed after the contract was
+approved is approved on its own, the same way: `vbw approve` records the
+decision `Project commands approved: name (argv); ...` and its commit
+`chore(vbw): approve commands` before it grants the consent, so the record and
+git say what was approved and when. When that commit fails, the decision is
+taken back, no consent is kept and the message ends `the commands are not
+approved`. A loop records the same decision with its own words (docs/loop.md).
+
 ## Rules
 
 A rule is one condition, edge or error case that an `auto` requirement's text
