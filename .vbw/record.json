@@ -16193,9 +16193,17 @@
       "qa": {
         "result": "pass",
         "tier": "deep",
-        "tree": "969bede7cb14242b1a9a1d5c5d448783d8d4a47863c12b9f043175f08bef8424",
-        "at": "2026-10-13T21:11:19Z",
+        "tree": "24a15e9ab76be8903a75be6bdda64e1b3d4e691092679a0613927c1f8a4dac36",
+        "at": "2026-10-13T21:22:26Z",
         "note": "30/30 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 4,
+        "qa_findings": 4,
+        "escalations": 1
       }
     },
     {
