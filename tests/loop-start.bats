@@ -156,3 +156,8 @@ refused() {
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   jq -e '.loop.items | length == 1' .vbw/record.json
 }
+
+@test "R178 (F201): the word stop given as an item is refused and points to vbw loop stop" {
+  refused stop --no-ceiling
+  [[ "$output" == *"Next: "*"vbw loop stop"* ]] || { echo "$output"; false; }
+}
