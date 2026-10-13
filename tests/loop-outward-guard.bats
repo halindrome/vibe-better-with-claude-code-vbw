@@ -123,3 +123,11 @@ denied_as() {
   denied_as 'gh --repo a/b pr create --fill' 'gh pr create' 'open the pull request'
   denied_as 'wrangler --env prod deploy' 'wrangler deploy' 'deploy'
 }
+
+@test "R180 (F180): a trigger word that is an argument, not the subcommand, is allowed while a loop is on: cargo test publish, npm run publish, gh issue list --label release, docker run --name push" {
+  local c
+  for c in 'cargo test publish' 'cargo build -p publish' 'npm run publish' 'npm test -- publish' 'gh issue list --label release' 'docker run --name push ubuntu' 'git log --grep push' 'cat docs/release.md'; do
+    run bash_call "$c"
+    [ -z "$output" ] || { echo "refused: $c -> $output"; false; }
+  done
+}
