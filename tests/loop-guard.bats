@@ -93,3 +93,12 @@ Next: end your turn; the loop'"'"'s Stop hook gives the next step'
     [ -z "$output" ] || { echo "refused: $c -> $output"; false; }
   done
 }
+
+@test "R178 (D324): the /vbw:loop preamble has three lines: the interview answers, vbw loop start with the user's arguments, vbw loop status" {
+  local block
+  block=$(awk '/^```!/{on=1; next} /^```/{on=0} on' "$PLUGIN_ROOT/skills/loop/SKILL.md")
+  [ "$(printf '%s\n' "$block" | grep -c .)" -eq 3 ] || { echo "$block"; false; }
+  printf '%s\n' "$block" | sed -n 1p | grep -q 'bin/vbw" interview'
+  printf '%s\n' "$block" | sed -n 2p | grep -q 'loop start --session ${CLAUDE_SESSION_ID} $ARGUMENTS'
+  printf '%s\n' "$block" | sed -n 3p | grep -q 'loop status'
+}

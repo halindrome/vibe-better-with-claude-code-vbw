@@ -149,7 +149,9 @@ refused() {
 @test "R178 (F169): a [human] requirement an earlier ship carried over does not make the current milestone unfinished: the loop starts" {
   vbw_teardown
   loop_project human
-  jq -e '.requirements[] | select(.id == "R2") | .proof == "human" and .milestone == .milestone' .vbw/record.json > /dev/null
+  # R2 is [human], carried into the current milestone by the earlier ship, and built in a phase of the milestone before.
+  jq -e '. as $r | .milestone.id as $m | .requirements[] | select(.id == "R2") | .proof == "human" and .milestone == $m
+    and any($r.phases[]; .milestone != $m and any(.reqs[]; . == "R2"))' .vbw/record.json > /dev/null || { jq '{milestone, requirements, phases}' .vbw/record.json; false; }
   run env VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   jq -e '.loop.items | length == 1' .vbw/record.json
