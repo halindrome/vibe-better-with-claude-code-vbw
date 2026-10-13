@@ -96,6 +96,7 @@ doctor_statusline() {
   local state
   state=$(cmd_statusline status 2> /dev/null)
   case "$state" in
+    *"an older VBW status line"*) doctor_line warn "the VBW status line was set by an older VBW (it cannot hand back to your earlier status line)" "vbw statusline on" ;;
     *"refreshed on events only"*) doctor_line warn "the VBW status line refreshes on events only, so it can look frozen while a workflow runs" "vbw statusline on" ;;
     on:*) doctor_line ok "VBW status line" ;;
     *) doctor_line warn "the VBW status line is not on" "vbw statusline on" ;;

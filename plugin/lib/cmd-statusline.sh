@@ -11,7 +11,31 @@
 # change. This is the one place VBW looks into the plugin cache (standards
 # test exception, build plan K4).
 
-VBW_STATUSLINE_CMD='bash -c '"'"'for _d in "${CLAUDE_CONFIG_DIR:-}" "$HOME/.config/claude-code" "$HOME/.claude"; do [ -z "$_d" ] && continue; f=$(ls -1 "$_d"/plugins/cache/vbw-marketplace/vbw/*/scripts/vbw-statusline.sh 2>/dev/null | sort -V | tail -1 || true); [ -f "$f" ] && exec bash "$f"; done'"'"' '
+VBW_STATUSLINE_CMD='for _d in "${CLAUDE_CONFIG_DIR:-}" "$HOME/.config/claude-code" "$HOME/.claude"; do [ -z "$_d" ] && continue; f=$(ls -1 "$_d"/plugins/cache/vbw-marketplace/vbw/*/scripts/vbw-statusline.sh 2>/dev/null | sort -V | tail -1 || true); if [ -f "$f" ]; then printf %s "$i" | bash "$f"; rc=$?; [ "$rc" -eq 3 ] && break; exit "$rc"; fi; done'
+
+# statusline_quote TEXT: TEXT as one single-quoted shell word.
+statusline_quote() {
+  local q="'" t="$1"
+  printf "'%s'" "${t//$q/$q\\$q$q}"
+}
+
+# statusline_command: the command written into the setting. It reads Claude
+# Code's input (with a timeout: Claude Code may send nothing and leave stdin
+# open), gives it to the newest installed VBW's script, and where that script
+# says "VBW is off here" (exit 3) hands the same input to the user's earlier
+# status line. That line is written into the setting as quoted text, so Claude
+# Code runs it, never VBW (D356). With none saved, it shows nothing.
+statusline_command() {
+  local prev="" body
+  if [ -f "$(statusline_backup)" ]; then
+    prev=$(jq -r '(if type == "object" then .command elif type == "string" then . else "" end) // ""' "$(statusline_backup)" 2> /dev/null || true)
+  fi
+  body='i=; while IFS= read -t 1 -r l; do i=$i$l$'"'\\n'"'; done; [ -z "$l" ] || i=$i$l; rc=0; '"$VBW_STATUSLINE_CMD"'; '
+  if [ -n "$prev" ]; then
+    body="${body}[ \"\$rc\" -eq 3 ] && printf %s \"\$i\" | sh -c $(statusline_quote "$prev"); "
+  fi
+  printf 'bash -c %s vbw\n' "$(statusline_quote "${body}exit 0")"
+}
 
 # The user's settings file, in the Claude config folder (vbw_claude_dir).
 statusline_settings() {
@@ -19,7 +43,7 @@ statusline_settings() {
 }
 
 cmd_statusline() {
-  local sub="${1:-status}" settings current
+  local sub="${1:-status}" settings current want
   case "$sub" in
     status|on|off) [ $# -le 1 ] || vbw_usage_error "usage: vbw statusline status | on | off" ;;
     *) vbw_usage_error "usage: vbw statusline status | on | off" ;;
@@ -30,11 +54,13 @@ cmd_statusline() {
     current=$(jq -r '.statusLine | if type == "object" then .command // "" elif type == "string" then . else "" end' "$settings" 2> /dev/null) \
       || vbw_die "cannot read $settings (not valid JSON)"
   fi
+  want=$(statusline_command)
   case "$sub" in
     status)
       if [ -z "$current" ]; then printf 'off: no status line is set (vbw statusline on)\n'
       elif printf '%s' "$current" | grep -q 'vbw-statusline\.sh'; then
-        if statusline_refreshes "$settings"; then printf 'on: the VBW status line\n'
+        if [ "$current" != "$want" ]; then printf 'on: an older VBW status line (vbw statusline on updates it)\n'
+        elif statusline_refreshes "$settings"; then printf 'on: the VBW status line\n'
         else printf 'on: the VBW status line, refreshed on events only (vbw statusline on adds the 5-second refresh)\n'
         fi
       else printf 'another status line is set (vbw statusline on switches to VBW and keeps it)\n'
@@ -42,9 +68,12 @@ cmd_statusline() {
       ;;
     on)
       if printf '%s' "$current" | grep -q 'vbw-statusline\.sh'; then
-        # Set by an older VBW, without the refresh interval: add it.
-        statusline_refreshes "$settings" || statusline_write "$settings" \
-          '.statusLine |= if type == "object" then .refreshInterval = 5 else {type: "command", command: $cmd, refreshInterval: 5} end'
+        # Set by an older VBW: rewrite only its command, keep the interval
+        # (5 when missing) and every other field; the current one stays as is.
+        if [ "$current" != "$want" ] || ! statusline_refreshes "$settings"; then
+          statusline_write "$settings" \
+            '.statusLine |= if type == "object" then .command = $cmd | .refreshInterval = (if (.refreshInterval | type) == "number" then .refreshInterval else 5 end) else {type: "command", command: $cmd, refreshInterval: 5} end'
+        fi
         printf 'on: the VBW status line\n'
         return 0
       fi
@@ -100,7 +129,7 @@ statusline_write() {
   mkdir -p "$dir"
   [ -f "$file" ] || printf '{}\n' > "$file"
   tmp=$(mktemp "$dir/settings.XXXXXX") || vbw_die "cannot write $dir"
-  if ! jq --arg cmd "$VBW_STATUSLINE_CMD" ${1+"$@"} "$filter" "$file" > "$tmp"; then
+  if ! jq --arg cmd "$(statusline_command)" ${1+"$@"} "$filter" "$file" > "$tmp"; then
     rm -f "$tmp"
     vbw_die "cannot update $file"
   fi
