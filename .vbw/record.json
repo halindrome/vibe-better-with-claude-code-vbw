@@ -15768,10 +15768,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "4f7a3ede8d6bd5f7b845d7a39f7b337a8e4088a913823236346a42e520e6b22d",
-        "at": "2026-10-13T01:21:37Z",
+        "tree": "cceb5ac1af693666222ec5756ceb84d8feac92546a2c327d96ccfbd9fdd9a4a4",
+        "at": "2026-10-13T03:00:28Z",
         "note": "30/31 checks",
-        "rounds": 2
+        "rounds": 3
       },
       "outcome": {
         "tier": "deep",
@@ -26214,7 +26214,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The loop report cannot be trusted for an item that was still running when the loop ended. plugin/lib/loop-report.sh line 43 prints every in-progress item's cost as 'in progress, not counted yet', also after the loop has ended (a ceiling stop, vbw loop stop, an unknown action, a refused ship all end the loop with the item still in progress). But the 'Loop total' line above it is loop_spend, which does count that item's spend (baseline to now). So after such a stop the report shows a total that no item line explains, and the item that cost the most (the one the loop was working on when it stopped) shows no dollars and no tokens, though VBW has the figure. The criterion says the report gives the loop's total and each item's cost in dollars and tokens, unknown only where VBW saw no figure. The same item also appears nowhere else (not in Shipped, Parked or Waiting for you), and the ceiling stop reason does not name it, so the morning reader cannot tell which item was left half done. Regression test, in tests/loop-report.bats: start a loop with two items and a ceiling, take the first to a point where figures exist and the ceiling is reached while T1 is in progress, let the step stop the loop, then assert the report's Cost section gives T1 a dollar and token figure that equals what vbw loop status shows (not 'not counted yet'), and that it names T1 as left in progress; with no figures it must say unknown."
     },
     {
@@ -26222,7 +26222,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Untested branches of the park remain after the F181 fix. plugin/lib/loop-park.sh decides what to leave alone from 'git diff --name-only HEAD' (staged and unstaged changes), leaves a check file the user changed ('left in place (you changed it)') and leaves a commit that 'does not revert cleanly'. The only added test (tests/loop-retry-park.bats, the F181 test, commit ffcdcfe0) appends to a file with a plain unstaged edit. Nothing stages a file, nothing edits a check file, nothing makes a revert conflict (grep 'staged', 'left in place (you', 'revert cleanly' in tests/loop-*.bats finds nothing but comments). The criterion says a file the user STAGED or edited is left as it is. Changing the dirty list to plain 'git diff --name-only' (unstaged only), dropping the vbw_dirty_files test on check files, or removing the conflict branch keeps every loop test green, and the park would then revert over the user's staged work. Regression tests to add in tests/loop-retry-park.bats: (1) stage (git add) a change to a file an item commit touched, park, assert the commit is not reverted, the file keeps the staged content and stays staged, and the decision names 'you changed FILE'; also stage an unrelated file and assert it stays staged after the reverts; (2) edit a check file of the item by hand, park, assert the file stays and the decision says 'left in place (you changed it)'; (3) make a later commit conflict with an earlier item commit, park, assert the decision says 'does not revert cleanly' and no half-done revert is left (git status clean of conflict markers)."
     },
     {
@@ -26230,7 +26230,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Untested P129.1 behaviour remains after the F182 fix: 'vbw milestone rename' refusing a parked milestone. plugin/lib/cmd-milestone.sh refuses with '<M> has been parked: start the next one (vbw milestone start TITLE)', but no test runs 'milestone rename' on a parked milestone (grep 'milestone rename' in tests/ finds only kernel-work.bats, which uses a shipped milestone). The test named 'a parked milestone keeps its name, and vbw status --json lists the parked ids' in tests/loop-park-report.bats never calls rename and never checks the title after the park, so its name promises more than it checks. Removing 'parked' from the refusal branch would leave the suite green. Regression test: after a park, 'vbw milestone rename Other' exits 1 with a message containing 'parked' and 'vbw milestone start', and .milestone.title is unchanged."
     },
     {
@@ -26238,7 +26238,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Plan task left out: P129.1 task 2 says 'next.jq row 1 and docs', but docs/next.md row 1 still reads 'milestone shipped' only (line 103) and says nothing of a parked milestone (grep -i parked docs/next.md finds nothing); lines 16-18 about requirements of shipped milestones are likewise unchanged. next.jq line 93 answers action milestone for status parked, so the documentation of the decision table is now wrong for users who read it. Regression test: tests/loop-docs.bats (or a next-docs test) asserts docs/next.md row 1 names both shipped and parked."
     },
     {
@@ -26246,7 +26246,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Unrecorded change to the plan, and undocumented. P129.2 task 2 says the commits since the item's head that touch a file outside .vbw/ are reverted, leaving unreverted only a commit touching a file the user staged or edited. plugin/lib/loop-park.sh (commit f6d1c7c1) also leaves a commit that changes code and a .vbw file together ('changes the record too') and a commit that 'does not revert cleanly', so a parked item can keep part of its code in the tree. 'vbw show decisions' has no decision for it (D322 and D324 are the only loop decisions after D317), and docs/loop.md 'Retry once, then park' step 2 does not say a commit can be left and named; a user reading it expects the item's code to be gone. The behaviour is defensible (reverting a record-touching commit would corrupt the record) but it is a deviation until decided. Fix: record one decision (vbw decide) for the mixed-commit and conflict cases, and add a sentence to docs/loop.md step 1 that a commit it cannot revert is left, named in the decision and the report. Regression test: tests/loop-docs.bats asserts docs/loop.md mentions that such a commit is left and named."
     },
     {
@@ -26264,6 +26264,14 @@
       "attempts": 0,
       "status": "fixed",
       "note": "The L3 loop scenario writes facts it did not measure. tools/l3-suite.sh scenario_loop passes the constants 'remotes: 0, tags: 0' into result_write instead of the counts it read (, ), so a failing run (a remote or tag present, passed=false) would still publish 'remotes: 0, tags: 0' in tools/l3-results/loop.json. Also the committed result (at 2026-10-13T00:13:07Z) predates commits e31332b7 (loop_kernel) and 469ef59c (guard change), so it describes older code. Regression test in tests/l3-loop.bats: the scenario body builds the facts from the measured remote and tag counts (no literal 'remotes: 0'), and a run with a remote present would write a nonzero fact."
+    },
+    {
+      "id": "F191",
+      "req": "R179",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "The loop report loses a [human] item's requirement and commits, and its 'Waiting for you' entry, as soon as a later item opens. Cause: vbw milestone start (plugin/lib/cmd-milestone.sh line 37) moves every 'later' requirement into the new milestone (.milestone = new id, and del(.skipped, .later)). The loop opens the next item's milestone in the same step that ships the first (loop_open_item, plugin/lib/loop-step.sh), so for a list like T3 ([human]) then T1 the report (plugin/lib/loop-report.sh) looks up the shipped item's requirement by '.milestone == $i.milestone' (line 32) and its commits through plans_of($i.milestone) (line 21): both now find nothing. I ran those two jq expressions on a record shaped as the kernel leaves it (R2 [human] moved to M3, item T3 shipped in M2): output 'T3 milestone M2 req none plans []', so the Shipped line reads '(M2, none): ' with no commits. The Waiting section selects '.skipped == true' (line 41), which the move deleted, so it prints 'no skipped [human] requirement' while the user's judgment is still owed; if the loop then stops (ceiling, vbw loop stop) before item 2 reaches accept, the report never lists it. The criterion says the report names, for what shipped, the item, milestone, requirement and commits, and lists skipped [human] requirements as waiting for the user; docs/loop.md 'The report' says the same. Existing tests only use one [human] item at the end of the list (tests/loop-human-skip.bats) or a [human] requirement carried in before the loop (loop_project human), so none moves it. Regression test: in tests/loop-human-skip.bats start a loop with the [human] item first and an [auto] item second, take the first to its ship, let the step open the second item's milestone, then assert that .vbw/loop-report.md's Shipped line for the [human] item names its requirement id (not 'none') and its commits, and that 'Waiting for you' lists the carried [human] requirement; the fix has to keep the requirement and plans attributed to the milestone the item shipped in (for example by recording the requirement id and the commit list on the item when it ships) and to find waiting [human] requirements by their state (open, proof human, built in an earlier milestone), not by the skipped flag."
     }
   ],
   "todos": [
