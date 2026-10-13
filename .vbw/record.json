@@ -26203,7 +26203,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "The loop report cannot be trusted for an item that was still running when the loop ended. plugin/lib/loop-report.sh line 43 prints every in-progress item's cost as 'in progress, not counted yet', also after the loop has ended (a ceiling stop, vbw loop stop, an unknown action, a refused ship all end the loop with the item still in progress). But the 'Loop total' line above it is loop_spend, which does count that item's spend (baseline to now). So after such a stop the report shows a total that no item line explains, and the item that cost the most (the one the loop was working on when it stopped) shows no dollars and no tokens, though VBW has the figure. The criterion says the report gives the loop's total and each item's cost in dollars and tokens, unknown only where VBW saw no figure. The same item also appears nowhere else (not in Shipped, Parked or Waiting for you), and the ceiling stop reason does not name it, so the morning reader cannot tell which item was left half done. Regression test, in tests/loop-report.bats: start a loop with two items and a ceiling, take the first to a point where figures exist and the ceiling is reached while T1 is in progress, let the step stop the loop, then assert the report's Cost section gives T1 a dollar and token figure that equals what vbw loop status shows (not 'not counted yet'), and that it names T1 as left in progress; with no figures it must say unknown."
     },
     {
@@ -26211,7 +26211,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "Untested branches of the park remain after the F181 fix. plugin/lib/loop-park.sh decides what to leave alone from 'git diff --name-only HEAD' (staged and unstaged changes), leaves a check file the user changed ('left in place (you changed it)') and leaves a commit that 'does not revert cleanly'. The only added test (tests/loop-retry-park.bats, the F181 test, commit ffcdcfe0) appends to a file with a plain unstaged edit. Nothing stages a file, nothing edits a check file, nothing makes a revert conflict (grep 'staged', 'left in place (you', 'revert cleanly' in tests/loop-*.bats finds nothing but comments). The criterion says a file the user STAGED or edited is left as it is. Changing the dirty list to plain 'git diff --name-only' (unstaged only), dropping the vbw_dirty_files test on check files, or removing the conflict branch keeps every loop test green, and the park would then revert over the user's staged work. Regression tests to add in tests/loop-retry-park.bats: (1) stage (git add) a change to a file an item commit touched, park, assert the commit is not reverted, the file keeps the staged content and stays staged, and the decision names 'you changed FILE'; also stage an unrelated file and assert it stays staged after the reverts; (2) edit a check file of the item by hand, park, assert the file stays and the decision says 'left in place (you changed it)'; (3) make a later commit conflict with an earlier item commit, park, assert the decision says 'does not revert cleanly' and no half-done revert is left (git status clean of conflict markers)."
     },
     {
@@ -26219,7 +26219,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "Untested P129.1 behaviour remains after the F182 fix: 'vbw milestone rename' refusing a parked milestone. plugin/lib/cmd-milestone.sh refuses with '<M> has been parked: start the next one (vbw milestone start TITLE)', but no test runs 'milestone rename' on a parked milestone (grep 'milestone rename' in tests/ finds only kernel-work.bats, which uses a shipped milestone). The test named 'a parked milestone keeps its name, and vbw status --json lists the parked ids' in tests/loop-park-report.bats never calls rename and never checks the title after the park, so its name promises more than it checks. Removing 'parked' from the refusal branch would leave the suite green. Regression test: after a park, 'vbw milestone rename Other' exits 1 with a message containing 'parked' and 'vbw milestone start', and .milestone.title is unchanged."
     },
     {
@@ -26227,7 +26227,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "Plan task left out: P129.1 task 2 says 'next.jq row 1 and docs', but docs/next.md row 1 still reads 'milestone shipped' only (line 103) and says nothing of a parked milestone (grep -i parked docs/next.md finds nothing); lines 16-18 about requirements of shipped milestones are likewise unchanged. next.jq line 93 answers action milestone for status parked, so the documentation of the decision table is now wrong for users who read it. Regression test: tests/loop-docs.bats (or a next-docs test) asserts docs/next.md row 1 names both shipped and parked."
     },
     {
@@ -26235,7 +26235,7 @@
       "req": "R179",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "Unrecorded change to the plan, and undocumented. P129.2 task 2 says the commits since the item's head that touch a file outside .vbw/ are reverted, leaving unreverted only a commit touching a file the user staged or edited. plugin/lib/loop-park.sh (commit f6d1c7c1) also leaves a commit that changes code and a .vbw file together ('changes the record too') and a commit that 'does not revert cleanly', so a parked item can keep part of its code in the tree. 'vbw show decisions' has no decision for it (D322 and D324 are the only loop decisions after D317), and docs/loop.md 'Retry once, then park' step 2 does not say a commit can be left and named; a user reading it expects the item's code to be gone. The behaviour is defensible (reverting a record-touching commit would corrupt the record) but it is a deviation until decided. Fix: record one decision (vbw decide) for the mixed-commit and conflict cases, and add a sentence to docs/loop.md step 1 that a commit it cannot revert is left, named in the decision and the report. Regression test: tests/loop-docs.bats asserts docs/loop.md mentions that such a commit is left and named."
     },
     {
@@ -26243,7 +26243,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "tests/loop-lease-guards.bats cannot tell whether the protected-check-file rule works under a loop. The test (first test, line ~38) writes tests/notes.sh, which is protected but not among the build lease's files (src/greet.txt), and accepts either 'protected check file' or 'outside this run's files'. lease_write_denial in plugin/hooks/common.jq checks the plan's files first, so the denial always comes from the outside-files rule and the protected rule is never reached. Deleting the protected rule leaves this test green. The criterion lists 'a protected check file' among the writes a loop's run still denies. Regression test: a lease whose files include a protected check file (a fix run with new_tests, or a build whose plan file list holds it) must be denied with 'protected check file', asserted without the either-or."
     },
     {
@@ -26251,7 +26251,7 @@
       "req": "R180",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "The L3 loop scenario writes facts it did not measure. tools/l3-suite.sh scenario_loop passes the constants 'remotes: 0, tags: 0' into result_write instead of the counts it read (, ), so a failing run (a remote or tag present, passed=false) would still publish 'remotes: 0, tags: 0' in tools/l3-results/loop.json. Also the committed result (at 2026-10-13T00:13:07Z) predates commits e31332b7 (loop_kernel) and 469ef59c (guard change), so it describes older code. Regression test in tests/l3-loop.bats: the scenario body builds the facts from the measured remote and tag counts (no literal 'remotes: 0'), and a run with a remote present would write a nonzero fact."
     }
   ],
@@ -28847,6 +28847,12 @@
       "id": "D325",
       "at": "2026-10-13T01:15:52Z",
       "text": "Contract approved: 169 requirements, 305 checks, 384 plans (760fefef3c1c)"
+    },
+    {
+      "id": "D326",
+      "text": "A park reverts, newest first, the item's commits that touch files outside .vbw/; a commit that also changes a .vbw file, one that does not revert cleanly, and one touching a file the user staged or edited are left in place and named in the park's decision and report (P129.2 task 2 named only the user's files; the other two cases cannot be reverted without touching the record or the user's work)",
+      "why": "QA F166 and F188: leaving and naming beats a silent skip or a revert that rewrites the record",
+      "at": "2026-10-13T01:39:06Z"
     }
   ],
   "commands": {
@@ -32546,6 +32552,15 @@
         "milestone": "M25",
         "started": "2026-10-13T01:18:55Z",
         "ended": "2026-10-13T01:26:21Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261013T013905Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M25",
+        "started": "2026-10-13T01:39:05Z",
+        "ended": "2026-10-13T02:44:52Z",
         "cost": null
       }
     ],
