@@ -152,6 +152,18 @@ vbw_claude_dir() {
   fi
 }
 
+# vbw_machine_limit: three quarters of the cores, rounded down, 1 to 64; 1 when
+# the count cannot be read. No setting, no environment override.
+vbw_machine_limit() {
+  local n cores
+  cores=$(vbw_cores) || cores=""
+  if [ -z "$cores" ]; then printf '1\n'; return 0; fi
+  n=$((cores * 3 / 4))
+  [ "$n" -ge 1 ] || n=1
+  [ "$n" -le 64 ] || n=64
+  printf '%s\n' "$n"
+}
+
 # vbw_check_jobs_set_value: the check_jobs value set in this clone's settings,
 # or nothing when missing, damaged or out of range.
 vbw_check_jobs_set_value() {
@@ -167,15 +179,10 @@ vbw_check_jobs_set_value() {
 # vbw_check_jobs: the one reader of check_jobs: a valid set value, else three
 # quarters of the cores (rounded down, 1 to 64), 1 when the count cannot be read.
 vbw_check_jobs() {
-  local n cores
+  local n
   n=$(vbw_check_jobs_set_value) || return 1
   if [ -n "$n" ]; then printf '%s\n' "$n"; return 0; fi
-  cores=$(vbw_cores) || cores=""
-  if [ -z "$cores" ]; then printf '1\n'; return 0; fi
-  n=$((cores * 3 / 4))
-  [ "$n" -ge 1 ] || n=1
-  [ "$n" -le 64 ] || n=64
-  printf '%s\n' "$n"
+  vbw_machine_limit
 }
 
 # vbw_check_jobs_source: "set" or "machine default".
