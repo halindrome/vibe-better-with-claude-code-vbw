@@ -279,6 +279,7 @@ its words are under `vbw loop status` above).
 | End of the list | Stops after the last item's ship. |
 | `/vbw:loop stop` or `vbw loop stop`, from any session | Stops before the next step. The reason names you and the session. |
 | A run open in another session | Stops, with that reason. |
+| A contract not ready yet (`vbw next` says `contract`: a check file not written, the spec not synced, a rule missing) | The session's unfinished plan step: handed back to the session once, recorded as `asked` in the loop state. The same unsatisfied instruction for the same item a second time stops the loop, with `asked once already` in the reason (D334). |
 | An action the loop cannot do | Stops with the reason, the item and the step, recorded in the loop state. |
 
 A workflow or proof already running is never killed: the loop stops once its
