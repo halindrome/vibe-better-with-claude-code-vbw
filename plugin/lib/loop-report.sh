@@ -41,8 +41,13 @@ loop_report_write() {
         $p[] | "- \(.id) \(.text) (\(.milestone // "no milestone")): \(.reason // "no reason recorded")\(if .left then "; left unreverted: \(.left)" else "" end); revert commits: \((.reverts // []) | map(if type == "object" then (.hash // .sha // tostring) else tostring end | .[0:7]) | join(", ")); to bring the work back, revert the reverts (git revert, newest first) or run the item again with /vbw:loop \(.id)" end ),
     "",
     "## Waiting for you",
+    # Every open [human] requirement still owed to the user: a shipped [human] item (by its req), one skipped in the
+    # current milestone, and one carried in from a shipped milestone (built in a phase of another milestone), whose
+    # skipped flag the carry removed (F197).
     ( ([$l.items[] | select(.status == "shipped" and .proof == "human") | req_of(.) | select(. != null and .status != "accepted" and .status != "rejected")]
-        + [$r.requirements[] | select(.proof == "human" and .skipped == true and .status == "open")] | unique_by(.id)) as $w
+        + [$r.requirements[] | select(.proof == "human" and .status == "open")
+            | select(.skipped == true or (. as $q | any($r.phases[]; .milestone != $q.milestone and any(.reqs[]; . == $q.id))))]
+        | unique_by(.id)) as $w
       | if ($w | length) == 0 then "no skipped [human] requirement" else $w[] | "- \(.id) \(.text) (skipped for you to judge)" end ),
     ( if $l.ended == null then "the loop is still running" else "the loop stopped: \($l.ended.reason)" end ),
     "",
