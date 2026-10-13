@@ -26147,7 +26147,7 @@
         "P134.2",
         "P134.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/statusline.md, a new section '## Projects where VBW is turned off', in plain words: when a project's settings say \"vbw@vbw-marketplace\": false under enabledPlugins, the status line shows the user's earlier status line (the one saved at vbw statusline on), or nothing shows when there was none, and nothing is written in that project. Name the files in Claude Code's order with a short example: .claude/settings.local.json, then .claude/settings.json, then the user's settings.json. Say that VBW's script only says 'off' and the setting itself runs the earlier status line; VBW never runs it.",
@@ -34939,6 +34939,15 @@
         "milestone": "M29",
         "started": "2026-10-13T23:40:18Z",
         "ended": "2026-10-13T23:47:38Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261013T234830Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M29",
+        "started": "2026-10-13T23:48:30Z",
+        "ended": "2026-10-13T23:53:11Z",
         "cost": null
       }
     ],
