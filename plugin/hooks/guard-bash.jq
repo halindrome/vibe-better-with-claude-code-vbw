@@ -156,30 +156,32 @@ def everywhere:
 # publishes and deploys wait for the user, for every caller.
 def loop_outward:
   (if .cmd | test("^(npx|bunx)$") then (.args | skip_options) as $a | {cmd: ($a[0] // "" | basename), args: $a[1:]} else . end)
-  # The words that are not options (nor a cargo +toolchain): the subcommand is any of them, wherever an
-  # option's value pushed it (npm --tag next publish, docker --context x push, gh -R a/b release create):
-  # a guard that fails closed while a loop is on (F175).
-  | ([.args[] | select((startswith("-") or startswith("+")) | not)]) as $w
-  | def has($x): any($w[]; . == $x);
-    def after($x): ([range(0; $w | length) | select($w[.] == $x)] | first) as $i | if $i == null then "" else ($w[$i + 1] // "") end;
+  # The subcommand is the first word after the leading options, with the value of an option that takes
+  # one skipped (npm --tag next publish, docker --context x push, gh -R a/b release create, cargo
+  # +nightly publish); a trigger word later in the line (cargo test publish, npm run publish, gh issue
+  # list --label release) is an argument, not the subcommand (F175, F180).
+  | def sub($vals): .args | until(length == 0 or ((.[0] | (startswith("-") or startswith("+"))) | not);
+        (.[0]) as $o | if ($o | contains("=") | not) and any($vals[]; . == $o) then .[2:] else .[1:] end);
+    def first($vals): (sub($vals) | .[0] // "");
+    def second($vals): (sub($vals) | .[1] // "");
     ( select(.cmd == "git") | git_words as $g | select(($g[0] // "") == "push") | ["git push", "push"] ),
-    ( select(.cmd == "gh" and has("release") and (after("release") | test("^(list|view|download)$") | not)) | ["gh release", "release"] ),
-    ( select(.cmd == "gh" and has("pr") and after("pr") == "create") | ["gh pr create", "open the pull request"] ),
-    ( select(.cmd == "npm" and has("publish")) | ["npm publish", "publish"] ),
-    ( select(.cmd == "cargo" and has("publish")) | ["cargo publish", "publish"] ),
-    ( select(.cmd == "twine" and has("upload")) | ["twine upload", "upload"] ),
-    ( select(.cmd == "gem" and has("push")) | ["gem push", "push"] ),
-    ( select(.cmd == "docker" and has("push")) | ["docker push", "push"] ),
+    ( select(.cmd == "gh") | ["-R", "--repo", "--hostname"] as $v | select(first($v) == "release" and (second($v) | test("^(list|view|download)$") | not)) | ["gh release", "release"] ),
+    ( select(.cmd == "gh") | ["-R", "--repo", "--hostname"] as $v | select(first($v) == "pr" and second($v) == "create") | ["gh pr create", "open the pull request"] ),
+    ( select(.cmd == "npm" and first(["--tag", "--registry", "--otp", "--access", "--workspace", "-w", "--userconfig", "--prefix", "-C", "--loglevel"]) == "publish") | ["npm publish", "publish"] ),
+    ( select(.cmd == "cargo" and first(["--config", "-Z", "--color"]) == "publish") | ["cargo publish", "publish"] ),
+    ( select(.cmd == "twine" and first(["--config-file"]) == "upload") | ["twine upload", "upload"] ),
+    ( select(.cmd == "gem" and first(["--config-file"]) == "push") | ["gem push", "push"] ),
+    ( select(.cmd == "docker" and first(["--context", "-c", "-H", "--host", "--config", "-l", "--log-level", "--tlscacert", "--tlscert", "--tlskey"]) == "push") | ["docker push", "push"] ),
     ( select(.cmd == "vercel" and ((.args[0] // "-") | startswith("-")) and (any(.args[]; test("^(-h|--help|-v|--version)$")) | not)
-             or .cmd == "vercel" and has("deploy")) | ["vercel deploy", "deploy"] ),
-    ( select(.cmd == "netlify" and has("deploy")) | ["netlify deploy", "deploy"] ),
-    ( select(.cmd == "fly" and has("deploy")) | ["fly deploy", "deploy"] ),
-    ( select(.cmd == "flyctl" and has("deploy")) | ["flyctl deploy", "deploy"] ),
-    ( select(.cmd == "heroku" and has("container:push")) | ["heroku container:push", "deploy"] ),
-    ( select(.cmd == "heroku" and has("container:release")) | ["heroku container:release", "deploy"] ),
-    ( select(.cmd == "heroku" and has("pipelines:promote")) | ["heroku pipelines:promote", "deploy"] ),
-    ( select(.cmd == "wrangler" and has("deploy")) | ["wrangler deploy", "deploy"] ),
-    ( select(.cmd == "wrangler" and has("publish")) | ["wrangler publish", "deploy"] )
+             or .cmd == "vercel" and first(["--token", "-t", "--scope", "-S", "--cwd", "--global-config", "-Q", "--local-config", "-A"]) == "deploy") | ["vercel deploy", "deploy"] ),
+    ( select(.cmd == "netlify" and first(["--filter", "--cwd", "--auth", "--httpProxy"]) == "deploy") | ["netlify deploy", "deploy"] ),
+    ( select(.cmd == "fly" and first(["-a", "--app", "-c", "--config", "-t", "--access-token"]) == "deploy") | ["fly deploy", "deploy"] ),
+    ( select(.cmd == "flyctl" and first(["-a", "--app", "-c", "--config", "-t", "--access-token"]) == "deploy") | ["flyctl deploy", "deploy"] ),
+    ( select(.cmd == "heroku" and first(["-a", "--app", "-r", "--remote"]) == "container:push") | ["heroku container:push", "deploy"] ),
+    ( select(.cmd == "heroku" and first(["-a", "--app", "-r", "--remote"]) == "container:release") | ["heroku container:release", "deploy"] ),
+    ( select(.cmd == "heroku" and first(["-a", "--app", "-r", "--remote"]) == "pipelines:promote") | ["heroku pipelines:promote", "deploy"] ),
+    ( select(.cmd == "wrangler" and first(["--env", "-e", "--config", "-c"]) == "deploy") | ["wrangler deploy", "deploy"] ),
+    ( select(.cmd == "wrangler" and first(["--env", "-e", "--config", "-c"]) == "publish") | ["wrangler publish", "deploy"] )
   | "the loop never leaves the project: \(.[0]) is not run while a loop is on\nNext: wait for the loop to end, or stop it with /vbw:loop stop, then \(.[1]) yourself";
 
 def in_project($g):
