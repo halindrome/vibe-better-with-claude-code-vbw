@@ -49,7 +49,10 @@ installed() {
 
 # settings_with STATUSLINE_JSON [EXTRA_JSON]: the user's settings.json.
 settings_with() {
-  jq -n --argjson s "$1" --argjson x "${2:-{\}}" '$x + {statusLine: $s}' > "$SETTINGS"
+  # The default is set apart: bash 3.2 keeps the backslash in a brace-literal default.
+  local extra="${2:-}"
+  [ -n "$extra" ] || extra='{}'
+  jq -n --argjson s "$1" --argjson x "$extra" '$x + {statusLine: $s}' > "$SETTINGS"
 }
 
 mine() { jq -nc --arg c "$MINE_CMD" '{type: "command", command: $c, padding: 0}'; }
