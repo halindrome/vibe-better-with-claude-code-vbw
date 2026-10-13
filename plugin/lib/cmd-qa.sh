@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# vbw qa finding REQ TEXT | record PHASE pass|fail TIER [NOTE]: the QA agent's
+# vbw qa finding [PHASE] REQ TEXT | record PHASE pass|fail TIER [NOTE]: the QA agent's
 # goal-backward verification of a built phase (VBW 1's QA mandate; docs/proof.md).
 # A finding opens a fix item marked source "qa": only QA closes it, because the
-# checks may pass while the work still deviates from the plan. The verdict is
+# checks may pass while the work still deviates from the plan. A finding belongs
+# to the phase whose QA found it (D332): named at the finding, or adopted by the
+# phase's fail verdict when left out; a verdict changes only its own phase's
+# findings, so phases sharing a requirement never close each other's. The verdict is
 # recorded against the digest of the phase's inputs and those of the phases it
 # builds on (lib/qa-inputs.sh): a change to them needs QA again, others do not. Three failed rounds in a row escalate.
 
@@ -11,23 +14,27 @@ VBW_QA_ROUNDS=3
 cmd_qa() {
   local sub="${1:-}"
   case "$sub" in
-    finding) [ $# -eq 3 ] && [ -n "$3" ] || vbw_usage_error "usage: vbw qa finding REQ TEXT" ;;
+    finding) { [ $# -eq 3 ] && [ -n "$3" ]; } || { [ $# -eq 4 ] && [ -n "$4" ]; } || vbw_usage_error "usage: vbw qa finding [PHASE] REQ TEXT" ;;
     record)
       [ $# -ge 4 ] && [ $# -le 5 ] && { [ "$3" = pass ] || [ "$3" = fail ]; } \
         && { [ "$4" = quick ] || [ "$4" = standard ] || [ "$4" = deep ]; } \
         || vbw_usage_error "usage: vbw qa record PHASE pass|fail quick|standard|deep [NOTE]"
       ;;
-    *) vbw_usage_error "usage: vbw qa finding REQ TEXT | qa record PHASE pass|fail TIER [NOTE]" ;;
+    *) vbw_usage_error "usage: vbw qa finding [PHASE] REQ TEXT | qa record PHASE pass|fail TIER [NOTE]" ;;
   esac
   vbw_require_project
   local record
   record=$(record_read)
   if [ "$sub" = finding ]; then
-    printf '%s' "$record" | jq -e --arg q "$2" 'any(.requirements[]; .id == $q)' > /dev/null || vbw_die "unknown requirement $2"
-    record_update "$VBW_JQ_DEFS"'.fixes += [{id: (.fixes | next_id("F")), req: $q, source: "qa", attempts: 0, status: "open", note: $t}]
-      | escalate_phases([.phases[] | select((.tier // "express") == "express" and (.reqs | index($q))) | .id]; null; "QA found a problem in \($q): \($t)"; $at)' \
-      --arg q "$2" --arg t "$3" --arg at "$(vbw_now)"
-    jq -r '.fixes[-1] | "\(.id) opened for \(.req) (qa): \(.note)"' "$VBW_RECORD"
+    local fphase="" freq ftext
+    if [ $# -eq 4 ]; then fphase=$2; freq=$3; ftext=$4; else freq=$2; ftext=$3; fi
+    printf '%s' "$record" | jq -e --arg q "$freq" 'any(.requirements[]; .id == $q)' > /dev/null || vbw_die "unknown requirement $freq"
+    [ -z "$fphase" ] || printf '%s' "$record" | jq -e --arg p "$fphase" --arg q "$freq" 'any(.phases[]; .id == $p and any(.reqs[]; . == $q))' > /dev/null \
+      || vbw_die "$fphase is not a phase with requirement $freq: name the phase whose QA found the problem"
+    record_update "$VBW_JQ_DEFS"'.fixes += [{id: (.fixes | next_id("F")), req: $q, source: "qa", attempts: 0, status: "open", note: $t} + (if $p == "" then {} else {phase: $p} end)]
+      | escalate_phases([.phases[] | select((.tier // "express") == "express" and (.reqs | index($q)) and ($p == "" or .id == $p)) | .id]; null; "QA found a problem in \($q): \($t)"; $at)' \
+      --arg q "$freq" --arg t "$ftext" --arg p "$fphase" --arg at "$(vbw_now)"
+    jq -r '.fixes[-1] | "\(.id) opened for \(.req)\(if .phase then " in \(.phase)" else "" end) (qa): \(.note)"' "$VBW_RECORD"
     return 0
   fi
   local phase="$2" result="$3" tier="$4" note="${5:-}" tree digests curf
@@ -43,8 +50,8 @@ cmd_qa() {
   [ -n "$tree" ] || vbw_die "$phase is not a phase of the active milestone"
   if [ "$result" = fail ]; then
     printf '%s' "$record" | jq -e --arg p "$phase" '. as $r | ([.phases[] | select(.id == $p)][0].reqs) as $q
-      | any(.fixes[]; .source == "qa" and .status == "open" and (.req as $x | any($q[]; . == $x)))' > /dev/null \
-      || vbw_die "a failed verdict needs its findings first (vbw qa finding REQ TEXT for each)"
+      | any(.fixes[]; .source == "qa" and .status == "open" and (.req as $x | any($q[]; . == $x)) and ((has("phase") | not) or .phase == $p))' > /dev/null \
+      || vbw_die "a failed verdict needs its findings first (vbw qa finding $phase REQ TEXT for each)"
   fi
   vbw_scratch_json curf "$(qa_combined "$record" "$digests" | jq -c --arg p "$phase" --arg t "$tree" '. + {($p): $t}')"
   record_update "$VBW_JQ_DEFS"'$cf[0] as $cur | ([.phases[] | select(.id == $p)][0]) as $ph
@@ -52,7 +59,9 @@ cmd_qa() {
     | (if $res == "fail" and ($ph.qa.result // "") == "fail" then ($ph.qa.rounds // 1) + 1 elif $res == "fail" then 1 else 0 end) as $rounds
     | (.phases[] | select(.id == $p)).qa = ({result: $res, tier: $tier, tree: $tree, at: $at}
         + (if $note != "" then {note: $note} else {} end) + (if $rounds > 0 then {rounds: $rounds} else {} end))
-    | .fixes |= map(if .source == "qa" and (.req as $x | any($q[]; . == $x)) then
+    # The findings left without a phase belong to this failed verdict; a verdict changes only the findings of its own phase (D332).
+    | .fixes |= map(if $res == "fail" and .source == "qa" and .status == "open" and (has("phase") | not) and (.req as $x | any($q[]; . == $x)) then .phase = $p else . end)
+    | .fixes |= map(if .source == "qa" and (.req as $x | any($q[]; . == $x)) and ((has("phase") | not) or .phase == $p) then
         (if $res == "pass" and (.status | IN("open", "fixed")) then .status = "closed"
          elif $res == "fail" and .status == "fixed" then .status = "closed"
          elif $res == "fail" and .status == "open" and $rounds >= $cap then .status = "escalated"
