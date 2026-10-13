@@ -11,7 +11,7 @@ standard: what good output is. Every write to the plan of record goes through
 |---|---|---|---|
 | `vbw:planning` | `vbw next` says `plan` | Architect (decide) → Architect (scope) → Lead | `needs_decisions` (up to 4 questions for the user, each with options, trade-offs and a recommendation; the router asks them, records the answers with `vbw decide`, and runs the workflow again with `decided: true`), or phases with goals and criteria, plans with tasks and checks in the record, test files written and failing, the Lead's own `choices` and the Architect's scope `notes` |
 | `vbw:building` | `build` (one wave: the ready plans, no two sharing a file) | a Dev per plan, Docs for documentation plans, in parallel | each plan `done` (one commit per task, its checks green) or `blocked` with a reason |
-| `vbw:fixing` | `fix` (`detail.groups`: open fixes that share files, grouped) | a Dev per group, groups in parallel | each fix `fixed` (verified, committed) or its plan `blocked` |
+| `vbw:fixing` | `fix` (`detail.groups`: open fixes that share files, grouped) | a Dev per group, groups in parallel; after every Dev returns, one `vbw fix done` for every fix whose Dev reported done | each fix `fixed` (verified, committed) or its plan `blocked` |
 | `vbw:verifying` | `qa` (built phases not yet verified on the proven code) | a QA agent per phase, in parallel | each phase's verdict recorded (`vbw qa record`), its findings as fixes (`vbw qa finding`) |
 | `vbw:mapping` | `spec` or `plan` on existing code without `.vbw/map.md` | Scouts, one per angle, then one merge | the map, written to `.vbw/map.md` |
 | `vbw:researching` | the user runs `/vbw:research` | four Scouts (sources, practice, current state, this project), then one answer | a sourced answer with a recommendation |
@@ -42,7 +42,12 @@ nothing and the router ends the run as before. With it:
 
 - `vbw:building`, `vbw:fixing` and `vbw:verifying` finish with one last agent,
   the Lead (label `close run`), that runs `vbw run confirm` for every plan, fix
-  or phase of the run, then `vbw run end` whatever confirm said. It answers
+  or phase of the run, then `vbw run end` whatever confirm said. In
+  `vbw:fixing` the Lead first runs one `vbw fix done` for the fixes whose Dev
+  reported done, and waits for it to end, before `vbw run confirm`. Without
+  `args.session`, `vbw:fixing` still runs it, with an agent of its own. A fix
+  whose Dev was blocked or stopped is left out and named with its status. The
+  result's `fixdone` field says which fixes closed and which stayed open. It answers
   `{ended, recorded, report}`. The workflow returns that answer as
   `confirmation` and sets `complete` to true only when no agent stopped early
   and `recorded` and `ended` are both true.
@@ -58,7 +63,9 @@ Claude Code marks a workflow's task text as not coming from the user, so an
 agent may refuse to follow an instruction that appears only there. VBW
 therefore puts the recording duty in each agent's own instructions
 (`plugin/agents/*.md`), which are VBW's: a Dev or Docs agent runs
-`vbw plan done`, `vbw fix done` or `vbw plan block` before it returns; QA runs
+`vbw plan done` or `vbw plan block` before it returns; a fixing Dev commits its
+fix and runs `vbw check` on its own fixes' checks, and never runs `vbw fix
+done`: the Lead runs the round's `vbw fix done` once, after every Dev returns; QA runs
 `vbw qa finding` and `vbw qa record`; the Lead runs `vbw apply` and the closing
 step. The Scout changes nothing and never closes a run.
 
@@ -72,6 +79,7 @@ did not end, the workflow writes the commands to its log and sets `complete` to
 `false`. Run them from the project, with the session of the run:
 
 ```
+vbw fix done F8 F9                                   # fix rounds only: the done fixes
 VBW_SESSION_ID=<session> vbw run confirm P1.1 P1.2   # names anything unrecorded
 VBW_SESSION_ID=<session> vbw run end
 ```
@@ -175,7 +183,7 @@ merely contains `--help` (for example a todo) is still text. The test is
 | `vbw commit P1.2 "feat(x): ..."` | Dev | commit the plan's changed files with provenance trailers |
 | `vbw commit --fix F1 "fix(x): ..." FILE...` | Dev | commit the named changed files of an open fix for a failing project command, even when no plan lists them. The commit carries a `VBW-Fix: F1` trailer. A requirement fix commits through its plan instead; `.vbw/` files are refused |
 | `vbw plan done P1.2` / `vbw plan block P1.2 "reason"` | Dev | the plan's outcome. `done` is verified: none of the plan's files has uncommitted changes, and the checks of the requirements it completes pass. The plan also needs a commit with its `VBW-Plan` trailer (`vbw commit`); without one, every file must be committed in `HEAD` (for example by the approval commit) and a check of its requirements must pass, or `done` is refused and names the failing check. A blocked plan stops only the plans that depend on it (docs/next.md). `block` refuses a plan that is already done, says so, and changes nothing; reset the plan first if it must be built again |
-| `vbw fix done F1` or `vbw fix done F8 F9` | Dev | verified (several fixes in one command run the checks they serve once; one that cannot close is named, the others still close, and the exit code is non-zero): no uncommitted changes in the files it may touch, and the checks of every finished requirement those files serve pass; then awaiting proof |
+| `vbw fix done F1` or `vbw fix done F8 F9` | Lead (the fix round's closing step, run by the workflow) | verified (several fixes in one command run the checks they serve once; one that cannot close is named, the others still close, and the exit code is non-zero): no uncommitted changes in the files it may touch, and the checks of every finished requirement those files serve pass; then awaiting proof |
 | `vbw fix check F1 < check.json` | Dev | in a fix that QA opened: register the regression test as a check of the finding's requirement. The JSON has `run` and `files`, and optionally `exit`, `output`, `timeout`, `alone`. It waits for the user's approval before the proof (docs/proof.md) |
 | `vbw apply < plan.json` | Lead | replace phases, plans and checks, and set each `auto` requirement's rules, in one validated write (refused while a build or fix run is open; a plan that has started must come back unchanged; a requirement that another milestone owns or that a phase of another milestone already covers is refused with the `vbw apply --add` message, and nothing is written) |
 | `vbw apply --patch < patch.json` | Lead | change only the plans, checks and rules in the document; everything else stays byte for byte as it was |
@@ -448,7 +456,7 @@ evidence and does not run the command itself.
 
 ## One test run per fix round
 
-In a fix round (`vbw:fixing`) the Devs run their own checks. They never run the project's test command or its quick command. The project's test command runs once, in the proof after the round. A fix for a failing test command runs only the failing tests it needs.
+In a fix round (`vbw:fixing`) each Dev commits its fix and runs `vbw check` on its own fixes' checks. The Lead runs the round's `vbw fix done` once, after every Dev returns. They never run the project's test command or its quick command. The project's test command runs once, in the proof after the round. A fix for a failing test command runs only the failing tests it needs.
 
 ## Rigor
 

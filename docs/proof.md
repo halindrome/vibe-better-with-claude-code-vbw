@@ -112,7 +112,7 @@ belongs to this clone and is shared by its worktrees; it is not in the record
 or the contract, so changing it needs no approval.
 
 The limit is shared. Several VBW commands can run checks at the same time in
-one project folder (parallel Devs each running `vbw check`, `vbw fix done`
+one project folder (parallel Devs each running `vbw check`, the round's one `vbw fix done`
 beside `vbw prove`). Together they never run more checks than the limit. A
 check that finds no free slot waits for one instead of failing, and its
 timeout counts from its real start. A slot held by a VBW process that died is
