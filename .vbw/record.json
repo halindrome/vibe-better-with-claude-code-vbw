@@ -15849,11 +15849,12 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "pass",
+        "result": "fail",
         "tier": "deep",
-        "tree": "8b264c36bb5848f0d583bccc44d2dbfdd1ebaebdcca42fad3bc531e317215f88",
-        "at": "2026-10-13T12:51:03Z",
-        "note": "30/30 checks"
+        "tree": "e91288f500bdae610a93494fe2959ca369da245d3a75b3f1862bcecd9e4a5789",
+        "at": "2026-10-13T13:52:41Z",
+        "note": "31/32 checks",
+        "rounds": 1
       },
       "escalations": [
         {
@@ -26418,6 +26419,15 @@
       "attempts": 0,
       "status": "closed",
       "note": "Re-filed F203, which P129's pass closed (see F204): when the last item ships with the spend at or above the ceiling (default mode, no --finish-item), the loop ends with 'ceiling reached' and answers stopped instead of 'end of the list: N shipped, M parked' and done, because loop_step judges the ceiling before the end-of-list branch (plugin/lib/loop-step.sh). Fix: judge the ceiling only when a step or an item opening is still due, never when no item is in progress and none is waiting. Regression test in tests/loop-stops.bats: one item, --ceiling 5, session figures above 5 before the proof; the step after the proof answers done with the reason 'end of the list: 1 shipped, 0 parked', and loop.ended.reason is that text; the report says the loop ended on the end of the list."
+    },
+    {
+      "id": "F206",
+      "req": "R180",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The loop's outward guard (plugin/hooks/guard-bash.jq, loop_outward) lets a push through when the redirect is written against the subcommand with no space: with a loop on, 'git push>out.log' and 'npm publish>log' are not denied (probed by piping the hook input through guard-bash.jq with a loop record: 'git push', 'git push origin main>/dev/null 2>&1', 'git push </dev/null' are denied, 'git push>/dev/null' and 'git push>out.log' are allowed). Cause: simple() in guard-bash.jq only splits a redirect off a word when the word starts with the operator, so 'push>out.log' stays one word and git_words reads it as an unknown subcommand. R180 and the plan say git push in any form is denied while a loop is on, and every outward command shares this reading. Regression test: in tests/loop-outward-guard.bats, with a loop on, 'git push>/dev/null', 'git push>out.log', 'npm publish>log' and 'docker push>x' must be denied with the pinned text (and 'echo hi>out.log' must stay allowed).",
+      "phase": "P129"
     }
   ],
   "todos": [
