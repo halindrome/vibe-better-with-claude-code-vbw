@@ -25220,7 +25220,7 @@
       "files": [
         "docs/proof.md",
         "docs/guards.md",
-        "CLAUDE.md"
+        "AGENTS.md"
       ],
       "after": [
         "P130.2"
@@ -25231,7 +25231,7 @@
         "docs/proof.md, beside 'Checks run in parallel': the computer-wide limit (machine limit: three quarters of the cores, every VBW project on this computer shares it, not a setting; check_jobs a per-run cap below it), what takes one slot (each check, project command or test file) and where the slot store lives (<claude-config-dir>/vbw/slots.json, the CLAUDE_CONFIG_DIR, ~/.config/claude-code, ~/.claude order, present only while runs use it)",
         "docs/proof.md: equal turns (the waiting run holding the fewest goes first, between equals the one that waited longest), the same result whether a unit waited or not (a timeout counts from when its command starts), slots of a killed run taken over, Ctrl-C giving them back, the lock taken over; the 'waited ... for other VBW runs on this computer' line and the 'machine limit:' line of vbw config",
         "docs/proof.md: a store that cannot be written (a read-only folder, the Claude Code sandbox) or is damaged: the run goes on under check_jobs and prints 'the computer-wide limit was not in force' with the reason; docs/guards.md: VBW itself writes nothing outside the project but the slot store and the user's settings.json",
-        "CLAUDE.md 'Nothing outside the project': the slot store in <claude-config-dir>/vbw/ becomes the second exception beside settings.json, with R181 as its source"
+        "AGENTS.md (CLAUDE.md links to it) 'Nothing outside the project': the slot store in <claude-config-dir>/vbw/ becomes the second exception beside settings.json, with R181 as its source"
       ]
     }
   ],
@@ -29579,6 +29579,11 @@
       "text": "The machine-wide limit is fixed at about three quarters of the cores: no per-machine setting; check_jobs stays the per-project cap",
       "why": "chosen by the loop: no new setting to document and keep; a knob for the whole machine can be added the day someone needs it",
       "at": "2026-10-13T16:41:40Z"
+    },
+    {
+      "id": "D342",
+      "at": "2026-10-13T17:28:32Z",
+      "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-13T16:35:58Z, items T128, T127, T130, T132, T137, T135, T133: 170 requirements, 314 checks, 389 plans (5c659ea6f0d9))"
     }
   ],
   "commands": {
