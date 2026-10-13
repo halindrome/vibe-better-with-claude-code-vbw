@@ -45,7 +45,11 @@ def command_words:
 
 # One simple command: {cmd, args, out, in} (out/in: redirect targets).
 def simple($q):
-  [splits("\\s+") | select(length > 0)]
+  [splits("\\s+") | select(length > 0)
+   # A redirect glued to the word before it (push>out.log, push&>log) is a word of its own, as the shell
+   # reads it; a word that is only a descriptor number (2>&1) stays whole (F206).
+   | (capture("^(?<pre>[^<>]*?)(?<red>&?[<>].*)$") // null) as $m
+   | if $m != null and ($m.pre | test("^[0-9]*$") | not) then $m.pre, $m.red else . end]
   | reduce .[] as $w ({words: [], out: [], in: [], next: null};
       if .next != null then .[.next] += [$w | restore($q)] | .next = null
       else ([$w | capture("^[0-9]*&?(?<op>>\\||>>?|<)(?<rest>.*)$")] | first) as $r
