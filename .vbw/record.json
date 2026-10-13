@@ -27141,7 +27141,7 @@
     {
       "id": "T118",
       "text": "QA re-check scope after a fix round: the QA digest (D91) re-checks every phase whose files or whose dependencies' files changed, so a two-file kernel fix re-checked 10 phases (2026-10-11 16:42). Scope re-checks to the phases whose own files changed; dependents only when their requirements' checks or files changed",
-      "sort": "later",
+      "sort": "next",
       "size": "medium",
       "status": "open"
     },
