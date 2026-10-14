@@ -26881,7 +26881,7 @@
       "after": [
         "P137.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/close-haiku-run.sh, a maintainer script (never shipped), usage 'close-haiku-run.sh building|fixing|long-fix'; anything else prints a line with 'usage' on stderr and exits 2 before anything runs. Bash 3.2, clean under 'bash tools/test.sh --lint'; its header names the three scenarios, the fixture, evidence level L2 and the cost. It builds a fresh practice project in .vbw/runtime/scratch/close-haiku/<scenario> (never /tmp; removes only a folder it marked as its own), with this tree's plugin/bin/vbw: building is one requirement with one small plan; fixing and long-fix are built the way tools/measure-fix-round.sh builds its project (finished requirements whose checks sleep, two open fixes with their changes committed), with checks of a few seconds for fixing and long enough for long-fix that vbw fix done runs past 600 seconds. Like tools/e2e.sh it drops installed plugin bins from PATH and keeps the user's own Claude login.",
@@ -36154,6 +36154,15 @@
         "milestone": "M31",
         "started": "2026-10-14T09:50:41Z",
         "ended": "2026-10-14T09:52:59Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T095317Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M31",
+        "started": "2026-10-14T09:53:17Z",
+        "ended": "2026-10-14T09:58:23Z",
         "cost": null
       }
     ],
