@@ -27693,7 +27693,7 @@
       "after": [
         "P139.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/record.jq: a build lease may carry an editable list (the check files a survivor opened); new_tests stays fix-only. docs/record.md: the lease row says so.",
@@ -27702,6 +27702,134 @@
         "plugin/lib/cmd-commit.sh: vbw commit PLAN MSG FILE... also takes a named check file that a survivor in this plan's mutations ran and no other requirement's check lists, committed with the plan's trailers; any other check file is refused, saying why. plugin/lib/cmd-prove.sh prove_scope: a plan's commit of such a file is within the plan.",
         "docs/guards.md: the build-run row for protected check files names the exception (after a survivor, the check files of that rule's own requirement, waiting for one approval before the proof).",
         "Prove it: bats tests/mutate-strengthen.bats, tests/mutate-command.bats, tests/fix-commit*.bats and the guard tests pass under /bin/bash and bash 5. If the vbw on PATH has the mutate command, record a red break for each R188 rule whose check is C354 (and, at deep, each task, or --none with a reason), running vbw mutate from a copy of the kernel at HEAD for breaks in cmd-mutate.sh; otherwise say so in notes."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R188",
+            "text": "after a survivor in a build run, the run's agents may write that rule's check files no other requirement uses; every other check file stays protected"
+          },
+          "what": "a survivor no longer opens its check files",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C354": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:23:03Z",
+          "head": "64a6297b7fe21e4ddc7bb429d944d97494924c05"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "vbw commit PLAN commits a survivor's check file with the plan's trailers; a check file with no survivor in that plan, or another requirement's, is refused"
+          },
+          "what": "any file is committed",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C354": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:23:35Z",
+          "head": "64a6297b7fe21e4ddc7bb429d944d97494924c05"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "a strengthened check file lets the build finish, then vbw next asks one approval naming it before the proof and vbw prove refuses until it is given"
+          },
+          "what": "survivor files are those of red breaks",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C354": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:23:59Z",
+          "head": "64a6297b7fe21e4ddc7bb429d944d97494924c05"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the proof's scope check counts the strengthened check file's commit as the plan's"
+          },
+          "what": "scope check ignores survivor files",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C354": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:24:32Z",
+          "head": "64a6297b7fe21e4ddc7bb429d944d97494924c05"
+        },
+        {
+          "task": 1,
+          "what": "build lease editable rejected by validation",
+          "files": [
+            "plugin/lib/record.jq"
+          ],
+          "checks": {
+            "C354": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:25:03Z",
+          "head": "64a6297b7fe21e4ddc7bb429d944d97494924c05"
+        },
+        {
+          "task": 2,
+          "what": "survivor does not open files in build",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C354": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:25:36Z",
+          "head": "64a6297b7fe21e4ddc7bb429d944d97494924c05"
+        },
+        {
+          "task": 3,
+          "what": "guard ignores editable",
+          "files": [
+            "plugin/hooks/common.jq"
+          ],
+          "checks": {
+            "C354": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:26:08Z",
+          "head": "64a6297b7fe21e4ddc7bb429d944d97494924c05"
+        },
+        {
+          "task": 4,
+          "what": "scope inverted",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C354": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:26:40Z",
+          "head": "64a6297b7fe21e4ddc7bb429d944d97494924c05"
+        },
+        {
+          "task": 5,
+          "none": "documentation row in docs/guards.md; no check reads that sentence",
+          "at": "2026-10-14T20:26:46Z"
+        },
+        {
+          "task": 6,
+          "none": "a verification task: it runs the tests and changes no code",
+          "at": "2026-10-14T20:26:52Z"
+        }
       ]
     },
     {
@@ -37496,6 +37624,15 @@
         "milestone": "M33",
         "started": "2026-10-14T19:02:10Z",
         "ended": "2026-10-14T19:02:32Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T201100Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-14T20:11:00Z",
+        "ended": "2026-10-14T20:27:13Z",
         "cost": null
       }
     ],
