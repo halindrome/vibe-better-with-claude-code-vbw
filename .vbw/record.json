@@ -182,6 +182,7 @@
     "tests/next-phase.bats",
     "tests/next-table.bats",
     "tests/no-bats-on-generated.bats",
+    "tests/outside-writes-docs.bats",
     "tests/panel-compat.bats",
     "tests/panel-glance.bats",
     "tests/panel-light.bats",
@@ -4408,6 +4409,19 @@
         "tests/l3-plugindir.bats"
       ],
       "timeout": 60
+    },
+    {
+      "id": "C341",
+      "req": "R185",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/outside-writes-docs.bats"
+      ],
+      "files": [
+        "tests/outside-writes-docs.bats"
+      ],
+      "fix": "F218"
     }
   ],
   "project": {
@@ -31179,6 +31193,12 @@
       "text": "R185 fix confirmed: the loaded copy puts its bin first through CLAUDE_ENV_FILE and records itself for its session",
       "why": "L3 probe (tools/l3-results/plugindir-probe.json, Claude Code 2.1.296, installed 2.0.35, tree as a throwaway copy 2.0.35+tree): both copies are read but --plugin-dir overrides the installed one; only vbw@inline hooks ran; PATH has the installed bin first (inherited) and the tree bin last, so vbw resolves to the installed release for the session and an agent; plugin data folder is vbw-inline; CLAUDE_ENV_FILE is given to the SessionStart hook and an export written there reached both the session's and an agent's Bash tool.",
       "at": "2026-10-14T01:07:03Z"
+    },
+    {
+      "id": "D364",
+      "text": "The per-session record of a --plugin-dir session (<claude-config-dir>/vbw/sessions/<session id>, one line naming the loaded plugin folder, records older than 7 days removed) is the third allowed write outside the project, beside the user's settings.json and the machine slot store: docs/guards.md and AGENTS.md's 'Nothing outside the project' rule name it, and a docs test pins it",
+      "why": "F218: QA found the write undocumented. Chosen by VBW (QA's recommendation): the status line and vbw doctor already read the record from the config folder, where Claude Code's sessions live; moving it into the project would cost more and break a session spanning projects",
+      "at": "2026-10-14T02:14:25Z"
     }
   ],
   "commands": {
@@ -35637,6 +35657,19 @@
         "started": "2026-10-14T02:09:56Z",
         "ended": "2026-10-14T02:14:16Z",
         "cost": null
+      },
+      {
+        "id": "fix-20261014T021442Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M30",
+        "started": "2026-10-14T02:14:42Z",
+        "ended": "2026-10-14T02:18:36Z",
+        "cost": {
+          "usd": 0.731741,
+          "in": 3764,
+          "out": 371
+        }
       }
     ],
     "milestones": {
