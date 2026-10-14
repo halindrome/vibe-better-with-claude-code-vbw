@@ -5,11 +5,13 @@ export const meta = {
   phases: [{ title: 'Build', detail: 'a Dev (or Docs) per plan; disjoint files' }],
 }
 
-// args: {plans: ["P1.1", ...], docs?: ["P2.1"], effort?: {dev?: {build}, docs?: {build}, lead?: {close}}, models?: {dev?, docs?}, rigor?: {P1: {models}}} (docs/workflows.md).
+// args: {plans: ["P1.1", ...], docs?: ["P2.1"], effort?: {dev?: {build}, docs?: {build}, lead?: {close}}, models?: {dev?, docs?; models.lead is not used for closing}, rigor?: {P1: {models}}} (docs/workflows.md).
 // docs: the plans the Lead marked as documentation, built by the Docs agent.
 const plans = (args && args.plans) || []
 const docs = (args && args.docs) || []
 const models = (args && args.models) || {}
+// R186, D369: the closing step is a few fixed commands and the record stays the source of truth.
+const CLOSE_MODEL = 'haiku'
 const rigor = (args && args.rigor) || {}
 // The user's level, explanation depth and involvement (args.profile, from vbw next --json):
 // every agent writes what reaches the user at that level.
@@ -53,7 +55,7 @@ const closeRun = async ids => {
   const confirm = sh(`vbw run confirm ${ids.join(' ')}`)
   const end = sh('vbw run end')
   const done = await agent(`Close this VBW run (your own instructions, Close a run, allow it). Run ${confirm} (it exits 1 when some plans were not recorded), then, whatever it said, run ${end}. Answer ended (run end succeeded), recorded (confirm exited 0) and report (the lines for what was not recorded, else "all recorded; run ended"). Change nothing else.${voice}`,
-    Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, models.lead ? { model: models.lead } : {}, effortOf('lead', 'close')))
+    Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, { model: CLOSE_MODEL }, effortOf('lead', 'close')))
   if (!done) log(`the closing agent stopped: run by hand: ${confirm} ; then ${end}`)
   else {
     if (!done.recorded || !done.ended) log(done.report)
