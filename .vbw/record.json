@@ -27957,7 +27957,7 @@
         "P139.1",
         "P140.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/workflows/building.js: take each plan's tier from args.rigor[phase].tier; for standard and deep add one line to the builder's prompt (Dev or Docs) naming the tier and asking for the mutation step of its instructions before vbw plan done; express, or no tier, adds nothing.",
@@ -27965,6 +27965,303 @@
         "plugin/agents/docs.md: at standard and deep, the same step for the rules its documents deliver: break one statement, run vbw mutate, strengthen or block the same way; within 900 words.",
         "Prove it: bats tests/mutate-prompts.bats, tests/fix-round-once.bats, tests/close-haiku.bats, tests/effort-workflows.bats, tests/agent-scratch.bats and tests/standards.bats pass. If the vbw on PATH has the mutate command, record a red break for each R188 rule whose check is C356 (and, at deep, each task, or --none with a reason); otherwise say so in notes.",
         "After P140.1: the R188.43 break (dropping never before another requirement in dev.md) survived C356; strengthen tests/mutate-prompts.bats in place through the survivor path (has_line DEV strengthen \"never another requirement\"), commit it with the plan, re-run vbw mutate P140.3 R188.43 until red"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R188",
+            "text": "a survivor is strengthened in place in its own requirement's check file, never another's, never weakened, re-run red, committed with the plan, waiting for one approval"
+          },
+          "what": "dev.md: dropped never before another requirement's",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-14T20:28:23Z",
+          "head": "f9b58b2fb2c3e7eb2ac44fda39fe70c99f4b91e7"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "a survivor is strengthened in place in its own requirement's check file, never another's, never weakened, re-run red, committed with the plan, waiting for one approval"
+          },
+          "what": "dev.md: dropped never before another requirement's",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:28:51Z",
+          "head": "c774cedf18ab8e367cec76d9dafdcbf026f82d1d",
+          "strengthened": [
+            "tests/mutate-prompts.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the building workflow passes each plan's tier; standard and deep plans get the mutation instruction, express plans none"
+          },
+          "what": "building.js: standard plans no longer get the instruction",
+          "files": [
+            "plugin/workflows/building.js"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:29:32Z",
+          "head": "c774cedf18ab8e367cec76d9dafdcbf026f82d1d"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the Dev's mutation step comes after green: one small break of the plan's own code per rule at standard, vbw mutate, the break undone; skipped at express"
+          },
+          "what": "dev.md: mutation step before green",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-14T20:29:51Z",
+          "head": "c774cedf18ab8e367cec76d9dafdcbf026f82d1d"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the Dev's mutation step comes after green: one small break of the plan's own code per rule at standard, vbw mutate, the break undone; skipped at express"
+          },
+          "what": "dev.md: express no longer skipped",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:30:10Z",
+          "head": "c774cedf18ab8e367cec76d9dafdcbf026f82d1d"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "at deep the Dev also breaks each task and each error and edge case its rules state"
+          },
+          "what": "dev.md: deep drops error and edge case",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:30:29Z",
+          "head": "c774cedf18ab8e367cec76d9dafdcbf026f82d1d"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "a survivor is strengthened in place in its own requirement's check file, never another's, never weakened, re-run red, committed with the plan, waiting for one approval"
+          },
+          "what": "dev.md: weakening allowed",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-14T20:30:48Z",
+          "head": "c774cedf18ab8e367cec76d9dafdcbf026f82d1d"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "a survivor is strengthened in place in its own requirement's check file, never another's, never weakened, re-run red, committed with the plan, waiting for one approval"
+          },
+          "what": "dev.md: re-run until red dropped",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:31:07Z",
+          "head": "c774cedf18ab8e367cec76d9dafdcbf026f82d1d"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "after two strengthening attempts that stay green the Dev blocks the plan naming the rule, and the phase rises one tier"
+          },
+          "what": "dev.md: no block after two attempts",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:31:26Z",
+          "head": "c774cedf18ab8e367cec76d9dafdcbf026f82d1d"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the Dev never runs the mutation step in a fix, and the fixing workflow gives no mutation instruction"
+          },
+          "what": "dev.md: never in a fix dropped",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:31:45Z",
+          "head": "c774cedf18ab8e367cec76d9dafdcbf026f82d1d"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the Docs agent breaks the statements its plan delivers the same way at standard and deep"
+          },
+          "what": "docs.md: break statement dropped",
+          "files": [
+            "plugin/agents/docs.md"
+          ],
+          "checks": {
+            "C356": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-14T20:32:04Z",
+          "head": "c774cedf18ab8e367cec76d9dafdcbf026f82d1d"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the Dev's mutation step comes after green: one small break of the plan's own code per rule at standard, vbw mutate, the break undone; skipped at express"
+          },
+          "what": "dev.md: mutation step before green",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:33:51Z",
+          "head": "52335a5a7f80c5e4c5a41b831329424b51d2b302"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "a survivor is strengthened in place in its own requirement's check file, never another's, never weakened, re-run red, committed with the plan, waiting for one approval"
+          },
+          "what": "dev.md: weakening allowed",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:34:09Z",
+          "head": "52335a5a7f80c5e4c5a41b831329424b51d2b302"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the Docs agent breaks the statements its plan delivers the same way at standard and deep"
+          },
+          "what": "docs.md: break statement dropped",
+          "files": [
+            "plugin/agents/docs.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:34:28Z",
+          "head": "52335a5a7f80c5e4c5a41b831329424b51d2b302",
+          "strengthened": [
+            "tests/mutate-prompts.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "workflows stay within 1,500 lines and the Dev and Docs agents within 900 words each"
+          },
+          "what": "dev.md: over 900 words",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:34:59Z",
+          "head": "52335a5a7f80c5e4c5a41b831329424b51d2b302"
+        },
+        {
+          "task": 1,
+          "what": "building.js: tier never read",
+          "files": [
+            "plugin/workflows/building.js"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:35:17Z",
+          "head": "52335a5a7f80c5e4c5a41b831329424b51d2b302"
+        },
+        {
+          "task": 2,
+          "what": "dev.md: block rule removed",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:35:36Z",
+          "head": "52335a5a7f80c5e4c5a41b831329424b51d2b302"
+        },
+        {
+          "task": 3,
+          "what": "docs.md: block rule removed",
+          "files": [
+            "plugin/agents/docs.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:35:55Z",
+          "head": "52335a5a7f80c5e4c5a41b831329424b51d2b302"
+        },
+        {
+          "task": 4,
+          "none": "the task runs the checks and records the breaks; it changes no file",
+          "at": "2026-10-14T20:35:57Z"
+        },
+        {
+          "task": 5,
+          "none": "the task edits a check file and re-runs a break; a check file cannot be broken",
+          "at": "2026-10-14T20:35:58Z"
+        }
       ]
     },
     {
@@ -37633,6 +37930,15 @@
         "milestone": "M33",
         "started": "2026-10-14T20:11:00Z",
         "ended": "2026-10-14T20:27:13Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T202735Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-14T20:27:35Z",
+        "ended": "2026-10-14T20:36:46Z",
         "cost": null
       }
     ],
