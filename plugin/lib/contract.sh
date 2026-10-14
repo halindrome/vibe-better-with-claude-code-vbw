@@ -23,7 +23,7 @@ contract_hash() {
 # canonical, without the bytes of any check file.
 contract_core() {
   printf '%s' "$1" | jq -cS '{requirements: [.requirements[] | {id, text, proof} + (if has("rules") then {rules} else {} end)],
-                              checks: .checks, plans: [.plans[] | del(.status, .note)]}
+                              checks: .checks, plans: [.plans[] | del(.status, .note, .mutations)]}
                              + (if .project.results then {results: .project.results} else {} end)
                              + (if .test_files then {test_files} else {} end)'
 }
@@ -108,7 +108,7 @@ contract_doc() {
   printf '%s' "$1" | jq -c --slurpfile f_files <(printf '%s' "$files") '$f_files[0] as $files | {
     requirements: (.requirements | map({key: .id, value: ({text, proof} + (if has("rules") then {rules} else {} end))}) | from_entries),
     checks: (.checks | map({key: .id, value: .}) | from_entries),
-    plans: (.plans | map({key: .id, value: del(.status, .note)}) | from_entries),
+    plans: (.plans | map({key: .id, value: del(.status, .note, .mutations)}) | from_entries),
     commands: .commands,
     files: $files} + (if .project.results then {results: .project.results} else {} end)
     + (if .test_files then {test_files} else {} end)'
