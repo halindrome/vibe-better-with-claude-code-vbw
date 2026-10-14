@@ -30684,6 +30684,11 @@
       "text": "Panel where VBW is turned off: Claude Code does not load the panel module (L3, tools/l3-results/pluginoff.json, Claude Code 2.1.296)",
       "why": "In a project whose .claude/settings.json sets vbw@vbw-marketplace to false, the debug log reads VBW's hooks.json with enabled=false and 'will NOT register, plugin is disabled'; hooks/panel.js is never loaded, no panel and no [VBW] line showed (the status line script exited 3). So no panel code change is needed. The installed plugin (2.0.35) was used because --plugin-dir sessions are not named vbw@vbw-marketplace.",
       "at": "2026-10-13T23:43:28Z"
+    },
+    {
+      "id": "D359",
+      "at": "2026-10-14T00:15:51Z",
+      "text": "Contract approved: 173 requirements, 328 checks, 399 plans (e20a1ddb4383)"
     }
   ],
   "commands": {
