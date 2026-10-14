@@ -28040,12 +28040,46 @@
       "after": [
         "P139.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/agents/qa.md, on the Test gaps line: the mutation results recorded for a plan (vbw show plan: red breaks, survivors, strengthened check files) are evidence for this rule; read them and do not find again a gap a mutation check already caught (a survivor strengthened to red).",
         "Keep qa.md within 900 words and all prompts within their budget (tests/fix-round-once.bats).",
         "Prove it: bats tests/mutation-qa.bats passes. If the vbw on PATH has the mutate command, record a red break for each R188 rule whose check is C359 (and, at deep, each task, or --none with a reason); otherwise say so in notes."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R188",
+            "text": "QA's test-gap rule takes the recorded mutation results in vbw show plan as evidence and does not find the same gaps again"
+          },
+          "what": "QA told to find the gap again",
+          "files": [
+            "plugin/agents/qa.md"
+          ],
+          "checks": {
+            "C359": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T19:00:29Z",
+          "head": "ab80e8e99fb65372dc33bc20871cbfc89ce67945"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the QA agent stays within 900 words"
+          },
+          "what": "QA grown past 900 words",
+          "files": [
+            "plugin/agents/qa.md"
+          ],
+          "checks": {
+            "C359": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T19:00:37Z",
+          "head": "ab80e8e99fb65372dc33bc20871cbfc89ce67945"
+        }
       ]
     }
   ],
@@ -37554,6 +37588,19 @@
           "usd": 2.242384,
           "in": 10234,
           "out": 847
+        }
+      },
+      {
+        "id": "build-20261014T185941Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-14T18:59:41Z",
+        "ended": "2026-10-14T19:00:54Z",
+        "cost": {
+          "usd": 0.218791,
+          "in": 1740,
+          "out": 83
         }
       }
     ],
