@@ -28824,7 +28824,7 @@
         "P140.2",
         "P140.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/workflows.md: a section headed The mutation check: when the builder runs it (standard and deep only, never at express or in a fix), vbw mutate with its forms, that VBW undoes the break, and what vbw show plan lists; add vbw mutate to the kernel commands agents use.",
@@ -28896,6 +28896,63 @@
           "result": "red",
           "at": "2026-10-14T20:43:58Z",
           "head": "5f3e8b2951e4940eb224f1724f0dab844fbc3bfb"
+        },
+        {
+          "task": 1,
+          "what": "workflows undo sentence removed",
+          "files": [
+            "docs/workflows.md"
+          ],
+          "checks": {
+            "C358": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T22:02:43Z",
+          "head": "157127540186e0fb2a0c196a7ffca12746d7c944"
+        },
+        {
+          "task": 3,
+          "what": "deep row shortened",
+          "files": [
+            "docs/rigor.md"
+          ],
+          "checks": {
+            "C358": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T22:02:50Z",
+          "head": "157127540186e0fb2a0c196a7ffca12746d7c944"
+        },
+        {
+          "task": 2,
+          "what": "survivor word removed",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C358": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-14T22:02:57Z",
+          "head": "157127540186e0fb2a0c196a7ffca12746d7c944"
+        },
+        {
+          "task": 4,
+          "none": "Runs the tests and records breaks; no behaviour of its own",
+          "at": "2026-10-14T22:02:59Z"
+        },
+        {
+          "task": 2,
+          "what": "in place removed",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C358": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T22:04:13Z",
+          "head": "157127540186e0fb2a0c196a7ffca12746d7c944"
         }
       ]
     },
@@ -38655,6 +38712,15 @@
         "milestone": "M33",
         "started": "2026-10-14T21:46:23Z",
         "ended": "2026-10-14T22:00:51Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T220109Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-14T22:01:09Z",
+        "ended": "2026-10-14T22:05:30Z",
         "cost": null
       }
     ],
