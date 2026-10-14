@@ -52,6 +52,9 @@
     "tests/ci-scope-wiring.bats",
     "tests/ci-scope.bats",
     "tests/ci-shards.bats",
+    "tests/close-haiku-docs.bats",
+    "tests/close-haiku-runs.bats",
+    "tests/close-haiku.bats",
     "tests/command-timeout-docs.bats",
     "tests/command-timeout-report.bats",
     "tests/command-timeout.bats",
@@ -4448,6 +4451,45 @@
         "tests/plugindir-path.bats"
       ],
       "fix": "F220"
+    },
+    {
+      "id": "C344",
+      "req": "R186",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/close-haiku.bats"
+      ],
+      "files": [
+        "tests/close-haiku.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C345",
+      "req": "R186",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/close-haiku-docs.bats"
+      ],
+      "files": [
+        "tests/close-haiku-docs.bats"
+      ],
+      "timeout": 60
+    },
+    {
+      "id": "C346",
+      "req": "R186",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/close-haiku-runs.bats"
+      ],
+      "files": [
+        "tests/close-haiku-runs.bats"
+      ],
+      "timeout": 60
     }
   ],
   "project": {
@@ -11037,7 +11079,76 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M31",
-      "rules": []
+      "rules": [
+        {
+          "text": "in building, verifying, fixing, planning and mapping the 'close run' call asks for model haiku in every profile (quality, balanced, budget), whatever args.models.lead says",
+          "check": "C344"
+        },
+        {
+          "text": "a model.lead the user set with vbw config (claude-opus-5-5, sonnet, fable) never reaches the closing step",
+          "check": "C344"
+        },
+        {
+          "text": "the fixing workflow's own 'fix done' step, used when no session is given, asks for haiku",
+          "check": "C344"
+        },
+        {
+          "text": "planning's plan step (label 'lead') still uses models.lead, and sets no model when none is given",
+          "check": "C344"
+        },
+        {
+          "text": "a test reads each of the five workflows and fails if a closing call takes its model from models.lead",
+          "check": "C344"
+        },
+        {
+          "text": "the closing step keeps agent type vbw:lead, its label, its answer schema and no other option than model and effort",
+          "check": "C344"
+        },
+        {
+          "text": "on Haiku the closing step is sent each profile's own lead.close effort",
+          "check": "C344"
+        },
+        {
+          "text": "in a fix round the closing prompt runs vbw fix done, then vbw run confirm, then vbw run end, in that order; building and QA confirm then end",
+          "check": "C344"
+        },
+        {
+          "text": "error: a closing agent that stops without answering leaves, in every workflow, the exact commands to run by hand (fix done if any, run confirm, run end)",
+          "check": "C344"
+        },
+        {
+          "text": "error: a closing agent that wrongly answers that everything was recorded changes nothing: vbw next after the run asks for the missing plan again",
+          "check": "C344"
+        },
+        {
+          "text": "the run tool refuses a missing or unknown scenario with its usage before anything runs, and builds its project in .vbw/runtime/scratch, never /tmp",
+          "check": "C346"
+        },
+        {
+          "text": "a scripted building run shows the closing step on a Haiku model with the profile's lead.close effort, answering, with run confirm before run end, and no run open after the workflow returned",
+          "check": "C346"
+        },
+        {
+          "text": "a scripted fixing run shows the Haiku closing step running fix done, then confirm, then run end, the fixes it reports closed and open matching each fix's state in the record, and no run open after",
+          "check": "C346"
+        },
+        {
+          "text": "a long fix round: a vbw fix done of more than 600 seconds moved to the background is waited for and read whole by the Haiku closing step before confirm and run end, and its reported fixes match the record",
+          "check": "C346"
+        },
+        {
+          "text": "docs/workflows.md says the closing step runs on Haiku in every profile, separate from the Lead's model (model.lead)",
+          "check": "C345"
+        },
+        {
+          "text": "docs/rigor.md says the closing step runs on Haiku in every profile, separate from the Lead's model (model.lead)",
+          "check": "C345"
+        },
+        {
+          "text": "the help for vbw config and every line describing model.lead never claims it sets the closing step's model",
+          "check": "C345"
+        }
+      ]
     }
   ],
   "phases": [
@@ -17245,6 +17356,39 @@
         "qa_findings": 3,
         "escalations": 0
       }
+    },
+    {
+      "id": "P137",
+      "title": "The step that closes each run uses the cheapest model",
+      "reqs": [
+        "R186"
+      ],
+      "milestone": "M31",
+      "goal": "Every workflow's closing step (the short job at the end of a run that checks what was saved and then ends the run, and in a fix round first marks the fixes done) runs on Haiku, the smallest and cheapest Claude model, in every profile, so a run no longer pays Opus or Fable prices for a couple of fixed commands, and every run still closes exactly as it does today.",
+      "criteria": [
+        "In all five workflows (building, verifying, fixing, planning, mapping), the agent call labelled 'close run' asks for the model 'haiku', whatever args.models.lead says, in every profile (budget, balanced, quality) and when the user has set model.lead to something else with vbw config; a test reads each workflow and fails if any closing call takes its model from models.lead.",
+        "The fixing workflow's separate 'fix done' step (used when no session id is given) also runs on Haiku.",
+        "Every other Lead job keeps the Lead's model: planning's plan step still uses models.lead, and a test pins that, so only the closing step changed.",
+        "The closing step is otherwise unchanged: same agent type (vbw:lead), same label, same answer format (schema), same commands in the same order (in a fix round: vbw fix done, then vbw run confirm, then vbw run end).",
+        "Effort setting on Haiku: the profile's lead.close effort is either passed or left out so that no closing step fails because Haiku does not accept it; a scripted run on Haiku shows the closing step finishing with the effort setting the workflow sends.",
+        "After each workflow returns, vbw status shows no open run: the run end the Haiku step ran took effect, in a scripted run of at least the building and fixing workflows.",
+        "Error case: when the closing agent stops without answering, the workflow still logs the exact commands to run by hand (fix done if any, run confirm, run end), as today; an existing or new test pins the message for each workflow.",
+        "Error case: if the closing agent answers wrongly (for example says everything was recorded when a plan is missing), what VBW asks for next still comes from the saved record: vbw next after that run asks for the missing work again, shown by a test that feeds a wrong 'recorded' answer.",
+        "Long fix round on Haiku (required by decision D369 before release): a scripted run whose vbw fix done takes longer than one shell command's 10-minute limit, so Claude Code moves it to the background, shows the Haiku closing step waiting for it to finish, reading its whole output, then running confirm and run end; the fixes it reports closed and open match vbw show fix for each fix. The run, its fixture and its evidence level are named in the progress log.",
+        "docs/workflows.md and docs/rigor.md say the closing step runs on Haiku in every profile, separate from the Lead's model, and the help for vbw config model.lead does not claim it sets the closing step's model.",
+        "The workflows stay within their 1,500-line budget and tools/test.sh passes under macOS /bin/bash 3.2."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 11 (80866 bytes)",
+        "files: more than 2 in a repository tracking 956 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R13 (C12), R14 (C13), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R35 (C31), R39 (C36), R44 (C44, C45), R50 (C51), R60 (C72, C94), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R95 (C149, C150), R96 (C151, C152), R99 (C155), R101 (C179), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R118 (C184), R123 (C190, C191), R129 (C196), R130 (C197), R131 (C198), R134 (C201), R135 (C202), R145 (C210), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R162 (C249), R163 (C250), R167 (C257, C258, C259, C260), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R182 (C322, C323, C324, C325, C326)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -26676,6 +26820,99 @@
         "Check the facts tests/l3-plugindir.bats names (session and agent vbw, version, status line version, the first line naming the kernel, installed hooks not run); a gap in another plan's code is reported as a blocker with the facts, not patched here",
         "Commit tools/l3-results/plugindir.json with its fixture and its not-tested list, and report the scenarios run and not run for the progress log"
       ]
+    },
+    {
+      "id": "P137.1",
+      "phase": "P137",
+      "title": "The closing step of every workflow asks for Haiku",
+      "reqs": [
+        "R186"
+      ],
+      "files": [
+        "plugin/workflows/building.js",
+        "plugin/workflows/verifying.js",
+        "plugin/workflows/fixing.js",
+        "plugin/workflows/planning.js",
+        "plugin/workflows/mapping.js"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "building.js and verifying.js: the agent call labelled 'close run' asks for model 'haiku' (one named constant per file, e.g. const CLOSE_MODEL = 'haiku', with a one-line comment: R186, D369, the closing step is a few fixed commands and the record stays the source of truth), never models.lead. Agent type vbw:lead, label, schema (CLOSE_RESULT), prompt text and effortOf('lead', 'close') stay exactly as they are; the header's args comment says models.lead is not used for closing.",
+        "fixing.js: the 'close run' call and the 'fix done' call (the one used without args.session) both ask for 'haiku'. Their prompts (the WAIT text, the order vbw fix done, then vbw run confirm, then vbw run end), schemas (CLOSE_RESULT, ALONE_RESULT), the lead.close effort and every log line for running by hand stay unchanged; the Devs keep devModel.",
+        "planning.js and mapping.js: the 'close run' call asks for 'haiku' (planning keeps effortFor('lead', 'close'), mapping effortOf('lead', 'close')). Planning's plan step (label 'lead', opts('lead', 'plan')) keeps models.lead, and the Architect and Scout calls keep their models.",
+        "Check under /bin/bash: bats tests/close-haiku.bats passes, and tests/workflow-closing.bats, tests/workflows-run-end.bats, tests/effort-workflows.bats, tests/fix-round-once.bats, tests/fix-round-close.bats, tests/qa-suite-once.bats, tests/planning-number.bats and tests/standards.bats (the 1,500-line workflow budget) still pass. tests/profile-lead-opus.bats test 2 (check C180 of R119) expects every Lead call of planning on Opus and fails once the closing step is on Haiku: it is a protected file; do not edit it, name it in notes (its edit is the owner's to approve with this contract)."
+      ]
+    },
+    {
+      "id": "P137.2",
+      "phase": "P137",
+      "title": "Say in the guides that the closing step runs on Haiku",
+      "reqs": [
+        "R186"
+      ],
+      "files": [
+        "docs/workflows.md",
+        "docs/rigor.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/workflows.md, 'A workflow closes its own run': one plain sentence that the closing step (the 'close run' agent, and vbw:fixing's own 'fix done' agent when there is no session) runs on Haiku in every profile, whatever the Lead's model (model.lead); why: it runs a few fixed commands, and the record stays the source of truth, so a wrong answer can only blur the summary line while vbw next still asks for any missing work.",
+        "docs/workflows.md, by the effort table where the lead row lists plan and close: the profile's lead.close effort is still sent to the closing step on Haiku; model.lead sets the model the Lead plans with and does not change the closing step. Any line that names model.lead and mentions closing also says Haiku on that same line (tests/close-haiku-docs.bats reads lines).",
+        "docs/rigor.md, below the tier table where it says the Lead takes its model from plugin/lib/profiles.json: the Lead plans on that model; the step that closes each run runs on Haiku in every profile, separate from the Lead's model (model.lead), the way 'QA never uses Haiku' is stated there.",
+        "bats tests/close-haiku-docs.bats passes; the other docs tests (tests/docs-workflows-count.bats, tests/readme.bats, tests/fix-round-docs.bats, tests/effort-profile.bats) still pass."
+      ]
+    },
+    {
+      "id": "P137.3",
+      "phase": "P137",
+      "title": "Scripted runs of building and fixing with the Haiku closing step",
+      "reqs": [
+        "R186"
+      ],
+      "files": [
+        "tools/close-haiku-run.sh",
+        "tools/baseline/results/close-haiku/building.json",
+        "tools/baseline/results/close-haiku/fixing.json"
+      ],
+      "after": [
+        "P137.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/close-haiku-run.sh, a maintainer script (never shipped), usage 'close-haiku-run.sh building|fixing|long-fix'; anything else prints a line with 'usage' on stderr and exits 2 before anything runs. Bash 3.2, clean under 'bash tools/test.sh --lint'; its header names the three scenarios, the fixture, evidence level L2 and the cost. It builds a fresh practice project in .vbw/runtime/scratch/close-haiku/<scenario> (never /tmp; removes only a folder it marked as its own), with this tree's plugin/bin/vbw: building is one requirement with one small plan; fixing and long-fix are built the way tools/measure-fix-round.sh builds its project (finished requirements whose checks sleep, two open fixes with their changes committed), with checks of a few seconds for fixing and long enough for long-fix that vbw fix done runs past 600 seconds. Like tools/e2e.sh it drops installed plugin bins from PATH and keeps the user's own Claude login.",
+        "Driving a run: open the lease (VBW_SESSION_ID=<id> vbw run start build P1.1, or fix with the fix ids), then one headless session: claude -p with an auto-capable session model, --plugin-dir <tree>/plugin, settings that turn off vbw@vbw-marketplace and turn on workflows, asking it to call the Workflow tool vbw:building or vbw:fixing with args {plans or groups, session, models (the balanced profile: lead opus), effort (plugin/lib/efforts.json balanced), profile}, and to reply with the workflow's result verbatim; output JSON with the cost.",
+        "The evidence, read from what happened, never typed by hand: from the session's transcripts (find the 'close run' agent's own transcript under the Claude config folder) its model id and the shell commands it ran, in order; from the returned result the closing answer (confirmation, and for fixes fixdone, closed, open); after the session returns, whether a run lease is still open in the record; for fix scenarios each fix's status in the record (fixed or open), how long vbw fix done took and whether Claude Code moved it to the background. Write tools/baseline/results/close-haiku/<scenario>.json with exactly the fields tests/close-haiku-runs.bats reads: scenario, evidence_level 'L2', fixture, at, claude_version, cost_usd, profile, lead_model, close {label, model, effort_sent, answer}, commands, run_open_after, fixes [{id, status}], fixdone {seconds, backgrounded}, not_tested.",
+        "Run 'bash tools/close-haiku-run.sh building' and 'bash tools/close-haiku-run.sh fixing' once each and commit both results. If the closing agent was not on Haiku, Haiku refused the effort, a run stayed open, or the reported fixes differ from the record, stop: vbw plan block with the facts; never adjust a result.",
+        "bats tests/close-haiku-runs.bats: its tests 1 to 4 pass (test 5 waits for the long run of P137.4); shellcheck clean."
+      ]
+    },
+    {
+      "id": "P137.4",
+      "phase": "P137",
+      "title": "A fix round on Haiku whose fix done runs past 10 minutes",
+      "reqs": [
+        "R186"
+      ],
+      "files": [
+        "tools/close-haiku-run.sh",
+        "tools/baseline/results/close-haiku/long-fix.json"
+      ],
+      "after": [
+        "P137.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Run 'bash tools/close-haiku-run.sh long-fix' in the background (it takes well over 10 minutes, longer than one shell command may run) and wait for it to finish; change tools/close-haiku-run.sh only if the run shows a defect in the script itself.",
+        "Read the result: vbw fix done took more than 600 seconds and Claude Code moved it to the background; the Haiku closing step waited for it, read its whole output, then ran vbw run confirm and vbw run end; the fixes it reports closed and open match each fix's state in the record; no run stayed open. If Haiku went on before fix done ended or misreported a fix, that is a finding about the product: vbw plan block with the facts, never adjust the result.",
+        "Commit tools/baseline/results/close-haiku/long-fix.json and record the run with vbw decide: the scenario, its fixture, evidence level L2, the Claude Code version, the cost, the fix done minutes and the outcome (the maintainer copies the same line into the progress log).",
+        "bats tests/close-haiku-runs.bats passes in full."
+      ]
     }
   ],
   "fixes": [
@@ -31313,6 +31550,12 @@
       "id": "D368",
       "at": "2026-10-14T09:32:12Z",
       "text": "Shipped M30 The session must run the loaded plugin's kernel (2026-10-13 14:54): in the v2 worktree the vbw on PATH was the installed release (2.0.34), put there by the SessionStart hook, so every kernel command of the session ran the released code and the record became unreadable to it once an agent wrote a new field through plugin/bin/vbw; with claude --plugin-dir ./plugin the loaded plugin's bin must be the one on PATH and the status line must show the loaded version (replaces T54: --plugin-dir did not override the installed copy); document the local-dev path: 1 requirement proven or accepted"
+    },
+    {
+      "id": "D369",
+      "text": "The step that closes each workflow run (vbw run confirm, vbw run end, and in a fix round the round's vbw fix done) runs on the smallest model, Haiku, in every profile, whatever the Lead's model",
+      "why": "chosen by the loop: about a fifth of Opus's price for two fixed commands; the record stays the source of truth, so a misread can only blur the summary line; the fix-round wait for a long vbw fix done must be tested on Haiku before release",
+      "at": "2026-10-14T09:35:30Z"
     }
   ],
   "commands": {
@@ -35882,6 +36125,15 @@
         "milestone": "M31",
         "started": "2026-10-14T09:32:41Z",
         "ended": "2026-10-14T09:35:22Z",
+        "cost": null
+      },
+      {
+        "id": "plan-20261014T093532Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M31",
+        "started": "2026-10-14T09:35:32Z",
+        "ended": "2026-10-14T09:49:31Z",
         "cost": null
       }
     ],
