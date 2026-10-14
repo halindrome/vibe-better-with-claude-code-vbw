@@ -7,6 +7,9 @@
 #                                        plain: without the VBW plugin, same app and settings
 #                                        installed: VBW as the user's installed marketplace plugin (no --plugin-dir,
 #                                        and no enabledPlugins in the session's settings: the project decides)
+#                                        both: the working tree (--plugin-dir) with the installed VBW left on;
+#                                        L3_TREE=DIR loads that plugin folder instead of plugin/;
+#                                        L3_INSTALLED_BIN=DIR starts with that bin/ first on the inherited PATH
 #   tools/l3.sh type NAME TEXT           type TEXT and press Enter
 #   tools/l3.sh keys NAME KEY...         press keys (tmux names: Down, Enter, Escape, ...)
 #   tools/l3.sh click NAME COL ROW       click the mouse at that column and row (1-based, left button)
@@ -36,13 +39,13 @@ case "$cmd" in
     dir="${3:?usage: tools/l3.sh start NAME DIR [MODEL]}"
     model="${4:-sonnet}"
     mode="${5:-${L3_MODE:-vbw}}"
-    [ "$mode" = vbw ] || [ "$mode" = plain ] || [ "$mode" = installed ] || { echo "l3: unknown mode: $mode" >&2; exit 2; }
+    [ "$mode" = vbw ] || [ "$mode" = plain ] || [ "$mode" = installed ] || [ "$mode" = both ] || { echo "l3: unknown mode: $mode" >&2; exit 2; }
     # Only what the test needs: VBW 1 off, the sandbox on, and this repository's
     # own maintainer instructions (CLAUDE.md, AGENTS.md) never read. Never
     # settings a real user would not have (VBW turns workflows on itself).
     settings=$(jq -cn --arg a "$ROOT/CLAUDE.md" --arg b "$ROOT/AGENTS.md" \
       '{enabledPlugins:{"vbw@vbw-marketplace":false},sandbox:{enabled:true},claudeMdExcludes:[$a,$b]}')
-    [ "$mode" != installed ] || settings=$(printf '%s' "$settings" | jq -c 'del(.enabledPlugins)')
+    { [ "$mode" != installed ] && [ "$mode" != both ]; } || settings=$(printf '%s' "$settings" | jq -c 'del(.enabledPlugins)')
     # L3_STATUSLINE=1: the session also shows the working tree's status line (the
     # user's own setting runs the installed plugin-cache copy, not the code under
     # test). Every other scenario keeps a real user's settings. Double quotes in
@@ -51,8 +54,9 @@ case "$cmd" in
       settings=$(printf '%s' "$settings" | jq -c --arg c "bash \"$ROOT/plugin/scripts/vbw-statusline.sh\"" \
         '.statusLine = {type: "command", command: $c, refreshInterval: 5}')
     fi
-    plugin="--plugin-dir '$ROOT/plugin' --add-dir '$ROOT/plugin'"
-    [ "$mode" = vbw ] || plugin=""
+    tree="${L3_TREE:-$ROOT/plugin}"
+    plugin="--plugin-dir '$tree' --add-dir '$tree'"
+    { [ "$mode" = vbw ] || [ "$mode" = both ]; } || plugin=""
     # A session launched from inside Claude Code inherits its PATH, which puts
     # that session's installed plugins' bin/ (an older vbw) ahead of the code
     # under test. Start from a PATH without any plugin cache.
@@ -61,6 +65,9 @@ case "$cmd" in
     for p in "${parts[@]}"; do
       case "$p" in */plugins/cache/*) ;; *) clean="${clean:+$clean:}$p" ;; esac
     done
+    # both + L3_INSTALLED_BIN: a session started from inside another one, whose
+    # PATH already holds the installed release's bin/.
+    [ -z "${L3_INSTALLED_BIN:-}" ] || clean="$L3_INSTALLED_BIN${clean:+:$clean}"
     tmux kill-session -t "$session" 2> /dev/null || true
     tmux new-session -d -s "$session" -x 200 -y 60 -c "$dir" \
       "env PATH='$clean' claude --model $model --permission-mode auto $plugin --settings '$settings' --debug-file '$dir.debug.log'"
