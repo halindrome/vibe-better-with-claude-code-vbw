@@ -35874,6 +35874,15 @@
         "started": "2026-10-14T09:26:44Z",
         "ended": "2026-10-14T09:31:47Z",
         "cost": null
+      },
+      {
+        "id": "plan-20261014T093241Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M31",
+        "started": "2026-10-14T09:32:41Z",
+        "ended": "2026-10-14T09:35:22Z",
+        "cost": null
       }
     ],
     "milestones": {
