@@ -11198,7 +11198,7 @@
       "id": "R187",
       "text": "Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09)",
       "proof": "auto",
-      "status": "open",
+      "status": "proven",
       "milestone": "M32",
       "rules": [
         {
@@ -17483,7 +17483,15 @@
         "guarded: R27 (C21), R35 (C31), R36 (C32), R39 (C36), R61 (C73, C74, C75, C76, C77), R101 (C179), R119 (C180), R147 (C212, C215, C237), R153 (C235, C236, C239)",
         "tests: project test command"
       ],
-      "predicted": "express"
+      "predicted": "express",
+      "outcome": {
+        "tier": "express",
+        "predicted": "express",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 0
+      }
     }
   ],
   "plans": [
@@ -31744,10 +31752,10 @@
     }
   },
   "evidence": {
-    "at": "2026-10-14T11:07:27Z",
-    "contract": "ac0c9919e514028c636a6c520152397b401f2b9315defc6ae88e60a7c0bfe35f",
-    "tree": "b246ef0ea54479e4c3757ecbe1fd5b4a794f27e4",
-    "head": "b246ef0ea54479e4c3757ecbe1fd5b4a794f27e4",
+    "at": "2026-10-14T11:16:01Z",
+    "contract": "b30c0320ef0e443e0306d9734b83c4c7d6477f93561ed2c32a8e2ea6029c6bf8",
+    "tree": "837127d2fa6b1f1edb33f424836e208e3cbbf8b9",
+    "head": "837127d2fa6b1f1edb33f424836e208e3cbbf8b9",
     "checks": {
       "C1": {
         "status": "pass",
@@ -31869,11 +31877,11 @@
       "C16": {
         "status": "pass",
         "exit": 0,
-        "seconds": 2,
+        "seconds": 3,
         "tail": "1..7\nok 1 the repository's contributor files name only what exists\nok 2 no contributor file mentions .vbw-planning\nok 3 selftest: a clean tree passes\nok 4 selftest: a nonexistent path fails and is named\nok 5 selftest: a nonexistent /vbw: command fails\nok 6 selftest: .vbw-planning fails\nok 7 selftest: a bad path in an issue template fails",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "42d52543809ac338e2220d67cea0076337b4c85be5d7b0a08e4efc2e6fc50fe2",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": ". listing changed"
       },
       "C17": {
         "status": "pass",
@@ -32004,20 +32012,20 @@
       "C31": {
         "status": "pass",
         "exit": 0,
-        "seconds": 19,
+        "seconds": 20,
         "tail": "1..8\nok 1 no profile and no tier cell gives QA Haiku, in the tables or in vbw next\nok 2 the budget profile shows QA on Sonnet in vbw config models and in the status line\nok 3 other roles keep their models: budget scout on haiku, express dev on haiku, the rest as before\nok 4 a record that already holds a Haiku QA override gets Sonnet in vbw next\nok 5 a QA override to opus or a full non-Haiku id is honoured, and the dev override still wins\nok 6 a forced rigor and an escalation never lower QA below Sonnet\nok 7 the status line shows the effective QA model: a Haiku override reads Sonnet, an opus one Opus\nok 8 the docs say QA never uses Haiku, and the budget profile no longer lists Haiku for QA",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "f14a566613c5fb88dbcb9cc70d56fa5c88a61582e2e6e6a94929be8746885ae7",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C32": {
         "status": "pass",
         "exit": 0,
-        "seconds": 6,
+        "seconds": 7,
         "tail": "1..6\nok 1 model.qa haiku is a usage error that says QA needs Sonnet or stronger and changes nothing\nok 2 any value naming Haiku is refused for model.qa, whatever its case\nok 3 model.qa accepts sonnet, opus and a full non-Haiku id; default removes the override\nok 4 the other roles still accept haiku\nok 5 a refused set leaves an existing valid model.qa override as it was\nok 6 the config header and the config skill document the QA restriction; the kernel stays within its budget",
-        "at": "2026-10-14T08:45:21Z",
         "fp": "6c88717e786edfd27e3f1a910323386105cea2c891944ef766d88f268ec78d7f",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C33": {
         "status": "pass",
@@ -32051,9 +32059,9 @@
         "exit": 0,
         "seconds": 11,
         "tail": "1..11\nok 1 R39: vbw next --json carries the user's level, explanation depth and involvement\nok 2 R39: with no answers it carries an explicit neutral default\nok 3 R39: a partly answered interview fills the gaps with the neutral default\nok 4 R39: machine-read output does not change with the level: only the profile field differs\nok 5 R39: every skill hands the user's three values to its prompt, and none is skipped\nok 6 R39: every agent that can reach the user receives and applies the three values\nok 7 R39: involvement is honored: the three settings each name what VBW does with a decision\nok 8 R39: every workflow agent call carries the profile in its task text and still passes a schema\nok 9 R39: the router hands the profile to every workflow it starts\nok 10 R39: prompts stay within their budgets: agents 1.5k tokens, mode prompts 3k, router 2k, all prompts 16k (owner raised it from 15k on 2026-10-04)\nok 11 R39: the workflows stay within 1,500 lines of JavaScript",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "63414c456d25a0fe1df0e51bea8b9b7ea2e99398e5e7cc2478c5169ce075ff8b",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C37": {
         "status": "pass",
@@ -32220,11 +32228,11 @@
       "C55": {
         "status": "pass",
         "exit": 0,
-        "seconds": 3,
+        "seconds": 4,
         "tail": "1..5\nok 1 R53: the panel is a mod named by hooks.json, next to the hooks it had, which are unchanged\nok 2 R53: Claude Code's own validator reads the module and lists the hooks the panel registers\nok 3 R53: the status line is byte for byte what it is without the panel, in a VBW project\nok 4 R53: the status line is byte for byte what it is without the panel, outside a VBW project, with colour too\nok 5 R53: the status line and the kernel know nothing of the panel, so an older Claude Code prints nothing extra",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "99b0b5dfc176cee0cb0aac0aaba7deaddcbf8b4074c02958b48278313fd54b6e",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C56": {
         "status": "pass",
@@ -32393,9 +32401,9 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..7\nok 1 R61: the router's approve step asks with AskUserQuestion, Approve first and Not yet second, from the question vbw show contract prints\nok 2 R61: the router tells Claude what to do with each answer: Approve continues, Not yet asks what to change, own words are what to change\nok 3 R61: the prompts stay within their budgets: router 1,400 words, every skill 2,000, all prompts 16k tokens\nok 4 R61: the help lists the approval choice next to /vbw:approve\nok 5 R61: docs/proof.md describes the choice, that Approve comes first so Enter approves, Not yet, own words, and that /vbw:approve still works\nok 6 R61: docs/guards.md explains the answer hook and why the model cannot approve through it\nok 7 R61: the README says approval is a choice where Enter approves, and /vbw:approve still works",
-        "at": "2026-10-14T02:20:50Z",
         "fp": "7b2f3c8fd16b43a30bbb02ec8ea26bcd6eaa001391d3d84ccf1a14ee0a449aca",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C77": {
         "status": "pass",
@@ -32501,9 +32509,9 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..14\nok 1 R65: the interview skill has an old-folder section, and reads the review with its other facts\nok 2 R65: it comes right after the level answer and before any other question; no folder or a recorded choice skips it silently\nok 3 R65: the review is shown to the user, in plain words at their level and depth, built from the kernel's four facts\nok 4 R65: the numbers and the recommendation come from the kernel, never from the model's guess\nok 5 R65: what could not be read is said, and converting is never recommended for it\nok 6 R65: the choice is a question with AskUserQuestion: the recommended option first marked Recommended, the other second, each with a short trade-off\nok 7 R65: the user may pick either option whatever was recommended, or answer in their own words\nok 8 R65: picking convert records the choice and runs the existing conversion; the old folder stays and the result is reported\nok 9 R65: picking start fresh records it, converts nothing, leaves the folder untouched and the interview goes on\nok 10 R65: the question is asked once per project, and the review can still be run on demand\nok 11 R65: it reads files only: no command found in the old folder is run, nothing is written, no network\nok 12 R65: it is one extra interview step\nok 13 R65: the router's convert step defers to this step instead of a fixed recommendation\nok 14 R65: the prompts stay within their budgets: the step 190 words, the interview 900, the router 1,400, every skill 2,000, all prompts 22,800",
-        "at": "2026-10-13T22:10:27Z",
         "fp": "eca5d3a9a9ad312fb465c37f579184c464a55fbbbc73154362823c836e5fd69f",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C89": {
         "status": "pass",
@@ -33039,11 +33047,11 @@
       "C148": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 2,
         "tail": "1..1\nok 1 R94: the wait setting VBW_CHECK_WAIT_SECONDS is gone from the code and the docs no longer say it ends a wait",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "2ed97e5d717f44f17f3acfc62ad02946f6c63db9ed0f63290d362963ff046d77",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C149": {
         "status": "pass",
@@ -33183,20 +33191,20 @@
       "C165": {
         "status": "pass",
         "exit": 0,
-        "seconds": 2,
+        "seconds": 3,
         "tail": "1..8\nok 1 R106: the Architect's scoping task states the next free phase number\nok 2 R106: the number follows the args, not a fixed text\nok 3 R106: a planning run has no renumbering step: the phases come back numbered and reach the Lead as given\nok 4 R106: planning again (decided) also states the number, and keeps started phases as they are\nok 5 R106: without a number in the args (an older router) planning still runs\nok 6 R106: the router passes next_phase to the planning workflow, on the first run and on the run after the user's decisions\nok 7 R106: the Architect numbers new phases from the number its task gives\nok 8 R106: the router and the prompts stay within their budgets",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "30134dc9c31cc9b8ac875f65abcb0282040365a9e542552c018cf2f334027cdc",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C166": {
         "status": "pass",
         "exit": 0,
-        "seconds": 11,
+        "seconds": 13,
         "tail": "1..13\nok 1 R107: the profile file has a table for each profile, and every role and step the workflows use has a value Claude Code accepts\nok 2 R107: closing a run and documentation get a lower effort than building, planning and QA a higher one, in every profile\nok 3 R107: vbw config effort prints the table of the current profile, and follows a profile change\nok 4 R107: vbw next --json carries the same table, so the router can pass it to every workflow\nok 5 R107: a value Claude Code does not accept is refused with the role and the step, by vbw config effort and by vbw next\nok 6 R107: a value that is not text is refused the same way\nok 7 R107: a missing role or step is refused with its name, so no workflow starts with a gap\nok 8 R107: only the profile in use is judged: a bad value in another profile does not stop this one\nok 9 R107: the router and every skill that starts a workflow pass the effort table in the workflow's args\nok 10 R107: the effort table is described for people: the effort levels, the steps and where the table lives\nok 11 R107: the router and the prompts stay within their budgets\nok 12 F88: a missing or invalid architect recommend step is refused like every other step\nok 13 F89: docs/workflows.md lists the architect recommend step in the table and the example",
-        "at": "2026-10-14T11:03:15Z",
         "fp": "ccdb89baa82f463ca04b47659bf6e485ed4405ac953f454d10bc2c8b942f46b6",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C167": {
         "status": "pass",
@@ -33264,11 +33272,11 @@
       "C174": {
         "status": "pass",
         "exit": 0,
-        "seconds": 17,
+        "seconds": 18,
         "tail": "1..5\nok 1 R111: tools/test.sh --quick --list names shellcheck and the engineering rules\nok 2 R111: the quick mode runs every test file no approved check runs, and none that a check runs\nok 3 R111: the quick mode leaves out the timing benchmarks\nok 4 R111: tools/test.sh refuses other arguments with its usage line and runs nothing\nok 5 R111: VBW's spec names the quick mode as its quick command, and the record carries it",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "ea8410462fa6587957008ad2de1329f5331f01d5fd1afc382372b9bc0886273a",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "tests listing changed"
       },
       "C175": {
         "status": "pass",
@@ -33320,9 +33328,9 @@
         "exit": 0,
         "seconds": 6,
         "tail": "1..6\nok 1 R119: vbw config models in the balanced profile: Architect and Lead on Opus, every other role on Sonnet\nok 2 R119: the planning workflow started with the balanced models runs the Architect and the Lead on Opus, nothing else\nok 3 R119: the quality and budget profiles give every role the same model as before\nok 4 R119: a user's own per-role model still wins over the balanced default\nok 5 R119: the panel's team table matches plugin/lib/profiles.json and shows the Lead on Opus\nok 6 R119: README, the config and profile skills and docs/record.md show the Lead on Opus in balanced",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "89acdcc2152e88fb2087cd7fc580b7d2b2988411953dfa496bd0e299d03defbe",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C181": {
         "status": "pass",
@@ -33381,20 +33389,20 @@
       "C187": {
         "status": "pass",
         "exit": 0,
-        "seconds": 21,
+        "seconds": 22,
         "tail": "1..11\nok 1 R121: vbw triage --json names the active milestone, its open requirements, the run and the sorted backlog in one call\nok 2 R121: vbw triage shows an open run, and leaves out accepted requirements and closed backlog items\nok 3 R121: after ship there is no active milestone and no open requirement\nok 4 R121: vbw triage (text) prints the same facts and writes nothing\nok 5 R121: vbw todo add keeps the sort and size, and vbw todo list shows them, next before later\nok 6 R121: backlog items added before sorting existed still list as before, without a sort or size, and nothing about them changes\nok 7 R121: a sort or size outside the allowed values, or one without the other, is refused and nothing is added\nok 8 R121: the record validator accepts sorted items and refuses a bad sort or size\nok 9 R121: a sorted backlog item raises the schema to 3 or above, so an older VBW asks for an update instead of calling the record corrupt\nok 10 R121: a 'now' idea added while a run is open is recorded at once, and planning waits for the run to end\nok 11 R121: the kernel help lists vbw triage and the sort and size of vbw todo add",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "9a3b037c82f6e23518475860fbc46760c87b2e8a98ce9b9e8dca5ac3adcf8a06",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C188": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
         "tail": "1..13\nok 1 R121: the triage skill exists, loads the kernel's summary in one call and starts no agent or workflow\nok 2 R121: the router sends every new request to the triage before any requirement, planning or file change\nok 3 R121: one line per idea: the sort (now joins the active milestone; next or later go into the backlog), a one-sentence reason and the size\nok 4 R121: the line is inside one AskUserQuestion menu, VBW's sort first and marked (Recommended), the two other sorts as the other options, no typed command\nok 5 R121: a message that is not a new idea gets no triage; a match of an existing requirement or backlog item is named, with an offer to move a backlog item to now\nok 6 R121: several ideas get one line each in the same menu, up to four; more than four are sorted four at a time\nok 7 R121: 'now' adds the idea with vbw spec add and the normal flow continues; with no active milestone it starts the next one\nok 8 R121: 'next' and 'later' add the idea with vbw todo add, its sort and its size\nok 9 R121: the triage never interrupts a run: a request during a run is sorted, and a 'now' idea waits for the run to end\nok 10 R121: the triage happens at every autonomy setting: guided, balanced and hands-off\nok 11 R121: the router stays within 1,400 words and all prompts within 22,800 words\nok 12 R121: the user documentation explains the three sorts, the sizes and how to overrule\nok 13 F90: docs/triage.md shows the real vbw todo list format",
-        "at": "2026-10-13T22:10:27Z",
         "fp": "3c7cac510b2181c43f9f019c9862f47f547e6fc41d3a20d6c364158699fa6278",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C189": {
         "status": "pass",
@@ -33410,9 +33418,9 @@
         "exit": 0,
         "seconds": 30,
         "tail": "1..14\nok 1 R123: vbw recommend stores the top pick, its reason and size, the runners-up and the time it was written\nok 2 R123: zero runners-up is fine, and a pick may have no source\nok 3 R123: a new recommendation replaces the earlier one, so only one is kept\nok 4 R123: every malformed recommendation is refused with a message naming what is wrong, and the earlier one stays\nok 5 R123: a pick whose source is not open is refused: a shipped or proven requirement, a closed or unknown todo\nok 6 R123: a pick that is a declined suggestion is refused\nok 7 R123: with no open requirement and an empty backlog the stored recommendation says the backlog is empty; with work open, 'empty' is refused\nok 8 R123: while a run is open the kernel stores no recommendation and says so\nok 9 R123: the validator accepts a record with and without a recommendation, and refuses a damaged one\nok 10 R123: a stored recommendation raises the schema to 3 or above; an older VBW asks for an update; without one and without sorted todos the schema stays as before\nok 11 R123: vbw status shows the what's-next part: the top pick, its reason and size, each runner-up with its size, and the date\nok 12 R123: with none stored, vbw status says there is none yet and how to ask for one\nok 13 R123: vbw status --json carries the recommendation, or null when none is stored\nok 14 R123: the kernel help lists vbw recommend",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "1298cf4f726813ed091d7c7cd224c97eafc08e4e8d56837e310e1c52709b6d91",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C191": {
         "status": "pass",
@@ -33489,11 +33497,11 @@
       "C199": {
         "status": "pass",
         "exit": 0,
-        "seconds": 67,
+        "seconds": 69,
         "tail": "1..8\nok 1 R132: the fingerprint stored for a passed phase carries the version of how it was computed, in the clone's QA cache\nok 2 R132: after an update that changes the fingerprint's version, an unchanged passed phase still stands\nok 3 R132: at the same version, a different stored fingerprint is a change, as today\nok 4 R132: a fingerprint written by an older VBW with no version is an older version, not a change\nok 5 R132: after an update, a real change to the phase's files sends it back to QA\nok 6 R132: a change to the phase's files made before the update still sends it back to QA after it\nok 7 R132: after an update, a change to the phase's tests, plan or requirements sends it back to QA\nok 8 R132: a change to the phase's requirement made before an update of a version-less fingerprint sends it back to QA",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "aa6f03034434abe1895e674e456d849a5fbff135a921984c8e7694be26905cba",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C200": {
         "status": "pass",
@@ -33534,11 +33542,11 @@
       "C204": {
         "status": "pass",
         "exit": 0,
-        "seconds": 50,
+        "seconds": 56,
         "tail": "1..8\nok 1 R142: for 1 to 5 shards, together the shards list every tests/*.bats file exactly once\nok 2 R142: the same inputs give the same shares\nok 3 R142: shares are balanced by test count: no shard of 4 holds much more than a quarter of the tests\nok 4 R142: a newly added test file lands in exactly one shard, with no list to edit\nok 5 R142: the tool lint and the hook and panel benchmarks are listed by shard 1 only\nok 6 R142: a shard runs its share in one parallel batch, then its timed files alone, and only shard 1 lints and benchmarks\nok 7 R142: a failing test file in a shard makes the shard fail, in the batch and in the timed files\nok 8 R142: an invalid shard argument exits 2 with the usage line and runs nothing",
-        "at": "2026-10-14T11:03:15Z",
         "fp": "a7a168580dd6010bf07effe9337ea968f9b2d34565451af92b8c3264f462f124",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "tests listing changed"
       },
       "C205": {
         "status": "pass",
@@ -33716,9 +33724,9 @@
         "exit": 0,
         "seconds": 25,
         "tail": "1..6\nok 1 R150: the schema-4 fixture loads and shows correctly in this VBW\nok 2 R150: a VBW that reads up to schema 3 asks for a newer VBW on the schema-4 fixture, never calling it corrupt\nok 3 R150: a VBW that reads up to schema 3 asks for a newer VBW on every record this VBW writes: 0, 1, 3 and 51 checks\nok 4 R150: the status line shows the same on a format-4 record with 0 and 60 checks as on an older one, idle and during a run, with no error\nok 5 R150: the session-start hook says the same on a format-4 record as on an older one, with no error\nok 6 R150: the panel shows the same on a format-4 record with 0 and 60 checks as on an older one",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "9546374c2244d2d507a4683c474557bb6a5653d90a82065dbd248f02e95b030d",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C225": {
         "status": "pass",
@@ -33777,11 +33785,11 @@
       "C231": {
         "status": "pass",
         "exit": 0,
-        "seconds": 250,
+        "seconds": 248,
         "tail": "1..7\nok 1 R151: a guard whose own cost is above 20 ms per call fails the bench, and the line names the input, the cost and the 20 ms limit\nok 2 R151: a guard whose own cost is at or below 20 ms passes, however it compares with the startup (the old 1x limit no longer fails)\nok 3 R151: the status line above 60 ms per call fails the bench on the small and the large record, naming the cost and the 60 ms limit\nok 4 R151: without settings the limits are 20 ms per guard call and 60 ms for the status line, also in the bench's defaults\nok 5 R151: a machine too busy to measure is reported with its startup and the run passes without judging any guard\nok 6 R151: the same run with a startup below the limit judges the guards and the status line as usual\nok 7 R151: VBW_HOOK_BUDGET_MS and VBW_STATUSLINE_BUDGET_MS override the two limits, the busy threshold following the hook limit",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "e793b124a2853ca98406f9890c1b9dfdad8f49b126f175a6b723f4671450cecf",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C232": {
         "status": "pass",
@@ -33795,11 +33803,11 @@
       "C233": {
         "status": "pass",
         "exit": 0,
-        "seconds": 10,
+        "seconds": 11,
         "tail": "1..8\nok 1 R152: bash tools/test.sh with no option runs the lint and every test file except the timed ones, and neither benchmark\nok 2 R152: bash tools/test.sh --release runs the lint, both benchmarks, the suite in one parallel batch, then the timed files alone\nok 3 R152: the release run fails when a benchmark, the batch or a timed file fails\nok 4 R152: --quick still runs without the benchmarks and without any timed file\nok 5 R152: the CI shards together make one release run: shard 1 runs both benchmarks, each shard runs its timed files alone after its batch\nok 6 R152: tools/test.sh refuses --release with other arguments, naming the release way in its usage line, and runs nothing\nok 7 R152: CI runs the release way: the jobs without a shard run --release, the shard jobs run their share\nok 8 R152: no test file of the default run measures a duration; the timed tests live in tests/timed-*.bats",
-        "at": "2026-10-14T11:03:15Z",
         "fp": "d6a91300a2cc3c178950148fe6689a3b3301183cc8e7951d2509592e254757f9",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "tests listing changed"
       },
       "C234": {
         "status": "pass",
@@ -33867,11 +33875,11 @@
       "C241": {
         "status": "pass",
         "exit": 0,
-        "seconds": 83,
+        "seconds": 84,
         "tail": "ok 16 R145: a phase that never escalated keeps the small-change discount\nok 17 R145: a tier forced with vbw config rigor, never escalated, keeps the small-change discount\nok 18 R145: the QA round's tier is the raised depth when an escalated phase is among those to verify\nok 19 with no setting the mode is auto, and the config listing says so\nok 20 vbw config rigor sets each of auto, express, standard and deep\nok 21 an invalid mode is refused with the allowed list and the setting stays\nok 22 a forced mode overrides the computed tier when planning, up or down\nok 23 changing the mode re-tiers phases whose work has not started, and auto computes again\nok 24 a phase whose work has started keeps its tier when the mode changes\nok 25 changing the mode never makes the approved contract need approving again\nok 26 init writes the detected commands into spec.md and the record\nok 27 sync makes the record's commands exactly the spec's: changed, added and removed\nok 28 an empty Commands section removes every command\nok 29 a spec without a Commands section leaves the record's commands as they are\nok 30 a JSON array keeps an argument that contains spaces\nok 31 malformed command lines and duplicate names are errors with line numbers; nothing changes\nok 32 after the commands change, next asks for approval until the user approves them\nok 33 approval is refused while the spec's commands and the record's differ\nok 34 vbw config rigor re-tiers unstarted phases only, forced or recomputed\nok 35 a phase the Architect raised to deep is deep again after config rigor express then auto",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "c3836073bec4f93d2e4494fed8606d7db8de4dec09b7f9a14777f400792ec841",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C242": {
         "status": "pass",
@@ -33941,9 +33949,9 @@
         "exit": 0,
         "seconds": 27,
         "tail": "1..7\nok 1 R162: every refusal written out in cmd-apply.sh and cmd-run.sh carries its next step\nok 2 R162: every refusal of a full apply ends with its next step\nok 3 R162: every refusal of vbw apply --add ends with its next step\nok 4 R162: every refusal of vbw apply --patch ends with its next step\nok 5 R162: every refusal of vbw run start ends with its next step\nok 6 R162: every block of the file guard and the Bash guard ends with its next step\nok 7 R162: a guard that failed during a run blocks with a next step",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "519896c0dfda601738e1bd71b8b65877e664a9d86e471d0b96c2aef1efda7c2e",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C250": {
         "status": "pass",
@@ -33959,18 +33967,18 @@
         "exit": 0,
         "seconds": 15,
         "tail": "1..8\nok 1 R164: with only the version files and the changelog changed since a passing proof, the release run reuses it\nok 2 R164: the same holds when the version change is committed\nok 3 R164: any other changed file, committed or not, runs everything and says why\nok 4 R164: a new untracked file runs everything and says why\nok 5 R164: with no proof recorded, the release run runs everything and says why\nok 6 R164: when the last proof failed, the release run runs everything and says why\nok 7 R164: when the proof is reused, a failing benchmark or timed check still fails the run\nok 8 R164: the CI shards run their whole share whatever proof is recorded",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "80591fb718986fab415be8f70c38cc801722e12ccc05aad150c6441f83794838",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C252": {
         "status": "pass",
         "exit": 0,
-        "seconds": 43,
+        "seconds": 45,
         "tail": "1..9\nok 1 R165: during a run a guard that crashes blocks the write or command, saying the guard failed and to run vbw doctor\nok 2 R165: during a run a guard that cannot start blocks: the guard file missing or unreadable\nok 3 R165: during a run a guard that cannot start because jq is missing blocks\nok 4 R165: during a run a guard that runs past its time limit is stopped and the action blocked; docs/guards.md states the limit\nok 5 R165: during a run a record that cannot be parsed blocks the action when the guard must read it\nok 6 R165: the run-open marker exists exactly while a run is open, outlives a record that cannot be read, and a broken guard goes quiet when the run ends\nok 7 R165: in a VBW project with no open run a failing guard lets the action through as before\nok 8 R165: outside VBW projects a failing or missing guard changes nothing and prints nothing\nok 9 R165: with the guards intact a run still gets their ordinary answers, and the doctor's guard self-test passes",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "3974be14db366f168f2e9b291226dfca3486024f14d0076397606898b8e370f2",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C253": {
         "status": "pass",
@@ -34032,7 +34040,7 @@
         "seconds": 1,
         "tail": "1..5\nok 1 R167: VBW's spec declares its single-file form: bats on one file\nok 2 R167: VBW's declared test files are every tracked tests/*.bats except the timed ones\nok 3 R167: VBW's spec names the shell lint as its own project command\nok 4 R167: bash tools/test.sh --lint runs shellcheck on every shell file under tools/ and runs no test file\nok 5 R167: tools/test.sh keeps its usage line and documents --lint in it",
         "fp": "a4c3fc4a1c937f7ed83dbad83a14a23b4a955b4576464496a0b301351ed0b484",
-        "at": "2026-10-14T11:07:27Z",
+        "at": "2026-10-14T11:16:01Z",
         "why": "reads the project through git"
       },
       "C260": {
@@ -34121,9 +34129,9 @@
         "exit": 0,
         "seconds": 6,
         "tail": "1..3\nok 1 R170: a passing proof that reused results is reused by the release run\nok 2 R170: a proof that skipped a command not yet approved is not reused, and the reason says so\nok 3 R170: a proof where the quick command stood in for the test command is not reused, and the reason says so",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "cca5744f1bf77d15e4a186f9542f9b6d64295f4334e6d2f6ac8581598920a628",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C270": {
         "status": "pass",
@@ -34157,9 +34165,9 @@
         "exit": 0,
         "seconds": 4,
         "tail": "1..2\nok 1 R172: no test file writes a bats file and also starts the real bats\nok 2 R172: the rule sees the pattern that failed on Linux, and passes the filter form and the stand-in form",
-        "at": "2026-10-14T11:03:15Z",
         "fp": "ab7e91af533b5933eea6fff46b276d511c63f30112f526ece27beda6a441b2d5",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "tests listing changed"
       },
       "C274": {
         "status": "pass",
@@ -34301,9 +34309,9 @@
         "exit": 0,
         "seconds": 59,
         "tail": "1..2\nok 1 R173: the bench's status line cases write the cost side file, and pass\nok 2 R173: a status line that never writes the side file fails the bench, on both records",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "fbe13635ca6021b4583a358cf68ff6ab8e9119a2fe8377ba7eb14d6645ccb075",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C290": {
         "status": "pass",
@@ -34346,9 +34354,9 @@
         "exit": 0,
         "seconds": 4,
         "tail": "1..7\nok 1 R178: vbw loop start from any tool call is denied, however it is spelled, with the pinned text\nok 2 R178: the kernel's loop steps, vbw loop next and vbw loop park, are denied from any tool call with the pinned text\nok 3 R178: vbw loop stop, status and help, and the words in text, stay allowed\nok 4 R178: the /vbw:loop skill is user-invoked only and arms the loop in its preamble with the user's own arguments\nok 5 R178: no other skill arms the loop, and the guards doc names the denial\nok 6 R178 (F167): --help as a value arms nothing: only a bare help form passes the guard\nok 7 R178 (D324): the /vbw:loop preamble has three lines: the interview answers, vbw loop start with the user's arguments, vbw loop status",
-        "at": "2026-10-14T02:20:50Z",
         "fp": "cc6dd087b3b5e652ca0d1d5b2ad7badaa9dd137a8c8f849a6f4f613246a179dd",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C295": {
         "status": "pass",
@@ -34373,9 +34381,9 @@
         "exit": 0,
         "seconds": 4,
         "tail": "1..6\nok 1 R179: the skill exists, is user-invoked only, names its arguments, and runs vbw loop start with them\nok 2 R179: the one message says what changed and what never happens, and how to stop\nok 3 R179: /vbw:loop stop runs vbw loop stop and says what the loop was doing\nok 4 R179: the steps are the router's, run the same way, and the loop never asks\nok 5 R179: the skill never arms autonomy steps, never approves and never asks the approval menu\nok 6 R179: the skill stays within the router's size and the shell-block rules of tests/skills.bats",
-        "at": "2026-10-13T18:15:25Z",
         "fp": "cde4f08f4426175100446a52033cf24f86a2c469e081c067bb2a7297cb764e4b",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C298": {
         "status": "pass",
@@ -34598,9 +34606,9 @@
         "exit": 0,
         "seconds": 2,
         "tail": "exactly one instruction to run vbw fix done, naming every done fix\nok 2 R182: the round's vbw fix done comes after every Dev has returned\nok 3 R182: with one group (N = 1) the round still runs vbw fix done exactly once\nok 4 R182: with a session, the closing Lead runs vbw fix done first, then vbw run confirm and vbw run end\nok 5 R182: a vbw fix done past one shell command's 10-minute limit is waited for, and its output read, before the run is confirmed\nok 6 R182: without a session the round's vbw fix done still runs, by an agent of its own, before the workflow returns\nok 7 R182: no Dev is told to run vbw fix done: each commits its fix and checks it with vbw check on its own fixes' checks\nok 8 R182: a blocked fix and a fix whose Dev stopped are left out of vbw fix done and named with their status\nok 9 R182: when no Dev reported done, no vbw fix done runs\nok 10 R182: the result says which fixes closed and which stayed open, each open one with its reason\nok 11 R182: the agent answering for vbw fix done is asked which fixes closed and which stayed open\nok 12 R182: when the closing Lead stops, the log gives the exact vbw fix done to run by hand, and the round is not complete\nok 13 R182: when the agent reports that vbw fix done failed, the log gives the command to run by hand, and the round is not complete\nok 14 R182: without a session, a stopped or failed vbw fix done agent leaves the command to run by hand, and the round is not complete\nok 15 R182: dev.md never tells the Dev to run vbw fix done: the workflow runs it once for the round\nok 16 R182: dev.md tells a fixing Dev to commit its fix and check it with vbw check on its own fixes' checks\nok 17 R182: the Lead's own Close a run instructions include the fix round's vbw fix done, waited for to its end\nok 18 R182: the workflows stay within 1,500 lines and every agent within 900 words, all prompts within 22,800\nok 19 R182: without a session, complete follows the plan: an open fix and a blocked Dev give the same value, true",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "803f0983124e78b253ff1f30ee1ca79d1aaebd20c65fec4fba7392bceb6759cb",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C323": {
         "status": "pass",
@@ -34634,9 +34642,9 @@
         "exit": 0,
         "seconds": 2,
         "tail": "exactly one instruction to run vbw fix done, naming every done fix\nok 2 R182: the round's vbw fix done comes after every Dev has returned\nok 3 R182: with one group (N = 1) the round still runs vbw fix done exactly once\nok 4 R182: with a session, the closing Lead runs vbw fix done first, then vbw run confirm and vbw run end\nok 5 R182: a vbw fix done past one shell command's 10-minute limit is waited for, and its output read, before the run is confirmed\nok 6 R182: without a session the round's vbw fix done still runs, by an agent of its own, before the workflow returns\nok 7 R182: no Dev is told to run vbw fix done: each commits its fix and checks it with vbw check on its own fixes' checks\nok 8 R182: a blocked fix and a fix whose Dev stopped are left out of vbw fix done and named with their status\nok 9 R182: when no Dev reported done, no vbw fix done runs\nok 10 R182: the result says which fixes closed and which stayed open, each open one with its reason\nok 11 R182: the agent answering for vbw fix done is asked which fixes closed and which stayed open\nok 12 R182: when the closing Lead stops, the log gives the exact vbw fix done to run by hand, and the round is not complete\nok 13 R182: when the agent reports that vbw fix done failed, the log gives the command to run by hand, and the round is not complete\nok 14 R182: without a session, a stopped or failed vbw fix done agent leaves the command to run by hand, and the round is not complete\nok 15 R182: dev.md never tells the Dev to run vbw fix done: the workflow runs it once for the round\nok 16 R182: dev.md tells a fixing Dev to commit its fix and check it with vbw check on its own fixes' checks\nok 17 R182: the Lead's own Close a run instructions include the fix round's vbw fix done, waited for to its end\nok 18 R182: the workflows stay within 1,500 lines and every agent within 900 words, all prompts within 22,800\nok 19 R182: without a session, complete follows the plan: an open fix and a blocked Dev give the same value, true",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "077d866f059c5c7adfd9a2b44634dd0ca21d54241d70c56b1a3e86d609100bf9",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C327": {
         "status": "pass",
@@ -34668,20 +34676,20 @@
       "C330": {
         "status": "pass",
         "exit": 0,
-        "seconds": 3,
+        "seconds": 2,
         "tail": "1..4\nok 1 R184: in a project that turns VBW off, the real setting shows the user's earlier status line with Claude Code's input\nok 2 R184: in a project that turns VBW off, with no earlier status line, nothing shows: no VBW line, no 'unavailable'\nok 3 R184: where VBW is on, the real setting prints exactly what VBW's script prints, and the earlier status line never runs\nok 4 R184: a setting from an older VBW, not yet updated, shows no VBW line in a project that turns VBW off",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "3b50fe4150340023c092a793ef6a3955eb329bb7051768079a0c60dd3c49c50b",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C331": {
         "status": "pass",
         "exit": 0,
-        "seconds": 122,
+        "seconds": 119,
         "tail": "1..4\nok 1 R184: the bench measures the hand-back where VBW is off against the 60 ms status line limit, and passes\nok 2 R184: VBW's script above 60 ms makes the hand-back fail the bench, naming the cost and the limit\nok 3 R184: a hand-back that never shows the earlier status line fails the bench\nok 4 R184: on a machine too busy to measure, the hand-back is not judged either",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "4fa21950dd10ab4b8ba500e56341e5b7e18c6ce9f2aa1b422a8cd9dd4db2811f",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C332": {
         "status": "pass",
@@ -34706,9 +34714,9 @@
         "exit": 0,
         "seconds": 13,
         "tail": "1..9\nok 1 R185: a session that loaded VBW from a working tree runs that tree's vbw, ahead of an installed release\nok 2 R185: the same holds outside a VBW project and with the installed VBW turned off for the project\nok 3 R185: the env file keeps what it held, and a working tree whose path has a space and a quote is put first whole\nok 4 R185: a normal installed session leaves the PATH to Claude Code: the installed copy writes nothing to the env file\nok 5 R185: in a VBW project the session's one line names the kernel in use, its path and its version\nok 6 R185: when the env file cannot be written, the session is told once, naming the exact kernel path to use\nok 7 R185: an approval answered in the menu is recorded by the loaded kernel, with an installed release that cannot read the record first on PATH\nok 8 R185: with an installed release first on PATH, VBW's hooks (session start, approval menu, guards) never run it\nok 9 R185: the unwritable-env-file warning survives a VBW 1 command copy removal and a project made by a newer VBW",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "1690eeddc1c35f8732ce10b2b2161b14398b314403a88668913e2ed0dcac015c",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C335": {
         "status": "pass",
@@ -34733,18 +34741,18 @@
         "exit": 0,
         "seconds": 18,
         "tail": "1..8\nok 1 R185: a session that loaded a working tree shows the tree's version, rendered by the tree's own script\nok 2 R185: in a normal installed session the status line shows the newest installed version, as before\nok 3 R185: the choice never leaks: a later normal session, and the same session resumed without the tree, show the installed copy\nok 4 R185: a working tree that was moved or deleted falls back to the installed copy instead of failing\nok 5 R185: a recorded folder that is no VBW plugin any more is never run: the installed copy renders\nok 6 R185: with the installed VBW turned off for the project, a session that loaded the tree still shows VBW, and one without it still hands back\nok 7 R185: the session start writes only to the project's runtime folder, VBW's Claude config folder and the env file, whatever the session id\nok 8 R185: the status line of a loaded tree runs no git process",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "cc14417e3b3a29df3c3de96f5819f39f5250e20e9e16ef0c75494cfed3d2c880",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C338": {
         "status": "pass",
         "exit": 0,
-        "seconds": 106,
+        "seconds": 105,
         "tail": "1..3\nok 1 R185: the bench measures the loaded copy's status line against the 60 ms limit, and the hooks against 20 ms\nok 2 R185: a loaded copy's status line above 60 ms fails the bench, naming the cost and the limit\nok 3 R185: when the session start does not record the loaded copy, the bench fails instead of measuring the installed one",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "70edcfbe7dc6a57d89688d5212c7cffc2e1b541cb671ddf7f2f420eba2706a3d",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C339": {
         "status": "pass",
@@ -34778,18 +34786,18 @@
         "exit": 0,
         "seconds": 12,
         "tail": "1..9\nok 1 R185: a session that loaded VBW from a working tree runs that tree's vbw, ahead of an installed release\nok 2 R185: the same holds outside a VBW project and with the installed VBW turned off for the project\nok 3 R185: the env file keeps what it held, and a working tree whose path has a space and a quote is put first whole\nok 4 R185: a normal installed session leaves the PATH to Claude Code: the installed copy writes nothing to the env file\nok 5 R185: in a VBW project the session's one line names the kernel in use, its path and its version\nok 6 R185: when the env file cannot be written, the session is told once, naming the exact kernel path to use\nok 7 R185: an approval answered in the menu is recorded by the loaded kernel, with an installed release that cannot read the record first on PATH\nok 8 R185: with an installed release first on PATH, VBW's hooks (session start, approval menu, guards) never run it\nok 9 R185: the unwritable-env-file warning survives a VBW 1 command copy removal and a project made by a newer VBW",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "794a3e0cbb4e606196379a5c8d05a4be79bf87a9966d37c842ec316c49e53fc8",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C343": {
         "status": "pass",
         "exit": 0,
-        "seconds": 12,
+        "seconds": 13,
         "tail": "1..9\nok 1 R185: a session that loaded VBW from a working tree runs that tree's vbw, ahead of an installed release\nok 2 R185: the same holds outside a VBW project and with the installed VBW turned off for the project\nok 3 R185: the env file keeps what it held, and a working tree whose path has a space and a quote is put first whole\nok 4 R185: a normal installed session leaves the PATH to Claude Code: the installed copy writes nothing to the env file\nok 5 R185: in a VBW project the session's one line names the kernel in use, its path and its version\nok 6 R185: when the env file cannot be written, the session is told once, naming the exact kernel path to use\nok 7 R185: an approval answered in the menu is recorded by the loaded kernel, with an installed release that cannot read the record first on PATH\nok 8 R185: with an installed release first on PATH, VBW's hooks (session start, approval menu, guards) never run it\nok 9 R185: the unwritable-env-file warning survives a VBW 1 command copy removal and a project made by a newer VBW",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "127086ffc1beb40afcf45403b24f260f7be8f18d24e422dd3f03fbb17beaf85e",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C344": {
         "status": "pass",
@@ -34805,9 +34813,9 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..4\nok 1 R186: docs/workflows.md says the closing step runs on Haiku in every profile, separate from the Lead's model\nok 2 R186: docs/rigor.md says the closing step runs on Haiku in every profile, separate from the Lead's model\nok 3 R186: the help for vbw config model.lead never claims it sets the closing step's model\nok 4 R186: in docs/workflows.md the line ending 'With it:' is followed, after blank lines, by a list item",
-        "at": "2026-10-14T11:03:15Z",
         "fp": "47146ea65d7e4e94ca68f735311f996d848e62fd6fa2677e71a1fce3a09322f7",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C346": {
         "status": "pass",
@@ -34824,16 +34832,25 @@
         "seconds": 0,
         "tail": "1..4\nok 1 R186: docs/workflows.md says the closing step runs on Haiku in every profile, separate from the Lead's model\nok 2 R186: docs/rigor.md says the closing step runs on Haiku in every profile, separate from the Lead's model\nok 3 R186: the help for vbw config model.lead never claims it sets the closing step's model\nok 4 R186: in docs/workflows.md the line ending 'With it:' is followed, after blank lines, by a list item",
         "fp": "48e8d0a6955b22893d8f2b74a3b8393956b842af2a0b7d862a0ea900d55f6719",
-        "at": "2026-10-14T11:07:27Z",
-        "why": "never passed"
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "C348": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..6\nok 1 R186: the tool names its three scenarios, builds its project in .vbw/runtime/scratch and never in /tmp\nok 2 R186: the tool refuses a missing or unknown scenario with its usage, before anything runs\nok 3 R186: a scripted building run: the closing step ran on Haiku with the profile's effort, confirmed, ended the run\nok 4 R186: a scripted fixing run: on Haiku, fix done, then confirm, then run end; the fixes it reports match the record\nok 5 R186: a long fix round on Haiku: a vbw fix done past 10 minutes moved to the background is waited for, read whole, then confirm and run end\nok 6 R186: the tool header's dollar range holds every committed result's cost_usd",
-        "fp": "bc3713a65ebd1946ed211bca404f7742d734a128ffd6b9da48f9b08ae7e60410",
         "at": "2026-10-14T11:07:27Z",
+        "fp": "bc3713a65ebd1946ed211bca404f7742d734a128ffd6b9da48f9b08ae7e60410",
+        "reused": true
+      },
+      "C349": {
+        "status": "pass",
+        "exit": 0,
+        "seconds": 0,
+        "tail": "1..2\nok 1 R187: the config skill names check_jobs, its range and its default\nok 2 R187: the config skill says the computer-wide limit caps check_jobs and is not a setting",
+        "fp": "f40532df7bcc44192f0cd6cda7cde33943cd4f8baad8a29fc12ab73b911fd52b",
+        "at": "2026-10-14T11:16:01Z",
         "why": "never passed"
       }
     },
@@ -34844,13 +34861,13 @@
         "seconds": 3,
         "tail": "bash: 5.3.20(1)-release",
         "fp": "065b393b71dee4232b9b45e3d96e4a1a6552ad444e6fa87346b5ac33b420c740",
-        "at": "2026-10-14T11:07:27Z",
-        "why": "tools/close-haiku-run.sh changed"
+        "at": "2026-10-14T11:16:01Z",
+        "why": "tests listing changed"
       },
       "test": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1219,
+        "seconds": 1215,
         "tail": "",
         "command": "bats --print-output-on-failure {file} (one test file per run)",
         "of_files": true
@@ -35256,29 +35273,29 @@
       "tests/skills-workflow-profile.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..2\nok 1 every skill other than the router that starts a workflow passes profile in its args\nok 2 the router's mapping step does not show args without the profile",
-        "at": "2026-10-13T18:15:25Z",
         "fp": "70c6427a506ca52aa057c79674aad1a6e38dded541b83583291e596d9268b065",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "tests/skills.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 6,
+        "seconds": 5,
         "tail": "1..11\nok 1 the vibe, approve, init and status skills exist\nok 2 each skill is named after its directory with a single-line description\nok 3 every shell block runs the kernel by its plugin path and can never abort the skill\nok 4 every skill with shell blocks pre-approves them in allowed-tools (G9)\nok 5 only the user can approve\nok 6 the router's Stop hook is the autonomy gate and can never block by accident\nok 7 skills only name vbw commands that exist\nok 8 the router stays within its budget (about 2k tokens)\nok 9 skills never build paths from $HOME, caches or /tmp (K4)\nok 10 the router says before the user's request that no project file changes before approval\nok 11 the router says a document's required contents are [auto]; only how it reads is [human]",
-        "at": "2026-10-14T01:30:37Z",
         "fp": "0a3a89199242b32eaf3a2dd0775276ec0bffbd19e0237fb22f5272d5b96506bb",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "tests/standards-selftest.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 55,
+        "seconds": 52,
         "tail": "1..17\nok 1 eval is caught\nok 2 bash-4 features are caught\nok 3 process killing is caught\nok 4 the signal-free liveness probe kill -0 passes, any other kill is caught\nok 5 /tmp paths are caught\nok 6 git path listings without -z are caught, with -z pass\nok 7 plugin-root discovery is caught\nok 8 a clean file breaks no rule\nok 9 hooks naming a missing file are caught\nok 10 per-tool-call hooks that start a shell or can exit non-zero are caught\nok 11 per-tool-call hooks: only assignments and [ ] tests may come before jq, and the command must end in || true\nok 12 the vision rule check passes on the repository as it is\nok 13 the vision rule check catches the rule removed from a contributor file\nok 14 the vision rule check catches the rule moved below another rule in AGENTS.md\nok 15 the hook answer check passes on the repository as it is\nok 16 the hook answer check catches a new unpinned answer shape\nok 17 the hook answer check catches a hook that answers allow",
         "fp": "cea597da7e37298b1c50fd07c24fcfcd6ab9c1e90cc14912ac62ec844e47ba39",
-        "at": "2026-10-14T11:07:27Z",
-        "why": "tests/close-haiku-docs.bats changed"
+        "at": "2026-10-14T11:16:01Z",
+        "why": "tests listing changed"
       },
       "tests/standards.bats": {
         "status": "pass",
@@ -35286,17 +35303,17 @@
         "seconds": 9,
         "tail": "1..17\nok 1 kernel stays within 7,600 lines of code (design §10; owner raised it to 3,300 on 2026-10-04, 3,500 on 2026-10-05, 3,800 on 2026-10-06 and 7,600 on 2026-10-07)\nok 2 workflows stay within 1,500 lines (design §10)\nok 3 mod JavaScript stays within 3,500 lines (owner raised it from 3,000 on 2026-10-07)\nok 4 no eval or data-as-code (ledger D108, D139)\nok 5 no bash-4-only features: macOS /bin/bash 3.2 is the floor (K2, ledger D294)\nok 6 never terminates processes (ledger D54, D285–D288)\nok 7 no predictable /tmp paths or writes outside the project (K3, ledger D296)\nok 8 git path listings are NUL-separated (ledger D293)\nok 9 no plugin-root discovery: paths come from ${CLAUDE_PLUGIN_ROOT} substitution or $0 (K4)\nok 10 shell files parse on the minimum bash and pass shellcheck\nok 11 plugin manifests are valid\nok 12 hooks.json is valid and every file a hook names exists in hooks/\nok 13 per-tool-call hooks run jq directly and never exit non-zero (K20)\nok 14 Claude Code's own validator accepts the plugin and the marketplace\nok 15 no brace-literal parameter defaults (a default of {} written inside the expansion): bash 3.2 keeps the backslash (tests and tools too)\nok 16 the vision rule is VBW's first development rule, and every contributor file states it (owner mandate, 2026-10-06)\nok 17 every answer a hook gives Claude Code has a test pinning its meaning, and no hook answers allow (R128)",
         "fp": "0081e8d9fb717ee39eded21e9282e34e071705efe4349f4a472013dd63d63d6c",
-        "at": "2026-10-14T11:07:27Z",
+        "at": "2026-10-14T11:16:01Z",
         "why": "reads the project through git"
       },
       "tests/statusline.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 14,
+        "seconds": 13,
         "tail": "1..16\nok 1 outside a VBW project it says how to start, and still shows the session\nok 2 in a VBW project it shows progress and the last next step\nok 3 a running build and an armed autonomous run are visible\nok 4 a gate that needs the user says so\nok 5 no data from Claude Code, or garbage, never breaks it\nok 6 the branch is read in a linked worktree too\nok 7 statusline on sets it without asking, and keeps the user's own to restore\nok 8 the setting finds the newest installed VBW and renders it\nok 9 workflows on turns Dynamic workflows on, keeps every other setting, and never overrides a deliberate off\nok 10 started in a subfolder it shows the project; a VBW 1 project is pointed to the conversion\nok 11 a running step shows how long it has run and how many agents are working\nok 12 the team line follows the profile and per-role models; tokens and prompt cache are shown\nok 13 statusline on asks Claude Code to refresh it every 5 seconds, and tops up a setting made without it\nok 14 from Claude Code 2.1.287 the agents and team line is dropped; line 1 keeps the agent count\nok 15 a session in a VBW project tops up the refresh interval of VBW's status line, and leaves any other status line alone\nok 16 doctor warns when VBW's status line has no refresh interval",
-        "at": "2026-10-14T10:44:27Z",
         "fp": "4a4f96ffe59d490f5eacbb1ae1d4adf16d0a33c8851971ab35542efdf55174f2",
-        "reused": true
+        "at": "2026-10-14T11:16:01Z",
+        "why": "plugin/skills/config/SKILL.md changed"
       },
       "tests/testfiles-spec.bats": {
         "status": "pass",
@@ -35329,7 +35346,7 @@
     "scope": [],
     "full": false,
     "passed": true,
-    "record": "68eb1265e0813b6611cae15d07d537db5a26cfa23d8b14afd41435a616ca9d87"
+    "record": "51b6f0e9ecb82fe3da3a6999331b2041b97fb0508d04eb1d0d74209f46bcbab1"
   },
   "recommendation": {
     "at": "2026-10-09T20:53:56Z",
