@@ -4422,6 +4422,19 @@
         "tests/outside-writes-docs.bats"
       ],
       "fix": "F218"
+    },
+    {
+      "id": "C342",
+      "req": "R185",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/plugindir-path.bats"
+      ],
+      "files": [
+        "tests/plugindir-path.bats"
+      ],
+      "fix": "F219"
     }
   ],
   "project": {
@@ -35718,6 +35731,15 @@
         "milestone": "M30",
         "started": "2026-10-14T08:07:17Z",
         "ended": "2026-10-14T08:10:05Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261014T081025Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M30",
+        "started": "2026-10-14T08:10:25Z",
+        "ended": "2026-10-14T08:14:04Z",
         "cost": null
       }
     ],
