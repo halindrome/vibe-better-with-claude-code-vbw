@@ -27830,31 +27830,14 @@
       "after": [
         "P139.1"
       ],
-      "status": "done",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "Standard: in vbw plan done, after the existing commit, uncommitted-files (it already names the files) and passing-checks steps, when the plan is being built in an open build run (lease kind build, plan status building), its phase's recorded tier is standard or deep and its requirements have checks: take each approved rule of each requirement the plan completes (the same set as the checks it runs) and count it covered when any plan of that requirement has a mutation entry for that rule (same req and text) whose result is red. Refuse listing the rules still missing one as Rn.k with their text, ending with Next: break what each rule promises in this plan's code and run vbw mutate PLAN Rn.k \"what you broke\" FILE...",
         "Deep: also every task K of the plan needs, in this plan's own mutations, a red break of taskK or a none reason; refuse listing the tasks missing one (taskK) and naming vbw mutate PLAN taskK ... and vbw mutate PLAN taskK --none REASON.",
         "Unchanged where nothing is asked: express, a phase with no recorded tier, plans whose requirements have no checks (all [human]), and plan done outside a build run behave exactly as before. Record-sized data reaches jq through pipes or --slurpfile only (tests/record-args-rule.bats).",
-        "Prove it: bats tests/mutate-plan-done.bats passes under /bin/bash and bash 5; every test file that calls vbw plan done (tests/plan-done-committed.bats, tests/kernel-work.bats, tests/fix-*.bats, tests/loop-*.bats, tests/qa-*.bats, tests/small-*.bats, tests/record-duty.bats) and tests/standards.bats still pass. If the vbw on PATH has the mutate command, record a red break for each R188 rule whose check is C352 (and, at deep, each task, or --none with a reason); otherwise say so in notes."
-      ],
-      "mutations": [
-        {
-          "rule": {
-            "req": "R188",
-            "text": "at standard, plan done of a plan being built refuses until every approved rule of each requirement it completes has a red break, listing the rules still missing one and naming vbw mutate"
-          },
-          "what": "inverted the missing-breaks refusal",
-          "files": [
-            "plugin/lib/cmd-plan.sh"
-          ],
-          "checks": {
-            "C352": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:44:43Z",
-          "head": "7b400c9abf014264f67edb4caa6bad2aafff008c"
-        }
+        "Prove it: bats tests/mutate-plan-done.bats passes under /bin/bash and bash 5; every test file that calls vbw plan done (tests/plan-done-committed.bats, tests/kernel-work.bats, tests/fix-*.bats, tests/loop-*.bats, tests/qa-*.bats, tests/small-*.bats, tests/record-duty.bats) and tests/standards.bats still pass. If the vbw on PATH has the mutate command, record a red break for each R188 rule whose check is C352 (and, at deep, each task, or --none with a reason); otherwise say so in notes.",
+        "The code is built (476447cc). Record a red break with vbw mutate for EVERY rule checked by C352 (R188.17 to R188.26), one at a time, BEFORE vbw plan done; plan done does not enforce it here because P141.2 finishes R188 later, so the duty is this plan's"
       ]
     },
     {
@@ -38477,6 +38460,19 @@
         "started": "2026-10-14T21:40:33Z",
         "ended": "2026-10-14T21:45:13Z",
         "cost": null
+      },
+      {
+        "id": "plan-20261014T214541Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-14T21:45:41Z",
+        "ended": "2026-10-14T21:45:47Z",
+        "cost": {
+          "usd": 0,
+          "in": 0,
+          "out": 0
+        }
       }
     ],
     "milestones": {
