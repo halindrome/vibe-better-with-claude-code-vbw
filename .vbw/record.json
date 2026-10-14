@@ -31199,6 +31199,11 @@
       "text": "The per-session record of a --plugin-dir session (<claude-config-dir>/vbw/sessions/<session id>, one line naming the loaded plugin folder, records older than 7 days removed) is the third allowed write outside the project, beside the user's settings.json and the machine slot store: docs/guards.md and AGENTS.md's 'Nothing outside the project' rule name it, and a docs test pins it",
       "why": "F218: QA found the write undocumented. Chosen by VBW (QA's recommendation): the status line and vbw doctor already read the record from the config folder, where Claude Code's sessions live; moving it into the project would cost more and break a session spanning projects",
       "at": "2026-10-14T02:14:25Z"
+    },
+    {
+      "id": "D365",
+      "at": "2026-10-14T08:03:24Z",
+      "text": "Contract approved: 174 requirements, 336 checks, 405 plans (10aed2392227)"
     }
   ],
   "commands": {
