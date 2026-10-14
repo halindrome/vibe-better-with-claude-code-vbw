@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261014T110920Z",
+    "kind": "qa",
+    "started_at": "2026-10-14T11:09:20Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1122.744227,
+      "in": 899703,
+      "out": 233
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -17416,12 +17427,19 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "8ee7417afb0c76cc45dbf364ca7699974d390bcdbb525ca25db45f95061024e1",
-        "at": "2026-10-14T10:59:54Z",
-        "note": "27/29 checks",
-        "rounds": 1
+        "tree": "589a280098f460bf51bf24850e1e8bb016651ec9627386a1e929727cd8f6cea1",
+        "at": "2026-10-14T11:10:51Z",
+        "note": "30/30 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 2,
+        "qa_findings": 2,
+        "escalations": 0
       }
     }
   ],
@@ -28675,7 +28693,7 @@
       "req": "R186",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "docs/workflows.md lines 38-43: the new Haiku paragraph (added in 21d1aa38) sits between 'Without it, a workflow closes nothing and the router ends the run as before. With it:' and the bullet list that 'With it:' introduces, so the sentence now ends in a colon with no list after it, and the reader meets the Haiku paragraph first. Move the Haiku paragraph to after the two bullets (or before 'Without it'). A regression test should fail when the line that ends 'With it:' is not followed (after blank lines) by a list item.",
       "phase": "P137"
     },
@@ -28684,7 +28702,7 @@
       "req": "R186",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "tools/close-haiku-run.sh header (line 13-14) says one run costs 'roughly 1 to 3 USD'; the three committed results show 0.13 (building), 0.19 (fixing) and 0.36 (long-fix) USD. The plan asks the header to name the cost, and the stated figure is wrong by a factor of 3 to 20. Correct the range to what the runs cost. A regression test in tests/close-haiku-runs.bats should read the dollar range from the header and fail when any committed result's cost_usd lies outside it.",
       "phase": "P137"
     }
