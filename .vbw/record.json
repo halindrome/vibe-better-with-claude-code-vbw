@@ -31741,6 +31741,13 @@
       "sort": "next",
       "size": "medium",
       "status": "open"
+    },
+    {
+      "id": "T154",
+      "text": "vbw apply --patch drops a plan's recorded mutation breaks (2026-10-14): patching a reset plan (to add a file) erased its 19 recorded breaks, including the survivors that justified a strengthened check file; the next proof then flagged that strengthening commit (e120842e) as out of scope and the loop parked T74. Mutations are kernel-recorded evidence like status: a patch must keep them",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
