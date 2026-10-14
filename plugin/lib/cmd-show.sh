@@ -307,9 +307,6 @@ show_work() {
           {plan: $p,
            requirements: [$p.reqs[] as $q | $r.requirements[] | select(.id == $q) | {id, text, proof,
              other_open_plans: [$r.plans[] | select(.id != $p.id and .status != "done" and any(.reqs[]; . == $q)) | .id]}],
-           rules: [$p.reqs[] as $q | $r.requirements[] | select(.id == $q and .proof == "auto") | (.rules // []) | to_entries[]
-             | {n: "\($q).\(.key + 1)", text: .value.text, check: .value.check}],
-           tier: ([$r.phases[] | select(.id == $p.phase)][0].tier // null),
            checks: checks_for($p.reqs), commands: $r.commands} end
       else
         [.fixes[] | select(.id == $id)][0] as $f
@@ -334,23 +331,12 @@ show_work() {
       + (if .last then " — last: \(.last.status)" else "" end);
     def full_output: if .kept then "    full output: \(.kept)" else "    full output not kept: run vbw prove again" end;
     if .plan then
-      .rules as $rules |
       "\(.plan.id) \(.plan.title) [\(.plan.status)]\(if .plan.note then ": " + .plan.note else "" end)",
       "files: \(.plan.files | join(", "))",
       (if .plan.tasks then "tasks:", (.plan.tasks | to_entries[] | "  \(.key + 1). \(.value)") else empty end),
       (if (.plan.after | length) > 0 then "after: \(.plan.after | join(", "))" else empty end),
       "requirements:", (.requirements[] | "  \(.id) [\(.proof)] \(.text)"),
-      (if (.rules | length) > 0 then "rules:", (.rules[] | "  \(.n) \(.text) -> \(.check)") else empty end),
-      (if .tier == "standard" then "tier: standard (the mutation check asks one break per rule)"
-       elif .tier == "deep" then "tier: deep (the mutation check asks one break per rule and per task)"
-       elif .tier then "tier: \(.tier)" else empty end),
-      "checks:", check_lines,
-      (def tname: if .rule then (.rule.req as $q | .rule.text as $t | ($rules | map(select(.text == $t and (.n | startswith($q + "."))))[0].n // $q)) else "task\(.task)" end;
-       if (.plan.mutations // [] | length) > 0 then "mutations:",
-         (.plan.mutations[] | if .none then "  task\(.task): no testable behaviour: \(.none)"
-           else "  \(tname): \(.what): \(.result)"
-             + (if .strengthened then " (strengthened: \(.strengthened | join(", ")))" else "" end),
-             (.checks | to_entries[] | "    \(.key): \(.value)") end) else empty end)
+      "checks:", check_lines
     else
       "\(.fix.id) [\(.fix.status), attempts \(.fix.attempts)]: \(.fix.note)",
       (if .requirement then "requirement: \(.requirement.id) \(.requirement.text)" else empty end),
