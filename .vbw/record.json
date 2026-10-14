@@ -26458,7 +26458,7 @@
         "tools/l3-results/plugindir-probe.json"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/l3.sh: a 'both' mode that starts Claude Code with the working tree loaded (--plugin-dir) and the installed VBW left turned on, and, when asked, with the installed release's bin folder already on the inherited PATH (the case of a session started from inside another one)",
@@ -31149,6 +31149,12 @@
       "id": "D362",
       "at": "2026-10-14T01:01:48Z",
       "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-13T16:35:58Z, items T128, T127, T130, T132, T137, T135, T133: 174 requirements, 335 checks, 405 plans (f716e198dd65))"
+    },
+    {
+      "id": "D363",
+      "text": "R185 fix confirmed: the loaded copy puts its bin first through CLAUDE_ENV_FILE and records itself for its session",
+      "why": "L3 probe (tools/l3-results/plugindir-probe.json, Claude Code 2.1.296, installed 2.0.35, tree as a throwaway copy 2.0.35+tree): both copies are read but --plugin-dir overrides the installed one; only vbw@inline hooks ran; PATH has the installed bin first (inherited) and the tree bin last, so vbw resolves to the installed release for the session and an agent; plugin data folder is vbw-inline; CLAUDE_ENV_FILE is given to the SessionStart hook and an export written there reached both the session's and an agent's Bash tool.",
+      "at": "2026-10-14T01:07:03Z"
     }
   ],
   "commands": {
@@ -35498,6 +35504,15 @@
         "milestone": "M30",
         "started": "2026-10-14T00:42:51Z",
         "ended": "2026-10-14T01:01:32Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T010208Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M30",
+        "started": "2026-10-14T01:02:08Z",
+        "ended": "2026-10-14T01:07:17Z",
         "cost": null
       }
     ],
