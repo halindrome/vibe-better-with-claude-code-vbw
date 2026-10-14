@@ -31734,6 +31734,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T153",
+      "text": "CRITICAL: a loop park can leave VBW unable to read its own record (2026-10-14 23:43, M33): the park reverts the item's code commits first and writes the record after; T74's commits included the record validator change for the new mutations field, so after the reverts the kernel rejected the record ('P139.1 has an unknown field: mutations'), the park's record write never happened, and the project was stuck with 22 reverts and an item still in progress. Restored by reverting the reverts (00:35). The park must reconcile the record before reverting kernel code it depends on, or refuse to park an item that changed the record's schema, and must never leave the record unreadable",
+      "sort": "next",
+      "size": "medium",
+      "status": "open"
     }
   ],
   "decisions": [
