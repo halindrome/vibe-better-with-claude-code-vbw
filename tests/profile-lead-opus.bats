@@ -37,7 +37,8 @@ teardown() { vbw_teardown; }
   models=$("$VBW" config models < /dev/null)
   out=$(node "$RUN" "$PLANNING" "$(jq -nc --argjson m "$models" '{requirements: [{id: "R1", proof: "auto", text: "One"}], models: $m, session: "s1"}')" \
     '{"architect (decide)": {"decisions": []}, "architect (scope)": {"phases": [{"id": "P1", "title": "T", "reqs": ["R1"], "goal": "g", "criteria": ["c"]}], "notes": []}, "lead": {"applied": true, "summary": "planned", "blockers": []}, "close run": {"ended": true, "recorded": true, "report": "ok"}}')
-  printf '%s' "$out" | jq -e '[.calls[] | select(.opts.agentType == "vbw:lead")] | length == 2 and all(.[]; .opts.model == "opus")' || { echo "$out"; false; }
+  # The Lead's planning step runs on Opus; the run's closing step runs on Haiku by D369 (tests/close-haiku.bats).
+  printf '%s' "$out" | jq -e '[.calls[] | select(.opts.agentType == "vbw:lead" and .opts.label == "lead")] | length == 1 and all(.[]; .opts.model == "opus")' || { echo "$out"; false; }
   printf '%s' "$out" | jq -e '[.calls[] | select(.opts.agentType != "vbw:lead" and .opts.agentType != "vbw:architect") | .opts.model] | all(. == "sonnet")' || { echo "$out"; false; }
 }
 
