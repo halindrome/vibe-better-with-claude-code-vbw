@@ -26553,7 +26553,7 @@
         "P135.2",
         "P136.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "CONTRIBUTING.md, Local development: start with claude --plugin-dir ./plugin; the vbw on PATH and the status line's version are then the working tree's; check with vbw --version, vbw doctor and the status line; what happens when a VBW release is also installed",
@@ -26578,7 +26578,7 @@
         "P135.2",
         "P136.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Run tools/l3-suite.sh plugindir after the fix, with a VBW release installed and turned on and its bin folder on the inherited PATH, result named plugindir",
@@ -35531,6 +35531,15 @@
         "milestone": "M30",
         "started": "2026-10-14T01:11:20Z",
         "ended": "2026-10-14T01:22:10Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T012237Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M30",
+        "started": "2026-10-14T01:22:37Z",
+        "ended": "2026-10-14T01:29:00Z",
         "cost": null
       }
     ],
