@@ -4541,7 +4541,7 @@
   "milestone": {
     "id": "M32",
     "title": "Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09)",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -4698,6 +4698,11 @@
       "id": "M31",
       "title": "Brainstorm B4: every workflow's close-run step (vbw run confirm + run end) is a vbw:lead agent on model.lead, so Fable or Opus is paid once per run for two commands; give the step its own cheap model or let the workflow end the run itself",
       "at": "2026-10-14T11:11:47Z"
+    },
+    {
+      "id": "M32",
+      "title": "Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09)",
+      "at": "2026-10-14T11:26:28Z"
     }
   ],
   "requirements": [
@@ -31725,6 +31730,11 @@
       "id": "D375",
       "at": "2026-10-14T11:13:07Z",
       "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-13T16:35:58Z, items T128, T127, T130, T132, T137, T135, T133: 176 requirements, 344 checks, 410 plans (b30c0320ef0e))"
+    },
+    {
+      "id": "D376",
+      "at": "2026-10-14T11:26:28Z",
+      "text": "Shipped M32 Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09): 1 requirement proven or accepted"
     }
   ],
   "commands": {
@@ -36862,6 +36872,12 @@
             "out": 0,
             "at": "2026-10-14T11:11:52Z"
           }
+        },
+        "total": {
+          "usd": 1126.4158,
+          "in": 916014,
+          "out": 62,
+          "sessions": 8
         }
       }
     }
