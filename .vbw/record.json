@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261014T105813Z",
+    "kind": "qa",
+    "started_at": "2026-10-14T10:58:13Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1119.406555,
+      "in": 885027,
+      "out": 232
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -17388,7 +17399,15 @@
         "guarded: R12 (C11), R13 (C12), R14 (C13), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R35 (C31), R39 (C36), R44 (C44, C45), R50 (C51), R60 (C72, C94), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R95 (C149, C150), R96 (C151, C152), R99 (C155), R101 (C179), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R118 (C184), R123 (C190, C191), R129 (C196), R130 (C197), R131 (C198), R134 (C201), R135 (C202), R145 (C210), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R162 (C249), R163 (C250), R167 (C257, C258, C259, C260), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R182 (C322, C323, C324, C325, C326)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "8ee7417afb0c76cc45dbf364ca7699974d390bcdbb525ca25db45f95061024e1",
+        "at": "2026-10-14T10:59:54Z",
+        "note": "27/29 checks",
+        "rounds": 1
+      }
     }
   ],
   "plans": [
@@ -28635,6 +28654,24 @@
       "status": "closed",
       "note": "plugin/hooks/session-start.sh line 56 (commit 10a93f0b): 'while IFS= read -t 1 -r line; do input=$input$line; done' keeps looping after the first JSON line. If Claude Code leaves the hook's stdin pipe open (the comment on lines 53-54 says it may, and the plan says 'read the hook input without ever blocking'), every session start waits a full extra second. Measured: printf '{\"session_id\":\"abc\"}\\n'; sleep 4 piped into the hook took 1.03 s wall, 0.03 s CPU (same hook with </dev/null: 0.03 s). The hook never read stdin before this phase, so this is new latency at every session start, and no test pins the open-pipe case. The input is one line, so one bounded read is enough. Regression test (tests/plugindir-path.bats): feed the hook one JSON line from a producer that keeps the pipe open for 3 s and assert the hook finishes in well under 1 s and still records session s1 (and a --plugin-dir session still writes the PATH line). Fix: read a single line ('IFS= read -r -t 1 input || true') instead of looping. Minor, not in doctor: vbw doctor builds the session-record path from $CLAUDE_CODE_SESSION_ID without the plain-name check the hook and status line apply (read only, so no write risk).",
       "phase": "P135"
+    },
+    {
+      "id": "F221",
+      "req": "R186",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "docs/workflows.md lines 38-43: the new Haiku paragraph (added in 21d1aa38) sits between 'Without it, a workflow closes nothing and the router ends the run as before. With it:' and the bullet list that 'With it:' introduces, so the sentence now ends in a colon with no list after it, and the reader meets the Haiku paragraph first. Move the Haiku paragraph to after the two bullets (or before 'Without it'). A regression test should fail when the line that ends 'With it:' is not followed (after blank lines) by a list item.",
+      "phase": "P137"
+    },
+    {
+      "id": "F222",
+      "req": "R186",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "tools/close-haiku-run.sh header (line 13-14) says one run costs 'roughly 1 to 3 USD'; the three committed results show 0.13 (building), 0.19 (fixing) and 0.36 (long-fix) USD. The plan asks the header to name the cost, and the stated figure is wrong by a factor of 3 to 20. Correct the range to what the runs cost. A regression test in tests/close-haiku-runs.bats should read the dollar range from the header and fail when any committed result's cost_usd lies outside it.",
+      "phase": "P137"
     }
   ],
   "todos": [
