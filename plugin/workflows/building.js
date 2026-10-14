@@ -71,7 +71,7 @@ const results = await pipeline(plans, id => {
   const cell = rigor[id.split('.')[0]]
   const m = (cell && cell.models && cell.models[role]) || models[role]
   const tier = cell && cell.tier
-  const mutate = tier === 'standard' || tier === 'deep' ? ` This plan's rigor tier: ${tier}. Do the mutation step of your instructions before vbw plan done.` : ''
+  const mutate = tier === 'standard' || tier === 'deep' ? ` This plan's rigor tier is ${tier}: do the mutation step of your instructions before vbw plan done.` : ''
   return agent(`Execute VBW plan ${id}. Start with: vbw show plan ${id}${mutate}${voice}`,
     Object.assign({ agentType: `vbw:${role}`, label: `${role} ${id}`, phase: 'Build', schema: BUILD_RESULT },
       m ? { model: m } : {}, effortOf(role, 'build')))

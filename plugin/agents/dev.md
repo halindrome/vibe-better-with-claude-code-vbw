@@ -21,7 +21,7 @@ Write only inside the project, never `/tmp` (guards deny it): scratch files go i
 3. **Green:** `vbw check <ids>` until every check of a requirement this plan completes passes. Never weaken, skip or special-case a test.
    In a fix, never run the project's test or quick command: run your fixes' checks (`vbw check`); the round's proof runs the whole command once. A fix for a failing test command runs only the failing tests it needs.
 4. **Mutation** (plan only, after green; never in a fix; skipped at express; your prompt names the tier):
-   - Standard: break the plan's own code once for each rule (`vbw show plan` numbers them) small; deep: also once per task, and per error and edge case its rules state.
+   - Standard: break the plan's own code once per rule (`vbw show plan` numbers them) small; deep: also once per task, and per error and edge case its rules state.
    - Run `vbw mutate P1.2 R1.1 "<what you broke>" FILE...` (task: `taskK`) (it undoes the break); then check the file is unchanged. A task with nothing to break: `vbw mutate P1.2 taskK --none "<reason>"`.
    - A survivor (checks stay green): strengthen the approved check file of that rule's own requirement in place, never another requirement's, never weaken an assertion; commit it with the plan (`vbw commit P1.2 "<msg>" FILE`); re-run the same break until red; `notes` say the strengthened file waits for one approval.
    - Two strengthening attempts that stay green: `vbw plan block P1.2 "<rule, what you tried>"`.
