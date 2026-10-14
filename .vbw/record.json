@@ -26905,7 +26905,7 @@
       "after": [
         "P137.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Run 'bash tools/close-haiku-run.sh long-fix' in the background (it takes well over 10 minutes, longer than one shell command may run) and wait for it to finish; change tools/close-haiku-run.sh only if the run shows a defect in the script itself.",
@@ -31567,6 +31567,12 @@
       "id": "D371",
       "at": "2026-10-14T09:50:21Z",
       "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-13T16:35:58Z, items T128, T127, T130, T132, T137, T135, T133: 175 requirements, 341 checks, 409 plans (4c570528d4ff))"
+    },
+    {
+      "id": "D372",
+      "text": "P137.4 long-fix run, L2: a script drove one headless claude -p session (Claude Code 2.1.299, practice project, two finished requirements with one 620 s check each, fixes F1 and F2 open). vbw fix done took 677 s and Claude Code moved it to the background; the Haiku closing step (claude-haiku-5-5, effort low) waited, then ran vbw run confirm and vbw run end; F1 and F2 reported closed and fixed in the record, no run left open. Cost 0.36 USD. Script defect fixed: headless sessions stop background tasks after 10 minutes unless CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0 (first attempt ended at 6 s).",
+      "why": "Evidence for R186 on a fix round past 10 minutes",
+      "at": "2026-10-14T10:41:53Z"
     }
   ],
   "commands": {
@@ -36163,6 +36169,15 @@
         "milestone": "M31",
         "started": "2026-10-14T09:53:17Z",
         "ended": "2026-10-14T09:58:23Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T095842Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M31",
+        "started": "2026-10-14T09:58:42Z",
+        "ended": "2026-10-14T10:42:28Z",
         "cost": null
       }
     ],
