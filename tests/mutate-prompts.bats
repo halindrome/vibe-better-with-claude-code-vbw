@@ -65,7 +65,7 @@ has_line() {
 
 @test "R188: the Dev's mutation step comes after green, breaks the plan's own code once per rule at standard, runs vbw mutate, undoes the break, and is skipped at express" {
   grep -q 'vbw mutate' "$DEV" || { echo "dev.md does not name vbw mutate"; false; }
-  has_line "$DEV" mutation green
+  has_line "$DEV" mutation "after green"
   has_line "$DEV" "each rule" standard
   has_line "$DEV" "vbw mutate" undo
   has_line "$DEV" mutation express
@@ -79,7 +79,7 @@ has_line() {
 @test "R188: a survivor is strengthened in place in its own requirement's check file, never another's, never weakened, re-run until red, committed with the plan, and waits for one approval" {
   has_line "$DEV" survivor strengthen "in place"
   has_line "$DEV" strengthen "never another requirement"
-  has_line "$DEV" strengthen weaken
+  has_line "$DEV" strengthen "never weaken"
   has_line "$DEV" "same break" red
   has_line "$DEV" strengthen commit approval
 }
@@ -94,6 +94,10 @@ has_line() {
 
 @test "R188: the Docs agent breaks the statements its plan delivers the same way at standard and deep" {
   has_line "$DOCS" "vbw mutate" standard deep
+  has_line "$DOCS" mutation "never at express"
+  has_line "$DOCS" "break one statement" "vbw mutate"
+  has_line "$DOCS" strengthen "never weaken"
+  has_line "$DOCS" "vbw plan block" two
 }
 
 @test "R188: a Dev block naming the rule raises the phase one tier, as any Dev block does" {
