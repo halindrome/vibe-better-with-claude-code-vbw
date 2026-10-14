@@ -11,14 +11,14 @@
 # L3_JOBS at a time (default 4); each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel pluginoff tools legacy nolegacy smallchange costs loop"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel pluginoff tools legacy nolegacy smallchange costs loop plugindir"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -947,6 +947,114 @@ scenario_pluginoff() {
   }
 }
 
+# plugindir (R185): VBW is installed from the marketplace AND the working tree is
+# loaded with claude --plugin-dir, in a session whose inherited PATH already
+# holds the installed release's bin/ (a session started from inside another
+# one). The session and one VBW agent it starts each run 'command -v vbw' and
+# 'vbw version'. The facts come from the session transcripts and the debug log:
+# which copies load, which hooks ran, the vbw each resolved, the plugin data
+# folder name and CLAUDE_ENV_FILE the loaded copy's SessionStart hook gets (a
+# probe hook in a throwaway copy of the tree in .vbw/runtime/scratch/, whose
+# plugin.json version is suffixed when it equals the installed one, so the two
+# copies tell apart). The result name comes from the caller: L3_PLUGINDIR_RESULT
+# (plugindir-probe before the fix, plugindir after it; default plugindir).
+# L3_PLUGINDIR_INHERIT=0 starts without the installed bin/ on PATH.
+scenario_plugindir() {
+  new_project
+  # The caller names the result: plugindir-probe before the fix, plugindir after it.
+  pd_name=${L3_PLUGINDIR_RESULT:-plugindir}
+  pd_tree="$ROOT/.vbw/runtime/scratch/plugindir-tree"
+  local inst_root inst_ver tree_ver
+  inst_root=$(jq -r '.plugins["vbw@vbw-marketplace"][0].installPath // empty' "$(claude_dir)/plugins/installed_plugins.json" 2> /dev/null)
+  [ -n "$inst_root" ] && [ -x "$inst_root/bin/vbw" ] || { say "setup failed: no installed VBW release (vbw@vbw-marketplace) in $(claude_dir)"; return 1; }
+  inst_ver=$(jq -r .version "$inst_root/.claude-plugin/plugin.json")
+  rm -rf "$pd_tree" && mkdir -p "$ROOT/.vbw/runtime/scratch" && cp -R "$ROOT/plugin" "$pd_tree" || { say "setup failed: could not copy the tree"; return 1; }
+  find "$pd_tree" -name .DS_Store -delete
+  tree_ver=$(jq -r .version "$pd_tree/.claude-plugin/plugin.json")
+  if [ "$tree_ver" = "$inst_ver" ]; then
+    tree_ver="$tree_ver+tree"
+    jq --arg v "$tree_ver" '.version = $v' "$pd_tree/.claude-plugin/plugin.json" > "$pd_tree/.claude-plugin/plugin.json.new" \
+      && mv "$pd_tree/.claude-plugin/plugin.json.new" "$pd_tree/.claude-plugin/plugin.json"
+  fi
+  # The probe: what the loaded copy's SessionStart hook is given, and a variable
+  # exported through CLAUDE_ENV_FILE to see whether the Bash tools read that file.
+  cat > "$pd_tree/hooks/probe.sh" << 'PROBE'
+#!/usr/bin/env bash
+{ echo "ROOT=$CLAUDE_PLUGIN_ROOT"; echo "DATA=${CLAUDE_PLUGIN_DATA:-}"; echo "ENVFILE=${CLAUDE_ENV_FILE:-}"; } > "$0.out"
+[ -z "${CLAUDE_ENV_FILE:-}" ] || echo 'export VBWPROBE_ENV=applied' >> "$CLAUDE_ENV_FILE"
+PROBE
+  jq '.hooks.SessionStart += [{hooks: [{type: "command", command: "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/probe.sh\""}]}]' \
+    "$pd_tree/hooks/hooks.json" > "$pd_tree/hooks/hooks.json.new" && mv "$pd_tree/hooks/hooks.json.new" "$pd_tree/hooks/hooks.json" \
+    || { say "setup failed: could not add the probe hook"; return 1; }
+  rm -f "$pd_tree/hooks/probe.sh.out"
+  (cd "$dir" && "$VBW" init > /dev/null \
+    && printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"\n' > .vbw/spec.md \
+    && "$VBW" spec sync > /dev/null \
+    && git add -A && git commit -qm "chore: small VBW project") || { say "setup failed: could not seed the project"; return 1; }
+  pd_inst_ver=$inst_ver pd_tree_ver=$tree_ver
+  export L3_STATUSLINE=1 L3_MODE=both L3_TREE="$pd_tree"
+  pd_inherit=true
+  if [ "${L3_PLUGINDIR_INHERIT:-1}" = 0 ]; then pd_inherit=false; else export L3_INSTALLED_BIN="$inst_root/bin"; fi
+  fixture="a small VBW project (vbw init, one-requirement spec); VBW $inst_ver installed from the marketplace and left on; a throwaway copy of this tree ($tree_ver, with a probe SessionStart hook) loaded with --plugin-dir; status line from that copy; launch PATH has the installed bin/ first: $pd_inherit"
+  start='Do two things, then reply only with the word done. 1) With your Bash tool run exactly this: echo VBWPROBE; command -v vbw; vbw version; echo "$PATH"; echo "env=${VBWPROBE_ENV:-unset}"  2) Start one vbw:scout agent whose whole task is to run exactly that same command with its Bash tool and report the output. Change nothing.'
+  pd_seen=""
+  done_yet() {
+    sleep 10
+    pd_seen=$(screen | sed 's/[[:space:]][[:space:]]*/ /g')
+    return 0
+  }
+  checks() {
+    local log main agent out_s out_a facts passed copies hooks bins data envfile sl names
+    log=$(l3 debuglog "$dir")
+    [ -f "$log" ] || log=/dev/null
+    main=$(main_transcript)
+    agent=$(transcripts | grep '/subagents/' | head -1)
+    out_s=$([ -z "$main" ] || pd_probe_out "$main")
+    out_a=$([ -z "$agent" ] || pd_probe_out "$agent")
+    copies=$(sed -nE 's/.*Read hooks\.json for plugin vbw \(enabled=true\): (.*)\/hooks\/hooks\.json$/\1/p' "$log" | sort -u | jq -R . | jq -sc .)
+    hooks=$(sed -nE 's/.*Hooks: SessionStart.*\(plugin ([^)]*)\) finished.*/\1/p' "$log" | sort -u | jq -R . | jq -sc .)
+    bins=$(printf '%s\n' "$out_s" | sed -n 4p | tr ':' '\n' | while IFS= read -r p; do [ -z "$p" ] || [ ! -x "$p/vbw" ] || printf '%s\n' "$p"; done | jq -R . | jq -sc .)
+    data=$(sed -n 's/^DATA=//p' "$pd_tree/hooks/probe.sh.out" 2> /dev/null | head -1)
+    envfile=$(sed -n 's/^ENVFILE=//p' "$pd_tree/hooks/probe.sh.out" 2> /dev/null | head -1)
+    sl=$(printf '%s' "$pd_seen" | grep -oE 'VBW [0-9][^ ]*' | tail -1 | sed 's/^VBW //')
+    names=false
+    [ -z "$main" ] || jq -se --arg k "$pd_tree/bin/vbw" 'any(.[]; (tostring | contains("SessionStart")) and (tostring | contains($k)))' "$main" > /dev/null 2>&1 && names=true
+    facts=$(jq -n --arg cv "$(claude --version 2> /dev/null | awk '{print $1}')" --arg tv "$pd_tree_ver" --arg iv "$pd_inst_ver" \
+      --arg tr "$pd_tree" --argjson copies "${copies:-[]}" --argjson bins "${bins:-[]}" --argjson hooks "${hooks:-[]}" \
+      --arg sp "$(printf '%s\n' "$out_s" | sed -n 2p)" --arg sv "$(printf '%s\n' "$out_s" | sed -n 3p)" \
+      --arg se "$(printf '%s\n' "$out_s" | sed -n 5p)" \
+      --arg ap "$(printf '%s\n' "$out_a" | sed -n 2p)" --arg av "$(printf '%s\n' "$out_a" | sed -n 3p)" \
+      --arg ae "$(printf '%s\n' "$out_a" | sed -n 5p)" \
+      --arg data "$(basename "${data:-}")" --arg envf "$envfile" --argjson inh "$pd_inherit" \
+      --arg sl "$sl" --argjson names "$names" \
+      --argjson ovr "$(grep -q 'from --plugin-dir overrides installed version' "$log" && echo true || echo false)" \
+      '{claude_version: $cv, tree_root: $tr, tree_version: $tv, installed_version: $iv,
+        loaded_copies: $copies, tree_overrides_installed: $ovr, plugin_bins_on_path: $bins,
+        session_vbw_path: $sp, session_vbw_version: $sv, session_env_applied: ($se == "env=applied"),
+        agent_vbw_path: $ap, agent_vbw_version: $av, agent_env_applied: ($ae == "env=applied"),
+        hooks_from: $hooks, installed_hooks_ran: ($hooks | any(. != "vbw@inline")),
+        plugin_data_id: $data, env_file_given: ($envf != ""), launch_path_had_installed: $inh,
+        statusline_version_shown: $sl, session_start_names_kernel: $names}')
+    passed=$(jq -r '.session_vbw_path == (.tree_root + "/bin/vbw") and .agent_vbw_path == (.tree_root + "/bin/vbw")
+      and .session_vbw_version == .tree_version and .statusline_version_shown == .tree_version
+      and .session_start_names_kernel and (.installed_hooks_ran | not)' <<< "$facts")
+    expect "the session ran the working tree's vbw" jq -e '.session_vbw_path == (.tree_root + "/bin/vbw")' <<< "$facts"
+    expect "the agent ran the working tree's vbw" jq -e '.agent_vbw_path == (.tree_root + "/bin/vbw")' <<< "$facts"
+    expect "the status line showed the working tree's version" jq -e '.statusline_version_shown == .tree_version' <<< "$facts"
+    expect "the installed copy's hooks did not run" jq -e '.installed_hooks_ran | not' <<< "$facts"
+    [ "$passed" = true ] || failed=1
+    result_write "$pd_name" "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
+      '["a marketplace release other than the one installed here","Claude Code versions other than the one that ran","a session started by a person from a shell with a different PATH","the user'"'"'s own status line setting (the session shows the throwaway copy'"'"'s script)","the tree'"'"'s own version number (the copy carries a +tree suffix when it equals the installed release)","a project that turns VBW off"]'
+  }
+}
+
+# The first tool result starting with VBWPROBE in a transcript (the probe command's output).
+pd_probe_out() {
+  jq -rs '[.[] | select(.type == "user") | .message.content[]? | select(.type == "tool_result")
+    | (.content | if type == "array" then map(.text? // "") | join("") else (. // "") end)
+    | select(startswith("VBWPROBE"))] | first // empty' "$1" 2> /dev/null
+}
+
 # Agent types of every subagent the session ran (their .meta.json), one per line.
 agent_types() {
   local f
@@ -1619,7 +1727,7 @@ for scenario in "$@"; do
   # Each scenario's result reflects its own checks; the suite's exit, all of them.
   suite_failed=$failed failed=0
   unset -f on_question on_idle done_yet checks idle
-  unset L3_STATUSLINE L3_MODE
+  unset L3_STATUSLINE L3_MODE L3_TREE L3_INSTALLED_BIN
   idle() { default_idle; }
   on_question() { return 1; }
   on_idle() { return 1; }

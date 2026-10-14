@@ -51,7 +51,7 @@ case "$cmd" in
     # test). Every other scenario keeps a real user's settings. Double quotes in
     # the command: the settings travel inside single quotes.
     if [ "${L3_STATUSLINE:-}" = 1 ]; then
-      settings=$(printf '%s' "$settings" | jq -c --arg c "bash \"$ROOT/plugin/scripts/vbw-statusline.sh\"" \
+      settings=$(printf '%s' "$settings" | jq -c --arg c "bash \"${L3_TREE:-$ROOT/plugin}/scripts/vbw-statusline.sh\"" \
         '.statusLine = {type: "command", command: $c, refreshInterval: 5}')
     fi
     tree="${L3_TREE:-$ROOT/plugin}"
