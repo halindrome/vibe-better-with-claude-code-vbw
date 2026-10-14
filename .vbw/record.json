@@ -30618,6 +30618,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T150",
+      "text": "A resumed session loses the loop's engine (2026-10-14 21:05): the loop's Stop hook (vbw auto gate) is declared in plugin/skills/loop/SKILL.md, so it exists only while that skill is loaded; after /exit and claude --resume the record still says 'loop on' but nothing drives it, and the session sat at approve for an hour. Running /vbw:loop again only says 'a loop is already on'. The loop must survive a resume (a plugin-level Stop hook that is inert unless a loop is on for this session), and SessionStart should say when a loop is on with no driver",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
