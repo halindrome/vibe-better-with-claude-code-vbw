@@ -39,6 +39,9 @@ done
 export PATH="$clean"
 # Nothing of the calling session reaches the practice project; the Claude login stays.
 unset CLAUDE_SESSION_ID CLAUDE_CODE_SESSION_ID CLAUDE_PLUGIN_ROOT CLAUDE_PROJECT_DIR CLAUDE_ENV_FILE CLAUDECODE CLAUDE_CODE_ENTRYPOINT VBW_SESSION_ID
+# A headless session stops background tasks 10 minutes after its last turn; long-fix needs the
+# workflow to run on until it ends.
+export CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0
 export GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL="$dir.gitconfig" LC_ALL=C
 mkdir -p "$(dirname "$dir")"
 
