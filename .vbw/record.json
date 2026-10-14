@@ -17176,12 +17176,11 @@
       ],
       "predicted": "deep",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "1d23cb76f73d6c98dd6a83fd44e11be0612945d1ad89609fc22bec272df18415",
-        "at": "2026-10-14T08:41:04Z",
-        "note": "29/30 checks",
-        "rounds": 3
+        "tree": "b18077dc403a893f0ba3584e4458a71ffa23905865c6724e5133201f2dc05e9d",
+        "at": "2026-10-14T09:31:16Z",
+        "note": "30/30 checks"
       },
       "escalations": [
         {
@@ -17190,7 +17189,15 @@
           "to": "deep",
           "reason": "QA needs a second round"
         }
-      ]
+      ],
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 3,
+        "qa_findings": 3,
+        "escalations": 1
+      }
     },
     {
       "id": "P136",
@@ -17227,6 +17234,14 @@
         "tree": "4a66fc898b9d9e2f8171dabd0d149011e6b4a8feece1bb67073f5e25e7d98fbe",
         "at": "2026-10-14T09:29:06Z",
         "note": "18/18 checks"
+      },
+      "outcome": {
+        "tier": "standard",
+        "predicted": "standard",
+        "held": true,
+        "fix_rounds": 3,
+        "qa_findings": 3,
+        "escalations": 0
       }
     }
   ],
@@ -28378,7 +28393,7 @@
       "req": "R185",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/hooks/session-start.sh line 56 (commit 10a93f0b): 'while IFS= read -t 1 -r line; do input=$input$line; done' keeps looping after the first JSON line. If Claude Code leaves the hook's stdin pipe open (the comment on lines 53-54 says it may, and the plan says 'read the hook input without ever blocking'), every session start waits a full extra second. Measured: printf '{\"session_id\":\"abc\"}\\n'; sleep 4 piped into the hook took 1.03 s wall, 0.03 s CPU (same hook with </dev/null: 0.03 s). The hook never read stdin before this phase, so this is new latency at every session start, and no test pins the open-pipe case. The input is one line, so one bounded read is enough. Regression test (tests/plugindir-path.bats): feed the hook one JSON line from a producer that keeps the pipe open for 3 s and assert the hook finishes in well under 1 s and still records session s1 (and a --plugin-dir session still writes the PATH line). Fix: read a single line ('IFS= read -r -t 1 input || true') instead of looping. Minor, not in doctor: vbw doctor builds the session-record path from $CLAUDE_CODE_SESSION_ID without the plain-name check the hook and status line apply (read only, so no write risk).",
       "phase": "P135"
     }
