@@ -4321,7 +4321,7 @@
   "milestone": {
     "id": "M29",
     "title": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -4463,6 +4463,11 @@
       "id": "M28",
       "title": "Stale proof copies: a process killed outright leaves its .vbw/runtime/proof.* copy (13 MB seen 2026-10-12 05:26 from a killed duplicate fix done); the next proof removes copies whose owner process is gone (record the owner pid in the copy folder, as the gate's mutex does), with a test. Part of the machine-wide limit milestone (T128)",
       "at": "2026-10-13T23:18:05Z"
+    },
+    {
+      "id": "M29",
+      "title": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
+      "at": "2026-10-14T00:42:24Z"
     }
   ],
   "requirements": [
@@ -30731,6 +30736,11 @@
       "id": "D360",
       "at": "2026-10-14T00:35:10Z",
       "text": "Contract approved: 173 requirements, 328 checks, 399 plans (cd33ef7dc04e)"
+    },
+    {
+      "id": "D361",
+      "at": "2026-10-14T00:42:24Z",
+      "text": "Shipped M29 A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one: 1 requirement proven or accepted"
     }
   ],
   "commands": {
@@ -35339,6 +35349,12 @@
             "out": 0,
             "at": "2026-10-13T23:18:09Z"
           }
+        },
+        "total": {
+          "usd": 15.208427,
+          "in": 54932,
+          "out": 64,
+          "sessions": 8
         }
       }
     }
