@@ -27528,332 +27528,19 @@
         "plugin/bin/vbw",
         "plugin/lib/cmd-mutate.sh",
         "plugin/lib/record.jq",
-        "plugin/lib/contract.sh"
+        "plugin/lib/contract.sh",
+        "plugin/lib/checks.sh"
       ],
       "after": [],
-      "status": "done",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "Record shape, contract untouched: plugin/lib/record.jq accepts an optional plan field mutations, an array of entries: a break {rule: {req, text}} or {task: K} with what (one line), files, checks ({ID: \"red\" | \"green\"}), result (\"red\" | \"survivor\"), at, head (the commit it ran on) and, on a red break after a survivor of the same target, strengthened (paths); or a task with nothing to break {task: K, none: REASON, at}. plugin/lib/contract.sh leaves mutations out of the contract core, the shape and contract_doc, so recording a break never changes the fingerprint or the approval.",
         "The command and its refusals: plugin/lib/cmd-mutate.sh with cmd_mutate, wired in plugin/bin/vbw (dispatch list, vbw help line, vbw_cmd_usage entry). Forms: vbw mutate PLAN Rn.k WHAT FILE... (rule k of requirement Rn, 1-based in that requirement's rules order, the numbering vbw show plan will show), vbw mutate PLAN taskK [--check ID]... WHAT FILE..., vbw mutate PLAN taskK --none REASON. Before anything runs, refuse with a message naming the next step and write nothing when: the plan, rule or task is unknown or the rule's requirement is not one the plan serves; a --check is not a check of the plan's requirements; --none is given with a rule or an empty reason; a FILE is not covered by the plan's files or is a check file; no FILE differs from HEAD (untracked counts); a check file of the checks to run differs from HEAD.",
         "The run, isolated: copy the named files' broken bytes (or note a deletion) into the run's folder under .vbw/runtime, restore the named files to HEAD at once (before any check starts, also on error or interrupt through the guard), then in a proof copy of HEAD (proofcopy, removed at the end) run the target's checks unbroken (a rule: its own check; a task: the plan's requirements' checks, or only the --check ones) through checks_begin (not strict: check files waiting for approval still run) and checks_run_all, so machine slots and check_jobs hold. Any check that does not pass unbroken refuses, naming it, nothing written; an earlier break of this plan at the same HEAD that ran the same checks proves the unbroken pass and it is not run again. Then put the break into the copy and run the checks again.",
         "Record and report: one locked record_update appends the entry; each check is red when it did not pass, green when it did; the result is survivor when every check stayed green: print a line naming survivor, the target (R2.1), the rule's text and the checks still passing, and exit 1; otherwise print each check red or green and exit 0. A red break after a survivor of the same target lists strengthened: the files of its checks whose content at this HEAD differs from the survivor's head. The named files are byte-identical to HEAD afterwards in every outcome.",
-        "Prove it: bats tests/mutate-command.bats and tests/mutate-isolation.bats pass under /bin/bash and bash 5; tests/standards.bats, tests/help-every-command.bats, tests/kernel-core.bats, tests/record-args-rule.bats and the approve and contract tests still pass. If the vbw on PATH has the mutate command (vbw mutate --help), record a red break for each R188 rule whose check is C350 or C351 (vbw show req R188 lists them), running vbw mutate from a copy of the kernel at HEAD (git archive HEAD plugin | tar -x -C .vbw/runtime/scratch/kernel-head) since the breaks are in kernel files; otherwise say in notes that the installed VBW predates the command."
-      ],
-      "mutations": [
-        {
-          "rule": {
-            "req": "R188",
-            "text": "a break the rule's check notices is recorded under the plan as red: the rule, the one-line description, the checks run and each check red or green"
-          },
-          "what": "entry loses description",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T20:58:56Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "a rule's break runs that rule's own check, not the requirement's others"
-          },
-          "what": "rule runs all requirement checks",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:00:04Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "nothing differing from the plan's last commit is refused, writing nothing"
-          },
-          "what": "no-change check skipped",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:01:20Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "a break in a file outside the plan's files is refused, writing nothing"
-          },
-          "what": "plan files not checked",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:02:20Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "a break touching a check file (named, or changed beside the break) is refused, writing nothing"
-          },
-          "what": "check file break allowed",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "green"
-          },
-          "result": "survivor",
-          "at": "2026-10-14T21:03:19Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "checks that do not pass on the unbroken code are refused, writing nothing"
-          },
-          "what": "failing unbroken checks accepted",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:04:19Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "a break leaving every check passing is recorded as a survivor, named with its rule in the output, and the command exits non-zero"
-          },
-          "what": "survivor exits 0",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:05:16Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "after a mutation check the named plan files are byte-identical to their last commit, red or survivor"
-          },
-          "what": "files left broken",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:06:12Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "recording a break leaves the contract approved with its fingerprint unchanged"
-          },
-          "what": "mutations enter the fingerprint",
-          "files": [
-            "plugin/lib/contract.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:07:07Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "a task break runs the checks of the plan's requirements, only the named ones with --check, never another requirement's"
-          },
-          "what": "task runs every check",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:08:06Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "a task with no testable behaviour is recorded with its written reason and nothing runs; a rule cannot be, and an empty reason is refused"
-          },
-          "what": "empty reason accepted",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "green"
-          },
-          "result": "survivor",
-          "at": "2026-10-14T21:09:14Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "an unknown plan, rule or task, or a rule of a requirement the plan does not serve, is refused, writing nothing"
-          },
-          "what": "unknown plan accepted",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "green"
-          },
-          "result": "survivor",
-          "at": "2026-10-14T21:10:27Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "the new kernel code is bash 3.2 compatible, passes JSON only through jq, and the kernel stays within 7,600 lines"
-          },
-          "what": "mapfile used",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:11:46Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "while a break is checked, another Dev's vbw check gets the result it gets with no break, and the working file already holds its last commit"
-          },
-          "what": "files kept broken until checks done",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C351": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:12:59Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "a mutation check takes machine slots: with the computer-wide limit taken it waits its turn and says so"
-          },
-          "what": "no slot taken",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C351": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:13:47Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "check_jobs caps how many of a mutation check's checks run at once"
-          },
-          "what": "check_jobs ignored",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C351": "green"
-          },
-          "result": "survivor",
-          "at": "2026-10-14T21:14:30Z",
-          "head": "bb45757c64e5a96a0f60afaee52906f6d1d95c87"
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "a break touching a check file (named, or changed beside the break) is refused, writing nothing"
-          },
-          "what": "check file break allowed",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:18:25Z",
-          "head": "e120842ef3faf7cff151f5585e8cd09d8c0ef951",
-          "strengthened": [
-            "tests/mutate-command.bats"
-          ]
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "a task with no testable behaviour is recorded with its written reason and nothing runs; a rule cannot be, and an empty reason is refused"
-          },
-          "what": "empty reason accepted",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:19:27Z",
-          "head": "e120842ef3faf7cff151f5585e8cd09d8c0ef951",
-          "strengthened": [
-            "tests/mutate-command.bats"
-          ]
-        },
-        {
-          "rule": {
-            "req": "R188",
-            "text": "an unknown plan, rule or task, or a rule of a requirement the plan does not serve, is refused, writing nothing"
-          },
-          "what": "unknown plan accepted",
-          "files": [
-            "plugin/lib/cmd-mutate.sh"
-          ],
-          "checks": {
-            "C350": "red"
-          },
-          "result": "red",
-          "at": "2026-10-14T21:20:32Z",
-          "head": "e120842ef3faf7cff151f5585e8cd09d8c0ef951",
-          "strengthened": [
-            "tests/mutate-command.bats"
-          ]
-        }
+        "Prove it: bats tests/mutate-command.bats and tests/mutate-isolation.bats pass under /bin/bash and bash 5; tests/standards.bats, tests/help-every-command.bats, tests/kernel-core.bats, tests/record-args-rule.bats and the approve and contract tests still pass. If the vbw on PATH has the mutate command (vbw mutate --help), record a red break for each R188 rule whose check is C350 or C351 (vbw show req R188 lists them), running vbw mutate from a copy of the kernel at HEAD (git archive HEAD plugin | tar -x -C .vbw/runtime/scratch/kernel-head) since the breaks are in kernel files; otherwise say in notes that the installed VBW predates the command.",
+        "R188.16 (check_jobs cap) survived a break in proofcopy because checks_run_all in plugin/lib/checks.sh also enforces the cap: record a red break of R188.16 by breaking that cap in checks.sh (C351), restore it, then vbw plan done"
       ]
     },
     {
@@ -38438,6 +38125,19 @@
         "started": "2026-10-14T20:53:56Z",
         "ended": "2026-10-14T21:21:04Z",
         "cost": null
+      },
+      {
+        "id": "plan-20261014T212124Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-14T21:21:24Z",
+        "ended": "2026-10-14T21:21:31Z",
+        "cost": {
+          "usd": 0,
+          "in": 0,
+          "out": 0
+        }
       }
     ],
     "milestones": {
