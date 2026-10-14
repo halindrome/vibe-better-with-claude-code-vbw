@@ -31556,6 +31556,17 @@
       "text": "The step that closes each workflow run (vbw run confirm, vbw run end, and in a fix round the round's vbw fix done) runs on the smallest model, Haiku, in every profile, whatever the Lead's model",
       "why": "chosen by the loop: about a fifth of Opus's price for two fixed commands; the record stays the source of truth, so a misread can only blur the summary line; the fix-round wait for a long vbw fix done must be tested on Haiku before release",
       "at": "2026-10-14T09:35:30Z"
+    },
+    {
+      "id": "D370",
+      "text": "tests/profile-lead-opus.bats test 2 (C180, R119) checks only the Lead's planning step (label 'lead') on Opus in the balanced profile; the run's closing step moves to Haiku by D369 and is checked by tests/close-haiku.bats",
+      "why": "The R186 planning found this approved test of finished work would fail once the closing step moves to Haiku; changed before approval by the main session, approved with this contract (same path as D175)",
+      "at": "2026-10-14T09:49:59Z"
+    },
+    {
+      "id": "D371",
+      "at": "2026-10-14T09:50:21Z",
+      "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-13T16:35:58Z, items T128, T127, T130, T132, T137, T135, T133: 175 requirements, 341 checks, 409 plans (4c570528d4ff))"
     }
   ],
   "commands": {
