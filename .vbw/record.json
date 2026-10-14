@@ -11030,6 +11030,14 @@
           "check": "C340"
         }
       ]
+    },
+    {
+      "id": "R186",
+      "text": "Brainstorm B4: every workflow's close-run step (vbw run confirm + run end) is a vbw:lead agent on model.lead, so Fable or Opus is paid once per run for two commands; give the step its own cheap model or let the workflow end the run itself",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M31",
+      "rules": []
     }
   ],
   "phases": [
@@ -29222,7 +29230,7 @@
       "text": "Brainstorm B4: every workflow's close-run step (vbw run confirm + run end) is a vbw:lead agent on model.lead, so Fable or Opus is paid once per run for two commands; give the step its own cheap model or let the workflow end the run itself",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "in_progress"
     },
     {
       "id": "T136",
@@ -36590,7 +36598,60 @@
         "id": "T135",
         "text": "Brainstorm B4: every workflow's close-run step (vbw run confirm + run end) is a vbw:lead agent on model.lead, so Fable or Opus is paid once per run for two commands; give the step its own cheap model or let the workflow end the run itself",
         "proof": "auto",
-        "status": "waiting"
+        "status": "in_progress",
+        "milestone": "M31",
+        "head": "efffc9e7649ba1c43f201c23b7d5a801e9c19979",
+        "baseline": {
+          "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
+            "usd": 1108.225639,
+            "in": 856268,
+            "out": 137,
+            "at": "2026-10-14T09:32:24Z"
+          },
+          "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-14T09:32:24Z"
+          },
+          "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-14T09:32:24Z"
+          },
+          "689c5465-3aa1-49af-9115-8192ae092ecf": {
+            "usd": 35.064654,
+            "in": 174558,
+            "out": 600,
+            "at": "2026-10-14T09:32:24Z"
+          },
+          "69afb011-3850-41d9-8620-9b59aa9fe082": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-14T09:32:24Z"
+          },
+          "868abfef-9fb7-492e-afba-751d9042e56a": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-14T09:32:24Z"
+          },
+          "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-14T09:32:24Z"
+          },
+          "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-14T09:32:24Z"
+          }
+        },
+        "req": "R186"
       },
       {
         "id": "T133",
