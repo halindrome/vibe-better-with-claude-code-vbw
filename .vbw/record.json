@@ -28283,13 +28283,79 @@
         "P140.2",
         "P140.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/mutation-run.sh standard|express, built the way tools/close-haiku-run.sh is (L2 header, PATH without installed plugins, the Claude login kept): a practice project in .vbw/runtime/scratch/mutation/<scenario> with two [auto] rules, one whose approved test cannot fail, contract approved, its phase at the scenario's tier; one headless claude -p session with this tree's plugin runs the building workflow; then vbw next --json is captured before any proof.",
         "The result file tools/baseline/results/mutation/<scenario>.json, read from the record, vbw next and the session transcripts, never typed by hand, with the fields tests/mutation-runs.bats names (scenario, tier, evidence_level, fixture, at, claude_version, cost_usd, minutes, minutes_added, decision, weak_rule, mutations, next_after_build, plan_status, commands); shellcheck clean (bash tools/test.sh --lint).",
         "Run both scenarios (real Claude Code sessions, a few US dollars; run in the background past the 10-minute shell limit and wait for the end), then record the outcome with vbw decide (fixture, L2, Claude Code version, cost, minutes added) and write that decision id into both result files; commit the tool and the results.",
         "Prove it: bats tests/mutation-runs.bats passes. If the vbw on PATH has the mutate command, record a red break for each R188 rule whose check is C357 (and, at deep, each task, or --none with a reason); otherwise say so in notes."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R188",
+            "text": "a maintainer script drives a headless standard or express build (L2) of a practice project whose test for one rule cannot fail"
+          },
+          "what": "the tool accepts deep",
+          "files": [
+            "tools/mutation-run.sh"
+          ],
+          "checks": {
+            "C357": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:42:50Z",
+          "head": "0b45c9e08e57c509ade7e3590fa315a3a6e3f27b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the standard result shows a survivor for that rule, the strengthened check file, the approval asked before the proof and a red result for the same break afterwards"
+          },
+          "what": "standard result has no survivor",
+          "files": [
+            "tools/baseline/results/mutation/standard.json"
+          ],
+          "checks": {
+            "C357": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:43:20Z",
+          "head": "5f3e8b2951e4940eb224f1724f0dab844fbc3bfb"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the express result on the same project shows no mutation step and an unchanged plan done"
+          },
+          "what": "express shows minutes added",
+          "files": [
+            "tools/baseline/results/mutation/express.json"
+          ],
+          "checks": {
+            "C357": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:43:41Z",
+          "head": "5f3e8b2951e4940eb224f1724f0dab844fbc3bfb"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "each result names its fixture, evidence level L2, Claude Code version, cost, minutes added by the mutation step and the decision recording it"
+          },
+          "what": "no decision id",
+          "files": [
+            "tools/baseline/results/mutation/express.json"
+          ],
+          "checks": {
+            "C357": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:43:59Z",
+          "head": "5f3e8b2951e4940eb224f1724f0dab844fbc3bfb"
+        }
       ]
     },
     {
@@ -28318,6 +28384,72 @@
         "docs/proof.md: a section headed The mutation check: a test that cannot fail is a survivor, strengthened in place in its own check file, re-run red; what vbw plan done waits for; the one approval it can add before the proof, and that under a loop the loop gives it and records a decision.",
         "docs/rigor.md: a section headed The mutation check at each tier: express nothing; standard each rule; deep each rule, each task and each error and edge case its rules state.",
         "Prove it: bats tests/mutation-docs.bats and the docs tests touching these files pass. If the vbw on PATH has the mutate command, record a red break for each R188 rule whose check is C358 (break one statement, run vbw mutate; at deep also each task); otherwise say so in notes."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R188",
+            "text": "docs/workflows.md says when the mutation step runs (standard and deep, never express or a fix), how a builder runs vbw mutate and that the break is undone"
+          },
+          "what": "workflows: undo removed",
+          "files": [
+            "docs/workflows.md"
+          ],
+          "checks": {
+            "C358": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:43:00Z",
+          "head": "5f3e8b2951e4940eb224f1724f0dab844fbc3bfb"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "docs/rigor.md says what is broken at each level"
+          },
+          "what": "rigor: levels changed",
+          "files": [
+            "docs/rigor.md"
+          ],
+          "checks": {
+            "C358": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:43:19Z",
+          "head": "5f3e8b2951e4940eb224f1724f0dab844fbc3bfb"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "docs/proof.md says what happens to a test that cannot fail and what vbw plan done waits for"
+          },
+          "what": "proof: survivor removed",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C358": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:43:40Z",
+          "head": "5f3e8b2951e4940eb224f1724f0dab844fbc3bfb"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "docs/proof.md says the one approval it can add before the proof and that a loop gives it with a decision"
+          },
+          "what": "proof: approval removed",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C358": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T20:43:58Z",
+          "head": "5f3e8b2951e4940eb224f1724f0dab844fbc3bfb"
+        }
       ]
     },
     {
@@ -33151,6 +33283,12 @@
       "id": "D385",
       "at": "2026-10-14T20:10:40Z",
       "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-14T15:58:04Z, items T74, T131, T118, T45, T123, T111, T140, T144: 177 requirements, 354 checks, 419 plans (7e4faaba5590))"
+    },
+    {
+      "id": "D386",
+      "text": "R188 L2 runs of the mutation check: fixture .vbw/runtime/scratch/mutation (one plan, two rules, one test that cannot fail), Claude Code 2.1.300; standard cost 0.22 USD with 14 s added by the mutation step, express 0.15 USD with none",
+      "why": "P141.1: the standard run caught the weak test of R2 as a survivor, strengthened tests/bye.sh, asked one approval before the proof and then showed the same break red; the express run had no mutation step",
+      "at": "2026-10-14T20:41:07Z"
     }
   ],
   "commands": {
@@ -37939,6 +38077,15 @@
         "milestone": "M33",
         "started": "2026-10-14T20:27:35Z",
         "ended": "2026-10-14T20:36:46Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T203745Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-14T20:37:45Z",
+        "ended": "2026-10-14T20:46:06Z",
         "cost": null
       }
     ],
