@@ -9,6 +9,7 @@
     "tests/apply-narrow.bats",
     "tests/apply-refusal-modes.bats",
     "tests/apply-reopen.bats",
+    "tests/apply-supersede.bats",
     "tests/apply-tier-started.bats",
     "tests/apply-unstarted-goal.bats",
     "tests/approval-after-plan.bats",
@@ -55,6 +56,9 @@
     "tests/close-haiku-docs.bats",
     "tests/close-haiku-runs.bats",
     "tests/close-haiku.bats",
+    "tests/close-lead-model-cleanup.bats",
+    "tests/close-lead-model-docs.bats",
+    "tests/close-lead-model.bats",
     "tests/command-timeout-docs.bats",
     "tests/command-timeout-report.bats",
     "tests/command-timeout.bats",
@@ -4529,6 +4533,58 @@
       "files": [
         "tests/config-skill-check-jobs.bats"
       ]
+    },
+    {
+      "id": "C350",
+      "req": "R188",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/close-lead-model.bats"
+      ],
+      "files": [
+        "tests/close-lead-model.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C351",
+      "req": "R188",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/close-lead-model-docs.bats"
+      ],
+      "files": [
+        "tests/close-lead-model-docs.bats"
+      ],
+      "timeout": 60
+    },
+    {
+      "id": "C352",
+      "req": "R188",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/close-lead-model-cleanup.bats"
+      ],
+      "files": [
+        "tests/close-lead-model-cleanup.bats"
+      ],
+      "timeout": 60
+    },
+    {
+      "id": "C353",
+      "req": "R188",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/apply-supersede.bats"
+      ],
+      "files": [
+        "tests/apply-supersede.bats"
+      ],
+      "timeout": 300
     }
   ],
   "project": {
@@ -11222,7 +11278,120 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M33",
-      "rules": []
+      "rules": [
+        {
+          "text": "no workflow in plugin/workflows/ has a CLOSE_MODEL constant or a hard-coded haiku on its closing calls",
+          "check": "C350"
+        },
+        {
+          "text": "in building, verifying, fixing, planning and mapping the 'close run' agent is sent args.models.lead: opus, sonnet, claude-opus-5-5, and haiku when the user chose it",
+          "check": "C350"
+        },
+        {
+          "text": "in every profile (quality, balanced, budget) the closing step is sent that profile's Lead model",
+          "check": "C350"
+        },
+        {
+          "text": "a model.lead the user set with vbw config (claude-opus-5-5, sonnet, haiku) reaches the closing step",
+          "check": "C350"
+        },
+        {
+          "text": "without a session, vbw:fixing's own 'fix done' agent is sent args.models.lead, like its 'close run' agent",
+          "check": "C350"
+        },
+        {
+          "text": "edge: with args.models.lead missing or empty, the closing agents are sent no model field at all, never haiku",
+          "check": "C350"
+        },
+        {
+          "text": "unchanged: the closing agents keep agent type vbw:lead, their labels, their answer schemas and the profile's lead.close effort",
+          "check": "C350"
+        },
+        {
+          "text": "unchanged: the closing prompt runs vbw fix done, then vbw run confirm, then vbw run end; building and QA confirm then end",
+          "check": "C350"
+        },
+        {
+          "text": "error: a closing agent that stops without answering leaves, in every workflow, the exact commands to run by hand",
+          "check": "C350"
+        },
+        {
+          "text": "error: a closing agent that answers recorded=false or ended=false has its report logged",
+          "check": "C350"
+        },
+        {
+          "text": "no other agent's model changes: the Lead plans on models.lead, and in balanced every vbw:lead call runs on opus and every role but the Architect on sonnet",
+          "check": "C350"
+        },
+        {
+          "text": "docs/workflows.md says the closing step runs on the Lead's model (model.lead) and no sentence puts it on Haiku",
+          "check": "C351"
+        },
+        {
+          "text": "docs/rigor.md says the closing step runs on the Lead's model (model.lead) and no sentence puts it on Haiku",
+          "check": "C351"
+        },
+        {
+          "text": "the help for vbw config, vbw config set, the config skill and the guides never say model.lead leaves out the closing step",
+          "check": "C351"
+        },
+        {
+          "text": "in docs/workflows.md the line ending 'With it:' is still followed by its list",
+          "check": "C351"
+        },
+        {
+          "text": "tools/close-haiku-run.sh and tools/baseline/results/close-haiku/ are gone and nothing in tools/ claims a Haiku close",
+          "check": "C352"
+        },
+        {
+          "text": "tests/profile-lead-opus.bats checks both Lead steps, planning and closing, on opus in the balanced profile, with no D369/D370 note",
+          "check": "C352"
+        },
+        {
+          "text": "a decision recorded after D370 marks D369 and D370 superseded",
+          "check": "C352"
+        },
+        {
+          "text": "vbw apply with supersedes [{req, by}] records the old requirement as superseded by the new one: its rules and checks leave the record, its test files are no longer protected, its open fixes close, its phases and plans stay",
+          "check": "C353"
+        },
+        {
+          "text": "vbw apply --patch and vbw apply --add take supersedes too",
+          "check": "C353"
+        },
+        {
+          "text": "error: supersedes naming an unknown requirement on either side is refused, naming it, and nothing changes",
+          "check": "C353"
+        },
+        {
+          "text": "error: the replacing requirement must be one a phase of the current milestone covers",
+          "check": "C353"
+        },
+        {
+          "text": "error: a requirement cannot replace itself, and one a phase of the plan covers cannot be superseded",
+          "check": "C353"
+        },
+        {
+          "text": "error: a requirement already superseded is not superseded again",
+          "check": "C353"
+        },
+        {
+          "text": "error: a malformed supersedes (not a list, a missing or extra key, a non-string id) is refused and nothing changes",
+          "check": "C353"
+        },
+        {
+          "text": "the supersession is part of the contract: vbw next asks for approval again, vbw show contract --changes and vbw show req name it",
+          "check": "C353"
+        },
+        {
+          "text": "a superseded requirement is approved without checks, stays superseded through vbw prove and vbw spec sync, and vbw next never asks about it",
+          "check": "C353"
+        },
+        {
+          "text": "error: the record refuses superseded without by, a by naming a missing requirement, a by on a requirement that is not superseded, and a check of a superseded requirement",
+          "check": "C353"
+        }
+      ]
     }
   ],
   "phases": [
@@ -17505,6 +17674,41 @@
         "qa_findings": 0,
         "escalations": 0
       }
+    },
+    {
+      "id": "P139",
+      "title": "The closing step runs on the Lead's model again",
+      "reqs": [
+        "R188"
+      ],
+      "milestone": "M33",
+      "goal": "In every workflow and every profile, the step that closes a run uses the model the user chose for the Lead (model.lead), as it did before D369, with docs and tests saying the same.",
+      "criteria": [
+        "building.js, verifying.js, fixing.js, planning.js and mapping.js have no CLOSE_MODEL constant and no hard-coded 'haiku' for the closing step; a search of plugin/workflows/ for CLOSE_MODEL finds nothing",
+        "With a stubbed runtime (tests/helpers/run-workflow-all.js), in each of the five workflows the agent labelled 'close run' is sent the same model as args.models.lead, for every value tried: opus, sonnet, a full model id such as claude-opus-5-5, and haiku when the user set model.lead to haiku",
+        "In vbw:fixing with no session given, the agent labelled 'fix done' is sent args.models.lead as its model, the same as the 'close run' agent",
+        "Edge case: when args.models.lead is missing or empty, the closing agents are sent no model field at all (they inherit the session's model, as before D369); they are never sent 'haiku' as a fallback",
+        "Unchanged by this phase, each pinned by a test: the closing agent's agentType (vbw:lead), its labels ('close run', 'fix done'), its answer schemas, the profile's lead.close effort sent to it, and its command order (vbw fix done before vbw run confirm before vbw run end)",
+        "Unchanged error paths, each pinned by a test: when the closing agent stops (returns null) the workflow logs the exact commands to run by hand; when it answers recorded=false or ended=false the workflow logs its report",
+        "No other agent's model changes: the Lead's planning step ('lead') stays on model.lead, and Dev, QA, Scout, Debugger, Docs and Architect keep the models their profile gives (balanced: Lead opus, Dev and QA sonnet, checked by tests/profile-lead-opus.bats)",
+        "tests/profile-lead-opus.bats (C180, R119) checks again that every vbw:lead call in the balanced profile, the planning step and the closing step, runs on opus; its D369/D370 comment is gone",
+        "docs/workflows.md and docs/rigor.md say the closing step runs on the Lead's model (model.lead) and contain no sentence saying it runs on Haiku; the vbw help line for config model.lead does not say it excludes the closing step",
+        "The approved R186 checks that assert Haiku (C344 close-haiku.bats, C345 and C347 close-haiku-docs.bats, C346 and C348 close-haiku-runs.bats) are replaced through the approval path by R188 checks asserting the Lead's model; no check in the record asserts a Haiku closing step, and the protected-file list no longer names test files that were deleted",
+        "The R186-only L2 tool tools/close-haiku-run.sh and its results in tools/baseline/results/close-haiku/ are removed or rewritten to record the Lead's model, so no committed tool or result claims a Haiku close",
+        "D369 and D370 are marked superseded by a new decision recording the owner's choice of 2026-10-14 (the Lead's model is kept for closing; the extra cost is accepted), and R186 is recorded as superseded by R188 rather than left proven",
+        "bash tools/test.sh passes under macOS /bin/bash 3.2, with the workflow line budget (1,500 lines of JS) not exceeded"
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 20 (237817 bytes)",
+        "files: more than 2 in a repository tracking 964 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R10 (C9), R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R27 (C21), R28 (C25), R31 (C27), R33 (C29), R35 (C31), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R95 (C149, C150), R96 (C151, C152), R99 (C155), R101 (C179), R102 (C158, C159), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R145 (C210), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R182 (C322, C323, C324, C325, C326), R186 (C344, C345, C346, C347, C348)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -27045,6 +27249,85 @@
       "tasks": [
         "in the check_jobs line, add that the computer-wide limit (three quarters of the cores, shared by every VBW project, not a setting; docs/proof.md) caps it"
       ]
+    },
+    {
+      "id": "P139.1",
+      "phase": "P139",
+      "title": "Let a newer requirement officially replace an older one",
+      "reqs": [
+        "R188"
+      ],
+      "files": [
+        "plugin/lib/cmd-apply.sh",
+        "plugin/lib/record.jq",
+        "plugin/lib/next.jq",
+        "plugin/lib/prove.jq",
+        "plugin/lib/cmd-approve.sh",
+        "plugin/lib/contract.sh",
+        "plugin/lib/cmd-show.sh",
+        "plugin/agents/lead.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Record format (record.jq): a requirement may have the status superseded with a by field naming the requirement that replaced it; the record refuses superseded without by, a by naming a missing requirement, a by on a requirement that is not superseded, and a check that belongs to a superseded requirement",
+        "vbw apply (full, --patch and --add) reads an optional supersedes list of {req, by}; it refuses, naming the requirement and writing nothing, a malformed list, an unknown requirement on either side, a requirement replacing itself, one already superseded, one a phase of the plan covers, and a by that no phase of the current milestone covers",
+        "Applying it: the old requirement becomes superseded by the new one, its rules and checks leave the record (so its test files are no longer protected), its open fixes close, and its phases and plans stay as history",
+        "vbw next, vbw prove and approval treat a superseded requirement as settled: never unproven, never re-proved, no check needed; the contract includes the supersession, vbw show contract --changes prints 'R1 superseded by R3' and vbw show req prints 'superseded by R3' on its first line",
+        "The Lead's instructions (plugin/agents/lead.md, Planning again) name the supersedes key in one sentence"
+      ]
+    },
+    {
+      "id": "P139.2",
+      "phase": "P139",
+      "title": "Workflows close the run on the Lead's model again; the Haiku test tool goes",
+      "reqs": [
+        "R188"
+      ],
+      "files": [
+        "plugin/workflows/building.js",
+        "plugin/workflows/verifying.js",
+        "plugin/workflows/fixing.js",
+        "plugin/workflows/planning.js",
+        "plugin/workflows/mapping.js",
+        "tools/close-haiku-run.sh",
+        "tools/baseline/results/close-haiku/building.json",
+        "tools/baseline/results/close-haiku/fixing.json",
+        "tools/baseline/results/close-haiku/long-fix.json"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "building.js and verifying.js: remove CLOSE_MODEL; the close run agent is sent models.lead when it is set, and no model otherwise; building.js's args comment no longer says models.lead is unused for closing",
+        "fixing.js: the same for its close run agent and for its own fix done agent used when no session is given",
+        "planning.js and mapping.js: the same for their close run agent",
+        "Delete tools/close-haiku-run.sh and its three results in tools/baseline/results/close-haiku/, so nothing in tools/ claims a Haiku close"
+      ]
+    },
+    {
+      "id": "P139.3",
+      "phase": "P139",
+      "title": "Guides: the closing step runs on the Lead's model; how a requirement is replaced",
+      "reqs": [
+        "R188"
+      ],
+      "files": [
+        "docs/workflows.md",
+        "docs/rigor.md",
+        "docs/record.md"
+      ],
+      "after": [
+        "P139.1"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/workflows.md: replace the two Haiku sentences (after the 'With it:' list and in the Effort section) with one saying the closing step, close run and fixing's own fix done, runs on the Lead's model (model.lead); keep the 'With it:' list right after its line",
+        "docs/rigor.md: the Lead plans and closes each run on its model (model.lead); remove the Haiku sentence",
+        "docs/record.md and the vbw apply section of docs/workflows.md: the supersedes key, the superseded status and its by field, what leaves the contract, and the refusals"
+      ]
     }
   ],
   "fixes": [
@@ -31748,6 +32031,12 @@
       "id": "D376",
       "at": "2026-10-14T11:26:28Z",
       "text": "Shipped M32 Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09): 1 requirement proven or accepted"
+    },
+    {
+      "id": "D377",
+      "text": "D369 and D370 are superseded (R188): the step that closes a run (close run, and vbw:fixing's own fix done when no session is given) runs on the Lead's model (model.lead) again, in every workflow and profile, and sends no model when model.lead is not set; tests/profile-lead-opus.bats checks both Lead steps, planning and closing, on Opus in the balanced profile again. A cheaper close stays brainstorm idea B4 for 2.1.1",
+      "why": "Owner's choice, 2026-10-14: 'I want to keep lead being who user selected. dont care about the extra cost'. The extra cost of the closing step on the Lead's model is accepted",
+      "at": "2026-10-14T14:54:16Z"
     }
   ],
   "commands": {
@@ -36444,6 +36733,19 @@
         "started": "2026-10-14T11:13:28Z",
         "ended": "2026-10-14T11:14:06Z",
         "cost": null
+      },
+      {
+        "id": "plan-20261014T144546Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-14T14:45:46Z",
+        "ended": "2026-10-14T15:05:20Z",
+        "cost": {
+          "usd": 5.641368,
+          "in": 13643,
+          "out": 48
+        }
       }
     ],
     "milestones": {
