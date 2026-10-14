@@ -28315,7 +28315,7 @@
       "req": "R185",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The SessionStart hook (plugin/hooks/session-start.sh lines 62-82, commit 10a93f0b) now writes outside the project in a --plugin-dir session: it creates <claude-config-dir>/vbw/sessions/<session id>, deletes records older than 7 days there, and (installed copy) removes its session's record. The criterion allows only writes 'already allowed', and docs/guards.md line 268 still says 'VBW itself writes nothing outside the project except the slot store (<claude-config-dir>/vbw/slots.json) and the user's settings.json'; its SessionStart section (line ~260) also still says the hook 'never writes'. No decision records the new exception and no doc names the sessions folder or the PATH line it appends to CLAUDE_ENV_FILE. tests/plugindir-docs.bats pins CONTRIBUTING.md, statusline.md and diagnostics.md only. Regression test to add: a docs test (like tests/machine-limit-docs.bats) that fails unless docs/guards.md names <claude-config-dir>/vbw/sessions and the env-file PATH line in the outside-the-project sentence and the SessionStart section. Fix: record a decision accepting the sessions folder as a second allowed exception (or move it inside the project), then update docs/guards.md.",
       "phase": "P135"
     }
@@ -35670,6 +35670,15 @@
           "in": 3764,
           "out": 371
         }
+      },
+      {
+        "id": "fix-20261014T021913Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M30",
+        "started": "2026-10-14T02:19:13Z",
+        "ended": "2026-10-14T02:22:33Z",
+        "cost": null
       }
     ],
     "milestones": {
