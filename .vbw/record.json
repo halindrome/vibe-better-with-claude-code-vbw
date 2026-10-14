@@ -27509,7 +27509,7 @@
         "plugin/lib/contract.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Record shape, contract untouched: plugin/lib/record.jq accepts an optional plan field mutations, an array of entries: a break {rule: {req, text}} or {task: K} with what (one line), files, checks ({ID: \"red\" | \"green\"}), result (\"red\" | \"survivor\"), at, head (the commit it ran on) and, on a red break after a survivor of the same target, strengthened (paths); or a task with nothing to break {task: K, none: REASON, at}. plugin/lib/contract.sh leaves mutations out of the contract core, the shape and contract_doc, so recording a break never changes the fingerprint or the approval.",
@@ -32461,11 +32461,6 @@
       "at": "2026-10-14T16:03:32Z"
     },
     {
-      "id": "D382",
-      "at": "2026-10-14T17:22:49Z",
-      "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-14T15:58:04Z, items T74, T131, T118, T45, T123, T111, T140, T144: 177 requirements, 354 checks, 419 plans (a74c9d691210))"
-    },
-    {
       "id": "D383",
       "at": "2026-10-14T17:22:49Z",
       "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-14T15:58:04Z, items T74, T131, T118, T45, T123, T111, T140, T144: 177 requirements, 354 checks, 419 plans (a74c9d691210))"
@@ -37195,6 +37190,15 @@
         "milestone": "M33",
         "started": "2026-10-14T16:03:34Z",
         "ended": "2026-10-14T17:22:27Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T172311Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-14T17:23:11Z",
+        "ended": "2026-10-14T17:45:19Z",
         "cost": null
       }
     ],
