@@ -85,3 +85,15 @@ result() {
     || { cat "$RESULTS/long-fix.json"; false; }
   jq -e "$FIXES" "$RESULTS/long-fix.json" || { cat "$RESULTS/long-fix.json"; false; }
 }
+
+@test "R186: the tool header's dollar range holds every committed result's cost_usd" {
+  local range lo hi f
+  range=$(sed -n '1,30p' "$TOOL" | grep -oE 'roughly [0-9.]+ to [0-9.]+ USD' | head -n 1)
+  [ -n "$range" ] || { echo "no 'roughly N to M USD' in the tool header"; false; }
+  lo=$(printf '%s' "$range" | awk '{print $2}')
+  hi=$(printf '%s' "$range" | awk '{print $4}')
+  for f in "$RESULTS"/*.json; do
+    jq -e --argjson lo "$lo" --argjson hi "$hi" '.cost_usd >= $lo and .cost_usd <= $hi' "$f" > /dev/null \
+      || { echo "$f: cost_usd $(jq .cost_usd "$f") outside $lo to $hi USD"; false; }
+  done
+}
