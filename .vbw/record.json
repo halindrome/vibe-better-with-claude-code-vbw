@@ -37399,6 +37399,10 @@
         "at": "2026-10-13T16:35:58Z"
       }
     },
-    "report": ".vbw/loop-report.md"
+    "report": ".vbw/loop-report.md",
+    "ended": {
+      "at": "2026-10-14T11:26:33Z",
+      "reason": "end of the list: 7 shipped, 0 parked"
+    }
   }
 }
