@@ -27020,7 +27020,7 @@
         "plugin/skills/config/SKILL.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "in the check_jobs line, add that the computer-wide limit (three quarters of the cores, shared by every VBW project, not a setting; docs/proof.md) caps it"
       ]
@@ -36394,6 +36394,15 @@
         "milestone": "M31",
         "started": "2026-10-14T11:09:20Z",
         "ended": "2026-10-14T11:11:28Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T111328Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M32",
+        "started": "2026-10-14T11:13:28Z",
+        "ended": "2026-10-14T11:14:06Z",
         "cost": null
       }
     ],
