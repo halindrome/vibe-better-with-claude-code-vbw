@@ -262,7 +262,15 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
 
 In a VBW project, one line of context: the project state and `vbw next`.
 Started in a subdirectory of a VBW project, it says the guards are off and
-where to start instead. It never writes and never injects resume directives
-(ledger D289).
+where to start instead. It never injects resume directives (ledger D289). It
+writes only for a copy loaded with `claude --plugin-dir`: a PATH line in the
+file Claude Code provides for it (`CLAUDE_ENV_FILE`), and the session record
+below.
 
-VBW itself writes nothing outside the project except the slot store (`<claude-config-dir>/vbw/slots.json`, the computer-wide limit in docs/proof.md) and the user's `settings.json`.
+VBW itself writes nothing outside the project except three things: the slot
+store (`<claude-config-dir>/vbw/slots.json`, the computer-wide limit in
+docs/proof.md); the session record of a `--plugin-dir` session
+(`<claude-config-dir>/vbw/sessions/<session id>`, one line naming the loaded
+plugin folder, read by the status line and `vbw doctor`; records older than 7
+days are removed, and an installed copy removes its own session's record;
+D364); and the user's `settings.json`.
