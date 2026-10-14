@@ -78,7 +78,7 @@ has_line() {
 
 @test "R188: a survivor is strengthened in place in its own requirement's check file, never another's, never weakened, re-run until red, committed with the plan, and waits for one approval" {
   has_line "$DEV" survivor strengthen "in place"
-  has_line "$DEV" strengthen "another requirement"
+  has_line "$DEV" strengthen "never another requirement"
   has_line "$DEV" strengthen weaken
   has_line "$DEV" "same break" red
   has_line "$DEV" strengthen commit approval
