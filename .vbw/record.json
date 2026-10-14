@@ -28688,7 +28688,7 @@
       "text": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
       "sort": "next",
       "size": "small",
-      "status": "in_progress"
+      "status": "done"
     },
     {
       "id": "T133",
@@ -35560,7 +35560,7 @@
         "id": "T132",
         "text": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
         "proof": "auto",
-        "status": "in_progress",
+        "status": "shipped",
         "milestone": "M29",
         "head": "f57000c173b4b06f27aac75f7c9a1815286b6f20",
         "baseline": {
@@ -35613,7 +35613,13 @@
             "at": "2026-10-13T23:18:16Z"
           }
         },
-        "req": "R184"
+        "req": "R184",
+        "cost": {
+          "usd": 15.208427,
+          "in": 54932,
+          "out": 64
+        },
+        "at": "2026-10-14T00:42:25Z"
       },
       {
         "id": "T137",
