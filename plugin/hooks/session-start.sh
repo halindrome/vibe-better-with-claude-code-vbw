@@ -52,9 +52,8 @@ loaded=0
 
 # The hook's input arrives on stdin as one JSON line; Claude Code may leave
 # the pipe open, so never wait for its end.
-input="" line=""
-while IFS= read -t 1 -r line; do input=$input$line; done
-input=$input$line
+input=""
+IFS= read -r -t 1 input || true
 sid=$(printf '%s' "$input" | jq -r '.session_id // "" | if test("^[A-Za-z0-9_-]+$") then . else "" end' 2> /dev/null || true)
 
 # A loaded copy puts its own bin/ first on PATH for the session (the env file
