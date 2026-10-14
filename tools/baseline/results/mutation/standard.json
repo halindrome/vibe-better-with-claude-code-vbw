@@ -1,0 +1,91 @@
+{
+  "scenario": "standard",
+  "tier": "standard",
+  "evidence_level": "L2",
+  "fixture": "one plan (P1.1) creating src/hello.sh and src/bye.sh; R1 (hello.sh prints hello) and R2 (bye.sh prints bye), one rule each; the check of R2 only runs bye.sh and cannot fail on what it prints",
+  "at": "2026-10-14T20:39:19Z",
+  "claude_version": "2.1.300",
+  "cost_usd": 0.22220793000000003,
+  "minutes": 0.7,
+  "minutes_added": 0.23333333333333334,
+  "decision": "D386",
+  "weak_rule": {
+    "req": "R2",
+    "text": "bye.sh prints bye"
+  },
+  "mutations": [
+    {
+      "rule": {
+        "req": "R1",
+        "text": "hello.sh prints hello"
+      },
+      "what": "print nope instead of hello",
+      "files": [
+        "src/hello.sh"
+      ],
+      "checks": {
+        "C1": "red"
+      },
+      "result": "red",
+      "at": "2026-10-14T20:39:39Z",
+      "head": "c75d087974015cb175d0526711907598c88690cf"
+    },
+    {
+      "rule": {
+        "req": "R2",
+        "text": "bye.sh prints bye"
+      },
+      "what": "print nope instead of bye",
+      "files": [
+        "src/bye.sh"
+      ],
+      "checks": {
+        "C2": "green"
+      },
+      "result": "survivor",
+      "at": "2026-10-14T20:39:41Z",
+      "head": "c75d087974015cb175d0526711907598c88690cf"
+    },
+    {
+      "rule": {
+        "req": "R2",
+        "text": "bye.sh prints bye"
+      },
+      "what": "print nope instead of bye",
+      "files": [
+        "src/bye.sh"
+      ],
+      "checks": {
+        "C2": "red"
+      },
+      "result": "red",
+      "at": "2026-10-14T20:39:46Z",
+      "head": "ba02c45a288e27af617213c72a4893c91d11af78",
+      "strengthened": [
+        "tests/bye.sh"
+      ]
+    }
+  ],
+  "next_after_build": {
+    "action": "approve",
+    "files": [
+      "tests/bye.sh"
+    ]
+  },
+  "plan_status": "done",
+  "commands": [
+    "vbw show plan P1.1",
+    "vbw check --expect-red C1 C2; ls tests src; cat tests/*.sh",
+    "printf 'echo hello\\n' > src/hello.sh; vbw commit P1.1 \"feat(P1.1): add hello.sh\" src/hello.sh; printf 'echo bye\\n' > src/bye.sh; vbw commit P1.1 \"feat(P1.1): add bye.sh\" src/bye.sh; vbw check C1 C2",
+    "vbw mutate P1.1 R1.1 \"print goodbye instead of hello\" src/hello.sh; vbw mutate P1.1 R2.1 \"print wrong text instead of bye\" src/bye.sh; git status --short",
+    "echo 'echo nope' > src/hello.sh; vbw mutate P1.1 R1.1 \"print nope instead of hello\" src/hello.sh; echo 'echo nope' > src/bye.sh; vbw mutate P1.1 R2.1 \"print nope instead of bye\" src/bye.sh; git status --short; cat src/*.sh",
+    "printf '[ \"$(sh src/bye.sh)\" = bye ]\\n' > tests/bye.sh; vbw commit P1.1 \"test(P1.1): assert bye.sh output\" tests/bye.sh; echo 'echo nope' > src/bye.sh; vbw mutate P1.1 R2.1 \"print nope instead of bye\" src/bye.sh; cat src/bye.sh; vbw check C2",
+    "vbw plan done P1.1"
+  ],
+  "not_tested": [
+    "a person using /vbw:vibe (L3)",
+    "a project of real size",
+    "the deep tier",
+    "models other than Sonnet for the Dev"
+  ]
+}
