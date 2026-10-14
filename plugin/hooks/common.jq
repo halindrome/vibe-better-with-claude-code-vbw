@@ -90,7 +90,6 @@ def lease_write_denial($lease; $record):
     "\(.) cannot be written during a \($lease.kind) run: its agents only read\nNext: leave \(.) as it is; report the change you need in your result for the session that started the run"
   elif scratch_path then empty
   elif $lease.kind == "plan" and test_path then empty
-  elif $lease.kind == "build" and (. as $p | any($lease.editable[]?; . == $p)) then empty
   elif $lease.new_tests == true and (. as $p | any($lease.editable[]?; . == $p)) then empty
   elif $lease.new_tests == true and (. as $p | any($record.protected[]?; . == $p)) then
     "\(.) is a protected check file of another requirement: the fix may edit only the check files of its own requirement (\($lease.editable | join(", ")))\nNext: leave \(.) as it is; put the regression test in a new test file and register it with vbw fix check"
