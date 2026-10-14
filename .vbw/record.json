@@ -33599,6 +33599,17 @@
       "id": "D389",
       "at": "2026-10-14T21:46:07Z",
       "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-14T15:58:04Z, items T74, T131, T118, T45, T123, T111, T140, T144: 177 requirements, 354 checks, 419 plans (ae244e7c8d01))"
+    },
+    {
+      "id": "D390",
+      "text": "P139.1 owns tests/mutate-command.bats and re-records its breaks; T74 is finished step by step, not by the loop",
+      "why": "owner 2026-10-15 00:40: 'I finish T74 by hand'; the strengthening commit e120842e lost its survivor records when a patch dropped them (T154), so the proof saw it as out of scope and the loop's park broke the record (T153)",
+      "at": "2026-10-14T23:34:22Z"
+    },
+    {
+      "id": "D391",
+      "at": "2026-10-14T23:41:19Z",
+      "text": "Contract approved: 177 requirements, 354 checks, 419 plans (24303c7daee6)"
     }
   ],
   "commands": {
