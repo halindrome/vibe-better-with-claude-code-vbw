@@ -1,0 +1,55 @@
+{
+  "scenario": "long-fix",
+  "evidence_level": "L2",
+  "fixture": "two finished requirements with one check each of 620 seconds; two open fixes of R1 and R2 with their changes committed (vbw fix done runs about 10.5 minutes)",
+  "at": "2026-10-14T10:09:41Z",
+  "claude_version": "2.1.299",
+  "cost_usd": 0.3647635050000001,
+  "profile": "balanced",
+  "lead_model": "opus",
+  "close": {
+    "label": "close run",
+    "model": "claude-haiku-5-5",
+    "effort_sent": "low",
+    "answer": {
+      "fixdone": "ran",
+      "closed": [
+        "F1",
+        "F2"
+      ],
+      "open": [],
+      "ended": true,
+      "recorded": true,
+      "report": "all recorded; run ended. The fix run ran both checks (C1 and C2 passed, 620s each, 0 reused). `vbw fix done` reported F1 and F2 fixed. `vbw run confirm` recorded both (exit 0), and `vbw run end` succeeded."
+    }
+  },
+  "commands": [
+    "VBW_SESSION_ID=1a65d7b6-00ad-451c-a79e-f3471b2e0bd2 vbw fix done F1 F2",
+    "f=/private/tmp/claude-501/-Users-tiagoserodio-Documents-AI-Stuff-vibe-better-with-claude-code-vbw-worktrees-v2--vbw-runtime-scratch-close-haiku-long-fix-project/1a65d7b6-00ad-451c-a79e-f3471b2e0bd2/tasks/b1a5u7lpn.output; i=0; while [ $i -lt 1100 ]; do if ! pgrep -f \"vbw fix done\" >/dev/null 2>&1; then break; fi; i=$((i+1)); perl -e 'select(undef,undef,undef,0.5)'; done; cat \"$f\"",
+    "sleep 1; echo waiting",
+    "perl -e 'select(undef,undef,undef,60)'; echo done",
+    "VBW_SESSION_ID=1a65d7b6-00ad-451c-a79e-f3471b2e0bd2 vbw run confirm F1 F2; echo \"CONFIRM_EXIT=$?\"",
+    "VBW_SESSION_ID=1a65d7b6-00ad-451c-a79e-f3471b2e0bd2 vbw run end; echo \"END_EXIT=$?\""
+  ],
+  "run_open_after": false,
+  "fixes": [
+    {
+      "id": "F1",
+      "status": "fixed"
+    },
+    {
+      "id": "F2",
+      "status": "fixed"
+    }
+  ],
+  "fixdone": {
+    "seconds": 677,
+    "backgrounded": true
+  },
+  "not_tested": [
+    "a person using /vbw:vibe (L3)",
+    "the closing step on Haiku in a project of real size",
+    "the other workflows (planning, mapping, verifying)",
+    "Fable as the session model"
+  ]
+}
