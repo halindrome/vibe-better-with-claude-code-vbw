@@ -122,15 +122,19 @@ got_input() {
   settings_with "$(mine)"
   vbw_run statusline on
   installed off
-  local cmd start
+  local cmd pid i=0
   cmd=$(jq -r '.statusLine.command' "$SETTINGS")
-  start=$SECONDS
-  run sh -c "$cmd" < <(exec 3>&-; sleep 6)
-  [ $((SECONDS - start)) -lt 5 ] || {
-    echo "the setting waited $((SECONDS - start)) seconds for input that never came"
+  # A watchdog, not a clock: the setting must end on its own within about 5 s (50 looks, 0.1 s apart).
+  sh -c "$cmd" < <(exec 3>&-; sleep 8) > "$TEST_ROOT/out" 2>&1 &
+  pid=$!
+  while kill -0 "$pid" 2> /dev/null && [ "$i" -lt 50 ]; do sleep 0.1; i=$((i + 1)); done
+  if kill -0 "$pid" 2> /dev/null; then
+    kill "$pid" 2> /dev/null
+    echo "the setting was still waiting for input that never came after about 5 s"
     false
-  }
-  [ "$output" = "my own line 1" ]
+  fi
+  wait "$pid" || true
+  [ "$(cat "$TEST_ROOT/out")" = "my own line 1" ]
 }
 
 @test "R184: vbw statusline on updates an older VBW setting in place, keeping the refresh interval, every other field and the saved earlier status line" {

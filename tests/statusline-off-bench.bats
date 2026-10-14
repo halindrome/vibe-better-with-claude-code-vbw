@@ -22,8 +22,10 @@ teardown() { vbw_teardown; }
 
 burn() { printf "perl -e '1 while (times)[0] + (times)[1] < %s / 1000'" "$1"; }
 
+# The limit is set on the bench's own line (60 ms, the status line's, unless a test gives another), as
+# tests/bench-limits.bats does: these tests check the limit logic with wide margins, not this machine's speed.
 bench() {
-  run env VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=2 "$@" bash "$BENCH"
+  run env VBW_STATUSLINE_BUDGET_MS=60 VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=2 "$@" bash "$BENCH"
 }
 
 quiet_or_skip() {
