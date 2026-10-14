@@ -9,6 +9,8 @@ export const meta = {
 // Fixes in one group share files, so one Dev works them together.
 const groups = ((args && args.groups) || []).filter(g => Array.isArray(g) && g.length > 0)
 const models = (args && args.models) || {}
+// R186, D369: the closing step is a few fixed commands and the record stays the source of truth.
+const CLOSE_MODEL = 'haiku'
 // The user's level, explanation depth and involvement (args.profile, from vbw next --json):
 // every agent writes what reaches the user at that level.
 const profile = (args && typeof args === 'object' && args.profile) || {}
@@ -66,7 +68,7 @@ const closeRun = async (ids, fixCmd) => {
   const end = sh('vbw run end')
   const first = fixCmd ? `First run ${fixCmd}. ${WAIT} ` : ''
   const done = await agent(`Close this VBW run (your own instructions, Close a run, allow it). ${first}Then run ${confirm} (it exits 1 when some fixes were not recorded), then, whatever it said, run ${end}. ${FIXDONE_ANSWER}${fixCmd ? '' : ' (no fix is to be closed: answer "ran" with empty lists)'}, ended (run end succeeded), recorded (confirm exited 0) and report (the lines for what was not recorded, else "all recorded; run ended"). Change nothing else.${voice}`,
-    Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, models.lead ? { model: models.lead } : {}, effortOf('lead', 'close')))
+    Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, { model: CLOSE_MODEL }, effortOf('lead', 'close')))
   if (!done) log(`the closing agent stopped: run by hand: ${fixCmd ? fixCmd + ' ; then ' : ''}${confirm} ; then ${end}`)
   else {
     if (!done.recorded || !done.ended) log(done.report)
@@ -78,7 +80,7 @@ const closeRun = async (ids, fixCmd) => {
 // Without a session there is no closing Lead: an agent of its own runs the round's vbw fix done.
 const fixDoneAlone = async fixCmd => {
   const done = await agent(`Close the fixes of this VBW round (your own instructions, Close a run, allow it). Run ${fixCmd}. ${WAIT} ${FIXDONE_ANSWER}, and report (what it printed for fixes left open). Change nothing else.${voice}`,
-    Object.assign({ agentType: 'vbw:lead', label: 'fix done', schema: ALONE_RESULT }, models.lead ? { model: models.lead } : {}, effortOf('lead', 'close')))
+    Object.assign({ agentType: 'vbw:lead', label: 'fix done', schema: ALONE_RESULT }, { model: CLOSE_MODEL }, effortOf('lead', 'close')))
   if (!done) log(`the fix done agent stopped: run by hand: ${fixCmd}`)
   return done
 }
