@@ -39,6 +39,47 @@ if [ -d "$claude_dir/commands/vbw" ]; then
 fi
 
 context="" notice=""
+
+# Which copy of VBW is this? A copy loaded with claude --plugin-dir is named
+# vbw@inline, so Claude Code gives its hooks a plugin data folder named
+# vbw-inline; an installed copy gets vbw-vbw-marketplace (probe, R185).
+plugin=${CLAUDE_PLUGIN_ROOT:-}
+[ -n "$plugin" ] || plugin=$(cd "${0%/*}/.." 2> /dev/null && pwd) || plugin=${0%/*}/..
+kernel=$plugin/bin/vbw
+kversion=$(jq -r '.version // empty' "$plugin/.claude-plugin/plugin.json" 2> /dev/null || true)
+loaded=0
+[ "${CLAUDE_PLUGIN_DATA##*/}" != "vbw-inline" ] || loaded=1
+
+# The hook's input arrives on stdin as one JSON line; Claude Code may leave
+# the pipe open, so never wait for its end.
+input="" line=""
+while IFS= read -t 1 -r line; do input=$input$line; done
+input=$input$line
+sid=$(printf '%s' "$input" | jq -r '.session_id // "" | if test("^[A-Za-z0-9_-]+$") then . else "" end' 2> /dev/null || true)
+
+# A loaded copy puts its own bin/ first on PATH for the session (the env file
+# is read before each Bash tool command; one line, quoted for sh, bash and zsh)
+# and records its folder for the session id (the status line and doctor read
+# it). An installed copy writes no PATH line and drops its session's record
+# (the same session resumed without the tree). Records older than 7 days go.
+sessions=$claude_dir/vbw/sessions
+if [ -d "$sessions" ]; then
+  find "$sessions" -type f -mtime +7 -exec rm -f {} + 2> /dev/null || true
+fi
+if [ "$loaded" -eq 1 ]; then
+  q="'"
+  if [ -n "${CLAUDE_ENV_FILE:-}" ] && { printf 'export PATH=%s:"$PATH"\n' "'${plugin//$q/$q\\$q$q}/bin'" >> "$CLAUDE_ENV_FILE"; } 2> /dev/null; then
+    :
+  else
+    notice="VBW could not put this loaded copy first on PATH (Claude Code gave no writable env file), so a plain vbw may run an installed release. Run ${kernel} instead."
+    context="${context}VBW could not put the loaded copy first on PATH: run ${kernel} instead of vbw in this session. Tell the user once. "
+  fi
+  if [ -n "$sid" ]; then
+    { mkdir -p "$sessions" && printf '%s\n' "$plugin" > "$sessions/$sid"; } 2> /dev/null || true
+  fi
+elif [ -n "$sid" ]; then
+  rm -f "$sessions/$sid" 2> /dev/null || true
+fi
 [ "$removed" -eq 0 ] || context="VBW removed $removed outdated VBW 1 command copies that would have run instead of the VBW 2 commands. Tell the user once: run /reload-skills now (or restart Claude Code) before using any /vbw: command, because this session loaded the old copies. "
 
 if [ -f "$root/.vbw/record.json" ]; then
@@ -56,7 +97,7 @@ if [ -f "$root/.vbw/record.json" ]; then
       *"refreshed on events only"* | *"an older VBW status line"*) "$vbw" statusline on > /dev/null 2>&1 || true ;;
     esac
     next=$(cd "$root" && "$vbw" next 2>&1 < /dev/null | head -n 1)
-    context="${context}VBW project ($state). Next: $next. Continue with /vbw:vibe. The vbw command is on PATH (vbw help)."
+    context="${context}VBW project ($state). Next: $next. Continue with /vbw:vibe. The vbw command is on PATH (vbw help); this session's kernel is ${kernel}${kversion:+ (version $kversion)}."
   fi
 elif [ -d "$root/.vbw-planning" ]; then
   context="${context}This project has a VBW 1 plan (.vbw-planning/). Tell the user once: VBW 2 leaves it untouched, and /vbw:vibe or /vbw:convert brings it into VBW 2 through a few questions."
