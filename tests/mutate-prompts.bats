@@ -94,7 +94,7 @@ has_line() {
 
 @test "R188: the Docs agent breaks the statements its plan delivers the same way at standard and deep" {
   has_line "$DOCS" "vbw mutate" standard deep
-  has_line "$DOCS" standard "never at express"
+  has_line "$DOCS" mutation "never at express"
   has_line "$DOCS" "break one statement" "vbw mutate"
   has_line "$DOCS" strengthen "never weaken"
   has_line "$DOCS" "vbw plan block" two
