@@ -11,8 +11,6 @@
 
 # shellcheck source=checks.sh
 . "$VBW_LIB/checks.sh"
-# shellcheck source=cmd-commit.sh
-. "$VBW_LIB/cmd-commit.sh"
 # shellcheck source=proofcopy.sh
 . "$VBW_LIB/proofcopy.sh"
 
@@ -116,11 +114,7 @@ cmd_mutate() {
   done
   [ ${#broke[@]} -gt 0 ] || vbw_die "nothing to check: none of the named files differs from the last commit; make the break in the file, then run vbw mutate"
   while IFS= read -r -d '' f; do cfiles+=("$f"); done < <(printf '%s' "$record" | jq -j --argjson ids "$ids" '[.checks[] | select(.id as $c | $ids | index($c) != null) | .files // [] | .[]] | unique[] | . + "\u0000"')
-  # In a build run the guard keeps check files untouched but for those a survivor
-  # opened, and the checks run on a copy of HEAD: a changed check file there is a
-  # strengthening in progress, not tests the run would silently skip.
-  if [ ${#cfiles[@]} -gt 0 ] && [ -n "$(vbw_dirty_files "${cfiles[@]}")" ] \
-    && ! printf '%s' "$record" | jq -e '.lease.kind == "build"' > /dev/null; then
+  if [ ${#cfiles[@]} -gt 0 ] && [ -n "$(vbw_dirty_files "${cfiles[@]}")" ]; then
     vbw_die "check files differ from the last commit: $(vbw_dirty_files "${cfiles[@]}"): commit them first, so the break is run against the approved tests"
   fi
   local head
@@ -183,10 +177,7 @@ cmd_mutate() {
     (if $rule != null then {rule: {req: $rule.req, text: $rule.text}} else {task: $k} end)
     + {what: $what, files: $files, checks: $marks, result: $result, at: $at, head: $head}
     + (if ($strong | length) > 0 then {strengthened: $strong} else {} end)')
-  # A survivor of a plan of the open build run opens its check files for the run (R188.33).
-  record_update "$COMMIT_SURVIVOR_DEFS"'(.plans[] | select(.id == $p)).mutations += [$e]
-    | if $e.result == "survivor" and .lease.kind == "build" and (.plans[] | select(.id == $p).status) == "building"
-      then .lease.editable = (((.lease.editable // []) + survivor_files($p)) | unique) else . end' --arg p "$plan" --argjson e "$entry"
+  record_update '(.plans[] | select(.id == $p)).mutations += [$e]' --arg p "$plan" --argjson e "$entry"
   if [ "$result" = survivor ]; then
     [ -z "$ruledoc" ] || what=$(printf '%s' "$ruledoc" | jq -r .text)
     printf 'survivor: %s (%s): %s still pass\n' "$target" "$what" \
