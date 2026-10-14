@@ -172,20 +172,6 @@ stronger model. Other roles keep the models their profile gives them.
 
 An express phase has exactly one plan: `vbw apply` refuses more.
 
-## The mutation check at each tier
-
-At standard and deep, the builder breaks its own plan's code on purpose with
-`vbw mutate` to prove the plan's tests can fail (docs/workflows.md).
-
-| Tier | What is broken |
-|---|---|
-| `express` | nothing; no mutation step |
-| `standard` | each rule: one small break per rule |
-| `deep` | each rule, each task, and each error and edge case the rules state |
-
-A fix never runs it. A phase with no recorded tier, and a plan whose
-requirements are all `[human]`, ask for none.
-
 ## QA depth
 
 The table gives each phase a QA depth. Size and risk can only lower it, and
