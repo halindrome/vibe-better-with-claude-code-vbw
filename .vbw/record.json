@@ -4460,7 +4460,7 @@
   "milestone": {
     "id": "M30",
     "title": "The session must run the loaded plugin's kernel (2026-10-13 14:54): in the v2 worktree the vbw on PATH was the installed release (2.0.34), put there by the SessionStart hook, so every kernel command of the session ran the released code and the record became unreadable to it once an agent wrote a new field through plugin/bin/vbw; with claude --plugin-dir ./plugin the loaded plugin's bin must be the one on PATH and the status line must show the loaded version (replaces T54: --plugin-dir did not override the installed copy); document the local-dev path",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -4607,6 +4607,11 @@
       "id": "M29",
       "title": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
       "at": "2026-10-14T00:42:24Z"
+    },
+    {
+      "id": "M30",
+      "title": "The session must run the loaded plugin's kernel (2026-10-13 14:54): in the v2 worktree the vbw on PATH was the installed release (2.0.34), put there by the SessionStart hook, so every kernel command of the session ran the released code and the record became unreadable to it once an agent wrote a new field through plugin/bin/vbw; with claude --plugin-dir ./plugin the loaded plugin's bin must be the one on PATH and the status line must show the loaded version (replaces T54: --plugin-dir did not override the installed copy); document the local-dev path",
+      "at": "2026-10-14T09:32:12Z"
     }
   ],
   "requirements": [
@@ -31295,6 +31300,11 @@
       "id": "D367",
       "at": "2026-10-14T09:16:37Z",
       "text": "Contract approved: 174 requirements, 338 checks, 405 plans (f9f823711de5)"
+    },
+    {
+      "id": "D368",
+      "at": "2026-10-14T09:32:12Z",
+      "text": "Shipped M30 The session must run the loaded plugin's kernel (2026-10-13 14:54): in the v2 worktree the vbw on PATH was the installed release (2.0.34), put there by the SessionStart hook, so every kernel command of the session ran the released code and the record became unreadable to it once an agent wrote a new field through plugin/bin/vbw; with claude --plugin-dir ./plugin the loaded plugin's bin must be the one on PATH and the status line must show the loaded version (replaces T54: --plugin-dir did not override the installed copy); document the local-dev path: 1 requirement proven or accepted"
     }
   ],
   "commands": {
@@ -36181,6 +36191,12 @@
             "out": 0,
             "at": "2026-10-14T00:42:28Z"
           }
+        },
+        "total": {
+          "usd": 1108.225639,
+          "in": 856268,
+          "out": 137,
+          "sessions": 8
         }
       }
     }
