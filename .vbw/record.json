@@ -29531,7 +29531,7 @@
       "text": "Brainstorm B4: every workflow's close-run step (vbw run confirm + run end) is a vbw:lead agent on model.lead, so Fable or Opus is paid once per run for two commands; give the step its own cheap model or let the workflow end the run itself",
       "sort": "next",
       "size": "small",
-      "status": "in_progress"
+      "status": "done"
     },
     {
       "id": "T136",
@@ -37055,7 +37055,7 @@
         "id": "T135",
         "text": "Brainstorm B4: every workflow's close-run step (vbw run confirm + run end) is a vbw:lead agent on model.lead, so Fable or Opus is paid once per run for two commands; give the step its own cheap model or let the workflow end the run itself",
         "proof": "auto",
-        "status": "in_progress",
+        "status": "shipped",
         "milestone": "M31",
         "head": "efffc9e7649ba1c43f201c23b7d5a801e9c19979",
         "baseline": {
@@ -37108,7 +37108,13 @@
             "at": "2026-10-14T09:32:24Z"
           }
         },
-        "req": "R186"
+        "req": "R186",
+        "cost": {
+          "usd": 1123.745705,
+          "in": 906127,
+          "out": 93
+        },
+        "at": "2026-10-14T11:11:48Z"
       },
       {
         "id": "T133",
