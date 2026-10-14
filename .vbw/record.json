@@ -1,6 +1,19 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "plan-20261014T160334Z",
+    "kind": "plan",
+    "started_at": "2026-10-14T16:03:34Z",
+    "files": [
+      ".vbw/"
+    ],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1149.784036,
+      "in": 195595,
+      "out": 583
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -29700,6 +29713,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T148",
+      "text": "Linux: Ctrl-C does not stop a vbw check that waits on the computer-wide limit (2.0.36 CI, run 38574239511, failed twice on Linux bash 5; passes on macOS under bash 3.2 and 5): tests/machine-recovery.bats 'R181: a run interrupted with Ctrl-C ends and gives its slot back at once' sees vbw still running 10 s after SIGINT to its process group. Reproduce in Linux (tools/test-linux.sh needs Docker running), find whether the kernel's INT trap (plugin/lib/slots.sh slots_traps) or the test is at fault, fix the root cause; CI must be green",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
@@ -31767,6 +31787,24 @@
       "text": "D369 and D370 stand: the closing step stays on Haiku; D377 is withdrawn and R188 dropped",
       "why": "owner 2026-10-14 16:2x: 'If there is zero risk the Lead doesnt default to Haiku when we need high intelligence, then leave it'; Haiku is only the close call's constant, the planning Lead uses models.lead (pinned by C344); undoing a shipped requirement needs a supersede step the kernel lacks (idea kept for 2.1.1 with B4)",
       "at": "2026-10-14T15:56:52Z"
+    },
+    {
+      "id": "D379",
+      "text": "Mutation check of a plan's tests: the plan's Dev breaks each promised behaviour once its work passes, VBW runs the tests and records that they failed, then the Dev restores the code",
+      "why": "chosen by the loop: catches subtle gaps (wrong value, missing message) with no extra agent, at some AI cost per plan; the Lead wrote the approved tests, so the Dev is not grading its own tests",
+      "at": "2026-10-14T16:03:30Z"
+    },
+    {
+      "id": "D380",
+      "text": "Mutation check depth matches the rigor level: standard breaks once per approved rule; deep also once per promised task behaviour and each error and edge case",
+      "why": "chosen by the loop: mirrors what QA checks at each level; standard builds stay quick, deep builds take longer",
+      "at": "2026-10-14T16:03:31Z"
+    },
+    {
+      "id": "D381",
+      "text": "A test the mutation check finds unable to fail is strengthened in place: the approved check files change and wait for one approval before the proof",
+      "why": "chosen by the loop: the agreed definition of done stays locked and gets stronger, at the cost of one more approval question (delegated under a loop), the same path QA's fixes use",
+      "at": "2026-10-14T16:03:32Z"
     }
   ],
   "commands": {
