@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261014T083736Z",
+    "kind": "qa",
+    "started_at": "2026-10-14T08:37:36Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1101.705033,
+      "in": 827761,
+      "out": 233
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -17154,10 +17165,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "a7d1308fb565aaa1dfa21602a67f7571e7ad41ec51673df8c901dee2acb7e8fa",
-        "at": "2026-10-14T08:09:34Z",
-        "note": "19/20 checks",
-        "rounds": 2
+        "tree": "1d23cb76f73d6c98dd6a83fd44e11be0612945d1ad89609fc22bec272df18415",
+        "at": "2026-10-14T08:41:04Z",
+        "note": "29/30 checks",
+        "rounds": 3
       },
       "escalations": [
         {
@@ -28345,8 +28356,17 @@
       "req": "R185",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "In plugin/hooks/session-start.sh the loaded-copy error message can be thrown away. When a --plugin-dir session cannot write CLAUDE_ENV_FILE, the hook sets context='VBW could not put the loaded copy first on PATH: run <tree>/bin/vbw ...'. Two lines later the old line '[ \"$removed\" -eq 0 ] || context=\"VBW removed ...\"' assigns context without keeping the earlier text, so when VBW 1 command copies were also removed in the same start, Claude is never told to run <tree>/bin/vbw and its agents silently run the installed release (the user still sees the systemMessage). That line was safe before this phase because context was always empty there. Same pattern for notice: the 'project made by a newer VBW' branch assigns notice='This project was made by a newer VBW...' and drops the 'could not put first on PATH' message the user should see. Evidence: code read of plugin/hooks/session-start.sh after commit 10a93f0b (I could not run it: the QA guard forbids writes). Regression test: tests/plugindir-path.bats should start a loaded session with CLAUDE_ENV_FILE unset (1) with a VBW 1 command copy present in the Claude config folder, and (2) in a project whose record is newer than the kernel; in both the hook output must still name $PLUGIN_ROOT/bin/vbw in additionalContext and systemMessage. Fix: append (context=\"${context}...\", notice=\"${notice:+$notice }...\") instead of assigning.",
+      "phase": "P135"
+    },
+    {
+      "id": "F220",
+      "req": "R185",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "plugin/hooks/session-start.sh line 56 (commit 10a93f0b): 'while IFS= read -t 1 -r line; do input=$input$line; done' keeps looping after the first JSON line. If Claude Code leaves the hook's stdin pipe open (the comment on lines 53-54 says it may, and the plan says 'read the hook input without ever blocking'), every session start waits a full extra second. Measured: printf '{\"session_id\":\"abc\"}\\n'; sleep 4 piped into the hook took 1.03 s wall, 0.03 s CPU (same hook with </dev/null: 0.03 s). The hook never read stdin before this phase, so this is new latency at every session start, and no test pins the open-pipe case. The input is one line, so one bounded read is enough. Regression test (tests/plugindir-path.bats): feed the hook one JSON line from a producer that keeps the pipe open for 3 s and assert the hook finishes in well under 1 s and still records session s1 (and a --plugin-dir session still writes the PATH line). Fix: read a single line ('IFS= read -r -t 1 input || true') instead of looping. Minor, not in doctor: vbw doctor builds the session-record path from $CLAUDE_CODE_SESSION_ID without the plain-name check the hook and status line apply (read only, so no write risk).",
       "phase": "P135"
     }
   ],
