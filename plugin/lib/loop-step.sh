@@ -31,38 +31,6 @@ loop_delegate() {
   approve_record "$record" "$hash" "$text" "$(printf '%s' "$record" | jq -r '"by the loop on the user'"'"'s behalf (loop started \(.loop.started_at), items \([.loop.items[].id] | join(", ")))"')" > /dev/null
 }
 
-# loop_strengthened_files RECORD FILES...: 0 when every file appears in the strengthened list of a red
-# mutation entry (vbw mutate) of a current-milestone plan, and is now exactly what that entry's head held.
-loop_strengthened_files() {
-  local record=$1 f h
-  shift
-  [ $# -gt 0 ] || return 1
-  for f in "$@"; do
-    while IFS= read -r h; do
-      [ -n "$h" ] || continue
-      git -C "$VBW_ROOT" cat-file -e "$h:$f" 2> /dev/null && git -C "$VBW_ROOT" diff --quiet "$h" -- "$f" 2> /dev/null && continue 2
-    done < <(printf '%s' "$record" | jq -r --arg f "$f" '. as $r | .milestone.id as $m
-      | $r.plans[] | select(.phase as $p | any($r.phases[]; .id == $p and .milestone == $m))
-      | (.mutations // [])[] | select(.result == "red" and ((.strengthened // []) | index($f) != null)) | .head')
-    return 1
-  done
-}
-
-# loop_delegate_files RECORD NEXT_JSON: when the loop is on, not stopping and not ended, and vbw next asks
-# for the approval of changed check files that a mutation check strengthened (each exactly as its red
-# break ran it), the kernel approves them on the user's behalf and records a decision naming them.
-loop_delegate_files() {
-  local record=$1 files=() f text who
-  printf '%s' "$record" | jq -e '.loop != null and .loop.stopping == null and .loop.ended == null' > /dev/null || return 0
-  printf '%s' "$2" | jq -e '.action == "approve" and .gate == true and (.detail.files != null)' > /dev/null || return 0
-  while IFS= read -r f; do files+=("$f"); done < <(printf '%s' "$2" | jq -r '.detail.files[]')
-  loop_strengthened_files "$record" "${files[@]}" || return 0
-  who=$(printf '%s' "$record" | jq -r '"loop started \(.loop.started_at), items \([.loop.items[].id] | join(", "))"')
-  text="Strengthened check files approved by the loop on the user's behalf ($who): ${files[*]}"
-  [ -z "$(approve_problems "$record")" ] || return 0
-  approve_record "$record" "$(contract_hash "$record")" "$text" "by the loop on the user's behalf ($who)" > /dev/null
-}
-
 # loop_ended_answer RECORD: what an ended loop answers: done at the end of its list, else stopped.
 loop_ended_answer() {
   printf '%s' "$1" | jq -c '.loop.ended.reason as $r
@@ -254,7 +222,6 @@ loop_step() {
     fi
     if [ "$action" = approve ]; then
       loop_delegate "$rec" "$next"
-      loop_delegate_files "$rec" "$next"
       next=$(cmd_next --json) || exit $?
       action=$(printf '%s' "$next" | jq -r .action)
     fi
