@@ -11223,14 +11223,6 @@
       "status": "open",
       "milestone": "M33",
       "rules": []
-    },
-    {
-      "id": "R189",
-      "text": "Cost: at standard and deep, mutation-check a plan's own tests before its build ends, so QA stops finding tests that cannot fail one round at a time (M15: each deep QA round found 1-2 such gaps, about an hour per loop)",
-      "proof": "auto",
-      "status": "open",
-      "milestone": "M33",
-      "rules": []
     }
   ],
   "phases": [
@@ -29701,6 +29693,13 @@
       "id": "T146",
       "text": "The closing step (close run, and fixing's fix done without a session) runs on the Lead's model again, as the user chose it (owner 2026-10-14: 'I want to keep lead being who user selected. dont care about the extra cost'): undo D369's CLOSE_MODEL haiku in the five workflows and its docs (docs/workflows.md, docs/rigor.md) and tests (close-haiku-docs.bats, profile-lead-opus.bats); a cheaper close stays a brainstorm idea (B4) for 2.1.1",
       "status": "dropped"
+    },
+    {
+      "id": "T147",
+      "text": "The loop opened T74 twice (2026-10-14 17:58): two Stop hook answers in one turn each ran 'loop T74 open' (commits b0dffb1c, e1769919), adding its requirement twice (R188, R189); opening an item must be idempotent. Also: a dropped requirement's id (R188, dropped by D378) was reused for a new one, so decisions naming R188 now point at the wrong requirement; ids of dropped requirements are never reused",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
