@@ -1,5 +1,43 @@
 # Changelog
 
+## [2.0.36] - 2026-10-14
+
+### Added
+
+- **Runs take turns on your computer.** Every VBW run on one computer, in any
+  project or session, shares one limit: about three quarters of the processor
+  cores, at least 1 and at most 64. Each check, project command and test file
+  takes one slot while it runs; a run that finds none free waits its turn, and
+  a freed slot goes to the run holding the fewest. A run that waited ends with
+  `waited N s for other VBW runs on this computer (limit L of C cores)`, and
+  `vbw config` shows the limit. `check_jobs` stays a per-run cap below it. The
+  shared count lives in `<Claude config folder>/vbw/slots.json` and is removed
+  when nothing runs; if it cannot be written, a run goes on under `check_jobs`
+  and says so once. Results never change because of waiting. See
+  docs/proof.md, "The computer-wide limit".
+- **`vbw --version`**, and `vbw doctor` now shows which `vbw` your session runs
+  and whether it is the loaded plugin's, with the fix when it is not.
+
+### Changed
+
+- **A fix round checks its work once.** The Devs of a fix round commit and
+  check their own fixes; one `vbw fix done` for every finished fix runs after
+  they all return, so no check runs twice in a round. On a three-group test
+  project a round went from 0.72 to 0.40 minutes and from 18 checks to 6.
+- **Closing a run uses the smallest model.** The step that ends each workflow
+  run (confirm, end, and a fix round's `vbw fix done`) runs on Haiku in every
+  profile, whatever model the Lead uses.
+- **A project where you turned VBW off shows no VBW.** The status line there
+  shows your own earlier status line, or nothing if you had none; an older
+  VBW status line setting updates itself at the next session start.
+- **Your working copy runs its own kernel.** With `claude --plugin-dir`, the
+  loaded copy's `vbw` comes first for the session and its agents, the status
+  line shows its version, and the session's first line names the kernel. See
+  CONTRIBUTING.md, "Local development".
+- **Leftover proof copies are cleaned up.** A proof or `vbw fix done` removes
+  copies left by a run that was killed, and leaves running ones alone.
+- `/vbw:config` says the computer-wide limit caps `check_jobs`.
+
 ## [2.0.35] - 2026-10-13
 
 ### Added
