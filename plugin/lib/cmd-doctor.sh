@@ -12,6 +12,7 @@ cmd_doctor() {
   [ $# -eq 0 ] || vbw_usage_error "usage: vbw doctor"
   DOCTOR_FAILED=0
   doctor_tools
+  doctor_path
   doctor_claude
   doctor_statusline
   if VBW_ROOT=$(git rev-parse --show-toplevel 2> /dev/null); then
@@ -52,6 +53,26 @@ doctor_tools() {
     else
       doctor_line warn "git has no name or email set: VBW's commits may fail" "git config --global user.name \"Your Name\" && git config --global user.email you@example.com"
     fi
+  fi
+}
+
+# The loaded plugin: the folder the session start recorded for this session
+# while it still holds a VBW plugin, else the plugin of this kernel. The vbw on
+# PATH should be that plugin's.
+doctor_path() {
+  local loaded=$VBW_PLUGIN rec on_path pv lv
+  rec=$(head -n 1 "$(vbw_claude_dir)/vbw/sessions/${CLAUDE_CODE_SESSION_ID:-none}" 2> /dev/null || true)
+  [ -z "$rec" ] || [ ! -f "$rec/.claude-plugin/plugin.json" ] || loaded=$rec
+  lv=$(jq -r '.version // "unknown"' "$loaded/.claude-plugin/plugin.json" 2> /dev/null || echo unknown)
+  if ! on_path=$(command -v vbw 2> /dev/null) || [ -z "$on_path" ]; then
+    doctor_line warn "no vbw on PATH (the loaded plugin is $loaded, version $lv)" "run $loaded/bin/vbw, or put $loaded/bin on PATH"
+    return 0
+  fi
+  pv=$(jq -r '.version // "unknown"' "${on_path%/*}/../.claude-plugin/plugin.json" 2> /dev/null || echo unknown)
+  if [ "$(cd "${on_path%/*}/.." 2> /dev/null && pwd -P)" = "$(cd "$loaded" 2> /dev/null && pwd -P)" ]; then
+    doctor_line ok "vbw on PATH: $on_path (version $pv), the loaded plugin's"
+  else
+    doctor_line warn "vbw on PATH is $on_path (version $pv), not the loaded plugin's: $loaded (version $lv)" "run $loaded/bin/vbw, or put $loaded/bin first on PATH"
   fi
 }
 
