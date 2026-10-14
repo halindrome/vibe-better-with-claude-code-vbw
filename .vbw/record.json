@@ -27855,7 +27855,7 @@
       "id": "F217",
       "req": "R152",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C233 fail (exit 1)"
     }
   ],
@@ -35023,6 +35023,19 @@
         "started": "2026-10-13T23:48:30Z",
         "ended": "2026-10-13T23:53:11Z",
         "cost": null
+      },
+      {
+        "id": "fix-20261014T002704Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M29",
+        "started": "2026-10-14T00:27:04Z",
+        "ended": "2026-10-14T00:34:28Z",
+        "cost": {
+          "usd": 1.412622,
+          "in": 11462,
+          "out": 237
+        }
       }
     ],
     "milestones": {
