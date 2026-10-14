@@ -17926,7 +17926,21 @@
         "guarded: R1 (C1), R2 (C2), R15 (C14), R24 (C23), R25 (C24), R26 (C22), R32 (C28), R39 (C36), R43 (C42, C43), R44 (C44, C45), R47 (C47), R49 (C48), R61 (C73, C74, C75, C76, C77), R69 (C110, C120, C122), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R93 (C140, C141, C142, C143, C144), R95 (C149, C150), R96 (C151, C152), R98 (C154), R99 (C155), R103 (C160), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R118 (C184), R120 (C185), R128 (C200), R144 (C208, C209), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R153 (C235, C236, C239), R160 (C247, C263, C264), R162 (C249), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R186 (C344, C345, C346, C347, C348)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-14T17:47:21Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P140.1: Task 1 needs a build lease to carry an editable list, but plugin/lib/record.jq (line 387) refuses it: 'only a fix run carries editable and new_tests', so record_update would reject the mutate write. plugin/lib/record.jq (allow editable on kind build, keep new_tests fix-only) and docs/record.md (lease row) are outside the plan's files, so vbw commit would refuse them. Replan with those two files added; red state confirmed (C354 fails as expected). No code changed."
+        },
+        {
+          "at": "2026-10-14T17:50:34Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P140.3: Tasks 1-3 done and committed; R188.40-42, 44-47 and task1-3 breaks recorded red. R188.43 survived: tests/mutate-prompts.bats (C356) only checks that 'another requirement' appears on the strengthen line, so dropping 'never' passes. The fix is one line there (has_line DEV strengthen \"never another requirement\"), but vbw commit P140.3 refuses it: the file is not in the plan's files (nor is a fix open). Needs the plan to declare tests/mutate-prompts.bats, or a decision on committing it; then re-run vbw mutate P140.3 R188.43 after removing 'never' in dev.md's survivor line, and plan done."
+        }
+      ]
     },
     {
       "id": "P141",
@@ -27532,7 +27546,7 @@
       "after": [
         "P139.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Standard: in vbw plan done, after the existing commit, uncommitted-files (it already names the files) and passing-checks steps, when the plan is being built in an open build run (lease kind build, plan status building), its phase's recorded tier is standard or deep and its requirements have checks: take each approved rule of each requirement the plan completes (the same set as the checks it runs) and count it covered when any plan of that requirement has a mutation entry for that rule (same req and text) whose result is red. Refuse listing the rules still missing one as Rn.k with their text, ending with Next: break what each rule promises in this plan's code and run vbw mutate PLAN Rn.k \"what you broke\" FILE...",
@@ -27554,12 +27568,110 @@
       "after": [
         "P139.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vbw show plan: a rules: block listing each approved rule of the plan's requirements as Rn.k (numbered per requirement in its rules order, as vbw mutate takes them), its text and its check; and a tier: line with the phase's tier and what the mutation check asks there (standard: one break per rule; deep: one break per rule and per task); at express, or with no tier, the line says nothing about a mutation check.",
         "A mutations: block listing each entry: its target (Rn.k or taskK), the description, red or survivor, each check red or green, strengthened: FILES on a red break after a survivor, and taskK with its reason for a task with no testable behaviour. vbw show plan --json carries the plan's mutations.",
         "Prove it: bats tests/mutate-show.bats passes under /bin/bash and bash 5; tests/kernel-show.bats and the other show tests still pass. If the vbw on PATH has the mutate command, record a red break for each R188 rule whose check is C353 (and, at deep, each task, or --none with a reason); otherwise say so in notes."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R188",
+            "text": "vbw show plan lists the rules numbered as vbw mutate takes them, each with its check"
+          },
+          "what": "rules block header renamed so no rule lines print",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C353": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:48:57Z",
+          "head": "68c3ba9adaa244d305cfe7552d5ab38a883cdc9d"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "vbw show plan names the phase's tier and what the mutation check asks at it; at express nothing"
+          },
+          "what": "standard tier line says nothing about mutation",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C353": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:49:53Z",
+          "head": "30201e714f46e90a26237b3dacb4f9d9b655cf1b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "vbw show plan lists each break: target, description, red or survivor, each check red or green"
+          },
+          "what": "break result no longer printed",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C353": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:50:22Z",
+          "head": "30201e714f46e90a26237b3dacb4f9d9b655cf1b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "vbw show plan names the check files strengthened before a red break that followed a survivor"
+          },
+          "what": "strengthened files no longer listed",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C353": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:51:25Z",
+          "head": "23a591e21ebbd11b0d50949318e71dac3f9d79c9"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "vbw show plan shows the written reason of a task with no testable behaviour"
+          },
+          "what": "reason of a none entry dropped",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C353": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:51:56Z",
+          "head": "23a591e21ebbd11b0d50949318e71dac3f9d79c9"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "vbw show plan --json carries the recorded breaks"
+          },
+          "what": "mutations dropped from plan json",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C353": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:52:25Z",
+          "head": "23a591e21ebbd11b0d50949318e71dac3f9d79c9"
+        }
       ]
     },
     {
@@ -27579,7 +27691,7 @@
       "after": [
         "P139.1"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/lib/cmd-mutate.sh: when it records a survivor for a plan of the open build run, the same record update adds to the lease's editable list the files of the survivor's checks that no check of another requirement lists.",
@@ -27587,7 +27699,8 @@
         "plugin/lib/cmd-commit.sh: vbw commit PLAN MSG FILE... also takes a named check file that a survivor in this plan's mutations ran and no other requirement's check lists, committed with the plan's trailers; any other check file is refused, saying why. plugin/lib/cmd-prove.sh prove_scope: a plan's commit of such a file is within the plan.",
         "docs/guards.md: the build-run row for protected check files names the exception (after a survivor, the check files of that rule's own requirement, waiting for one approval before the proof).",
         "Prove it: bats tests/mutate-strengthen.bats, tests/mutate-command.bats, tests/fix-commit*.bats and the guard tests pass under /bin/bash and bash 5. If the vbw on PATH has the mutate command, record a red break for each R188 rule whose check is C354 (and, at deep, each task, or --none with a reason), running vbw mutate from a copy of the kernel at HEAD for breaks in cmd-mutate.sh; otherwise say so in notes."
-      ]
+      ],
+      "note": "Task 1 needs a build lease to carry an editable list, but plugin/lib/record.jq (line 387) refuses it: 'only a fix run carries editable and new_tests', so record_update would reject the mutate write. plugin/lib/record.jq (allow editable on kind build, keep new_tests fix-only) and docs/record.md (lease row) are outside the plan's files, so vbw commit would refuse them. Replan with those two files added; red state confirmed (C354 fails as expected). No code changed."
     },
     {
       "id": "P140.2",
@@ -27603,13 +27716,99 @@
       "after": [
         "P139.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/loop-step.sh: when vbw next asks for the approval of changed check files (detail.files), the loop is on, not stopping and not ended, and every listed file appears in the strengthened list of a red mutation entry of a current-milestone plan with its content now equal to its content at that entry's head, the loop step approves on the user's behalf the way it approves a contract (consent, shape, snapshot, approval commit) and records a decision naming the files: Strengthened check files approved by the loop on the user's behalf (loop started AT, items ...): FILES.",
         "Any other changed check file (no mutation check strengthened it, or edited after its red break) still ends the loop with approve needs you, exactly as today (docs/next.md row 4a).",
         "docs/loop.md: What is written and What still waits for you say both cases.",
         "Prove it: bats tests/mutate-loop.bats and every tests/loop-*.bats pass under /bin/bash and bash 5. If the vbw on PATH has the mutate command, record a red break for each R188 rule whose check is C355 (and, at deep, each task, or --none with a reason); otherwise say so in notes."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R188",
+            "text": "under the loop, check files strengthened by a mutation check are approved by the loop and a decision names them"
+          },
+          "what": "files delegation disabled",
+          "files": [
+            "plugin/lib/loop-step.sh"
+          ],
+          "checks": {
+            "C355": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T18:19:46Z",
+          "head": "23a591e21ebbd11b0d50949318e71dac3f9d79c9"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "under the loop, a changed check file no mutation check strengthened still waits for the user"
+          },
+          "what": "any file counts as strengthened",
+          "files": [
+            "plugin/lib/loop-step.sh"
+          ],
+          "checks": {
+            "C355": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T18:20:58Z",
+          "head": "23a591e21ebbd11b0d50949318e71dac3f9d79c9"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "under the loop, a strengthened check file edited again after its red break waits for the user"
+          },
+          "what": "content after the red break is not compared",
+          "files": [
+            "plugin/lib/loop-step.sh"
+          ],
+          "checks": {
+            "C355": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T18:22:04Z",
+          "head": "23a591e21ebbd11b0d50949318e71dac3f9d79c9"
+        },
+        {
+          "task": 3,
+          "none": "documentation text only; no check can fail on its wording beyond C358's docs check",
+          "at": "2026-10-14T18:24:52Z"
+        },
+        {
+          "task": 4,
+          "none": "running the existing tests, no behaviour of its own",
+          "at": "2026-10-14T18:24:54Z"
+        },
+        {
+          "task": 1,
+          "what": "files delegation disabled",
+          "files": [
+            "plugin/lib/loop-step.sh"
+          ],
+          "checks": {
+            "C355": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T18:26:16Z",
+          "head": "23a591e21ebbd11b0d50949318e71dac3f9d79c9"
+        },
+        {
+          "task": 2,
+          "what": "any file counts as strengthened",
+          "files": [
+            "plugin/lib/loop-step.sh"
+          ],
+          "checks": {
+            "C355": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T18:27:19Z",
+          "head": "23a591e21ebbd11b0d50949318e71dac3f9d79c9"
+        }
       ]
     },
     {
@@ -27627,14 +27826,150 @@
       "after": [
         "P139.1"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/workflows/building.js: take each plan's tier from args.rigor[phase].tier; for standard and deep add one line to the builder's prompt (Dev or Docs) naming the tier and asking for the mutation step of its instructions before vbw plan done; express, or no tier, adds nothing.",
         "plugin/agents/dev.md: a Mutation step after Green, for plans only (never in a fix): at standard one small break of the plan's own code per rule (vbw show plan numbers them), at deep also per task and per error and edge case its rules state; run vbw mutate, which undoes the break, then check the file is unchanged; skipped at express. On a survivor: strengthen the approved check file of that rule's own requirement in place, never another requirement's, never weakening an assertion; commit it with the plan (vbw commit PLAN MSG FILE); re-run the same break until red; notes say it waits for one approval. After two strengthening attempts that stay green: vbw plan block naming the rule and what was tried. A task with nothing to break: vbw mutate PLAN taskK --none REASON. Keep dev.md within 900 words by tightening other text without losing a rule.",
         "plugin/agents/docs.md: at standard and deep, the same step for the rules its documents deliver: break one statement, run vbw mutate, strengthen or block the same way; within 900 words.",
         "Prove it: bats tests/mutate-prompts.bats, tests/fix-round-once.bats, tests/close-haiku.bats, tests/effort-workflows.bats, tests/agent-scratch.bats and tests/standards.bats pass. If the vbw on PATH has the mutate command, record a red break for each R188 rule whose check is C356 (and, at deep, each task, or --none with a reason); otherwise say so in notes."
-      ]
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the building workflow passes each plan's tier; standard and deep plans get the mutation instruction, express plans none"
+          },
+          "what": "every tier gets the mutation line",
+          "files": [
+            "plugin/workflows/building.js"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:48:18Z",
+          "head": "30201e714f46e90a26237b3dacb4f9d9b655cf1b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the Dev's mutation step comes after green: one small break of the plan's own code per rule at standard, vbw mutate, the break undone; skipped at express"
+          },
+          "what": "dev.md drops the per-rule wording",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:48:41Z",
+          "head": "30201e714f46e90a26237b3dacb4f9d9b655cf1b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "at deep the Dev also breaks each task and each error and edge case its rules state"
+          },
+          "what": "dev.md drops error and edge",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:48:53Z",
+          "head": "30201e714f46e90a26237b3dacb4f9d9b655cf1b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "a survivor is strengthened in place in its own requirement's check file, never another's, never weakened, re-run red, committed with the plan, waiting for one approval"
+          },
+          "what": "dev.md allows another requirement",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-14T17:49:05Z",
+          "head": "30201e714f46e90a26237b3dacb4f9d9b655cf1b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "after two strengthening attempts that stay green the Dev blocks the plan naming the rule, and the phase rises one tier"
+          },
+          "what": "dev.md drops two attempts",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:49:17Z",
+          "head": "30201e714f46e90a26237b3dacb4f9d9b655cf1b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the Dev never runs the mutation step in a fix, and the fixing workflow gives no mutation instruction"
+          },
+          "what": "dev.md allows mutation in a fix",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:49:29Z",
+          "head": "30201e714f46e90a26237b3dacb4f9d9b655cf1b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "the Docs agent breaks the statements its plan delivers the same way at standard and deep"
+          },
+          "what": "docs.md drops vbw mutate",
+          "files": [
+            "plugin/agents/docs.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:49:41Z",
+          "head": "30201e714f46e90a26237b3dacb4f9d9b655cf1b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "workflows stay within 1,500 lines and the Dev and Docs agents within 900 words each"
+          },
+          "what": "dev.md over 900 words",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C356": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T17:49:53Z",
+          "head": "30201e714f46e90a26237b3dacb4f9d9b655cf1b"
+        },
+        {
+          "task": 4,
+          "none": "running the listed tests is the proof, not behaviour",
+          "at": "2026-10-14T17:50:10Z"
+        }
+      ],
+      "note": "Tasks 1-3 done and committed; R188.40-42, 44-47 and task1-3 breaks recorded red. R188.43 survived: tests/mutate-prompts.bats (C356) only checks that 'another requirement' appears on the strengthen line, so dropping 'never' passes. The fix is one line there (has_line DEV strengthen \"never another requirement\"), but vbw commit P140.3 refuses it: the file is not in the plan's files (nor is a fix open). Needs the plan to declare tests/mutate-prompts.bats, or a decision on committing it; then re-run vbw mutate P140.3 R188.43 after removing 'never' in dev.md's survivor line, and plan done."
     },
     {
       "id": "P141.1",
@@ -37207,6 +37542,19 @@
         "started": "2026-10-14T17:23:11Z",
         "ended": "2026-10-14T17:45:19Z",
         "cost": null
+      },
+      {
+        "id": "build-20261014T174553Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-14T17:45:53Z",
+        "ended": "2026-10-14T18:46:13Z",
+        "cost": {
+          "usd": 2.242384,
+          "in": 10234,
+          "out": 847
+        }
       }
     ],
     "milestones": {
