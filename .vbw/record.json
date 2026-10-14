@@ -26836,7 +26836,7 @@
         "plugin/workflows/mapping.js"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "building.js and verifying.js: the agent call labelled 'close run' asks for model 'haiku' (one named constant per file, e.g. const CLOSE_MODEL = 'haiku', with a one-line comment: R186, D369, the closing step is a few fixed commands and the record stays the source of truth), never models.lead. Agent type vbw:lead, label, schema (CLOSE_RESULT), prompt text and effortOf('lead', 'close') stay exactly as they are; the header's args comment says models.lead is not used for closing.",
@@ -26857,7 +26857,7 @@
         "docs/rigor.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/workflows.md, 'A workflow closes its own run': one plain sentence that the closing step (the 'close run' agent, and vbw:fixing's own 'fix done' agent when there is no session) runs on Haiku in every profile, whatever the Lead's model (model.lead); why: it runs a few fixed commands, and the record stays the source of truth, so a wrong answer can only blur the summary line while vbw next still asks for any missing work.",
@@ -36145,6 +36145,15 @@
         "milestone": "M31",
         "started": "2026-10-14T09:35:32Z",
         "ended": "2026-10-14T09:49:31Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T095041Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M31",
+        "started": "2026-10-14T09:50:41Z",
+        "ended": "2026-10-14T09:52:59Z",
         "cost": null
       }
     ],
