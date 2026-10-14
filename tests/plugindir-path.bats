@@ -250,3 +250,25 @@ context() { printf '%s' "$output" | jq -r '.hookSpecificOutput.additionalContext
     false
   }
 }
+
+@test "R185: the unwritable-env-file warning survives a VBW 1 command copy removal and a project made by a newer VBW" {
+  vbw_git_project
+  "$VBW" init > /dev/null
+  loaded
+  unset CLAUDE_ENV_FILE
+  # (1) a VBW 1 command copy in the Claude config folder is removed at start.
+  mkdir -p "$CLAUDE_CONFIG_DIR/commands/vbw"
+  printf -- '---\nname: vbw:old\n---\nold\n' > "$CLAUDE_CONFIG_DIR/commands/vbw/old.md"
+  run session_start
+  [ "$status" -eq 0 ]
+  [ ! -e "$CLAUDE_CONFIG_DIR/commands/vbw/old.md" ]
+  [[ "$(context)" == *"$PLUGIN_ROOT/bin/vbw"* ]] || { echo "context lost the kernel path: $output"; false; }
+  [[ "$(printf '%s' "$output" | jq -r '.systemMessage // ""')" == *"$PLUGIN_ROOT/bin/vbw"* ]] || { echo "$output"; false; }
+  # (2) a record newer than the kernel.
+  jq '.schema = 99' .vbw/record.json > "$TEST_ROOT/newer.json" && cp "$TEST_ROOT/newer.json" .vbw/record.json
+  run session_start
+  [ "$status" -eq 0 ]
+  [[ "$(context)" == *"$PLUGIN_ROOT/bin/vbw"* && "$(context)" == *"newer VBW"* ]] || { echo "$output"; false; }
+  [[ "$(printf '%s' "$output" | jq -r '.systemMessage // ""')" == *"$PLUGIN_ROOT/bin/vbw"* ]] || { echo "$output"; false; }
+  [[ "$(printf '%s' "$output" | jq -r '.systemMessage // ""')" == *"/vbw:update"* ]] || { echo "$output"; false; }
+}
