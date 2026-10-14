@@ -139,13 +139,23 @@ items ...): name (argv); ...` and its commit `chore(vbw): approve commands`
 come first, then the consent; `vbw approve` records the same decision without
 the loop's words. A consent is never granted without its decision.
 
+When `vbw next` asks for the approval of changed check files (docs/next.md row
+4a) and every listed file is one a mutation check strengthened (it appears in the
+`strengthened` list of a red mutation entry of a current-milestone plan, docs/proof.md)
+and is still exactly what that entry's commit held, the loop approves them the
+same way (consent, shape, snapshot, approval commit) with a decision
+`Strengthened check files approved by the loop on the user's behalf (loop started
+AT, items ...): FILES`. `vbw next` then moves on to the proof.
+
 A second loop step approves nothing again and records no second decision.
 
 **What still waits for you.** When any condition fails, `vbw next` answers as
 docs/next.md rows 3a, 4 and 4a describe: a requirement whose text differs by
 one character, an extra requirement, a requirement for an item not on the
 loop's list, a loop that is stopping or not on, a contract that is not ready
-(row 3a), or a contract needing the approval of changed test files (row 4a).
+(row 3a), or a contract needing the approval of changed test files (row 4a) when any of
+them was not strengthened by a mutation check, or was edited again after its red
+break.
 
 **Who can approve.** Only the kernel's own loop step approves. The guard
 denies `vbw loop start`, `vbw loop next` and `vbw loop park` to any tool call,
