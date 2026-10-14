@@ -55,3 +55,9 @@ says_haiku_close() {
     [ -z "$bad" ] || { echo "$f: $bad"; false; }
   done
 }
+
+@test "R186: in docs/workflows.md the line ending 'With it:' is followed, after blank lines, by a list item" {
+  local next
+  next=$(awk '/With it:$/ { f = 1; next } f && NF { print; exit }' "$REPO_ROOT/docs/workflows.md")
+  [[ "$next" =~ ^(-|\*|[0-9]+\.)[[:space:]] ]] || { echo "after 'With it:' comes: $next"; false; }
+}
