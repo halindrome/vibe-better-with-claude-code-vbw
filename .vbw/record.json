@@ -29680,6 +29680,11 @@
       "sort": "later",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T146",
+      "text": "The closing step (close run, and fixing's fix done without a session) runs on the Lead's model again, as the user chose it (owner 2026-10-14: 'I want to keep lead being who user selected. dont care about the extra cost'): undo D369's CLOSE_MODEL haiku in the five workflows and its docs (docs/workflows.md, docs/rigor.md) and tests (close-haiku-docs.bats, profile-lead-opus.bats); a cheaper close stays a brainstorm idea (B4) for 2.1.1",
+      "status": "open"
     }
   ],
   "decisions": [
