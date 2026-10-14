@@ -57,7 +57,15 @@ done
 if [ ${#cfgs[@]} -gt 0 ]; then
   verdict=$(jq -nRr 'reduce inputs as $l ([]; if length > 0 and .[-1][0] == input_filename then .[-1][1] += $l + "\n" else . + [[input_filename, $l + "\n"]] end)
     | [.[] | (.[1] | try (fromjson | .enabledPlugins["vbw@vbw-marketplace"] | select(type == "boolean")) catch empty)] | .[0] | if . == null then "" else tostring end' "${cfgs[@]}" 2> /dev/null)
-  if [ "$verdict" = false ]; then exit 3; fi
+  if [ "$verdict" = false ]; then
+    # Off for the installed VBW, but not for a copy loaded with --plugin-dir:
+    # when the session's record (R185) names this very plugin, VBW is on.
+    own=$(cd "$plugin" 2> /dev/null && pwd -P) || own=""
+    p=""
+    [ -z "$sid" ] || { read -r p < "$cdir/vbw/sessions/$sid"; } 2> /dev/null || p=""
+    p=$(cd "$p" 2> /dev/null && pwd -P) || p=""
+    if [ -z "$own" ] || [ "$p" != "$own" ]; then exit 3; fi
+  fi
 fi
 
 legacy=""

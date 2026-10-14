@@ -30,6 +30,11 @@
 # line JSON on stdin), with the bench's plugin in a Claude config folder of the
 # bench's own and a small earlier status line saved first. It is judged against the
 # same limit, and the bench fails if the earlier status line's marker did not show.
+# A session that loaded the plugin (R185) is measured on 'status line (loaded copy)':
+# the bench's plugin's SessionStart hook starts a session the way claude --plugin-dir
+# does (the plugin data folder of a vbw@inline copy), a stand-in installed release
+# sits in the same config folder, and the setting runs as above. It is judged against
+# the same limit, and the bench fails if the loaded copy did not render.
 # VBW_BENCH_RUNS and VBW_BENCH_PLUGIN_ROOT override the runs and the plugin (tests).
 set -euo pipefail
 
@@ -247,6 +252,38 @@ handback() {
   fi
 }
 
+# loaded: the setting in a session that loaded the bench's plugin, next to a stand-in release.
+loaded() {
+  local cfg="$work/loaded-config" cmd total line out ver inst
+  inst="$cfg/plugins/cache/vbw-marketplace/vbw/0.0.0/scripts"
+  mkdir -p "$inst" "$work/loaded-env"
+  printf '#!/bin/sh\necho "installed stand-in (bench)"\n' > "$inst/vbw-statusline.sh"
+  jq -nc --arg d "$work" '{hook_event_name: "SessionStart", source: "startup", session_id: "loaded-bench", cwd: $d}' > "$work/loaded-start.json"
+  CLAUDE_CONFIG_DIR="$cfg" CLAUDE_PLUGIN_DATA="$work/loaded-data/vbw-inline" CLAUDE_ENV_FILE="$work/loaded-env/env.sh" \
+    sh -c "$(jq -r '.hooks.SessionStart[0].hooks[0].command' "$hooks_json")" < "$work/loaded-start.json" > /dev/null 2>&1 || true
+  CLAUDE_CONFIG_DIR="$cfg" "$PLUGIN/bin/vbw" statusline on > /dev/null
+  jq -r '.statusLine.command' "$cfg/settings.json" > "$work/loaded-setting.sh"
+  jq -nc --arg d "$work" '{session_id: "loaded-bench", workspace: {project_dir: $d}, cwd: $d, model: {display_name: "Opus"},
+    cost: {total_cost_usd: 1.25}, context_window: {total_input_tokens: 12000, total_output_tokens: 3400, context_window_size: 200000}}' > "$work/loaded.json"
+  cmd="cd '$work' && CLAUDE_CONFIG_DIR='$cfg' NO_COLOR=1 sh '$work/loaded-setting.sh'"
+  ver=$(jq -r .version "$PLUGIN/.claude-plugin/plugin.json")
+  out=$(sh -c "$cmd" < "$work/loaded.json" 2> /dev/null || true)
+  if [[ "$out" != *"VBW $ver"* ]]; then
+    printf 'status line (loaded copy): the loaded copy did not show (VBW %s expected), so the measure left it out\n' "$ver" >&2
+    status=1
+    return 0
+  fi
+  read -r _ total < <(cpu_pair "$work/loaded.json" true "$cmd")
+  rm -f "$work/.vbw/runtime/cost.loaded-bench.json"
+  line=$(printf 'status line (loaded copy): %s ms CPU per call; budget %s ms' "$total" "$STATUS_MS")
+  if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$total" "$STATUS_MS"; then
+    printf '%s\n' "$line"
+  else
+    printf '%s: OVER\n' "$line" >&2
+    status=1
+  fi
+}
+
 guards "$work" ""
 guards "$large" ", large record"
 # A loop on and no lease: the main session's push, judged like the others.
@@ -267,4 +304,5 @@ for n in 51 500 2000; do guards "$work/checks-$n" ", $n checks"; done
 statusline "$work" ""
 statusline "$large" " (large record)"
 handback
+loaded
 exit $status
