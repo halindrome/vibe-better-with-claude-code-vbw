@@ -30374,6 +30374,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T149",
+      "text": "Gate waits are not counted as 'waited' (P139.1 DEVN-02, 2026-10-14): when another vbw check of the same project holds the check gate, vbw check, prove and mutate wait at the gate without the 'waited' line, because plugin/lib/checks.sh counts only slot waits. P139.1 worked around it in cmd-mutate.sh (slots_take/slots_give mutate before the checks); fix the root cause in checks.sh and remove that workaround",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
