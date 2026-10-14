@@ -31,6 +31,19 @@ claude --plugin-dir ./plugin         # run VBW from your working tree, in any pr
 
 There is no setup script, no cache link and no command mirror. `--plugin-dir` loads the plugin in place.
 
+In that session the `vbw` on PATH is the working tree's (`plugin/bin/vbw`), and the status line shows the working tree's version. So every kernel command of the session runs the code you are editing, not a released copy.
+
+Check it:
+
+```bash
+vbw --version   # the loaded plugin's version
+vbw doctor      # the "vbw on PATH" line says ok when it is the loaded plugin's, else names the fix
+```
+
+The status line's version must match `vbw --version`.
+
+If a VBW release is also installed from the marketplace, the session still runs the working tree: the loaded copy puts its own `bin` first on PATH and the status line renders with its own script. Other sessions, started without `--plugin-dir`, keep using the installed release. If the working tree is moved or deleted, the status line falls back to the installed release; it never fails.
+
 ## Tests
 
 ```bash

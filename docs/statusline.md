@@ -59,6 +59,12 @@ The setting runs the newest installed VBW's `scripts/vbw-statusline.sh` from
 the plugin cache, because the plugin's directory changes with every update and
 settings cannot use `${CLAUDE_PLUGIN_ROOT}`.
 
+A session started with `claude --plugin-dir ./plugin` (a working tree of VBW)
+is the exception: its status line is drawn by the working tree's script and
+shows the working tree's version. Any other session shows the version of the
+newest installed copy. If the working tree is moved or deleted, or is no longer
+a VBW plugin, the session falls back to the installed copy.
+
 ## Projects where VBW is turned off
 
 When a project's settings turn the plugin off, the status line does not show
