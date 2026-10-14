@@ -11,7 +11,7 @@
 # Fixture: a practice project built in .vbw/runtime/scratch/close-haiku/<scenario>
 # (rebuilt every run; only a folder this tool marked is removed) with this tree's
 # plugin/bin/vbw, built the way tools/measure-fix-round.sh builds its project.
-# Cost: one Claude Code session with Dev and Lead agents, roughly 1 to 3 USD
+# Cost: one Claude Code session with Dev and Lead agents, roughly 0.1 to 0.4 USD
 # (the result file holds the session's own figure); long-fix also takes 15+ minutes.
 # It uses the Claude login of the user who runs it and writes
 # tools/baseline/results/close-haiku/<scenario>.json, read from the session's
