@@ -384,8 +384,7 @@ if type != "object" then ["record must be a JSON object"] else
                     and ((has("new_tests") | not) or (.new_tests | type == "boolean"))
                     and ((has("cost") | not) or .cost == null or (.cost | figures))) | not)
             | "lease needs run, kind (plan, build, fix, qa or map), started_at (ISO-8601 UTC) and files (null or relative paths) and optionally a session (string), cost (null or the costs figures {usd, in, out}), editable (relative paths) and new_tests (true or false)" ),
-          ( select(has("new_tests") and .kind != "fix") | "only a fix run carries new_tests" ),
-          ( select(has("editable") and (.kind | one_of(["fix","build"]) | not)) | "only a fix or build run carries editable" ),
+          ( select((has("editable") or has("new_tests")) and .kind != "fix") | "only a fix run carries editable and new_tests" ),
           ( . as $l | keys[] | select(one_of(["run","kind","started_at","files","session","editable","new_tests","cost"]) | not) | "lease has an unknown field: \(.)" )
         end )
   ]
