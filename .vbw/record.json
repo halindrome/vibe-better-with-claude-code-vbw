@@ -29595,7 +29595,7 @@
       "text": "Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09)",
       "sort": "next",
       "size": "small",
-      "status": "in_progress"
+      "status": "done"
     },
     {
       "id": "T134",
@@ -37284,7 +37284,7 @@
         "id": "T133",
         "text": "Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09)",
         "proof": "auto",
-        "status": "in_progress",
+        "status": "shipped",
         "milestone": "M32",
         "head": "dcbfd1a54ce1f55474aaddd97ae5600a1d934510",
         "baseline": {
@@ -37337,7 +37337,13 @@
             "at": "2026-10-14T11:12:00Z"
           }
         },
-        "req": "R187"
+        "req": "R187",
+        "cost": {
+          "usd": 1126.4158,
+          "in": 916014,
+          "out": 62
+        },
+        "at": "2026-10-14T11:26:30Z"
       }
     ],
     "ceiling": null,
