@@ -80,7 +80,7 @@ if [ "$loaded" -eq 1 ]; then
 elif [ -n "$sid" ]; then
   rm -f "$sessions/$sid" 2> /dev/null || true
 fi
-[ "$removed" -eq 0 ] || context="VBW removed $removed outdated VBW 1 command copies that would have run instead of the VBW 2 commands. Tell the user once: run /reload-skills now (or restart Claude Code) before using any /vbw: command, because this session loaded the old copies. "
+[ "$removed" -eq 0 ] || context="${context}VBW removed $removed outdated VBW 1 command copies that would have run instead of the VBW 2 commands. Tell the user once: run /reload-skills now (or restart Claude Code) before using any /vbw: command, because this session loaded the old copies. "
 
 if [ -f "$root/.vbw/record.json" ]; then
   state=$(cd "$root" && "$vbw" status 2>&1 < /dev/null)
@@ -89,7 +89,7 @@ if [ -f "$root/.vbw/record.json" ]; then
   if [ "$newer" -eq 4 ]; then
     # Written by a newer VBW: nothing works until VBW is updated (exit 4).
     context="${context}VBW project made by a newer VBW (${state#vbw: }). Tell the user once: update VBW with /vbw:update, then restart Claude Code; VBW cannot work on this project until then."
-    notice="This project was made by a newer VBW. Update with /vbw:update, then restart Claude Code."
+    notice="${notice:+$notice }This project was made by a newer VBW. Update with /vbw:update, then restart Claude Code."
   else
     # VBW's status line set by an older VBW (an old command or no refresh interval): update it
     # (only VBW's own line; `on` keeps every other setting).
