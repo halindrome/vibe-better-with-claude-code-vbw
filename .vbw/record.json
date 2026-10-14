@@ -130,6 +130,8 @@
     "tests/l3-legacy.bats",
     "tests/l3-loop.bats",
     "tests/l3-panel.bats",
+    "tests/l3-plugindir-probe.bats",
+    "tests/l3-plugindir.bats",
     "tests/l3-pluginoff.bats",
     "tests/l3-recheck.bats",
     "tests/l3-results.bats",
@@ -217,6 +219,11 @@
     "tests/plan-done-committed.bats",
     "tests/plan-scope.bats",
     "tests/planning-number.bats",
+    "tests/plugindir-bench.bats",
+    "tests/plugindir-docs.bats",
+    "tests/plugindir-doctor.bats",
+    "tests/plugindir-path.bats",
+    "tests/plugindir-statusline.bats",
     "tests/profile-architect-qa.bats",
     "tests/profile-lead-opus.bats",
     "tests/profile-levels.bats",
@@ -4307,6 +4314,98 @@
       ],
       "files": [
         "tests/statusline-off-docs.bats"
+      ],
+      "timeout": 60
+    },
+    {
+      "id": "C334",
+      "req": "R185",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/plugindir-path.bats"
+      ],
+      "files": [
+        "tests/plugindir-path.bats"
+      ],
+      "timeout": 180
+    },
+    {
+      "id": "C335",
+      "req": "R185",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/plugindir-doctor.bats"
+      ],
+      "files": [
+        "tests/plugindir-doctor.bats"
+      ],
+      "timeout": 180
+    },
+    {
+      "id": "C336",
+      "req": "R185",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-plugindir-probe.bats"
+      ],
+      "files": [
+        "tests/l3-plugindir-probe.bats"
+      ],
+      "timeout": 60
+    },
+    {
+      "id": "C337",
+      "req": "R185",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/plugindir-statusline.bats"
+      ],
+      "files": [
+        "tests/plugindir-statusline.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C338",
+      "req": "R185",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/plugindir-bench.bats"
+      ],
+      "files": [
+        "tests/plugindir-bench.bats"
+      ],
+      "timeout": 1200,
+      "alone": true
+    },
+    {
+      "id": "C339",
+      "req": "R185",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/plugindir-docs.bats"
+      ],
+      "files": [
+        "tests/plugindir-docs.bats"
+      ],
+      "timeout": 60
+    },
+    {
+      "id": "C340",
+      "req": "R185",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-plugindir.bats"
+      ],
+      "files": [
+        "tests/l3-plugindir.bats"
       ],
       "timeout": 60
     }
@@ -10796,7 +10895,96 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M30",
-      "rules": []
+      "rules": [
+        {
+          "text": "With a release installed and claude --plugin-dir <tree>, the Bash tool's vbw is <tree>/bin/vbw and vbw version prints the tree's version, in sh, bash and zsh",
+          "check": "C334"
+        },
+        {
+          "text": "The same holds outside a VBW project and when the project turns the installed VBW off",
+          "check": "C334"
+        },
+        {
+          "text": "A tree path with a space or a quote is put first whole, and the env file's other lines are kept",
+          "check": "C334"
+        },
+        {
+          "text": "A normal installed session writes no PATH line: Claude Code's own order (the newest installed release) stands",
+          "check": "C334"
+        },
+        {
+          "text": "In a VBW project the session's one line names the kernel in use, its path and its version",
+          "check": "C334"
+        },
+        {
+          "text": "Error case: when the env file is missing or cannot be written, the session is told once, naming <tree>/bin/vbw",
+          "check": "C334"
+        },
+        {
+          "text": "An approval answered in the menu is recorded by the loaded kernel even with an installed release that cannot read the record first on PATH, and no VBW hook (session start, approval menu, guards) runs the installed release",
+          "check": "C334"
+        },
+        {
+          "text": "vbw --version prints the plugin's version, as vbw version does, in and outside a project",
+          "check": "C335"
+        },
+        {
+          "text": "vbw doctor shows the vbw on PATH (path and version) and the loaded plugin, ok when they match",
+          "check": "C335"
+        },
+        {
+          "text": "vbw doctor warns, with a fix naming the loaded kernel, when the vbw on PATH differs from the loaded plugin's or no vbw is on PATH",
+          "check": "C335"
+        },
+        {
+          "text": "Before the fix, a real session records which copies load, every vbw on PATH in order, the vbw of the session and of an agent, whose hooks ran, the loaded copy's plugin data folder name and whether it got CLAUDE_ENV_FILE",
+          "check": "C336"
+        },
+        {
+          "text": "A --plugin-dir session's status line is rendered by the tree's own script and shows the tree's version",
+          "check": "C337"
+        },
+        {
+          "text": "A normal installed session's status line shows the newest installed version, as before",
+          "check": "C337"
+        },
+        {
+          "text": "The choice never leaks: a later normal session, and the same session resumed without the tree, show the installed copy",
+          "check": "C337"
+        },
+        {
+          "text": "A moved or deleted tree falls back to the installed copy without failing, and a recorded folder that holds no VBW plugin is never run",
+          "check": "C337"
+        },
+        {
+          "text": "With the installed VBW turned off for the project, a session that loaded the tree shows VBW, and one without it still hands back (R184)",
+          "check": "C337"
+        },
+        {
+          "text": "The session start writes only to the project's .vbw/runtime, VBW's folder in the Claude config folder and the env file, and a session id that is not a plain name is never used as a path",
+          "check": "C337"
+        },
+        {
+          "text": "The status line runs no git process",
+          "check": "C337"
+        },
+        {
+          "text": "The loaded copy's status line stays at or under 60 ms CPU per call and the per-call hooks at or under 20 ms in tools/bench-hooks.sh, which fails when the loaded copy did not render",
+          "check": "C338"
+        },
+        {
+          "text": "CONTRIBUTING.md's Local development section says to start with claude --plugin-dir ./plugin, that the vbw on PATH and the status line version are then the working tree's, how to check (vbw --version, vbw doctor, the status line) and what happens with a release installed",
+          "check": "C339"
+        },
+        {
+          "text": "docs/statusline.md says which copy's version the status line shows, and docs/diagnostics.md that vbw doctor compares the vbw on PATH with the loaded plugin",
+          "check": "C339"
+        },
+        {
+          "text": "An L3 run with a release installed and the tree loaded shows the tree's version in the status line, the session and an agent resolving vbw to <tree>/bin/vbw, the first line naming the kernel, and the installed copy's hooks not running",
+          "check": "C340"
+        }
+      ]
     }
   ],
   "phases": [
@@ -16900,6 +17088,72 @@
         "qa_findings": 0,
         "escalations": 0
       }
+    },
+    {
+      "id": "P135",
+      "title": "The session's vbw command is the loaded plugin's kernel",
+      "reqs": [
+        "R185"
+      ],
+      "milestone": "M30",
+      "goal": "When Claude Code is started with --plugin-dir pointing at a VBW working tree, every vbw command the session, its agents and VBW's own hooks run is that tree's kernel (the vbw program that reads and writes .vbw/record.json), never an installed release.",
+      "criteria": [
+        "Probe first, recorded as a decision with its evidence: on the current Claude Code version, with VBW installed from the marketplace and a session started with claude --plugin-dir ./plugin, the decision names which copies of VBW load, which copy's bin folder comes first on the Bash tool's PATH (the list of folders searched for a command), and which copy's hooks run; the fix is chosen from these facts",
+        "With VBW release X installed and claude --plugin-dir <tree> (version Y), the session's Bash tool resolves command -v vbw to <tree>/bin/vbw and vbw --version prints Y",
+        "The same holds inside workflow agents (Dev, QA, Lead) started by that session: their vbw is <tree>/bin/vbw",
+        "With --plugin-dir and no installed VBW, vbw resolves to <tree>/bin/vbw (unchanged behaviour)",
+        "With --plugin-dir while the installed VBW is turned off for the project (enabledPlugins vbw@vbw-marketplace false), vbw resolves to <tree>/bin/vbw",
+        "Without --plugin-dir, a normal installed session still resolves vbw to the newest installed release, and an update switches it over as before",
+        "VBW's hooks act through one kernel only, the loaded one: in a --plugin-dir session, an approval answered in the approval menu is recorded by <tree>/bin/vbw, shown by a test where the record holds a field the installed kernel does not know and the approval is still recorded; the installed copy's SessionStart hook, guards and approval hooks do not run the installed kernel against the project's record",
+        "The SessionStart message of a --plugin-dir session names the kernel in use (its path and version) in its one line",
+        "Error case: when the loaded kernel cannot be put first on PATH, the session is told so once, naming the exact path to use (<tree>/bin/vbw), instead of silently running the installed release",
+        "vbw doctor shows which vbw is on PATH and which plugin is loaded, and warns with a fix when they differ",
+        "No writes outside the project except those already allowed; works under the Claude Code sandbox; each hook's own CPU per call stays at or under 20 ms (tools/bench-hooks.sh)",
+        "Regression tests under tests/ fail without the fix and pass with it, run under macOS /bin/bash 3.2 and bash 5"
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 6 (130848 bytes)",
+        "files: more than 2 in a repository tracking 945 files",
+        "risk: none",
+        "breaks: R41",
+        "guarded: R3 (C3), R4 (C4), R5 (C5), R8 (C8), R13 (C12), R14 (C13), R18 (C18), R24 (C23), R25 (C24), R27 (C21), R29 (C26), R33 (C29), R34 (C30), R38 (C33, C34), R40 (C37), R42 (C38), R44 (C44, C45), R48 (C49, C50), R51 (C52, C53, C66), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R72 (C116, C118), R78 (C105, C106), R80 (C108), R81 (C109, C111, C112, C113), R98 (C154), R100 (C156), R116 (C182, C183), R121 (C187, C188), R123 (C190, C191), R127 (C194), R141 (C203), R147 (C212, C215, C237), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R153 (C235, C236, C239), R163 (C250), R173 (C281, C282, C283, C284, C285, C286, C289), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333)",
+        "tests: project test command",
+        "raised by the Architect"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P136",
+      "title": "Status line shows the loaded version, and the local-dev path is documented",
+      "reqs": [
+        "R185"
+      ],
+      "milestone": "M30",
+      "goal": "A developer running VBW from a working tree sees that tree's version in the status line and can follow written steps to run, check and trust the local copy.",
+      "criteria": [
+        "In a claude --plugin-dir <tree> session with release X installed, the status line's version field reads the version in <tree>/.claude-plugin/plugin.json (Y), and the status line is rendered by <tree>'s status line script",
+        "In a normal installed session the status line shows the newest installed version, as before",
+        "A --plugin-dir session's choice never leaks to another session: a later normal session in the same project shows the installed version; if the working tree is moved or deleted, the status line falls back to the installed copy instead of failing",
+        "With the installed VBW turned off for the project but loaded through --plugin-dir, the status line shows VBW (the loaded copy is on); with VBW turned off and no --plugin-dir, it still hands back to the user's earlier status line or prints nothing (R184 / D356 unchanged)",
+        "The status line stays at or under 60 ms (tools/bench-hooks.sh), runs no network and no git process, and never runs a command read from a file",
+        "CONTRIBUTING.md's local development section states: start with claude --plugin-dir ./plugin; the vbw on PATH and the status line version are then the working tree's; how to check (vbw --version, vbw doctor, the status line); what happens when a release is also installed",
+        "docs/statusline.md (and README.md where it describes the status line) states which copy's version the status line shows",
+        "An L3 run (tools/l3-suite.sh scenario or a recorded manual run) with a release installed and --plugin-dir shows the loaded version in the status line and vbw resolving to the tree; the progress log names it and what was not run"
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 9 (179528 bytes)",
+        "files: more than 2 in a repository tracking 945 files",
+        "risk: none",
+        "breaks: R20, R41",
+        "guarded: R3 (C3), R4 (C4), R5 (C5), R8 (C8), R16 (C15), R21 (C16), R34 (C30), R42 (C38), R48 (C49, C50), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R57 (C59, C70, C71), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R72 (C116, C118), R76 (C102, C103), R77 (C104), R99 (C155), R101 (C179), R116 (C182, C183), R119 (C180), R121 (C187, C188), R122 (C189), R123 (C190, C191), R142 (C204, C205), R143 (C206, C207), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234), R157 (C244), R161 (C248, C265, C266), R164 (C251), R165 (C252), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R184 (C328, C329, C330, C331, C332, C333)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -26190,6 +26444,147 @@
         "Same section and 'How it is installed': the setting changed with this version, so drop 'It is the same setting VBW 1 used...'; vbw statusline on (and a session that starts in a VBW project) updates a setting made by an older VBW in place, keeping the refresh interval and the saved status line; vbw doctor flags an older one with vbw statusline on as the fix. In 'Engineering': the exit 3 hand-back signal and the 'status line (VBW off)' speed check within the same 60 ms.",
         "docs/panel.md: only if P134.4 changed the panel (tools/l3-results/pluginoff.json says panel_module_loaded true), say in plain words that the panel shows nothing in a project where VBW is turned off; otherwise leave it unchanged. Run bats tests/statusline-off-docs.bats, tests/bench-limits-docs.bats and tests/cost-docs.bats."
       ]
+    },
+    {
+      "id": "P135.1",
+      "phase": "P135",
+      "title": "Find out in the real app which VBW copy a --plugin-dir session uses",
+      "reqs": [
+        "R185"
+      ],
+      "files": [
+        "tools/l3.sh",
+        "tools/l3-suite.sh",
+        "tools/l3-results/plugindir-probe.json"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/l3.sh: a 'both' mode that starts Claude Code with the working tree loaded (--plugin-dir) and the installed VBW left turned on, and, when asked, with the installed release's bin folder already on the inherited PATH (the case of a session started from inside another one)",
+        "tools/l3-suite.sh: a 'plugindir' scenario (in the default list and the header) that asks the session and one VBW agent it starts to run 'command -v vbw' and 'vbw version', reads the debug log (which copies load, whose hooks.json is registered, whether the tree overrides the installed copy), and, through a throwaway copy of the tree in .vbw/runtime/scratch/, which plugin data folder name and CLAUDE_ENV_FILE the loaded copy's SessionStart hook gets; the result name comes from the caller (plugindir-probe now, plugindir after the fix), with the facts tests/l3-plugindir-probe.bats and tests/l3-plugindir.bats name",
+        "Run it once before any fix (a VBW release installed, this branch as the tree) and commit tools/l3-results/plugindir-probe.json",
+        "Record the decision with vbw decide, naming the evidence: which copies load, which bin folder comes first on PATH and why, whose hooks run, the plugin data folder name (expected vbw-inline) and whether CLAUDE_ENV_FILE reaches the session's and agents' Bash tool; it confirms the planned fix (the loaded copy puts its bin first through CLAUDE_ENV_FILE and records itself for its session) or, if the facts contradict it (for example both copies' hooks run, or agents do not read the env file), mark this plan blocked with the facts instead"
+      ]
+    },
+    {
+      "id": "P135.3",
+      "phase": "P135",
+      "title": "At session start, the loaded copy puts its own vbw first and says so",
+      "reqs": [
+        "R185"
+      ],
+      "files": [
+        "plugin/hooks/session-start.sh"
+      ],
+      "after": [
+        "P135.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Read the hook's input (session_id) without ever blocking, and tell a copy loaded with --plugin-dir from an installed one by the plugin data folder Claude Code gives its hooks (vbw-inline, as the probe found); no plugin-cache paths (standards rule K4)",
+        "A loaded copy appends to CLAUDE_ENV_FILE one line that puts its bin folder first on PATH, safely quoted for any path and read the same by sh, bash and zsh, keeping the file's other lines; it records its plugin folder for its session in <claude-config-dir>/vbw/sessions/<session id> (plain session ids only, records older than 7 days removed); an installed copy writes no PATH line and removes its session's record (a session resumed without the tree)",
+        "In a VBW project the session's one line names the kernel in use, its path and version; when CLAUDE_ENV_FILE is missing or cannot be written, the user (systemMessage) and Claude (context) are told once, naming <tree>/bin/vbw",
+        "tests/plugindir-path.bats and the session parts of tests/plugindir-statusline.bats pass; tests/hooks-session*.bats, tests/hook-answers.bats and tests/standards.bats still pass, under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P135.2",
+      "phase": "P135",
+      "title": "vbw --version, and vbw doctor checks which vbw is on PATH",
+      "reqs": [
+        "R185"
+      ],
+      "files": [
+        "plugin/bin/vbw",
+        "plugin/lib/cmd-doctor.sh"
+      ],
+      "after": [
+        "P135.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "vbw --version prints the plugin's version, as vbw version does, in and outside a project (its help entry names it)",
+        "vbw doctor finds the loaded plugin: the folder the session start recorded for $CLAUDE_CODE_SESSION_ID when it still holds a VBW plugin, else the plugin of the kernel running doctor",
+        "vbw doctor shows the vbw on PATH with its path and version (read from that copy's .claude-plugin/plugin.json): ok when it is the loaded plugin's; a warning naming both, with the fix naming <loaded>/bin/vbw, when they differ or no vbw is on PATH",
+        "tests/plugindir-doctor.bats passes; tests/help-every-command.bats, tests/kernel-diagnostics.bats and tests/standards.bats (kernel line budget) still pass, under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P136.1",
+      "phase": "P136",
+      "title": "The status line of a --plugin-dir session is the working tree's",
+      "reqs": [
+        "R185"
+      ],
+      "files": [
+        "plugin/lib/cmd-statusline.sh",
+        "plugin/scripts/vbw-statusline.sh",
+        "tools/bench-hooks.sh"
+      ],
+      "after": [
+        "P135.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "The statusLine setting vbw statusline on writes reads the session_id Claude Code sends (through jq) and, when the session's record names a folder that still holds a VBW plugin (.claude-plugin/plugin.json and scripts/vbw-statusline.sh), runs that folder's script; otherwise the newest installed copy as before, with the R184 hand-back unchanged; a setting from an older VBW is updated as before",
+        "scripts/vbw-statusline.sh: when the session's record names this script's own plugin, VBW is on even where the project turns vbw@vbw-marketplace off",
+        "tools/bench-hooks.sh: a 'status line (loaded copy)' line that starts a session the way --plugin-dir does, with a stand-in installed release in the bench's own config folder, judges the setting against 60 ms, and fails when the loaded copy did not render",
+        "tests/plugindir-statusline.bats and tests/plugindir-bench.bats pass; tests/statusline*.bats, tests/machine-limit.bats and tests/standards.bats (the one K4 exception line) still pass, under macOS /bin/bash 3.2 and bash 5"
+      ]
+    },
+    {
+      "id": "P136.2",
+      "phase": "P136",
+      "title": "Write down how to run, check and trust VBW from a working tree",
+      "reqs": [
+        "R185"
+      ],
+      "files": [
+        "CONTRIBUTING.md",
+        "docs/statusline.md",
+        "docs/diagnostics.md",
+        "README.md"
+      ],
+      "after": [
+        "P135.2",
+        "P136.1"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "CONTRIBUTING.md, Local development: start with claude --plugin-dir ./plugin; the vbw on PATH and the status line's version are then the working tree's; check with vbw --version, vbw doctor and the status line; what happens when a VBW release is also installed",
+        "docs/statusline.md: which copy's version the status line shows (the working tree's in a --plugin-dir session, the newest installed one otherwise), and the fallback when the tree is moved or deleted",
+        "docs/diagnostics.md: vbw doctor compares the vbw on PATH with the loaded plugin and names the fix; README.md only where it already describes the status line's version",
+        "tests/plugindir-docs.bats passes; tests/readme.bats and the other docs tests still pass"
+      ]
+    },
+    {
+      "id": "P136.3",
+      "phase": "P136",
+      "title": "Real-app run after the fix: release installed, working tree loaded",
+      "reqs": [
+        "R185"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3-results/plugindir.json"
+      ],
+      "after": [
+        "P135.1",
+        "P135.2",
+        "P136.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Run tools/l3-suite.sh plugindir after the fix, with a VBW release installed and turned on and its bin folder on the inherited PATH, result named plugindir",
+        "Check the facts tests/l3-plugindir.bats names (session and agent vbw, version, status line version, the first line naming the kernel, installed hooks not run); a gap in another plan's code is reported as a blocker with the facts, not patched here",
+        "Commit tools/l3-results/plugindir.json with its fixture and its not-tested list, and report the scenarios run and not run for the progress log"
+      ]
     }
   ],
   "fixes": [
@@ -35089,6 +35484,15 @@
         "milestone": "M29",
         "started": "2026-10-14T00:38:34Z",
         "ended": "2026-10-14T00:42:00Z",
+        "cost": null
+      },
+      {
+        "id": "plan-20261014T004251Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M30",
+        "started": "2026-10-14T00:42:51Z",
+        "ended": "2026-10-14T01:01:32Z",
         "cost": null
       }
     ],
