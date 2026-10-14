@@ -17152,11 +17152,19 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "c3069f93d124fbedcb0fd28a63b89b91664921fe683fe823b10fc3829f88990f",
-        "at": "2026-10-14T02:12:33Z",
-        "note": "18/20 checks",
-        "rounds": 1
-      }
+        "tree": "a7d1308fb565aaa1dfa21602a67f7571e7ad41ec51673df8c901dee2acb7e8fa",
+        "at": "2026-10-14T08:09:34Z",
+        "note": "19/20 checks",
+        "rounds": 2
+      },
+      "escalations": [
+        {
+          "at": "2026-10-14T08:09:34Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "QA needs a second round"
+        }
+      ]
     },
     {
       "id": "P136",
@@ -28326,8 +28334,17 @@
       "req": "R185",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The SessionStart hook (plugin/hooks/session-start.sh lines 62-82, commit 10a93f0b) now writes outside the project in a --plugin-dir session: it creates <claude-config-dir>/vbw/sessions/<session id>, deletes records older than 7 days there, and (installed copy) removes its session's record. The criterion allows only writes 'already allowed', and docs/guards.md line 268 still says 'VBW itself writes nothing outside the project except the slot store (<claude-config-dir>/vbw/slots.json) and the user's settings.json'; its SessionStart section (line ~260) also still says the hook 'never writes'. No decision records the new exception and no doc names the sessions folder or the PATH line it appends to CLAUDE_ENV_FILE. tests/plugindir-docs.bats pins CONTRIBUTING.md, statusline.md and diagnostics.md only. Regression test to add: a docs test (like tests/machine-limit-docs.bats) that fails unless docs/guards.md names <claude-config-dir>/vbw/sessions and the env-file PATH line in the outside-the-project sentence and the SessionStart section. Fix: record a decision accepting the sessions folder as a second allowed exception (or move it inside the project), then update docs/guards.md.",
+      "phase": "P135"
+    },
+    {
+      "id": "F219",
+      "req": "R185",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "In plugin/hooks/session-start.sh the loaded-copy error message can be thrown away. When a --plugin-dir session cannot write CLAUDE_ENV_FILE, the hook sets context='VBW could not put the loaded copy first on PATH: run <tree>/bin/vbw ...'. Two lines later the old line '[ \"$removed\" -eq 0 ] || context=\"VBW removed ...\"' assigns context without keeping the earlier text, so when VBW 1 command copies were also removed in the same start, Claude is never told to run <tree>/bin/vbw and its agents silently run the installed release (the user still sees the systemMessage). That line was safe before this phase because context was always empty there. Same pattern for notice: the 'project made by a newer VBW' branch assigns notice='This project was made by a newer VBW...' and drops the 'could not put first on PATH' message the user should see. Evidence: code read of plugin/hooks/session-start.sh after commit 10a93f0b (I could not run it: the QA guard forbids writes). Regression test: tests/plugindir-path.bats should start a loaded session with CLAUDE_ENV_FILE unset (1) with a VBW 1 command copy present in the Claude config folder, and (2) in a project whose record is newer than the kernel; in both the hook output must still name $PLUGIN_ROOT/bin/vbw in additionalContext and systemMessage. Fix: append (context=\"${context}...\", notice=\"${notice:+$notice }...\") instead of assigning.",
       "phase": "P135"
     }
   ],
