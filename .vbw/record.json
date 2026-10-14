@@ -27830,7 +27830,7 @@
       "after": [
         "P139.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Standard: in vbw plan done, after the existing commit, uncommitted-files (it already names the files) and passing-checks steps, when the plan is being built in an open build run (lease kind build, plan status building), its phase's recorded tier is standard or deep and its requirements have checks: take each approved rule of each requirement the plan completes (the same set as the checks it runs) and count it covered when any plan of that requirement has a mutation entry for that rule (same req and text) whose result is red. Refuse listing the rules still missing one as Rn.k with their text, ending with Next: break what each rule promises in this plan's code and run vbw mutate PLAN Rn.k \"what you broke\" FILE...",
@@ -27838,6 +27838,168 @@
         "Unchanged where nothing is asked: express, a phase with no recorded tier, plans whose requirements have no checks (all [human]), and plan done outside a build run behave exactly as before. Record-sized data reaches jq through pipes or --slurpfile only (tests/record-args-rule.bats).",
         "Prove it: bats tests/mutate-plan-done.bats passes under /bin/bash and bash 5; every test file that calls vbw plan done (tests/plan-done-committed.bats, tests/kernel-work.bats, tests/fix-*.bats, tests/loop-*.bats, tests/qa-*.bats, tests/small-*.bats, tests/record-duty.bats) and tests/standards.bats still pass. If the vbw on PATH has the mutate command, record a red break for each R188 rule whose check is C352 (and, at deep, each task, or --none with a reason); otherwise say so in notes.",
         "The code is built (476447cc). Record a red break with vbw mutate for EVERY rule checked by C352 (R188.17 to R188.26), one at a time, BEFORE vbw plan done; plan done does not enforce it here because P141.2 finishes R188 later, so the duty is this plan's"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R188",
+            "text": "at standard, plan done of a plan being built refuses until every approved rule of each requirement it completes has a red break, listing the rules still missing one and naming vbw mutate"
+          },
+          "what": "standard tier no longer asks for the mutation check",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C352": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T21:48:36Z",
+          "head": "4c3aa434e7adae2ab45c45af577ac06532f0599b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "rules that share one check each need their own break"
+          },
+          "what": "a red break of any rule of the requirement covers all its rules",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C352": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T21:49:37Z",
+          "head": "4c3aa434e7adae2ab45c45af577ac06532f0599b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "a survivor alone covers nothing; a red break of the same rule after its check file was strengthened covers it"
+          },
+          "what": "a survivor covers a rule like a red break",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C352": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T21:50:33Z",
+          "head": "4c3aa434e7adae2ab45c45af577ac06532f0599b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "a requirement another open plan still serves asks nothing of this plan; the completing plan counts the red breaks every plan of the requirement recorded"
+          },
+          "what": "a requirement another open plan still serves is asked of this plan",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C352": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T21:51:28Z",
+          "head": "4c3aa434e7adae2ab45c45af577ac06532f0599b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "at deep, plan done also refuses until every task has a red break or a written reason it has no testable behaviour, listing the tasks missing one"
+          },
+          "what": "deep no longer asks for task breaks",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C352": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T21:52:30Z",
+          "head": "4c3aa434e7adae2ab45c45af577ac06532f0599b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "at express plan done asks for no mutation check"
+          },
+          "what": "express asks for the mutation check too",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C352": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T21:53:26Z",
+          "head": "4c3aa434e7adae2ab45c45af577ac06532f0599b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "a plan whose requirements are all [human] asks for no mutation check, at standard or deep"
+          },
+          "what": "a plan with only human requirements is asked too",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C352": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T21:54:25Z",
+          "head": "4c3aa434e7adae2ab45c45af577ac06532f0599b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "a phase with no recorded tier asks for no mutation check"
+          },
+          "what": "an untiered phase is asked for the mutation check",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C352": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T21:55:31Z",
+          "head": "4c3aa434e7adae2ab45c45af577ac06532f0599b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "outside a build run (a plan closed by hand) plan done asks for no mutation check"
+          },
+          "what": "plan done outside a build run is asked too",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C352": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T21:56:35Z",
+          "head": "4c3aa434e7adae2ab45c45af577ac06532f0599b"
+        },
+        {
+          "rule": {
+            "req": "R188",
+            "text": "plan done refuses while the plan's files differ from their last commit, naming them"
+          },
+          "what": "uncommitted plan files no longer refuse plan done",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C352": "red"
+          },
+          "result": "red",
+          "at": "2026-10-14T22:00:32Z",
+          "head": "4c3aa434e7adae2ab45c45af577ac06532f0599b"
+        }
       ]
     },
     {
@@ -38485,6 +38647,15 @@
           "in": 0,
           "out": 0
         }
+      },
+      {
+        "id": "build-20261014T214623Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-14T21:46:23Z",
+        "ended": "2026-10-14T22:00:51Z",
+        "cost": null
       }
     ],
     "milestones": {
