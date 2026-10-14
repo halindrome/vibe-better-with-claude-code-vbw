@@ -28345,7 +28345,7 @@
       "req": "R185",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "In plugin/hooks/session-start.sh the loaded-copy error message can be thrown away. When a --plugin-dir session cannot write CLAUDE_ENV_FILE, the hook sets context='VBW could not put the loaded copy first on PATH: run <tree>/bin/vbw ...'. Two lines later the old line '[ \"$removed\" -eq 0 ] || context=\"VBW removed ...\"' assigns context without keeping the earlier text, so when VBW 1 command copies were also removed in the same start, Claude is never told to run <tree>/bin/vbw and its agents silently run the installed release (the user still sees the systemMessage). That line was safe before this phase because context was always empty there. Same pattern for notice: the 'project made by a newer VBW' branch assigns notice='This project was made by a newer VBW...' and drops the 'could not put first on PATH' message the user should see. Evidence: code read of plugin/hooks/session-start.sh after commit 10a93f0b (I could not run it: the QA guard forbids writes). Regression test: tests/plugindir-path.bats should start a loaded session with CLAUDE_ENV_FILE unset (1) with a VBW 1 command copy present in the Claude config folder, and (2) in a project whose record is newer than the kernel; in both the hook output must still name $PLUGIN_ROOT/bin/vbw in additionalContext and systemMessage. Fix: append (context=\"${context}...\", notice=\"${notice:+$notice }...\") instead of assigning.",
       "phase": "P135"
     }
@@ -35745,6 +35745,15 @@
         "milestone": "M30",
         "started": "2026-10-14T08:10:25Z",
         "ended": "2026-10-14T08:14:04Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261014T082106Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M30",
+        "started": "2026-10-14T08:21:06Z",
+        "ended": "2026-10-14T08:34:04Z",
         "cost": null
       }
     ],
