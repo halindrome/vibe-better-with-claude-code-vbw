@@ -890,6 +890,29 @@ can judge it), and a `[human]` requirement with an open fix from your rejection
 (`vbw req skip` refuses it too). Finish the fix with `vbw next`, then judge the
 requirement or skip it. `vbw ship` refuses while such a fix is open.
 
+### The mutation check
+
+At standard and deep, the builder breaks the plan's code on purpose (one
+statement per rule) with `vbw mutate` and runs the rule's own check. See
+docs/workflows.md for the command and docs/rigor.md for the levels.
+
+- A check that notices the break is **red**: the rule is covered.
+- A test that cannot fail, because every check stays green, is a **survivor**.
+  The Dev strengthens it in place, in the check file of that rule's own
+  requirement (never another's, never weakened), then repeats the same break
+  until it is red. After two attempts that stay green the Dev blocks the plan.
+- `vbw plan done` waits for the breaks: at standard it refuses until each
+  approved rule of the requirements the plan completes has a red break, and
+  lists the rules missing one. At deep each task also needs a red break or a
+  written reason. At express it asks for nothing. A survivor alone covers
+  nothing.
+
+A strengthened check file adds one approval. The build finishes, then `vbw next`
+asks you to approve the file before the proof, and `vbw prove` refuses until
+you do. Under a loop, the loop gives that approval and records a decision that
+names the file. A changed check file that no mutation check strengthened, or
+one edited again after its red break, still waits for you.
+
 ### QA verification
 
 Passing checks prove each requirement's behavior; they cannot see whether the

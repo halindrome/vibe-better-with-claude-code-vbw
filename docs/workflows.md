@@ -182,6 +182,7 @@ merely contains `--help` (for example a todo) is still text. The test is
 | `vbw show plan P1.2 [--json]` | Dev | the plan, its requirements, its checks, its files |
 | `vbw show fix F1 [--json]` | Dev | the fix, its requirement, failing checks and output (with the path of each kept full output, under `.vbw/runtime/output/`), the files it may touch |
 | `vbw check [--expect-red] [C1 ...]` | Dev | run approved checks, report, write nothing. `--expect-red`: every check must fail (red-first) |
+| `vbw mutate P1.2 R3.1 "what you broke" FILE...` | Dev, Docs | break one rule (or `taskK`) of the plan on purpose and record whether a check noticed; VBW undoes the break. Standard and deep only (below) |
 | `vbw commit P1.2 "feat(x): ..."` | Dev | commit the plan's changed files with provenance trailers |
 | `vbw commit --fix F1 "fix(x): ..." FILE...` | Dev | commit the named changed files of an open fix for a failing project command, even when no plan lists them. The commit carries a `VBW-Fix: F1` trailer. A requirement fix commits through its plan instead; `.vbw/` files are refused |
 | `vbw plan done P1.2` / `vbw plan block P1.2 "reason"` | Dev | the plan's outcome. `done` is verified: none of the plan's files has uncommitted changes, and the checks of the requirements it completes pass. The plan also needs a commit with its `VBW-Plan` trailer (`vbw commit`); without one, every file must be committed in `HEAD` (for example by the approval commit) and a check of its requirements must pass, or `done` is refused and names the failing check. A blocked plan stops only the plans that depend on it (docs/next.md). `block` refuses a plan that is already done, says so, and changes nothing; reset the plan first if it must be built again |
@@ -190,6 +191,35 @@ merely contains `--help` (for example a todo) is still text. The test is
 | `vbw apply < plan.json` | Lead | replace phases, plans and checks, and set each `auto` requirement's rules, in one validated write (refused while a build or fix run is open; a plan that has started must come back unchanged; a requirement that another milestone owns or that a phase of another milestone already covers is refused with the `vbw apply --add` message, and nothing is written) |
 | `vbw apply --patch < patch.json` | Lead | change only the plans, checks and rules in the document; everything else stays byte for byte as it was |
 | `vbw apply --add < phase.json` | router | add one new phase with its plans, checks and rules to the milestone; every other phase, plan, check and rule stays as it was |
+
+## The mutation check
+
+```
+vbw mutate P1.2 R3.1 "return true always" src/pay.sh
+vbw mutate P1.2 task2 --check C7 "drop the retry" src/pay.sh
+vbw mutate P1.2 task2 --none "documentation only"
+```
+
+After its checks are green, the Dev of a plan breaks its own code on purpose
+and confirms that a check notices. A test that stays green on broken code
+cannot fail, and QA would otherwise find it one round at a time.
+
+- **When it runs:** at standard and deep. Never at express, and never in a fix.
+- **Rule form** (`Rn.k`): break rule k of requirement Rn in the named files.
+  Only that rule's own check runs. `vbw show plan` numbers the rules this way.
+- **Task form** (`taskK`): break task K. The checks of the plan's requirements
+  run, or only the `--check` ones. `--none REASON` records that the task has
+  no behaviour a test could notice; a rule cannot be recorded this way.
+- **VBW undoes the break.** The named files go back to their last commit,
+  whether a check noticed (red) or not (a survivor). The command refuses, and
+  writes nothing, if the plan's files differ from their last commit, a file is
+  outside the plan, or a check file is touched.
+- **What it records:** `vbw show plan` lists each break: target, description,
+  red or survivor, and each check's result. A survivor makes `vbw mutate` exit
+  non-zero. What to do with it: docs/proof.md.
+
+The Docs agent breaks the statements its documents deliver in the same way.
+What is broken at each tier: docs/rigor.md.
 
 ## `vbw apply` and rules
 
