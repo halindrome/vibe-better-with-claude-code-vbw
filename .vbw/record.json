@@ -4490,6 +4490,32 @@
         "tests/close-haiku-runs.bats"
       ],
       "timeout": 60
+    },
+    {
+      "id": "C347",
+      "req": "R186",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/close-haiku-docs.bats"
+      ],
+      "files": [
+        "tests/close-haiku-docs.bats"
+      ],
+      "fix": "F221"
+    },
+    {
+      "id": "C348",
+      "req": "R186",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/close-haiku-runs.bats"
+      ],
+      "files": [
+        "tests/close-haiku-runs.bats"
+      ],
+      "fix": "F222"
     }
   ],
   "project": {
@@ -28649,7 +28675,7 @@
       "req": "R186",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/workflows.md lines 38-43: the new Haiku paragraph (added in 21d1aa38) sits between 'Without it, a workflow closes nothing and the router ends the run as before. With it:' and the bullet list that 'With it:' introduces, so the sentence now ends in a colon with no list after it, and the reader meets the Haiku paragraph first. Move the Haiku paragraph to after the two bullets (or before 'Without it'). A regression test should fail when the line that ends 'With it:' is not followed (after blank lines) by a list item.",
       "phase": "P137"
     },
@@ -28658,7 +28684,7 @@
       "req": "R186",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "tools/close-haiku-run.sh header (line 13-14) says one run costs 'roughly 1 to 3 USD'; the three committed results show 0.13 (building), 0.19 (fixing) and 0.36 (long-fix) USD. The plan asks the header to name the cost, and the stated figure is wrong by a factor of 3 to 20. Correct the range to what the runs cost. A regression test in tests/close-haiku-runs.bats should read the dollar range from the header and fail when any committed result's cost_usd lies outside it.",
       "phase": "P137"
     }
@@ -36240,6 +36266,15 @@
         "milestone": "M31",
         "started": "2026-10-14T10:58:13Z",
         "ended": "2026-10-14T11:00:23Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261014T110048Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M31",
+        "started": "2026-10-14T11:00:48Z",
+        "ended": "2026-10-14T11:04:40Z",
         "cost": null
       }
     ],
