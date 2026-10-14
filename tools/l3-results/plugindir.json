@@ -1,14 +1,14 @@
 {
   "scenario": "plugindir",
-  "fixture": "a small VBW project (vbw init, one-requirement spec); VBW 2.0.35 installed from the marketplace and left on; a throwaway copy of this tree (2.0.35+tree, with a probe SessionStart hook) loaded with --plugin-dir; status line from that copy; launch PATH has the installed bin/ first: true",
-  "cost_usd": 0.1574,
+  "fixture": "a small VBW project (vbw init, one-requirement spec); VBW 2.0.35 installed from the marketplace and left on; a throwaway copy of this tree (2.0.36, with a probe SessionStart hook) loaded with --plugin-dir; status line from that copy; launch PATH has the installed bin/ first: true",
+  "cost_usd": 0.1598,
   "evidence_level": "L3",
-  "at": "2026-10-14T01:24:34Z",
+  "at": "2026-10-14T13:39:38Z",
   "passed": true,
   "facts": {
-    "claude_version": "2.1.296",
+    "claude_version": "2.1.299",
     "tree_root": "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/.vbw/runtime/scratch/plugindir-tree",
-    "tree_version": "2.0.35+tree",
+    "tree_version": "2.0.36",
     "installed_version": "2.0.35",
     "loaded_copies": [
       "/Users/tiagoserodio/.claude/plugins/cache/vbw-marketplace/vbw/2.0.35",
@@ -21,10 +21,10 @@
       "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/.vbw/runtime/scratch/plugindir-tree/bin"
     ],
     "session_vbw_path": "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/.vbw/runtime/scratch/plugindir-tree/bin/vbw",
-    "session_vbw_version": "2.0.35+tree",
+    "session_vbw_version": "2.0.36",
     "session_env_applied": true,
     "agent_vbw_path": "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/.vbw/runtime/scratch/plugindir-tree/bin/vbw",
-    "agent_vbw_version": "2.0.35+tree",
+    "agent_vbw_version": "2.0.36",
     "agent_env_applied": true,
     "hooks_from": [
       "vbw@inline"
@@ -33,7 +33,7 @@
     "plugin_data_id": "vbw-inline",
     "env_file_given": true,
     "launch_path_had_installed": true,
-    "statusline_version_shown": "2.0.35+tree",
+    "statusline_version_shown": "2.0.36",
     "session_start_names_kernel": true
   },
   "not_tested": [
