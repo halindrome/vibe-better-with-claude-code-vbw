@@ -8,6 +8,17 @@
 # regression test included). Commits are serialized with
 # the project lock, so parallel Devs never collide on git's index lock.
 
+# jq text, prepended to a filter over the record: survivor_files($plan) are the
+# check files a survivor of vbw mutate in that plan opened for strengthening: the
+# files of the checks the survivor ran that no check of another requirement lists.
+# shellcheck disable=SC2016 # jq text, not shell
+COMMIT_SURVIVOR_DEFS='def survivor_files($p): . as $r
+  | ([$r.plans[] | select(.id == $p) | (.mutations // [])[] | select(.result == "survivor") | (.checks // {}) | keys[]] | unique) as $ran
+  | [$r.checks[] | select(.id as $c | $ran | index($c) != null)] as $mine
+  | ([$mine[].req] | unique) as $q
+  | (([$mine[] | (.files // [])[]] | unique) - ([$r.checks[] | select(.req as $x | $q | index($x) | not) | (.files // [])[]] | unique));
+'
+
 VBW_COMMIT_RE='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)\([^)]+\)!?: .+'
 
 cmd_commit() {
@@ -39,7 +50,11 @@ cmd_commit() {
         e="${e%/}"
         if [ "$f" = "$e" ] || { [ "${f#"$e"/}" != "$f" ] && [[ "/$f/" != *"/../"* ]]; }; then covered=1; break; fi
       done
-      [ "$covered" -eq 1 ] || vbw_die "$f is not covered by plan $plan: name only files the plan declares"
+      if [ "$covered" -eq 0 ]; then
+        # A check file a survivor of this plan opened for strengthening (R188.34).
+        printf '%s' "$record" | jq -e --arg p "$plan" --arg f "$f" "$COMMIT_SURVIVOR_DEFS"'survivor_files($p) | index($f) != null' > /dev/null \
+          || vbw_die "$f is not covered by plan $plan: name only files the plan declares, or a check file of the rule a survivor of vbw mutate $plan left (no other requirement's check file is the plan's to commit)"
+      fi
       named+=("$f")
     done
     files=("${named[@]}")
