@@ -186,6 +186,8 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 - R185 [auto] The session must run the loaded plugin's kernel (2026-10-13 14:54): in the v2 worktree the vbw on PATH was the installed release (2.0.34), put there by the SessionStart hook, so every kernel command of the session ran the released code and the record became unreadable to it once an agent wrote a new field through plugin/bin/vbw; with claude --plugin-dir ./plugin the loaded plugin's bin must be the one on PATH and the status line must show the loaded version (replaces T54: --plugin-dir did not override the installed copy); document the local-dev path
 - R186 [auto] Brainstorm B4: every workflow's close-run step (vbw run confirm + run end) is a vbw:lead agent on model.lead, so Fable or Opus is paid once per run for two commands; give the step its own cheap model or let the workflow end the run itself
 - R187 [auto] Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09)
+- R188 [auto] Cost: at standard and deep, mutation-check a plan's own tests before its build ends, so QA stops finding tests that cannot fail one round at a time (M15: each deep QA round found 1-2 such gaps, about an hour per loop)
+- R189 [auto] Cost: at standard and deep, mutation-check a plan's own tests before its build ends, so QA stops finding tests that cannot fail one round at a time (M15: each deep QA round found 1-2 such gaps, about an hour per loop)
 
 <!-- One requirement per line: an id, how it is proved, and a user-observable
      statement. [auto] = a check can prove it; [human] = only a person can judge it.
