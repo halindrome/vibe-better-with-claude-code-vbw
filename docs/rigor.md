@@ -165,6 +165,8 @@ tiers; `budget` runs `express` Dev on Haiku and `standard` QA at `quick`. Read t
 file for the exact table. The Lead, Scout and Architect take their models from
 `plugin/lib/profiles.json` (`vbw config models` prints them). Your own model overrides (`vbw config set model.dev opus`) win over the table.
 
+The Lead plans on that model. The step that closes each run runs on Haiku in every profile, separate from the Lead's model (`model.lead`).
+
 **QA never uses Haiku.** In every profile and tier, QA runs on Sonnet or a
 stronger model. Other roles keep the models their profile gives them.
 

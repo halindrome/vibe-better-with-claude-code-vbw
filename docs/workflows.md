@@ -40,6 +40,8 @@ A workflow closes its own run. The router passes `args.session` (its
 `${CLAUDE_SESSION_ID}`) to every workflow. Without it, a workflow closes
 nothing and the router ends the run as before. With it:
 
+The closing step (the `close run` agent, and `vbw:fixing`'s own `fix done` agent when there is no session) runs on Haiku in every profile, whatever the Lead's model (`model.lead`) is: it runs a few fixed commands, and the record stays the source of truth, so a wrong answer can only blur the summary line while `vbw next` still asks for any missing work.
+
 - `vbw:building`, `vbw:fixing` and `vbw:verifying` finish with one last agent,
   the Lead (label `close run`), that runs `vbw run confirm` for every plan, fix
   or phase of the run, then `vbw run end` whatever confirm said. In
@@ -502,6 +504,8 @@ holding roles and, under each role, steps. The levels are `low`, `medium`,
 | `qa` | `verify` |
 | `scout` | `survey`, `merge` |
 | `debugger` | `investigate`, `diagnose`, `fix` |
+
+The profile's `lead.close` effort is still sent to the closing step, which runs on Haiku in every profile; `model.lead` sets the model the Lead plans with and does not change the closing step.
 
 `vbw next --json` returns the current profile's table as `effort`, and the
 router passes it to every workflow as `args.effort`. A workflow gives each
