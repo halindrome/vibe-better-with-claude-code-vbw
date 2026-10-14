@@ -10,6 +10,8 @@ export const meta = {
 
 // args: {models?: {scout?}}
 const models = (args && args.models) || {}
+// R186, D369: the closing step is a few fixed commands and the record stays the source of truth.
+const CLOSE_MODEL = 'haiku'
 const model = models.scout ? { model: models.scout } : {}
 // The effort the profile gives a role and step (args.effort, from vbw next --json): the option
 // for an agent call, or nothing when there is no table or no value (agents then run as before).
@@ -31,7 +33,7 @@ const closeRun = async (phaseIds = []) => {
   const end = `VBW_SESSION_ID=${session} vbw run end`
   const check = phaseIds.length === 0 ? '' : `First check that each planned phase has plans: ${phaseIds.map(id => `vbw show phase ${id}`).join('; ')}. `
   const done = await agent(`Close this VBW run (your own instructions, Close a run, allow it). ${check}Then, whatever you found, run ${end}. Answer ended (run end succeeded), recorded (${phaseIds.length === 0 ? 'true' : 'every phase has plans'}) and report (${phaseIds.length === 0 ? 'what it printed' : 'name each phase without plans, else "all recorded; run ended"'}). Change nothing else.${voice}`,
-    Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, models.lead ? { model: models.lead } : {}, effortOf('lead', 'close')))
+    Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, { model: CLOSE_MODEL }, effortOf('lead', 'close')))
   if (!done) log(`the closing agent stopped: run by hand: ${end}`)
   else {
     if (!done.recorded) log(done.report)

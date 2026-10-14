@@ -14,6 +14,8 @@ export const meta = {
 // effort: {<role>: {<step>: level}} from vbw next --json; used only when it is an object, else agents run as before.
 // next_phase: the next free phase number; the Architect numbers new phases from it.
 const models = (args && args.models) || {}
+// R186, D369: the closing step is a few fixed commands and the record stays the source of truth.
+const CLOSE_MODEL = 'haiku'
 const decided = Boolean(args && args.decided)
 // The user's level, explanation depth and involvement (args.profile, from vbw next --json):
 // every agent writes what reaches the user at that level.
@@ -115,7 +117,7 @@ const closeRun = async (phaseIds = []) => {
   const end = `VBW_SESSION_ID=${session} vbw run end`
   const check = phaseIds.length === 0 ? '' : `First check that each planned phase has plans: ${phaseIds.map(id => `vbw show phase ${id}`).join('; ')}. `
   const done = await agent(`Close this VBW run (your own instructions, Close a run, allow it). ${check}Then, whatever you found, run ${end}. Answer ended (run end succeeded), recorded (${phaseIds.length === 0 ? 'true' : 'every phase has plans'}) and report (${phaseIds.length === 0 ? 'what it printed' : 'name each phase without plans, else "all recorded; run ended"'}). Change nothing else.${voice}`,
-    Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, models.lead ? { model: models.lead } : {}, effortFor('lead', 'close')))
+    Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, { model: CLOSE_MODEL }, effortFor('lead', 'close')))
   if (!done) log(`the closing agent stopped: run by hand: ${end}`)
   else {
     if (!done.recorded) log(done.report)
