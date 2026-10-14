@@ -26480,7 +26480,7 @@
       "after": [
         "P135.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Read the hook's input (session_id) without ever blocking, and tell a copy loaded with --plugin-dir from an installed one by the plugin data folder Claude Code gives its hooks (vbw-inline, as the probe found); no plugin-cache paths (standards rule K4)",
@@ -35513,6 +35513,15 @@
         "milestone": "M30",
         "started": "2026-10-14T01:02:08Z",
         "ended": "2026-10-14T01:07:17Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T010735Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M30",
+        "started": "2026-10-14T01:07:35Z",
+        "ended": "2026-10-14T01:11:03Z",
         "cost": null
       }
     ],
