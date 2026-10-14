@@ -5,7 +5,7 @@ export const meta = {
   phases: [{ title: 'Build', detail: 'a Dev (or Docs) per plan; disjoint files' }],
 }
 
-// args: {plans: ["P1.1", ...], docs?: ["P2.1"], effort?: {dev?: {build}, docs?: {build}, lead?: {close}}, models?: {dev?, docs?; models.lead is not used for closing}, rigor?: {P1: {models, tier}}} (docs/workflows.md).
+// args: {plans: ["P1.1", ...], docs?: ["P2.1"], effort?: {dev?: {build}, docs?: {build}, lead?: {close}}, models?: {dev?, docs?; models.lead is not used for closing}, rigor?: {P1: {models}}} (docs/workflows.md).
 // docs: the plans the Lead marked as documentation, built by the Docs agent.
 const plans = (args && args.plans) || []
 const docs = (args && args.docs) || []
@@ -70,9 +70,7 @@ const results = await pipeline(plans, id => {
   const role = docs.includes(id) ? 'docs' : 'dev'
   const cell = rigor[id.split('.')[0]]
   const m = (cell && cell.models && cell.models[role]) || models[role]
-  const tier = cell && cell.tier
-  const mutate = tier === 'standard' || tier === 'deep' ? ` This plan's rigor tier is ${tier}: do the mutation step of your instructions before vbw plan done.` : ''
-  return agent(`Execute VBW plan ${id}. Start with: vbw show plan ${id}${mutate}${voice}`,
+  return agent(`Execute VBW plan ${id}. Start with: vbw show plan ${id}${voice}`,
     Object.assign({ agentType: `vbw:${role}`, label: `${role} ${id}`, phase: 'Build', schema: BUILD_RESULT },
       m ? { model: m } : {}, effortOf(role, 'build')))
 })
