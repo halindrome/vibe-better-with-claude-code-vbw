@@ -164,8 +164,6 @@ prove_stamp() {
 # only that plan's files. Prints a JSON array of violations.
 prove_scope() {
   local entry sha plan f
-  # shellcheck source=cmd-commit.sh
-  . "$VBW_LIB/cmd-commit.sh"
   {
     while IFS= read -r -d '' entry; do
       sha=${entry%%$'\x1f'*}
@@ -176,12 +174,11 @@ prove_scope() {
         printf '%s\x1f%s\x1f%s\n' "${sha:0:12}" "$plan" "$f"
       done < <(git diff-tree -z --no-commit-id --name-only -r --root "$sha")
     done < <(git log -z --format='%H%x1f%(trailers:key=VBW-Plan,valueonly)' 2> /dev/null)
-  } | jq -R -s -c --slurpfile rec <(printf '%s' "$1") "$VBW_JQ_DEFS$COMMIT_SURVIVOR_DEFS"'
+  } | jq -R -s -c --slurpfile rec <(printf '%s' "$1") "$VBW_JQ_DEFS"'
     $rec[0] as $r
     | ($r.plans | map({key: .id, value: .files}) | from_entries) as $files
-    | ($r.plans | map(.id as $i | {key: $i, value: ($r | survivor_files($i))}) | from_entries) as $own
     | [split("\n")[] | select(length > 0) | split("\u001f") | select($files[.[1]] != null)
-       | select(.[2] as $f | (any($files[.[1]][]; covers($f)) or ($own[.[1]] | index($f) != null)) | not)
+       | select(.[2] as $f | any($files[.[1]][]; covers($f)) | not)
        | "\(.[0]) (\(.[1])) changed \(.[2]), which is not in the plan"]'
 }
 
