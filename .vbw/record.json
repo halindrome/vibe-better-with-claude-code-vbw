@@ -37088,6 +37088,7 @@
     "ended": {
       "at": "2026-10-14T14:45:14Z",
       "reason": "refused: costs.milestones.M33 is not an existing milestone  (item T146, step open)"
-    }
+    },
+    "report": ".vbw/loop-report.md"
   }
 }
