@@ -4526,9 +4526,9 @@
     ]
   },
   "milestone": {
-    "id": "M31",
-    "title": "Brainstorm B4: every workflow's close-run step (vbw run confirm + run end) is a vbw:lead agent on model.lead, so Fable or Opus is paid once per run for two commands; give the step its own cheap model or let the workflow end the run itself",
-    "status": "shipped"
+    "id": "M32",
+    "title": "Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09)",
+    "status": "active"
   },
   "shipped": [
     {
@@ -36714,6 +36714,58 @@
           "in": 906127,
           "out": 93,
           "sessions": 8
+        }
+      },
+      "M32": {
+        "baseline": {
+          "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
+            "usd": 1123.745705,
+            "in": 906127,
+            "out": 93,
+            "at": "2026-10-14T11:11:52Z"
+          },
+          "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-14T11:11:52Z"
+          },
+          "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-14T11:11:52Z"
+          },
+          "689c5465-3aa1-49af-9115-8192ae092ecf": {
+            "usd": 35.064654,
+            "in": 174558,
+            "out": 600,
+            "at": "2026-10-14T11:11:52Z"
+          },
+          "69afb011-3850-41d9-8620-9b59aa9fe082": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-14T11:11:52Z"
+          },
+          "868abfef-9fb7-492e-afba-751d9042e56a": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-14T11:11:52Z"
+          },
+          "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-14T11:11:52Z"
+          },
+          "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-14T11:11:52Z"
+          }
         }
       }
     }
