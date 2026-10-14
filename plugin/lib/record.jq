@@ -43,23 +43,6 @@ def loop_item: type == "object"
   and ((has("reason") | not) or (.reason | nonempty))
   and ((has("at") | not) or (.at | iso));
 
-# One recorded break of a plan (vbw mutate): a rule or a task K with what was broken,
-# the files, each check red or green and the result, or a task with nothing to break.
-def mutation_ok:
-  type == "object" and (.at | iso)
-  and (if has("none") then (keys | sort) == ["at","none","task"] and (.none | nonempty) and (.task | int_in(1; 9999))
-      else (keys - ["rule","task","what","files","checks","result","at","head","strengthened"] == [])
-        and (has("rule") != has("task"))
-        and ((has("rule") | not) or (.rule | type == "object" and (keys | sort) == ["req","text"] and (.req | nonempty) and (.text | nonempty)))
-        and ((has("task") | not) or (.task | int_in(1; 9999)))
-        and (.what | nonempty)
-        and (.files | type == "array" and length > 0 and all(.[]; safe_path))
-        and (.checks | type == "object" and length > 0 and all(.[]; one_of(["red","green"])))
-        and (.result == (if all(.checks[]; . == "green") then "survivor" else "red" end))
-        and (.head | type == "string" and test("^[0-9a-f]{40}$"))
-        and ((has("strengthened") | not) or (.strengthened | type == "array" and all(.[]; safe_path)))
-      end);
-
 # Plan ids reachable from $n through "after" edges ($g: id -> [ids]).
 def reachable($g; $n):
   {seen: [], todo: ($g[$n] // [])}
@@ -235,8 +218,7 @@ if type != "object" then ["record must be a JSON object"] else
         ( . as $p | (.reqs // [])[] | . as $x | select(($reqs | has_id($x)) | not) | "\($p.id) references unknown requirement \(.)" ) ),
 
     ( $plans[]
-      | field_rule(["id","phase","title","reqs","files","after","status","note","tasks","role","mutations"]),
-        ( select(has("mutations") and ((.mutations | type == "array" and all(.[]; mutation_ok)) | not)) | "\(.id) mutations must be recorded breaks (vbw mutate)" ),
+      | field_rule(["id","phase","title","reqs","files","after","status","note","tasks","role"]),
         ( select(has("tasks") and ((.tasks | type == "array" and length > 0) and all(.tasks[]; nonempty) | not)) | "\(.id) tasks must be a non-empty array of non-empty strings" ),
         ( select(has("role") and (.role | one_of(["dev","docs"]) | not)) | "\(.id) role must be dev or docs" ),
         ( select(has("note") and ((.note | nonempty) | not)) | "\(.id) note must be a non-empty string" ),
