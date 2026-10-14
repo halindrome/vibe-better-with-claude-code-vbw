@@ -26503,7 +26503,7 @@
       "after": [
         "P135.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vbw --version prints the plugin's version, as vbw version does, in and outside a project (its help entry names it)",
@@ -26527,7 +26527,7 @@
       "after": [
         "P135.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "The statusLine setting vbw statusline on writes reads the session_id Claude Code sends (through jq) and, when the session's record names a folder that still holds a VBW plugin (.claude-plugin/plugin.json and scripts/vbw-statusline.sh), runs that folder's script; otherwise the newest installed copy as before, with the R184 hand-back unchanged; a setting from an older VBW is updated as before",
@@ -35522,6 +35522,15 @@
         "milestone": "M30",
         "started": "2026-10-14T01:07:35Z",
         "ended": "2026-10-14T01:11:03Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261014T011120Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M30",
+        "started": "2026-10-14T01:11:20Z",
+        "ended": "2026-10-14T01:22:10Z",
         "cost": null
       }
     ],
