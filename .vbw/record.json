@@ -31466,6 +31466,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T151",
+      "text": "Two limits do one job (P139.1 mutation finding, 2026-10-14): the check_jobs cap is enforced both in plugin/lib/checks.sh (checks_run_all) and in plugin/lib/proofcopy.sh (proofcopy_slots), so breaking either alone leaves the cap in force and no test can tell them apart; keep one owner of the cap",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
