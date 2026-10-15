@@ -31510,12 +31510,148 @@
         "P144.3",
         "P143.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "Describe the 'what's happening now' box at the top of the Now tab, with an idle example ('nothing is running')",
         "Show that events and messages start with their clock time, for example '[14:20] About 2 min left in this step.'",
         "Describe the What's next rows as buttons with a size chip that fill the prompt, and the mark on new things that stays until you have seen them ('new' with motion off)"
+      ],
+      "mutations": [
+        {
+          "task": 2,
+          "what": "clock time example without brackets",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "green",
+            "C366": "green",
+            "C367": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:35:39Z",
+          "head": "73b415a370d46716401a742d4f1a139582c03c6e"
+        },
+        {
+          "task": 3,
+          "what": "buttons and chip removed",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "green",
+            "C366": "green",
+            "C367": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:37:39Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md describes the box, the [HH:MM] times, the What's next buttons with their chip, and the mark that stays until seen"
+          },
+          "what": "mark stays until seen removed",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C367": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:37:53Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "task": 2,
+          "what": "clock time example without brackets",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C367": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:38:37Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "task": 1,
+          "what": "idle example removed",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C367": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:38:51Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "task": 3,
+          "what": "buttons and chip removed",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C367": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:39:05Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "task": 1,
+          "what": "idle example removed",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C367": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:40:41Z",
+          "head": "f1ccea4b759bb1b8bea42c79dadb1152c5569045",
+          "strengthened": [
+            "tests/panel-now-docs.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md describes the box, the [HH:MM] times, the What's next buttons with their chip, and the mark that stays until seen"
+          },
+          "what": "mark paragraph removed",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C367": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:40:55Z",
+          "head": "f1ccea4b759bb1b8bea42c79dadb1152c5569045",
+          "strengthened": [
+            "tests/panel-now-docs.bats"
+          ]
+        }
       ]
     },
     {
@@ -31582,7 +31718,7 @@
       "after": [
         "P144.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Mission Control: never more rows than Claude Code reports (scroll.bodyRows), the top part included (drop the portrait when short); with no reported height, cap it at one fixed height ending with '+N more · open Mission Control'; keep tests/panel/pane.test.mjs green",
@@ -31590,6 +31726,300 @@
         "Comms: the crew, the needs-you line, a celebration (the all-checks-pass line and the confetti) and the moment after a ship all fit in maxRows and the columns, folding before they overflow",
         "Timeline: a helper running past its usual time is amber, never red",
         "C368 and C369 pass with the whole panel suite; this plan owns the colour and room rules, so it may adjust the palette and breaks each rule where its code lives"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A helper running past its usual time is amber on the Timeline, never red"
+          },
+          "what": "overrun lane red again",
+          "files": [
+            "plugin/hooks/panel-mission-live.js"
+          ],
+          "checks": {
+            "C368": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:36:04Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Mission Control never draws more rows than scroll.bodyRows on any tab or VBW Wrapped, at 80x22, 40x22, 80x8, 40x8 and 40x4"
+          },
+          "what": "body one row too tall",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C369": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:36:19Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "With no reported height Mission Control has one fixed height of at most 30 rows ending with '+N more · open Mission Control'; a short one has no such line"
+          },
+          "what": "fixed height 40",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C369": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:36:33Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The tab row is one line at 40 columns, beside the portrait"
+          },
+          "what": "Timeline label not shortened",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C369": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:36:47Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Comms stays within maxRows and its columns with a crew (full and calm, 12 down to 1 rows, 80 and 40 columns), with the needs-you line, during a celebration and after a ship"
+          },
+          "what": "celebration takes no rows from the crew",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C369": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:37:01Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "task": 1,
+          "what": "fold line says + more",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "green",
+            "C366": "green",
+            "C367": "green",
+            "C368": "green",
+            "C369": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:38:09Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "task": 2,
+          "what": "tabs always full labels",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "green",
+            "C366": "green",
+            "C367": "green",
+            "C368": "green",
+            "C369": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:38:46Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "task": 3,
+          "what": "confetti always drawn",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "green",
+            "C366": "green",
+            "C367": "green",
+            "C368": "green",
+            "C369": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:39:22Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "task": 4,
+          "what": "overrun lane red",
+          "files": [
+            "plugin/hooks/panel-mission-live.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "green",
+            "C366": "green",
+            "C367": "green",
+            "C368": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:39:56Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Each role has its own colour, all different, never a state colour and never green, red, amber or grey in hue"
+          },
+          "what": "dev role colour green",
+          "files": [
+            "plugin/hooks/panel-palette.js"
+          ],
+          "checks": {
+            "C368": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:40:09Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "States keep one meaning: green done, red failed, amber running and needs you (one amber), grey quiet, cut off and idle"
+          },
+          "what": "done is cyan",
+          "files": [
+            "plugin/hooks/panel-palette.js"
+          ],
+          "checks": {
+            "C368": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:40:22Z",
+          "head": "10bcc7e251ea302d90bf0ef9b9171950036c4541"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "On Comms a working helper's mark is amber and its role a word in the role colour; a failed one's ✗ is red"
+          },
+          "what": "running glyph not amber",
+          "files": [
+            "plugin/hooks/panel-palette.js"
+          ],
+          "checks": {
+            "C368": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:40:37Z",
+          "head": "f1ccea4b759bb1b8bea42c79dadb1152c5569045"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Every state colour on Comms and on Mission Control's cards sits beside its mark"
+          },
+          "what": "mark of running removed",
+          "files": [
+            "plugin/hooks/panel-palette.js"
+          ],
+          "checks": {
+            "C368": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:40:50Z",
+          "head": "f1ccea4b759bb1b8bea42c79dadb1152c5569045"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "VBW Wrapped draws no amber or red"
+          },
+          "what": "progress amber",
+          "files": [
+            "plugin/hooks/panel-palette.js"
+          ],
+          "checks": {
+            "C368": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:41:03Z",
+          "head": "f1ccea4b759bb1b8bea42c79dadb1152c5569045"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The palette tests that pinned R84's old role colours are rewritten to the D407 rule and name D407"
+          },
+          "what": "docs hue like amber",
+          "files": [
+            "plugin/hooks/panel-palette.js"
+          ],
+          "checks": {
+            "C368": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:41:16Z",
+          "head": "f1ccea4b759bb1b8bea42c79dadb1152c5569045"
+        },
+        {
+          "task": 5,
+          "none": "the palette needed no adjustment; P145.1 delivered it",
+          "at": "2026-10-15T22:41:18Z"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "VBW Wrapped draws no amber or red"
+          },
+          "what": "Wrapped frame drawn amber",
+          "files": [
+            "plugin/hooks/panel-candy.js"
+          ],
+          "checks": {
+            "C368": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:41:39Z",
+          "head": "f1ccea4b759bb1b8bea42c79dadb1152c5569045"
+        }
       ]
     },
     {
@@ -42063,6 +42493,15 @@
         "milestone": "M34",
         "started": "2026-10-15T22:11:52Z",
         "ended": "2026-10-15T22:27:10Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261015T222936Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M34",
+        "started": "2026-10-15T22:29:36Z",
+        "ended": "2026-10-15T22:42:38Z",
         "cost": null
       }
     ],
