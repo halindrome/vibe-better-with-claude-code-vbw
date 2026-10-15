@@ -31079,7 +31079,7 @@
     {
       "id": "T27",
       "text": "l3-suite scheduler waits on the oldest job (head-of-line), so a slow scenario leaves slots idle; poll for any finished job (bash 3.2 has no wait -n)",
-      "status": "open",
+      "status": "done",
       "sort": "next",
       "size": "small"
     },
