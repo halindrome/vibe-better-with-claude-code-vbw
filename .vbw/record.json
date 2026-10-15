@@ -18592,7 +18592,15 @@
         "guarded: R82 (C117)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-15T21:31:09Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P142.1: Tasks 1-5 are committed (e5784b12 stage code, 17f4ca7a rewritten tests/panel/stage.test.mjs). C360 and C361 test Comms through panel.js, which this plan may not edit; they stay red until P142.3 passes need/seen to stageModel and renders the new model. vbw mutate refuses to run while the checks fail on unbroken code, and plan done needs them green. Rerun the mutation step (deep tier, one break per rule R189.1-R189.20 and per task) and plan done after P142.3."
+        }
+      ]
     },
     {
       "id": "P143",
@@ -18690,7 +18698,15 @@
         "guarded: R3 (C3), R4 (C4), R5 (C5), R8 (C8), R34 (C30), R42 (C38), R72 (C116, C118), R82 (C117), R99 (C155), R101 (C179), R157 (C244), R161 (C248, C265, C266)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-15T21:27:52Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P145.1: Palette committed (7adbd99e); palette.test.mjs green (15). vbw mutate refuses: C368, the only check covering R189.49/.50, stays red until P145.2 (working glyph amber in stage/mission-live, Timeline red), so no break can be shown caught by a recorded check. I ran 10 manual breaks (each role colour, running/need/done/failed/cut) against palette.test.mjs + meaning.test.mjs: all raised failures above the 2-failure baseline. Old tests pinning old colours (candy 23-24, mission-live 174/175/181, mission-record 193, stage 295) are in P145.2's files. Run mutation for task1/task2 after P145.2 or allow it to be recorded then."
+        }
+      ]
     }
   ],
   "plans": [
@@ -29740,7 +29756,7 @@
         "tests/panel/stage.test.mjs"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "Replace the gate card (the box with buttons) by one amber line, 'HH:MM ⚑ VBW needs you · <what>', for every gate kind and for /compact first; no button, no Later. The line comes from a `need` ({ key, what, at }) that panel-view.js's liveNeed gives (plan P142.2)",
@@ -29748,7 +29764,8 @@
         "Each row: the state mark in its state colour (● amber while working), the role as a word in its own colour, the step (dev P142.1), what it is doing and the time it started (HH:MM). Keep what the approved tests already hold: row key agent-<id>, label and spinner in the role colour, time and tokens dim, the 'VBW ▸ <kind>' top line (band-colours, activity-render, flash and palette tests)",
         "At full motion draw pixel figures for at most 3 working helpers and text rows for the rest; fold rows beyond maxRows into one '+N more · [m] Mission Control' line",
         "Rewrite tests/panel/stage.test.mjs for Comms (the wired checks C360 and C361 pass once P142.3 connects it)"
-      ]
+      ],
+      "note": "Tasks 1-5 are committed (e5784b12 stage code, 17f4ca7a rewritten tests/panel/stage.test.mjs). C360 and C361 test Comms through panel.js, which this plan may not edit; they stay red until P142.3 passes need/seen to stageModel and renders the new model. vbw mutate refuses to run while the checks fail on unbroken code, and plan done needs them green. Rerun the mutation step (deep tier, one break per rule R189.1-R189.20 and per task) and plan done after P142.3."
     },
     {
       "id": "P142.2",
@@ -29767,13 +29784,35 @@
         "tests/panel/commands.test.mjs"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Add liveNeed to panel-view.js: the one thing VBW needs now (an open question, else a gate in next.json, else /compact first before a run when the context is 85% full), with its kind, a short phrase for Comms, the Mission Control sentence and the time it was reached (next.json's time, or the question's)",
         "A gate stops counting the moment the record says it is done: a run holds the lease, a 'Contract approved' decision is newer than next.json, the milestone is shipped, the requirements to check are no longer open. Any other record change (a parked idea) leaves it standing",
         "Use liveNeed in panelView, the hint line under the prompt (panel-lines.js, panel-sites.js) and /vbw-status and /vbw-why (panel-commands.js), so no place keeps showing a request that is gone; keep tests/panel/view.test.mjs green",
         "Update tests/panel/lines.test.mjs, sites.test.mjs and commands.test.mjs"
+      ],
+      "mutations": [
+        {
+          "task": 1,
+          "none": "the registered check that notices it (C360) stays red until P142.3 connects Comms (decision: P142.3 breaks each rule where its code lives); unit tests in lines, sites and commands tests were mutation-run by hand",
+          "at": "2026-10-15T21:29:17Z"
+        },
+        {
+          "task": 2,
+          "none": "the registered check that notices it (C360) stays red until P142.3 connects Comms (decision: P142.3 breaks each rule where its code lives); unit tests in lines, sites and commands tests were mutation-run by hand",
+          "at": "2026-10-15T21:29:19Z"
+        },
+        {
+          "task": 3,
+          "none": "the registered check that notices it (C360) stays red until P142.3 connects Comms (decision: P142.3 breaks each rule where its code lives); unit tests in lines, sites and commands tests were mutation-run by hand",
+          "at": "2026-10-15T21:29:20Z"
+        },
+        {
+          "task": 4,
+          "none": "the registered check that notices it (C360) stays red until P142.3 connects Comms (decision: P142.3 breaks each rule where its code lives); unit tests in lines, sites and commands tests were mutation-run by hand",
+          "at": "2026-10-15T21:29:22Z"
+        }
       ]
     },
     {
@@ -29915,13 +29954,35 @@
         "plugin/hooks/panel-next.js"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Draw each row (the top pick and each runner-up) as one Button: the item, a size chip (small, medium, large) and, where VBW gave one, the reason in dim text; every piece of text cut to the width",
         "Pressing a row puts '/vbw:vibe <T or R id>' in the prompt (else '/vbw:vibe <item text>') and never sends it; Suggest next stays as it is",
         "Mark a recommendation not yet seen (an input from panel.js): full motion keeps the R125 shimmer and pulse on arrival, then a steady mark; calm a steady mark; motion off only the word 'new'; palette colours only",
         "Start the 'written' line with its local time as '[HH:MM]'; keep tests/panel/whats-next.test.mjs green"
+      ],
+      "mutations": [
+        {
+          "task": 1,
+          "none": "C366/C365 cannot pass until P144.3 wires the seen state and times (it owns that and breaks each rule there); breaks run by hand against next-buttons, whats-next and now-box tests were caught (row command, reason, time, hour)",
+          "at": "2026-10-15T21:28:08Z"
+        },
+        {
+          "task": 2,
+          "none": "C366/C365 cannot pass until P144.3 wires the seen state and times (it owns that and breaks each rule there); breaks run by hand against next-buttons, whats-next and now-box tests were caught (row command, reason, time, hour)",
+          "at": "2026-10-15T21:28:09Z"
+        },
+        {
+          "task": 3,
+          "none": "C366/C365 cannot pass until P144.3 wires the seen state and times (it owns that and breaks each rule there); breaks run by hand against next-buttons, whats-next and now-box tests were caught (row command, reason, time, hour)",
+          "at": "2026-10-15T21:28:11Z"
+        },
+        {
+          "task": 4,
+          "none": "C366/C365 cannot pass until P144.3 wires the seen state and times (it owns that and breaks each rule there); breaks run by hand against next-buttons, whats-next and now-box tests were caught (row command, reason, time, hour)",
+          "at": "2026-10-15T21:28:12Z"
+        }
       ]
     },
     {
@@ -29991,13 +30052,21 @@
         "plugin/hooks/panel-palette.js"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "Give the seven roles colours of their own, none of them green, red, amber or grey, all different, readable on dark and light terminals (brand kit hues where they fit)",
         "Make 'needs you' the same amber as running; keep done green, failed red, quiet and cut off grey",
         "Run tests/panel/palette.test.mjs (rewritten for D407) and the whole panel suite (node --test tests/panel/*.test.mjs)"
-      ]
+      ],
+      "mutations": [
+        {
+          "task": 3,
+          "none": "running the tests is not behaviour to break",
+          "at": "2026-10-15T21:27:50Z"
+        }
+      ],
+      "note": "Palette committed (7adbd99e); palette.test.mjs green (15). vbw mutate refuses: C368, the only check covering R189.49/.50, stays red until P145.2 (working glyph amber in stage/mission-live, Timeline red), so no break can be shown caught by a recorded check. I ran 10 manual breaks (each role colour, running/need/done/failed/cut) against palette.test.mjs + meaning.test.mjs: all raised failures above the 2-failure baseline. Old tests pinning old colours (candy 23-24, mission-live 174/175/181, mission-record 193, stage 295) are in P145.2's files. Run mutation for task1/task2 after P145.2 or allow it to be recorded then."
     },
     {
       "id": "P145.2",
@@ -40318,6 +40387,15 @@
         "milestone": "M34",
         "started": "2026-10-15T20:45:46Z",
         "ended": "2026-10-15T21:25:23Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261015T212615Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M34",
+        "started": "2026-10-15T21:26:15Z",
+        "ended": "2026-10-15T21:31:25Z",
         "cost": null
       }
     ],
