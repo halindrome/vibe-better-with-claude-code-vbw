@@ -30865,7 +30865,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "escalated",
+      "status": "fixed",
       "note": "Criterion 4 and rules R188.52-R188.55 say a docs test pins each statement. tests/mutation-docs.bats still checks mostly single words anywhere in the section, so most statements can be reversed and every test stays green. Evidence (L1, throwaway copy of HEAD docs plus tests/mutation-docs.bats and tests/mutation-qa.bats in the scratchpad, one edit at a time, 12 of 12 tests still ok after each): (a) docs/proof.md 'A strengthened check file adds one approval' changed to 'adds no approval' (the one approval it can add, R188.55); (b) docs/workflows.md '**VBW undoes the break.**' changed to '**VBW does not undo the break (undo it yourself).**' (R188.52; the test only looks for the word 'undo'); (c) docs/proof.md '(never another's, never weakened)' changed to '(any requirement's, weakened if needed)' (where a survivor is strengthened, R188.54); (d) 'After two attempts that stay green the Dev blocks the plan' changed to 'the Dev goes on'; (e) 'At deep each task also needs a red break or a written reason' changed to 'At deep no task needs a break'; (f) 'At express it asks for nothing' changed to 'At express it asks for every rule'; (g) 'A survivor alone covers nothing' changed to 'A survivor alone covers the rule' (what vbw plan done waits for, R188.54). The earlier F227 edits are now caught (rigor rows, workflows tier line, loop decision line, qa.md), so this is the rest of the same gap. What a regression test should catch: assert whole sentences (as the existing tests do for the tier line and the loop line) for proof.md 'adds one approval' next to 'before the proof', workflows.md 'VBW undoes the break', proof.md 'never another' with 'never weakened', 'blocks the plan', the deep and express plan-done sentences, and 'A survivor alone covers nothing', and be shown red for each of edits (a) to (g).",
       "phase": "P141"
     }
@@ -39062,6 +39062,15 @@
         "milestone": "M33",
         "started": "2026-10-15T07:37:39Z",
         "ended": "2026-10-15T07:41:13Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261015T074322Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-15T07:43:22Z",
+        "ended": "2026-10-15T07:46:47Z",
         "cost": null
       }
     ],
