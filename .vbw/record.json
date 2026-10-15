@@ -30801,12 +30801,100 @@
         "P143.1",
         "P142.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "Rewrite 'The sound': it plays once, when Claude Code's own question menu opens, never for a gate on its own",
         "Describe the notification: with the question, and once for a new What's next recommendation; it follows /vbw-sound and the switch; test sessions get none",
         "Say what happens where notifications or sound are missing: nothing, and nothing breaks"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md ties the sound to the question menu, once, and describes the notification, for new recommendations too, and turning both off"
+          },
+          "what": "sound once removed",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C364": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:12:51Z",
+          "head": "ea1fa07c1abbba3eb395142736a9b1146ec00be9"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md ties the sound to the question menu, once, and describes the notification, for new recommendations too, and turning both off"
+          },
+          "what": "sound once removed",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C364": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:14:18Z",
+          "head": "da15822fdd74d9b433f39d628cc12a7a5b4e9174",
+          "strengthened": [
+            "tests/panel-call-docs.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "notification twice",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:15:17Z",
+          "head": "da15822fdd74d9b433f39d628cc12a7a5b4e9174"
+        },
+        {
+          "task": 3,
+          "what": "missing shows toast",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:15:54Z",
+          "head": "da15822fdd74d9b433f39d628cc12a7a5b4e9174"
+        },
+        {
+          "task": 1,
+          "what": "gate sound",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C364": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:16:13Z",
+          "head": "4924a8311c1dfc9ef5d2808fd9989699e5fbe22c"
+        }
       ]
     },
     {
@@ -30929,7 +31017,7 @@
         "P144.1",
         "P144.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Keep what the user has seen in Claude Code's per-user store (vbw-panel.* keys, test.* in a test session, never in the project): a recommendation, a failed helper, a needs-you line; seen when pressed, opened, or when its tab is opened",
@@ -30937,6 +31025,475 @@
         "Keep the time each message began saying what it says and pass it to the pane, so the clock alone never redraws; read .vbw/runtime/proving.<session> for the proving state",
         "Start Comms' all-checks-pass line with the proof's '[HH:MM]'",
         "Update tests/panel/wiring.test.mjs, delight.test.mjs and stage.test.mjs; C365 and C366 pass. This plan owns the Now tab rules end to end, so it may adjust P144.1's and P144.2's files and breaks each rule where its code lives"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Seen stays seen after a restart and unseen stays new, kept under vbw-panel.* in the user's store and never in the project; a test session uses only test.*"
+          },
+          "what": "the seen key is not test.-prefixed in a test session",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C366": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:16:49Z",
+          "head": "68ef11d5b746138c84fd50221bf75f0bcddd9ea2"
+        },
+        {
+          "task": 1,
+          "what": "a pressed What's next row is not marked seen",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "green",
+            "C366": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:18:04Z",
+          "head": "68ef11d5b746138c84fd50221bf75f0bcddd9ea2"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Opening its tab counts as seen"
+          },
+          "what": "opening the Now tab does not count as seen",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C366": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:18:19Z",
+          "head": "68ef11d5b746138c84fd50221bf75f0bcddd9ea2"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Seen stays seen after a restart and unseen stays new, kept under vbw-panel.* in the user's store and never in the project; a test session uses only test.*"
+          },
+          "what": "a seen recommendation is not kept in the store",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C366": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:18:34Z",
+          "head": "68ef11d5b746138c84fd50221bf75f0bcddd9ea2"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A newly failed helper's Mission Control card is marked until it is opened"
+          },
+          "what": "a failed helper's card is never marked",
+          "files": [
+            "plugin/hooks/panel-mission-live.js"
+          ],
+          "checks": {
+            "C366": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:18:50Z",
+          "head": "68ef11d5b746138c84fd50221bf75f0bcddd9ea2"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A new needs-you line on Comms is marked until its tab is opened; the line stays while the gate stands"
+          },
+          "what": "the needs-you line is never marked",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C366": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:19:05Z",
+          "head": "68ef11d5b746138c84fd50221bf75f0bcddd9ea2"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A new recommendation is still marked 10 s after it arrived until seen: full a mark after the shimmer, calm a mark that does not move, off only the word 'new'"
+          },
+          "what": "the recommendation is never marked new",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C366": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:19:20Z",
+          "head": "68ef11d5b746138c84fd50221bf75f0bcddd9ea2"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Pressing a row fills /vbw:vibe with its T or R id (else its text) and never sends; Suggest next stays and only fills (R124)"
+          },
+          "what": "a runner's T/R id is not used",
+          "files": [
+            "plugin/hooks/panel-next.js"
+          ],
+          "checks": {
+            "C366": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:19:36Z",
+          "head": "68ef11d5b746138c84fd50221bf75f0bcddd9ea2"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Each What's next row (top pick, each runner-up) is one Button with the item, a size chip and, for the top pick, its reason in dim text"
+          },
+          "what": "the size chip is not drawn",
+          "files": [
+            "plugin/hooks/panel-next.js"
+          ],
+          "checks": {
+            "C366": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:19:52Z",
+          "head": "68ef11d5b746138c84fd50221bf75f0bcddd9ea2"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Pressing a row fills /vbw:vibe with its T or R id (else its text) and never sends; Suggest next stays and only fills (R124)"
+          },
+          "what": "a runner's T/R id is not used",
+          "files": [
+            "plugin/hooks/panel-next.js"
+          ],
+          "checks": {
+            "C366": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:20:21Z",
+          "head": "7df60f3b715bf2f38d71af121ee513033c2cb91a",
+          "strengthened": [
+            "tests/panel/r189/next-buttons.test.mjs"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "the failed card mark is gone",
+          "files": [
+            "plugin/hooks/panel-mission-live.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "green",
+            "C366": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:21:30Z",
+          "head": "7df60f3b715bf2f38d71af121ee513033c2cb91a"
+        },
+        {
+          "task": 3,
+          "what": "the proving mark is never read",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:22:09Z",
+          "head": "7df60f3b715bf2f38d71af121ee513033c2cb91a"
+        },
+        {
+          "task": 4,
+          "what": "the pass line has no proof time",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:22:47Z",
+          "head": "7df60f3b715bf2f38d71af121ee513033c2cb91a"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Comms' all-checks-pass line starts with the proof's [HH:MM]"
+          },
+          "what": "the pass line takes the time it was noticed, not the proof's",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C365": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:23:02Z",
+          "head": "7df60f3b715bf2f38d71af121ee513033c2cb91a"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The What's next section shows when the recommendation was written as [HH:MM]"
+          },
+          "what": "the recommendation shows no time",
+          "files": [
+            "plugin/hooks/panel-next.js"
+          ],
+          "checks": {
+            "C365": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:23:17Z",
+          "head": "7df60f3b715bf2f38d71af121ee513033c2cb91a"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A helper card's state line starts with [HH:MM]: the start while running, the end when done or failed"
+          },
+          "what": "a card's state line has no time",
+          "files": [
+            "plugin/hooks/panel-mission-live.js"
+          ],
+          "checks": {
+            "C365": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:23:32Z",
+          "head": "7df60f3b715bf2f38d71af121ee513033c2cb91a"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Mission Control's need sentence starts with [HH:MM] of when the gate was reached, and the time-left sentences with [HH:MM]"
+          },
+          "what": "the time-left sentences carry no time",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C365": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:23:47Z",
+          "head": "7df60f3b715bf2f38d71af121ee513033c2cb91a"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A message keeps the time it began saying what it says: three minutes of clock alone redraw nothing"
+          },
+          "what": "a message takes a new time every refresh",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C365": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:24:02Z",
+          "head": "7df60f3b715bf2f38d71af121ee513033c2cb91a"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The state reads planning, building with its phase, proving, checking, waiting for you and for what, or nothing running"
+          },
+          "what": "proving reads as idle",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C365": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:24:17Z",
+          "head": "7df60f3b715bf2f38d71af121ee513033c2cb91a"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The box follows a state change within one refresh with no other event"
+          },
+          "what": "the box never follows a state change",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C365": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:24:32Z",
+          "head": "7df60f3b715bf2f38d71af121ee513033c2cb91a"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The Now tab opens on a framed box above everything else: the state sentence, the step with its start HH:MM and the session cost, drawn once"
+          },
+          "what": "the box shows no step start time",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C365": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:24:47Z",
+          "head": "7df60f3b715bf2f38d71af121ee513033c2cb91a"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A message keeps the time it began saying what it says: three minutes of clock alone redraw nothing"
+          },
+          "what": "a message takes a new time every refresh",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C365": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:25:24Z",
+          "head": "70a78fe26a526a1e74e8e384e3cc16bf3ca07dea",
+          "strengthened": [
+            "tests/panel/r189/now-box.test.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The box follows a state change within one refresh with no other event"
+          },
+          "what": "the box never follows a state change",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C365": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:25:38Z",
+          "head": "70a78fe26a526a1e74e8e384e3cc16bf3ca07dea"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The state reads planning, building with its phase, proving, checking, waiting for you and for what, or nothing running"
+          },
+          "what": "proving reads as idle",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C365": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:25:51Z",
+          "head": "70a78fe26a526a1e74e8e384e3cc16bf3ca07dea"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The box follows a state change within one refresh with no other event"
+          },
+          "what": "the box never follows a state change",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C365": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:26:13Z",
+          "head": "6635843ff4b86448b0c4d6215addf9e29908e3ae",
+          "strengthened": [
+            "tests/panel/r189/now-box.test.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The state reads planning, building with its phase, proving, checking, waiting for you and for what, or nothing running"
+          },
+          "what": "proving reads as idle",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C365": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:26:26Z",
+          "head": "6635843ff4b86448b0c4d6215addf9e29908e3ae"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The state reads planning, building with its phase, proving, checking, waiting for you and for what, or nothing running"
+          },
+          "what": "proving reads as idle",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C365": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:26:48Z",
+          "head": "32f17ce8f51df45d64f0a848675f63143864f54c",
+          "strengthened": [
+            "tests/panel/r189/now-box.test.mjs"
+          ]
+        },
+        {
+          "task": 5,
+          "none": "task 5 only updates test files; no shipped behaviour to break",
+          "at": "2026-10-15T22:26:53Z"
+        }
       ]
     },
     {
@@ -41498,6 +42055,15 @@
           "in": 5179,
           "out": 18
         }
+      },
+      {
+        "id": "build-20261015T221152Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M34",
+        "started": "2026-10-15T22:11:52Z",
+        "ended": "2026-10-15T22:27:10Z",
+        "cost": null
       }
     ],
     "milestones": {
