@@ -30847,7 +30847,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/workflows.md lines 213-216 (section 'The mutation check') say: 'The command refuses, and writes nothing, if the plan's files differ from their last commit, a file is outside the plan, or a check file is touched.' The first condition is the opposite of the code. plugin/lib/cmd-mutate.sh refuses when NONE of the named files differs from the last commit ('nothing to check: none of the named files differs from the last commit'), because the break itself is the difference; it never refuses because a plan file differs. Rule R188.3 reads 'nothing differing from the plan's last commit is refused'. A Dev or user reading the guide would think a dirty working file blocks the command, when a dirty (broken) file is what it needs. Evidence: L1, reading cmd-mutate.sh lines 105-118 against the docs text and the rule list in vbw show req R188. tests/mutation-docs.bats does not pin this sentence (it checks single words in the section, plus the one 'at standard and deep / never at express / never in a fix' line). A regression test should assert the refusal sentence says that a break which changes none of the named files is refused (words such as 'nothing' or 'none' with 'differs'), and be shown red with the current inverted wording.",
       "phase": "P141"
     },
@@ -30856,7 +30856,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "tests/mutation-docs.bats, test 'docs/rigor.md gives express, standard and deep each its own content': the first negated line '! line_has rigor.md express \"each rule\" > /dev/null' is not the last command of the test, so bash errexit (bats) ignores it and it can never fail. Evidence: L1, 'bash -c \"set -eET; f(){ return 0; }; ! f; echo reached\"' prints reached; by reading, only the final '! line_has rigor.md standard nothing' is enforced. So an express row such as 'nothing, each rule: one small break per rule' keeps all 11 tests green although it says express breaks each rule (F227 asked that express and standard each keep their own content). A regression test should replace both negations with 'run line_has ...; [ \"$status\" -ne 0 ]' (or if line_has; then false; fi) and be shown red when the express row also says 'each rule'.",
       "phase": "P141"
     }
@@ -39030,6 +39030,15 @@
         "milestone": "M33",
         "started": "2026-10-15T07:22:03Z",
         "ended": "2026-10-15T07:25:39Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261015T072607Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-15T07:26:07Z",
+        "ended": "2026-10-15T07:29:49Z",
         "cost": null
       }
     ],
