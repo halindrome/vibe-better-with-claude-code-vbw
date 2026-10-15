@@ -1,12 +1,12 @@
 // The panel module wired to its views (mods_4_vbw.md §2-§4): the run feed learns a
 // VBW workflow from its Workflow tool call (or finds it after a reload) and reads it
-// on the panel's timer; the band above the prompt draws the Stage (crew, gate card,
-// nudges) with buttons that only fill, open or collapse; the pane is Mission Control
+// on the panel's timer; Comms, above the prompt, draws the crew, the one needs-you
+// line and the nudges, with buttons that only fill or open; the pane is Mission Control
 // with seven tabs. Driven through the stand-in for Claude Code's mods API (L1).
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mount, record, next, lease, collect, find, walk, ROOT, T0 } from './helpers/fake-mod.mjs'
-import { ENV, SESSION_DIR, RUN, RUN_DIR, ARCH, writeRun, finish, launch, band } from './helpers/run.mjs'
+import { ENV, SESSION_DIR, RUN, RUN_DIR, ARCH, LEAD, writeRun, finish, launch, band } from './helpers/run.mjs'
 
 const TEST_MODE = ROOT + '/.vbw/runtime/test-mode'
 const approve = () => next({ action: 'approve', gate: true })
@@ -31,7 +31,7 @@ const isEngine = (x, component) => x && x.type === 'engine' && x.ref === compone
 
 // ---- the run feed ----
 
-test('a VBW workflow launched in this session shows its crew in the band within 2 seconds', async () => {
+test('a VBW workflow launched in this session shows its crew on Comms within 2 seconds', async () => {
   const h = await started({}, record({ lease: lease('plan', T0) }), next({ action: 'run' }))
   writeRun(h, h.now())
   await launch(h)
@@ -82,27 +82,26 @@ test('agent snippets come from the transcripts: no hook on every tool call or ev
   }
 })
 
-test('a run that ends shows done in the band for a minute, then the band is empty', async () => {
+test('a run that ends leaves Comms at the next redraw, and Mission Control says it ended', async () => {
   const h = await started({}, record({ lease: lease('plan', T0) }), next({ action: 'run' }))
-  writeRun(h, h.now(), { journal: [{ type: 'result', agentId: ARCH, result: { summary: 'scope set' } }] })
+  writeRun(h, h.now(), { journal: [{ type: 'result', agentId: ARCH, result: { summary: 'scope set' } }, { type: 'result', agentId: LEAD, result: { summary: 'planned' } }] })
   await launch(h)
   await h.advance(2000)
   finish(h, h.now() - 840000, 'completed')
   h.project(record(), next())
   await h.advance(2000)
-  assert.match(text(await band(h)), /completed/)
-  await h.advance(90000)
-  assert.ok(isEngine(await band(h), 'AbovePrompt'))
+  assert.ok(isEngine(await band(h), 'AbovePrompt'), 'no hold: Comms is empty at once')
+  assert.match(text(await h.render()), /completed/)
 })
 
-// ---- the band: gate card ----
+// ---- Comms: the needs-you line ----
 
-test('an approve gate shows the card; Approve fills /vbw:approve and never sends it', async () => {
+test('an approve gate is one needs-you line with no button: nothing on Comms fills or sends', async () => {
   const h = await started({}, record(), approve())
   const tree = await band(h)
-  assert.match(text(tree), /VBW needs you/)
-  await press(h, tree, 'Approve…')
-  assert.deepEqual(h.callsOf('prompt.fill').at(-1)[0], { text: '/vbw:approve' })
+  assert.match(text(tree), /^\d\d:\d\d ⚑ VBW needs you · /)
+  assert.equal(buttons(tree).length, 0)
+  assert.equal(h.count('prompt.fill'), 0)
   assert.equal(h.count('prompt.submit'), 0)
 })
 
@@ -116,54 +115,37 @@ test('an approve gate suggests /vbw:approve once, however many ticks follow', as
   assert.equal(h.count('prompt.suggest'), 1, 'only the approve gate is suggested')
 })
 
-test('Review plan opens Mission Control on its Plan tab', async () => {
+test('a standing gate has no Later: the line stays, and comes back when the gate is raised again', async () => {
   const h = await started({}, record(), approve())
-  await press(h, await band(h), 'Review plan')
-  const open = h.opens.at(-1)
-  assert.equal(open.id, 'vbw-panel')
-  assert.equal(open.focus, true)
-  const pane = await h.render()
-  const active = buttons(pane).find((b) => b.props.key === 'tab-plan')
-  assert.equal(active.props.variant, 'primary')
-  assert.match(text(pane), /P44 Cost/)
-})
-
-test('Later hides the card until the gate changes', async () => {
-  const h = await started({}, record(), approve())
-  await press(h, await band(h), 'Later')
-  assert.ok(isEngine(await band(h), 'AbovePrompt'))
+  assert.doesNotMatch(text(await band(h)), /Later/)
   await h.advance(10000)
-  assert.ok(isEngine(await band(h), 'AbovePrompt'), 'still hidden for the same gate')
+  assert.match(text(await band(h)), /VBW needs you/, 'still standing for the same gate')
   h.project(undefined, next({ action: 'ship', gate: true }))
   await h.advance(2000)
   assert.match(text(await band(h)), /ready to ship/)
-})
-
-test('a card put off with Later comes back when the same gate is raised again later', async () => {
-  const h = await started({}, record(), approve())
-  await press(h, await band(h), 'Later')
   h.project(undefined, next())
   await h.advance(2000)
+  assert.ok(isEngine(await band(h), 'AbovePrompt'))
   h.project(undefined, approve())
   await h.advance(2000)
   assert.match(text(await band(h)), /VBW needs you/)
 })
 
-test('a survey in the band wins: VBW yields', async () => {
+test('a survey wins over Comms: VBW yields', async () => {
   const h = await started({}, record(), approve())
   assert.ok(isEngine(await band(h, { hasSurvey: true }), 'AbovePrompt'))
 })
 
-test('health: a nearly full context offers /compact first, a weekly limit past 80% warns before a run', async () => {
+test('health: a nearly full context is a needs-you line naming /compact, a weekly limit past 80% warns before a run', async () => {
   const usage = { cost: { usd: 2 }, context: { window: 200000, tokens: 180000, percent: 90 }, rateLimits: [{ kind: 'seven_day', percentUsed: 85 }] }
-  const h = await started({ usage }, record(), approve())
+  const h = await started({ usage }, record(), next({ action: 'build', gate: false }))
   const tree = await band(h)
+  assert.match(text(tree), /VBW needs you · .*\/compact/)
   assert.match(text(tree), /Weekly limit 85%/)
-  await press(h, tree, '/compact first')
-  assert.deepEqual(h.callsOf('prompt.fill').at(-1)[0], { text: '/compact' })
+  assert.equal(buttons(tree).length, 0, 'no /compact button')
 })
 
-test('no usage figures: the gate card shows without health lines', async () => {
+test('no usage figures: the needs-you line shows without health lines', async () => {
   const h = await started({ usageError: true }, record(), approve())
   const t = text(await band(h))
   assert.match(t, /VBW needs you/)
@@ -236,6 +218,8 @@ test('a failed agent\'s details button opens Mission Control on that agent', asy
   await h.advance(2000)
   await press(h, await band(h), 'details')
   assert.match(text(await h.render()), /Result: Agent crashed/)
+  await h.advance(2000)
+  assert.doesNotMatch(text(await band(h)), /architect/, 'opened in Mission Control: the failure leaves Comms')
 })
 
 test('Costs: each run costs the session cost moved while its lease was open', async () => {
@@ -268,7 +252,7 @@ test('the plan\'s Ask field is not drawn until it is wired', async () => {
 
 // ---- staying out of the way ----
 
-test('outside a VBW project, or on an old Claude Code, the band and pane draw nothing of VBW', async () => {
+test('outside a VBW project, or on an old Claude Code, Comms and the pane draw nothing of VBW', async () => {
   for (const opts of [{}, { version: '2.1.200' }]) {
     const h = await mount({ env: ENV, ...opts })
     if (opts.version) h.project(record(), approve())
@@ -296,7 +280,7 @@ test('outside the project it reads only this session\'s own folder, and never se
 
 // Claude Code before 2.1.290 redrew a band forever when its tree changed height
 // (fixed in 2.1.290); the crew changes height as agents come and go.
-test('the band draws from Claude Code 2.1.290; on older versions it leaves the engine its band', async () => {
+test('Comms draws from Claude Code 2.1.290; on older versions it leaves the engine its own', async () => {
   const old = await started({ version: '2.1.289' }, record(), approve())
   assert.ok(isEngine(await band(old), 'AbovePrompt'))
   const now = await started({ version: '2.1.290' }, record(), approve())
