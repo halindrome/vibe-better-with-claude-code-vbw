@@ -27,13 +27,27 @@ function tint(r, need) {
   }
 }
 
+// The 'what's happening now' box (panel-view.js): the state, the step with its start
+// time and the session cost line, drawn once here and not again among the sentences.
+function nowBox(ui, v) {
+  const { Box, Text } = ui
+  const b = v.box
+  if (!b) return []
+  const cost = v.rows.find((r) => r.id === 'cost')
+  return [h(Box, { key: 'now-box', flexDirection: 'column', borderStyle: 'round', paddingX: 1, marginBottom: 1 },
+    h(Text, { bold: true }, String(b.state.text)),
+    b.step ? h(Text, null, String(b.step.text)) : null,
+    cost ? h(Text, { color: tint(cost, v.need) }, String(cost.text)) : null,
+    cost ? h(Text, { dimColor: true }, String(cost.term)) : null)]
+}
+
 // The panel's sentences (panel-view.js), each with its term in small text, and the sound switch.
 function summary(ui, v, st, on) {
   const { Box, Text, Button } = ui
-  const rows = v.rows.map((r) =>
+  const rows = [...nowBox(ui, v), ...v.rows.filter((r) => !(v.box && r.id === 'cost')).map((r) =>
     h(Box, { key: r.id, flexDirection: 'column', marginBottom: 1 },
       h(Text, { color: tint(r, v.need) }, String(r.text)),
-      h(Text, { dimColor: true }, String(r.term))))
+      h(Text, { dimColor: true }, String(r.term))))]
   rows.push(
     h(Box, { key: 'sound', flexDirection: 'row', marginBottom: 1 },
       h(Text, null, 'Sound is ' + (st.sound ? 'on' : 'off') + '. '),
