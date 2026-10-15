@@ -45,23 +45,66 @@ function doing(rec, now) {
   return { id: 'doing', text: 'VBW is ' + what[0] + ' (' + since + ').', term: what[1] }
 }
 
-function needOf(nx, question) {
-  if (isObj(question)) return { key: 'question:' + (question.id ?? ''), text: 'VBW has a question for you and is waiting for your answer.' }
-  if (!isObj(nx) || nx.gate !== true) return null
+const list = (a) => (Array.isArray(a) ? a.filter((x) => typeof x === 'string' && x).join(', ') : '')
+const RUN_ACTIONS = new Set(['plan', 'build', 'qa', 'fix'])
+const COMPACT_PCT = 85 // the context is this full: /compact before a run
+
+// The gate in next.json as the need it makes: key, kind, the sentence Mission Control
+// says, and the short phrase Comms puts after 'VBW needs you ·'.
+function gateNeed(nx) {
   const d = isObj(nx.detail) ? nx.detail : {}
-  const list = (a) => (Array.isArray(a) ? a.join(', ') : '')
+  const need = (key, text, what) => ({ key, kind: nx.action, text, what })
   switch (nx.action) {
-    case 'approve': return { key: 'approve', text: 'Please approve the plan before VBW builds it.' }
-    case 'accept': { const r = list(d.requirements); return { key: 'accept:' + r, text: 'Please check the result by hand: ' + r + '.' } }
-    case 'ship': return { key: 'ship', text: 'The milestone is ready: your go-ahead to ship it is needed.' }
-    case 'spec': return { key: 'spec', text: 'VBW needs you to say what to build: the requirements.' }
-    case 'escalate': { const f = list(d.fixes); return { key: 'escalate:' + f, text: 'A decision is needed from you on ' + f + '.' } }
-    case 'unblock': { const p = list(d.plans); return { key: 'unblock:' + p, text: 'Work is blocked and needs you' + (p ? ': ' + p : '') + '.' } }
-    case 'scope': return { key: 'scope', text: 'Some changes went outside their planned files: your decision is needed.' }
-    case 'milestone': return { key: 'milestone', text: 'The milestone is shipped: say what to build next.' }
-    case 'convert': return { key: 'convert', text: 'A VBW 1 plan is here: bring it into VBW 2 or start fresh.' }
-    default: return { key: 'other:' + String(nx.action), text: 'VBW is waiting for you: run /vbw:vibe to see what for.' }
+    case 'approve': {
+      const f = list(d.files)
+      return need('approve' + (f ? ':' + f : ''), 'Please approve the plan before VBW builds it.',
+        f ? 'test files changed since your approval: ' + f : 'the plan is ready: review it, then approve it to build')
+    }
+    case 'accept': { const r = list(d.requirements); return need('accept:' + r, 'Please check the result by hand: ' + r + '.', 'check by hand what only you can judge' + (r ? ': ' + r : '')) }
+    case 'ship': return need('ship', 'The milestone is ready: your go-ahead to ship it is needed.', 'the milestone is proven and accepted: ready to ship')
+    case 'spec': return need('spec', 'VBW needs you to say what to build: the requirements.', 'say what to build: the requirements')
+    case 'escalate': { const f = list(d.fixes); return need('escalate:' + f, 'A decision is needed from you on ' + f + '.', 'the fix limit was reached' + (f ? ' for ' + f : '') + ': decide how to go on') }
+    case 'unblock': { const p = list(d.plans); return need('unblock:' + p, 'Work is blocked and needs you' + (p ? ': ' + p : '') + '.', 'blocked' + (p ? ': ' + p : '') + ', VBW needs your help to go on') }
+    case 'scope': return need('scope', 'Some changes went outside their planned files: your decision is needed.', 'commits changed files outside their plans: review them')
+    case 'milestone': return need('milestone', 'The milestone is shipped: say what to build next.', 'the milestone is shipped: choose what comes next')
+    case 'convert': return need('convert', 'A VBW 1 plan is here: bring it into VBW 2 or start fresh.', 'a VBW 1 plan is here: bring it into VBW 2, or start fresh')
+    default: return need('other:' + String(nx.action), 'VBW is waiting for you: run /vbw:vibe to see what for.', typeof nx.instruction === 'string' && nx.instruction ? nx.instruction : 'a decision is needed')
   }
+}
+
+// True when the record says the gate in next.json (written at `nextAt`, ms) is done.
+// Any other record change (a parked idea) leaves it standing.
+function answered(rec, nx, nextAt) {
+  const rows = (k) => (Array.isArray(rec[k]) ? rec[k].filter(isObj) : [])
+  if (nx.action === 'approve') {
+    return Number.isFinite(nextAt) && rows('decisions').some((x) => typeof x.text === 'string' && x.text.startsWith('Contract approved') && Date.parse(x.at) > nextAt)
+  }
+  if (nx.action === 'ship') return rec.milestone.status === 'shipped'
+  if (nx.action === 'accept') {
+    const ids = isObj(nx.detail) && Array.isArray(nx.detail.requirements) ? nx.detail.requirements : []
+    const mine = ids.map((id) => rows('requirements').find((r) => r.id === id))
+    return mine.length > 0 && mine.every((r) => r && (r.status === 'accepted' || r.status === 'rejected'))
+  }
+  return false
+}
+
+// The one thing VBW needs from the user now, or null: an open question, else a gate in
+// next.json that the record has not answered, else /compact before a run when the
+// context is 85% full. While a run holds the lease nothing is needed. `at` is when it
+// was reached (ms; next.json's time, or the question's), null when unknown.
+export function liveNeed(input) {
+  const { record: rec, next: nx, nextAt, question, questionAt, health } = isObj(input) ? input : {}
+  if (!isObj(rec) || !isObj(rec.milestone) || isObj(rec.lease)) return null
+  const at = (t) => (Number.isFinite(t) ? t : null)
+  if (isObj(question)) {
+    return { key: 'question:' + (question.id ?? ''), kind: 'question', text: 'VBW has a question for you and is waiting for your answer.', what: 'a question is waiting for your answer', at: at(questionAt) }
+  }
+  if (!isObj(nx)) return null
+  if (nx.gate === true) return answered(rec, nx, nextAt) ? null : { ...gateNeed(nx), at: at(nextAt) }
+  if (RUN_ACTIONS.has(nx.action) && isObj(health) && Number.isFinite(health.contextPct) && health.contextPct >= COMPACT_PCT) {
+    return { key: 'compact', kind: 'compact', text: 'The context is nearly full: run /compact first, then VBW can start.', what: 'the context is nearly full: run /compact first', at: at(nextAt) }
+  }
+  return null
 }
 
 // The session cost as one small line; no number when there is none to show.
@@ -89,7 +132,7 @@ function estimateRows(rec, steps, phasesLeft, now) {
 }
 
 export function panelView(input) {
-  const { record: rec, next: nx, question, now, cost, steps } = isObj(input) ? input : {}
+  const { record: rec, next: nx, nextAt, question, questionAt, health, now, cost, steps } = isObj(input) ? input : {}
   if (!isObj(rec) || !isObj(rec.milestone) || !rec.milestone.id) return { rows: [NEUTRAL], need: null }
   const ph = (Array.isArray(rec.phases) ? rec.phases : []).filter((p) => isObj(p) && p.milestone === rec.milestone.id)
   const phasesLeft = ph.filter((p) => !(isObj(p.qa) && p.qa.result === 'pass')).length
@@ -98,8 +141,7 @@ export function panelView(input) {
   const done = rq.filter((r) => r.status === 'proven' || r.status === 'accepted').length
   const progress = rq.length === 0 ? 'No requirements are set yet.'
     : done + ' of ' + rq.length + (rq.length === 1 ? ' requirement' : ' requirements') + ' done.'
-  const open = isObj(rec.lease)
-  const need = open ? null : needOf(nx, question)
+  const need = liveNeed({ record: rec, next: nx, nextAt, question, questionAt, health })
   return {
     need,
     rows: [
