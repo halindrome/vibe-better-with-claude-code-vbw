@@ -14,7 +14,8 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
 
 @test "R189: docs/panel.md describes the what's happening now box at the top of the Now tab" {
   has "$DOC" "what.s happening now"
-  has "$DOC" 'nothing (is )?running'
+  grep -qiE "^#+ what.s happening now" "$DOC" || { echo "docs/panel.md has no what's happening now heading"; false; }
+  grep -qiE '^[|] +nothing (is )?running' "$DOC" || { echo "docs/panel.md has no idle example in the box"; false; }
 }
 
 @test "R189: docs/panel.md shows events and messages starting with their clock time" {
