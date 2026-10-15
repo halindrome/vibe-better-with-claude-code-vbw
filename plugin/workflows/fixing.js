@@ -87,12 +87,14 @@ const fixDoneAlone = async fixCmd => {
 
 phase('Fix')
 const NO_SUITE = ' Do not run the project\'s test command or its quick command: run only your fixes\' checks (vbw check). Commit your fix, check it with vbw check, then return. Do not run vbw fix done: the workflow runs it once for the round, after every Dev returns. The whole test command runs once, in the proof after this round. If your fix is for a failure of the test command itself, run only the failing tests you need to fix.'
+// T123: a decision recorded after the approval may correct the plan the fix serves; the brief names them.
+const SINCE = 'vbw show decisions --since-approval (decisions recorded after the contract was approved: where one differs from the plan, the decision wins).'
 // A fix a QA finding opened is a gap in the tests too: the Dev adds the regression test (R160).
 const QA_TEST = ' If a fix came from a QA finding (its source says qa), first write a test that fails while the problem exists (it may create new test files), register it with vbw fix check FIX (a check document on stdin), and commit it with the fix. Edits to an approved check file of the finding\'s requirement wait for one approval by the user before the proof: say so in notes, never approve.'
 const results = await pipeline(groups, ids =>
   agent(ids.length === 1
-    ? `Fix VBW fix item ${ids[0]}. Start with: vbw show fix ${ids[0]}.${NO_SUITE}${QA_TEST}${voice}`
-    : `Fix VBW fix items ${ids.join(', ')} together: they touch the same files and may share one cause. Start with: ${ids.map(id => `vbw show fix ${id}`).join('; ')}.${NO_SUITE}${QA_TEST}${voice}`,
+    ? `Fix VBW fix item ${ids[0]}. Start with: vbw show fix ${ids[0]}; then ${SINCE}${NO_SUITE}${QA_TEST}${voice}`
+    : `Fix VBW fix items ${ids.join(', ')} together: they touch the same files and may share one cause. Start with: ${ids.map(id => `vbw show fix ${id}`).join('; ')}; then ${SINCE}${NO_SUITE}${QA_TEST}${voice}`,
     Object.assign({ agentType: 'vbw:dev', label: ids.join('+'), phase: 'Fix', schema: FIX_RESULT },
       devModel ? { model: devModel } : {}, effortOf('dev', 'fix'))))
 

@@ -23,6 +23,18 @@ After `build` and `fix`, the router runs `vbw prove` (deterministic, no agent);
 after a passing proof, QA verifies what the checks cannot (docs/proof.md). Then
 `vbw next` decides again. Approval, acceptance and shipping are human gates.
 
+Each Dev and Docs prompt of `vbw:building` and `vbw:fixing` starts the agent
+on its plan or fix, then on `vbw show decisions --since-approval`: the
+decisions recorded after the latest approval of the contract. A decision there
+overrides the plan where they differ; one that needs files outside the plan
+blocks it (`vbw plan block`) for a new plan.
+
+The Architect and the Lead choose the optimal, future-proof design, never the
+merely safe or simple one, and name any known cost or debt. The Lead's
+self-review refuses a design that pays a recurring cost (time, tokens,
+re-runs) to avoid thinking, and QA fails a phase that brings in such a
+shortcut or a debt nobody named.
+
 Every stop ends with one plain line, **What I need from you:** followed by the
 one thing you must do now, or "nothing" when VBW needs nothing.
 

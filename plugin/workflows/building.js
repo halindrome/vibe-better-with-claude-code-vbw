@@ -65,6 +65,9 @@ const closeRun = async ids => {
   return done
 }
 
+// T123: a decision recorded after the approval may correct the plan mid-milestone; the brief names them.
+const SINCE = 'vbw show decisions --since-approval (decisions recorded after the contract was approved: where one differs from the plan, the decision wins).'
+
 phase('Build')
 const results = await pipeline(plans, id => {
   const role = docs.includes(id) ? 'docs' : 'dev'
@@ -72,7 +75,7 @@ const results = await pipeline(plans, id => {
   const m = (cell && cell.models && cell.models[role]) || models[role]
   const tier = cell && cell.tier
   const mutate = tier === 'standard' || tier === 'deep' ? ` This plan's rigor tier: ${tier}. Do the mutation step of your instructions before vbw plan done.` : ''
-  return agent(`Execute VBW plan ${id}. Start with: vbw show plan ${id}${mutate}${voice}`,
+  return agent(`Execute VBW plan ${id}. Start with: vbw show plan ${id}; then ${SINCE}${mutate}${voice}`,
     Object.assign({ agentType: `vbw:${role}`, label: `${role} ${id}`, phase: 'Build', schema: BUILD_RESULT },
       m ? { model: m } : {}, effortOf(role, 'build')))
 })
