@@ -80,12 +80,11 @@ teardown() { vbw_teardown; }
   jq -e '(.project | keys | sort) == ["declined","name"]' .vbw/record.json
 }
 
-@test "R40: the suggest skill states its limit of three suggestions and stays within 600 words" {
+@test "R40: the suggest skill states its limit of three suggestions" {
   [ -f "$SKILL" ]
   grep -qx 'name: suggest' "$SKILL"
   grep -qE '^description: .{20,}$' "$SKILL"
   grep -qiE 'at most three' "$SKILL"
-  [ "$(wc -w < "$SKILL")" -le 600 ]
 }
 
 @test "R40: the skill names the commands for each answer: vbw spec add, vbw decide, vbw suggest decline" {

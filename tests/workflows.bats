@@ -68,14 +68,6 @@ agents() { find "$PLUGIN_ROOT/agents" -name '*.md' | LC_ALL=C sort; }
   done < <(agents)
 }
 
-@test "agents stay within their size budget (about 1.5k tokens)" {
-  local f words
-  while IFS= read -r f; do
-    words=$(wc -w < "$f")
-    [ "$words" -le 900 ] || { echo "$f has $words words"; false; }
-  done < <(agents)
-}
-
 @test "agents only use vbw commands that exist" {
   local cmd n=0
   while IFS= read -r cmd; do

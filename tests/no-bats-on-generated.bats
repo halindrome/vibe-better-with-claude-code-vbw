@@ -37,7 +37,7 @@ runs_real_bats() {
   printf '%s\n' '@test "x" {' '  cat > "$repo/tests/one.bats" << '"'"'BATS'"'"'' '  run bash -c '"'"'cd "$1" && bats tests/one.bats'"'"' _ "$repo"' '}' > "$TEST_ROOT/bad.bats"
   writes_bats "$TEST_ROOT/bad.bats"
   [ -n "$(runs_real_bats "$TEST_ROOT/bad.bats")" ]
-  printf '%s\n' '@test "y" {' '  run bats --filter "kernel stays within" "$REPO_ROOT/tests/standards.bats"' '}' > "$TEST_ROOT/ok.bats"
+  printf '%s\n' '@test "y" {' '  run bats --filter "no eval" "$REPO_ROOT/tests/standards.bats"' '}' > "$TEST_ROOT/ok.bats"
   ! writes_bats "$TEST_ROOT/ok.bats"
   printf '%s\n' '@test "z" {' '  printf "x" > "$FAKE/tests/a.bats"' '  PATH="$STUBS:$PATH" bash tools/test.sh' '}' > "$TEST_ROOT/stub.bats"
   writes_bats "$TEST_ROOT/stub.bats"

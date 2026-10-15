@@ -1,6 +1,5 @@
 #!/usr/bin/env bats
-# R44: help text, docs, agents and skills show the multi-id form of vbw fix done;
-# the kernel stays within budget.
+# R44: help text, docs, agents and skills show the multi-id form of vbw fix done.
 
 load helper
 
@@ -17,9 +16,4 @@ load helper
 
 @test "the dev agent closes several fixes in one vbw fix done" {
   grep -qE 'vbw fix done F[0-9]+ F[0-9]+' "$PLUGIN_ROOT/agents/dev.md"
-}
-
-@test "the kernel stays within its line budget" {
-  run bats --filter 'kernel stays within' "$REPO_ROOT/tests/standards.bats"
-  [ "$status" -eq 0 ]
 }

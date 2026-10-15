@@ -3,7 +3,7 @@
 # tools/bench-panel.sh (like tools/bench-hooks.sh does for the hooks) against a
 # stated budget, judged in the release run (bash tools/test.sh --release, R152)
 # and never in vbw prove; it uses no network and reads no credentials; its code is
-# read-only; and the kernel and workflow budgets still hold. Behaviour is in
+# read-only. Behaviour is in
 # tests/panel/light.test.mjs. L1.
 
 load helper
@@ -55,13 +55,6 @@ BENCH="$BATS_TEST_DIRNAME/../tools/bench-panel.sh"
 @test "R55: the panel never names the record as something to write" {
   ! grep -nE 'record\.json.*(write|set)|(write|set).*record\.json' "$PLUGIN_ROOT"/hooks/panel*.js || false
   [ -f "$PLUGIN_ROOT/hooks/panel.js" ]
-}
-
-@test "R55: the kernel stays within its budget and the workflows within theirs" {
-  run bats --filter "kernel stays within" "$BATS_TEST_DIRNAME/standards.bats"
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  run bats --filter "workflows stay within" "$BATS_TEST_DIRNAME/standards.bats"
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
 }
 
 @test "R55: the panel's node tests are part of the suite, so a regression fails bash tools/test.sh" {

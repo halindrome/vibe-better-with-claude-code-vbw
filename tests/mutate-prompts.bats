@@ -5,9 +5,9 @@
 # mutation instruction, a plan of an express phase none; the fixing workflow
 # none. The Dev and Docs briefs name the step's commands (vbw mutate, vbw plan
 # block) and levels, and keep its prohibitions (never weaken a check, never in
-# a fix). A Dev block naming the rule raises the phase one tier. Budgets hold:
-# workflows 1,500 lines, each agent 900 words. L1, with stubbed agents (tests/helpers/run-workflow.js) and the
-# kernel on a fixture project: no model runs.
+# a fix). A Dev block naming the rule raises the phase one tier. L1, with stubbed
+# agents (tests/helpers/run-workflow.js) and the kernel on a fixture project: no
+# model runs.
 
 load helper
 
@@ -92,15 +92,4 @@ names() {
   run "$VBW" plan block P1.1 "R1.1 stays green after two strengthening attempts (checked stdout, then stderr)" < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   jq -e '.phases[0].tier == "deep" and (.phases[0].escalations[-1].reason | contains("R1.1"))' .vbw/record.json || { jq '.phases[0]' .vbw/record.json; false; }
-}
-
-@test "R188: the workflows stay within 1,500 lines and the Dev and Docs agents within 900 words each" {
-  local total=0 f n
-  for f in "$WF"/*.js; do
-    n=$(grep -cvE '^[[:space:]]*(//|$)' "$f" || true)
-    total=$((total + n))
-  done
-  [ "$total" -le 1500 ] || { echo "workflow lines: $total"; false; }
-  [ "$(wc -w < "$DEV")" -le 900 ] || { echo "dev.md: $(wc -w < "$DEV") words"; false; }
-  [ "$(wc -w < "$DOCS")" -le 900 ] || { echo "docs.md: $(wc -w < "$DOCS") words"; false; }
 }

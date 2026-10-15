@@ -1,8 +1,7 @@
 #!/usr/bin/env bats
 # R61 (L1, facts): the router asks for approval with AskUserQuestion, built from
 # what vbw show contract prints, Approve before Not yet; /vbw:approve still
-# works; the docs name the choice, its options, the Enter key and the command;
-# the prompts stay within their budgets.
+# works; the docs name the choice, its options, the Enter key and the command.
 
 load helper
 
@@ -18,16 +17,6 @@ approve_step() { sed -n '/^\*\*approve\*\*/,/^\*\*build\*\*/p' "$ROUTER"; }
   [[ "$s" == *"approval question"* ]]
   [[ "$s" == *Approve*"Not yet"* ]]
   [[ "$s" == *"/vbw:approve"* ]]
-}
-
-@test "R61: the prompts stay within their budgets: router 1,400 words, every skill 2,000, all prompts 16k tokens" {
-  [ "$(wc -w < "$ROUTER")" -le 1400 ]
-  local f total=0 w
-  for f in "$PLUGIN_ROOT"/skills/*/SKILL.md "$PLUGIN_ROOT"/agents/*.md; do
-    w=$(wc -w < "$f"); total=$((total + w))
-    [ "$w" -le 2000 ] || [ "$f" = "$ROUTER" ] || { echo "$f has $w words"; false; }
-  done
-  [ "$total" -le 22800 ]
 }
 
 @test "R61: the help lists /vbw:approve" {

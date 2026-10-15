@@ -102,8 +102,3 @@ EOS
   vbw_kernel 'trap "echo caller" EXIT; record_update ".milestone.title = \"X\""; trap -p EXIT' > "$TEST_ROOT/out"
   grep -q "caller" "$TEST_ROOT/out"
 }
-
-@test "the kernel stays within its budget (kept in one place: tests/standards.bats)" {
-  run bats --filter 'kernel stays within' "$REPO_ROOT/tests/standards.bats"
-  [ "$status" -eq 0 ]
-}

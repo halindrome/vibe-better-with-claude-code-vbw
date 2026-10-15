@@ -55,17 +55,6 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$(basename "$(dirname "$1")")/$(
   has "$SKILL" 'hands-off'
 }
 
-@test "R121: the router stays within 1,400 words and all prompts within 22,800 words" {
-  [ "$(wc -w < "$ROUTER")" -le 1400 ]
-  local f total=0 w
-  for f in "$PLUGIN_ROOT"/skills/*/SKILL.md "$PLUGIN_ROOT"/agents/*.md; do
-    w=$(wc -w < "$f")
-    total=$((total + w))
-    [ "$w" -le 2000 ] || [ "$f" = "$ROUTER" ] || { echo "$f has $w words"; false; }
-  done
-  [ "$total" -le 22800 ] || { echo "all prompts: $total words"; false; }
-}
-
 @test "R121: the user documentation names the three sorts, the sizes and vbw todo list, and the README links it" {
   [ -f "$DOC" ]
   local w

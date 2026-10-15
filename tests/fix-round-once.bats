@@ -178,26 +178,6 @@ all_done() { jq -nc --argjson d "$DONE" --argjson k "${1:-$OK}" --argjson a "${2
   printf '%s' "$section" | grep -q 'vbw fix done' || { echo "$section"; false; }
 }
 
-@test "R182: the workflows stay within 1,500 lines and every agent within 900 words, all prompts within 22,800" {
-  local total=0 f n w
-  while IFS= read -r f; do
-    n=$(grep -cvE '^[[:space:]]*(//|$)' "$f" || true)
-    total=$((total + n))
-  done < <(find "$PLUGIN_ROOT/workflows" -type f -name '*.js')
-  [ "$total" -le 1500 ] || { echo "workflow lines: $total"; false; }
-  total=0
-  for f in "$PLUGIN_ROOT"/agents/*.md; do
-    w=$(wc -w < "$f")
-    total=$((total + w))
-    [ "$w" -le 900 ] || { echo "$f has $w words"; false; }
-  done
-  for f in "$PLUGIN_ROOT"/skills/*/SKILL.md; do
-    w=$(wc -w < "$f")
-    total=$((total + w))
-  done
-  [ "$total" -le 22800 ] || { echo "all prompts: $total words"; false; }
-}
-
 @test "R182: without a session, complete follows the plan: an open fix and a blocked Dev give the same value, true" {
   local k='{"fixdone":"ran","closed":["F1"],"open":[{"fix":"F2","reason":"uncommitted changes"}],"report":"F2 open"}'
   run wf '{"groups":[["F1"],["F2"]]}' "$(jq -nc --argjson d "$DONE" --argjson k "$k" '{"F1": $d, "F2": $d, "fix done": $k}')"

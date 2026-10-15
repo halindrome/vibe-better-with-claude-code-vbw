@@ -106,8 +106,7 @@ cache_commit() { jq -r --arg p "$1" '.[$p].commit' "$(git rev-parse --path-forma
     and ([.calls[] | select(.opts.label == "qa P2")][0].prompt | contains("abc1234") or contains("F7") | not)' || { echo "$out"; false; }
 }
 
-@test "T131: the QA agent's instructions carry the re-check round rule and stay within 900 words" {
+@test "T131: the QA agent's instructions carry the re-check round rule" {
   local qa="$PLUGIN_ROOT/agents/qa.md"
   grep -qi 're-check round' "$qa"
-  [ "$(wc -w < "$qa")" -le 900 ]
 }

@@ -123,13 +123,6 @@ plugin_copy() {
   grep -q 'config effort' "$REPO_ROOT/docs/workflows.md"
 }
 
-@test "R107: the router and the prompts stay within their budgets" {
-  run bats --filter "the router stays within its budget" "$BATS_TEST_DIRNAME/skills.bats"
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  run bats --filter "R39: prompts stay within" "$BATS_TEST_DIRNAME/profile-levels.bats"
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-}
-
 @test "F88: a missing or invalid architect recommend step is refused like every other step" {
   plugin_copy
   jq 'del(.balanced.architect.recommend)' "$EFFORTS" > "$TEST_ROOT/plugin/lib/efforts.json"

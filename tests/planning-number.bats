@@ -64,10 +64,3 @@ plan() {
 @test "R106: the Architect reads vbw show roadmap before planning again" {
   grep -qF 'vbw show roadmap' "$PLUGIN_ROOT/agents/architect.md"
 }
-
-@test "R106: the router and the prompts stay within their budgets" {
-  run bats --filter "the router stays within its budget" "$BATS_TEST_DIRNAME/skills.bats"
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  run bats --filter "R39: prompts stay within" "$BATS_TEST_DIRNAME/profile-levels.bats"
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-}

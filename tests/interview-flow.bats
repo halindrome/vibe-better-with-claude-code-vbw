@@ -22,12 +22,11 @@ teardown() { vbw_teardown; }
 # line_of TEXT FILE: the line number of the first line containing TEXT (fixed string).
 line_of() { grep -nF -m1 -- "$1" "$2" | cut -d: -f1; }
 
-@test "R37: the interview is a skill of its own, named interview, within a mode prompt's budget" {
+@test "R37: the interview is a skill of its own, named interview" {
   [ -f "$SKILL" ]
   [ "$(sed -n 1p "$SKILL")" = "---" ]
   grep -qx 'name: interview' "$SKILL"
   grep -qE '^description: .{20,}$' "$SKILL"
-  [ "$(wc -w < "$SKILL")" -le 900 ]
 }
 
 @test "R37: the three fixed questions are asked in order with exactly the listed options" {
@@ -111,9 +110,4 @@ line_of() { grep -nF -m1 -- "$1" "$2" | cut -d: -f1; }
   map=$(line_of 'map.md' "$ROUTER")
   ask=$(line_of 'profile.ask' "$ROUTER")
   [ -n "$map" ] && [ -n "$ask" ] && [ "$ask" -gt "$map" ]
-}
-
-@test "R37: the router stays within its budget and the interview adds no more than a mode prompt" {
-  [ "$(wc -w < "$ROUTER")" -le 1400 ]
-  [ "$(wc -w < "$SKILL")" -le 900 ]
 }

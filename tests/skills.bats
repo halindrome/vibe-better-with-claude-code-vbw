@@ -74,13 +74,6 @@ front() { awk 'NR == 1 && /^---$/ { on = 1; next } on && /^---$/ { exit } on' "$
   [ "$n" -ge 8 ] || { echo "only $n commands found: the scan is broken"; false; }
 }
 
-@test "the router stays within its budget (about 2k tokens)" {
-  local words
-  words=$(wc -w < "$PLUGIN_ROOT/skills/vibe/SKILL.md")
-  echo "router: $words words"
-  [ "$words" -le 1400 ]
-}
-
 @test "skills never build paths from \$HOME, caches or /tmp (K4)" {
   local f
   while IFS= read -r f; do

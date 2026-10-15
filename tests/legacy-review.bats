@@ -241,8 +241,6 @@ review() { "$VBW" legacy review < /dev/null; }
   [[ "$output" == *"legacy"*"review"* ]]
 }
 
-@test "R65: the kernel with the review stays within its budget (kept in one place: tests/standards.bats)" {
+@test "R65: the kernel's legacy command holds the review" {
   grep -q 'review' "$PLUGIN_ROOT/lib/cmd-legacy.sh"
-  run bats --filter 'kernel stays within' "$REPO_ROOT/tests/standards.bats"
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
 }

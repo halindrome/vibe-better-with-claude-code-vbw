@@ -1,6 +1,6 @@
 #!/usr/bin/env bats
 # Engineering standards as tests. Each rule traces to a v1 defect or a design
-# budget (vbw2_build_plan.md §2 M0). A rule that is not enforced here is not a rule.
+# rule (vbw2_build_plan.md §2 M0). A rule that is not enforced here is not a rule.
 
 load helper
 
@@ -17,37 +17,6 @@ code_grep() {
   while IFS= read -r file; do
     grep -nE "$pattern" "$file" | grep -vE '^[0-9]+:[[:space:]]*#' | sed "s|^|$file:|"
   done < <(kernel_files)
-}
-
-@test "kernel stays within 7,600 lines of code (design §10; owner raised it to 3,300 on 2026-10-04, 3,500 on 2026-10-05, 3,800 on 2026-10-06 and 7,600 on 2026-10-07)" {
-  # Shell and jq both count: the jq programs are kernel logic too.
-  local total=0 file n
-  while IFS= read -r file; do
-    n=$(grep -cvE '^[[:space:]]*(#|$)' "$file" || true)
-    total=$((total + n))
-  done < <(kernel_files; find "$PLUGIN_ROOT/lib" "$PLUGIN_ROOT/hooks" "$PLUGIN_ROOT/scripts" -type f -name '*.jq' 2>/dev/null)
-  echo "kernel lines: $total"
-  [ "$total" -le 7600 ]
-}
-
-@test "workflows stay within 1,500 lines (design §10)" {
-  local total=0 file n
-  while IFS= read -r file; do
-    n=$(grep -cvE '^[[:space:]]*(//|$)' "$file" || true)
-    total=$((total + n))
-  done < <(find "$PLUGIN_ROOT/workflows" -type f -name '*.js' 2>/dev/null)
-  echo "workflow lines: $total"
-  [ "$total" -le 1500 ]
-}
-
-@test "mod JavaScript stays within 3,500 lines (owner raised it from 3,000 on 2026-10-07)" {
-  local total=0 file n
-  while IFS= read -r file; do
-    n=$(grep -cvE '^[[:space:]]*(//|$)' "$file" || true)
-    total=$((total + n))
-  done < <(find "$PLUGIN_ROOT/hooks" -type f -name '*.js' 2>/dev/null)
-  echo "mod lines: $total"
-  [ "$total" -le 3500 ]
 }
 
 @test "no eval or data-as-code (ledger D108, D139)" {

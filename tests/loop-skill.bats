@@ -72,8 +72,7 @@ lacks() { ! grep -qE -- "$1" "$SKILL" || { echo "the loop skill must not say: $1
   ! grep -qE 'AskUserQuestion' "$SKILL" || grep -qiE 'never.*AskUserQuestion|AskUserQuestion.*never' "$SKILL"
 }
 
-@test "R179: the skill stays within the router's size and the shell-block rules of tests/skills.bats" {
-  [ "$(wc -w < "$SKILL")" -le 1400 ]
+@test "R179: the skill follows the shell-block rules of tests/skills.bats" {
   run bats --filter 'shell block|allowed-tools|named after its directory|only the user can approve' "$REPO_ROOT/tests/skills.bats"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
 }

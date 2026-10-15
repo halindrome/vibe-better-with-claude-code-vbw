@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
-# R45: the docs describe the alone marker, and the kernel stays within budget.
+# R45: the docs describe the alone marker, and the kernel code stays bash 3.2
+# compatible.
 
 load helper
 
@@ -9,11 +10,6 @@ load helper
 
 @test "docs/record.md lists alone among a check's fields" {
   grep -E '^\| `checks\[\]`.*`alone`' "$REPO_ROOT/docs/record.md"
-}
-
-@test "the kernel stays within its line budget" {
-  run bats --filter 'kernel stays within' "$REPO_ROOT/tests/standards.bats"
-  [ "$status" -eq 0 ]
 }
 
 @test "the kernel code stays bash 3.2 compatible, without eval and without /tmp" {

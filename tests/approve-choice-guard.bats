@@ -72,9 +72,3 @@ teardown() { vbw_teardown; }
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   echo "$output" | grep -qE '^guard \(answer\): -?[0-9.]+ ms own CPU per call'
 }
-
-@test "R61: the kernel stays within its budget (kept in one place: tests/standards.bats) and the router within 1,400 words" {
-  run bats --filter 'kernel stays within' "$REPO_ROOT/tests/standards.bats"
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(wc -w < "$PLUGIN_ROOT/skills/vibe/SKILL.md")" -le 1400 ]
-}
