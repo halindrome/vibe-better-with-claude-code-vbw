@@ -5,9 +5,12 @@
 // names or #rrggbb strings; rgb() turns one into the number a Raster cell
 // takes. Pure: values in, values out, never throws.
 
+// Seven hues spread over the blue-to-pink arc (teal 176 to pink 329 degrees),
+// all at a mid lightness so they read on dark and light terminals; teal is the
+// brand kit's Proof Teal lifted, indigo the Contract Indigo lifted.
 export const ROLE_COLORS = {
-  architect: 'magenta', lead: 'blue', dev: '#2ec4b6', qa: '#ff87d7',
-  scout: 'cyan', debugger: '#875fff', docs: '#d7afff',
+  architect: '#e060e0', lead: '#5f7bff', dev: '#1fbfb0', qa: '#ff6fb5',
+  scout: '#3ab0ff', debugger: '#8a6bff', docs: '#c27aff',
 }
 export const STATE_COLORS = {
   running: '#ffaf00', done: 'green', failed: 'red', quiet: 'gray', cut: 'gray',
