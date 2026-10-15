@@ -30777,14 +30777,14 @@
       "id": "F225",
       "req": "R148",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C214 fail (exit 1)"
     },
     {
       "id": "F226",
       "req": "R149",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C217 fail (exit 1), C218 fail (exit 1), C221 fail (exit 1)"
     }
   ],
@@ -38914,6 +38914,15 @@
         "milestone": "M33",
         "started": "2026-10-14T23:59:08Z",
         "ended": "2026-10-15T00:20:15Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261015T020031Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-15T02:00:31Z",
+        "ended": "2026-10-15T02:13:40Z",
         "cost": null
       }
     ],
