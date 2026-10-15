@@ -5,7 +5,8 @@
 # (user + system, not time spent waiting) of one refresh, averaged over
 # VBW_BENCH_RUNS (default 200):
 #   - tick, nothing changed: the timer fires, the files are only checked;
-#   - refresh, state changed: a file changed, is read, and the panel redraws.
+#   - refresh, state changed: a file changed, is read, and the panel redraws;
+#   - render, Comms and Mission Control: five helpers at work, both drawn on each refresh.
 # The stand-in's own work is inside the numbers, so they are an upper bound.
 # Measured on a developer Mac (node 22): about 0.02 ms and 0.04 ms. The budget
 # is VBW_PANEL_BUDGET_MS per refresh (default 0.5, about 12x headroom for a
@@ -27,18 +28,20 @@ tick="$(printf '%s\n' "$out" | awk '$1 == "tick" { print $2 }')"
 refresh="$(printf '%s\n' "$out" | awk '$1 == "refresh" { print $2 }')"
 sound="$(printf '%s\n' "$out" | awk '$1 == "sound" { print $2 }')"
 glance="$(printf '%s\n' "$out" | awk '$1 == "glance" { print $2 }')"
+render="$(printf '%s\n' "$out" | awk '$1 == "render" { print $2 }')"
 whats_next="$(printf '%s\n' "$out" | awk '$1 == "whats-next" { print $2 }')"
-[ -n "$whats_next" ] && [ -n "$glance" ] && [ -n "$sound" ] && [ -n "$tick" ] && [ -n "$refresh" ] || { echo "bench-panel: the driver printed no measurement: $out" >&2; exit 1; }
+[ -n "$render" ] && [ -n "$whats_next" ] && [ -n "$glance" ] && [ -n "$sound" ] && [ -n "$tick" ] && [ -n "$refresh" ] || { echo "bench-panel: the driver printed no measurement: $out" >&2; exit 1; }
 
 printf 'tick, nothing changed: %s ms CPU\n' "$tick"
 printf 'refresh, state changed: %s ms CPU\n' "$refresh"
+printf 'render, Comms and Mission Control: %s ms CPU\n' "$render"
 printf 'sound, need raised: %s ms CPU\n' "$sound"
 printf 'refresh with cost and estimates: %s ms CPU\n' "$glance"
 printf "refresh with what's next: %s ms CPU\n" "$whats_next"
 printf 'budget: %s ms\n' "$BUDGET_MS"
 
 status=0
-for v in "$tick" "$refresh" "$sound" "$glance" "$whats_next"; do
+for v in "$tick" "$refresh" "$sound" "$glance" "$whats_next" "$render"; do
   perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$v" "$BUDGET_MS" || status=1
 done
 [ "$status" -eq 0 ] || echo "bench-panel: a refresh is over the budget of $BUDGET_MS ms" >&2
