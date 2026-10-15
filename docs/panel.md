@@ -290,6 +290,20 @@ Now │ Plan │ Proof │ Timeline │ Decisions │ Team │ Costs
 The tabs stay at the top of the pane however long the content is. When the
 content is taller than the pane, only the part under the tabs scrolls.
 
+The tab row is always one line. In a narrow pane (40 columns, beside the
+portrait) the tabs use short names: `Now Plan Proof Time Log Team Cost`.
+
+Mission Control never draws more rows than the pane has. When Claude Code
+reports no height for the pane, it has one fixed height of at most 30 rows.
+If the content is taller, the last line says how much is left out:
+
+```
++14 more · open Mission Control
+```
+
+A pane with room for everything has no such line. Open the pane itself (or
+scroll it) to read the rest.
+
 - **Now:** a framed [what's happening now](#whats-happening-now) box above everything else, then the sentences above, the sound switch, [What's next](#whats-next), then the running workflow as
   columns of agent cards by phase. Each card has a frame in its agent's role
   colour, its state as a coloured mark and word (`● running`, `✓ done`,
@@ -618,8 +632,9 @@ not time spent waiting) as follows, measured on a developer Mac with Node 22:
 | Nothing changed | about 0.02 to 0.08 ms | 0.5 ms |
 | A file changed, read and redrawn | about 0.04 to 0.2 ms | 0.5 ms |
 | A need raised and the sound asked to play | measured by the same script | 0.5 ms |
+| Comms and Mission Control both drawn, five helpers at work | about 0.4 ms | 0.5 ms |
 
-The budget is about 12 times the typical cost, to leave room for a busy
+The budget is about 12 times the cost of a plain check, to leave room for a busy
 machine. These numbers come from the test stand-in for Claude Code, whose own
 work is counted too, so they are an upper bound.
 
@@ -629,6 +644,6 @@ Check it yourself from a VBW checkout (needs `node`):
 bash tools/bench-panel.sh
 ```
 
-It prints the three costs and the budget, and fails if a check is over the budget.
+It prints each cost and the budget, and fails if a check is over the budget.
 `VBW_PANEL_BUDGET_MS` changes the budget; `VBW_BENCH_RUNS` changes how many
 checks it averages (default 200).
