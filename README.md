@@ -246,7 +246,7 @@ The loop above is the core. Around it:
 | **Rigor that fits** | A typo gets one Dev and one approval. Your billing code gets research, a full team and deep review. VBW sizes the process from what the work touches, raises the bar when a build goes badly, and tells you why. [docs/rigor.md](docs/rigor.md) |
 | **Talks at your level** | Three questions, once per project. Beginners get plain words. Seniors get terse output and the trade-offs, which is what they'd have asked for if they ever read the docs. |
 | **Picks up where you left off** | Everything lives in `.vbw/` in your project, not in a chat window. Disappear for a weekend of pretending you have hobbies; `/vbw:vibe` continues exactly where things stand. |
-| **Status line and panel** | Progress, what's proven and what VBW needs from you, after every response. On Claude Code 2.1.287+, a panel says in plain words what VBW is doing, with an optional sound when it needs you. [docs/panel.md](docs/panel.md) |
+| **Status line and panel** | Progress, what's proven and what VBW needs from you, after every response. On Claude Code 2.1.287+, the panel has Comms (the strip above the prompt: the helpers at work, or one line when VBW needs you) and Mission Control (the side pane: where the project stands, in plain words), with an optional sound when it needs you. [docs/panel.md](docs/panel.md) |
 
 ![VBW statusline example](assets/statusline.png)
 
