@@ -25,6 +25,15 @@ export function supports(version, min = MIN_VERSION) {
   return true
 }
 
+// A moment as the local clock reads it, 'HH:MM'; '' when there is no moment.
+export function clock(ms) {
+  if (typeof ms !== 'number' || !Number.isFinite(ms)) return ''
+  const d = new Date(ms)
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
+}
+// '[14:20] ' before a sentence that has a start time; the sentence alone without one.
+const stamped = (ms, text) => (clock(ms) ? '[' + clock(ms) + '] ' + text : text)
+
 const NEUTRAL = { id: 'neutral', text: 'No VBW project is open here yet.', term: 'no project' }
 
 function doing(rec, now) {
@@ -114,16 +123,46 @@ function costRow(cost) {
     : { id: 'cost', text: 'The cost so far is not available.', term: 'cost, not available' }
 }
 
+// The 'what's happening now' box: VBW's state as one plain sentence, the current step
+// with the time it started, and the cost line. `proving` comes from panel.js (a proof
+// is running with no lease); `stamps.proving` is when it began.
+function nowBox(rec, need, proving, stamps, cost) {
+  const l = isObj(rec.lease) ? rec.lease : null
+  const cl = costRow(cost)
+  if (l) {
+    const plans = (Array.isArray(rec.plans) ? rec.plans : []).filter((p) => isObj(p) && p.status === 'building')
+    const phases = [...new Set(plans.map((p) => p.phase).filter((x) => typeof x === 'string' && x))]
+    const titles = plans.map((p) => p.title).filter(Boolean)
+    const what = {
+      plan: ['planning the work', 'planning'],
+      build: ['building ' + (phases.length ? 'phase ' + phases.join(', ') : 'the plan') + (titles.length ? ' (' + titles.join(', ') + ')' : ''), 'building'],
+      qa: ['checking the results', 'checking'],
+      fix: ['fixing what the checks found', 'fixing'],
+      map: ['reading the project to map it', 'mapping'],
+    }[l.kind] || ['working', String(l.kind || 'run')]
+    const at = Date.parse(l.started_at)
+    return { state: { text: 'VBW is ' + what[0] + '.', term: 'state' }, step: Number.isFinite(at) ? { text: 'Current step: ' + what[1] + ', started at ' + clock(at) + '.', at } : null, cost: cl }
+  }
+  if (proving) {
+    const at = stamps.proving
+    return { state: { text: 'VBW is proving the work: running its checks.', term: 'state' }, step: Number.isFinite(at) ? { text: 'Current step: proving, started at ' + clock(at) + '.', at } : null, cost: cl }
+  }
+  if (need) {
+    return { state: { text: 'VBW is waiting for you: ' + need.what + '.', term: 'state' }, step: Number.isFinite(need.at) ? { text: 'Waiting since ' + clock(need.at) + '.', at: need.at } : null, cost: cl }
+  }
+  return { state: { text: 'Nothing is running.', term: 'state' }, step: null, cost: cl }
+}
+
 const mins = (sec) => Math.max(1, Math.round(sec / 60))
 const NO_BASIS = { text: 'No estimate yet: there are not enough finished steps to go on.', term: 'estimate, no basis' }
 
 // Time left for the running step and for the milestone, never more exact than it is.
-function estimateRows(rec, steps, phasesLeft, now) {
+function estimateRows(rec, steps, phasesLeft, now, stamps) {
   const e = estimate({ steps, lease: isObj(rec.lease) ? rec.lease : null, phasesLeft, now })
   const row = (id, x, what) => {
     if (x.state === 'none') return { id, ...NO_BASIS }
-    if (x.state === 'longer') return { id, text: 'This step is taking longer than usual.', term: 'estimate, approximate' }
-    return { id, text: 'About ' + mins(x.seconds) + ' min left in ' + what + '.', term: 'estimate, approximate' }
+    const text = x.state === 'longer' ? 'This step is taking longer than usual.' : 'About ' + mins(x.seconds) + ' min left in ' + what + '.'
+    return { id, text: stamped(stamps[id], text), term: 'estimate, approximate' }
   }
   const rows = []
   if (e.step) rows.push(row('estimate-step', e.step, 'this step'))
@@ -132,8 +171,9 @@ function estimateRows(rec, steps, phasesLeft, now) {
 }
 
 export function panelView(input) {
-  const { record: rec, next: nx, nextAt, question, questionAt, health, now, cost, steps } = isObj(input) ? input : {}
-  if (!isObj(rec) || !isObj(rec.milestone) || !rec.milestone.id) return { rows: [NEUTRAL], need: null }
+  const { record: rec, next: nx, nextAt, question, questionAt, health, now, cost, steps, proving } = isObj(input) ? input : {}
+  const stamps = isObj(input) && isObj(input.stamps) ? input.stamps : {}
+  if (!isObj(rec) || !isObj(rec.milestone) || !rec.milestone.id) return { rows: [NEUTRAL], need: null, box: null }
   const ph = (Array.isArray(rec.phases) ? rec.phases : []).filter((p) => isObj(p) && p.milestone === rec.milestone.id)
   const phasesLeft = ph.filter((p) => !(isObj(p.qa) && p.qa.result === 'pass')).length
   // Progress as the status line counts it: the current milestone's requirements proven or accepted.
@@ -142,15 +182,17 @@ export function panelView(input) {
   const progress = rq.length === 0 ? 'No requirements are set yet.'
     : done + ' of ' + rq.length + (rq.length === 1 ? ' requirement' : ' requirements') + ' done.'
   const need = liveNeed({ record: rec, next: nx, nextAt, question, questionAt, health })
+  const t = Number.isFinite(now) ? now : Date.now()
   return {
     need,
+    box: nowBox(rec, need, proving === true, stamps, cost),
     rows: [
       { id: 'milestone', text: 'Working on ' + rec.milestone.id + ': ' + (rec.milestone.title || 'untitled') + '.', term: 'milestone' },
       { id: 'progress', text: progress, term: 'requirements' },
-      doing(rec, Number.isFinite(now) ? now : Date.now()),
-      ...estimateRows(rec, Array.isArray(steps) ? steps : [], phasesLeft, Number.isFinite(now) ? now : Date.now()),
+      doing(rec, t),
+      ...estimateRows(rec, Array.isArray(steps) ? steps : [], phasesLeft, t, stamps),
       costRow(cost),
-      { id: 'need', text: need ? need.text : 'Nothing is needed from you right now.', term: 'your turn' },
+      { id: 'need', text: need ? stamped(Number.isFinite(stamps.need) ? stamps.need : need.at, need.text) : 'Nothing is needed from you right now.', term: 'your turn' },
     ],
   }
 }
