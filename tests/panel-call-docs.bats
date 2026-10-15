@@ -23,3 +23,19 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
   has "$DOC" '/vbw-sound off'
   has "$DOC" 'notification[^.]*(off|switch)|(off|switch)[^.]*notification'
 }
+
+@test "R189: docs/panel.md says the sound plays once per question and not for a gate on its own" {
+  has "$DOC" 'plays \*\*once per question'
+  has "$DOC" 'not for a gate on its own'
+  has "$DOC" 'second question plays once more'
+}
+
+@test "R189: docs/panel.md says the notification is titled VBW and never fires twice for one question" {
+  has "$DOC" 'titled `vbw`'
+  has "$DOC" 'never fires twice for one question'
+}
+
+@test "R189: docs/panel.md says what happens without notifications or sound" {
+  has "$DOC" 'does nothing in their place'
+  has "$DOC" 'nothing breaks'
+}
