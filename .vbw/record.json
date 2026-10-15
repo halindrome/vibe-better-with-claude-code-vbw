@@ -31748,7 +31748,7 @@
       "text": "Brainstorm B3: a full vbw apply of the active milestone is refused when it reopened a shipped requirement (cmd-apply.sh FOREIGN_REQS_JQ counts shipped phases as covering; the message names --add on a full apply), and a new phase cannot share a reopened requirement once work started. Portfolium-webstack report (2.0.30, 2026-10-10), reproduced on a copy: the one rule change applied their full draft. Decide how a reopened requirement is owned; failing test from their record shape first",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T135",
