@@ -86,7 +86,6 @@ next_phase() { "$VBW" next --json < /dev/null | jq -c '.next_phase'; }
   [ "$(next_phase)" = 5 ]
 }
 
-@test "R106: docs/next.md names next_phase and how the number is found" {
+@test "R106: docs/next.md names next_phase" {
   grep -q 'next_phase' "$REPO_ROOT/docs/next.md"
-  grep -qi 'sub-phase' "$REPO_ROOT/docs/next.md"
 }

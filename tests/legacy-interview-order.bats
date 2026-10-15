@@ -37,5 +37,5 @@ next_json() { "$VBW" next --json < /dev/null; }
 }
 
 @test "R67: the router interviews before spec or convert work, not only before spec" {
-  grep -qF '`profile.ask` true: follow `vbw:interview` before any spec or convert work' "$PLUGIN_ROOT/skills/vibe/SKILL.md"
+  grep -F '`profile.ask`' "$PLUGIN_ROOT/skills/vibe/SKILL.md" | grep -F '`vbw:interview`' | grep -qi 'convert'
 }

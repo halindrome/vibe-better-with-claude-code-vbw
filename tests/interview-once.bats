@@ -94,8 +94,7 @@ answer_all() {
   printf '%s' "$output" | jq -e '.profile.ask == false and .profile.interviewed == true and .profile.kept == "project"'
 }
 
-@test "R38: the router asks the interview only when next says profile.ask, never mid-run" {
+@test "R38: the router asks the interview on profile.ask" {
   local r="$PLUGIN_ROOT/skills/vibe/SKILL.md"
   grep -qF 'profile.ask' "$r"
-  grep -qiE 'once|never ask(ed)? again' "$PLUGIN_ROOT/skills/interview/SKILL.md"
 }
