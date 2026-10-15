@@ -33,8 +33,8 @@ When the user reports VBW misbehavior (pasted session output, a command behaving
 
 - **Surface** (`plugin/skills/`): the `/vbw:vibe` router and utility skills, plus the statusline segment. Skills are specifications, not procedures.
 - **Engine** (`plugin/workflows/*.js`): all orchestration and all run-scoped logic (waves, retries, fix loops, budgets, fan-out and merge). Workflows receive state in `args` from `vbw next --json`. Agents write only through `vbw` subcommands.
-- **Kernel** (`plugin/bin/vbw` + `plugin/lib/*.sh`): the only writer of the plan of record (`.vbw/record.json`). It runs approved checks, commits with provenance, renders on demand and backs the hooks. Hard budget: 7,600 lines (owner raised it from 3,000 to 3,300 on 2026-10-04, 3,500 on 2026-10-05, 3,800 on 2026-10-06 and 7,600 on 2026-10-07).
-- **Agents** (`plugin/agents/`): VBW 1's team with its mandates: `architect`, `lead`, `dev`, `qa`, `scout`, `debugger`, `docs`. Each is a ≤1.5k-token specification of good output plus a tool list.
+- **Kernel** (`plugin/bin/vbw` + `plugin/lib/*.sh`): the only writer of the plan of record (`.vbw/record.json`). It runs approved checks, commits with provenance, renders on demand and backs the hooks.
+- **Agents** (`plugin/agents/`): VBW 1's team with its mandates: `architect`, `lead`, `dev`, `qa`, `scout`, `debugger`, `docs`. Each is a short specification of good output plus a tool list.
 - **Hooks** (`plugin/hooks/hooks.json`): guards scoped by the run lease and by `agent_type`. They are inert outside VBW projects.
 
 ## Repository layout
@@ -60,7 +60,7 @@ When the user reports VBW misbehavior (pasted session output, a command behaving
 - Workflows hold procedure; prompts hold only the definition of good output and its schema. Every agent call passes a `schema`.
 - Model and effort are chosen per stage from the profile. The session model must be auto-capable (Sonnet/Opus/Fable); workflow agents may use Haiku.
 - No `permissionMode`, `hooks`, `mcpServers` or `initialPrompt` in agent files (ignored for plugin agents). Agents search with Bash, because Glob and Grep may be absent.
-- Budgets: workflows ≤ 1,500 lines of JS in total, mods (`plugin/hooks/*.js`) ≤ 3,500 lines (owner raised it from 3,000 on 2026-10-07), router ≤ 2k tokens, each mode prompt ≤ 3k, all prompts ≤ 22,800 words, about 32k tokens (owner raised it from 15k tokens on 2026-10-04 and doubled it on 2026-10-07).
+- No size caps (owner decision D408, 2026-10-15): code and prompts have no line or word limit. Each release's notes report the sizes of the kernel, mods, workflows and prompts as information, so growth stays visible. Speed limits stay (hot paths, below).
 
 ## Testing
 
@@ -115,4 +115,4 @@ Load the plugin from the working tree with `claude --plugin-dir ./plugin`. Nothi
 - Branch from `origin/main`, push to `origin`, and open the PR against `main`. Commits follow `{type}({scope}): {description}`, one atomic commit per change, with files staged explicitly.
 - Root-cause fixes only. A mitigation without its root-cause fix in the same work item is incomplete.
 - Update user docs (`docs/`, `README.md`) whenever behavior changes.
-- Discuss first before any change that adds a runtime dependency or grows a budget.
+- Discuss first before any change that adds a runtime dependency.
