@@ -208,3 +208,13 @@ test('renderNow: the state line starts with [HH:MM] in dim text and keeps the st
   assert.ok(state, 'the state text stays whole')
   assert.ok(state.props.color && state.props.dimColor !== true)
 })
+
+test('renderNow: a failed helper not yet opened is marked "new" on its card; an opened one, a done one and a working one are not', () => {
+  const r = run([agent({ id: 'f', state: 'failed', endedAt: S + MIN }), agent({ id: 'd', state: 'done', endedAt: S + MIN }), agent({ id: 'w' })])
+  const marked = (seen) => {
+    const tree = renderNow(UI, nowModel({ run: r, now: S + 2 * MIN, seen, motion: 'off' }))
+    return ['f', 'd', 'w'].filter((id) => find(find(tree, (n) => n.type === 'Box' && n.props.key === 'card-box:' + id), (n) => n.type === 'Text' && n.children.join('').trim() === 'new'))
+  }
+  assert.deepEqual(marked([]), ['f'])
+  assert.deepEqual(marked(['f']), [])
+})

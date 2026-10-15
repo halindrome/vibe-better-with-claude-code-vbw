@@ -407,3 +407,14 @@ test('colour off: Comms reads state from the palette marks, working, failed and 
   const glyph = (id) => m.rows.find((r) => r.id === id).glyph
   assert.deepEqual([glyph('w'), glyph('q'), glyph('f')], [P.STATE_MARKS.running, P.STATE_MARKS.quiet, P.STATE_MARKS.failed])
 })
+
+test('a needs-you line not yet seen carries a mark after its text, within the columns; a seen one carries none', () => {
+  for (const motion of ['full', 'calm', 'off']) {
+    const fresh = model({ need: need(), fresh: true, motion, columns: 60 })
+    const tree = stage.renderStage(UI, fresh)
+    const mark = find(tree, (n) => n.type === 'Text' && words(n).trim() === 'new')
+    assert.ok(mark, motion + ': no mark')
+    assert.ok(len(words(tree)) <= 60, motion + ': the marked line overflows')
+    assert.ok(!find(stage.renderStage(UI, model({ need: need(), fresh: false, motion })), (n) => n.type === 'Text' && words(n).trim() === 'new'), motion + ': a seen line is marked')
+  }
+})

@@ -205,3 +205,13 @@ test('Mission Control wears the VBW portrait (a shipped PNG) where the terminal 
   assert.ok(fs.statSync(PLUGIN + '/assets/portrait.png').size < 32 * 1024, 'a small portrait')
   assert.equal(find(await h.render({ surface: 'desktop' }), (n) => n.type === 'Image'), undefined)
 })
+
+test('the all-checks-pass line starts with the time the proof was recorded, not the time it was noticed', async () => {
+  const h = await started({}, record({ settings: { motion: 'calm' } }))
+  await h.advance(5 * 60000)
+  const at = Date.UTC(2026, 9, 7, 10, 0, 0)
+  const hm = (ms) => String(new Date(ms).getHours()).padStart(2, '0') + ':' + String(new Date(ms).getMinutes()).padStart(2, '0')
+  h.project(green(record({ settings: { motion: 'calm' } })))
+  await h.advance(2000)
+  assert.ok(text(await band(h)).includes('[' + hm(at) + '] ✓ All checks pass'), text(await band(h)))
+})

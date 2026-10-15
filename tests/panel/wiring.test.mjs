@@ -286,3 +286,16 @@ test('Comms draws from Claude Code 2.1.290; on older versions it leaves the engi
   const now = await started({ version: '2.1.290' }, record(), approve())
   assert.match(text(await band(now)), /needs you/)
 })
+
+test('a proof running in this session (its mark in .vbw/runtime) is the state "proving", dated by the mark; it ends with the mark', async () => {
+  const mark = ROOT + '/.vbw/runtime/proving.sess-1'
+  const h = await started({}, record(), next({ action: 'prove' }))
+  const box = async () => text(await h.render())
+  assert.doesNotMatch(await box(), /proving/i)
+  h.write(mark, '4242\n')
+  await h.advance(2000)
+  assert.match(await box(), /VBW is proving the work/)
+  h.remove(mark)
+  await h.advance(2000)
+  assert.doesNotMatch(await box(), /proving/i)
+})
