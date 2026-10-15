@@ -178,3 +178,12 @@ test('a time-left sentence keeps the time it began saying what it says while the
   await h.advance(10 * 60000)
   assert.equal(await sentence(), first, 'the time moved with the clock')
 })
+
+test('the state sentence itself, the box\'s first line, names each state; the step line below it never stands in for it', async () => {
+  const first = async (h) => (await nowBox(h)).split('\n').map((l) => l.replace(/[│╭╮╰╯─]/g, '').trim()).filter(Boolean)[0]
+  const proving = await session(record(), next({ action: 'prove' }), { [ROOT + '/.vbw/runtime/proving.sess-1']: '4242\n' })
+  assert.match(await first(proving), /proving/i)
+  assert.doesNotMatch(await first(proving), /nothing/i)
+  const idle = await session()
+  assert.match(await first(idle), /nothing (is )?running/i)
+})
