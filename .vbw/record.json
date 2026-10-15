@@ -133,6 +133,7 @@
     "tests/l3-interview.bats",
     "tests/l3-legacy.bats",
     "tests/l3-loop.bats",
+    "tests/l3-panel-comms.bats",
     "tests/l3-panel.bats",
     "tests/l3-plugindir-probe.bats",
     "tests/l3-plugindir.bats",
@@ -197,9 +198,14 @@
     "tests/next-table.bats",
     "tests/no-bats-on-generated.bats",
     "tests/outside-writes-docs.bats",
+    "tests/panel-bench-render.bats",
+    "tests/panel-call-docs.bats",
+    "tests/panel-colours-docs.bats",
+    "tests/panel-comms-docs.bats",
     "tests/panel-compat.bats",
     "tests/panel-glance.bats",
     "tests/panel-light.bats",
+    "tests/panel-now-docs.bats",
     "tests/panel-skill-open.bats",
     "tests/panel-sound-audio.bats",
     "tests/panel-sound.bats",
@@ -222,6 +228,15 @@
     "tests/panel/palette.test.mjs",
     "tests/panel/pane.test.mjs",
     "tests/panel/panel.test.mjs",
+    "tests/panel/r189/call.test.mjs",
+    "tests/panel/r189/comms-crew.test.mjs",
+    "tests/panel/r189/comms-need.test.mjs",
+    "tests/panel/r189/containment.test.mjs",
+    "tests/panel/r189/helpers/crew.mjs",
+    "tests/panel/r189/helpers/screen.mjs",
+    "tests/panel/r189/meaning.test.mjs",
+    "tests/panel/r189/next-buttons.test.mjs",
+    "tests/panel/r189/now-box.test.mjs",
     "tests/panel/record-row.test.mjs",
     "tests/panel/safe.test.mjs",
     "tests/panel/schema4.test.mjs",
@@ -4658,6 +4673,188 @@
       ],
       "files": [
         "tests/mutation-qa.bats"
+      ]
+    },
+    {
+      "id": "C360",
+      "req": "R189",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r189/comms-need.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r189/comms-need.test.mjs",
+        "tests/panel/r189/helpers/screen.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C361",
+      "req": "R189",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r189/comms-crew.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r189/comms-crew.test.mjs",
+        "tests/panel/r189/helpers/screen.mjs",
+        "tests/panel/r189/helpers/crew.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/helpers/run.mjs",
+        "tests/panel/helpers/feed-fs.mjs"
+      ]
+    },
+    {
+      "id": "C362",
+      "req": "R189",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/panel-comms-docs.bats"
+      ],
+      "files": [
+        "tests/panel-comms-docs.bats"
+      ]
+    },
+    {
+      "id": "C363",
+      "req": "R189",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r189/call.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r189/call.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C364",
+      "req": "R189",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/panel-call-docs.bats"
+      ],
+      "files": [
+        "tests/panel-call-docs.bats"
+      ]
+    },
+    {
+      "id": "C365",
+      "req": "R189",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r189/now-box.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r189/now-box.test.mjs",
+        "tests/panel/r189/helpers/screen.mjs",
+        "tests/panel/helpers/fake-mod.mjs"
+      ]
+    },
+    {
+      "id": "C366",
+      "req": "R189",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r189/next-buttons.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r189/next-buttons.test.mjs",
+        "tests/panel/r189/helpers/screen.mjs",
+        "tests/panel/r189/helpers/crew.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/helpers/run.mjs",
+        "tests/panel/helpers/feed-fs.mjs"
+      ]
+    },
+    {
+      "id": "C367",
+      "req": "R189",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/panel-now-docs.bats"
+      ],
+      "files": [
+        "tests/panel-now-docs.bats"
+      ]
+    },
+    {
+      "id": "C368",
+      "req": "R189",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r189/meaning.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r189/meaning.test.mjs",
+        "tests/panel/r189/helpers/screen.mjs",
+        "tests/panel/r189/helpers/crew.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/helpers/run.mjs",
+        "tests/panel/helpers/feed-fs.mjs"
+      ]
+    },
+    {
+      "id": "C369",
+      "req": "R189",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r189/containment.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r189/containment.test.mjs",
+        "tests/panel/r189/helpers/screen.mjs",
+        "tests/panel/r189/helpers/crew.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/helpers/run.mjs",
+        "tests/panel/helpers/feed-fs.mjs"
+      ]
+    },
+    {
+      "id": "C370",
+      "req": "R189",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/panel-bench-render.bats"
+      ],
+      "files": [
+        "tests/panel-bench-render.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C371",
+      "req": "R189",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-panel-comms.bats"
+      ],
+      "files": [
+        "tests/l3-panel-comms.bats"
+      ]
+    },
+    {
+      "id": "C372",
+      "req": "R189",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/panel-colours-docs.bats"
+      ],
+      "files": [
+        "tests/panel-colours-docs.bats"
       ]
     }
   ],
@@ -11594,7 +11791,323 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M34",
-      "rules": []
+      "rules": [
+        {
+          "text": "Every gate kind (approve, approve of edited test files, human check, ship, blocked, fix limit, scope, spec, next milestone, convert) is exactly one Comms line 'HH:MM ⚑ VBW needs you · <what>' in the needs-you colour, timed when the gate was reached",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "While a gate stands Comms draws no button and no Later, and the line stays",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "Compact first is a gate kind: one needs-you line naming /compact, no button",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "Plan approved (a Contract approved decision newer than next.json): Comms, Mission Control, the hint line and /vbw-status drop the request at the next refresh (2 s) with no other event",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "An approval older than the gate, or a record change not about it (a parked idea), leaves the line standing",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "Milestone shipped: the ship line clears at the next refresh though next.json still says ship",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "Regression 2026-10-09: after a ship completes no 'ready to ship' text stays on Comms or in Mission Control",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "Human check answered: the line clears at the next refresh",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "A run started (a lease is held): the line clears at the next refresh and Mission Control says nothing is needed",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "The gate leaves next.json: the line clears at the next refresh",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "An open question shows the line; it is gone at the redraw after the answer",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "A gate in next.json while a lease is held is never shown, on Comms or in Mission Control",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "/vbw-panel and its description say Mission Control; nothing VBW draws or says calls the strip the band or the pane Telemetry",
+          "check": "C360",
+          "plan": "P142.3"
+        },
+        {
+          "text": "A helper that turns done leaves Comms at the next redraw with no hold, is counted in the top line's 'N done', and its Mission Control card stops showing running on the same redraw",
+          "check": "C361",
+          "plan": "P142.3"
+        },
+        {
+          "text": "A failed helper stays one red ✗ row with no green or amber in it until opened in Mission Control, then leaves at the next redraw",
+          "check": "C361",
+          "plan": "P142.3"
+        },
+        {
+          "text": "The crew leaves Comms as soon as the run ends; a working run is never drawn as ended, and no card of an ended run as running",
+          "check": "C361",
+          "plan": "P142.3"
+        },
+        {
+          "text": "A failed helper not yet seen stays alone on Comms after the run ends, until opened",
+          "check": "C361",
+          "plan": "P142.3"
+        },
+        {
+          "text": "At full motion exactly 3 of 5 working helpers are pixel figures and the rest text rows; at calm and off no figure, one line per helper",
+          "check": "C361",
+          "plan": "P142.3"
+        },
+        {
+          "text": "Rows beyond maxRows fold into one last line '+N more · [m] Mission Control', N being exactly the helpers not shown",
+          "check": "C361",
+          "plan": "P142.3"
+        },
+        {
+          "text": "A helper row shows the role as a word, the step, what it is doing and the start time HH:MM",
+          "check": "C361",
+          "plan": "P142.3"
+        },
+        {
+          "text": "docs/panel.md calls the strip Comms and the pane Mission Control, never the band or Telemetry; README and skills neither",
+          "check": "C362",
+          "plan": "P142.4"
+        },
+        {
+          "text": "docs/panel.md shows the needs-you line, says it has no buttons, when messages clear, and how helpers come and go",
+          "check": "C362",
+          "plan": "P142.4"
+        },
+        {
+          "text": "The sound plays exactly once, at the moment the question menu (AskUserQuestion) opens",
+          "check": "C363",
+          "plan": "P143.1"
+        },
+        {
+          "text": "A gate in next.json or the record with no question menu open plays no sound",
+          "check": "C363",
+          "plan": "P143.1"
+        },
+        {
+          "text": "Redraws of the open menu, an answer and the menu closing play no sound; a second question plays once more",
+          "check": "C363",
+          "plan": "P143.1"
+        },
+        {
+          "text": "B1: a gate standing when the question opens gives one clip, and none after the answer",
+          "check": "C363",
+          "plan": "P143.1"
+        },
+        {
+          "text": "With the sound off (command or Mission Control's switch) nothing plays and nothing is raised; the choice holds across sessions (R57)",
+          "check": "C363",
+          "plan": "P143.1"
+        },
+        {
+          "text": "A test session plays and raises nothing and reads or writes only test.* keys (R64)",
+          "check": "C363",
+          "plan": "P143.1"
+        },
+        {
+          "text": "When the menu opens one notification fires, titled VBW, a plain sentence naming what VBW needs; never twice for one question",
+          "check": "C363",
+          "plan": "P143.1"
+        },
+        {
+          "text": "A new What's next recommendation raises one notification; one already seen raises none after a restart; a newer one raises one",
+          "check": "C363",
+          "plan": "P143.1"
+        },
+        {
+          "text": "Without $.ui.notify, or with notify and audio failing, nothing fails and no toast, log, status or notice appears instead",
+          "check": "C363",
+          "plan": "P143.1"
+        },
+        {
+          "text": "docs/panel.md ties the sound to the question menu, once, and describes the notification, for new recommendations too, and turning both off",
+          "check": "C364",
+          "plan": "P143.2"
+        },
+        {
+          "text": "The Now tab opens on a framed box above everything else: the state sentence, the step with its start HH:MM and the session cost, drawn once",
+          "check": "C365",
+          "plan": "P144.3"
+        },
+        {
+          "text": "The state reads planning, building with its phase, proving, checking, waiting for you and for what, or nothing running",
+          "check": "C365",
+          "plan": "P144.3"
+        },
+        {
+          "text": "The box follows a state change within one refresh with no other event",
+          "check": "C365",
+          "plan": "P144.3"
+        },
+        {
+          "text": "Mission Control's need sentence starts with [HH:MM] of when the gate was reached, and the time-left sentences with [HH:MM]",
+          "check": "C365",
+          "plan": "P144.3"
+        },
+        {
+          "text": "A message keeps the time it began saying what it says: three minutes of clock alone redraw nothing",
+          "check": "C365",
+          "plan": "P144.3"
+        },
+        {
+          "text": "A helper card's state line starts with [HH:MM]: the start while running, the end when done or failed",
+          "check": "C365",
+          "plan": "P144.3"
+        },
+        {
+          "text": "Comms' all-checks-pass line starts with the proof's [HH:MM]",
+          "check": "C365",
+          "plan": "P144.3"
+        },
+        {
+          "text": "The What's next section shows when the recommendation was written as [HH:MM]",
+          "check": "C365",
+          "plan": "P144.3"
+        },
+        {
+          "text": "Each What's next row (top pick, each runner-up) is one Button with the item, a size chip and, for the top pick, its reason in dim text",
+          "check": "C366",
+          "plan": "P144.3"
+        },
+        {
+          "text": "Pressing a row fills /vbw:vibe with its T or R id (else its text) and never sends; Suggest next stays and only fills (R124)",
+          "check": "C366",
+          "plan": "P144.3"
+        },
+        {
+          "text": "A new recommendation is still marked 10 s after it arrived until seen: full a mark after the shimmer, calm a mark that does not move, off only the word 'new'",
+          "check": "C366",
+          "plan": "P144.3"
+        },
+        {
+          "text": "Opening its tab counts as seen",
+          "check": "C366",
+          "plan": "P144.3"
+        },
+        {
+          "text": "Seen stays seen after a restart and unseen stays new, kept under vbw-panel.* in the user's store and never in the project; a test session uses only test.*",
+          "check": "C366",
+          "plan": "P144.3"
+        },
+        {
+          "text": "A newly failed helper's Mission Control card is marked until it is opened",
+          "check": "C366",
+          "plan": "P144.3"
+        },
+        {
+          "text": "A new needs-you line on Comms is marked until its tab is opened; the line stays while the gate stands",
+          "check": "C366",
+          "plan": "P144.3"
+        },
+        {
+          "text": "docs/panel.md describes the box, the [HH:MM] times, the What's next buttons with their chip, and the mark that stays until seen",
+          "check": "C367",
+          "plan": "P144.4"
+        },
+        {
+          "text": "Each role has its own colour, all different, never a state colour and never green, red, amber or grey in hue",
+          "check": "C368",
+          "plan": "P145.2"
+        },
+        {
+          "text": "States keep one meaning: green done, red failed, amber running and needs you (one amber), grey quiet, cut off and idle",
+          "check": "C368",
+          "plan": "P145.2"
+        },
+        {
+          "text": "On Comms a working helper's mark is amber and its role a word in the role colour; a failed one's ✗ is red",
+          "check": "C368",
+          "plan": "P145.2"
+        },
+        {
+          "text": "Every state colour on Comms and on Mission Control's cards sits beside its mark",
+          "check": "C368",
+          "plan": "P145.2"
+        },
+        {
+          "text": "A helper running past its usual time is amber on the Timeline, never red",
+          "check": "C368",
+          "plan": "P145.2"
+        },
+        {
+          "text": "VBW Wrapped draws no amber or red",
+          "check": "C368",
+          "plan": "P145.2"
+        },
+        {
+          "text": "The palette tests that pinned R84's old role colours are rewritten to the D407 rule and name D407",
+          "check": "C368",
+          "plan": "P145.2"
+        },
+        {
+          "text": "Mission Control never draws more rows than scroll.bodyRows on any tab or VBW Wrapped, at 80x22, 40x22, 80x8, 40x8 and 40x4",
+          "check": "C369",
+          "plan": "P145.2"
+        },
+        {
+          "text": "With no reported height Mission Control has one fixed height of at most 30 rows ending with '+N more · open Mission Control'; a short one has no such line",
+          "check": "C369",
+          "plan": "P145.2"
+        },
+        {
+          "text": "The tab row is one line at 40 columns, beside the portrait",
+          "check": "C369",
+          "plan": "P145.2"
+        },
+        {
+          "text": "Comms stays within maxRows and its columns with a crew (full and calm, 12 down to 1 rows, 80 and 40 columns), with the needs-you line, during a celebration and after a ship",
+          "check": "C369",
+          "plan": "P145.2"
+        },
+        {
+          "text": "The bench measures a render of Comms and Mission Control with a crew at work beside the tick; the budget is judged in the release run (R152)",
+          "check": "C370",
+          "plan": "P145.3"
+        },
+        {
+          "text": "The bench's sound case raises the need through the question menu",
+          "check": "C370",
+          "plan": "P145.3"
+        },
+        {
+          "text": "The panel scenario, run in the real window, records the needs-you line clearing, a finished helper leaving and no spill in a short (at most 30 rows) and a narrow (at most 100 columns) window, committed at L3",
+          "check": "C371",
+          "plan": "P145.4"
+        },
+        {
+          "text": "docs/panel.md gives no role a state colour and says what each state colour means; README names Comms and Mission Control",
+          "check": "C372",
+          "plan": "P145.5"
+        }
+      ]
     }
   ],
   "phases": [
@@ -18046,6 +18559,138 @@
         "qa_findings": 9,
         "escalations": 2
       }
+    },
+    {
+      "id": "P142",
+      "title": "Comms shows only what is true right now",
+      "reqs": [
+        "R189"
+      ],
+      "milestone": "M34",
+      "goal": "The strip above the prompt, now called Comms, shows a waiting question as one plain line with no buttons, drops finished helpers at once, and clears every message the moment it stops being true.",
+      "criteria": [
+        "Every user-facing text, button label and doc names the strip above the prompt 'Comms' and the side panel 'Mission Control' (D406); no user-facing text says 'the band' or 'Telemetry'; /vbw-panel still opens Mission Control",
+        "While a human gate stands (approve, review, ship, blocked, human check, compact first), Comms shows exactly one amber line of the form 'HH:MM ⚑ VBW needs you · <what>' and no Button element, for every gate kind; the 'Later' collapse is gone",
+        "The needs-you line disappears at the first redraw after its gate leaves next.json or the record (plan approved, milestone shipped, question answered, a run started): within one refresh interval (2 s) and without any other event. Each case has a test that changes the state and checks that the next render lacks the line",
+        "Regression of the 2026-10-09 screenshot: after a ship completes, no 'ready to ship' text stays on Comms or in Mission Control",
+        "A gate in next.json that a running run has made stale (a lease is held) is never shown",
+        "A helper whose state turns 'done' is gone from the crew rows at the next redraw, with no 60-second hold, and is counted in the header's 'N done'",
+        "A helper whose state turns 'failed' stays as a red row marked '✗' until the user opens it in Mission Control (seen), then it leaves; it is never shown in green or amber",
+        "The crew rows leave Comms as soon as the run ends; a run that is still working is never drawn as ended, and an ended run is never drawn as working",
+        "At full motion, Comms draws pixel figures for at most 3 working helpers (D405); further working helpers are text rows; rows beyond the room Claude Code gives fold into one '+N more · [m] Mission Control' line. At calm or off motion every helper is one text row",
+        "Each helper row shows its role as a word and its step (for example 'dev P142.1'), what it is doing, and the time it started as HH:MM",
+        "Mission Control's agent cards and state sentences clear on the same redraw as Comms: no Mission Control entry outlives the state it describes",
+        "docs/panel.md describes Comms, the needs-you line and when each message clears"
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 14 (193293 bytes)",
+        "files: more than 2 in a repository tracking 991 files",
+        "risk: none",
+        "breaks: R51, R52, R53, R55, R56, R57, R58, R64, R84, R85, R86, R87, R88, R89, R91, R124, R125, R184",
+        "guarded: R82 (C117)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P143",
+      "title": "VBW calls you once, when the question is actually on screen",
+      "reqs": [
+        "R189"
+      ],
+      "milestone": "M34",
+      "goal": "The needs-you sound and a desktop notification happen exactly once per question, at the moment Claude Code's own question menu opens, and never from the panel alone.",
+      "criteria": [
+        "The needs-you sound plays exactly once when Claude Code opens its own question menu (AskUserQuestion) in a VBW project, at the moment the menu opens",
+        "A gate appearing in next.json or the record with no question menu open plays no sound",
+        "Pressing Enter on an option, re-renders of the same open menu, and the menu closing play no sound",
+        "A second, different question plays the sound once more; one question never plays two clips (regression of B1: two clips together, and a clip after answering)",
+        "With the sound turned off (/vbw-sound off or the switch in Mission Control) no sound plays; the choice is remembered across sessions as before (R57)",
+        "In a VBW test session (.vbw/runtime/test-mode) nothing plays aloud and the user's own choices are neither read nor changed (R64 still holds)",
+        "When the question menu opens, Claude Code's native notification ($.ui.notify) fires once with title 'VBW' and a plain sentence naming what VBW needs; it does not fire again for the same question",
+        "When a new What's next recommendation is written, one native notification fires; a recommendation already seen does not notify again after a restart (it uses the stored seen time)",
+        "Notifications follow the same on/off choice as the sound, and test sessions raise none",
+        "Where $.ui.notify or audio is missing, nothing fails and nothing is shown in its place",
+        "docs/panel.md states when the sound and the notification happen and how to turn them off"
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 4 (74215 bytes)",
+        "files: more than 2 in a repository tracking 991 files",
+        "risk: none",
+        "breaks: R51, R52, R53, R55, R56, R57, R58, R64, R84, R85, R86, R87, R88, R89, R91, R124, R125, R184",
+        "guarded: R82 (C117)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P144",
+      "title": "Mission Control's Now tab: what is happening, when, and what is new",
+      "reqs": [
+        "R189"
+      ],
+      "milestone": "M34",
+      "goal": "The Now tab opens on a box saying what VBW is doing right now, every event carries its clock time, What's next rows are one press each, and new things stay highlighted until the user has seen them.",
+      "criteria": [
+        "The top of the Now tab is a 'what's happening now' box: VBW's state in a plain sentence (planning, building which phase, proving, checking, waiting for you and for what, or nothing running), the current step with the HH:MM it started, and the session cost line (D106)",
+        "The box changes within one refresh interval (2 s) of the state changing, and an idle project says plainly that nothing is running",
+        "Every event and message line the panel shows (needs-you line, helper started, finished or failed, gate reached, proof passed, new recommendation, time-left message) starts with the local time as HH:MM, for example '[14:20] About 2 minutes left'",
+        "Each What's next row (the top pick and up to two runners-up) is one pressable Button showing the item, a size chip (small, medium or large) and the reason in dim text; pressing it puts the item's command in the prompt and never sends it",
+        "The Suggest next button stays and still only fills the prompt (R124)",
+        "The R125 shimmer and soft pulse mark every new thing (a new recommendation, a newly failed helper, a new needs-you line) and stay until the user has seen it (opened it, pressed it, or opened its tab), not for 4 seconds",
+        "What has been seen stays seen after a restart, kept in the user's store; test sessions use only test.* keys",
+        "At calm motion the highlight is a steady mark with no movement; with motion off it is a text 'new' mark only",
+        "docs/panel.md describes the box, the timestamps, the What's next buttons and the new-thing highlight"
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 11 (161856 bytes)",
+        "files: more than 2 in a repository tracking 991 files",
+        "risk: none",
+        "breaks: R51, R52, R53, R55, R56, R57, R58, R64, R84, R85, R86, R87, R88, R89, R91, R124, R125, R184",
+        "guarded: R82 (C117)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P145",
+      "title": "One colour per meaning, nothing spills over, ready for the owner's eye",
+      "reqs": [
+        "R189"
+      ],
+      "milestone": "M34",
+      "goal": "Every panel surface uses colours with one meaning each, stays inside the room Claude Code gives it in any terminal size, keeps within its code and speed budgets, and is ready for the owner to judge by eye.",
+      "criteria": [
+        "Each helper role has its own colour taken from a set that excludes green, red, amber and grey; the role is written as a word (D407). Green means only done, red only failed, amber only needs you or running, grey only idle or quiet, the same in Comms, Mission Control and VBW Wrapped",
+        "A helper that overruns its estimate is drawn amber, never red; red appears only for a failure",
+        "Every state has a glyph next to its colour (for example ● running, ✓ done, ✗ failed), so no meaning depends on colour alone",
+        "The shipped palette tests that pinned R84's old role colours are rewritten to the D407 rule, with D407 named as the reason",
+        "Mission Control never draws more rows than Claude Code reports (scroll.bodyRows); when that size is not reported (inline, main screen) it is capped at a fixed height and ends with '+N more · open Mission Control'",
+        "Comms stays within its maxRows in every mode (crew, needs-you line, celebration, Wrapped)",
+        "The tab row never wraps onto a second line at 40 columns",
+        "Panel tests render every surface at 80x24, at 40 columns and in a short terminal, and assert that nothing is drawn past the given rows or columns",
+        "All panel modules (plugin/hooks/*.js) stay at or below the 3,500-line mods budget and tests/standards.bats passes; any raise of that budget waits for the owner (D404)",
+        "Panel render and tick stay within the CPU budgets of tools/bench-panel.sh",
+        "The panel scenario of tools/l3-suite.sh, run in the real Claude Code window, shows needs-you lines and finished helpers clearing and nothing spilling below the window in a short and a narrow terminal; its results are kept under tools/l3-results/",
+        "docs/panel.md and README.md describe the colours, Comms and Mission Control as they now behave"
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 16 (313380 bytes)",
+        "files: more than 2 in a repository tracking 991 files",
+        "risk: none",
+        "breaks: R20, R41, R48, R51, R52, R53, R55, R56, R57, R58, R59, R61, R62, R64, R65, R84, R85, R86, R87, R88, R89, R91, R116, R119, R121, R122, R123, R124, R125, R152, R165, R173, R179, R180, R184, R185",
+        "guarded: R3 (C3), R4 (C4), R5 (C5), R8 (C8), R34 (C30), R42 (C38), R72 (C116, C118), R82 (C117), R99 (C155), R101 (C179), R157 (C244), R161 (C248, C265, C266)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -29082,6 +29727,378 @@
           "head": "ab80e8e99fb65372dc33bc20871cbfc89ce67945"
         }
       ]
+    },
+    {
+      "id": "P142.1",
+      "phase": "P142",
+      "title": "Comms shows one needs-you line and only the helpers still at work",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "plugin/hooks/panel-stage.js",
+        "tests/panel/stage.test.mjs"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Replace the gate card (the box with buttons) by one amber line, 'HH:MM ⚑ VBW needs you · <what>', for every gate kind and for /compact first; no button, no Later. The line comes from a `need` ({ key, what, at }) that panel-view.js's liveNeed gives (plan P142.2)",
+        "Show only live helpers: a finished one leaves at once and is counted in the top line's 'N done'; a failed one stays as a red ✗ row until it is seen (a `seen` list of helper ids from panel.js); nothing of the crew once the run has ended, except failures not yet seen",
+        "Each row: the state mark in its state colour (● amber while working), the role as a word in its own colour, the step (dev P142.1), what it is doing and the time it started (HH:MM). Keep what the approved tests already hold: row key agent-<id>, label and spinner in the role colour, time and tokens dim, the 'VBW ▸ <kind>' top line (band-colours, activity-render, flash and palette tests)",
+        "At full motion draw pixel figures for at most 3 working helpers and text rows for the rest; fold rows beyond maxRows into one '+N more · [m] Mission Control' line",
+        "Rewrite tests/panel/stage.test.mjs for Comms (the wired checks C360 and C361 pass once P142.3 connects it)"
+      ]
+    },
+    {
+      "id": "P142.2",
+      "phase": "P142",
+      "title": "A request for the user is shown only while it is still true",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "plugin/hooks/panel-view.js",
+        "plugin/hooks/panel-lines.js",
+        "plugin/hooks/panel-sites.js",
+        "plugin/hooks/panel-commands.js",
+        "tests/panel/lines.test.mjs",
+        "tests/panel/sites.test.mjs",
+        "tests/panel/commands.test.mjs"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Add liveNeed to panel-view.js: the one thing VBW needs now (an open question, else a gate in next.json, else /compact first before a run when the context is 85% full), with its kind, a short phrase for Comms, the Mission Control sentence and the time it was reached (next.json's time, or the question's)",
+        "A gate stops counting the moment the record says it is done: a run holds the lease, a 'Contract approved' decision is newer than next.json, the milestone is shipped, the requirements to check are no longer open. Any other record change (a parked idea) leaves it standing",
+        "Use liveNeed in panelView, the hint line under the prompt (panel-lines.js, panel-sites.js) and /vbw-status and /vbw-why (panel-commands.js), so no place keeps showing a request that is gone; keep tests/panel/view.test.mjs green",
+        "Update tests/panel/lines.test.mjs, sites.test.mjs and commands.test.mjs"
+      ]
+    },
+    {
+      "id": "P142.3",
+      "phase": "P142",
+      "title": "Connect Comms and Mission Control to what is true now",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "plugin/hooks/panel.js",
+        "plugin/hooks/panel-mission-live.js",
+        "plugin/hooks/panel-stage.js",
+        "plugin/hooks/panel-view.js",
+        "plugin/hooks/panel-lines.js",
+        "plugin/hooks/panel-sites.js",
+        "plugin/hooks/panel-commands.js",
+        "tests/panel/wiring.test.mjs",
+        "tests/panel/mission-live.test.mjs",
+        "tests/panel/stage.test.mjs"
+      ],
+      "after": [
+        "P142.1",
+        "P142.2",
+        "P145.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Keep next.json's time with its contents and pass liveNeed, the session's health figures and the seen helpers to Comms, Mission Control, the hint line and the instant commands",
+        "A failed helper counts as seen when the user opens it in Mission Control (its card or its details button); it leaves Comms at the next redraw. Remove the Later collapse",
+        "Mission Control's agent cards follow the same redraw: a run that has ended draws no card as working and says it ended; a run still working is never drawn as ended",
+        "/vbw-panel and its description say Mission Control; no text, comment included, calls the strip 'the band' or the pane 'Telemetry'",
+        "Update tests/panel/wiring.test.mjs and mission-live.test.mjs; C360 and C361 pass. This plan owns the Comms rules end to end, so it may adjust P142.1's and P142.2's files and breaks each rule where its code lives"
+      ]
+    },
+    {
+      "id": "P142.4",
+      "phase": "P142",
+      "title": "Explain Comms and when its messages clear",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "docs/panel.md"
+      ],
+      "after": [
+        "P142.3"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "Rename 'the band' to Comms everywhere in docs/panel.md; the side pane keeps the name Mission Control",
+        "Show the needs-you line with an example ('14:20 ⚑ VBW needs you · approve the plan'), say it has no buttons, and say when it clears: plan approved, milestone shipped, question answered, a run started",
+        "Describe the helper rows: role and step, what it is doing, start time; finished helpers leave at once, failed ones stay red until opened, extra rows fold into '+N more · [m] Mission Control'"
+      ]
+    },
+    {
+      "id": "P143.1",
+      "phase": "P143",
+      "title": "The sound and a desktop notification, once per question",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "plugin/hooks/panel.js",
+        "tools/bench-panel.mjs",
+        "tests/panel/wiring.test.mjs"
+      ],
+      "after": [
+        "P142.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Play the needs-you sound only when Claude Code's question menu (AskUserQuestion) opens, once per question, at that moment; never for a gate on its own, a redraw of the menu, an answer or the menu closing",
+        "At the same moment raise one native notification, $.ui.notify(text, { title: 'VBW' }), with a plain sentence of what VBW needs (the live need, else 'a question')",
+        "Raise one notification for a new What's next recommendation, using the stored seen time so a restart does not repeat it",
+        "Both follow the sound switch (/vbw-sound and Mission Control's button); test sessions raise nothing; a missing or failing $.ui.notify or audio player stays silent and shows nothing",
+        "In tools/bench-panel.mjs the sound case raises the need through the question menu; tests/panel/r189/call.test.mjs passes"
+      ]
+    },
+    {
+      "id": "P143.2",
+      "phase": "P143",
+      "title": "Explain when VBW calls you",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "docs/panel.md"
+      ],
+      "after": [
+        "P143.1",
+        "P142.4"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "Rewrite 'The sound': it plays once, when Claude Code's own question menu opens, never for a gate on its own",
+        "Describe the notification: with the question, and once for a new What's next recommendation; it follows /vbw-sound and the switch; test sessions get none",
+        "Say what happens where notifications or sound are missing: nothing, and nothing breaks"
+      ]
+    },
+    {
+      "id": "P144.1",
+      "phase": "P144",
+      "title": "The 'what's happening now' box and clock times in Mission Control",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "plugin/hooks/panel-view.js",
+        "plugin/hooks/panel-pane.js",
+        "plugin/hooks/panel-mission-live.js",
+        "tests/panel/mission-live.test.mjs"
+      ],
+      "after": [
+        "P142.2",
+        "P142.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Build the box's content in panel-view.js: VBW's state as a plain sentence (planning, building which phase, proving, checking, waiting for you and for what, or nothing running; proving comes as an input from panel.js), the current step with the time it started (HH:MM), and the session cost line",
+        "Draw it as a framed box at the top of the Now tab (panel-pane.js), the cost line moved into it so it is drawn once; keep tests/panel/pane.test.mjs green",
+        "Start Mission Control's need and time-left sentences with '[HH:MM] ', taken from an input of start times (`stamps`, filled by panel.js in P144.3)",
+        "Start each agent card's state line with '[HH:MM] ': when it started, finished or failed (panel-mission-live.js), keeping the state text and colour tests/panel/cards.test.mjs holds"
+      ]
+    },
+    {
+      "id": "P144.2",
+      "phase": "P144",
+      "title": "What's next rows you can press, marked while new",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "plugin/hooks/panel-next.js"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Draw each row (the top pick and each runner-up) as one Button: the item, a size chip (small, medium, large) and, where VBW gave one, the reason in dim text; every piece of text cut to the width",
+        "Pressing a row puts '/vbw:vibe <T or R id>' in the prompt (else '/vbw:vibe <item text>') and never sends it; Suggest next stays as it is",
+        "Mark a recommendation not yet seen (an input from panel.js): full motion keeps the R125 shimmer and pulse on arrival, then a steady mark; calm a steady mark; motion off only the word 'new'; palette colours only",
+        "Start the 'written' line with its local time as '[HH:MM]'; keep tests/panel/whats-next.test.mjs green"
+      ]
+    },
+    {
+      "id": "P144.3",
+      "phase": "P144",
+      "title": "Remember what you have seen, and put the times on screen",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "plugin/hooks/panel.js",
+        "plugin/hooks/panel-stage.js",
+        "plugin/hooks/panel-mission-live.js",
+        "plugin/hooks/panel-view.js",
+        "plugin/hooks/panel-pane.js",
+        "plugin/hooks/panel-next.js",
+        "tests/panel/wiring.test.mjs",
+        "tests/panel/delight.test.mjs",
+        "tests/panel/stage.test.mjs",
+        "tests/panel/mission-live.test.mjs"
+      ],
+      "after": [
+        "P143.1",
+        "P144.1",
+        "P144.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Keep what the user has seen in Claude Code's per-user store (vbw-panel.* keys, test.* in a test session, never in the project): a recommendation, a failed helper, a needs-you line; seen when pressed, opened, or when its tab is opened",
+        "Mark what is not yet seen: the What's next section, the failed helper's card in Mission Control, and the needs-you line on Comms (after its text: a steady mark at calm, the word 'new' with motion off)",
+        "Keep the time each message began saying what it says and pass it to the pane, so the clock alone never redraws; read .vbw/runtime/proving.<session> for the proving state",
+        "Start Comms' all-checks-pass line with the proof's '[HH:MM]'",
+        "Update tests/panel/wiring.test.mjs, delight.test.mjs and stage.test.mjs; C365 and C366 pass. This plan owns the Now tab rules end to end, so it may adjust P144.1's and P144.2's files and breaks each rule where its code lives"
+      ]
+    },
+    {
+      "id": "P144.4",
+      "phase": "P144",
+      "title": "Explain the Now box, the times and the new-thing mark",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "docs/panel.md"
+      ],
+      "after": [
+        "P144.3",
+        "P143.2"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "Describe the 'what's happening now' box at the top of the Now tab, with an idle example ('nothing is running')",
+        "Show that events and messages start with their clock time, for example '[14:20] About 2 min left in this step.'",
+        "Describe the What's next rows as buttons with a size chip that fill the prompt, and the mark on new things that stays until you have seen them ('new' with motion off)"
+      ]
+    },
+    {
+      "id": "P145.1",
+      "phase": "P145",
+      "title": "One colour per meaning in the shared palette",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "plugin/hooks/panel-palette.js"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Give the seven roles colours of their own, none of them green, red, amber or grey, all different, readable on dark and light terminals (brand kit hues where they fit)",
+        "Make 'needs you' the same amber as running; keep done green, failed red, quiet and cut off grey",
+        "Run tests/panel/palette.test.mjs (rewritten for D407) and the whole panel suite (node --test tests/panel/*.test.mjs)"
+      ]
+    },
+    {
+      "id": "P145.2",
+      "phase": "P145",
+      "title": "Nothing spills outside the room Claude Code gives",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "plugin/hooks/panel-pane.js",
+        "plugin/hooks/panel.js",
+        "plugin/hooks/panel-stage.js",
+        "plugin/hooks/panel-mission-live.js",
+        "plugin/hooks/panel-palette.js",
+        "plugin/hooks/panel-candy.js",
+        "tests/panel/stage.test.mjs",
+        "tests/panel/delight.test.mjs",
+        "tests/panel/mission-live.test.mjs",
+        "tests/panel/candy.test.mjs"
+      ],
+      "after": [
+        "P144.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Mission Control: never more rows than Claude Code reports (scroll.bodyRows), the top part included (drop the portrait when short); with no reported height, cap it at one fixed height ending with '+N more · open Mission Control'; keep tests/panel/pane.test.mjs green",
+        "Keep the tab row on one line at 40 columns (shorter labels when narrow)",
+        "Comms: the crew, the needs-you line, a celebration (the all-checks-pass line and the confetti) and the moment after a ship all fit in maxRows and the columns, folding before they overflow",
+        "Timeline: a helper running past its usual time is amber, never red",
+        "C368 and C369 pass with the whole panel suite; this plan owns the colour and room rules, so it may adjust the palette and breaks each rule where its code lives"
+      ]
+    },
+    {
+      "id": "P145.3",
+      "phase": "P145",
+      "title": "Measure what drawing Comms and Mission Control costs",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "tools/bench-panel.mjs",
+        "tools/bench-panel.sh"
+      ],
+      "after": [
+        "P143.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Add a render measure to tools/bench-panel.mjs: a crew of helpers at work, Comms and Mission Control's Now tab drawn on each refresh",
+        "Print it as 'render, Comms and Mission Control: <ms> ms CPU' in tools/bench-panel.sh and judge it against the same budget",
+        "Run the bench under /bin/bash 3.2 and report the measured numbers in the plan's result"
+      ]
+    },
+    {
+      "id": "P145.4",
+      "phase": "P145",
+      "title": "Check the panel in the real Claude Code window",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3-results/panel.json"
+      ],
+      "after": [
+        "P145.2",
+        "P145.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Extend scenario_panel in tools/l3-suite.sh: bring up a needs-you line and a finished helper in the real window and record need_line_cleared and helper_done_cleared",
+        "Resize to a short and a narrow window, check nothing is drawn below or past it, and record no_spill_short, no_spill_narrow, short_rows and narrow_columns; keep the facts tests/l3-panel.bats holds",
+        "Run 'tools/l3-suite.sh panel' with the plugin from this working tree and commit tools/l3-results/panel.json with what it did not test"
+      ]
+    },
+    {
+      "id": "P145.5",
+      "phase": "P145",
+      "title": "Explain the colours, Comms and Mission Control",
+      "reqs": [
+        "R189"
+      ],
+      "files": [
+        "docs/panel.md",
+        "README.md"
+      ],
+      "after": [
+        "P144.4",
+        "P145.2",
+        "P145.3"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "Rewrite 'Colours' and 'Judging the colours' in docs/panel.md for D407: roles have colours of their own; green is done, red failed, amber needs you or running, grey idle or quiet; running late is amber",
+        "Describe how Mission Control fits its room ('+N more · open Mission Control', the tab row on one line) and add the render line to the cost table",
+        "In README.md, name Comms (the strip above the prompt) and Mission Control (the side pane) where the panel is described"
+      ]
     }
   ],
   "fixes": [
@@ -34123,6 +35140,36 @@
       "text": "T82 reverted: the prebuilt-project cache in tests/helper.bash stays out",
       "why": "measured 2.5% (200.05 s to 194.94 s on five heavy files, one run): the first git call under each test's own HOME (60-90 ms, the Xcode wrapper) absorbs most of the saved setup; three fallback paths in the file every test reads are not worth that gain (D399 scope, zero-debt)",
       "at": "2026-10-15T17:47:00Z"
+    },
+    {
+      "id": "D404",
+      "text": "Panel polish scope for this milestone: the trust fixes plus the nine items R189 names (P2, P3, P5, P6, P9, T64, T78, T81, T87); the Settings and Sessions tabs, the costs view and the countdowns wait for the next milestone",
+      "why": "chosen by the loop: one rebuild of the band and the Now tab, checked by eye once (D219); the panel code is near its 3,500-line limit, and any raise of that limit waits for the owner",
+      "at": "2026-10-15T20:45:41Z"
+    },
+    {
+      "id": "D405",
+      "text": "The strip above the prompt shows a small table of working helpers with the pixel figures (up to 3; text rows beyond; text only under calm motion); finished helpers leave at once and are counted in the top line; a failed one stays red until seen",
+      "why": "chosen by the loop: the owner's choice of 2026-10-12, adjusted to R189's rule that finished agents leave at once",
+      "at": "2026-10-15T20:45:42Z"
+    },
+    {
+      "id": "D406",
+      "text": "The strip above the prompt is called Comms and the side panel keeps the name Mission Control",
+      "why": "chosen by the loop: the owner's choice of 2026-10-12; least renaming, the known name stays",
+      "at": "2026-10-15T20:45:43Z"
+    },
+    {
+      "id": "D407",
+      "text": "Helpers get their own colours, never green, red, amber or grey, which keep one meaning each: done, failed, needs you, running or idle; the role is written as a word",
+      "why": "chosen by the loop: the owner's choice of 2026-10-12; changes shipped R84's checks, and the owner judges the colours by eye",
+      "at": "2026-10-15T20:45:44Z"
+    },
+    {
+      "id": "D408",
+      "text": "No size caps: code and prompts have no line or word limit (kernel, mods, workflows, router, mode prompts, agents, all prompts); speed limits stay; each release's notes report the sizes as information",
+      "why": "owner 2026-10-15: 'lets make it global, remove any caps' (asked before on 2026-10-12); the caps were also the bloat alarm, so sizes are reported per release instead",
+      "at": "2026-10-15T20:55:40Z"
     }
   ],
   "commands": {
@@ -39257,6 +40304,15 @@
         "milestone": "M34",
         "started": "2026-10-15T20:41:13Z",
         "ended": "2026-10-15T20:45:16Z",
+        "cost": null
+      },
+      {
+        "id": "plan-20261015T204546Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M34",
+        "started": "2026-10-15T20:45:46Z",
+        "ended": "2026-10-15T21:25:23Z",
         "cost": null
       }
     ],

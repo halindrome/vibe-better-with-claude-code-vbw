@@ -9,6 +9,8 @@ import assert from 'node:assert/strict'
 import { mount, record, next, PANE, ROOT } from './helpers/fake-mod.mjs'
 
 const approve = () => next({ action: 'approve', gate: true })
+// Claude Code's question menu, answered at once: since R189 (B1) the request that sounds.
+const ask = (h) => h.fire('tool.call', { tool: 'AskUserQuestion', tool_use_id: 'q1', questions: [{ question: 'Approve the plan?' }] }, async () => ({ result: 'Yes' }))
 const USER_KEYS = ['vbw-panel.closed', 'vbw-panel.sound']
 
 const TEST_MODE = { [ROOT + '/.vbw/runtime/test-mode']: '1' }
@@ -24,7 +26,7 @@ async function session(files) {
 
 test('in test mode a need records the sound but plays nothing aloud', async () => {
   const { h } = await session(TEST_MODE)
-  h.project(undefined, approve())
+  await ask(h)
   await h.advance(30000)
   assert.equal(h.plays.length, 0, 'no audio in a test session')
 })
@@ -40,7 +42,7 @@ test('in test mode the sound switch and a close never touch the user keys', asyn
 
 test('outside test mode the sound plays and the switch uses the user keys', async () => {
   const { h, store } = await session({})
-  h.project(undefined, approve())
+  await ask(h)
   await h.advance(30000)
   assert.equal(h.plays.length, 1)
   await h.cmd('vbw-sound', 'off')

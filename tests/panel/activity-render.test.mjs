@@ -1,7 +1,8 @@
 // R87, drawing: an agent's activity is drawn with the verb coloured and the
-// object dimmed, in the band and on Mission Control's cards, and a long object
-// is cut to the row's width without breaking colour. Pure: renderStage and
-// renderNow, no Claude Code needed (evidence level L1).
+// object dimmed, on Comms (formerly the band, D406) and on Mission Control's
+// cards, and a long object is cut to the row's width without breaking colour. A
+// finished agent leaves Comms at once (R189), so Comms draws no done row.
+// Pure: renderStage and renderNow, no Claude Code needed (evidence level L1).
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
@@ -35,7 +36,7 @@ const texts = (node) => {
   })
   return out
 }
-const SURFACES = { band: (a) => band(a), card: (a) => cardOf(a) }
+const SURFACES = { comms: (a) => band(a), card: (a) => cardOf(a) }
 
 for (const [name, draw] of Object.entries(SURFACES)) {
   test(name + ': the verb is coloured and the object dimmed', () => {
@@ -76,7 +77,7 @@ for (const [name, draw] of Object.entries(SURFACES)) {
   })
 }
 
-test('band: a long object is cut to the row width, columns counted over the whole row', () => {
+test('comms: a long object is cut to the row width, columns counted over the whole row', () => {
   const long = 'editing ' + 'a-very-long-file-name-that-keeps-going-and-going.tsx'
   for (const columns of [30, 40, 60, 100]) {
     const row = band(agent(tool(long)), columns)
@@ -92,16 +93,14 @@ test('card: the activity stays within 40 characters', () => {
   assert.ok(parts.reduce((n, x) => n + len(x.text), 0) <= 41)
 })
 
-test('band: what an agent says (not a tool) stays one quoted line, not split into a verb and an object', () => {
+test('comms: what an agent says (not a tool) stays one quoted line, not split into a verb and an object', () => {
   const t = texts(band(agent({ kind: 'text', text: 'Splitting R69 into two plans' })))
   assert.ok(t.some((x) => x.text.trim() === '"Splitting R69 into two plans"'))
 })
 
-test('band: quiet, done and failed rows keep one state-coloured phrase', () => {
+test('comms: quiet and failed rows keep one state-coloured phrase', () => {
   const quiet = texts(band(agent(tool('editing a.js'), { state: 'quiet', lastSeenAt: NOW - 90 * S })))
   assert.equal(quiet.find((x) => /^quiet 1m30s$/.test(x.text.trim())).props.color, P.stateColor('quiet'))
-  const done = texts(band(agent(null, { state: 'done', endedAt: NOW - 5 * S, result: 'ok' })))
-  assert.equal(done.find((x) => /^done · ok$/.test(x.text.trim())).props.color, P.stateColor('done'))
   const failed = texts(band(agent(null, { state: 'failed', endedAt: NOW - 5 * S, result: 'boom' })))
   assert.equal(failed.find((x) => x.text.trim() === 'boom').props.color, P.stateColor('failed'))
 })

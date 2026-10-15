@@ -1,7 +1,9 @@
-// R86: in the band, each agent row shows its plan label and spinner in the
-// role's colour, its time and tokens dimmed, and the run's cost in an accent
-// colour in the header. Pure: stageModel and renderStage, no Claude Code
-// needed (evidence level L1).
+// R86: on Comms (the strip above the prompt, formerly the band, D406), each
+// agent row shows its plan label and spinner in the role's colour, its time and
+// tokens dimmed, and the run's cost in an accent colour in the header. A
+// finished agent leaves Comms at once (R189), so only working, failed and quiet
+// rows are drawn here. Pure: stageModel and renderStage, no Claude Code needed
+// (evidence level L1).
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
@@ -76,22 +78,20 @@ test('without a cost there is no accent piece', () => {
   assert.doesNotMatch(texts(tree).map((t) => t.text).join(' '), /\$/)
 })
 
-test('a done and a failed row keep their label in the role colour', () => {
-  const tree = draw([agent({ id: 'd', label: 'P1.1', state: 'done', endedAt: NOW - 5 * S, result: 'ok' }), agent({ id: 'f', role: 'qa', label: 'P1.2', state: 'failed', endedAt: NOW - 5 * S, result: 'boom' })])
-  assert.equal(textOf(rowOf(tree, 'd'), 'P1.1').props.color, P.roleColor('dev'))
+test('a failed row keeps its label in the role colour', () => {
+  const tree = draw([agent({ id: 'w', label: 'P1.1' }), agent({ id: 'f', role: 'qa', label: 'P1.2', state: 'failed', endedAt: NOW - 5 * S, result: 'boom' })])
+  assert.equal(textOf(rowOf(tree, 'w'), 'P1.1').props.color, P.roleColor('dev'))
   assert.equal(textOf(rowOf(tree, 'f'), 'P1.2').props.color, P.roleColor('qa'))
 })
 
 test('with colour off the states are still told apart by a mark and a word', () => {
   const tree = draw([
-    agent({ id: 'w' }), agent({ id: 'd', state: 'done', endedAt: NOW - 5 * S, result: 'ok' }),
-    agent({ id: 'f', state: 'failed', endedAt: NOW - 5 * S, result: 'boom' }), agent({ id: 'q', state: 'quiet', lastSeenAt: NOW - 90 * S }),
+    agent({ id: 'w' }), agent({ id: 'f', state: 'failed', endedAt: NOW - 5 * S, result: 'boom' }), agent({ id: 'q', state: 'quiet', lastSeenAt: NOW - 90 * S }),
   ])
   const plain = (id) => texts(rowOf(tree, id)).map((t) => t.text).join('')
   assert.match(plain('w'), /●.*editing app-topbar\.tsx/)
-  assert.match(plain('d'), /✓.*done/)
   assert.match(plain('f'), /✗.*boom/)
   assert.match(plain('q'), /quiet 1m30s/)
-  const marks = ['w', 'd', 'f'].map((id) => /[●✓✗]/.exec(plain(id))[0])
-  assert.equal(new Set(marks).size, 3)
+  const marks = ['w', 'f'].map((id) => /[●✓✗]/.exec(plain(id))[0])
+  assert.equal(new Set(marks).size, 2)
 })

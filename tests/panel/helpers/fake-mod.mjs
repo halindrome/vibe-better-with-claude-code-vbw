@@ -74,7 +74,8 @@ function matches(matcher, e) {
 // options: version, root, files (path -> text), store (a Map shared between
 // mounts to model a restart), usage, usageError, placed (ui.open answer),
 // audioFails, modulePath, env (name -> value), sessionId, process (argv -> result),
-// selection ($.ui.selection answer), blit ($.ui.blit answer: a function of its argument).
+// selection ($.ui.selection answer), blit ($.ui.blit answer: a function of its argument),
+// notifyFails ($.ui.notify throws), noNotify (this Claude Code has no $.ui.notify).
 export async function mount(options = {}) {
   const o = { version: '2.1.292', root: ROOT, usage: { cost: { usd: 1.4234 } }, placed: true, env: {}, sessionId: 'sess-1', ...options }
   const files = new Map()
@@ -85,11 +86,12 @@ export async function mount(options = {}) {
   const calls = []
   const errors = []
   const plays = []
+  const notifies = []
   const opens = []
   let now = T0
   let clockSeq = 0
 
-  const h = { calls, errors, plays, opens, store, files, handlers }
+  const h = { calls, errors, plays, notifies, opens, store, files, handlers }
   h.now = () => now
 
   function put(p, text) {
@@ -200,7 +202,13 @@ export async function mount(options = {}) {
       if (o.audioFails) throw new Error('no player')
       plays.push(clip)
     },
+    // As in Claude Code: $.ui.notify(text, { title }), a native notification.
+    'ui.notify': (text, opts) => {
+      if (o.notifyFails) throw new Error('no notifications here')
+      notifies.push({ text, title: opts?.title })
+    },
   }
+  if (o.noNotify) delete impl['ui.notify']
 
   // Timers and redraw requests answer at once, as in Claude Code; every other call is async.
   const SYNC = new Set(['clock.every', 'clock.after', 'ui.invalidate', 'ui.resolve'])
@@ -347,14 +355,15 @@ export function dimTexts(tree) {
   return out
 }
 
-// What the tests allow the panel to call: it reads, draws, keeps a preference and plays a sound.
+// What the tests allow the panel to call: it reads, draws, keeps a preference, plays a
+// sound and raises a native notification (R189).
 export const ALLOWED = new Set([
   'session.version', 'session.root', 'session.cwd', 'session.usage',
   'fs.read', 'fs.stat', 'fs.exists',
   'store.get', 'store.set',
   'clock.now', 'clock.every', 'clock.after',
   'ui.open', 'ui.close', 'ui.invalidate', 'ui.resolve',
-  'command.register', 'audio.play',
+  'command.register', 'audio.play', 'ui.notify',
   // The run feed lists the session's workflow folder and finds it by the session id
   // and the Claude config folder (HOME, CLAUDE_CONFIG_DIR: names, never values elsewhere).
   'fs.list', 'session.id', 'env.get',

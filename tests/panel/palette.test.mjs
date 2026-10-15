@@ -1,7 +1,11 @@
-// R84: every part of the panel (the band, Mission Control, Wrapped) takes its
+// R84: every part of the panel (Comms, Mission Control, Wrapped) takes its
 // colours from one shared palette (plugin/hooks/panel-palette.js): a role has
-// one colour everywhere and a state has one colour everywhere. Pure: no Claude
-// Code needed (evidence level L1).
+// one colour everywhere and a state has one colour everywhere. Rewritten for
+// D407 (2026-10-15): R84's role colours (dev green, qa yellow, debugger red)
+// shared a colour with a state, so the role colours are no longer pinned here;
+// each role keeps a colour of its own that no state uses, and needs-you is the
+// running amber. tests/panel/r189/meaning.test.mjs holds the D407 rule itself.
+// Pure: no Claude Code needed (evidence level L1).
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -19,16 +23,17 @@ const UI = { Box: EL('Box'), Text: EL('Text'), Button: EL('Button') }
 const NOW = 1_800_000_000_000
 const S = 1000
 const ROLES = ['architect', 'lead', 'dev', 'qa', 'scout', 'debugger', 'docs']
-const ROLE_WANT = { architect: 'magenta', lead: 'blue', dev: 'green', qa: 'yellow', scout: 'cyan', debugger: 'red', docs: '#ff87d7' }
 const STATES = ['running', 'done', 'failed', 'quiet', 'cut']
 const hex = (n) => '#' + n.toString(16).padStart(6, '0')
 
 // --- the palette itself --------------------------------------------------------
 
-test('roles: architect magenta, lead blue, dev green, qa yellow, scout cyan, debugger red, docs pink', () => {
-  for (const [role, want] of Object.entries(ROLE_WANT)) assert.equal(P.roleColor(role), want, role)
-  assert.deepEqual({ ...P.ROLE_COLORS }, ROLE_WANT)
+test('roles (D407): each of the seven roles has its own colour, and no role wears a state colour', () => {
+  assert.deepEqual(Object.keys(P.ROLE_COLORS).sort(), [...ROLES].sort())
+  for (const role of ROLES) assert.equal(P.roleColor(role), P.ROLE_COLORS[role], role)
   assert.equal(new Set(ROLES.map((r) => P.roleColor(r))).size, 7, 'no two roles share a colour')
+  const states = new Set([...STATES.map((s) => P.stateColor(s)), P.NEED, P.PROGRESS, P.NEUTRAL])
+  for (const role of ROLES) assert.ok(!states.has(P.roleColor(role)), role + ' wears a state colour')
 })
 
 test('states: running amber, done green, failed red, quiet and cut off grey', () => {
@@ -61,10 +66,10 @@ test('states carry a mark and a word as well as a colour, so colour off still te
   assert.equal(new Set(STATES.map((s) => P.STATE_WORDS[s])).size, STATES.length, 'each state has its own word')
 })
 
-test('key values: progress green, estimate amber, a need of the user yellow, cost in its own accent', () => {
+test('key values: progress green, estimate amber, a need of the user amber as running (D407), cost in its own accent', () => {
   assert.equal(P.PROGRESS, 'green')
   assert.equal(P.ESTIMATE, '#ffaf00')
-  assert.equal(P.NEED, 'yellow')
+  assert.equal(P.NEED, P.stateColor('running'))
   const used = new Set([...ROLES.map((r) => P.roleColor(r)), ...STATES.map((s) => P.stateColor(s)), P.NEUTRAL, P.NEED])
   assert.ok(typeof P.ACCENT === 'string' && P.ACCENT !== '' && !used.has(P.ACCENT), 'the accent is a colour nothing else uses')
 })
@@ -88,17 +93,21 @@ const agent = (over = {}) => ({
 })
 const run = (agents, over = {}) => ({ runId: 'wf_1', kind: 'building', phase: 'wave 1', startedAt: NOW - 600 * S, endedAt: null, status: 'running', agents, ...over })
 
-test('the band: a row wears its role colour; done, failed and quiet wear their state colours', () => {
+// A finished helper leaves Comms at once (R189), so no done row is drawn to colour.
+test('Comms: a row names its role in the role colour; failed and quiet wear their state colours', () => {
   const agents = [...ROLES.map((role) => agent({ id: role, role })), agent({ id: 'x', role: 'mystery' }),
-    agent({ id: 'd', state: 'done', endedAt: NOW - 5 * S, result: 'ok' }), agent({ id: 'f', state: 'failed', endedAt: NOW - 5 * S, result: 'boom' }),
-    agent({ id: 'q', state: 'quiet', lastSeenAt: NOW - 90 * S })]
-  const m = stage.stageModel({ now: NOW, maxRows: 30, columns: 100, motion: 'calm', run: deepFreeze(run(agents)) })
-  const row = (id) => m.rows.find((r) => r.id === id)
-  for (const role of ROLES) assert.equal(row(role).roleColor, P.roleColor(role), role)
-  assert.equal(row('x').roleColor, P.NEUTRAL, 'an unknown role is neutral grey')
-  assert.equal(row('d').glyphColor, P.stateColor('done'))
-  assert.equal(row('f').glyphColor, P.stateColor('failed'))
-  assert.equal(row('q').activityColor, P.stateColor('quiet'), 'quiet is grey, not amber')
+    agent({ id: 'f', state: 'failed', endedAt: NOW - 5 * S, result: 'boom' }), agent({ id: 'q', state: 'quiet', lastSeenAt: NOW - 90 * S })]
+  const tree = stage.renderStage(UI, stage.stageModel({ now: NOW, maxRows: 30, columns: 100, motion: 'calm', run: deepFreeze(run(agents)) }))
+  const texts = (id) => {
+    const out = []
+    walk(find(tree, (n) => n.type === 'Box' && n.props.key === 'agent-' + id), (n) => { if (n.type === 'Text') out.push(n) })
+    return out
+  }
+  const word = (id, w) => texts(id).find((t) => t.children.join('').trim() === w)
+  for (const role of ROLES) assert.equal(word(role, role).props.color, P.roleColor(role), role)
+  assert.equal(word('x', 'mystery').props.color, P.NEUTRAL, 'an unknown role is neutral grey')
+  assert.equal(texts('f').find((t) => t.children.join('').includes('✗')).props.color, P.stateColor('failed'))
+  assert.equal(texts('q').find((t) => /quiet/.test(t.children.join(''))).props.color, P.stateColor('quiet'), 'quiet is grey, not amber')
 })
 
 test('Mission Control, Now: a card carries the role colour; an unknown role and an unknown state are neutral', () => {
@@ -166,7 +175,7 @@ const surfaces = fs.readdirSync(HOOKS).filter((f) => /^panel.*\.js$/.test(f) && 
 const code = (file) => fs.readFileSync(HOOKS + '/' + file, 'utf8').split('\n')
   .filter((l) => !/^\s*\/\//.test(l)).map((l) => l.replace(/\s\/\/.*$/, '')).join('\n')
 
-test('the panel files are found, and the band, Mission Control and Wrapped import the palette', () => {
+test('the panel files are found, and Comms, Mission Control and Wrapped import the palette', () => {
   for (const f of ['panel-stage.js', 'panel-mission-live.js', 'panel-mission-record.js', 'panel-pane.js', 'panel-candy.js']) {
     assert.ok(surfaces.includes(f), f)
     assert.match(code(f), /from '\.\/panel-palette\.js'/, f + ' reads its colours from the palette')

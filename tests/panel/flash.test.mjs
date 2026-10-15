@@ -1,4 +1,4 @@
-// R91: when an agent starts, its new row in the band flashes briefly in its
+// R91: when an agent starts, its new row on Comms flashes briefly in its
 // role's colour (about a second), only when the motion setting is full. The
 // flash ends on its own and leaves the row in its normal colours. The model
 // and the drawing are tested by value; the wiring through the stand-in for
@@ -56,9 +56,10 @@ test('only the full motion setting flashes: calm, off and an unknown level do no
   assert.equal(flashed(model({ a1: NOW - 100 }, { motion: 'full' }), 'a1'), true)
 })
 
+// A finished agent leaves Comms at once (R189): it has no row, so nothing of it flashes.
 test('a row that already finished does not flash', () => {
-  const m = stage.stageModel({ now: NOW, maxRows: 12, columns: 100, motion: 'full', born: { d: NOW - 100 }, run: run([agent({ id: 'd', state: 'done', endedAt: NOW - 50, result: 'ok' })]) })
-  assert.equal(m.rows.find((r) => r.id === 'd').flash === true, false)
+  const m = stage.stageModel({ now: NOW, maxRows: 12, columns: 100, motion: 'full', born: { d: NOW - 100 }, run: run([agent(), agent({ id: 'd', state: 'done', endedAt: NOW - 50, result: 'ok' })]) })
+  assert.ok(!(m && Array.isArray(m.rows) ? m.rows : []).some((r) => r.id === 'd' && r.flash === true))
 })
 
 // --- the drawing ----------------------------------------------------------------
@@ -96,12 +97,12 @@ async function started(motion) {
   return h
 }
 
-test('wired: a new agent flashes in the band at full motion, and the flash ends by itself with a redraw', async () => {
+test('wired: a new agent flashes on Comms at full motion, and the flash ends by itself with a redraw', async () => {
   const h = await started('full')
   assert.ok(invertedIn(await band(h)) >= 1, 'the new rows flash')
   const before = h.invalidations()
   await h.advance(1500)
-  assert.ok(h.invalidations() > before, 'the band is redrawn when the flash ends')
+  assert.ok(h.invalidations() > before, 'Comms is redrawn when the flash ends')
   assert.equal(invertedIn(await band(h)), 0, 'the rows are back to normal')
   assert.deepEqual(h.errors, [])
 })

@@ -1,8 +1,11 @@
-// R57: a short sound when VBW needs the user (an approval, a question, a result
-// to check): once per request, even with the panel closed, on by default, one
-// click or one command turns it off or on, and the choice is remembered. The
-// sound is the plugin's own file; a missing file or player is silent. Driven
-// through a stand-in for Claude Code's mods API (L1).
+// R57: a short sound when VBW needs the user: once per request, even with the
+// panel closed, on by default, one click or one command turns it off or on, and
+// the choice is remembered. The sound is the plugin's own file; a missing file
+// or player is silent. Since R189 (B1) the request that sounds is Claude Code's
+// own question menu (AskUserQuestion), where the user answers an approval, a
+// check or a question; a gate in next.json alone stays silent (that rule is held
+// by tests/panel/r189/call.test.mjs). Driven through a stand-in for Claude
+// Code's mods API (L1).
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mount, record, next, ROOT, PANE } from './helpers/fake-mod.mjs'
@@ -12,6 +15,13 @@ const SHIPPED = /^assets\/audio\/[^/]+\/[^/]+\.mp3$/
 const approve = () => next({ action: 'approve', gate: true })
 const accept = (r) => next({ action: 'accept', gate: true, detail: { requirements: [r] } })
 
+// Claude Code opens its question menu; the call stays open until `answer` is called.
+function ask(h, id) {
+  let answer
+  const done = h.fire('tool.call', { tool: 'AskUserQuestion', tool_use_id: id, questions: [{ question: 'Approve the plan?' }] }, () => new Promise((r) => (answer = r)))
+  return { done, answer: async () => { answer({ result: 'Yes' }); await done } }
+}
+
 async function session(options = {}) {
   const h = await mount(options)
   h.project(record(), next())
@@ -20,29 +30,32 @@ async function session(options = {}) {
   return h
 }
 
-test('a need for the user plays the sound once, and not again while the need stands', async () => {
+test('a request for the user plays the sound once, and not again while it stands', async () => {
   const h = await session()
   assert.equal(h.plays.length, 0)
-  h.project(undefined, approve())
+  const q = ask(h, 'q1')
   await h.advance(30000)
   assert.equal(h.plays.length, 1)
   assert.match(h.plays[0].asset, SHIPPED)
+  await q.answer()
 })
 
-test('each new request plays it once; the same request after it was answered plays it again', async () => {
+test('each new request plays it once; a request asked again after it was answered plays it again', async () => {
   const h = await session()
-  h.project(undefined, accept('R54'))
+  const q1 = ask(h, 'q1')
   await h.advance(6000)
   assert.equal(h.plays.length, 1)
-  h.project(undefined, accept('R55'))
+  await q1.answer()
+  const q2 = ask(h, 'q2')
   await h.advance(6000)
   assert.equal(h.plays.length, 2)
-  h.project(undefined, next())
+  await q2.answer()
   await h.advance(6000)
   assert.equal(h.plays.length, 2, 'nothing is needed: no sound')
-  h.project(undefined, accept('R55'))
+  const q3 = ask(h, 'q3')
   await h.advance(6000)
   assert.equal(h.plays.length, 3)
+  await q3.answer()
 })
 
 test('a question for the user plays it once, and the need ends when it is answered', async () => {
@@ -70,9 +83,10 @@ test('other tool calls make no sound', async () => {
 test('the sound plays even when the panel is closed', async () => {
   const h = await session()
   await h.fire('ui.close', { id: PANE, origin: { kind: 'person' } })
-  h.project(undefined, approve())
+  const q = ask(h, 'q1')
   await h.advance(6000)
   assert.equal(h.plays.length, 1)
+  await q.answer()
 })
 
 test('it is on by default and a command switches it off and on, and says which', async () => {
@@ -80,14 +94,16 @@ test('it is on by default and a command switches it off and on, and says which',
   const off = await h.cmd('vbw-sound', 'off')
   assert.match(off.text, /\boff\b/i)
   assert.doesNotMatch(off.text, /\bon\b/i)
-  h.project(undefined, approve())
+  const q1 = ask(h, 'q1')
   await h.advance(6000)
   assert.equal(h.plays.length, 0, 'with the sound off nothing plays')
+  await q1.answer()
   const on = await h.cmd('vbw-sound', 'on')
   assert.match(on.text, /\bon\b/i)
-  h.project(undefined, accept('R1'))
+  const q2 = ask(h, 'q2')
   await h.advance(6000)
   assert.equal(h.plays.length, 1)
+  await q2.answer()
 })
 
 test('with no word, the command switches the sound over', async () => {
@@ -140,7 +156,9 @@ test('the choice survives a restart, and lives in the user store, not in the pro
 test('a missing file or no player is silent: nothing plays and nothing is shown', async () => {
   const h = await session({ audioFails: true })
   h.project(undefined, approve())
+  const q = ask(h, 'q1')
   await h.advance(10000)
+  await q.answer()
   assert.deepEqual(h.errors, [])
   for (const n of ['ui.toast', 'ui.log', 'ui.status', 'ui.notice']) assert.equal(h.count(n), 0, n)
   assert.match(await h.text(), /approve/i)
