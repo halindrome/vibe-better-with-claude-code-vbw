@@ -52,7 +52,7 @@ The panel shows these things, top to bottom:
 5. **What this session has cost** so far (see [Cost](#cost)).
 6. **Whether it needs you, and for what:** approving the plan, checking a
    result by hand, giving the go-ahead to ship, saying what to build,
-   deciding on a stuck fix, or answering a question. The line turns yellow
+   deciding on a stuck fix, or answering a question. The line turns amber
    when it needs you.
 
 The panel updates by itself, within a few seconds of a change. You do not
@@ -62,7 +62,7 @@ refresh it.
 
 Read the panel from the top. The first two sentences say where you are. The
 third says what VBW is doing. The estimate and cost lines say how long and how
-much. The last sentence is the one that matters most: if it is yellow, VBW is
+much. The last sentence is the one that matters most: if it is amber, VBW is
 waiting for you; if it says "Nothing is needed from you right now", you can
 leave it running.
 
@@ -90,61 +90,66 @@ your turn
 
 ## Colours
 
-One palette colours the whole panel, so a role has one colour and a state has
-one colour everywhere: Comms, Mission Control and VBW Wrapped.
+Roles and states use different colours, so one colour never says two things.
 
-| Role | Colour | | State | Colour | Mark and word |
-|---|---|---|---|---|---|
-| architect | magenta | | running | amber | `● running` |
-| lead | blue | | done | green | `✓ done` |
-| dev | green | | failed | red | `✗ failed` |
-| QA | yellow | | quiet | grey | `… quiet` |
-| scout | cyan | | cut off | grey | `■ cut off` |
-| debugger | red | | | | |
-| docs | pink | | | | |
+**A state has one colour everywhere** (Comms, Mission Control and VBW Wrapped):
 
-Other colours: purple for the run's cost, yellow for "VBW needs you", green for
-progress, amber for time estimates, grey for secondary detail.
+| State | Colour | Mark and word |
+|---|---|---|
+| running, or VBW needs you | amber | `● running` |
+| done | green | `✓ done` |
+| failed | red | `✗ failed` |
+| quiet, cut off, idle | grey | `… quiet`, `■ cut off` |
+
+Amber is the one colour for "look at this": a helper at work and a request for
+you. A helper running past its usual time is amber on the Timeline, never red.
+Red is only for a failure. VBW Wrapped is a look back, so it draws no amber or
+red.
+
+**A role has a colour of its own.** None of them is green, red, amber or grey,
+so a role is never mistaken for a state:
+
+| Role | Colour |
+|---|---|
+| architect | magenta |
+| lead | blue |
+| dev | teal |
+| QA | pink |
+| scout | sky blue |
+| debugger | violet |
+| docs | lilac |
+
+On Comms a working helper's mark is amber and its role name is in the role's
+colour; a failed helper's `✗` is red.
+
+Other colours: purple for the run's cost, green for progress, amber for time
+estimates and for "VBW needs you", grey for secondary detail.
 
 In Mission Control's **Now** tab, each sentence shows its key value in one of
 these colours: the progress sentence in green, the two time-left sentences in
-amber, the session cost in purple, and the "needs you" sentence in yellow when
+amber, the session cost in purple, and the "needs you" sentence in amber when
 VBW needs you. A sentence with no value in it ("No estimate yet", "The cost so
 far is not available") stays plain.
 
-Colour never carries a state alone. Every state has a mark and a word, so with
-colour turned off (or if you cannot tell two colours apart) the panel reads the
-same.
+Colour never carries a state alone. Every state colour on Comms and on
+Mission Control's cards sits beside its mark and word, so with colour turned
+off (or if you cannot tell two colours apart) the panel reads the same.
 
 ## Judging the colours
 
 Requirement R108 asks whether the colours make it easy to tell at a glance
 which agent is which and what state each is in. Only you can judge that. Watch
-Comms or the **Now** tab during a real VBW run, then record a verdict.
-
-What to look at, from the palette in `plugin/hooks/panel-palette.js`:
-
-| Role | Colour | State | Colour | Mark and word |
-|---|---|---|---|---|
-| architect | magenta | running | amber | `● running` |
-| lead | blue | done | green | `✓ done` |
-| dev | green | failed | red | `✗ failed` |
-| QA | yellow | quiet | grey | `… quiet` |
-| scout | cyan | cut off | grey | `■ cut off` |
-| debugger | red | | | |
-| docs | pink | | | |
-
-These pairs share a colour, so check that you can still tell them apart:
-
-- **Dev and done** (both green): a running dev agent and a finished agent.
-- **Debugger and failed** (both red): a debugger at work and a failed agent.
-- **Quiet and cut off** (both grey): told apart only by their mark and word.
-- **QA and the "needs you" line** (both yellow), and **QA and running**
-  (yellow next to amber): close in shade.
+Comms or the **Now** tab during a real VBW run, then record a verdict. The
+colours are in `plugin/hooks/panel-palette.js`; the tables are in
+[Colours](#colours).
 
 How to judge:
 
-- Try a dark terminal and a light one. Pink, yellow, cyan and amber are the
+- Can you tell the seven roles apart? They are all different hues.
+- Can you tell the states apart: amber (running or needs you), green (done),
+  red (failed), grey (idle or quiet)? **Quiet** and **cut off** are both grey,
+  told apart only by their mark and word.
+- Try a dark terminal and a light one. Pink, sky blue, lilac and amber are the
   colours most likely to wash out on a light background; grey is the most
   likely to fade on a dark one.
 - A state is never colour alone: it also has a mark and a word. If you can
@@ -156,7 +161,7 @@ Record your verdict:
 
 ```bash
 vbw req accept R108
-vbw req reject R108 "dev green and done green look the same on my light terminal"
+vbw req reject R108 "scout and lead look the same on my light terminal"
 ```
 
 A rejection needs a note saying what is hard to tell apart (which roles or
@@ -218,7 +223,7 @@ point where it needs you:
   approving edited test files, a result to check by hand, shipping, a blocked
   step, a fix limit, scope, the spec, the next milestone, converting a
   project, or `/compact` when the context is nearly full.
-- The line stays while the request stands, and it is shown in yellow.
+- The line stays while the request stands, and it is shown in amber.
 - The hint line under the prompt still says what is waiting.
 - Before a run, a warning appears when your weekly limit is past 80%.
 
