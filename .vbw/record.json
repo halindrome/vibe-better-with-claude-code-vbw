@@ -35170,6 +35170,11 @@
       "text": "No size caps: code and prompts have no line or word limit (kernel, mods, workflows, router, mode prompts, agents, all prompts); speed limits stay; each release's notes report the sizes as information",
       "why": "owner 2026-10-15: 'lets make it global, remove any caps' (asked before on 2026-10-12); the caps were also the bloat alarm, so sizes are reported per release instead",
       "at": "2026-10-15T20:55:40Z"
+    },
+    {
+      "id": "D409",
+      "at": "2026-10-15T21:25:50Z",
+      "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-15T20:40:30Z, items T92, T94, T102, T139, T138: 178 requirements, 367 checks, 434 plans (579e782c9f37))"
     }
   ],
   "commands": {
