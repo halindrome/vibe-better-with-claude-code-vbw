@@ -4,6 +4,7 @@
 // the run model in, plain models out, trees built with h(); never throws.
 
 import { estimate, MIN_STEPS } from './panel-estimate.js'
+import { clock } from './panel-view.js'
 import { roleColor, stateColor, ACCENT, STATE_MARKS, STATE_WORDS } from './panel-palette.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
@@ -75,7 +76,10 @@ export const nowModel = safe(({ run, now, selected }) => {
   for (const a of agents) if (!order.includes(phaseOf(a))) order.push(phaseOf(a))
   const card = (a) => {
     const state = stateOf(a, run)
+    // When it started while it works; when it ended once it is done, failed or cut off.
+    const at = state === 'working' || !num(a.endedAt) ? a.startedAt : a.endedAt
     return {
+      at: clock(at),
       id: a.id, title: titleOf(a), role: roleOf(a), roleColor: roleColor(roleOf(a)), state, frame: roleColor(roleOf(a)),
       mark: STATE_MARKS[paletteState(state)], word: STATE_WORDS[paletteState(state)], stateColor: stateColor(paletteState(state)),
       activity: isObj(a.activity) && str(a.activity.text) ? clip(a.activity.text, ACTIVITY_MAX) : null,
@@ -202,7 +206,9 @@ export function renderNow(ui, model, act) {
   const card = (c) =>
     h(ui.Box, { key: 'card-box:' + c.id, flexDirection: 'column', borderStyle: 'round', borderColor: c.frame, paddingX: 1 },
       h(ui.Button, { key: 'card:' + c.id, label: c.title, plain: true, onPress: () => { if (typeof act === 'function') act(c.action) } }),
-      h(ui.Text, { color: c.stateColor }, c.mark + ' ' + c.word),
+      h(ui.Box, { flexDirection: 'row' },
+        c.at ? h(ui.Text, { dimColor: true }, '[' + c.at + '] ') : null,
+        h(ui.Text, { color: c.stateColor }, c.mark + ' ' + c.word)),
       c.activity ? activityLine(ui, c) : null,
       c.tokens ? h(ui.Text, { dimColor: true }, c.tokens) : null)
   const columns = model.columns.map((col) =>

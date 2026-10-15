@@ -10,6 +10,7 @@ const S = 1_800_000_000_000
 const MIN = 60_000
 const UI = { Box: Object.freeze({ element: 'Box' }), Text: Object.freeze({ element: 'Text' }), Button: Object.freeze({ element: 'Button' }) }
 
+const hhmm = (ms) => String(new Date(ms).getHours()).padStart(2, '0') + ':' + String(new Date(ms).getMinutes()).padStart(2, '0')
 const agent = (over) => ({ id: 'a1', role: 'dev', label: 'P55.1', model: 'sonnet', state: 'working', activity: null, startedAt: S, endedAt: null, lastSeenAt: S, tokens: null, result: null, ...over })
 const run = (agents, over = {}) => ({ runId: 'wf_1', kind: 'building', phase: 'Build', startedAt: S, endedAt: null, status: 'running', agents, ...over })
 const step = (kind, seconds) => ({ kind, run: kind + '-x', started_at: '2026-10-01T00:00:00Z', ended_at: '2026-10-01T00:10:00Z', seconds })
@@ -68,7 +69,7 @@ test('nowModel: a card carries its role colour, activity, tokens and a select ac
   const c = m.columns[0].cards[0]
   assert.deepEqual(c, {
     id: 'a9', title: 'qa P55', role: 'qa', roleColor: R.qa, state: 'working', frame: R.qa, mark: '●', word: 'running', stateColor: '#ffaf00',
-    activity: 'reading spec.md', tool: true, tokens: '48k tokens', selected: false, action: { select: 'a9' },
+    activity: 'reading spec.md', tool: true, tokens: '48k tokens', selected: false, action: { select: 'a9' }, at: hhmm(S),
   })
   const big = nowModel({ run: run([agent({ tokens: 1_250_000 }), agent({ id: 'b', tokens: 900, role: 'docs' })]), now: S })
   assert.deepEqual(big.columns[0].cards.map((x) => [x.tokens, x.roleColor]), [['1.3M tokens', R.dev], ['900 tokens', R.docs]])
@@ -180,4 +181,30 @@ test('renderTimeline and renderCosts draw lanes, sparkline and bars', () => {
   for (const t of ['building 1', 'about $0.50', '█'.repeat(8), 'This session: $0.70']) assert.ok(cs.some((x) => x.includes(t)), t)
   assert.ok(collect(renderTimeline(UI, null)).length > 0)
   assert.ok(collect(renderCosts(UI, null)).length > 0)
+})
+
+test('nowModel: a card is timed by when it started while it works, and by when it ended once done, failed or cut off', () => {
+  const r = run([
+    agent({ id: 'w', startedAt: S }),
+    agent({ id: 'd', state: 'done', startedAt: S, endedAt: S + 7 * MIN }),
+    agent({ id: 'f', state: 'failed', startedAt: S, endedAt: S + 11 * MIN }),
+    agent({ id: 'n', state: 'done', startedAt: S + 2 * MIN, endedAt: null }),
+  ])
+  const at = Object.fromEntries(nowModel({ run: r, now: S + 20 * MIN }).columns.flatMap((c) => c.cards).map((c) => [c.id, c.at]))
+  assert.deepEqual(at, { w: hhmm(S), d: hhmm(S + 7 * MIN), f: hhmm(S + 11 * MIN), n: hhmm(S + 2 * MIN) })
+  const cut = nowModel({ run: run([agent({ id: 'c', startedAt: S })], { status: 'stopped', endedAt: S + 5 * MIN }), now: S + 20 * MIN })
+  assert.equal(cut.columns[0].cards[0].at, hhmm(S))
+  const none = nowModel({ run: run([agent({ id: 'x', startedAt: undefined })]), now: S })
+  assert.equal(none.columns[0].cards[0].at, '')
+})
+
+test('renderNow: the state line starts with [HH:MM] in dim text and keeps the state text whole in its colour', () => {
+  const tree = renderNow(UI, nowModel({ run: run([agent({ id: 'd', state: 'done', endedAt: S + 3 * MIN })]), now: S + 4 * MIN }))
+  const box = find(tree, (n) => n.type === 'Box' && n.props.key === 'card-box:d')
+  const t = []
+  walk(box, (n) => { if (n.type === 'Text') t.push({ text: n.children.join(''), props: n.props }) })
+  assert.ok(t.find((x) => x.text === '[' + hhmm(S + 3 * MIN) + '] ' && x.props.dimColor === true), 'the dim time')
+  const state = t.find((x) => x.text === '✓ done')
+  assert.ok(state, 'the state text stays whole')
+  assert.ok(state.props.color && state.props.dimColor !== true)
 })
