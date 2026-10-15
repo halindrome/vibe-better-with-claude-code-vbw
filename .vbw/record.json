@@ -31336,7 +31336,7 @@
     {
       "id": "T74",
       "text": "Cost: at standard and deep, mutation-check a plan's own tests before its build ends, so QA stops finding tests that cannot fail one round at a time (M15: each deep QA round found 1-2 such gaps, about an hour per loop)",
-      "status": "in_progress",
+      "status": "done",
       "sort": "next",
       "size": "medium"
     },
