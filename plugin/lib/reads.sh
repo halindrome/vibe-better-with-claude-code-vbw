@@ -26,12 +26,14 @@ reads_probe() {
   local p ok=0
   p=$(mktemp -d "$1/probe.XXXXXX" 2> /dev/null) || ok=1
   if [ "$ok" -eq 0 ]; then
-    # "now", made before the probed file: a set-back that silently did nothing leaves the file newer than it.
-    : > "$p/now" 2> /dev/null || ok=1
     mkdir "$p/d" 2> /dev/null && printf 'x\n' > "$p/d/f" 2> /dev/null || ok=1
     : > "$p/ref" && touch -t "$READS_OLD_DAY" "$p/ref" 2> /dev/null || ok=1
     touch -a -t "$READS_OLD" "$p/d/f" "$p/d" 2> /dev/null || ok=1
-    [ "$ok" -ne 0 ] || [ -z "$(find "$p/d/f" "$p/d" -maxdepth 0 -anewer "$p/now" 2> /dev/null)" ] || ok=1
+    # Each set-back must have taken: the yardstick and both access times are years old. Asked by age,
+    # never by comparing with a file made a moment before, whose time can be equal on a fast machine
+    # (2.0.37 CI, Linux).
+    [ "$ok" -ne 0 ] || [ -n "$(find "$p/ref" -maxdepth 0 -mtime +1000 2> /dev/null)" ] || ok=1
+    [ "$ok" -ne 0 ] || [ "$(find "$p/d/f" "$p/d" -maxdepth 0 -atime +1000 2> /dev/null | wc -l | tr -d ' ')" = 2 ] || ok=1
     if [ "$ok" -eq 0 ]; then
       cat "$p/d/f" > /dev/null 2>&1
       [ -n "$(find "$p/d/f" -maxdepth 0 -anewer "$p/ref" 2> /dev/null)" ] || ok=1
