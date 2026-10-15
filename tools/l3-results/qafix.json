@@ -1,14 +1,14 @@
 {
   "scenario": "qafix",
   "fixture": "greet.sh plus NOTES.md (no check names it); the built NOTES.md is deleted after the build, so only QA can see the deviation",
-  "cost_usd": 1.66,
+  "cost_usd": 1.65,
   "evidence_level": "L3",
-  "at": "2026-10-15T18:44:38Z",
+  "at": "2026-10-15T20:27:23Z",
   "passed": true,
   "facts": {
     "deviation": "NOTES.md",
     "first_qa_verdict": "fail",
-    "first_qa_note": "0/5 checks NOTES.md does not exist. Commit 6a9e0ae 'chore: drop NOTES.md' deleted it after d1eb7cd created it; ls shows only README.md, greet.sh, tests. Criteria 1-4 cannot be met. A regression test should check NOTES.md exists at project top, is one line ending in a full stop, and names greet.sh.",
+    "first_qa_note": "9/10 checks NOTES.md does not exist at the project root. It was written in commit 0b534d3 and deleted in commit 04d3e30 (chore: drop NOTES.md). Plan P1.2 and the goal both require it with one sentence saying greet.sh greets a person by name, or the world when no name is given. Regression test: a check that NOTES.md exists and holds exactly one sentence.",
     "fix_rounds": 1,
     "final_qa_verdict": "pass",
     "phase_proved": true
