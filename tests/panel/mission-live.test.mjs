@@ -69,7 +69,7 @@ test('nowModel: a card carries its role colour, activity, tokens and a select ac
   const c = m.columns[0].cards[0]
   assert.deepEqual(c, {
     id: 'a9', title: 'qa P55', role: 'qa', roleColor: R.qa, state: 'working', frame: R.qa, mark: '●', word: 'running', stateColor: '#ffaf00',
-    activity: 'reading spec.md', tool: true, tokens: '48k tokens', selected: false, action: { select: 'a9' }, at: hhmm(S),
+    activity: 'reading spec.md', tool: true, tokens: '48k tokens', selected: false, action: { select: 'a9' }, at: hhmm(S), fresh: false, motion: undefined,
   })
   const big = nowModel({ run: run([agent({ tokens: 1_250_000 }), agent({ id: 'b', tokens: 900, role: 'docs' })]), now: S })
   assert.deepEqual(big.columns[0].cards.map((x) => [x.tokens, x.roleColor]), [['1.3M tokens', R.dev], ['900 tokens', R.docs]])

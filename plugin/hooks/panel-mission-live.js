@@ -239,7 +239,7 @@ export function renderTimeline(ui, model) {
   const lane = (l) =>
     h(ui.Box, { key: 'lane:' + l.id, flexDirection: 'row' },
       h(ui.Text, { color: l.color }, l.name.slice(0, nameW).padEnd(nameW + 1)),
-      h(ui.Text, { color: l.slow ? stateColor('failed') : l.color, bold: l.slow }, ' '.repeat(l.from) + '█'.repeat(l.to - l.from)),
+      h(ui.Text, { color: l.slow ? stateColor('running') : l.color, bold: l.slow }, ' '.repeat(l.from) + '█'.repeat(l.to - l.from)),
       h(ui.Text, { dimColor: !l.slow }, ' ' + duration(l.seconds * 1000)))
   const sp = model.spark
   const spark = isObj(sp)
