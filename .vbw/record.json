@@ -31671,7 +31671,7 @@
       "text": "Build and fix briefs carry the decisions recorded since the contract was approved (vbw show decisions --since APPROVAL, or the workflow passes them in the Dev's prompt): tonight D291, D294, D295 and D296 corrected plans mid-milestone and no Dev could see them; only the Lead reads decisions (2026-10-12)",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T124",
