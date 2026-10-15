@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261015T075136Z",
+    "kind": "qa",
+    "started_at": "2026-10-15T07:51:36Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1196.332981,
+      "in": 409881,
+      "out": 187
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -18005,10 +18016,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "5332902991836828e2a217e1466ec57a1f66683d2710cc3e63f8056c1013529f",
-        "at": "2026-10-15T07:40:39Z",
-        "note": "20/22 checks",
-        "rounds": 3
+        "tree": "68df897f43e68d74de79ab13414418a0b06394713a0daca3a09b9fde8f801568",
+        "at": "2026-10-15T07:55:08Z",
+        "note": "14/16 checks",
+        "rounds": 4
       }
     }
   ],
@@ -30865,9 +30876,36 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Criterion 4 and rules R188.52-R188.55 say a docs test pins each statement. tests/mutation-docs.bats still checks mostly single words anywhere in the section, so most statements can be reversed and every test stays green. Evidence (L1, throwaway copy of HEAD docs plus tests/mutation-docs.bats and tests/mutation-qa.bats in the scratchpad, one edit at a time, 12 of 12 tests still ok after each): (a) docs/proof.md 'A strengthened check file adds one approval' changed to 'adds no approval' (the one approval it can add, R188.55); (b) docs/workflows.md '**VBW undoes the break.**' changed to '**VBW does not undo the break (undo it yourself).**' (R188.52; the test only looks for the word 'undo'); (c) docs/proof.md '(never another's, never weakened)' changed to '(any requirement's, weakened if needed)' (where a survivor is strengthened, R188.54); (d) 'After two attempts that stay green the Dev blocks the plan' changed to 'the Dev goes on'; (e) 'At deep each task also needs a red break or a written reason' changed to 'At deep no task needs a break'; (f) 'At express it asks for nothing' changed to 'At express it asks for every rule'; (g) 'A survivor alone covers nothing' changed to 'A survivor alone covers the rule' (what vbw plan done waits for, R188.54). The earlier F227 edits are now caught (rigor rows, workflows tier line, loop decision line, qa.md), so this is the rest of the same gap. What a regression test should catch: assert whole sentences (as the existing tests do for the tier line and the loop line) for proof.md 'adds one approval' next to 'before the proof', workflows.md 'VBW undoes the break', proof.md 'never another' with 'never weakened', 'blocks the plan', the deep and express plan-done sentences, and 'A survivor alone covers nothing', and be shown red for each of edits (a) to (g).",
       "phase": "P141"
+    },
+    {
+      "id": "F233",
+      "req": "R188",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Criterion 4 says a docs test pins each statement of the mutation check docs (when it runs, what is broken at each level, what happens to a test that cannot fail, the one approval). tests/mutation-docs.bats still checks many statements only as single words anywhere in the section. Evidence (L1, throwaway copy of HEAD docs plus tests/mutation-docs.bats and tests/mutation-qa.bats in the scratchpad, one edit at a time; 'survives' = all 14 tests still ok): docs/rigor.md standard row changed to 'each rule: one small break per rule and each task' survives (deep-only content under standard); docs/proof.md 'is a survivor' changed to 'is red' survives; 'then repeats the same break until it is red' changed to 'then moves on' survives; 'it refuses until each approved rule' changed to 'it accepts when some rule' survives (what vbw plan done waits for at standard); 'and vbw prove refuses until you do' changed to 'goes on' survives (the one approval's effect); 'still waits for you' sentence reversed survives; 'At standard and deep, the builder' changed to 'At express and deep' in proof.md and rigor.md survives; docs/rigor.md 'A fix never runs it' changed to 'always runs it' survives; docs/workflows.md 'Only that rule's own check runs' reversed, 'A survivor makes vbw mutate exit non-zero' changed to 'exit zero', 'a rule cannot be recorded this way' changed to 'can', and the refusals for a file outside the plan or a check file reversed all survive. Caught: never in a fix, never at express, deep row, loop decision names the file, QA do-not-find-again and evidence. What a regression test should catch: has_sentence (whole statement) for each of these in proof.md, rigor.md and workflows.md, each shown red under the reversal listed.",
+      "phase": "P141"
+    },
+    {
+      "id": "F234",
+      "req": "R188",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Plan P141.2 left a survivor unresolved, against D381 and plugin/agents/dev.md step 4 ('strengthen the approved check file, re-run the same break until red'). The record of P141.2 holds task2 'survivor word removed' = survivor (C358 green, 2026-10-14T22:02:57Z). The Dev did not strengthen tests/mutation-docs.bats and re-run that break; it recorded a different break ('in place removed', red, 22:04:13) and finished. Evidence: jq on .vbw/record.json plans P141.2 mutations; and my own run: removing the word-level definition 'is a survivor' (changed to 'is red') still leaves all docs tests green, so the gap the survivor showed is still open. What a regression test should catch: a test that fails when the proof.md sentence defining a survivor (a test that cannot fail, because every check stays green, is a survivor) is removed or reversed; shown red for that edit.",
+      "phase": "P141"
+    },
+    {
+      "id": "F235",
+      "req": "R188",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "plugin/lib/cmd-mutate.sh line 176 loops over \"${cfiles[@]}\" with no empty-array guard. cfiles is empty when the checks being run protect no files (a check's files list is optional in record.jq). A red break that follows a survivor of the same target then reaches that line, and on macOS /bin/bash 3.2 under set -u it stops with 'unbound variable' after the checks ran and before the result is recorded, so the red break is lost. The repo rule and R188.13 both require every array expansion under set -u to be guarded as ${a[@]+\"${a[@]}\"}. I showed the bash 3.2 behaviour with a one-line script (/bin/bash -c 'set -u; a=(); for f in \"${a[@]}\"; do :; done' fails); I did not run the full vbw mutate path because the QA guard blocks writes. Regression test to add: in tests/mutate-command.bats, a project whose check has no files list; record a survivor for a rule, then a red break of the same rule, run under /bin/bash 3.2, and assert the red break is recorded with exit 0 and no 'unbound variable' in the output.",
+      "phase": "P139"
     }
   ],
   "todos": [
