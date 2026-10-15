@@ -17915,11 +17915,12 @@
       ],
       "predicted": "standard",
       "qa": {
-        "result": "pass",
+        "result": "fail",
         "tier": "standard",
-        "tree": "5f8d3bb9f0a5e022992242859d504766e0d31312b6c92b1a1a2e5775d46a0d5e",
-        "at": "2026-10-15T07:39:38Z",
-        "note": "18/18 checks"
+        "tree": "100ea9d587bd962a08282438d3ef1d82b4dbb0917d7ea94d27a0970228e91bdb",
+        "at": "2026-10-15T07:55:15Z",
+        "note": "18/19 checks",
+        "rounds": 1
       }
     },
     {
