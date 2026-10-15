@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261015T082133Z",
+    "kind": "qa",
+    "started_at": "2026-10-15T08:21:33Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1200.338305,
+      "in": 433545,
+      "out": 384
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -17904,12 +17915,11 @@
       ],
       "predicted": "standard",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "standard",
-        "tree": "100ea9d587bd962a08282438d3ef1d82b4dbb0917d7ea94d27a0970228e91bdb",
-        "at": "2026-10-15T07:55:15Z",
-        "note": "18/19 checks",
-        "rounds": 1
+        "tree": "770d08eb6ab31633cde63d1123d61c4cf8155dd83b6f1d95762ccae1413eb5a4",
+        "at": "2026-10-15T08:23:51Z",
+        "note": "19/19 checks"
       }
     },
     {
@@ -30893,7 +30903,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "plugin/lib/cmd-mutate.sh line 176 loops over \"${cfiles[@]}\" with no empty-array guard. cfiles is empty when the checks being run protect no files (a check's files list is optional in record.jq). A red break that follows a survivor of the same target then reaches that line, and on macOS /bin/bash 3.2 under set -u it stops with 'unbound variable' after the checks ran and before the result is recorded, so the red break is lost. The repo rule and R188.13 both require every array expansion under set -u to be guarded as ${a[@]+\"${a[@]}\"}. I showed the bash 3.2 behaviour with a one-line script (/bin/bash -c 'set -u; a=(); for f in \"${a[@]}\"; do :; done' fails); I did not run the full vbw mutate path because the QA guard blocks writes. Regression test to add: in tests/mutate-command.bats, a project whose check has no files list; record a survivor for a rule, then a red break of the same rule, run under /bin/bash 3.2, and assert the red break is recorded with exit 0 and no 'unbound variable' in the output.",
       "phase": "P139"
     }
