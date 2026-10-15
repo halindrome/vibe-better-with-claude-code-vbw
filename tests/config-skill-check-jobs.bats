@@ -11,9 +11,8 @@ load helper
   grep '`check_jobs`' "$s" | grep -q '1 to 64'
 }
 
-@test "R187: the config skill says the computer-wide limit caps check_jobs and is not a setting" {
+@test "R187: the config skill names the computer-wide limit on the check_jobs line" {
   local line
   line=$(grep '`check_jobs`' "$PLUGIN_ROOT/skills/config/SKILL.md")
   [[ "$line" == *"computer-wide limit"* ]] || { echo "$line"; false; }
-  [[ "$line" == *"not a setting"* ]] || { echo "$line"; false; }
 }

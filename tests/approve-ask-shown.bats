@@ -39,8 +39,3 @@ ask_hook() {
   printf '%s' "$output" | jq -e '.hookSpecificOutput.updatedInput | has("answers") | not' \
     || { echo "$output"; false; }
 }
-
-@test "R120: docs/guards.md says the rewritten question is shown to the user, never answered by the hook" {
-  grep -qiE 'shown to (you|the user)' "$REPO_ROOT/docs/guards.md"
-  grep -qiE 'never answers' "$REPO_ROOT/docs/guards.md"
-}

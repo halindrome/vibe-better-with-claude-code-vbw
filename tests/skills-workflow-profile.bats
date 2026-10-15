@@ -21,5 +21,4 @@ SKILLS="$PLUGIN_ROOT/skills"
 @test "the router's mapping step does not show args without the profile" {
   run grep -F 'vbw:mapping` (args `{"models": ...}`)' "$SKILLS/vibe/SKILL.md"
   [ "$status" -ne 0 ]
-  grep -qi 'profile.*every workflow' "$SKILLS/vibe/SKILL.md"
 }

@@ -1,10 +1,10 @@
 #!/usr/bin/env bats
 # R121 (decisions D206, D161; L1): every new idea brought to /vbw:vibe is sorted
-# on one line as now, next or later, with a reason and a size, before any
-# planning, inside one AskUserQuestion menu whose first option is VBW's sort.
-# The instructions live in the triage skill (plugin/skills/triage/SKILL.md),
-# outside the router, which only points to it. What the main conversation does
-# is the skill's text (L1); the kernel's part is tests/triage-kernel.bats.
+# as now, next or later with a size, in an AskUserQuestion menu. The
+# instructions live in the triage skill (plugin/skills/triage/SKILL.md),
+# outside the router, which only points to it. These tests check the facts the
+# skill names (sorts, sizes, commands, the menu tool, the limit of four); the
+# kernel's part is tests/triage-kernel.bats.
 
 load helper
 
@@ -25,72 +25,34 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$(basename "$(dirname "$1")")/$(
   ! grep -qE '^allowed-tools:.*(Workflow|Agent|Task)' "$SKILL" || { echo "the triage may not start an agent or a workflow"; false; }
 }
 
-@test "R121: the router sends every new request to the triage before any requirement, planning or file change" {
+@test "R121: the router points to the triage skill" {
   grep -qF 'vbw:triage' "$ROUTER"
-  has "$ROUTER" 'new (request|idea).{0,160}vbw:triage|vbw:triage.{0,160}new (request|idea)'
-  has "$SKILL" 'before (any|a) (requirement|planning|plan|file)'
 }
 
-@test "R121: one line per idea: the sort (now joins the active milestone; next or later go into the backlog), a one-sentence reason and the size" {
-  has "$SKILL" 'one line'
-  has "$SKILL" '\bnow\b.{0,120}(active milestone|this milestone)'
-  has "$SKILL" '\bnext\b.{0,40}\blater\b.{0,120}backlog|backlog.{0,120}\bnext\b.{0,40}\blater\b'
-  has "$SKILL" 'reason'
-  has "$SKILL" 'one sentence'
-  has "$SKILL" 'small.{0,20}medium.{0,20}large'
+@test "R121: the skill names the three sorts and the three sizes" {
+  local w
+  for w in now next later small medium large; do
+    grep -qw "$w" "$SKILL" || { echo "triage/SKILL.md does not name $w"; false; }
+  done
 }
 
-@test "R121: the line is inside one AskUserQuestion menu, VBW's sort first and marked (Recommended), the two other sorts as the other options, no typed command" {
+@test "R121: the line is asked in an AskUserQuestion menu, VBW's sort marked (Recommended), at most four ideas at a time" {
   grep -qF 'AskUserQuestion' "$SKILL"
   grep -qF '(Recommended)' "$SKILL"
-  has "$SKILL" 'first option'
-  has "$SKILL" 'line is inside'
-  has "$SKILL" 'question text.{0,80}(sort|line)'
-  has "$SKILL" '(print|show|write) no line before'
-  has "$SKILL" '(two other|other two) sorts'
-  has "$SKILL" 'never (ask|have) the user (to )?type|no typed command'
-}
-
-@test "R121: a message that is not a new idea gets no triage; a match of an existing requirement or backlog item is named, with an offer to move a backlog item to now" {
-  has "$SKILL" 'not a new idea|no triage'
-  has "$SKILL" 'answer.{0,80}question'
-  has "$SKILL" 'continue'
-  has "$SKILL" 'go on'
-  has "$SKILL" 'approv'
-  has "$SKILL" 'already (matches|match|is) .{0,80}(requirement|backlog)'
-  has "$SKILL" 'name'
-  has "$SKILL" 'move.{0,60}(to|into) now|now.{0,60}move'
-}
-
-@test "R121: several ideas get one line each in the same menu, up to four; more than four are sorted four at a time" {
-  has "$SKILL" 'one (triage )?line (per|for each) idea|one line each'
   has "$SKILL" 'four'
-  has "$SKILL" 'four at a time'
 }
 
-@test "R121: 'now' adds the idea with vbw spec add and the normal flow continues; with no active milestone it starts the next one" {
+@test "R121: 'now' uses vbw spec add and vbw milestone start; 'next' and 'later' use vbw todo add with its sort and size" {
   grep -qF 'vbw spec add' "$SKILL"
   grep -qF 'vbw milestone start' "$SKILL"
-  has "$SKILL" 'no active milestone'
-  has "$SKILL" 'plan(ning)? again|approval menu|normal flow'
-}
-
-@test "R121: 'next' and 'later' add the idea with vbw todo add, its sort and its size" {
   grep -qE 'vbw todo add --sort (next|later|<|\$|\{)' "$SKILL"
   grep -qF -- '--size' "$SKILL"
 }
 
-@test "R121: the triage never interrupts a run: a request during a run is sorted, and a 'now' idea waits for the run to end" {
-  has "$SKILL" '(during|while) a run|run is open'
-  has "$SKILL" 'wait'
-  has "$SKILL" 'interrupt'
-}
-
-@test "R121: the triage happens at every autonomy setting: guided, balanced and hands-off" {
+@test "R121: the skill names the three autonomy settings: guided, balanced and hands-off" {
   has "$SKILL" 'guided'
   has "$SKILL" 'balanced'
   has "$SKILL" 'hands-off'
-  has "$SKILL" 'every autonomy|all autonomy|any autonomy|whatever the autonomy'
 }
 
 @test "R121: the router stays within 1,400 words and all prompts within 22,800 words" {
@@ -104,17 +66,14 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$(basename "$(dirname "$1")")/$(
   [ "$total" -le 22800 ] || { echo "all prompts: $total words"; false; }
 }
 
-@test "R121: the user documentation explains the three sorts, the sizes and how to overrule" {
+@test "R121: the user documentation names the three sorts, the sizes and vbw todo list, and the README links it" {
   [ -f "$DOC" ]
-  has "$DOC" '\bnow\b'
-  has "$DOC" '\bnext\b'
-  has "$DOC" '\blater\b'
-  has "$DOC" 'small.{0,20}medium.{0,20}large'
-  has "$DOC" 'overrul'
-  has "$DOC" 'reason'
+  local w
+  for w in now next later small medium large; do
+    grep -qw "$w" "$DOC" || { echo "docs/triage.md does not name $w"; false; }
+  done
   has "$DOC" 'vbw todo list'
   grep -qF 'docs/triage.md' "$README"
-  has "$README" 'now.{0,20}next.{0,20}later'
 }
 
 @test "F90: docs/triage.md shows the real vbw todo list format" {

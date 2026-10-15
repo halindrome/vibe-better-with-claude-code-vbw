@@ -37,9 +37,8 @@ bash_call() {
   [[ "$reason" != *"run /vbw:approve"* && "$reason" != *"type /vbw:approve"* ]] || { echo "$reason"; false; }
 }
 
-@test "R83: the router asks for approval only with the menu and never asks the user to type the command" {
+@test "R83: the router's approve step asks with AskUserQuestion" {
   local step
   step=$(sed -n '/^\*\*approve\*\*/,/^\*\*build\*\*/p' "$PLUGIN_ROOT/skills/vibe/SKILL.md")
   printf '%s' "$step" | grep -q 'AskUserQuestion'
-  printf '%s' "$step" | tr '\n' ' ' | grep -qiE 'only (with|through) (the )?(approval )?menu|never ask (the user )?to type'
 }

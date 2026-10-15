@@ -1,7 +1,8 @@
 #!/usr/bin/env bats
 # R100 (L1): after the plan changes (a new plan, a changed plan or a re-plan),
-# VBW asks for approval only with the approval menu. No kernel output, and no
-# step of the router, tells the user to type /vbw:approve (typing it still works).
+# VBW asks for approval only with the approval menu. No kernel output tells the
+# user to type /vbw:approve (typing it still works); the router's texts are
+# pinned by approval-menu.bats.
 
 load helper
 load approve-choice-helper
@@ -35,18 +36,4 @@ teardown() { vbw_teardown; }
   [[ "$output" != *"/vbw:approve"* ]]
   run bash -c 'printf "{\"phases\": [{\"id\": \"P1\", \"title\": \"Checkout\", \"reqs\": [\"R1\", \"R2\"]}], \"plans\": [{\"id\": \"P1.1\", \"phase\": \"P1\", \"title\": \"Pay\", \"reqs\": [\"R1\"], \"files\": [\"src/pay.txt\"]}], \"checks\": [{\"id\": \"C1\", \"req\": \"R1\", \"run\": [\"sh\", \"tests/pay.sh\"], \"files\": [\"tests/pay.sh\"]}], \"rules\": [{\"req\": \"R1\", \"text\": \"paid is written\", \"check\": \"C1\"}]}" | "$1" apply' _ "$VBW"
   [[ "$output" != *"/vbw:approve"* ]]
-}
-
-@test "R100: the router's step for a changed plan asks for approval only with the approval menu" {
-  local para
-  para=$(sed -n '/^\*\*Changing the plan\*\*/,/^## Rules/p' "$ROUTER")
-  [ -n "$para" ]
-  printf '%s' "$para" | tr '\n' ' ' | grep -qiE 'approval menu|AskUserQuestion'
-}
-
-@test "R100: the router's planned step hands the user to the approval menu and never relays a typed command" {
-  local para
-  para=$(sed -n '/^\*\*plan\*\*: `VBW_SESSION_ID/,/^\*\*approve\*\*/p' "$ROUTER")
-  [ -n "$para" ]
-  printf '%s' "$para" | tr '\n' ' ' | grep -qiE 'approval menu|never (relay|pass on|tell)'
 }

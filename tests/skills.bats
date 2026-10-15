@@ -95,6 +95,6 @@ front() { awk 'NR == 1 && /^---$/ { on = 1; next } on && /^---$/ { exit } on' "$
   [ -n "$rule" ] && [ -n "$said" ] && [ "$rule" -lt "$said" ]
 }
 
-@test "the router says a document's required contents are [auto]; only how it reads is [human]" {
-  grep -q 'document that must contain' "$PLUGIN_ROOT/skills/vibe/SKILL.md"
+@test "the router marks a document's required contents [auto] and how it reads [human]" {
+  grep -i 'document' "$PLUGIN_ROOT/skills/vibe/SKILL.md" | grep -F '`[auto]`' | grep -qF '`[human]`'
 }

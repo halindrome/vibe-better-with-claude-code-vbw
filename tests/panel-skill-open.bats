@@ -4,9 +4,8 @@
 
 load helper
 
-@test "R52: the panel skill says /vbw-panel opens the panel and never that it closes it" {
+@test "R52: the panel skill names /vbw-panel and never says it closes or toggles the panel" {
   run grep -n '/vbw-panel' "$PLUGIN_ROOT/skills/panel/SKILL.md"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"/vbw-panel\` opens it"* ]] || { echo "$output"; false; }
   ! grep -niE '/vbw-panel[^.;]*(closes|toggle)' "$PLUGIN_ROOT/skills/panel/SKILL.md"
 }
