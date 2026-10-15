@@ -30,8 +30,9 @@ setup() {
   "$VBW" approve > /dev/null
   cat > "$TEST_ROOT/bin/timeout" << 'SH'
 #!/bin/sh
-# timeout -k GRACE LIMIT ARGV...
-shift 2
+# timeout [--foreground] -k GRACE LIMIT ARGV... (T148: VBW passes --foreground)
+[ "$1" != --foreground ] || shift
+[ "$1" != -k ] || shift 2
 limit=$1
 shift
 if [ "$limit" = 2 ]; then
