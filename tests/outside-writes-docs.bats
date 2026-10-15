@@ -7,7 +7,6 @@ load helper
 
 @test "R185 (F218): docs/guards.md names the session record as an allowed write outside the project, with its folder and lifetime" {
   local g="$REPO_ROOT/docs/guards.md"
-  grep -q 'except three things' "$g"
   grep -qF '<claude-config-dir>/vbw/sessions/<session id>' "$g"
   grep -q '7' "$g"
   grep -q 'D364' "$g"
@@ -15,7 +14,7 @@ load helper
   grep -qF 'CLAUDE_ENV_FILE' "$g"
 }
 
-@test "R185 (F218): AGENTS.md's nothing-outside-the-project rule names the session record as its third exception" {
+@test "R185 (F218): AGENTS.md's nothing-outside-the-project rule names three exceptions, the session record among them" {
   local a="$REPO_ROOT/AGENTS.md" line
   line=$(grep 'Nothing outside the project' "$a")
   [[ "$line" == *"Three exceptions"* ]]

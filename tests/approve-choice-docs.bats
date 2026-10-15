@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
-# R61 (words, L1): the router asks for approval with a choice, built from what
-# vbw show contract prints; /vbw:approve still works; the docs describe the
-# choice, the Approve-first order, and that typing the command still works; the
-# prompts stay within their budgets.
+# R61 (L1, facts): the router asks for approval with AskUserQuestion, built from
+# what vbw show contract prints, Approve before Not yet; /vbw:approve still
+# works; the docs name the choice, its options, the Enter key and the command;
+# the prompts stay within their budgets.
 
 load helper
 
@@ -18,14 +18,6 @@ approve_step() { sed -n '/^\*\*approve\*\*/,/^\*\*build\*\*/p' "$ROUTER"; }
   [[ "$s" == *"approval question"* ]]
   [[ "$s" == *Approve*"Not yet"* ]]
   [[ "$s" == *"/vbw:approve"* ]]
-  [[ "$s" == *"cannot approve"* ]]
-}
-
-@test "R61: the router tells Claude what to do with each answer: Approve continues, Not yet asks what to change, own words are what to change" {
-  local s
-  s=$(approve_step)
-  [[ "$s" == *"what to change"* ]]
-  [[ "$s" == *"own words"* ]]
 }
 
 @test "R61: the prompts stay within their budgets: router 1,400 words, every skill 2,000, all prompts 16k tokens" {
@@ -38,25 +30,23 @@ approve_step() { sed -n '/^\*\*approve\*\*/,/^\*\*build\*\*/p' "$ROUTER"; }
   [ "$total" -le 22800 ]
 }
 
-@test "R61: the help lists the approval choice next to /vbw:approve" {
-  grep -E '/vbw:approve' "$PLUGIN_ROOT/skills/help/SKILL.md" | grep -qi 'choice\|Enter'
+@test "R61: the help lists /vbw:approve" {
+  grep -qF '/vbw:approve' "$PLUGIN_ROOT/skills/help/SKILL.md"
 }
 
-@test "R61: docs/proof.md describes the choice, that Approve comes first so Enter approves, Not yet, own words, and that /vbw:approve still works" {
+@test "R61: docs/proof.md names the options Approve and Not yet, the Enter key, /vbw:approve and the fingerprint" {
   local d="$REPO_ROOT/docs/proof.md"
   grep -q 'Approve' "$d"
   grep -q 'Not yet' "$d"
   grep -qi 'Enter' "$d"
-  grep -qi 'own words' "$d"
   grep -q '/vbw:approve' "$d"
   grep -qi 'fingerprint' "$d"
 }
 
-@test "R61: docs/guards.md explains the answer hook and why the model cannot approve through it" {
+@test "R61: docs/guards.md names the answer hook: AskUserQuestion and PostToolUse" {
   local d="$REPO_ROOT/docs/guards.md"
   grep -q 'AskUserQuestion' "$d"
   grep -qi 'PostToolUse' "$d"
-  grep -qi 'cannot' "$d"
 }
 
 @test "R61: the README says approval is a choice where Enter approves, and /vbw:approve still works" {

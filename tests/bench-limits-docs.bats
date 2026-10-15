@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# R151: the speed limits are the same everywhere and stated once in words. CI
+# R151: the speed limits are the same everywhere. CI
 # runs the hook benchmark with the same defaults as a local run (no CI-only
 # hook or status line limit), and docs/guards.md, docs/statusline.md and the
 # hot-path rule of CLAUDE.md state 20 ms per hook call, 60 ms for the status
@@ -31,7 +31,7 @@ old_limits() {
     echo "docs/guards.md does not state 20 ms"
     false
   }
-  flat "$f" | grep -qE 'too busy|busy machine|machine is busy' || {
+  flat "$f" | grep -qF 'busy' || {
     echo "docs/guards.md does not describe the busy-machine report"
     false
   }

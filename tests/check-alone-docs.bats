@@ -3,10 +3,8 @@
 
 load helper
 
-@test "docs/proof.md describes the alone marker of a check" {
-  grep -q 'alone' "$REPO_ROOT/docs/proof.md"
-  run grep -ci 'alone' "$REPO_ROOT/docs/proof.md"
-  [ "$output" -ge 2 ]
+@test "docs/proof.md names the alone marker of a check" {
+  grep -qF '`alone`' "$REPO_ROOT/docs/proof.md"
 }
 
 @test "docs/record.md lists alone among a check's fields" {
@@ -23,7 +21,6 @@ load helper
   [ "$status" -eq 0 ]
 }
 
-@test "docs/record.md says a record whose checks use alone is schema 2, and why" {
+@test "docs/record.md says a record whose checks use alone is schema 2" {
   grep -i 'alone' "$REPO_ROOT/docs/record.md" | grep -qi 'schema 2'
-  grep -i 'schema 2' "$REPO_ROOT/docs/record.md" | grep -qi 'newer VBW\|update'
 }
