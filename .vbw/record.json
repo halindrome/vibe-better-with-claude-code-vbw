@@ -17920,6 +17920,14 @@
         "tree": "770d08eb6ab31633cde63d1123d61c4cf8155dd83b6f1d95762ccae1413eb5a4",
         "at": "2026-10-15T08:23:51Z",
         "note": "19/19 checks"
+      },
+      "outcome": {
+        "tier": "standard",
+        "predicted": "standard",
+        "held": true,
+        "fix_rounds": 9,
+        "qa_findings": 9,
+        "escalations": 0
       }
     },
     {
@@ -17971,6 +17979,14 @@
         "tree": "5e6633f9f10b48a88928b022bfd3cf2b63bca69b9d4ce7c23926be4ba5faf64e",
         "at": "2026-10-15T08:24:19Z",
         "note": "30/30 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 9,
+        "qa_findings": 9,
+        "escalations": 2
       }
     },
     {
@@ -18014,12 +18030,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "68df897f43e68d74de79ab13414418a0b06394713a0daca3a09b9fde8f801568",
-        "at": "2026-10-15T07:55:08Z",
-        "note": "14/16 checks",
-        "rounds": 4
+        "tree": "08535d1ea41768507b7c1faf497b64b63fe68565c2315388699692bcb681228e",
+        "at": "2026-10-15T08:25:02Z",
+        "note": "18/18 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 9,
+        "qa_findings": 9,
+        "escalations": 2
       }
     }
   ],
@@ -30885,7 +30908,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Criterion 4 says a docs test pins each statement of the mutation check docs (when it runs, what is broken at each level, what happens to a test that cannot fail, the one approval). tests/mutation-docs.bats still checks many statements only as single words anywhere in the section. Evidence (L1, throwaway copy of HEAD docs plus tests/mutation-docs.bats and tests/mutation-qa.bats in the scratchpad, one edit at a time; 'survives' = all 14 tests still ok): docs/rigor.md standard row changed to 'each rule: one small break per rule and each task' survives (deep-only content under standard); docs/proof.md 'is a survivor' changed to 'is red' survives; 'then repeats the same break until it is red' changed to 'then moves on' survives; 'it refuses until each approved rule' changed to 'it accepts when some rule' survives (what vbw plan done waits for at standard); 'and vbw prove refuses until you do' changed to 'goes on' survives (the one approval's effect); 'still waits for you' sentence reversed survives; 'At standard and deep, the builder' changed to 'At express and deep' in proof.md and rigor.md survives; docs/rigor.md 'A fix never runs it' changed to 'always runs it' survives; docs/workflows.md 'Only that rule's own check runs' reversed, 'A survivor makes vbw mutate exit non-zero' changed to 'exit zero', 'a rule cannot be recorded this way' changed to 'can', and the refusals for a file outside the plan or a check file reversed all survive. Caught: never in a fix, never at express, deep row, loop decision names the file, QA do-not-find-again and evidence. What a regression test should catch: has_sentence (whole statement) for each of these in proof.md, rigor.md and workflows.md, each shown red under the reversal listed.",
       "phase": "P141"
     },
@@ -30894,7 +30917,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Plan P141.2 left a survivor unresolved, against D381 and plugin/agents/dev.md step 4 ('strengthen the approved check file, re-run the same break until red'). The record of P141.2 holds task2 'survivor word removed' = survivor (C358 green, 2026-10-14T22:02:57Z). The Dev did not strengthen tests/mutation-docs.bats and re-run that break; it recorded a different break ('in place removed', red, 22:04:13) and finished. Evidence: jq on .vbw/record.json plans P141.2 mutations; and my own run: removing the word-level definition 'is a survivor' (changed to 'is red') still leaves all docs tests green, so the gap the survivor showed is still open. What a regression test should catch: a test that fails when the proof.md sentence defining a survivor (a test that cannot fail, because every check stays green, is a survivor) is removed or reversed; shown red for that edit.",
       "phase": "P141"
     },
