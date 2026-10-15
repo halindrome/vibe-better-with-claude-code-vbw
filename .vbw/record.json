@@ -31907,7 +31907,7 @@
       "text": "Mutation check cost on slow test suites (owner 2026-10-15, for 2.0.39): each break re-runs the plan's checks, so the cost is rules x test time (cargo test at 3 min x 10 rules = 30 min per plan). By design, no measuring needed: a break runs only the fastest check covering its rule (durations from the run store, .git/vbw/runs.json); a check above a time limit is broken once per plan, not once per rule. Big gain on slow suites, none lost on fast ones",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     }
   ],
   "decisions": [
