@@ -1,56 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "fix-20261015T022225Z",
-    "kind": "fix",
-    "started_at": "2026-10-15T02:22:25Z",
-    "files": [
-      "docs/guards.md",
-      "docs/loop.md",
-      "docs/proof.md",
-      "docs/record.md",
-      "docs/rigor.md",
-      "docs/workflows.md",
-      "plugin/agents/dev.md",
-      "plugin/agents/docs.md",
-      "plugin/agents/qa.md",
-      "plugin/bin/vbw",
-      "plugin/hooks/common.jq",
-      "plugin/lib/checks.sh",
-      "plugin/lib/cmd-commit.sh",
-      "plugin/lib/cmd-mutate.sh",
-      "plugin/lib/cmd-plan.sh",
-      "plugin/lib/cmd-prove.sh",
-      "plugin/lib/cmd-show.sh",
-      "plugin/lib/contract.sh",
-      "plugin/lib/loop-step.sh",
-      "plugin/lib/record.jq",
-      "plugin/workflows/building.js",
-      "tests/mutate-command.bats",
-      "tools/baseline/results/mutation/express.json",
-      "tools/baseline/results/mutation/standard.json",
-      "tools/mutation-run.sh"
-    ],
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
-    "new_tests": true,
-    "editable": [
-      "tests/mutate-command.bats",
-      "tests/mutate-isolation.bats",
-      "tests/mutate-loop.bats",
-      "tests/mutate-plan-done.bats",
-      "tests/mutate-prompts.bats",
-      "tests/mutate-show.bats",
-      "tests/mutate-strengthen.bats",
-      "tests/mutation-docs.bats",
-      "tests/mutation-qa.bats",
-      "tests/mutation-runs.bats"
-    ],
-    "cost": {
-      "usd": 1186.997296,
-      "in": 367905,
-      "out": 201
-    }
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -30865,7 +30815,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The docs tests do not pin the statements they are meant to pin (criteria 4 and 5; rules R188.52-R188.56). tests/mutation-docs.bats and tests/mutation-qa.bats only check that certain words appear somewhere in the section (or on one line of qa.md), so a statement can say the opposite and every test stays green. Evidence (L1, throwaway copy of HEAD in the scratchpad, bats tests/mutation-docs.bats tests/mutation-qa.bats, 7 of 7 still ok after these edits): (1) docs/workflows.md 'When it runs: at standard and deep. Never at express, and never in a fix.' changed to 'at express. Never at standard or deep, but in a fix, and undo.'; (2) docs/rigor.md table rows swapped so express = 'each rule' and standard = 'nothing'; (3) docs/proof.md 'the loop gives that approval and records a decision' changed to 'you give that approval, no decision'; (4) plugin/agents/qa.md 'do not find again a gap' changed to 'find again a gap'. P141.2's own recorded break 'task2: survivor word removed' also stayed green (a survivor) and was covered only by a different break, not by a stronger test. What a regression test should catch: assert the sentences, not single words (for example 'standard and deep' next to 'never at express', the express/standard/deep table rows each with their own content, 'the loop gives' with 'records a decision', 'do not find again' in qa.md), and be shown red when each of the four edits above is applied.",
       "phase": "P141"
     },
@@ -30874,7 +30824,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "vbw mutate (plugin/lib/cmd-mutate.sh, lines 119-125, commit 8d26c179 / original 3be3c530) stopped refusing a changed-but-uncommitted check file whenever the lease kind is build. R188.5 says a break with a check file 'changed beside the break' is refused, writing nothing; the new code only keeps that refusal outside a build run. Inside a build run the checks still run on a detached copy of HEAD (plugin/lib/proofcopy.sh:91), so a Dev who strengthened tests/x.sh and re-ran vbw mutate before committing gets a recorded survivor from the OLD test, with no warning. That wastes one of the Dev's two strengthening attempts (dev.md: two attempts then vbw plan block) and records a false survivor. The plan's task 2 only asked for adding the survivor's files to the lease editable list, not for relaxing this refusal, and no test pins the relaxed branch (tests/mutate-command.bats:102-122 runs with no lease; tests/mutate-strengthen.bats never runs vbw mutate with an uncommitted check file). A regression test should open a build run, record a survivor, change the check file without committing, run vbw mutate, and expect a refusal naming the file (commit them first), nothing written to the record.",
       "phase": "P140"
     },
@@ -30883,7 +30833,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/workflows.md section 'Rigor' (lines 493-503) lists what each workflow takes from args.rigor but the vbw:building bullet names only models; it never says rigor[phase].tier now decides whether a Dev or Docs agent is told to do the mutation step (building.js line 74). Minor cross-file consistency gap against criterion 2. A regression test (tests/mutation-docs.bats) should require the vbw:building bullet to mention the tier.",
       "phase": "P140"
     }
@@ -39036,6 +38986,19 @@
         "started": "2026-10-15T02:17:40Z",
         "ended": "2026-10-15T02:21:56Z",
         "cost": null
+      },
+      {
+        "id": "fix-20261015T022225Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M33",
+        "started": "2026-10-15T02:22:25Z",
+        "ended": "2026-10-15T07:18:42Z",
+        "cost": {
+          "usd": 3.879474,
+          "in": 9878,
+          "out": 226
+        }
       }
     ],
     "milestones": {
