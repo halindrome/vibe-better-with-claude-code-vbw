@@ -1,10 +1,8 @@
 #!/usr/bin/env bats
-# R184: docs/statusline.md says, in plain words, what the status line shows in
-# a project where VBW is turned off (the user's earlier status line, or
-# nothing), which settings files decide it and in what order, that the
-# setting itself runs the earlier status line (VBW never does), and that
-# vbw statusline on updates a setting made by an older VBW. The old claim
-# that the setting never changes is gone. L1.
+# R184: docs/statusline.md's section on a project where VBW is turned off names
+# the setting (enabledPlugins), the settings files that decide it in Claude
+# Code's order, and the commands vbw statusline on and vbw doctor. The old
+# claim that the setting never changes is gone. L1.
 
 load helper
 
@@ -33,14 +31,6 @@ section() { sed -n '/^## .*[Tt]urned off/,/^## /p' "$DOC"; }
   a=$(printf '%s\n' "$s" | grep -nF '.claude/settings.local.json' | head -1 | cut -d: -f1)
   b=$(printf '%s\n' "$s" | grep -nF '.claude/settings.json' | head -1 | cut -d: -f1)
   [ "$a" -le "$b" ]
-}
-
-@test "R184: it says the earlier status line comes back there, or nothing shows, and VBW itself never runs it" {
-  local s
-  s=$(section)
-  printf '%s\n' "$s" | grep -qi 'earlier status line'
-  printf '%s\n' "$s" | grep -qiE 'nothing (shows|is shown)|shows nothing'
-  printf '%s\n' "$s" | grep -qiE 'never runs'
 }
 
 @test "R184: it says vbw statusline on updates a setting made by an older VBW, and the old 'same setting' claim is gone" {

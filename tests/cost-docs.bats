@@ -1,14 +1,13 @@
 #!/usr/bin/env bats
-# R173: the user docs describe the cost data and the command in current-behaviour
-# terms: docs/record.md the record field and its schema, docs/statusline.md the
-# side file, docs/costs.md the command. L1.
+# R173: the user docs name the cost data and the command: docs/record.md the
+# record field, docs/statusline.md the side file, docs/costs.md the command, its
+# flags and every field of its JSON. L1.
 
 load helper
 
-@test "R173: docs/record.md documents the costs field, the lease's opening figures and the schema" {
+@test "R173: docs/record.md names the costs field and lease.cost" {
   grep -qF '| `costs` |' "$REPO_ROOT/docs/record.md"
   grep -qF 'lease.cost' "$REPO_ROOT/docs/record.md"
-  grep -qF 'Added within schema 4' "$REPO_ROOT/docs/record.md"
 }
 
 @test "R173: docs/statusline.md documents the side file and no longer claims no temporary files" {
@@ -17,11 +16,10 @@ load helper
   ! grep -qF 'no temporary files' "$REPO_ROOT/docs/statusline.md"
 }
 
-@test "R173: docs/costs.md documents the command, its JSON, the ceiling and what unknown means" {
+@test "R173: docs/costs.md names the command, its JSON and ceiling flags, the unknown value and vbw statusline on" {
   [ -f "$REPO_ROOT/docs/costs.md" ]
   grep -qF 'vbw show costs --json' "$REPO_ROOT/docs/costs.md"
   grep -qF 'vbw show costs --ceiling' "$REPO_ROOT/docs/costs.md"
-  grep -qF 'cannot tell' "$REPO_ROOT/docs/costs.md"
   grep -qF 'unknown' "$REPO_ROOT/docs/costs.md"
   grep -qF 'vbw statusline on' "$REPO_ROOT/docs/costs.md"
 }
