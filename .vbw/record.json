@@ -29756,7 +29756,7 @@
         "tests/panel/stage.test.mjs"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Replace the gate card (the box with buttons) by one amber line, 'HH:MM ⚑ VBW needs you · <what>', for every gate kind and for /compact first; no button, no Later. The line comes from a `need` ({ key, what, at }) that panel-view.js's liveNeed gives (plan P142.2)",
@@ -29765,6 +29765,38 @@
         "At full motion draw pixel figures for at most 3 working helpers and text rows for the rest; fold rows beyond maxRows into one '+N more · [m] Mission Control' line",
         "Rewrite tests/panel/stage.test.mjs for Comms (the wired checks C360 and C361 pass once P142.3 connects it)",
         "Code and tests are committed. Deep-tier task breaks: every R189 check covering this plan stays red until a later plan wires it (C360/C361 until P142.3, the palette checks until P145.2), and vbw mutate --check takes only R189 checks; so record each task with vbw mutate PLAN taskK --none \"covered by <later plan>: its check is red until then\" and run vbw plan done. The rules are broken by the plans that own them (T152), where their code is wired. Do not block on the red checks."
+      ],
+      "mutations": [
+        {
+          "task": 1,
+          "none": "covered by a later plan: its check is red until then (P142.3 wires C360/C361, P145.2 the palette checks)",
+          "at": "2026-10-15T21:33:32Z"
+        },
+        {
+          "task": 2,
+          "none": "covered by a later plan: its check is red until then (P142.3 wires C360/C361, P145.2 the palette checks)",
+          "at": "2026-10-15T21:33:34Z"
+        },
+        {
+          "task": 3,
+          "none": "covered by a later plan: its check is red until then (P142.3 wires C360/C361, P145.2 the palette checks)",
+          "at": "2026-10-15T21:33:35Z"
+        },
+        {
+          "task": 4,
+          "none": "covered by a later plan: its check is red until then (P142.3 wires C360/C361, P145.2 the palette checks)",
+          "at": "2026-10-15T21:33:37Z"
+        },
+        {
+          "task": 5,
+          "none": "covered by a later plan: its check is red until then (P142.3 wires C360/C361, P145.2 the palette checks)",
+          "at": "2026-10-15T21:33:38Z"
+        },
+        {
+          "task": 6,
+          "none": "covered by a later plan: its check is red until then (P142.3 wires C360/C361, P145.2 the palette checks)",
+          "at": "2026-10-15T21:33:40Z"
+        }
       ]
     },
     {
@@ -30052,7 +30084,7 @@
         "plugin/hooks/panel-palette.js"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Give the seven roles colours of their own, none of them green, red, amber or grey, all different, readable on dark and light terminals (brand kit hues where they fit)",
@@ -30065,6 +30097,21 @@
           "task": 3,
           "none": "running the tests is not behaviour to break",
           "at": "2026-10-15T21:27:50Z"
+        },
+        {
+          "task": 1,
+          "none": "covered by a later plan: its R189 check (C368 palette checks) is red until P145.2 wires it",
+          "at": "2026-10-15T21:34:02Z"
+        },
+        {
+          "task": 2,
+          "none": "covered by a later plan: its R189 check (C368 palette checks) is red until P145.2 wires it",
+          "at": "2026-10-15T21:34:03Z"
+        },
+        {
+          "task": 4,
+          "none": "covered by a later plan: its R189 check (C368 palette checks) is red until P145.2 wires it",
+          "at": "2026-10-15T21:34:05Z"
         }
       ]
     },
@@ -40428,6 +40475,15 @@
           "in": 0,
           "out": 0
         }
+      },
+      {
+        "id": "build-20261015T213302Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M34",
+        "started": "2026-10-15T21:33:02Z",
+        "ended": "2026-10-15T21:34:24Z",
+        "cost": null
       }
     ],
     "milestones": {
