@@ -45,3 +45,9 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
   has "$DOC" 'a run starts'
   has "$DOC" 'run ends.{0,40}crew leaves comms|crew leaves comms.{0,40}run ends'
 }
+
+@test "R189: docs/panel.md states the helper-row facts: a finished helper leaves at once, a failed one stays red until opened" {
+  has "$DOC" 'helper that finishes leaves comms at the next redraw, with no wait'
+  has "$DOC" 'helper that fails stays as one red'
+  has "$DOC" 'until you open it in mission control'
+}
