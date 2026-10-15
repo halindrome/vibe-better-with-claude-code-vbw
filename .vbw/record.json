@@ -30330,7 +30330,7 @@
       "after": [
         "P142.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "Rename 'the band' to Comms everywhere in docs/panel.md; the side pane keeps the name Mission Control",
@@ -30401,6 +30401,74 @@
           "result": "red",
           "at": "2026-10-15T21:46:31Z",
           "head": "bdca53be513a2dfd563e21793a76aff1976c1c4d",
+          "strengthened": [
+            "tests/panel-comms-docs.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "what": "the Comms heading renamed back to the band",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C362": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:09:04Z",
+          "head": "87619748046a0738e238f5e13976667adb21bd15"
+        },
+        {
+          "task": 2,
+          "what": "the needs-you line said to have buttons",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C362": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:09:18Z",
+          "head": "87619748046a0738e238f5e13976667adb21bd15"
+        },
+        {
+          "task": 3,
+          "what": "the fold line text changed",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C362": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:09:32Z",
+          "head": "87619748046a0738e238f5e13976667adb21bd15"
+        },
+        {
+          "task": 3,
+          "what": "finished helpers said to stay 60 seconds",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C362": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:10:01Z",
+          "head": "87619748046a0738e238f5e13976667adb21bd15"
+        },
+        {
+          "task": 3,
+          "what": "finished helpers said to stay 60 seconds",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C362": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:10:36Z",
+          "head": "a4c543e5d8b8c17a38e9c6c4d15c00c3bf4734e5",
           "strengthened": [
             "tests/panel-comms-docs.bats"
           ]
@@ -41417,6 +41485,19 @@
         "started": "2026-10-15T22:03:03Z",
         "ended": "2026-10-15T22:08:19Z",
         "cost": null
+      },
+      {
+        "id": "build-20261015T220832Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M34",
+        "started": "2026-10-15T22:08:32Z",
+        "ended": "2026-10-15T22:10:42Z",
+        "cost": {
+          "usd": 1.647928,
+          "in": 5179,
+          "out": 18
+        }
       }
     ],
     "milestones": {
