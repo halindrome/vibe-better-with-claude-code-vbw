@@ -9,7 +9,7 @@
 // is worked out by the pure modules: panel-stage.js (Comms), panel-sites.js (the
 // one-line sites and rows), panel-pane.js (Mission Control), panel-view.js, and
 // panel-candy.js (motion, sprites, celebrations), whose frames this file blits.
-import { panelView, liveNeed, supports, COMMS_MIN_VERSION } from './panel-view.js'
+import { panelView, liveNeed, supports, clock, COMMS_MIN_VERSION } from './panel-view.js'
 import { SOUNDS } from './panel-sounds.js'
 import { gatherRun, findRun } from './panel-feed.js'
 import { stageModel, renderStage } from './panel-stage.js'
@@ -93,16 +93,41 @@ function fresh() {
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
     lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {},
     sprites: null, burst: null, sweep: null, cheer: null, wrapped: null, nextSeen: null, nextAt: null, nextAnim: null,
-    seenNext: null, needSeen: null,
+    seenNext: null, needSeen: null, proving: null, stamps: {},
   }
 }
 
 // What is true now, for every place that asks: next.json comes with the time it was
 // written, so a gate is dated by the file and answered by the record that followed it.
-const view = (st, now) => panelView({
-  record: st.record, next: st.next, nextAt: st.nextFileAt, question: st.question, questionAt: st.questionAt,
-  health: st.health, now, cost: st.cost, steps: st.steps,
-})
+// A message keeps the time it began saying what it says (st.stamps): the first pass
+// reads the sentences bare, the second puts each one's [HH:MM] before it.
+const STAMPED = ['estimate-step', 'estimate-milestone']
+const bare = (t) => String(t).replace(/^\[\d\d:\d\d\] /, '')
+function view(st, now) {
+  const input = {
+    record: st.record, next: st.next, nextAt: st.nextFileAt, question: st.question, questionAt: st.questionAt,
+    health: st.health, now, cost: st.cost, steps: st.steps, proving: st.proving !== null,
+  }
+  const proving = st.proving && num(st.proving.at) ? st.proving.at : undefined
+  const first = panelView({ ...input, stamps: { proving } })
+  const stamps = { proving }
+  for (const id of STAMPED) {
+    const row = first.rows.find((r) => r.id === id)
+    const text = row ? bare(row.text) : null
+    if (text === null || /^No estimate/.test(text)) delete st.stamps[id]
+    else {
+      if (!st.stamps[id] || st.stamps[id].text !== text) st.stamps[id] = { text, at: now }
+      stamps[id] = st.stamps[id].at
+    }
+  }
+  // A need without a time of its own is dated by when it was first seen.
+  const need = first.need
+  if (need && !num(need.at)) {
+    if (!st.stamps.need || st.stamps.need.text !== need.key) st.stamps.need = { text: need.key, at: now }
+    stamps.need = st.stamps.need.at
+  } else delete st.stamps.need
+  return panelView({ ...input, stamps })
+}
 
 // The session cost moved while the open lease ran; null without both figures.
 const openLease = (st) => {
@@ -225,6 +250,17 @@ async function readUsage($, st) {
   } catch {
     st.cost = null
     st.health = null
+  }
+}
+
+// A proof is running in this session while its mark exists (the kernel removes it when
+// the proof ends); the mark's time is when it began.
+async function readProving($, st) {
+  try {
+    const f = st.sessionId ? await $.fs.stat(st.root + '/.vbw/runtime/proving.' + st.sessionId) : null
+    st.proving = f ? { at: num(f.mtimeMs) ? f.mtimeMs : null } : null
+  } catch {
+    st.proving = null
   }
 }
 
@@ -353,6 +389,7 @@ async function gather($, st) {
   const root = st.root
   await refresh($, st, root + '/.vbw/record.json', 'record')
   await refresh($, st, root + '/.vbw/runtime/next.json', 'next', false, 'nextFileAt')
+  await readProving($, st)
   if (st.sessionId) await refresh($, st, root + '/.vbw/runtime/auto.' + st.sessionId + '.json', 'auto', true)
   if (st.stepsPath) {
     await refresh($, st, st.stepsPath, 'history')
