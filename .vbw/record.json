@@ -31900,7 +31900,7 @@
       "text": "Loop stop rule (owner 2026-10-15): each loop item gets a time and spend budget from its size and the recorded times of past items; when it is spent the loop stops before its next step and reports where the item stands, instead of grinding on",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     }
   ],
   "decisions": [
