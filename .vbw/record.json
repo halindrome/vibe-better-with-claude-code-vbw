@@ -31872,7 +31872,7 @@
       "text": "The mutation finish check binds only the last plan of a requirement (found in M33, 2026-10-14): plan done skips the missing-breaks check while another plan of the requirement is unfinished, so an earlier plan can finish with 1 of 10 rules broken (P139.2) and the gap lands on the last plan, which may not own the code (P141.2, docs). Each plan should owe the breaks for the rules its own checks cover",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T153",
