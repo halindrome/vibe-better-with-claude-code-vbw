@@ -87,3 +87,27 @@ line_has() {
   b=$(awk '/^## Rigor/ {on=1; next} /^## / {on=0} on && /vbw:building/' "$DOCS/workflows.md")
   [[ "$b" == *tier* && "$b" == *mutation* ]] || { echo "$b"; false; }
 }
+
+# flat FILE: the mutation check section of FILE on one line, spaces squeezed.
+flat() { section "$DOCS/$1" | tr '\n' ' ' | tr -s ' '; }
+# has_sentence FILE TEXT: the section of FILE holds TEXT whole (reversing it fails).
+has_sentence() {
+  local t
+  t=$(flat "$1")
+  [[ "$t" == *"$2"* ]] || { echo "docs/$1 mutation check section lacks: $2"; return 1; }
+}
+
+@test "R188: docs/proof.md pins whole statements: survivor, where it is strengthened, blocking, tiers, one approval" {
+  has_sentence proof.md "never another's, never weakened"
+  has_sentence proof.md "After two attempts that stay green the Dev blocks the plan."
+  has_sentence proof.md "At deep each task also needs a red break or a written reason."
+  has_sentence proof.md "At express it asks for nothing."
+  has_sentence proof.md "A survivor alone covers nothing."
+  has_sentence proof.md "A strengthened check file adds one approval."
+  has_sentence proof.md "asks you to approve the file before the proof"
+}
+
+@test "R188: docs/workflows.md says VBW undoes the break" {
+  has_sentence workflows.md "**VBW undoes the break.**"
+  has_sentence workflows.md "go back to their last commit"
+}
