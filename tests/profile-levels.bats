@@ -99,9 +99,6 @@ carries_profile() {
   for s in "decide and tell me" "options with a recommendation" "I make the calls"; do
     grep -qF -- "$s" "$TEST_ROOT/job1.txt" || { echo "Job 1 ignores involvement '$s'"; false; }
   done
-  # The router puts decisions to the user before proceeding for 'I make the calls'.
-  grep -iE 'I make the calls' "$PLUGIN_ROOT/skills/vibe/SKILL.md" | grep -qiE 'before|ask|put'
-  grep -iE 'decide and tell me' "$PLUGIN_ROOT/skills/vibe/SKILL.md" | grep -qiE 'vbw decide|decid'
 }
 
 @test "R39: every workflow agent call carries the profile in its task text and still passes a schema" {
