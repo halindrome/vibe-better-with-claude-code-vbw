@@ -356,7 +356,11 @@ written 2026-10-09
 - The **top pick**, with its size (`small`, `medium` or `large`) and the reason
   VBW gave for it.
 - Up to two **runners-up**, each with its size, one per line.
-- The date the recommendation was **written**.
+- Each What's next row (the top pick and each runner-up) is a **button** with
+  a size **chip**. Pressing a row fills `/vbw:vibe` with the item's `T` or `R` id, or
+  with its text when it has no id. It only fills the prompt and never sends:
+  you press Enter.
+- When the recommendation was **written**, as `[HH:MM]` in the panel.
 - Before any recommendation is stored, one line says there is **none yet**.
 - When the recommendation found nothing to pick, one line says **the backlog
   is empty**.
@@ -382,6 +386,15 @@ set to `calm` or `off`, or left unset with an interview level whose default is
 not `full`, the section is still. Whether the effect is subtle and elegant
 (R125) is yours to judge: watch a new recommendation arrive, then
 `vbw req accept R125` or `vbw req reject R125 "<what is off>"`.
+
+A new recommendation is also **marked** as new. The mark appears 10 seconds
+after it arrives, when the shimmer has settled, and stays until you have seen
+it; opening the Now tab counts as seen. At full motion it is a mark after the
+shimmer; at `calm` the mark does not move; with motion `off` only the word
+`new` shows. The same mark stays on a newly failed helper's card in Mission
+Control until you open it, and on a new needs-you line in Comms until you open
+its tab. Seen stays seen after a restart, and unseen stays new: the panel
+keeps this under `vbw-panel.*` in your own store, never in the project.
 
 When a milestone ships, Mission Control opens on **VBW Wrapped**: the
 requirements proven, the checks passing, the agents and fix rounds, the time
