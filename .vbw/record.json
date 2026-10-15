@@ -31788,7 +31788,7 @@
     {
       "id": "T140",
       "text": "Loop spend over-counts after a compaction (2026-10-13 18:37): vbw loop status said $1,022.24 spent when the session's dollars had gone from $997.23 to $1,022.40 (about $25). The session's 'in' token figure went DOWN (656,256 to 566,163: Claude Code's figure is the context size, which drops at a compaction), so the spend arithmetic treated the session as reset and counted its whole total. A session whose dollars rose is never a reset; judge resets by the dollar figure only, and treat token counts as non-cumulative. Affects the ceiling stop (a loop with a ceiling would have stopped at once) and every run's and milestone's recorded cost (docs/costs.md).",
-      "sort": "next",
+      "sort": "later",
       "size": "small",
       "status": "open"
     },
