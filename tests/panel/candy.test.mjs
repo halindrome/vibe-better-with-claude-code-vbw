@@ -27,6 +27,7 @@ test('motion: test mode is off whatever the setting; a setting wins; else the in
   assert.equal(motionOf(null), 'calm')
 })
 
+// D407: a role wears its own hue, never a state colour.
 test('every pose has at least two frames of 5x3 cells, painted in the role colour, using half-blocks', () => {
   for (const pose of POSES) {
     const a = spriteFrame({ role: 'dev', pose, frame: 0 })
@@ -35,7 +36,7 @@ test('every pose has at least two frames of 5x3 cells, painted in the role colou
     assert.equal(a.rows, 3)
     assert.equal(a.cells.length, 15)
     assert.notDeepEqual(a.cells, b.cells, pose + ' animates')
-    assert.ok(a.cells.some((c) => c.fg === 0x5fd75f), pose + ' wears the role colour')
+    assert.ok(a.cells.some((c) => c.fg === 0x1fbfb0), pose + ' wears the role colour')
     assert.ok(a.cells.some((c) => /[▀▄▌▐█]/.test(c.ch)), pose + ' is drawn in half-blocks')
     for (const c of a.cells) {
       assert.equal([...c.ch].length, 1)
@@ -46,9 +47,9 @@ test('every pose has at least two frames of 5x3 cells, painted in the role colou
   assert.deepEqual(spriteFrame({ role: 'qa', pose: 'reading', frame: 2 }), spriteFrame({ role: 'qa', pose: 'reading', frame: 0 }), 'frames cycle')
 })
 
-test('each role has its own colour; an unknown role is the neutral grey; docs is pink', () => {
+test('each role has its own colour; an unknown role is the neutral grey; docs is violet', () => {
   const fig = (role) => spriteFrame({ role, pose: 'reading', frame: 0 }).cells[1].fg
-  assert.equal(fig('docs'), 0xff87d7)
+  assert.equal(fig('docs'), 0xc27aff)
   assert.equal(fig('nobody'), 0x808080)
   const roles = ['architect', 'lead', 'dev', 'qa', 'scout', 'debugger', 'docs', 'nobody']
   assert.equal(new Set(roles.map(fig)).size, roles.length)
