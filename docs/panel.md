@@ -320,6 +320,23 @@ event needed. When nothing is going on it says so:
 +------------------------------------------+
 ```
 
+### Clock times
+
+Events and messages start with their clock time in brackets, so you can tell
+when something began saying what it says:
+
+```
+[14:20] About 2 min left in this step.
+```
+
+Mission Control's need sentence starts with the time the gate was reached, and
+the time-left sentences start with their own time. A helper card's state line
+starts with the time the helper started (while running) or ended (done or
+failed). The all-checks-pass line in Comms starts with the time of the proof,
+and What's next shows when its recommendation was written. A message keeps the
+time it began saying what it says: three minutes of clock alone redraw
+nothing.
+
 ### What's next
 
 The **Now** tab has a **What's next** section with the recommendation VBW
