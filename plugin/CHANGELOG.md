@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.0.38] - 2026-10-15
+
+### Changed
+
+- **No shortcuts in plans.** The Architect and the Lead choose the best
+  long-term design, never the merely safe or simple one, and name any cost or
+  debt they accept. QA fails a phase that pays a recurring cost (time, tokens,
+  re-runs) instead of the better design, or leaves a cost unnamed.
+- **Builders see your later decisions.** A decision recorded after you
+  approved the plan reaches every Dev and Docs agent of a build or fix round
+  (`vbw show decisions --since-approval`) and wins over the plan.
+- **A wait behind another VBW command is told.** When another `vbw` command of
+  the same project holds the checks, `vbw check`, `vbw prove` and `vbw mutate`
+  end with the same "waited N s" line as a wait for the computer-wide limit.
+
+### Fixed
+
+- **Read tracking on fast machines.** The check that the file system records
+  reads could pass when it should not on a fast Linux machine; it now asks
+  whether the set-back times took, by their age.
+
 ## [2.0.37] - 2026-10-15
 
 ### Added
