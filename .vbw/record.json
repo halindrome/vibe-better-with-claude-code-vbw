@@ -18005,15 +18005,21 @@
           "from": "standard",
           "to": "deep",
           "reason": "Dev blocked P141.2: Docs done and committed (5f3e8b29); red breaks recorded for R188.52-55. plan done refuses: it asks a red break for every R188 rule (R188.1-51, 56, 57), whose code lies outside this plan's files, and vbw mutate refuses breaks outside plan files (R188.4). Also tests/mutate-prompts.bats waits for approval. Needs the owner or the other R188 plans (P139/P140) to complete the requirement."
+        },
+        {
+          "at": "2026-10-15T07:25:02Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "QA needs a second round"
         }
       ],
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "b8a88a06113136fadd589f790bb03111aef54f036a33a2029ce5b1e476414c65",
-        "at": "2026-10-15T02:19:52Z",
-        "note": "17/18 checks",
-        "rounds": 1
+        "tree": "d87f94967816caf073630662463eafb043805aba4dcba020ebb839c2c7e61773",
+        "at": "2026-10-15T07:25:02Z",
+        "note": "20/22 checks",
+        "rounds": 2
       }
     }
   ],
@@ -30825,7 +30831,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The docs tests do not pin the statements they are meant to pin (criteria 4 and 5; rules R188.52-R188.56). tests/mutation-docs.bats and tests/mutation-qa.bats only check that certain words appear somewhere in the section (or on one line of qa.md), so a statement can say the opposite and every test stays green. Evidence (L1, throwaway copy of HEAD in the scratchpad, bats tests/mutation-docs.bats tests/mutation-qa.bats, 7 of 7 still ok after these edits): (1) docs/workflows.md 'When it runs: at standard and deep. Never at express, and never in a fix.' changed to 'at express. Never at standard or deep, but in a fix, and undo.'; (2) docs/rigor.md table rows swapped so express = 'each rule' and standard = 'nothing'; (3) docs/proof.md 'the loop gives that approval and records a decision' changed to 'you give that approval, no decision'; (4) plugin/agents/qa.md 'do not find again a gap' changed to 'find again a gap'. P141.2's own recorded break 'task2: survivor word removed' also stayed green (a survivor) and was covered only by a different break, not by a stronger test. What a regression test should catch: assert the sentences, not single words (for example 'standard and deep' next to 'never at express', the express/standard/deep table rows each with their own content, 'the loop gives' with 'records a decision', 'do not find again' in qa.md), and be shown red when each of the four edits above is applied.",
       "phase": "P141"
     },
@@ -30846,6 +30852,24 @@
       "status": "closed",
       "note": "docs/workflows.md section 'Rigor' (lines 493-503) lists what each workflow takes from args.rigor but the vbw:building bullet names only models; it never says rigor[phase].tier now decides whether a Dev or Docs agent is told to do the mutation step (building.js line 74). Minor cross-file consistency gap against criterion 2. A regression test (tests/mutation-docs.bats) should require the vbw:building bullet to mention the tier.",
       "phase": "P140"
+    },
+    {
+      "id": "F230",
+      "req": "R188",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "docs/workflows.md lines 213-216 (section 'The mutation check') say: 'The command refuses, and writes nothing, if the plan's files differ from their last commit, a file is outside the plan, or a check file is touched.' The first condition is the opposite of the code. plugin/lib/cmd-mutate.sh refuses when NONE of the named files differs from the last commit ('nothing to check: none of the named files differs from the last commit'), because the break itself is the difference; it never refuses because a plan file differs. Rule R188.3 reads 'nothing differing from the plan's last commit is refused'. A Dev or user reading the guide would think a dirty working file blocks the command, when a dirty (broken) file is what it needs. Evidence: L1, reading cmd-mutate.sh lines 105-118 against the docs text and the rule list in vbw show req R188. tests/mutation-docs.bats does not pin this sentence (it checks single words in the section, plus the one 'at standard and deep / never at express / never in a fix' line). A regression test should assert the refusal sentence says that a break which changes none of the named files is refused (words such as 'nothing' or 'none' with 'differs'), and be shown red with the current inverted wording.",
+      "phase": "P141"
+    },
+    {
+      "id": "F231",
+      "req": "R188",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "tests/mutation-docs.bats, test 'docs/rigor.md gives express, standard and deep each its own content': the first negated line '! line_has rigor.md express \"each rule\" > /dev/null' is not the last command of the test, so bash errexit (bats) ignores it and it can never fail. Evidence: L1, 'bash -c \"set -eET; f(){ return 0; }; ! f; echo reached\"' prints reached; by reading, only the final '! line_has rigor.md standard nothing' is enforced. So an express row such as 'nothing, each rule: one small break per rule' keeps all 11 tests green although it says express breaks each rule (F227 asked that express and standard each keep their own content). A regression test should replace both negations with 'run line_has ...; [ \"$status\" -ne 0 ]' (or if line_has; then false; fi) and be shown red when the express row also says 'each rule'.",
+      "phase": "P141"
     }
   ],
   "todos": [
