@@ -212,8 +212,9 @@ cannot fail, and QA would otherwise find it one round at a time.
   no behaviour a test could notice; a rule cannot be recorded this way.
 - **VBW undoes the break.** The named files go back to their last commit,
   whether a check noticed (red) or not (a survivor). The command refuses, and
-  writes nothing, if the plan's files differ from their last commit, a file is
-  outside the plan, or a check file is touched.
+  writes nothing, if none of the named files differs from their last commit (the
+  break is the difference), a file is outside the plan, or a check file is
+  touched.
 - **What it records:** `vbw show plan` lists each break: target, description,
   red or survivor, and each check's result. A survivor makes `vbw mutate` exit
   non-zero. What to do with it: docs/proof.md.

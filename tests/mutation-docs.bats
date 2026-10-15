@@ -65,8 +65,17 @@ line_has() {
   line_has rigor.md '`express`' "nothing"
   line_has rigor.md '`standard`' "each rule" "one small break per rule"
   line_has rigor.md '`deep`' "each rule" "each task" "edge case"
-  ! line_has rigor.md '`express`' "each rule" > /dev/null
-  ! line_has rigor.md '`standard`' "nothing" > /dev/null
+  run line_has rigor.md '`express`' "each rule"
+  [ "$status" -ne 0 ]
+  run line_has rigor.md '`standard`' "nothing"
+  [ "$status" -ne 0 ]
+}
+
+@test "R188: docs/workflows.md says the command refuses when none of the named files differs from the last commit" {
+  local t
+  t=$(section "$DOCS/workflows.md" | tr '\n' ' ' | tr -s ' ')
+  [[ "$t" == *"refuses"*"none of the named files differs from their last commit"* ]] || { echo "$t"; false; }
+  [[ "$t" != *"if the plan's files differ"* ]]
 }
 
 @test "R188: docs/proof.md says the loop gives the approval and records a decision" {
