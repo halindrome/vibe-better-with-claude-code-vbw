@@ -4671,7 +4671,7 @@
   "milestone": {
     "id": "M33",
     "title": "Cost: at standard and deep, mutation-check a plan's own tests before its build ends, so QA stops finding tests that cannot fail one round at a time (M15: each deep QA round found 1-2 such gaps, about an hour per loop)",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -4833,6 +4833,11 @@
       "id": "M32",
       "title": "Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09)",
       "at": "2026-10-14T11:26:28Z"
+    },
+    {
+      "id": "M33",
+      "title": "Cost: at standard and deep, mutation-check a plan's own tests before its build ends, so QA stops finding tests that cannot fail one round at a time (M15: each deep QA round found 1-2 such gaps, about an hour per loop)",
+      "at": "2026-10-15T08:26:53Z"
     }
   ],
   "requirements": [
@@ -34047,6 +34052,11 @@
       "id": "D397",
       "at": "2026-10-15T08:18:00Z",
       "text": "Contract approved: 177 requirements, 354 checks, 419 plans (a738474ab81f)"
+    },
+    {
+      "id": "D398",
+      "at": "2026-10-15T08:26:53Z",
+      "text": "Shipped M33 Cost: at standard and deep, mutation-check a plan's own tests before its build ends, so QA stops finding tests that cannot fail one round at a time (M15: each deep QA round found 1-2 such gaps, about an hour per loop): 1 requirement proven or accepted"
     }
   ],
   "commands": {
@@ -39690,6 +39700,12 @@
             "out": 0,
             "at": "2026-10-14T14:45:12Z"
           }
+        },
+        "total": {
+          "usd": 60.675527,
+          "in": 349118,
+          "out": 574,
+          "sessions": 13
         }
       }
     }
