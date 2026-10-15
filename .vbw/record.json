@@ -31173,7 +31173,7 @@
     {
       "id": "T45",
       "text": "QA re-check scope: a phase is re-checked deeply when a phase it builds on changed only test-result files (2026-10-07: P55 re-checked because P57's tools/l3-results/smallchange.json was re-committed); judge dependency changes by kind, as R71 does for depth",
-      "status": "open",
+      "status": "done",
       "sort": "next",
       "size": "small"
     },
