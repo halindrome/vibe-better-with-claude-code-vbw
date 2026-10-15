@@ -29871,7 +29871,7 @@
         "P142.2",
         "P145.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Keep next.json's time with its contents and pass liveNeed, the session's health figures and the seen helpers to Comms, Mission Control, the hint line and the instant commands",
@@ -29879,6 +29879,434 @@
         "Mission Control's agent cards follow the same redraw: a run that has ended draws no card as working and says it ended; a run still working is never drawn as ended",
         "/vbw-panel and its description say Mission Control; no text, comment included, calls the strip 'the band' or the pane 'Telemetry'",
         "Update tests/panel/wiring.test.mjs and mission-live.test.mjs; C360 and C361 pass. This plan owns the Comms rules end to end, so it may adjust P142.1's and P142.2's files and breaks each rule where its code lives"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Every gate kind (approve, approve of edited test files, human check, ship, blocked, fix limit, scope, spec, next milestone, convert) is exactly one Comms line 'HH:MM ⚑ VBW needs you · <what>' in the needs-you colour, timed when the gate was reached"
+          },
+          "what": "the needs-you line says 'VBW needs' without 'you'",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:37:43Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "While a gate stands Comms draws no button and no Later, and the line stays"
+          },
+          "what": "Comms line gets a Later button",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:38:01Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Compact first is a gate kind: one needs-you line naming /compact, no button"
+          },
+          "what": "compact threshold unreachable",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:38:08Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Plan approved (a Contract approved decision newer than next.json): Comms, Mission Control, the hint line and /vbw-status drop the request at the next refresh (2 s) with no other event"
+          },
+          "what": "an approval no longer answers the approve gate",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:38:15Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "An approval older than the gate, or a record change not about it (a parked idea), leaves the line standing"
+          },
+          "what": "any approval answers the gate, even an older one",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:38:22Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Milestone shipped: the ship line clears at the next refresh though next.json still says ship"
+          },
+          "what": "ship never answered by the shipped milestone",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:38:29Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Regression 2026-10-09: after a ship completes no 'ready to ship' text stays on Comms or in Mission Control"
+          },
+          "what": "ship answered by a status that never occurs",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:38:36Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Human check answered: the line clears at the next refresh"
+          },
+          "what": "accepted no longer answers a human check",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:38:43Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A run started (a lease is held): the line clears at the next refresh and Mission Control says nothing is needed"
+          },
+          "what": "a held lease no longer clears the need",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:38:50Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The gate leaves next.json: the line clears at the next refresh"
+          },
+          "what": "a gate:false next.json still makes a need",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:38:57Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "An open question shows the line; it is gone at the redraw after the answer"
+          },
+          "what": "the question is never cleared after the answer",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:39:04Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A gate in next.json while a lease is held is never shown, on Comms or in Mission Control"
+          },
+          "what": "Comms computes the need as if no lease were held",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:39:11Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "/vbw-panel and its description say Mission Control; nothing VBW draws or says calls the strip the band or the pane Telemetry"
+          },
+          "what": "/vbw-panel description names the panel again",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:39:18Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A helper that turns done leaves Comms at the next redraw with no hold, is counted in the top line's 'N done', and its Mission Control card stops showing running on the same redraw"
+          },
+          "what": "a done helper keeps its Comms row",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C361": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:39:26Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A failed helper stays one red ✗ row with no green or amber in it until opened in Mission Control, then leaves at the next redraw"
+          },
+          "what": "a failed helper never leaves Comms",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C361": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:39:32Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The crew leaves Comms as soon as the run ends; a working run is never drawn as ended, and no card of an ended run as running"
+          },
+          "what": "the crew stays after the run ends",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C361": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:39:39Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A failed helper not yet seen stays alone on Comms after the run ends, until opened"
+          },
+          "what": "an unseen failure vanishes with the run",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C361": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:39:46Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "At full motion exactly 3 of 5 working helpers are pixel figures and the rest text rows; at calm and off no figure, one line per helper"
+          },
+          "what": "4 figures instead of 3",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C361": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:39:53Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Rows beyond maxRows fold into one last line '+N more · [m] Mission Control', N being exactly the helpers not shown"
+          },
+          "what": "the fold counts one too few",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C361": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:40:00Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A helper row shows the role as a word, the step, what it is doing and the start time HH:MM"
+          },
+          "what": "the row loses its start time",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C361": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:40:07Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "task": 1,
+          "what": "next.json keeps no time",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:40:44Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "task": 4,
+          "what": "/vbw-panel answers with the old name",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:41:50Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "task": 2,
+          "what": "opening a helper does not mark it seen",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C361": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T21:42:07Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "task": 3,
+          "what": "only a stopped run cuts its cards",
+          "files": [
+            "plugin/hooks/panel-mission-live.js"
+          ],
+          "checks": {
+            "C361": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T21:42:14Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "task": 3,
+          "what": "a working run is drawn as ended (cut off)",
+          "files": [
+            "plugin/hooks/panel-mission-live.js"
+          ],
+          "checks": {
+            "C361": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T21:42:34Z",
+          "head": "7ad5e7602782eee9d859c9254932fe7b5a674e7c"
+        },
+        {
+          "task": 2,
+          "what": "opening a helper does not mark it seen",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C361": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:42:59Z",
+          "head": "d22c2a5d1db0bf70126f6a24db0cb37ea40c65f3",
+          "strengthened": [
+            "tests/panel/r189/comms-crew.test.mjs"
+          ]
+        },
+        {
+          "task": 3,
+          "what": "a working run is drawn as ended (cut off)",
+          "files": [
+            "plugin/hooks/panel-mission-live.js"
+          ],
+          "checks": {
+            "C361": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:43:12Z",
+          "head": "d22c2a5d1db0bf70126f6a24db0cb37ea40c65f3",
+          "strengthened": [
+            "tests/panel/r189/comms-crew.test.mjs"
+          ]
+        },
+        {
+          "task": 5,
+          "none": "task 5 only updates tests; the mutations of tasks 1 to 4 and the rules already break the code these tests protect",
+          "at": "2026-10-15T21:43:17Z"
+        }
       ]
     },
     {
@@ -40483,6 +40911,15 @@
         "milestone": "M34",
         "started": "2026-10-15T21:33:02Z",
         "ended": "2026-10-15T21:34:24Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261015T213442Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M34",
+        "started": "2026-10-15T21:34:42Z",
+        "ended": "2026-10-15T21:43:35Z",
         "cost": null
       }
     ],
