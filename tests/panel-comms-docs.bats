@@ -38,3 +38,10 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
   has "$DOC" 'fail'
   has "$DOC" '\+[0-9n]+ more'
 }
+
+@test "R189: docs/panel.md ties each clearing to its event: ship, answer, a run starting, the run ending" {
+  has "$DOC" 'ready to ship.{0,40}milestone ships|milestone ships.{0,40}ready to ship'
+  has "$DOC" 'you answer'
+  has "$DOC" 'a run starts'
+  has "$DOC" 'run ends.{0,40}crew leaves comms|crew leaves comms.{0,40}run ends'
+}
