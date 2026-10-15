@@ -1,6 +1,56 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "fix-20261015T022225Z",
+    "kind": "fix",
+    "started_at": "2026-10-15T02:22:25Z",
+    "files": [
+      "docs/guards.md",
+      "docs/loop.md",
+      "docs/proof.md",
+      "docs/record.md",
+      "docs/rigor.md",
+      "docs/workflows.md",
+      "plugin/agents/dev.md",
+      "plugin/agents/docs.md",
+      "plugin/agents/qa.md",
+      "plugin/bin/vbw",
+      "plugin/hooks/common.jq",
+      "plugin/lib/checks.sh",
+      "plugin/lib/cmd-commit.sh",
+      "plugin/lib/cmd-mutate.sh",
+      "plugin/lib/cmd-plan.sh",
+      "plugin/lib/cmd-prove.sh",
+      "plugin/lib/cmd-show.sh",
+      "plugin/lib/contract.sh",
+      "plugin/lib/loop-step.sh",
+      "plugin/lib/record.jq",
+      "plugin/workflows/building.js",
+      "tests/mutate-command.bats",
+      "tools/baseline/results/mutation/express.json",
+      "tools/baseline/results/mutation/standard.json",
+      "tools/mutation-run.sh"
+    ],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "new_tests": true,
+    "editable": [
+      "tests/mutate-command.bats",
+      "tests/mutate-isolation.bats",
+      "tests/mutate-loop.bats",
+      "tests/mutate-plan-done.bats",
+      "tests/mutate-prompts.bats",
+      "tests/mutate-show.bats",
+      "tests/mutate-strengthen.bats",
+      "tests/mutation-docs.bats",
+      "tests/mutation-qa.bats",
+      "tests/mutation-runs.bats"
+    ],
+    "cost": {
+      "usd": 1186.997296,
+      "in": 367905,
+      "out": 201
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -33939,6 +33989,11 @@
       "id": "D392",
       "at": "2026-10-15T02:00:01Z",
       "text": "Contract approved: 177 requirements, 354 checks, 419 plans (87593d779969)"
+    },
+    {
+      "id": "D393",
+      "at": "2026-10-15T07:06:11Z",
+      "text": "Contract approved: 177 requirements, 354 checks, 419 plans (ea08d0460d7d)"
     }
   ],
   "commands": {
