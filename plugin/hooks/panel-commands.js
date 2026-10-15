@@ -18,8 +18,8 @@ const STEPS = {
 
 const clock = (n) => (Number.isFinite(n) ? n : Date.now())
 const project = (input) => {
-  const { record, next, now, sessionId } = isObj(input) ? input : {}
-  const v = panelView({ record, next, now: clock(now) })
+  const { record, next, nextAt, health, now, sessionId } = isObj(input) ? input : {}
+  const v = panelView({ record, next, nextAt, health, now: clock(now) })
   return v.rows[0].id === 'neutral' ? null : { v, rec: record, nx: next, now: clock(now), sessionId }
 }
 

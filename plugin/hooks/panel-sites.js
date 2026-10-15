@@ -40,7 +40,7 @@ export const SITES = {
     return suffix ? { props: { suffix } } : null
   },
   PromptHint: (st, e, now) => {
-    const tail = hintTail({ ...live(st), now })
+    const tail = hintTail({ ...live(st), nextAt: st.nextFileAt, health: st.health, now })
     return tail ? { props: { tail } } : null
   },
   SessionMode: (st, e) => {

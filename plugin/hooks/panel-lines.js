@@ -4,6 +4,8 @@
 // the `vbw` row intentions. Pure: data in, one string out, or null to leave the
 // engine's own line. Never throws, never changes its input, no `$` here.
 
+import { liveNeed } from './panel-view.js'
+
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const arr = (x) => (Array.isArray(x) ? x.filter(isObj) : [])
 const WORKFLOWS = ['planning', 'building', 'fixing', 'verifying', 'mapping', 'researching', 'investigating', 'tooling']
@@ -56,13 +58,15 @@ export function spinnerSuffix(input) {
 
 // PromptHint `tail`: the run and its time, else the gate, else the next step.
 export function hintTail(input) {
-  const { record: rec, next: nx, run, now } = isObj(input) ? input : {}
+  const { record: rec, next: nx, nextAt, health, run, now } = isObj(input) ? input : {}
   if (!isProject(rec)) return null
   if (live(run)) {
     const t = dur((Number.isFinite(now) ? now : Date.now()) - run.startedAt)
     return 'VBW: ' + run.kind + (t ? ' ' + t : '')
   }
-  if (isObj(nx) && nx.gate === true) return 'VBW needs you: ' + nextCommand(nx)
+  // Only a request that is still true (an answered gate or a held lease asks nothing).
+  const need = liveNeed({ record: rec, next: nx, nextAt, health })
+  if (need) return 'VBW needs you: ' + (need.kind === 'compact' ? '/compact' : nextCommand(nx))
   return 'VBW next: /vbw:vibe'
 }
 
