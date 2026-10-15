@@ -57,10 +57,11 @@ front() { awk 'NR == 1 && /^---$/ { on = 1; next } on && /^---$/ { exit } on' "$
   done < <(skills)
 }
 
-@test "the router's Stop hook is the autonomy gate and can never block by accident" {
-  local cmd
-  cmd=$(front "$PLUGIN_ROOT/skills/vibe/SKILL.md" | sed -n 's/^ *command: //p')
-  [ "$cmd" = '"\"${CLAUDE_PLUGIN_ROOT}/bin/vbw\" auto gate 2>/dev/null || true"' ]
+@test "the plugin's Stop hook is the autonomy gate and can never block by accident" {
+  # The plugin's own (T150), never the router's: a skill's hook dies with a resumed session.
+  ! front "$PLUGIN_ROOT/skills/vibe/SKILL.md" | grep -q '^hooks:'
+  jq -r '.hooks.Stop[0].hooks[0].command' "$PLUGIN_ROOT/hooks/hooks.json" | grep -q ' || true$'
+  grep -q 'auto gate 2> /dev/null || true$' "$PLUGIN_ROOT/hooks/stop.sh"
   grep -qF 'vbw auto on ${CLAUDE_SESSION_ID}' "$PLUGIN_ROOT/skills/vibe/SKILL.md"
 }
 

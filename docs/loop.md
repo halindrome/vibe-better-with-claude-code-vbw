@@ -185,6 +185,14 @@ against `autonomy_cap` (the steps of an ordinary autonomous run); the loop's
 own ceiling is its cap. While this session's proof runs in the background the
 hook asks for nothing.
 
+The hook is the plugin's own (`hooks/stop.sh` in `hooks/hooks.json`), not part
+of `/vbw:loop` or `/vbw:vibe`, so it runs once per stop and still drives the
+loop after you resume the session. It starts the kernel only for a session with
+a loop on (`vbw loop start` leaves a mark in `.vbw/runtime/`, the loop's end
+removes it) or an armed autonomous run; in every other session it does nothing.
+A session resumed from before this change gets its mark back when you run
+`/vbw:loop` again: it says the loop is already on and drives it from there.
+
 ### `vbw loop next`
 
 Each step is one kernel call, `vbw loop next --json`. Only the loop's hook calls

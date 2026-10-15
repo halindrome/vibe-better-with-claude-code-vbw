@@ -108,8 +108,11 @@ loop_start() {
     built=$(printf '%s' "$built" | jq -c --arg i "$id" --arg t "$text" --arg p "$proof" '. += [{id: $i, text: $t, proof: $p, status: "waiting"}]')
     list="$list${list:+, }$id"
   done
-  printf '%s' "$rec" | jq -e '.loop != null and .loop.ended == null' > /dev/null \
-    && vbw_die "a loop is already on. Next: run vbw loop status to see it, or vbw loop stop to end it (twice when it is already stopping and its session is gone)"
+  if printf '%s' "$rec" | jq -e '.loop != null and .loop.ended == null' > /dev/null; then
+    # The loop's own session starting it again (after a resume) gets its Stop hook's mark back (T150).
+    [ -z "$session" ] || ! printf '%s' "$rec" | jq -e --arg s "$session" '.loop.session == $s' > /dev/null || loop_mark "$session"
+    vbw_die "a loop is already on. Next: run vbw loop status to see it, or vbw loop stop to end it (twice when it is already stopping and its session is gone)"
+  fi
   printf '%s' "$rec" | jq -e '.milestone.status != "shipped" and (. as $r | .milestone.id as $m
       | any($r.requirements[]; .milestone == $m and ((.proof == "human" and (.id as $i | any($r.phases[]; .milestone != $m and any(.reqs[]; . == $i)))) | not)))' > /dev/null \
     && vbw_die "$(printf '%s' "$rec" | jq -r .milestone.id) has requirements and is not shipped. Next: finish or ship it first (vbw next): each item gets its own milestone"
@@ -127,7 +130,14 @@ loop_start() {
   record_update '.loop = {items: $items, ceiling: $ceil, session: (if $s == "" then null else $s end), started_at: $at, baseline: $base}' \
     --argjson items "$built" --argjson ceil "$ceil" --arg s "$session" --arg at "$(vbw_now)" --argjson base "$base"
   record_commit "chore(vbw): loop start" .vbw/record.json
+  [ -z "$session" ] || loop_mark "$session"
   printf 'loop on: %s; %s; session %s\n' "$list" "$desc" "${session:-unknown}"
+}
+
+# loop_mark SESSION: the mark the plugin's Stop hook (hooks/stop.sh) looks for before it starts the kernel.
+loop_mark() {
+  [[ "$1" =~ ^[A-Za-z0-9_-]+$ ]] || return 0
+  mkdir -p "$VBW_RUNTIME" && : > "$VBW_RUNTIME/loop.$1"
 }
 
 loop_stop() {

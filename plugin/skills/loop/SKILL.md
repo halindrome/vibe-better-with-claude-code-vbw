@@ -4,11 +4,6 @@ description: Let VBW work through named backlog items on its own, within a spend
 argument-hint: "ITEM... --ceiling USD [--finish-item] | ITEM... --no-ceiling | stop"
 disable-model-invocation: true
 allowed-tools: Bash("${CLAUDE_PLUGIN_ROOT}/bin/vbw" *) Bash(vbw *) Workflow(vbw:mapping) Workflow(vbw:planning) Workflow(vbw:building) Workflow(vbw:fixing) Workflow(vbw:verifying)
-hooks:
-  Stop:
-    - hooks:
-        - type: command
-          command: '"${CLAUDE_PLUGIN_ROOT}/bin/vbw" auto gate 2>/dev/null || true'
 ---
 
 The user ran `/vbw:loop`. Result:

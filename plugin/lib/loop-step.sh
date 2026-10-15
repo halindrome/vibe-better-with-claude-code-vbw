@@ -80,7 +80,11 @@ loop_commit_report() {
 
 # loop_end REASON: the loop ends here: written once, committed with the report, and answered.
 loop_end() {
+  local s
   record_update '.loop.ended = {at: $at, reason: $r}' --arg at "$(vbw_now)" --arg r "$1"
+  # The Stop hook's mark goes with the loop (T150): the hook is silent again.
+  s=$(jq -r '.loop.session // empty' "$VBW_RECORD")
+  [[ ! "$s" =~ ^[A-Za-z0-9_-]+$ ]] || rm -f "$VBW_RUNTIME/loop.$s"
   loop_commit_report "chore(vbw): loop ended"
   loop_ended_answer "$(record_read)"
 }
