@@ -87,7 +87,7 @@ function parse(text) {
 // What the panel knows: the last good state of its files, the live run, what is drawn, what is asked.
 function fresh() {
   return {
-    live: false, born: {}, timer: null, busy: false, question: null, sound: true, keys: keys(false), silent: false, wouldPlay: 0, alerted: null,
+    live: false, born: {}, timer: null, busy: false, question: null, sound: true, keys: keys(false), silent: false, wouldPlay: 0,
     record: null, next: null, history: null, cost: null, health: null, auto: null, stepsPath: null, steps: null, shown: '', seen: {}, sized: false,
     root: null, sessionId: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
@@ -351,23 +351,33 @@ async function gather($, st) {
   await feed($, st)
 }
 
-// Play the sound once when a need appears; the same need never plays it again.
-// A missing file or player is silent.
-async function alert($, st, need) {
-  const key = need ? need.key : null
-  if (key === st.alerted) return
-  st.alerted = key
-  const clip = key && st.sound ? pick() : null
-  if (!clip) return
+// Call the user, once: the needs-you sound and a native notification, both only while the
+// sound is on, neither in a test session. A missing player or $.ui.notify is silent.
+async function call($, st, text, clip) {
+  if (!st.sound) return
   if (st.silent) {
-    st.wouldPlay++
+    if (clip) st.wouldPlay++
     return
   }
-  try {
-    await $.audio.play(clip)
-  } catch {
-    // no file or no player: nothing to say
+  if (clip) {
+    try {
+      await $.audio.play(clip)
+    } catch {
+      // no file or no player: nothing to say
+    }
   }
+  try {
+    await $.ui.notify(text, { title: 'VBW' })
+  } catch {
+    // no notifications here: nothing to show instead
+  }
+}
+
+// Claude Code's question menu just opened: one clip and one notification naming what VBW
+// needs (the need standing besides the question, else just a question).
+async function callForQuestion($, st) {
+  const need = liveNeed({ record: st.record, next: st.next, nextAt: st.nextFileAt, health: st.health })
+  await call($, st, need ? need.text : 'VBW has a question for you.', pick())
 }
 
 // An approve gate puts /vbw:approve in the prompt's suggestion, once; the person sends it.
@@ -411,6 +421,7 @@ async function noteRecommendation($, st, now) {
   } catch {
     // it may move again after a restart
   }
+  await call($, st, 'There is a new recommendation for what to build next: ' + String(rec.top && rec.top.text ? rec.top.text : 'see What\'s next') + '.', null)
   if (motion(st) !== 'full' || st.nextAnim) return
   st.nextAnim = $.clock.every(FRAME_MS, async () => {
     try {
@@ -430,7 +441,6 @@ async function redrawIfChanged($, st, force) {
   const now = await $.clock.now()
   await noteBorn($, st, now)
   const v = view(st, now)
-  await alert($, st, v.need)
   await suggest($, st)
   const sig = signature(st, v, now)
   if (sig === st.shown && !force) return
@@ -671,7 +681,6 @@ async function begin($, st) {
   const now = await $.clock.now()
   await noteRecommendation($, st, now)
   const v0 = view(st, now)
-  st.alerted = v0.need ? v0.need.key : null // a need already standing at start is not announced
   await suggest($, st)
   st.shown = signature(st, v0, now)
   if (st.timer && st.timer.cancel) st.timer.cancel()
@@ -744,6 +753,7 @@ export function register(on) {
     st.question = { id: String(Date.now()) + Math.random() }
     st.questionAt = await $.clock.now()
     try {
+      await callForQuestion($, st)
       await redrawIfChanged($, st)
     } catch {
       // the next tick draws it
