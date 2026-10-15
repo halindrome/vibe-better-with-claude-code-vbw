@@ -1705,18 +1705,29 @@ failed=0
 
 # Several scenarios: run each in its own process, L3_JOBS at a time, then
 # print each one's lines in the order asked; the exit reflects all of them.
+l3_child() { L3_CHILD=1 bash "$0" "$1"; }
 if [ $# -gt 1 ] && [ "${L3_JOBS:-4}" -gt 1 ] && [ -z "${L3_CHILD:-}" ]; then
   logs=$(mktemp -d "${TMPDIR:-/tmp}/vbw-l3-logs.XXXXXX")
   pids=() names=() status=0 running=0
   for scenario in "$@"; do
     case " $ALL " in *" $scenario "*) ;; *) echo "unknown scenario $scenario (one of: $ALL)" >&2; exit 2 ;; esac
   done
+  # reap: collect the exit of every scenario that ended (bash 3.2 has no wait -n),
+  # so a free slot is used at once whichever scenario ended.
+  reap() {
+    local i
+    for ((i = 0; i < ${#pids[@]}; i++)); do
+      [ -n "${pids[$i]}" ] && ! kill -0 "${pids[$i]}" 2> /dev/null || continue
+      wait "${pids[$i]}" || status=1
+      pids[i]="" running=$((running - 1))
+    done
+  }
   for scenario in "$@"; do
-    L3_CHILD=1 bash "$0" "$scenario" > "$logs/$scenario.log" 2>&1 &
+    while [ "$running" -ge "${L3_JOBS:-4}" ]; do reap; [ "$running" -lt "${L3_JOBS:-4}" ] || sleep 1; done
+    l3_child "$scenario" > "$logs/$scenario.log" 2>&1 &
     pids+=("$!") names+=("$scenario") running=$((running + 1))
-    if [ "$running" -ge "${L3_JOBS:-4}" ]; then wait "${pids[$((${#pids[@]} - running))]}" || status=1; running=$((running - 1)); fi
   done
-  for ((i = ${#pids[@]} - running; i < ${#pids[@]}; i++)); do wait "${pids[$i]}" || status=1; done
+  while [ "$running" -gt 0 ]; do reap; [ "$running" -eq 0 ] || sleep 1; done
   for scenario in "${names[@]}"; do grep -v '^L3 suite:' "$logs/$scenario.log"; done
   rm -rf "$logs"
   [ "$status" -eq 0 ] && echo "L3 suite: all checks passed" || { echo "L3 suite: FAILED"; exit 1; }
