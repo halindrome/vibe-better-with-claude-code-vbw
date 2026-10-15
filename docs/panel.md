@@ -2,8 +2,8 @@
 
 The panel is VBW inside Claude Code's own screen. It has two parts:
 
-- **The band** above the prompt: the agents at work while a VBW workflow runs,
-  or a card with buttons when VBW needs you (see [The band](#the-band)).
+- **Comms**, the strip above the prompt: the helpers at work while a VBW
+  workflow runs, or one line when VBW needs you (see [Comms](#comms)).
 - **Mission Control**, a pane beside the conversation: where your project
   stands, in plain words, and seven tabs for the detail (see
   [Mission Control](#mission-control)). It opens by itself when a session
@@ -91,7 +91,7 @@ your turn
 ## Colours
 
 One palette colours the whole panel, so a role has one colour and a state has
-one colour everywhere: the band, Mission Control and VBW Wrapped.
+one colour everywhere: Comms, Mission Control and VBW Wrapped.
 
 | Role | Colour | | State | Colour | Mark and word |
 |---|---|---|---|---|---|
@@ -120,7 +120,7 @@ same.
 
 Requirement R108 asks whether the colours make it easy to tell at a glance
 which agent is which and what state each is in. Only you can judge that. Watch
-the band or the **Now** tab during a real VBW run, then record a verdict.
+Comms or the **Now** tab during a real VBW run, then record a verdict.
 
 What to look at, from the palette in `plugin/hooks/panel-palette.js`:
 
@@ -162,64 +162,86 @@ vbw req reject R108 "dev green and done green look the same on my light terminal
 A rejection needs a note saying what is hard to tell apart (which roles or
 states, and on which terminal). The note becomes a fix.
 
-## The band
+## Comms
 
-The band is the strip directly above the prompt. VBW uses it only when there is
+Comms is the strip directly above the prompt. VBW uses it only when there is
 something to watch or something to decide; otherwise it is empty. A survey from
-Claude Code always takes it first.
+Claude Code always takes it first. (The pane beside the conversation is
+[Mission Control](#mission-control).)
 
-**While a VBW workflow runs**, the band shows the crew, one row per agent:
+**While a VBW workflow runs**, Comms shows the crew, one row per helper:
 
 ```
-VBW ▸ planning · Plan · 10m04s · ≈$3.20 this run                 [p] Mission Control
-● architect  scope   ⠹ reading spec.md                              2m10s   41k
-● lead       P53     ⠼ "Splitting R69 into two plans: the runner…"  0m48s   18k
-✓ scout      linux   done · 4 findings                              1m02s   12k
+VBW ▸ planning · Plan · 10m04s · ≈$3.20 this run · 1 done        [p] Mission Control
+● architect  scope   ⠹ reading spec.md                              14:02
+● lead       P53     ⠼ "Splitting R69 into two plans: the runner…"  14:03
++2 more · [m] Mission Control
 ```
 
-- Each row shows the role, the agent's label and the spinner in the role's
-  colour, then what the agent is doing now (see
-  [How activity reads](#how-activity-reads)), then its time and its context
-  size, dimmed.
-- In the header, the run's cost (`≈$3.20 this run`) is purple.
-- A finished agent shows ✓ and its one-line result for a minute, then joins a
-  "done" count. A failed agent shows ✗, its reason and a **details** button.
-- An agent with no new step for 45 seconds is marked **quiet**, so a hang looks
-  different from slow work.
+- Each helper row shows the role as a word, in the role's colour (the step
+  label next to it), what the helper is doing now (see
+  [How activity reads](#how-activity-reads)), and the time it started
+  (`HH:MM`).
+- In the top line, the run's cost (`≈$3.20 this run`) is purple, and `N done`
+  counts the helpers that have finished.
+- A helper that finishes leaves Comms at the next redraw, with no wait. It
+  stays in the `N done` count, and its card in Mission Control stops saying
+  running at the same moment.
+- A helper that fails stays as one red `✗` row until you open it in Mission
+  Control. Then it leaves at the next redraw. If the run ends first, the
+  failed helper you have not opened stays alone on Comms.
+- When the run ends, the crew leaves Comms at once.
+- A helper with no new step for 45 seconds is marked **quiet**, so a hang
+  looks different from slow work.
+- When there is no room for every row, the rest fold into one last line,
+  `+N more · [m] Mission Control`, where N is exactly the number of helpers
+  not shown. With little room the rows shrink, down to one summary line.
 - The cost is the session cost added since the run started, so it is "about".
-- With little room the rows shrink, down to one summary line.
 
 VBW reads this from the files Claude Code writes for each workflow run in this
 session's own folder (`<Claude config folder>/projects/<project>/<session>/`):
 which agents started, their type, their transcripts and the run's end. It finds
 the run from the moment `/vbw:vibe` launches it, and again after a reload while
 the run goes on. These files are Claude Code's own and undocumented: if they
-change, the band shows less, never an error.
+change, Comms shows less, never an error.
 
-**When VBW needs you**, the band shows a card instead:
+**When VBW needs you**, Comms shows one line, timed from when VBW reached the
+point where it needs you:
 
 ```
-⚑ VBW needs you · the plan is ready: review it, then approve it to build
-[1: Review plan]   [2: Approve…]   [3: Discuss]   [4: Later]
+14:20 ⚑ VBW needs you · approve the plan
 ```
 
-- Press a digit from an empty prompt, or click.
-- **Review plan** (or Review proof, Review fixes) opens Mission Control on that
-  tab.
-- **Approve…**, **Verify…**, **Discuss** and the like put the command in your
-  prompt (`/vbw:approve`, …). **You press Enter.** No button ever sends a
-  command or answers for you.
-- **Later** hides the card until VBW needs something else; the hint line under
-  the prompt still says what is waiting.
-- When the plan is ready, `/vbw:approve` is also offered as the prompt's
-  suggestion (press Tab to take it).
-- Before a run, the card adds a warning when your weekly limit is past 80%, and
-  a **/compact first** button when the context is 85% full or more. The button
-  only fills `/compact` in.
+- The line has no buttons and nothing to press. Do what it says: run the
+  command it names (for example `/vbw:approve`), or answer VBW's question.
+- Every kind of request gets exactly one such line: approving the plan,
+  approving edited test files, a result to check by hand, shipping, a blocked
+  step, a fix limit, scope, the spec, the next milestone, converting a
+  project, or `/compact` when the context is nearly full.
+- The line stays while the request stands, and it is shown in yellow.
+- The hint line under the prompt still says what is waiting.
+- Before a run, a warning appears when your weekly limit is past 80%.
+
+**When a message clears.** A message leaves as soon as it stops being true,
+at the next redraw (within 2 seconds), with no other event needed:
+
+| The line says | It clears when |
+|---|---|
+| Approve the plan | you approve the plan |
+| Ready to ship | the milestone ships |
+| A result to check | you answer the check |
+| Any request | a run starts (VBW holds the lease), or the request leaves VBW's next step |
+| A question | you answer it |
+
+An approval older than the request, or a change to the record that has
+nothing to do with it (for example a parked idea), leaves the line standing.
+While a run is working, VBW shows no request at all, on Comms or in Mission
+Control, and Mission Control says nothing is needed. After a ship, no "ready to
+ship" text stays on Comms or in Mission Control.
 
 ## How activity reads
 
-The band and the cards say what an agent is doing as a plain intention, not the
+Comms and Mission Control say what an agent is doing as a plain intention, not the
 raw command:
 
 ```
@@ -231,7 +253,7 @@ raw command:
 
 The verb (`editing`, `running`, `recording`) is in the role's colour and the
 object is dimmed. When an agent is writing text rather than calling a tool, the
-band shows the end of that text in quotes, dimmed.
+Comms shows the end of that text in quotes, dimmed.
 
 | The agent... | Shows |
 |---|---|
@@ -462,18 +484,18 @@ What each level shows:
 | | `full` | `calm` | `off` |
 |---|---|---|---|
 | The What's next title and a new top pick | shimmer and pulse, then settle | still | still |
-| Each agent in the band | a small figure in its role's colour, posed by what it does (reading, editing, running a command, writing, quiet, done, failed), moving about 10 times a second while the run works | a dot in its role's colour and a spinner that steps once a second | a dot and a still `·` |
-| A new agent starts | its row in the band flashes in its role's colour for about a second | no flash | no flash |
-| A phase passes QA | about 1.5 s of confetti in the band | nothing | nothing |
-| All checks pass | one green sweep across the top of the Proof tab, and `✓ All checks pass` in the band for a minute | `✓ All checks pass` in the band for a minute | nothing |
+| Each agent in Comms | a small figure in its role's colour, posed by what it does (reading, editing, running a command, writing, quiet, done, failed), moving about 10 times a second while the run works | a dot in its role's colour and a spinner that steps once a second | a dot and a still `·` |
+| A new agent starts | its row in Comms flashes in its role's colour for about a second | no flash | no flash |
+| A phase passes QA | about 1.5 s of confetti in Comms | nothing | nothing |
+| All checks pass | one green sweep across the top of the Proof tab, and `✓ All checks pass` in Comms for a minute | `✓ All checks pass` in Comms for a minute | nothing |
 | A milestone ships | Mission Control opens on VBW Wrapped | the same | the same |
 
 The flash shows the role and label of the new row with its colours inverted. It
 needs `full` motion: set it with `vbw config set motion full` (see above). At
 `calm` and `off` a new agent's row appears without it.
 
-The figures need three rows of the band for each agent; with less room the band
-shows dots. They move only while a VBW run works and the band shows them, and
+The figures need three rows of Comms for each agent; with less room Comms
+shows dots. They move only while a VBW run works and Comms shows them, and
 stop when the run ends. Figures, confetti and the sweep are drawn on the
 terminal only; other surfaces show the dots. VBW Wrapped is information, not
 decoration, so it opens at every level.
@@ -488,10 +510,10 @@ test mode it is always `off`, so test runs draw the same thing every time.
 The panel needs **Claude Code 2.1.287 or newer** (check with
 `claude --version`; update with `claude update`).
 
-- **The band above the prompt** (the crew and the cards) needs **2.1.290 or
-  newer**: earlier versions redraw a band forever when it changes height. On
+- **Comms, above the prompt** (the crew and the needs-you line) needs **2.1.290 or
+  newer**: earlier versions redraw Comms forever when it changes height. On
   2.1.287 to 2.1.289 the pane, the one-line notes and the commands work, and the
-  band stays Claude Code's own.
+  Comms stays Claude Code's own.
 - **Older Claude Code:** there is no panel and no error. Everything else in
   VBW, including the status line, works as before.
 - **Outside a VBW project** (no `.vbw/record.json`): there is no panel and no
