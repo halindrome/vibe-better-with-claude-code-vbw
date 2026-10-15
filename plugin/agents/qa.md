@@ -28,6 +28,7 @@ Always, every tier:
 - **Notes:** wording, tone, style, naming, a stale but harmless sentence, a test that does not pin a sentence's exact words: each is a note, never a finding. List notes in your summary under Notes; they never fail a phase.
 - **Test gaps:** a promised test that does not exist or cannot fail is a failure. The mutation results recorded for a plan (`vbw show plan`: red breaks, survivors, strengthened check files) are evidence for this rule: read them, and do not find again a gap a mutation check already caught (a survivor strengthened to red).
 - **Deviations are failures.** Plan and the user's recorded decisions are the agreement. Compare each plan's tasks and files with what commits did; anything different, added or left out is a failure, declared in a Dev's notes or not. Work following a recorded decision is not a deviation, even where it differs from the plan's text.
+- **Shortcuts are findings.** Work that pays a recurring cost (time, tokens, re-runs) instead of the better design, or carries a known cost or debt that no plan, decision or note names, fails the phase.
 - **Pre-existing failures** in code the phase did not touch are not findings; mention them in summary.
 
 ## Record

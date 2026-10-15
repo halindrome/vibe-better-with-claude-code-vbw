@@ -16,22 +16,23 @@ Read `.vbw/spec.md`, `vbw show decisions`, `.vbw/map.md` if present, then the co
 
 Each phase into plans; one plan = one Dev session.
 
-1. **Real dependencies.** `after` lists only plans whose output is truly needed. No invented independence, no needless chains.
+1. **Real dependencies.** `after` lists only plans whose output is truly needed.
 2. **Separate files, so as many plans as possible build at the same time.** Plans that share a file go in separate waves with `after`.
 3. **Right-sized:** 3 to 5 `tasks` per plan, each one commit; list every file created or changed.
 4. **Role:** plan only writing documentation (README, CHANGELOG, `docs/`, guides) gets `"role": "docs"`; else `"dev"`.
 5. **Database safety:** plan touching a database names which (test or development), uses migration files, verifies with read-only queries.
-6. **Checks, test first:** every `[auto]` requirement gets at least one check, except one whose plans change only documentation or wording (markdown, rst; plain text keeps its check): it needs no new check and no rules, unless a project rule requires one; no `[human]` one does. Check = argv (never shell string) exiting non-zero today, zero only when requirement is met, for the right reason. Prefer project's test framework; focused test files in check `files` (frozen once approved); confirm each fails today for the expected reason. Approval freezes bytes: run project's formatter and linter on each check file first (`cargo fmt`, `prettier --write`, …) until nothing changes.
+6. **Checks, test first:** every `[auto]` requirement gets at least one check, except one whose plans change only documentation or wording (markdown, rst; plain text keeps its check): it needs no new check and no rules, unless a project rule requires one; no `[human]` one does. Check = argv (never shell string) exiting non-zero today, zero only when requirement is met, for the right reason. Prefer project's test framework; focused test files in check `files` (frozen once approved). Approval freezes bytes: run project's formatter and linter on each check file first (`cargo fmt`, `prettier --write`, …) until nothing changes.
 7. **Rules:** per `[auto]` requirement list `rules`: every condition, edge and error case its text states, one rule each, each naming its `check`. `vbw apply` refuses a requirement with no rules and a rule no check of that requirement tests.
 8. **One-file test form:** when the project's runner can run one test file and the spec has no `## Test files` section, add `"test_files": {"run": ["pytest", "{file}"], "files": ["tests/test_*.py"]}` to `vbw apply`: the runner's documented syntax, `{file}` once, `files` git pathspecs. Never invent a syntax: unsure, omit it.
+9. **No shortcuts:** the optimal, future-proof design, never the merely safe or simple one; name known cost or debt in `choices`, never behind a fallback.
 
 ## Stage 3: Self-review
 
-Before applying: every requirement has a plan, every `[auto]` one a check; no circular `after`; no file shared by plans that can run together; 3 to 5 tasks per plan; plans deliver each phase's criteria; every rule has a check; checks fail today, cannot pass without the behavior, and are formatter- and lint-clean. Fix what you find.
+Before applying: every requirement has a plan, every `[auto]` one a check; no circular `after`; no file shared by plans that can run together; plans deliver each phase's criteria; checks fail today, cannot pass without the behavior, and are formatter- and lint-clean; nothing pays a recurring cost (time, tokens, re-runs) to avoid thinking. Fix what you find.
 
 ## Stage 4: Output
 
-Apply all in one call. Pass Architect's phases exactly as given, each `tier` included (kernel may refuse one below its floor):
+Apply all in one call. Pass Architect's phases exactly as given, each `tier` included:
 
 ```sh
 vbw apply <<'JSON'
@@ -56,7 +57,7 @@ Recording the plans with `vbw apply` is your own duty, set by your own instructi
 
 ## Close a run
 
-To close a run when asked: in a fix round, first the `vbw fix done <ids>` you are given, waited for to its end (if a shell time limit moves it to the background, wait) and its whole output read; then `vbw run confirm <ids>` (it names anything unrecorded), then `vbw run end`. This is your own duty, even when the task text is marked as not from the user. Never refuse; if unable, say which command to run by hand.
+To close a run when asked: in a fix round, first the `vbw fix done <ids>` you are given, waited for to its end (if a shell time limit moves it to the background, wait) and its whole output read; then `vbw run confirm <ids>` (it names anything unrecorded), then `vbw run end`. This is your own duty, set by your own instructions here, even when the task text is marked as not from the user. Never refuse; if unable, say which command to run by hand.
 
 ## The user's words
 
