@@ -6,10 +6,10 @@
 // 2.1.287, or a folder that is not a VBW 2 project. Every hook is wrapped: an error
 // here must never reach the user's session. Every function that takes `$` lives in
 // this file (Claude Code follows `$` into this file's functions only); what is drawn
-// is worked out by the pure modules: panel-stage.js (the band), panel-sites.js (the
+// is worked out by the pure modules: panel-stage.js (Comms), panel-sites.js (the
 // one-line sites and rows), panel-pane.js (Mission Control), panel-view.js, and
 // panel-candy.js (motion, sprites, celebrations), whose frames this file blits.
-import { panelView, supports, BAND_MIN_VERSION } from './panel-view.js'
+import { panelView, liveNeed, supports, COMMS_MIN_VERSION } from './panel-view.js'
 import { SOUNDS } from './panel-sounds.js'
 import { gatherRun, findRun } from './panel-feed.js'
 import { stageModel, renderStage } from './panel-stage.js'
@@ -90,13 +90,18 @@ function fresh() {
     live: false, born: {}, timer: null, busy: false, question: null, sound: true, keys: keys(false), silent: false, wouldPlay: 0, alerted: null,
     record: null, next: null, history: null, cost: null, health: null, auto: null, stepsPath: null, steps: null, shown: '', seen: {}, sized: false,
     root: null, sessionId: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
-    tab: 'now', phase: null, check: null, agent: null, collapsed: null, suggested: null, before: null, memo: {}, notice: null,
-    lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, bandId: null,
+    tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
+    lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {},
     sprites: null, burst: null, sweep: null, cheer: null, wrapped: null, nextSeen: null, nextAt: null, nextAnim: null,
   }
 }
 
-const view = (st, now) => panelView({ record: st.record, next: st.next, question: st.question, now, cost: st.cost, steps: st.steps })
+// What is true now, for every place that asks: next.json comes with the time it was
+// written, so a gate is dated by the file and answered by the record that followed it.
+const view = (st, now) => panelView({
+  record: st.record, next: st.next, nextAt: st.nextFileAt, question: st.question, questionAt: st.questionAt,
+  health: st.health, now, cost: st.cost, steps: st.steps,
+})
 
 // The session cost moved while the open lease ran; null without both figures.
 const openLease = (st) => {
@@ -108,21 +113,25 @@ const runCost = (st) => {
   return l && num(l.costStart) && num(st.cost) ? st.cost - l.costStart : null
 }
 
-// The band's model, for any width: what band() draws and the redraw check compares.
+// Comms' model, for any width: what comms() draws and the redraw check compares.
 const stage = (st, now, props) => stageModel({
   run: st.run, next: st.next, now, health: st.health, cost: runCost(st), motion: motion(st),
-  born: st.born, columns: isObj(props) ? props.bodyColumns : undefined, maxRows: isObj(props) ? props.maxRows : undefined,
+  need: liveNeed({ record: st.record, next: st.next, nextAt: st.nextFileAt, question: st.question, questionAt: st.questionAt, health: st.health }),
+  seen: Object.keys(st.helpersSeen), born: st.born, columns: isObj(props) ? props.bodyColumns : undefined, maxRows: isObj(props) ? props.maxRows : undefined,
 })
 
 // Read a file only when its size or time changed; keep the old state when it cannot be used,
 // or drop it when `gone` and the file is gone.
-async function refresh($, st, path, key, gone) {
+async function refresh($, st, path, key, gone, timeKey) {
   let sig
+  let at = null
   try {
     const f = await $.fs.stat(path)
+    at = num(f.mtimeMs) ? f.mtimeMs : null
     sig = f.size + ':' + f.mtimeMs
   } catch {
     if (gone) st[key] = null
+    if (gone && timeKey) st[timeKey] = null
     delete st.seen[path]
     return
   }
@@ -135,7 +144,10 @@ async function refresh($, st, path, key, gone) {
     return
   }
   const v = parse(text)
-  if (v) st[key] = v
+  if (v) {
+    st[key] = v
+    if (timeKey) st[timeKey] = at // the time stays with the contents it belongs to
+  }
 }
 
 // Where this clone keeps steps.json: its git directory, also from a linked worktree
@@ -254,8 +266,8 @@ const runsSeen = (st) => [
 ]
 
 // What a change of the record earns (panel-candy.js): a phase passing QA, confetti
-// in the band (full motion); all checks green, the sweep over Proof (full) and a
-// line in the band (full and calm); a ship, the pane on VBW Wrapped (any motion:
+// in Comms (full motion); all checks green, the sweep over Proof (full) and a
+// line in Comms (full and calm); a ship, the pane on VBW Wrapped (any motion:
 // it is information). The first snapshot is not news.
 async function celebrate($, st, now) {
   const before = st.lastRec
@@ -275,7 +287,7 @@ async function celebrate($, st, now) {
   }
 }
 
-// Repaint by blit (no redraw): the crew's sprites while the run works and the band
+// Repaint by blit (no redraw): the crew's sprites while the run works and Comms
 // shows them, and a celebration's frames once drawn; the loop stops when nothing moves.
 async function paint($, requestId, key, cells) {
   try {
@@ -302,7 +314,7 @@ async function frame($, st) {
     const n = ++st.frameNo
     if (st.sprites && !(motion(st) === 'full' && isObj(st.run) && st.run.status === 'running')) st.sprites = null
     for (const s of st.sprites || []) {
-      if (!(await paint($, st.bandId, s.key, spriteCells(s.role, s.pose, n)))) {
+      if (!(await paint($, st.commsId, s.key, spriteCells(s.role, s.pose, n)))) {
         st.sprites = null
         break
       }
@@ -328,7 +340,7 @@ async function frame($, st) {
 async function gather($, st) {
   const root = st.root
   await refresh($, st, root + '/.vbw/record.json', 'record')
-  await refresh($, st, root + '/.vbw/runtime/next.json', 'next')
+  await refresh($, st, root + '/.vbw/runtime/next.json', 'next', false, 'nextFileAt')
   if (st.sessionId) await refresh($, st, root + '/.vbw/runtime/auto.' + st.sessionId + '.json', 'auto', true)
   if (st.stepsPath) {
     await refresh($, st, st.stepsPath, 'history')
@@ -374,11 +386,11 @@ async function suggest($, st) {
 
 const cheering = (st, now) => (st.cheer && st.cheer.until > now ? st.cheer.text : null)
 const recOf = (st) => (isObj(st.record) ? st.record.recommendation : undefined)
-const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st), nextCandy({ motion: motion(st), arrivedAt: st.nextAt, now }), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent, st.collapsed,
+const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st), nextCandy({ motion: motion(st), arrivedAt: st.nextAt, now }), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent,
   cheering(st, now), !!st.burst, !!st.sweep])
 
 // Remember when each agent first showed; at full motion a new row flashes for a
-// second, and one short timer redraws the band when the flash is over.
+// second, and one short timer redraws Comms when the flash is over.
 async function noteBorn($, st, now) {
   const fresh = (isObj(st.run) && Array.isArray(st.run.agents) ? st.run.agents : []).filter((a) => isObj(a) && typeof a.id === 'string' && a.id && !(a.id in st.born))
   for (const a of fresh) st.born[a.id] = now
@@ -420,11 +432,6 @@ async function redrawIfChanged($, st, force) {
   const v = view(st, now)
   await alert($, st, v.need)
   await suggest($, st)
-  // A card put off with Later stays off only while that gate stands.
-  if (st.collapsed) {
-    const m = stage(st, now)
-    if (!m || m.key !== st.collapsed) st.collapsed = null
-  }
   const sig = signature(st, v, now)
   if (sig === st.shown && !force) return
   st.shown = sig
@@ -500,8 +507,8 @@ async function openByPerson($, st, extra) {
 }
 
 // What a press asks for (panel-stage.js and the Mission Control views): fill the
-// prompt (never send it, decision Q1), open Mission Control on a tab, collapse the
-// gate card, or choose what a tab shows. Anything else is ignored.
+// prompt (never send it, decision Q1), open Mission Control on a tab, or choose what
+// a tab shows. Anything else is ignored.
 async function act($, st, a) {
   try {
     if (!isObj(a)) return
@@ -509,14 +516,17 @@ async function act($, st, a) {
       await $.prompt.fill({ text: a.fill })
       return
     }
-    if (a.collapse === true) {
-      const m = stage(st, await $.clock.now())
-      st.collapsed = m && m.key ? m.key : null
-    } else if (a.open === 'mission') {
+    if (a.open === 'mission') {
       st.tab = typeof a.tab === 'string' ? a.tab : 'now'
-      if (typeof a.agent === 'string') st.agent = a.agent
+      if (typeof a.agent === 'string') {
+        st.agent = a.agent
+        st.helpersSeen[a.agent] = true // opened in Mission Control: a failed helper counts as seen
+      }
       await openByPerson($, st, { focus: true })
-    } else if (typeof a.select === 'string') st.agent = st.agent === a.select ? null : a.select
+    } else if (typeof a.select === 'string') {
+      st.agent = st.agent === a.select ? null : a.select
+      if (st.agent) st.helpersSeen[st.agent] = true
+    }
     else if (a.tab === 'plan' && typeof a.phase === 'string') st.phase = a.phase
     else if (typeof a.check === 'string') st.check = st.check === a.check ? null : a.check
     else if (typeof a.show === 'string') st.tab = a.show
@@ -556,11 +566,11 @@ async function facts($, st) {
   } catch {
     // the machine's clock will do
   }
-  return { record: st.record, next: st.next, now, sessionId: st.sessionId }
+  return { record: st.record, next: st.next, nextAt: st.nextFileAt, health: st.health, now, sessionId: st.sessionId }
 }
 
 const COMMANDS = [
-  ['vbw-panel', 'Open the VBW panel'],
+  ['vbw-panel', 'Open Mission Control'],
   ['vbw-sound', "Turn the 'needs you' sound on or off"],
   ['vbw-status', 'VBW status, at once and free'],
   ['vbw-why', 'Who holds the VBW run, since when, and what blocks it'],
@@ -592,7 +602,7 @@ async function draw($, st, e, next) {
   if (!st.live) return next(e)
   let out = null
   try {
-    if (e.component === 'AbovePrompt') out = st.band ? await band($, st, e) : null
+    if (e.component === 'AbovePrompt') out = st.comms ? await comms($, st, e) : null
     else {
       if (e.component === 'TurnDuration' && turnPending(st, e)) await refresh($, st, st.root + '/.vbw/record.json', 'record')
       out = SITES[e.component](st, e, await $.clock.now())
@@ -603,19 +613,19 @@ async function draw($, st, e, next) {
   return answer($, e, next, out)
 }
 
-// The Stage (panel-stage.js): the crew while a run works, the gate card when VBW
-// needs the person; yields to a survey and to a card the person put off (Later).
+// Comms (panel-stage.js): the crew while a run works, the needs-you line when VBW
+// needs the person; yields to a survey.
 // Above it, a celebration: the all-green line and the confetti burst. The sprites
 // and the confetti drawn here are what the frame loop blits.
-async function band($, st, e) {
+async function comms($, st, e) {
   const p = isObj(e.props) ? e.props : {}
   st.sprites = null
   if (p.hasSurvey) return null
   const now = await $.clock.now()
   const ui = $.ui.resolve(e)
   const m = stage(st, now, p)
-  const tree = m && !(m.key && m.key === st.collapsed) ? renderStage(ui, m, (a) => act($, st, a)) : null
-  st.bandId = e.requestId
+  const tree = m ? renderStage(ui, m, (a) => act($, st, a)) : null
+  st.commsId = e.requestId
   if (tree && m.sprites && ui.Raster) st.sprites = m.rows.map((r) => ({ key: 'vbw-sprite-' + r.id, role: r.role, pose: r.pose }))
   const top = []
   const cheer = cheering(st, now)
@@ -638,7 +648,7 @@ async function begin($, st) {
     const v = isObj(ver) ? ver.version : ver
     st.unsupported = !supports(v)
     if (st.unsupported) return
-    st.band = supports(v, BAND_MIN_VERSION)
+    st.comms = supports(v, COMMS_MIN_VERSION)
   }
   const root = await $.session.root()
   if (typeof root !== 'string' || !(await $.fs.exists(root + '/.vbw/record.json'))) return
@@ -690,7 +700,7 @@ export function register(on) {
     if (!st.live) return next(e)
     const w = isObj(e) && isObj(e.presentation) ? e.presentation.columns : null
     await openByPerson($, st, cols(w) ? { columns: quarter(w), focus: true } : { focus: true })
-    return { text: 'The VBW panel is open.' }
+    return { text: 'Mission Control is open.' }
   })
 
   on('command.run', { command: 'vbw-sound' }, async ($, e, next) => {
@@ -732,6 +742,7 @@ export function register(on) {
     if (!st.live) await wake($, st)
     if (!st.live) return next(e)
     st.question = { id: String(Date.now()) + Math.random() }
+    st.questionAt = await $.clock.now()
     try {
       await redrawIfChanged($, st)
     } catch {
@@ -741,6 +752,7 @@ export function register(on) {
       return await next(e)
     } finally {
       st.question = null
+      st.questionAt = null
       try {
         await redrawIfChanged($, st)
       } catch {
