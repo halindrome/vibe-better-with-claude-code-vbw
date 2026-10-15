@@ -48,3 +48,33 @@ says() {
 @test "R188: docs/proof.md says the one approval it can add, and that a loop gives it with a decision" {
   says proof.md approval "before the proof" loop decision
 }
+
+# line_has FILE WORD...: one line of the mutation check section of FILE holds every WORD.
+line_has() {
+  local f=$1 l w
+  shift
+  l=$(section "$DOCS/$f")
+  for w in "$@"; do l=$(printf '%s\n' "$l" | grep -iF -- "$w") || { echo "no line of the mutation check section of docs/$f holds all of: $*"; return 1; }; done
+}
+
+@test "R188: docs/workflows.md says it runs at standard and deep, never at express, never in a fix" {
+  line_has workflows.md "at standard and deep" "never at express" "never in a fix"
+}
+
+@test "R188: docs/rigor.md gives express, standard and deep each its own content" {
+  line_has rigor.md '`express`' "nothing"
+  line_has rigor.md '`standard`' "each rule" "one small break per rule"
+  line_has rigor.md '`deep`' "each rule" "each task" "edge case"
+  ! line_has rigor.md '`express`' "each rule" > /dev/null
+  ! line_has rigor.md '`standard`' "nothing" > /dev/null
+}
+
+@test "R188: docs/proof.md says the loop gives the approval and records a decision" {
+  line_has proof.md "the loop gives" "records a decision"
+}
+
+@test "R188: docs/workflows.md Rigor section says the building bullet takes the tier for the mutation step" {
+  local b
+  b=$(awk '/^## Rigor/ {on=1; next} /^## / {on=0} on && /vbw:building/' "$DOCS/workflows.md")
+  [[ "$b" == *tier* && "$b" == *mutation* ]] || { echo "$b"; false; }
+}

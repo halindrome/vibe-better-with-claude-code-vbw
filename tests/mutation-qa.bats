@@ -22,7 +22,7 @@ has_line() {
 }
 
 @test "R188: QA does not find again a gap a mutation check already recorded" {
-  has_line mutation survivor again
+  has_line mutation survivor "do not find again"
 }
 
 @test "R188: the QA agent stays within 900 words" {

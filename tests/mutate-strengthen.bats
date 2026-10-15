@@ -80,7 +80,9 @@ strengthen() { printf '[ "$(sh src/pay.sh)" = paid ] && sh tests/shared.sh\n' > 
   strengthen
   run "$VBW" commit P1.1 "test(pay): check what is printed" tests/pay.sh < /dev/null
   [ "$status" -ne 0 ] || { echo "committed with no survivor: $output"; false; }
+  git checkout -q -- tests/pay.sh
   survivor
+  strengthen
   run "$VBW" commit P1.1 "test(pay): check what is printed" tests/pay.sh < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(git show --name-only --format= HEAD)" = tests/pay.sh ]
@@ -108,4 +110,16 @@ strengthen() { printf '[ "$(sh src/pay.sh)" = paid ] && sh tests/shared.sh\n' > 
   "$VBW" approve > /dev/null
   run "$VBW" prove < /dev/null
   jq -e '.evidence.scope == []' .vbw/record.json || { echo "$output"; jq '.evidence.scope' .vbw/record.json; false; }
+}
+
+@test "R188: in a build run a check file changed and not committed refuses the break, naming it, nothing written (commit it first)" {
+  survivor
+  strengthen
+  local sum
+  sum=$(cksum < .vbw/record.json)
+  printf 'echo unpaid\n' > src/pay.sh
+  run "$VBW" mutate P1.1 R1.1 "prints unpaid instead of paid" src/pay.sh < /dev/null
+  [ "$status" -ne 0 ] || { echo "$output"; false; }
+  [[ "$output" == *tests/pay.sh* && "$output" == *"commit them first"* ]] || { echo "$output"; false; }
+  [ "$(cksum < .vbw/record.json)" = "$sum" ]
 }
