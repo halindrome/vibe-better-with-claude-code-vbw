@@ -91,8 +91,11 @@ checks_exec() {
   # to SIGKILL, which cannot be ignored, and perl resets SIGALRM before the alarm.
   # A unit never sees the session that runs the proof (VBW_SESSION_ID): a project's
   # tests must give one result whoever proves them.
-  if command -v timeout > /dev/null 2>&1; then
-    env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} timeout -k 5 "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
+  # --foreground keeps the unit in the run's process group, so Ctrl-C reaches it as
+  # it does under perl; without it GNU timeout starts a group of its own and an
+  # interrupted run waited for its units to end (T148, Linux).
+  if command -v timeout > /dev/null 2>&1 && timeout --foreground 5 true > /dev/null 2>&1; then
+    env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} timeout --foreground -k 5 "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
   else
     env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} perl -e '$SIG{ALRM} = "DEFAULT"; alarm shift @ARGV; exec { $ARGV[0] } @ARGV or do { print STDERR "cannot run $ARGV[0]: $!\n"; exit 127 }' \
       "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
