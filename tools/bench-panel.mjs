@@ -4,7 +4,7 @@
 //   tick: the timer fires and finds nothing new (files unchanged, only checked);
 //   refresh: the timer fires, a file changed, the panel reads it, redraws and
 //   the draw is rendered.
-//   sound: a need for the user appears and the sound is played (the next tick it ends).
+//   sound: the question menu opens, so the sound is played and a notification raised; then it is answered.
 //   whats-next: the record carries a recommendation that changes, so each refresh draws the section.
 //   glance: the cost changed and a step history changed: both are read, both estimates worked out, drawn.
 // Prints "tick <ms>", "refresh <ms>" and "sound <ms>". The stand-in's own work is included,
@@ -41,10 +41,14 @@ const refresh = await measure(async (h, i) => {
   await h.advance(TICK_MS)
   await h.render()
 })
-// sound: a need appears (the sound is asked to play), then goes away
+// sound: the question menu opens (the sound and the notification are asked for), then it is answered
 const sound = await measure(async (h, i) => {
-  h.write(ROOT + '/.vbw/runtime/next.json', next(i % 2 === 0 ? { action: 'approve', gate: true } : {}))
+  let answer
+  const done = h.fire('tool.call', { tool: 'AskUserQuestion', tool_use_id: 'q' + i, questions: [{ question: 'Which plan?', options: [{ label: 'A' }, { label: 'B' }] }] },
+    () => new Promise((r) => (answer = r)))
   await h.advance(TICK_MS)
+  answer({ result: 'A' })
+  await done
 })
 // glance: a refresh that also reads the session cost and works out both estimates
 const STEPS = ROOT + '/.git/vbw/steps.json'
