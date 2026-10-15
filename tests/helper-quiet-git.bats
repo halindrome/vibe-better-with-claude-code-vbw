@@ -7,8 +7,9 @@
 # therefore run from the test's temporary folder, never from the repository.
 # Here a small repository holds a copy of the helper; the access times of its
 # HEAD and index are set back, the helper's setup and teardown run from inside
-# it (a plain shell, not a nested bats run: bats inside bats loses a test on
-# Linux, found in CI on 2026-10-11), and neither may have been read. L1.
+# it, cold and then from its cache (a plain shell, not a nested bats run: bats
+# inside bats loses a test on Linux, found in CI on 2026-10-11), and neither may
+# have been read. L1.
 
 load helper
 
@@ -27,8 +28,12 @@ helper_run() {
   git -C "$REPO" -c user.email=t@example.com -c user.name=T commit -q -m "chore(test): suite"
   : > "$TEST_ROOT/ref" && touch -t 200001020000 "$TEST_ROOT/ref"
   touch -a -t 200001010000 "$REPO/.git/HEAD" "$REPO/.git/index"
-  run env -u TEST_ROOT BATS_TEST_DIRNAME="$REPO/tests" GIT_TRACE2_EVENT="$TRACE" \
-    bash -c 'cd "$1" && . tests/helper.bash && vbw_setup && vbw_git_project && vbw_teardown' _ "$REPO"
+  # Twice, with a file temporary folder of its own: the first builds the helper's
+  # cached gitconfig and seed repository, the second copies them (T82).
+  mkdir "$TEST_ROOT/file tmp"
+  run env -u TEST_ROOT BATS_TEST_DIRNAME="$REPO/tests" BATS_FILE_TMPDIR="$TEST_ROOT/file tmp" GIT_TRACE2_EVENT="$TRACE" \
+    bash -c 'cd "$1" && . tests/helper.bash && for i in 1 2; do vbw_setup && vbw_git_project && vbw_teardown && cd "$1" || exit 1; done' _ "$REPO"
+  [ -f "$TEST_ROOT/file tmp/vbw-seed/ready" ] || { echo "the helper built no seed repository"; false; }
 }
 
 # moved: the repository files a git command read since the reset.
