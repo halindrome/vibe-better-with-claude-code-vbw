@@ -31606,7 +31606,7 @@
     {
       "id": "T114",
       "text": "New model profile \"advanced\" beside quality, balanced and budget: Fable 5.1 where judgment decides the outcome (Architect and Lead; QA at the deep tier is the open question), Opus or Sonnet for the Devs and the rest as in quality. Owner's idea (2026-10-11, after switching Architect and Lead to Fable by hand with vbw config set model.ROLE). Decide the exact table from the cost data of a few runs before building; /vbw:profile and the statusline must name it.",
-      "sort": "next",
+      "sort": "later",
       "size": "small",
       "status": "open"
     },
