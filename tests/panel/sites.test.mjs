@@ -179,3 +179,20 @@ test('a run in this session is never mistaken for another: the receipt needs thi
   const props = { text: 'done', origin: { kind: 'task-notification' }, isExpanded: false, task: { toolUseId: 'unknown', type: 'local_workflow' } }
   assert.ok(isEngine(await h.draw('UserMessage', props), 'UserMessage'))
 })
+
+// R189.12: a request that is not true is not on the hint line.
+test('hint line: a gate in next.json while a lease is held, or a shipped milestone, asks for nothing', async () => {
+  const hint = async (h) => (await h.draw('PromptHint', { isDraft: false, isWorking: false, hint: '? for shortcuts' })).props.tail
+  const held = await started({}, record({ lease: lease('build', T0) }), next({ action: 'approve', gate: true }))
+  assert.equal(await hint(held), 'VBW next: /vbw:vibe')
+  const shipped = await started({}, record({ milestone: { id: 'M9', title: 'x', status: 'shipped' } }), next({ action: 'ship', gate: true }))
+  assert.equal(await hint(shipped), 'VBW next: /vbw:vibe')
+})
+
+test('hint line: /compact first when the context is 85% full before a run', async () => {
+  const hint = async (h) => (await h.draw('PromptHint', { isDraft: false, isWorking: false, hint: '? for shortcuts' })).props.tail
+  const h = await started()
+  h.setUsage({ cost: { usd: 1 }, context: { percent: 90 } })
+  await h.advance(2000)
+  assert.equal(await hint(h), 'VBW needs you: /compact')
+})

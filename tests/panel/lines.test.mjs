@@ -195,3 +195,27 @@ test('bad input never throws: every function answers null', () => {
     assert.ok(out === null || (f === 'recordDiffIntent' && b === 'x'), f + '(' + JSON.stringify(b) + ') -> ' + JSON.stringify(out))
   }
 })
+
+// R189.4-R189.12: the hint line asks only for a request that is still true.
+test('hint tail: an answered gate, a held lease or a parked idea (R189.4, R189.5, R189.6, R189.12)', () => {
+  const at = Date.parse('2026-10-07T16:00:00Z')
+  const approved = (when) => record({ decisions: [{ id: 'D1', text: 'Contract approved: 1 requirements, 1 checks, 1 plans (abc)', at: new Date(when).toISOString() }] })
+  const gate = next({ action: 'approve', gate: true })
+  const tail = (rec, nx, extra = {}) => L.hintTail({ record: rec, next: nx, nextAt: at, run: null, now: NOW, ...extra })
+  assert.equal(tail(approved(at + 1000), gate), 'VBW next: /vbw:vibe', 'an approval newer than the gate answers it')
+  assert.equal(tail(approved(at - 1000), gate), 'VBW needs you: /vbw:approve', 'an older approval does not')
+  assert.equal(tail(record({ todos: [{ id: 'T1', text: 'idea', status: 'open' }] }), gate), 'VBW needs you: /vbw:approve', 'a parked idea does not')
+  assert.equal(tail(record({ milestone: { id: 'M9', title: 'x', status: 'shipped' } }), next({ action: 'ship', gate: true })), 'VBW next: /vbw:vibe')
+  assert.equal(tail(record({ lease: { run: 'b-1', kind: 'build', started_at: '2026-10-07T16:30:00Z', files: null } }), gate), 'VBW next: /vbw:vibe', 'a held lease')
+  const req = (status) => record({ requirements: [{ id: 'R54', text: 't', proof: 'human', status, milestone: 'M9' }] })
+  const accept = next({ action: 'accept', gate: true, detail: { requirements: ['R54'] } })
+  assert.equal(tail(req('accepted'), accept), 'VBW next: /vbw:vibe')
+  assert.equal(tail(req('open'), accept), 'VBW needs you: /vbw:verify')
+})
+
+test('hint tail: /compact first when the context is 85% full before a run', () => {
+  const tail = (pct, action) => L.hintTail({ record: record(), next: next({ action }), health: { contextPct: pct }, run: null, now: NOW })
+  assert.equal(tail(85, 'build'), 'VBW needs you: /compact')
+  assert.equal(tail(84, 'build'), 'VBW next: /vbw:vibe')
+  assert.equal(tail(95, 'map'), 'VBW next: /vbw:vibe', 'only before a workflow run')
+})

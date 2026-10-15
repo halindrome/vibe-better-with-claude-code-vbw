@@ -101,3 +101,24 @@ test('the command models change nothing in their input', () => {
   const input = deepFreeze({ record: rec({ lease: lease('build', NOW - 5000, { session: SID }) }), next: next({ action: 'unblock', gate: true }), now: NOW, sessionId: SID, args: 'x', selection: 'y' })
   assert.doesNotThrow(() => { cmd.statusText(input); cmd.whyText(input); cmd.todoArgs(input) })
 })
+
+// R189.4: /vbw-status and /vbw-why drop a request the record has answered.
+test('/vbw-status and /vbw-why drop an answered gate and keep one a parked idea did not answer', () => {
+  const at = NOW - 60000
+  const approval = { id: 'D1', text: 'Contract approved: 1 requirements, 1 checks, 1 plans (abc)', at: new Date(NOW - 1000).toISOString() }
+  const gate = next({ action: 'approve', gate: true })
+  const done = { record: rec({ decisions: [approval] }), next: gate, nextAt: at, now: NOW, sessionId: SID }
+  assert.doesNotMatch(cmd.statusText(done), /approve/i)
+  assert.equal(cmd.whyText(done), 'Nothing is running and nothing is blocked.')
+  const parked = { record: rec({ todos: [{ id: 'T1', text: 'idea', status: 'open' }] }), next: gate, nextAt: at, now: NOW, sessionId: SID }
+  assert.match(cmd.statusText(parked), /Please approve/)
+  assert.match(cmd.whyText(parked), /Please approve/)
+  const shipped = { record: rec({ milestone: { id: 'M9', title: 'x', status: 'shipped' } }), next: next({ action: 'ship', gate: true }), now: NOW }
+  assert.doesNotMatch(cmd.statusText(shipped), /ship/i)
+})
+
+test('/vbw-status says /compact first when the context is 85% full before a run', () => {
+  const s = cmd.statusText({ record: rec(), next: next({ action: 'build' }), health: { contextPct: 90 }, now: NOW })
+  assert.match(s, /\/compact/)
+  assert.doesNotMatch(cmd.statusText({ record: rec(), next: next({ action: 'build' }), health: { contextPct: 50 }, now: NOW }), /compact/)
+})

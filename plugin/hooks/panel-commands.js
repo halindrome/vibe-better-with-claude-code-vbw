@@ -31,7 +31,7 @@ export function statusText(input) {
   const out = [row('milestone'), row('progress'), row('doing')]
   if (!isObj(p.rec.lease)) {
     if (p.v.need) out.push(p.v.need.text)
-    else if (!isObj(p.nx) || !p.nx.action) out.push('Next: run /vbw:vibe.')
+    else if (!isObj(p.nx) || !p.nx.action || p.nx.gate === true) out.push('Next: run /vbw:vibe.')
     else out.push('Next: ' + (STEPS[p.nx.action] || String(p.nx.action)) + ' (/vbw:vibe carries on).')
   }
   return out.join('\n')
