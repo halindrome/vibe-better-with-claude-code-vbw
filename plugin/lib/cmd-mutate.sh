@@ -140,10 +140,6 @@ cmd_mutate() {
     fi
   done
   local n=${#idl[@]} results bad=""
-  # A check of another Dev in this project can hold the gate before this one asks
-  # for a slot, and that wait is not counted by the runner: take the turn here first.
-  slots_take mutate
-  slots_give mutate
   proofcopy_create_slots "$(proofcopy_slots "$n")"
   if printf '%s' "$record" | jq -e --arg p "$plan" --arg h "$head" --argjson ids "$ids" '.plans[] | select(.id == $p)
       | [(.mutations // [])[] | select(.head == $h) | (.checks // {}) as $c | select(all($ids[]; . as $i | $c | has($i)))] | length > 0' > /dev/null; then

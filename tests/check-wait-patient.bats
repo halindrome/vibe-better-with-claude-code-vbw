@@ -78,7 +78,10 @@ project() {
 
 check() { printf '{"id":"%s","req":"R1","run":["sh","tests/%s.sh"],"files":["tests/%s.sh"]%s}' "$1" "$2" "$2" "${3:-}"; }
 
+# noise OUTPUT: no warning or error text; the one line telling a wait for another VBW
+# command (R181, T149: "waited N s for other VBW runs on this computer ...") is not noise.
 noise() {
+  set -- "$(printf '%s\n' "$1" | grep -vE '^waited [0-9]+ (s|min) for other VBW runs on this computer')"
   [[ "$1" != *"did not finish"* ]] && [[ "$1" != *"waited"* ]] && [[ "$1" != *"not a child"* ]] \
     && [[ "$1" != *"Killed"* ]] && [[ "$1" != *"wait:"* ]] && ! printf '%s\n' "$1" | grep -qE 'line [0-9]+:'
 }

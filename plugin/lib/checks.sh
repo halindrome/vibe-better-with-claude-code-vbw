@@ -161,9 +161,19 @@ checks_gate_blocker() {
   return 1
 }
 
+# checks_gate_foreign DIR: another process (another vbw command of this project) holds or wants the gate.
+checks_gate_foreign() {
+  local f
+  for f in "$1"/reg.* "$1"/want.*; do
+    [ -e "$f" ] || continue
+    case "${f##*/}" in "reg.$$."* | "want.$$."*) ;; *) return 0 ;; esac
+  done
+  return 1
+}
+
 # checks_gate_enter ID ALONE: wait for the gate, then register this check.
 checks_gate_enter() {
-  local id="$1" kind=shared g="$VBW_RUNTIME/gate" idle=0 want='' owner limit
+  local id="$1" kind=shared g="$VBW_RUNTIME/gate" idle=0 want='' owner limit since=''
   [ "$2" != true ] || kind=alone
   limit="${CHECKS_LIMIT:-}"
   [ -n "$limit" ] || limit=$(vbw_check_jobs) || limit=1
@@ -175,6 +185,8 @@ checks_gate_enter() {
       vbw_guard_add dir "$g/mutex"
       idle=0
       if checks_gate_blocker "$kind" "$limit" > /dev/null; then
+        # Only a wait for another VBW command counts; this run's own units queue at the gate silently (R94).
+        [ -n "$since" ] || ! checks_gate_foreign "$g" || since=$(date +%s)
         # An alone check that has to wait holds back new shared checks, so it is not starved.
         if [ "$kind" = alone ] && [ -z "$want" ]; then
           want="$g/want.$$.$id"
@@ -186,6 +198,8 @@ checks_gate_enter() {
         printf '%s\n' "$kind" > "$g/reg.$$.$id"
         vbw_guard_add file "$g/reg.$$.$id"
         vbw_guard_drop "$g/mutex"
+        # A wait at the gate is told like a wait for a slot (T149); with the store off it is not told.
+        [ "${SLOTS_STATE:-}" != on ] || slots_waited "$since"
         return 0
       fi
       vbw_guard_drop "$g/mutex"
