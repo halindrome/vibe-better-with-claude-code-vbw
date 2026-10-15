@@ -55,7 +55,7 @@ function summary(ui, v, st, on) {
   return rows
 }
 
-function body(ui, { st, now, width }, act) {
+function body(ui, { st, now, width, motion }, act) {
   const rec = st.record
   switch (st.tab) {
     case 'plan': return renderPlan({ ...ui, Input: undefined }, planModel({ record: rec, phase: st.phase }), act) // Ask is not wired yet
@@ -64,7 +64,7 @@ function body(ui, { st, now, width }, act) {
     case 'decisions': return renderDecisions(ui, decisionsModel({ record: rec }))
     case 'team': return renderTeam(ui, teamModel({ record: rec }), act)
     case 'costs': return renderCosts(ui, costsModel({ runs: st.leases, sessionCost: st.cost, width: Math.max(1, Math.floor(width / 3)) }))
-    default: return renderNow(ui, nowModel({ run: st.run, now, selected: st.agent }), act)
+    default: return renderNow(ui, nowModel({ run: st.run, now, selected: st.agent, seen: Object.keys(st.helpersSeen || {}), motion }), act)
   }
 }
 
@@ -85,7 +85,7 @@ export function renderPane(ui, input, on) {
   const head = h(Box, { key: 'head', flexDirection: 'row', columnGap: 1, marginBottom: 1 }, ...portrait, tabs)
   const sweep = tab === 'proof' && Raster && input.sweep ? [h(Raster, { key: 'vbw-sweep', columns: input.sweep.cols, rows: 1, cells: input.sweep.cells })] : []
   const view = wrapped ? renderWrapped(ui, wrapped) : body(ui, { ...input, st: { ...st, tab } }, act)
-  const upNext = tab === 'now' ? [renderNext(ui, { recommendation: input.recommendation, width: input.width, motion: input.motion, arrivedAt: input.arrivedAt, now: input.now }, act)] : []
+  const upNext = tab === 'now' ? [renderNext(ui, { recommendation: input.recommendation, width: input.width, motion: input.motion, arrivedAt: input.arrivedAt, now: input.now, unseen: input.unseen }, act)] : []
   const content = [...(tab === 'now' ? summary(ui, v, st, on) : []), ...upNext, ...sweep, view]
   const sc = input.scroll
   const rows = sc && Number.isInteger(sc.bodyRows) ? sc.bodyRows : 0

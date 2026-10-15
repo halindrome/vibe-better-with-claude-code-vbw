@@ -127,7 +127,7 @@ const stage = (st, now, props) => {
   const need = needNow(st)
   return stageModel({
     run: st.run, next: st.next, now, health: st.health, cost: runCost(st), motion: motion(st),
-    need,
+    need, fresh: need !== null && needId(need) !== st.needSeen,
     seen: Object.keys(st.helpersSeen), born: st.born, columns: isObj(props) ? props.bodyColumns : undefined, maxRows: isObj(props) ? props.maxRows : undefined,
   })
 }
@@ -408,7 +408,7 @@ async function suggest($, st) {
 
 const cheering = (st, now) => (st.cheer && st.cheer.until > now ? st.cheer.text : null)
 const recOf = (st) => (isObj(st.record) ? st.record.recommendation : undefined)
-const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st),  nextCandy({ motion: motion(st), arrivedAt: st.nextAt, now }), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent,
+const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st), unseenNext(st), st.needSeen,  nextCandy({ motion: motion(st), arrivedAt: st.nextAt, now }), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent,
   cheering(st, now), !!st.burst, !!st.sweep])
 
 // Remember when each agent first showed; at full motion a new row flashes for a
@@ -855,7 +855,7 @@ export function register(on) {
       const cells = st.sweep && st.tab === 'proof' && ui.Raster ? drawn(st.sweep, width, PANE) : null
       if (cells) animate($, st)
       const sweep = cells ? { cols: st.sweep.cols, cells } : null
-      return renderPane(ui, { st, v, now, width, sweep, recommendation: recOf(st), motion: motion(st), arrivedAt: st.nextAt, wrapped: st.wrapped, scroll: isObj(e.props) ? e.props.scroll : null, portrait: $.plugin.root + '/assets/portrait.png' }, {
+      return renderPane(ui, { st, v, now, width, sweep, recommendation: recOf(st), unseen: unseenNext(st), motion: motion(st), arrivedAt: st.nextAt, wrapped: st.wrapped, scroll: isObj(e.props) ? e.props.scroll : null, portrait: $.plugin.root + '/assets/portrait.png' }, {
         act: (a) => act($, st, a),
         sound: () => setSound($, st, !st.sound),
       })

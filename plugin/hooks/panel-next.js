@@ -95,7 +95,7 @@ function titlePieces(Text, title) {
 // The mark of a recommendation not yet seen: the word 'new'. Motion off draws
 // the word alone; calm and full add a steady palette colour (the shimmer and
 // pulse of candy() mark the arrival at full motion, then this mark stays).
-function newMark(Text, motion) {
+export function newMark(Text, motion) {
   const props = { key: 'new', wrap: 'truncate' }
   if (motion === 'full' || motion === 'calm') Object.assign(props, { bold: true, color: ACCENT })
   return h(Text, props, ' new')

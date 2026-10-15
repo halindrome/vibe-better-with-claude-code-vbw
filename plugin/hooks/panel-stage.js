@@ -11,6 +11,7 @@
 // Pure: data in, a model out (stageModel), a tree out (renderStage). No `$`,
 // never changes its input, never throws.
 import { poseOf, spriteFrame, encodeCells } from './panel-candy.js'
+import { newMark } from './panel-next.js'
 import { roleColor as colorOfRole, stateColor, STATE_MARKS, NEED, ACCENT } from './panel-palette.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
@@ -55,10 +56,12 @@ const tokens = (t) => {
 // --- the needs-you line --------------------------------------------------------
 
 // `need` is { key, what, at } (panel-view.js liveNeed): the line is 'HH:MM ⚑ VBW needs you · <what>'.
-function needOf(need, columns) {
+// A need not yet seen (`fresh`) carries the mark after its text, which keeps its columns.
+function needOf(need, columns, fresh, motion) {
   if (!isObj(need) || !str(need.what)) return null
   const time = hhmm(need.at)
-  return { key: str(need.key), text: cut((time ? time + ' ' : '') + '⚑ VBW needs you · ' + need.what, columns) }
+  const mark = fresh === true
+  return { key: str(need.key), text: cut((time ? time + ' ' : '') + '⚑ VBW needs you · ' + need.what, mark ? columns - 4 : columns), fresh: mark, motion }
 }
 
 // The weekly-limit line, only when a workflow is next.
@@ -179,7 +182,7 @@ export function stageModel(input) {
     const now = num(input.now) ? input.now : Date.now()
     const columns = num(input.columns) && input.columns > 0 ? Math.floor(input.columns) : 80
     const maxRows = num(input.maxRows) && input.maxRows > 0 ? Math.floor(input.maxRows) : 8
-    const need = needOf(input.need, columns)
+    const need = needOf(input.need, columns, input.fresh, motion)
     const room = maxRows - (need ? 1 : 0)
     const seen = new Set(Array.isArray(input.seen) ? input.seen.filter((x) => typeof x === 'string') : [])
     if (room >= 1 && isObj(rn) && Array.isArray(rn.agents) && rn.agents.some((a) => isObj(a) && typeof a.id === 'string' && a.id)) {
@@ -209,7 +212,10 @@ export function renderStage(ui, model, onAction) {
       key: 'vbw-stage-' + id, label: b.label, hotkey: b.key,
       ...(typeof onAction === 'function' ? { onPress: () => onAction(b.action) } : {}),
     })
-    const needLine = isObj(model.need) ? [h(Text, { key: 'need', color: NEED, bold: true, wrap: 'truncate-end' }, String(model.need.text))] : []
+    const needText = (n) => h(Text, { key: 'need', color: NEED, bold: true, wrap: 'truncate-end' }, String(n.text))
+    const needLine = isObj(model.need)
+      ? [model.need.fresh ? h(Box, { key: 'need-row', flexDirection: 'row' }, needText(model.need), newMark(Text, model.need.motion)) : needText(model.need)]
+      : []
     const notes = (model.lines || []).map((l, i) => h(Text, { key: 'line-' + i, color: l.color, wrap: 'truncate-end' }, String(l.text)))
     if (model.kind === 'need') return h(Box, { flexDirection: 'column' }, ...needLine, ...notes)
     if (model.kind === 'nudge') return h(Box, { flexDirection: 'column' }, h(Text, { key: 'title', color: NEED, wrap: 'truncate-end' }, String(model.title)), ...notes)

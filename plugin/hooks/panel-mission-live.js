@@ -5,6 +5,7 @@
 
 import { estimate, MIN_STEPS } from './panel-estimate.js'
 import { clock } from './panel-view.js'
+import { newMark } from './panel-next.js'
 import { roleColor, stateColor, ACCENT, STATE_MARKS, STATE_WORDS } from './panel-palette.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
@@ -68,8 +69,9 @@ function phaseOf(a) {
 
 const phaseName = (p) => (typeof p === 'string' ? p : isObj(p) ? str(p.title) || str(p.name) : '')
 
-export const nowModel = safe(({ run, now, selected }) => {
+export const nowModel = safe(({ run, now, selected, seen, motion }) => {
   if (!validRun(run)) return null
+  const opened = new Set(Array.isArray(seen) ? seen : [])
   const t = num(now) ? now : Date.now()
   const agents = agentsOf(run)
   const order = (Array.isArray(run.phases) ? run.phases : []).map(phaseName).filter(Boolean)
@@ -85,6 +87,7 @@ export const nowModel = safe(({ run, now, selected }) => {
       activity: isObj(a.activity) && str(a.activity.text) ? clip(a.activity.text, ACTIVITY_MAX) : null,
       tool: isObj(a.activity) && a.activity.kind === 'tool',
       tokens: tokens(a.tokens), selected: a.id === selected, action: { select: a.id },
+      fresh: state === 'failed' && !opened.has(a.id), motion,
     }
   }
   const columns = order
@@ -208,7 +211,8 @@ export function renderNow(ui, model, act) {
       h(ui.Button, { key: 'card:' + c.id, label: c.title, plain: true, onPress: () => { if (typeof act === 'function') act(c.action) } }),
       h(ui.Box, { flexDirection: 'row' },
         c.at ? h(ui.Text, { dimColor: true }, '[' + c.at + '] ') : null,
-        h(ui.Text, { color: c.stateColor }, c.mark + ' ' + c.word)),
+        h(ui.Text, { color: c.stateColor }, c.mark + ' ' + c.word),
+        c.fresh ? newMark(ui.Text, c.motion) : null),
       c.activity ? activityLine(ui, c) : null,
       c.tokens ? h(ui.Text, { dimColor: true }, c.tokens) : null)
   const columns = model.columns.map((col) =>
