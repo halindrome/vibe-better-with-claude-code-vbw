@@ -18664,7 +18664,15 @@
         "guarded: R82 (C117)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-15T21:46:58Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P144.1: All four tasks are committed (19f521e4, ceeb38fb, d8aa51b5) and their tests pass: pane, view, cost, cards and mission-live tests green. The mutation step cannot run: every check of R189 (C360-C372) is red on unbroken code, because C365 needs panel.js (the proving input and the stamps, P144.3) and other checks belong to P144.2-P144.5, so 'vbw mutate' refuses ('checks do not pass on the unbroken code') and 'vbw plan done' wants a red break per task. Needs the plan order changed (mutate after P144.3) or a decision to accept --none with this reason; I will not record --none for tasks that do have behaviour."
+        }
+      ]
     },
     {
       "id": "P145",
@@ -30328,6 +30336,75 @@
         "Rename 'the band' to Comms everywhere in docs/panel.md; the side pane keeps the name Mission Control",
         "Show the needs-you line with an example ('14:20 ⚑ VBW needs you · approve the plan'), say it has no buttons, and say when it clears: plan approved, milestone shipped, question answered, a run started",
         "Describe the helper rows: role and step, what it is doing, start time; finished helpers leave at once, failed ones stay red until opened, extra rows fold into '+N more · [m] Mission Control'"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md calls the strip Comms and the pane Mission Control, never the band or Telemetry; README and skills neither"
+          },
+          "what": "named Comms the band again",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C362": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:45:34Z",
+          "head": "74845808c17d5ff3f642fcc42c4ce558d69aba64"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md shows the needs-you line, says it has no buttons, when messages clear, and how helpers come and go"
+          },
+          "what": "removed the no-buttons statement",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C362": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:45:49Z",
+          "head": "dd3ed285b0704fd640611595a6319e07a7f29cdc"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md shows the needs-you line, says it has no buttons, when messages clear, and how helpers come and go"
+          },
+          "what": "removed ship clearing row",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C362": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T21:46:05Z",
+          "head": "19f521e447523e035c1d7072722959e5d4f277a5"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md shows the needs-you line, says it has no buttons, when messages clear, and how helpers come and go"
+          },
+          "what": "removed ship clearing row",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C362": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:46:31Z",
+          "head": "bdca53be513a2dfd563e21793a76aff1976c1c4d",
+          "strengthened": [
+            "tests/panel-comms-docs.bats"
+          ]
+        }
       ]
     },
     {
@@ -30345,7 +30422,7 @@
       "after": [
         "P142.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Play the needs-you sound only when Claude Code's question menu (AskUserQuestion) opens, once per question, at that moment; never for a gate on its own, a redraw of the menu, an answer or the menu closing",
@@ -30353,6 +30430,293 @@
         "Raise one notification for a new What's next recommendation, using the stored seen time so a restart does not repeat it",
         "Both follow the sound switch (/vbw-sound and Mission Control's button); test sessions raise nothing; a missing or failing $.ui.notify or audio player stays silent and shows nothing",
         "In tools/bench-panel.mjs the sound case raises the need through the question menu; tests/panel/r189/call.test.mjs passes"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The sound plays exactly once, at the moment the question menu (AskUserQuestion) opens"
+          },
+          "what": "no clip at menu open",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:46:07Z",
+          "head": "19f521e447523e035c1d7072722959e5d4f277a5"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Redraws of the open menu, an answer and the menu closing play no sound; a second question plays once more"
+          },
+          "what": "call also on redraw",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:46:21Z",
+          "head": "ceeb38fb4912d1f128b2f6d08c56daaf939a23a9"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "With the sound off (command or Mission Control's switch) nothing plays and nothing is raised; the choice holds across sessions (R57)"
+          },
+          "what": "ignore sound switch",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:46:35Z",
+          "head": "bdca53be513a2dfd563e21793a76aff1976c1c4d"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A test session plays and raises nothing and reads or writes only test.* keys (R64)"
+          },
+          "what": "test session plays",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:46:49Z",
+          "head": "d8aa51b5ffa3258e17660baa4da53725617d746c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A gate in next.json or the record with no question menu open plays no sound"
+          },
+          "what": "gate alone calls",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:47:06Z",
+          "head": "d8aa51b5ffa3258e17660baa4da53725617d746c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "B1: a gate standing when the question opens gives one clip, and none after the answer"
+          },
+          "what": "two clips per question",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:47:19Z",
+          "head": "d8aa51b5ffa3258e17660baa4da53725617d746c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "When the menu opens one notification fires, titled VBW, a plain sentence naming what VBW needs; never twice for one question"
+          },
+          "what": "wrong title",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:47:32Z",
+          "head": "d8aa51b5ffa3258e17660baa4da53725617d746c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "A new What's next recommendation raises one notification; one already seen raises none after a restart; a newer one raises one"
+          },
+          "what": "recommendation notifies every time",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:47:45Z",
+          "head": "d8aa51b5ffa3258e17660baa4da53725617d746c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Without $.ui.notify, or with notify and audio failing, nothing fails and no toast, log, status or notice appears instead"
+          },
+          "what": "notify failure escapes",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T21:47:58Z",
+          "head": "d8aa51b5ffa3258e17660baa4da53725617d746c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Without $.ui.notify, or with notify and audio failing, nothing fails and no toast, log, status or notice appears instead"
+          },
+          "what": "audio failure escapes",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T21:48:11Z",
+          "head": "d8aa51b5ffa3258e17660baa4da53725617d746c"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Without $.ui.notify, or with notify and audio failing, nothing fails and no toast, log, status or notice appears instead"
+          },
+          "what": "notify failure escapes",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T21:48:42Z",
+          "head": "765be01f3c6d534dc0f2d3db5510b44fa1c97f7f"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Without $.ui.notify, or with notify and audio failing, nothing fails and no toast, log, status or notice appears instead"
+          },
+          "what": "audio failure escapes",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:48:55Z",
+          "head": "765be01f3c6d534dc0f2d3db5510b44fa1c97f7f"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "Without $.ui.notify, or with notify and audio failing, nothing fails and no toast, log, status or notice appears instead"
+          },
+          "what": "notify failure escapes",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:49:19Z",
+          "head": "d1eb396f68ccd9d4906929c440636eecf0aec165"
+        },
+        {
+          "task": 1,
+          "what": "sound for every gate",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:50:26Z",
+          "head": "d1eb396f68ccd9d4906929c440636eecf0aec165"
+        },
+        {
+          "task": 2,
+          "what": "no notification text title",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:50:57Z",
+          "head": "d1eb396f68ccd9d4906929c440636eecf0aec165"
+        },
+        {
+          "task": 3,
+          "what": "no recommendation notification",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:51:28Z",
+          "head": "d1eb396f68ccd9d4906929c440636eecf0aec165"
+        },
+        {
+          "task": 4,
+          "what": "notify ignores sound switch",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T21:51:59Z",
+          "head": "d1eb396f68ccd9d4906929c440636eecf0aec165"
+        },
+        {
+          "task": 5,
+          "none": "its check C370 also holds the later render case (P143.x) and fails unbroken, so a break cannot be run; the bench sound case was broken by hand and its own bats test went red",
+          "at": "2026-10-15T22:01:42Z"
+        }
       ]
     },
     {
@@ -30394,14 +30758,15 @@
         "P142.2",
         "P142.3"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "Build the box's content in panel-view.js: VBW's state as a plain sentence (planning, building which phase, proving, checking, waiting for you and for what, or nothing running; proving comes as an input from panel.js), the current step with the time it started (HH:MM), and the session cost line",
         "Draw it as a framed box at the top of the Now tab (panel-pane.js), the cost line moved into it so it is drawn once; keep tests/panel/pane.test.mjs green",
         "Start Mission Control's need and time-left sentences with '[HH:MM] ', taken from an input of start times (`stamps`, filled by panel.js in P144.3)",
         "Start each agent card's state line with '[HH:MM] ': when it started, finished or failed (panel-mission-live.js), keeping the state text and colour tests/panel/cards.test.mjs holds"
-      ]
+      ],
+      "note": "All four tasks are committed (19f521e4, ceeb38fb, d8aa51b5) and their tests pass: pane, view, cost, cards and mission-live tests green. The mutation step cannot run: every check of R189 (C360-C372) is red on unbroken code, because C365 needs panel.js (the proving input and the stamps, P144.3) and other checks belong to P144.2-P144.5, so 'vbw mutate' refuses ('checks do not pass on the unbroken code') and 'vbw plan done' wants a red break per task. Needs the plan order changed (mutate after P144.3) or a decision to accept --none with this reason; I will not record --none for tasks that do have behaviour."
     },
     {
       "id": "P144.2",
@@ -40920,6 +41285,15 @@
         "milestone": "M34",
         "started": "2026-10-15T21:34:42Z",
         "ended": "2026-10-15T21:43:35Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261015T214424Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M34",
+        "started": "2026-10-15T21:44:24Z",
+        "ended": "2026-10-15T22:01:59Z",
         "cost": null
       }
     ],
