@@ -831,7 +831,7 @@ scenario_panel() {
   new_project
   (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor standard > /dev/null && panel_seed) \
     || { say "setup failed: could not seed the two-phase project"; return 1; }
-  fixture="greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan waits for the user's approval; no finished steps in the clone (so no estimate basis); window 200 columns wide"
+  fixture="greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan waits for the user's approval; no finished steps in the clone (so no estimate basis); window 200 columns wide, resized to 200x24 and to 60x40 with the needs-you line up and again while the build's helpers work; the user then approves and the build runs"
   start="/vbw:panel"
   facts="{}"
   panel_text() { screen | sed 's/[[:space:]][[:space:]]*/ /g'; }
@@ -872,17 +872,23 @@ scenario_panel() {
   # R189: Comms in the real window. Resize the window, wait for the redraw, and
   # read what is drawn: the prompt box must still be whole (two borders of the full
   # width and its text line on screen) and Comms must still be there, once.
-  # Echoes "ok" or what was wrong. $1 columns, $2 rows, $3 the text Comms must show.
+  # Echoes "ok" or what was wrong. $1 columns, $2 rows, $3 the text Comms must show
+  # exactly once (none: Mission Control fills the window and the pane's bottom edge must show).
   fits_window() {
     local sess="vbw-l3-$scenario" s border line
     tmux resize-window -t "$sess" -x "$1" -y "$2" 2> /dev/null || { echo "could not resize"; return; }
     sleep 8
     s=$(tmux capture-pane -t "$sess" -p)
+    printf '%s\n' "$s" > "$dir.panel.$1x$2.last.txt"
     line=$(printf '─%.0s' $(seq 1 "$1"))
     border=$(printf '%s\n' "$s" | grep -cxF "$line")
     [ "$border" -ge 2 ] || { echo "the prompt box is not whole at $1x$2 ($border full-width borders)"; return; }
     printf '%s\n' "$s" | grep -q '❯' || { echo "no prompt line at $1x$2"; return; }
-    [ "$(printf '%s\n' "$s" | grep -cF "$3")" -eq 1 ] || { echo "'$3' is not drawn exactly once at $1x$2"; return; }
+    if [ -n "$3" ]; then
+      [ "$(printf '%s\n' "$s" | grep -cF "$3")" -eq 1 ] || { echo "'$3' is not drawn exactly once at $1x$2"; return; }
+    else
+      printf '%s\n' "$s" | grep -q '^╰.*╯$' || { echo "Mission Control's bottom edge is not on screen at $1x$2"; return; }
+    fi
     printf '%s\n' "$s" > "$dir.panel.$1x$2.screen.txt"
     echo ok
   }
@@ -890,7 +896,7 @@ scenario_panel() {
   spill_checks() {
     local a b
     a=$(fits_window 200 "$SHORT_ROWS" "$1")
-    b=$(fits_window "$NARROW_COLUMNS" 40 "$1")
+    b=$(fits_window "$NARROW_COLUMNS" 40 "")
     tmux resize-window -t "vbw-l3-$scenario" -x 200 -y 60 2> /dev/null; sleep 6
     [ "$a" = ok ] || say "short window: $a" >&2
     [ "$b" = ok ] || say "narrow window: $b" >&2
@@ -907,7 +913,7 @@ scenario_panel() {
     # 1. The needs-you line stands while the plan waits for approval.
     s=$(panel_wait "⚑ VBW needs you")
     shown=$(has "$s" "⚑ VBW needs you")
-    pair=$(spill_checks "VBW needs you")
+    pair=$(spill_checks "⚑ VBW needs you")
     sh=${pair% *} nr=${pair#* }
     # 2. The user approves; the line must go once the gate is answered.
     l3 type "$scenario" "/vbw:approve"
@@ -916,17 +922,22 @@ scenario_panel() {
       if screen | grep -q 'Enter to select\|Ready to submit'; then answer_recommended; continue; fi
       if ! screen | grep -q "VBW needs you" && [ "$(next_action)" != approve ]; then cleared=true; break; fi
     done
-    idle
     # 3. The build: helpers come and go on Comms. A row seen once, then gone while the
     # top line counts "N done", is a finished helper that left. The window is also
     # resized once while helpers are at work.
     local seen_rows="" cur r started=false done_gone=false how="" crew_sh=true crew_nr=true crew_checked=false act
-    l3 type "$scenario" "/vbw:vibe"
+    local waiting=0
     for ((i = 0; i < 400; i++)); do
       sleep 3
       if screen | grep -q 'Enter to select\|Ready to submit'; then answer_recommended; continue; fi
       act=$(next_action)
+      # Claude Code goes on to the build by itself after an approval; if it has not within 45 s, the user asks.
+      if [ "$started" = false ] && [ "$act" = build ] && ! screen | grep -q 'esc to interrupt'; then
+        waiting=$((waiting + 1))
+        if [ "$waiting" -ge 15 ]; then l3 type "$scenario" "/vbw:vibe"; waiting=0; fi
+      fi
       cur=$(crew_rows)
+      screen > "$dir.panel.build.last.txt"
       if [ -n "$cur" ]; then
         started=true
         while IFS= read -r r; do case "$seen_rows" in *"|$r|"*) ;; *) seen_rows="$seen_rows|$r|" ;; esac; done <<< "$cur"
