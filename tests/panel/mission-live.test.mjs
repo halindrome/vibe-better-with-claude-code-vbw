@@ -3,6 +3,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { collect, find, walk, deepFreeze } from './helpers/fake-mod.mjs'
+import { ROLE_COLORS as R } from '../../plugin/hooks/panel-palette.js'
 import { nowModel, timelineModel, costsModel, renderNow, renderTimeline, renderCosts } from '../../plugin/hooks/panel-mission-live.js'
 
 const S = 1_800_000_000_000
@@ -42,22 +43,35 @@ test('nowModel: the frame is the role colour; the state mark and word carry the 
   ])
   const frames = (m) => Object.fromEntries(m.columns[0].cards.map((c) => [c.id, c.frame]))
   const lines = (m) => Object.fromEntries(m.columns[0].cards.map((c) => [c.id, [c.mark + ' ' + c.word, c.stateColor]]))
-  assert.deepEqual(frames(nowModel({ run: r, now: S })), { w: 'green', d: 'green', f: 'green', q: 'green' })
+  assert.deepEqual(frames(nowModel({ run: r, now: S })), { w: R.dev, d: R.dev, f: R.dev, q: R.dev })
   assert.deepEqual(lines(nowModel({ run: r, now: S })), { w: ['● running', '#ffaf00'], d: ['✓ done', 'green'], f: ['✗ failed', 'red'], q: ['… quiet', 'gray'] })
   const stopped = nowModel({ run: { ...r, status: 'stopped', endedAt: S + MIN }, now: S + 2 * MIN })
   assert.deepEqual(lines(stopped), { w: ['■ cut off', 'gray'], d: ['✓ done', 'green'], f: ['✗ failed', 'red'], q: ['■ cut off', 'gray'] })
   assert.equal(stopped.columns[0].cards[0].state, 'cut')
 })
 
+test('nowModel: a run that has ended draws no card as working or quiet; a run still working is never drawn as ended', () => {
+  const agents = [agent({ id: 'w', state: 'working' }), agent({ id: 'q', state: 'quiet' }), agent({ id: 'd', state: 'done' }), agent({ id: 'f', state: 'failed' })]
+  const states = (m) => Object.fromEntries(m.columns[0].cards.map((c) => [c.id, c.state]))
+  for (const status of ['completed', 'failed', 'stopped']) {
+    const m = nowModel({ run: run(agents, { status, endedAt: S + MIN }), now: S + 2 * MIN })
+    assert.deepEqual(states(m), { w: 'cut', q: 'cut', d: 'done', f: 'failed' }, status)
+    assert.equal(m.header.status, status, 'the header says the run ended')
+  }
+  const live = nowModel({ run: run(agents), now: S + 2 * MIN })
+  assert.deepEqual(states(live), { w: 'working', q: 'quiet', d: 'done', f: 'failed' })
+  assert.equal(live.header.status, 'running')
+})
+
 test('nowModel: a card carries its role colour, activity, tokens and a select action', () => {
   const m = nowModel({ run: run([agent({ id: 'a9', role: 'qa', label: 'P55', tokens: 48_213, activity: { kind: 'tool', text: 'reading spec.md' } })]), now: S })
   const c = m.columns[0].cards[0]
   assert.deepEqual(c, {
-    id: 'a9', title: 'qa P55', role: 'qa', roleColor: 'yellow', state: 'working', frame: 'yellow', mark: '●', word: 'running', stateColor: '#ffaf00',
+    id: 'a9', title: 'qa P55', role: 'qa', roleColor: R.qa, state: 'working', frame: R.qa, mark: '●', word: 'running', stateColor: '#ffaf00',
     activity: 'reading spec.md', tool: true, tokens: '48k tokens', selected: false, action: { select: 'a9' },
   })
   const big = nowModel({ run: run([agent({ tokens: 1_250_000 }), agent({ id: 'b', tokens: 900, role: 'docs' })]), now: S })
-  assert.deepEqual(big.columns[0].cards.map((x) => [x.tokens, x.roleColor]), [['1.3M tokens', 'green'], ['900 tokens', '#ff87d7']])
+  assert.deepEqual(big.columns[0].cards.map((x) => [x.tokens, x.roleColor]), [['1.3M tokens', R.dev], ['900 tokens', R.docs]])
   const long = nowModel({ run: run([agent({ activity: { kind: 'text', text: 'x'.repeat(100) } })]), now: S })
   assert.ok(long.columns[0].cards[0].activity.length <= 40)
   assert.ok(long.columns[0].cards[0].activity.endsWith('…'))
@@ -140,7 +154,7 @@ test('renderNow: phase columns of framed cards; pressing a card asks to select i
   const m = nowModel({ run: run([agent({ id: 'a1', phase: 'Build', state: 'done', tokens: 2000, activity: { kind: 'tool', text: 'editing x.js' } })]), now: S + MIN, selected: 'a1' })
   const acts = []
   const tree = renderNow(UI, m, (a) => acts.push(a))
-  const card = find(tree, (n) => n.type === 'Box' && n.props.borderColor === 'green')
+  const card = find(tree, (n) => n.type === 'Box' && n.props.borderColor === R.dev)
   assert.ok(card, 'a dev card framed in the dev colour')
   assert.equal(card.props.borderStyle, 'round')
   const btn = find(card, (n) => n.type === 'Button' && n.props.key === 'card:a1')

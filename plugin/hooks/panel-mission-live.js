@@ -50,10 +50,12 @@ function tokens(n) {
   return n + ' tokens'
 }
 
-// The state an agent shows: what was still going when the run stopped is cut off.
+// The state an agent shows: what was still going when the run ended (stopped, failed or
+// completed) is cut off; a run still working never shows a card as ended.
 function stateOf(a, run) {
   const s = STATES.includes(a.state) ? a.state : 'quiet'
-  return run.status === 'stopped' && (s === 'working' || s === 'quiet') ? 'cut' : s
+  const ended = str(run.status) !== '' && run.status !== 'running'
+  return ended && (s === 'working' || s === 'quiet') ? 'cut' : s
 }
 
 // The column an agent belongs to: its workflow phase, else the phase in its label (P55.1 -> P55).
