@@ -17964,7 +17964,15 @@
           "to": "deep",
           "reason": "Dev blocked P140.3: Tasks 1-3 done and committed; R188.40-42, 44-47 and task1-3 breaks recorded red. R188.43 survived: tests/mutate-prompts.bats (C356) only checks that 'another requirement' appears on the strengthen line, so dropping 'never' passes. The fix is one line there (has_line DEV strengthen \"never another requirement\"), but vbw commit P140.3 refuses it: the file is not in the plan's files (nor is a fix open). Needs the plan to declare tests/mutate-prompts.bats, or a decision on committing it; then re-run vbw mutate P140.3 R188.43 after removing 'never' in dev.md's survivor line, and plan done."
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "3339351fe613dc5efdcce677e9df882bf8805fd049f357335720a4dbfc2c6e26",
+        "at": "2026-10-15T02:21:18Z",
+        "note": "32/34 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P141",
@@ -30821,6 +30829,24 @@
       "status": "open",
       "note": "The docs tests do not pin the statements they are meant to pin (criteria 4 and 5; rules R188.52-R188.56). tests/mutation-docs.bats and tests/mutation-qa.bats only check that certain words appear somewhere in the section (or on one line of qa.md), so a statement can say the opposite and every test stays green. Evidence (L1, throwaway copy of HEAD in the scratchpad, bats tests/mutation-docs.bats tests/mutation-qa.bats, 7 of 7 still ok after these edits): (1) docs/workflows.md 'When it runs: at standard and deep. Never at express, and never in a fix.' changed to 'at express. Never at standard or deep, but in a fix, and undo.'; (2) docs/rigor.md table rows swapped so express = 'each rule' and standard = 'nothing'; (3) docs/proof.md 'the loop gives that approval and records a decision' changed to 'you give that approval, no decision'; (4) plugin/agents/qa.md 'do not find again a gap' changed to 'find again a gap'. P141.2's own recorded break 'task2: survivor word removed' also stayed green (a survivor) and was covered only by a different break, not by a stronger test. What a regression test should catch: assert the sentences, not single words (for example 'standard and deep' next to 'never at express', the express/standard/deep table rows each with their own content, 'the loop gives' with 'records a decision', 'do not find again' in qa.md), and be shown red when each of the four edits above is applied.",
       "phase": "P141"
+    },
+    {
+      "id": "F228",
+      "req": "R188",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "vbw mutate (plugin/lib/cmd-mutate.sh, lines 119-125, commit 8d26c179 / original 3be3c530) stopped refusing a changed-but-uncommitted check file whenever the lease kind is build. R188.5 says a break with a check file 'changed beside the break' is refused, writing nothing; the new code only keeps that refusal outside a build run. Inside a build run the checks still run on a detached copy of HEAD (plugin/lib/proofcopy.sh:91), so a Dev who strengthened tests/x.sh and re-ran vbw mutate before committing gets a recorded survivor from the OLD test, with no warning. That wastes one of the Dev's two strengthening attempts (dev.md: two attempts then vbw plan block) and records a false survivor. The plan's task 2 only asked for adding the survivor's files to the lease editable list, not for relaxing this refusal, and no test pins the relaxed branch (tests/mutate-command.bats:102-122 runs with no lease; tests/mutate-strengthen.bats never runs vbw mutate with an uncommitted check file). A regression test should open a build run, record a survivor, change the check file without committing, run vbw mutate, and expect a refusal naming the file (commit them first), nothing written to the record.",
+      "phase": "P140"
+    },
+    {
+      "id": "F229",
+      "req": "R188",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "docs/workflows.md section 'Rigor' (lines 493-503) lists what each workflow takes from args.rigor but the vbw:building bullet names only models; it never says rigor[phase].tier now decides whether a Dev or Docs agent is told to do the mutation step (building.js line 74). Minor cross-file consistency gap against criterion 2. A regression test (tests/mutation-docs.bats) should require the vbw:building bullet to mention the tier.",
+      "phase": "P140"
     }
   ],
   "todos": [
