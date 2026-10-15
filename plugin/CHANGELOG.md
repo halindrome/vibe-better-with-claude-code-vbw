@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.0.39] - 2026-10-15
+
+### Changed
+
+- **The mutation check is cheap on slow test suites.** A break with several
+  checks runs them one at a time, fastest first by their last recorded time,
+  and stops at the first that catches the break. Each check runs on the
+  unbroken code only when an earlier break at the same commit has not already
+  done so. A project whose tests take minutes now pays for the checks a break
+  needs, not for every check on every break.
+- **Each plan breaks its own rules.** When several plans serve a requirement,
+  the Lead names the plan that builds each rule's code, and that plan cannot
+  finish until its rules have a break the tests caught. A later plan no longer
+  inherits rules it cannot break.
+
 ## [2.0.38] - 2026-10-15
 
 ### Changed
