@@ -317,6 +317,12 @@ const runsSeen = (st) => [
 // in Comms (full motion); all checks green, the sweep over Proof (full) and a
 // line in Comms (full and calm); a ship, the pane on VBW Wrapped (any motion:
 // it is information). The first snapshot is not news.
+// The proof's own time as HH:MM (when it was recorded), else now.
+const proofTime = (st, now) => {
+  const ev = isObj(st.record) && isObj(st.record.evidence) ? st.record.evidence : null
+  const at = ev ? Date.parse(ev.at) : NaN
+  return clock(Number.isFinite(at) ? at : now)
+}
 async function celebrate($, st, now) {
   const before = st.lastRec
   if (before === st.record) return
@@ -324,7 +330,7 @@ async function celebrate($, st, now) {
   const c = celebration({ before, after: st.record })
   const m = motion(st)
   if (c === 'qa-pass' && m === 'full') st.burst = effect('vbw-confetti', now, (w) => confettiFrames({ cols: w, rows: 3, seed: now }))
-  if (c === 'all-green' && m !== 'off') st.cheer = { text: '✓ All checks pass', until: now + CHEER_MS }
+  if (c === 'all-green' && m !== 'off') st.cheer = { text: (proofTime(st, now) ? '[' + proofTime(st, now) + '] ' : '') + '✓ All checks pass', until: now + CHEER_MS }
   if (c === 'all-green' && m === 'full') st.sweep = effect('vbw-sweep', now, (w) => sweepFrames({ cols: w }))
   if (c === 'shipped') {
     st.wrapped = wrappedModel({ record: st.record, runs: runsSeen(st), steps: st.steps })
