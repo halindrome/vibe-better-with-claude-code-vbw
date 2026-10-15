@@ -32127,12 +32127,125 @@
         "P145.2",
         "P145.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Extend scenario_panel in tools/l3-suite.sh: bring up a needs-you line and a finished helper in the real window and record need_line_cleared and helper_done_cleared",
         "Resize to a short and a narrow window, check nothing is drawn below or past it, and record no_spill_short, no_spill_narrow, short_rows and narrow_columns; keep the facts tests/l3-panel.bats holds",
         "Run 'tools/l3-suite.sh panel' with the plugin from this working tree and commit tools/l3-results/panel.json with what it did not test"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The panel scenario, run in the real window, records the needs-you line clearing, a finished helper leaving and no spill in a short (at most 30 rows) and a narrow (at most 100 columns) window, committed at L3"
+          },
+          "what": "renamed the no_spill_short fact in the scenario",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C371": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T23:18:11Z",
+          "head": "047e6b94ae403daa71ee7532c612fe60d1ff1840"
+        },
+        {
+          "task": 1,
+          "what": "renamed the helper_done_cleared fact",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "green",
+            "C366": "green",
+            "C367": "green",
+            "C368": "green",
+            "C369": "green",
+            "C370": "green",
+            "C371": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T23:19:29Z",
+          "head": "047e6b94ae403daa71ee7532c612fe60d1ff1840"
+        },
+        {
+          "task": 2,
+          "what": "made the short window 45 rows",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "green",
+            "C366": "green",
+            "C367": "green",
+            "C368": "green",
+            "C369": "green",
+            "C370": "green",
+            "C371": "green",
+            "C372": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T23:20:15Z",
+          "head": "047e6b94ae403daa71ee7532c612fe60d1ff1840"
+        },
+        {
+          "task": 3,
+          "what": "recorded the narrow window as spilling",
+          "files": [
+            "tools/l3-results/panel.json"
+          ],
+          "checks": {
+            "C18": "green",
+            "C1": "green",
+            "C360": "green",
+            "C361": "green",
+            "C362": "green",
+            "C363": "green",
+            "C364": "green",
+            "C365": "green",
+            "C366": "green",
+            "C367": "green",
+            "C368": "green",
+            "C369": "green",
+            "C370": "green",
+            "C371": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T23:20:59Z",
+          "head": "047e6b94ae403daa71ee7532c612fe60d1ff1840"
+        },
+        {
+          "task": 2,
+          "what": "made the short window 45 rows",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C371": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T23:21:24Z",
+          "head": "18ec565992e9aa40abc220e85fa5f42e4dd53947",
+          "strengthened": [
+            "tests/l3-panel-comms.bats"
+          ]
+        }
       ]
     },
     {
@@ -32151,12 +32264,141 @@
         "P145.2",
         "P145.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "Rewrite 'Colours' and 'Judging the colours' in docs/panel.md for D407: roles have colours of their own; green is done, red failed, amber needs you or running, grey idle or quiet; running late is amber",
         "Describe how Mission Control fits its room ('+N more · open Mission Control', the tab row on one line) and add the render line to the cost table",
         "In README.md, name Comms (the strip above the prompt) and Mission Control (the side pane) where the panel is described"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md gives no role a state colour and says what each state colour means; README names Comms and Mission Control"
+          },
+          "what": "state colours: amber to purple, green to blue",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C372": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:44:51Z",
+          "head": "7c2e0ce063619a66ea270dac18ab9596a7157341"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md gives no role a state colour and says what each state colour means; README names Comms and Mission Control"
+          },
+          "what": "done green to blue",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C372": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:45:15Z",
+          "head": "af7f8679b1b31937b9adf998e28dedf55c876bf8",
+          "strengthened": [
+            "tests/panel-colours-docs.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md calls the strip Comms and the pane Mission Control, never the band or Telemetry; README and skills neither"
+          },
+          "what": "Comms called the band",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C362": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:45:35Z",
+          "head": "af7f8679b1b31937b9adf998e28dedf55c876bf8"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md gives no role a state colour and says what each state colour means; README names Comms and Mission Control"
+          },
+          "what": "README Mission Control text",
+          "files": [
+            "README.md"
+          ],
+          "checks": {
+            "C372": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:45:50Z",
+          "head": "af7f8679b1b31937b9adf998e28dedf55c876bf8"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "docs/panel.md gives no role a state colour and says what each state colour means; README names Comms and Mission Control"
+          },
+          "what": "README no longer names Comms or Mission Control",
+          "files": [
+            "README.md"
+          ],
+          "checks": {
+            "C372": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:46:09Z",
+          "head": "32cd759baca742675ffea255fd4988eb9f2ed40b"
+        },
+        {
+          "task": 1,
+          "what": "failed red to blue",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C372": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:47:30Z",
+          "head": "32cd759baca742675ffea255fd4988eb9f2ed40b"
+        },
+        {
+          "task": 1,
+          "what": "QA green",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C372": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:47:43Z",
+          "head": "32cd759baca742675ffea255fd4988eb9f2ed40b"
+        },
+        {
+          "task": 3,
+          "what": "README Comms",
+          "files": [
+            "README.md"
+          ],
+          "checks": {
+            "C372": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:47:56Z",
+          "head": "32cd759baca742675ffea255fd4988eb9f2ed40b"
+        },
+        {
+          "task": 2,
+          "none": "the fit and the render cost are pinned in tests/panel/r189/containment.test.mjs and tests/panel-bench-render.bats (waiting for approval); the docs sentences have no check of their own",
+          "at": "2026-10-15T22:48:01Z"
+        }
       ]
     }
   ],
@@ -42502,6 +42744,15 @@
         "milestone": "M34",
         "started": "2026-10-15T22:29:36Z",
         "ended": "2026-10-15T22:42:38Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261015T224315Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M34",
+        "started": "2026-10-15T22:43:15Z",
+        "ended": "2026-10-15T23:21:59Z",
         "cost": null
       }
     ],
