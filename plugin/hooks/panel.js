@@ -26,7 +26,7 @@ const TICK_MS = 2000
 // A project holding .vbw/runtime/test-mode is a VBW test session (R64): it plays no
 // audio and keeps its choices under test.* keys, never the user's.
 const TEST_MARK = '/.vbw/runtime/test-mode'
-const keys = (test) => ({ closed: (test ? 'test.' : '') + 'vbw-panel.closed', sound: (test ? 'test.' : '') + 'vbw-panel.sound', nextSeen: (test ? 'test.' : '') + 'vbw-panel.next-seen' })
+const keys = (test) => ({ closed: (test ? 'test.' : '') + 'vbw-panel.closed', sound: (test ? 'test.' : '') + 'vbw-panel.sound', nextSeen: (test ? 'test.' : '') + 'vbw-panel.next-seen', seen: (test ? 'test.' : '') + 'vbw-panel.seen' })
 // One of the plugin's shipped sounds (assets/audio/<character>/), picked at random
 // for each request for the user; with none shipped, the panel is silent.
 const pick = () => (SOUNDS.length ? { asset: SOUNDS[Math.floor(Math.random() * SOUNDS.length)] } : null)
@@ -93,6 +93,7 @@ function fresh() {
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
     lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {},
     sprites: null, burst: null, sweep: null, cheer: null, wrapped: null, nextSeen: null, nextAt: null, nextAnim: null,
+    seenNext: null, needSeen: null,
   }
 }
 
@@ -114,11 +115,22 @@ const runCost = (st) => {
 }
 
 // Comms' model, for any width: what comms() draws and the redraw check compares.
-const stage = (st, now, props) => stageModel({
-  run: st.run, next: st.next, now, health: st.health, cost: runCost(st), motion: motion(st),
-  need: liveNeed({ record: st.record, next: st.next, nextAt: st.nextFileAt, question: st.question, questionAt: st.questionAt, health: st.health }),
-  seen: Object.keys(st.helpersSeen), born: st.born, columns: isObj(props) ? props.bodyColumns : undefined, maxRows: isObj(props) ? props.maxRows : undefined,
-})
+// What the user has not seen yet (a recommendation, a needs-you line, a failed helper)
+// is marked until it is pressed, opened, or its tab is opened.
+const needNow = (st) => liveNeed({ record: st.record, next: st.next, nextAt: st.nextFileAt, question: st.question, questionAt: st.questionAt, health: st.health })
+const needId = (n) => n.key + '@' + String(n.at)
+const unseenNext = (st) => {
+  const rec = recOf(st)
+  return isObj(rec) && typeof rec.at === 'string' && rec.at !== '' && rec.at !== st.seenNext
+}
+const stage = (st, now, props) => {
+  const need = needNow(st)
+  return stageModel({
+    run: st.run, next: st.next, now, health: st.health, cost: runCost(st), motion: motion(st),
+    need,
+    seen: Object.keys(st.helpersSeen), born: st.born, columns: isObj(props) ? props.bodyColumns : undefined, maxRows: isObj(props) ? props.maxRows : undefined,
+  })
+}
 
 // Read a file only when its size or time changed; keep the old state when it cannot be used,
 // or drop it when `gone` and the file is gone.
@@ -396,7 +408,7 @@ async function suggest($, st) {
 
 const cheering = (st, now) => (st.cheer && st.cheer.until > now ? st.cheer.text : null)
 const recOf = (st) => (isObj(st.record) ? st.record.recommendation : undefined)
-const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st), nextCandy({ motion: motion(st), arrivedAt: st.nextAt, now }), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent,
+const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st),  nextCandy({ motion: motion(st), arrivedAt: st.nextAt, now }), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent,
   cheering(st, now), !!st.burst, !!st.sweep])
 
 // Remember when each agent first showed; at full motion a new row flashes for a
@@ -516,6 +528,24 @@ async function openByPerson($, st, extra) {
   await open($, extra)
 }
 
+// The user has seen these: the recommendation (kept in the user's store, so a restart
+// keeps it seen) and the needs-you line (until the gate changes).
+async function seen($, st, what) {
+  if (what.includes('need')) {
+    const n = needNow(st)
+    if (n) st.needSeen = needId(n)
+  }
+  const rec = recOf(st)
+  if (what.includes('next') && isObj(rec) && typeof rec.at === 'string' && rec.at) {
+    st.seenNext = rec.at
+    try {
+      await $.store.set(st.keys.seen, rec.at)
+    } catch {
+      // it stays seen for this session
+    }
+  }
+}
+
 // What a press asks for (panel-stage.js and the Mission Control views): fill the
 // prompt (never send it, decision Q1), open Mission Control on a tab, or choose what
 // a tab shows. Anything else is ignored.
@@ -524,10 +554,15 @@ async function act($, st, a) {
     if (!isObj(a)) return
     if (typeof a.fill === 'string') {
       await $.prompt.fill({ text: a.fill })
+      if (a.seen === 'next') {
+        await seen($, st, ['next'])
+        await redrawIfChanged($, st, true)
+      }
       return
     }
     if (a.open === 'mission') {
       st.tab = typeof a.tab === 'string' ? a.tab : 'now'
+      if (st.tab === 'now') await seen($, st, ['next', 'need'])
       if (typeof a.agent === 'string') {
         st.agent = a.agent
         st.helpersSeen[a.agent] = true // opened in Mission Control: a failed helper counts as seen
@@ -539,7 +574,10 @@ async function act($, st, a) {
     }
     else if (a.tab === 'plan' && typeof a.phase === 'string') st.phase = a.phase
     else if (typeof a.check === 'string') st.check = st.check === a.check ? null : a.check
-    else if (typeof a.show === 'string') st.tab = a.show
+    else if (typeof a.show === 'string') {
+      st.tab = a.show
+      if (a.show === 'now') await seen($, st, ['next', 'need'])
+    }
     else return
     await redrawIfChanged($, st, true)
   } catch {
@@ -678,6 +716,8 @@ async function begin($, st) {
   st.sound = (await $.store.get(st.keys.sound)) !== false
   const stored = await $.store.get(st.keys.nextSeen)
   st.nextSeen = typeof stored === 'string' ? stored : null
+  const kept = await $.store.get(st.keys.seen)
+  st.seenNext = typeof kept === 'string' ? kept : null
   const now = await $.clock.now()
   await noteRecommendation($, st, now)
   const v0 = view(st, now)

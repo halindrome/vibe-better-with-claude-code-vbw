@@ -107,7 +107,8 @@ export function renderNext(ui, input, act) {
   const { recommendation, width, motion, arrivedAt, now, unseen } = isObj(input) ? input : {}
   const c = candy({ motion, arrivedAt, now })
   const model = nextModel(recommendation)
-  const press = (fill) => () => { if (typeof act === 'function') act({ fill }) }
+  // A row pressed has been seen; Suggest next only fills the prompt.
+  const press = (fill, seen) => () => { if (typeof act === 'function') act(seen ? { fill, seen: 'next' } : { fill }) }
   const lines = nextLines(model).map((l) => {
     if (!l.row) {
       const props = { key: l.id, wrap: 'truncate' }
@@ -127,7 +128,7 @@ export function renderNext(ui, input, act) {
       h(Text, itemProps, cut(r.text, Math.max(1, w - [...chip].length - 1))),
       h(Text, { key: 'chip', dimColor: true, wrap: 'truncate' }, chip))
     const body = r.reason ? [head, h(Text, { key: 'reason', dimColor: true, wrap: 'truncate' }, cut(r.reason, w))] : [head]
-    return h(Button, { key: l.id, plain: true, onPress: press(commandOf(r)) },
+    return h(Button, { key: l.id, plain: true, onPress: press(commandOf(r), true) },
       h(Box, { key: 'row', flexDirection: 'column' }, ...body))
   })
   return h(Box, { key: 'whats-next', flexDirection: 'column', marginBottom: 1 },
