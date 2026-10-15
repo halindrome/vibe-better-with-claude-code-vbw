@@ -84,6 +84,15 @@ test("pressing a row puts the item's command in the prompt and never sends it", 
   assert.deepEqual(h.names().filter((n) => n.startsWith('prompt.') && n !== 'prompt.fill' && n !== 'prompt.suggest'), [], 'only fills, never sends')
 })
 
+test("a row whose source is a requirement id (R) or a note that is not an id fills the id or the text", async () => {
+  const rec = { at: '2026-10-09T10:00:00Z', top: { text: 'Export to CSV', reason: 'Asked twice.', size: 'small', source: 'R12' }, runners: [{ text: 'Print view', size: 'small', source: 'from the survey' }, { text: 'Sort columns', size: 'small', source: 'T3x' }] }
+  const h = await session(record({ recommendation: rec, ...motion('off') }))
+  await press(h, await row(h, /Export to CSV/))
+  await press(h, await row(h, /Print view/))
+  await press(h, await row(h, /Sort columns/))
+  assert.deepEqual(h.callsOf('prompt.fill').map((a) => a[0].text), ['/vbw:vibe R12', '/vbw:vibe Print view', '/vbw:vibe Sort columns'])
+})
+
 test('Suggest next stays and still only fills the prompt (R124)', async () => {
   const h = await session(record({ recommendation: REC() }))
   const b = find(await section(h), (n) => n.type === 'Button' && n.props.label === 'Suggest next')
