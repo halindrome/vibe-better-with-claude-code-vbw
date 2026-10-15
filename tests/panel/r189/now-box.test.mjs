@@ -151,3 +151,26 @@ test("the What's next recommendation shows the time it was written as [HH:MM]", 
   const lines = screen(section, WIDTH)
   assert.ok(lines.some((l) => l.trim().startsWith('[' + hhmm(at) + ']')), lines.join('\n'))
 })
+
+test('a state change that touches nothing else still redraws the box within one refresh: a proof starting, then ending', async () => {
+  const mark = ROOT + '/.vbw/runtime/proving.sess-1'
+  const h = await session()
+  assert.match(await nowBox(h), /nothing (is )?running/i)
+  h.write(mark, '4242\n')
+  await h.advance(TICK)
+  assert.match(await nowBox(h), /proving/i)
+  h.remove(mark)
+  await h.advance(TICK)
+  assert.match(await nowBox(h), /nothing (is )?running/i)
+})
+
+test('a time-left sentence keeps the time it began saying what it says while the words stay the same', async () => {
+  // A step far past its usual time says "taking longer than usual" and goes on saying it.
+  const h = await session(record({ lease: lease('build', T0 - 3 * 3600 * S), plans: PLANS }), next({ action: 'run' }), { [STEPS]: JSON.stringify(HISTORY) })
+  const sentence = async () => (await paneLines(h)).find((l) => /taking longer than usual/.test(l))
+  const first = await sentence()
+  assert.ok(first, 'no taking-longer sentence')
+  assert.match(first.trim(), /^\[\d\d:\d\d\] /)
+  await h.advance(10 * 60000)
+  assert.equal(await sentence(), first, 'the time moved with the clock')
+})
