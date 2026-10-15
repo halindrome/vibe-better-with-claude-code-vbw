@@ -39771,204 +39771,154 @@
   "loop": {
     "items": [
       {
-        "id": "T74",
-        "text": "Cost: at standard and deep, mutation-check a plan's own tests before its build ends, so QA stops finding tests that cannot fail one round at a time (M15: each deep QA round found 1-2 such gaps, about an hour per loop)",
-        "proof": "auto",
-        "status": "in_progress",
-        "milestone": "M33",
-        "head": "372f06aa0b20ac6ac55fe8132bc663235a6276d9",
-        "baseline": {
-          "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
-            "usd": 1148.56479,
-            "in": 187586,
-            "out": 400,
-            "at": "2026-10-14T15:58:25Z"
-          },
-          "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-14T15:58:25Z"
-          },
-          "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-14T15:58:25Z"
-          },
-          "689c5465-3aa1-49af-9115-8192ae092ecf": {
-            "usd": 35.064654,
-            "in": 174558,
-            "out": 600,
-            "at": "2026-10-14T15:58:25Z"
-          },
-          "69afb011-3850-41d9-8620-9b59aa9fe082": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-14T15:58:25Z"
-          },
-          "7bb0d4fc-0bbf-4fcb-a770-a9f18afa977d": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-14T15:58:25Z"
-          },
-          "868abfef-9fb7-492e-afba-751d9042e56a": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-14T15:58:25Z"
-          },
-          "b46c3fe0-67c9-4862-ac23-c11851da8815": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-14T15:58:25Z"
-          },
-          "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-14T15:58:25Z"
-          },
-          "d53bd0eb-b19e-4431-a0f8-2a6a8b13fccc": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-14T15:58:25Z"
-          },
-          "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-14T15:58:25Z"
-          }
-        },
-        "req": "R188"
-      },
-      {
-        "id": "T131",
-        "text": "FOR DISCUSSION (2026-10-12): QA re-check rounds. Four deep rounds on M24 each found new, smaller things (a clause without a test that can fail, a stale sentence), because every round re-runs the whole deep sweep with a fresh mind. Proposal: a re-check round verifies the round's fixes and what their changed files reach, plus the goal; the whole-phase sweep runs once, at round 1, unless the goal, criteria or plans changed. Owner decides: it trades some depth for convergence",
+        "id": "T92",
+        "text": "Final polish (panel trust, from M18): every band and pane message disappears as soon as it stops being true (P10); no 'VBW needs you' card with buttons in the band (P1); the sound plays once per question, only with Claude Code's own menu (B1); finished agents leave the crew list at once (P4); owner judges it by eye. Do together with P2, P3, P5, P6, P9, T64, T78, T81, T87",
         "proof": "auto",
         "status": "waiting"
       },
       {
-        "id": "T118",
-        "text": "QA re-check scope after a fix round: the QA digest (D91) re-checks every phase whose files or whose dependencies' files changed, so a two-file kernel fix re-checked 10 phases (2026-10-11 16:42). Scope re-checks to the phases whose own files changed; dependents only when their requirements' checks or files changed",
+        "id": "T94",
+        "text": "Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92",
         "proof": "auto",
         "status": "waiting"
       },
       {
-        "id": "T45",
-        "text": "QA re-check scope: a phase is re-checked deeply when a phase it builds on changed only test-result files (2026-10-07: P55 re-checked because P57's tools/l3-results/smallchange.json was re-committed); judge dependency changes by kind, as R71 does for depth",
+        "id": "T102",
+        "text": "Every long VBW step (planning, build, proof, QA) shows what it is doing now and when it should end, as a clock time from how long the same step took before in this project, in the panel, status line and VBW's messages; absorbs T85. Final polish before 2.1.0 (owner 2026-10-10: cosmetics last, core first unless a technical reason makes it urgent)",
         "proof": "auto",
         "status": "waiting"
       },
       {
-        "id": "T123",
-        "text": "Build and fix briefs carry the decisions recorded since the contract was approved (vbw show decisions --since APPROVAL, or the workflow passes them in the Dev's prompt): tonight D291, D294, D295 and D296 corrected plans mid-milestone and no Dev could see them; only the Lead reads decisions (2026-10-12)",
+        "id": "T139",
+        "text": "ETA quality for T102 (cosmetic leg, brainstorm inbox 2026-10-10): estimate per unit of work (plan, task, check by tier from .git/vbw/steps.json) times the work size, and the whole road (build, proof, QA, likely fix rounds from this machine's history), not only the current step",
         "proof": "auto",
         "status": "waiting"
       },
       {
-        "id": "T111",
-        "text": "No shortcuts, for every VBW user (owner, 2026-10-11: 'this must NEVER happen to ANYONE using VBW, NO SHORTCUTS EVER ALLOWED'): the Architect and Lead choose the optimal, future-proof design, never the merely safe or simple one, and name any known cost or debt instead of hiding it behind a fallback; their self-review refuses a design that pays a recurring cost (time, tokens, re-runs) to avoid thinking; QA fails a phase that introduces such a shortcut or unnamed debt. Applies to plans for users' projects and to VBW itself",
-        "proof": "auto",
-        "status": "waiting"
-      },
-      {
-        "id": "T140",
-        "text": "Loop spend over-counts after a compaction (2026-10-13 18:37): vbw loop status said $1,022.24 spent when the session's dollars had gone from $997.23 to $1,022.40 (about $25). The session's 'in' token figure went DOWN (656,256 to 566,163: Claude Code's figure is the context size, which drops at a compaction), so the spend arithmetic treated the session as reset and counted its whole total. A session whose dollars rose is never a reset; judge resets by the dollar figure only, and treat token counts as non-cumulative. Affects the ceiling stop (a loop with a ceiling would have stopped at once) and every run's and milestone's recorded cost (docs/costs.md).",
-        "proof": "auto",
-        "status": "waiting"
-      },
-      {
-        "id": "T144",
-        "text": "The R152 rule (tests/release-run.bats: no default-run test file measures a duration) misses millisecond timers: it looks for SECONDS and date +%s, and for Time::HiRes only in proof-stale-links.bats, so a perl -MTime::HiRes timer in any other default test file slipped through (F220's first test, 2026-10-14). Look for Time::HiRes, gdate +%N and similar in every default-run file",
+        "id": "T138",
+        "text": "Brainstorm F4 (cosmetic leg): show which session holds the run, by name, in the status line, Comms and a Sessions-tab mark; names need the session name as data (ties to cosmetic.md D14); optionally /vbw:vibe suggests /rename vbw · <project> at first setup, never applies it",
         "proof": "auto",
         "status": "waiting"
       }
     ],
     "ceiling": null,
     "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
-    "started_at": "2026-10-14T15:58:04Z",
+    "started_at": "2026-10-15T20:40:30Z",
     "baseline": {
+      "08215c4b-a532-4631-97a7-fc456d305a2d": {
+        "usd": 1244.340821,
+        "in": 658637,
+        "out": 312,
+        "at": "2026-10-15T20:40:30Z"
+      },
+      "0998a6b2-8631-43de-9da7-063dec09aa18": {
+        "usd": 0,
+        "in": 0,
+        "out": 0,
+        "at": "2026-10-15T20:40:30Z"
+      },
       "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
-        "usd": 1148.492192,
-        "in": 184114,
-        "out": 491,
-        "at": "2026-10-14T15:58:04Z"
+        "usd": 1284.245205,
+        "in": 885597,
+        "out": 216,
+        "at": "2026-10-15T20:40:30Z"
+      },
+      "1c35771f-52c4-41e8-956d-5ce15298d991": {
+        "usd": 0.349007,
+        "in": 58901,
+        "out": 580,
+        "at": "2026-10-15T20:40:30Z"
       },
       "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-14T15:58:04Z"
+        "at": "2026-10-15T20:40:30Z"
+      },
+      "242ff0cc-4ea5-4f6b-9665-932974b21b29": {
+        "usd": 0,
+        "in": 0,
+        "out": 0,
+        "at": "2026-10-15T20:40:30Z"
       },
       "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-14T15:58:04Z"
+        "at": "2026-10-15T20:40:30Z"
+      },
+      "60723b89-7950-4ffa-bf04-6cdf30e3ec96": {
+        "usd": 0,
+        "in": 0,
+        "out": 0,
+        "at": "2026-10-15T20:40:30Z"
       },
       "689c5465-3aa1-49af-9115-8192ae092ecf": {
-        "usd": 35.064654,
-        "in": 174558,
-        "out": 600,
-        "at": "2026-10-14T15:58:04Z"
+        "usd": 36.332158,
+        "in": 176815,
+        "out": 348,
+        "at": "2026-10-15T20:40:30Z"
       },
       "69afb011-3850-41d9-8620-9b59aa9fe082": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-14T15:58:04Z"
+        "at": "2026-10-15T20:40:30Z"
+      },
+      "6c761191-76a0-4136-9123-f41780837c28": {
+        "usd": 0.462324,
+        "in": 56499,
+        "out": 517,
+        "at": "2026-10-15T20:40:30Z"
       },
       "7bb0d4fc-0bbf-4fcb-a770-a9f18afa977d": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-14T15:58:04Z"
+        "at": "2026-10-15T20:40:30Z"
       },
       "868abfef-9fb7-492e-afba-751d9042e56a": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-14T15:58:04Z"
+        "at": "2026-10-15T20:40:30Z"
+      },
+      "a0c9069c-b087-42d1-8480-1a48d6ead14d": {
+        "usd": 0,
+        "in": 0,
+        "out": 0,
+        "at": "2026-10-15T20:40:30Z"
+      },
+      "a5bff576-1135-48dc-814f-a1cba2240cae": {
+        "usd": 0,
+        "in": 0,
+        "out": 0,
+        "at": "2026-10-15T20:40:30Z"
       },
       "b46c3fe0-67c9-4862-ac23-c11851da8815": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-14T15:58:04Z"
+        "at": "2026-10-15T20:40:30Z"
       },
       "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-14T15:58:04Z"
+        "at": "2026-10-15T20:40:30Z"
       },
       "d53bd0eb-b19e-4431-a0f8-2a6a8b13fccc": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-14T15:58:04Z"
+        "at": "2026-10-15T20:40:30Z"
       },
       "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-14T15:58:04Z"
+        "at": "2026-10-15T20:40:30Z"
       }
-    },
-    "stopping": {
-      "at": "2026-10-14T23:26:48Z",
-      "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
-    },
-    "ended": {
-      "at": "2026-10-15T07:34:29Z",
-      "reason": "stopped by the user (session 0ee781c3-c5b6-4a6c-889f-04b89f1fba4a)"
-    },
-    "report": ".vbw/loop-report.md"
+    }
   }
 }
