@@ -30758,7 +30758,7 @@
         "P142.2",
         "P142.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Build the box's content in panel-view.js: VBW's state as a plain sentence (planning, building which phase, proving, checking, waiting for you and for what, or nothing running; proving comes as an input from panel.js), the current step with the time it started (HH:MM), and the session cost line",
@@ -30766,6 +30766,33 @@
         "Start Mission Control's need and time-left sentences with '[HH:MM] ', taken from an input of start times (`stamps`, filled by panel.js in P144.3)",
         "Start each agent card's state line with '[HH:MM] ': when it started, finished or failed (panel-mission-live.js), keeping the state text and colour tests/panel/cards.test.mjs holds",
         "Code and tests are committed (19f521e4, ceeb38fb, d8aa51b5). Its R189 checks stay red until P144.3 wires panel.js, vbw mutate refuses red checks and --check takes only R189 checks, so record each task with vbw mutate P144.1 taskK --none \"covered by P144.3: its check C365 is red until then\" and run vbw plan done (D410). P144.3 breaks the rules where the code is wired (T152). Do not block on the red checks."
+      ],
+      "mutations": [
+        {
+          "task": 1,
+          "none": "covered by P144.3: its check C365 is red until then",
+          "at": "2026-10-15T22:03:18Z"
+        },
+        {
+          "task": 2,
+          "none": "covered by P144.3: its check C365 is red until then",
+          "at": "2026-10-15T22:03:20Z"
+        },
+        {
+          "task": 3,
+          "none": "covered by P144.3: its check C365 is red until then",
+          "at": "2026-10-15T22:03:21Z"
+        },
+        {
+          "task": 4,
+          "none": "covered by P144.3: its check C365 is red until then",
+          "at": "2026-10-15T22:03:23Z"
+        },
+        {
+          "task": 5,
+          "none": "covered by P144.3: its check C365 is red until then",
+          "at": "2026-10-15T22:03:27Z"
+        }
       ]
     },
     {
@@ -30954,12 +30981,80 @@
       "after": [
         "P143.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Add a render measure to tools/bench-panel.mjs: a crew of helpers at work, Comms and Mission Control's Now tab drawn on each refresh",
         "Print it as 'render, Comms and Mission Control: <ms> ms CPU' in tools/bench-panel.sh and judge it against the same budget",
         "Run the bench under /bin/bash 3.2 and report the measured numbers in the plan's result"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The bench measures a render of Comms and Mission Control with a crew at work beside the tick; the budget is judged in the release run (R152)"
+          },
+          "what": "bench no longer draws Mission Control",
+          "files": [
+            "tools/bench-panel.mjs"
+          ],
+          "checks": {
+            "C370": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-15T22:04:12Z",
+          "head": "6b055d275affe516a6a2b9e675042385976ceeb3"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The bench measures a render of Comms and Mission Control with a crew at work beside the tick; the budget is judged in the release run (R152)"
+          },
+          "what": "bench no longer draws Mission Control",
+          "files": [
+            "tools/bench-panel.mjs"
+          ],
+          "checks": {
+            "C370": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:04:51Z",
+          "head": "e7e549f62587dd26500b384de0b96d531da9a07b",
+          "strengthened": [
+            "tests/panel-bench-render.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "none": "a measured run, nothing in the code to break",
+          "at": "2026-10-15T22:06:34Z"
+        },
+        {
+          "rule": {
+            "req": "R189",
+            "text": "The bench's sound case raises the need through the question menu"
+          },
+          "what": "sound case no longer opens the question menu",
+          "files": [
+            "tools/bench-panel.mjs"
+          ],
+          "checks": {
+            "C370": "red"
+          },
+          "result": "red",
+          "at": "2026-10-15T22:06:59Z",
+          "head": "e7e549f62587dd26500b384de0b96d531da9a07b"
+        },
+        {
+          "task": 1,
+          "none": "a task break needs every check of R189 green and C364 (docs, a later plan) fails; the render case is broken and caught under R189.60 (Mission Control draw removed) and R189.61",
+          "at": "2026-10-15T22:08:03Z"
+        },
+        {
+          "task": 2,
+          "none": "same: C364 blocks task breaks; the budget judgement is pinned by the strengthened bats test (loop must hold render) and a tiny-budget run",
+          "at": "2026-10-15T22:08:05Z"
+        }
       ]
     },
     {
@@ -41313,6 +41408,15 @@
           "in": 0,
           "out": 0
         }
+      },
+      {
+        "id": "build-20261015T220303Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M34",
+        "started": "2026-10-15T22:03:03Z",
+        "ended": "2026-10-15T22:08:19Z",
+        "cost": null
       }
     ],
     "milestones": {
