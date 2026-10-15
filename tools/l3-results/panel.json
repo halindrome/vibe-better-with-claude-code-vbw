@@ -1,9 +1,9 @@
 {
   "scenario": "panel",
-  "fixture": "greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan waits for the user's approval; no finished steps in the clone (so no estimate basis); window 200 columns wide",
-  "cost_usd": 0.1278,
+  "fixture": "greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan waits for the user's approval; no finished steps in the clone (so no estimate basis); window 200 columns wide, resized to 200x24 and to 60x40 with the needs-you line up and again while the build's helpers work; the user then approves and the build runs",
+  "cost_usd": 0.09,
   "evidence_level": "L3",
-  "at": "2026-10-09T10:30:20Z",
+  "at": "2026-10-15T23:17:30Z",
   "passed": true,
   "facts": {
     "milestone_shown": true,
@@ -14,6 +14,15 @@
     "cost_shown": true,
     "estimate_shown": "no basis yet",
     "sound_shown_off": true,
+    "need_line_shown": true,
+    "need_line_cleared": true,
+    "helper_seen_working": true,
+    "helper_done_cleared": true,
+    "helper_done_how": "a helper's row left while the top line counted it done",
+    "no_spill_short": true,
+    "no_spill_narrow": true,
+    "short_rows": 24,
+    "narrow_columns": 60,
     "closed_by_click": true,
     "closed_stays_closed": true,
     "sound_toggle_persisted": true
@@ -21,7 +30,12 @@
   "not_tested": [
     "the sound itself (nothing was heard: the run only checks the switch)",
     "what a person reads at a glance: wording and layout are judged on the screen text, not by a reader",
-    "a narrow window (the panel is opened with /vbw-panel there)",
-    "a panel while a build or QA runs, and a time estimate with a number"
+    "no spill is read from the visible tmux screen after a resize (prompt box whole, Comms drawn once), not from a real terminal's scrollback",
+    "one short window (200 columns, 24 rows) and one narrow window (60 columns, 40 rows), with the needs-you line and with helpers at work; no other size",
+    "Comms in the 60-column window: Mission Control fills that window and Comms' own line is not on screen there (seen in the run, not judged), so the narrow check holds the prompt box and the pane's bottom edge only",
+    "Mission Control's own rows and tabs at those sizes (held by tests/panel/r189/containment.test.mjs, L1)",
+    "figure counts and the motion levels (full, calm, off)",
+    "a failed helper, a celebration and a ship in the real window",
+    "a time estimate with a number"
   ]
 }
