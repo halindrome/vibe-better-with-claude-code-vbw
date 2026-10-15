@@ -111,3 +111,27 @@ has_sentence() {
   has_sentence workflows.md "**VBW undoes the break.**"
   has_sentence workflows.md "go back to their last commit"
 }
+
+@test "R188: docs/proof.md pins what a survivor is, the repeat until red, what plan done refuses and the approval's effect" {
+  has_sentence proof.md "A test that cannot fail, because every check stays green, is a **survivor**."
+  has_sentence proof.md "then repeats the same break until it is red."
+  has_sentence proof.md "at standard it refuses until each approved rule of the requirements the plan completes has a red break, and lists the rules missing one."
+  has_sentence proof.md "and \`vbw prove\` refuses until you do."
+  has_sentence proof.md "one edited again after its red break, still waits for you."
+  has_sentence proof.md "At standard and deep, the builder breaks the plan's code on purpose"
+}
+
+@test "R188: docs/rigor.md pins the tiers: standard is rules only, the builder runs it at standard and deep, a fix never does" {
+  has_sentence rigor.md '| `standard` | each rule: one small break per rule |'
+  has_sentence rigor.md '| `deep` | each rule, each task, and each error and edge case the rules state |'
+  has_sentence rigor.md "At standard and deep, the builder breaks its own plan's code on purpose"
+  has_sentence rigor.md "A fix never runs it."
+}
+
+@test "R188: docs/workflows.md pins which check runs, the exit code of a survivor, --none and the refusals" {
+  has_sentence workflows.md "Only that rule's own check runs."
+  has_sentence workflows.md "A survivor makes \`vbw mutate\` exit non-zero."
+  has_sentence workflows.md "a rule cannot be recorded this way."
+  has_sentence workflows.md "a file is outside the plan, or a check file is touched."
+  has_sentence workflows.md "The command refuses, and writes nothing, if none of the named files differs from their last commit"
+}
