@@ -223,10 +223,11 @@ test('one failing call does not stop the other, nor the redraw that shows the qu
   q.answer()
   await q.done
   const noToast = await session({ notifyFails: true })
+  const drawn = noToast.count('ui.invalidate')
   const q2 = ask(noToast)
   await noToast.settle()
   assert.equal(noToast.plays.length, 1)
-  assert.match(await noToast.text(), /question/i, 'the question was not drawn at once with notify failing')
+  assert.ok(noToast.count('ui.invalidate') > drawn, 'the question was not redrawn at once with notify failing')
   q2.answer()
   await q2.done
 })
