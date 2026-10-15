@@ -29,3 +29,11 @@ body() { sed -n '/^scenario_panel()/,/^}/p' "$SUITE"; }
     and (.facts.narrow_columns | type == "number" and . > 0 and . <= 100)
     and (.not_tested | type == "array" and length > 0)' "$RESULT"
 }
+
+@test "R189: the scenario resizes to a short window of at most 30 rows and a narrow one of at most 100 columns" {
+  local rows cols
+  rows=$(body | grep -oE 'SHORT_ROWS=[0-9]+' | head -1 | cut -d= -f2)
+  cols=$(body | grep -oE 'NARROW_COLUMNS=[0-9]+' | head -1 | cut -d= -f2)
+  [ -n "$rows" ] && [ "$rows" -gt 0 ] && [ "$rows" -le 30 ]
+  [ -n "$cols" ] && [ "$cols" -gt 0 ] && [ "$cols" -le 100 ]
+}
