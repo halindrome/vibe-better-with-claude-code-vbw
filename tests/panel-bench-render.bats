@@ -23,3 +23,22 @@ BENCH="$BATS_TEST_DIRNAME/../tools/bench-panel.sh"
 @test "R189: the bench's sound case raises the need through Claude Code's question menu" {
   grep -q 'AskUserQuestion' "$REPO_ROOT/tools/bench-panel.mjs"
 }
+
+# The render case: a crew at work, and both Comms (AbovePrompt) and Mission
+# Control (the Pane) drawn on each refresh; judged against the same budget.
+render_block() { awk '/^const render = await measure/ { on = 1 } /^console\.log\(.tick/ { on = 0 } on' "$REPO_ROOT/tools/bench-panel.mjs"; }
+
+@test "R189: the render case runs with a crew at work and draws both Comms and Mission Control each refresh" {
+  block="$(render_block)"
+  [[ "$block" == *"working("* ]] || { echo "$block"; false; }
+  [[ "$block" == *"'AbovePrompt'"* ]] || { echo "$block"; false; }
+  [[ "$block" == *"h.render()"* ]] || { echo "$block"; false; }
+  [[ "$block" == *"h.advance(TICK)"* ]] || { echo "$block"; false; }
+}
+
+@test "R189: the render measure is judged against the same budget as the others" {
+  VBW_PANEL_BUDGET_MS=0.000001 VBW_BENCH_RUNS=5 run bash "$BENCH"
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"over the budget"* ]]
+  grep -Eq 'for v in .*"\$render"' "$REPO_ROOT/tools/bench-panel.sh"
+}
