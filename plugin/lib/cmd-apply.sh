@@ -315,8 +315,11 @@ cmd_apply() {
                               else [] end)) end),
                        predicted: (if $locked then ($o.predicted // $tier) else $tier end)}
                     + ($o // {} | with_entries(select(.key | IN("escalations", "outcome", "qa")))))] end)
+    # A plan keeps the breaks its mutation check recorded: kernel evidence, like its status (T154).
+    | ([.plans[] | select(has("mutations")) | {key: .id, value: .mutations}] | from_entries) as $mut
     | ([($pd.plans // $d.plans)[] | {id, phase, title, reqs, files, after: (.after // []), status: ($status[.id] // "planned")}
-          + (with_entries(select(.key | IN("tasks", "role"))))]) as $np
+          + (with_entries(select(.key | IN("tasks", "role"))))
+          + (if $mut[.id] then {mutations: $mut[.id]} else {} end)]) as $np
     | .plans = (if $patch or $add then [.plans[] | . as $o | ([$np[] | select(.id == $o.id)][0]) // $o] + [$np[] | select($status[.id] == null)]
         else [(.plans[] | select(.phase as $p | any($mine[]; . == $p) | not)), $np[]] end)
     | .checks = (if $patch or $add then [$c0[] | . as $o | ([$pd.checks[] | select(.id == $o.id)][0]) // $o] + [$pd.checks[] | select(.id as $i | $c0 | any(.id == $i) | not)]
