@@ -140,3 +140,25 @@ test('each helper row shows its role as a word, its step, what it is doing and t
   assert.match(row, /editing a\.js/, row)
   assert.ok(row.includes(hhmm(at - 5000)), "'" + row + "' lacks the start time " + hhmm(at - 5000))
 })
+
+test("a failed helper's details button on Comms counts as opening it in Mission Control: the row leaves at the next redraw", async () => {
+  const crew = steps(2)
+  const { h, at } = await building(crew)
+  writeCrew(h, at, crew.map((c) => (c.n === 'P142.2' ? { ...c, state: 'failed' } : c)))
+  await h.advance(TICK)
+  const details = find(await commsTree(h), (n) => n.type === 'Button' && n.props.label === 'details')
+  assert.ok(details, 'the failed row has its details button')
+  await details.props.onPress({ surface: 'terminal' })
+  await h.settle()
+  await h.advance(TICK)
+  assert.deepEqual(rowsWith(await commsLines(h), 'P142.2'), [], 'opened through details, it still stands on Comms')
+  assert.equal(rowsWith(await commsLines(h), 'P142.1').length, 1, 'the working helper stays')
+})
+
+test('while the run works, Mission Control draws its working helpers as running, never as cut off or ended', async () => {
+  const { h } = await building(steps(2))
+  const words = []
+  walk(await h.render(), (n) => { if (n.type === 'Text') words.push(textOf(n)) })
+  assert.ok(words.some((t) => /running/.test(t)), 'a working helper is drawn as running: ' + words.join(' | '))
+  assert.ok(!words.some((t) => /cut off|ended/.test(t)), 'a working run is drawn as ended: ' + words.join(' | '))
+})
