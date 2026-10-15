@@ -173,7 +173,7 @@ cmd_mutate() {
       | [(.mutations // [])[] | select(has("result") and (if $rule != null then .rule == {req: $rule.req, text: $rule.text} else .task == $k end))] | last
       | if . != null and .result == "survivor" then .head else empty end' 2> /dev/null) || prior=''
     if [ -n "$prior" ]; then
-      strong=$(for f in "${cfiles[@]}"; do git diff --quiet "$prior" HEAD -- "$f" 2> /dev/null || printf '%s\n' "$f"; done | jq -R . | jq -sc 'map(select(length > 0))')
+      strong=$(for f in ${cfiles[@]+"${cfiles[@]}"}; do git diff --quiet "$prior" HEAD -- "$f" 2> /dev/null || printf '%s\n' "$f"; done | jq -R . | jq -sc 'map(select(length > 0))')
     fi
   fi
   entry=$(jq -nc --argjson rule "${ruledoc:-null}" --argjson k "${tk:-0}" --arg what "$what" --argjson files "$(printf '%s\n' "${files[@]}" | jq -R . | jq -sc .)" \

@@ -142,6 +142,36 @@ refused() {
     and .[0].rule == {req: "R2", text: "a receipt is printed"}' || { breaks P1.2; false; }
 }
 
+@test "R188: a red break after a survivor of the same rule is recorded when the check protects no files, under /bin/bash 3.2" {
+  # A check's files list is optional: cfiles is then empty, and under set -u
+  # bash 3.2 stops on an unguarded "${cfiles[@]}" after the checks ran.
+  git rm -q --cached -r . > /dev/null 2>&1 || true
+  rm -rf .git .vbw
+  vbw_git_project
+  "$VBW" init > /dev/null
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer gets a receipt\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  mkdir -p src tests
+  printf 'echo receipt\n' > src/receipt.sh
+  printf 'sh src/receipt.sh > /dev/null\n' > tests/receipt.sh
+  jq -nc '{phases: [{id: "P1", title: "Shop", reqs: ["R1"], goal: "g", criteria: ["c"], tier: "standard"}],
+    plans: [{id: "P1.1", phase: "P1", title: "Receipt", reqs: ["R1"], files: ["src/receipt.sh"], after: [], role: "dev", tasks: ["receipt"]}],
+    checks: [{id: "C1", req: "R1", run: ["sh", "tests/receipt.sh"]}],
+    rules: [{req: "R1", text: "a receipt is printed", check: "C1"}]}' | "$VBW" apply > /dev/null
+  git add -A && git commit -q -m "feat(shop): start"
+  "$VBW" approve > /dev/null
+  printf 'echo nothing\n' > src/receipt.sh
+  run /bin/bash "$VBW" mutate P1.1 R1.1 "prints nothing useful" src/receipt.sh < /dev/null
+  [ "$status" -ne 0 ]
+  [[ "$output" == *survivor* ]] || { echo "$output"; false; }
+  git checkout -q -- src/receipt.sh
+  printf 'exit 1\n' > src/receipt.sh
+  run /bin/bash "$VBW" mutate P1.1 R1.1 "fails outright" src/receipt.sh < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" != *"unbound variable"* ]] || { echo "$output"; false; }
+  breaks P1.1 | jq -e 'length == 2 and .[1].result == "red"' || { breaks P1.1; false; }
+}
+
 @test "R188: after a mutation check the named files are byte-identical to their last commit, red or survivor" {
   printf 'echo unpaid\n' > src/pay.sh
   "$VBW" mutate P1.1 R1.1 "prints unpaid" src/pay.sh < /dev/null > /dev/null
