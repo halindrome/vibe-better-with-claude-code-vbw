@@ -53,6 +53,7 @@ const levelOf = (st) => {
 const motion = (st) => motionOf({ setting: isObj(st.record) && isObj(st.record.settings) ? st.record.settings.motion : null, level: levelOf(st), testMode: st.silent })
 const FRAME_MS = 100 // 10 frames a second, while something moves
 const AFTER_MS = 5000 // a celebration never drawn in this long is let go
+const CONFETTI_ROWS = 3 // the height of the confetti burst in Comms
 const CHEER_MS = 60000
 // A sprite's cells, encoded once per role, pose and frame (every pose has 2 or 3).
 const SPRITES = new Map()
@@ -329,7 +330,7 @@ async function celebrate($, st, now) {
   st.lastRec = st.record
   const c = celebration({ before, after: st.record })
   const m = motion(st)
-  if (c === 'qa-pass' && m === 'full') st.burst = effect('vbw-confetti', now, (w) => confettiFrames({ cols: w, rows: 3, seed: now }))
+  if (c === 'qa-pass' && m === 'full') st.burst = effect('vbw-confetti', now, (w) => confettiFrames({ cols: w, rows: CONFETTI_ROWS, seed: now }))
   if (c === 'all-green' && m !== 'off') st.cheer = { text: (proofTime(st, now) ? '[' + proofTime(st, now) + '] ' : '') + '✓ All checks pass', until: now + CHEER_MS }
   if (c === 'all-green' && m === 'full') st.sweep = effect('vbw-sweep', now, (w) => sweepFrames({ cols: w }))
   if (c === 'shipped') {
@@ -714,14 +715,18 @@ async function comms($, st, e) {
   if (p.hasSurvey) return null
   const now = await $.clock.now()
   const ui = $.ui.resolve(e)
-  const m = stage(st, now, p)
+  // A celebration takes its rows from the room Claude Code gives (maxRows): the line
+  // needs 3 rows, the confetti 4 more, and the crew or the needs-you line keeps the rest.
+  const room = Number.isInteger(p.maxRows) && p.maxRows > 0 ? p.maxRows : 8
+  const cheer = room >= 3 ? cheering(st, now) : null
+  const fx = room - (cheer ? 1 : 0) >= 7 ? st.burst : null
+  const spare = room - (cheer ? 1 : 0) - (fx ? CONFETTI_ROWS : 0)
+  const m = stage(st, now, { ...p, maxRows: spare })
   const tree = m ? renderStage(ui, m, (a) => act($, st, a)) : null
   st.commsId = e.requestId
   if (tree && m.sprites && ui.Raster) st.sprites = m.rows.map((r) => ({ key: 'vbw-sprite-' + r.id, role: r.role, pose: r.pose }))
   const top = []
-  const cheer = cheering(st, now)
   if (cheer) top.push(h(ui.Text, { key: 'vbw-cheer', color: stateColor('done'), wrap: 'truncate-end' }, cheer))
-  const fx = st.burst
   const cells = fx && ui.Raster ? drawn(fx, cols(p.bodyColumns) ? p.bodyColumns : 80, e.requestId) : null
   if (cells) top.push(h(ui.Raster, { key: fx.key, columns: fx.cols, rows: fx.rows, cells }))
   if (st.sprites || cells) animate($, st)
