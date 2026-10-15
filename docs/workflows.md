@@ -487,6 +487,13 @@ QA's own instructions say where the command lives: the `test:` line under
 `project commands` in `vbw show contract`. QA uses the result in its prompt as
 evidence and does not run the command itself.
 
+A phase QA failed before, whose goal, criteria, plans and `auto` requirements
+are unchanged since, comes back as a re-check: `round.focus` holds, per phase,
+the failed verdict's commit, the round number and its QA fixes. The workflow
+tells that phase's QA agent to verify only those fixes, the files changed since
+that commit and what they reach, and the goal; anything else it notices is a
+note (docs/proof.md, Re-check rounds). Every other phase gets the whole sweep.
+
 ## One test run per fix round
 
 In a fix round (`vbw:fixing`) each Dev commits its fix and runs `vbw check` on its own fixes' checks. The Lead runs the round's `vbw fix done` once, after every Dev returns. They never run the project's test command or its quick command. The project's test command runs once, in the proof after the round. A fix for a failing test command runs only the failing tests it needs.
