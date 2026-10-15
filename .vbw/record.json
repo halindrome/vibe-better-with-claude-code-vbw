@@ -31816,7 +31816,7 @@
     {
       "id": "T144",
       "text": "The R152 rule (tests/release-run.bats: no default-run test file measures a duration) misses millisecond timers: it looks for SECONDS and date +%s, and for Time::HiRes only in proof-stale-links.bats, so a perl -MTime::HiRes timer in any other default test file slipped through (F220's first test, 2026-10-14). Look for Time::HiRes, gdate +%N and similar in every default-run file",
-      "sort": "next",
+      "sort": "later",
       "size": "small",
       "status": "open"
     },
