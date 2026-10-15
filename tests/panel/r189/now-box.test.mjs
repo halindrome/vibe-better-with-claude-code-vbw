@@ -156,11 +156,15 @@ test('a state change that touches nothing else still redraws the box within one 
   const mark = ROOT + '/.vbw/runtime/proving.sess-1'
   const h = await session()
   assert.match(await nowBox(h), /nothing (is )?running/i)
+  let draws = h.invalidations()
   h.write(mark, '4242\n')
   await h.advance(TICK)
+  assert.ok(h.invalidations() > draws, 'the panel was not asked to redraw when the proof began')
   assert.match(await nowBox(h), /proving/i)
+  draws = h.invalidations()
   h.remove(mark)
   await h.advance(TICK)
+  assert.ok(h.invalidations() > draws, 'the panel was not asked to redraw when the proof ended')
   assert.match(await nowBox(h), /nothing (is )?running/i)
 })
 
