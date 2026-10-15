@@ -6,10 +6,12 @@
 //   the draw is rendered.
 //   sound: the question menu opens, so the sound is played and a notification raised; then it is answered.
 //   whats-next: the record carries a recommendation that changes, so each refresh draws the section.
+//   render: a crew of helpers is at work; each refresh draws Comms (the strip above the prompt) and Mission Control's Now tab.
 //   glance: the cost changed and a step history changed: both are read, both estimates worked out, drawn.
-// Prints "tick <ms>", "refresh <ms>" and "sound <ms>". The stand-in's own work is included,
+// Prints "tick <ms>", "refresh <ms>" and "sound <ms>", and "render <ms>". The stand-in's own work is included,
 // so the numbers are an upper bound on the panel's cost.
 import { mount, record, next } from '../tests/panel/helpers/fake-mod.mjs'
+import { building, writeCrew, working, TICK } from '../tests/panel/r189/helpers/crew.mjs'
 
 const RUNS = Number(process.env.VBW_BENCH_RUNS || 200)
 const TICK_MS = 2000
@@ -20,13 +22,15 @@ const cpu = () => {
   return (u.user + u.system) / 1000
 }
 
-async function measure(step) {
-  const h = await mount()
-  h.project(record(), next())
-  h.git()
-  await h.start()
-  await h.advance(5000)
-  await h.render()
+async function measure(step, begin) {
+  const h = begin ? await begin() : await mount()
+  if (!begin) {
+    h.project(record(), next())
+    h.git()
+    await h.start()
+    await h.advance(5000)
+    await h.render()
+  }
   for (let i = 0; i < 20; i++) await step(h, i) // warm up
   const t0 = cpu()
   for (let i = 0; i < RUNS; i++) await step(h, i)
@@ -66,8 +70,20 @@ const whatsNext = await measure(async (h, i) => {
   await h.advance(TICK_MS)
   await h.render()
 })
+// render: five helpers at work (a run is live); every refresh the crew moves on, and Comms and Mission Control's Now tab are drawn
+const render = await measure(async (h, i) => {
+  writeCrew(h, h.now() + TICK, working(5))
+  await h.advance(TICK)
+  await h.draw('AbovePrompt', { hasSurvey: false, isWorking: true, maxRows: 12, bodyColumns: 100 })
+  await h.render()
+}, async () => {
+  const { h } = await building(working(5))
+  h.git()
+  return h
+})
 console.log('tick ' + tick.toFixed(3))
 console.log('refresh ' + refresh.toFixed(3))
+console.log('render ' + render.toFixed(3))
 console.log('sound ' + sound.toFixed(3))
 console.log('glance ' + glance.toFixed(3))
 console.log('whats-next ' + whatsNext.toFixed(3))
