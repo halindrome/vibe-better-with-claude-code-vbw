@@ -867,6 +867,93 @@ scenario_panel() {
     l3 type "$scenario" "/vbw-sound off"
     snd=$(panel_wait "Sound is off.")
     facts=$(jq -c --arg s "$(has "$snd" "Sound is off.")" '. + {sound_shown_off: ($s == "true")}' <<< "$facts")
+    comms
+  }
+  # R189: Comms in the real window. Resize the window, wait for the redraw, and
+  # read what is drawn: the prompt box must still be whole (two borders of the full
+  # width and its text line on screen) and Comms must still be there, once.
+  # Echoes "ok" or what was wrong. $1 columns, $2 rows, $3 the text Comms must show.
+  fits_window() {
+    local sess="vbw-l3-$scenario" s border line
+    tmux resize-window -t "$sess" -x "$1" -y "$2" 2> /dev/null || { echo "could not resize"; return; }
+    sleep 8
+    s=$(tmux capture-pane -t "$sess" -p)
+    line=$(printf '─%.0s' $(seq 1 "$1"))
+    border=$(printf '%s\n' "$s" | grep -cxF "$line")
+    [ "$border" -ge 2 ] || { echo "the prompt box is not whole at $1x$2 ($border full-width borders)"; return; }
+    printf '%s\n' "$s" | grep -q '❯' || { echo "no prompt line at $1x$2"; return; }
+    [ "$(printf '%s\n' "$s" | grep -cF "$3")" -eq 1 ] || { echo "'$3' is not drawn exactly once at $1x$2"; return; }
+    printf '%s\n' "$s" > "$dir.panel.$1x$2.screen.txt"
+    echo ok
+  }
+  # Both windows in turn, then the first size back. Echoes "short narrow" as true/false.
+  spill_checks() {
+    local a b
+    a=$(fits_window 200 "$SHORT_ROWS" "$1")
+    b=$(fits_window "$NARROW_COLUMNS" 40 "$1")
+    tmux resize-window -t "vbw-l3-$scenario" -x 200 -y 60 2> /dev/null; sleep 6
+    [ "$a" = ok ] || say "short window: $a" >&2
+    [ "$b" = ok ] || say "narrow window: $b" >&2
+    echo "$([ "$a" = ok ] && echo true || echo false) $([ "$b" = ok ] && echo true || echo false)"
+  }
+  SHORT_ROWS=24 NARROW_COLUMNS=60
+  # The helper rows of Comms (the left 120 columns, under the "VBW ▸" line): "role label" per row.
+  crew_rows() {
+    screen | cut -c1-120 | awk '/VBW ▸/ { on = 1; next } on && /^─/ { on = 0 } on' \
+      | grep -oE '(^|[[:space:]])(architect|lead|dev|qa|scout|debugger|docs) {2,}[^ ]+' | sed 's/^[[:space:]]*//; s/  */ /g'
+  }
+  comms() {
+    local shown cleared=false pair sh nr i s
+    # 1. The needs-you line stands while the plan waits for approval.
+    s=$(panel_wait "⚑ VBW needs you")
+    shown=$(has "$s" "⚑ VBW needs you")
+    pair=$(spill_checks "VBW needs you")
+    sh=${pair% *} nr=${pair#* }
+    # 2. The user approves; the line must go once the gate is answered.
+    l3 type "$scenario" "/vbw:approve"
+    for ((i = 0; i < 40; i++)); do
+      sleep 3
+      if screen | grep -q 'Enter to select\|Ready to submit'; then answer_recommended; continue; fi
+      if ! screen | grep -q "VBW needs you" && [ "$(next_action)" != approve ]; then cleared=true; break; fi
+    done
+    idle
+    # 3. The build: helpers come and go on Comms. A row seen once, then gone while the
+    # top line counts "N done", is a finished helper that left. The window is also
+    # resized once while helpers are at work.
+    local seen_rows="" cur r started=false done_gone=false how="" crew_sh=true crew_nr=true crew_checked=false act
+    l3 type "$scenario" "/vbw:vibe"
+    for ((i = 0; i < 400; i++)); do
+      sleep 3
+      if screen | grep -q 'Enter to select\|Ready to submit'; then answer_recommended; continue; fi
+      act=$(next_action)
+      cur=$(crew_rows)
+      if [ -n "$cur" ]; then
+        started=true
+        while IFS= read -r r; do case "$seen_rows" in *"|$r|"*) ;; *) seen_rows="$seen_rows|$r|" ;; esac; done <<< "$cur"
+        if [ "$crew_checked" = false ]; then
+          crew_checked=true
+          pair=$(spill_checks "VBW ▸")
+          crew_sh=${pair% *} crew_nr=${pair#* }
+          continue
+        fi
+      fi
+      if [ -n "$seen_rows" ] && [ "$done_gone" = false ] && screen | cut -c1-120 | grep -qE 'VBW ▸.* [1-9][0-9]* done'; then
+        while IFS= read -r r; do
+          [ -n "$r" ] || continue
+          case "$cur" in *"$r"*) ;; *) done_gone=true how="a helper's row left while the top line counted it done" ;; esac
+        done <<< "$(printf '%s' "$seen_rows" | sed 's/^|//; s/|$//; s/||/\
+/g')"
+      fi
+      if [ "$started" = true ] && [ "$act" != build ] && [ "$act" != run ]; then
+        if [ "$done_gone" = false ] && ! screen | cut -c1-120 | grep -q 'VBW ▸'; then done_gone=true how="the run ended and the crew left Comms"; fi
+        break
+      fi
+    done
+    facts=$(jq -c --arg sh "$shown" --argjson cl "$cleared" --argjson dg "$done_gone" --arg how "$how" --argjson st "$started" \
+      --argjson s1 "$sh" --argjson n1 "$nr" --argjson s2 "$crew_sh" --argjson n2 "$crew_nr" \
+      --argjson sr "$SHORT_ROWS" --argjson nc "$NARROW_COLUMNS" \
+      '. + {need_line_shown: ($sh == "true"), need_line_cleared: $cl, helper_seen_working: $st, helper_done_cleared: $dg, helper_done_how: $how,
+            no_spill_short: ($s1 and $s2), no_spill_narrow: ($n1 and $n2), short_rows: $sr, narrow_columns: $nc}' <<< "$facts")
   }
   done_yet() { observe; return 0; }
   checks() {
@@ -890,14 +977,14 @@ scenario_panel() {
     sleep 2
     l3 stop "$scenario"
     local k passed
-    for k in milestone_shown progress_shown doing_shown need_shown cost_shown sound_shown_off closed_by_click closed_stays_closed sound_toggle_persisted; do
+    for k in milestone_shown progress_shown doing_shown need_shown cost_shown sound_shown_off closed_by_click closed_stays_closed sound_toggle_persisted need_line_shown need_line_cleared helper_seen_working helper_done_cleared no_spill_short no_spill_narrow; do
       expect "the panel: $k" jq -e --arg k "$k" '.[$k] == true' <<< "$facts"
     done
     expect "the panel shows an estimate or the plain 'no basis yet'" jq -e '.estimate_shown | length > 0' <<< "$facts"
-    passed=$(jq -r '[.milestone_shown, .progress_shown, .doing_shown, .need_shown, .cost_shown, .sound_shown_off, .closed_by_click, .closed_stays_closed, .sound_toggle_persisted, (.estimate_shown | length > 0)] | all' <<< "$facts")
+    passed=$(jq -r '[.milestone_shown, .progress_shown, .doing_shown, .need_shown, .cost_shown, .sound_shown_off, .closed_by_click, .closed_stays_closed, .sound_toggle_persisted, .need_line_shown, .need_line_cleared, .helper_seen_working, .helper_done_cleared, .no_spill_short, .no_spill_narrow, (.estimate_shown | length > 0)] | all' <<< "$facts")
     [ "$passed" = true ] || failed=1
     result_write panel "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
-      '["the sound itself (nothing was heard: the run only checks the switch)","what a person reads at a glance: wording and layout are judged on the screen text, not by a reader","a narrow window (the panel is opened with /vbw-panel there)","a panel while a build or QA runs, and a time estimate with a number"]'
+      '["the sound itself (nothing was heard: the run only checks the switch)","what a person reads at a glance: wording and layout are judged on the screen text, not by a reader","no spill is read from the visible tmux screen after a resize (prompt box whole, Comms drawn once), not from a real terminal'"'"'s scrollback","one short window (200 columns, 24 rows) and one narrow window (60 columns, 40 rows), with the needs-you line and with helpers at work; no other size","Mission Control'"'"'s own rows and tabs at those sizes (held by tests/panel/r189/containment.test.mjs, L1)","figure counts and the motion levels (full, calm, off)","a failed helper, a celebration and a ship in the real window","a time estimate with a number"]'
   }
 }
 
