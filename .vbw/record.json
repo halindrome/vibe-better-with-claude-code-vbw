@@ -31844,7 +31844,7 @@
       "text": "Linux: Ctrl-C does not stop a vbw check that waits on the computer-wide limit (2.0.36 CI, run 38574239511, failed twice on Linux bash 5; passes on macOS under bash 3.2 and 5): tests/machine-recovery.bats 'R181: a run interrupted with Ctrl-C ends and gives its slot back at once' sees vbw still running 10 s after SIGINT to its process group. Reproduce in Linux (tools/test-linux.sh needs Docker running), find whether the kernel's INT trap (plugin/lib/slots.sh slots_traps) or the test is at fault, fix the root cause; CI must be green",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T149",
