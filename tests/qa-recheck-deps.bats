@@ -1,18 +1,26 @@
 #!/usr/bin/env bats
-# R49 (docs/proof.md): a phase is also checked again when a phase it builds on
-# was checked again because its inputs changed, even if its own inputs did not.
-# A phase builds on another when one of its plans comes after a plan of the
-# other. The rule is transitive and survives an interrupted QA round.
+# R49 (docs/proof.md): a phase is also checked again when the tests of a phase
+# it builds on changed, even if its own inputs did not. A phase builds on
+# another when one of its plans comes after a plan of the other. The rule is
+# transitive and survives an interrupted QA round.
 
 load helper
 load qa-recheck-helper
 
 teardown() { vbw_teardown; }
 
-@test "R49: a phase that builds on a re-checked phase is checked again though its own inputs did not change" {
+# retest N: a stricter check file for phase N, still passing; approve and prove.
+retest() {
+  printf '# stricter\n' >> "tests/p$1.sh"
+  git add "tests/p$1.sh" && git commit -q -m "test(p$1): stricter"
+  "$VBW" approve > /dev/null
+  "$VBW" prove --full > /dev/null
+}
+
+@test "R49: a phase whose dependency's tests changed is checked again though its own inputs did not change" {
   qa_project 2 chain
   qa_pass P1 P2
-  qa_touch 1
+  retest 1
   [ "$(listed)" = '["P1","P2"]' ]
   next_json | jq -e '.qa.recheck.P2 | any(.[]; contains("P1"))'
 }
@@ -20,7 +28,7 @@ teardown() { vbw_teardown; }
 @test "R49: it is transitive: A changes, B builds on A, C builds on B, and all three are checked again" {
   qa_project 3 chain
   qa_pass P1 P2 P3
-  qa_touch 1
+  retest 1
   [ "$(listed)" = '["P1","P2","P3"]' ]
   next_json | jq -e '.qa.recheck.P3 | length > 0'
 }
@@ -28,7 +36,7 @@ teardown() { vbw_teardown; }
 @test "R49: a change in the middle checks it and what builds on it, not what it builds on" {
   qa_project 3 chain
   qa_pass P1 P2 P3
-  qa_touch 2
+  retest 2
   [ "$(listed)" = '["P2","P3"]' ]
   next_json | jq -e '.qa.standing == ["P1"]'
 }
@@ -44,7 +52,7 @@ teardown() { vbw_teardown; }
 @test "R49: a dependent that has itself never passed is already included and listed once" {
   qa_project 3 chain
   qa_pass P1 P3
-  qa_touch 1
+  retest 1
   [ "$(listed)" = '["P1","P2","P3"]' ]
   next_json | jq -e '.qa.recheck.P2 | length >= 1'
 }
@@ -52,7 +60,7 @@ teardown() { vbw_teardown; }
 @test "R49: when the changed phase passes again but its dependent was not recorded, the dependent is still checked" {
   qa_project 2 chain
   qa_pass P1 P2
-  qa_touch 1
+  retest 1
   qa_pass P1
   [ "$(listed)" = '["P2"]' ]
   next_json | jq -e '.qa.recheck.P2 | any(.[]; contains("P1"))'
@@ -61,7 +69,7 @@ teardown() { vbw_teardown; }
 @test "R49: when both are checked again, every pass stands and the milestone can ship" {
   qa_project 2 chain
   qa_pass P1 P2
-  qa_touch 1
+  retest 1
   qa_pass P1 P2
   [ "$(listed)" = '[]' ]
   next_json | jq -e '.action == "ship" and .qa.standing == ["P1","P2"]'

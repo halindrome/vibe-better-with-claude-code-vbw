@@ -43,10 +43,13 @@ JARGON='fingerprint|hash|sha|digest|checksum|tree|blob|inputs'
   next_json | jq -e '.qa.recheck.P3 | any(.[]; test("goal or plan changed"))'
 }
 
-@test "R48: a phase that builds on a re-checked phase names it" {
+@test "R48: a phase that builds on a phase whose tests changed names it" {
   qa_project 2 chain
   qa_pass P1 P2
-  qa_touch 1
+  printf '# stricter\n' >> tests/p1.sh
+  git add tests/p1.sh && git commit -q -m "test(p1): stricter"
+  "$VBW" approve > /dev/null
+  "$VBW" prove --full > /dev/null
   next_json | jq -e '.qa.recheck.P2 | any(.[]; test("builds on P1"))'
 }
 
@@ -54,7 +57,7 @@ JARGON='fingerprint|hash|sha|digest|checksum|tree|blob|inputs'
   qa_project 2 chain
   qa_pass P1 P2
   printf 'extra\n' >> src/p2.txt
-  printf 'extra\n' >> src/p1.txt
+  printf '# stricter\n' >> tests/p1.sh
   printf '# stricter\n' >> tests/p2.sh
   git add -A && git commit -q -m "change"
   "$VBW" approve > /dev/null
@@ -72,7 +75,7 @@ JARGON='fingerprint|hash|sha|digest|checksum|tree|blob|inputs'
   printf '%s' "$json" | jq -e '(.qa.recheck | keys) == (.detail.phases | sort) and .action == "qa"'
   printf '%s' "$json" | jq -e '.instruction as $i | all(.qa.recheck | to_entries[]; .key as $k | ($i | contains($k)) and (.value | all(.[]; . as $r | $i | contains($r))))'
   printf '%s' "$json" | jq -e '.instruction | contains("P1")'
-  [ "$(printf '%s' "$json" | jq -c '.qa.standing')" = '["P1"]' ]
+  [ "$(printf '%s' "$json" | jq -c '.qa.standing')" = '["P1","P3"]' ]
   out=$(node "$REPO_ROOT/tests/helpers/run-workflow.js" "$PLUGIN_ROOT/workflows/verifying.js" \
     "$(printf '%s' "$json" | jq -c '{phases: .detail.phases, tier: .detail.tier}')" '{}')
   [ "$(printf '%s' "$out" | jq -c '[.calls[].opts.label | ltrimstr("qa ")] | sort')" = "$(printf '%s' "$json" | jq -c '.qa.recheck | keys')" ]

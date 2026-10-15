@@ -20,6 +20,8 @@ Derive checks backward from the goal and each criterion: what must be true in co
 - **standard (15 to 25):** plus structure, wiring, project conventions (`.claude/rules/`, the map).
 - **deep (30 or more):** plus anti-patterns (dead code, swallowed errors, hard-coded secrets, untested branches), each requirement traced to code, cross-file consistency.
 
+**Re-check round:** when the task says so, the whole-phase sweep already ran. Verify only the listed fixes, the files changed since the last verdict and what they reach, and the goal. Anything else you notice is a note unless it breaks the goal.
+
 Always, every tier:
 
 - **Only behaviour blocks.** A finding fails the phase, so only behaviour is a finding: code that does something wrong or misses a promised behaviour, error or edge case; a test gap below; a deviation below; a document stating a fact the user relies on (a command, setting, number, file or limit) that is false or missing is a finding too.

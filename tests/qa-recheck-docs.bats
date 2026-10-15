@@ -160,13 +160,17 @@ rechecked() { next_json | jq -c '.qa.recheck | keys'; }
   next_json | jq -e '.qa.recheck.P1 | index("its goal or plan changed")' || { next_json | jq -c .qa; false; }
 }
 
-@test "R115: a phase built on another stays off the list when that phase changed only documentation or results, and is listed when its code changed" {
+@test "R115: a phase built on another stays off the list when that phase changed only documentation, results or code, and is listed when its tests changed" {
   docs_project results
   change "docs: reword" docs/p1.md
   change "test: save results" results/run.json
   [ "$(rechecked)" = '[]' ] || { next_json | jq -c .qa; false; }
   change "feat(p1): more" src/p1.txt
-  next_json | jq -e '(.qa.recheck.P1 | index("its files changed")) and (.qa.recheck.P3 | index("builds on P1, which changed"))' || { next_json | jq -c .qa; false; }
+  next_json | jq -e '(.qa.recheck.P1 | index("its files changed")) and (.qa.recheck | has("P3") | not)' || { next_json | jq -c .qa; false; }
+  change "test(p1): more cases" tests/p1-cases.md
+  "$VBW" approve > /dev/null
+  "$VBW" prove --full > /dev/null
+  next_json | jq -e '.qa.recheck.P3 | index("builds on P1, whose tests changed")' || { next_json | jq -c .qa; false; }
 }
 
 @test "R115: a phase whose every plan changes only documents is listed again when those documents change" {

@@ -3,11 +3,14 @@
 # milestone: {Pn: {files, tests, plan, reqs, combined}}, from lib/qa-inputs.sh) and
 # $cache (null, or what each phase's last pass covered: {Pn: {files, tests,
 # plan, reqs, combined, version, tree, deps: {Pm: {files, tests, plan, reqs}}}}; this clone's
-# file, so anything may be wrong with it). Output: {closure, recheck, standing, problems}. closure
+# file, so anything may be wrong with it). Output: {closure, recheck, standing, focus, problems}. closure
 # maps a phase to every phase it builds on, directly or not (a phase builds on
 # another when one of its plans comes after a plan of the other).
 # recheck maps each built phase that needs checking again to its reasons, in
-# plain words; standing lists the built phases whose pass stands.
+# plain words; standing lists the built phases whose pass stands; focus maps each
+# re-checked phase in a re-check round to {since: the commit of its failed verdict,
+# round, fixes: the QA fixes since}. A phase is checked again for one it builds on
+# only when that one's tests changed (its checks or their files), whatever else did.
 . as $r
 | ([$r.phases[].id]) as $all
 | ([$r.phases[] | select(.milestone == $r.milestone.id) | .id]) as $ids
@@ -25,10 +28,7 @@
 | ([$r.phases[] | select(.id | IN($ids[]))
     | select(.id as $i | [$r.plans[] | select(.phase == $i)] | length > 0 and all(.[]; .status == "done"))]) as $built
 | ($ARGS.named.fpv) as $fpv
-| (def own: {files, tests, plan, reqs};
-   def plain: "its files, tests or plan changed";
-   # A cache written before the [auto] requirements digest existed has no reqs: compare what it has.
-   def same($o; $n): $o != null and $o.files == $n.files and $o.tests == $n.tests and $o.plan == $n.plan and ($o.reqs == null or $o.reqs == $n.reqs);
+| (def plain: "its files, tests or plan changed";
    ($cache | if type == "object" then . else {} end) as $c
    | [$built[] | . as $ph | ($inputs[$ph.id]) as $cur | ($c[$ph.id]) as $old
      | (if $ph.qa == null then ["not checked yet"]
@@ -40,12 +40,20 @@
                           if $old.tests != $cur.tests then "its tests changed" else empty end,
                           if $old.plan != $cur.plan then "its goal or plan changed" else empty end,
                           if $old.reqs != null and $old.reqs != $cur.reqs then "an [auto] requirement changed" else empty end]
-                         + [$closure[$ph.id][] as $d | select(same($old.deps[$d]; $inputs[$d] | own) | not) | "builds on \($d), which changed"])
+                         + [$closure[$ph.id][] as $d | select(($old.deps[$d].tests // null) != $inputs[$d].tests) | "builds on \($d), whose tests changed"])
                    else [] end) | if length > 0 then . else [plain] end
              end)
         end) as $why
-     | {id: $ph.id, why: $why}]) as $judged
+     # A re-check round (T131): the last verdict failed and this clone's cache, of this
+     # method, shows the goal, criteria, plans and [auto] requirements unchanged since.
+     | (if $ph.qa.result == "fail" and ($old | type == "object" and ($fpv == null or (.version // 0) == $fpv) and (.commit | type == "string")
+             and .plan == $cur.plan and (.reqs == null or .reqs == $cur.reqs))
+        then {since: $old.commit, round: (($ph.qa.rounds // 1) + 1),
+              fixes: [$r.fixes[] | select(.source == "qa" and (.status | IN("open", "fixed")) and (.req as $q | $ph.reqs | index($q)) and ((has("phase") | not) or .phase == $ph.id)) | {id, req, note}]}
+        else null end) as $focus
+     | {id: $ph.id, why: $why, focus: $focus}]) as $judged
 | {closure: $closure,
    recheck: (if $inputs == null then {} else [$judged[] | select(.why | length > 0) | {key: .id, value: .why}] | from_entries end),
    standing: (if $inputs == null then [] else [$judged[] | select(.why | length == 0) | .id] end),
+   focus: (if $inputs == null then {} else [$judged[] | select((.why | length > 0) and .focus != null) | {key: .id, value: .focus}] | from_entries end),
    problems: $problems}

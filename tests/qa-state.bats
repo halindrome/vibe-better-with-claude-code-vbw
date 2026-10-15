@@ -39,7 +39,7 @@ qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.
 @test "qa.jq: untouched phases keep their pass; the record's passes stand" {
   run qa "$(rec 2)" "$(dig 2)" "$(cache 2)"
   [ "$status" -eq 0 ]
-  [ "$output" = '{"closure":{"P1":[],"P2":[]},"recheck":{},"standing":["P1","P2"],"problems":[]}' ]
+  [ "$output" = '{"closure":{"P1":[],"P2":[]},"recheck":{},"standing":["P1","P2"],"focus":{},"problems":[]}' ]
 }
 
 @test "qa.jq: never checked, failed last time" {
@@ -49,27 +49,32 @@ qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.
   echo "$output" | jq -e '.recheck == {"P1": ["not checked yet"], "P2": ["failed last time"]} and .standing == []'
 }
 
-@test "qa.jq: several reasons at once, each named: files, tests, goal or plan, and what it builds on" {
+@test "qa.jq: several reasons at once, each named: files, tests, goal or plan, and the tests of what it builds on" {
   local i
-  i=$(dig 2 1 | jq -c '.P2.tests = "t2new" | .P2.plan = "l2new" | .P2.combined = "x2"')
+  i=$(dig 2 1 | jq -c '.P1.tests = "t1new" | .P2.tests = "t2new" | .P2.plan = "l2new" | .P2.combined = "x2"')
   run qa "$(rec 2 chain)" "$i" "$(cache 2)"
-  echo "$output" | jq -e '.recheck.P1 == ["its files changed"]
-    and .recheck.P2 == ["its tests changed", "its goal or plan changed", "builds on P1, which changed"]'
+  echo "$output" | jq -e '.recheck.P1 == ["its files changed", "its tests changed"]
+    and .recheck.P2 == ["its tests changed", "its goal or plan changed", "builds on P1, whose tests changed"]'
 }
 
-@test "qa.jq: a phase that builds on a changed phase is checked again, transitively, and the one it builds on is not" {
-  run qa "$(rec 3 chain)" "$(dig 3 1 | jq -c '.P2.combined = "x2" | .P3.combined = "x3"')" "$(cache 3)"
+@test "qa.jq: a phase that builds on one whose tests changed is checked again, transitively, and the one it builds on is not" {
+  run qa "$(rec 3 chain)" "$(dig 3 1 | jq -c '.P1.tests = "t1new" | .P2.combined = "x2" | .P3.combined = "x3"')" "$(cache 3)"
   echo "$output" | jq -e '.recheck | keys == ["P1","P2","P3"]'
-  echo "$output" | jq -e '.recheck.P3 == ["builds on P1, which changed"]'
-  run qa "$(rec 3 chain)" "$(dig 3 2 | jq -c '.P3.combined = "x3"')" "$(cache 3)"
+  echo "$output" | jq -e '.recheck.P3 == ["builds on P1, whose tests changed"]'
+  run qa "$(rec 3 chain)" "$(dig 3 2 | jq -c '.P2.tests = "t2new" | .P3.combined = "x3"')" "$(cache 3)"
   echo "$output" | jq -e '(.recheck | keys) == ["P2","P3"] and .standing == ["P1"]'
+}
+
+@test "qa.jq: a dependency whose files or plan changed but not its tests leaves the dependent standing" {
+  run qa "$(rec 2 chain)" "$(dig 2 1 | jq -c '.P1.plan = "l1new"')" "$(cache 2)"
+  echo "$output" | jq -e '(.recheck | keys) == ["P1"] and .standing == ["P2"]' || { echo "$output"; false; }
 }
 
 @test "qa.jq: a change that is checked again and passed leaves the dependent re-checked until it passes too" {
   local c
-  c=$(cache 2 | jq -c '.P1.files = "f1new"')
-  run qa "$(rec 2 chain | jq -c '.phases[0].qa.tree = "x1"')" "$(dig 2 1 | jq -c '.P1.combined = "x1" | .P2.combined = "x2"')" "$c"
-  echo "$output" | jq -e '.recheck == {"P2": ["builds on P1, which changed"]} and .standing == ["P1"]'
+  c=$(cache 2 | jq -c '.P1.files = "f1new" | .P1.tests = "t1new"')
+  run qa "$(rec 2 chain | jq -c '.phases[0].qa.tree = "x1"')" "$(dig 2 1 | jq -c '.P1.tests = "t1new" | .P1.combined = "x1" | .P2.combined = "x2"')" "$c"
+  echo "$output" | jq -e '.recheck == {"P2": ["builds on P1, whose tests changed"]} and .standing == ["P1"]'
 }
 
 @test "qa.jq: a cycle terminates and is named, with the phases in it" {
@@ -116,7 +121,7 @@ qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.
   echo "$output" | jq -e '.P1.combined != .P2.combined and .P1.files != .P2.files'
 }
 
-@test "qa_digests: an uncommitted edit changes nothing; a commit changes that phase and what builds on it only" {
+@test "qa_digests: an uncommitted edit changes nothing; a code commit changes that phase only, a test commit what builds on it too" {
   qa_project 3 chain
   local a b c
   a=$(vbw_kernel '. "$VBW_LIB/qa-inputs.sh"; qa_digests "$(cat "$VBW_RECORD")"')
@@ -126,7 +131,11 @@ qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.
   git add src/p2.txt && git commit -q -m "touch"
   c=$(vbw_kernel '. "$VBW_LIB/qa-inputs.sh"; qa_digests "$(cat "$VBW_RECORD")"')
   jq -ne --argjson a "$a" --argjson c "$c" '$a.P1 == $c.P1 and $a.P2.files != $c.P2.files and $a.P2.tests == $c.P2.tests
-    and $a.P2.combined != $c.P2.combined and $a.P3.files == $c.P3.files and $a.P3.combined != $c.P3.combined'
+    and $a.P2.combined != $c.P2.combined and $a.P3.files == $c.P3.files and $a.P3.combined == $c.P3.combined'
+  printf '# stricter\n' >> tests/p2.sh
+  git add tests/p2.sh && git commit -q -m "tests"
+  b=$(vbw_kernel '. "$VBW_LIB/qa-inputs.sh"; qa_digests "$(cat "$VBW_RECORD")"')
+  jq -ne --argjson c "$c" --argjson b "$b" '$c.P1 == $b.P1 and $c.P2.tests != $b.P2.tests and $c.P3.combined != $b.P3.combined'
 }
 
 @test "qa_digests: a changed check file changes tests, a changed goal changes plan, other phases are untouched" {

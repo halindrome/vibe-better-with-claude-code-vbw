@@ -5,7 +5,8 @@ export const meta = {
   phases: [{ title: 'Verify', detail: 'one QA agent per phase, in parallel' }],
 }
 
-// args: {phases: ["P1", ...], tier: "quick"|"standard"|"deep", models?: {qa?}, rigor?: {P1: {qa, models}}} (docs/workflows.md).
+// args: {phases: ["P1", ...], tier: "quick"|"standard"|"deep", models?: {qa?}, rigor?: {P1: {qa, models}},
+// round?: {tiers, suite, focus?: {P1: {since, round, fixes}}}} (docs/workflows.md).
 const phases = (args && args.phases) || []
 const tier = (args && args.tier) || 'standard'
 const models = (args && args.models) || {}
@@ -96,8 +97,17 @@ const cellOf = id => rigor[id] || {}
 const sized = (args && args.round && args.round.tiers) || {}
 const tierOf = id => sized[id] || cellOf(id).qa || tier
 const modelOf = id => (cellOf(id).models && cellOf(id).models.qa) || models.qa
+// A re-check round (args.round.focus, T131): the whole-phase sweep ran at round 1 and the goal,
+// criteria and plans have not changed since, so QA verifies the fixes, what they reach and the goal.
+const focuses = (args && args.round && args.round.focus) || {}
+const focusNote = id => {
+  const r = focuses[id]
+  if (!r || !r.since) return ''
+  const fixes = (r.fixes || []).map(f => `${f.id} (${f.req}): ${f.note}`).join('; ') || 'none recorded'
+  return `\n\nThis is re-check round ${r.round || 2} for ${id}: the whole-phase sweep ran at round 1 and the goal, criteria and plans have not changed since. Verify only: the fixes since the last verdict (${fixes}); the files changed since that verdict (git diff --name-only ${r.since} HEAD, leaving out .vbw/) and what those files reach (callers, tests, documents stating their behaviour); and that the phase goal still holds. Do not sweep the rest of the phase again; a problem outside that scope is a note, unless it breaks the goal.`
+}
 const results = await pipeline(phases, id =>
-  agent(`Verify VBW phase ${id} at the ${tierOf(id)} tier, then record your findings and verdict with vbw qa (if qa record refuses a stale proof, run vbw prove --full, then retry the record once). Start with: vbw show phase ${id}${suiteNote}${voice}`,
+  agent(`Verify VBW phase ${id} at the ${tierOf(id)} tier, then record your findings and verdict with vbw qa (if qa record refuses a stale proof, run vbw prove --full, then retry the record once). Start with: vbw show phase ${id}${focusNote(id)}${suiteNote}${voice}`,
     Object.assign({ agentType: 'vbw:qa', label: `qa ${id}`, phase: 'Verify', schema: VERDICT },
       modelOf(id) ? { model: modelOf(id) } : {}, effortOf('qa', 'verify'))))
 

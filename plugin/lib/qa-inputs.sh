@@ -3,7 +3,8 @@
 # active milestone: a digest of its files, of its tests (its requirements'
 # checks and their files) as committed (HEAD), of its goal and plan, and of its
 # [auto] requirements (id and text; a [human] one is not an input); the
-# combined digest adds the same four of every phase it builds on. The combined
+# combined digest adds the tests of every phase it builds on: a phase relies on
+# what another's checks promise, not on its code, documents or plan. The combined
 # digest is the pass's qa.tree in the record (no new field). The per-input
 # digests live in this clone's cache $(git-common-dir)/vbw/qa.json, which only
 # names the reason: missing or damaged reads as no cache. lib/qa.jq decides.
@@ -16,7 +17,7 @@
 # that changes. A fingerprint stored without a version counts as version 0. A
 # VBW update that raises it does not by itself send a passed phase back to QA:
 # the pass is fingerprinted again at its own commit (qa_settle).
-QA_FP_VERSION=1
+QA_FP_VERSION=2
 
 # vbw_scratch_json VAR VALUE: put VALUE in a new file inside .vbw/runtime, removed when the
 # command ends or fails (vbw_guard_add), and set VAR to its path. For a jq call that
@@ -65,7 +66,7 @@ qa_digests() {
   while IFS=$'\t' read -r id line; do
     out=$(printf '%s' "$out" | jq -c --arg id "$id" --arg c "$(printf '%s' "$line" | vbw_sha256)" --slurpfile own <(printf '%s' "$own") --slurpfile cl <(printf '%s' "$cl") \
       '. + {($id): ($own[0][$id] + {combined: $c, deps: $cl[0][$id]})}')
-  done < <(jq -nr --slurpfile own <(printf '%s' "$own") --slurpfile cl <(printf '%s' "$cl") '$own[0] as $own | $cl[0] as $cl | $own | keys[] | . as $k | [$k, ([$k] + $cl[$k] | map("\(.) \($own[.].files) \($own[.].tests) \($own[.].plan) \($own[.].reqs)") | join(";"))] | @tsv')
+  done < <(jq -nr --slurpfile own <(printf '%s' "$own") --slurpfile cl <(printf '%s' "$cl") '$own[0] as $own | $cl[0] as $cl | $own | keys[] | . as $k | [$k, (["\($k) \($own[$k].files) \($own[$k].tests) \($own[$k].plan) \($own[$k].reqs)"] + [$cl[$k][] | "\(.) \($own[.].tests)"] | join(";"))] | @tsv')
   printf '%s\n' "$out"
 }
 

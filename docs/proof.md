@@ -926,7 +926,9 @@ without the phase is adopted by that phase's fail verdict), a fix item with
 pass|fail TIER`, against the phase's inputs (see "Which phases QA checks
 again"). A verdict changes only its own phase's findings: a pass closes them,
 never another phase's, so phases that share a requirement can be verified in
-parallel (D332); three failed rounds in a row escalate.
+parallel (D332); three failed rounds in a row escalate. A round after a fail
+verifies that round's fixes, not the whole phase again
+([Re-check rounds](#re-check-rounds)).
 
 Only behaviour blocks (D400). A finding is code that does something wrong or
 misses a promised behaviour, a test gap, a deviation, or a document stating a
@@ -956,10 +958,12 @@ phase keeps its pass. A built phase is checked again when:
 - it never passed, or its last verdict was a fail;
 - its own inputs changed since it passed: its files (the files of its plans),
   its tests (its requirements' checks and their files), or its goal and plan;
-- a phase it builds on is checked again because that phase's inputs changed,
-  even if its own inputs did not. A phase builds on another when one of its
-  plans comes after a plan of the other, directly or through other phases.
-
+- the tests of a phase it builds on changed (that phase's requirements' checks
+  or their files), even if its own inputs did not. A phase builds on another
+  when one of its plans comes after a plan of the other, directly or through
+  other phases. A change to that phase's code, documents, saved results, goal
+  or plan does not list it: that phase is checked again itself, and what the
+  phases built on it rely on is what its checks promise;
 - one of its `[auto]` requirements was added, reworded or removed.
 
 Files and tests count as committed (`HEAD`), so commit work before QA.
@@ -1009,7 +1013,7 @@ phases whose own inputs changed, by the rule above.
 ```
 $ vbw show qa
 P1 is checked again: its files changed
-P2 is checked again: builds on P1, which changed
+P2 is checked again: builds on P1, whose tests changed
 P3 keeps its pass
 ```
 
@@ -1029,13 +1033,27 @@ The reasons, in plain words:
 | `its tests changed` | a check of its requirements, or a file of that check, changed |
 | `its goal or plan changed` | the goal or the plans changed |
 | `an [auto] requirement changed` | an `[auto]` requirement of the phase was added, reworded or removed |
-| `builds on P1, which changed` | a phase it builds on has changed inputs |
+| `builds on P1, whose tests changed` | a check of a phase it builds on, or a file of that check, changed |
 | `its files, tests or plan changed` | something changed, but the cache that says what is missing |
 
 `vbw next` sends only these phases to QA, gives the reasons in its `qa` key
 (docs/next.md) and states them in its instruction line. The QA skill tells the
 user the same. `vbw qa record PHASE pass` stores a digest of the phase's inputs
-and those of the phases it builds on in the phase's `qa.tree` (docs/record.md).
+and the tests of the phases it builds on in the phase's `qa.tree` (docs/record.md).
+
+#### Re-check rounds
+
+The whole-phase sweep runs once, at a phase's first QA round. When the last
+verdict was a fail and the phase's goal, criteria, plans and `[auto]`
+requirements are unchanged since, the next round is a re-check round: `vbw
+next` adds the phase to `round.focus` with `since` (the commit the failed
+verdict was recorded at), `round` (2 or more) and `fixes` (the QA fixes of the
+phase still open or fixed, each with its requirement and note). The QA agent is
+told to verify only those fixes, the files changed since that commit and what
+they reach, and that the goal still holds; anything else it notices is a note
+unless it breaks the goal. A change to the goal, criteria, plans or `[auto]`
+requirements since the failed verdict, or a clone without the cache
+`qa.json`, brings back the whole-phase sweep.
 
 A record from before this rule holds the proof's tree id in `qa.tree`. It matches
 no digest, so each such phase is checked once more, and the new pass stores a
