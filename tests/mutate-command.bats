@@ -195,7 +195,7 @@ refused() {
   printf 'echo unpaid\n' > src/pay.sh
   run "$VBW" mutate P1.1 task1 "prints unpaid" src/pay.sh < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  breaks P1.1 | jq -e '.[0].task == 1 and .[0].checks == {C1: "red", C3: "green"} and .[0].result == "red" and (.[0] | has("rule") | not)' \
+  breaks P1.1 | jq -e '.[0].task == 1 and .[0].checks == {C1: "red"} and .[0].result == "red" and (.[0] | has("rule") | not)' \
     || { breaks P1.1; false; }
   printf 'echo paid\necho paid\n' > src/pay.sh
   run "$VBW" mutate P1.1 task2 --check C3 "prints paid twice" src/pay.sh < /dev/null

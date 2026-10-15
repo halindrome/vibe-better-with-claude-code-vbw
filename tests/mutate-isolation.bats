@@ -133,5 +133,5 @@ appears() {
   run "$VBW" mutate P1.1 task1 --check C3 --check C4 "prints unpaid" src/pay.sh < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(sort -n "$CONC/seen" | tail -n 1)" = 1 ] || { cat "$CONC/seen"; false; }
-  breaks | jq -e '.[0].checks == {C3: "red", C4: "red"}' || { breaks; false; }
+  breaks | jq -e '.[0].checks == {C3: "red"}' || { breaks; false; }
 }

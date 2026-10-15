@@ -15,6 +15,8 @@
 . "$VBW_LIB/cmd-commit.sh"
 # shellcheck source=proofcopy.sh
 . "$VBW_LIB/proofcopy.sh"
+# shellcheck source=proofreuse.sh
+. "$VBW_LIB/proofreuse.sh"
 
 # mutate_usage: the forms, as the message of a refusal that names the next step.
 mutate_usage() {
@@ -32,6 +34,18 @@ mutate_put() {
     if [ -e "$dir/files/$f" ] || [ -L "$dir/files/$f" ]; then
       mkdir -p "$dest/$(dirname "$f")"
       cp -pP "$dir/files/$f" "$dest/$f"
+    fi
+  done
+}
+
+# mutate_clean DEST FILE...: the files back to their last commit in DEST (removed when HEAD has none).
+mutate_clean() {
+  local dest="$1" f
+  shift
+  for f in "$@"; do
+    rm -rf "${dest:?}/$f"
+    if git cat-file -e "HEAD:$f" 2> /dev/null; then
+      git archive HEAD -- "$f" | tar -x -C "$dest" || vbw_die "cannot restore $f in the proof copy"
     fi
   done
 }
@@ -139,24 +153,33 @@ cmd_mutate() {
       rm -f "$f"
     fi
   done
-  local n=${#idl[@]} results bad=""
-  proofcopy_create_slots "$(proofcopy_slots "$n")"
-  if printf '%s' "$record" | jq -e --arg p "$plan" --arg h "$head" --argjson ids "$ids" '.plans[] | select(.id == $p)
-      | [(.mutations // [])[] | select(.head == $h) | (.checks // {}) as $c | select(all($ids[]; . as $i | $c | has($i)))] | length > 0' > /dev/null; then
-    :
-  else
-    results=$(checks_run_all "$record" "${idl[@]}")
-    bad=$(printf '%s' "$results" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')
-  fi
-  if [ -n "$bad" ]; then
-    proofcopy_remove
-    checks_end
-    vbw_die "checks do not pass on the unbroken code, so a break proves nothing: $bad; make them pass and commit, then break again"
-  fi
-  rm -f "$CHECK_OUT"/*.res "$CHECK_OUT"/*.res.tmp
-  local c
-  for c in "${PROOF_COPIES[@]}"; do mutate_put "$dir" "$c" "${broke[@]}"; done
-  results=$(checks_run_all "$record" "${idl[@]}")
+  # One red check is the proof (T157): the checks run one at a time, fastest first by their last
+  # recorded time (a check never run counts as slowest), until one goes red; a survivor runs them all.
+  # A check runs unbroken first, unless a recorded break at this HEAD already ran it (it passed then).
+  local results='{}' order base c one copy bad
+  proofcopy_create_slots 1
+  copy=${PROOF_COPIES[0]}
+  base=$(printf '%s' "$record" | jq -c --arg p "$plan" --arg h "$head" \
+    '[.plans[] | select(.id == $p) | (.mutations // [])[] | select(.head == $h) | (.checks // {}) | keys[]] | unique')
+  order=$(proofreuse_store_read | jq -r --argjson ids "$ids" '.runs as $r
+    | [$ids[] | {id: ., s: ($r["check:" + .].seconds // 1e9)}] | sort_by(.s, .id)[] | .id')
+  for c in $order; do
+    if ! printf '%s' "$base" | jq -e --arg c "$c" 'index($c) != null' > /dev/null; then
+      rm -f "$CHECK_OUT"/*.res "$CHECK_OUT"/*.res.tmp
+      bad=$(checks_run_all "$record" "$c" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')
+      if [ -n "$bad" ]; then
+        proofcopy_remove
+        checks_end
+        vbw_die "checks do not pass on the unbroken code, so a break proves nothing: $bad; make them pass and commit, then break again"
+      fi
+    fi
+    mutate_put "$dir" "$copy" "${broke[@]}"
+    rm -f "$CHECK_OUT"/*.res "$CHECK_OUT"/*.res.tmp
+    one=$(checks_run_all "$record" "$c")
+    results=$(printf '%s' "$results" | jq -c --argjson o "$one" '. + $o')
+    mutate_clean "$copy" "${broke[@]}"
+    printf '%s' "$one" | jq -e 'all(.[]; .status == "pass")' > /dev/null || break
+  done
   proofcopy_remove
   checks_end
   # What was recorded for this target before: a survivor, if the last one was.

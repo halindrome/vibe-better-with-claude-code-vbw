@@ -896,6 +896,12 @@ At standard and deep, the builder breaks the plan's code on purpose (one
 statement per rule) with `vbw mutate` and runs the rule's own check. See
 docs/workflows.md for the command and docs/rigor.md for the levels.
 
+A break with several checks (a task at deep) runs them one at a time, fastest
+first by their last recorded time, and stops at the first that goes red; a
+survivor runs them all. Each check first runs once on the unbroken code at that
+commit, unless an earlier break at the same commit already ran it. A slow test
+suite therefore pays for the checks a break needs, not for every check.
+
 - A check that notices the break is **red**: the rule is covered.
 - A test that cannot fail, because every check stays green, is a **survivor**.
   The Dev strengthens it in place, in the check file of that rule's own
@@ -903,7 +909,10 @@ docs/workflows.md for the command and docs/rigor.md for the levels.
   until it is red. After two attempts that stay green the Dev blocks the plan.
 - `vbw plan done` waits for the breaks: at standard it refuses until each
   approved rule of the requirements the plan completes has a red break, and
-  lists the rules missing one. At deep each task also needs a red break or a
+  lists the rules missing one. A rule that names its plan (`plan` in the
+  Lead's rules: the plan that builds its code) is asked of that plan when it
+  finishes, even while another plan of the requirement is open, so each plan
+  breaks its own rules. At deep each task also needs a red break or a
   written reason. At express it asks for nothing. A survivor alone covers
   nothing.
 
