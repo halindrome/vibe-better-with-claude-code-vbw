@@ -31893,7 +31893,7 @@
       "text": "Wording tests become fact tests (D399/D400, owner 2026-10-15): tests that pin sentences of docs/ or agent instructions are removed or rewritten to check the facts a user relies on (commands, settings, numbers, files, limits); behaviour tests stay",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T156",
