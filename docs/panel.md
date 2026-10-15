@@ -452,21 +452,45 @@ and its sound are available.
 
 ## The sound
 
-VBW plays a short sound when it needs you: an approval, a question, or a
-result to check. It plays once per request, not again while the same request
-stands, and not for a request already waiting when the session starts. Each
-time it picks one at random from the sounds shipped with VBW, in
+VBW plays a short sound when Claude Code's own question menu opens (the
+`AskUserQuestion` menu where you pick an answer). It plays **once per
+question**: not when the menu is redrawn, not when you answer or the menu
+closes, and not for a gate on its own. A gate that stands in the record or in
+`next.json` with no question open makes no sound; if one stands when a question
+opens, you still hear one clip. A second question plays once more. Each time
+VBW picks one clip at random from the sounds shipped with it, in
 `plugin/assets/audio/<character>/` (mp3 files).
 
-The sound is **on by default**. To turn it off or on:
+### The notification
+
+When the menu opens, VBW also raises one native notification, titled `VBW`,
+with a plain sentence naming what it needs (for example, that it has a question
+for you). It never fires twice for one question.
+
+VBW raises the same kind of notification, without a sound, once for each new
+[What's next](#whats-next) recommendation. One you have already seen raises
+none after a restart; a newer one raises one.
+
+### Turning them off
+
+The sound and the notification share one switch. It is **on by default**. To
+turn both off or on:
 
 - click the **Turn off** / **Turn on** button in the panel, or
 - run `/vbw-sound` (it switches; `/vbw-sound off` and `/vbw-sound on` set it).
 
-The choice is remembered. It is yours alone: it is kept in Claude Code's
-per-user store on your own machine, never committed, never in the project and
-never in `.vbw/record.json`. The sound needs the panel, so it needs Claude Code
-2.1.287 or newer.
+With the switch off, nothing plays and no notification is raised. The choice is
+remembered. It is yours alone: it is kept in Claude Code's per-user store on
+your own machine, never committed, never in the project and never in
+`.vbw/record.json`. A test session plays and raises nothing, and uses only
+`test.*` keys in that store, never yours.
+
+### When they are missing
+
+If Claude Code has no notifications, or the sound cannot play (no player, no
+file), VBW does nothing in their place: no toast, log line, status or notice,
+and nothing breaks. The sound needs the panel, so it needs Claude Code 2.1.287
+or newer.
 
 ## Motion
 
