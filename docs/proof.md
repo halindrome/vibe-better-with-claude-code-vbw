@@ -928,6 +928,13 @@ again"). A verdict changes only its own phase's findings: a pass closes them,
 never another phase's, so phases that share a requirement can be verified in
 parallel (D332); three failed rounds in a row escalate.
 
+Only behaviour blocks (D400). A finding is code that does something wrong or
+misses a promised behaviour, a test gap, a deviation, or a document stating a
+false or missing fact the user relies on (a command, setting, number, file or
+limit). Wording, tone, style, naming and a test that does not pin a sentence's
+exact words are notes: QA lists them in its summary, and they never fail a
+phase.
+
 The project's test command is not run again for QA. The proof runs it once
 (a project command, above) and `vbw next` hands that one result to the QA round
 (`round.suite`, docs/next.md). QA agents use it as evidence and do not run the

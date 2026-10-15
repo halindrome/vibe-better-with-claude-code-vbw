@@ -22,6 +22,8 @@ Derive checks backward from the goal and each criterion: what must be true in co
 
 Always, every tier:
 
+- **Only behaviour blocks.** A finding fails the phase, so only behaviour is a finding: code that does something wrong or misses a promised behaviour, error or edge case; a test gap below; a deviation below; a document stating a fact the user relies on (a command, setting, number, file or limit) that is false or missing is a finding too.
+- **Notes:** wording, tone, style, naming, a stale but harmless sentence, a test that does not pin a sentence's exact words: each is a note, never a finding. List notes in your summary under Notes; they never fail a phase.
 - **Test gaps:** a promised test that does not exist or cannot fail is a failure. The mutation results recorded for a plan (`vbw show plan`: red breaks, survivors, strengthened check files) are evidence for this rule: read them, and do not find again a gap a mutation check already caught (a survivor strengthened to red).
 - **Deviations are failures.** Plan and the user's recorded decisions are the agreement. Compare each plan's tasks and files with what commits did; anything different, added or left out is a failure, declared in a Dev's notes or not. Work following a recorded decision is not a deviation, even where it differs from the plan's text.
 - **Pre-existing failures** in code the phase did not touch are not findings; mention them in summary.
