@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261015T072203Z",
+    "kind": "qa",
+    "started_at": "2026-10-15T07:22:03Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1191.298574,
+      "in": 380679,
+      "out": 189
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -17955,12 +17966,11 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "3339351fe613dc5efdcce677e9df882bf8805fd049f357335720a4dbfc2c6e26",
-        "at": "2026-10-15T02:21:18Z",
-        "note": "32/34 checks",
-        "rounds": 1
+        "tree": "c69e7df4917b36ac15fa6e1628f53f0fe17e7c23ff5315d2844a692fea67562e",
+        "at": "2026-10-15T07:24:25Z",
+        "note": "34/34 checks"
       }
     },
     {
@@ -30824,7 +30834,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "vbw mutate (plugin/lib/cmd-mutate.sh, lines 119-125, commit 8d26c179 / original 3be3c530) stopped refusing a changed-but-uncommitted check file whenever the lease kind is build. R188.5 says a break with a check file 'changed beside the break' is refused, writing nothing; the new code only keeps that refusal outside a build run. Inside a build run the checks still run on a detached copy of HEAD (plugin/lib/proofcopy.sh:91), so a Dev who strengthened tests/x.sh and re-ran vbw mutate before committing gets a recorded survivor from the OLD test, with no warning. That wastes one of the Dev's two strengthening attempts (dev.md: two attempts then vbw plan block) and records a false survivor. The plan's task 2 only asked for adding the survivor's files to the lease editable list, not for relaxing this refusal, and no test pins the relaxed branch (tests/mutate-command.bats:102-122 runs with no lease; tests/mutate-strengthen.bats never runs vbw mutate with an uncommitted check file). A regression test should open a build run, record a survivor, change the check file without committing, run vbw mutate, and expect a refusal naming the file (commit them first), nothing written to the record.",
       "phase": "P140"
     },
@@ -30833,7 +30843,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "docs/workflows.md section 'Rigor' (lines 493-503) lists what each workflow takes from args.rigor but the vbw:building bullet names only models; it never says rigor[phase].tier now decides whether a Dev or Docs agent is told to do the mutation step (building.js line 74). Minor cross-file consistency gap against criterion 2. A regression test (tests/mutation-docs.bats) should require the vbw:building bullet to mention the tier.",
       "phase": "P140"
     }
