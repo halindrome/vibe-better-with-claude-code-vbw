@@ -4,13 +4,21 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REPO_URL="https://raw.githubusercontent.com/swt-labs/vibe-better-with-claude-code-vbw/main/VERSION"
 
+# The files a bump writes, relative to the repository root. tools/test.sh
+# --release reads this list (--files) to know what a release may change.
 FILES=(
-  "$ROOT/VERSION"
-  "$ROOT/plugin/VERSION"
-  "$ROOT/plugin/.claude-plugin/plugin.json"
-  "$ROOT/.claude-plugin/marketplace.json"
-  "$ROOT/marketplace.json"
+  VERSION
+  plugin/VERSION
+  plugin/.claude-plugin/plugin.json
+  .claude-plugin/marketplace.json
+  marketplace.json
 )
+
+# --files: print the files a bump writes, one per line
+if [[ "${1:-}" == "--files" ]]; then
+  printf '%s\n' "${FILES[@]}"
+  exit 0
+fi
 
 # --verify: check all 5 version files are in sync without bumping
 if [[ "${1:-}" == "--verify" ]]; then
@@ -97,7 +105,7 @@ jq --arg v "$NEW" '.plugins[0].version = $v' "$ROOT/marketplace.json" > "$ROOT/m
 
 echo "Updated 5 files:"
 for f in "${FILES[@]}"; do
-  echo "  ${f#$ROOT/}"
+  echo "  $f"
 done
 echo ""
 echo "Version is now $NEW"

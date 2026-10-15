@@ -13,7 +13,7 @@ fake_repo() {
   AT="2026-10-10T10:00:00Z"
   export FAKE LOG STUBS AT
   mkdir -p "$FAKE/tools" "$FAKE/tests" "$FAKE/.vbw/runtime" "$FAKE/.claude-plugin" "$FAKE/src" "$STUBS"
-  cp "$REPO_ROOT/tools/test.sh" "$FAKE/tools/test.sh"
+  cp "$REPO_ROOT/tools/test.sh" "$REPO_ROOT/tools/bump-version.sh" "$FAKE/tools/"
   cp -R "$PLUGIN_ROOT" "$FAKE/plugin"
   local b f t
   for b in bench-hooks bench-panel; do
@@ -23,9 +23,8 @@ fake_repo() {
     printf '#!/usr/bin/env bats\n@test "%s" { true; }\n' "$f" > "$FAKE/tests/$f.bats"
   done
   printf '1.0.0\n' > "$FAKE/VERSION"
-  printf '{"name": "vbw", "version": "1.0.0"}\n' > "$FAKE/.claude-plugin/marketplace.json"
-  printf '{"name": "vbw", "version": "1.0.0"}\n' > "$FAKE/marketplace.json"
-  printf '# Changelog\n' > "$FAKE/CHANGELOG.md"
+  printf '{"name": "vbw", "plugins": [{"name": "vbw", "version": "1.0.0"}]}\n' > "$FAKE/.claude-plugin/marketplace.json"
+  cp "$FAKE/.claude-plugin/marketplace.json" "$FAKE/marketplace.json"
   printf '# Fake\n' > "$FAKE/README.md"
   printf 'code\n' > "$FAKE/src/app.txt"
   printf '.vbw/runtime/\n' > "$FAKE/.gitignore"
@@ -65,13 +64,11 @@ prove_with() {
   cp "$TEST_ROOT/record.json" "$FAKE/.vbw/record.json"
 }
 
-# bump: change only the four version files and the changelog.
+# bump: what a release changes: the version files, written by the real
+# tools/bump-version.sh, and the changelog entry in plugin/CHANGELOG.md.
 bump() {
-  printf '1.0.1\n' > "$FAKE/VERSION"
-  jq '.version = "1.0.1"' "$FAKE/plugin/.claude-plugin/plugin.json" > "$TEST_ROOT/p.json" && cp "$TEST_ROOT/p.json" "$FAKE/plugin/.claude-plugin/plugin.json"
-  printf '{"name": "vbw", "version": "1.0.1"}\n' > "$FAKE/.claude-plugin/marketplace.json"
-  printf '{"name": "vbw", "version": "1.0.1"}\n' > "$FAKE/marketplace.json"
-  printf '# Changelog\n\n## 1.0.1\n' > "$FAKE/CHANGELOG.md"
+  (cd "$FAKE" && bash tools/bump-version.sh --set 1.0.1 > /dev/null)
+  printf '# Changelog\n\n## 1.0.1\n' > "$FAKE/plugin/CHANGELOG.md"
 }
 
 # fake_run ARGS...: run the copied script in the scratch repository; sets CODE

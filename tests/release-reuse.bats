@@ -1,9 +1,9 @@
 #!/usr/bin/env bats
 # R164 (CLAUDE.md testing, docs/proof.md): before a push, bash tools/test.sh
 # --release reuses the last proof (recorded in .vbw/record.json) when it passed
-# on code that differs from the working tree only in the four version files
-# (VERSION, plugin/.claude-plugin/plugin.json, .claude-plugin/marketplace.json,
-# marketplace.json) and CHANGELOG.md: it then runs only the timed speed checks
+# on code that differs from the working tree only in the version files (those
+# tools/bump-version.sh writes, listed by its --files) and plugin/CHANGELOG.md
+# (T115): it then runs only the timed speed checks
 # and the benchmarks, and prints which proof it reused. When any other file
 # differs (uncommitted changes included), when there is no passing proof, or
 # when the last proof failed, it runs everything and prints why. Which proofs

@@ -22,7 +22,7 @@ setup() {
   printf 'grep -qx paid src/pay.txt\n' > tests/pay.sh
   printf 'grep -qx paid src/pay.txt\n' > tests/all.sh
   printf '#!/usr/bin/env bats\n@test "a" { true; }\n' > tests/a.bats
-  cp "$REPO_ROOT/tools/test.sh" tools/test.sh
+  cp "$REPO_ROOT/tools/test.sh" "$REPO_ROOT/tools/bump-version.sh" tools/
   local b
   for b in bench-hooks bench-panel; do
     printf '#!/usr/bin/env bash\necho %s >> "$LOG"\n' "$b" > "tools/$b.sh"

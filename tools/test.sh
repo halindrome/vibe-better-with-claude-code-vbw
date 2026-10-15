@@ -154,11 +154,12 @@ echo "bash: $(bash -c 'echo "$BASH_VERSION"')"
 # release_reuse: succeed when the last proof in .vbw/record.json passed, left no
 # command skipped and no quick command standing in for the test command (a
 # reused result counts: the read lists still vouch for it, R170), and the
-# project's files differ from the code it proved only in the version files and
-# the changelog; print the proof's time. Otherwise fail, printing why (naming
+# project's files differ from the code it proved only in the version files
+# (those tools/bump-version.sh --files names) and plugin/CHANGELOG.md; print the
+# proof's time. Otherwise fail, printing why (naming
 # the differing files) on stdout.
 release_reuse() {
-  local ev at head idx now diff other f
+  local ev at head idx now diff other f allowed
   [ -f .vbw/record.json ] && ev=$(jq -c '.evidence // empty | select(type == "object")' .vbw/record.json 2>/dev/null) && [ -n "$ev" ] \
     || { echo "no proof recorded"; return 1; }
   at=$(jq -r '.at // "unknown time"' <<< "$ev")
@@ -184,10 +185,13 @@ release_reuse() {
   [ -n "$now" ] || { echo "cannot fingerprint the project files"; return 1; }
   diff=$(git diff-tree -z -r --name-only "$head" "$now" 2>/dev/null | tr '\0' '\n') \
     || { echo "the proved code of $at is not in this repository"; return 1; }
+  allowed=$(bash tools/bump-version.sh --files) || { echo "cannot list the version files"; return 1; }
+  allowed=$'\n'"$allowed"$'\nplugin/CHANGELOG.md\n'
   other=
   while IFS= read -r f; do
-    case "$f" in
-      ""|VERSION|plugin/.claude-plugin/plugin.json|.claude-plugin/marketplace.json|marketplace.json|CHANGELOG.md) ;;
+    [ -n "$f" ] || continue
+    case "$allowed" in
+      *$'\n'"$f"$'\n'*) ;;
       *) other="${other:+$other, }$f" ;;
     esac
   done <<< "$diff"
