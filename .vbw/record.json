@@ -34077,6 +34077,12 @@
       "text": "Rest of VBW 2.0 is built directly, not through VBW; scope frozen to T153, T150, T154, T148, T131 (QA judges facts, not prose), kernel held at 7,600 lines; then release 2.0.37 and a real trial on the owner's Rust product",
       "why": "owner 2026-10-15 09:27: 'Yes, do that'; VBW's process on its own development cost about 16 h for T74 (20-min suite, deep tier on kernel changes, self-checking re-dos); safety nets kept: tests first, both shells, CI green, release steps, push on the owner's word",
       "at": "2026-10-15T08:27:01Z"
+    },
+    {
+      "id": "D400",
+      "text": "Only behaviour blocks: a QA finding is behaviour (wrong or missing behaviour, a test gap, a deviation, a false or missing fact in a document); wording, style, naming and exact-sentence pinning are notes in QA's summary and never fail a phase",
+      "why": "owner 2026-10-15 'Do it now!': 115 of 181 QA findings to date concerned docs or wording and each cost a fix round, a proof and a QA round; real bugs (F235) are still findings",
+      "at": "2026-10-15T09:06:08Z"
     }
   ],
   "commands": {
