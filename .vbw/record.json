@@ -31615,7 +31615,7 @@
       "text": "tools/test.sh release_reuse: the allow-list names CHANGELOG.md at the root and four version files; this repository keeps plugin/CHANGELOG.md and the bump also writes plugin/VERSION, so the release run never reuses a proof after the changelog commit (2.0.32: two full runs). Allow plugin/VERSION and plugin/CHANGELOG.md; the fixture of tests/release-reuse-helper.bash bumps the same files (found 2026-10-11 19:12)",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T116",
