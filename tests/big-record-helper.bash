@@ -78,8 +78,8 @@ twin_project() {
 # twin_doc: the vbw apply document for the active milestone M2.
 twin_doc() {
   jq -nc '{
-    phases: [{id: "P51", title: "Part a", reqs: ["R51"], goal: "Part a works", criteria: ["src/a.txt says a"], tier: "deep"},
-             {id: "P52", title: "Part b", reqs: ["R52", "R53"], goal: "Part b works", criteria: ["src/b.txt says b"], tier: "standard"}],
+    phases: [{id: "P51", title: "Part a", reqs: ["R51"], goal: "Part a works", criteria: ["src/a.txt says a"], tier: "express"},
+             {id: "P52", title: "Part b", reqs: ["R52", "R53"], goal: "Part b works", criteria: ["src/b.txt says b"], tier: "express"}],
     plans: [{id: "P51.1", phase: "P51", title: "Write a", reqs: ["R51"], files: ["src/a.txt"], after: [], role: "dev", tasks: ["write a", "check a", "note a"]},
             {id: "P52.1", phase: "P52", title: "Write b", reqs: ["R52", "R53"], files: ["src/b.txt"], after: [], role: "dev", tasks: ["write b", "check b", "note b"]}],
     checks: [{id: "C101", req: "R51", run: ["sh", "tests/a.sh"], files: ["tests/a.sh"]},
