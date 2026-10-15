@@ -30,25 +30,14 @@ vbw_setup() {
   export GIT_CONFIG_GLOBAL="$TEST_ROOT/gitconfig"
   export LC_ALL=C
   mkdir -p "$HOME" "$CLAUDE_CONFIG_DIR" "$CLAUDE_PLUGIN_DATA"
-  # The first test of a file writes the gitconfig with git; the others copy it (T82).
-  if [ -n "${BATS_FILE_TMPDIR:-}" ] && [ -f "$BATS_FILE_TMPDIR/vbw-gitconfig" ]; then
-    cp "$BATS_FILE_TMPDIR/vbw-gitconfig" "$GIT_CONFIG_GLOBAL"
-  else
-    git config --global user.email "test@example.com"
-    git config --global user.name "VBW Test"
-    git config --global init.defaultBranch main
-    # No background git work. One macOS CI teardown failed with "Directory not empty" on
-    # .git/objects; its cause is not proven, and a detached gc or maintenance after a commit
-    # is the candidate this removes.
-    git config --global gc.auto 0
-    git config --global maintenance.auto false
-    # Published by rename, so a test running in parallel never copies a partial file.
-    [ -z "${BATS_FILE_TMPDIR:-}" ] || {
-      local tmp
-      tmp=$(mktemp "$BATS_FILE_TMPDIR/vbw-gitconfig.XXXXXX") &&
-        cp "$GIT_CONFIG_GLOBAL" "$tmp" && mv -f "$tmp" "$BATS_FILE_TMPDIR/vbw-gitconfig"
-    }
-  fi
+  git config --global user.email "test@example.com"
+  git config --global user.name "VBW Test"
+  git config --global init.defaultBranch main
+  # No background git work. One macOS CI teardown failed with "Directory not empty" on
+  # .git/objects; its cause is not proven, and a detached gc or maintenance after a commit
+  # is the candidate this removes.
+  git config --global gc.auto 0
+  git config --global maintenance.auto false
   PROJECT="$TEST_ROOT/project with space"
   export PROJECT
   mkdir -p "$PROJECT"
@@ -62,38 +51,6 @@ vbw_teardown() {
 
 # A git repository with one commit, as most kernel tests need.
 vbw_git_project() {
-  # The first test of a file builds the repository once under the file's temporary
-  # folder; every test copies it (T82). The copy is used only where building would
-  # give the same repository: no repository here yet, the helper's own gitconfig and
-  # no variable that changes what git init and commit write. The seed commit is
-  # then the one of the file's first test, so it can be some seconds old.
-  # Builtins only: each command a test runs costs bats' debug trap.
-  local seed="${BATS_FILE_TMPDIR:-}/vbw-seed" v ours='' cached=''
-  [ -f "${BATS_FILE_TMPDIR:-}/vbw-gitconfig" ] && [ ! -e .git ] || seed=
-  [ -z "$seed" ] || {
-    IFS= read -r -d '' ours < "$GIT_CONFIG_GLOBAL" || :
-    IFS= read -r -d '' cached < "$BATS_FILE_TMPDIR/vbw-gitconfig" || :
-    [ "$ours" = "$cached" ] || seed=
-  }
-  for v in ${!GIT_*}; do
-    case "$v" in
-      GIT_CONFIG_NOSYSTEM | GIT_CONFIG_GLOBAL) ;;
-      GIT_AUTHOR_* | GIT_COMMITTER_* | GIT_CONFIG* | GIT_DIR | GIT_WORK_TREE | GIT_INDEX_FILE | GIT_OBJECT_DIRECTORY | GIT_TEMPLATE_DIR) seed= ;;
-    esac
-  done
-  # mkdir claims the build: a test running in parallel that loses the claim builds its own.
-  if [ -n "$seed" ] && { [ -f "$seed/ready" ] || { mkdir "$seed" 2> /dev/null && (
-    mkdir "$seed/repo" && cd "$seed/repo" && vbw_git_seed) && : > "$seed/ready"; }; }; then
-    cp -R "$seed/repo/.git" .git
-    printf 'seed\n' > README.md
-    # The copied index holds the template's file stats; refresh it as a fresh commit leaves it.
-    git update-index -q --refresh
-  else
-    vbw_git_seed
-  fi
-}
-
-vbw_git_seed() {
   git init -q
   printf 'seed\n' > README.md
   git add README.md
