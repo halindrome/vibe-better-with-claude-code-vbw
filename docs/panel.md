@@ -285,7 +285,7 @@ Now │ Plan │ Proof │ Timeline │ Decisions │ Team │ Costs
 The tabs stay at the top of the pane however long the content is. When the
 content is taller than the pane, only the part under the tabs scrolls.
 
-- **Now:** the sentences above, the sound switch, [What's next](#whats-next), then the running workflow as
+- **Now:** a framed [what's happening now](#whats-happening-now) box above everything else, then the sentences above, the sound switch, [What's next](#whats-next), then the running workflow as
   columns of agent cards by phase. Each card has a frame in its agent's role
   colour, its state as a coloured mark and word (`● running`, `✓ done`,
   `✗ failed`, `… quiet`), what the agent is doing, and its tokens, dimmed. Two
@@ -303,6 +303,22 @@ content is taller than the pane, only the part under the tabs scrolls.
 - **Costs:** each VBW run of this session with its cost (the session cost added
   while the run was open, so "about"), by kind, and the session total. The list
   starts with the session: a new session starts again from zero.
+
+### What's happening now
+
+The **Now** tab opens on a framed box, drawn once, above everything else. It
+holds the state sentence, the step with the time it started (`HH:MM`) and the
+session cost. The state reads one of: planning, building (with its phase),
+proving, checking, waiting for you (and for what), or nothing running. The box
+follows a change of state within one refresh (about 2 seconds), with no other
+event needed. When nothing is going on it says so:
+
+```
++------------------------------------------+
+| Nothing is running                       |
+| Session cost $0.42                       |
++------------------------------------------+
+```
 
 ### What's next
 
