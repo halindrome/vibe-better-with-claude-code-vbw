@@ -4,7 +4,7 @@
 #   {"phases": [{id, title, reqs, goal?, criteria?, tier?}],   (the Architect's)
 #    "plans":  [{id, phase, title, reqs, files, after, tasks?, role?}],   (the Lead's)
 #    "checks": [{id, req, run, files?, exit?, output?, timeout?, alone?}],
-#    "rules":  [{req, text, check}]}   (optional, the Lead's: R31)
+#    "rules":  [{req, text, check, plan?}]}   (optional, the Lead's: R31)
 # A check may carry "alone": true (a boolean): it never runs beside another VBW check (R45).
 # "rules" are the conditions, edges and error cases an [auto] requirement
 # states, each with the check that tests it. When present, apply refuses a rule
@@ -72,7 +72,7 @@ apply_next() {
     "test_files must be"*) echo "give test_files as {\"run\": [argv naming {file} once], \"files\": [git pathspecs]}, or leave it out" ;;
     "no .vbw/spec.md"*) echo "restore .vbw/spec.md (git checkout -- .vbw/spec.md), then send the document again" ;;
     "apply needs a JSON object"*) echo "pipe one JSON object into vbw apply: {\"phases\": [], \"plans\": [], \"checks\": []}" ;;
-    "apply needs phases"*) echo "give phases, plans and checks as arrays, and rules as [{req, text, check}] if present" ;;
+    "apply needs phases"*) echo "give phases, plans and checks as arrays, and rules as [{req, text, check, plan?}] if present" ;;
     *"is already a phase"*) echo "give the new phase an unused id, or change the existing phase with a full apply" ;;
     *"is already a plan"* | *"is already a check"*) echo "give it an unused id, or change the existing one with vbw apply --patch" ;;
     *"whose work has not started"*) echo "change that phase with a full apply (vbw apply); add a phase beside it only once its work has started" ;;
@@ -172,7 +172,7 @@ cmd_apply() {
             + (if (.proposed // .tier) != null then {tier: (.proposed // .tier)} else {} end)), $p.phases[]],
          plans: ([.plans[] | select(.phase as $x | any($ph[]; .id == $x)) | with_entries(select(.key | IN("id", "phase", "title", "reqs", "files", "after", "tasks", "role")))] + $p.plans),
          checks: ([.checks[] | select(.req as $x | any($rq[]; .id == $x))] + $p.checks),
-         rules: ([$rq[] | .id as $q | (.rules // [])[] | {req: $q, text, check}] + $p.rules)}') \
+         rules: ([$rq[] | .id as $q | (.rules // [])[] | {req: $q, text, check} + (if has("plan") then {plan} else {} end)] + $p.rules)}') \
       || apply_internal "cannot merge the added phases"
   elif [ "$patch" = true ]; then
     # --patch: plans, checks and rules to change, merged by id (rules by requirement and text)
@@ -189,13 +189,13 @@ cmd_apply() {
           + (if (.proposed // .tier) != null then {tier: (.proposed // .tier)} else {} end)],
        plans: merge([.plans[] | select(.phase as $x | any($ph[]; .id == $x)) | with_entries(select(.key | IN("id", "phase", "title", "reqs", "files", "after", "tasks", "role")))]; $p.plans; ["id"]),
        checks: merge([.checks[] | select(.req as $x | any($rq[]; .id == $x))]; $p.checks; ["id"]),
-       rules: merge([$rq[] | .id as $q | (.rules // [])[] | {req: $q, text, check}]; $p.rules; ["req", "text"])}') \
+       rules: merge([$rq[] | .id as $q | (.rules // [])[] | {req: $q, text, check} + (if has("plan") then {plan} else {} end)]; $p.rules; ["req", "text"])}') \
       || apply_internal "cannot merge the patch"
   fi
   printf '%s' "$doc" | jq -e 'type == "object"' > /dev/null 2>&1 || apply_refuse "apply needs a JSON object on stdin"
   printf '%s' "$doc" | jq -e '(keys - ["phases", "plans", "checks", "rules"]) == [] and all(.phases, .plans, .checks; type == "array")
-      and ((has("rules") | not) or (.rules | type == "array" and all(.[]; type == "object" and (keys - ["req", "text", "check"]) == [] and (.text | type == "string" and length > 0))))' \
-    > /dev/null || apply_refuse "apply needs phases, plans and checks, each an array, and optionally rules: [{req, text, check}]"
+      and ((has("rules") | not) or (.rules | type == "array" and all(.[]; type == "object" and (keys - ["req", "text", "check", "plan"]) == [] and (.text | type == "string" and length > 0))))' \
+    > /dev/null || apply_refuse "apply needs phases, plans and checks, each an array, and optionally rules: [{req, text, check, plan?}]"
   if [ "$add" = false ] && [ "$patch" = false ]; then
     problem=$(record_read | jq -r --slurpfile f_p <(printf '%s' "$doc") "$FOREIGN_REQS_JQ"'$f_p[0] as $p | . as $r | foreign_reqs($r; .milestone.id; $p; "others"; "full apply")[0] // empty') \
       || apply_internal "cannot read the phases' requirements"
@@ -325,7 +325,7 @@ cmd_apply() {
     | .checks = (if $patch or $add then [$c0[] | . as $o | ([$pd.checks[] | select(.id == $o.id)][0]) // $o] + [$pd.checks[] | select(.id as $i | $c0 | any(.id == $i) | not)]
         else [($c0[] | select(.req as $q | any($myreqs[]; . == $q) | not)), $d.checks[]] end)
     | if $d | has("rules") then .requirements |= map(. as $q
-        | if any($d.rules[]; .req == $q.id) then .rules = [$d.rules[] | select(.req == $q.id) | {text, check}] else . end)
+        | if any($d.rules[]; .req == $q.id) then .rules = [$d.rules[] | select(.req == $q.id) | {text, check} + (if has("plan") then {plan} else {} end)] else . end)
       else . end'
   # The merged record is checked here, so a violation names the mode too; record_update checks it again.
   merged=$(mktemp "$VBW_RUNTIME/apply.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"$'\n'"Next: check that $VBW_RUNTIME exists and can be written to, then run vbw apply again"

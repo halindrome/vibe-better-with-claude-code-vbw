@@ -10,7 +10,7 @@ Scratch files: `.vbw/runtime/scratch/`, never `/tmp`.
 
 ## Stage 1: Research
 
-Read `.vbw/spec.md`, `vbw show decisions`, `.vbw/map.md` if present, then the code the phases touch. Follow every recorded decision.
+Read `.vbw/spec.md`, `vbw show decisions`, `.vbw/map.md` if present, then the code the phases touch; follow every decision.
 
 ## Stage 2: Decompose
 
@@ -20,9 +20,9 @@ Each phase into plans; one plan = one Dev session.
 2. **Separate files, so as many plans as possible build at the same time.** Plans that share a file go in separate waves with `after`.
 3. **Right-sized:** 3 to 5 `tasks` per plan, each one commit; list every file created or changed.
 4. **Role:** plan only writing documentation (README, CHANGELOG, `docs/`, guides) gets `"role": "docs"`; else `"dev"`.
-5. **Database safety:** plan touching a database names which (test or development), uses migration files, verifies with read-only queries.
+5. **Database safety:** a plan touching a database names which (test or development), uses migrations, verifies read-only.
 6. **Checks, test first:** every `[auto]` requirement gets at least one check, except one whose plans change only documentation or wording (markdown, rst; plain text keeps its check): it needs no new check and no rules, unless a project rule requires one; no `[human]` one does. Check = argv (never shell string) exiting non-zero today, zero only when requirement is met, for the right reason. Prefer project's test framework; focused test files in check `files` (frozen once approved). Approval freezes bytes: run project's formatter and linter on each check file first (`cargo fmt`, `prettier --write`, …) until nothing changes.
-7. **Rules:** per `[auto]` requirement list `rules`: every condition, edge and error case its text states, one rule each, each naming its `check`. `vbw apply` refuses a requirement with no rules and a rule no check of that requirement tests.
+7. **Rules:** per `[auto]` requirement list `rules`: every condition, edge and error case its text states, one rule each, naming its `check` and, when several plans serve it, the `plan` that builds its code. `vbw apply` refuses a requirement with no rules and a rule no check of that requirement tests.
 8. **One-file test form:** when the project's runner can run one test file and the spec has no `## Test files` section, add `"test_files": {"run": ["pytest", "{file}"], "files": ["tests/test_*.py"]}` to `vbw apply`: the runner's documented syntax, `{file}` once, `files` git pathspecs. Never invent a syntax: unsure, omit it.
 9. **No shortcuts:** the optimal, future-proof design, never the merely safe or simple one; name known cost or debt in `choices`, never behind a fallback.
 
@@ -46,10 +46,10 @@ vbw apply <<'JSON'
 JSON
 ```
 
-Each rule is `{req, text, check}`. Optional check fields: `exit`, `output` (regex), `timeout`, `alone`. `"alone": true` for a check starting containers, services or other heavy shared resources: it never runs beside another VBW check.
-Then `vbw show contract`; read its build waves line; split further where possible.
+Each rule is `{req, text, check, plan?}`. Optional check fields: `exit`, `output` (regex), `timeout`, `alone`. `"alone": true` for a check starting containers, services or heavy shared resources: it never runs beside another check.
+Then `vbw show contract`: split build waves further where possible.
 
-**Changing one thing** (a plan, check or rule not yet started): `vbw apply --patch` with only those `plans`, `checks`, `rules`. Never rename or duplicate a started phase: add plans to it.
+**Changing one thing** (a plan, check or rule not yet started): `vbw apply --patch` with only those `plans`, `checks`, `rules`. Never rename or duplicate a started phase.
 
 **Planning again:** `vbw show roadmap` first. Every started plan reappears exactly as is; plan only the rest, with unused ids. Never change check files of finished work. More work on a requirement whose phase has started goes in a new phase beside it (full apply or `vbw apply --add`). Only unstarted phases may change goal or criteria or tier.
 

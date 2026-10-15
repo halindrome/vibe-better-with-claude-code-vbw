@@ -87,11 +87,13 @@ plan_missing_breaks() {
     | ([$r.phases[] | select(.id == $pl.phase)][0].tier // "") as $tier
     | if ($r.lease.kind // "") != "build" or $pl.status != "building" or ($tier | IN("standard", "deep") | not)
         or ([$pl.reqs[] as $q | $r.checks[] | select(.req == $q)] | length == 0) then empty else
+        # The rules a plan owes: every rule of a requirement it completes, and (T152) every rule
+        # that names it as the plan building its code, even while another plan of the requirement is open.
         [$pl.reqs[] as $q
-          | select(all($r.plans[]; .id == $p or .status == "done" or (any(.reqs[]; . == $q) | not)))
+          | (all($r.plans[]; .id == $p or .status == "done" or (any(.reqs[]; . == $q) | not))) as $completes
           | select(any($r.checks[]; .req == $q))
           | ($r.requirements[] | select(.id == $q and .proof == "auto")) as $rq
-          | ($rq.rules // []) | to_entries[] | select(.value.text as $t
+          | ($rq.rules // []) | to_entries[] | select($completes or .value.plan == $p) | select(.value.text as $t
               | [$r.plans[].mutations[]? | select(.result == "red" and .rule.req == $q and .rule.text == $t)] | length == 0)
           | "  \($q).\(.key + 1) \(.value.text)"] as $rules
         | [if $tier == "deep" then range(1; ($pl.tasks // [] | length) + 1) as $k
