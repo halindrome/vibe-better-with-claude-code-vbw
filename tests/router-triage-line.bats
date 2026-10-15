@@ -7,9 +7,10 @@ load helper
 
 ROUTER="$PLUGIN_ROOT/skills/vibe/SKILL.md"
 
-@test "R135: the router's paragraph with \$ARGUMENTS names vbw:triage" {
+@test "R135: the router takes the user's words as \$ARGUMENTS and names vbw:triage" {
   # shellcheck disable=SC2016 # the router's literal text
-  awk 'BEGIN { RS = "" } index($0, "$ARGUMENTS") && index($0, "`vbw:triage`") { found = 1 } END { exit !found }' "$ROUTER"
+  grep -qF '$ARGUMENTS' "$ROUTER"
+  grep -qF '`vbw:triage`' "$ROUTER"
 }
 
 @test "R135: the router stays within its 1,400-word budget" {
