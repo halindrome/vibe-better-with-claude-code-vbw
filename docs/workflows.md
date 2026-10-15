@@ -496,7 +496,7 @@ The router passes `args.rigor` (the `rigor` key of `vbw next --json`, docs/next.
 to the building, verifying and fixing workflows. It maps each phase id to
 `{tier, agents, qa, models}` (docs/rigor.md).
 
-- `vbw:building`: each Dev runs on `rigor[phase].models.dev`, falling back to `args.models.dev`; a documentation plan's Docs agent runs on `args.models.docs`.
+- `vbw:building`: each Dev runs on `rigor[phase].models.dev`, falling back to `args.models.dev`; a documentation plan's Docs agent runs on `args.models.docs`. `rigor[phase].tier` decides whether a Dev or Docs agent is told to do the mutation step (standard and deep; docs/rigor.md).
 - `vbw:verifying`: each phase is verified at `rigor[phase].qa` (`quick`, `standard` or `deep`), falling back to `args.tier`, on `rigor[phase].models.qa`.
 - `vbw:fixing`: a fix has no phase of its own, so every Dev runs on the Dev model of the highest-tier phase in `args.rigor`.
 
