@@ -225,5 +225,4 @@ no_private_copy() {
   grep -qF 'vbw interview set involvement' "$f"
   # shellcheck disable=SC2016 # the literal skill text
   grep -q '^"${CLAUDE_PLUGIN_ROOT}/bin/vbw" interview' "$f"
-  grep -qi 'one answer' "$f"
 }

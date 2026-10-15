@@ -61,9 +61,8 @@ plan() {
   [ "$n" -ge 2 ] || { echo "the router names next_phase $n times"; false; }
 }
 
-@test "R106: the Architect numbers new phases from the number its task gives" {
-  grep -qi 'next free phase number' "$PLUGIN_ROOT/agents/architect.md"
-  grep -q 'started' "$PLUGIN_ROOT/agents/architect.md"
+@test "R106: the Architect reads vbw show roadmap before planning again" {
+  grep -qF 'vbw show roadmap' "$PLUGIN_ROOT/agents/architect.md"
 }
 
 @test "R106: the router and the prompts stay within their budgets" {

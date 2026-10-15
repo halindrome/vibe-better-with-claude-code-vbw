@@ -143,7 +143,11 @@ nojq() {
 }
 
 @test "R165: during a run a guard that runs past its time limit is stopped and the action blocked; docs/guards.md states the limit" {
-  grep -qi 'time limit' "$REPO_ROOT/docs/guards.md" || { echo "docs/guards.md states no time limit"; false; }
+  # The limit the docs state is the one hooks.json sets (ulimit -t).
+  local limit
+  limit=$(jq -r '.hooks.PreToolUse[].hooks[].command' "$PLUGIN_ROOT/hooks/hooks.json" | sed -n 's/^ulimit -t \([0-9]*\).*/\1/p' | head -1)
+  [ -n "$limit" ] || { echo "hooks.json sets no ulimit -t"; false; }
+  grep -qF "$limit seconds of CPU time" "$REPO_ROOT/docs/guards.md" || { echo "docs/guards.md does not state $limit seconds"; false; }
   open_run
   break_guard hang
   hook Bash "$(bash_in vbw:dev)"

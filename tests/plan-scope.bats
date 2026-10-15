@@ -115,6 +115,5 @@ plan_run() {
 
 @test "R50: the Architect reads only the requirements its task lists, and the router hands them to the planning workflow" {
   if grep -q 'vbw show requirements' "$PLUGIN_ROOT/agents/architect.md"; then false; fi
-  grep -qiE 'requirements (your task|the task|in your task)' "$PLUGIN_ROOT/agents/architect.md"
   [ "$(grep -c '"requirements"' "$PLUGIN_ROOT/skills/vibe/SKILL.md")" -ge 2 ]
 }

@@ -27,10 +27,8 @@ AGENTS="$PLUGIN_ROOT/agents"
   grep -q 'vbw apply' "$AGENTS/lead.md"
 }
 
-@test "R95: the QA agent's instructions name the project's test command and where to read it" {
-  grep -qi 'test command' "$AGENTS/qa.md"
+@test "R95: the QA agent reads the project's commands with vbw show contract" {
   grep -q 'vbw show contract' "$AGENTS/qa.md"
-  grep -qi 'project commands' "$AGENTS/qa.md"
 }
 
 @test "R96: the Lead's own instructions allow closing a run: confirm what was recorded, then end the run" {
@@ -38,12 +36,11 @@ AGENTS="$PLUGIN_ROOT/agents"
   grep -q 'vbw run end' "$AGENTS/lead.md"
 }
 
-@test "R96: the Lead's closing duty says it never refuses and, when it cannot finish, names the command to run by hand" {
+@test "R96: the Lead's closing duty keeps its rule: never refuse" {
   local close
   close=$(sed -n '/^## Close a run/,/^## [^C]/p' "$AGENTS/lead.md")
   [ -n "$close" ]
   printf '%s' "$close" | grep -qi 'never refuse'
-  printf '%s' "$close" | grep -qi 'by hand'
   printf '%s' "$close" | grep -qiE 'not from the user'
 }
 

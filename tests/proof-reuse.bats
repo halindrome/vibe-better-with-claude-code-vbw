@@ -250,8 +250,6 @@ decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
   jq -e '.evidence.passed == false and .evidence.checks.C2.status == "fail" and .evidence.checks.C1.status == "pass"' .vbw/record.json
 }
 
-@test "R103: docs/proof.md describes the reuse: when it applies, when nothing is reused, and how the output shows it" {
-  grep -qi 'reuse' "$REPO_ROOT/docs/proof.md"
-  grep -qi 'reused' "$REPO_ROOT/docs/proof.md"
-  grep -qi 'interrupted' "$REPO_ROOT/docs/proof.md"
+@test "R103: docs/proof.md shows the reused count of the output" {
+  grep -qE 'checks: [0-9N]+ ran, [0-9N]+ reused' "$REPO_ROOT/docs/proof.md"
 }

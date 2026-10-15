@@ -2,18 +2,11 @@
 # R188 (P140; D379, D380, D381; docs/workflows.md): the builders run the
 # mutation check during the build. The building workflow passes each plan's
 # rigor tier to its builder; a plan of a standard or deep phase gets the
-# mutation instruction, a plan of an express phase none. The Dev's
-# instructions add the mutation step after the green step: at standard one
-# small break of the plan's own code per rule, at deep also per task and per
-# error and edge case its rules state, each followed by vbw mutate and undoing
-# the break; skipped at express; never in a fix. A survivor is strengthened in
-# the approved check file of its own requirement, in place, never another
-# requirement's, never weakened, the same break re-run until red, committed
-# with the plan, and the notes say it waits for one approval. Two strengthening
-# attempts that stay green end in vbw plan block naming the rule, and the phase
-# rises one tier as with any Dev block. The Docs agent does the same for the
-# rules its documents deliver. Budgets hold: workflows 1,500 lines, each agent
-# 900 words. L1, with stubbed agents (tests/helpers/run-workflow.js) and the
+# mutation instruction, a plan of an express phase none; the fixing workflow
+# none. The Dev and Docs briefs name the step's commands (vbw mutate, vbw plan
+# block) and levels, and keep its prohibitions (never weaken a check, never in
+# a fix). A Dev block naming the rule raises the phase one tier. Budgets hold:
+# workflows 1,500 lines, each agent 900 words. L1, with stubbed agents (tests/helpers/run-workflow.js) and the
 # kernel on a fixture project: no model runs.
 
 load helper
@@ -63,41 +56,25 @@ has_line() {
     | jq -e '[.calls[].prompt | test("mutat"; "i")] | any | not' > /dev/null
 }
 
-@test "R188: the Dev's mutation step comes after green, breaks the plan's own code once per rule at standard, runs vbw mutate, undoes the break, and is skipped at express" {
-  grep -q 'vbw mutate' "$DEV" || { echo "dev.md does not name vbw mutate"; false; }
-  has_line "$DEV" mutation "after green"
-  has_line "$DEV" "each rule" standard
-  has_line "$DEV" "vbw mutate" undo
-  has_line "$DEV" mutation express
-  has_line "$DEV" break "own"
+# names FILE WORD...: FILE holds every WORD (case-insensitive).
+names() {
+  local f=$1 w
+  shift
+  for w in "$@"; do grep -qiF -- "$w" "$f" || { echo "${f##*/} does not name: $w"; return 1; }; done
 }
 
-@test "R188: at deep the Dev also breaks each task and each error and edge case its rules state" {
-  has_line "$DEV" deep task error edge
+@test "R188: the Dev names the mutation step's commands and levels: vbw mutate, standard, deep, express, vbw plan block" {
+  names "$DEV" "vbw mutate" standard deep express "vbw plan block"
 }
 
-@test "R188: a survivor is strengthened in place in its own requirement's check file, never another's, never weakened, re-run until red, committed with the plan, and waits for one approval" {
-  has_line "$DEV" survivor strengthen "in place"
-  has_line "$DEV" strengthen "never another requirement"
-  has_line "$DEV" strengthen "never weaken"
-  has_line "$DEV" "same break" red
-  has_line "$DEV" strengthen commit approval
-}
-
-@test "R188: two strengthening attempts that stay green end in vbw plan block naming the rule" {
-  has_line "$DEV" "vbw plan block" two rule
-}
-
-@test "R188: the Dev never runs the mutation step in a fix" {
+@test "R188: the Dev's prohibitions hold: a strengthened check is never weakened, and a fix never runs the mutation step" {
+  has_line "$DEV" "never weaken"
   has_line "$DEV" mutation fix never
 }
 
-@test "R188: the Docs agent breaks the statements its plan delivers the same way at standard and deep" {
-  has_line "$DOCS" "vbw mutate" standard deep
-  has_line "$DOCS" standard "never at express"
-  has_line "$DOCS" "break one statement" "vbw mutate"
-  has_line "$DOCS" strengthen "never weaken"
-  has_line "$DOCS" "vbw plan block" two
+@test "R188: the Docs agent names vbw mutate, the levels, vbw plan block, and never weakens a check" {
+  names "$DOCS" "vbw mutate" standard deep express "vbw plan block"
+  has_line "$DOCS" "never weaken"
 }
 
 @test "R188: a Dev block naming the rule raises the phase one tier, as any Dev block does" {

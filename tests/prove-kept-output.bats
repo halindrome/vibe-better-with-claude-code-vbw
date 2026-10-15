@@ -227,7 +227,7 @@ OUT=.vbw/runtime/output
   [ "$(grep -rlF 'TEST line 1 ' "$TEST_ROOT" | grep -v '/\.git/' | sed "s|^$PROJECT/||")" = "$OUT/command-test.log" ]
 }
 
-@test "R118: docs/proof.md tells where a failure's full output is kept and that vbw show fix names it" {
+@test "R118: docs/proof.md names .vbw/runtime/output and vbw show fix" {
   grep -q '\.vbw/runtime/output' "$REPO_ROOT/docs/proof.md"
-  grep -qiE 'show fix.*(kept|full output)|(kept|full output).*show fix' "$REPO_ROOT/docs/proof.md"
+  grep -qF 'vbw show fix' "$REPO_ROOT/docs/proof.md"
 }

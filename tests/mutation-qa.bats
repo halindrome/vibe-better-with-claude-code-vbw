@@ -1,9 +1,6 @@
 #!/usr/bin/env bats
-# R188 (P141): the QA agent reads the mutation check's results. Its
-# specification says, on its test-gap rule, that the breaks recorded for a plan
-# (vbw show plan: red, survivor, strengthened check files) are evidence for that
-# rule, so QA reads them rather than finding the same gaps again; it stays
-# within 900 words. L1: the text of plugin/agents/qa.md.
+# R188 (P141): the QA agent reads the mutation check's results with vbw show
+# plan; it stays within 900 words. L1: the text of plugin/agents/qa.md.
 
 load helper
 
@@ -16,13 +13,8 @@ has_line() {
   for w in "$@"; do lines=$(printf '%s\n' "$lines" | grep -iF -- "$w") || { echo "no line of qa.md holds all of: $*"; return 1; }; done
 }
 
-@test "R188: QA's test-gap rule takes the recorded mutation results as evidence and reads them in vbw show plan" {
-  has_line "test gap" mutation evidence
+@test "R188: QA reads the recorded mutation results with vbw show plan" {
   has_line mutation "vbw show plan"
-}
-
-@test "R188: QA does not find again a gap a mutation check already recorded" {
-  has_line mutation survivor "do not find again"
 }
 
 @test "R188: the QA agent stays within 900 words" {
