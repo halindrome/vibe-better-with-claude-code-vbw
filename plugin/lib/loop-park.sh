@@ -67,10 +67,7 @@ loop_park() {
   # shellcheck source=costs.sh
   . "$VBW_LIB/costs.sh"
   total=$(costs_milestone_total "$VBW_RECORD" "$m")
-  if [ -n "$head" ]; then loop_park_reverts "$head"; else LOOP_PARK_REVERTED=""; LOOP_PARK_LEFT=""; fi
-  reverts=$(for f in $LOOP_PARK_REVERTED; do printf '%s\n' "$f"; done | jq -Rsc 'split("\n") | map(select(length > 0))')
   left=""
-  [ -z "$LOOP_PARK_LEFT" ] || left="; left unreverted: $LOOP_PARK_LEFT"
   # The requirements the park removes: the milestone's own, never a [human] one carried in from a shipped
   # milestone (it goes back to be judged by the user).
   rmreq=$(printf '%s' "$rec" | jq -c '. as $r | .milestone.id as $m
@@ -87,10 +84,8 @@ loop_park() {
     if [ -n "$(vbw_dirty_files "$f")" ]; then stay="$stay${stay:+, }$f"; else drop+=("$f"); fi
   done
   [ -z "$stay" ] || left="$left; left in place (you changed it): $stay"
-  leftrec="${left#; }"
-  said=""
-  for f in $LOOP_PARK_REVERTED; do said="$said${said:+, }${f:0:7}"; done
-  said="reverted ${said:-nothing}"
+  # The item's work leaves the record first, while the kernel that wrote it still reads it: its own commits
+  # may have changed that kernel (VBW built with VBW), and the reverts below bring back the one before (T153).
   record_update "$VBW_JQ_DEFS"'. as $r | .milestone.id as $m
     | def has_it($l; $i): any($l[]; . == $i);
       ([.phases[] | select(.milestone == $m) | .id]) as $ph
@@ -105,16 +100,25 @@ loop_park() {
     | .fixes |= map(select(.id as $f | has_it($fx; $f) | not))
     | (if (.evidence | type) == "object"
        then .evidence.checks |= with_entries(select(.key as $k | has_it($ck; $k) | not)) | .evidence.scope = [] else . end)
-    | (.loop.items[] | select(.id == $id)) |= (.status = "parked" | .reason = $reason | .reverts = $reverts | .cost = $cost | .at = $at
-        | if $leftrec == "" then . else .left = $leftrec end)
+    | (.loop.items[] | select(.id == $id)) |= (.status = "parked" | .reason = $reason | .reverts = [] | .cost = $cost | .at = $at)
     | (.todos[] | select(.id == $id)).status = "open"
     | .milestone.status = "parked"
     | .parked = ((.parked // []) + [{id: $m, title: .milestone.title, at: $at, reason: $reason}])
-    | (if $total == null then . else .costs.milestones[$m] = ((.costs.milestones[$m] // {baseline: {}}) + {total: $total}) end)
+    | (if $total == null then . else .costs.milestones[$m] = ((.costs.milestones[$m] // {baseline: {}}) + {total: $total}) end)' \
+    --argjson rm "$rmreq" --arg id "$id" --arg reason "$reason" --argjson cost "$cost" \
+    --argjson total "$total" --arg at "$(vbw_now)"
+  if [ -n "$head" ]; then loop_park_reverts "$head"; else LOOP_PARK_REVERTED=""; LOOP_PARK_LEFT=""; fi
+  reverts=$(for f in $LOOP_PARK_REVERTED; do printf '%s\n' "$f"; done | jq -Rsc 'split("\n") | map(select(length > 0))')
+  [ -z "$LOOP_PARK_LEFT" ] || left="; left unreverted: $LOOP_PARK_LEFT$left"
+  leftrec="${left#; }"
+  said=""
+  for f in $LOOP_PARK_REVERTED; do said="$said${said:+, }${f:0:7}"; done
+  said="reverted ${said:-nothing}"
+  record_update "$VBW_JQ_DEFS"'(.loop.items[] | select(.id == $id)) |= (.reverts = $reverts | if $leftrec == "" then . else .left = $leftrec end)
     | .decisions += [{id: (.decisions | next_id("D")), at: $at,
         text: ("Parked \($id) (\($text)): \($reason); \($said)\($left); milestone \($m) is parked, the backlog entry stays open; to bring the work back revert the reverts or run the item again")}]' \
-    --argjson rm "$rmreq" --arg id "$id" --arg reason "$reason" --argjson reverts "$reverts" --argjson cost "$cost" \
-    --argjson total "$total" --arg at "$(vbw_now)" --arg text "$text" --arg said "$said" --arg left "$left" --arg leftrec "$leftrec"
+    --arg id "$id" --arg reason "$reason" --argjson reverts "$reverts" --arg m "$m" \
+    --arg at "$(vbw_now)" --arg text "$text" --arg said "$said" --arg left "$left" --arg leftrec "$leftrec"
   # The item's lines leave the spec; the removed check files leave the tree.
   spec="$VBW_ROOT/.vbw/spec.md"
   if [ -f "$spec" ]; then
