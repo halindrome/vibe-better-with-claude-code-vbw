@@ -31384,7 +31384,7 @@
     {
       "id": "T82",
       "text": "Tests: one prebuilt template project (git repo + vbw init + first commit) copied per test instead of building it each time; measured 0.33 s fixed setup per test on the owner's Mac, 88 files use it",
-      "status": "open",
+      "status": "done",
       "sort": "next",
       "size": "medium"
     },
@@ -34089,6 +34089,12 @@
       "text": "T151 declined: the three check_jobs limits stay",
       "why": "proofcopy_slots sizes how many proof copies (lanes) a proof makes; checks_run_units' cap is the limit when there are no copies (one unit, a project command); the copy loop waits for a free lane. They coincide only when copies equal check_jobs, which is why a mutation break of one alone survived; merging them would drop the cap of the no-copy path",
       "at": "2026-10-15T16:55:30Z"
+    },
+    {
+      "id": "D402",
+      "text": "Mac first: Linux and bash 5 run in CI as information; the owner updates once the local release run passed; a Linux failure that cannot affect macOS waits for one batch before 2.1.0, which must have green Linux",
+      "why": "owner 2026-10-15 'yes': the owner is the only user until 2.1 and runs macOS; waiting for Linux CI (about an hour on 2.0.37) and chasing Linux-only failures cost the owner time; a failure that could also hit macOS is still fixed at once",
+      "at": "2026-10-15T17:25:52Z"
     }
   ],
   "commands": {
