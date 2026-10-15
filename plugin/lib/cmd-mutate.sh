@@ -116,11 +116,9 @@ cmd_mutate() {
   done
   [ ${#broke[@]} -gt 0 ] || vbw_die "nothing to check: none of the named files differs from the last commit; make the break in the file, then run vbw mutate"
   while IFS= read -r -d '' f; do cfiles+=("$f"); done < <(printf '%s' "$record" | jq -j --argjson ids "$ids" '[.checks[] | select(.id as $c | $ids | index($c) != null) | .files // [] | .[]] | unique[] | . + "\u0000"')
-  # In a build run the guard keeps check files untouched but for those a survivor
-  # opened, and the checks run on a copy of HEAD: a changed check file there is a
-  # strengthening in progress, not tests the run would silently skip.
-  if [ ${#cfiles[@]} -gt 0 ] && [ -n "$(vbw_dirty_files "${cfiles[@]}")" ] \
-    && ! printf '%s' "$record" | jq -e '.lease.kind == "build"' > /dev/null; then
+  # Also in a build run: the checks run on a copy of HEAD, so an uncommitted
+  # strengthening would be tested as the old file and record a false survivor.
+  if [ ${#cfiles[@]} -gt 0 ] && [ -n "$(vbw_dirty_files "${cfiles[@]}")" ]; then
     vbw_die "check files differ from the last commit: $(vbw_dirty_files "${cfiles[@]}"): commit them first, so the break is run against the approved tests"
   fi
   local head
