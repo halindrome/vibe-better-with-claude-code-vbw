@@ -29,3 +29,10 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
   has "$README" '\bcomms\b'
   has "$README" 'mission control'
 }
+
+@test "R189: the state table gives each state its one colour" {
+  has "$DOC" '\| running, or vbw needs you \| amber \|'
+  has "$DOC" '\| done \| green \|'
+  has "$DOC" '\| failed \| red \|'
+  has "$DOC" '\| quiet, cut off, idle \| gr[ae]y \|'
+}
