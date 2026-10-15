@@ -12,7 +12,7 @@ export const REQUEST = "/vbw:vibe what's next"
 export const SETTLE_MS = 4000
 
 // nextModel(recommendation): { kind: 'none' } | { kind: 'empty', at } |
-// { kind: 'pick', at, top: { text, reason, size }, runners: [{ text, size }] }.
+// { kind: 'pick', at, top: { text, reason, size, source }, runners: [{ text, size, source }] }.
 // Any wrong type or missing field is 'none': a half-read pick is never shown.
 export function nextModel(rec) {
   try {
@@ -23,25 +23,33 @@ export function nextModel(rec) {
     const runners = []
     for (const r of rec.runners.slice(0, 2)) {
       if (!isObj(r) || !str(r.text) || !str(r.size)) return { kind: 'none' }
-      runners.push({ text: r.text, size: r.size })
+      runners.push({ text: r.text, size: r.size, source: str(r.source) ? r.source : '' })
     }
-    return { kind: 'pick', at: rec.at, top: { text: t.text, reason: t.reason, size: t.size }, runners }
+    return { kind: 'pick', at: rec.at, top: { text: t.text, reason: t.reason, size: t.size, source: str(t.source) ? t.source : '' }, runners }
   } catch {
     return { kind: 'none' }
   }
 }
 
-// The section's lines before the width cut: [{ id, text, dim?, pick? }].
+// The local time of a stored moment as '[HH:MM]', or '' when it is not a time.
+export function stamp(at) {
+  const d = new Date(at)
+  if (Number.isNaN(d.getTime())) return ''
+  return '[' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ']'
+}
+
+// What pressing a row puts in the prompt: its T or R id, else its text.
+export const commandOf = (row) => '/vbw:vibe ' + (/^[TR]\d+$/.test(row.source) ? row.source : row.text)
+
+// The section's lines before the width cut: [{ id, text, dim?, row? }]. A row
+// is a pressable item { text, size, source, reason? }, drawn as one Button.
 export function nextLines(model) {
   const m = isObj(model) ? model : { kind: 'none' }
   if (m.kind === 'empty') return [{ id: 'empty', text: 'the backlog is empty', dim: true }]
   if (m.kind !== 'pick') return [{ id: 'none', text: 'none yet', dim: true }]
-  const out = [
-    { id: 'top', text: `${m.top.text} · ${m.top.size}`, pick: true },
-    { id: 'reason', text: '  ' + m.top.reason, dim: true },
-  ]
-  m.runners.forEach((r, i) => out.push({ id: 'runner' + i, text: `  ${r.text} · ${r.size}` }))
-  out.push({ id: 'at', text: 'written ' + m.at.slice(0, 10), dim: true })
+  const out = [{ id: 'top', row: m.top, pick: true }]
+  m.runners.forEach((r, i) => out.push({ id: 'runner' + i, row: r }))
+  out.push({ id: 'at', text: (stamp(m.at) ? stamp(m.at) + ' ' : '') + 'written ' + m.at.slice(0, 10), dim: true })
   return out
 }
 
@@ -84,23 +92,46 @@ function titlePieces(Text, title) {
   return [piece('t0', 0, from, ACCENT), piece('t1', from, to, HIGHLIGHT), piece('t2', to, letters.length, ACCENT)].filter(Boolean)
 }
 
-// renderNext(ui, { recommendation, width, motion, arrivedAt, now }, act) -> Box
+// The mark of a recommendation not yet seen: the word 'new'. Motion off draws
+// the word alone; calm and full add a steady palette colour (the shimmer and
+// pulse of candy() mark the arrival at full motion, then this mark stays).
+function newMark(Text, motion) {
+  const props = { key: 'new', wrap: 'truncate' }
+  if (motion === 'full' || motion === 'calm') Object.assign(props, { bold: true, color: ACCENT })
+  return h(Text, props, ' new')
+}
+
+// renderNext(ui, { recommendation, width, motion, arrivedAt, now, unseen }, act) -> Box
 export function renderNext(ui, input, act) {
   const { Box, Text, Button } = isObj(ui) ? ui : {}
-  const { recommendation, width, motion, arrivedAt, now } = isObj(input) ? input : {}
+  const { recommendation, width, motion, arrivedAt, now, unseen } = isObj(input) ? input : {}
   const c = candy({ motion, arrivedAt, now })
-  const lines = nextLines(nextModel(recommendation)).map((l) => {
-    const props = { key: l.id, wrap: 'truncate' }
-    if (l.dim) props.dimColor = true
-    if (l.pick) {
-      props.bold = true
-      if (c.pulse === 1 || c.pulse === 3) props.color = ACCENT
-      else if (c.pulse === 2) props.color = HIGHLIGHT
+  const model = nextModel(recommendation)
+  const press = (fill) => () => { if (typeof act === 'function') act({ fill }) }
+  const lines = nextLines(model).map((l) => {
+    if (!l.row) {
+      const props = { key: l.id, wrap: 'truncate' }
+      if (l.dim) props.dimColor = true
+      return h(Text, props, cut(l.text, width))
     }
-    return h(Text, props, cut(l.text, width))
+    const r = l.row
+    const w = Number.isFinite(width) ? Math.max(1, Math.floor(width)) : 40
+    const chip = cut('[' + r.size + ']', w)
+    const itemProps = { key: 'item', wrap: 'truncate' }
+    if (l.pick) {
+      itemProps.bold = true
+      if (c.pulse === 1 || c.pulse === 3) itemProps.color = ACCENT
+      else if (c.pulse === 2) itemProps.color = HIGHLIGHT
+    }
+    const head = h(Box, { key: 'head', flexDirection: 'row', columnGap: 1 },
+      h(Text, itemProps, cut(r.text, Math.max(1, w - [...chip].length - 1))),
+      h(Text, { key: 'chip', dimColor: true, wrap: 'truncate' }, chip))
+    const body = r.reason ? [head, h(Text, { key: 'reason', dimColor: true, wrap: 'truncate' }, cut(r.reason, w))] : [head]
+    return h(Button, { key: l.id, plain: true, onPress: press(commandOf(r)) },
+      h(Box, { key: 'row', flexDirection: 'column' }, ...body))
   })
   return h(Box, { key: 'whats-next', flexDirection: 'column', marginBottom: 1 },
-    h(Box, { key: 'whats-next-title', flexDirection: 'row' }, ...titlePieces(Text, c.title)),
+    h(Box, { key: 'whats-next-title', flexDirection: 'row' }, ...titlePieces(Text, c.title), ...(unseen === true ? [newMark(Text, motion)] : [])),
     ...lines,
-    h(Button, { key: 'suggest-next', label: 'Suggest next', onPress: () => { if (typeof act === 'function') act({ fill: REQUEST }) } }))
+    h(Button, { key: 'suggest-next', label: 'Suggest next', onPress: press(REQUEST) }))
 }
