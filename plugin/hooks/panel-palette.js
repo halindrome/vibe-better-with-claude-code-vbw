@@ -1,3 +1,4 @@
+// D407: a role never wears a state colour (no green, red, amber or grey hue).
 // The one palette of the VBW panel (R84): every part of the panel (the band,
 // Mission Control, Wrapped) takes its colours from here, so a role has one
 // colour everywhere and a state has one colour everywhere. Colours are Ink
@@ -5,15 +6,15 @@
 // takes. Pure: values in, values out, never throws.
 
 export const ROLE_COLORS = {
-  architect: 'magenta', lead: 'blue', dev: 'green', qa: 'yellow',
-  scout: 'cyan', debugger: 'red', docs: '#ff87d7',
+  architect: 'magenta', lead: 'blue', dev: '#2ec4b6', qa: '#ff87d7',
+  scout: 'cyan', debugger: '#875fff', docs: '#d7afff',
 }
 export const STATE_COLORS = {
   running: '#ffaf00', done: 'green', failed: 'red', quiet: 'gray', cut: 'gray',
 }
 export const NEUTRAL = 'gray'
 export const ACCENT = '#af87ff'
-export const NEED = 'yellow'
+export const NEED = STATE_COLORS.running
 export const PROGRESS = 'green'
 export const ESTIMATE = '#ffaf00'
 
