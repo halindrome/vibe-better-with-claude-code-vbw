@@ -18016,10 +18016,10 @@
       "qa": {
         "result": "fail",
         "tier": "deep",
-        "tree": "d87f94967816caf073630662463eafb043805aba4dcba020ebb839c2c7e61773",
-        "at": "2026-10-15T07:25:02Z",
+        "tree": "5332902991836828e2a217e1466ec57a1f66683d2710cc3e63f8056c1013529f",
+        "at": "2026-10-15T07:40:39Z",
         "note": "20/22 checks",
-        "rounds": 2
+        "rounds": 3
       }
     }
   ],
@@ -30858,7 +30858,7 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "docs/workflows.md lines 213-216 (section 'The mutation check') say: 'The command refuses, and writes nothing, if the plan's files differ from their last commit, a file is outside the plan, or a check file is touched.' The first condition is the opposite of the code. plugin/lib/cmd-mutate.sh refuses when NONE of the named files differs from the last commit ('nothing to check: none of the named files differs from the last commit'), because the break itself is the difference; it never refuses because a plan file differs. Rule R188.3 reads 'nothing differing from the plan's last commit is refused'. A Dev or user reading the guide would think a dirty working file blocks the command, when a dirty (broken) file is what it needs. Evidence: L1, reading cmd-mutate.sh lines 105-118 against the docs text and the rule list in vbw show req R188. tests/mutation-docs.bats does not pin this sentence (it checks single words in the section, plus the one 'at standard and deep / never at express / never in a fix' line). A regression test should assert the refusal sentence says that a break which changes none of the named files is refused (words such as 'nothing' or 'none' with 'differs'), and be shown red with the current inverted wording.",
       "phase": "P141"
     },
@@ -30867,8 +30867,17 @@
       "req": "R188",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "tests/mutation-docs.bats, test 'docs/rigor.md gives express, standard and deep each its own content': the first negated line '! line_has rigor.md express \"each rule\" > /dev/null' is not the last command of the test, so bash errexit (bats) ignores it and it can never fail. Evidence: L1, 'bash -c \"set -eET; f(){ return 0; }; ! f; echo reached\"' prints reached; by reading, only the final '! line_has rigor.md standard nothing' is enforced. So an express row such as 'nothing, each rule: one small break per rule' keeps all 11 tests green although it says express breaks each rule (F227 asked that express and standard each keep their own content). A regression test should replace both negations with 'run line_has ...; [ \"$status\" -ne 0 ]' (or if line_has; then false; fi) and be shown red when the express row also says 'each rule'.",
+      "phase": "P141"
+    },
+    {
+      "id": "F232",
+      "req": "R188",
+      "source": "qa",
+      "attempts": 0,
+      "status": "escalated",
+      "note": "Criterion 4 and rules R188.52-R188.55 say a docs test pins each statement. tests/mutation-docs.bats still checks mostly single words anywhere in the section, so most statements can be reversed and every test stays green. Evidence (L1, throwaway copy of HEAD docs plus tests/mutation-docs.bats and tests/mutation-qa.bats in the scratchpad, one edit at a time, 12 of 12 tests still ok after each): (a) docs/proof.md 'A strengthened check file adds one approval' changed to 'adds no approval' (the one approval it can add, R188.55); (b) docs/workflows.md '**VBW undoes the break.**' changed to '**VBW does not undo the break (undo it yourself).**' (R188.52; the test only looks for the word 'undo'); (c) docs/proof.md '(never another's, never weakened)' changed to '(any requirement's, weakened if needed)' (where a survivor is strengthened, R188.54); (d) 'After two attempts that stay green the Dev blocks the plan' changed to 'the Dev goes on'; (e) 'At deep each task also needs a red break or a written reason' changed to 'At deep no task needs a break'; (f) 'At express it asks for nothing' changed to 'At express it asks for every rule'; (g) 'A survivor alone covers nothing' changed to 'A survivor alone covers the rule' (what vbw plan done waits for, R188.54). The earlier F227 edits are now caught (rigor rows, workflows tier line, loop decision line, qa.md), so this is the rest of the same gap. What a regression test should catch: assert whole sentences (as the existing tests do for the tier line and the loop line) for proof.md 'adds one approval' next to 'before the proof', workflows.md 'VBW undoes the break', proof.md 'never another' with 'never weakened', 'blocks the plan', the deep and express plan-done sentences, and 'A survivor alone covers nothing', and be shown red for each of edits (a) to (g).",
       "phase": "P141"
     }
   ],
