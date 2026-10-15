@@ -1,5 +1,45 @@
 # Changelog
 
+## [2.0.37] - 2026-10-15
+
+### Added
+
+- **Tests are checked for real.** At standard and deep rigor, the builder of
+  each plan breaks its own code on purpose, once per rule (and at deep, per
+  task, error and edge case), with the new `vbw mutate`; VBW runs the plan's
+  checks on a private copy and records whether they noticed. `vbw plan done`
+  waits until every rule has a break the tests caught. A test that let a break
+  through is strengthened in place and waits for one approval before the proof
+  (under `/vbw:loop`, the loop approves it for you and records it). `vbw show
+  plan` lists the rules and every break. Nothing changes at express rigor.
+- **A loop item has a time budget.** Twice the usual time of past items of its
+  size, or 2, 4 or 8 hours for small, medium and large when there is no
+  history. Past it, the loop stops before the item's next step, keeps the work
+  and tells you where it stands. `vbw loop status` shows each item's time.
+
+### Changed
+
+- **Only behaviour blocks a phase.** QA fails a phase for wrong or missing
+  behaviour, a test that cannot fail, a deviation from the plan, or a document
+  that states a false fact. Wording, style and naming are notes in its summary
+  and never start a fix round.
+- **QA re-checks only what changed.** A phase that failed QA is checked again
+  on its fixes, the files they changed and its goal, not swept whole again. A
+  phase is re-checked because of a phase it builds on only when that phase's
+  tests changed.
+
+### Fixed
+
+- **A loop survives a resumed session.** The step that drives a loop is now
+  the plugin's own, so it keeps working after `claude --resume`, and it runs
+  once per turn: a loop no longer opens an item twice. For a loop started
+  before this version, run `/vbw:loop` again in its session.
+- **Giving up on an item never leaves the project unreadable.** When the loop
+  sets an item aside, it updates its record before it undoes the item's work.
+- **Changing a plan keeps its recorded breaks.**
+- **Ctrl-C stops a proof at once on Linux.** Before, it waited for the running
+  checks to end.
+
 ## [2.0.36] - 2026-10-14
 
 ### Added
