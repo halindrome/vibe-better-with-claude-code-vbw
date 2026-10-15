@@ -31837,7 +31837,7 @@
       "text": "The loop opened T74 twice (2026-10-14 17:58): two Stop hook answers in one turn each ran 'loop T74 open' (commits b0dffb1c, e1769919), adding its requirement twice (R188, R189); opening an item must be idempotent. Also: a dropped requirement's id (R188, dropped by D378) was reused for a new one, so decisions naming R188 now point at the wrong requirement; ids of dropped requirements are never reused",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T148",
