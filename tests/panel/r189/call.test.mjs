@@ -214,3 +214,19 @@ test('without $.ui.notify, or with notify and audio failing, nothing fails and n
     assert.match(await h.text(), /Working on/, 'the panel still draws')
   }
 })
+
+test('one failing call does not stop the other, nor the redraw that shows the question', async () => {
+  const noPlayer = await session({ audioFails: true })
+  const q = ask(noPlayer)
+  await noPlayer.settle()
+  assert.equal(noPlayer.notifies.length, 1, 'the notification was lost with the audio failing')
+  q.answer()
+  await q.done
+  const noToast = await session({ notifyFails: true })
+  const q2 = ask(noToast)
+  await noToast.settle()
+  assert.equal(noToast.plays.length, 1)
+  assert.match(await noToast.text(), /question/i, 'the question was not drawn at once with notify failing')
+  q2.answer()
+  await q2.done
+})
