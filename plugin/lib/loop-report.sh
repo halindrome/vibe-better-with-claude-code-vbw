@@ -14,7 +14,7 @@ loop_report_write() {
   log=$(mktemp "$VBW_RUNTIME/report.XXXXXX") || vbw_die "cannot create a temporary file in $VBW_RUNTIME"
   vbw_guard_add file "$log"
   git -C "$VBW_ROOT" log --format='%h%x1f%s%x1f%(trailers:key=VBW-Plan,valueonly,separator=%x20)' > "$log" 2> /dev/null || : > "$log"
-  jq -r --argjson spend "$spend" --argjson cur "$cur" --rawfile log "$log" "$LOOP_USD_JQ"'
+  jq -r --argjson spend "$spend" --argjson cur "$cur" --rawfile log "$log" "$LOOP_USD_JQ$LOOP_TIME_JQ"'
     def cost: if . == null then "unknown" else "\(.usd | usd) (\(.in) in, \(.out) out)" end;
     . as $r | .loop as $l
     | ([$log | split("\n")[] | select(length > 0) | split("\u001f") | {hash: .[0], subject: .[1], plans: ((.[2] // "") | split(" "))}]) as $commits
@@ -54,7 +54,7 @@ loop_report_write() {
     "## Cost",
     "Loop total: \($spend | cost)",
     ( $l.items[] | select(.status == "shipped" or .status == "parked" or .status == "in_progress")
-      | "- \(.id) (\(.status)): \(if .status == "in_progress" then (if $l.ended == null then "in progress, not counted yet" else "\($cur | cost) so far (cut off when the loop ended)" end) else (.cost | cost) end)" )' "$rec" > "$VBW_ROOT/.vbw/loop-report.md"
+      | "- \(.id) (\(.status)): \(if .status == "in_progress" then (if $l.ended == null then "in progress, not counted yet" else "\($cur | cost) so far (cut off when the loop ended)" end) else (.cost | cost) end)\(if .budget != null and .opened_at != null then "; time \(took($l) | hm) of a \(.budget.seconds | hm) budget" else "" end)" )' "$rec" > "$VBW_ROOT/.vbw/loop-report.md"
   vbw_guard_drop "$log"
   rm -f "$log"
 }

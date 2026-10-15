@@ -31,6 +31,7 @@ Armed: one message, no questions, covering:
 - approval is delegated for these items only: the kernel approves their contract, you never do;
 - what never happens: no push, release or publish; no work beyond the items; a `[human]` requirement waits for you to judge;
 - how to stop: `/vbw:loop stop`, from any session.
+- each item has a time budget (shown in the status); past it the loop stops before the item's next step and keeps its work.
 
 End the turn after the message. The loop's Stop hook (`vbw auto gate`) then answers with the next step, each time
 naming the action.

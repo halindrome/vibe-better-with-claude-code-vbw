@@ -131,12 +131,43 @@ loop_kernel() {
   return 1
 }
 
+# loop_item_budget ITEM: the item's time budget, {seconds, basis} (T156): twice the median time of the
+# shipped items of its size (a done backlog item whose text titles a shipped milestone, timed from the
+# milestone's start, its cost baseline, to its ship) when there are three or more, else a default per
+# size: small 2h, medium 4h, large 8h; an item with no size is medium. Twice the median: an item taking
+# more than twice the usual time of its size is grinding (T74 ran 16 hours). Three: one or two times are
+# not a usual time. The defaults are about twice this project's own loop items when T156 was built
+# (small 14-99 minutes, medium 69-287). The time is wall-clock: a spend count can over-count (T140).
+loop_item_budget() {
+  jq -c --arg i "$1" "$LOOP_TIME_JQ"'def norm: [splits("\\s+") | select(length > 0)] | join(" ");
+    . as $r | ([.todos[] | select(.id == $i)][0].size // "medium") as $z
+    | [ (.shipped // [])[] as $s
+        | (($r.costs.milestones[$s.id].baseline // {}) | [.[].at] | min) as $st
+        | select($st != null)
+        | select(any($r.todos[]; .status == "done" and .size == $z and (.text | sub("^\\[(human|auto)\\] "; "") | norm) == $s.title))
+        | ($s.at | fromdateiso8601) - ($st | fromdateiso8601) | select(. > 0) ] | sort as $t
+    | if ($t | length) >= 3 then ($t | if length % 2 == 1 then .[length / 2 | floor] else (.[length / 2 - 1] + .[length / 2]) / 2 end) as $m
+        | {seconds: (2 * $m | floor), basis: "twice the median time (\($m | hm)) of \($t | length) shipped \($z) items"}
+      else {seconds: {small: 7200, medium: 14400, large: 28800}[$z], basis: "the default for a \($z) item, fewer than 3 shipped \($z) items timed"} end' "$VBW_RECORD"
+}
+
+# loop_over_budget ITEM STEP: the reason to stop (printed, status 0) when the item has run past its time
+# budget, or status 1. The reason says where the item stands: the step, its time, its budget, its spend.
+loop_over_budget() {
+  local spend
+  jq -e --arg i "$1" '[.loop.items[] | select(.id == $i)][0]
+    | .budget != null and .opened_at != null and now - (.opened_at | fromdateiso8601) > .budget.seconds' "$VBW_RECORD" > /dev/null || return 1
+  spend=$(loop_spend "$VBW_RECORD" "$1")
+  jq -r --arg i "$1" --arg a "$2" --argjson s "$spend" "$LOOP_USD_JQ$LOOP_TIME_JQ"'.loop as $l | [$l.items[] | select(.id == $i)][0]
+    | "time budget spent: item \($i) stopped before step \($a) after \(took($l) | hm) of a \(.budget.seconds | hm) budget (\(.budget.basis)), \(if $s == null then "spend unknown" else "\($s.usd | usd) spent" end); its work is kept in \(.milestone)"' "$VBW_RECORD"
+}
+
 # loop_open_item RECORD ITEM: opens the item's milestone (started when the current one is shipped or
 # parked, renamed when it is active with no requirements of its own), adds its requirement (unless
 # the milestone already holds it), and marks it and its backlog entry in progress. Status 1 and the reason on stdout when the milestone
 # cannot be opened.
 loop_open_item() {
-  local rec=$1 id=$2 text proof title m head base q
+  local rec=$1 id=$2 text proof title m head base q budget
   text=$(printf '%s' "$rec" | jq -r --arg i "$id" '.loop.items[] | select(.id == $i) | .text')
   proof=$(loop_item_proof "$text")
   title=$(loop_item_text "$text")
@@ -158,9 +189,11 @@ loop_open_item() {
   q=$(jq -r --arg m "$m" --arg t "$(loop_norm "$title")" '[.requirements[] | select(.milestone == $m and .text == $t)][0].id // empty' "$VBW_RECORD")
   head=$(git -C "$VBW_ROOT" rev-parse HEAD)
   base=$(loop_figures_now)
+  budget=$(loop_item_budget "$id")
   record_update '(.loop.items[] | select(.id == $i)) |= (.status = "in_progress" | .milestone = $m | .head = $h | .baseline = $b
-      | if $q == "" then . else .req = $q end)
-    | (.todos[] | select(.id == $i)).status = "in_progress"' --arg i "$id" --arg m "$m" --arg h "$head" --argjson b "$base" --arg q "$q"
+      | .opened_at = $at | .budget = $bud | if $q == "" then . else .req = $q end)
+    | (.todos[] | select(.id == $i)).status = "in_progress"' --arg i "$id" --arg m "$m" --arg h "$head" --argjson b "$base" --arg q "$q" \
+    --arg at "$(vbw_now)" --argjson bud "$budget"
   loop_commit "$id" open
 }
 
@@ -262,6 +295,9 @@ loop_step() {
       next=$(cmd_next --json) || exit $?
       action=$(printf '%s' "$next" | jq -r .action)
     fi
+    # The item's time budget (T156): past it, the loop ends before this step (after a delegated approval) and the work stays. Accept
+    # (a skip) and ship, the kernel's own last steps of an item, are never stopped.
+    case "$action" in accept | ship) ;; *) if why=$(loop_over_budget "$cur" "$action"); then loop_end "$why"; return 0; fi ;; esac
     case "$action" in
       accept)
         # A [human] requirement is the user's to judge: skipped, never accepted or rejected.

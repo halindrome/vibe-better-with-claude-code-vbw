@@ -79,7 +79,9 @@ vbw loop status --json
 Prints the items in order with their status and text, the ceiling
 (`$5 (stop at the next step)`, `$5 (finish the item first)` or `none`), the
 session, the start time, the baseline per session, and the spend. It also
-shows `stopping since AT (asked by session S)` after a stop, and
+shows, after the item in progress, its time so far and its time budget
+(`time: 1h30m of a 4h00m budget, ...`, see "The time budget"),
+`stopping since AT (asked by session S)` after a stop, and
 `ended AT: REASON (report: PATH)` once the loop has ended. With no loop it
 prints `no loop is on`; `--json` returns `{ "on": false }`.
 
@@ -99,7 +101,8 @@ ceiling, the status then names `vbw statusline on`.
 
 `--json` carries `on`, `items`, `ceiling`, `session`, `started_at`,
 `baseline`, `spend` (null when unknown), `word` (null with no ceiling),
-`stopping`, `ended` and `report`.
+`stopping`, `ended`, `report` and `time`: `{ item, elapsed, budget, basis }`
+for the item in progress (seconds), or null.
 
 ## Approval by delegation
 
@@ -283,6 +286,35 @@ commits. Either:
 - run the item again: its backlog entry is still open, so
   `/vbw:loop THE_ITEM --ceiling USD` starts it over from a clean milestone.
 
+## The time budget
+
+Each item gets a time budget when the loop opens it, recorded on the item
+(`opened_at`, `budget`):
+
+- **From history.** Twice the median time of the shipped items of the same
+  size (`vbw todo add --size`, `vbw todo sort`), when the record holds three
+  or more. A shipped item is a done backlog item whose text titles a shipped
+  milestone; its time runs from the milestone's start (its cost baseline) to
+  its ship.
+- **The default.** With fewer than three: small 2h, medium 4h, large 8h. An
+  item with no size counts as medium.
+
+Twice the median, because an item taking more than twice the usual time of its
+size is grinding, not progressing; three, because one or two times are not a
+usual time. The defaults are about twice the times of the loop items in VBW's
+own record when the rule was added (small 14 to 99 minutes, medium 69 to 287).
+The budget is wall-clock time from the item's open: spend is already bounded by
+the ceiling, and a token count can over-count after a compaction.
+
+Before each step of an item, after a delegated approval, the loop compares the
+item's time with its budget. Past it, the loop ends before that step, with a
+reason naming the item, the step, the time, the budget and its basis, and the
+item's spend so far. The item stays in progress with all its work in its
+milestone: nothing is parked or reverted. Run it again later with
+`/vbw:loop THE_ITEM`, or finish it with `/vbw:vibe`. Accept (the skip of a
+`[human]` requirement) and ship, the kernel's own last steps of an item, are
+never stopped. The next item gets its own budget.
+
 ## Where the loop stops
 
 Before each step the loop compares its spend with the ceiling (the spend and
@@ -294,6 +326,7 @@ its words are under `vbw loop status` above).
 | `--ceiling USD`, spend `cannot tell` | Counts as reached: stops before the step. |
 | `--ceiling USD --finish-item`, `reached` | The current item runs on to its ship, then the loop stops. |
 | `--no-ceiling` | No comparison, even with no cost figure. |
+| The item's time budget spent | Stops before the item's next step (not before its accept or ship); the work is kept. |
 | End of the list | Stops after the last item's ship. |
 | `/vbw:loop stop` or `vbw loop stop`, from any session | Stops before the next step. The reason names you and the session. |
 | A run open in another session | Stops, with that reason. |
@@ -314,7 +347,7 @@ running shows as in progress. The sections:
 | Shipped | Each item, its milestone, its requirement and its commits. |
 | Parked | Each parked item, the reason, the commits left in place and why, its revert commits and how to bring the work back. |
 | Waiting for you | Every `[human]` requirement still owed to you: one the loop skipped, one of a shipped `[human]` item, and one carried into the loop's milestones from a ship before it, each listed until you judge it, wherever a later milestone carried it; and why the loop stopped (for example `end of the list` or `stopped by the user` with the session). |
-| Cost | The loop's total and each item's cost, in dollars and tokens (parked items included). |
+| Cost | The loop's total and each item's cost, in dollars and tokens (parked items included), with its time and its time budget. |
 
 A cost VBW did not see is written `unknown`, never `0` and never an estimate.
 The record stores the same facts. After the end, `vbw loop status` says the loop

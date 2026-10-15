@@ -5,6 +5,11 @@
 
 LOOP_USAGE="usage: vbw loop start [--session ID] ITEM... --ceiling USD [--finish-item] | --no-ceiling   |   vbw loop stop   |   vbw loop status [--json]"
 LOOP_FORMS="choose one: --ceiling USD (stop at the next step), --ceiling USD --finish-item, or --no-ceiling"
+# LOOP_TIME_JQ (T156): hm, seconds as "4h05m"; took($l), an item's seconds from its open to its ship or
+# park, else to the loop's end, else to now.
+# shellcheck disable=SC2034 # used by the loop step and the report, which this file sources
+LOOP_TIME_JQ='def hm: floor | "\(. / 3600 | floor)h\(. % 3600 / 60 | floor | tostring | if length < 2 then "0" + . else . end)m";
+  def took($l): ((.at // $l.ended.at) | if . then fromdateiso8601 else now end) - (.opened_at | fromdateiso8601) | floor;'
 
 cmd_loop() {
   local sub="${1:-}"
@@ -174,16 +179,19 @@ loop_status() {
   spend=$(loop_spend "$VBW_RECORD")
   word=$(loop_word "$VBW_RECORD" "$spend")
   if [ "$1" = --json ]; then
-    jq --argjson spend "$spend" --arg word "$word" '.loop as $l
+    jq --argjson spend "$spend" --arg word "$word" "$LOOP_TIME_JQ"'.loop as $l
       | {on: ($l.ended == null), items: $l.items, ceiling: $l.ceiling, session: $l.session, started_at: $l.started_at,
          baseline: $l.baseline, spend: $spend, word: (if $word == "null" then null else $word end),
-         stopping: ($l.stopping // null), ended: ($l.ended // null), report: ($l.report // null)}' "$VBW_RECORD"
+         stopping: ($l.stopping // null), ended: ($l.ended // null), report: ($l.report // null),
+         time: ([$l.items[] | select(.status == "in_progress" and .budget != null and .opened_at != null)][0]
+           | if . == null then null else {item: .id, elapsed: took($l), budget: .budget.seconds, basis: .budget.basis} end)}' "$VBW_RECORD"
     return 0
   fi
-  jq -r --argjson spend "$spend" --arg word "$word" "$LOOP_USD_JQ"'
+  jq -r --argjson spend "$spend" --arg word "$word" "$LOOP_USD_JQ$LOOP_TIME_JQ"'
     .loop as $l
     | "loop \(if $l.ended != null then "ended" elif $l.stopping != null then "stopping" else "on" end)",
-      ($l.items[] | "  \(.id) [\(.status)\(if .proof == "human" then ", human" else "" end)] \(.text)"),
+      ($l.items[] | "  \(.id) [\(.status)\(if .proof == "human" then ", human" else "" end)] \(.text)\(if .budget != null and .opened_at != null
+        then " (time: \(took($l) | hm) of a \(.budget.seconds | hm) budget, \(.budget.basis))" else "" end)"),
       "ceiling: \(if $l.ceiling == null then "none"
                   else "$\($l.ceiling.usd) (\(if $l.ceiling.finish_item then "finish the item first" else "stop at the next step" end))" end)",
       "session: \($l.session // "none")",
