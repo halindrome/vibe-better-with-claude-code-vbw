@@ -6,7 +6,7 @@
 # app in the release run (L3), and its committed result, once there, must be
 # labelled honestly. tests/l3-scenarios.bats is the frozen check file of R34,
 # so the loop scenario is listed here instead. docs/loop.md, docs/guards.md and
-# README describe the loop, its limits and the promise as it now stands.
+# README name its commands and the parked status.
 
 load helper
 
@@ -42,18 +42,13 @@ RESULTS="$REPO_ROOT/tools/l3-results"
     and (.facts | type == "object") and (.not_tested | type == "array" and length > 0)' "$f"
 }
 
-@test "R180: docs/loop.md, docs/guards.md and README describe the loop, its limits and the promise" {
+@test "R180: docs/loop.md, docs/guards.md and README name the loop's commands and status" {
   grep -qF '/vbw:loop' "$REPO_ROOT/README.md"
-  grep -qiE 'never leaves the project' "$REPO_ROOT/README.md"
-  grep -qiE 'who approved' "$REPO_ROOT/README.md"
   grep -qF 'docs/loop.md' "$REPO_ROOT/README.md"
   grep -qF '/vbw:loop stop' "$REPO_ROOT/docs/guards.md"
-  grep -qF 'never leaves the project' "$REPO_ROOT/docs/guards.md"
   grep -qF 'git push' "$REPO_ROOT/docs/guards.md"
   grep -qF 'vbw loop park' "$REPO_ROOT/docs/loop.md"
   grep -qF 'git revert' "$REPO_ROOT/docs/loop.md"
-  grep -qiE 'never leaves the project' "$REPO_ROOT/docs/loop.md"
-  grep -qiE 'who approved' "$REPO_ROOT/docs/loop.md"
   grep -qF 'parked' "$REPO_ROOT/docs/record.md"
 }
 

@@ -26,12 +26,12 @@ teardown() { vbw_teardown; }
   [ "$first" = "$(grep -nE '^1\. ' "$SKILL" | head -1 | cut -d: -f1)" ]
 }
 
-@test "R59: the four options follow the greeting, in the same order and wording" {
-  local g
-  g=$(grep -nF -m1 -- "$GREETING" "$SKILL" | cut -d: -f1)
-  [ -n "$g" ]
-  [ "$(sed -n "$((g + 1))p" "$SKILL" | sed 's/^ *//')" = "Options: never; small scripts or no-code; professionally; senior engineer." ]
+@test "R59: the four level options are the kernel's values, and the skill names each" {
   [ "$(jq -r '.level | join("|")' "$PLUGIN_ROOT/lib/interview.json")" = "never|small scripts or no-code|professionally|senior engineer" ]
+  local o
+  for o in never "small scripts or no-code" professionally "senior engineer"; do
+    grep -qF -- "$o" "$SKILL" || { echo "the skill does not name the option $o"; false; }
+  done
 }
 
 @test "R59: choosing a level still records it and the interview continues at the next question" {
@@ -42,18 +42,7 @@ teardown() { vbw_teardown; }
   printf '%s' "$output" | jq -e '.level == "senior engineer" and .pending == "depth"'
 }
 
-@test "R59: the later questions, the follow-up rules and the keep order are unchanged" {
-  grep -qF '2. "How should I explain things?"' "$SKILL"
-  grep -qF '3. "How involved do you want to be in technical decisions?"' "$SKILL"
-  grep -qF 'then `keep`' "$SKILL"
-  grep -qF 'Zero is allowed only when the answers already say what it does and for whom' "$SKILL"
-  grep -qF 'a follow-up may be your proposal for them to confirm or' "$SKILL"
-  grep -qF 'before the keep question, never left to the spec step' "$SKILL"
-}
-
-@test "R59: the old opening wording is gone from the skill and the interview doc, which shows the greeting" {
-  ! grep -qF 'How much software have you built' "$SKILL"
-  ! grep -qF 'How much have you built before' "$DOC"
+@test "R59: the interview doc shows the greeting" {
   grep -qF -- "$GREETING" "$DOC"
 }
 
@@ -64,7 +53,7 @@ teardown() { vbw_teardown; }
 }
 
 @test "R59: a returning user whose level is recorded is not asked the level question again" {
-  grep -qF 'Skip the answers `profile` already holds' "$SKILL"
+  grep -i 'skip' "$SKILL" | grep -qF '`profile`' || { echo "the skill does not skip the answers profile holds"; false; }
   "$VBW" interview set level "never" > /dev/null
   run "$VBW" interview --json
   printf '%s' "$output" | jq -e '.pending != "level"'

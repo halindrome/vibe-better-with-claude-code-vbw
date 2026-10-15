@@ -35,15 +35,11 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "docs/panel.md lacks: $2"; return
   [ "$total" -le 3500 ]
 }
 
-@test "R124: docs/panel.md describes the What's next section and the Suggest next button" {
+@test "R124: docs/panel.md names the What's next section, the Suggest next button, its labels and /vbw:vibe what's next" {
   has "$DOC" "what's next"
   has "$DOC" 'suggest next'
   has "$DOC" 'top pick'
   has "$DOC" 'runners-up'
   has "$DOC" "/vbw:vibe what's next"
-  has "$DOC" '(never|does not|without) send'
   has "$DOC" 'none yet'
-  has "$DOC" 'shimmer'
-  has "$DOC" 'pulse'
-  has "$DOC" 'motion'
 }

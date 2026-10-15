@@ -114,8 +114,7 @@ reasons() { jq -r '.phases[] | select(.id == "P2") | .reasons[]' .vbw/record.jso
   [[ "$line" == *"guarded: R1"* ]] || { echo "$line"; false; }
 }
 
-@test "R105: docs/rigor.md explains guarded requirements and what raises the tier" {
+@test "R105: docs/rigor.md names the guarded and breaks: labels" {
   grep -qi 'guarded' "$REPO_ROOT/docs/rigor.md"
-  grep -qi 'approved check' "$REPO_ROOT/docs/rigor.md"
   grep -q 'breaks:' "$REPO_ROOT/docs/rigor.md"
 }

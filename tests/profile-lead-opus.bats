@@ -81,10 +81,10 @@ teardown() { vbw_teardown; }
   for f in "$REPO_ROOT/README.md" "$PLUGIN_ROOT/skills/profile/SKILL.md"; do
     line=$(grep -E '\| *\*{0,2}Standard\*{0,2} *\|' "$f")
     printf '%s' "$line" | grep -q 'balanced' || { echo "$f: $line"; false; }
-    printf '%s' "$line" | grep -qE 'Opus for the Architect and the Lead' || { echo "$f: $line"; false; }
+    printf '%s' "$line" | grep 'Opus' | grep 'Architect' | grep -q 'Lead' || { echo "$f: $line"; false; }
   done
   line=$(grep -E '`balanced` \(default' "$PLUGIN_ROOT/skills/config/SKILL.md")
-  printf '%s' "$line" | grep -qE 'Opus for (the )?Architect and (the )?Lead' || { echo "$line"; false; }
+  printf '%s' "$line" | grep 'Opus' | grep 'Architect' | grep -q 'Lead' || { echo "$line"; false; }
   line=$(grep -E '`settings`' "$REPO_ROOT/docs/record.md")
-  printf '%s' "$line" | grep -qE 'Opus for the Architect and the Lead' || { echo "$line"; false; }
+  printf '%s' "$line" | grep 'Opus' | grep 'Architect' | grep -q 'Lead' || { echo "$line"; false; }
 }

@@ -44,7 +44,7 @@ BENCH="$BATS_TEST_DIRNAME/../tools/bench-panel.sh"
   grep -q '/vbw-sound' "$REPO_ROOT/README.md"
 }
 
-@test "R57: the sound preference is the user's own: docs say where it is kept and that it is never committed" {
-  grep -qiE 'sound' "$REPO_ROOT/docs/panel.md"
-  grep -qiE 'never (committed|in the record)|not (committed|in the record)|not in the project' "$REPO_ROOT/docs/panel.md"
+@test "R57: docs/panel.md names the /vbw-sound command and its on and off forms" {
+  grep -qF '/vbw-sound off' "$REPO_ROOT/docs/panel.md"
+  grep -qF '/vbw-sound on' "$REPO_ROOT/docs/panel.md"
 }

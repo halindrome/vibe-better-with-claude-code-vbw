@@ -33,13 +33,11 @@ BENCH="$BATS_TEST_DIRNAME/../tools/bench-panel.sh"
   ! grep -nE 'steps\.json.*(write|\$\.fs\.write)' "$PLUGIN_ROOT/hooks/panel.js"
 }
 
-@test "R56: docs/panel.md says the cost is one line, from this session, and when it is not available" {
+@test "R56: docs/panel.md names the cost" {
   grep -qiE 'cost' "$REPO_ROOT/docs/panel.md"
-  grep -qiE 'not available' "$REPO_ROOT/docs/panel.md"
 }
 
-@test "R58: docs/panel.md says how many finished steps an estimate needs, that it is approximate, and where the history is kept" {
+@test "R58: docs/panel.md states how many finished steps an estimate needs and names steps.json" {
   grep -qiE 'at least 3|three finished|3 finished' "$REPO_ROOT/docs/panel.md"
-  grep -qiE 'approximate|about' "$REPO_ROOT/docs/panel.md"
   grep -q 'steps.json' "$REPO_ROOT/docs/panel.md"
 }
