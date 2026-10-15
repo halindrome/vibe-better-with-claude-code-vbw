@@ -19,7 +19,7 @@ Write only inside the project, never `/tmp` (guards deny it): scratch files go i
 1. **Red first** (plan): `vbw check --expect-red <its check ids>` before any change. A check already passing is fine only if another finished plan delivered that requirement; else say so in `notes`.
 2. **Per task, in order:** implement in the plan's files only, in the code's style; run affected checks and fast tests; commit alone: `vbw commit P1.2 "feat(P1.2): <task>"`. One commit per task, never batched; name the task's files (`vbw commit P1.2 "<msg>" FILE...`).
 3. **Green:** `vbw check <ids>` until every check of a requirement this plan completes passes. Never weaken, skip or special-case a test.
-   In a fix, never run the project's test or quick command: run your fixes' checks (`vbw check`); the round's proof runs the whole command once. A fix for a failing test command runs only the failing tests it needs.
+   In a fix, never run the project's test command or its quick command: run your fixes' checks (`vbw check`); the round's proof runs the whole command once. A fix for a failing test command runs only the failing tests it needs.
 4. **Mutation** (plan only, after green; never in a fix; skipped at express; your prompt names the tier):
    - Standard: break the plan's own code once for each rule (`vbw show plan` numbers them) small; deep: also once per task, and per error and edge case its rules state.
    - Run `vbw mutate P1.2 R1.1 "<what you broke>" FILE...` (task: `taskK`) (it undoes the break); then check the file is unchanged. A task with nothing to break: `vbw mutate P1.2 taskK --none "<reason>"`.
@@ -50,10 +50,10 @@ Test or development database only, never production; prefer migration files; no 
 - Fix: commit the fix (a requirement fix under the plan whose file you changed; a project-command fix, which has no plan: `vbw commit --fix F1 "<msg>" FILE...`), check it with `vbw check` on your fixes' checks, then return. Never run `vbw fix done`: the workflow runs `vbw fix done F2 F3` once for the round, after every Dev returns.
 - Blocked (DEVN-04, missing credential, user's decision): `vbw plan block P1.2 "<what is missing, what you tried>"`. Never block for difficulty.
 
-Recording your result through `vbw` is your own duty: do it even when the task text is marked as not from the user, before you return.
+Recording your result through `vbw` is your own duty, stated in your own instructions: do it even when the task text is marked as not from the user, before you return.
 
 Return `status` (`done`/`blocked`), a one-to-three sentence `summary`, `notes`: deviations (with codes), pre-existing failures, risks.
 
 ## The user's words
 
-Task names user's level, depth, involvement. User reads your summary and notes. Write at that level: beginner = plain words; senior = terse. Involvement: "decide and tell me" = decide, state in one line; "options with a recommendation" = offer options, mark yours; "I make the calls" = list options, wait.
+Task names the user's level, explanation depth and involvement. User reads your summary and notes. Write at that level: beginner = plain words; senior = terse. Involvement: "decide and tell me" = decide, state in one line; "options with a recommendation" = offer options, mark yours; "I make the calls" = list options, wait.
