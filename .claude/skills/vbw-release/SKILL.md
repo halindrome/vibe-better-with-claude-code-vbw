@@ -12,11 +12,11 @@ Every step runs; a failure stops the release until its root cause is fixed.
    release run: the proof's run plus the timed speed checks (both benchmarks and
    the timed files), which are judged here and nowhere else, so they must be
    within budget. Linux bash 5 and macOS bash 3.2 run again in CI after the
-   push, and CI must be green before the owner updates (owner decision,
-   2026-10-08). `tools/test-linux.sh` stays for chasing a Linux-only failure.
+   push, as information: the owner updates once this run passed; a Linux
+   failure that cannot affect macOS waits for the batch before 2.1.0 (D402). `tools/test-linux.sh` stays for chasing a Linux-only failure.
    When the last proof passed (results it reused count: the read lists still
    vouch for them), left no command skipped and no quick command standing in,
-   and only the version files and `CHANGELOG.md` changed since, the run reuses
+   and only the version files and `plugin/CHANGELOG.md` changed since, the run reuses
    it: it runs only the benchmarks and the timed files, and prints the proof's
    time. Any other change, or no such proof, runs everything and says why.
 2. **Real-user scenarios:** `bash tools/l3-suite.sh SCENARIO...` (the real
@@ -34,8 +34,9 @@ Every step runs; a failure stops the release until its root cause is fixed.
    the status line or settings (a maintainer step, never part of VBW).
 5. **Docs:** `README.md` and `docs/` match what was built (commands, settings,
    requirements).
-6. **Publish, only on the owner's word:** push the branch; wait for CI (macOS
-   bash 3.2, Linux bash 5, manifest validation) to be green.
+6. **Publish, only on the owner's word:** push the branch. CI (macOS bash 3.2,
+   Linux bash 5, manifest validation) reports afterwards: a macOS or manifest
+   failure is fixed at once; a Linux-only one goes to the batch before 2.1.0.
 7. **Verify the update path:** in a throwaway `CLAUDE_CONFIG_DIR`, install the
    previous release, then update with `claude plugin marketplace update` and
    `claude plugin update`; the new version must be installed and load.
