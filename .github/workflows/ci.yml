@@ -12,7 +12,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest]
+        # Every system runs the suite as the same shards; together they make one
+        # release run (tools/test.sh --shard: shard 1 lints and runs the benchmarks).
+        os: [macos-latest, ubuntu-latest, ubuntu-26.04]
         shard: [1, 2, 3, 4]
         include:
           # macOS ships /bin/bash 3.2; that is the kernel's floor (build plan K2).
@@ -78,15 +80,11 @@ jobs:
         run: |
           export PATH="${{ matrix.bash_path }}:$PATH"
           bash --version | head -1
-          # The timed speed checks run here, in the release run, and never in vbw prove.
-          if [ -n "$SHARD" ]; then
-            bash tools/test.sh --shard "$SHARD/$SHARDS"
-          else
-            bash tools/test.sh --release
-          fi
+          # The timed speed checks run here, in the shards of the release run, and never in vbw prove.
+          bash tools/test.sh --shard "$SHARD/$SHARDS"
 
       - name: Run the changed test files with the target bash first on PATH
-        if: steps.scope.outputs.scope == 'some' && (!matrix.shard || matrix.shard == 1)
+        if: steps.scope.outputs.scope == 'some' && matrix.shard == 1
         working-directory: src dir
         env:
           FILES: ${{ steps.scope.outputs.files }}

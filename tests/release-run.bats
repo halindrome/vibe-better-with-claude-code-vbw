@@ -249,11 +249,7 @@ tests/timed-speed.bats'
   done
 }
 
-@test "R152: CI runs the release way: the jobs without a shard run --release, the shard jobs run their share" {
-  grep -qF 'bash tools/test.sh --release' "$CI" || {
-    echo "ci.yml never runs bash tools/test.sh --release"
-    false
-  }
+@test "R152: CI runs the release way: every job runs its shard of the release run" {
   grep -qF 'bash tools/test.sh --shard "$SHARD/$SHARDS"' "$CI"
   ! grep -nE 'bash tools/test\.sh *($|;|&|\|| fi)' "$CI" || {
     echo "ci.yml still runs tools/test.sh without the release way"

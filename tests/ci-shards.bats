@@ -1,11 +1,9 @@
 #!/usr/bin/env bats
-# R142 (L1): CI runs the macOS /bin/bash 3.2 suite as several parallel shard
-# jobs of the one Tests job, while both Linux bash 5 entries keep the full
-# release run (bash tools/test.sh --release, R152) and the manifest validation
-# job is unchanged. The matrix fans out only
-# the macOS entry: its base is os: [macos-latest] with shard: [1, ..., N], the
-# macOS include entry matches that os (so it joins every shard) and the Linux
-# include entries name another os (so each becomes one job of its own). The
+# R142 (L1): CI runs the suite on macOS /bin/bash 3.2 and on both Linux bash 5
+# systems as parallel shard jobs of the one Tests job (2.0.38: an unsplit Linux
+# job set the run's length, about an hour), and the manifest validation job is
+# unchanged. The matrix base lists the three systems with shard: [1, ..., N];
+# each include entry names one of them, so it joins every shard. The
 # workflow file is read as text: no YAML parser is a VBW dependency. The real
 # proof is a CI run on GitHub after the owner pushes (L4); this file proves only
 # what the file says.
@@ -28,7 +26,7 @@ shard_list() {
   job test | sed -n 's/^ *shard: *\[\(.*\)\] *$/\1/p' | tr ',' '\n' | tr -d ' '
 }
 
-@test "R142: the Tests matrix splits the macOS entry into 3 to 5 shards numbered 1 to N" {
+@test "R142: the Tests matrix splits every system into 3 to 5 shards numbered 1 to N" {
   local list n
   list=$(shard_list)
   [ -n "$list" ] || {
@@ -44,13 +42,13 @@ shard_list() {
     echo "shards: $list"
     false
   }
-  job test | grep -qE '^ +os: *\[ *macos-latest *\] *$' || {
-    echo "the matrix base is not os: [macos-latest]"
+  job test | grep -qE '^ +os: *\[ *macos-latest, *ubuntu-latest, *ubuntu-26\.04 *\] *$' || {
+    echo "the matrix base is not os: [macos-latest, ubuntu-latest, ubuntu-26.04]"
     false
   }
 }
 
-@test "R142: only the macOS entry joins the shards; the Linux entries keep one job each" {
+@test "R142: each system's entry joins the shards: one include entry per os of the base" {
   local entries
   entries=$(job test | awk '
     /^ *- name:/ { if (n) print n "|" o; n = $0; sub(/^ *- name: */, "", n); o = ""; next }
@@ -61,7 +59,7 @@ shard_list() {
     echo "$entries"
     false
   }
-  [ "$(printf '%s\n' "$entries" | grep -cE '\|ubuntu-(latest|26\.04)$')" -eq 2 ] || {
+  [ "$(printf '%s\n' "$entries" | grep -c '|ubuntu-latest$')" -eq 1 ] && [ "$(printf '%s\n' "$entries" | grep -c '|ubuntu-26.04$')" -eq 1 ] || {
     echo "$entries"
     false
   }
@@ -71,7 +69,7 @@ shard_list() {
   }
 }
 
-@test "R142: a shard job runs tools/test.sh --shard K/N with N the shard count; a job without a shard runs the full release run" {
+@test "R142: every job runs tools/test.sh --shard K/N with N the shard count, and no job runs the release run unsplit" {
   local n step
   n=$(shard_list | grep -c .)
   step=$(job test)
@@ -87,8 +85,8 @@ shard_list() {
     echo "no shard run"
     false
   }
-  printf '%s\n' "$step" | grep -qE 'bash tools/test.sh --release *(;|$| *fi)' || {
-    echo "no release run for the entries without a shard"
+  ! printf '%s\n' "$step" | grep -qF 'bash tools/test.sh --release' || {
+    echo "a job still runs the release run unsplit"
     false
   }
 }
