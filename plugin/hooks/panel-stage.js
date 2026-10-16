@@ -12,6 +12,7 @@
 // never changes its input, never throws.
 import { poseOf, spriteFrame, encodeCells } from './panel-candy.js'
 import { newMark } from './panel-next.js'
+import { stepWords } from './panel-step.js'
 import { roleColor as colorOfRole, stateColor, STATE_MARKS, NEED, ACCENT } from './panel-palette.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
@@ -76,6 +77,19 @@ function health(hl, action) {
   return out
 }
 
+// --- the step -------------------------------------------------------------------
+
+// The running step, one line: what it is doing and its end time in the panel's
+// wording ('proving 12 of 40 checks · about 8 min, until around 14:26'). '' with no
+// step (the note went, or was never live), so the line goes at the next refresh.
+function stepOf(step, now, columns) {
+  if (!isObj(step)) return ''
+  const words = stepWords(step, now)
+  if (!words) return ''
+  const doing = str(step.doing) || str(step.kind)
+  return cut((doing ? doing + ' · ' : '') + words.text, columns)
+}
+
 // --- the crew ----------------------------------------------------------------
 
 // One helper as Comms shows it: a working or quiet one, or a failed one. A finished one has no row.
@@ -122,7 +136,7 @@ function fit(rows, columns, full) {
 }
 
 // The crew: the helpers still at work, the failures not yet seen. Null when there is nothing to draw.
-function crewOf(rn, now, columns, maxRows, motion, cost, born, seen) {
+function crewOf(rn, now, columns, maxRows, motion, cost, born, seen, stepLine) {
   const running = rn.status === 'running'
   const ended = num(rn.endedAt) ? rn.endedAt : null
   const agents = rn.agents.filter((a) => isObj(a) && typeof a.id === 'string' && a.id)
@@ -138,7 +152,7 @@ function crewOf(rn, now, columns, maxRows, motion, cost, born, seen) {
   if (maxRows < 4) {
     const working = agents.filter((a) => a.state === 'working' || a.state === 'quiet').length
     const parts = ['VBW ▸ ' + kind, status, working ? working + ' working' : '', doneAll ? doneAll + ' done' : '', time].filter(Boolean)
-    return { kind: 'crew', mode: 'line', header: { text: cut(parts.join(' · '), room), button }, rows: [], more: 0 }
+    return { kind: 'crew', mode: 'line', header: { text: cut(parts.join(' · '), room), button }, rows: [], more: 0, ...(stepLine ? { step: stepLine } : {}) }
   }
   let failedKey = false
   rows = rows.map((r) => {
@@ -167,7 +181,8 @@ function crewOf(rn, now, columns, maxRows, motion, cost, born, seen) {
   const parts = ['VBW ▸ ' + kind, status, str(rn.phase), doneAll ? doneAll + ' done' : '', time]
   if (price) parts.push(price)
   const model = { kind: 'crew', mode: full ? 'full' : 'compact', header: { text: cut(parts.filter(Boolean).join(' · '), room), ...(price ? { cost: price } : {}), button }, rows: fit(rows, columns, full), more }
-  return figures > 0 ? { ...model, sprites: true } : model
+  const withStep = stepLine ? { ...model, step: stepLine } : model
+  return figures > 0 ? { ...withStep, sprites: true } : withStep
 }
 
 // --- the model ---------------------------------------------------------------
@@ -183,14 +198,18 @@ export function stageModel(input) {
     const columns = num(input.columns) && input.columns > 0 ? Math.floor(input.columns) : 80
     const maxRows = num(input.maxRows) && input.maxRows > 0 ? Math.floor(input.maxRows) : 8
     const need = needOf(input.need, columns, input.fresh, motion)
-    const room = maxRows - (need ? 1 : 0)
+    // The needs-you line comes first; the step line takes the next row when there is one.
+    const left = maxRows - (need ? 1 : 0)
+    const stepText = left >= 2 ? stepOf(input.step, now, columns) : ''
+    const room = left - (stepText ? 1 : 0)
     const seen = new Set(Array.isArray(input.seen) ? input.seen.filter((x) => typeof x === 'string') : [])
     if (room >= 1 && isObj(rn) && Array.isArray(rn.agents) && rn.agents.some((a) => isObj(a) && typeof a.id === 'string' && a.id)) {
-      const crew = crewOf(rn, now, columns, room, motion, cost, born, seen)
+      const crew = crewOf(rn, now, columns, room, motion, cost, born, seen, stepText)
       if (crew) return need ? { ...crew, need } : crew
     }
+    if (stepText) return { kind: 'step', step: stepText, ...(need ? { need } : {}), lines: [] }
     const action = isObj(nx) && typeof nx.action === 'string' ? nx.action : ''
-    const lines = health(hl, action).slice(0, Math.max(0, need ? room : maxRows - 1)).map((l) => ({ ...l, text: cut(l.text, columns) }))
+    const lines = health(hl, action).slice(0, Math.max(0, need ? left : maxRows - 1)).map((l) => ({ ...l, text: cut(l.text, columns) }))
     if (need) return { kind: 'need', need, lines }
     if (RUNS.has(action) && lines.length) return { kind: 'nudge', title: cut('VBW · before the ' + action + ' run', columns), lines }
     return null
@@ -217,6 +236,8 @@ export function renderStage(ui, model, onAction) {
       ? [model.need.fresh ? h(Box, { key: 'need-row', flexDirection: 'row' }, needText(model.need), newMark(Text, model.need.motion)) : needText(model.need)]
       : []
     const notes = (model.lines || []).map((l, i) => h(Text, { key: 'line-' + i, color: l.color, wrap: 'truncate-end' }, String(l.text)))
+    const stepRow = typeof model.step === 'string' && model.step ? [h(Text, { key: 'step', wrap: 'truncate-end' }, model.step)] : []
+    if (model.kind === 'step') return h(Box, { flexDirection: 'column' }, ...needLine, ...stepRow)
     if (model.kind === 'need') return h(Box, { flexDirection: 'column' }, ...needLine, ...notes)
     if (model.kind === 'nudge') return h(Box, { flexDirection: 'column' }, h(Text, { key: 'title', color: NEED, wrap: 'truncate-end' }, String(model.title)), ...notes)
     if (model.kind !== 'crew' || !isObj(model.header) || !Array.isArray(model.rows)) return null
@@ -246,7 +267,7 @@ export function renderStage(ui, model, onAction) {
       ...(r.button ? [h(Text, null, '  '), button(r.button, 'details-' + r.id)] : [])))
     const fold = model.more ? [h(Box, { key: 'more', flexDirection: 'row', columnGap: 1 },
       h(Text, { dimColor: true }, '+' + model.more + ' more ·'), button({ key: 'm', label: 'Mission Control', action: { open: 'mission' } }, 'more'))] : []
-    return h(Box, { flexDirection: 'column' }, ...needLine, header, ...rows, ...fold)
+    return h(Box, { flexDirection: 'column' }, ...needLine, header, ...stepRow, ...rows, ...fold)
   } catch {
     return null
   }
