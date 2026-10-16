@@ -248,8 +248,8 @@ test('team render: a role table in role colours and buttons that fill commands',
   const pressed = []
   const tree = mr.renderTeam(UI, mr.teamModel({ record: rec() }), (a) => pressed.push(a))
   const role = (r) => find(tree, (n) => n.type === 'Text' && n.children.join('').trim() === r)
-  assert.equal(role('architect').props.color, 'magenta')
-  assert.equal(role('docs').props.color, '#ff87d7')
+  assert.equal(role('architect').props.color, '#e060e0')
+  assert.equal(role('docs').props.color, '#c27aff')
   const text = collect(tree).join('\n')
   assert.match(text, /quality/)
   assert.match(text, /hands-off/)
