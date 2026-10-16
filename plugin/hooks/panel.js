@@ -13,6 +13,7 @@ import { panelView, liveNeed, supports, clock, COMMS_MIN_VERSION } from './panel
 import { SOUNDS } from './panel-sounds.js'
 import { gatherRun, findRun } from './panel-feed.js'
 import { stageModel, renderStage } from './panel-stage.js'
+import { liveStep } from './panel-step.js'
 import { statusText, whyText, todoArgs } from './panel-commands.js'
 import { renderPane } from './panel-pane.js'
 import { candy as nextCandy, SETTLE_MS as NEXT_SETTLE_MS } from './panel-next.js'
@@ -94,7 +95,7 @@ function fresh() {
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
     lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {},
     sprites: null, burst: null, sweep: null, cheer: null, wrapped: null, nextSeen: null, nextAt: null, nextAnim: null,
-    seenNext: null, needSeen: null, proving: null, stamps: {},
+    seenNext: null, needSeen: null, proving: null, stamps: {}, stepNote: null, step: null,
   }
 }
 
@@ -107,7 +108,7 @@ const bare = (t) => String(t).replace(/^\[\d\d:\d\d\] /, '')
 function view(st, now) {
   const input = {
     record: st.record, next: st.next, nextAt: st.nextFileAt, question: st.question, questionAt: st.questionAt,
-    health: st.health, now, cost: st.cost, steps: st.steps, proving: st.proving !== null,
+    health: st.health, now, cost: st.cost, steps: st.steps, step: st.step, proving: st.proving !== null,
   }
   const proving = st.proving && num(st.proving.at) ? st.proving.at : undefined
   const first = panelView({ ...input, stamps: { proving } })
@@ -115,7 +116,7 @@ function view(st, now) {
   for (const id of STAMPED) {
     const row = first.rows.find((r) => r.id === id)
     const text = row ? bare(row.text) : null
-    if (text === null || /^No estimate/.test(text)) delete st.stamps[id]
+    if (text === null || /^No (?:estimate|end time)/.test(text)) delete st.stamps[id]
     else {
       if (!st.stamps[id] || st.stamps[id].text !== text) st.stamps[id] = { text, at: now }
       stamps[id] = st.stamps[id].at
@@ -152,7 +153,7 @@ const unseenNext = (st) => {
 const stage = (st, now, props) => {
   const need = needNow(st)
   return stageModel({
-    run: st.run, next: st.next, now, health: st.health, cost: runCost(st), motion: motion(st),
+    run: st.run, next: st.next, step: st.step, now, health: st.health, cost: runCost(st), motion: motion(st),
     need, fresh: need !== null && needId(need) !== st.needSeen,
     seen: Object.keys(st.helpersSeen), born: st.born, columns: isObj(props) ? props.bodyColumns : undefined, maxRows: isObj(props) ? props.maxRows : undefined,
   })
@@ -397,6 +398,8 @@ async function gather($, st) {
   await refresh($, st, root + '/.vbw/record.json', 'record')
   await refresh($, st, root + '/.vbw/runtime/next.json', 'next', false, 'nextFileAt')
   await readProving($, st)
+  await refresh($, st, root + '/.vbw/runtime/step.json', 'stepNote', true)
+  st.step = liveStep(st.stepNote, st.record, st.sessionId)
   if (st.sessionId) await refresh($, st, root + '/.vbw/runtime/auto.' + st.sessionId + '.json', 'auto', true)
   if (st.stepsPath) {
     await refresh($, st, st.stepsPath, 'history')
