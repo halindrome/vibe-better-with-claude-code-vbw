@@ -38527,7 +38527,7 @@
     {
       "id": "T163",
       "text": "Park keeps ids; scope skips park-undone commits (done 2026-10-16, T102 scope false alarm)",
-      "status": "open"
+      "status": "done"
     }
   ],
   "decisions": [
