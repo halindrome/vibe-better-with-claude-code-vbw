@@ -1057,49 +1057,44 @@ scenario_steptime() {
     || { say "setup failed: could not seed the two-plan project"; return 1; }
   fixture="greet.sh and farewell.sh (two plans, the second after the first), six real checks that wait 5 s each (check_jobs 2), approved; the working tree's status line on, the panel in a wide window; no step history first (a build run started by the scenario with vbw run start build, then ended), then a seeded history of three builds of 2 plans in 10 min and three proofs of 6 checks in 1 min, and the user types /vbw:vibe for the real build"
   start="/vbw:status"
-  st_phase=A st_idle=0 st_proof_seq="" st_proof_best="" st_total=0 st_chat="" st_status="" st_comms="" st_note_end="" st_nohist_status=false st_nohist_text=false st_nohist_next=false
-  st_samples=0
-  # What the three places say now. Echoes nothing; sets sw_* variables.
+  st_phase=A st_nohist_status=false st_nohist_text=false st_nohist_next=false
+  st_samples="$dir.steptime.samples" st_stop="$dir.steptime.stop"
+  rm -f "$st_samples" "$st_stop"
+  # What the three places say now: sets sw_* variables.
   st_read() {
     local s
-    s=$(screen)
+    s=$(screen) || return 1
     sw_status=$(printf '%s\n' "$s" | awk '/^─/ { n = NR } { l[NR] = $0 } END { for (i = n + 1; i <= NR; i++) print l[i] }')
     sw_comms=$(printf '%s\n' "$s" | sed 's/│.*//' | awk '/VBW ▸/ { on = 1 } on && /^─/ { on = 0 } on')
     sw_chat=$(printf '%s\n' "$s" | sed 's/│.*//' | awk '/^─/ { exit } /VBW ▸/ { exit } { print }')
     sw_screen=$s
   }
-  st_time() { grep -oE "$1 (tomorrow )?[0-9]{2}:[0-9]{2}" | head -1 | grep -oE '[0-9]{2}:[0-9]{2}$'; }
+  st_time() { grep -oE "$1 (tomorrow )?[0-9]{2}:[0-9]{2}" | head -1 | grep -oE '[0-9]{2}:[0-9]{2}$' || true; }
+  # One sample, a tab-separated line: chat time, status line time, Comms time, the status line's
+  # proof count (done, total) and the note's first end in local time.
   st_sample() {
-    local t c n m last
-    st_samples=$((st_samples + 1))
-    st_read
-    t=$(printf '%s\n' "$sw_status" | st_time 'until')
-    [ -n "$st_status" ] || st_status=$t
-    c=$(printf '%s\n' "$sw_comms" | st_time 'until around')
-    [ -n "$st_comms" ] || st_comms=$c
-    t=$(printf '%s\n' "$sw_chat" | grep -iE 'building|fixing|proving|checking' | st_time 'until around')
-    [ -n "$st_chat" ] || st_chat=$t
-    [ -n "$st_note_end" ] || st_note_end=$(jq -r '(.first_end // empty) | fromdateiso8601 | localtime | strftime("%H:%M")' "$dir/.vbw/runtime/step.json" 2> /dev/null || true)
-    # The proof's count, read over time: one rising run is kept (the longest seen).
-    n=$(printf '%s\n' "$sw_status" | grep -oE 'proving [0-9]+ of [0-9]+ checks' | head -1 | grep -oE '[0-9]+' | head -1)
-    m=$(printf '%s\n' "$sw_status" | grep -oE 'proving [0-9]+ of [0-9]+ checks' | head -1 | grep -oE '[0-9]+' | sed -n 2p)
-    if [ -n "$n" ]; then
-      st_total=$m
-      last=${st_proof_seq##* }
-      if [ -z "$st_proof_seq" ]; then st_proof_seq=$n
-      elif [ "$n" -lt "$last" ]; then
-        [ "$(wc -w <<< "$st_proof_seq")" -lt "$(wc -w <<< "$st_proof_best")" ] || st_proof_best=$st_proof_seq
-        st_proof_seq=$n
-      elif [ "$n" != "$last" ]; then st_proof_seq="$st_proof_seq $n"; fi
+    local chat sl cm n m note
+    st_read || return 1
+    chat=$(printf '%s\n' "$sw_chat" | grep -iE 'building|fixing|proving|checking' | st_time 'until around')
+    sl=$(printf '%s\n' "$sw_status" | st_time 'until')
+    cm=$(printf '%s\n' "$sw_comms" | st_time 'until around')
+    n="" m=""
+    if printf '%s\n' "$sw_status" | grep -qE 'proving [0-9]+ of [0-9]+ checks'; then
+      n=$(printf '%s\n' "$sw_status" | grep -oE 'proving [0-9]+ of [0-9]+ checks' | head -1 | grep -oE '[0-9]+' | sed -n 1p)
+      m=$(printf '%s\n' "$sw_status" | grep -oE 'proving [0-9]+ of [0-9]+ checks' | head -1 | grep -oE '[0-9]+' | sed -n 2p)
     fi
+    note=$(jq -r '(.first_end // empty) | fromdateiso8601 | localtime | strftime("%H:%M")' "$dir/.vbw/runtime/step.json" 2> /dev/null || true)
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$chat" "$sl" "$cm" "$n" "$m" "$note" >> "$st_samples"
   }
-  st_poll() { local i; for ((i = 0; i < $1 / 2; i++)); do st_sample; sleep 2; done; }
+  # Every 2 s until the session is gone or the stop file is there; the waits of the
+  # driver (a background build keeps it idle for minutes) do not thin it out.
+  st_sampler() { while [ ! -f "$st_stop" ]; do st_sample || break; sleep 2; done; }
   # Phase A: no history. The scenario starts the build run; the window shows it with no end time.
   st_no_history() {
     local i sayt
-    (cd "$dir" && "$VBW" run start build P1.1 > /dev/null 2>&1) || { say "could not start the run by hand"; return; }
     sayt=$(cd "$dir" && "$VBW" next --json 2> /dev/null | jq -r '.step.say // ""')
     case "$sayt" in *"no end time yet"*) st_nohist_next=true ;; esac
+    (cd "$dir" && "$VBW" run start build P1.1 > /dev/null 2>&1) || { say "could not start the run by hand"; return; }
     for ((i = 0; i < 20; i++)); do
       sleep 2
       st_read
@@ -1116,38 +1111,37 @@ scenario_steptime() {
       st_no_history
       (cd "$dir" && steptime_history) || { say "could not seed the history"; return 0; }
       st_phase=B
+      st_sampler &
       l3 type "$scenario" "/vbw:vibe"
       return 1
     fi
-    st_sample
     shipped && return 0
     plans_done || return 1
-    # Both plans are built: go on until the proof after them has run.
+    # Both plans are built: go on until the proof after them has run and been seen counting.
     case "$(next_action)" in build | run | prove) return 1 ;; esac
-    return 0
-  }
-  on_idle() {
-    [ "$st_phase" = B ] || return 1
-    case "$(next_action)" in
-      build | run | prove)
-        # A step is running in the background: watch it. After three quiet watches with no run open, ask again.
-        if [ -f "$dir/.vbw/runtime/step.json" ]; then st_idle=0; st_poll 30; return 0; fi
-        st_idle=$((st_idle + 1))
-        if [ "$st_idle" -lt 3 ]; then st_poll 30; return 0; fi
-        st_idle=0
-        return 1 ;;
-    esac
-    return 1
+    awk -F'\t' '$4 != "" { found = 1 } END { exit !found }' "$st_samples" 2> /dev/null
   }
   checks() {
-    [ "$(wc -w <<< "$st_proof_seq")" -lt "$(wc -w <<< "$st_proof_best")" ] || st_proof_best=$st_proof_seq
-    local counts same up passed
-    counts=$(printf '%s\n' $st_proof_best | jq -s 'map(tonumber)')
-    same=$([ -n "$st_chat" ] && [ "$st_chat" = "$st_status" ] && [ "$st_chat" = "$st_comms" ] && echo true || echo false)
+    : > "$st_stop"
+    wait
+    local counts same up passed chat sl cm note total
+    chat=$(awk -F'\t' '$1 != "" { print $1; exit }' "$st_samples")
+    sl=$(awk -F'\t' '$2 != "" { print $2; exit }' "$st_samples")
+    cm=$(awk -F'\t' '$3 != "" { print $3; exit }' "$st_samples")
+    note=$(awk -F'\t' '$6 != "" { print $6; exit }' "$st_samples")
+    total=$(awk -F'\t' '$5 != "" { print $5; exit }' "$st_samples")
+    # The longest run of counts that never went down, from the status line over time.
+    counts=$(awk -F'\t' '$4 != "" { n = $4 + 0
+        if (len > 0 && n < last) { if (len > blen) { best = seq; blen = len } seq = ""; len = 0 }
+        if (len == 0 || n != last) { seq = seq (len ? " " : "") n; len++ }
+        last = n }
+      END { if (len > blen) best = seq; print best }' "$st_samples" | tr ' ' '\n' | jq -R 'select(length > 0) | tonumber' | jq -s .)
+    same=$([ -n "$chat" ] && [ "$chat" = "$sl" ] && [ "$chat" = "$cm" ] && echo true || echo false)
     up=$(jq -n --argjson c "$counts" '($c | length) >= 2 and ($c[-1] > $c[0]) and ([range(1; $c | length) as $i | $c[$i] >= $c[$i - 1]] | all)')
-    facts=$(jq -n --arg chat "$st_chat" --arg sl "$st_status" --arg cm "$st_comms" --arg note "$st_note_end" --argjson same "$same" \
-      --argjson counts "$counts" --argjson up "$up" --argjson total "${st_total:-0}" \
-      --argjson nhs "$st_nohist_status" --argjson nht "$st_nohist_text" --argjson nhn "$st_nohist_next" --argjson samples "$st_samples" \
+    facts=$(jq -n --arg chat "$chat" --arg sl "$sl" --arg cm "$cm" --arg note "$note" --argjson same "$same" \
+      --argjson counts "$counts" --argjson up "$up" --argjson total "${total:-0}" \
+      --argjson nhs "$st_nohist_status" --argjson nht "$st_nohist_text" --argjson nhn "$st_nohist_next" \
+      --argjson samples "$(wc -l < "$st_samples" | tr -d ' ')" \
       '{chat_end: $chat, statusline_end: $sl, comms_end: $cm, note_first_end: $note, same_end: $same,
         proof_counts: $counts, proof_total: $total, proof_counted_up: $up,
         no_history_no_end_time: ($nhs and $nht and $nhn), no_history_status_line_without_time: $nhs, no_history_screen_says_no_end_time: $nht, no_history_next_says_no_end_time: $nhn,
