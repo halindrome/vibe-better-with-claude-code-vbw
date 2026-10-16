@@ -39,6 +39,17 @@ SH
   cat > tests/snap.sh << 'SH'
 jq -c . "$NOTE" >> "$SNAPS" 2> /dev/null || echo '{"missing": true}' >> "$SNAPS"
 SH
+  # barrier.sh: waits until the units that have started number a multiple of 4,
+  # so that four units finish at the same moment (at most about 5 s).
+  cat > tests/barrier.sh << 'SH'
+touch "$CONC/arrive.$$"
+i=0
+while [ "$i" -lt 100 ]; do
+  [ $(($(ls "$CONC" | grep -c '^arrive\.') % 4)) -eq 0 ] && break
+  sleep 0.05
+  i=$((i + 1))
+done
+SH
   # slow.sh: runs until the test says go (at most about 30 s).
   cat > tests/slow.sh << 'SH'
 i=0
@@ -98,6 +109,23 @@ until_note() {
   jq -s -e '[.[].parts.done] as $d | all(range(1; $d | length); $d[.] >= $d[. - 1])' "$TEST_ROOT/seen" || { cat "$TEST_ROOT/seen"; false; }
   jq -e '[.steps[] | select(.kind == "proof")] | last | .parts == 40' "$STEPS" || { cat "$STEPS"; false; }
   [ ! -e "$NOTE" ] || { echo "the proof's note outlived it"; cat "$NOTE"; false; }
+}
+
+@test "R190: four units that finish at the same moment all count: 40 of 40, never fewer" {
+  checks 40 barrier
+  "$VBW" config set check_jobs 4 > /dev/null
+  (
+    while [ ! -e "$CONC/stop" ]; do
+      jq -c '{kind, parts}' "$NOTE" >> "$TEST_ROOT/seen" 2> /dev/null || true
+      sleep 0.02
+    done
+  ) &
+  local watcher=$!
+  VBW_SESSION_ID=s1 "$VBW" prove > "$TEST_ROOT/prove.out" 2>&1 || { cat "$TEST_ROOT/prove.out"; false; }
+  touch "$CONC/stop"
+  wait "$watcher" || true
+  jq -s -e 'all(.[]; .parts.total == 40 and .parts.done <= 40) and ([.[].parts.done] | max == 40)' "$TEST_ROOT/seen" || { sort -u "$TEST_ROOT/seen"; false; }
+  jq -e '[.steps[] | select(.kind == "proof")] | last | .parts == 40' "$STEPS" || { cat "$STEPS"; false; }
 }
 
 @test "R190: each finished unit counts before the next one starts; a proof's end time is its median time per unit times its units" {
