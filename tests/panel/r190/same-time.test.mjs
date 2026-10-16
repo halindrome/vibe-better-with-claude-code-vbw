@@ -4,7 +4,7 @@
 // the time out itself. One fixed note: the real status line script runs on a
 // small project in a scratch folder (its own HOME); Comms and Mission Control
 // are their pure models (panel-stage.js, panel-view.js) at the same moment.
-// Times are local to Asia/Kolkata (UTC+05:30), so a UTC clock shows.
+// Times are local to Europe/Zurich (UTC+01:00, +02:00 in summer), so a UTC clock shows.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
@@ -15,7 +15,7 @@ import { pathToFileURL } from 'node:url'
 import { record, next, collect, PLUGIN } from '../helpers/fake-mod.mjs'
 import { hhmm } from '../r189/helpers/screen.mjs'
 
-process.env.TZ = 'Asia/Kolkata'
+process.env.TZ = 'Europe/Zurich'
 
 const view = await import(pathToFileURL(PLUGIN + '/hooks/panel-view.js').href)
 const stage = await import(pathToFileURL(PLUGIN + '/hooks/panel-stage.js').href)
@@ -40,7 +40,7 @@ function project(rec, note) {
 
 function statusLine(dir) {
   const input = JSON.stringify({ session_id: 'sess-1', workspace: { project_dir: dir, current_dir: dir }, version: '2.1.286' })
-  const env = { PATH: process.env.PATH, HOME: path.join(dir, 'home'), CLAUDE_CONFIG_DIR: path.join(dir, 'home/.claude'), TZ: 'Asia/Kolkata', NO_COLOR: '1' }
+  const env = { PATH: process.env.PATH, HOME: path.join(dir, 'home'), CLAUDE_CONFIG_DIR: path.join(dir, 'home/.claude'), TZ: 'Europe/Zurich', NO_COLOR: '1' }
   return execFileSync('bash', [path.join(PLUGIN, 'scripts/vbw-statusline.sh')], { input, env, encoding: 'utf8' }).split('\n')[0]
 }
 

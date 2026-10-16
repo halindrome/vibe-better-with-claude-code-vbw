@@ -9,14 +9,14 @@
 // The time keeps the estimate colour. It is gone at the next refresh (2 s) once
 // the step ends. The panel never works the step's time out itself: a lease and a
 // history without a note show no step time; the milestone estimate (R58) stays.
-// Times are local to Asia/Kolkata (UTC+05:30), so a UTC clock shows.
+// Times are local to Europe/Zurich (UTC+01:00, +02:00 in summer), so a UTC clock shows.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 import { mount, record, next, lease, walk, deepFreeze, PLUGIN, ROOT, T0 } from '../helpers/fake-mod.mjs'
 import { screen, hhmm } from '../r189/helpers/screen.mjs'
 
-process.env.TZ = 'Asia/Kolkata'
+process.env.TZ = 'Europe/Zurich'
 
 const P = await import(pathToFileURL(PLUGIN + '/hooks/panel-palette.js').href)
 const view = await import(pathToFileURL(PLUGIN + '/hooks/panel-view.js').href)

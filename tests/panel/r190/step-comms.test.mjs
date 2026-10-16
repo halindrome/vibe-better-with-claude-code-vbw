@@ -5,14 +5,14 @@
 // and for a background proof ('proving 12 of 40 checks'); 'later than usual'
 // and 'N min late' as in Mission Control. When the step ends its time is gone
 // at the next refresh (2 s); with nothing running none shows.
-// Times are local to Asia/Kolkata (UTC+05:30), so a UTC clock shows.
+// Times are local to Europe/Zurich (UTC+01:00, +02:00 in summer), so a UTC clock shows.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 import { mount, record, next, lease, collect, PLUGIN, ROOT, T0 } from '../helpers/fake-mod.mjs'
 import { screen, hhmm } from '../r189/helpers/screen.mjs'
 
-process.env.TZ = 'Asia/Kolkata'
+process.env.TZ = 'Europe/Zurich'
 
 const stage = await import(pathToFileURL(PLUGIN + '/hooks/panel-stage.js').href)
 

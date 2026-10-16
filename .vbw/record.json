@@ -37532,7 +37532,7 @@
       "id": "F244",
       "req": "R190",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C378 fail (exit 1), C383 fail (exit 1)"
     }
   ],
@@ -46707,6 +46707,15 @@
         "milestone": "M36",
         "started": "2026-10-16T16:51:22Z",
         "ended": "2026-10-16T16:56:34Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261016T183423Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M36",
+        "started": "2026-10-16T18:34:23Z",
+        "ended": "2026-10-16T18:56:27Z",
         "cost": null
       }
     ],

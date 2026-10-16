@@ -8,7 +8,7 @@
 # it is doing, no time. Clock times are the computer's local time, 24-hour
 # HH:MM; an end on another day names the day ('until tomorrow 00:20'). A note
 # whose run is not the open run, or whose proof process is gone, shows nothing.
-# The times here are local to Asia/Kolkata (UTC+05:30), so a UTC clock shows.
+# The times here are local to Europe/Zurich (UTC+01:00, +02:00 in summer), so a UTC clock shows.
 
 load helper
 load step-helper
@@ -17,7 +17,7 @@ setup() {
   vbw_setup
   step_project
   SL="$PLUGIN_ROOT/scripts/vbw-statusline.sh"
-  export TZ=Asia/Kolkata
+  export TZ=Europe/Zurich
   sleep 30 &
   LIVE=$!
 }

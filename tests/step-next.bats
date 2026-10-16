@@ -7,7 +7,7 @@
 # '...: no end time yet (VBW has timed fewer than 3 steps like this here)'.
 # vbw run start says the same sentence, its time within a minute of next's;
 # vbw status prints the running step in the same words, the later-than-usual
-# and minutes-late cases included. Times are local (Asia/Kolkata here).
+# and minutes-late cases included. Times are local (Europe/Zurich here).
 
 load helper
 load step-helper
@@ -15,7 +15,7 @@ load step-helper
 setup() {
   vbw_setup
   step_project
-  export TZ=Asia/Kolkata
+  export TZ=Europe/Zurich
 }
 teardown() { vbw_teardown; }
 
