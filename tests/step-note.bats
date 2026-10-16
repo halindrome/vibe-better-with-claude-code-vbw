@@ -45,18 +45,19 @@ status_step() { "$VBW" status --json | jq -c '.step'; }
   local k
   for k in plan map; do
     "$VBW" run start "$k" > /dev/null
-    jq -e --arg k "$k" '.kind == $k and (.doing | type == "string" and length > 0) and .parts == null' "$NOTE" || { cat "$NOTE"; false; }
+    jq -e --arg k "$k" '.kind == $k and (.doing | type == "string" and length > 0) and .parts == null
+      and .doing == (if $k == "plan" then "planning" else "mapping the project" end)' "$NOTE" || { cat "$NOTE"; false; }
     "$VBW" run end > /dev/null
   done
   step_edit '.phases[0].tier = "standard" | .plans[].status = "done"'
   git add -A && git commit -q -m "chore(vbw): built"
   "$VBW" run start qa > /dev/null
-  jq -e '.kind == "qa" and .ids == ["P1"] and (.doing | test("P1")) and .parts == null' "$NOTE" || { cat "$NOTE"; false; }
+  jq -e '.kind == "qa" and .ids == ["P1"] and .doing == "checking P1" and (.doing | test("QA") | not) and .parts == null' "$NOTE" || { cat "$NOTE"; false; }
   "$VBW" run end > /dev/null
   step_edit '.fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "C1 fail"}]'
   git add -A && git commit -q -m "chore(vbw): fix"
   "$VBW" run start fix F1 > /dev/null
-  jq -e '.kind == "fix" and .ids == ["F1"] and (.doing | test("F1")) and .parts == {done: 0, total: 1}' "$NOTE" || { cat "$NOTE"; false; }
+  jq -e '.kind == "fix" and .ids == ["F1"] and .doing == "fixing F1" and .parts == {done: 0, total: 1}' "$NOTE" || { cat "$NOTE"; false; }
 }
 
 @test "R190: each vbw plan done counts one more part done, at once" {
