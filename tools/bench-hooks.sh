@@ -198,21 +198,36 @@ guards() {
   done
 }
 
-# statusline DIR LABEL: the status line's CPU per call (the whole process tree,
-# startup included) for a session in the project at DIR.
+# statusline DIR LABEL [step]: the status line's CPU per call (the whole process
+# tree, startup included) for a session in the project at DIR. With "step" a
+# running build's note (R190, .vbw/runtime/step.json) is on disk, and the bench
+# fails when the step's end time did not show in the first line.
 statusline() {
-  local dir="$1" label="$2" cmd total line
+  local dir="$1" label="$2" cmd total line first
   # With the cost fields Claude Code sends, so the side file write (R173) is inside the measure.
   jq -nc --arg d "$dir" '{session_id: "bench", workspace: {project_dir: $d}, cwd: $d, model: {display_name: "Opus"},
     cost: {total_cost_usd: 1.25}, context_window: {total_input_tokens: 12000, total_output_tokens: 3400, context_window_size: 200000}}' > "$work/statusline.json"
   rm -f "$dir/.vbw/runtime/cost.bench.json"
+  if [ "${3:-}" = step ]; then
+    mkdir -p "$dir/.vbw/runtime"
+    jq -nc 'def s($n): (now | floor) + $n | todateiso8601;
+      {kind: "build", run: "build-1", session: "bench", pid: null, started_at: s(-300), ids: ["P1.1", "P1.2"], doing: "building P1.1, P1.2",
+       parts: {done: 1, total: 2}, proof: null, first_end: s(720), end: s(720), late: false}' > "$dir/.vbw/runtime/step.json"
+    first=$(NO_COLOR=1 bash "$PLUGIN/scripts/vbw-statusline.sh" < "$work/statusline.json" 2> /dev/null | head -n 1) || first=""
+    case "$first" in
+      *"1 of 2 · until "[0-9][0-9]:[0-9][0-9]*) ;;
+      *)
+        printf 'status line%s: the step was not shown, so the measure left it out\n' "$label" >&2
+        status=1 ;;
+    esac
+  fi
   cmd="NO_COLOR=1 bash '$PLUGIN/scripts/vbw-statusline.sh'"
   read -r _ total < <(cpu_pair "$work/statusline.json" true "$cmd")
   if ! jq -e '.session == "bench" and .usd == 1.25 and .in == 12000 and .out == 3400' "$dir/.vbw/runtime/cost.bench.json" > /dev/null 2>&1; then
     printf 'status line%s: the cost side file was not written, so the measure left the write out\n' "$label" >&2
     status=1
   fi
-  rm -f "$dir/.vbw/runtime/cost.bench.json"
+  rm -f "$dir/.vbw/runtime/cost.bench.json" "$dir/.vbw/runtime/step.json"
   line=$(printf 'status line%s: %s ms CPU per call; budget %s ms' "$label" "$total" "$STATUS_MS")
   if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$total" "$STATUS_MS"; then
     printf '%s\n' "$line"
@@ -303,6 +318,7 @@ guards "$work/loop-large" ", large record" loop
 for n in 51 500 2000; do guards "$work/checks-$n" ", $n checks"; done
 statusline "$work" ""
 statusline "$large" " (large record)"
+statusline "$work" " (step running)" step
 handback
 loaded
 exit $status
