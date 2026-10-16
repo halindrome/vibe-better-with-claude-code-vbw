@@ -496,8 +496,8 @@ estimate.
 - **It is approximate.** "about 12 min" is whole minutes, never an exact
   figure. Under a minute it says "less than a minute". An end on another day
   names the day: "until around tomorrow 00:20". Times are 24-hour, local.
-- **It needs history.** VBW gives an end time only after **at least 3 finished
-  steps of the same kind** (for example 3 builds). With fewer, the panel says
+- **It needs history.** VBW gives an end time only after
+  **at least 3 finished steps** of the same kind (for example 3 builds). With fewer, the panel says
   "No end time yet: VBW has timed fewer than 3 steps like this here" and shows
   no time. VBW never guesses. The milestone estimate also needs 3 finished
   builds and 3 finished checks; before that it says "No estimate yet: there are
