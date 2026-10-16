@@ -3923,7 +3923,8 @@
       "files": [
         "tests/loop-human-skip.bats",
         "tests/loop-helper.bash"
-      ]
+      ],
+      "timeout": 900
     },
     {
       "id": "C301",
@@ -3936,7 +3937,8 @@
       "files": [
         "tests/loop-stops.bats",
         "tests/loop-helper.bash"
-      ]
+      ],
+      "timeout": 900
     },
     {
       "id": "C302",
@@ -3974,7 +3976,8 @@
       "files": [
         "tests/loop-retry-park.bats",
         "tests/loop-helper.bash"
-      ]
+      ],
+      "timeout": 900
     },
     {
       "id": "C305",
@@ -4000,7 +4003,8 @@
       "files": [
         "tests/loop-park-report.bats",
         "tests/loop-helper.bash"
-      ]
+      ],
+      "timeout": 900
     },
     {
       "id": "C307",
@@ -40845,6 +40849,11 @@
       "id": "D426",
       "at": "2026-10-16T09:01:23Z",
       "text": "Contract approved: 179 requirements, 383 checks, 443 plans (d62a093e11c7)"
+    },
+    {
+      "id": "D427",
+      "at": "2026-10-16T16:51:00Z",
+      "text": "Contract approved: 179 requirements, 383 checks, 443 plans (82ca95dfa905)"
     }
   ],
   "commands": {
