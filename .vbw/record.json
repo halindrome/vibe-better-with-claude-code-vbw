@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261016T002038Z",
+    "kind": "qa",
+    "started_at": "2026-10-16T00:20:38Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1324.396144,
+      "in": 124700,
+      "out": 254
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -18631,7 +18642,22 @@
         "guarded: R82 (C117)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "qa": {
+        "result": "pass",
+        "tier": "standard",
+        "tree": "141d1977e4cfd51578b9ffdc807dc8485e641680e712ca87f82095c5715dfa3b",
+        "at": "2026-10-16T00:21:58Z",
+        "note": "17/17 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 0
+      }
     },
     {
       "id": "P144",
