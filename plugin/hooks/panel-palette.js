@@ -1,5 +1,5 @@
 // D407: a role never wears a state colour (no green, red, amber or grey hue).
-// The one palette of the VBW panel (R84): every part of the panel (the band,
+// The one palette of the VBW panel (R84): every part of the panel (Comms,
 // Mission Control, Wrapped) takes its colours from here, so a role has one
 // colour everywhere and a state has one colour everywhere. Colours are Ink
 // names or #rrggbb strings; rgb() turns one into the number a Raster cell
