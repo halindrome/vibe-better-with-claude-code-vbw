@@ -18609,7 +18609,15 @@
           "to": "deep",
           "reason": "Dev blocked P142.1: Tasks 1-5 are committed (e5784b12 stage code, 17f4ca7a rewritten tests/panel/stage.test.mjs). C360 and C361 test Comms through panel.js, which this plan may not edit; they stay red until P142.3 passes need/seen to stageModel and renders the new model. vbw mutate refuses to run while the checks fail on unbroken code, and plan done needs them green. Rerun the mutation step (deep tier, one break per rule R189.1-R189.20 and per task) and plan done after P142.3."
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "6d01d65ee83747a1d4ad3ab6c80b644bbafb460a0ff9d947802a4bfb7b78d68c",
+        "at": "2026-10-16T00:24:13Z",
+        "note": "21/24 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P143",
@@ -34321,6 +34329,33 @@
       "status": "open",
       "note": "Seen is kept across a restart for only one of the three new things. Criterion 'what has been seen stays seen after a restart, kept in the user's store' and P144.3 task 1 (a recommendation, a failed helper, a needs-you line) are met for the recommendation only: plugin/hooks/panel.js writes just keys.seen (vbw-panel.seen, line ~586) and reads it back in begin() (~767). The needs-you line's seen mark is st.needSeen and the failed helper's is st.helpersSeen ({} in fresh(), line 95); neither is ever written to the store or read from it. After a restart a standing gate shows 'new' again and an already-opened failed helper's card and Comms row come back marked/unseen. docs/panel.md (~line 415) states 'Seen stays seen after a restart, and unseen stays new', which is false for these two. tests/panel/r189/next-buttons.test.mjs pins the restart only for the recommendation (test at line 135); the failed-helper and needs-you tests (lines 158, 177) never restart. Fix: keep the seen needs-you id (needId) and the opened failed-helper ids under vbw-panel.* keys (test.* in a test session), read them in begin(), and correct the doc if any case stays out. Regression test: open a failed helper's card and see a needs-you line, start a second session on the same store and the same project state, and assert neither is marked; a mutation that stops writing either key must turn it red.",
       "phase": "P144"
+    },
+    {
+      "id": "F240",
+      "req": "R189",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Comms keeps showing gates that are already answered. plugin/hooks/panel-view.js answered() clears only approve, ship and accept; every other gate kind (milestone, spec, convert, unblock, escalate, scope) returns false, so it stands until the next 'vbw next' rewrites next.json. Checked with liveNeed: record milestone M2 status 'open' (new milestone started) plus next.json {action:'milestone',gate:true} still returns 'the milestone is shipped: choose what comes next'; a spec gate with requirements present, and an unblock gate with no blocked plan, still return a need. The phase goal says every message clears the moment it stops being true. The same stale next.json also drives suggest() in plugin/hooks/panel.js (reads st.next directly, not liveNeed), which puts /vbw:approve back in the prompt in a new session after the plan was approved. Regression test should: for each gate kind, change the record so the gate is done (new milestone started, requirements written, plan unblocked, converted), leave next.json unchanged, and check the next render of Comms, Mission Control, the hint line and /vbw-status lacks the line, and that no /vbw:approve is suggested after a newer 'Contract approved' decision.",
+      "phase": "P142"
+    },
+    {
+      "id": "F241",
+      "req": "R189",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "A failed helper can be marked seen before it fails, so its red row never reaches Comms. plugin/hooks/panel.js act(): 'a.select' (any card) and the open-with-agent action set st.helpersSeen[id] = true whatever the helper's state, and stage crewOf treats failed + seen as not shown. A card selected while the helper is working (the selection stays until toggled) therefore hides its later failure from Comms, with Mission Control closed or on another tab, against 'a failed helper stays as a red row until the user opens it'. Regression test should: select a working helper's card, then turn it failed, and check Comms shows its red x row until it is opened again after the failure (seen must only count from the moment the helper is failed).",
+      "phase": "P142"
+    },
+    {
+      "id": "F242",
+      "req": "R189",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "docs/panel.md states a false fact about Comms figures. The motion table (line ~576) says 'Each agent in Comms' is a small figure posed by reading, editing, running, writing, quiet, done, failed, and line ~586 says figures need three rows 'for each agent'. The built behaviour (D405, panel-stage.js SPRITES = 3, figures only for working non-quiet helpers at full motion) is at most 3 working helpers as figures, the rest text rows; done helpers leave at once and failed ones are a red x text row, so no done, failed or quiet figure is ever drawn on Comms. The Comms section never says 'at most 3' either. Regression test (tests/panel-comms-docs.bats) should: require the docs to say at most 3 working helpers get a figure at full motion and the rest are text rows, and reject 'Each agent in Comms' as a figure and done/failed/quiet figure poses on Comms.",
+      "phase": "P142"
     }
   ],
   "todos": [
