@@ -35383,6 +35383,11 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T160",
+      "text": "Blocker before the next push (owner, 2026-10-16 02:11): with claude --plugin-dir ./plugin (2.0.39 + M34) Mission Control opens empty in the real window: no tab row, no Now box; /vbw-panel says it is open; Comms works. The same record renders fully in the fake mod (L1), so the real-window render throws and the ui.render catch hands back the default. Regression from M34 (P144/P145 pane changes); find the cause with the real Claude Code (2.1.301) and pin it with an L3 scenario that checks the pane draws its tab row",
+      "status": "open"
     }
   ],
   "decisions": [
