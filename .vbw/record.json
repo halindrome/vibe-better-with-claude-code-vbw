@@ -1,6 +1,19 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "plan-20261016T015318Z",
+    "kind": "plan",
+    "started_at": "2026-10-16T01:53:18Z",
+    "files": [
+      ".vbw/"
+    ],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1335.798066,
+      "in": 258137,
+      "out": 512
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -35396,6 +35409,11 @@
       "id": "T160",
       "text": "Blocker before the next push (owner, 2026-10-16 02:11): with claude --plugin-dir ./plugin (2.0.39 + M34) Mission Control opens empty in the real window: no tab row, no Now box; /vbw-panel says it is open; Comms works. The same record renders fully in the fake mod (L1), so the real-window render throws and the ui.render catch hands back the default. Regression from M34 (P144/P145 pane changes); find the cause with the real Claude Code (2.1.301) and pin it with an L3 scenario that checks the pane draws its tab row",
       "status": "done"
+    },
+    {
+      "id": "T161",
+      "text": "Mission Control tab plan (owner sketch 2026-10-12, split out of R190 by D419): tabs Now, Plan, Proof, Timeline, Settings; Team, Decisions and Costs fold in (models to Settings, decisions inside each phase in Plan, run costs to Timeline, sound switch to Settings); Settings changes go through the kernel and are read back. Do before T95 (Sessions tab) and T96 (costs) so those are built once",
+      "status": "open"
     }
   ],
   "decisions": [
@@ -37672,6 +37690,24 @@
       "id": "D417",
       "at": "2026-10-16T01:30:17Z",
       "text": "Contract approved: 178 requirements, 368 checks, 434 plans (afa206b51a8b)"
+    },
+    {
+      "id": "D418",
+      "text": "Keep the names Comms and Mission Control, opened with /vbw-panel (what shipped)",
+      "why": "chosen by the loop: nothing to redo and matches D406; R190's rename part is closed as replaced by D406; /vbw-panel does not repeat the name",
+      "at": "2026-10-16T01:53:14Z"
+    },
+    {
+      "id": "D419",
+      "text": "Nothing more for the tidy-up: M34 was the tidy-up, so close R190 once checks confirm it",
+      "why": "chosen by the loop: smallest; the 12 October tab plan (fewer tabs plus Settings) becomes its own backlog item before T95 and T96",
+      "at": "2026-10-16T01:53:16Z"
+    },
+    {
+      "id": "D420",
+      "text": "Keep the helper figures in Comms as shipped (D405)",
+      "why": "chosen by the loop: nothing to redo; up to 3 figures take about 10 lines with 3+ helpers; calm motion turns them off",
+      "at": "2026-10-16T01:53:17Z"
     }
   ],
   "commands": {
