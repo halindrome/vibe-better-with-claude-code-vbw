@@ -225,7 +225,8 @@ point where it needs you:
   project, or `/compact` when the context is nearly full.
 - The line stays while the request stands, and it is shown in amber.
 - The hint line under the prompt still says what is waiting.
-- Before a run, a warning appears when your weekly limit is past 80%.
+- Before a run, an amber warning appears when your weekly limit is past 80%. It is
+  never red: red is only for a failure.
 
 **When a message clears.** A message leaves as soon as it stops being true,
 at the next redraw (within 2 seconds), with no other event needed:
@@ -235,6 +236,12 @@ at the next redraw (within 2 seconds), with no other event needed:
 | Approve the plan | you approve the plan |
 | Ready to ship | the milestone ships |
 | A result to check | you answer the check |
+| The next milestone | a new milestone starts |
+| Say what to build | the requirements are written |
+| Convert a VBW 1 plan | you convert it or choose to start fresh |
+| A blocked step | the step is no longer blocked |
+| A fix limit | the fix is no longer waiting on you |
+| Scope | the changes outside the plan are cleared |
 | Any request | a run starts (VBW holds the lease), or the request leaves VBW's next step |
 | A question | you answer it |
 
@@ -573,7 +580,7 @@ What each level shows:
 | | `full` | `calm` | `off` |
 |---|---|---|---|
 | The What's next title and a new top pick | shimmer and pulse, then settle | still | still |
-| Each agent in Comms | a small figure in its role's colour, posed by what it does (reading, editing, running a command, writing, quiet, done, failed), moving about 10 times a second while the run works | a dot in its role's colour and a spinner that steps once a second | a dot and a still `·` |
+| Each working agent in Comms (the first 3 only) | a small figure in its role's colour, posed by what it does (reading, editing, running a command, writing), moving about 10 times a second while the run works | a dot in its role's colour and a spinner that steps once a second | a dot and a still `·` |
 | A new agent starts | its row in Comms flashes in its role's colour for about a second | no flash | no flash |
 | A phase passes QA | about 1.5 s of confetti in Comms | nothing | nothing |
 | All checks pass | one green sweep across the top of the Proof tab, and `✓ All checks pass` in Comms for a minute | `✓ All checks pass` in Comms for a minute | nothing |
@@ -583,8 +590,10 @@ The flash shows the role and label of the new row with its colours inverted. It
 needs `full` motion: set it with `vbw config set motion full` (see above). At
 `calm` and `off` a new agent's row appears without it.
 
-The figures need three rows of Comms for each agent; with less room Comms
-shows dots. They move only while a VBW run works and Comms shows them, and
+At most 3 working helpers get a figure at full motion; the other helpers are
+text rows. A finished helper leaves Comms, and a failed one is a red `✗` text
+row, so Comms never draws a done, failed or quiet figure. A figure needs three
+rows of Comms; with less room Comms shows dots. They move only while a VBW run works and Comms shows them, and
 stop when the run ends. Figures, confetti and the sweep are drawn on the
 terminal only; other surfaces show the dots. VBW Wrapped is information, not
 decoration, so it opens at every level.
