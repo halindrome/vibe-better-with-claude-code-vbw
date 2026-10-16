@@ -46494,6 +46494,19 @@
           "in": 1489,
           "out": 225
         }
+      },
+      {
+        "id": "fix-20261016T163719Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M36",
+        "started": "2026-10-16T16:37:19Z",
+        "ended": "2026-10-16T16:44:23Z",
+        "cost": {
+          "usd": 0,
+          "in": 0,
+          "out": 0
+        }
       }
     ],
     "milestones": {
