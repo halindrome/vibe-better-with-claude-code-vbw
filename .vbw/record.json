@@ -19574,6 +19574,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P148.2: Code done and committed (7aafa3d8, 5f01e517); C384 green; rule breaks R190.71-73 red. Task mutations task1/task2 cannot run: vbw mutate refuses because tests/step-helper.bash and tests/step-history.bats (another plan's pending edit, a pwd -P fix for the /private path) differ from the last commit and wait for approval; task3 recorded --none. Re-run 'vbw mutate P148.2 task1 \"removed step.say rule\" plugin/skills/vibe/SKILL.md' and task2 (status SKILL.md) once those files are committed, then vbw plan done."
+        },
+        {
+          "at": "2026-10-16T13:13:01Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P148.4: Work done and committed (scenario, L3 result tools/l3-results/steptime.json, C386 green, deep mutation red for R190.81-83 and tasks 1-3), but vbw plan done refuses: C374 (tests/step-history.bats test 8, 'step code reads and writes JSON only through jq') fails on plugin/lib/steps.sh line 279, added by P148.1 (f38fe666): printf ... | sed 's/^null$/0/'. The file is outside this plan's files. Fix needed there (e.g. a shell case/parameter expansion instead of sed), then run vbw plan done P148.4."
         }
       ]
     }
@@ -35264,12 +35270,219 @@
         "P147.3",
         "P148.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/panel.md 'Time left': which steps get an end time (planning, build, fix, QA, proof), the full wording, the 3-step minimum, time per part, the latest 50 steps of each kind, 'later than usual' and 'N min late', 'No end time yet', where steps.json lives (.git/vbw/steps.json) and how to reset it (delete it).",
         "docs/statusline.md: the short form ('until 14:20'), the background proof's 'proving 12 of 40 checks', the late cases.",
         "README.md (where it describes the panel) and docs/next.md (the step and step.say vbw next --json carries)."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R190",
+            "text": "docs/panel.md's Time left names the steps that get an end time and shows the full wording, not the old sentence"
+          },
+          "what": "old sentence back",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C385": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:52:57Z",
+          "head": "b9c3a3325ee66174a81101a29242b7f9e9ceac98"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "docs/panel.md explains the 3-step minimum, time per part and the 50-per-kind history"
+          },
+          "what": "50 to 20",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C385": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:53:14Z",
+          "head": "b9c3a3325ee66174a81101a29242b7f9e9ceac98"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "docs/panel.md says what 'later than usual' and 'N min late' mean"
+          },
+          "what": "dropped later than usual",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C385": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T11:53:29Z",
+          "head": "b9c3a3325ee66174a81101a29242b7f9e9ceac98"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "docs/panel.md says where the history lives and how to reset it"
+          },
+          "what": "wrong path",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C385": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:53:44Z",
+          "head": "b9c3a3325ee66174a81101a29242b7f9e9ceac98"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the status line docs show the clock time, the proof count and the late cases"
+          },
+          "what": "dropped proof count",
+          "files": [
+            "docs/statusline.md"
+          ],
+          "checks": {
+            "C385": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:53:59Z",
+          "head": "b9c3a3325ee66174a81101a29242b7f9e9ceac98"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the README names the step's end time where it describes the panel"
+          },
+          "what": "dropped end time",
+          "files": [
+            "README.md"
+          ],
+          "checks": {
+            "C385": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T11:54:14Z",
+          "head": "b9c3a3325ee66174a81101a29242b7f9e9ceac98"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "docs/next.md describes the step and its sentence that vbw next --json carries"
+          },
+          "what": "dropped no-basis sentence",
+          "files": [
+            "docs/next.md"
+          ],
+          "checks": {
+            "C385": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:54:29Z",
+          "head": "b9c3a3325ee66174a81101a29242b7f9e9ceac98"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "docs/panel.md says what 'later than usual' and 'N min late' mean"
+          },
+          "what": "dropped later than usual",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C385": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:55:11Z",
+          "head": "db016ad24713d77e2627784ce9755e344c63c740",
+          "strengthened": [
+            "tests/step-docs.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the README names the step's end time where it describes the panel"
+          },
+          "what": "dropped end time",
+          "files": [
+            "README.md"
+          ],
+          "checks": {
+            "C385": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:55:27Z",
+          "head": "22672055af8d5e06c7727b7a9e694b23b48101db",
+          "strengthened": [
+            "tests/step-docs.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "what": "3-step minimum became 7",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C385": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T11:57:56Z",
+          "head": "22672055af8d5e06c7727b7a9e694b23b48101db"
+        },
+        {
+          "task": 2,
+          "what": "dropped late case",
+          "files": [
+            "docs/statusline.md"
+          ],
+          "checks": {
+            "C385": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:58:15Z",
+          "head": "22672055af8d5e06c7727b7a9e694b23b48101db"
+        },
+        {
+          "task": 3,
+          "what": "dropped README end time",
+          "files": [
+            "README.md"
+          ],
+          "checks": {
+            "C385": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:58:38Z",
+          "head": "22672055af8d5e06c7727b7a9e694b23b48101db"
+        },
+        {
+          "task": 1,
+          "what": "3-step minimum became 7",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C385": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:59:33Z",
+          "head": "5bc9f611e802c0d6e1c4de6c8080a1d7370b7894",
+          "strengthened": [
+            "tests/step-docs.bats"
+          ]
+        }
       ]
     },
     {
@@ -35289,13 +35502,95 @@
         "P148.1",
         "P148.2"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "tools/l3-suite.sh scenario_steptime: a realistic project (more than one plan, real checks) with a seeded steps.json; records chat_end, statusline_end and comms_end for a build (HH:MM), same_end, proof_counts (the status line's 'N of M checks' read over time), proof_counted_up, and no_history_no_end_time on a project with no history.",
         "Run it through the real Claude Code screen (L3) and commit tools/l3-results/steptime.json as the run wrote it, with its fixture and not_tested list.",
         "Report in the plan's notes the scenarios run and not run, for the progress log."
-      ]
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the steptime scenario seeds a step history and records each fact"
+          },
+          "what": "the scenario no longer names the step history file it seeds",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C386": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T12:23:42Z",
+          "head": "0dd00065057c636ec187171fb916bb9eb4a48e23"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a real-session run shows one end time in chat, the status line and Comms for a build, at L3"
+          },
+          "what": "the status line's end time in the committed result differs from chat's",
+          "files": [
+            "tools/l3-results/steptime.json"
+          ],
+          "checks": {
+            "C386": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T12:24:10Z",
+          "head": "0dd00065057c636ec187171fb916bb9eb4a48e23"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the real-session run shows a background proof counting up and 'no end time yet' without history"
+          },
+          "what": "the committed result says the proof did not count up",
+          "files": [
+            "tools/l3-results/steptime.json"
+          ],
+          "checks": {
+            "C386": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T12:24:58Z",
+          "head": "0dd00065057c636ec187171fb916bb9eb4a48e23"
+        },
+        {
+          "task": 3,
+          "none": "the task is a report in the plan's notes; no file to break",
+          "at": "2026-10-16T12:28:19Z"
+        },
+        {
+          "task": 1,
+          "what": "the scenario records commsend instead of comms_end",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C386": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T12:37:05Z",
+          "head": "0dd00065057c636ec187171fb916bb9eb4a48e23"
+        },
+        {
+          "task": 2,
+          "what": "the committed result claims L2",
+          "files": [
+            "tools/l3-results/steptime.json"
+          ],
+          "checks": {
+            "C386": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T12:37:24Z",
+          "head": "0dd00065057c636ec187171fb916bb9eb4a48e23"
+        }
+      ],
+      "note": "Work done and committed (scenario, L3 result tools/l3-results/steptime.json, C386 green, deep mutation red for R190.81-83 and tasks 1-3), but vbw plan done refuses: C374 (tests/step-history.bats test 8, 'step code reads and writes JSON only through jq') fails on plugin/lib/steps.sh line 279, added by P148.1 (f38fe666): printf ... | sed 's/^null$/0/'. The file is outside this plan's files. Fix needed there (e.g. a shell case/parameter expansion instead of sed), then run vbw plan done P148.4."
     }
   ],
   "fixes": [
@@ -46164,6 +46459,19 @@
           "usd": 4.047806,
           "in": 3161,
           "out": 421
+        }
+      },
+      {
+        "id": "build-20261016T115043Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M36",
+        "started": "2026-10-16T11:50:43Z",
+        "ended": "2026-10-16T13:13:26Z",
+        "cost": {
+          "usd": 2.891234,
+          "in": 3513,
+          "out": 76
         }
       }
     ],
