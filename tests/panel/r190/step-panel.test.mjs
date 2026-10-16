@@ -70,6 +70,7 @@ test("Mission Control gives the running step's time in full: 'about 12 min, unti
   const h = await session(building(), note())
   const text = await paneText(h)
   assert.ok(text.includes('about 12 min, until around ' + hhmm(END)), text)
+  assert.ok(text.includes('This step: about 12 min, until around ' + hhmm(END) + '.'), text)
   assert.doesNotMatch(text, /left in this step/i, 'the old sentence is replaced')
   assert.deepEqual(h.errors, [])
 })
