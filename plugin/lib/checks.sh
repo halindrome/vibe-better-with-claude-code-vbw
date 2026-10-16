@@ -7,6 +7,8 @@
 . "$VBW_LIB/reads.sh"
 # shellcheck source=slots.sh
 . "$VBW_LIB/slots.sh"
+# shellcheck source=proofsteps.sh
+. "$VBW_LIB/proofsteps.sh"
 
 # checks_begin RECORD [strict]: die unless the contract is approved. Check
 # files edited since the approval wait for it (CHECK_WAITING): the checks still
@@ -278,6 +280,8 @@ checks_unit_run() {
   slots_give "$name"
   checks_gate_leave "$name"
   res=$(checks_result "$out" "$t" "$want" "$re")
+  # A proof counts the unit as it finishes, before the next one starts (vbw check never does).
+  proofsteps_unit_done
   if [ -z "$st" ]; then
     printf '%s\n' "$res"
   elif [ "$reads" = true ] && reads_collect "$copy" "$st" > "$st/result.json"; then
