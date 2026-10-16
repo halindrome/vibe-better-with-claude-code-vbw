@@ -111,3 +111,11 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
   vbw_run status
   [[ "$output" == *"no end time yet (VBW has timed fewer than 3 steps like this here)"* ]] || { echo "$output"; false; }
 }
+
+@test "R190: the Stop hook's gate does not pay for the step; vbw next does" {
+  "$VBW" auto on s1 > /dev/null
+  printf '%s' '{"session_id":"s1"}' | "$VBW" auto gate > /dev/null
+  jq -e '.action == "build" and (has("step") | not)' .vbw/runtime/next.json || { cat .vbw/runtime/next.json; false; }
+  "$VBW" next --json > /dev/null
+  jq -e '.step.kind == "build"' .vbw/runtime/next.json || { cat .vbw/runtime/next.json; false; }
+}
