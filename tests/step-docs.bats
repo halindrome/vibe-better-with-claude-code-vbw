@@ -41,6 +41,9 @@ section() { sed -n '/^## Time left/,/^## /p' "$PANEL" | sed '$d'; }
   s=$(section)
   printf '%s\n' "$s" | grep -qi 'later than usual' || { echo "'later than usual' is not explained"; false; }
   printf '%s\n' "$s" | grep -qE '[0-9]+ min late' || { echo "'N min late' is not explained"; false; }
+  printf '%s\n' "$s" | grep -qE '"until around [0-9]{2}:[0-9]{2}, later than usual"' || { echo "the later-than-usual wording is not shown"; false; }
+  printf '%s\n' "$s" | grep -qE '"until around [0-9]{2}:[0-9]{2}, [0-9]+ min late"' || { echo "the N-min-late wording is not shown"; false; }
+  printf '%s\n' "$s" | grep -qi 'own pace' || { echo "the move to the run's own pace is not explained"; false; }
 }
 
 @test "R190: docs/panel.md says where the history lives and how to reset it" {
@@ -59,7 +62,7 @@ section() { sed -n '/^## Time left/,/^## /p' "$PANEL" | sed '$d'; }
 }
 
 @test "R190: the README names the step's end time where it describes the panel" {
-  grep -qiE 'until around [0-9]{2}:[0-9]{2}|end (clock )?time' "$README" || { echo "README.md does not mention the step's end time"; false; }
+  grep -qE 'until around [0-9]{2}:[0-9]{2}' "$README" || { echo "README.md does not mention the step's end time"; false; }
 }
 
 @test "R190: docs/next.md describes the step vbw next --json carries" {
