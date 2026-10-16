@@ -7,10 +7,11 @@
 //   sound: the question menu opens, so the sound is played and a notification raised; then it is answered.
 //   whats-next: the record carries a recommendation that changes, so each refresh draws the section.
 //   render: a crew of helpers is at work; each refresh draws Comms (the strip above the prompt) and Mission Control's Now tab.
+//   step: a step is running and its note changes: the note is read, kept while live, and Mission Control draws the step.
 //   glance: the cost changed and a step history changed: both are read, both estimates worked out, drawn.
 // Prints "tick <ms>", "refresh <ms>" and "sound <ms>", and "render <ms>". The stand-in's own work is included,
 // so the numbers are an upper bound on the panel's cost.
-import { mount, record, next } from '../tests/panel/helpers/fake-mod.mjs'
+import { mount, record, next, lease } from '../tests/panel/helpers/fake-mod.mjs'
 import { building, writeCrew, working, TICK } from '../tests/panel/r189/helpers/crew.mjs'
 
 const RUNS = Number(process.env.VBW_BENCH_RUNS || 200)
@@ -81,9 +82,30 @@ const render = await measure(async (h, i) => {
   h.git()
   return h
 })
+// step: a build runs and the kernel's note moves its end; the panel reads the note, keeps it while live and draws it
+const NOTE = ROOT + '/.vbw/runtime/step.json'
+const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z')
+const stepped = await measure(async (h, i) => {
+  const end = h.now() + (12 + (i % 5)) * 60000
+  h.write(NOTE, {
+    kind: 'build', run: 'build-1', session: 'sess-1', pid: null, started_at: iso(h.now() - 300000), ids: ['P44.1'], doing: 'building P44.1',
+    parts: { done: 1, total: 2 }, proof: null, first_end: iso(end), end: iso(end), late: false,
+  })
+  await h.advance(TICK_MS)
+  await h.render()
+}, async () => {
+  const h = await mount()
+  h.project(record({ lease: lease('build', Date.now()) }), next())
+  h.git()
+  await h.start()
+  await h.advance(5000)
+  await h.render()
+  return h
+})
 console.log('tick ' + tick.toFixed(3))
 console.log('refresh ' + refresh.toFixed(3))
 console.log('render ' + render.toFixed(3))
 console.log('sound ' + sound.toFixed(3))
+console.log('step ' + stepped.toFixed(3))
 console.log('glance ' + glance.toFixed(3))
 console.log('whats-next ' + whatsNext.toFixed(3))
