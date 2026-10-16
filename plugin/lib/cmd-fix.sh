@@ -141,6 +141,8 @@ cmd_fix() {
   . "$VBW_LIB/proofcauses.sh"
   # shellcheck source=testfiles.sh
   . "$VBW_LIB/testfiles.sh"
+  # shellcheck source=proofsteps.sh
+  . "$VBW_LIB/proofsteps.sh"
   local todo=() cands=() c at results='{}' held head noreads causes fp why served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0
   if [ ${#ids[@]} -gt 0 ]; then
     for id in "${ids[@]}"; do
@@ -149,6 +151,7 @@ cmd_fix() {
     held=$(contract_held "$record")
     cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
     mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
+    proofsteps_clean
     noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
     head=$(vbw_head_tree 2> /dev/null) || head=
     # Any cause (R168) runs every candidate check, as it does in vbw prove, except
@@ -204,10 +207,12 @@ cmd_fix() {
     c=${#todo[@]}
     [ "$c" -ge ${#TF_TODO[@]} ] || c=${#TF_TODO[@]}
     proofcopy_create_slots "$(proofcopy_slots "$c")"
+    proofsteps_begin "$((${#todo[@]} + ${#TF_TODO[@]}))"
     [ ${#todo[@]} -eq 0 ] || results=$(checks_run_all "$record" "${todo[@]}")
     [ ${#TF_TODO[@]} -eq 0 ] || tfres=$(testfiles_run "$record")
     proofcopy_remove
     checks_end
+    proofsteps_end
     results=$(printf '%s' "$results" | jq -c --argjson off "$off" "$PROVE_FLAT")
     tfres=$(printf '%s' "$tfres" | jq -c --argjson off "$off" "$PROVE_FLAT")
     proofreuse_save "$record" "$results" '{}' "$head" "$at"
@@ -256,6 +261,7 @@ cmd_fix() {
       | (.fixes[] | select(.id as $i | $humans | index($i))).status = "closed"
       | (.requirements[] | select(.id as $q | any($r.fixes[]; (.id as $i | $humans | index($i)) and .req == $q))).status = "open"' \
       --argjson fixed "$fixed" --argjson humans "$humans"
+    proofsteps_fix_done "${#closed[@]}"
     for id in "${closed[@]}"; do
       if printf '%s' "$humans" | jq -e --arg f "$id" 'index($f)' > /dev/null; then
         printf '%s closed: its requirement goes back to the user for acceptance\n' "$id"
