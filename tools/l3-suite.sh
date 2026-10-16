@@ -11,14 +11,14 @@
 # L3_JOBS at a time (default 4); each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel pluginoff tools legacy nolegacy smallchange costs loop plugindir"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime pluginoff tools legacy nolegacy smallchange costs loop plugindir"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -1002,6 +1002,165 @@ scenario_panel() {
     [ "$passed" = true ] || failed=1
     result_write panel "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
       '["the sound itself (nothing was heard: the run only checks the switch)","what a person reads at a glance: wording and layout are judged on the screen text, not by a reader","no spill is read from the visible tmux screen after a resize (prompt box whole, Comms drawn once), not from a real terminal'"'"'s scrollback","one short window (200 columns, 24 rows) and one narrow window (60 columns, 40 rows), with the needs-you line and with helpers at work; no other size","Comms in the 60-column window: Mission Control fills that window and Comms'"'"' own line is not on screen there (seen in the run, not judged), so the narrow check holds the prompt box and the pane'"'"'s bottom edge only","Mission Control'"'"'s own rows and tabs at those sizes (held by tests/panel/r189/containment.test.mjs, L1)","figure counts and the motion levels (full, calm, off)","a failed helper, a celebration and a ship in the real window","a milestone shipped before the recommendation (the seed stores the recommendation on an active milestone)","a time estimate with a number"]'
+  }
+}
+
+# steptime (R190, phase P148): the step's end time in the real window. A project
+# with two plans and six slow real checks, no step history at first. Phase 1: the
+# scenario starts a build run by hand (the kernel's own `vbw run start build`), so
+# a project with no history shows the step with no end time in the status line and
+# Comms, and `vbw next` says so; it ends the run. Phase 2: it seeds a history of
+# three finished builds (and proofs) in the clone, the user types /vbw:vibe, and the
+# build runs through the real window. Sampled every 2 s from the screen: VBW's
+# message in the chat ("until around HH:MM"), the status line under the prompt
+# box ("until HH:MM") and Comms (the "VBW ▸" strip: "until around HH:MM") must read
+# the same time; the status line's "proving N of M checks" must count up.
+steptime_seed() {
+  local i
+  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"; without a name it prints "Hello, world!"\n- R2 [auto] ./farewell.sh Ana prints "Goodbye, Ana!"; without a name it prints "Goodbye, world!"\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null || return 1
+  # Three checks per requirement, each waits 5 s first: a proof takes long enough to watch.
+  for i in 1 2 3; do
+    case $i in 1) a=Ana b="Hello, Ana!" c="Goodbye, Ana!" ;; 2) a="" b="Hello, world!" c="Goodbye, world!" ;; 3) a=Bo b="Hello, Bo!" c="Goodbye, Bo!" ;; esac
+    printf 'sleep 5\n[ "$(sh greet.sh %s)" = "%s" ]\n' "$a" "$b" > "test_greet_$i.sh"
+    printf 'sleep 5\n[ "$(sh farewell.sh %s)" = "%s" ]\n' "$a" "$c" > "test_farewell_$i.sh"
+  done
+  git add -A && git commit -qm "test: the greeting checks" || return 1
+  jq -n '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"]}, {"id": "P2", "title": "Farewell", "reqs": ["R2"]}],
+    "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME! or Hello, world! without a name"]},
+              {"id": "P2.1", "phase": "P2", "title": "farewell.sh", "reqs": ["R2"], "files": ["farewell.sh"], "after": ["P1.1"], "tasks": ["farewell.sh prints Goodbye, NAME! or Goodbye, world! without a name"]}],
+    "checks": [(range(1; 4) as $i | {"id": "C\($i)", "req": "R1", "run": ["sh", "test_greet_\($i).sh"], "files": ["test_greet_\($i).sh"]}),
+               (range(1; 4) as $i | {"id": "C\($i + 3)", "req": "R2", "run": ["sh", "test_farewell_\($i).sh"], "files": ["test_farewell_\($i).sh"]})],
+    "rules": [(range(1; 4) as $i | {"req": "R1", "text": "greeting case \($i)", "check": "C\($i)"}),
+              (range(1; 4) as $i | {"req": "R2", "text": "farewell case \($i)", "check": "C\($i + 3)"})]}' \
+    | "$VBW" apply > /dev/null || return 1
+  git add -A && git commit -qm "chore: plan" || return 1
+  "$VBW" approve > /dev/null || return 1
+  # Two checks at a time, so the count steps 0, 2, 4, 6 and can be seen.
+  "$VBW" config set check_jobs 2 > /dev/null
+}
+
+# The history the clone would have after three earlier builds (2 plans, 10 min) and three proofs (6 checks, 1 min).
+steptime_history() {
+  local common
+  common=$(git rev-parse --path-format=absolute --git-common-dir) || return 1
+  mkdir -p "$common/vbw"
+  jq -n '{steps: [(range(0; 3) as $i | {kind: "build", run: "build-seed-\($i)", started_at: "2026-10-15T09:00:00Z", ended_at: "2026-10-15T09:10:00Z", seconds: 600, parts: 2}),
+                  (range(0; 3) as $i | {kind: "proof", run: "proof-seed-\($i)", started_at: "2026-10-15T09:10:00Z", ended_at: "2026-10-15T09:11:00Z", seconds: 60, parts: 6})]}' \
+    > "$common/vbw/steps.json"
+}
+
+scenario_steptime() {
+  new_project
+  export L3_STATUSLINE=1
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor standard > /dev/null && steptime_seed) \
+    || { say "setup failed: could not seed the two-plan project"; return 1; }
+  fixture="greet.sh and farewell.sh (two plans, the second after the first), six real checks that wait 5 s each (check_jobs 2), approved; the working tree's status line on, the panel in a wide window; no step history first (a build run started by the scenario with vbw run start build, then ended), then a seeded history of three builds of 2 plans in 10 min and three proofs of 6 checks in 1 min, and the user types /vbw:vibe for the real build"
+  start="/vbw:status"
+  st_phase=A st_idle=0 st_proof_seq="" st_proof_best="" st_total=0 st_chat="" st_status="" st_comms="" st_note_end="" st_nohist_status=false st_nohist_text=false st_nohist_next=false
+  st_samples=0
+  # What the three places say now. Echoes nothing; sets sw_* variables.
+  st_read() {
+    local s
+    s=$(screen)
+    sw_status=$(printf '%s\n' "$s" | awk '/^─/ { n = NR } { l[NR] = $0 } END { for (i = n + 1; i <= NR; i++) print l[i] }')
+    sw_comms=$(printf '%s\n' "$s" | sed 's/│.*//' | awk '/VBW ▸/ { on = 1 } on && /^─/ { on = 0 } on')
+    sw_chat=$(printf '%s\n' "$s" | sed 's/│.*//' | awk '/^─/ { exit } /VBW ▸/ { exit } { print }')
+    sw_screen=$s
+  }
+  st_time() { grep -oE "$1 (tomorrow )?[0-9]{2}:[0-9]{2}" | head -1 | grep -oE '[0-9]{2}:[0-9]{2}$'; }
+  st_sample() {
+    local t c n m last
+    st_samples=$((st_samples + 1))
+    st_read
+    t=$(printf '%s\n' "$sw_status" | st_time 'until')
+    [ -n "$st_status" ] || st_status=$t
+    c=$(printf '%s\n' "$sw_comms" | st_time 'until around')
+    [ -n "$st_comms" ] || st_comms=$c
+    t=$(printf '%s\n' "$sw_chat" | grep -iE 'building|fixing|proving|checking' | st_time 'until around')
+    [ -n "$st_chat" ] || st_chat=$t
+    [ -n "$st_note_end" ] || st_note_end=$(jq -r '(.first_end // empty) | fromdateiso8601 | localtime | strftime("%H:%M")' "$dir/.vbw/runtime/step.json" 2> /dev/null || true)
+    # The proof's count, read over time: one rising run is kept (the longest seen).
+    n=$(printf '%s\n' "$sw_status" | grep -oE 'proving [0-9]+ of [0-9]+ checks' | head -1 | grep -oE '[0-9]+' | head -1)
+    m=$(printf '%s\n' "$sw_status" | grep -oE 'proving [0-9]+ of [0-9]+ checks' | head -1 | grep -oE '[0-9]+' | sed -n 2p)
+    if [ -n "$n" ]; then
+      st_total=$m
+      last=${st_proof_seq##* }
+      if [ -z "$st_proof_seq" ]; then st_proof_seq=$n
+      elif [ "$n" -lt "$last" ]; then
+        [ "$(wc -w <<< "$st_proof_seq")" -lt "$(wc -w <<< "$st_proof_best")" ] || st_proof_best=$st_proof_seq
+        st_proof_seq=$n
+      elif [ "$n" != "$last" ]; then st_proof_seq="$st_proof_seq $n"; fi
+    fi
+  }
+  st_poll() { local i; for ((i = 0; i < $1 / 2; i++)); do st_sample; sleep 2; done; }
+  # Phase A: no history. The scenario starts the build run; the window shows it with no end time.
+  st_no_history() {
+    local i sayt
+    (cd "$dir" && "$VBW" run start build P1.1 > /dev/null 2>&1) || { say "could not start the run by hand"; return; }
+    sayt=$(cd "$dir" && "$VBW" next --json 2> /dev/null | jq -r '.step.say // ""')
+    case "$sayt" in *"no end time yet"*) st_nohist_next=true ;; esac
+    for ((i = 0; i < 20; i++)); do
+      sleep 2
+      st_read
+      if printf '%s\n' "$sw_status" | grep -q '▶ build' && ! printf '%s\n' "$sw_status" | grep -q 'until'; then st_nohist_status=true; fi
+      case "$sw_screen" in *"No end time yet"*) st_nohist_text=true ;; esac
+      [ "$st_nohist_status" = true ] && [ "$st_nohist_text" = true ] && break
+    done
+    printf '%s\n' "$sw_screen" > "$dir.steptime.nohistory.screen.txt"
+    (cd "$dir" && "$VBW" run end > /dev/null 2>&1) || say "could not end the run started by hand"
+  }
+  plans_done() { jq -e '[.plans[]? | .status] | length > 0 and all(. == "done")' "$dir/.vbw/record.json" > /dev/null 2>&1; }
+  done_yet() {
+    if [ "$st_phase" = A ]; then
+      st_no_history
+      (cd "$dir" && steptime_history) || { say "could not seed the history"; return 0; }
+      st_phase=B
+      l3 type "$scenario" "/vbw:vibe"
+      return 1
+    fi
+    st_sample
+    shipped && return 0
+    plans_done || return 1
+    # Both plans are built: go on until the proof after them has run.
+    case "$(next_action)" in build | run | prove) return 1 ;; esac
+    return 0
+  }
+  on_idle() {
+    [ "$st_phase" = B ] || return 1
+    case "$(next_action)" in
+      build | run | prove)
+        # A step is running in the background: watch it. After three quiet watches with no run open, ask again.
+        if [ -f "$dir/.vbw/runtime/step.json" ]; then st_idle=0; st_poll 30; return 0; fi
+        st_idle=$((st_idle + 1))
+        if [ "$st_idle" -lt 3 ]; then st_poll 30; return 0; fi
+        st_idle=0
+        return 1 ;;
+    esac
+    return 1
+  }
+  checks() {
+    [ "$(wc -w <<< "$st_proof_seq")" -lt "$(wc -w <<< "$st_proof_best")" ] || st_proof_best=$st_proof_seq
+    local counts same up passed
+    counts=$(printf '%s\n' $st_proof_best | jq -s 'map(tonumber)')
+    same=$([ -n "$st_chat" ] && [ "$st_chat" = "$st_status" ] && [ "$st_chat" = "$st_comms" ] && echo true || echo false)
+    up=$(jq -n --argjson c "$counts" '($c | length) >= 2 and ($c[-1] > $c[0]) and ([range(1; $c | length) as $i | $c[$i] >= $c[$i - 1]] | all)')
+    facts=$(jq -n --arg chat "$st_chat" --arg sl "$st_status" --arg cm "$st_comms" --arg note "$st_note_end" --argjson same "$same" \
+      --argjson counts "$counts" --argjson up "$up" --argjson total "${st_total:-0}" \
+      --argjson nhs "$st_nohist_status" --argjson nht "$st_nohist_text" --argjson nhn "$st_nohist_next" --argjson samples "$st_samples" \
+      '{chat_end: $chat, statusline_end: $sl, comms_end: $cm, note_first_end: $note, same_end: $same,
+        proof_counts: $counts, proof_total: $total, proof_counted_up: $up,
+        no_history_no_end_time: ($nhs and $nht and $nhn), no_history_status_line_without_time: $nhs, no_history_screen_says_no_end_time: $nht, no_history_next_says_no_end_time: $nhn,
+        screen_samples: $samples}')
+    expect "chat, status line and Comms each gave an end time" jq -e '.chat_end != "" and .statusline_end != "" and .comms_end != ""' <<< "$facts"
+    expect "the three end times are the same" jq -e '.same_end == true' <<< "$facts"
+    expect "the three end times are the note's first end" jq -e '.note_first_end == .chat_end' <<< "$facts"
+    expect "the background proof counted up" jq -e '.proof_counted_up == true' <<< "$facts"
+    expect "with no history the window shows no end time" jq -e '.no_history_no_end_time == true' <<< "$facts"
+    passed=$(jq -r '.chat_end != "" and .same_end and (.note_first_end == .chat_end) and .proof_counted_up and .no_history_no_end_time' <<< "$facts")
+    [ "$passed" = true ] || failed=1
+    result_write steptime "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
+      '["a build that ran late: the end moving to this run'"'"'s pace was not seen in the window (held by tests/step-note.bats, L1)","an end time on another day","a fix, QA, planning or mapping step in the window","the three times are read from the visible screen text at 2 s steps, by the first time each place showed one, not by a reader","the project with no history had a build started by the scenario with vbw run start, not by the router, so the router saying no end time yet in chat was not seen (vbw next --json gave it)","the status line, Comms and the chat message were read in one 200-column window only","the proof counted was the one the build flow ran with check_jobs 2; its pace on a machine with more lanes","the time left shrinking, a user watching, and the clock time being right to the minute against real elapsed time"]'
   }
 }
 
