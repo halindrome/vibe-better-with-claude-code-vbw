@@ -44733,7 +44733,11 @@
         "at": "2026-10-16T01:48:07Z"
       }
     },
-    "report": ".vbw/loop-report.md"
+    "report": ".vbw/loop-report.md",
+    "stopping": {
+      "at": "2026-10-16T02:29:47Z",
+      "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+    }
   },
   "parked": [
     {
