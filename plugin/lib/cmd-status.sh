@@ -29,10 +29,11 @@ cmd_status() {
     }'
     return 0
   fi
-  printf '%s\n' "$record" | jq -r --argjson iv "$interview" '.milestone.id as $m | [.requirements[] | select(.milestone == $m)] as $cur |
+  printf '%s\n' "$record" | jq -r --argjson iv "$interview" --argjson step "$(step_status "$(printf '%s' "$record" | jq -r '.lease.run // ""')")" "$VBW_STEP_DEFS"'.milestone.id as $m | [.requirements[] | select(.milestone == $m)] as $cur |
     "\(.project.name) · \(.milestone.id) \(.milestone.title) (\(.milestone.status))",
     "requirements: \([$cur[] | select(.status == "proven" or .status == "accepted")] | length)/\($cur | length) proven",
     "phases: \([.phases[] | select(.milestone == $m)] | length) · open fixes: \([.fixes[] | select(.status == "open")] | length) · open todos: \([.todos[] | select(.status == "open" or .status == "in_progress")] | length)",
+    (if $step != null then "now: \(step_sentence($step; now | floor))" else empty end),
     (if (.shipped | length) > 0 then "shipped: \([.shipped[] | "\(.id) \(.title)"] | join(", "))" else empty end),
     (if ((.parked // []) | length) > 0 then "parked: \([.parked[] | "\(.id) (\(.reason))"] | join(", "))" else empty end),
     (if $iv.interviewed then "interview (kept \($iv.kept)): level \($iv.level) · depth \($iv.depth) · involvement \($iv.involvement)" else "interview: the interview has not been done" end),
