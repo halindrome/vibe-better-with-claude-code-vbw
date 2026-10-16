@@ -160,8 +160,10 @@ prove_stamp() {
   done < <(printf '%s' "$3" | jq -j 'keys[] | . + "\u0000"')
   printf '%s\n' "$out"
 }
-# Scope: every commit whose VBW-Plan trailer names a plan in the record changes
-# only that plan's files. Prints a JSON array of violations.
+# Scope: every commit whose VBW-Plan trailer names a plan of the current
+# milestone changes only that plan's files. A shipped milestone's commits were
+# judged by its own proofs; today's record can no longer judge them (T162).
+# Prints a JSON array of violations.
 prove_scope() {
   local entry sha plan f
   # shellcheck source=cmd-commit.sh
@@ -178,7 +180,8 @@ prove_scope() {
     done < <(git log -z --format='%H%x1f%(trailers:key=VBW-Plan,valueonly)' 2> /dev/null)
   } | jq -R -s -c --slurpfile rec <(printf '%s' "$1") "$VBW_JQ_DEFS$COMMIT_SURVIVOR_DEFS"'
     $rec[0] as $r
-    | ($r.plans | map({key: .id, value: .files}) | from_entries) as $files
+    | ([$r.phases[] | select(.milestone == $r.milestone.id) | .id]) as $now
+    | ($r.plans | map(select(.phase as $p | $now | index($p) != null)) | map({key: .id, value: .files}) | from_entries) as $files
     | ($r.plans | map(.id as $i | {key: $i, value: ($r | survivor_files($i))}) | from_entries) as $own
     | [split("\n")[] | select(length > 0) | split("\u001f") | select($files[.[1]] != null)
        | select(.[2] as $f | (any($files[.[1]][]; covers($f)) or ($own[.[1]] | index($f) != null)) | not)

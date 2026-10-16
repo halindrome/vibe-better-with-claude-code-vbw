@@ -470,8 +470,9 @@ form in `.vbw/spec.md`.
    A check whose last pass is still valid for the files it read is reused, not
    run again ([Reusing results in `vbw prove`](#reusing-results-in-vbw-prove)).
    Then it removes the copy, also when interrupted.
-4. Scope: every commit with a `VBW-Plan:` trailer naming a plan in the record
-   must change only that plan's files.
+4. Scope: every commit with a `VBW-Plan:` trailer naming a plan of the current
+   milestone must change only that plan's files. A shipped milestone's commits
+   were judged by its own proofs and are not judged again.
 5. Writes the evidence and updates requirements and fixes in one atomic record
    update, then prints a one-screen summary. Exit 0 only when everything passed.
 
