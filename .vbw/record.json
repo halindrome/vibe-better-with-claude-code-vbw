@@ -18738,7 +18738,15 @@
           "to": "deep",
           "reason": "Dev blocked P145.1: Palette committed (7adbd99e); palette.test.mjs green (15). vbw mutate refuses: C368, the only check covering R189.49/.50, stays red until P145.2 (working glyph amber in stage/mission-live, Timeline red), so no break can be shown caught by a recorded check. I ran 10 manual breaks (each role colour, running/need/done/failed/cut) against palette.test.mjs + meaning.test.mjs: all raised failures above the 2-failure baseline. Old tests pinning old colours (candy 23-24, mission-live 174/175/181, mission-record 193, stage 295) are in P145.2's files. Run mutation for task1/task2 after P145.2 or allow it to be recorded then."
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "bad1350a80a4dc62eff4d8d6bec52e251e819db3c09f26608a4b4da40bcaa7c0",
+        "at": "2026-10-16T00:22:55Z",
+        "note": "19/20 checks",
+        "rounds": 1
+      }
     }
   ],
   "plans": [
@@ -34287,6 +34295,15 @@
       "attempts": 0,
       "status": "closed",
       "note": "test fail"
+    },
+    {
+      "id": "F238",
+      "req": "R189",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Red is still drawn for something that is not a failure. plugin/hooks/panel-stage.js:74 colours the Comms line 'Weekly limit N%: ...' with stateColor('failed') (red) when the weekly limit is 90% or more; no helper or run has failed. P145's criteria and D407 say red appears only for a failure (docs/panel.md also says 'Red is only for a failure'). tests/panel/stage.test.mjs:128 pins this red, so the old rule was kept instead of being rewritten to D407, and tests/panel/r189/meaning.test.mjs has no check that catches it. Regression test: render the weekly-limit line at 80 and at 95 percent and assert its colour is amber (NEED), never the failed colour; change stage.test.mjs:128 to match; add to meaning.test.mjs a sweep that no Comms or Mission Control text outside a failed helper or failed check uses the failed colour.",
+      "phase": "P145"
     }
   ],
   "todos": [
