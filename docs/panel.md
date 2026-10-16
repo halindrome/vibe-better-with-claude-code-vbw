@@ -510,8 +510,9 @@ estimate.
   of their latest 10 steps. With an even count, the median is the mean of the
   two middle values.
 - **Later than usual.** When a step with parts runs past its end time, VBW moves
-  the end to this run's own pace and shows "until around 14:35, later than
-  usual". It can move again, and never earlier than the first end time.
+  the end to this run's own pace and shows
+  "until around 14:35, later than usual". It can move again, and never earlier
+  than the first end time.
 - **N min late.** A step without parts (planning, QA) keeps its first end time
   and shows "until around 14:20, 6 min late" once it is a minute past it.
 - **A proof inside a build or fix** shows as what the build or fix is doing
