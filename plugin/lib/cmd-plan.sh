@@ -5,6 +5,9 @@
 # none of its files has uncommitted changes, and the checks of every requirement
 # it completes (no other open plan serves it) pass. "block" refuses a done plan.
 
+# shellcheck source=steps.sh
+. "$VBW_LIB/steps.sh"
+
 cmd_plan() {
   local sub="${1:-}" id="${2:-}"
   case "$sub" in
@@ -57,6 +60,7 @@ cmd_plan() {
       [ -z "$missing" ] || vbw_die "$id has behaviour no recorded break has shown to be caught:
 $missing"
       record_update '(.plans[] | select(.id == $p)) |= (.status = "done" | del(.note))' --arg p "$id"
+      step_plan_done
       printf '%s done\n' "$id"
       ;;
     block)
