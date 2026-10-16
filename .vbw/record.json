@@ -37507,7 +37507,7 @@
       "id": "F243",
       "req": "R189",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C362 fail (exit 1)"
     }
   ],
@@ -46516,6 +46516,15 @@
           "in": 0,
           "out": 0
         }
+      },
+      {
+        "id": "fix-20261016T165122Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M36",
+        "started": "2026-10-16T16:51:22Z",
+        "ended": "2026-10-16T16:56:34Z",
+        "cost": null
       }
     ],
     "milestones": {
