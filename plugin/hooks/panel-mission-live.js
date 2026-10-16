@@ -5,6 +5,7 @@
 
 import { estimate, MIN_STEPS } from './panel-estimate.js'
 import { clock } from './panel-view.js'
+import { stepWords } from './panel-step.js'
 import { newMark } from './panel-next.js'
 import { roleColor, stateColor, ACCENT, STATE_MARKS, STATE_WORDS } from './panel-palette.js'
 
@@ -125,14 +126,14 @@ function sparkOf(steps, kind, now) {
   return { bars, median, mark, kind }
 }
 
-function leftOf(run, steps, kind, now) {
-  if (num(run.endedAt) || !num(run.startedAt)) return null
-  const e = estimate({ steps, lease: { kind, started_at: new Date(run.startedAt).toISOString() }, now })
-  if (!e.step || e.step.state === 'none') return null
-  return e.step.state === 'longer' ? 'taking longer than usual' : 'about ' + Math.max(1, Math.round(e.step.seconds / 60)) + ' min left'
+// The time left is the kernel's note, worded as everywhere else (panel-step.js); the Timeline works none out.
+function leftOf(run, step, now) {
+  if (num(run.endedAt) || !isObj(step)) return null
+  const words = stepWords(step, now)
+  return words ? words.text : null
 }
 
-export const timelineModel = safe(({ run, now, steps, width }) => {
+export const timelineModel = safe(({ run, now, steps, step, width }) => {
   if (!validRun(run)) return null
   const t = num(now) ? now : Date.now()
   const w = num(width) ? Math.max(10, Math.floor(width)) : 40
@@ -155,7 +156,7 @@ export const timelineModel = safe(({ run, now, steps, width }) => {
   }
   const history = Array.isArray(steps) ? steps : []
   const kind = STEP_KIND[run.kind] || str(run.kind)
-  return { width: w, lanes, spark: sparkOf(history, kind, t), left: leftOf(run, history, kind, t) }
+  return { width: w, lanes, spark: sparkOf(history, kind, t), left: leftOf(run, step, t) }
 })
 
 const cents = (x) => Math.round(x * 1e4) / 1e4
