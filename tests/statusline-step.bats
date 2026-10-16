@@ -130,7 +130,7 @@ note() {
     {kind: "proof", run: null, session: "s1", pid: $pid, started_at: s(-60), ids: [], doing: "proving 12 of 40 checks",
      parts: {done: 12, total: 40}, proof: {done: 12, total: 40}, first_end: s(480), end: s(480), late: false}' > "$NOTE"
   run render
-  [[ "${lines[0]}" != *"proving"* ]] || { echo "${lines[0]}"; false; }
+  [[ "$output" != *"proving"* && "$output" != *"step_pid"* ]] || { echo "$output"; false; }
 }
 
 @test "R190: the status line works no time out itself: with the run open and no note, no end time" {
