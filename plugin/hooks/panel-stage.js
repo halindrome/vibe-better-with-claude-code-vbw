@@ -200,7 +200,7 @@ export function stageModel(input) {
     const need = needOf(input.need, columns, input.fresh, motion)
     // The needs-you line comes first; the step line takes the next row when there is one.
     const left = maxRows - (need ? 1 : 0)
-    const stepText = left >= 2 ? stepOf(input.step, now, columns) : ''
+    const stepText = left >= 1 ? stepOf(input.step, now, columns) : ''
     const room = left - (stepText ? 1 : 0)
     const seen = new Set(Array.isArray(input.seen) ? input.seen.filter((x) => typeof x === 'string') : [])
     if (room >= 1 && isObj(rn) && Array.isArray(rn.agents) && rn.agents.some((a) => isObj(a) && typeof a.id === 'string' && a.id)) {
