@@ -165,5 +165,6 @@ cmd_run() {
     --arg k "$kind" --arg me "$(vbw_session)" --argjson ids "$ids" --arg at "$at" --arg run "$(run_id "$kind" "$at")" \
     --argjson cost "$(costs_figures "$(vbw_session)")"
   step_start "$kind" "$ids"
+  step_say_note
   jq -r '.lease | "run \(.run) started; agents may write: \(if .files == null then "any file (protected checks excepted)" else (.files | join(", ")) end)"' "$VBW_RECORD"
 }
