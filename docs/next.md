@@ -126,6 +126,25 @@ entry done) and returns the first that does. `vbw next` itself is unchanged: a
 pure reading of the record, and the loop's answers carry the same `action`,
 `instruction` and `detail`.
 
+## The step
+
+When the answer runs a step (planning, a build wave, a fix, QA, or a proof with
+checks left to run), `vbw next --json` carries `step`; otherwise `step` is
+`null`:
+
+```json
+{"kind": "build", "ids": ["P1.1", "P1.2"], "parts": 2, "seconds": 600,
+ "end": "2026-10-16T14:20:00Z",
+ "say": "Building P1.1 and P1.2: about 10 min, until around 14:20"}
+```
+
+`parts` is the number of plans, fixes or checks (a proof counts the checks left
+after reused results); it is `null` for planning and QA. `seconds` and `end` come
+from this clone's step history (see [Time left](panel.md#time-left)). `say` is
+the sentence the router says as given before the step starts. With fewer than 3
+finished steps of the kind, `seconds` and `end` are `null` and `say` reads
+`Building P1.1, P1.2 and P1.3: no end time yet (VBW has timed fewer than 3 steps like this here)`.
+
 ## Build waves
 
 `vbw show contract` prints one line under `plans:`, before the approval
