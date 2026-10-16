@@ -35434,6 +35434,11 @@
       "id": "T161",
       "text": "Mission Control tab plan (owner sketch 2026-10-12, split out of R190 by D419): tabs Now, Plan, Proof, Timeline, Settings; Team, Decisions and Costs fold in (models to Settings, decisions inside each phase in Plan, run costs to Timeline, sound switch to Settings); Settings changes go through the kernel and are read back. Do before T95 (Sessions tab) and T96 (costs) so those are built once",
       "status": "open"
+    },
+    {
+      "id": "T162",
+      "text": "Scope check false alarm that parked T94 (2026-10-16 03:28): prove_scope (cmd-prove.sh) scans all history against today's record; survivor_files(plan) drops a strengthened test file as soon as a check of ANOTHER requirement reads it. T94's plan reused R189's now-box/containment test files for R190 checks (C379/C380), so M34's shipped P144.3 survivor commits on tests/panel/r189/now-box.test.mjs became 'scope violations' and the loop parked T94 (its work reverted). Fix: a survivor commit stays in scope by the record as it was when the plan was done (or scope ignores plans of shipped milestones), with a regression test; T94 then reruns",
+      "status": "open"
     }
   ],
   "decisions": [
