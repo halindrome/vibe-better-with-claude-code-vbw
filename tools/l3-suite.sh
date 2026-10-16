@@ -1110,6 +1110,7 @@ scenario_steptime() {
     if [ "$st_phase" = A ]; then
       st_no_history
       (cd "$dir" && steptime_history) || { say "could not seed the history"; return 0; }
+      say "seeded the clone's steps.json: 3 builds of 2 plans in 10 min, 3 proofs of 6 checks in 1 min"
       st_phase=B
       st_sampler &
       l3 type "$scenario" "/vbw:vibe"
