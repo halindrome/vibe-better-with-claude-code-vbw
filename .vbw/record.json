@@ -4854,6 +4854,19 @@
       "files": [
         "tests/panel-colours-docs.bats"
       ]
+    },
+    {
+      "id": "C373",
+      "req": "R189",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/view.test.mjs"
+      ],
+      "files": [
+        "tests/panel/view.test.mjs"
+      ],
+      "fix": "F240"
     }
   ],
   "project": {
@@ -34306,7 +34319,7 @@
       "req": "R189",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Red is still drawn for something that is not a failure. plugin/hooks/panel-stage.js:74 colours the Comms line 'Weekly limit N%: ...' with stateColor('failed') (red) when the weekly limit is 90% or more; no helper or run has failed. P145's criteria and D407 say red appears only for a failure (docs/panel.md also says 'Red is only for a failure'). tests/panel/stage.test.mjs:128 pins this red, so the old rule was kept instead of being rewritten to D407, and tests/panel/r189/meaning.test.mjs has no check that catches it. Regression test: render the weekly-limit line at 80 and at 95 percent and assert its colour is amber (NEED), never the failed colour; change stage.test.mjs:128 to match; add to meaning.test.mjs a sweep that no Comms or Mission Control text outside a failed helper or failed check uses the failed colour.",
       "phase": "P145"
     },
@@ -34315,7 +34328,7 @@
       "req": "R189",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Seen is kept across a restart for only one of the three new things. Criterion 'what has been seen stays seen after a restart, kept in the user's store' and P144.3 task 1 (a recommendation, a failed helper, a needs-you line) are met for the recommendation only: plugin/hooks/panel.js writes just keys.seen (vbw-panel.seen, line ~586) and reads it back in begin() (~767). The needs-you line's seen mark is st.needSeen and the failed helper's is st.helpersSeen ({} in fresh(), line 95); neither is ever written to the store or read from it. After a restart a standing gate shows 'new' again and an already-opened failed helper's card and Comms row come back marked/unseen. docs/panel.md (~line 415) states 'Seen stays seen after a restart, and unseen stays new', which is false for these two. tests/panel/r189/next-buttons.test.mjs pins the restart only for the recommendation (test at line 135); the failed-helper and needs-you tests (lines 158, 177) never restart. Fix: keep the seen needs-you id (needId) and the opened failed-helper ids under vbw-panel.* keys (test.* in a test session), read them in begin(), and correct the doc if any case stays out. Regression test: open a failed helper's card and see a needs-you line, start a second session on the same store and the same project state, and assert neither is marked; a mutation that stops writing either key must turn it red.",
       "phase": "P144"
     },
@@ -34324,7 +34337,7 @@
       "req": "R189",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Comms keeps showing gates that are already answered. plugin/hooks/panel-view.js answered() clears only approve, ship and accept; every other gate kind (milestone, spec, convert, unblock, escalate, scope) returns false, so it stands until the next 'vbw next' rewrites next.json. Checked with liveNeed: record milestone M2 status 'open' (new milestone started) plus next.json {action:'milestone',gate:true} still returns 'the milestone is shipped: choose what comes next'; a spec gate with requirements present, and an unblock gate with no blocked plan, still return a need. The phase goal says every message clears the moment it stops being true. The same stale next.json also drives suggest() in plugin/hooks/panel.js (reads st.next directly, not liveNeed), which puts /vbw:approve back in the prompt in a new session after the plan was approved. Regression test should: for each gate kind, change the record so the gate is done (new milestone started, requirements written, plan unblocked, converted), leave next.json unchanged, and check the next render of Comms, Mission Control, the hint line and /vbw-status lacks the line, and that no /vbw:approve is suggested after a newer 'Contract approved' decision.",
       "phase": "P142"
     },
@@ -34333,7 +34346,7 @@
       "req": "R189",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "A failed helper can be marked seen before it fails, so its red row never reaches Comms. plugin/hooks/panel.js act(): 'a.select' (any card) and the open-with-agent action set st.helpersSeen[id] = true whatever the helper's state, and stage crewOf treats failed + seen as not shown. A card selected while the helper is working (the selection stays until toggled) therefore hides its later failure from Comms, with Mission Control closed or on another tab, against 'a failed helper stays as a red row until the user opens it'. Regression test should: select a working helper's card, then turn it failed, and check Comms shows its red x row until it is opened again after the failure (seen must only count from the moment the helper is failed).",
       "phase": "P142"
     },
@@ -34342,7 +34355,7 @@
       "req": "R189",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/panel.md states a false fact about Comms figures. The motion table (line ~576) says 'Each agent in Comms' is a small figure posed by reading, editing, running, writing, quiet, done, failed, and line ~586 says figures need three rows 'for each agent'. The built behaviour (D405, panel-stage.js SPRITES = 3, figures only for working non-quiet helpers at full motion) is at most 3 working helpers as figures, the rest text rows; done helpers leave at once and failed ones are a red x text row, so no done, failed or quiet figure is ever drawn on Comms. The Comms section never says 'at most 3' either. Regression test (tests/panel-comms-docs.bats) should: require the docs to say at most 3 working helpers get a figure at full motion and the rest are text rows, and reject 'Each agent in Comms' as a figure and done/failed/quiet figure poses on Comms.",
       "phase": "P142"
     }
@@ -43115,6 +43128,15 @@
         "milestone": "M34",
         "started": "2026-10-16T00:20:38Z",
         "ended": "2026-10-16T00:24:46Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261016T002518Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M34",
+        "started": "2026-10-16T00:25:18Z",
+        "ended": "2026-10-16T00:41:41Z",
         "cost": null
       }
     ],
