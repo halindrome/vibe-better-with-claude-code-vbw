@@ -33277,7 +33277,7 @@
         "plugin/lib/cmd-status.sh"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "History (new plugin/lib/steps.sh, replacing vbw_step_add in core.sh): each finished step goes into steps.json in the clone's git folder with its kind, start, end, seconds and, for a build or fix, its parts (plans or fixes in the run); the latest 50 of each kind stay, in time order; a missing, damaged or unwritable file never fails a step. JSON only through jq.",
@@ -33286,7 +33286,444 @@
         "vbw plan done adds one part done at once; when this run's own pace (time so far / parts done x parts left) ends after the first end time, end moves to that projection and late is true; it can move again and never goes earlier than first_end (D424).",
         "vbw status --json gains step: the live note or null, plus minutes_late (whole minutes past first_end for a step without parts, else null); steps.sh also holds the one kernel wording of a step (jq defs) for vbw status, vbw next and vbw run start, used by P148.1."
       ],
-      "note": "Code done and C374 C375 C376 pass, but the approved tests are defective and cannot run green as approved: tests/step-helper.bash step_back has a jq syntax error (def without a semicolon followed by a pipe; fails every late-step test), and tests/step-history.bats test 7 compares a /var/... path with git's /private/var/... real path on macOS. I fixed both in the working tree (uncommitted: vbw commit refuses check files outside a survivor; they wait for one approval). vbw mutate refuses to run until they are committed, so the mutation step cannot start. Needs: approve and commit those two test edits, then re-run P146.1 for the mutation step."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a finished build is recorded in steps.json with its kind, start, end, seconds and its plans as parts"
+          },
+          "what": "step_record never records parts",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C374": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:50:34Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a finished fix is recorded with its fixes as parts"
+          },
+          "what": "fix parts dropped",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C374": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:51:35Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "planning, QA and mapping steps are recorded with no parts"
+          },
+          "what": "plan gets parts",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C374": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:52:52Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the history keeps the latest 50 steps of each kind, so many steps of one kind never push out another"
+          },
+          "what": "keep 50 overall",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C374": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:53:53Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a damaged history never fails a step and means no end time yet"
+          },
+          "what": "damaged history gives a guess",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C374": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:54:47Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a missing or unwritable history never fails a step and means no end time yet"
+          },
+          "what": "missing history gives a guess",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C374": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:55:45Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "under /bin/bash the history and the note stay in the project and the clone's git folder; nothing else outside the project is written"
+          },
+          "what": "note written to TMPDIR",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C374": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:57:02Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the step code reads and writes JSON only through jq"
+          },
+          "what": "pid read by grep",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C374": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:58:00Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a kind with parts expects the median time per part over its latest 10 steps that recorded parts, times this step's parts"
+          },
+          "what": "median per part not times parts",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C375": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:58:55Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "steps that recorded no parts do not count for a kind with parts"
+          },
+          "what": "partless steps counted",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C375": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:59:50Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a kind without parts expects the median of its latest 10 steps; an even count takes the mean of the two middle values"
+          },
+          "what": "even median takes upper middle",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C375": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:00:35Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "with fewer than 3 finished steps of the kind there is no end time, never a guess"
+          },
+          "what": "minimum 1 step instead of 3",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C375": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:01:25Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "vbw run start writes the note: kind, run, session, ids, what it is doing, parts, start, first and current end time, late"
+          },
+          "what": "note drops session",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:04:25Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "each kind says what it is doing; QA names the phases it checks and a fix its fixes"
+          },
+          "what": "qa wording says QA",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C376": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T10:06:11Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "each vbw plan done counts one more part done at once"
+          },
+          "what": "plan done never counts",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:07:37Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a late step with parts moves its end to this run's own pace, marked later than usual, and the end can move again (D424)"
+          },
+          "what": "never late",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:10:32Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the end time never moves earlier than the first end time"
+          },
+          "what": "end can move earlier",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:11:58Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "each kind says what it is doing; QA names the phases it checks and a fix its fixes"
+          },
+          "what": "qa wording says QA",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:16:22Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b",
+          "strengthened": [
+            "tests/step-note.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a late step without parts keeps its first end time and vbw status --json gives the whole minutes past it"
+          },
+          "what": "minutes late never given",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:17:44Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "vbw status --json gives the running step as the note says it"
+          },
+          "what": "status gives no step",
+          "files": [
+            "plugin/lib/cmd-status.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:18:51Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "with no basis the note and vbw status --json carry no end time"
+          },
+          "what": "no basis still gives an end",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:19:43Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "when a run ends its note goes; a note of an ended run is never a running step and the next step replaces it"
+          },
+          "what": "run end keeps the note",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:21:48Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a proof note whose process is gone is never a running step and the next step removes it"
+          },
+          "what": "dead proof process counts as live",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:23:33Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "task": 1,
+          "what": "history never written",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C374": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:25:33Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "task": 2,
+          "what": "median ignores the seconds",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C375": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:30:11Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "task": 3,
+          "what": "note ids empty",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:32:13Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "task": 4,
+          "what": "pace uses one more part",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:33:49Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "task": 5,
+          "what": "minutes late counts seconds",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C376": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:34:53Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        }
+      ]
     },
     {
       "id": "P146.2",
@@ -33328,7 +33765,7 @@
         "tests/statusline.bats"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vbw-statusline.sh reads .vbw/runtime/step.json as one more input of the same single jq call (no new process); a proof note counts only while its pid lives (kill -0, a shell builtin); a note whose run is not the open run counts as none.",
@@ -33336,7 +33773,273 @@
         "tools/bench-hooks.sh: a 'status line (step running)' case measured against the status line budget, which fails with 'status line (step running): the step was not shown, so the measure left it out' when the end time is missing from the output.",
         "Bring tests/statusline.bats's run-state expectations to the new first line."
       ],
-      "note": "Tasks 1-4 committed and C378/C382 green. The deep mutation step cannot start: vbw mutate refuses because tests/step-helper.bash and tests/step-history.bats (check files of C378, owned by another plan, not in P147.1) have uncommitted edits (pwd -P fix, jq def semicolon fix) that sat uncommitted for 15+ minutes. I may not commit another plan's files. Needs: those two files committed or reverted by their owner, then rerun the mutation step (rules R190.35-42, 60-62 and tasks 1-4)."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a build shows '▶ build P1.1, P1.2 · 1 of 2 · until HH:MM' and no 'about'"
+          },
+          "what": "until replaced by about",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:49:05Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a background proof shows 'proving N of M checks · until HH:MM' and counts up"
+          },
+          "what": "proof shows no doing",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:50:07Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a proof inside a fix shows as what the fix is doing, with the fix's time"
+          },
+          "what": "proof inside build ignored",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:50:54Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "late with parts the status line shows 'until HH:MM, later than usual'"
+          },
+          "what": "later than usual dropped",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:51:48Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "late without parts the status line shows 'until HH:MM, N min late'"
+          },
+          "what": "min late dropped",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:53:03Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "with no basis the status line shows the step and what it is doing with no time"
+          },
+          "what": "no-basis shows a time",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:53:55Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "an end on another day names the day ('until tomorrow 00:20'), in 24-hour local time"
+          },
+          "what": "tomorrow not named",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:54:44Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a note of another run or of a dead proof process shows no step in the status line"
+          },
+          "what": "dead pid counts",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C378": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T09:55:40Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a note of another run or of a dead proof process shows no step in the status line"
+          },
+          "what": "other run counts",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:56:50Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a note of another run or of a dead proof process shows no step in the status line"
+          },
+          "what": "dead pid counts",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:15:42Z",
+          "head": "5932c8d87b8d118bbd3dd0535017cbf9b1dcc003"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the status line works no time out itself: with the run open and no note it shows no end time"
+          },
+          "what": "end time invented without note",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:17:04Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "task": 1,
+          "what": "pid liveness ignored",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:18:18Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "task": 1,
+          "what": "note not read",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:18:58Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the hook bench measures the status line with a step running against the status line budget"
+          },
+          "what": "bench drops step case",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C382": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:23:03Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a status line that does not show the step fails the hook bench"
+          },
+          "what": "bench ignores missing step",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C382": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:24:39Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "task": 2,
+          "what": "later-than-usual wording dropped",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C378": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:25:30Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "task": 3,
+          "what": "step case commented out",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C382": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:29:37Z",
+          "head": "a02c85162da306d928bf8238e640a834c951c97b"
+        },
+        {
+          "task": 4,
+          "none": "task 4 only edits test expectations in tests/statusline.bats; the status line checks C378 and the bench (C382) mutate the code they pin",
+          "at": "2026-10-16T10:29:41Z"
+        }
+      ]
     },
     {
       "id": "P147.2",
@@ -33768,7 +34471,7 @@
         "plugin/skills/status/SKILL.md"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vibe/SKILL.md: one rule, before starting planning, a build, a fix, QA or a background proof, say step.say from vbw next --json as given (one line).",
@@ -33828,9 +34531,34 @@
           "task": 3,
           "none": "keeping existing skill tests green is no code; tests/skills.bats ran green after the edits",
           "at": "2026-10-16T09:05:30Z"
+        },
+        {
+          "task": 1,
+          "what": "removed the step.say rule",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C384": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:01:03Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
+        },
+        {
+          "task": 2,
+          "what": "removed the running step sentence",
+          "files": [
+            "plugin/skills/status/SKILL.md"
+          ],
+          "checks": {
+            "C384": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:01:26Z",
+          "head": "064b6cca0cea057b93787731b4ac22f6d3d58e4e"
         }
-      ],
-      "note": "Code done and committed (7aafa3d8, 5f01e517); C384 green; rule breaks R190.71-73 red. Task mutations task1/task2 cannot run: vbw mutate refuses because tests/step-helper.bash and tests/step-history.bats (another plan's pending edit, a pwd -P fix for the /private path) differ from the last commit and wait for approval; task3 recorded --none. Re-run 'vbw mutate P148.2 task1 \"removed step.say rule\" plugin/skills/vibe/SKILL.md' and task2 (status SKILL.md) once those files are committed, then vbw plan done."
+      ]
     },
     {
       "id": "P148.3",
@@ -39159,8 +39887,8 @@
     "profile": "balanced",
     "autonomy_cap": 25,
     "models": {
-      "architect": "opus",
-      "lead": "opus"
+      "architect": "fable",
+      "lead": "fable"
     }
   },
   "evidence": {
@@ -44728,6 +45456,15 @@
         "milestone": "M36",
         "started": "2026-10-16T09:01:49Z",
         "ended": "2026-10-16T09:27:10Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261016T094002Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M36",
+        "started": "2026-10-16T09:40:02Z",
+        "ended": "2026-10-16T10:35:21Z",
         "cost": null
       }
     ],
