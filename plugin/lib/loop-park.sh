@@ -103,7 +103,7 @@ loop_park() {
     | (.loop.items[] | select(.id == $id)) |= (.status = "parked" | .reason = $reason | .reverts = [] | .cost = $cost | .at = $at)
     | (.todos[] | select(.id == $id)).status = "open"
     | .milestone.status = "parked"
-    | .parked = ((.parked // []) + [{id: $m, title: .milestone.title, at: $at, reason: $reason}])
+    | .parked = ((.parked // []) + [{id: $m, title: .milestone.title, at: $at, reason: $reason, ids: ($ph + $rm + $fx)}])
     | (if $total == null then . else .costs.milestones[$m] = ((.costs.milestones[$m] // {baseline: {}}) + {total: $total}) end)' \
     --argjson rm "$rmreq" --arg id "$id" --arg reason "$reason" --argjson cost "$cost" \
     --argjson total "$total" --arg at "$(vbw_now)"

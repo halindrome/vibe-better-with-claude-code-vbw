@@ -31,7 +31,7 @@ cmd_qa() {
     printf '%s' "$record" | jq -e --arg q "$freq" 'any(.requirements[]; .id == $q)' > /dev/null || vbw_die "unknown requirement $freq"
     [ -z "$fphase" ] || printf '%s' "$record" | jq -e --arg p "$fphase" --arg q "$freq" 'any(.phases[]; .id == $p and any(.reqs[]; . == $q))' > /dev/null \
       || vbw_die "$fphase is not a phase with requirement $freq: name the phase whose QA found the problem"
-    record_update "$VBW_JQ_DEFS"'.fixes += [{id: (.fixes | next_id("F")), req: $q, source: "qa", attempts: 0, status: "open", note: $t} + (if $p == "" then {} else {phase: $p} end)]
+    record_update "$VBW_JQ_DEFS"'.fixes += [{id: next_fix_id, req: $q, source: "qa", attempts: 0, status: "open", note: $t} + (if $p == "" then {} else {phase: $p} end)]
       | escalate_phases([.phases[] | select((.tier // "express") == "express" and (.reqs | index($q)) and ($p == "" or .id == $p)) | .id]; null; "QA found a problem in \($q): \($t)"; $at)' \
       --arg q "$freq" --arg t "$ftext" --arg p "$fphase" --arg at "$(vbw_now)"
     jq -r '.fixes[-1] | "\(.id) opened for \(.req)\(if .phase then " in \(.phase)" else "" end) (qa): \(.note)"' "$VBW_RECORD"

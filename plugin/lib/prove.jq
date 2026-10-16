@@ -46,7 +46,7 @@ $ev[0] as $ev
         (if $i != null then .fixes[$i].status = "closed" else . end)
       elif $i == null and ($t.built | not) then .
       elif $i == null then
-        .fixes += [{id: (.fixes | next_id("F")), ($t.key): $t.target, attempts: 0, status: "open", note: $t.note}]
+        .fixes += [{id: next_fix_id, ($t.key): $t.target, attempts: 0, status: "open", note: $t.note}]
       elif .fixes[$i].status == "fixed" then
         .fixes[$i].attempts += 1
         | .fixes[$i].note = $t.note

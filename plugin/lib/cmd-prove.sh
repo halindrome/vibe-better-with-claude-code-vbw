@@ -180,15 +180,21 @@ prove_stamp() {
 # judged by its own proofs; today's record can no longer judge them (T162).
 # Prints a JSON array of violations.
 prove_scope() {
-  local entry sha plan f
+  local entry sha plan f r undone=""
   # shellcheck source=cmd-commit.sh
   . "$VBW_LIB/cmd-commit.sh"
+  # The commits a park undid: their changes are gone and the park recorded why, so a later plan that
+  # took their plan id is not blamed for them (T163). A revert made by hand is still judged.
+  while IFS= read -r r; do
+    undone="$undone $(git log -1 --format=%B "$r" 2> /dev/null | sed -n 's/^This reverts commit \([0-9a-f]\{40\}\)\..*/\1/p')"
+  done < <(printf '%s' "$1" | jq -r '(.loop.items // [])[].reverts[]?')
   {
     while IFS= read -r -d '' entry; do
       sha=${entry%%$'\x1f'*}
       plan=${entry#*$'\x1f'}
       plan=${plan%%$'\n'*}
       [ -n "$plan" ] || continue
+      case "$undone " in *" $sha "*) continue ;; esac
       while IFS= read -r -d '' f; do
         printf '%s\x1f%s\x1f%s\n' "${sha:0:12}" "$plan" "$f"
       done < <(git diff-tree -z --no-commit-id --name-only -r --root "$sha")

@@ -263,7 +263,8 @@ record_commit() {
   ) || [ "$strict" = 0 ]
 }
 
-# jq helper, prepended to update filters: the next free id with prefix P.
+# jq helper, prepended to update filters: the next free id with prefix P;
+# next_fix_id: the next fix id, past those a parked milestone freed (T163).
 # shellcheck disable=SC2016,SC2034 # jq text, not shell; used by the cmd-*.sh files
 # covers($p): a plan file entry covers PATH: the same path, or a directory
 # entry (ending in /) with PATH under it; two file lists overlap when either
@@ -271,6 +272,7 @@ record_commit() {
 # build wave: those whose after-plans are all in $done, no two sharing a file.
 # vbw next and the approval's waves line both use it (D166).
 VBW_JQ_DEFS='def next_id($p): (([.[]?.id | ltrimstr($p) | tonumber?] | max) // 0) + 1 | "\($p)\(.)";
+def next_fix_id: (.fixes + [(.parked // [])[].ids[]? | select(startswith("F")) | {id: .}]) | next_id("F");
 def covers($p): . as $e | $e == $p or (($e | endswith("/")) and ($p | startswith($e)));
 def overlaps($a; $b): any($a[], $b[]; . == "*") or any($a[]; . as $x | any($b[]; . as $y | ($x | covers($y)) or ($y | covers($x))));
 def proof_complete: (.evidence.commands // {}) as $m | .evidence.full != false

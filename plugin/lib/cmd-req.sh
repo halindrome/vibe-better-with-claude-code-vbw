@@ -40,7 +40,7 @@ cmd_req() {
   else
     record_update "$VBW_JQ_DEFS"'(.requirements[] | select(.id == $q)).status = "rejected"
       | del(.requirements[] | select(.id == $q) | .skipped)
-      | .fixes += [{id: (.fixes | next_id("F")), req: $q, attempts: 0, status: "open", note: $note}]' \
+      | .fixes += [{id: next_fix_id, req: $q, attempts: 0, status: "open", note: $note}]' \
       --arg q "$id" --arg note "$3"
     jq -r '.fixes[-1] | "\(.req) rejected: \(.id) opened (\(.note))"' "$VBW_RECORD"
   fi

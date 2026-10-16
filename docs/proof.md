@@ -472,7 +472,9 @@ form in `.vbw/spec.md`.
    Then it removes the copy, also when interrupted.
 4. Scope: every commit with a `VBW-Plan:` trailer naming a plan of the current
    milestone must change only that plan's files. A shipped milestone's commits
-   were judged by its own proofs and are not judged again.
+   were judged by its own proofs and are not judged again, nor are the commits
+   a park undid (their `git revert` is in the loop's `reverts`): their changes
+   are gone. A commit reverted by hand is still judged.
 5. Writes the evidence and updates requirements and fixes in one atomic record
    update, then prints a one-screen summary. Exit 0 only when everything passed.
 

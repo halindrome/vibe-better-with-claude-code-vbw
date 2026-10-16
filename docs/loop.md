@@ -266,7 +266,9 @@ so the loop retries an item once, never twice.
    did before the item started.
 4. Marks the milestone `parked`, with the reason and the time, and freezes its
    cost the way a ship does (docs/costs.md). The milestone goes in the
-   record's `parked` list (docs/record.md).
+   record's `parked` list (docs/record.md), with the phase, requirement and
+   fix ids it freed: their commits keep those ids in their trailers, so no
+   later phase, requirement or fix takes them again.
 5. Records a decision: the item, the reason, the revert commits and how to
    bring the work back.
 6. Leaves the item's backlog entry open, and sets the item to `parked` in the

@@ -148,7 +148,7 @@ spec_add() {
   text=${text% }
   [ -n "$text" ] || vbw_usage_error "requirement text must not be empty"
   id=$(record_read | jq -r --slurpfile f_p <(printf '%s' "$parsed") \
-    '$f_p[0] as $p | [(.requirements[], $p.requirements[]) | .id | ltrimstr("R") | tonumber] | "R\((max // 0) + 1)"')
+    '$f_p[0] as $p | [((.requirements[], $p.requirements[]) | .id), ((.parked // [])[].ids[]? | select(startswith("R"))) | ltrimstr("R") | tonumber] | "R\((max // 0) + 1)"')
   line="- $id [$proof] $text"
   end=$(printf '%s' "$parsed" | jq -r '.end')
   tmp=$(mktemp "$VBW_RUNTIME/spec.XXXXXX") || vbw_die "cannot write $VBW_RUNTIME"

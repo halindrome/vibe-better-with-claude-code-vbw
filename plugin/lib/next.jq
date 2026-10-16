@@ -86,7 +86,7 @@ def fix_files($r): if .command then ["*"]
         elif $nf <= 9 then ([$cell, "standard"] | min_by(qa_rank))
         else $cell end)}] | from_entries) as $tiers_qa
 # The next free phase number (R106).
-| ([(.phases[].id), (.plans[] | .id, .phase), (.decisions[]?.text // empty)]
+| ([(.phases[].id), (.plans[] | .id, .phase), (.decisions[]?.text // empty), ((.parked // [])[].ids[]?)]
    | map(strings | [scan("(?<![A-Za-z0-9])P([0-9]+)") | .[0] | tonumber] | .[]) | max // 0 | . + 1) as $next_phase
 | (if .lease != null and .lease.session != null and .lease.session != $session then
     result("run"; false; "A VBW \(.lease.kind) run (\(.lease.run)) belongs to another session: wait for it, or check vbw status"; {lease: .lease})

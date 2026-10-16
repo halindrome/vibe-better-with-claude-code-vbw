@@ -160,7 +160,9 @@ if type != "object" then ["record must be a JSON object"] else
     ( arr("parked")[]
       | ( select(((.id | type == "string" and test("^M[0-9]+$")) and (.title | nonempty) and (.at | iso) and (.reason | nonempty)) | not)
           | "parked milestones need an id, a title, an ISO-8601 UTC time and a reason" ),
-        ( keys[] | select(one_of(["id","title","at","reason"]) | not) | "a parked milestone has an unknown field: \(.)" ) ),
+        ( select(has("ids") and ((.ids | type == "array" and all(.[]; type == "string" and test("^[PRF][0-9]+$"))) | not))
+          | "a parked milestone's ids are the phase, requirement and fix ids it freed (P<n>, R<n>, F<n>)" ),
+        ( keys[] | select(one_of(["id","title","at","reason","ids"]) | not) | "a parked milestone has an unknown field: \(.)" ) ),
     ( arr("parked") | [.[].id] | group_by(.) | map(select(length > 1) | "milestone \(.[0]) is parked twice") | .[] ),
     ( arr("parked")[] | .id as $p
       | select(any(arr("shipped")[]; .id == $p)) | "milestone \($p) cannot be both shipped and parked" ),
