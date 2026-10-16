@@ -15,4 +15,4 @@ allowed-tools: Bash("${CLAUDE_PLUGIN_ROOT}/bin/vbw" *) Bash(vbw *)
 Write to the user's level, explanation depth and involvement (above; "-": plain words).
 
 Summarize the above for the user in at most six lines: progress, what is done,
-what is next and whether it needs them. When `vbw status` shows a running step, include it and its end time in vbw status's own words (never reword the time). Change nothing.
+what is next and whether it needs them. When `vbw status` shows a running step, include it and its end time in vbw status's words (never reword the time). Change nothing.
