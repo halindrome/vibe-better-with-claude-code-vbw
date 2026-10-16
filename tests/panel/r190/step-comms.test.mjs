@@ -93,3 +93,25 @@ test('while a workflow crew shows, the step time shows with it', () => {
   assert.match(text, /P44\.1/)
   assert.ok(text.includes('about 12 min, until around ' + hhmm(END)), text)
 })
+
+test('the step line is cut to the columns Comms has, never spilled', () => {
+  for (const columns of [30, 50]) {
+    const model = stage.stageModel({ step: note(), now: NOW, columns, maxRows: 8 })
+    const lines = collect(stage.renderStage(UI, model))
+    assert.ok(lines.length > 0, 'no step line')
+    for (const l of lines) assert.ok([...l].length <= columns, columns + ' columns: ' + l)
+    assert.match(lines.join('\n'), /…/)
+  }
+})
+
+test("the step line never pushes out the needs-you line", () => {
+  const need = { key: 'k', what: 'approve the plan', at: NOW }
+  const alone = stage.stageModel({ step: note(), need, now: NOW, columns: 100, maxRows: 1 })
+  const one = collect(stage.renderStage(UI, alone)).join('\n')
+  assert.match(one, /VBW needs you/)
+  assert.doesNotMatch(one, /until around/)
+  const both = stage.stageModel({ step: note(), need, now: NOW, columns: 100, maxRows: 2 })
+  const two = collect(stage.renderStage(UI, both)).join('\n')
+  assert.match(two, /VBW needs you/)
+  assert.match(two, /until around/)
+})
