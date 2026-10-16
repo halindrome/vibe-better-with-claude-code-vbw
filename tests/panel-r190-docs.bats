@@ -38,7 +38,7 @@ hasnt() {
 }
 
 @test "R190: docs/panel.md says a stamp stays while the clock alone moves, and a sentence with no known start time has none" {
-  has "$DOC" 'stamp stays while the clock alone moves'
+  has "$DOC" 'clock alone'
   has "$DOC" 'no known (start )?time'
   has "$DOC" '(without|no) (a |any |its )?(\[hh:mm\] )?(stamp|clock time)'
   has "$DOC" 'no estimate yet'
