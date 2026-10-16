@@ -44058,6 +44058,11 @@
         "out": 0,
         "at": "2026-10-15T20:40:30Z"
       }
-    }
+    },
+    "ended": {
+      "at": "2026-10-16T00:42:36Z",
+      "reason": "approve needs you: Approve the test files new or edited since the approval (a fix may add or change them), once, before they are proved: tests/panel-comms-docs.bats, tests/panel/r189/comms-crew.test.mjs, tests/panel/r189/comms-need.test.mjs, tests/panel/r189/meaning.test.mjs, tests/panel/r189/next-buttons.test.mjs, tests/panel/view.test.mjs (item T92, step approve)"
+    },
+    "report": ".vbw/loop-report.md"
   }
 }
