@@ -44737,6 +44737,10 @@
     "stopping": {
       "at": "2026-10-16T02:29:47Z",
       "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
+    },
+    "ended": {
+      "at": "2026-10-16T02:33:24Z",
+      "reason": "stopped by the user (session 0ee781c3-c5b6-4a6c-889f-04b89f1fba4a)"
     }
   },
   "parked": [

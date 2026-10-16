@@ -1,6 +1,6 @@
 # Loop report
 
-Started 2026-10-16T01:48:07Z. State: running (an item still in progress shows as in progress).
+Started 2026-10-16T01:48:07Z. State: ended 2026-10-16T02:33:24Z: stopped by the user (session 0ee781c3-c5b6-4a6c-889f-04b89f1fba4a).
 
 ## Shipped
 none yet
@@ -10,8 +10,9 @@ none yet
 
 ## Waiting for you
 no skipped [human] requirement
-the loop is still running
+the loop stopped: stopped by the user (session 0ee781c3-c5b6-4a6c-889f-04b89f1fba4a)
 
 ## Cost
-Loop total: $6.64 (37343 in, 117 out)
+Loop total: $1342.44 (296542 in, 215 out)
 - T94 (parked): $1340.85 (275572 in, 513 out); time 0h39m of a 9h34m budget
+- T102 (in_progress): $1342.44 (296542 in, 215 out) so far (cut off when the loop ended); time 0h04m of a 9h34m budget
