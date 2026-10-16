@@ -18719,12 +18719,11 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "719b138fff2f6609fa719b88b5c1b35a03823d7efb2c3b7d8d90df6b6b07d312",
-        "at": "2026-10-16T00:23:21Z",
-        "note": "17/18 checks",
-        "rounds": 1
+        "tree": "95b6b40a2c078d3056e815286b1a35d9bf31ef093103c0eb128914ca1750af5c",
+        "at": "2026-10-16T01:05:55Z",
+        "note": "8/8 checks"
       }
     },
     {
@@ -34338,7 +34337,7 @@
       "req": "R189",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Seen is kept across a restart for only one of the three new things. Criterion 'what has been seen stays seen after a restart, kept in the user's store' and P144.3 task 1 (a recommendation, a failed helper, a needs-you line) are met for the recommendation only: plugin/hooks/panel.js writes just keys.seen (vbw-panel.seen, line ~586) and reads it back in begin() (~767). The needs-you line's seen mark is st.needSeen and the failed helper's is st.helpersSeen ({} in fresh(), line 95); neither is ever written to the store or read from it. After a restart a standing gate shows 'new' again and an already-opened failed helper's card and Comms row come back marked/unseen. docs/panel.md (~line 415) states 'Seen stays seen after a restart, and unseen stays new', which is false for these two. tests/panel/r189/next-buttons.test.mjs pins the restart only for the recommendation (test at line 135); the failed-helper and needs-you tests (lines 158, 177) never restart. Fix: keep the seen needs-you id (needId) and the opened failed-helper ids under vbw-panel.* keys (test.* in a test session), read them in begin(), and correct the doc if any case stays out. Regression test: open a failed helper's card and see a needs-you line, start a second session on the same store and the same project state, and assert neither is marked; a mutation that stops writing either key must turn it red.",
       "phase": "P144"
     },
