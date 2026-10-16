@@ -124,12 +124,14 @@ export function renderNext(ui, input, act) {
       if (c.pulse === 1 || c.pulse === 3) itemProps.color = ACCENT
       else if (c.pulse === 2) itemProps.color = HIGHLIGHT
     }
+    // Claude Code's h() lets a Button hold only strings and Text (never a Box), so
+    // the item is the Button, the chip sits beside it and the reason under it.
+    const label = h(Text, itemProps, cut(r.text, Math.max(1, w - [...chip].length - 1)))
     const head = h(Box, { key: 'head', flexDirection: 'row', columnGap: 1 },
-      h(Text, itemProps, cut(r.text, Math.max(1, w - [...chip].length - 1))),
+      h(Button, { key: 'item-button', plain: true, onPress: press(commandOf(r), true) }, label),
       h(Text, { key: 'chip', dimColor: true, wrap: 'truncate' }, chip))
     const body = r.reason ? [head, h(Text, { key: 'reason', dimColor: true, wrap: 'truncate' }, cut(r.reason, w))] : [head]
-    return h(Button, { key: l.id, plain: true, onPress: press(commandOf(r), true) },
-      h(Box, { key: 'row', flexDirection: 'column' }, ...body))
+    return h(Box, { key: l.id, flexDirection: 'column' }, ...body)
   })
   return h(Box, { key: 'whats-next', flexDirection: 'column', marginBottom: 1 },
     h(Box, { key: 'whats-next-title', flexDirection: 'row' }, ...titlePieces(Text, c.title), ...(unseen === true ? [newMark(Text, motion)] : [])),

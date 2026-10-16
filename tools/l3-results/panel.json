@@ -1,15 +1,17 @@
 {
   "scenario": "panel",
   "fixture": "greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan waits for the user's approval; no finished steps in the clone (so no estimate basis); window 200 columns wide, resized to 200x24 and to 60x40 with the needs-you line up and again while the build's helpers work; the user then approves and the build runs",
-  "cost_usd": 0.09,
+  "cost_usd": 0.05,
   "evidence_level": "L3",
-  "at": "2026-10-15T23:17:30Z",
+  "at": "2026-10-16T01:26:37Z",
   "passed": true,
   "facts": {
     "milestone_shown": true,
     "progress_shown": true,
     "doing_shown": true,
     "need_shown": true,
+    "tabs_shown": true,
+    "next_row_shown": true,
     "need_text": "Please approve the plan before VBW builds it.",
     "cost_shown": true,
     "estimate_shown": "no basis yet",
@@ -36,6 +38,7 @@
     "Mission Control's own rows and tabs at those sizes (held by tests/panel/r189/containment.test.mjs, L1)",
     "figure counts and the motion levels (full, calm, off)",
     "a failed helper, a celebration and a ship in the real window",
+    "a milestone shipped before the recommendation (the seed stores the recommendation on an active milestone)",
     "a time estimate with a number"
   ]
 }

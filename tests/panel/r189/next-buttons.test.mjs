@@ -58,21 +58,25 @@ const styled = (node, skip = () => false) => {
 const isNew = (n) => n.type === 'Text' && textOf(n).trim() === 'new'
 const hasNew = (node) => Boolean(find(node, isNew))
 
-test("each row is one Button with the item, its size chip and, where VBW gave one, the reason in dim text", async () => {
+test("each row is a Button holding the item, with its size chip beside it and, where VBW gave one, the reason in dim text under it", async () => {
   const h = await session(record({ recommendation: REC(), ...motion('off') }))
   const s = await section(h)
   const bs = rows(s)
   assert.equal(bs.length, 3, 'the top pick and two runners-up, one Button each: ' + bs.map(whole).join(' | '))
   const [top, gift, dark] = bs
   assert.match(whole(top), /Refunds for paid orders/)
-  assert.match(whole(top), /\bsmall\b/)
-  const reason = find(top, (n) => n.type === 'Text' && /Customers ask for it most/.test(textOf(n)))
-  assert.ok(reason, 'the reason is inside the top row')
-  assert.equal(reason.props.dimColor, true, 'the reason is dim')
   assert.match(whole(gift), /Gift cards/)
-  assert.match(whole(gift), /\blarge\b/)
   assert.match(whole(dark), /Dark mode/)
-  assert.match(whole(dark), /\bmedium\b/)
+  // Claude Code lets a Button hold only strings and Text (T160): the chip and the reason sit outside it.
+  const rowBox = (re) => find(s, (n) => n.type === 'Box' && n.children.some((c) => c.type === 'Box' && c.children.includes(bs.find((b) => re.test(whole(b))))))
+  for (const [re, size] of [[/Refunds/, 'small'], [/Gift cards/, 'large'], [/Dark mode/, 'medium']]) {
+    const box = rowBox(re)
+    assert.ok(box, 'a row Box holds the Button: ' + re)
+    assert.ok(find(box, (n) => n.type === 'Text' && n.props.dimColor === true && textOf(n).includes(size)), 'the size chip is beside it: ' + size)
+  }
+  const reason = find(rowBox(/Refunds/), (n) => n.type === 'Text' && /Customers ask for it most/.test(textOf(n)))
+  assert.ok(reason, 'the reason is under the top row')
+  assert.equal(reason.props.dimColor, true, 'the reason is dim')
 })
 
 test("pressing a row puts the item's command in the prompt and never sends it", async () => {

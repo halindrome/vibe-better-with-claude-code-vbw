@@ -929,8 +929,15 @@ export function register(on) {
         act: (a) => act($, st, a),
         sound: () => setSound($, st, !st.sound),
       })
-    } catch {
-      return next(e)
+    } catch (err) {
+      // Never an empty pane with nothing said (T160): one dim line with the reason.
+      try {
+        const { Text } = $.ui.resolve(e)
+        const reason = String(err && err.message ? err.message : err).split('\n')[0].replace(/\s+/g, ' ').trim().slice(0, 120)
+        return h(Text, { key: 'could-not-draw', dimColor: true, wrap: 'truncate' }, 'Mission Control could not draw: ' + (reason || 'unknown reason'))
+      } catch {
+        return next(e)
+      }
     }
   })
 

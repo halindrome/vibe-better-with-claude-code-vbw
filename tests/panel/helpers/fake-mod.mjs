@@ -13,6 +13,12 @@ const flat = (xs) => xs.flat(Infinity).filter((c) => c !== undefined && c !== nu
 globalThis.h = (type, props, ...children) => {
   if (!type || typeof type.element !== 'string') throw new Error('h() needs an element from $.ui.resolve(e)')
   const kids = flat(children.length ? children : [props?.children ?? []])
+  // As in Claude Code 2.1.301: a Button holds strings and Text, never a Box
+  // ("JSX element <Button> holds strings and Text, not <Box>"). T160.
+  if (type.element === 'Button') {
+    const bad = kids.find((c) => typeof c !== 'string' && c?.type !== 'Text')
+    if (bad) throw new Error('JSX element <Button key=' + props?.key + '> holds strings and Text, not <' + (bad.type ?? typeof bad) + '>')
+  }
   return { type: type.element, props: { ...(props || {}), children: kids }, children: kids }
 }
 
@@ -75,7 +81,7 @@ function matches(matcher, e) {
 // mounts to model a restart), usage, usageError, placed (ui.open answer),
 // audioFails, modulePath, env (name -> value), sessionId, process (argv -> result),
 // selection ($.ui.selection answer), blit ($.ui.blit answer: a function of its argument),
-// notifyFails ($.ui.notify throws), noNotify (this Claude Code has no $.ui.notify).
+// brokenBox (reading Box from $.ui.resolve throws), notifyFails ($.ui.notify throws), noNotify (this Claude Code has no $.ui.notify).
 export async function mount(options = {}) {
   const o = { version: '2.1.292', root: ROOT, usage: { cost: { usd: 1.4234 } }, placed: true, env: {}, sessionId: 'sess-1', ...options }
   const files = new Map()
@@ -190,6 +196,8 @@ export async function mount(options = {}) {
     'ui.resolve': (e) => {
       if (!e || typeof e.surface !== 'string') throw new Error('$.ui.resolve(e) needs the render event')
       const els = { Box: ELEMENT('Box'), Text: ELEMENT('Text'), Button: ELEMENT('Button') }
+      // brokenBox: reading Box throws, so renderPane fails the way a rejected element would.
+      if (o.brokenBox) return { ...els, get Box() { throw new Error('JSX element <Button key=item> holds strings and Text, not <Box>\n  at h') } }
       return e.surface === 'terminal' ? { ...els, Raster: ELEMENT('Raster'), Image: ELEMENT('Image') } : els
     },
     // As in Claude Code: {} once taken, or { deny } (not mounted, another size, ...).

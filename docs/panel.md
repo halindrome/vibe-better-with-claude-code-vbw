@@ -382,8 +382,9 @@ written 2026-10-09
 - The **top pick**, with its size (`small`, `medium` or `large`) and the reason
   VBW gave for it.
 - Up to two **runners-up**, each with its size, one per line.
-- Each What's next row (the top pick and each runner-up) is a **button** with
-  a size **chip**. Pressing a row fills `/vbw:vibe` with the item's `T` or `R` id, or
+- On each What's next row (the top pick and each runner-up) the item line is a
+  **button**, followed by a size **chip**; only the item line is pressable, the
+  reason under it is plain text. Pressing the item fills `/vbw:vibe` with the item's `T` or `R` id, or
   with its text when it has no id. It only fills the prompt and never sends:
   you press Enter.
 - When the recommendation was **written**, as `[HH:MM]` in the panel.

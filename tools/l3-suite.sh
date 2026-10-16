@@ -813,6 +813,10 @@ panel_seed() {
   panel_apply "farewell.sh says Goodbye, NAME! (or Goodbye, world! with no name) and exits 0" || return 1
   # Applying a plan starts the phases over: phase 1's verdict is recorded again.
   "$VBW" qa record P1 pass standard > /dev/null || return 1
+  # A What's next recommendation with rows (T160): Mission Control once opened empty
+  # in the real window when the Now tab drew rows, and nothing else caught it.
+  printf '%s' '{"top": {"text": "Refunds for paid orders", "reason": "Customers ask for it most this month.", "size": "small"}, "runners": [{"text": "Gift cards", "size": "large"}, {"text": "Dark mode", "size": "medium"}]}' \
+    | "$VBW" recommend > /dev/null || return 1
 }
 
 # panel_apply TASK: apply the two-phase plan, P2.1 with the task TASK.
@@ -855,13 +859,15 @@ scenario_panel() {
     # The panel opens by itself in a wide window; if not, the user opens it with /vbw-panel.
     if [ "$(has "$(panel_wait "Working on")" "Working on")" = false ]; then l3 type "$scenario" "/vbw-panel"; fi
     mid=$(jq -r '.milestone.id' "$dir/.vbw/record.json")
-    s=$(panel_wait "Working on $mid:" "1 of 2 requirements done" "Please approve the plan")
+    s=$(panel_wait "Working on $mid:" "1 of 2 requirements done" "Please approve the plan" "Refunds for paid orders")
     printf '%s\n' "$s" > "$dir.panel.screen.txt"
     facts=$(jq -n --arg m "$(has "$s" "Working on $mid:")" --arg p "$(has "$s" "1 of 2 requirements done")" \
       --arg d "$(has "$s" "VBW is idle")" --arg n "$(has "$s" "Please approve the plan")" \
+      --arg t "$(has "$s" "Now")$(has "$s" "Plan")$(has "$s" "Proof")$(has "$s" "Timeline")" --arg r "$(has "$s" "Refunds for paid orders")" \
       --arg c "$(case "$s" in *"has cost \$"*|*"cost so far is not available"*) echo true ;; *) echo false ;; esac)" \
       --arg e "$(case "$s" in *"No estimate yet"*) echo "no basis yet" ;; *"min left"*) echo "approximate time" ;; *) echo "" ;; esac)" \
       '{milestone_shown: ($m == "true"), progress_shown: ($p == "true"), doing_shown: ($d == "true"), need_shown: ($n == "true"),
+        tabs_shown: ($t == "truetruetruetrue"), next_row_shown: ($r == "true"),
         need_text: (if $n == "true" then "Please approve the plan before VBW builds it." else "" end), cost_shown: ($c == "true"), estimate_shown: $e}')
     # The sound switch, as the user types it; the panel's own line follows within seconds.
     l3 type "$scenario" "/vbw-sound off"
@@ -988,14 +994,14 @@ scenario_panel() {
     sleep 2
     l3 stop "$scenario"
     local k passed
-    for k in milestone_shown progress_shown doing_shown need_shown cost_shown sound_shown_off closed_by_click closed_stays_closed sound_toggle_persisted need_line_shown need_line_cleared helper_seen_working helper_done_cleared no_spill_short no_spill_narrow; do
+    for k in milestone_shown progress_shown doing_shown need_shown tabs_shown next_row_shown cost_shown sound_shown_off closed_by_click closed_stays_closed sound_toggle_persisted need_line_shown need_line_cleared helper_seen_working helper_done_cleared no_spill_short no_spill_narrow; do
       expect "the panel: $k" jq -e --arg k "$k" '.[$k] == true' <<< "$facts"
     done
     expect "the panel shows an estimate or the plain 'no basis yet'" jq -e '.estimate_shown | length > 0' <<< "$facts"
-    passed=$(jq -r '[.milestone_shown, .progress_shown, .doing_shown, .need_shown, .cost_shown, .sound_shown_off, .closed_by_click, .closed_stays_closed, .sound_toggle_persisted, .need_line_shown, .need_line_cleared, .helper_seen_working, .helper_done_cleared, .no_spill_short, .no_spill_narrow, (.estimate_shown | length > 0)] | all' <<< "$facts")
+    passed=$(jq -r '[.milestone_shown, .progress_shown, .doing_shown, .need_shown, .tabs_shown, .next_row_shown, .cost_shown, .sound_shown_off, .closed_by_click, .closed_stays_closed, .sound_toggle_persisted, .need_line_shown, .need_line_cleared, .helper_seen_working, .helper_done_cleared, .no_spill_short, .no_spill_narrow, (.estimate_shown | length > 0)] | all' <<< "$facts")
     [ "$passed" = true ] || failed=1
     result_write panel "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
-      '["the sound itself (nothing was heard: the run only checks the switch)","what a person reads at a glance: wording and layout are judged on the screen text, not by a reader","no spill is read from the visible tmux screen after a resize (prompt box whole, Comms drawn once), not from a real terminal'"'"'s scrollback","one short window (200 columns, 24 rows) and one narrow window (60 columns, 40 rows), with the needs-you line and with helpers at work; no other size","Comms in the 60-column window: Mission Control fills that window and Comms'"'"' own line is not on screen there (seen in the run, not judged), so the narrow check holds the prompt box and the pane'"'"'s bottom edge only","Mission Control'"'"'s own rows and tabs at those sizes (held by tests/panel/r189/containment.test.mjs, L1)","figure counts and the motion levels (full, calm, off)","a failed helper, a celebration and a ship in the real window","a time estimate with a number"]'
+      '["the sound itself (nothing was heard: the run only checks the switch)","what a person reads at a glance: wording and layout are judged on the screen text, not by a reader","no spill is read from the visible tmux screen after a resize (prompt box whole, Comms drawn once), not from a real terminal'"'"'s scrollback","one short window (200 columns, 24 rows) and one narrow window (60 columns, 40 rows), with the needs-you line and with helpers at work; no other size","Comms in the 60-column window: Mission Control fills that window and Comms'"'"' own line is not on screen there (seen in the run, not judged), so the narrow check holds the prompt box and the pane'"'"'s bottom edge only","Mission Control'"'"'s own rows and tabs at those sizes (held by tests/panel/r189/containment.test.mjs, L1)","figure counts and the motion levels (full, calm, off)","a failed helper, a celebration and a ship in the real window","a milestone shipped before the recommendation (the seed stores the recommendation on an active milestone)","a time estimate with a number"]'
   }
 }
 
