@@ -3,6 +3,7 @@
 // rows out; it never changes its input and never throws.
 
 import { estimate } from './panel-estimate.js'
+import { stepWords } from './panel-step.js'
 
 export const MIN_VERSION = '2.1.287'
 
@@ -137,7 +138,7 @@ function costRow(cost) {
 // The 'what's happening now' box: VBW's state as one plain sentence, the current step
 // with the time it started, and the cost line. `proving` comes from panel.js (a proof
 // is running with no lease); `stamps.proving` is when it began.
-function nowBox(rec, need, proving, stamps, cost) {
+function nowBox(rec, need, proving, stamps, cost, step) {
   const l = isObj(rec.lease) ? rec.lease : null
   const cl = costRow(cost)
   if (l) {
@@ -152,11 +153,13 @@ function nowBox(rec, need, proving, stamps, cost) {
       map: ['reading the project to map it', 'mapping'],
     }[l.kind] || ['working', String(l.kind || 'run')]
     const at = Date.parse(l.started_at)
-    return { state: { text: 'VBW is ' + what[0] + '.', term: 'state' }, step: Number.isFinite(at) ? { text: 'Current step: ' + what[1] + ', started at ' + clock(at) + '.', at } : null, cost: cl }
+    const name = step && step.doing ? step.doing : what[1]
+    return { state: { text: 'VBW is ' + what[0] + '.', term: 'state' }, step: Number.isFinite(at) ? { text: 'Current step: ' + name + ', started at ' + clock(at) + '.', at } : null, cost: cl }
   }
   if (proving) {
     const at = stamps.proving
-    return { state: { text: 'VBW is proving the work: running its checks.', term: 'state' }, step: Number.isFinite(at) ? { text: 'Current step: proving, started at ' + clock(at) + '.', at } : null, cost: cl }
+    const name = step && step.doing ? step.doing : 'proving'
+    return { state: { text: 'VBW is proving the work: running its checks.', term: 'state' }, step: Number.isFinite(at) ? { text: 'Current step: ' + name + ', started at ' + clock(at) + '.', at } : null, cost: cl }
   }
   if (need) {
     return { state: { text: 'VBW is waiting for you: ' + need.what + '.', term: 'state' }, step: Number.isFinite(need.at) ? { text: 'Waiting since ' + clock(need.at) + '.', at: need.at } : null, cost: cl }
@@ -167,22 +170,28 @@ function nowBox(rec, need, proving, stamps, cost) {
 const mins = (sec) => Math.max(1, Math.round(sec / 60))
 const NO_BASIS = { text: 'No estimate yet: there are not enough finished steps to go on.', term: 'estimate, no basis' }
 
-// Time left for the running step and for the milestone, never more exact than it is.
-function estimateRows(rec, steps, phasesLeft, now, stamps) {
-  const e = estimate({ steps, lease: isObj(rec.lease) ? rec.lease : null, phasesLeft, now })
-  const row = (id, x, what) => {
-    if (x.state === 'none') return { id, ...NO_BASIS }
-    const text = x.state === 'longer' ? 'This step is taking longer than usual.' : 'About ' + mins(x.seconds) + ' min left in ' + what + '.'
-    return { id, text: stamped(stamps[id], text), term: 'estimate, approximate' }
-  }
+// The running step's time is the kernel's note, worded in panel-step.js; the panel works
+// none out. The milestone's time is R58's estimate, never more exact than it is.
+function estimateRows(rec, steps, phasesLeft, now, stamps, step) {
   const rows = []
-  if (e.step) rows.push(row('estimate-step', e.step, 'this step'))
-  if (e.milestone && !(e.milestone.state === 'none' && rows.length && rows[0].term === NO_BASIS.term)) rows.push(row('estimate-milestone', e.milestone, 'the milestone'))
+  const words = step ? stepWords(step, now) : null
+  if (words) {
+    rows.push(words.timed
+      ? { id: 'estimate-step', text: stamped(stamps['estimate-step'], 'This step: ' + words.text + '.'), term: 'estimate, approximate' }
+      : { id: 'estimate-step', text: words.text + '.', term: 'estimate, no basis' })
+  }
+  const e = estimate({ steps, lease: isObj(rec.lease) ? rec.lease : null, phasesLeft, now })
+  if (e.milestone) {
+    rows.push(e.milestone.state === 'none'
+      ? { id: 'estimate-milestone', ...NO_BASIS }
+      : { id: 'estimate-milestone', text: stamped(stamps['estimate-milestone'], 'About ' + mins(e.milestone.seconds) + ' min left in the milestone.'), term: 'estimate, approximate' })
+  }
   return rows
 }
 
 export function panelView(input) {
   const { record: rec, next: nx, nextAt, question, questionAt, health, now, cost, steps, proving } = isObj(input) ? input : {}
+  const step = isObj(input) && isObj(input.step) ? input.step : null
   const stamps = isObj(input) && isObj(input.stamps) ? input.stamps : {}
   if (!isObj(rec) || !isObj(rec.milestone) || !rec.milestone.id) return { rows: [NEUTRAL], need: null, box: null }
   const ph = (Array.isArray(rec.phases) ? rec.phases : []).filter((p) => isObj(p) && p.milestone === rec.milestone.id)
@@ -196,12 +205,12 @@ export function panelView(input) {
   const t = Number.isFinite(now) ? now : Date.now()
   return {
     need,
-    box: nowBox(rec, need, proving === true, stamps, cost),
+    box: nowBox(rec, need, proving === true, stamps, cost, step),
     rows: [
       { id: 'milestone', text: 'Working on ' + rec.milestone.id + ': ' + (rec.milestone.title || 'untitled') + '.', term: 'milestone' },
       { id: 'progress', text: progress, term: 'requirements' },
       doing(rec, t),
-      ...estimateRows(rec, Array.isArray(steps) ? steps : [], phasesLeft, t, stamps),
+      ...estimateRows(rec, Array.isArray(steps) ? steps : [], phasesLeft, t, stamps, step),
       costRow(cost),
       { id: 'need', text: need ? stamped(Number.isFinite(stamps.need) ? stamps.need : need.at, need.text) : 'Nothing is needed from you right now.', term: 'your turn' },
     ],

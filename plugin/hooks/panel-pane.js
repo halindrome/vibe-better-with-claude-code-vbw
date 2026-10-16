@@ -120,7 +120,7 @@ function tint(r, need) {
   switch (r.id) {
     case 'need': return need ? NEED : undefined
     case 'progress': return /^No requirements/.test(String(r.text)) ? undefined : PROGRESS
-    case 'estimate-step': case 'estimate-milestone': return /^No estimate/.test(String(r.text)) ? undefined : ESTIMATE
+    case 'estimate-step': case 'estimate-milestone': return /^No (?:estimate|end time)/.test(String(r.text)) ? undefined : ESTIMATE
     case 'cost': return /not available/.test(String(r.text)) ? undefined : ACCENT
     default: return undefined
   }
@@ -159,7 +159,7 @@ function body(ui, { st, now, width, motion }, act) {
   switch (st.tab) {
     case 'plan': return renderPlan({ ...ui, Input: undefined }, planModel({ record: rec, phase: st.phase }), act) // Ask is not wired yet
     case 'proof': return renderProof(ui, proofModel({ record: rec, selected: st.check }), act)
-    case 'timeline': return renderTimeline(ui, timelineModel({ run: st.run, now, steps: st.steps, width: Math.max(10, width - 24) }))
+    case 'timeline': return renderTimeline(ui, timelineModel({ run: st.run, now, steps: st.steps, step: st.step, width: Math.max(10, width - 24) }))
     case 'decisions': return renderDecisions(ui, decisionsModel({ record: rec }))
     case 'team': return renderTeam(ui, teamModel({ record: rec }), act)
     case 'costs': return renderCosts(ui, costsModel({ runs: st.leases, sessionCost: st.cost, width: Math.max(1, Math.floor(width / 3)) }))
