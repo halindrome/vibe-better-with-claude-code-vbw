@@ -122,9 +122,23 @@ end="$plugin/hooks/end.json"
 auto="$root/.vbw/runtime/auto.${sid:-none}.json"
 [ -n "$input" ] || input='{}'
 # jq exits non-zero when an optional file is missing; only an empty render is a failure.
-out=$(jq -nr --argjson cc "$input" --arg branch "$branch" --arg color "$color" --arg legacy "$legacy" --argjson agents "$agents" --slurpfile profiles "$plugin/lib/profiles.json" -f "$here/statusline.jq" \
-  "$plugin/.claude-plugin/plugin.json" "$recfile" "$end" \
-  "$root/.vbw/runtime/next.json" "$end" "$auto" 2> /dev/null)
+# The running step's note (R190) is one more input of the same call. A proof's
+# note counts only while its process lives: the render names the pid first
+# ({"step_pid":N}); a dead one is rendered again without the note (rare).
+render() {
+  jq -nr --argjson cc "$input" --arg branch "$branch" --arg color "$color" --arg legacy "$legacy" --arg sid "$sid" --argjson deadpid "$1" --argjson agents "$agents" --slurpfile profiles "$plugin/lib/profiles.json" -f "$here/statusline.jq" \
+    "$plugin/.claude-plugin/plugin.json" "$recfile" "$end" \
+    "$root/.vbw/runtime/next.json" "$end" "$root/.vbw/runtime/step.json" "$end" "$auto" 2> /dev/null
+}
+out=$(render 0)
+case "$out" in
+  '{"step_pid":'*)
+    pid=${out%%$'\n'*}
+    out=${out#*$'\n'}
+    pid=${pid#'{"step_pid":'}
+    pid=${pid%'}'}
+    if ! kill -0 "$pid" 2> /dev/null; then out=$(render "$pid"); fi ;;
+esac
 # The cost record is the render's last line when Claude Code sent a cost: split
 # it off and store it atomically. A failed write is skipped quietly.
 last=${out##*$'\n'}
