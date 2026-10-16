@@ -81,3 +81,27 @@ last() { jq -c --arg k "$1" '[.steps[] | select(.kind == $k)] | last' "$STEPS"; 
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ ! -e "$NOTE" ] || { cat "$NOTE"; false; }
 }
+
+@test "R190: a note left by an ended run is removed by a proof that runs nothing, and by one inside another run" {
+  "$VBW" run start build P1.1 > /dev/null
+  cp "$NOTE" "$TEST_ROOT/old-note.json"
+  "$VBW" run end > /dev/null
+  step_edit '.plans[].status = "done"'
+  git add -A && git commit -q -m "chore(vbw): done"
+  "$VBW" approve > /dev/null
+  "$VBW" prove > /dev/null
+  # Everything is reused: the proof runs no unit, and still removes the stale note.
+  cp "$TEST_ROOT/old-note.json" "$NOTE"
+  "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" == *"checks: 0 ran"* ]] || { echo "$output"; false; }
+  [ ! -e "$NOTE" ] || { cat "$NOTE"; false; }
+  # A run of this session is open, its note is another run's: the stale note goes too.
+  "$VBW" run start qa > /dev/null
+  cp "$TEST_ROOT/old-note.json" "$NOTE"
+  printf 'paid\n' >> src/a.txt
+  git add src/a.txt && git commit -q -m "feat(pay): change a"
+  vbw_run prove
+  [ ! -e "$NOTE" ] || { cat "$NOTE"; false; }
+}
