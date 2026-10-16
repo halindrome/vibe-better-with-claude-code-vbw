@@ -12,6 +12,8 @@
 . "$VBW_LIB/proofcauses.sh"
 # shellcheck source=testfiles.sh
 . "$VBW_LIB/testfiles.sh"
+# shellcheck source=proofsteps.sh
+. "$VBW_LIB/proofsteps.sh"
 # shellcheck source=cmd-next.sh
 . "$VBW_LIB/cmd-next.sh"
 
@@ -37,6 +39,7 @@ cmd_prove() {
   checks_begin "$record" strict
   # The file-system test first: where reads cannot be recorded nothing is reused.
   mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
+  proofsteps_clean
   noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
   proofreuse_plan "$record" "$full"
   # Any cause (R168) runs every check, test file and command, and the summary names it.
@@ -57,6 +60,7 @@ cmd_prove() {
     [ "$n" -ge ${#TF_TODO[@]} ] || n=${#TF_TODO[@]}
     [ "$n" -gt 0 ] || n=1
     proofcopy_create_slots "$(proofcopy_slots "$n")"
+    proofsteps_begin "$(prove_units "$record")"
     proofcopy_verify "$CHECK_HASH" "$record"
     # Checks and commands run in clean copies; evidence and the record stay here.
     [ ${#TODO_CHECKS[@]} -eq 0 ] || checks=$(checks_run_all "$record" "${TODO_CHECKS[@]}")
@@ -109,6 +113,7 @@ cmd_prove() {
   # The evidence is part of the plan of record: commit it, so a proof never
   # leaves VBW's own file modified in the user's working tree.
   record_commit "chore(vbw): proof $(jq -r 'if .evidence.passed then "passed" else "not passed" end' "$VBW_RECORD")"
+  proofsteps_end
   # shellcheck disable=SC2034
   VBW_DIE_HOOK=; proofcopy_warn_stale
   [ -z "$mark" ] || vbw_guard_drop "$mark"
@@ -138,6 +143,16 @@ prove_commands() {
   done < <(printf '%s' "$1" | jq -j --argjson t "$2" '.commands | keys[] | select(. as $k | $t | index($k)) | . + "\u0000"')
   res=$(checks_run_units "$units")
   printf '%s' "$res" | jq -c --slurpfile s <(printf '%s' "$skipped") 'with_entries(.key |= ltrimstr("cmd-")) + $s[0]'
+}
+
+# prove_units RECORD: how many units this proof runs: the checks that are not held,
+# the approved project commands and the test files.
+prove_units() {
+  local c n=0
+  for c in ${TODO_CHECKS[@]+"${TODO_CHECKS[@]}"}; do
+    printf '%s\n' "${CHECK_HELD:-}" | grep -qx -- "$c" || n=$((n + 1))
+  done
+  printf '%s\n' "$((n + $(proofsteps_commands "$1" "$TODO_COMMANDS") + ${#TF_TODO[@]}))"
 }
 
 # prove_plan_all RECORD: nothing is reused (vbw prove --full, or a file system
