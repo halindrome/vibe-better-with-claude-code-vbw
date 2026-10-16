@@ -133,3 +133,25 @@ test("the palette tests that pinned R84's old role colours are rewritten to the 
   assert.match(src, /D407/)
   assert.doesNotMatch(src, /dev:\s*'green'|qa:\s*'yellow'|debugger:\s*'red'/, 'the old role colours are still pinned')
 })
+
+test('red is drawn only for a failure: the weekly limit and the other Comms and Mission Control text never use the failed colour without one', async () => {
+  const stage = await import(pathToFileURL(PLUGIN + '/hooks/panel-stage.js').href)
+  const red = (tree, where) => walk(tree, (n) => {
+    for (const k of ['color', 'borderColor']) if (n.props && n.props[k] === P.stateColor('failed')) assert.fail(where + ': red without a failure: ' + textOf(n))
+  })
+  const need = { key: 'approve', what: 'the plan is ready: review it, then approve it to build', at: NOW - 90 * S }
+  for (const weekPct of [80, 95]) {
+    const gate = { action: 'approve', gate: true }
+    const m = stage.stageModel({ now: NOW, maxRows: 12, columns: 100, motion: 'full', need, next: gate, health: { contextPct: 95, weekPct, weekPerRun: 6 } })
+    const line = m.lines.find((l) => /Weekly limit/.test(l.text))
+    assert.equal(line.color, P.NEED, 'the weekly limit at ' + weekPct + '% is amber')
+    red(stage.renderStage(UI, m), 'Comms need at ' + weekPct + '%')
+    const alone = stage.stageModel({ now: NOW, maxRows: 12, columns: 100, motion: 'full', next: { action: 'build' }, health: { contextPct: 95, weekPct } })
+    red(stage.renderStage(UI, alone), 'Comms nudge at ' + weekPct + '%')
+  }
+  const { h, at } = await building(working(2), { profile: 'balanced', motion: 'calm' })
+  writeCrew(h, at, working(2))
+  await h.advance(TICK)
+  red(await h.draw('AbovePrompt', { hasSurvey: false, isWorking: true, maxRows: 12, bodyColumns: 100 }), 'Comms crew')
+  red(await h.render(), 'Mission Control')
+})

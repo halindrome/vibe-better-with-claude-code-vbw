@@ -186,3 +186,50 @@ test('a new needs-you line on Comms is marked until its tab is opened, and then 
   assert.ok(!hasNew(after), 'still marked after its tab was opened')
   assert.match(textOf(after), /VBW needs you/, 'the line itself stays while the gate stands')
 })
+
+test('a seen needs-you line stays seen after a restart on the same project state, a new one is marked; kept in the store', async () => {
+  const store = new Map()
+  const start = async () => {
+    const h = await session(record(motion('off')), { store })
+    h.write(NEXT, next({ action: 'approve', gate: true }))
+    await h.advance(TICK)
+    return h
+  }
+  const comms = (h) => h.draw('AbovePrompt', { hasSurvey: false, isWorking: false, maxRows: 12, bodyColumns: 100 })
+  const first = await start()
+  assert.ok(hasNew(await comms(first)), 'the new needs-you line is not marked')
+  const again = await start()
+  assert.ok(hasNew(await comms(again)), 'an unseen line lost its mark at a restart')
+  await again.press('tab-now')
+  await again.advance(TICK)
+  const third = await start()
+  assert.match(textOf(await comms(third)), /VBW needs you/)
+  assert.ok(!hasNew(await comms(third)), 'a seen needs-you line is new again after a restart')
+  for (const [k] of third.callsOf('store.set')) assert.match(k, /^vbw-panel\./, k)
+})
+
+test('an opened failed helper stays opened after a restart on the same project state: no mark on its card', async () => {
+  const store = new Map()
+  const crew = [{ n: 'P142.1', state: 'working' }, { n: 'P142.2', state: 'failed' }]
+  const start = async () => {
+    const { h, at } = await building(working(2), { profile: 'balanced', motion: 'off' }, { store })
+    writeCrew(h, at, crew)
+    await h.advance(TICK)
+    return h
+  }
+  const card = async (h) => {
+    const tree = await h.render()
+    const b = find(tree, (n) => n.type === 'Button' && String(n.props.label).includes('P142.2'))
+    return { b, box: find(tree, (n) => n.type === 'Box' && n.props.borderStyle && n.children.includes(b)) }
+  }
+  const first = await start()
+  const c1 = await card(first)
+  assert.ok(hasNew(c1.box || c1.b), 'the failed card is not marked at first')
+  await press(first, c1.b)
+  await first.advance(TICK)
+  assert.ok(!hasNew((await card(first)).box || (await card(first)).b), 'still marked after it was opened')
+  const again = await start()
+  const c2 = await card(again)
+  assert.ok(c2.b, 'no card for the failed helper after the restart')
+  assert.ok(!hasNew(c2.box || c2.b), 'an opened failed helper is marked again after a restart')
+})

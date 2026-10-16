@@ -162,3 +162,23 @@ test('while the run works, Mission Control draws its working helpers as running,
   assert.ok(words.some((t) => /running/.test(t)), 'a working helper is drawn as running: ' + words.join(' | '))
   assert.ok(!words.some((t) => /cut off|ended/.test(t)), 'a working run is drawn as ended: ' + words.join(' | '))
 })
+
+test('a card opened while its helper still works does not hide the later failure: Comms shows the red row until it is opened after the failure', async () => {
+  const crew = steps(2)
+  const { h, at } = await building(crew)
+  const c = card(await h.render(), 'P142.2')
+  assert.ok(c, 'Mission Control shows the working helper')
+  await c.props.onPress({ surface: 'terminal' }) // selects the card while the helper works
+  await h.settle()
+  writeCrew(h, at, crew.map((x) => (x.n === 'P142.2' ? { ...x, state: 'failed' } : x)))
+  await h.advance(TICK)
+  const rows = rowsWith(await commsLines(h), 'P142.2')
+  assert.equal(rows.length, 1, 'the failure was hidden by a selection made before it')
+  assert.match(rows[0], /✗/)
+  const again = card(await h.render(), 'P142.2')
+  await again.props.onPress({ surface: 'terminal' })
+  await h.settle()
+  await h.advance(TICK)
+  const after = rowsWith(await commsLines(h), 'P142.2')
+  assert.deepEqual(after, [], 'opened after the failure, it leaves Comms')
+})

@@ -51,3 +51,16 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
   has "$DOC" 'helper that fails stays as one red'
   has "$DOC" 'until you open it in mission control'
 }
+
+@test "R189: docs/panel.md says at most 3 working helpers get a figure at full motion and the rest are text rows" {
+  has "$DOC" 'at most 3 working helpers get a figure at full motion'
+  has "$DOC" 'other helpers are text rows'
+}
+
+@test "R189: docs/panel.md never draws a figure for every agent, nor a done, failed or quiet figure on Comms" {
+  run grep -niE 'each agent in comms' "$DOC"
+  [ "$status" -ne 0 ] || { echo "$output"; false; }
+  run grep -niE 'posed by[^|]*(done|failed|quiet)' "$DOC"
+  [ "$status" -ne 0 ] || { echo "$output"; false; }
+  has "$DOC" 'never draws a done, failed or quiet figure'
+}

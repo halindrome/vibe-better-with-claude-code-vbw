@@ -52,10 +52,17 @@ const GATES = [
   ['milestone', {}, /milestone|next/i],
   ['convert', {}, /VBW 1|convert/i],
 ]
+// The record that makes each gate true (a gate the record has answered is not shown).
+const STANDING = {
+  unblock: { plans: [{ id: 'P44.1', phase: 'P44', title: 'Show the cost', status: 'blocked' }] },
+  escalate: { fixes: [{ id: 'F3', status: 'escalated' }] },
+  scope: { evidence: { scope: [{ file: 'src/x.js' }] } },
+  milestone: { milestone: { id: 'M9', title: 'Live VBW panel', status: 'shipped' } },
+}
 
 test('every gate kind is one amber line "HH:MM ⚑ VBW needs you · <what>", with no button', async () => {
   for (const [action, detail, what] of GATES) {
-    const h = await session()
+    const h = await session(record(STANDING[action]))
     const at = await gate(h, action, detail)
     const tree = await comms(h)
     const name = action + ' ' + JSON.stringify(detail)
@@ -213,4 +220,44 @@ test('names: the strip is Comms and the pane Mission Control; nothing VBW draws 
   const said = [...(await commsLines(h)), await h.text(), String((await h.cmd('vbw-status')).text), String((await h.cmd('vbw-why')).text)]
   for (const t of said) assert.doesNotMatch(t, /\bband\b|telemetry/i, t)
   for (const reg2 of h.callsOf('command.register').map((a) => a[0])) assert.doesNotMatch(String(reg2.description), /\bband\b|telemetry/i)
+})
+
+// Every gate kind clears when the record says it is done, with next.json left as it was.
+const DONE = {
+  milestone: [{ milestone: { id: 'M10', title: 'Next work', status: 'active' } }, /shipped|what to build next/i],
+  spec: [{ requirements: [{ id: 'R1', text: 'It works', proof: 'auto', status: 'open', milestone: 'M9' }] }, /needs you to say what to build/i],
+  unblock: [{ plans: [{ id: 'P44.1', phase: 'P44', title: 'Show the cost', status: 'planned' }] }, /blocked/i],
+  escalate: [{ fixes: [{ id: 'F3', status: 'closed' }] }, /decision is needed from you on F3/i],
+  scope: [{ evidence: { scope: [] } }, /outside/i],
+  convert: [{ converted: { from: '.vbw-planning', at: '2026-10-16T10:00:00Z' } }, /VBW 1/],
+}
+const DETAIL = { unblock: { plans: ['P44.1'] }, escalate: { fixes: ['F3'] } }
+
+test('every other gate kind clears too once the record says it is done, with next.json unchanged: Comms, Mission Control, the hint line and /vbw-status', async () => {
+  for (const [action, [done, said]] of Object.entries(DONE)) {
+    const h = await session(record(STANDING[action]))
+    await gate(h, action, DETAIL[action] || {})
+    assert.equal((await needLines(h)).length, 1, action + ': the gate stands first')
+    await h.advance(1000)
+    h.project(record(done))
+    await h.advance(TICK)
+    assert.deepEqual(await needLines(h), [], action + ': Comms still shows the answered gate')
+    assert.doesNotMatch(await h.text(), said, action + ': Mission Control still shows it')
+    const hint = await h.draw('PromptHint', {})
+    assert.doesNotMatch(String((hint.props || {}).tail || ''), /needs you/i, action + ': the hint line still asks')
+    assert.doesNotMatch(String((await h.cmd('vbw-status')).text), said, action + ': /vbw-status still says it')
+  }
+})
+
+test('after a newer "Contract approved" decision no /vbw:approve is suggested, in the running session or in a new one', async () => {
+  const h = await session()
+  await gate(h, 'approve')
+  assert.equal(h.callsOf('prompt.suggest').length, 1, 'the open approve gate suggests it once')
+  const approved = record({ decisions: [{ id: 'D1', text: 'Contract approved: 3 requirements, 4 checks, 5 plans (abc123def456)', at: iso(h.now() + 1000) }] })
+  const fresh = await mount()
+  fresh.project(approved, next({ action: 'approve', gate: true }))
+  fresh.write(NEXT, next({ action: 'approve', gate: true }))
+  await fresh.start()
+  await fresh.advance(4000)
+  assert.equal(fresh.callsOf('prompt.suggest').length, 0, 'a new session suggested /vbw:approve for an approved plan')
 })
