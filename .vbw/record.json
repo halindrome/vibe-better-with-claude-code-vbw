@@ -38019,6 +38019,11 @@
       "text": "Keep the helper figures in Comms as shipped (D405)",
       "why": "chosen by the loop: nothing to redo; up to 3 figures take about 10 lines with 3+ helpers; calm motion turns them off",
       "at": "2026-10-16T01:53:17Z"
+    },
+    {
+      "id": "D421",
+      "at": "2026-10-16T02:06:24Z",
+      "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-16T01:48:07Z, items T94, T102, T139, T138: 179 requirements, 375 checks, 436 plans (5281675044cd))"
     }
   ],
   "commands": {
