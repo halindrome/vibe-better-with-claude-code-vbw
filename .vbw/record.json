@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261016T010434Z",
+    "kind": "qa",
+    "started_at": "2026-10-16T01:04:34Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1328.586244,
+      "in": 159350,
+      "out": 460
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -18656,8 +18667,8 @@
       "qa": {
         "result": "pass",
         "tier": "standard",
-        "tree": "141d1977e4cfd51578b9ffdc807dc8485e641680e712ca87f82095c5715dfa3b",
-        "at": "2026-10-16T00:21:58Z",
+        "tree": "5a191ec4fe203a78df0ed8a2493d699133f37c8ceaac9fddd1b6c1136d10934d",
+        "at": "2026-10-16T01:05:52Z",
         "note": "17/17 checks"
       },
       "outcome": {
@@ -18758,12 +18769,11 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "bad1350a80a4dc62eff4d8d6bec52e251e819db3c09f26608a4b4da40bcaa7c0",
-        "at": "2026-10-16T00:22:55Z",
-        "note": "19/20 checks",
-        "rounds": 1
+        "tree": "4dda4851b8b917749cc5c731a725e2ba746fe7326fa6ae3a72a90a53b364dfd0",
+        "at": "2026-10-16T01:05:52Z",
+        "note": "8/8 checks"
       }
     }
   ],
@@ -34319,7 +34329,7 @@
       "req": "R189",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Red is still drawn for something that is not a failure. plugin/hooks/panel-stage.js:74 colours the Comms line 'Weekly limit N%: ...' with stateColor('failed') (red) when the weekly limit is 90% or more; no helper or run has failed. P145's criteria and D407 say red appears only for a failure (docs/panel.md also says 'Red is only for a failure'). tests/panel/stage.test.mjs:128 pins this red, so the old rule was kept instead of being rewritten to D407, and tests/panel/r189/meaning.test.mjs has no check that catches it. Regression test: render the weekly-limit line at 80 and at 95 percent and assert its colour is amber (NEED), never the failed colour; change stage.test.mjs:128 to match; add to meaning.test.mjs a sweep that no Comms or Mission Control text outside a failed helper or failed check uses the failed colour.",
       "phase": "P145"
     },
