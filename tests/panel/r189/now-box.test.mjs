@@ -4,8 +4,9 @@
 // for you and for what, or nothing running), the current step with the HH:MM it
 // started, and the session cost line (D106). The box follows the state within
 // one refresh (2 s). Every event and message line starts with the local time as
-// HH:MM: Mission Control's need and time-left sentences ('[14:20] About 2 min
-// left in this step.'), a helper card's state (started, finished, failed), the
+// HH:MM: Mission Control's need and time-left sentences ('[14:08] This step:
+// about 12 min, until around 14:20.', R190, from the kernel's note
+// .vbw/runtime/step.json), a helper card's state (started, finished, failed), the
 // all-checks-pass line on Comms and the What's next recommendation. A message
 // keeps the time it began saying what it says, so the clock alone redraws nothing.
 import test from 'node:test'
@@ -18,10 +19,14 @@ const live = await import(pathToFileURL(PLUGIN + '/hooks/panel-mission-live.js')
 const TICK = 2000
 const NEXT = ROOT + '/.vbw/runtime/next.json'
 const STEPS = ROOT + '/.git/vbw/steps.json'
+const NOTE = ROOT + '/.vbw/runtime/step.json'
 const S = 1000
 const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z')
 const steps = (kind, secs) => secs.map((s, i) => ({ kind, run: kind + '-' + i, started_at: iso(T0 - 1e7 - i * 1e5), ended_at: iso(T0 - 1e7 - i * 1e5 + s * 1000), seconds: s }))
 const HISTORY = { steps: [...steps('build', [600, 900, 1200]), ...steps('qa', [100, 200, 300])] }
+// The kernel's note for the build of P44.1 (R190): it ends at END.
+const note = (end, over = {}) => JSON.stringify({ kind: 'build', run: 'build-1', session: 'sess-1', pid: null, started_at: iso(T0 - 300 * S),
+  ids: ['P44.1'], doing: 'building P44.1', parts: { done: 0, total: 1 }, proof: null, first_end: iso(end), end: iso(end), late: false, ...over })
 const PLANS = [{ id: 'P44.1', phase: 'P44', title: 'Show the cost', status: 'building' }]
 const WIDTH = 60
 const EL = (name) => Object.freeze({ element: name })
@@ -98,12 +103,12 @@ test("Mission Control's need sentence starts with the time the gate was reached"
   assert.ok(line.trim().startsWith('[' + hhmm(at) + '] '), "'" + line + "' does not start with [" + hhmm(at) + ']')
 })
 
-test('the time-left sentences start with [HH:MM], as in "[14:20] About 2 min left in this step."', async () => {
-  const h = await session(record({ lease: lease('build', T0 - 300 * S), plans: PLANS }), next({ action: 'run' }), { [STEPS]: JSON.stringify(HISTORY) })
+test('the time-left sentences start with [HH:MM], as in "[14:08] This step: about 12 min, until around 14:20."', async () => {
+  const h = await session(record({ lease: lease('build', T0 - 300 * S), plans: PLANS }), next({ action: 'run' }), { [STEPS]: JSON.stringify(HISTORY), [NOTE]: note(T0 + 600 * S) })
   const lines = await paneLines(h)
-  const left = lines.filter((l) => /About \d+ min left/.test(l))
-  assert.ok(left.length >= 1, 'no time-left sentence')
-  for (const l of left) assert.match(l.trim(), /^\[\d\d:\d\d\] About \d+ min left/)
+  const left = lines.filter((l) => /until around \d\d:\d\d|min left in the milestone/.test(l))
+  assert.ok(left.length >= 2, 'no time-left sentence for the step and the milestone')
+  for (const l of left) assert.match(l.trim(), /^\[\d\d:\d\d\] /)
 })
 
 test('a message keeps the time it began saying what it says: the clock moving alone redraws nothing', async () => {
@@ -169,11 +174,12 @@ test('a state change that touches nothing else still redraws the box within one 
 })
 
 test('a time-left sentence keeps the time it began saying what it says while the words stay the same', async () => {
-  // A step far past its usual time says "taking longer than usual" and goes on saying it.
-  const h = await session(record({ lease: lease('build', T0 - 3 * 3600 * S), plans: PLANS }), next({ action: 'run' }), { [STEPS]: JSON.stringify(HISTORY) })
-  const sentence = async () => (await paneLines(h)).find((l) => /taking longer than usual/.test(l))
+  // A step with parts past even its moved end time says "until around HH:MM, later than usual" and goes on saying it.
+  const h = await session(record({ lease: lease('build', T0 - 3 * 3600 * S), plans: PLANS }), next({ action: 'run' }),
+    { [STEPS]: JSON.stringify(HISTORY), [NOTE]: note(T0 - 3600 * S, { first_end: iso(T0 - 2 * 3600 * S), late: true }) })
+  const sentence = async () => (await paneLines(h)).find((l) => /later than usual/.test(l))
   const first = await sentence()
-  assert.ok(first, 'no taking-longer sentence')
+  assert.ok(first, 'no later-than-usual sentence')
   assert.match(first.trim(), /^\[\d\d:\d\d\] /)
   await h.advance(10 * 60000)
   assert.equal(await sentence(), first, 'the time moved with the clock')

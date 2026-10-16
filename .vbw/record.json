@@ -143,6 +143,7 @@
     "tests/l3-scenarios.bats",
     "tests/l3-smallchange-added.bats",
     "tests/l3-smallchange.bats",
+    "tests/l3-step-time.bats",
     "tests/l3-testmode.bats",
     "tests/l3-tools.bats",
     "tests/lead-parallel.bats",
@@ -237,6 +238,9 @@
     "tests/panel/r189/meaning.test.mjs",
     "tests/panel/r189/next-buttons.test.mjs",
     "tests/panel/r189/now-box.test.mjs",
+    "tests/panel/r190/same-time.test.mjs",
+    "tests/panel/r190/step-comms.test.mjs",
+    "tests/panel/r190/step-panel.test.mjs",
     "tests/panel/record-row.test.mjs",
     "tests/panel/safe.test.mjs",
     "tests/panel/schema4.test.mjs",
@@ -341,6 +345,18 @@
     "tests/statusline-off-docs.bats",
     "tests/statusline-off-e2e.bats",
     "tests/statusline-off.bats",
+    "tests/statusline-step.bats",
+    "tests/step-bench.bats",
+    "tests/step-docs.bats",
+    "tests/step-expect.bats",
+    "tests/step-helper.bash",
+    "tests/step-history.bats",
+    "tests/step-next.bats",
+    "tests/step-note.bats",
+    "tests/step-panel-bench.bats",
+    "tests/step-proof-history.bats",
+    "tests/step-proof.bats",
+    "tests/step-skill.bats",
     "tests/stop-line.bats",
     "tests/suggestions.bats",
     "tests/test-shards.bats",
@@ -4867,6 +4883,207 @@
         "tests/panel/view.test.mjs"
       ],
       "fix": "F240"
+    },
+    {
+      "id": "C374",
+      "req": "R190",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-history.bats"
+      ],
+      "files": [
+        "tests/step-history.bats",
+        "tests/step-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C375",
+      "req": "R190",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-expect.bats"
+      ],
+      "files": [
+        "tests/step-expect.bats",
+        "tests/step-helper.bash"
+      ]
+    },
+    {
+      "id": "C376",
+      "req": "R190",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-note.bats"
+      ],
+      "files": [
+        "tests/step-note.bats",
+        "tests/step-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C377",
+      "req": "R190",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-proof.bats"
+      ],
+      "files": [
+        "tests/step-proof.bats",
+        "tests/step-helper.bash"
+      ],
+      "timeout": 900
+    },
+    {
+      "id": "C378",
+      "req": "R190",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/statusline-step.bats"
+      ],
+      "files": [
+        "tests/statusline-step.bats",
+        "tests/step-helper.bash"
+      ]
+    },
+    {
+      "id": "C379",
+      "req": "R190",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r190/step-panel.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r190/step-panel.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/r189/helpers/screen.mjs"
+      ]
+    },
+    {
+      "id": "C380",
+      "req": "R190",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r190/step-comms.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r190/step-comms.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/r189/helpers/screen.mjs"
+      ]
+    },
+    {
+      "id": "C381",
+      "req": "R190",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r190/same-time.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r190/same-time.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/r189/helpers/screen.mjs"
+      ]
+    },
+    {
+      "id": "C382",
+      "req": "R190",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-bench.bats"
+      ],
+      "files": [
+        "tests/step-bench.bats"
+      ],
+      "timeout": 1800,
+      "alone": true
+    },
+    {
+      "id": "C383",
+      "req": "R190",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-next.bats"
+      ],
+      "files": [
+        "tests/step-next.bats",
+        "tests/step-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C384",
+      "req": "R190",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-skill.bats"
+      ],
+      "files": [
+        "tests/step-skill.bats"
+      ]
+    },
+    {
+      "id": "C385",
+      "req": "R190",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-docs.bats"
+      ],
+      "files": [
+        "tests/step-docs.bats"
+      ]
+    },
+    {
+      "id": "C386",
+      "req": "R190",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-step-time.bats"
+      ],
+      "files": [
+        "tests/l3-step-time.bats"
+      ]
+    },
+    {
+      "id": "C387",
+      "req": "R190",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-proof-history.bats"
+      ],
+      "files": [
+        "tests/step-proof-history.bats",
+        "tests/step-helper.bash"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C388",
+      "req": "R190",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-panel-bench.bats"
+      ],
+      "files": [
+        "tests/step-panel-bench.bats"
+      ],
+      "timeout": 600
     }
   ],
   "project": {
@@ -12131,7 +12348,423 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M36",
-      "rules": []
+      "rules": [
+        {
+          "text": "a finished build is recorded in steps.json with its kind, start, end, seconds and its plans as parts",
+          "check": "C374",
+          "plan": "P146.1"
+        },
+        {
+          "text": "a finished fix is recorded with its fixes as parts",
+          "check": "C374",
+          "plan": "P146.1"
+        },
+        {
+          "text": "planning, QA and mapping steps are recorded with no parts",
+          "check": "C374",
+          "plan": "P146.1"
+        },
+        {
+          "text": "the history keeps the latest 50 steps of each kind, so many steps of one kind never push out another",
+          "check": "C374",
+          "plan": "P146.1"
+        },
+        {
+          "text": "a damaged history never fails a step and means no end time yet",
+          "check": "C374",
+          "plan": "P146.1"
+        },
+        {
+          "text": "a missing or unwritable history never fails a step and means no end time yet",
+          "check": "C374",
+          "plan": "P146.1"
+        },
+        {
+          "text": "under /bin/bash the history and the note stay in the project and the clone's git folder; nothing else outside the project is written",
+          "check": "C374",
+          "plan": "P146.1"
+        },
+        {
+          "text": "the step code reads and writes JSON only through jq",
+          "check": "C374",
+          "plan": "P146.1"
+        },
+        {
+          "text": "a proof is recorded as a step of kind proof whose parts are the checks it really ran",
+          "check": "C387",
+          "plan": "P146.2"
+        },
+        {
+          "text": "the proof inside vbw fix done is recorded as a proof step",
+          "check": "C387",
+          "plan": "P146.2"
+        },
+        {
+          "text": "a proof that reused every result ran nothing and adds no step",
+          "check": "C387",
+          "plan": "P146.2"
+        },
+        {
+          "text": "a missing or unwritable history never fails a proof",
+          "check": "C387",
+          "plan": "P146.2"
+        },
+        {
+          "text": "a kind with parts expects the median time per part over its latest 10 steps that recorded parts, times this step's parts",
+          "check": "C375",
+          "plan": "P146.1"
+        },
+        {
+          "text": "steps that recorded no parts do not count for a kind with parts",
+          "check": "C375",
+          "plan": "P146.1"
+        },
+        {
+          "text": "a kind without parts expects the median of its latest 10 steps; an even count takes the mean of the two middle values",
+          "check": "C375",
+          "plan": "P146.1"
+        },
+        {
+          "text": "with fewer than 3 finished steps of the kind there is no end time, never a guess",
+          "check": "C375",
+          "plan": "P146.1"
+        },
+        {
+          "text": "vbw run start writes the note: kind, run, session, ids, what it is doing, parts, start, first and current end time, late",
+          "check": "C376",
+          "plan": "P146.1"
+        },
+        {
+          "text": "vbw status --json gives the running step as the note says it",
+          "check": "C376",
+          "plan": "P146.1"
+        },
+        {
+          "text": "each kind says what it is doing; QA names the phases it checks and a fix its fixes",
+          "check": "C376",
+          "plan": "P146.1"
+        },
+        {
+          "text": "each vbw plan done counts one more part done at once",
+          "check": "C376",
+          "plan": "P146.1"
+        },
+        {
+          "text": "a late step with parts moves its end to this run's own pace, marked later than usual, and the end can move again (D424)",
+          "check": "C376",
+          "plan": "P146.1"
+        },
+        {
+          "text": "the end time never moves earlier than the first end time",
+          "check": "C376",
+          "plan": "P146.1"
+        },
+        {
+          "text": "a late step without parts keeps its first end time and vbw status --json gives the whole minutes past it",
+          "check": "C376",
+          "plan": "P146.1"
+        },
+        {
+          "text": "with no basis the note and vbw status --json carry no end time",
+          "check": "C376",
+          "plan": "P146.1"
+        },
+        {
+          "text": "when a run ends its note goes; a note of an ended run is never a running step and the next step replaces it",
+          "check": "C376",
+          "plan": "P146.1"
+        },
+        {
+          "text": "a note left by an ended run is removed by the next proof",
+          "check": "C387",
+          "plan": "P146.2"
+        },
+        {
+          "text": "a proof note whose process is gone is never a running step and the next step removes it",
+          "check": "C376",
+          "plan": "P146.1"
+        },
+        {
+          "text": "with 4 lanes, 40 finished units read exactly 40 of 40, never fewer or more, counting only up",
+          "check": "C377",
+          "plan": "P146.2"
+        },
+        {
+          "text": "each finished unit counts before the next starts; a proof of its own expects its median time per unit times its units",
+          "check": "C377",
+          "plan": "P146.2"
+        },
+        {
+          "text": "a proof inside this session's build is what the build is doing now ('proving N of M checks'); the build's end time stays",
+          "check": "C377",
+          "plan": "P146.2"
+        },
+        {
+          "text": "a proof of another session never replaces this session's step",
+          "check": "C377",
+          "plan": "P146.2"
+        },
+        {
+          "text": "a proof killed outright is never shown as running, and the next proof removes its note",
+          "check": "C377",
+          "plan": "P146.2"
+        },
+        {
+          "text": "the Stop hook still waits while a background proof runs",
+          "check": "C377",
+          "plan": "P146.2"
+        },
+        {
+          "text": "vbw fix done counts each fix it closes as one part done of the fix step",
+          "check": "C377",
+          "plan": "P146.2"
+        },
+        {
+          "text": "a build shows '▶ build P1.1, P1.2 · 1 of 2 · until HH:MM' and no 'about'",
+          "check": "C378",
+          "plan": "P147.1"
+        },
+        {
+          "text": "a background proof shows 'proving N of M checks · until HH:MM' and counts up",
+          "check": "C378",
+          "plan": "P147.1"
+        },
+        {
+          "text": "a proof inside a fix shows as what the fix is doing, with the fix's time",
+          "check": "C378",
+          "plan": "P147.1"
+        },
+        {
+          "text": "late with parts the status line shows 'until HH:MM, later than usual'",
+          "check": "C378",
+          "plan": "P147.1"
+        },
+        {
+          "text": "late without parts the status line shows 'until HH:MM, N min late'",
+          "check": "C378",
+          "plan": "P147.1"
+        },
+        {
+          "text": "with no basis the status line shows the step and what it is doing with no time",
+          "check": "C378",
+          "plan": "P147.1"
+        },
+        {
+          "text": "an end on another day names the day ('until tomorrow 00:20'), in 24-hour local time",
+          "check": "C378",
+          "plan": "P147.1"
+        },
+        {
+          "text": "a note of another run or of a dead proof process shows no step in the status line",
+          "check": "C378",
+          "plan": "P147.1"
+        },
+        {
+          "text": "Mission Control shows 'about 12 min, until around HH:MM' and no longer the old step sentence",
+          "check": "C379",
+          "plan": "P147.2"
+        },
+        {
+          "text": "Mission Control's Now box names what the step is doing now, a proof inside a fix included",
+          "check": "C379",
+          "plan": "P147.2"
+        },
+        {
+          "text": "later than usual with parts shows the moved time marked in full wording in Mission Control",
+          "check": "C379",
+          "plan": "P147.2"
+        },
+        {
+          "text": "late without parts Mission Control says 'until around HH:MM, N min late'",
+          "check": "C379",
+          "plan": "P147.2"
+        },
+        {
+          "text": "with no basis Mission Control says 'No end time yet: VBW has timed fewer than 3 steps like this here' and shows no time",
+          "check": "C379",
+          "plan": "P147.2"
+        },
+        {
+          "text": "under a minute left Mission Control says 'less than a minute'",
+          "check": "C379",
+          "plan": "P147.2"
+        },
+        {
+          "text": "an end on another day reads 'until around tomorrow 00:20' in Mission Control",
+          "check": "C379",
+          "plan": "P147.2"
+        },
+        {
+          "text": "when the step ends or its note goes, its time leaves Mission Control at the next refresh",
+          "check": "C379",
+          "plan": "P147.2"
+        },
+        {
+          "text": "with nothing running, or a note of another run, Mission Control shows no step time",
+          "check": "C379",
+          "plan": "P147.2"
+        },
+        {
+          "text": "Mission Control and its Timeline never work the step's time out themselves; the milestone estimate stays",
+          "check": "C379",
+          "plan": "P147.2"
+        },
+        {
+          "text": "the step's time keeps the estimate colour; a sentence without a time stays plain",
+          "check": "C379",
+          "plan": "P147.2"
+        },
+        {
+          "text": "Comms shows 'about 12 min, until around HH:MM' while a step runs",
+          "check": "C380",
+          "plan": "P147.3"
+        },
+        {
+          "text": "a background proof shows in Comms as 'proving N of M checks' with its time",
+          "check": "C380",
+          "plan": "P147.3"
+        },
+        {
+          "text": "later than usual and minutes late read in Comms as in Mission Control",
+          "check": "C380",
+          "plan": "P147.3"
+        },
+        {
+          "text": "when the step ends its time leaves Comms at the next refresh; with nothing running none shows",
+          "check": "C380",
+          "plan": "P147.3"
+        },
+        {
+          "text": "while a workflow crew shows in Comms, the step time shows with it",
+          "check": "C380",
+          "plan": "P147.3"
+        },
+        {
+          "text": "one note at one moment gives the identical HH:MM in the status line, Comms and Mission Control",
+          "check": "C381",
+          "plan": "P147.3"
+        },
+        {
+          "text": "the status line works no time out itself: with the run open and no note it shows no end time",
+          "check": "C378",
+          "plan": "P147.1"
+        },
+        {
+          "text": "the hook bench measures the status line with a step running against the status line budget",
+          "check": "C382",
+          "plan": "P147.1"
+        },
+        {
+          "text": "a status line that does not show the step fails the hook bench",
+          "check": "C382",
+          "plan": "P147.1"
+        },
+        {
+          "text": "the panel bench measures a refresh that reads the note and draws the step",
+          "check": "C388",
+          "plan": "P147.2"
+        },
+        {
+          "text": "vbw next --json gives a build wave its expected length, end time and the sentence to say",
+          "check": "C383",
+          "plan": "P148.1"
+        },
+        {
+          "text": "without a basis next's sentence names the step and says 'no end time yet (VBW has timed fewer than 3 steps like this here)'",
+          "check": "C383",
+          "plan": "P148.1"
+        },
+        {
+          "text": "a proof's size in vbw next is the units left to run after reuse",
+          "check": "C383",
+          "plan": "P148.1"
+        },
+        {
+          "text": "planning, QA and a fix carry their own kind, size and expected length in vbw next",
+          "check": "C383",
+          "plan": "P148.1"
+        },
+        {
+          "text": "vbw run start says what starts and when it should end, within a minute of next's time",
+          "check": "C383",
+          "plan": "P148.1"
+        },
+        {
+          "text": "vbw status prints the running step, its progress and its end time in the panel's words",
+          "check": "C383",
+          "plan": "P148.1"
+        },
+        {
+          "text": "vbw status says later than usual, N min late and no end time yet as the panel does",
+          "check": "C383",
+          "plan": "P148.1"
+        },
+        {
+          "text": "the router says step.say as given when it starts planning, a build, a fix, QA or a proof",
+          "check": "C384",
+          "plan": "P148.2"
+        },
+        {
+          "text": "the router says it before the step starts, a background proof included",
+          "check": "C384",
+          "plan": "P148.2"
+        },
+        {
+          "text": "/vbw:status reports the running step and its end time in vbw status's words",
+          "check": "C384",
+          "plan": "P148.2"
+        },
+        {
+          "text": "docs/panel.md's Time left names the steps that get an end time and shows the full wording, not the old sentence",
+          "check": "C385",
+          "plan": "P148.3"
+        },
+        {
+          "text": "docs/panel.md explains the 3-step minimum, time per part and the 50-per-kind history",
+          "check": "C385",
+          "plan": "P148.3"
+        },
+        {
+          "text": "docs/panel.md says what 'later than usual' and 'N min late' mean",
+          "check": "C385",
+          "plan": "P148.3"
+        },
+        {
+          "text": "docs/panel.md says where the history lives and how to reset it",
+          "check": "C385",
+          "plan": "P148.3"
+        },
+        {
+          "text": "the status line docs show the clock time, the proof count and the late cases",
+          "check": "C385",
+          "plan": "P148.3"
+        },
+        {
+          "text": "the README names the step's end time where it describes the panel",
+          "check": "C385",
+          "plan": "P148.3"
+        },
+        {
+          "text": "docs/next.md describes the step and its sentence that vbw next --json carries",
+          "check": "C385",
+          "plan": "P148.3"
+        },
+        {
+          "text": "the steptime scenario seeds a step history and records each fact",
+          "check": "C386",
+          "plan": "P148.4"
+        },
+        {
+          "text": "a real-session run shows one end time in chat, the status line and Comms for a build, at L3",
+          "check": "C386",
+          "plan": "P148.4"
+        },
+        {
+          "text": "the real-session run shows a background proof counting up and 'no end time yet' without history",
+          "check": "C386",
+          "plan": "P148.4"
+        }
+      ]
     }
   ],
   "phases": [
@@ -18825,6 +19458,100 @@
         "qa_findings": 5,
         "escalations": 1
       }
+    },
+    {
+      "id": "P146",
+      "title": "VBW knows what each long step is doing and when it should end",
+      "reqs": [
+        "R190"
+      ],
+      "milestone": "M36",
+      "goal": "While planning, a build, a fix, a proof or QA runs, VBW's kernel (its record-keeping core) keeps one up-to-date note of what the step is doing, how far along it is and the clock time it should end, worked out from how long the same kind of step took before in this project.",
+      "criteria": [
+        "When a step ends, VBW adds it to the step history (steps.json in the project's git folder, private to this computer): its kind (plan, build, fix, qa, map or proof), start, end, seconds and, where it has countable parts, how many: plans for build and fix, checks and test files actually run for a proof.",
+        "A proof (vbw prove, and the proof inside vbw fix done) is recorded as a step of kind proof. A proof that reused every earlier result and ran nothing is not recorded, so it never teaches VBW a false zero.",
+        "The history keeps the latest 50 steps of each kind, so many proofs never push out the planning or QA history. A missing, damaged or unwritable history file never fails a step: it means 'no end time yet'.",
+        "Expected length: for a kind with parts, the median time per part over its latest 10 finished steps that recorded parts, times this step's number of parts. For a kind without parts (planning, QA, map), the median of its latest 10 finished steps. With fewer than 3 finished steps of that kind there is no end time, never a guess.",
+        "While a step runs, vbw status --json and one note under .vbw/runtime/ (written only by the kernel) give: the kind, what it is doing now (the plan ids building, 'check 12 of 40', the phase QA is checking), parts done of total, start time, first end time, current end time, and whether it is later than usual, or that there is no basis yet.",
+        "Parts done update within 2 seconds of each vbw plan done in a build or fix and of each finished proof unit. With the proof running checks in 4 parallel lanes, 40 finished units read exactly 40 of 40, never fewer or more (a test proves it).",
+        "A proof that runs inside a build or fix shows as what that step is doing now ('proving 12 of 40 checks'); the end time stays the build's or fix's.",
+        "Late step with parts (D424): once this run's own pace (time so far divided by parts done, times parts left) puts the end after the first end time, the current end time moves to that projection and is marked later than usual. It can move again. It never moves earlier than the first end time.",
+        "Late step without parts (D424): the end time stays the first one, and the note says how many minutes past it the step is.",
+        "A note whose run has ended, or whose proof process is gone (killed outright), is ignored and removed by the next step or proof; it never shows a step as running. A proof of another session never replaces this session's own step.",
+        "The kernel rules hold: bash 3.2, JSON only through jq, nothing written outside the project except the clone's git folder; the Stop hook still waits while a background proof runs."
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 9 (79658 bytes)",
+        "files: more than 2 in a repository tracking 1008 files",
+        "risk: none",
+        "breaks: R58",
+        "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R25 (C24), R32 (C28), R33 (C29), R38 (C33, C34), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R49 (C48), R69 (C110, C120, C122), R74 (C99, C100), R75 (C101), R78 (C105, C106), R79 (C107), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R98 (C154), R103 (C160), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R118 (C184), R123 (C190, C191), R129 (C196), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R153 (C235, C236, C239), R160 (C247, C263, C264), R162 (C249), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R173 (C281, C282, C283, C284, C285, C286, C289), R176 (C276, C277, C278), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359)",
+        "tests: project test command",
+        "raised by the Architect"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P147",
+      "title": "The status line and the panel show the step and its end time",
+      "reqs": [
+        "R190"
+      ],
+      "milestone": "M36",
+      "goal": "The status line, Comms (the strip above the prompt) and Mission Control (the side panel) show what the running step is doing and the same end clock time, all read from the kernel's note.",
+      "criteria": [
+        "Status line while a step runs (D425): the step, what it is doing, and the clock time only, for example '▶ build P146.1, P146.2 · 1 of 2 · until 14:20'. A background proof shows 'proving 12 of 40 checks · until 14:26' and counts up as checks finish (absorbs T85).",
+        "Comms and Mission Control use the full wording (D425): 'about 12 min, until around 14:20'. Mission Control's Now box names what the step is doing now.",
+        "Status line, Comms and Mission Control show the same clock time at the same moment: a test with one fixed note shows the identical HH:MM in all three. None of them computes the step's time itself.",
+        "Later than usual with parts: status line 'until 14:35, later than usual', the panel the same marker in its full wording. Late without parts: 'until around 14:20, 6 min late' in the panel and 'until 14:20, 6 min late' in the status line.",
+        "No basis: the panel says 'No end time yet: VBW has timed fewer than 3 steps like this here'; the status line shows the step and what it is doing with no time. A made-up time never appears.",
+        "Clock times are the computer's local time, 24-hour HH:MM. An end on another day names the day ('until tomorrow 00:20'). Under one minute left, the panel says 'less than a minute'.",
+        "When the step ends, its end time is gone from all three at the next refresh (2 seconds). With nothing running, no step end time shows.",
+        "The old 'About 10 min left in this step' sentence is replaced by the new wording; the milestone estimate (R58) stays as it is. The time keeps the estimate colour (amber, R89).",
+        "Speed limits hold: status line at most 60 ms, a hook at most 20 ms (tools/bench-hooks.sh), the panel render within its benchmark."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 13 (163358 bytes)",
+        "files: more than 2 in a repository tracking 1008 files",
+        "risk: none",
+        "breaks: R58, R89, R125",
+        "guarded: R16 (C15), R35 (C31), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R56 (C61, C65), R57 (C59, C70, C71), R61 (C73, C74, C75, C76, C77), R64 (C84, C85), R76 (C102, C103), R77 (C104), R82 (C117), R84 (C123), R85 (C125), R86 (C124), R87 (C126, C127), R88 (C129), R91 (C130), R101 (C179), R119 (C180), R124 (C192, C193), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R173 (C281, C282, C283, C284, C285, C286, C289), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P148",
+      "title": "VBW's messages say when a step should end, documented and shown in a real session",
+      "reqs": [
+        "R190"
+      ],
+      "milestone": "M36",
+      "goal": "When VBW starts or reports on a long step, its chat message names the step, what it does and its end clock time in the same words as the panel; the docs explain how the time is worked out; a real session shows the same time in chat, status line and panel.",
+      "criteria": [
+        "vbw next --json, for a step to run, carries its expected length and end time from the history and the step's size (plans in the wave; proof units left to run after reuse), or says there is no basis.",
+        "When VBW starts planning, a build, a fix, QA or a background proof, its chat message says what starts and when it should end, for example 'Building P146.1 and P146.2: about 12 min, until around 14:20' (D425). The time is within one minute of what the status line shows once the step has started.",
+        "Without a basis the message names the step and says 'no end time yet (VBW has timed fewer than 3 steps like this here)'.",
+        "vbw status and /vbw:status print the running step, its progress and its end time in the same words, including the later-than-usual and minutes-late cases.",
+        "The docs (docs/panel.md 'Time left', the status line docs, and the README where it describes the panel) explain: which steps get an end time, the 3-step minimum, time per part, the 50-per-kind history, what 'later than usual' and 'N min late' mean, and where the history lives and how to reset it.",
+        "An L3 run (the real Claude Code screen used like a user would, through tools/l3-suite.sh) on a realistic project with a seeded step history shows the same end time in the chat message, the status line and Comms for a build; a background proof's 'N of M checks' counting up; and, on a project with no history, 'no end time yet'. The results are saved in tools/l3-results and the progress log names the scenarios run."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 13 (239038 bytes)",
+        "files: more than 2 in a repository tracking 1008 files",
+        "risk: none",
+        "breaks: R20, R41, R58, R89, R125",
+        "guarded: R3 (C3), R4 (C4), R5 (C5), R8 (C8), R13 (C12), R14 (C13), R16 (C15), R22 (C19), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R34 (C30), R35 (C31), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R42 (C38), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R56 (C61, C65), R57 (C59, C70, C71), R59 (C68, C92), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R82 (C117), R83 (C119), R85 (C125), R86 (C124), R87 (C126, C127), R88 (C129), R91 (C130), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R119 (C180), R121 (C187, C188), R122 (C189), R123 (C190, C191), R124 (C192, C193), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R145 (C210), R149 (C217, C218, C219, C220, C221, C222), R151 (C231, C232), R152 (C233, C234), R157 (C244), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R165 (C252), R166 (C253, C254, C255, C256, C267), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -32510,6 +33237,227 @@
           "at": "2026-10-15T22:48:01Z"
         }
       ]
+    },
+    {
+      "id": "P146.1",
+      "phase": "P146",
+      "title": "Step history, expected length and the running step's note",
+      "reqs": [
+        "R190"
+      ],
+      "files": [
+        "plugin/lib/steps.sh",
+        "plugin/lib/core.sh",
+        "plugin/lib/cmd-run.sh",
+        "plugin/lib/cmd-plan.sh",
+        "plugin/lib/cmd-status.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "History (new plugin/lib/steps.sh, replacing vbw_step_add in core.sh): each finished step goes into steps.json in the clone's git folder with its kind, start, end, seconds and, for a build or fix, its parts (plans or fixes in the run); the latest 50 of each kind stay, in time order; a missing, damaged or unwritable file never fails a step. JSON only through jq.",
+        "Expected length: kinds with parts take the median time per part over their latest 10 finished steps that recorded parts, times this step's parts; kinds without parts (plan, qa, map) the median of their latest 10; an even count takes the mean of the two middle values; fewer than 3 such steps gives no end time.",
+        "The note: The note (.vbw/runtime/step.json, written only by the kernel, atomically): {kind, run (the lease's run id, null for a proof of its own), session, pid (a proof of its own: its process, else null), started_at, ids (the run's plans, fixes or the phases QA checks), doing (plain words of what it does now: 'building P1.1, P1.2', 'checking P1', 'fixing F1', 'planning', 'mapping the project', 'proving 12 of 40 checks'; never the word QA), parts {done, total} or null, proof {done, total} or null, first_end, end (UTC ISO to the second, null for no basis), late}. vbw run start writes it (QA's ids are the phases vbw next would send to QA, by the same rule) after removing a note that is not live (its run is not the open run, or its proof process is gone); vbw run end records the step and removes the note.",
+        "vbw plan done adds one part done at once; when this run's own pace (time so far / parts done x parts left) ends after the first end time, end moves to that projection and late is true; it can move again and never goes earlier than first_end (D424).",
+        "vbw status --json gains step: the live note or null, plus minutes_late (whole minutes past first_end for a step without parts, else null); steps.sh also holds the one kernel wording of a step (jq defs) for vbw status, vbw next and vbw run start, used by P148.1."
+      ]
+    },
+    {
+      "id": "P146.2",
+      "phase": "P146",
+      "title": "Proofs count their checks as they finish and become steps of their own",
+      "reqs": [
+        "R190"
+      ],
+      "files": [
+        "plugin/lib/proofsteps.sh",
+        "plugin/lib/cmd-prove.sh",
+        "plugin/lib/checks.sh",
+        "plugin/lib/cmd-fix.sh"
+      ],
+      "after": [
+        "P146.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Exact unit count (new plugin/lib/proofsteps.sh): every unit a proof runs (a check, a test file, a project command) that finishes, in any lane, marks itself done once and the note is rewritten atomically under a lock, so 40 finished units read exactly 40 of 40; vbw check never touches the note.",
+        "vbw prove and the proof inside vbw fix done: with no run of this session open and no live note, the proof writes its own note (kind proof, run null, its pid, parts over the units it will run, end from the proof history: median time per unit x units) and removes it when it ends; the proving mark the Stop hook waits on stays as it is.",
+        "Inside this session's open build or fix the proof only sets doing ('proving 12 of 40 checks') and proof {done, total}, and clears them when it ends; the step's parts and end time stay. A live note of another session is never touched.",
+        "Before it starts, a proof removes a note that is not live (an ended run's, a dead process's); when it ends it records a proof step whose parts are the units that really finished, and nothing when no unit ran (every result reused).",
+        "vbw fix done counts each fix it closes as one part done of the open fix step."
+      ]
+    },
+    {
+      "id": "P147.1",
+      "phase": "P147",
+      "title": "Status line: the step, what it is doing and its clock time",
+      "reqs": [
+        "R190"
+      ],
+      "files": [
+        "plugin/scripts/vbw-statusline.sh",
+        "plugin/scripts/statusline.jq",
+        "tools/bench-hooks.sh",
+        "tests/statusline.bats"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "vbw-statusline.sh reads .vbw/runtime/step.json as one more input of the same single jq call (no new process); a proof note counts only while its pid lives (kill -0, a shell builtin); a note whose run is not the open run counts as none.",
+        "statusline.jq line 1 (D425): '▶ build P1.1, P1.2 · 1 of 2 · until 14:20'; a proof of its own '▶ proving 12 of 40 checks · until 14:26'; a proof inside a build or fix shows the note's doing with the step's time; late with parts 'until 14:35, later than usual'; late without parts 'until 14:20, 6 min late'; no basis: no time; local 24-hour time (strflocaltime), 'until tomorrow 00:20' for the next day; elapsed seconds are no longer shown.",
+        "tools/bench-hooks.sh: a 'status line (step running)' case measured against the status line budget, which fails with 'status line (step running): the step was not shown, so the measure left it out' when the end time is missing from the output.",
+        "Bring tests/statusline.bats's run-state expectations to the new first line."
+      ]
+    },
+    {
+      "id": "P147.2",
+      "phase": "P147",
+      "title": "Mission Control: the step's end time from the kernel's note",
+      "reqs": [
+        "R190"
+      ],
+      "files": [
+        "plugin/hooks/panel-step.js",
+        "plugin/hooks/panel.js",
+        "plugin/hooks/panel-view.js",
+        "plugin/hooks/panel-pane.js",
+        "plugin/hooks/panel-mission-live.js",
+        "tests/panel/mission-live.test.mjs",
+        "tools/bench-panel.mjs",
+        "tools/bench-panel.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "New pure plugin/hooks/panel-step.js: the one panel wording of a note at a moment: 'about 12 min, until around 14:20' (minutes rounded, at least 1), 'less than a minute, until around 14:20', '..., later than usual' (late), 'until around 14:35, later than usual' once past the end with parts, 'until around 14:20, 6 min late' without parts, 'until around tomorrow 00:20', and 'No end time yet: VBW has timed fewer than 3 steps like this here'.",
+        "panel.js reads .vbw/runtime/step.json on each refresh, keeps it only while live (its run is the record's open run, or a proof note of its own), redraws within one refresh (2 s) when it changes or goes, and passes it as step to panelView, stageModel and timelineModel.",
+        "panelView: the estimate-step row comes only from step ('This step: about 12 min, until around 14:20.' with its [HH:MM] stamp; no note, no row); the Now box names step.doing; the old 'About N min left in this step' sentence and the panel's own step arithmetic go; the milestone estimate (R58) stays; panel-pane.js keeps 'No end time yet' plain and the time amber.",
+        "Timeline (panel-mission-live.js): its time left comes from step, never from the history; update tests/panel/mission-live.test.mjs to match.",
+        "tools/bench-panel.mjs and bench-panel.sh: a 'refresh with a running step' case."
+      ]
+    },
+    {
+      "id": "P147.3",
+      "phase": "P147",
+      "title": "Comms: the step and its end time above the prompt",
+      "reqs": [
+        "R190"
+      ],
+      "files": [
+        "plugin/hooks/panel-stage.js"
+      ],
+      "after": [
+        "P147.1",
+        "P147.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "stageModel takes step (the live note panel.js passes) and shows one line in panel-step.js's full wording, with or without the crew of a workflow, also for a background proof ('proving 12 of 40 checks · about 8 min, until around 14:26').",
+        "The late, minutes-late and no-basis cases read as in Mission Control; with no step there is no line, so the line is gone at the next refresh once the step ends.",
+        "The line fits the room Comms has (cut, never spilled) and never pushes out the needs-you line."
+      ]
+    },
+    {
+      "id": "P148.1",
+      "phase": "P148",
+      "title": "vbw next, vbw run start and vbw status say the step and its end time",
+      "reqs": [
+        "R190"
+      ],
+      "files": [
+        "plugin/lib/cmd-next.sh",
+        "plugin/lib/next.jq",
+        "plugin/lib/cmd-run.sh",
+        "plugin/lib/cmd-status.sh",
+        "plugin/lib/steps.sh"
+      ],
+      "after": [
+        "P146.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "vbw next --json adds step for a step to run: {kind, ids, parts, seconds, end, say}: plan, build (the wave's plans), fix (the open fixes), qa (its phases) and prove (the units left to run after reuse, planned by the proof's own reuse rule without running anything); null for other answers; the Stop hook's gate (vbw auto gate) does not pay for the proof's reuse plan.",
+        "The say sentence (D425): 'Building P1.1, P1.2 and P1.3: about 15 min, until around 14:20', 'Planning the work: ...', 'Checking P1: ...', 'Fixing F1: ...', 'Proving 3 checks: ...'; without a basis '...: no end time yet (VBW has timed fewer than 3 steps like this here)'.",
+        "vbw run start prints the same sentence from the note it just wrote, so its time is within a minute of next's.",
+        "vbw status prints the running step: what it is doing, parts done of total, and the full wording, with ', later than usual', 'until around 14:20, 6 min late' and 'no end time yet (VBW has timed fewer than 3 steps like this here)'."
+      ]
+    },
+    {
+      "id": "P148.2",
+      "phase": "P148",
+      "title": "The router and /vbw:status tell the user the step's end time",
+      "reqs": [
+        "R190"
+      ],
+      "files": [
+        "plugin/skills/vibe/SKILL.md",
+        "plugin/skills/status/SKILL.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "vibe/SKILL.md: one rule, before starting planning, a build, a fix, QA or a background proof, say step.say from vbw next --json as given (one line).",
+        "status/SKILL.md: the summary includes the running step and its end time in vbw status's own words.",
+        "Keep the skills' existing tests (tests/skills.bats and the router's) green."
+      ]
+    },
+    {
+      "id": "P148.3",
+      "phase": "P148",
+      "title": "Docs: how VBW works out a step's end time",
+      "reqs": [
+        "R190"
+      ],
+      "files": [
+        "docs/panel.md",
+        "docs/statusline.md",
+        "README.md",
+        "docs/next.md"
+      ],
+      "after": [
+        "P146.2",
+        "P147.3",
+        "P148.1"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/panel.md 'Time left': which steps get an end time (planning, build, fix, QA, proof), the full wording, the 3-step minimum, time per part, the latest 50 steps of each kind, 'later than usual' and 'N min late', 'No end time yet', where steps.json lives (.git/vbw/steps.json) and how to reset it (delete it).",
+        "docs/statusline.md: the short form ('until 14:20'), the background proof's 'proving 12 of 40 checks', the late cases.",
+        "README.md (where it describes the panel) and docs/next.md (the step and step.say vbw next --json carries)."
+      ]
+    },
+    {
+      "id": "P148.4",
+      "phase": "P148",
+      "title": "Real-session check: one end time in chat, status line and Comms",
+      "reqs": [
+        "R190"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3-results/steptime.json"
+      ],
+      "after": [
+        "P146.2",
+        "P147.3",
+        "P148.1",
+        "P148.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/l3-suite.sh scenario_steptime: a realistic project (more than one plan, real checks) with a seeded steps.json; records chat_end, statusline_end and comms_end for a build (HH:MM), same_end, proof_counts (the status line's 'N of M checks' read over time), proof_counted_up, and no_history_no_end_time on a project with no history.",
+        "Run it through the real Claude Code screen (L3) and commit tools/l3-results/steptime.json as the run wrote it, with its fixture and not_tested list.",
+        "Report in the plan's notes the scenarios run and not run, for the progress log."
+      ]
     }
   ],
   "fixes": [
@@ -37748,6 +38696,18 @@
       "id": "D423",
       "at": "2026-10-16T02:28:27Z",
       "text": "Parked T94 (Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92): scope violation: 32f17ce8f51d (P144.3) changed tests/panel/r189/now-box.test.mjs, which is not in the plan; reverted bd48805, 39608cb, 67881f9; left unreverted: 0760206 (changes the record too); milestone M35 is parked, the backlog entry stays open; to bring the work back revert the reverts or run the item again"
+    },
+    {
+      "id": "D424",
+      "text": "A late step's end time moves with this run's real speed, marked 'later than usual'; steps with no parts to count keep the first time and say how late they are",
+      "why": "owner's choice: always a time to plan around, already accounting for a busy machine; the time can change more than once",
+      "at": "2026-10-16T08:16:33Z"
+    },
+    {
+      "id": "D425",
+      "text": "Full wording ('about 12 min, until around 14:20') in Mission Control and chat; clock time only ('until 14:20') in the status line",
+      "why": "owner's choice: each place shows as much as fits, the same clock time everywhere; two wordings of the same fact",
+      "at": "2026-10-16T08:16:34Z"
     }
   ],
   "commands": {
@@ -43321,6 +44281,15 @@
         "milestone": "M36",
         "started": "2026-10-16T08:12:10Z",
         "ended": "2026-10-16T08:15:16Z",
+        "cost": null
+      },
+      {
+        "id": "plan-20261016T081636Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M36",
+        "started": "2026-10-16T08:16:36Z",
+        "ended": "2026-10-16T09:00:00Z",
         "cost": null
       }
     ],

@@ -2,7 +2,9 @@
 // its content is, and each sentence of the pane shows its key value in colour
 // (progress green, estimate amber, cost in the accent colour, a need of the
 // user yellow). Pure: panelView and renderPane, no Claude Code needed
-// (evidence level L1).
+// (evidence level L1). Since R190 (D425) the step's time comes from the
+// kernel's note (the `step` input of panelView) in full wording, 'about 5 min,
+// until around HH:MM', and without a basis 'No end time yet: ...'.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
@@ -22,6 +24,9 @@ const TABS = ['now', 'plan', 'proof', 'timeline', 'decisions', 'team', 'costs']
 const reqs = (done, total) => Array.from({ length: total }, (_, i) => ({ id: 'R' + (i + 1), text: 'R' + (i + 1) + ' holds', proof: 'auto', status: i < done ? 'proven' : 'open', milestone: 'M9' }))
 const steps = (kind, secs) => secs.map((s, i) => ({ kind, run: kind + '-' + i, seconds: s, started_at: new Date(NOW - 1e7 - i * 1e5).toISOString(), ended_at: new Date(NOW - 1e7 - i * 1e5 + s * 1000).toISOString() }))
 const HISTORY = [...steps('build', [600, 900, 1200]), ...steps('qa', [100, 200, 300])]
+const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z')
+const step = (over = {}) => ({ kind: 'build', run: 'build-1', session: 'sess-1', pid: null, started_at: iso(NOW - 300 * S), ids: ['P44.1'],
+  doing: 'building P44.1', parts: { done: 0, total: 1 }, proof: null, first_end: iso(NOW + 300 * S), end: iso(NOW + 300 * S), late: false, ...over })
 const busy = () => deepFreeze(record({
   requirements: reqs(2, 5),
   lease: lease('build', NOW - 300 * S),
@@ -45,11 +50,11 @@ const sentence = (tree, text) => texts(tree).filter((t) => t.text === text)
 // --- key values in colour -------------------------------------------------------
 
 test('progress is green, the estimate amber and the cost in the accent colour, each sentence whole', () => {
-  const v = view.panelView({ record: busy(), next: next({ action: 'run' }), now: NOW, cost: 1.42, steps: HISTORY })
+  const v = view.panelView({ record: busy(), next: next({ action: 'run' }), now: NOW, cost: 1.42, steps: HISTORY, step: step() })
   const tree = pane.renderPane(UI, input(v), on)
   const row = (id) => v.rows.find((r) => r.id === id)
   assert.match(row('progress').text, /2 of 5 requirements done/)
-  assert.match(row('estimate-step').text, /About \d+ min left/)
+  assert.match(row('estimate-step').text, /about 5 min, until around \d\d:\d\d/)
   assert.match(row('cost').text, /\$1\.42/)
   for (const [id, colour] of [['progress', P.PROGRESS], ['estimate-step', P.ESTIMATE], ['estimate-milestone', P.ESTIMATE], ['cost', P.ACCENT]]) {
     const hit = sentence(tree, row(id).text)
@@ -73,11 +78,12 @@ test('a need of the user is yellow; with nothing needed the line is plain', () =
 })
 
 test('a sentence with no value in it stays plain: no requirements, no estimate basis, no cost', () => {
-  const v = view.panelView({ record: deepFreeze(record({ requirements: [], lease: lease('build', NOW - 60 * S) })), next: next(), now: NOW, cost: undefined, steps: [] })
+  const v = view.panelView({ record: deepFreeze(record({ requirements: [], lease: lease('build', NOW - 60 * S) })), next: next(), now: NOW, cost: undefined, steps: [],
+    step: step({ first_end: null, end: null }) })
   const tree = pane.renderPane(UI, input(v), on)
   const row = (id) => v.rows.find((r) => r.id === id)
   assert.match(row('progress').text, /No requirements/)
-  assert.match(row('estimate-step').text, /No estimate/)
+  assert.match(row('estimate-step').text, /No end time yet/)
   assert.match(row('cost').text, /not available/)
   for (const id of ['progress', 'estimate-step', 'cost']) {
     const hit = sentence(tree, row(id).text)

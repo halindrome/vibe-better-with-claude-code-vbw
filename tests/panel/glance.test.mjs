@@ -2,14 +2,23 @@
 // and for the milestone, from the clone's own record of finished steps, and
 // says plainly when it has no basis yet. Approximate, never negative, never
 // from anywhere but local files (L1, stand-in for the mods API).
+// R190 (D425) replaced the step's sentence: the running step's time comes from
+// the kernel's note (.vbw/runtime/step.json), in full wording ('about 10 min,
+// until around HH:MM'; 'later than usual' when late); the milestone estimate is
+// unchanged.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mount, record, next, lease, ROOT, T0, ALLOWED } from './helpers/fake-mod.mjs'
 
 const STEPS = ROOT + '/.git/vbw/steps.json'
+const NOTE = ROOT + '/.vbw/runtime/step.json'
 const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z')
 const steps = (kind, secs) => secs.map((s, i) => ({ kind, run: kind + '-' + i, started_at: iso(T0 - 1e7 - i * 1e5), ended_at: iso(T0 - 1e7 - i * 1e5 + s * 1000), seconds: s }))
 const HISTORY = { steps: [...steps('build', [600, 900, 1200]), ...steps('qa', [100, 200, 300])] }
+// The kernel's note for the build: it ends ENDSEC seconds after the first drawing (T0 + 4 s).
+const note = (elapsedSec, endSec, over = {}) => JSON.stringify({ kind: 'build', run: 'build-1', session: 'sess-1', pid: null,
+  started_at: iso(T0 - elapsedSec * 1000), ids: ['P44.1'], doing: 'building P44.1', parts: { done: 0, total: 1 }, proof: null,
+  first_end: iso(T0 + 4000 + endSec * 1000), end: iso(T0 + 4000 + endSec * 1000), late: false, ...over })
 const building = (elapsedSec) => record({ lease: lease('build', T0 - elapsedSec * 1000), plans: [{ id: 'P44.1', phase: 'P44', title: 'Show the cost', status: 'building' }] })
 
 async function session(rec, files, options = {}) {
@@ -35,7 +44,7 @@ test('with too little history (2 finished steps) it still gives no number', asyn
 })
 
 test('with enough history it shows approximate time left for the step and for the milestone', async () => {
-  const h = await session(building(300), { [STEPS]: JSON.stringify(HISTORY) })
+  const h = await session(building(300), { [STEPS]: JSON.stringify(HISTORY), [NOTE]: note(300, 600) })
   const texts = await h.texts()
   const about = texts.filter((t) => /about \d+/i.test(t))
   assert.equal(about.length, 2, 'one line for the step, one for the milestone')
@@ -44,11 +53,11 @@ test('with enough history it shows approximate time left for the step and for th
   assert.doesNotMatch(texts.join(' '), /exactly|precisely/i)
 })
 
-test('a step that runs past its usual time says it is taking longer than usual', async () => {
-  const h = await session(building(5000), { [STEPS]: JSON.stringify(HISTORY) })
+test('a step that runs past its usual time says it is later than usual', async () => {
+  const h = await session(building(5000), { [STEPS]: JSON.stringify(HISTORY), [NOTE]: note(5000, 600, { first_end: iso(T0 - 4000 * 1000), late: true }) })
   const text = await h.text()
-  assert.match(text, /longer than usual/i)
-  assert.doesNotMatch(text, /-\d|negative|overdue|ago|late/i)
+  assert.match(text, /later than usual/i)
+  assert.doesNotMatch(text, /-\d|negative|overdue|ago/i)
 })
 
 test('idle: only the milestone is estimated', async () => {
@@ -77,6 +86,7 @@ test('in a linked worktree the history is read from the clone it belongs to', as
     [ROOT + '/.git']: 'gitdir: /main/.git/worktrees/w1\n',
     '/main/.git/worktrees/w1/commondir': '../..\n',
     '/main/.git/vbw/steps.json': JSON.stringify(HISTORY),
+    [NOTE]: note(300, 600),
   }
   const h = await mount({ files })
   h.project(building(300), next({ action: 'run' }))
@@ -96,7 +106,7 @@ test('the history is read only from the clone cache, never written, with no netw
 })
 
 test('the estimate follows the clock: a minute later it has gone down, and it redraws only for that', async () => {
-  const h = await session(building(300), { [STEPS]: JSON.stringify(HISTORY) })
+  const h = await session(building(300), { [STEPS]: JSON.stringify(HISTORY), [NOTE]: note(300, 600) })
   assert.match(await h.text(), /about 10 min/i)
   await h.advance(5 * 60000)
   assert.match(await h.text(), /about 5 min/i)

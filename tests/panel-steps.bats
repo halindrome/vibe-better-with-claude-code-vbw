@@ -3,7 +3,8 @@
 # kernel keeps that history in the clone's own cache, $(git common dir)/vbw/steps.json
 # (like qa.json, D91): a finished run is one step. No new field in the record
 # (D91, R46), nothing in a tracked file, and a cache that cannot be written
-# never stops a run from ending. L1.
+# never stops a run from ending. L1. Since R190 the history keeps the latest
+# 50 steps of each kind (tests/step-history.bats has the rest of R190's history).
 
 load helper
 
@@ -38,12 +39,12 @@ teardown() { vbw_teardown; }
   jq -e '.steps[0].started_at == "2026-01-01T00:00:00Z" and .steps[0].run == "plan-20260101T000000Z" and (.steps[0].seconds > 86400 * 100)' "$STEPS"
 }
 
-@test "R58: only the latest 50 steps are kept" {
+@test "R58: only the latest 50 steps of each kind are kept" {
   mkdir -p "$(dirname "$STEPS")"
   jq -n '{steps: [range(0; 60) | {kind: "build", run: "build-\(.)", started_at: "2026-01-01T00:00:00Z", ended_at: "2026-01-01T00:01:00Z", seconds: 60}]}' > "$STEPS"
   "$VBW" run start plan > /dev/null
   "$VBW" run end > /dev/null
-  jq -e '(.steps | length) == 50 and .steps[-1].kind == "plan" and .steps[0].run == "build-11"' "$STEPS"
+  jq -e '(.steps | length) == 51 and .steps[-1].kind == "plan" and .steps[0].run == "build-10"' "$STEPS"
 }
 
 @test "R58: the history is in the clone's git directory: no tracked file and no record field is added" {
