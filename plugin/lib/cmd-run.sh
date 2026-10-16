@@ -7,6 +7,9 @@
 
 VBW_LEASE_HOURS=24
 
+# shellcheck source=steps.sh
+. "$VBW_LIB/steps.sh"
+
 # run_id KIND AT: the id of a run of KIND started at AT (the time, to the
 # second): KIND-20260101T120000Z, unique among the runs the record holds. A
 # second run started in the same second gets -2, a third -3 (R173: a run's
@@ -89,7 +92,8 @@ cmd_run() {
       | .costs.runs = ((.costs.runs // []) + [$r]) | .costs.milestones = (.costs.milestones // {})' \
       --arg m "$m" --arg at "$(vbw_now)" --argjson cost "$cost"
     record_commit "chore(vbw): record after $run"
-    [ -z "$lease" ] || vbw_step_add "$lease"
+    if [ -n "$lease" ]; then step_record "$lease"; fi
+    rm -f "$(step_note_file)" 2> /dev/null || true
     printf 'run ended\n'
     return 0
   fi
@@ -160,5 +164,6 @@ cmd_run() {
     | if $k == "build" then (.plans[] | select(.id as $i | any($ids[]; . == $i))).status = "building" else . end' \
     --arg k "$kind" --arg me "$(vbw_session)" --argjson ids "$ids" --arg at "$at" --arg run "$(run_id "$kind" "$at")" \
     --argjson cost "$(costs_figures "$(vbw_session)")"
+  step_start "$kind" "$ids"
   jq -r '.lease | "run \(.run) started; agents may write: \(if .files == null then "any file (protected checks excepted)" else (.files | join(", ")) end)"' "$VBW_RECORD"
 }
