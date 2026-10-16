@@ -33741,7 +33741,7 @@
       "after": [
         "P146.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Exact unit count (new plugin/lib/proofsteps.sh): every unit a proof runs (a check, a test file, a project command) that finishes, in any lane, marks itself done once and the note is rewritten atomically under a lock, so 40 finished units read exactly 40 of 40; vbw check never touches the note.",
@@ -33749,6 +33749,313 @@
         "Inside this session's open build or fix the proof only sets doing ('proving 12 of 40 checks') and proof {done, total}, and clears them when it ends; the step's parts and end time stay. A live note of another session is never touched.",
         "Before it starts, a proof removes a note that is not live (an ended run's, a dead process's); when it ends it records a proof step whose parts are the units that really finished, and nothing when no unit ran (every result reused).",
         "vbw fix done counts each fix it closes as one part done of the open fix step."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R190",
+            "text": "with 4 lanes, 40 finished units read exactly 40 of 40, never fewer or more, counting only up"
+          },
+          "what": "the count goes up by 2 per unit",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C377": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:51:42Z",
+          "head": "62b21952cd76fe5d497aeb0e7b4d89a872582173"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "each finished unit counts before the next starts; a proof of its own expects its median time per unit times its units"
+          },
+          "what": "a proof expects time for one unit, not all",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C377": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:55:33Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a proof inside this session's build is what the build is doing now ('proving N of M checks'); the build's end time stays"
+          },
+          "what": "an inside proof never gives the step its doing back",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C377": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:58:18Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a proof of another session never replaces this session's step"
+          },
+          "what": "a proof also takes over a live step of another session",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C377": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:03:10Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a proof killed outright is never shown as running, and the next proof removes its note"
+          },
+          "what": "a proof note carries pid 1, always alive",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C377": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:04:22Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a note left by an ended run is removed by the next proof"
+          },
+          "what": "no proof removes a note that is not live",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C387": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T11:05:42Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the Stop hook still waits while a background proof runs"
+          },
+          "what": "the proving mark names no live process",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C377": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:07:36Z",
+          "head": "614ae7c13d0f6c49f55d9067cbeb8b67fea2410c"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "vbw fix done counts each fix it closes as one part done of the fix step"
+          },
+          "what": "a closed fix counts one however many close",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C377": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:08:40Z",
+          "head": "614ae7c13d0f6c49f55d9067cbeb8b67fea2410c"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a note left by an ended run is removed by the next proof"
+          },
+          "what": "no proof removes a note that is not live",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C387": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:12:19Z",
+          "head": "11facf162dd225cf2a7408e8582daefed6312094",
+          "strengthened": [
+            "tests/step-proof-history.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a proof is recorded as a step of kind proof whose parts are the checks it really ran"
+          },
+          "what": "the proof step records one part, not the units finished",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C387": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:13:25Z",
+          "head": "11facf162dd225cf2a7408e8582daefed6312094"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the proof inside vbw fix done is recorded as a proof step"
+          },
+          "what": "the proof inside fix done never starts its step",
+          "files": [
+            "plugin/lib/cmd-fix.sh"
+          ],
+          "checks": {
+            "C387": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:14:20Z",
+          "head": "11facf162dd225cf2a7408e8582daefed6312094"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a proof that reused every result ran nothing and adds no step"
+          },
+          "what": "a proof that ran nothing records a step of zero parts",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C387": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:15:08Z",
+          "head": "11facf162dd225cf2a7408e8582daefed6312094"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a missing or unwritable history never fails a proof"
+          },
+          "what": "an unwritable history fails the proof",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C387": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:16:34Z",
+          "head": "f2de319830f4a9ee235ef3dbd528d10ca27fb4d3"
+        },
+        {
+          "task": 1,
+          "what": "the lock does nothing, so two lanes can count at once",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C377": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T11:23:11Z",
+          "head": "f2de319830f4a9ee235ef3dbd528d10ca27fb4d3"
+        },
+        {
+          "task": 2,
+          "what": "a proof of its own writes a note of kind build",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C377": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:24:36Z",
+          "head": "f2de319830f4a9ee235ef3dbd528d10ca27fb4d3"
+        },
+        {
+          "task": 3,
+          "what": "a proof inside a step wipes the step end time",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C377": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:25:39Z",
+          "head": "f2de319830f4a9ee235ef3dbd528d10ca27fb4d3"
+        },
+        {
+          "task": 4,
+          "what": "the proof step records one part too many",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C387": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:26:30Z",
+          "head": "f2de319830f4a9ee235ef3dbd528d10ca27fb4d3"
+        },
+        {
+          "task": 5,
+          "what": "fix done counts parts only of a build step",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C377": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:27:32Z",
+          "head": "f2de319830f4a9ee235ef3dbd528d10ca27fb4d3"
+        },
+        {
+          "task": 1,
+          "what": "the lock does nothing, so two lanes can count at once",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C377": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T11:32:20Z",
+          "head": "de98d8411fa2c87ce08f9f19a0ad8d2adc4c8c4f"
+        },
+        {
+          "task": 1,
+          "what": "lock does nothing",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C377": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:48:25Z",
+          "head": "8c3b51421f25d6cacfd9c7ae820ebd1bcaa02894",
+          "strengthened": [
+            "tests/step-proof.bats"
+          ]
+        }
       ]
     },
     {
@@ -34425,12 +34732,209 @@
         "P147.1",
         "P147.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "stageModel takes step (the live note panel.js passes) and shows one line in panel-step.js's full wording, with or without the crew of a workflow, also for a background proof ('proving 12 of 40 checks · about 8 min, until around 14:26').",
         "The late, minutes-late and no-basis cases read as in Mission Control; with no step there is no line, so the line is gone at the next refresh once the step ends.",
         "The line fits the room Comms has (cut, never spilled) and never pushes out the needs-you line."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R190",
+            "text": "when the step ends its time leaves Comms at the next refresh; with nothing running none shows"
+          },
+          "what": "no step still draws a time",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C380": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:40:14Z",
+          "head": "cc4a2bd3cdc4e249027fdde5bc3ad1038e8fa94f"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a background proof shows in Comms as 'proving N of M checks' with its time"
+          },
+          "what": "the doing words are dropped",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C380": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:40:30Z",
+          "head": "cc4a2bd3cdc4e249027fdde5bc3ad1038e8fa94f"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "Comms shows 'about 12 min, until around HH:MM' while a step runs"
+          },
+          "what": "no step line at all",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C380": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:40:50Z",
+          "head": "cc4a2bd3cdc4e249027fdde5bc3ad1038e8fa94f"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "while a workflow crew shows in Comms, the step time shows with it"
+          },
+          "what": "the crew drops the step",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C380": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:41:12Z",
+          "head": "cc4a2bd3cdc4e249027fdde5bc3ad1038e8fa94f"
+        },
+        {
+          "task": 3,
+          "what": "the step line is not cut",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C380": "green",
+            "C381": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T11:04:08Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "task": 3,
+          "what": "the step line takes the needs-you row",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C380": "green",
+            "C381": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T11:04:24Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "task": 2,
+          "what": "words worked at the wrong moment",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C380": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:04:47Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "task": 1,
+          "what": "no line without a crew",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C380": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:05:03Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "task": 3,
+          "what": "the step line is not cut",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C380": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:05:45Z",
+          "head": "614ae7c13d0f6c49f55d9067cbeb8b67fea2410c",
+          "strengthened": [
+            "tests/panel/r190/step-comms.test.mjs"
+          ]
+        },
+        {
+          "task": 3,
+          "what": "the step line takes the needs-you row",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C380": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:06:01Z",
+          "head": "614ae7c13d0f6c49f55d9067cbeb8b67fea2410c"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "later than usual and minutes late read in Comms as in Mission Control"
+          },
+          "what": "late wording is dropped",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C380": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:06:27Z",
+          "head": "614ae7c13d0f6c49f55d9067cbeb8b67fea2410c"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "one note at one moment gives the identical HH:MM in the status line, Comms and Mission Control"
+          },
+          "what": "Comms words the step at another moment",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C381": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T11:06:44Z",
+          "head": "614ae7c13d0f6c49f55d9067cbeb8b67fea2410c"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "one note at one moment gives the identical HH:MM in the status line, Comms and Mission Control"
+          },
+          "what": "Comms shows the end an hour off",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C381": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:07:03Z",
+          "head": "614ae7c13d0f6c49f55d9067cbeb8b67fea2410c"
+        }
       ]
     },
     {
@@ -34450,13 +34954,195 @@
       "after": [
         "P146.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "vbw next --json adds step for a step to run: {kind, ids, parts, seconds, end, say}: plan, build (the wave's plans), fix (the open fixes), qa (its phases) and prove (the units left to run after reuse, planned by the proof's own reuse rule without running anything); null for other answers; the Stop hook's gate (vbw auto gate) does not pay for the proof's reuse plan.",
         "The say sentence (D425): 'Building P1.1, P1.2 and P1.3: about 15 min, until around 14:20', 'Planning the work: ...', 'Checking P1: ...', 'Fixing F1: ...', 'Proving 3 checks: ...'; without a basis '...: no end time yet (VBW has timed fewer than 3 steps like this here)'.",
         "vbw run start prints the same sentence from the note it just wrote, so its time is within a minute of next's.",
         "vbw status prints the running step: what it is doing, parts done of total, and the full wording, with ', later than usual', 'until around 14:20, 6 min late' and 'no end time yet (VBW has timed fewer than 3 steps like this here)'."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R190",
+            "text": "vbw next --json gives a build wave its expected length, end time and the sentence to say"
+          },
+          "what": "next's step end time always null",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C383": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:50:40Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "without a basis next's sentence names the step and says 'no end time yet (VBW has timed fewer than 3 steps like this here)'"
+          },
+          "what": "no-basis sentence drops the explanation",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C383": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:51:49Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "a proof's size in vbw next is the units left to run after reuse"
+          },
+          "what": "proof size counts every check, not the units left after reuse",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C383": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:52:40Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "planning, QA and a fix carry their own kind, size and expected length in vbw next"
+          },
+          "what": "QA carries the plan kind",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C383": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:53:27Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "vbw run start says what starts and when it should end, within a minute of next's time"
+          },
+          "what": "run start prints no sentence",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C383": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T10:57:54Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "vbw status prints the running step, its progress and its end time in the panel's words"
+          },
+          "what": "status prints no running step",
+          "files": [
+            "plugin/lib/cmd-status.sh"
+          ],
+          "checks": {
+            "C383": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:01:40Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "vbw status says later than usual, N min late and no end time yet as the panel does"
+          },
+          "what": "later than usual left out of the sentence",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C383": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:03:02Z",
+          "head": "ba84b9caebdefdc4baaf7f0945a8fd4a0a7840b6"
+        },
+        {
+          "task": 1,
+          "what": "the gate also computes the step",
+          "files": [
+            "plugin/lib/cmd-next.sh"
+          ],
+          "checks": {
+            "C383": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T11:13:39Z",
+          "head": "11facf162dd225cf2a7408e8582daefed6312094"
+        },
+        {
+          "task": 1,
+          "what": "the gate also computes the step",
+          "files": [
+            "plugin/lib/cmd-next.sh"
+          ],
+          "checks": {
+            "C383": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:16:02Z",
+          "head": "f2de319830f4a9ee235ef3dbd528d10ca27fb4d3",
+          "strengthened": [
+            "tests/step-next.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "a fix is said as Mending",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C383": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:16:46Z",
+          "head": "f2de319830f4a9ee235ef3dbd528d10ca27fb4d3"
+        },
+        {
+          "task": 3,
+          "what": "run start prints no sentence",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C383": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:17:30Z",
+          "head": "f2de319830f4a9ee235ef3dbd528d10ca27fb4d3"
+        },
+        {
+          "task": 4,
+          "what": "status prints no running step",
+          "files": [
+            "plugin/lib/cmd-status.sh"
+          ],
+          "checks": {
+            "C383": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T11:18:12Z",
+          "head": "f2de319830f4a9ee235ef3dbd528d10ca27fb4d3"
+        }
       ]
     },
     {
@@ -45466,6 +46152,19 @@
         "started": "2026-10-16T09:40:02Z",
         "ended": "2026-10-16T10:35:21Z",
         "cost": null
+      },
+      {
+        "id": "build-20261016T103806Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M36",
+        "started": "2026-10-16T10:38:06Z",
+        "ended": "2026-10-16T11:50:13Z",
+        "cost": {
+          "usd": 4.047806,
+          "in": 3161,
+          "out": 421
+        }
       }
     ],
     "milestones": {
