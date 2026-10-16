@@ -34261,7 +34261,7 @@
       "id": "F237",
       "command": "test",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "test fail"
     }
   ],
@@ -42997,6 +42997,15 @@
         "milestone": "M34",
         "started": "2026-10-15T22:43:15Z",
         "ended": "2026-10-15T23:21:59Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261016T001020Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M34",
+        "started": "2026-10-16T00:10:20Z",
+        "ended": "2026-10-16T00:13:28Z",
         "cost": null
       }
     ],
