@@ -12,26 +12,51 @@
 # are null when there is no basis (fewer than 3 finished steps of the kind).
 # JSON is read and written only through jq.
 
-# The kernel's one wording of a step, for vbw status, vbw next and vbw run start:
-# step_clock($iso): the local 24-hour time of a UTC time, "tomorrow HH:MM" (or
-# the date) when it is not today; step_sentence($step): what the step is doing,
-# its progress and its end time.
+# The kernel's one wording of a step, for vbw status, vbw next and vbw run start
+# (the panel's words, D425). $t is the moment, in epoch seconds.
+# step_clock($iso; $t): the local 24-hour time of a UTC time; "tomorrow HH:MM",
+# "yesterday HH:MM" or the weekday when it is not today.
+# step_words($s; $t): a note's time: 'about 12 min, until around 14:20',
+# 'less than a minute, ...', 'until around 14:35, later than usual' (with parts),
+# 'until around 14:20, 6 min late' (without), or 'no end time yet (...)'.
+# step_label($kind; $ids; $n): what a step is: 'Building P1.1, P1.2 and P1.3'.
+# step_say($s; $t): the sentence VBW says before a step starts; $s has kind,
+# ids, parts (a number or {done, total}), end, late.
+# step_sentence($s; $t): what a running step is doing, its progress and its time.
 # shellcheck disable=SC2016,SC2034
-VBW_STEP_DEFS='def step_clock($iso):
-  ($iso | fromdateiso8601) as $t
-  | ($t | localtime | strftime("%H:%M")) as $hm
-  | (now | localtime | strftime("%Y-%m-%d")) as $today
-  | ($t | localtime | strftime("%Y-%m-%d")) as $day
-  | if $day == $today then $hm
-    elif $day == ((now + 86400) | localtime | strftime("%Y-%m-%d")) then "tomorrow \($hm)"
-    else "\($day) \($hm)" end;
-def step_sentence($s):
+VBW_STEP_DEFS='def step_day($e): $e | localtime | mktime / 86400 | floor;
+def step_clock($iso; $t):
+  ($iso | fromdateiso8601) as $e
+  | ($e | localtime | strftime("%H:%M")) as $hm
+  | (step_day($e) - step_day($t)) as $d
+  | if $d == 0 then $hm
+    elif $d == 1 then "tomorrow \($hm)"
+    elif $d == -1 then "yesterday \($hm)"
+    else "\($e | localtime | strftime("%A")) \($hm)" end;
+def step_words($s; $t):
+  if $s.end == null then "no end time yet (VBW has timed fewer than 3 steps like this here)"
+  else (($s.end | fromdateiso8601) - $t) as $left
+    | "until around \(step_clock($s.end; $t))" as $at
+    | (($s.parts // null) != null) as $hp
+    | if $hp and ($s.late == true or $left <= 0) then "\($at), later than usual"
+      elif ($hp | not) and $left <= -60 then "\($at), \(-$left / 60 | floor) min late"
+      elif $left < 60 then (if $left > 0 then "less than a minute, \($at)" else $at end)
+      else "about \([1, ($left / 60 | round)] | max) min, \($at)" end end;
+def step_and: if length < 2 then join("") else (.[:-1] | join(", ")) + " and " + .[-1] end;
+def step_label($k; $ids; $n):
+  if $k == "build" then "Building \($ids | step_and)"
+  elif $k == "fix" then "Fixing \($ids | step_and)"
+  elif $k == "qa" then (if ($ids | length) > 0 then "Checking \($ids | step_and)" else "Checking the built work" end)
+  elif $k == "plan" then "Planning the work"
+  elif $k == "proof" then "Proving \($n) \(if $n == 1 then "check" else "checks" end)"
+  else "Mapping the project" end;
+def step_say($s; $t):
+  step_label($s.kind; $s.ids // []; if ($s.parts | type) == "object" then $s.parts.total else ($s.parts // 0) end)
+  + ": " + step_words($s; $t);
+def step_sentence($s; $t):
   $s.doing
-  + (if ($s.parts // null) != null and ($s.proof // null) == null then " · \($s.parts.done) of \($s.parts.total)" else "" end)
-  + (if $s.end == null then " · no end time yet (VBW has timed fewer than 3 steps like this here)"
-     else " · until \(step_clock($s.end))"
-       + (if $s.late == true then ", later than usual"
-          elif ($s.minutes_late // null) != null then ", \($s.minutes_late) min late" else "" end) end);
+  + (if ($s.parts // null) != null and ($s.proof // null) == null and $s.kind != "proof" then " · \($s.parts.done) of \($s.parts.total)" else "" end)
+  + " · " + step_words($s; $t);
 '
 
 # step_history_file: the history's path, empty outside a git repository.
@@ -203,4 +228,58 @@ step_status() {
   if [ -z "$live" ]; then echo null; return 0; fi
   printf '%s' "$live" | jq -c '. + {minutes_late: (if .parts == null and .first_end != null
       then (((now | floor) - (.first_end | fromdateiso8601)) / 60 | floor | if . >= 1 then . else null end) else null end)}' 2> /dev/null || echo null
+}
+
+# step_say_note: the sentence of the note just written (run start), nothing
+# without a note.
+step_say_note() {
+  local note
+  note=$(step_note_file)
+  [ -f "$note" ] || return 0
+  jq -r "$VBW_STEP_DEFS"'step_say(.; now | floor)' "$note" 2> /dev/null || true
+}
+
+# step_proof_units RECORD FULL: how many units a proof would run now, planned
+# by the proof's own reuse rule (cmd-prove.sh) without running anything.
+step_proof_units() {
+  (
+    cd "$VBW_ROOT" || exit 1
+    # shellcheck source=cmd-prove.sh
+    . "$VBW_LIB/cmd-prove.sh"
+    local causes alln=0
+    proofreuse_plan "$1" "$2"
+    causes=$(proofcauses_find "$1" "$2" "$(vbw_head_tree 2> /dev/null)")
+    [ -z "$causes" ] || alln=1
+    testfiles_plan "$1" "$alln"
+    [ -z "$causes" ] || prove_plan_all "$1"
+    printf '%s\n' "$(( ${#TODO_CHECKS[@]} + $(printf '%s' "$TODO_COMMANDS" | jq 'length') + ${#TF_TODO[@]} ))"
+  ) 2> /dev/null || echo 0
+}
+
+# step_next RECORD NEXT: the step vbw next --json carries: {kind, ids, parts,
+# seconds, end, say} for an answer that runs a step (plan, build, fix, qa, a
+# proof with units left to run), else null. A kind without parts has parts null.
+step_next() {
+  local kind ids='[]' parts=null full units seconds=
+  case "$(printf '%s' "$2" | jq -r .action)" in
+    plan) kind=plan ;;
+    build) kind=build ids=$(printf '%s' "$2" | jq -c .detail.plans) ;;
+    fix) kind=fix ids=$(printf '%s' "$2" | jq -c .detail.fixes) ;;
+    qa) kind=qa ids=$(printf '%s' "$2" | jq -c .detail.phases) ;;
+    prove)
+      kind=proof
+      full=0
+      printf '%s' "$2" | jq -e '.detail.full == true' > /dev/null && full=1
+      units=$(step_proof_units "$1" "$full")
+      [ "${units:-0}" -gt 0 ] 2> /dev/null || { echo null; return 0; }
+      parts=$units ;;
+    *) echo null; return 0 ;;
+  esac
+  step_kind_has_parts "$kind" && [ "$parts" = null ] && parts=$(printf '%s' "$ids" | jq 'length')
+  seconds=$(step_expect "$kind" "$(printf '%s' "$parts" | sed 's/^null$/0/')")
+  jq -nc --arg k "$kind" --argjson ids "$ids" --argjson parts "$parts" --arg s "$seconds" "$VBW_STEP_DEFS"'
+    (now | floor) as $t
+    | (if $s == "" then null else ($s | tonumber) end) as $sec
+    | {kind: $k, ids: $ids, parts: $parts, seconds: $sec, end: (if $sec == null then null else $t + $sec | todateiso8601 end)}
+    | . + {say: step_say(.; $t)}'
 }

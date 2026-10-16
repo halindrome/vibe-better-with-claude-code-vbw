@@ -10,6 +10,8 @@
 . "$VBW_LIB/effort.sh"
 # shellcheck source=cmd-approve.sh
 . "$VBW_LIB/cmd-approve.sh"
+# shellcheck source=steps.sh
+. "$VBW_LIB/steps.sh"
 
 # qa_state RECORD [DIGESTS]: lib/qa.jq's answer (closure, recheck, standing, problems).
 # The one judgment of whether a pass stands; a pass of another fingerprint
@@ -54,6 +56,12 @@ cmd_next() {
   profile=$(interview_effective "$record")
   next=$(printf '%s' "$record" | jq -c --argjson effort "$effort" --argjson tracked "$counts" --argjson approved "$approved" --arg waiting "$waiting" --arg problems "$problems" --arg contract "$hash" \
     --argjson code_changed "$changed" --argjson legacy "$legacy" --slurpfile qa <(printf '%s' "$qa") --argjson profile "$profile" --arg session "$(vbw_session)" --slurpfile tiers "$VBW_LIB/tiers.json" "$VBW_JQ_DEFS$(cat "$VBW_LIB/next.jq")")
+  # The step to run, with its end time and the sentence to say (R190, D425). Only the
+  # command asks for it: a caller inside the kernel (the Stop hook's gate, ship, the
+  # loop) never pays for the proof's reuse plan.
+  if [ "${FUNCNAME[1]:-main}" = main ]; then
+    next=$(printf '%s' "$next" | jq -c --argjson step "$(step_next "$record" "$next")" '. + {step: $step}')
+  fi
   # The status line shows the last answer (docs/statusline.md).
   printf '%s\n' "$next" > "$VBW_RUNTIME/next.json.$$" && mv "$VBW_RUNTIME/next.json.$$" "$VBW_RUNTIME/next.json"
   if [ "${1:-}" = "--json" ]; then
