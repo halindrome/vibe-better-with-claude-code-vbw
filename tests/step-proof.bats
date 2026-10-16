@@ -207,3 +207,32 @@ until_note() {
   VBW_SESSION_ID=s1 "$VBW" fix done F1 F2 > "$TEST_ROOT/done.out" 2>&1 || { cat "$TEST_ROOT/done.out"; false; }
   jq -e '.kind == "fix" and .parts == {done: 2, total: 2} and .proof == null' "$NOTE" || { cat "$NOTE"; false; }
 }
+
+@test "R190: the note is rewritten under a lock: a proof waits while another writer holds it, and takes over a dead owner's" {
+  checks 2 snap
+  local lock="$PROJECT/.vbw/runtime/step.lock"
+  mkdir -p "$lock"
+  sleep 30 &
+  local holder=$!
+  printf '%s\n' "$holder" > "$lock/pid"
+  VBW_SESSION_ID=s1 "$VBW" prove > "$TEST_ROOT/prove.out" 2>&1 &
+  local prove=$!
+  sleep 1.5
+  kill -0 "$prove" || { echo "the proof did not wait for the lock"; cat "$TEST_ROOT/prove.out"; false; }
+  [ ! -e "$NOTE" ] || { echo "the note was written while another writer held the lock"; cat "$NOTE"; false; }
+  [ ! -s "$SNAPS" ] || { echo "a unit ran while the lock was held"; false; }
+  rm -rf "$lock"
+  kill "$holder" 2> /dev/null || true
+  wait "$prove" || { cat "$TEST_ROOT/prove.out"; false; }
+  jq -e '[.steps[] | select(.kind == "proof")] | last | .parts == 2' "$STEPS" || { cat "$STEPS"; false; }
+  # A lock whose owner is gone is taken over at once.
+  sleep 0.1 &
+  local gone=$!
+  wait "$gone"
+  mkdir -p "$lock"
+  printf '%s\n' "$gone" > "$lock/pid"
+  printf 'x\n' >> src/a.txt
+  git add src/a.txt && git commit -q -m "feat(pay): change a"
+  VBW_SESSION_ID=s1 "$VBW" prove > "$TEST_ROOT/prove2.out" 2>&1 || { cat "$TEST_ROOT/prove2.out"; false; }
+  [ ! -e "$lock" ] || { echo "the dead owner's lock stayed"; false; }
+}
