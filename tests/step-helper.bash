@@ -55,8 +55,8 @@ step_seed() {
 # lease's start in the record and the note's start and end times move back.
 step_back() {
   step_edit ".lease.started_at = (.lease.started_at | fromdateiso8601 - $1 | todateiso8601)"
-  jq --argjson s "$1" 'def back: if . == null then null else fromdateiso8601 - $s | todateiso8601 end
-    | .started_at |= back | .first_end |= back | .end |= back' "$NOTE" > "$TEST_ROOT/note.json"
+  jq --argjson s "$1" 'def back: if . == null then null else fromdateiso8601 - $s | todateiso8601 end;
+    .started_at |= back | .first_end |= back | .end |= back' "$NOTE" > "$TEST_ROOT/note.json"
   cp "$TEST_ROOT/note.json" "$NOTE"
 }
 

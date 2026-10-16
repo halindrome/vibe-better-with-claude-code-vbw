@@ -100,7 +100,7 @@ last() { jq -c --arg k "$1" '[.steps[] | select(.kind == $k)] | last' "$STEPS"; 
   VBW_SESSION_ID=s1 /bin/bash "$VBW" run end > /dev/null
   after=$(cd "$TEST_ROOT" && find . -path './project with space' -prune -o -type f -print | grep -v '/vbw/slots' | sort)
   [ "$before" = "$after" ] || { diff <(printf '%s\n' "$before") <(printf '%s\n' "$after"); false; }
-  case "$STEPS" in "$PROJECT/.git/"*) ;; *) echo "the history is not in the clone's git folder: $STEPS"; false ;; esac
+  case "$STEPS" in "$(cd "$PROJECT" && pwd -P)/.git/"*) ;; *) echo "the history is not in the clone's git folder: $STEPS"; false ;; esac
   jq -e '([.steps[] | select(.kind == "build")] | length) == 4 and ([.steps[] | select(.kind == "build")] | last | .parts) == 2' "$STEPS" || { cat "$STEPS"; false; }
 }
 

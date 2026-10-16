@@ -19492,7 +19492,15 @@
         "tests: project test command",
         "raised by the Architect"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-16T09:14:31Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P146.1: Code done and C374 C375 C376 pass, but the approved tests are defective and cannot run green as approved: tests/step-helper.bash step_back has a jq syntax error (def without a semicolon followed by a pipe; fails every late-step test), and tests/step-history.bats test 7 compares a /var/... path with git's /private/var/... real path on macOS. I fixed both in the working tree (uncommitted: vbw commit refuses check files outside a survivor; they wait for one approval). vbw mutate refuses to run until they are committed, so the mutation step cannot start. Needs: approve and commit those two test edits, then re-run P146.1 for the mutation step."
+        }
+      ]
     },
     {
       "id": "P147",
@@ -19523,7 +19531,15 @@
         "guarded: R16 (C15), R35 (C31), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R56 (C61, C65), R57 (C59, C70, C71), R61 (C73, C74, C75, C76, C77), R64 (C84, C85), R76 (C102, C103), R77 (C104), R82 (C117), R84 (C123), R85 (C125), R86 (C124), R87 (C126, C127), R88 (C129), R91 (C130), R101 (C179), R119 (C180), R124 (C192, C193), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R173 (C281, C282, C283, C284, C285, C286, C289), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-16T09:26:56Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P147.1: Tasks 1-4 committed and C378/C382 green. The deep mutation step cannot start: vbw mutate refuses because tests/step-helper.bash and tests/step-history.bats (check files of C378, owned by another plan, not in P147.1) have uncommitted edits (pwd -P fix, jq def semicolon fix) that sat uncommitted for 15+ minutes. I may not commit another plan's files. Needs: those two files committed or reverted by their owner, then rerun the mutation step (rules R190.35-42, 60-62 and tasks 1-4)."
+        }
+      ]
     },
     {
       "id": "P148",
@@ -19551,7 +19567,15 @@
         "guarded: R3 (C3), R4 (C4), R5 (C5), R8 (C8), R13 (C12), R14 (C13), R16 (C15), R22 (C19), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R34 (C30), R35 (C31), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R42 (C38), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R56 (C61, C65), R57 (C59, C70, C71), R59 (C68, C92), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R82 (C117), R83 (C119), R85 (C125), R86 (C124), R87 (C126, C127), R88 (C129), R91 (C130), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R119 (C180), R121 (C187, C188), R122 (C189), R123 (C190, C191), R124 (C192, C193), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R145 (C210), R149 (C217, C218, C219, C220, C221, C222), R151 (C231, C232), R152 (C233, C234), R157 (C244), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R165 (C252), R166 (C253, C254, C255, C256, C267), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-16T09:23:56Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P148.2: Code done and committed (7aafa3d8, 5f01e517); C384 green; rule breaks R190.71-73 red. Task mutations task1/task2 cannot run: vbw mutate refuses because tests/step-helper.bash and tests/step-history.bats (another plan's pending edit, a pwd -P fix for the /private path) differ from the last commit and wait for approval; task3 recorded --none. Re-run 'vbw mutate P148.2 task1 \"removed step.say rule\" plugin/skills/vibe/SKILL.md' and task2 (status SKILL.md) once those files are committed, then vbw plan done."
+        }
+      ]
     }
   ],
   "plans": [
@@ -33253,7 +33277,7 @@
         "plugin/lib/cmd-status.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "History (new plugin/lib/steps.sh, replacing vbw_step_add in core.sh): each finished step goes into steps.json in the clone's git folder with its kind, start, end, seconds and, for a build or fix, its parts (plans or fixes in the run); the latest 50 of each kind stay, in time order; a missing, damaged or unwritable file never fails a step. JSON only through jq.",
@@ -33261,7 +33285,8 @@
         "The note: The note (.vbw/runtime/step.json, written only by the kernel, atomically): {kind, run (the lease's run id, null for a proof of its own), session, pid (a proof of its own: its process, else null), started_at, ids (the run's plans, fixes or the phases QA checks), doing (plain words of what it does now: 'building P1.1, P1.2', 'checking P1', 'fixing F1', 'planning', 'mapping the project', 'proving 12 of 40 checks'; never the word QA), parts {done, total} or null, proof {done, total} or null, first_end, end (UTC ISO to the second, null for no basis), late}. vbw run start writes it (QA's ids are the phases vbw next would send to QA, by the same rule) after removing a note that is not live (its run is not the open run, or its proof process is gone); vbw run end records the step and removes the note.",
         "vbw plan done adds one part done at once; when this run's own pace (time so far / parts done x parts left) ends after the first end time, end moves to that projection and late is true; it can move again and never goes earlier than first_end (D424).",
         "vbw status --json gains step: the live note or null, plus minutes_late (whole minutes past first_end for a step without parts, else null); steps.sh also holds the one kernel wording of a step (jq defs) for vbw status, vbw next and vbw run start, used by P148.1."
-      ]
+      ],
+      "note": "Code done and C374 C375 C376 pass, but the approved tests are defective and cannot run green as approved: tests/step-helper.bash step_back has a jq syntax error (def without a semicolon followed by a pipe; fails every late-step test), and tests/step-history.bats test 7 compares a /var/... path with git's /private/var/... real path on macOS. I fixed both in the working tree (uncommitted: vbw commit refuses check files outside a survivor; they wait for one approval). vbw mutate refuses to run until they are committed, so the mutation step cannot start. Needs: approve and commit those two test edits, then re-run P146.1 for the mutation step."
     },
     {
       "id": "P146.2",
@@ -33303,14 +33328,15 @@
         "tests/statusline.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "vbw-statusline.sh reads .vbw/runtime/step.json as one more input of the same single jq call (no new process); a proof note counts only while its pid lives (kill -0, a shell builtin); a note whose run is not the open run counts as none.",
         "statusline.jq line 1 (D425): '▶ build P1.1, P1.2 · 1 of 2 · until 14:20'; a proof of its own '▶ proving 12 of 40 checks · until 14:26'; a proof inside a build or fix shows the note's doing with the step's time; late with parts 'until 14:35, later than usual'; late without parts 'until 14:20, 6 min late'; no basis: no time; local 24-hour time (strflocaltime), 'until tomorrow 00:20' for the next day; elapsed seconds are no longer shown.",
         "tools/bench-hooks.sh: a 'status line (step running)' case measured against the status line budget, which fails with 'status line (step running): the step was not shown, so the measure left it out' when the end time is missing from the output.",
         "Bring tests/statusline.bats's run-state expectations to the new first line."
-      ]
+      ],
+      "note": "Tasks 1-4 committed and C378/C382 green. The deep mutation step cannot start: vbw mutate refuses because tests/step-helper.bash and tests/step-history.bats (check files of C378, owned by another plan, not in P147.1) have uncommitted edits (pwd -P fix, jq def semicolon fix) that sat uncommitted for 15+ minutes. I may not commit another plan's files. Needs: those two files committed or reverted by their owner, then rerun the mutation step (rules R190.35-42, 60-62 and tasks 1-4)."
     },
     {
       "id": "P147.2",
@@ -33330,7 +33356,7 @@
         "tools/bench-panel.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "New pure plugin/hooks/panel-step.js: the one panel wording of a note at a moment: 'about 12 min, until around 14:20' (minutes rounded, at least 1), 'less than a minute, until around 14:20', '..., later than usual' (late), 'until around 14:35, later than usual' once past the end with parts, 'until around 14:20, 6 min late' without parts, 'until around tomorrow 00:20', and 'No end time yet: VBW has timed fewer than 3 steps like this here'.",
@@ -33338,6 +33364,348 @@
         "panelView: the estimate-step row comes only from step ('This step: about 12 min, until around 14:20.' with its [HH:MM] stamp; no note, no row); the Now box names step.doing; the old 'About N min left in this step' sentence and the panel's own step arithmetic go; the milestone estimate (R58) stays; panel-pane.js keeps 'No end time yet' plain and the time amber.",
         "Timeline (panel-mission-live.js): its time left comes from step, never from the history; update tests/panel/mission-live.test.mjs to match.",
         "tools/bench-panel.mjs and bench-panel.sh: a 'refresh with a running step' case."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R190",
+            "text": "Mission Control shows 'about 12 min, until around HH:MM' and no longer the old step sentence"
+          },
+          "what": "drop the 'about' wording",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:07:19Z",
+          "head": "d94aeecfacb63c16a061c79ba904666591c2517a"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "Mission Control's Now box names what the step is doing now, a proof inside a fix included"
+          },
+          "what": "Now box ignores what the step is doing",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:07:40Z",
+          "head": "d94aeecfacb63c16a061c79ba904666591c2517a"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "later than usual with parts shows the moved time marked in full wording in Mission Control"
+          },
+          "what": "late flag no longer marks later than usual",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:07:50Z",
+          "head": "d94aeecfacb63c16a061c79ba904666591c2517a"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "late without parts Mission Control says 'until around HH:MM, N min late'"
+          },
+          "what": "minutes late counted one too many",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:07:58Z",
+          "head": "d94aeecfacb63c16a061c79ba904666591c2517a"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "with no basis Mission Control says 'No end time yet: VBW has timed fewer than 3 steps like this here' and shows no time"
+          },
+          "what": "no-basis wording changed",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T09:08:06Z",
+          "head": "d94aeecfacb63c16a061c79ba904666591c2517a"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "under a minute left Mission Control says 'less than a minute'"
+          },
+          "what": "under a minute no longer says less than a minute",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:08:22Z",
+          "head": "d94aeecfacb63c16a061c79ba904666591c2517a"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "an end on another day reads 'until around tomorrow 00:20' in Mission Control"
+          },
+          "what": "another day not named",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:08:51Z",
+          "head": "d94aeecfacb63c16a061c79ba904666591c2517a"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "with no basis Mission Control says 'No end time yet: VBW has timed fewer than 3 steps like this here' and shows no time"
+          },
+          "what": "no-basis wording changed",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T09:10:57Z",
+          "head": "6dabc4e3ae91971aaa69b5527cf6a6f552202e0b"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "with no basis Mission Control says 'No end time yet: VBW has timed fewer than 3 steps like this here' and shows no time"
+          },
+          "what": "no-basis wording changed",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:11:36Z",
+          "head": "545ed5035fd6e191c5c40e7576eb36301c46c308"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "an end on another day reads 'until around tomorrow 00:20' in Mission Control"
+          },
+          "what": "another day not named",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:11:53Z",
+          "head": "545ed5035fd6e191c5c40e7576eb36301c46c308"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "when the step ends or its note goes, its time leaves Mission Control at the next refresh"
+          },
+          "what": "a note of an ended run stays live",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:12:07Z",
+          "head": "545ed5035fd6e191c5c40e7576eb36301c46c308"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "with nothing running, or a note of another run, Mission Control shows no step time"
+          },
+          "what": "a proof of another session counts as this one's",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T09:12:22Z",
+          "head": "545ed5035fd6e191c5c40e7576eb36301c46c308"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "with nothing running, or a note of another run, Mission Control shows no step time"
+          },
+          "what": "a proof of another session counts as this one's",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:12:48Z",
+          "head": "0e25665cd778a030698399834e741de300bc122e",
+          "strengthened": [
+            "tests/panel/r190/step-panel.test.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "Mission Control and its Timeline never work the step's time out themselves; the milestone estimate stays"
+          },
+          "what": "the Timeline works a time out itself",
+          "files": [
+            "plugin/hooks/panel-mission-live.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:13:12Z",
+          "head": "0e25665cd778a030698399834e741de300bc122e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the step's time keeps the estimate colour; a sentence without a time stays plain"
+          },
+          "what": "the step time loses its colour",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:13:27Z",
+          "head": "0e25665cd778a030698399834e741de300bc122e"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the panel bench measures a refresh that reads the note and draws the step"
+          },
+          "what": "the bench no longer names the running step",
+          "files": [
+            "tools/bench-panel.sh"
+          ],
+          "checks": {
+            "C388": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:13:45Z",
+          "head": "1e25434921984811afa7b63872e04c41611d6aa7"
+        },
+        {
+          "task": 1,
+          "what": "no parts ever",
+          "files": [
+            "plugin/hooks/panel-step.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:14:38Z",
+          "head": "1e25434921984811afa7b63872e04c41611d6aa7"
+        },
+        {
+          "task": 2,
+          "what": "the panel keeps no step",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:14:53Z",
+          "head": "1e25434921984811afa7b63872e04c41611d6aa7"
+        },
+        {
+          "task": 3,
+          "what": "the row loses its 'This step:' wording",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C379": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-16T09:15:07Z",
+          "head": "1e25434921984811afa7b63872e04c41611d6aa7"
+        },
+        {
+          "task": 4,
+          "what": "the Timeline's time left is empty",
+          "files": [
+            "plugin/hooks/panel-mission-live.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:15:22Z",
+          "head": "1e25434921984811afa7b63872e04c41611d6aa7"
+        },
+        {
+          "task": 5,
+          "what": "the bench step case prints another name",
+          "files": [
+            "tools/bench-panel.mjs"
+          ],
+          "checks": {
+            "C388": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:15:38Z",
+          "head": "1e25434921984811afa7b63872e04c41611d6aa7"
+        },
+        {
+          "task": 3,
+          "what": "the row loses its 'This step:' wording",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C379": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:15:59Z",
+          "head": "9895ab4bd32a65cea22d535a89d0ca343cca8200",
+          "strengthened": [
+            "tests/panel/r190/step-panel.test.mjs"
+          ]
+        }
       ]
     },
     {
@@ -33400,13 +33768,69 @@
         "plugin/skills/status/SKILL.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "vibe/SKILL.md: one rule, before starting planning, a build, a fix, QA or a background proof, say step.say from vbw next --json as given (one line).",
         "status/SKILL.md: the summary includes the running step and its end time in vbw status's own words.",
         "Keep the skills' existing tests (tests/skills.bats and the router's) green."
-      ]
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the router says step.say as given when it starts planning, a build, a fix, QA or a proof"
+          },
+          "what": "reworded step.say",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C384": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:04:20Z",
+          "head": "7aafa3d8efee6bab1d32c1223b006a70ebe3a7c8"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "the router says it before the step starts, a background proof included"
+          },
+          "what": "said after start",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C384": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:04:29Z",
+          "head": "7aafa3d8efee6bab1d32c1223b006a70ebe3a7c8"
+        },
+        {
+          "rule": {
+            "req": "R190",
+            "text": "/vbw:status reports the running step and its end time in vbw status's words"
+          },
+          "what": "dropped running step and end time",
+          "files": [
+            "plugin/skills/status/SKILL.md"
+          ],
+          "checks": {
+            "C384": "red"
+          },
+          "result": "red",
+          "at": "2026-10-16T09:04:38Z",
+          "head": "7aafa3d8efee6bab1d32c1223b006a70ebe3a7c8"
+        },
+        {
+          "task": 3,
+          "none": "keeping existing skill tests green is no code; tests/skills.bats ran green after the edits",
+          "at": "2026-10-16T09:05:30Z"
+        }
+      ],
+      "note": "Code done and committed (7aafa3d8, 5f01e517); C384 green; rule breaks R190.71-73 red. Task mutations task1/task2 cannot run: vbw mutate refuses because tests/step-helper.bash and tests/step-history.bats (another plan's pending edit, a pwd -P fix for the /private path) differ from the last commit and wait for approval; task3 recorded --none. Re-run 'vbw mutate P148.2 task1 \"removed step.say rule\" plugin/skills/vibe/SKILL.md' and task2 (status SKILL.md) once those files are committed, then vbw plan done."
     },
     {
       "id": "P148.3",
@@ -44295,6 +44719,15 @@
         "milestone": "M36",
         "started": "2026-10-16T08:16:36Z",
         "ended": "2026-10-16T09:00:00Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261016T090149Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M36",
+        "started": "2026-10-16T09:01:49Z",
+        "ended": "2026-10-16T09:27:10Z",
         "cost": null
       }
     ],
