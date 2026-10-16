@@ -38523,6 +38523,11 @@
       "id": "T162",
       "text": "Scope check false alarm that parked T94 (2026-10-16 03:28): prove_scope (cmd-prove.sh) scans all history against today's record; survivor_files(plan) drops a strengthened test file as soon as a check of ANOTHER requirement reads it. T94's plan reused R189's now-box/containment test files for R190 checks (C379/C380), so M34's shipped P144.3 survivor commits on tests/panel/r189/now-box.test.mjs became 'scope violations' and the loop parked T94 (its work reverted). Fix: a survivor commit stays in scope by the record as it was when the plan was done (or scope ignores plans of shipped milestones), with a regression test; T94 then reruns",
       "status": "done"
+    },
+    {
+      "id": "T163",
+      "text": "Park keeps ids; scope skips park-undone commits (done 2026-10-16, T102 scope false alarm)",
+      "status": "open"
     }
   ],
   "decisions": [
