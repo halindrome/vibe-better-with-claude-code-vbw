@@ -206,7 +206,6 @@
     "tests/panel-glance.bats",
     "tests/panel-light.bats",
     "tests/panel-now-docs.bats",
-    "tests/panel-r190-docs.bats",
     "tests/panel-skill-open.bats",
     "tests/panel-sound-audio.bats",
     "tests/panel-sound.bats",
@@ -238,10 +237,6 @@
     "tests/panel/r189/meaning.test.mjs",
     "tests/panel/r189/next-buttons.test.mjs",
     "tests/panel/r189/now-box.test.mjs",
-    "tests/panel/r190/motion.test.mjs",
-    "tests/panel/r190/names.test.mjs",
-    "tests/panel/r190/now-top.test.mjs",
-    "tests/panel/r190/stamps.test.mjs",
     "tests/panel/record-row.test.mjs",
     "tests/panel/safe.test.mjs",
     "tests/panel/schema4.test.mjs",
@@ -4872,114 +4867,6 @@
         "tests/panel/view.test.mjs"
       ],
       "fix": "F240"
-    },
-    {
-      "id": "C374",
-      "req": "R190",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/r190/now-top.test.mjs"
-      ],
-      "files": [
-        "tests/panel/r190/now-top.test.mjs",
-        "tests/panel/r189/helpers/screen.mjs",
-        "tests/panel/r189/helpers/crew.mjs",
-        "tests/panel/helpers/fake-mod.mjs",
-        "tests/panel/helpers/run.mjs",
-        "tests/panel/helpers/feed-fs.mjs"
-      ]
-    },
-    {
-      "id": "C375",
-      "req": "R190",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/r190/stamps.test.mjs"
-      ],
-      "files": [
-        "tests/panel/r190/stamps.test.mjs",
-        "tests/panel/r189/helpers/screen.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C376",
-      "req": "R190",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/r190/motion.test.mjs"
-      ],
-      "files": [
-        "tests/panel/r190/motion.test.mjs",
-        "tests/panel/r189/helpers/screen.mjs",
-        "tests/panel/r189/helpers/crew.mjs",
-        "tests/panel/helpers/fake-mod.mjs",
-        "tests/panel/helpers/run.mjs",
-        "tests/panel/helpers/feed-fs.mjs"
-      ]
-    },
-    {
-      "id": "C377",
-      "req": "R190",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/r190/names.test.mjs"
-      ],
-      "files": [
-        "tests/panel/r190/names.test.mjs",
-        "tests/panel/r189/helpers/screen.mjs",
-        "tests/panel/r189/helpers/crew.mjs",
-        "tests/panel/helpers/fake-mod.mjs",
-        "tests/panel/helpers/run.mjs",
-        "tests/panel/helpers/feed-fs.mjs"
-      ]
-    },
-    {
-      "id": "C378",
-      "req": "R190",
-      "run": [
-        "bats",
-        "--print-output-on-failure",
-        "tests/panel-r190-docs.bats"
-      ],
-      "files": [
-        "tests/panel-r190-docs.bats"
-      ]
-    },
-    {
-      "id": "C379",
-      "req": "R190",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/r189/now-box.test.mjs"
-      ],
-      "files": [
-        "tests/panel/r189/now-box.test.mjs",
-        "tests/panel/r189/helpers/screen.mjs",
-        "tests/panel/helpers/fake-mod.mjs"
-      ]
-    },
-    {
-      "id": "C380",
-      "req": "R190",
-      "run": [
-        "node",
-        "--test",
-        "tests/panel/r189/containment.test.mjs"
-      ],
-      "files": [
-        "tests/panel/r189/containment.test.mjs",
-        "tests/panel/r189/helpers/screen.mjs",
-        "tests/panel/r189/helpers/crew.mjs",
-        "tests/panel/helpers/fake-mod.mjs",
-        "tests/panel/helpers/run.mjs",
-        "tests/panel/helpers/feed-fs.mjs"
-      ]
     }
   ],
   "project": {
@@ -4992,7 +4879,7 @@
   "milestone": {
     "id": "M35",
     "title": "Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92",
-    "status": "active"
+    "status": "parked"
   },
   "shipped": [
     {
@@ -12237,150 +12124,6 @@
           "plan": "P145.5"
         }
       ]
-    },
-    {
-      "id": "R190",
-      "text": "Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92",
-      "proof": "auto",
-      "status": "proven",
-      "milestone": "M35",
-      "rules": [
-        {
-          "text": "P3: the first thing under Mission Control's tab row is the 'what's happening now' box, its first line the state sentence, in every state, with a What's next pick, with a crew at work and in a short pane",
-          "check": "C374",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P3: the box's state sentence reads planning, building with its phase, proving, checking, or waiting for you and for what",
-          "check": "C379",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P3: with nothing running the box says plainly that nothing is running",
-          "check": "C379",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P3: the box holds the current step with the HH:MM it started and the session cost line, drawn once",
-          "check": "C379",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P3: the box follows a change of state within one refresh (2 s), with no other event",
-          "check": "C379",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P6: every 'VBW needs you' sentence in Mission Control (each gate kind, a question, /compact) starts with [HH:MM] of when VBW began needing it",
-          "check": "C375",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P6: the time-left sentences of this step and of the milestone start with [HH:MM]",
-          "check": "C375",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P6: the 'taking longer than usual' sentence starts with [HH:MM] and keeps it while it stays",
-          "check": "C379",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P6: a redraw where only the clock moved keeps the stamp; new words get the time they began",
-          "check": "C375",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P6: a sentence with no known start time has no stamp, never a wrong, empty or malformed one",
-          "check": "C375",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P6, R58: with no basis for an estimate the panel says 'No estimate yet' plainly, with no stamp and no number",
-          "check": "C375",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P9 (D406, D418): no skill, agent, docs page or README says Telemetry, the band or /vbw-telemetry",
-          "check": "C377",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P9: no /vbw-telemetry command exists and no command name or description uses an old name; /vbw-panel is described as opening Mission Control and opens it",
-          "check": "C377",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P9: nothing drawn on Comms or on any Mission Control tab, labels and buttons included, says an old name, and Mission Control is named where it is drawn",
-          "check": "C377",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P5 (D405, D420): at full motion Comms draws a figure for at most 3 working helpers and every further helper is one text row, with 1, 3, 4 and 6 helpers",
-          "check": "C376",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P5: at calm motion every helper is one text row with no figure, with 1, 3, 4 and 6 helpers",
-          "check": "C376",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P5: with motion off every helper is one text row and nothing moves: no figure, spinner, flash or blitted frame between redraws, with 1, 3, 4 and 6 helpers",
-          "check": "C376",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P5: off is the only still setting: calm turns its spinner and full moves its figures",
-          "check": "C376",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P2 (D419): Comms never draws more lines than maxRows, with a crew, the needs-you line, a celebration or a ship (R189's C369, run again as this check)",
-          "check": "C380",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P2: Mission Control never draws more rows than scroll.bodyRows on any tab or VBW Wrapped, and without a reported height is capped with a '+N more' line (R189's C369)",
-          "check": "C380",
-          "plan": "P146.1"
-        },
-        {
-          "text": "P2: the tab row stays one line at 40 columns (R189's C369)",
-          "check": "C380",
-          "plan": "P146.1"
-        },
-        {
-          "text": "docs/panel.md calls the strip above the prompt Comms and the pane Mission Control, never the other way round",
-          "check": "C378",
-          "plan": "P146.2"
-        },
-        {
-          "text": "docs/panel.md puts the 'what's happening now' box first on the Now tab and never says the tab starts with the sentences",
-          "check": "C378",
-          "plan": "P146.2"
-        },
-        {
-          "text": "every time-left and needs-you example sentence in docs/panel.md starts with its [HH:MM] stamp",
-          "check": "C378",
-          "plan": "P146.2"
-        },
-        {
-          "text": "docs/panel.md says the stamp stays while the clock alone moves, a sentence with no known start time has none, and 'No estimate yet' without a basis",
-          "check": "C378",
-          "plan": "P146.2"
-        },
-        {
-          "text": "docs/panel.md describes full (figures for at most 3), calm (one text row per helper) and off (nothing moves)",
-          "check": "C378",
-          "plan": "P146.2"
-        },
-        {
-          "text": "docs/panel.md says nothing about a removed feature: Telemetry, the band, a gate card with buttons, a Later button, the running-person animation",
-          "check": "C378",
-          "plan": "P146.2"
-        }
-      ]
     }
   ],
   "phases": [
@@ -19074,36 +18817,6 @@
         "qa_findings": 5,
         "escalations": 1
       }
-    },
-    {
-      "id": "P146",
-      "title": "The 9 October polish list is checked against what shipped, and closed",
-      "reqs": [
-        "R190"
-      ],
-      "milestone": "M35",
-      "goal": "Each item of R190 is either shown working by an automated check on the panel as it shipped in M34, or closed with the recorded decision that replaced it, so R190 is proven with nothing new to build.",
-      "criteria": [
-        "Now tab (P3): the first thing under the tab row is the 'what's happening now' box: VBW's state as a plain sentence (planning, building which phase, proving, checking, waiting for you and for what), the current step with the HH:MM time it started, and the session cost line. A project with nothing running says plainly that nothing is running. The box changes within one refresh (2 seconds) of the state changing. A check covers each of these states, including the idle one",
-        "Timestamps (P6): every time-left message and every 'VBW needs you' sentence in Mission Control starts with the local time it began saying so, as '[HH:MM] ', for example '[14:20] About 2 minutes left'. A redraw where only the clock has moved keeps the same time stamp. A message with no known start time is shown without a stamp, never with a wrong or empty one. When there is no basis for an estimate yet, the panel still says so plainly (R58)",
-        "Names (P9, replaced by D406 and D418): every text the user can see (labels, buttons, command descriptions, docs/panel.md and README.md) calls the strip above the prompt 'Comms' and the side panel 'Mission Control'. None of them says 'Telemetry', 'the band' or '/vbw-telemetry'. No /vbw-telemetry command exists, and /vbw-panel opens Mission Control. A check fails if any of the old or proposed names comes back",
-        "Work-is-running animation (P5, replaced by D405 and D420): at full motion, Comms draws the small pixel figures for at most 3 working helpers, and every further helper is a one-line text row. At calm motion, every helper is one text row with no figure. With motion off, nothing moves. So the one-line form the list asked for is what a user gets by choosing calm motion. A check covers each of the three motion settings with 1, 3 and 4 or more working helpers",
-        "Tidy-up (P2, done by M34 per D419): Comms never draws more lines than Claude Code gives it, Mission Control never draws more rows than it is given (scroll.bodyRows), and the tab row stays on one line at 40 columns. Each of these points to the checks that already prove them for R189; no rule is checked twice under two names",
-        "Every rule of R190 names the check that tests it. vbw show req R190 shows each rule with its check, and the proof marks R190 proven with every check passing on the committed code",
-        "If any check above fails on today's code, the panel code is fixed until it passes, and the check is never loosened to match the code",
-        "docs/panel.md describes Comms, Mission Control, the Now box, the time stamps and the three motion settings as they behave now. A docs check fails on any sentence about a feature that no longer exists, such as a gate card with buttons or a Telemetry pane"
-      ],
-      "tier": "standard",
-      "reasons": [
-        "requirements: 1",
-        "files: 6 (112872 bytes)",
-        "files: more than 2 in a repository tracking 1007 files",
-        "risk: none",
-        "breaks: R125",
-        "guarded: R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R56 (C61, C65), R57 (C59, C70, C71), R58 (C62, C63, C64, C67), R64 (C84, C85), R82 (C117), R84 (C123), R85 (C125), R86 (C124), R87 (C126, C127), R88 (C129), R89 (C128), R91 (C130), R124 (C192, C193), R184 (C328, C329, C330, C331, C332, C333), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373)",
-        "tests: project test command"
-      ],
-      "predicted": "standard"
     }
   ],
   "plans": [
@@ -32789,554 +32502,6 @@
           "at": "2026-10-15T22:48:01Z"
         }
       ]
-    },
-    {
-      "id": "P146.1",
-      "phase": "P146",
-      "title": "Confirm the shipped panel passes R190's checks, and prove each check catches a break",
-      "reqs": [
-        "R190"
-      ],
-      "files": [
-        "plugin/hooks/panel-palette.js",
-        "plugin/hooks/panel-pane.js",
-        "plugin/hooks/panel-view.js",
-        "plugin/hooks/panel-stage.js",
-        "plugin/hooks/panel.js"
-      ],
-      "after": [],
-      "status": "done",
-      "role": "dev",
-      "tasks": [
-        "Run R190's code checks (C374 to C377, C379, C380) on today's code; where one fails, fix the panel code until it passes, never the check (none failed at planning time)",
-        "Rename 'the band' to 'Comms' in the header comment of plugin/hooks/panel-palette.js, the last old name in the panel code",
-        "Mutation-check the Now box and tidy-up rules: break the box's place, state words, refresh and the row limits in panel-pane.js, panel-view.js and panel-stage.js, and record each red break with vbw mutate",
-        "Mutation-check the clock-time and name rules: break the [HH:MM] stamps in panel-view.js and panel.js and the command names in panel.js, and record each red break",
-        "Mutation-check the motion rules: break the figure limit, the calm one-line rows and the motion-off stillness in panel-stage.js, and record each red break"
-      ],
-      "mutations": [
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P3: the first thing under Mission Control's tab row is the 'what's happening now' box, its first line the state sentence, in every state, with a What's next pick, with a crew at work and in a short pane"
-          },
-          "what": "Now box never drawn",
-          "files": [
-            "plugin/hooks/panel-pane.js"
-          ],
-          "checks": {
-            "C374": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:07:46Z",
-          "head": "8c796636f2ea7b66c071a299636395f5c38900fd"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P3: the box's state sentence reads planning, building with its phase, proving, checking, or waiting for you and for what"
-          },
-          "what": "proving state words changed",
-          "files": [
-            "plugin/hooks/panel-view.js"
-          ],
-          "checks": {
-            "C379": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:07:54Z",
-          "head": "8c796636f2ea7b66c071a299636395f5c38900fd"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P3: with nothing running the box says plainly that nothing is running"
-          },
-          "what": "idle state words changed",
-          "files": [
-            "plugin/hooks/panel-view.js"
-          ],
-          "checks": {
-            "C379": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:08:01Z",
-          "head": "8c796636f2ea7b66c071a299636395f5c38900fd"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P3: the box holds the current step with the HH:MM it started and the session cost line, drawn once"
-          },
-          "what": "cost drawn twice",
-          "files": [
-            "plugin/hooks/panel-pane.js"
-          ],
-          "checks": {
-            "C379": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:08:09Z",
-          "head": "8c796636f2ea7b66c071a299636395f5c38900fd"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P3: the box follows a change of state within one refresh (2 s), with no other event"
-          },
-          "what": "refresh slowed to 60s",
-          "files": [
-            "plugin/hooks/panel.js"
-          ],
-          "checks": {
-            "C379": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:08:23Z",
-          "head": "8c796636f2ea7b66c071a299636395f5c38900fd"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P6: every 'VBW needs you' sentence in Mission Control (each gate kind, a question, /compact) starts with [HH:MM] of when VBW began needing it"
-          },
-          "what": "needs-you sentence unstamped",
-          "files": [
-            "plugin/hooks/panel-view.js"
-          ],
-          "checks": {
-            "C375": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:08:38Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P6: the time-left sentences of this step and of the milestone start with [HH:MM]"
-          },
-          "what": "time-left sentences unstamped",
-          "files": [
-            "plugin/hooks/panel-view.js"
-          ],
-          "checks": {
-            "C375": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:08:51Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P6: the 'taking longer than usual' sentence starts with [HH:MM] and keeps it while it stays"
-          },
-          "what": "step estimate stamp dropped",
-          "files": [
-            "plugin/hooks/panel.js"
-          ],
-          "checks": {
-            "C379": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:09:05Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P6: a redraw where only the clock moved keeps the stamp; new words get the time they began"
-          },
-          "what": "stamp reset on every redraw",
-          "files": [
-            "plugin/hooks/panel.js"
-          ],
-          "checks": {
-            "C375": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:09:18Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P6: a sentence with no known start time has no stamp, never a wrong, empty or malformed one"
-          },
-          "what": "stamp always added",
-          "files": [
-            "plugin/hooks/panel-view.js"
-          ],
-          "checks": {
-            "C375": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:09:31Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P6, R58: with no basis for an estimate the panel says 'No estimate yet' plainly, with no stamp and no number"
-          },
-          "what": "no-estimate gets a stamp",
-          "files": [
-            "plugin/hooks/panel.js"
-          ],
-          "checks": {
-            "C375": "green"
-          },
-          "result": "survivor",
-          "at": "2026-10-16T02:09:45Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P6, R58: with no basis for an estimate the panel says 'No estimate yet' plainly, with no stamp and no number"
-          },
-          "what": "no-estimate sentence gets a stamp",
-          "files": [
-            "plugin/hooks/panel-view.js"
-          ],
-          "checks": {
-            "C375": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:10:05Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P9 (D406, D418): no skill, agent, docs page or README says Telemetry, the band or /vbw-telemetry"
-          },
-          "what": "command description uses old name",
-          "files": [
-            "plugin/hooks/panel.js"
-          ],
-          "checks": {
-            "C377": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:10:25Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P9: no /vbw-telemetry command exists and no command name or description uses an old name; /vbw-panel is described as opening Mission Control and opens it"
-          },
-          "what": "command named with old name",
-          "files": [
-            "plugin/hooks/panel.js"
-          ],
-          "checks": {
-            "C377": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:10:40Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P9: nothing drawn on Comms or on any Mission Control tab, labels and buttons included, says an old name, and Mission Control is named where it is drawn"
-          },
-          "what": "Comms button uses old name",
-          "files": [
-            "plugin/hooks/panel-stage.js"
-          ],
-          "checks": {
-            "C377": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:10:54Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P5 (D405, D420): at full motion Comms draws a figure for at most 3 working helpers and every further helper is one text row, with 1, 3, 4 and 6 helpers"
-          },
-          "what": "figure limit 4",
-          "files": [
-            "plugin/hooks/panel-stage.js"
-          ],
-          "checks": {
-            "C376": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:11:08Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P5: at calm motion every helper is one text row with no figure, with 1, 3, 4 and 6 helpers"
-          },
-          "what": "calm draws figures",
-          "files": [
-            "plugin/hooks/panel-stage.js"
-          ],
-          "checks": {
-            "C376": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:11:21Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P5: with motion off every helper is one text row and nothing moves: no figure, spinner, flash or blitted frame between redraws, with 1, 3, 4 and 6 helpers"
-          },
-          "what": "off motion spins",
-          "files": [
-            "plugin/hooks/panel-stage.js"
-          ],
-          "checks": {
-            "C376": "green"
-          },
-          "result": "survivor",
-          "at": "2026-10-16T02:11:34Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P5: off is the only still setting: calm turns its spinner and full moves its figures"
-          },
-          "what": "calm flashes",
-          "files": [
-            "plugin/hooks/panel-stage.js"
-          ],
-          "checks": {
-            "C376": "green"
-          },
-          "result": "survivor",
-          "at": "2026-10-16T02:11:47Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P2 (D419): Comms never draws more lines than maxRows, with a crew, the needs-you line, a celebration or a ship (R189's C369, run again as this check)"
-          },
-          "what": "crew exceeds maxRows",
-          "files": [
-            "plugin/hooks/panel-stage.js"
-          ],
-          "checks": {
-            "C380": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:12:01Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P2: Mission Control never draws more rows than scroll.bodyRows on any tab or VBW Wrapped, and without a reported height is capped with a '+N more' line (R189's C369)"
-          },
-          "what": "body taller than bodyRows",
-          "files": [
-            "plugin/hooks/panel-pane.js"
-          ],
-          "checks": {
-            "C380": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:12:14Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P2: the tab row stays one line at 40 columns (R189's C369)"
-          },
-          "what": "tab row never shortens",
-          "files": [
-            "plugin/hooks/panel-pane.js"
-          ],
-          "checks": {
-            "C380": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:12:27Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P5: with motion off every helper is one text row and nothing moves: no figure, spinner, flash or blitted frame between redraws, with 1, 3, 4 and 6 helpers"
-          },
-          "what": "motion off draws figures",
-          "files": [
-            "plugin/hooks/panel-stage.js"
-          ],
-          "checks": {
-            "C376": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:12:47Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "P5: off is the only still setting: calm turns its spinner and full moves its figures"
-          },
-          "what": "calm spinner stands still",
-          "files": [
-            "plugin/hooks/panel-stage.js"
-          ],
-          "checks": {
-            "C376": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:13:01Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac"
-        }
-      ]
-    },
-    {
-      "id": "P146.2",
-      "phase": "P146",
-      "title": "Bring docs/panel.md in line with the panel as it shipped",
-      "reqs": [
-        "R190"
-      ],
-      "files": [
-        "docs/panel.md"
-      ],
-      "after": [],
-      "status": "done",
-      "role": "docs",
-      "tasks": [
-        "Open the page's Now tab example on the 'what's happening now' box, with the sentences below it, and drop the line saying the tab starts with those sentences",
-        "Put the [HH:MM] stamp on every time-left and needs-you example sentence, and say that a sentence with no known start time has no stamp while 'No estimate yet' is said plainly",
-        "Describe the three motion settings as they behave: full draws figures for at most 3 working helpers, at calm every helper is one text row, with motion off nothing moves",
-        "Check the page for any sentence about a removed feature (Telemetry, the band, a gate card with buttons, a Later button, the running-person animation) and record the mutation breaks of the docs rules"
-      ],
-      "mutations": [
-        {
-          "rule": {
-            "req": "R190",
-            "text": "docs/panel.md calls the strip above the prompt Comms and the pane Mission Control, never the other way round"
-          },
-          "what": "swapped Comms to a pane",
-          "files": [
-            "docs/panel.md"
-          ],
-          "checks": {
-            "C378": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:07:26Z",
-          "head": "8c796636f2ea7b66c071a299636395f5c38900fd"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "docs/panel.md puts the 'what's happening now' box first on the Now tab and never says the tab starts with the sentences"
-          },
-          "what": "Now tab starts with sentences",
-          "files": [
-            "docs/panel.md"
-          ],
-          "checks": {
-            "C378": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:07:34Z",
-          "head": "8c796636f2ea7b66c071a299636395f5c38900fd"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "every time-left and needs-you example sentence in docs/panel.md starts with its [HH:MM] stamp"
-          },
-          "what": "dropped stamp",
-          "files": [
-            "docs/panel.md"
-          ],
-          "checks": {
-            "C378": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:07:42Z",
-          "head": "8c796636f2ea7b66c071a299636395f5c38900fd"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "docs/panel.md says the stamp stays while the clock alone moves, a sentence with no known start time has none, and 'No estimate yet' without a basis"
-          },
-          "what": "clock alone removed",
-          "files": [
-            "docs/panel.md"
-          ],
-          "checks": {
-            "C378": "green"
-          },
-          "result": "survivor",
-          "at": "2026-10-16T02:07:50Z",
-          "head": "8c796636f2ea7b66c071a299636395f5c38900fd"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "docs/panel.md describes full (figures for at most 3), calm (one text row per helper) and off (nothing moves)"
-          },
-          "what": "figures limit",
-          "files": [
-            "docs/panel.md"
-          ],
-          "checks": {
-            "C378": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:07:58Z",
-          "head": "8c796636f2ea7b66c071a299636395f5c38900fd"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "docs/panel.md says nothing about a removed feature: Telemetry, the band, a gate card with buttons, a Later button, the running-person animation"
-          },
-          "what": "mentions Telemetry",
-          "files": [
-            "docs/panel.md"
-          ],
-          "checks": {
-            "C378": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:08:06Z",
-          "head": "8c796636f2ea7b66c071a299636395f5c38900fd"
-        },
-        {
-          "rule": {
-            "req": "R190",
-            "text": "docs/panel.md says the stamp stays while the clock alone moves, a sentence with no known start time has none, and 'No estimate yet' without a basis"
-          },
-          "what": "clock alone removed",
-          "files": [
-            "docs/panel.md"
-          ],
-          "checks": {
-            "C378": "red"
-          },
-          "result": "red",
-          "at": "2026-10-16T02:08:30Z",
-          "head": "9774b3a215b921828863e9199e19d83a8db6a3ac",
-          "strengthened": [
-            "tests/panel-r190-docs.bats"
-          ]
-        }
-      ]
     }
   ],
   "fixes": [
@@ -35799,7 +34964,7 @@
       "text": "Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92",
       "sort": "later",
       "size": "medium",
-      "status": "in_progress"
+      "status": "open"
     },
     {
       "id": "T95",
@@ -38565,6 +37730,11 @@
       "id": "D422",
       "at": "2026-10-16T02:14:05Z",
       "text": "Strengthened check files approved by the loop on the user's behalf (loop started 2026-10-16T01:48:07Z, items T94, T102, T139, T138): tests/panel-r190-docs.bats"
+    },
+    {
+      "id": "D423",
+      "at": "2026-10-16T02:28:27Z",
+      "text": "Parked T94 (Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92): scope violation: 32f17ce8f51d (P144.3) changed tests/panel/r189/now-box.test.mjs, which is not in the plan; reverted bd48805, 39608cb, 67881f9; left unreverted: 0760206 (changes the record too); milestone M35 is parked, the backlog entry stays open; to bring the work back revert the reverts or run the item again"
     }
   ],
   "commands": {
@@ -41908,69 +41078,6 @@
         "at": "2026-10-16T01:32:12Z",
         "fp": "5e9ed773fdb959507de75408943011a4433d764b6fd52711cc9578915e11e7a0",
         "reused": true
-      },
-      "C374": {
-        "status": "pass",
-        "exit": 0,
-        "seconds": 0,
-        "tail": "ok 3 - with a crew at work the box still comes first, above the helper cards\n  ---\n  duration_ms: 6.947125\n  type: 'test'\n  ...\n# Subtest: in a short pane the box is still the first thing under the tab row\nok 4 - in a short pane the box is still the first thing under the tab row\n  ---\n  duration_ms: 7.891958\n  type: 'test'\n  ...\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 143.805833",
-        "fp": "9504a2433ded53f165504fa81f86f767a14264f935753fd0d5b713f5e9e14c9e",
-        "at": "2026-10-16T02:16:27Z",
-        "why": "never passed"
-      },
-      "C375": {
-        "status": "pass",
-        "exit": 0,
-        "seconds": 0,
-        "tail": "ok 6 - with no basis for an estimate the panel says so plainly, with no stamp and no number\n  ---\n  duration_ms: 4.175292\n  type: 'test'\n  ...\n# Subtest: no stamp anywhere in Mission Control is empty or malformed, in any state\nok 7 - no stamp anywhere in Mission Control is empty or malformed, in any state\n  ---\n  duration_ms: 15.731459\n  type: 'test'\n  ...\n1..7\n# tests 7\n# suites 0\n# pass 7\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 407.459959",
-        "fp": "bd276fb4b4599c5d9352a782fcf2894307e431ca454ac92ef41af2dd6918210d",
-        "at": "2026-10-16T02:16:27Z",
-        "why": "never passed"
-      },
-      "C376": {
-        "status": "pass",
-        "exit": 0,
-        "seconds": 0,
-        "tail": "ok 3 - motion off: one text row per helper, and nothing moves between redraws\n  ---\n  duration_ms: 31.630542\n  type: 'test'\n  ...\n# Subtest: the settings differ where they should: calm still turns its spinner, full blits its figures, off does neither\nok 4 - the settings differ where they should: calm still turns its spinner, full blits its figures, off does neither\n  ---\n  duration_ms: 31.112417\n  type: 'test'\n  ...\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 183.5425",
-        "fp": "7d49557639a6f6d0a3a45cdd785bac5c87909899651c955fc202f1ccaa8300f4",
-        "at": "2026-10-16T02:16:27Z",
-        "why": "never passed"
-      },
-      "C377": {
-        "status": "pass",
-        "exit": 0,
-        "seconds": 1,
-        "tail": "ok 2 - no /vbw-telemetry command exists; /vbw-panel is described as opening Mission Control and opens it\n  ---\n  duration_ms: 13.05525\n  type: 'test'\n  ...\n# Subtest: nothing the panel draws, on Comms or on any Mission Control tab, says an old name\nok 3 - nothing the panel draws, on Comms or on any Mission Control tab, says an old name\n  ---\n  duration_ms: 25.879375\n  type: 'test'\n  ...\n1..3\n# tests 3\n# suites 0\n# pass 3\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 100.719167",
-        "fp": "e56ff44bac3d8b063bfdec27b64b845745503af88c7c3860031d36fd095ce768",
-        "at": "2026-10-16T02:16:27Z",
-        "why": "never passed"
-      },
-      "C378": {
-        "status": "pass",
-        "exit": 0,
-        "seconds": 1,
-        "tail": "1..6\nok 1 R190: docs/panel.md calls the strip above the prompt Comms and the pane Mission Control, never the other way round\nok 2 R190: docs/panel.md puts the what's happening now box first on the Now tab, nowhere a list of sentences before it\nok 3 R190: every time-left and needs-you sentence docs/panel.md shows starts with its [HH:MM] stamp\nok 4 R190: docs/panel.md says a stamp stays while the clock alone moves, and a sentence with no known start time has none\nok 5 R190: docs/panel.md describes the three motion settings: figures for at most 3 at full, one text row per helper at calm, nothing moving when off\nok 6 R190: docs/panel.md says nothing about a feature that no longer exists",
-        "fp": "e90fc7f4bed41f3e62e7f43765feb12d8dcc08d49b18709f4b071f9222cb76c3",
-        "at": "2026-10-16T02:16:27Z",
-        "why": "never passed"
-      },
-      "C379": {
-        "status": "pass",
-        "exit": 0,
-        "seconds": 0,
-        "tail": "ok 11 - a time-left sentence keeps the time it began saying what it says while the words stay the same\n  ---\n  duration_ms: 78.824917\n  type: 'test'\n  ...\n# Subtest: the state sentence itself, the box's first line, names each state; the step line below it never stands in for it\nok 12 - the state sentence itself, the box's first line, names each state; the step line below it never stands in for it\n  ---\n  duration_ms: 8.897875\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 272.675833",
-        "fp": "f806bbcf1e73c2f648af9f1c9add52b7c514d44c4e510a1fe2e0785c2781e30e",
-        "at": "2026-10-16T02:16:27Z",
-        "why": "never passed"
-      },
-      "C380": {
-        "status": "pass",
-        "exit": 0,
-        "seconds": 1,
-        "tail": "ok 7 - Comms stays within its rows and columns with the needs-you line\n  ---\n  duration_ms: 6.626792\n  type: 'test'\n  ...\n# Subtest: Comms stays within its rows during a celebration (a phase passing QA, all checks passing) and after a ship\nok 8 - Comms stays within its rows during a celebration (a phase passing QA, all checks passing) and after a ship\n  ---\n  duration_ms: 18.956584\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 195.549292",
-        "fp": "621b319f98c41c78c09f04b658a4e3064eba92286b4b03ee81b3e645211d26fe",
-        "at": "2026-10-16T02:16:27Z",
-        "why": "never passed"
       }
     },
     "commands": {
@@ -42570,11 +41677,7 @@
         "reused": true
       }
     },
-    "scope": [
-      "32f17ce8f51d (P144.3) changed tests/panel/r189/now-box.test.mjs, which is not in the plan",
-      "6635843ff4b8 (P144.3) changed tests/panel/r189/now-box.test.mjs, which is not in the plan",
-      "70a78fe26a52 (P144.3) changed tests/panel/r189/now-box.test.mjs, which is not in the plan"
-    ],
+    "scope": [],
     "full": false,
     "passed": false,
     "record": "6fda2cd181a24e54f1e155a8fd56c3ac35d71e5e37c0cd111ad1d40dd10afa45"
@@ -44986,6 +44089,12 @@
             "out": 0,
             "at": "2026-10-16T01:48:21Z"
           }
+        },
+        "total": {
+          "usd": 1340.853051,
+          "in": 275572,
+          "out": 513,
+          "sessions": 23
         }
       }
     }
@@ -44996,7 +44105,7 @@
         "id": "T94",
         "text": "Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92",
         "proof": "auto",
-        "status": "in_progress",
+        "status": "parked",
         "milestone": "M35",
         "head": "21b5d54dd2e8bce5b9c266f0898db81f6459182e",
         "baseline": {
@@ -45144,7 +44253,20 @@
           "seconds": 34450,
           "basis": "twice the median time (4h47m) of 3 shipped medium items"
         },
-        "req": "R190"
+        "req": "R190",
+        "reason": "scope violation: 32f17ce8f51d (P144.3) changed tests/panel/r189/now-box.test.mjs, which is not in the plan",
+        "reverts": [
+          "bd48805faca914477fe22fe57f717273210a6071",
+          "39608cbf01077b8a2a30321706bb38c50d35be53",
+          "67881f9a23bbc9f4f0f210783ecd5ee1d8234e6e"
+        ],
+        "cost": {
+          "usd": 1340.853051,
+          "in": 275572,
+          "out": 513
+        },
+        "at": "2026-10-16T02:28:25Z",
+        "left": "left unreverted: 0760206 (changes the record too)"
       },
       {
         "id": "T102",
@@ -45308,5 +44430,13 @@
         "at": "2026-10-16T01:48:07Z"
       }
     }
-  }
+  },
+  "parked": [
+    {
+      "id": "M35",
+      "title": "Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92",
+      "at": "2026-10-16T02:28:25Z",
+      "reason": "scope violation: 32f17ce8f51d (P144.3) changed tests/panel/r189/now-box.test.mjs, which is not in the plan"
+    }
+  ]
 }

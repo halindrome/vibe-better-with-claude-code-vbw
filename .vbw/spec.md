@@ -188,7 +188,6 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 - R187 [auto] Brainstorm B2: /vbw:config does not know check_jobs; add the key to plugin/skills/config/SKILL.md (found 2026-10-09)
 - R188 [auto] Cost: at standard and deep, mutation-check a plan's own tests before its build ends, so QA stops finding tests that cannot fail one round at a time (M15: each deep QA round found 1-2 such gaps, about an hour per loop)
 - R189 [auto] Final polish (panel trust, from M18): every band and pane message disappears as soon as it stops being true (P10); no 'VBW needs you' card with buttons in the band (P1); the sound plays once per question, only with Claude Code's own menu (B1); finished agents leave the crew list at once (P4); owner judges it by eye. Do together with P2, P3, P5, P6, P9, T64, T78, T81, T87
-- R190 [auto] Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92
 
 <!-- One requirement per line: an id, how it is proved, and a user-observable
      statement. [auto] = a check can prove it; [human] = only a person can judge it.
