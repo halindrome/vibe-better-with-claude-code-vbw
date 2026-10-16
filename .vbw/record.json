@@ -2883,12 +2883,10 @@
       "req": "R148",
       "run": [
         "bats",
-        "tests/check-jobs-docs.bats",
-        "-f",
-        "R148"
+        "tests/fix-suite-once.bats"
       ],
       "files": [
-        "tests/check-jobs-docs.bats"
+        "tests/fix-suite-once.bats"
       ]
     },
     {
@@ -37518,6 +37516,11 @@
       "id": "D413",
       "at": "2026-10-15T23:22:36Z",
       "text": "Strengthened check files approved by the loop on the user's behalf (loop started 2026-10-15T20:40:30Z, items T92, T94, T102, T139, T138): tests/l3-panel-comms.bats tests/panel-bench-render.bats tests/panel-call-docs.bats tests/panel-colours-docs.bats tests/panel-comms-docs.bats tests/panel-now-docs.bats tests/panel/r189/next-buttons.test.mjs tests/panel/r189/now-box.test.mjs"
+    },
+    {
+      "id": "D414",
+      "at": "2026-10-16T00:15:07Z",
+      "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-15T20:40:30Z, items T92, T94, T102, T139, T138: 178 requirements, 367 checks, 434 plans (8a68d90badef))"
     }
   ],
   "commands": {
