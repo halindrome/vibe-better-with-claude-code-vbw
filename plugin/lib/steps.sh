@@ -260,7 +260,7 @@ step_proof_units() {
 # seconds, end, say} for an answer that runs a step (plan, build, fix, qa, a
 # proof with units left to run), else null. A kind without parts has parts null.
 step_next() {
-  local kind ids='[]' parts=null full units seconds=
+  local kind ids='[]' parts=null full units n seconds=
   case "$(printf '%s' "$2" | jq -r .action)" in
     plan) kind=plan ;;
     build) kind=build ids=$(printf '%s' "$2" | jq -c .detail.plans) ;;
@@ -276,7 +276,9 @@ step_next() {
     *) echo null; return 0 ;;
   esac
   step_kind_has_parts "$kind" && [ "$parts" = null ] && parts=$(printf '%s' "$ids" | jq 'length')
-  seconds=$(step_expect "$kind" "$(printf '%s' "$parts" | sed 's/^null$/0/')")
+  n=$parts
+  [ "$n" = null ] && n=0
+  seconds=$(step_expect "$kind" "$n")
   jq -nc --arg k "$kind" --argjson ids "$ids" --argjson parts "$parts" --arg s "$seconds" "$VBW_STEP_DEFS"'
     (now | floor) as $t
     | (if $s == "" then null else ($s | tonumber) end) as $sec
