@@ -179,3 +179,11 @@ test('the time keeps the estimate colour; a sentence with no time stays plain', 
   assert.match(plain, /No end time yet/)
   assert.equal(nc, undefined)
 })
+
+test("a proof of another session is not this panel's step; a proof of its own is", async () => {
+  const proof = (session) => note({ kind: 'proof', run: null, session, pid: 4242, ids: [], doing: 'proving 12 of 40 checks', parts: { done: 12, total: 40 }, proof: { done: 12, total: 40 } })
+  const other = await session(record(), proof('sess-9'))
+  assert.doesNotMatch(await paneText(other), /until around/)
+  const own = await session(record(), proof('sess-1'))
+  assert.match(await paneText(own), /until around/)
+})
