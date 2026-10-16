@@ -16,7 +16,7 @@
 # step_clock($iso): the local 24-hour time of a UTC time, "tomorrow HH:MM" (or
 # the date) when it is not today; step_sentence($step): what the step is doing,
 # its progress and its end time.
-# shellcheck disable=SC2016
+# shellcheck disable=SC2016,SC2034
 VBW_STEP_DEFS='def step_clock($iso):
   ($iso | fromdateiso8601) as $t
   | ($t | localtime | strftime("%H:%M")) as $hm
