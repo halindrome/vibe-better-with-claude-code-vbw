@@ -75,7 +75,7 @@ test('when nothing needs the user it says so, and the need is empty', () => {
 })
 
 test('when VBW needs the user it says what for', () => {
-  const need = (n) => show({ record: record(), next: next(n) })
+  const need = (n, over) => show({ record: record(over), next: next(n) })
   assert.match(need({ action: 'approve', gate: true }).need.text, /approve/i)
   assert.match(need({ action: 'approve', gate: true }).need.text, /plan/i)
   const accept = need({ action: 'accept', gate: true, detail: { requirements: ['R54'] } })
@@ -83,13 +83,18 @@ test('when VBW needs the user it says what for', () => {
   assert.match(accept.need.text, /R54/)
   assert.match(need({ action: 'ship', gate: true }).need.text, /ship/i)
   assert.match(need({ action: 'spec', gate: true }).need.text, /requirements|what to build/i)
-  assert.match(need({ action: 'escalate', gate: true, detail: { fixes: ['F3'] } }).need.text, /decision|decide/i)
+  assert.match(need({ action: 'escalate', gate: true, detail: { fixes: ['F3'] } }, { fixes: [{ id: 'F3', status: 'escalated' }] }).need.text, /decision|decide/i)
   const v = need({ action: 'approve', gate: true })
   assert.equal(row(v, 'need').text, v.need.text)
 })
 
 test('every human gate is a need, so the panel never says nothing is needed while VBW waits', () => {
-  const need = (n) => show({ record: record(), next: next(n) }).need
+  const STANDING = {
+    unblock: { plans: [{ id: 'P44.1', status: 'blocked' }, { id: 'P44.2', status: 'blocked' }] },
+    scope: { evidence: { scope: [{ file: 'src/x.js' }] } },
+    milestone: { milestone: { id: 'M9', title: 'Live VBW panel', status: 'shipped' } },
+  }
+  const need = (n) => show({ record: record(STANDING[n.action]), next: next(n) }).need
   const blocked = need({ action: 'unblock', gate: true, detail: { plans: ['P44.1'], blocked: [{ id: 'P44.1', note: 'no API key' }] } })
   assert.match(blocked.text, /blocked/i)
   assert.match(blocked.text, /P44\.1/)
