@@ -7,7 +7,7 @@ VBW plans and builds with: `/vbw:vibe` turns them on (`vbw workflows on`) unless
 the user disabled them on purpose.
 
 ```
-[VBW] expenses │ M1 First milestone │ ▓▓▓▓▓▓▓░░░ 4/6 done │ ▶ build: P1.2, P2.1 4m10s · 2 agents working │ ⟳ auto 3/25
+[VBW] expenses │ M1 First milestone │ ▓▓▓▓▓▓▓░░░ 4/6 done │ ▶ build P1.2, P2.1 · 1 of 2 · until 14:20 │ ⟳ auto 3/25
 Agents ● dev P1.2 sonnet  ● dev P2.1 sonnet
 Context ▓▓▓░░░░░░░ 31% 62K/200K │ Tokens 2 in 195 out │ Cache 93% hit 3.8K write 55.5K read │ Cost $1.42 │ +303 −12
 Limits 5h ▓▓░░░░░░░░ 23% (resets 2h13m) │ 7d ▓▓▓▓░░░░░░ 41% (resets 3d)
@@ -15,8 +15,14 @@ Sonnet 5.5 │ 10m22s (API 5m55s) │ main │ VBW 2.0.6 │ CC 2.1.286
 ```
 
 1. **VBW:** the project, the milestone, a progress bar of requirements proven
-   or accepted, and what is happening: a run in progress with its time and the
-   agents working (`▶ build: P1.2 4m10s · 2 agents working`), a step that needs
+   or accepted, and what is happening: a step in progress with what it is doing and when it should end
+   (`▶ build P1.2, P2.1 · 1 of 2 · until 14:20`; a background proof:
+   `▶ proving 12 of 40 checks · until 14:20`, counting up; an end on another day
+   reads `until tomorrow 00:20`). A step with parts past its time reads
+   `until 14:35, later than usual`; one without reads `until 14:20, 6 min late`.
+   With fewer than 3 finished steps of the kind there is no time: `▶ build P1.2,
+   P2.1 · 1 of 2`. The status line reads the time from the running step's note
+   and never works it out itself (see [Time left](panel.md#time-left)). A step that needs
    the user (`needs you: approve`), or the next step (`next: prove`, from the
    last `vbw next`). `⟳ auto 3/25` while this session's autonomous run is armed (another session's is not shown). Outside a
    VBW project: `/vbw:vibe to start` (this line, then lines 3 to 5).
