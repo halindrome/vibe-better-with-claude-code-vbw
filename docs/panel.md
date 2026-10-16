@@ -13,16 +13,9 @@ VBW also adds a few short lines to places Claude Code already draws (see
 [One-line notes](#one-line-notes)) and three instant commands (see
 [Instant commands](#instant-commands)).
 
-Mission Control's **Now** tab opens on a framed box, then shows these
-sentences (see [What's happening now](#whats-happening-now)):
+Mission Control's **Now** tab starts with these sentences:
 
 ```
-+------------------------------------------+
-| Building P1.2 in phase 1                 |
-| [14:02] build started                    |
-| Session cost $1.42                       |
-+------------------------------------------+
-
 Working on M1: First milestone.
 milestone
 
@@ -32,24 +25,18 @@ requirements
 VBW is building: P1.2, P2.1 (4 min so far).
 build
 
-[14:05] About 10 min left in this step.
+About 10 min left in this step.
 estimate, approximate
 
-[14:05] About 40 min left in the milestone.
+About 40 min left in the milestone.
 estimate, approximate
 
 This session has cost $1.42 so far.
 session cost
 
-[14:20] Please approve the plan before VBW builds it.
+Please approve the plan before VBW builds it.
 your turn
 ```
-
-A time-left or needs-you sentence starts with the `[HH:MM]` at which it began
-saying what it says. The stamp stays while the clock alone moves (the minutes
-counting down do not change it); new words get a new stamp. A sentence with no
-known start time has no stamp, never an empty or wrong one, and "No estimate
-yet" is said plainly, with no stamp and no number.
 
 Each sentence has a short technical term under it (`milestone`, `requirements`,
 `build`, `session cost`, `your turn`), so you can learn the words VBW uses.
@@ -605,8 +592,7 @@ needs `full` motion: set it with `vbw config set motion full` (see above). At
 `calm` and `off` a new agent's row appears without it.
 
 At most 3 working helpers get a figure at full motion; the other helpers are
-one text row each. At `calm`, every helper is one text row with a spinner and
-no figure. With motion `off`, nothing moves: no figure, spinner or flash. A finished helper leaves Comms, and a failed one is a red `✗` text
+text rows. A finished helper leaves Comms, and a failed one is a red `✗` text
 row, so Comms never draws a done, failed or quiet figure. A figure needs three
 rows of Comms; with less room Comms shows dots. They move only while a VBW run works and Comms shows them, and
 stop when the run ends. Figures, confetti and the sweep are drawn on the
