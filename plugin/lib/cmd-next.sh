@@ -35,7 +35,7 @@ qa_combined() {
 
 cmd_next() {
   vbw_require_project
-  local effort record hash counts approved=false changed=false legacy=false next qa waiting profile problems=""
+  local effort record hash counts approved=false changed=false legacy=false next qa waiting profile problems="" step
   record=$(record_read)
   hash=$(contract_hash "$record")
   # Check files edited since the approval wait: the build goes on, the one approval comes before proof.
@@ -60,7 +60,8 @@ cmd_next() {
   # command asks for it: a caller inside the kernel (the Stop hook's gate, ship, the
   # loop) never pays for the proof's reuse plan.
   if [ "${FUNCNAME[1]:-main}" = main ]; then
-    next=$(printf '%s' "$next" | jq -c --argjson step "$(step_next "$record" "$next")" '. + {step: $step}')
+    step=$(step_next "$record" "$next")
+    next=$(printf '%s' "$next" | jq -c --argjson step "$step" '. + {step: $step}')
   fi
   # The status line shows the last answer (docs/statusline.md).
   printf '%s\n' "$next" > "$VBW_RUNTIME/next.json.$$" && mv "$VBW_RUNTIME/next.json.$$" "$VBW_RUNTIME/next.json"
