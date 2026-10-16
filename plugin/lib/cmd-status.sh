@@ -5,6 +5,8 @@
 
 # shellcheck source=interview.sh
 . "$VBW_LIB/interview.sh"
+# shellcheck source=steps.sh
+. "$VBW_LIB/steps.sh"
 
 cmd_status() {
   vbw_require_project
@@ -12,7 +14,7 @@ cmd_status() {
   record=$(record_read)
   interview=$(interview_effective)
   if [ "${1:-}" = "--json" ]; then
-    printf '%s\n' "$record" | jq --argjson iv "$interview" '.milestone.id as $m | [.requirements[] | select(.milestone == $m)] as $cur | {
+    printf '%s\n' "$record" | jq --argjson iv "$interview" --argjson step "$(step_status "$(printf '%s' "$record" | jq -r '.lease.run // ""')")" '.milestone.id as $m | [.requirements[] | select(.milestone == $m)] as $cur | {
       milestone: .milestone,
       shipped: [.shipped[].id],
       parked: [(.parked // [])[].id],
@@ -22,7 +24,8 @@ cmd_status() {
       open_fixes: ([.fixes[] | select(.status == "open")] | length),
       open_todos: ([.todos[] | select(.status == "open" or .status == "in_progress")] | length),
       interview: $iv,
-      recommendation: (.recommendation // null)
+      recommendation: (.recommendation // null),
+      step: $step
     }'
     return 0
   fi
