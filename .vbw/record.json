@@ -43313,6 +43313,15 @@
         "started": "2026-10-16T02:06:45Z",
         "ended": "2026-10-16T02:13:31Z",
         "cost": null
+      },
+      {
+        "id": "plan-20261016T081210Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M36",
+        "started": "2026-10-16T08:12:10Z",
+        "ended": "2026-10-16T08:15:16Z",
+        "cost": null
       }
     ],
     "milestones": {
