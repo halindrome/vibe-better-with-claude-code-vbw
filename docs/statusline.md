@@ -22,7 +22,7 @@ Sonnet 5.5 │ 10m22s (API 5m55s) │ main │ VBW 2.0.6 │ CC 2.1.286
    `until 14:35, later than usual`; one without reads `until 14:20, 6 min late`.
    With fewer than 3 finished steps of the kind there is no time: `▶ build P1.2,
    P2.1 · 1 of 2`. The status line reads the time from the running step's note
-   and never works it out itself (see [Time left](panel.md#time-left)). A step that needs
+   and never works it out itself (see [Time left](panel.md#time-left)). Other states: a step that needs
    the user (`needs you: approve`), or the next step (`next: prove`, from the
    last `vbw next`). `⟳ auto 3/25` while this session's autonomous run is armed (another session's is not shown). Outside a
    VBW project: `/vbw:vibe to start` (this line, then lines 3 to 5).
