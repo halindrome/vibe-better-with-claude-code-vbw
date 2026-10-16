@@ -42,6 +42,8 @@ At a stop, say what happened.
 Every stop ends with a last line, **What I need from you:** <the one thing user must do now>, or "nothing".
 Claim only what kernel shows.
 
+Before starting a plan, build, fix, qa or prove step (a background proof too), say `step.say` from `vbw next --json` as given, one line, unchanged.
+
 `plan`, `build`, `fix` need the **Workflow** tool (the `workflows` line above turned it on). None: say why, stop. Pass
 `session` (`${CLAUDE_SESSION_ID}`, so the workflow confirms and ends its own run), `models` (from `vbw config models`), the next JSON's top-level `rigor`, `effort` and its `profile` in every workflow's args.
 
