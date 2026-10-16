@@ -33,8 +33,13 @@ render() {
     | NO_COLOR=1 bash "$SL"
 }
 
-# hm FIELD: the local HH:MM of the note's FIELD (end or first_end).
-hm() { jq -r --arg f "$1" '.[$f] | fromdateiso8601 | strflocaltime("%H:%M")' "$NOTE"; }
+# hm FIELD: the local HH:MM of the note's FIELD (end or first_end)., after "tomorrow " or
+# "yesterday " when it falls on another local day than now, as VBW words it:
+# the test holds at any hour, local midnight included.
+hm() {
+  jq -r --arg f "$1" '(.[$f] | fromdateiso8601) as $t | ([$t, now] | map(strflocaltime("%Y-%m-%d"))) as [$e, $d]
+    | (if $e == $d then "" elif $e > $d then "tomorrow " else "yesterday " end) + ($t | strflocaltime("%H:%M"))' "$NOTE"
+}
 
 # note FILTER: write the note: the open run's, a build of P1.1 and P1.2 started
 # 5 min ago, ending in 12 min, then FILTER (times as seconds from now: s(N)).

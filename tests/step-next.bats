@@ -19,8 +19,13 @@ setup() {
 }
 teardown() { vbw_teardown; }
 
-# hm FIELD: the local HH:MM of the note's FIELD.
-hm() { jq -r --arg f "$1" '.[$f] | fromdateiso8601 | strflocaltime("%H:%M")' "$NOTE"; }
+# hm FIELD: the local HH:MM of the note's FIELD., after "tomorrow " or
+# "yesterday " when it falls on another local day than now, as VBW words it:
+# the test holds at any hour, local midnight included.
+hm() {
+  jq -r --arg f "$1" '(.[$f] | fromdateiso8601) as $t | ([$t, now] | map(strflocaltime("%Y-%m-%d"))) as [$e, $d]
+    | (if $e == $d then "" elif $e > $d then "tomorrow " else "yesterday " end) + ($t | strflocaltime("%H:%M"))' "$NOTE"
+}
 step_of() { "$VBW" next --json | jq -c '.step'; }
 
 @test "R190: next gives a build wave its expected length and end time, and the sentence to say" {
