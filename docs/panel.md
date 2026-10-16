@@ -25,7 +25,7 @@ requirements
 VBW is building: P1.2, P2.1 (4 min so far).
 build
 
-About 10 min left in this step.
+about 10 min, until around 14:20
 estimate, approximate
 
 About 40 min left in the milestone.
@@ -78,7 +78,7 @@ requirements
 VBW is building: P1.2 (4 min so far).
 build
 
-No estimate yet: there are not enough finished steps to go on.
+No end time yet: VBW has timed fewer than 3 steps like this here
 estimate, no basis
 
 This session has cost $1.42 so far.
@@ -352,7 +352,7 @@ Events and messages start with their clock time in brackets, so you can tell
 when something began saying what it says:
 
 ```
-[14:20] About 2 min left in this step.
+[14:20] about 2 min, until around 14:22
 ```
 
 Mission Control's need sentence starts with the time the gate was reached, and
@@ -480,26 +480,53 @@ The panel never guesses a cost.
 
 ## Time left
 
-The panel estimates the time left for **this step** (the planning, building or
-checking that is running now) and for **the milestone** (all the phases not yet
-passed). When nothing is running, it estimates only the milestone. When no
-phase is left, it shows no milestone estimate.
+Every long step shows what it is doing and when it should end, as a clock time:
 
-- **It is approximate.** The text says "About 10 min left in this step", in
-  whole minutes, never an exact figure. It counts down as the step runs.
-- **It needs history.** VBW estimates only after **at least 3 finished steps
-  of the same kind** (for example 3 builds). The usual time of a kind is the
-  median of its latest 10 finished steps. The milestone estimate also needs
-  3 finished builds and 3 finished checks. Before that, the panel says "No
-  estimate yet: there are not enough finished steps to go on."
-- **It comes from this clone's own history.** When a run ends, VBW adds one
-  finished step (its kind, start, end and seconds) to `steps.json` in your
-  clone's git directory (`.git/vbw/steps.json`), keeping the latest 50. The
-  file is private to your machine: it is not committed and not part of
-  `.vbw/record.json`. Delete it and the estimates start again from none.
-  The panel only reads it.
-- **It never shows a negative time.** When a step runs past its usual time, the
-  panel says "This step is taking longer than usual." and shows no number.
+```
+Building P1.2, P2.1 · 1 of 2 · about 12 min, until around 14:20
+```
+
+Five kinds of step get an end time: **planning**, **build**, **fix**, **QA**
+and **proof**. The same time shows in the status line, Comms, Mission Control
+and VBW's own messages. The panel also estimates the time left for **the
+milestone** (all the phases not yet passed). When nothing is running, it
+estimates only the milestone. When no phase is left, it shows no milestone
+estimate.
+
+- **It is approximate.** "about 12 min" is whole minutes, never an exact
+  figure. Under a minute it says "less than a minute". An end on another day
+  names the day: "until around tomorrow 00:20". Times are 24-hour, local.
+- **It needs history.** VBW gives an end time only after **at least 3 finished
+  steps of the same kind** (for example 3 builds). With fewer, the panel says
+  "No end time yet: VBW has timed fewer than 3 steps like this here" and shows
+  no time. VBW never guesses. The milestone estimate also needs 3 finished
+  builds and 3 finished checks; before that it says "No estimate yet: there are
+  not enough finished steps to go on."
+- **Time per part.** A build, a fix and a proof count their parts: the plans of
+  a build, the fixes of a fix, the checks a proof really runs. VBW takes the
+  median time per plan (or fix, or check) over the latest 10 steps of that kind
+  that recorded parts, and multiplies it by this step's parts. A bigger build
+  gets a longer time. Planning and QA have no parts: they use the median time
+  of their latest 10 steps. With an even count, the median is the mean of the
+  two middle values.
+- **Later than usual.** When a step with parts runs past its end time, VBW moves
+  the end to this run's own pace and shows "until around 14:35, later than
+  usual". It can move again, and never earlier than the first end time.
+- **N min late.** A step without parts (planning, QA) keeps its first end time
+  and shows "until around 14:20, 6 min late" once it is a minute past it.
+- **A proof inside a build or fix** shows as what the build or fix is doing
+  ("proving 12 of 40 checks"); the build's own end time stays. A proof that
+  reused every result ran nothing and has no time.
+- **It comes from this clone's own history.** When a step finishes, VBW adds it
+  (its kind, start, end, seconds and parts) to `steps.json` in your clone's git
+  directory (`.git/vbw/steps.json`), keeping the latest 50 steps of each kind,
+  so many steps of one kind never push out another. The file is private to your
+  machine: it is not committed and not part of `.vbw/record.json`. To reset it,
+  delete it: end times start again from none. A missing, unwritable or damaged
+  file never fails a step; it only means no end time yet. The panel only reads
+  it.
+- **It never shows a negative time.** Past the end, the wording above says
+  "later than usual" or "N min late" instead of a number of minutes left.
 
 ## Open and close it
 
