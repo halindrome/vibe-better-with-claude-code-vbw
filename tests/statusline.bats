@@ -51,7 +51,7 @@ render() { cc_json | NO_COLOR=1 bash "$SL"; }
   "$VBW" run start build P1.1 > /dev/null
   "$VBW" auto on s1 > /dev/null
   run render
-  [[ "${lines[0]}" =~ "│ ▶ build: P1.1 "[0-9]+s" │ ⟳ auto 0/25"$ ]]
+  [[ "${lines[0]}" =~ "│ ▶ build P1.1 · 0 of 1 │ ⟳ auto 0/25"$ ]]
   # Another session of the project is not armed: its status line says nothing.
   SID=s2 run render
   [[ "${lines[0]}" != *"⟳ auto"* ]]
@@ -155,7 +155,7 @@ render() { cc_json | NO_COLOR=1 bash "$SL"; }
   printf '{"agentType": "vbw:qa", "description": "qa P1", "model": "opus"}' > "$w/agent-c.meta.json"
   touch -t 202001010000 "$w/agent-c.jsonl"
   run bash -c 'jq -nc --arg d "$1" --arg t "$2" "{workspace: {project_dir: \$d}, transcript_path: \$t}" | NO_COLOR=1 bash "$3"' _ "$PROJECT" "$t" "$SL"
-  [[ "${lines[0]}" =~ "│ ▶ plan "[0-9]+s" · 2 agents working" ]]
+  [[ "${lines[0]}" =~ "│ ▶ plan · 2 agents working" ]]
   [ "${lines[1]}" = "Agents ● dev P1.2 sonnet  ● scout risks haiku" ]
   # No run open (a map or debug workflow): the agents alone.
   "$VBW" run end > /dev/null
@@ -204,7 +204,7 @@ render() { cc_json | NO_COLOR=1 bash "$SL"; }
   for v in 2.1.287 2.1.291 2.2.0 3.0.0; do
     run bash -c 'jq -nc --arg d "$1" --arg t "$2" --arg v "$4" "{workspace: {project_dir: \$d}, transcript_path: \$t, version: \$v}" | NO_COLOR=1 bash "$3"' _ "$PROJECT" "$t" "$SL" "$v"
     [ "${#lines[@]}" -eq 4 ]
-    [[ "${lines[0]}" =~ "│ ▶ plan "[0-9]+s" · 1 agent working" ]]
+    [[ "${lines[0]}" =~ "│ ▶ plan · 1 agent working" ]]
     [[ "${lines[1]}" == "Context "* ]]
   done
   # Older, or not reported: the line stays as it was.
