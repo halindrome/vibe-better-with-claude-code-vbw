@@ -58,13 +58,14 @@ def progress($done; $total): (if $total > 0 then $done * 100 / $total else 0 end
      elif $rec.lease != null and $stepnote.run == $rec.lease.run then $stepnote
      else null end
    else null end) as $step
-# A clock time, local 24-hour; another day names the day.
-| ($now | strflocaltime("%Y-%m-%d")) as $today
-| (($now + 86400) | strflocaltime("%Y-%m-%d")) as $tomorrow
-| def clock($t): ($t | fromdateiso8601) as $e
-    | ($e | strflocaltime("%Y-%m-%d")) as $d
+# A clock time, local 24-hour; another day names the day as the kernel and the panel do
+# (step_clock in plugin/lib/steps.sh): tomorrow, yesterday, or the weekday.
+| def day($e): $e | localtime | mktime / 86400 | floor;
+  def clock($t): ($t | fromdateiso8601) as $e
     | ($e | strflocaltime("%H:%M")) as $hm
-    | if $d == $today then $hm elif $d == $tomorrow then "tomorrow " + $hm else ($e | strflocaltime("%b %d ")) + $hm end;
+    | (day($e) - day($now)) as $d
+    | if $d == 0 then $hm elif $d == 1 then "tomorrow " + $hm elif $d == -1 then "yesterday " + $hm
+      else ($e | strflocaltime("%A ")) + $hm end;
   def step_line($n):
     ($n.parts) as $p
     | (if ($n.proof != null and $n.kind != "proof") then $n.doing
