@@ -94,7 +94,18 @@ function answered(rec, nx, nextAt) {
     const mine = ids.map((id) => rows('requirements').find((r) => r.id === id))
     return mine.length > 0 && mine.every((r) => r && (r.status === 'accepted' || r.status === 'rejected'))
   }
-  return false
+  const ids = (key) => (isObj(nx.detail) && Array.isArray(nx.detail[key]) ? nx.detail[key] : [])
+  const gone = (key, still) => ids(key).length > 0 && ids(key).every((id) => !rows(key).some((r) => r.id === id && r.status === still))
+  const written = () => rows('requirements').some((r) => r.milestone === rec.milestone.id)
+  switch (nx.action) {
+    case 'milestone': return rec.milestone.status !== 'shipped' && rec.milestone.status !== 'parked'
+    case 'spec': return written()
+    case 'convert': return written() || Object.hasOwn(rec, 'converted') || (isObj(rec.project) && isObj(rec.project.legacy) && rec.project.legacy.choice === 'fresh')
+    case 'unblock': return gone('plans', 'blocked')
+    case 'escalate': return gone('fixes', 'escalated')
+    case 'scope': return !(isObj(rec.evidence) && Array.isArray(rec.evidence.scope) && rec.evidence.scope.length > 0)
+    default: return false
+  }
 }
 
 // The one thing VBW needs from the user now, or null: an open question, else a gate in

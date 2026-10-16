@@ -125,7 +125,7 @@ test('weekly limit at 80% or more adds a line under the need, or alone before a 
   const line = m.lines.find((l) => /Weekly limit/.test(l.text))
   assert.match(line.text, /Weekly limit 84%: a run like this used about 6% last time/)
   assert.equal(line.color, P.NEED)
-  assert.equal(model({ need: need(), next: next({ action: 'approve' }), health: { weekPct: 93 } }).lines[0].color, P.stateColor('failed'))
+  assert.equal(model({ need: need(), next: next({ action: 'approve' }), health: { weekPct: 93 } }).lines[0].color, P.NEED)
   assert.equal(model({ need: need(), next: next({ action: 'approve' }), health: { weekPct: 79 } }).lines.length, 0)
   assert.equal(model({ need: need(), next: next({ action: 'ship' }), health: { weekPct: 95 } }).lines.length, 0, 'shipping starts no run')
   const alone = model({ next: next({ action: 'build' }), health: { weekPct: 90 } })

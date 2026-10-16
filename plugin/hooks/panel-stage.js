@@ -71,7 +71,7 @@ function health(hl, action) {
   if (num(hl.weekPct) && hl.weekPct >= 80) {
     const w = Math.round(hl.weekPct)
     const per = num(hl.weekPerRun) && hl.weekPerRun > 0 ? 'a run like this used about ' + Math.round(hl.weekPerRun) + '% last time' : 'a long run may reach it'
-    out.push({ text: 'Weekly limit ' + w + '%: ' + per + '.', color: hl.weekPct >= 90 ? stateColor('failed') : NEED })
+    out.push({ text: 'Weekly limit ' + w + '%: ' + per + '.', color: NEED })
   }
   return out
 }
