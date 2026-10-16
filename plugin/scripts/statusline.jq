@@ -1,9 +1,12 @@
 # The VBW status line (docs/statusline.md). $cc: Claude Code's status line
 # JSON ({} when it sent none). Inputs, in order: plugin.json; the
 # project's .vbw/record.json, or its smaller glance.json when newer, if it exists; the sentinel; .vbw/runtime/next.json
-# if it exists (the last `vbw next`); the sentinel; this session's
-# .vbw/runtime/auto.SESSION.json if it armed an autonomous run. jq skips missing files, so the sentinels mark which
-# optional input is which. Args: $branch, $color ("1" or ""),
+# if it exists (the last `vbw next`); the sentinel; the running step's note
+# .vbw/runtime/step.json if it exists (R190, the kernel's; this program works
+# no time out); the sentinel; this session's .vbw/runtime/auto.SESSION.json if
+# it armed an autonomous run. jq skips missing files, so the sentinels mark which
+# optional input is which. Args: $branch, $color ("1" or ""), $sid (this session),
+# $deadpid (the pid of a proof note whose process is gone, or 0),
 # $legacy (a VBW 1 plan, not converted), $agents (the workflow agents working
 # now: [{role, label, model}]), $profiles ([lib/profiles.json]). Output: 4
 # lines; in a VBW project under Claude Code older than 2.1.287, 5 (the team or
@@ -41,14 +44,49 @@ def progress($done; $total): (if $total > 0 then $done * 100 / $total else 0 end
 | ($in[($s1 // 0) + 1:]) as $rest
 | ($rest | index("vbw-guard-end")) as $s2
 | (if $s2 != null and $s2 >= 1 then $rest[0] else null end) as $next
-| (if $s2 != null then $rest[$s2 + 1] else null end) as $auto
+| (if $s2 != null then $rest[$s2 + 1:] else [] end) as $rest2
+| ($rest2 | index("vbw-guard-end")) as $s3
+| (if $s3 != null and $s3 >= 1 then $rest2[0] else null end) as $stepnote
+| (if $s3 != null then $rest2[$s3 + 1] else null end) as $auto
 | now as $now
+# The step's note counts for a build, fix, plan or QA while its run is the open
+# run; a proof's, while its own session's and its process lives (the shell tells
+# a dead one by $deadpid). A step is shown only from the note, never worked out.
+| (if ($stepnote | type) == "object" and ($rec | type) == "object" then
+     if $stepnote.kind == "proof" then
+       (if ($stepnote.session // "") == $sid and $sid != "" and $stepnote.pid != $deadpid then $stepnote else null end)
+     elif $rec.lease != null and $stepnote.run == $rec.lease.run then $stepnote
+     else null end
+   else null end) as $step
+# A clock time, local 24-hour; another day names the day.
+| ($now | strflocaltime("%Y-%m-%d")) as $today
+| (($now + 86400) | strflocaltime("%Y-%m-%d")) as $tomorrow
+| def clock($t): ($t | fromdateiso8601) as $e
+    | ($e | strflocaltime("%Y-%m-%d")) as $d
+    | ($e | strflocaltime("%H:%M")) as $hm
+    | if $d == $today then $hm elif $d == $tomorrow then "tomorrow " + $hm else ($e | strflocaltime("%b %d ")) + $hm end;
+  def step_line($n):
+    ($n.parts) as $p
+    | (if ($n.proof != null and $n.kind != "proof") then $n.doing
+       elif $n.kind == "proof" then $n.doing
+       elif $p != null then "\($p.done) of \($p.total)" else null end) as $what
+    | (if $n.end == null then null
+       else clock($n.end)
+         + (if $p != null then (if $n.late then ", later than usual" else "" end)
+            else ((($now - ($n.first_end // $n.end | fromdateiso8601)) / 60 | floor) as $m | if $m >= 1 then ", \($m) min late" else "" end) end)
+       end) as $time
+    | ([(if $n.kind == "proof" then null else $n.kind + (if ($n.ids | length) > 0 then " " + ($n.ids | join(", ")) else "" end) end), $what, (if $time != null then "until " + $time else null end)]
+       | map(select(. != null)) | join(" · "));
+  .
 # Claude Code 2.1.287 and later shows the working agents and the team in its own
 # panes, so line 2 is left out there; older (or unreported) versions keep it.
 | (($cc.version // "") | if type == "string" then [scan("[0-9]+") | tonumber][0:3] >= [2, 1, 287] else false end) as $slim
 
+# A proof's note names its process first: the script checks it lives.
+| ( select($step != null and $step.kind == "proof" and ($step.pid | type) == "number") | {step_pid: $step.pid} | tojson ),
+
 # Line 1: VBW
-| ( if ($rec | type) != "object" then
+  ( if ($rec | type) != "object" then
       c("36"; "[VBW]") + " " + (if $legacy != "" then "VBW 1 plan here · /vbw:vibe to bring it into VBW 2" else "no project here · /vbw:vibe to start" end | dim)
     else
       [$rec.requirements[]? | select(.milestone == $rec.milestone.id)] as $cur
@@ -56,9 +94,9 @@ def progress($done; $total): (if $total > 0 then $done * 100 / $total else 0 end
       | ($cur | length) as $total
       | ($agents | length) as $n_agents
       | (if $n_agents > 0 then " · \($n_agents) agent\(if $n_agents == 1 then "" else "s" end) working" else "" end) as $working
-      | (if $rec.lease != null then
-           c("36"; "▶ \($rec.lease.kind)\(if $rec.lease.kind == "build" then ": " + ([$rec.plans[]? | select(.status == "building") | .id] | join(", ")) else "" end)"
-             + (($now - ($rec.lease.started_at | fromdateiso8601? // $now)) * 1000 | " " + dur) + $working)
+      | (if $step != null then c("36"; "▶ " + step_line($step) + $working)
+         elif $rec.lease != null then
+           c("36"; "▶ \($rec.lease.kind)\(if $rec.lease.kind == "build" then ": " + ([$rec.plans[]? | select(.status == "building") | .id] | join(", ")) else "" end)" + $working)
          elif $n_agents > 0 then c("36"; "▶ \($n_agents) agent\(if $n_agents == 1 then "" else "s" end) working")
          elif $next != null and $next.gate then c("33"; "needs you: \($next.action)")
          elif $next != null then "next: \($next.action)"
