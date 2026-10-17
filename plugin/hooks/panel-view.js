@@ -2,7 +2,6 @@
 // into plain sentences, each with its technical term beside it. Pure: data in,
 // rows out; it never changes its input and never throws.
 
-import { estimate } from './panel-estimate.js'
 import { stepWords } from './panel-step.js'
 
 export const MIN_VERSION = '2.1.287'
@@ -167,12 +166,27 @@ function nowBox(rec, need, proving, stamps, cost, step) {
   return { state: { text: 'Nothing is running.', term: 'state' }, step: null, cost: cl }
 }
 
-const mins = (sec) => Math.max(1, Math.round(sec / 60))
-const NO_BASIS = { text: 'No estimate yet: there are not enough finished steps to go on.', term: 'estimate, no basis' }
+// The running step's time and the milestone's end are the kernel's, worded here; the
+// panel works none out. The step's end comes from its note (panel-step.js); the road
+// (R191) comes from the live step's note, else from the last `vbw next` (next.json).
+// No road, or none at all, gives no milestone row.
+const sentence = (t) => {
+  const s = String(t).trim()
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) + (/[.!?]$/.test(s) ? '' : '.') : ''
+}
 
-// The running step's time is the kernel's note, worded in panel-step.js; the panel works
-// none out. The milestone's time is R58's estimate, never more exact than it is.
-function estimateRows(rec, steps, phasesLeft, now, stamps, step) {
+function roadRow(step, nx, stamps) {
+  const road = isObj(step) && isObj(step.road) ? step.road : isObj(step) && step.road === null ? null : isObj(nx) && isObj(nx.road) ? nx.road : null
+  if (!road) return null
+  if (typeof road.end !== 'string' || !Number.isFinite(Date.parse(road.end))) {
+    const why = typeof road.basis === 'string' && road.basis.trim() ? road.basis.trim().replace(/\.$/, '') : ''
+    return { id: 'estimate-milestone', text: 'No estimate yet' + (why ? ': ' + why : '') + '.', term: 'estimate, no basis' }
+  }
+  const say = sentence(road.say)
+  return say ? { id: 'estimate-milestone', text: stamped(stamps['estimate-milestone'], say), term: 'estimate, approximate' } : null
+}
+
+function estimateRows(now, stamps, step, nx) {
   const rows = []
   const words = step ? stepWords(step, now) : null
   if (words) {
@@ -180,22 +194,16 @@ function estimateRows(rec, steps, phasesLeft, now, stamps, step) {
       ? { id: 'estimate-step', text: stamped(stamps['estimate-step'], 'This step: ' + words.text + '.'), term: 'estimate, approximate' }
       : { id: 'estimate-step', text: words.text + '.', term: 'estimate, no basis' })
   }
-  const e = estimate({ steps, lease: isObj(rec.lease) ? rec.lease : null, phasesLeft, now })
-  if (e.milestone) {
-    rows.push(e.milestone.state === 'none'
-      ? { id: 'estimate-milestone', ...NO_BASIS }
-      : { id: 'estimate-milestone', text: stamped(stamps['estimate-milestone'], 'About ' + mins(e.milestone.seconds) + ' min left in the milestone.'), term: 'estimate, approximate' })
-  }
+  const r = roadRow(step, nx, stamps)
+  if (r) rows.push(r)
   return rows
 }
 
 export function panelView(input) {
-  const { record: rec, next: nx, nextAt, question, questionAt, health, now, cost, steps, proving } = isObj(input) ? input : {}
+  const { record: rec, next: nx, nextAt, question, questionAt, health, now, cost, proving } = isObj(input) ? input : {}
   const step = isObj(input) && isObj(input.step) ? input.step : null
   const stamps = isObj(input) && isObj(input.stamps) ? input.stamps : {}
   if (!isObj(rec) || !isObj(rec.milestone) || !rec.milestone.id) return { rows: [NEUTRAL], need: null, box: null }
-  const ph = (Array.isArray(rec.phases) ? rec.phases : []).filter((p) => isObj(p) && p.milestone === rec.milestone.id)
-  const phasesLeft = ph.filter((p) => !(isObj(p.qa) && p.qa.result === 'pass')).length
   // Progress as the status line counts it: the current milestone's requirements proven or accepted.
   const rq = (Array.isArray(rec.requirements) ? rec.requirements : []).filter((r) => isObj(r) && r.milestone === rec.milestone.id)
   const done = rq.filter((r) => r.status === 'proven' || r.status === 'accepted').length
@@ -210,7 +218,7 @@ export function panelView(input) {
       { id: 'milestone', text: 'Working on ' + rec.milestone.id + ': ' + (rec.milestone.title || 'untitled') + '.', term: 'milestone' },
       { id: 'progress', text: progress, term: 'requirements' },
       doing(rec, t),
-      ...estimateRows(rec, Array.isArray(steps) ? steps : [], phasesLeft, t, stamps, step),
+      ...estimateRows(t, stamps, step, nx),
       costRow(cost),
       { id: 'need', text: need ? stamped(Number.isFinite(stamps.need) ? stamps.need : need.at, need.text) : 'Nothing is needed from you right now.', term: 'your turn' },
     ],
