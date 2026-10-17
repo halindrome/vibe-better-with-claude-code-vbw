@@ -76,6 +76,14 @@ last() { jq -c --arg k "$1" '[.steps[] | select(.kind == $k)] | last' "$STEPS"; 
   "$VBW" run start plan > /dev/null
   "$VBW" run end > /dev/null
   last plan | jq -e '.reqs == 1' || { cat "$STEPS"; false; }
+  step_edit '(.requirements[] | select(.id == "R2")).status = "accepted"'
+  "$VBW" run start plan > /dev/null
+  "$VBW" run end > /dev/null
+  last plan | jq -e '.reqs == 1' || { cat "$STEPS"; false; }
+  step_edit '(.requirements[] | select(.id == "R2")).status = "open"'
+  "$VBW" run start plan > /dev/null
+  "$VBW" run end > /dev/null
+  last plan | jq -e '.reqs == 2' || { cat "$STEPS"; false; }
 }
 
 @test "R191: QA records the phases it checked, each with its tier" {
@@ -86,6 +94,10 @@ last() { jq -c --arg k "$1" '[.steps[] | select(.kind == $k)] | last' "$STEPS"; 
   "$VBW" run start qa > /dev/null
   "$VBW" run end > /dev/null
   last qa | jq -e '.kind == "qa" and .phases == [{id: "P1", tier: "standard"}]' || { cat "$STEPS"; false; }
+  step_edit '.phases[0].tier = "deep"'
+  "$VBW" run start qa > /dev/null
+  "$VBW" run end > /dev/null
+  last qa | jq -e '.phases == [{id: "P1", tier: "deep"}]' || { cat "$STEPS"; false; }
 }
 
 @test "R191: entries from before stay as they are beside the new ones, and the latest 50 of each kind are kept" {

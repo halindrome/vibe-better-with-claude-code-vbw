@@ -141,6 +141,10 @@ test('a road of null, or none at all, shows no milestone row', async () => {
     assert.doesNotMatch(text, /Milestone end|No estimate yet/, text)
     assert.doesNotMatch(text, OLD)
   }
+  // A live note whose road is null (no phase left) shows no row, whatever the last vbw next carried.
+  const live = await session(building(), next({ action: 'run', road: road(OTHER_END) }), { [NOTE]: JSON.stringify(note({ road: null })) })
+  const liveText = await paneText(live)
+  assert.doesNotMatch(liveText, /Milestone end|No estimate yet/, liveText)
 })
 
 test('the panel works no milestone time out itself: a history alone, with phases left, shows no milestone row', async () => {

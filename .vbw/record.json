@@ -36185,6 +36185,204 @@
         "Other kinds in step_record: a fix run records fixes (its ids) and tier (the highest tier among the phases of the fixes' requirements; none when no phase serves them); a planning run records reqs (the active milestone's requirements not proven or accepted at run start); a QA run records phases [{id, tier}] from the note's ids and the record",
         "step_expect KIND SIZE: SIZE is JSON (build: [{id, tier, tasks}] for the wave; fix: {tier}; plan: {reqs}; qa: [{id, tier}]; proof: {units: [names]}) and the function runs lib/steps-expect.jq (P149.2) as `jq -n --slurpfile h <history> --slurpfile runs <runs.json or an empty store> --arg kind K --argjson size SIZE -f`, printing seconds or nothing; step_start and step_next build SIZE from the record (phase tiers and tasks for the wave's plans; the fixes' highest tier; the open requirements count; QA phases with tiers; proof unit names check:ID, file:PATH, command:NAME from the proof plan's TODO_CHECKS, TF_TODO and TODO_COMMANDS), so next --json, the note and run start's sentence all use the new times with D425's wording unchanged",
         "Entries written before (kind, seconds, parts) stay as they are and still feed the coarse rungs; the latest 50 of each kind are kept; a missing, damaged or unwritable steps.json or runs.json never fails a step and only means no end time yet; record-sized data reaches jq by pipe or --slurpfile only; bash 3.2 (tests/step-units-history.bats green, tests/step-expect.bats and tests/step-next.bats still green)"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a finished build records each plan done with its id, its tier, its tasks and its own seconds from the run's start to its vbw plan done, and the note counts the parts done as before"
+          },
+          "what": "own seconds stamped as 0",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-17T18:43:54Z",
+          "head": "70cf7b279c3a360e9223e1e995e9e0bd2f95cdec"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a plan's tier is its phase's at that moment, standard when the phase has none, and a plan the run left unfinished is no unit"
+          },
+          "what": "tier always standard",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T18:44:37Z",
+          "head": "70cf7b279c3a360e9223e1e995e9e0bd2f95cdec"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a finished build records each plan done with its id, its tier, its tasks and its own seconds from the run's start to its vbw plan done, and the note counts the parts done as before"
+          },
+          "what": "own seconds stamped as 0",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T18:46:46Z",
+          "head": "bf3aaec0fc5b516c68ccbb770cf6330fdbedd170",
+          "strengthened": [
+            "tests/step-units-history.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a fix round records its fixes and the highest tier of their phases"
+          },
+          "what": "fix tier lowest not highest",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T18:47:42Z",
+          "head": "bf3aaec0fc5b516c68ccbb770cf6330fdbedd170"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "planning records how many open requirements of the milestone it planned"
+          },
+          "what": "accepted counts as open",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-17T18:48:28Z",
+          "head": "bf3aaec0fc5b516c68ccbb770cf6330fdbedd170"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "QA records the phases it checked, each with its tier"
+          },
+          "what": "QA tier always standard",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-17T18:49:12Z",
+          "head": "bf3aaec0fc5b516c68ccbb770cf6330fdbedd170"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "entries written before (kind, seconds, parts) stay readable beside the new ones and the latest 50 of each kind are kept"
+          },
+          "what": "keep latest 5",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T18:49:59Z",
+          "head": "bf3aaec0fc5b516c68ccbb770cf6330fdbedd170"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a damaged or unwritable history or runs store never fails a step and only means no end time yet"
+          },
+          "what": "step_record fails",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T18:50:41Z",
+          "head": "bf3aaec0fc5b516c68ccbb770cf6330fdbedd170"
+        },
+        {
+          "task": 1,
+          "what": "units without tasks",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:13:37Z",
+          "head": "bf3aaec0fc5b516c68ccbb770cf6330fdbedd170"
+        },
+        {
+          "task": 2,
+          "what": "fix round drops fixes",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:14:39Z",
+          "head": "bf3aaec0fc5b516c68ccbb770cf6330fdbedd170"
+        },
+        {
+          "task": 3,
+          "what": "size ignored by step_expect",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-17T19:15:27Z",
+          "head": "bf3aaec0fc5b516c68ccbb770cf6330fdbedd170"
+        },
+        {
+          "task": 4,
+          "what": "old entries dropped",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:16:10Z",
+          "head": "bf3aaec0fc5b516c68ccbb770cf6330fdbedd170"
+        },
+        {
+          "task": 3,
+          "what": "size ignored by step_expect",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:19:03Z",
+          "head": "bf3aaec0fc5b516c68ccbb770cf6330fdbedd170"
+        }
       ]
     },
     {
@@ -36526,6 +36724,72 @@
         "panel-view.js: the estimate-milestone row is the kernel's road: the live step note's road while a step runs, else next.json's road; its text is road.say with a capital first letter and a final period, stamped [HH:MM] like estimate-step; road.end null gives 'No estimate yet: ' + road.basis + '.' (plain); road null or absent gives no row; the 'About N min left in the milestone' row, NO_BASIS and the panel's milestone arithmetic are gone",
         "panel-estimate.js keeps only what the Timeline's bars use (MIN_STEPS and estimate's step median, pure and local) and returns no milestone; panel.js hands the step note and next.json through as today (no new file is read, nothing is written); panel-pane.js keeps a milestone row without a time plain",
         "The approved check files whose assertions pinned the old row are updated to the new contract and nothing else: tests/panel/estimate.test.mjs (no milestone from the history), tests/panel/glance.test.mjs (the milestone row comes from next.json's or the note's road), tests/panel/r190/step-panel.test.mjs and tests/panel/r189/now-box.test.mjs (fixtures carry a road); they wait for the one approval before the proof; tests/panel/r191/road-panel.test.mjs and road-same-time.test.mjs green"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R191",
+            "text": "Mission Control shows the kernel's road sentence from the step note while a step runs, stamped, in place of the old milestone row, in the estimate colour"
+          },
+          "what": "milestone row not stamped",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C394": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T18:33:33Z",
+          "head": "70cf7b279c3a360e9223e1e995e9e0bd2f95cdec"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "when road.end is null Mission Control shows 'No estimate yet' with the kernel's reason, plain"
+          },
+          "what": "no-basis wording changed",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C394": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T18:33:41Z",
+          "head": "70cf7b279c3a360e9223e1e995e9e0bd2f95cdec"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "with nothing running Mission Control shows the road of the last vbw next from next.json, and the note's road wins while its step runs"
+          },
+          "what": "next.json road beats the note",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C394": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T18:33:49Z",
+          "head": "70cf7b279c3a360e9223e1e995e9e0bd2f95cdec"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a road of null, or none at all, shows no milestone row, and a history alone shows none: the panel works no milestone time out itself and panel-estimate.js returns no milestone"
+          },
+          "what": "null note road falls through to next.json",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C394": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-17T18:33:57Z",
+          "head": "70cf7b279c3a360e9223e1e995e9e0bd2f95cdec"
+        }
       ]
     },
     {
@@ -47981,6 +48245,19 @@
           "usd": 0.670064,
           "in": 5493,
           "out": 308
+        }
+      },
+      {
+        "id": "build-20261017T182824Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-17T18:28:24Z",
+        "ended": "2026-10-17T19:32:56Z",
+        "cost": {
+          "usd": 0.809997,
+          "in": 1971,
+          "out": 100
         }
       }
     ],
