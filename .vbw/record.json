@@ -19631,12 +19631,11 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "fa7a9b93cce1f9b7a8f909c2ff5e0eecdc76f09148c895bffa0419c7bc64540f",
-        "at": "2026-10-17T01:15:48Z",
-        "note": "30/32 checks",
-        "rounds": 1
+        "tree": "5a48594dfef24f6f958e440df487c3f19b6a43911135e116706d07a4bb49d330",
+        "at": "2026-10-17T04:31:01Z",
+        "note": "7/7 checks"
       }
     }
   ],
@@ -37583,7 +37582,7 @@
       "req": "R190",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The status line leaves out 'later than usual' when a step with parts is past its end but the kernel has not moved the end, while 'vbw status', 'vbw next' and the panel say it. Evidence: plugin/lib/steps.sh step_words and plugin/hooks/panel-step.js stepWords say '..., later than usual' when parts exist and (note.late is true OR the end is already past); plugin/scripts/statusline.jq step_line (line ~76) says it only when $n.late is true. The kernel sets late only in step_plan_done (plugin/lib/steps.sh), which handles builds only and only after a plan finishes. So a build whose first plan overruns its first end, any fix, and a proof past its end show a past clock time in the status line with no caveat, while Comms/vbw status say 'until around 14:20, later than usual'. docs/statusline.md ('A step with parts past its time reads until 14:35, later than usual') and docs/panel.md ('When a step with parts runs past its end time, VBW moves the end to this run's own pace and shows ... later than usual. It can move again') state this as always true; for a fix, a proof, or a build with no plan done yet the end is never moved. Regression test should catch: a note with parts, late:false and end in the past must make the status line first line read 'until HH:MM, later than usual' (as vbw status does for the same note), and the docs must say that the end moves only when a plan of a build finishes (or the kernel must move the end for fixes and proofs).",
       "phase": "P148"
     },
