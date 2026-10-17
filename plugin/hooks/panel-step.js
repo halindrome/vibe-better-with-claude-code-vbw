@@ -29,11 +29,23 @@ function when(end, now) {
   return day + stamp(e)
 }
 
+// A proof's note counts only while its process lives (R190.27): a killed proof leaves
+// the note behind. EPERM means the process exists; no pid on the note is not a verdict.
+function alive(pid) {
+  if (typeof pid !== 'number') return true
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (e) {
+    return !!e && e.code === 'EPERM'
+  }
+}
+
 // The note a panel keeps only while it is live: its run is the record's open run, or it
 // is a proof of this session (a proof holds no lease). Anything else is no step here.
 export function liveStep(note, rec, sessionId) {
   if (!isObj(note) || !str(note.kind)) return null
-  if (note.kind === 'proof') return sessionId && note.session === sessionId ? note : null
+  if (note.kind === 'proof') return sessionId && note.session === sessionId && alive(note.pid) ? note : null
   const lease = isObj(rec) && isObj(rec.lease) ? rec.lease : null
   return lease && str(note.run) && lease.run === note.run ? note : null
 }
