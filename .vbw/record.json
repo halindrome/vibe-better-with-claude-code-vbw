@@ -140,6 +140,7 @@
     "tests/l3-pluginoff.bats",
     "tests/l3-recheck.bats",
     "tests/l3-results.bats",
+    "tests/l3-road.bats",
     "tests/l3-scenarios.bats",
     "tests/l3-smallchange-added.bats",
     "tests/l3-smallchange.bats",
@@ -241,6 +242,8 @@
     "tests/panel/r190/same-time.test.mjs",
     "tests/panel/r190/step-comms.test.mjs",
     "tests/panel/r190/step-panel.test.mjs",
+    "tests/panel/r191/road-panel.test.mjs",
+    "tests/panel/r191/road-same-time.test.mjs",
     "tests/panel/record-row.test.mjs",
     "tests/panel/safe.test.mjs",
     "tests/panel/schema4.test.mjs",
@@ -334,6 +337,11 @@
     "tests/rigor-prediction.bats",
     "tests/rigor-profile.bats",
     "tests/rigor-record.bats",
+    "tests/road-docs.bats",
+    "tests/road-helper.bash",
+    "tests/road-next.bats",
+    "tests/road-note.bats",
+    "tests/road-skill.bats",
     "tests/router-spec-rules.bats",
     "tests/router-triage-line.bats",
     "tests/rules.bats",
@@ -351,12 +359,15 @@
     "tests/step-expect.bats",
     "tests/step-helper.bash",
     "tests/step-history.bats",
+    "tests/step-ladder.bats",
     "tests/step-next.bats",
     "tests/step-note.bats",
     "tests/step-panel-bench.bats",
     "tests/step-proof-history.bats",
+    "tests/step-proof-units.bats",
     "tests/step-proof.bats",
     "tests/step-skill.bats",
+    "tests/step-units-history.bats",
     "tests/stop-line.bats",
     "tests/suggestions.bats",
     "tests/test-shards.bats",
@@ -5088,6 +5099,135 @@
         "tests/step-panel-bench.bats"
       ],
       "timeout": 600
+    },
+    {
+      "id": "C389",
+      "req": "R191",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-units-history.bats"
+      ],
+      "files": [
+        "tests/step-units-history.bats",
+        "tests/road-helper.bash"
+      ]
+    },
+    {
+      "id": "C390",
+      "req": "R191",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-ladder.bats"
+      ],
+      "files": [
+        "tests/step-ladder.bats",
+        "tests/road-helper.bash"
+      ]
+    },
+    {
+      "id": "C391",
+      "req": "R191",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/step-proof-units.bats"
+      ],
+      "files": [
+        "tests/step-proof-units.bats",
+        "tests/road-helper.bash"
+      ]
+    },
+    {
+      "id": "C392",
+      "req": "R191",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/road-next.bats"
+      ],
+      "files": [
+        "tests/road-next.bats",
+        "tests/road-helper.bash"
+      ]
+    },
+    {
+      "id": "C393",
+      "req": "R191",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/road-note.bats"
+      ],
+      "files": [
+        "tests/road-note.bats",
+        "tests/road-helper.bash"
+      ]
+    },
+    {
+      "id": "C394",
+      "req": "R191",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r191/road-panel.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r191/road-panel.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/r189/helpers/screen.mjs"
+      ]
+    },
+    {
+      "id": "C395",
+      "req": "R191",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r191/road-same-time.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r191/road-same-time.test.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/r189/helpers/screen.mjs"
+      ]
+    },
+    {
+      "id": "C396",
+      "req": "R191",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/road-skill.bats"
+      ],
+      "files": [
+        "tests/road-skill.bats"
+      ]
+    },
+    {
+      "id": "C397",
+      "req": "R191",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/road-docs.bats"
+      ],
+      "files": [
+        "tests/road-docs.bats"
+      ]
+    },
+    {
+      "id": "C398",
+      "req": "R191",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-road.bats"
+      ],
+      "files": [
+        "tests/l3-road.bats"
+      ]
     }
   ],
   "project": {
@@ -12781,7 +12921,253 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M37",
-      "rules": []
+      "rules": [
+        {
+          "text": "a finished build records each plan done with its id, its tier, its tasks and its own seconds from the run's start to its vbw plan done, and the note counts the parts done as before",
+          "check": "C389",
+          "plan": "P149.1"
+        },
+        {
+          "text": "a plan's tier is its phase's at that moment, standard when the phase has none, and a plan the run left unfinished is no unit",
+          "check": "C389",
+          "plan": "P149.1"
+        },
+        {
+          "text": "a fix round records its fixes and the highest tier of their phases",
+          "check": "C389",
+          "plan": "P149.1"
+        },
+        {
+          "text": "planning records how many open requirements of the milestone it planned",
+          "check": "C389",
+          "plan": "P149.1"
+        },
+        {
+          "text": "QA records the phases it checked, each with its tier",
+          "check": "C389",
+          "plan": "P149.1"
+        },
+        {
+          "text": "entries written before (kind, seconds, parts) stay readable beside the new ones and the latest 50 of each kind are kept",
+          "check": "C389",
+          "plan": "P149.1"
+        },
+        {
+          "text": "a damaged or unwritable history or runs store never fails a step and only means no end time yet",
+          "check": "C389",
+          "plan": "P149.1"
+        },
+        {
+          "text": "a plan's expected seconds are the median seconds per task over the latest 10 finished plans of its tier, times its tasks; another tier and older plans do not count",
+          "check": "C390",
+          "plan": "P149.2"
+        },
+        {
+          "text": "a build wave's expected time is its longest plan's, never the sum of its plans",
+          "check": "C390",
+          "plan": "P149.2"
+        },
+        {
+          "text": "with fewer than 3 finished plans of the tier that recorded tasks, a plan takes the median seconds per plan at that tier",
+          "check": "C390",
+          "plan": "P149.2"
+        },
+        {
+          "text": "with fewer than 3 finished plans of the tier, a plan takes the median seconds per plan of any tier",
+          "check": "C390",
+          "plan": "P149.2"
+        },
+        {
+          "text": "builds that recorded only parts still count by today's rule, the median seconds per plan times the wave's plans",
+          "check": "C390",
+          "plan": "P149.2"
+        },
+        {
+          "text": "with fewer than 3 plans in all there is no end time and no guess",
+          "check": "C390",
+          "plan": "P149.2"
+        },
+        {
+          "text": "vbw next --json's step, the note vbw run start writes and run start's sentence use the new expected times in D425's unchanged wording, within a minute of each other",
+          "check": "C390",
+          "plan": "P149.1"
+        },
+        {
+          "text": "a fix round's expected time is the median wall time of the latest 10 fix rounds at its tier, whatever the fix count",
+          "check": "C390",
+          "plan": "P149.2"
+        },
+        {
+          "text": "a fix round with fewer than 3 rounds at its tier takes the median of any tier, and fewer than 3 rounds in all give no time",
+          "check": "C390",
+          "plan": "P149.2"
+        },
+        {
+          "text": "planning's expected time is the median seconds per open requirement over the latest 10 planning steps that recorded a count, times the requirements to plan now",
+          "check": "C390",
+          "plan": "P149.2"
+        },
+        {
+          "text": "with fewer than 3 planning steps that recorded a count, planning takes the median planning time as today",
+          "check": "C390",
+          "plan": "P149.2"
+        },
+        {
+          "text": "QA's expected time is the sum over its phases of the median seconds per phase at the phase's tier, else per phase of any tier, else today's median QA time, else none",
+          "check": "C390",
+          "plan": "P149.2"
+        },
+        {
+          "text": "a proof records every unit it ran with that unit's own seconds, in vbw prove and in the proof inside vbw fix done",
+          "check": "C391",
+          "plan": "P149.3"
+        },
+        {
+          "text": "a proof's expected time is the sum of its units' last recorded seconds in runs.json times the median ratio of wall time to summed unit time over the latest 10 proofs that recorded units, rounded",
+          "check": "C391",
+          "plan": "P149.2"
+        },
+        {
+          "text": "a unit never run before counts as the median of the proof's known units",
+          "check": "C391",
+          "plan": "P149.2"
+        },
+        {
+          "text": "without proofs that recorded units, proofs that recorded only parts give today's time per unit; with fewer than 3 finished proofs there is no time",
+          "check": "C391",
+          "plan": "P149.2"
+        },
+        {
+          "text": "vbw next --json carries road {seconds, end, rounds, basis, say}: the waves still to build at their longest plan, one proof per wave over the phase's checks not yet passed, QA where the tier needs it, and the usual fix rounds each as one fix round plus one proof plus one QA recheck",
+          "check": "C392",
+          "plan": "P150.1"
+        },
+        {
+          "text": "the usual fix rounds per tier are the rounded median of outcome.fix_rounds over the latest 10 finished phases of that tier (1, 2, 2 and 5 give 2)",
+          "check": "C392",
+          "plan": "P150.1"
+        },
+        {
+          "text": "with fewer than 3 finished phases of a tier the road counts no fix rounds for it and the sentence says so",
+          "check": "C392",
+          "plan": "P150.1"
+        },
+        {
+          "text": "a wave already built leaves the road, and a built phase whose checks are not passed still counts one proof",
+          "check": "C392",
+          "plan": "P150.1"
+        },
+        {
+          "text": "before planning the road is the planning step alone and its sentence says the rest follows once the work is planned; it never guesses the unplanned work",
+          "check": "C392",
+          "plan": "P150.1"
+        },
+        {
+          "text": "when any needed piece has no basis, road.end and road.seconds are null and say names the missing kind; a made-up time never appears",
+          "check": "C392",
+          "plan": "P150.1"
+        },
+        {
+          "text": "durations over an hour read 'about 2 h 36 min' and the clock follows the step's rules",
+          "check": "C392",
+          "plan": "P150.1"
+        },
+        {
+          "text": "with no phase left (the milestone shipped) road is null and vbw status shows no milestone end",
+          "check": "C392",
+          "plan": "P150.1"
+        },
+        {
+          "text": "vbw status --json carries the same road as vbw next --json and vbw status prints its sentence",
+          "check": "C392",
+          "plan": "P150.2"
+        },
+        {
+          "text": "while a step runs, vbw next --json, vbw status --json and the note give the identical milestone end",
+          "check": "C392",
+          "plan": "P150.2"
+        },
+        {
+          "text": "vbw next writes the road into next.json beside the step",
+          "check": "C393",
+          "plan": "P150.2"
+        },
+        {
+          "text": "vbw run start writes the road into the note as the running wave's end plus the rest, and says it",
+          "check": "C393",
+          "plan": "P150.2"
+        },
+        {
+          "text": "a plan done on a late build moves the step's end and the milestone's end by the same amount at once",
+          "check": "C393",
+          "plan": "P150.2"
+        },
+        {
+          "text": "a proof of its own carries the road in its note and moves it with each unit that makes it late",
+          "check": "C393",
+          "plan": "P150.2"
+        },
+        {
+          "text": "the note's road goes with the note when the run ends and next.json keeps the last vbw next's road",
+          "check": "C393",
+          "plan": "P150.2"
+        },
+        {
+          "text": "Mission Control shows the kernel's road sentence from the step note while a step runs, stamped, in place of the old milestone row, in the estimate colour",
+          "check": "C394",
+          "plan": "P151.1"
+        },
+        {
+          "text": "when road.end is null Mission Control shows 'No estimate yet' with the kernel's reason, plain",
+          "check": "C394",
+          "plan": "P151.1"
+        },
+        {
+          "text": "with nothing running Mission Control shows the road of the last vbw next from next.json, and the note's road wins while its step runs",
+          "check": "C394",
+          "plan": "P151.1"
+        },
+        {
+          "text": "a road of null, or none at all, shows no milestone row, and a history alone shows none: the panel works no milestone time out itself and panel-estimate.js returns no milestone",
+          "check": "C394",
+          "plan": "P151.1"
+        },
+        {
+          "text": "the panel only reads while it shows the road",
+          "check": "C394",
+          "plan": "P151.1"
+        },
+        {
+          "text": "the status line, Comms and Mission Control show the identical step HH:MM, and the road's HH:MM shows in Mission Control only",
+          "check": "C395",
+          "plan": "P151.1"
+        },
+        {
+          "text": "the router says road.say with step.say, as given, before it starts planning, a build, a fix, QA or a background proof",
+          "check": "C396",
+          "plan": "P151.2"
+        },
+        {
+          "text": "/vbw:status passes the milestone's end on in vbw status's words",
+          "check": "C396",
+          "plan": "P151.2"
+        },
+        {
+          "text": "docs/panel.md explains the time per unit at a tier, the fallback ladder and its 3-step minimum, that side-by-side plans are not added, the proof's unit times and ratio, the road's pieces, how the usual fix rounds are counted and named, 'no milestone end time yet', and that the history is this project's only",
+          "check": "C397",
+          "plan": "P151.3"
+        },
+        {
+          "text": "docs/next.md describes road with its fields and sentence; docs/statusline.md says the status line shows the step's time only; docs/rigor.md connects fix_rounds to the milestone's end; the README names the milestone's end with the panel",
+          "check": "C397",
+          "plan": "P151.3"
+        },
+        {
+          "text": "the L3 road scenario exists, seeds a tiered history and phase outcomes, and its committed result shows both sentences in chat, the same milestone HH:MM in Mission Control, the status line without the milestone time, and 'no end time yet' for both without history",
+          "check": "C398",
+          "plan": "P151.4"
+        }
+      ]
     }
   ],
   "phases": [
@@ -19662,6 +20048,94 @@
         "qa_findings": 4,
         "escalations": 3
       }
+    },
+    {
+      "id": "P149",
+      "title": "A step's end time comes from the time per unit of work at its rigor tier, times the work's size",
+      "reqs": [
+        "R191"
+      ],
+      "milestone": "M37",
+      "goal": "When VBW starts planning, a build, a fix, a proof or QA, the end time it gives is worked out from how long one unit of that work (a plan's task at its rigor tier, a proof's check, a phase at its tier, a requirement) took before in this project, multiplied by the size of this step, instead of one average per kind of step.",
+      "criteria": [
+        "The step history (steps.json in the project's git folder, the private file where VBW keeps how long past steps took) records, for every finished step, its units: a build records each plan with its id, its rigor tier (express, standard or deep, taken from the plan's phase at that moment), its number of tasks and its own seconds (from the run's start to that plan's vbw plan done); a fix round records its fixes and the highest tier of their phases; a proof records every unit it ran (check, test file or command) with that unit's own seconds; planning records the number of open requirements it planned; QA records the phases it checked with each phase's tier. Entries written before this change (kind, seconds, parts only) stay readable and are still counted at the coarse level below.",
+        "A plan's expected seconds are the median seconds per task over the latest 10 finished plans of the same tier in the history, times this plan's tasks. With fewer than 3 finished plans of that tier with tasks, VBW falls back to the median seconds per plan at that tier; with fewer than 3 of those, to the median per plan of any tier (today's rule); with fewer than 3 plans in all, there is no end time. A test shows each rung of this ladder being used, and that a guess is never shown when the bottom rung lacks 3 plans.",
+        "A build wave's expected time is the longest expected time among its plans (they build side by side), never their sum; a test with two plans of different sizes shows the wave's time equals the bigger plan's. A fix round's expected time is the median wall time of the latest 10 fix rounds whose tier matches (else any tier; fewer than 3 in all gives no time): the round's Devs work side by side and end with one shared vbw fix done, so its time does not grow with the fix count.",
+        "A proof's expected time is the sum of its units' own last recorded seconds (from runs.json, the per-check store in the project's git folder; a unit never run before counts as the median of the known ones), multiplied by the median ratio of wall time to summed unit time over the latest 10 proofs (so parallel lanes and this machine's load are learned, not assumed). With fewer than 3 finished proofs there is no time. A test with 4 units of known seconds and a seeded ratio shows the expected seconds equal the sum times the ratio, rounded.",
+        "Planning's expected time is the median seconds per open requirement over the latest 10 planning steps that recorded a count, times the requirements to plan now (fewer than 3 such steps: the median planning time, as today). QA's expected time is the sum, over the phases it will check, of the median seconds per phase at that phase's tier (fewer than 3 at a tier: per phase of any tier; fewer than 3 in all: no time).",
+        "vbw next --json's step, the running step's note (.vbw/runtime/step.json) and vbw run start's sentence all use these expected times; the wording of D425 ('about 12 min, until around 14:20', 'later than usual', 'N min late', 'no end time yet') is unchanged, so the status line, Comms and Mission Control need no change for the step's time. The late rules of D424 and D429 still apply unchanged.",
+        "Parts shown while a step runs are unchanged ('1 of 2', 'proving 12 of 40 checks'); a build's parts done still updates within 2 seconds of each vbw plan done.",
+        "The history keeps the latest 50 steps of each kind; a missing, damaged or unwritable history or runs store never fails a step and only means 'no end time yet'. The kernel rules hold: bash 3.2, JSON only through jq, record-sized data never on a command line, nothing written outside the project except the project's git folder (D433: no computer-wide pool)."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 5 (53474 bytes)",
+        "files: more than 2 in a repository tracking 1029 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R25 (C24), R32 (C28), R43 (C42, C43), R44 (C44, C45), R47 (C47), R49 (C48), R69 (C110, C120, C122), R79 (C107), R81 (C109, C111, C112, C113), R93 (C140, C141, C142, C143, C144), R98 (C154), R103 (C160), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R118 (C184), R144 (C208, C209), R149 (C217, C218, C219, C220, C221, C222), R153 (C235, C236, C239), R160 (C247, C263, C264), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R176 (C276, C277, C278), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P150",
+      "title": "VBW works out when the whole milestone should end, counting the usual fix rounds",
+      "reqs": [
+        "R191"
+      ],
+      "milestone": "M37",
+      "goal": "The kernel (VBW's record-keeping core) gives one clock time for the end of the milestone, adding up everything still ahead on the road (planning, each build wave, each proof, QA and the fix rounds a phase of that rigor tier usually needs in this project), and names the assumption it made.",
+      "criteria": [
+        "vbw next --json carries road (null when there is no milestone or nothing is left): {seconds, end, rounds: {tier: n, ...}, basis, say}. end is the UTC time the milestone should end; say is the one sentence VBW uses everywhere, for example 'Milestone end: about 2 h 10 min, until around 16:40, counting 2 fix rounds per deep phase (the usual here)'. The same road is in vbw status --json and printed by vbw status and /vbw:status under the running step's line.",
+        "The road adds, for every phase of the milestone not yet passed by QA: the expected time of each build wave still to build (P149's rule, from the plans' tiers and tasks, waves as vbw show contract lists them); one proof per wave sized by the phase's checks and test files not yet passed (P149's proof rule); QA when the phase's tier needs it (the same needs_qa rule vbw next uses); and the phase's usual fix rounds, each counted as one fix round plus one proof plus one QA recheck (medians of P149). A running step contributes its current end time (moved when late), not its first estimate.",
+        "Usual fix rounds per tier are the median of outcome.fix_rounds over the latest 10 finished phases of that tier in this project's record, rounded to a whole number; with fewer than 3 finished phases of that tier the road counts 0 rounds and the sentence says so ('counting no fix rounds: fewer than 3 finished deep phases here'). A test with seeded outcomes (deep: 1, 2, 2, 5 rounds) shows 2 counted; one with two deep outcomes shows 0 counted and the stated reason.",
+        "Before planning (the milestone has no phases yet) the road is the planning step alone and the sentence says the rest follows once the work is planned; it never guesses the unplanned work. When any needed piece has no basis (for example fewer than 3 proofs), road.end is null and say names the missing kind: 'no milestone end time yet (VBW has timed fewer than 3 proofs here)'. A made-up time never appears.",
+        "The road is written by the kernel next to the step: into .vbw/runtime/next.json by vbw next, and into the running step's note by vbw run start and at every vbw plan done or proof unit that moves the step's end, so a step running later than usual moves the milestone's end by the same amount within 2 seconds. Only the kernel writes these files.",
+        "With no phase left (the milestone is ready to ship or shipped) road is null and nothing is shown; the first vbw next of a new milestone gives a road again.",
+        "Clock times follow the step's rules (local 24-hour HH:MM, 'tomorrow 00:20' on another day); durations over an hour read 'about 2 h 10 min'. A test with one fixed history shows vbw next --json, vbw status --json and the note give the identical end time.",
+        "Bash 3.2, JSON only through jq, record-sized data by pipe or file (never --arg), and vbw next stays within its current test's time budget on the 2 MB record used by tests/big-record tests (the road is computed once per vbw next, not per phase per call)."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 8 (69669 bytes)",
+        "files: more than 2 in a repository tracking 1029 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R33 (C29), R37 (C35), R38 (C33, C34), R40 (C37), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R65 (C86, C87, C88, C89, C90), R71 (C115, C121), R79 (C107), R81 (C109, C111, C112, C113), R102 (C158, C159), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R115 (C181), R118 (C184), R121 (C187, C188), R123 (C190, C191), R132 (C199), R146 (C211), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R160 (C247, C263, C264), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P151",
+      "title": "The milestone's end time shows in Mission Control and VBW's messages, documented and shown in a real session",
+      "reqs": [
+        "R191"
+      ],
+      "milestone": "M37",
+      "goal": "People see the milestone's end as a clock time in Mission Control (the side panel) and in VBW's chat message when a step starts, read from the kernel's figure and worded the same everywhere; the status line keeps only the step's time; the docs explain the new estimate and a real session shows it.",
+      "criteria": [
+        "Mission Control's Now tab shows the kernel's road sentence in place of today's 'About 40 min left in the milestone.' row, in the estimate colour (amber, R89), stamped like the other estimate rows, and the 'No estimate yet' row when road.end is null with the kernel's reason. The panel reads road from the step note while a step runs and from next.json otherwise; it computes no milestone time itself. plugin/hooks/panel-estimate.js keeps only what the Timeline's history bars use; its milestone computation is removed, and tests/panel/estimate.test.mjs is updated to the panel's new contract (an approved check file: its change waits for the one approval before the proof).",
+        "Status line, Comms and Mission Control show the same step end time as before; the status line shows no milestone time (D435). A test with one fixed note and next.json shows the identical HH:MM for the step in all three and the road's HH:MM only in Mission Control.",
+        "When VBW starts planning, a build, a fix, QA or a background proof, its chat message says the step's sentence (step.say, as today) followed by the road sentence (road.say) on the same line or the next, exactly as vbw next --json gives them (plugin/skills/vibe/SKILL.md names both). The road's time is within one minute of what Mission Control shows once the step has started.",
+        "When nothing is running, Mission Control still shows the milestone's end from the last vbw next; when the milestone has no phase left, no milestone row shows.",
+        "The docs (docs/panel.md 'Time left', docs/next.md 'The step', docs/statusline.md, docs/rigor.md where it names outcome.fix_rounds, and the README where it describes the panel) explain: time per unit at a tier (plan task, fix round, proof unit, QA phase, requirement), the fallback ladder and its 3-step minimum, that side-by-side plans are not added, the proof's unit times and ratio, the road's pieces, how the usual fix rounds are counted and named, what makes the road say 'no milestone end time yet', and that the history is this project's only (D433). A docs test pins each statement to the code's behaviour.",
+        "An L3 run (the real Claude Code screen used like a user, through tools/l3-suite.sh; the steptime scenario extended or a new one) on a project with a seeded tiered history and seeded phase outcomes shows: the chat message with both sentences at a build's start, the same milestone HH:MM in Mission Control, the status line showing the step's time only, and a project with no history saying 'no end time yet' for both. Results in tools/l3-results and the progress log names the scenarios run and not run."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 17 (342021 bytes)",
+        "files: more than 2 in a repository tracking 1029 files",
+        "risk: none",
+        "breaks: R20, R41, R125",
+        "guarded: R3 (C3), R4 (C4), R5 (C5), R8 (C8), R13 (C12), R14 (C13), R16 (C15), R22 (C19), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R34 (C30), R35 (C31), R37 (C35), R39 (C36), R40 (C37), R42 (C38), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R56 (C61, C65), R57 (C59, C70, C71), R58 (C62, C63, C64, C67), R59 (C68, C92), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R82 (C117), R83 (C119), R84 (C123), R85 (C125), R86 (C124), R87 (C126, C127), R88 (C129), R89 (C128), R91 (C130), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R119 (C180), R121 (C187, C188), R122 (C189), R123 (C190, C191), R124 (C192, C193), R134 (C201), R135 (C202), R145 (C210), R149 (C217, C218, C219, C220, C221, C222), R151 (C231, C232), R152 (C233, C234), R157 (C244), R159 (C246), R161 (C248, C265, C266), R165 (C252), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
     }
   ],
   "plans": [
@@ -35670,6 +36144,221 @@
           "head": "0dd00065057c636ec187171fb916bb9eb4a48e23"
         }
       ]
+    },
+    {
+      "id": "P149.1",
+      "phase": "P149",
+      "title": "The step history records each unit of work: plans with tier, tasks and own seconds, the fix round's tier, planning's count, QA's phases",
+      "reqs": [
+        "R191"
+      ],
+      "files": [
+        "plugin/lib/steps.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Build units in the note and the history: vbw run start build writes note.units = [{id, tier, tasks, seconds: null}] per plan (tier = the plan's phase tier at that moment, 'standard' when the phase has none; tasks = the plan's tasks count, 0 without tasks); step_plan_done stamps the plan's own seconds (run start to now) on its unit; step_record copies the units of plans done into the history entry (a plan left unfinished is no unit), beside parts as today",
+        "Other kinds in step_record: a fix run records fixes (its ids) and tier (the highest tier among the phases of the fixes' requirements; none when no phase serves them); a planning run records reqs (the active milestone's requirements not proven or accepted at run start); a QA run records phases [{id, tier}] from the note's ids and the record",
+        "step_expect KIND SIZE: SIZE is JSON (build: [{id, tier, tasks}] for the wave; fix: {tier}; plan: {reqs}; qa: [{id, tier}]; proof: {units: [names]}) and the function runs lib/steps-expect.jq (P149.2) as `jq -n --slurpfile h <history> --slurpfile runs <runs.json or an empty store> --arg kind K --argjson size SIZE -f`, printing seconds or nothing; step_start and step_next build SIZE from the record (phase tiers and tasks for the wave's plans; the fixes' highest tier; the open requirements count; QA phases with tiers; proof unit names check:ID, file:PATH, command:NAME from the proof plan's TODO_CHECKS, TF_TODO and TODO_COMMANDS), so next --json, the note and run start's sentence all use the new times with D425's wording unchanged",
+        "Entries written before (kind, seconds, parts) stay as they are and still feed the coarse rungs; the latest 50 of each kind are kept; a missing, damaged or unwritable steps.json or runs.json never fails a step and only means no end time yet; record-sized data reaches jq by pipe or --slurpfile only; bash 3.2 (tests/step-units-history.bats green, tests/step-expect.bats and tests/step-next.bats still green)"
+      ]
+    },
+    {
+      "id": "P149.2",
+      "phase": "P149",
+      "title": "The expectation ladders: one jq program turns the history, the runs store and a step's units into its expected seconds",
+      "reqs": [
+        "R191"
+      ],
+      "files": [
+        "plugin/lib/steps-expect.jq"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "A new lib/steps-expect.jq with the interface in its header: input none; $h[0] the history ({steps}) or null, $runs[0] the runs store ({runs}) or null, $kind, $size (as P149.1 defines); output one integer (seconds) or empty; medians of an even count take the mean of the two middle values; every list is 'the latest 10' by the history's order",
+        "Build: for each plan of $size the rungs in order: median seconds per task over the latest 10 plan units of its tier that recorded tasks > 0, times its tasks; else (fewer than 3) median seconds per plan over the latest 10 plan units of its tier; else median over the latest 10 plan units of any tier; the wave is the longest plan (never the sum); when fewer than 3 plan units exist in all, today's coarse rule on the builds that recorded parts (median seconds per part over the latest 10, times the wave's plan count, 3 builds at least); else nothing",
+        "Fix: median seconds of the latest 10 fix rounds whose tier equals $size.tier (3 at least), else of the latest 10 of any tier (entries without a tier included), else nothing; never multiplied by the fix count. Planning: median seconds per requirement over the latest 10 planning steps that recorded reqs > 0, times $size.reqs (3 at least), else the median seconds of the latest 10 planning steps (today's rule)",
+        "QA: each recorded QA step with phases gives one sample per phase (its seconds split over its phases, at the phase's tier); per phase of $size the median of the latest 10 samples of its tier (3 at least), else of any tier (3 at least); summed over the phases; with fewer than 3 samples in all, today's rule (median of the latest 10 QA steps, 3 at least); else nothing",
+        "Proof: over the latest 10 proofs that recorded units, ratio = seconds / sum(units[].seconds) (entries with a zero sum skipped); with 3 ratios at least, sum over $size.units of runs[name].seconds (a name the store does not know counts as the median of this proof's known units; no known unit at all gives nothing) times the median ratio, rounded; without 3 such proofs, today's rule on proofs with parts (median seconds per part over the latest 10, times the unit count, 3 at least); else nothing. Verified by hand against fixture files with jq -n --slurpfile; tests/step-ladder.bats and tests/step-proof-units.bats pass once P149.1 and P149.3 call it"
+      ]
+    },
+    {
+      "id": "P149.3",
+      "phase": "P149",
+      "title": "Proofs record every unit's own seconds and are sized by their units",
+      "reqs": [
+        "R191"
+      ],
+      "files": [
+        "plugin/lib/proofsteps.sh",
+        "plugin/lib/cmd-prove.sh",
+        "plugin/lib/cmd-fix.sh"
+      ],
+      "after": [
+        "P149.1",
+        "P149.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "proofsteps_end takes the units that really ran (a JSON object name -> result with seconds: checks as check:ID, test files as file:PATH, project commands as command:NAME) through a scratch file under .vbw/runtime, and proofsteps_record writes units [{name, seconds}] beside parts; a proof that ran nothing still records nothing",
+        "vbw prove hands its checks, test files and commands results to proofsteps_end; vbw fix done hands its results and test-file results; the record-sized results reach jq by file, never --arg",
+        "proofsteps_begin sizes the proof's own note through step_expect proof {units: [names]} (the names of TODO_CHECKS, TF_TODO and the approved TODO_COMMANDS), so a proof of its own gets the units-times-ratio time; inside a build or fix the step's end stays and 'proving N of M checks' is unchanged",
+        "The fix round's parts done still move the end at vbw fix done (D429); tests/step-proof-units.bats green, tests/step-proof.bats and tests/step-proof-history.bats still green"
+      ]
+    },
+    {
+      "id": "P150.1",
+      "phase": "P150",
+      "title": "The road: one jq program adds up everything still ahead in the milestone",
+      "reqs": [
+        "R191"
+      ],
+      "files": [
+        "plugin/lib/road.sh",
+        "plugin/lib/road.jq",
+        "plugin/lib/record.sh",
+        "plugin/lib/cmd-show.sh"
+      ],
+      "after": [
+        "P149.1",
+        "P149.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "The waves definition of vbw show contract (cmd-show.sh's waves($m)) moves into VBW_JQ_DEFS (record.sh) as the one wave schedule, used by show contract and by road.jq, so the road counts the waves exactly as the approval lists them",
+        "lib/road.sh: road_compute RECORD_JSON NEXT_JSON NOTE_JSON (NOTE_JSON empty when no step is live) prints the road or null; it is sourced by steps.sh (P150.2) and sources nothing itself; it uses step_expect (lib/steps-expect.jq) for every piece, VBW_STEP_DEFS for the clock words, and passes the record, the history and the runs store to road.jq by --slurpfile only",
+        "road.jq pieces, for the milestone's phases not passed by QA: each build wave still to build (plans not done or blocked, in wave order) at its longest plan's expected time; per phase one proof per remaining wave holding a plan of the phase (one proof at least when any of its checks is not passing in the evidence), sized by the phase's checks not yet passing and, with an approved single-file form, their test files; QA when needs_qa (the same rule as next.jq) at the QA rule for [{id, tier}]; the phase's usual fix rounds times (one fix round at the phase's tier + one proof of the phase's checks + one QA recheck); a live step (the note) contributes its current end instead of its own piece's first estimate",
+        "Usual fix rounds per tier: median of outcome.fix_rounds over the latest 10 finished phases (those with an outcome, in record order) of that tier, rounded; fewer than 3 such phases counts 0 and is named; before planning (no phases) and at spec or convert the road is the planning step alone, sized by the open requirements; with no milestone, a shipped or parked milestone, or nothing left to build, prove or check, the road is null",
+        "The sentence: 'Milestone end: about 2 h 10 min, until around 16:40, counting 2 fix rounds per deep phase (the usual here)'; tiers in the order deep, standard, express joined with ' and '; a tier with fewer than 3 finished phases reads 'counting no fix rounds: fewer than 3 finished deep phases here' (several lacking tiers: 'deep and standard phases'); durations under an hour 'about 12 min', from an hour 'about 2 h 10 min' ('about 2 h' when the minutes are 0); clock by step_clock ('tomorrow 00:20'); before planning 'Milestone end: planning about 2 min, until around 12:50; the rest follows once the work is planned'; any piece without a basis gives seconds and end null, basis 'VBW has timed fewer than 3 proofs here' (kinds: plans, fix rounds, proofs, planning steps, QA checks; the first missing in road order) and say 'no milestone end time yet (' + basis + ')'; basis otherwise names the pieces and the rounds' source; computed in one jq run; bash 3.2"
+      ]
+    },
+    {
+      "id": "P150.2",
+      "phase": "P150",
+      "title": "vbw next, vbw status, run start, plan done and proof units carry the road",
+      "reqs": [
+        "R191"
+      ],
+      "files": [
+        "plugin/lib/cmd-next.sh",
+        "plugin/lib/cmd-status.sh",
+        "plugin/lib/steps.sh",
+        "plugin/lib/proofsteps.sh"
+      ],
+      "after": [
+        "P149.3",
+        "P150.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "cmd_next: where it computes step (the command itself), it computes road once with road_compute (the live note when a step runs) and writes {step, road} into the answer and next.json; an inner caller (the Stop hook's gate, ship, the loop) keeps the road of the previous next.json instead of dropping it, so Mission Control keeps the last vbw next's road",
+        "vbw status --json carries road (the live note's road while a step runs, else road_compute now); vbw status prints 'milestone: <road.say>' under the now: line, or alone when nothing runs; nothing when road is null",
+        "steps.sh sources road.sh; step_start writes road into the note (vbw run start prints the step's sentence, then the road's); proofsteps_begin writes road into a proof's own note",
+        "step_plan_done and proofsteps_note_update recompute road from the moved end, so a late step moves the milestone's end by the same amount at once; the gap road.end minus end is the rest of the road; only the kernel writes next.json and the note (tests/road-next.bats and tests/road-note.bats green; tests/big-record-commands.bats still green)"
+      ]
+    },
+    {
+      "id": "P151.1",
+      "phase": "P151",
+      "title": "Mission Control shows the kernel's road; the panel works no milestone time out itself",
+      "reqs": [
+        "R191"
+      ],
+      "files": [
+        "plugin/hooks/panel-estimate.js",
+        "plugin/hooks/panel-view.js",
+        "plugin/hooks/panel.js",
+        "plugin/hooks/panel-pane.js",
+        "tests/panel/estimate.test.mjs",
+        "tests/panel/glance.test.mjs",
+        "tests/panel/r190/step-panel.test.mjs",
+        "tests/panel/r189/now-box.test.mjs"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "panel-view.js: the estimate-milestone row is the kernel's road: the live step note's road while a step runs, else next.json's road; its text is road.say with a capital first letter and a final period, stamped [HH:MM] like estimate-step; road.end null gives 'No estimate yet: ' + road.basis + '.' (plain); road null or absent gives no row; the 'About N min left in the milestone' row, NO_BASIS and the panel's milestone arithmetic are gone",
+        "panel-estimate.js keeps only what the Timeline's bars use (MIN_STEPS and estimate's step median, pure and local) and returns no milestone; panel.js hands the step note and next.json through as today (no new file is read, nothing is written); panel-pane.js keeps a milestone row without a time plain",
+        "The approved check files whose assertions pinned the old row are updated to the new contract and nothing else: tests/panel/estimate.test.mjs (no milestone from the history), tests/panel/glance.test.mjs (the milestone row comes from next.json's or the note's road), tests/panel/r190/step-panel.test.mjs and tests/panel/r189/now-box.test.mjs (fixtures carry a road); they wait for the one approval before the proof; tests/panel/r191/road-panel.test.mjs and road-same-time.test.mjs green"
+      ]
+    },
+    {
+      "id": "P151.2",
+      "phase": "P151",
+      "title": "The router says the milestone's sentence with the step's; /vbw:status passes it on",
+      "reqs": [
+        "R191"
+      ],
+      "files": [
+        "plugin/skills/vibe/SKILL.md",
+        "plugin/skills/status/SKILL.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/skills/vibe/SKILL.md: the step.say rule also says road.say from vbw next --json, as given, on the same line or the next, before planning, a build, a fix, QA or a background proof; the line keeps naming plan, build, fix, qa, prove and background",
+        "plugin/skills/status/SKILL.md: when vbw status prints the milestone's end, include it in vbw status's words, never reworded",
+        "tests/road-skill.bats green; tests/step-skill.bats and tests/skills.bats still green"
+      ]
+    },
+    {
+      "id": "P151.3",
+      "phase": "P151",
+      "title": "Docs: how VBW works out a step's end and the milestone's end",
+      "reqs": [
+        "R191"
+      ],
+      "files": [
+        "docs/panel.md",
+        "docs/next.md",
+        "docs/statusline.md",
+        "docs/rigor.md",
+        "README.md"
+      ],
+      "after": [
+        "P150.2",
+        "P151.1"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/panel.md 'Time left': time per unit at a tier (a plan's task, a fix round, a proof's unit, a QA phase, a requirement), the fallback ladder and its 3-step minimum, side-by-side plans not added (the longest counts, never their sum), the proof's unit times from runs.json and its learned ratio, the road's pieces (waves, proofs, QA, the usual fix rounds), how the rounds are counted (median of outcome.fix_rounds, 3 finished phases of the tier at least) and named ('(the usual here)', 'counting no fix rounds: ...'), 'no milestone end time yet', 'the rest follows once the work is planned', and that the history is this project's only (D433); the Now tab example shows the 'Milestone end: ...' sentence and the old 'About 40 min left in the milestone.' and 'No estimate yet: there are not enough finished steps' sentences are gone everywhere in the file",
+        "docs/next.md 'The step': road {seconds, end, rounds, basis, say} with an example, road.say, and the no-basis sentence; docs/statusline.md: the status line shows the step's time only, the milestone's end is Mission Control's and the chat message's (D435)",
+        "docs/rigor.md: the outcome record's fix_rounds feeds the usual fix rounds of the milestone's end; README.md: where it describes the panel, Mission Control shows when the milestone should end; tests/road-docs.bats green, tests/step-docs.bats, tests/panel-now-docs.bats and tests/panel-glance.bats still green"
+      ]
+    },
+    {
+      "id": "P151.4",
+      "phase": "P151",
+      "title": "Real-session check: the milestone's end in chat and Mission Control",
+      "reqs": [
+        "R191"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3-results/road.json"
+      ],
+      "after": [
+        "P150.2",
+        "P151.1",
+        "P151.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "scenario_road in tools/l3-suite.sh (in ALL and the header): a two-plan project like steptime's with a seeded tiered history (plan units with tiers and tasks, proofs with units and runs.json, QA phases with tiers, fix rounds with tiers) and seeded phase outcomes in a shipped milestone; phase A without history: vbw next --json says no end time yet for the step and for the road, and the screen shows it; phase B: the user types /vbw:vibe and the build runs through the real window",
+        "Facts from the screen at 2 s steps and from next.json: chat_step_end and chat_road_end (both sentences at the build's start), panel_road_end (Mission Control's milestone row), same_road_end (within a minute), statusline_has_road (false), no_history_no_end_time; result_write road with a not_tested list",
+        "Run it (bash tools/l3-suite.sh road) and commit tools/l3-results/road.json; tests/l3-road.bats green; the run's summary names the scenarios run and not run for the progress log"
+      ]
     }
   ],
   "fixes": [
@@ -41004,6 +41693,24 @@
       "id": "D432",
       "at": "2026-10-17T11:41:37Z",
       "text": "Shipped M36 Every long VBW step (planning, build, proof, QA) shows what it is doing now and when it should end, as a clock time from how long the same step took before in this project, in the panel, status line and VBW's messages; absorbs T85. Final polish before 2.1.0 (owner 2026-10-10: cosmetics last, core first unless a technical reason makes it urgent): 1 requirement proven or accepted"
+    },
+    {
+      "id": "D433",
+      "text": "Timing history: this project only (as today); no computer-wide pool",
+      "why": "chosen by the loop, not the Architect's recommendation: a shared pool would be a fourth write outside the project, which the kernel rules (CLAUDE.md, three exceptions) leave to the owner; trade-off accepted: a new project shows no end time for its first steps and counts fix rounds only once it has seen some",
+      "at": "2026-10-17T12:47:29Z"
+    },
+    {
+      "id": "D434",
+      "text": "Milestone end: one clock time counting the usual number of fix rounds in this project, with the assumption named",
+      "why": "chosen by the loop: one time to plan around, as D424/D425 chose for a step; trade-off accepted: the time moves when a milestone needs more or fewer rounds",
+      "at": "2026-10-17T12:47:30Z"
+    },
+    {
+      "id": "D435",
+      "text": "Milestone end time shows in Mission Control and in VBW's chat message when a step starts; the status line keeps only the step's time",
+      "why": "chosen by the loop: the status line stays short and two clock times are never side by side; trade-off accepted: with the panel closed the milestone time shows only when a step starts",
+      "at": "2026-10-17T12:47:31Z"
     }
   ],
   "commands": {
@@ -46872,6 +47579,15 @@
         "milestone": "M37",
         "started": "2026-10-17T12:37:39Z",
         "ended": "2026-10-17T12:46:59Z",
+        "cost": null
+      },
+      {
+        "id": "plan-20261017T124733Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-17T12:47:33Z",
+        "ended": "2026-10-17T14:08:30Z",
         "cost": null
       }
     ],
