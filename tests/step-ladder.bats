@@ -56,6 +56,8 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
 }
 
 @test "R191: rung 2: with fewer than 3 plans of the tier that recorded tasks, the median seconds per plan at that tier" {
+  # Another tier's quick plans must not pull the median (any-tier would give 300).
+  hist_build deep - 10 3
   hist_build standard - 300 1
   hist_build standard - 500 1
   hist_build standard - 700 1
