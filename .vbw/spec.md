@@ -189,6 +189,7 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 - R188 [auto] Cost: at standard and deep, mutation-check a plan's own tests before its build ends, so QA stops finding tests that cannot fail one round at a time (M15: each deep QA round found 1-2 such gaps, about an hour per loop)
 - R189 [auto] Final polish (panel trust, from M18): every band and pane message disappears as soon as it stops being true (P10); no 'VBW needs you' card with buttons in the band (P1); the sound plays once per question, only with Claude Code's own menu (B1); finished agents leave the crew list at once (P4); owner judges it by eye. Do together with P2, P3, P5, P6, P9, T64, T78, T81, T87
 - R190 [auto] Every long VBW step (planning, build, proof, QA) shows what it is doing now and when it should end, as a clock time from how long the same step took before in this project, in the panel, status line and VBW's messages; absorbs T85. Final polish before 2.1.0 (owner 2026-10-10: cosmetics last, core first unless a technical reason makes it urgent)
+- R191 [auto] ETA quality for T102 (cosmetic leg, brainstorm inbox 2026-10-10): estimate per unit of work (plan, task, check by tier from .git/vbw/steps.json) times the work size, and the whole road (build, proof, QA, likely fix rounds from this machine's history), not only the current step
 
 <!-- One requirement per line: an id, how it is proved, and a user-observable
      statement. [auto] = a check can prove it; [human] = only a person can judge it.
