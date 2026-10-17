@@ -94,7 +94,7 @@ last() { jq -c --arg k "$1" '[.steps[] | select(.kind == $k)] | last' "$STEPS"; 
   step_finish P1.1 src/a.txt
   "$VBW" run end > /dev/null
   [ "$(jq '[.steps[] | select(.kind == "build")] | length' "$STEPS")" -eq 50 ] || { jq '.steps | length' "$STEPS"; false; }
-  jq -e '[.steps[] | select(.kind == "build" and (has("units") | not))] | length == 49
+  jq -e '([.steps[] | select(.kind == "build" and (has("units") | not))] | length == 49)
     and ([.steps[] | select(.kind == "build" and .seconds == 300 and .parts == 1 and (has("units") | not))] | length == 2)
     and ([.steps[] | select(.kind == "build" and has("units"))] | length == 1)' "$STEPS" || { cat "$STEPS"; false; }
   step_seed build 1 1 3

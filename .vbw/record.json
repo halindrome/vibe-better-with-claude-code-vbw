@@ -20067,7 +20067,7 @@
         "Parts shown while a step runs are unchanged ('1 of 2', 'proving 12 of 40 checks'); a build's parts done still updates within 2 seconds of each vbw plan done.",
         "The history keeps the latest 50 steps of each kind; a missing, damaged or unwritable history or runs store never fails a step and only means 'no end time yet'. The kernel rules hold: bash 3.2, JSON only through jq, record-sized data never on a command line, nothing written outside the project except the project's git folder (D433: no computer-wide pool)."
       ],
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 5 (53474 bytes)",
@@ -20077,7 +20077,15 @@
         "guarded: R25 (C24), R32 (C28), R43 (C42, C43), R44 (C44, C45), R47 (C47), R49 (C48), R69 (C110, C120, C122), R79 (C107), R81 (C109, C111, C112, C113), R93 (C140, C141, C142, C143, C144), R98 (C154), R103 (C160), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R118 (C184), R144 (C208, C209), R149 (C217, C218, C219, C220, C221, C222), R153 (C235, C236, C239), R160 (C247, C263, C264), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R176 (C276, C277, C278), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "escalations": [
+        {
+          "at": "2026-10-17T14:21:07Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "Dev blocked P149.1: Code done and committed (166c87e0): tasks 1-4 in plugin/lib/steps.sh. C389 cannot go green as approved: tests/step-units-history.bats test 6 ('entries from before stay...') has a jq precedence bug at its first jq -e: '[.steps[]|select(...)] | length == 49 and ([.steps[]...' applies '.steps' to the array, so jq errors 'Cannot index array with string steps' whatever the code does. With the one-line fix (wrap the first operand in parentheses: '([...] | length == 49) and (...)') all 7 tests of C389 pass, but vbw commit refuses that check file (not a survivor's rule file) and vbw mutate refuses to run with it uncommitted. The fix is left uncommitted in the working tree for you to approve/commit. Separately, tests/step-proof.bats test 'R190 (D429): a late fix moves its end to its own pace' (line 240, an R190 check) now fails at line 247: it expects a 3-fix round to take 3x the per-fix median (900 s), which R191.15 replaces with the round's wall median (300 s); that R190 assertion needs updating with R191's approval. Mutation step not run (needs the check file committed)."
+        }
+      ]
     },
     {
       "id": "P150",
@@ -20135,7 +20143,15 @@
         "guarded: R3 (C3), R4 (C4), R5 (C5), R8 (C8), R13 (C12), R14 (C13), R16 (C15), R22 (C19), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R34 (C30), R35 (C31), R37 (C35), R39 (C36), R40 (C37), R42 (C38), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R56 (C61, C65), R57 (C59, C70, C71), R58 (C62, C63, C64, C67), R59 (C68, C92), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R82 (C117), R83 (C119), R84 (C123), R85 (C125), R86 (C124), R87 (C126, C127), R88 (C129), R89 (C128), R91 (C130), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R119 (C180), R121 (C187, C188), R122 (C189), R123 (C190, C191), R124 (C192, C193), R134 (C201), R135 (C202), R145 (C210), R149 (C217, C218, C219, C220, C221, C222), R151 (C231, C232), R152 (C233, C234), R157 (C244), R159 (C246), R161 (C248, C265, C266), R165 (C252), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-17T14:12:34Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P151.1: tests/panel/pane.test.mjs (approved check file, not among the plan's files) fails after the change: test 'progress is green, the estimate amber and the cost in the accent colour' needs an estimate-milestone row, which now comes only from a road. Fix: add road:{seconds:7800,end:iso(NOW+7800*S),rounds:{deep:2},basis:'2 waves, 2 proofs',say:'milestone end: about 2 h 10 min, until around 16:40'} to the step() fixture there (patch saved at .vbw/runtime/scratch/pane.patch, applies with git apply). The plan needs pane.test.mjs added to its files. Tasks 1-3 are otherwise done and committed (57bd896e, e7fc5bf8, 7e863abf); panel-pane.js and panel.js needed no change; mutation step not run."
+        }
+      ]
     }
   ],
   "plans": [
@@ -36156,14 +36172,15 @@
         "plugin/lib/steps.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "Build units in the note and the history: vbw run start build writes note.units = [{id, tier, tasks, seconds: null}] per plan (tier = the plan's phase tier at that moment, 'standard' when the phase has none; tasks = the plan's tasks count, 0 without tasks); step_plan_done stamps the plan's own seconds (run start to now) on its unit; step_record copies the units of plans done into the history entry (a plan left unfinished is no unit), beside parts as today",
         "Other kinds in step_record: a fix run records fixes (its ids) and tier (the highest tier among the phases of the fixes' requirements; none when no phase serves them); a planning run records reqs (the active milestone's requirements not proven or accepted at run start); a QA run records phases [{id, tier}] from the note's ids and the record",
         "step_expect KIND SIZE: SIZE is JSON (build: [{id, tier, tasks}] for the wave; fix: {tier}; plan: {reqs}; qa: [{id, tier}]; proof: {units: [names]}) and the function runs lib/steps-expect.jq (P149.2) as `jq -n --slurpfile h <history> --slurpfile runs <runs.json or an empty store> --arg kind K --argjson size SIZE -f`, printing seconds or nothing; step_start and step_next build SIZE from the record (phase tiers and tasks for the wave's plans; the fixes' highest tier; the open requirements count; QA phases with tiers; proof unit names check:ID, file:PATH, command:NAME from the proof plan's TODO_CHECKS, TF_TODO and TODO_COMMANDS), so next --json, the note and run start's sentence all use the new times with D425's wording unchanged",
         "Entries written before (kind, seconds, parts) stay as they are and still feed the coarse rungs; the latest 50 of each kind are kept; a missing, damaged or unwritable steps.json or runs.json never fails a step and only means no end time yet; record-sized data reaches jq by pipe or --slurpfile only; bash 3.2 (tests/step-units-history.bats green, tests/step-expect.bats and tests/step-next.bats still green)"
-      ]
+      ],
+      "note": "Code done and committed (166c87e0): tasks 1-4 in plugin/lib/steps.sh. C389 cannot go green as approved: tests/step-units-history.bats test 6 ('entries from before stay...') has a jq precedence bug at its first jq -e: '[.steps[]|select(...)] | length == 49 and ([.steps[]...' applies '.steps' to the array, so jq errors 'Cannot index array with string steps' whatever the code does. With the one-line fix (wrap the first operand in parentheses: '([...] | length == 49) and (...)') all 7 tests of C389 pass, but vbw commit refuses that check file (not a survivor's rule file) and vbw mutate refuses to run with it uncommitted. The fix is left uncommitted in the working tree for you to approve/commit. Separately, tests/step-proof.bats test 'R190 (D429): a late fix moves its end to its own pace' (line 240, an R190 check) now fails at line 247: it expects a 3-fix round to take 3x the per-fix median (900 s), which R191.15 replaces with the round's wall median (300 s); that R190 assertion needs updating with R191's approval. Mutation step not run (needs the check file committed)."
     },
     {
       "id": "P149.2",
@@ -36184,6 +36201,222 @@
         "Fix: median seconds of the latest 10 fix rounds whose tier equals $size.tier (3 at least), else of the latest 10 of any tier (entries without a tier included), else nothing; never multiplied by the fix count. Planning: median seconds per requirement over the latest 10 planning steps that recorded reqs > 0, times $size.reqs (3 at least), else the median seconds of the latest 10 planning steps (today's rule)",
         "QA: each recorded QA step with phases gives one sample per phase (its seconds split over its phases, at the phase's tier); per phase of $size the median of the latest 10 samples of its tier (3 at least), else of any tier (3 at least); summed over the phases; with fewer than 3 samples in all, today's rule (median of the latest 10 QA steps, 3 at least); else nothing",
         "Proof: over the latest 10 proofs that recorded units, ratio = seconds / sum(units[].seconds) (entries with a zero sum skipped); with 3 ratios at least, sum over $size.units of runs[name].seconds (a name the store does not know counts as the median of this proof's known units; no known unit at all gives nothing) times the median ratio, rounded; without 3 such proofs, today's rule on proofs with parts (median seconds per part over the latest 10, times the unit count, 3 at least); else nothing. Verified by hand against fixture files with jq -n --slurpfile; tests/step-ladder.bats and tests/step-proof-units.bats pass once P149.1 and P149.3 call it"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a plan's expected seconds are the median seconds per task over the latest 10 finished plans of its tier, times its tasks; another tier and older plans do not count"
+          },
+          "what": "per-task median uses plain seconds",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:20:26Z",
+          "head": "7e863abfea64845766a77c710875212af5683f5d"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a build wave's expected time is its longest plan's, never the sum of its plans"
+          },
+          "what": "wave sums plans",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:22:21Z",
+          "head": "166c87e0998d4d11fc3bba5ce7c168f4c371dc10"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "with fewer than 3 finished plans of the tier that recorded tasks, a plan takes the median seconds per plan at that tier"
+          },
+          "what": "rung 2 dropped",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-17T14:23:20Z",
+          "head": "166c87e0998d4d11fc3bba5ce7c168f4c371dc10"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "with fewer than 3 finished plans of the tier, a plan takes the median seconds per plan of any tier"
+          },
+          "what": "rung 3 dropped",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:24:18Z",
+          "head": "166c87e0998d4d11fc3bba5ce7c168f4c371dc10"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "builds that recorded only parts still count by today's rule, the median seconds per plan times the wave's plans"
+          },
+          "what": "coarse rule uses one plan",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:25:17Z",
+          "head": "166c87e0998d4d11fc3bba5ce7c168f4c371dc10"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "with fewer than 3 plans in all there is no end time and no guess"
+          },
+          "what": "coarse basis without 3 minimum",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:26:15Z",
+          "head": "166c87e0998d4d11fc3bba5ce7c168f4c371dc10"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "with fewer than 3 finished plans of the tier that recorded tasks, a plan takes the median seconds per plan at that tier"
+          },
+          "what": "rung 2 dropped",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:28:46Z",
+          "head": "f72a8571ecf50726959388997c17d5a71245506b",
+          "strengthened": [
+            "tests/step-ladder.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a fix round with fewer than 3 rounds at its tier takes the median of any tier, and fewer than 3 rounds in all give no time"
+          },
+          "what": "fix any-tier fallback dropped",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:30:20Z",
+          "head": "f72a8571ecf50726959388997c17d5a71245506b"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "with fewer than 3 planning steps that recorded a count, planning takes the median planning time as today"
+          },
+          "what": "planning fallback dropped",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:31:18Z",
+          "head": "f72a8571ecf50726959388997c17d5a71245506b"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "QA's expected time is the sum over its phases of the median seconds per phase at the phase's tier, else per phase of any tier, else today's median QA time, else none"
+          },
+          "what": "qa phases not summed: max",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-17T14:32:14Z",
+          "head": "f72a8571ecf50726959388997c17d5a71245506b"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "QA's expected time is the sum over its phases of the median seconds per phase at the phase's tier, else per phase of any tier, else today's median QA time, else none"
+          },
+          "what": "qa phases not summed: max",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:37:13Z",
+          "head": "f8291355986fdb7437bd555efef2915ab2b91f90",
+          "strengthened": [
+            "tests/step-ladder.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a fix round's expected time is the median wall time of the latest 10 fix rounds at its tier, whatever the fix count"
+          },
+          "what": "fix takes the minimum instead of the median",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:38:20Z",
+          "head": "f8291355986fdb7437bd555efef2915ab2b91f90"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "planning's expected time is the median seconds per open requirement over the latest 10 planning steps that recorded a count, times the requirements to plan now"
+          },
+          "what": "planning times a constant 1",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:39:25Z",
+          "head": "f8291355986fdb7437bd555efef2915ab2b91f90"
+        }
       ]
     },
     {
@@ -36282,13 +36515,14 @@
         "tests/panel/r189/now-box.test.mjs"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "panel-view.js: the estimate-milestone row is the kernel's road: the live step note's road while a step runs, else next.json's road; its text is road.say with a capital first letter and a final period, stamped [HH:MM] like estimate-step; road.end null gives 'No estimate yet: ' + road.basis + '.' (plain); road null or absent gives no row; the 'About N min left in the milestone' row, NO_BASIS and the panel's milestone arithmetic are gone",
         "panel-estimate.js keeps only what the Timeline's bars use (MIN_STEPS and estimate's step median, pure and local) and returns no milestone; panel.js hands the step note and next.json through as today (no new file is read, nothing is written); panel-pane.js keeps a milestone row without a time plain",
         "The approved check files whose assertions pinned the old row are updated to the new contract and nothing else: tests/panel/estimate.test.mjs (no milestone from the history), tests/panel/glance.test.mjs (the milestone row comes from next.json's or the note's road), tests/panel/r190/step-panel.test.mjs and tests/panel/r189/now-box.test.mjs (fixtures carry a road); they wait for the one approval before the proof; tests/panel/r191/road-panel.test.mjs and road-same-time.test.mjs green"
-      ]
+      ],
+      "note": "tests/panel/pane.test.mjs (approved check file, not among the plan's files) fails after the change: test 'progress is green, the estimate amber and the cost in the accent colour' needs an estimate-milestone row, which now comes only from a road. Fix: add road:{seconds:7800,end:iso(NOW+7800*S),rounds:{deep:2},basis:'2 waves, 2 proofs',say:'milestone end: about 2 h 10 min, until around 16:40'} to the step() fixture there (patch saved at .vbw/runtime/scratch/pane.patch, applies with git apply). The plan needs pane.test.mjs added to its files. Tasks 1-3 are otherwise done and committed (57bd896e, e7fc5bf8, 7e863abf); panel-pane.js and panel.js needed no change; mutation step not run."
     },
     {
       "id": "P151.2",
@@ -36308,6 +36542,40 @@
         "plugin/skills/vibe/SKILL.md: the step.say rule also says road.say from vbw next --json, as given, on the same line or the next, before planning, a build, a fix, QA or a background proof; the line keeps naming plan, build, fix, qa, prove and background",
         "plugin/skills/status/SKILL.md: when vbw status prints the milestone's end, include it in vbw status's words, never reworded",
         "tests/road-skill.bats green; tests/step-skill.bats and tests/skills.bats still green"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R191",
+            "text": "the router says road.say with step.say, as given, before it starts planning, a build, a fix, QA or a background proof"
+          },
+          "what": "dropped road.say from the step rule",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C396": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:11:24Z",
+          "head": "510c40cdc4687e3b6f017ce97162528376036359"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "/vbw:status passes the milestone's end on in vbw status's words"
+          },
+          "what": "removed the milestone end sentence",
+          "files": [
+            "plugin/skills/status/SKILL.md"
+          ],
+          "checks": {
+            "C396": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T14:12:54Z",
+          "head": "7e863abfea64845766a77c710875212af5683f5d"
+        }
       ]
     },
     {
@@ -47594,6 +47862,19 @@
         "started": "2026-10-17T12:47:33Z",
         "ended": "2026-10-17T14:08:30Z",
         "cost": null
+      },
+      {
+        "id": "build-20261017T140931Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-17T14:09:31Z",
+        "ended": "2026-10-17T15:25:02Z",
+        "cost": {
+          "usd": 3.057367,
+          "in": 6417,
+          "out": 304
+        }
       }
     ],
     "milestones": {
