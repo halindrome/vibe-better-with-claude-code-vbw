@@ -1,6 +1,69 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "fix-20261017T022555Z",
+    "kind": "fix",
+    "started_at": "2026-10-17T02:25:55Z",
+    "files": [
+      "README.md",
+      "docs/next.md",
+      "docs/panel.md",
+      "docs/statusline.md",
+      "plugin/hooks/panel-mission-live.js",
+      "plugin/hooks/panel-pane.js",
+      "plugin/hooks/panel-stage.js",
+      "plugin/hooks/panel-step.js",
+      "plugin/hooks/panel-view.js",
+      "plugin/hooks/panel.js",
+      "plugin/lib/checks.sh",
+      "plugin/lib/cmd-fix.sh",
+      "plugin/lib/cmd-next.sh",
+      "plugin/lib/cmd-plan.sh",
+      "plugin/lib/cmd-prove.sh",
+      "plugin/lib/cmd-run.sh",
+      "plugin/lib/cmd-status.sh",
+      "plugin/lib/core.sh",
+      "plugin/lib/next.jq",
+      "plugin/lib/proofsteps.sh",
+      "plugin/lib/steps.sh",
+      "plugin/scripts/statusline.jq",
+      "plugin/scripts/vbw-statusline.sh",
+      "plugin/skills/status/SKILL.md",
+      "plugin/skills/vibe/SKILL.md",
+      "tests/panel/mission-live.test.mjs",
+      "tests/statusline.bats",
+      "tools/bench-hooks.sh",
+      "tools/bench-panel.mjs",
+      "tools/bench-panel.sh",
+      "tools/l3-results/steptime.json",
+      "tools/l3-suite.sh"
+    ],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "new_tests": true,
+    "editable": [
+      "tests/l3-step-time.bats",
+      "tests/panel/r190/same-time.test.mjs",
+      "tests/panel/r190/step-comms.test.mjs",
+      "tests/panel/r190/step-panel.test.mjs",
+      "tests/statusline-step.bats",
+      "tests/step-bench.bats",
+      "tests/step-docs.bats",
+      "tests/step-expect.bats",
+      "tests/step-helper.bash",
+      "tests/step-history.bats",
+      "tests/step-next.bats",
+      "tests/step-note.bats",
+      "tests/step-panel-bench.bats",
+      "tests/step-proof-history.bats",
+      "tests/step-proof.bats",
+      "tests/step-skill.bats"
+    ],
+    "cost": {
+      "usd": 1382.777123,
+      "in": 70075,
+      "out": 950
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -40949,6 +41012,17 @@
       "id": "D428",
       "at": "2026-10-17T01:00:04Z",
       "text": "Contract approved: 179 requirements, 383 checks, 443 plans (e90fefcccbfd)"
+    },
+    {
+      "id": "D429",
+      "text": "F245: a late fix or proof moves its end time at its own pace, as a late build does (D424 applies to every step with parts); the docs stay as written",
+      "why": "the criterion and docs/panel.md promise it for any step with parts, and the proof is the most common long step; narrowing the docs would weaken the promise",
+      "at": "2026-10-17T02:25:47Z"
+    },
+    {
+      "id": "D430",
+      "at": "2026-10-17T02:51:12Z",
+      "text": "Contract approved: 179 requirements, 383 checks, 443 plans (78cf42d3e7d1)"
     }
   ],
   "commands": {
