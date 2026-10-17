@@ -19574,7 +19574,15 @@
           "to": "deep",
           "reason": "proven requirement R190 failed"
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "594af9de0ab31d235302789bdcd569a651da099e89259432aae89c1ab3eb6e58",
+        "at": "2026-10-17T02:21:28Z",
+        "note": "30/32 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P148",
