@@ -19523,12 +19523,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "0462df96ab179b0f68469a6acb226a0d18443146c0906f94db368b31732a76f8",
-        "at": "2026-10-17T01:13:24Z",
-        "note": "19/20 checks",
-        "rounds": 1
+        "tree": "3fa18a901e94c60bf97d9222ca2f585ddeace26507c39dceaec9287ca07af059",
+        "at": "2026-10-17T04:31:09Z",
+        "note": "8/8 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 5,
+        "qa_findings": 4,
+        "escalations": 2
       }
     },
     {
@@ -19581,6 +19588,14 @@
         "tree": "1f9687d7a0a96a0273b3a75d301073e8f307562982bcbb3230d410ef6fff3b7e",
         "at": "2026-10-17T04:30:55Z",
         "note": "7/7 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 5,
+        "qa_findings": 4,
+        "escalations": 2
       }
     },
     {
@@ -19636,6 +19651,14 @@
         "tree": "5a48594dfef24f6f958e440df487c3f19b6a43911135e116706d07a4bb49d330",
         "at": "2026-10-17T04:31:01Z",
         "note": "7/7 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 5,
+        "qa_findings": 4,
+        "escalations": 3
       }
     }
   ],
@@ -37573,7 +37596,7 @@
       "req": "R190",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "A late step with parts only moves its end for a build. Criterion (D424) says any step with parts: once its own pace (time so far / parts done x parts left) ends after the first end time, the current end moves to that projection and is marked later than usual; it can move again. Only plugin/lib/steps.sh step_plan_done does this, and it selects $n.kind == \"build\" (line 210). A fix step's parts go up in plugin/lib/proofsteps.sh proofsteps_fix_done (lines 193-204) and a proof's own parts in proofsteps_note_update (lines 116-127); neither projects the pace, so end stays equal to first_end and late stays false. Fix and proof both have parts (step_kind_has_parts, steps.sh line 75), and docs/panel.md lines 512-515 promise the move for 'a step with parts'. What shows instead: step_words prints 'until around HH:MM, later than usual' with an end time already in the past, never a new time. tests/step-note.bats line 73 only covers a build, and no test in tests/step-proof.bats checks late on a fix or proof. Regression test: seed 3 proofs (and 3 fixes) with history, start a proof of its own (or fix) of N units, back-date its started_at so the pace is past first_end, finish one unit (or close one fix) and expect end > first_end and late == true in the note, then a second unit moving it again, and never earlier than first_end.",
       "phase": "P146"
     },
