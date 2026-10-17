@@ -13,6 +13,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
+import { spawnSync } from 'node:child_process'
 import { mount, record, next, lease, walk, deepFreeze, PLUGIN, ROOT, T0 } from '../helpers/fake-mod.mjs'
 import { screen, hhmm } from '../r189/helpers/screen.mjs'
 
@@ -182,9 +183,16 @@ test('the time keeps the estimate colour; a sentence with no time stays plain', 
 })
 
 test("a proof of another session is not this panel's step; a proof of its own is", async () => {
-  const proof = (session) => note({ kind: 'proof', run: null, session, pid: 4242, ids: [], doing: 'proving 12 of 40 checks', parts: { done: 12, total: 40 }, proof: { done: 12, total: 40 } })
+  const proof = (session) => note({ kind: 'proof', run: null, session, pid: process.pid, ids: [], doing: 'proving 12 of 40 checks', parts: { done: 12, total: 40 }, proof: { done: 12, total: 40 } })
   const other = await session(record(), proof('sess-9'))
   assert.doesNotMatch(await paneText(other), /until around/)
   const own = await session(record(), proof('sess-1'))
   assert.match(await paneText(own), /until around/)
+})
+
+test("a proof of this session whose process is gone is no step in Mission Control; a live one is", async () => {
+  const dead = spawnSync(process.execPath, ['-e', '0']).pid
+  const proof = (pid) => note({ kind: 'proof', run: null, session: 'sess-1', pid, ids: [], doing: 'proving 12 of 40 checks', parts: { done: 12, total: 40 }, proof: { done: 12, total: 40 } })
+  assert.doesNotMatch(await paneText(await session(record(), proof(dead))), /until around/)
+  assert.match(await paneText(await session(record(), proof(process.pid))), /until around/)
 })

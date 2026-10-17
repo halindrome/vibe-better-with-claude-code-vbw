@@ -9,6 +9,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
+import { spawnSync } from 'node:child_process'
 import { mount, record, next, lease, collect, PLUGIN, ROOT, T0 } from '../helpers/fake-mod.mjs'
 import { screen, hhmm } from '../r189/helpers/screen.mjs'
 
@@ -53,11 +54,18 @@ test("Comms shows the running step's time in full: 'about 12 min, until around H
 })
 
 test("a background proof shows in Comms as 'proving 12 of 40 checks' with its time", async () => {
-  const proof = note({ kind: 'proof', run: null, pid: 4242, ids: [], doing: 'proving 12 of 40 checks', parts: { done: 12, total: 40 }, proof: { done: 12, total: 40 } })
+  const proof = note({ kind: 'proof', run: null, pid: process.pid, ids: [], doing: 'proving 12 of 40 checks', parts: { done: 12, total: 40 }, proof: { done: 12, total: 40 } })
   const h = await session(record(), proof)
   const text = await comms(h)
   assert.ok(text.includes('proving 12 of 40 checks'), text)
   assert.ok(text.includes('until around ' + hhmm(END)), text)
+})
+
+test('a proof whose process is gone shows nowhere in Comms; a live one does', async () => {
+  const dead = spawnSync(process.execPath, ['-e', '0']).pid
+  const proof = (pid) => note({ kind: 'proof', run: null, pid, ids: [], doing: 'proving 12 of 40 checks', parts: { done: 12, total: 40 }, proof: { done: 12, total: 40 } })
+  assert.doesNotMatch(await comms(await session(record(), proof(dead))), /until around|proving 12/)
+  assert.match(await comms(await session(record(), proof(process.pid))), /until around/)
 })
 
 test('later than usual and minutes late read in Comms as in Mission Control', async () => {
