@@ -86,32 +86,33 @@ step_kind_has_parts() {
   return 1
 }
 
-# step_expect KIND PARTS: the expected seconds of a step of KIND with PARTS
-# parts (ignored for a kind without parts), empty when the history gives no
-# basis: a kind with parts takes the median time per part over its latest 10
-# finished steps that recorded parts, times PARTS; a kind without parts the
-# median of its latest 10; an even count takes the mean of the two middle
-# values; fewer than 3 such steps give nothing.
+# step_expect KIND SIZE: the expected seconds of a step of KIND and SIZE, empty
+# when the history gives no basis. SIZE is JSON: build [{id, tier, tasks}] (the
+# wave's plans), fix {tier}, plan {reqs}, qa [{id, tier}], proof {units: [names]}
+# (a bare number for a proof counts that many unknown units). The ladders are
+# lib/steps-expect.jq's (R191); a missing, damaged or unreadable history or runs
+# store only means no time.
 step_expect() {
-  local file out
+  local file runs size out
   file=$(step_history_file)
   [ -n "$file" ] && [ -f "$file" ] || return 0
-  out=$(jq -r --arg k "$1" --argjson parts "${2:-0}" --argjson wp "$(step_kind_has_parts "$1" && echo true || echo false)" '
-    def median: sort | length as $n
-      | if $n % 2 == 1 then .[($n - 1) / 2 | floor] else (.[$n / 2 - 1] + .[$n / 2]) / 2 end;
-    select(type == "object" and (.steps | type) == "array")
-    | [.steps[] | select(type == "object" and .kind == $k and (.seconds | type) == "number" and .seconds >= 0)]
-    | if $wp then
-        map(select((.parts | type) == "number" and .parts > 0)) | .[-10:]
-        | if length < 3 then empty else (map(.seconds / .parts) | median) * $parts | round end
-      else .[-10:] | if length < 3 then empty else (map(.seconds) | median) | round end end' "$file" 2> /dev/null) || return 0
+  [ -f "$VBW_LIB/steps-expect.jq" ] || return 0
+  runs="$(dirname "$file")/runs.json"
+  size=$2
+  case "$size" in
+    '' | *[!0-9]*) ;;
+    *) size=$(jq -nc --argjson n "$size" '{units: [range(0; $n) | "unit:\(.)"]}') ;;
+  esac
+  out=$(jq -n -r --slurpfile h <(jq -c 'select(type == "object" and (.steps | type) == "array")' "$file" 2> /dev/null) \
+    --slurpfile runs <(jq -c 'select(type == "object" and (.runs | type) == "object")' "$runs" 2> /dev/null) \
+    --arg kind "$1" --argjson size "$size" -f "$VBW_LIB/steps-expect.jq" 2> /dev/null) || return 0
   printf '%s\n' "$out"
 }
 
 # step_record LEASE_JSON: add the run that just ended to the history, with its
 # parts from its note. Best effort, never fails the caller.
 step_record() {
-  local file now tmp note parts=null
+  local file now tmp note extra='{}' record
   file=$(step_history_file)
   [ -n "$file" ] || return 0
   [ ! -d "$file" ] || return 0
@@ -119,15 +120,24 @@ step_record() {
   tmp="$file.$$"
   note=$(step_note_file)
   if [ -f "$note" ]; then
-    parts=$(jq -c --arg run "$(printf '%s' "$1" | jq -r '.run')" 'if .run == $run and (.parts | type) == "object" then .parts.total else null end' "$note" 2> /dev/null) || parts=null
-    [ -n "$parts" ] || parts=null
+    record=$(record_read 2> /dev/null) || record='{}'
+    extra=$(printf '%s' "$record" | jq -c --arg run "$(printf '%s' "$1" | jq -r '.run')" --slurpfile n "$note" '
+      ($n[0] // {}) as $n
+      | if $n.run != $run then {} else
+          (if ($n.parts | type) == "object" then {parts: $n.parts.total} else {} end)
+          + (if $n.kind == "build" then {units: [($n.units // [])[] | select(.seconds != null)]}
+             elif $n.kind == "fix" then {fixes: $n.ids} + (if $n.tier != null then {tier: $n.tier} else {} end)
+             elif $n.kind == "plan" and $n.reqs != null then {reqs: $n.reqs}
+             elif $n.kind == "qa" then
+               {phases: [$n.ids[] as $i | {id: $i, tier: (([.phases[]? | select(.id == $i)][0].tier) // "standard")}]}
+             else {} end) end' 2> /dev/null) || extra='{}'
+    [ -n "$extra" ] || extra='{}'
   fi
   mkdir -p "$(dirname "$file")" 2> /dev/null || return 0
-  { jq -c --arg now "$now" --argjson parts "$parts" --slurpfile old <(jq -c 'select(type == "object" and (.steps | type) == "array")' "$file" 2> /dev/null) '
+  { jq -c --arg now "$now" --argjson extra "$extra" --slurpfile old <(jq -c 'select(type == "object" and (.steps | type) == "array")' "$file" 2> /dev/null) '
       ([$old[0].steps[]? | select(type == "object" and (.kind | type) == "string")]
         + [{kind, run, started_at, ended_at: $now,
-            seconds: (($now | fromdateiso8601) - (.started_at | fromdateiso8601))}
-           + (if $parts == null then {} else {parts: $parts} end)])
+            seconds: (($now | fromdateiso8601) - (.started_at | fromdateiso8601))} + $extra])
       | {steps: (group_by(.kind) | map(.[-50:]) | add | sort_by(.ended_at))}' <<< "$1" > "$tmp" \
     && mv -f "$tmp" "$file"; } 2> /dev/null || rm -f "$tmp" 2> /dev/null || true
   return 0
@@ -177,10 +187,33 @@ step_qa_phases() {
     | [.phases[] | select(.milestone == $m and $qa[0].recheck[.id] != null and needs_qa(.tier // "standard"; $current)) | .id]' 2> /dev/null || echo '[]'
 }
 
+# step_size RECORD KIND IDS_JSON: the size of a step for step_expect, from the
+# record: build [{id, tier, tasks}] (a plan's tier is its phase's, standard when
+# the phase has none), fix {tier} (the highest tier among the phases of the
+# fixes' requirements, null when no phase serves them), plan {reqs} (the active
+# milestone's requirements not proven or accepted), qa [{id, tier}].
+step_size() {
+  printf '%s' "$1" | jq -c --arg k "$2" --argjson ids "$3" "$VBW_JQ_DEFS"'
+    def tier_of($pid): ([.phases[]? | select(.id == $pid)][0].tier) // "standard";
+    if $k == "build" then
+      [$ids[] as $i | ([.plans[]? | select(.id == $i)][0]) as $p
+        | {id: $i, tier: tier_of($p.phase // ""), tasks: (($p.tasks // []) | length)}]
+    elif $k == "fix" then
+      ([.fixes[]? | select(.id as $i | any($ids[]; . == $i)) | .req | select(. != null)]) as $rq
+      | [.phases[]? | select(any(.reqs[]?; . as $r | any($rq[]; . == $r))) | (.tier // "standard")]
+      | {tier: (if length == 0 then null else (map(tier_rank) | max) as $m | tiers[$m] end)}
+    elif $k == "plan" then
+      .milestone.id as $m
+      | {reqs: ([.requirements[]? | select(.milestone == $m and .status != "proven" and .status != "accepted")] | length)}
+    elif $k == "qa" then
+      [$ids[] as $i | {id: $i, tier: tier_of($i)}]
+    else null end' 2> /dev/null || echo null
+}
+
 # step_start KIND IDS_JSON: write the note of the run that just started (the
 # open run of the record), after removing a note that is not live.
 step_start() {
-  local kind="$1" ids="$2" record lease parts=null doing expect first_end=null
+  local kind="$1" ids="$2" record lease parts=null doing expect first_end=null size
   record=$(record_read)
   lease=$(printf '%s' "$record" | jq -c '.lease // empty')
   [ -n "$lease" ] || return 0
@@ -199,11 +232,16 @@ step_start() {
     elif $k == "qa" then (if length > 0 then "checking \(join(", "))" else "checking the built work" end)
     elif $k == "plan" then "planning"
     else "mapping the project" end')
-  expect=$(step_expect "$kind" "$(printf '%s' "$parts" | jq -r '.total // 0')")
+  size=$(step_size "$record" "$kind" "$ids")
+  expect=$(step_expect "$kind" "$size")
   [ -z "$expect" ] || first_end=$(printf '%s' "$lease" | jq -r --argjson e "$expect" '(.started_at | fromdateiso8601) + $e | todateiso8601')
-  step_note_write "$(printf '%s' "$lease" | jq -c --arg k "$kind" --argjson ids "$ids" --argjson parts "$parts" --arg doing "$doing" --arg fe "$first_end" '
+  step_note_write "$(printf '%s' "$lease" | jq -c --arg k "$kind" --argjson ids "$ids" --argjson parts "$parts" --arg doing "$doing" --arg fe "$first_end" --argjson size "$size" '
     {kind: $k, run, session: (.session // null), pid: null, started_at, ids: $ids, doing: $doing, parts: $parts, proof: null,
-     first_end: (if $fe == "null" then null else $fe end), end: (if $fe == "null" then null else $fe end), late: false}')"
+     first_end: (if $fe == "null" then null else $fe end), end: (if $fe == "null" then null else $fe end), late: false}
+    + (if $k == "build" then {units: [$size[]? | . + {seconds: null}]}
+       elif $k == "fix" then {tier: ($size.tier // null)}
+       elif $k == "plan" then {reqs: ($size.reqs // null)}
+       else {} end)')"
 }
 
 # step_plan_done: a plan was just recorded done; count the running build's
@@ -220,7 +258,10 @@ step_plan_done() {
     | select($n.kind == "build" and ($n.parts | type) == "object")
     | ([$n.ids[] | select(. as $i | any($pl[]; .id == $i and .status == "done"))] | length) as $done
     | .parts.done = $done
-    | step_move(now | floor)' "$note" 2> /dev/null) || return 0
+    | (now | floor) as $t
+    | .units = [(.units // [])[] | if .seconds == null and (. as $u | any($pl[]; .id == $u.id and .status == "done"))
+        then .seconds = ($t - (($n.started_at | fromdateiso8601))) else . end]
+    | step_move($t)' "$note" 2> /dev/null) || return 0
   [ -z "$out" ] || step_note_write "$out"
 }
 
@@ -244,28 +285,31 @@ step_say_note() {
   jq -r "$VBW_STEP_DEFS"'step_say(.; now | floor)' "$note" 2> /dev/null || true
 }
 
-# step_proof_units RECORD FULL: how many units a proof would run now, planned
-# by the proof's own reuse rule (cmd-prove.sh) without running anything.
+# step_proof_units RECORD FULL: the names of the units a proof would run now (a
+# JSON array of check:ID, file:PATH and command:NAME), planned by the proof's own
+# reuse rule (cmd-prove.sh) without running anything.
 step_proof_units() {
   (
     cd "$VBW_ROOT" || exit 1
     # shellcheck source=cmd-prove.sh
     . "$VBW_LIB/cmd-prove.sh"
-    local causes alln=0
+    local causes alln=0 c names='[]'
     proofreuse_plan "$1" "$2"
     causes=$(proofcauses_find "$1" "$2" "$(vbw_head_tree 2> /dev/null)")
     [ -z "$causes" ] || alln=1
     testfiles_plan "$1" "$alln"
     [ -z "$causes" ] || prove_plan_all "$1"
-    printf '%s\n' "$(( ${#TODO_CHECKS[@]} + $(printf '%s' "$TODO_COMMANDS" | jq 'length') + ${#TF_TODO[@]} ))"
-  ) 2> /dev/null || echo 0
+    for c in ${TODO_CHECKS[@]+"${TODO_CHECKS[@]}"}; do names=$(printf '%s' "$names" | jq -c --arg n "check:$c" '. + [$n]'); done
+    for c in ${TF_TODO[@]+"${TF_TODO[@]}"}; do names=$(printf '%s' "$names" | jq -c --arg n "file:$c" '. + [$n]'); done
+    printf '%s' "$TODO_COMMANDS" | jq -c --argjson names "$names" '$names + [.[] | "command:\(.)"]'
+  ) 2> /dev/null || echo '[]'
 }
 
 # step_next RECORD NEXT: the step vbw next --json carries: {kind, ids, parts,
 # seconds, end, say} for an answer that runs a step (plan, build, fix, qa, a
 # proof with units left to run), else null. A kind without parts has parts null.
 step_next() {
-  local kind ids='[]' parts=null full units n seconds=
+  local kind ids='[]' parts=null full units n seconds='' size=null
   case "$(printf '%s' "$2" | jq -r .action)" in
     plan) kind=plan ;;
     build) kind=build ids=$(printf '%s' "$2" | jq -c .detail.plans) ;;
@@ -276,14 +320,16 @@ step_next() {
       full=0
       printf '%s' "$2" | jq -e '.detail.full == true' > /dev/null && full=1
       units=$(step_proof_units "$1" "$full")
-      [ "${units:-0}" -gt 0 ] 2> /dev/null || { echo null; return 0; }
-      parts=$units ;;
+      parts=$(printf '%s' "$units" | jq 'length' 2> /dev/null) || parts=0
+      [ "${parts:-0}" -gt 0 ] 2> /dev/null || { echo null; return 0; }
+      size=$(jq -nc --argjson u "$units" '{units: $u}') ;;
     *) echo null; return 0 ;;
   esac
   step_kind_has_parts "$kind" && [ "$parts" = null ] && parts=$(printf '%s' "$ids" | jq 'length')
   n=$parts
   [ "$n" = null ] && n=0
-  seconds=$(step_expect "$kind" "$n")
+  [ "$kind" = proof ] || size=$(step_size "$1" "$kind" "$ids")
+  seconds=$(step_expect "$kind" "$size")
   jq -nc --arg k "$kind" --argjson ids "$ids" --argjson parts "$parts" --arg s "$seconds" "$VBW_STEP_DEFS"'
     (now | floor) as $t
     | (if $s == "" then null else ($s | tonumber) end) as $sec
