@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261017T042947Z",
+    "kind": "qa",
+    "started_at": "2026-10-17T04:29:47Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1385.297525,
+      "in": 138453,
+      "out": 345
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -19565,12 +19576,11 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "594af9de0ab31d235302789bdcd569a651da099e89259432aae89c1ab3eb6e58",
-        "at": "2026-10-17T02:21:28Z",
-        "note": "30/32 checks",
-        "rounds": 1
+        "tree": "1f9687d7a0a96a0273b3a75d301073e8f307562982bcbb3230d410ef6fff3b7e",
+        "at": "2026-10-17T04:30:55Z",
+        "note": "7/7 checks"
       }
     },
     {
@@ -37582,7 +37592,7 @@
       "req": "R190",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Status line and the other two surfaces disagree once a step with parts runs past its end and the kernel has not moved the end yet. plugin/scripts/statusline.jq step_line adds ', later than usual' only when the note has late==true. The kernel (plugin/lib/steps.sh step_words line 41) and panel-step.js stepWords say 'later than usual' when late==true OR the end is already past (left <= 0). The kernel moves the end only at 'vbw plan done' (steps.sh line 213: no change while done==0), so a build whose first plan overruns shows in Mission Control, Comms and 'vbw status': 'until around 14:20, later than usual', but in the status line a bare past time 'until 14:20' with no marker. The criterion asks the same marker on every surface for a late step with parts. tests/statusline-step.bats only covers late==true. Regression test should write a build note with parts {done:0,total:2}, late:false and end in the past, and require the status line to read 'until HH:MM, later than usual' as panel-step.js does for the same note and moment.",
       "phase": "P147"
     },
@@ -37591,7 +37601,7 @@
       "req": "R190",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Mission Control and Comms show a dead proof as a running step. plugin/hooks/panel-step.js liveStep keeps a proof note whenever its session matches and never checks that the proof's process (note.pid) is alive. The status line does check (kill -0 in plugin/scripts/vbw-statusline.sh), and R190.27/R190.32 say a note whose proof process is gone, or a proof killed outright, is never shown as running until the next proof removes it. After a proof is killed outright (SIGKILL, closed session), step.json stays, so the panel and Comms keep drawing 'proving 12 of 40 checks · about N min, until around HH:MM' (later 'later than usual') while the status line shows nothing, and the criterion 'with nothing running, no step end time shows' fails on two of the three surfaces. tests/panel/r190 has no dead-pid case (step-panel.test.mjs only tests another session's proof). Regression test should keep a proof note of the panel's own session whose pid is a finished process and assert neither Mission Control nor Comms shows the step, while a live pid does show it.",
       "phase": "P147"
     }
