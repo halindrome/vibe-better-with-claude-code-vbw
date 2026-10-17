@@ -19622,7 +19622,15 @@
           "to": "deep",
           "reason": "proven requirement R190 failed"
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "fa7a9b93cce1f9b7a8f909c2ff5e0eecdc76f09148c895bffa0419c7bc64540f",
+        "at": "2026-10-17T01:15:48Z",
+        "note": "30/32 checks",
+        "rounds": 1
+      }
     }
   ],
   "plans": [
@@ -37562,6 +37570,33 @@
       "status": "open",
       "note": "A late step with parts only moves its end for a build. Criterion (D424) says any step with parts: once its own pace (time so far / parts done x parts left) ends after the first end time, the current end moves to that projection and is marked later than usual; it can move again. Only plugin/lib/steps.sh step_plan_done does this, and it selects $n.kind == \"build\" (line 210). A fix step's parts go up in plugin/lib/proofsteps.sh proofsteps_fix_done (lines 193-204) and a proof's own parts in proofsteps_note_update (lines 116-127); neither projects the pace, so end stays equal to first_end and late stays false. Fix and proof both have parts (step_kind_has_parts, steps.sh line 75), and docs/panel.md lines 512-515 promise the move for 'a step with parts'. What shows instead: step_words prints 'until around HH:MM, later than usual' with an end time already in the past, never a new time. tests/step-note.bats line 73 only covers a build, and no test in tests/step-proof.bats checks late on a fix or proof. Regression test: seed 3 proofs (and 3 fixes) with history, start a proof of its own (or fix) of N units, back-date its started_at so the pace is past first_end, finish one unit (or close one fix) and expect end > first_end and late == true in the note, then a second unit moving it again, and never earlier than first_end.",
       "phase": "P146"
+    },
+    {
+      "id": "F246",
+      "req": "R190",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "The status line leaves out 'later than usual' when a step with parts is past its end but the kernel has not moved the end, while 'vbw status', 'vbw next' and the panel say it. Evidence: plugin/lib/steps.sh step_words and plugin/hooks/panel-step.js stepWords say '..., later than usual' when parts exist and (note.late is true OR the end is already past); plugin/scripts/statusline.jq step_line (line ~76) says it only when $n.late is true. The kernel sets late only in step_plan_done (plugin/lib/steps.sh), which handles builds only and only after a plan finishes. So a build whose first plan overruns its first end, any fix, and a proof past its end show a past clock time in the status line with no caveat, while Comms/vbw status say 'until around 14:20, later than usual'. docs/statusline.md ('A step with parts past its time reads until 14:35, later than usual') and docs/panel.md ('When a step with parts runs past its end time, VBW moves the end to this run's own pace and shows ... later than usual. It can move again') state this as always true; for a fix, a proof, or a build with no plan done yet the end is never moved. Regression test should catch: a note with parts, late:false and end in the past must make the status line first line read 'until HH:MM, later than usual' (as vbw status does for the same note), and the docs must say that the end moves only when a plan of a build finishes (or the kernel must move the end for fixes and proofs).",
+      "phase": "P148"
+    },
+    {
+      "id": "F247",
+      "req": "R190",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Status line and the other two surfaces disagree once a step with parts runs past its end and the kernel has not moved the end yet. plugin/scripts/statusline.jq step_line adds ', later than usual' only when the note has late==true. The kernel (plugin/lib/steps.sh step_words line 41) and panel-step.js stepWords say 'later than usual' when late==true OR the end is already past (left <= 0). The kernel moves the end only at 'vbw plan done' (steps.sh line 213: no change while done==0), so a build whose first plan overruns shows in Mission Control, Comms and 'vbw status': 'until around 14:20, later than usual', but in the status line a bare past time 'until 14:20' with no marker. The criterion asks the same marker on every surface for a late step with parts. tests/statusline-step.bats only covers late==true. Regression test should write a build note with parts {done:0,total:2}, late:false and end in the past, and require the status line to read 'until HH:MM, later than usual' as panel-step.js does for the same note and moment.",
+      "phase": "P147"
+    },
+    {
+      "id": "F248",
+      "req": "R190",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Mission Control and Comms show a dead proof as a running step. plugin/hooks/panel-step.js liveStep keeps a proof note whenever its session matches and never checks that the proof's process (note.pid) is alive. The status line does check (kill -0 in plugin/scripts/vbw-statusline.sh), and R190.27/R190.32 say a note whose proof process is gone, or a proof killed outright, is never shown as running until the next proof removes it. After a proof is killed outright (SIGKILL, closed session), step.json stays, so the panel and Comms keep drawing 'proving 12 of 40 checks · about N min, until around HH:MM' (later 'later than usual') while the status line shows nothing, and the criterion 'with nothing running, no step end time shows' fails on two of the three surfaces. tests/panel/r190 has no dead-pid case (step-panel.test.mjs only tests another session's proof). Regression test should keep a proof note of the panel's own session whose pid is a finished process and assert neither Mission Control nor Comms shows the step, while a live pid does show it.",
+      "phase": "P147"
     }
   ],
   "todos": [
