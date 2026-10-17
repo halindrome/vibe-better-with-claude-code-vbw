@@ -36178,15 +36178,14 @@
         "plugin/lib/steps.sh"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "Build units in the note and the history: vbw run start build writes note.units = [{id, tier, tasks, seconds: null}] per plan (tier = the plan's phase tier at that moment, 'standard' when the phase has none; tasks = the plan's tasks count, 0 without tasks); step_plan_done stamps the plan's own seconds (run start to now) on its unit; step_record copies the units of plans done into the history entry (a plan left unfinished is no unit), beside parts as today",
         "Other kinds in step_record: a fix run records fixes (its ids) and tier (the highest tier among the phases of the fixes' requirements; none when no phase serves them); a planning run records reqs (the active milestone's requirements not proven or accepted at run start); a QA run records phases [{id, tier}] from the note's ids and the record",
         "step_expect KIND SIZE: SIZE is JSON (build: [{id, tier, tasks}] for the wave; fix: {tier}; plan: {reqs}; qa: [{id, tier}]; proof: {units: [names]}) and the function runs lib/steps-expect.jq (P149.2) as `jq -n --slurpfile h <history> --slurpfile runs <runs.json or an empty store> --arg kind K --argjson size SIZE -f`, printing seconds or nothing; step_start and step_next build SIZE from the record (phase tiers and tasks for the wave's plans; the fixes' highest tier; the open requirements count; QA phases with tiers; proof unit names check:ID, file:PATH, command:NAME from the proof plan's TODO_CHECKS, TF_TODO and TODO_COMMANDS), so next --json, the note and run start's sentence all use the new times with D425's wording unchanged",
         "Entries written before (kind, seconds, parts) stay as they are and still feed the coarse rungs; the latest 50 of each kind are kept; a missing, damaged or unwritable steps.json or runs.json never fails a step and only means no end time yet; record-sized data reaches jq by pipe or --slurpfile only; bash 3.2 (tests/step-units-history.bats green, tests/step-expect.bats and tests/step-next.bats still green)"
-      ],
-      "note": "Code done and committed (166c87e0): tasks 1-4 in plugin/lib/steps.sh. C389 cannot go green as approved: tests/step-units-history.bats test 6 ('entries from before stay...') has a jq precedence bug at its first jq -e: '[.steps[]|select(...)] | length == 49 and ([.steps[]...' applies '.steps' to the array, so jq errors 'Cannot index array with string steps' whatever the code does. With the one-line fix (wrap the first operand in parentheses: '([...] | length == 49) and (...)') all 7 tests of C389 pass, but vbw commit refuses that check file (not a survivor's rule file) and vbw mutate refuses to run with it uncommitted. The fix is left uncommitted in the working tree for you to approve/commit. Separately, tests/step-proof.bats test 'R190 (D429): a late fix moves its end to its own pace' (line 240, an R190 check) now fails at line 247: it expects a 3-fix round to take 3x the per-fix median (900 s), which R191.15 replaces with the round's wall median (300 s); that R190 assertion needs updating with R191's approval. Mutation step not run (needs the check file committed)."
+      ]
     },
     {
       "id": "P149.2",
@@ -36439,17 +36438,16 @@
         "plugin/lib/cmd-fix.sh"
       ],
       "after": [
-        "P149.1",
-        "P149.2"
+        "P149.1"
       ],
       "status": "planned",
-      "role": "dev",
       "tasks": [
         "proofsteps_end takes the units that really ran (a JSON object name -> result with seconds: checks as check:ID, test files as file:PATH, project commands as command:NAME) through a scratch file under .vbw/runtime, and proofsteps_record writes units [{name, seconds}] beside parts; a proof that ran nothing still records nothing",
         "vbw prove hands its checks, test files and commands results to proofsteps_end; vbw fix done hands its results and test-file results; the record-sized results reach jq by file, never --arg",
         "proofsteps_begin sizes the proof's own note through step_expect proof {units: [names]} (the names of TODO_CHECKS, TF_TODO and the approved TODO_COMMANDS), so a proof of its own gets the units-times-ratio time; inside a build or fix the step's end stays and 'proving N of M checks' is unchanged",
         "The fix round's parts done still move the end at vbw fix done (D429); tests/step-proof-units.bats green, tests/step-proof.bats and tests/step-proof-history.bats still green"
-      ]
+      ],
+      "role": "dev"
     },
     {
       "id": "P150.1",
@@ -36522,14 +36520,13 @@
         "tests/panel/r189/now-box.test.mjs"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "panel-view.js: the estimate-milestone row is the kernel's road: the live step note's road while a step runs, else next.json's road; its text is road.say with a capital first letter and a final period, stamped [HH:MM] like estimate-step; road.end null gives 'No estimate yet: ' + road.basis + '.' (plain); road null or absent gives no row; the 'About N min left in the milestone' row, NO_BASIS and the panel's milestone arithmetic are gone",
         "panel-estimate.js keeps only what the Timeline's bars use (MIN_STEPS and estimate's step median, pure and local) and returns no milestone; panel.js hands the step note and next.json through as today (no new file is read, nothing is written); panel-pane.js keeps a milestone row without a time plain",
         "The approved check files whose assertions pinned the old row are updated to the new contract and nothing else: tests/panel/estimate.test.mjs (no milestone from the history), tests/panel/glance.test.mjs (the milestone row comes from next.json's or the note's road), tests/panel/r190/step-panel.test.mjs and tests/panel/r189/now-box.test.mjs (fixtures carry a road); they wait for the one approval before the proof; tests/panel/r191/road-panel.test.mjs and road-same-time.test.mjs green"
-      ],
-      "note": "tests/panel/pane.test.mjs (approved check file, not among the plan's files) fails after the change: test 'progress is green, the estimate amber and the cost in the accent colour' needs an estimate-milestone row, which now comes only from a road. Fix: add road:{seconds:7800,end:iso(NOW+7800*S),rounds:{deep:2},basis:'2 waves, 2 proofs',say:'milestone end: about 2 h 10 min, until around 16:40'} to the step() fixture there (patch saved at .vbw/runtime/scratch/pane.patch, applies with git apply). The plan needs pane.test.mjs added to its files. Tasks 1-3 are otherwise done and committed (57bd896e, e7fc5bf8, 7e863abf); panel-pane.js and panel.js needed no change; mutation step not run."
+      ]
     },
     {
       "id": "P151.2",
@@ -36680,6 +36677,44 @@
         "scenario_road in tools/l3-suite.sh (in ALL and the header): a two-plan project like steptime's with a seeded tiered history (plan units with tiers and tasks, proofs with units and runs.json, QA phases with tiers, fix rounds with tiers) and seeded phase outcomes in a shipped milestone; phase A without history: vbw next --json says no end time yet for the step and for the road, and the screen shows it; phase B: the user types /vbw:vibe and the build runs through the real window",
         "Facts from the screen at 2 s steps and from next.json: chat_step_end and chat_road_end (both sentences at the build's start), panel_road_end (Mission Control's milestone row), same_road_end (within a minute), statusline_has_road (false), no_history_no_end_time; result_write road with a not_tested list",
         "Run it (bash tools/l3-suite.sh road) and commit tools/l3-results/road.json; tests/l3-road.bats green; the run's summary names the scenarios run and not run for the progress log"
+      ]
+    },
+    {
+      "id": "P149.4",
+      "phase": "P149",
+      "title": "The R190 late-fix test follows the round median (R191.15)",
+      "reqs": [
+        "R191"
+      ],
+      "files": [
+        "tests/step-proof.bats"
+      ],
+      "after": [
+        "P149.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tests/step-proof.bats, test \"R190 (D429): a late fix moves its end to its own pace\": its first end now comes from the fix round wall-time median (R191.15), not 3x the per-fix median; update only the expected seconds so the test still pins D429 (the end moves at its own pace, marked late, never before the first end)"
+      ]
+    },
+    {
+      "id": "P151.5",
+      "phase": "P151",
+      "title": "The pane test gives its step a road",
+      "reqs": [
+        "R191"
+      ],
+      "files": [
+        "tests/panel/pane.test.mjs"
+      ],
+      "after": [
+        "P151.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tests/panel/pane.test.mjs: the step() fixture carries a road (the patch in .vbw/runtime/scratch/pane.patch), because Mission Control shows the milestone row only from the kernel road (P151.1); the test keeps pinning the colours"
       ]
     }
   ],
@@ -42038,6 +42073,11 @@
       "id": "D436",
       "at": "2026-10-17T14:09:06Z",
       "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-17T11:58:13Z, items T139, T138, T94: 180 requirements, 393 checks, 452 plans (7fc3211991de))"
+    },
+    {
+      "id": "D437",
+      "at": "2026-10-17T15:39:11Z",
+      "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-17T11:58:13Z, items T139, T138, T94: 180 requirements, 393 checks, 454 plans (008e8f36e554))"
     }
   ],
   "commands": {
