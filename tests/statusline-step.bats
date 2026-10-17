@@ -86,6 +86,13 @@ note() {
   [[ "${lines[0]}" == *"until $(hm end), later than usual"* ]] || { echo "${lines[0]}"; false; }
 }
 
+@test "R190 (F246): a step with parts past its end that the kernel has not moved says later than usual too" {
+  "$VBW" run start build P1.1 P1.2 > /dev/null
+  note '.first_end = s(-120) | .end = s(-120) | .late = false | .parts = {done: 0, total: 2}'
+  run render
+  [[ "${lines[0]}" == *"until $(hm end), later than usual"* ]] || { echo "${lines[0]}"; false; }
+}
+
 @test "R190: a late step without parts keeps its clock time and says how many minutes late" {
   "$VBW" run start plan > /dev/null
   note '.kind = "plan" | .ids = [] | .doing = "planning" | .parts = null | .first_end = s(-380) | .end = s(-380)'

@@ -73,7 +73,7 @@ def progress($done; $total): (if $total > 0 then $done * 100 / $total else 0 end
        elif $p != null then "\($p.done) of \($p.total)" else null end) as $what
     | (if $n.end == null then null
        else clock($n.end)
-         + (if $p != null then (if $n.late then ", later than usual" else "" end)
+         + (if $p != null then (if $n.late == true or (($n.end | fromdateiso8601) <= $now) then ", later than usual" else "" end)
             else ((($now - ($n.first_end // $n.end | fromdateiso8601)) / 60 | floor) as $m | if $m >= 1 then ", \($m) min late" else "" end) end)
        end) as $time
     | ([(if $n.kind == "proof" then null else $n.kind + (if ($n.ids | length) > 0 then " " + ($n.ids | join(", ")) else "" end) end), $what, (if $time != null then "until " + $time else null end)]
