@@ -14,11 +14,10 @@ function usual(steps, kind) {
   return secs.length % 2 ? secs[m] : (secs[m - 1] + secs[m]) / 2
 }
 
-// input: { steps, lease: {kind, started_at} | null, phasesLeft, now (ms) }
+// input: { steps, lease: {kind, started_at} | null, now (ms) }; the milestone's end is the kernel's road, never worked out here.
 export function estimate(input) {
   const { lease, now } = input || {}
   const steps = Array.isArray(input && input.steps) ? input.steps : []
-  const phasesLeft = Number.isFinite(input && input.phasesLeft) ? Math.max(0, input.phasesLeft) : 0
   const started = lease && typeof lease.started_at === 'string' ? Date.parse(lease.started_at) : NaN
   const elapsed = Number.isFinite(started) && Number.isFinite(now) ? Math.max(0, (now - started) / 1000) : 0
 
@@ -31,18 +30,5 @@ export function estimate(input) {
     step = own === null || !Number.isFinite(started) ? { state: 'none' } : left > 0 ? { state: 'approx', seconds: Math.round(left) } : { state: 'longer' }
   }
 
-  let milestone = null
-  if (phasesLeft > 0) {
-    const build = usual(steps, 'build')
-    const check = usual(steps, 'qa')
-    if (build === null || check === null) milestone = { state: 'none' }
-    else {
-      const phase = build + check
-      const counts = lease && (lease.kind === 'build' || lease.kind === 'qa')
-      const running = left === null ? 0 : left
-      const whole = counts ? phasesLeft - 1 : phasesLeft
-      milestone = { state: 'approx', seconds: Math.round(running + whole * phase) }
-    }
-  }
-  return { step, milestone }
+  return { step }
 }
