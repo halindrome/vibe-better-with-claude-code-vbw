@@ -67,23 +67,23 @@ last() { jq -c --arg k "$1" '[.steps[] | select(.kind == $k)] | last' "$STEPS"; 
 }
 
 @test "R191: planning records how many open requirements of the milestone it planned" {
-  printf -- '- R2 [auto] A customer gets a receipt\n' >> .vbw/spec.md
+  printf -- '- R2 [auto] A customer gets a receipt\n- R3 [human] The page feels trustworthy\n' >> .vbw/spec.md
   "$VBW" spec sync > /dev/null
   "$VBW" run start plan > /dev/null
   "$VBW" run end > /dev/null
-  last plan | jq -e '.kind == "plan" and .reqs == 2 and (has("parts") | not)' || { cat "$STEPS"; false; }
+  last plan | jq -e '.kind == "plan" and .reqs == 3 and (has("parts") | not)' || { cat "$STEPS"; false; }
   step_edit '(.requirements[] | select(.id == "R2")).status = "proven"'
   "$VBW" run start plan > /dev/null
   "$VBW" run end > /dev/null
-  last plan | jq -e '.reqs == 1' || { cat "$STEPS"; false; }
-  step_edit '(.requirements[] | select(.id == "R2")).status = "accepted"'
-  "$VBW" run start plan > /dev/null
-  "$VBW" run end > /dev/null
-  last plan | jq -e '.reqs == 1' || { cat "$STEPS"; false; }
-  step_edit '(.requirements[] | select(.id == "R2")).status = "open"'
-  "$VBW" run start plan > /dev/null
-  "$VBW" run end > /dev/null
   last plan | jq -e '.reqs == 2' || { cat "$STEPS"; false; }
+  step_edit '(.requirements[] | select(.id == "R3")).status = "accepted"'
+  "$VBW" run start plan > /dev/null
+  "$VBW" run end > /dev/null
+  last plan | jq -e '.reqs == 1' || { cat "$STEPS"; false; }
+  step_edit '(.requirements[] | select(.id == "R2")).status = "open" | (.requirements[] | select(.id == "R3")).status = "open"'
+  "$VBW" run start plan > /dev/null
+  "$VBW" run end > /dev/null
+  last plan | jq -e '.reqs == 3' || { cat "$STEPS"; false; }
 }
 
 @test "R191: QA records the phases it checked, each with its tier" {
