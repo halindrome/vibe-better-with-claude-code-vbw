@@ -5100,7 +5100,7 @@
   "milestone": {
     "id": "M36",
     "title": "Every long VBW step (planning, build, proof, QA) shows what it is doing now and when it should end, as a clock time from how long the same step took before in this project, in the panel, status line and VBW's messages; absorbs T85. Final polish before 2.1.0 (owner 2026-10-10: cosmetics last, core first unless a technical reason makes it urgent)",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -5272,6 +5272,11 @@
       "id": "M34",
       "title": "Final polish (panel trust, from M18): every band and pane message disappears as soon as it stops being true (P10); no 'VBW needs you' card with buttons in the band (P1); the sound plays once per question, only with Claude Code's own menu (B1); finished agents leave the crew list at once (P4); owner judges it by eye. Do together with P2, P3, P5, P6, P9, T64, T78, T81, T87",
       "at": "2026-10-16T01:07:29Z"
+    },
+    {
+      "id": "M36",
+      "title": "Every long VBW step (planning, build, proof, QA) shows what it is doing now and when it should end, as a clock time from how long the same step took before in this project, in the panel, status line and VBW's messages; absorbs T85. Final polish before 2.1.0 (owner 2026-10-10: cosmetics last, core first unless a technical reason makes it urgent)",
+      "at": "2026-10-17T11:41:37Z"
     }
   ],
   "requirements": [
@@ -40986,6 +40991,11 @@
       "id": "D431",
       "at": "2026-10-17T04:07:52Z",
       "text": "Contract approved: 179 requirements, 383 checks, 443 plans (2c61c32dad54)"
+    },
+    {
+      "id": "D432",
+      "at": "2026-10-17T11:41:37Z",
+      "text": "Shipped M36 Every long VBW step (planning, build, proof, QA) shows what it is doing now and when it should end, as a clock time from how long the same step took before in this project, in the panel, status line and VBW's messages; absorbs T85. Final polish before 2.1.0 (owner 2026-10-10: cosmetics last, core first unless a technical reason makes it urgent): 1 requirement proven or accepted"
     }
   ],
   "commands": {
@@ -47783,6 +47793,12 @@
             "out": 0,
             "at": "2026-10-16T02:28:32Z"
           }
+        },
+        "total": {
+          "usd": 1387.092692,
+          "in": 155504,
+          "out": 243,
+          "sessions": 23
         }
       }
     }
