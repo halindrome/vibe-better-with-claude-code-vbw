@@ -47806,327 +47806,6 @@
   "loop": {
     "items": [
       {
-        "id": "T94",
-        "text": "Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92",
-        "proof": "auto",
-        "status": "parked",
-        "milestone": "M35",
-        "head": "21b5d54dd2e8bce5b9c266f0898db81f6459182e",
-        "baseline": {
-          "08215c4b-a532-4631-97a7-fc456d305a2d": {
-            "usd": 1244.340821,
-            "in": 658637,
-            "out": 312,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "0998a6b2-8631-43de-9da7-063dec09aa18": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
-            "usd": 1334.378271,
-            "in": 251415,
-            "out": 732,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "1c35771f-52c4-41e8-956d-5ce15298d991": {
-            "usd": 0.349007,
-            "in": 58901,
-            "out": 580,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "242ff0cc-4ea5-4f6b-9665-932974b21b29": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "3c1b9ed2-943d-4e23-a044-a01958ae20b8": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "43f0b3be-e6e5-4701-b39b-64b7c7f4bc45": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "59f46f8b-3baf-431a-99de-51583f2885ac": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "60723b89-7950-4ffa-bf04-6cdf30e3ec96": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "689c5465-3aa1-49af-9115-8192ae092ecf": {
-            "usd": 36.332158,
-            "in": 176815,
-            "out": 348,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "69afb011-3850-41d9-8620-9b59aa9fe082": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "6c761191-76a0-4136-9123-f41780837c28": {
-            "usd": 0.462324,
-            "in": 56499,
-            "out": 517,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "7bb0d4fc-0bbf-4fcb-a770-a9f18afa977d": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "868abfef-9fb7-492e-afba-751d9042e56a": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "a0c9069c-b087-42d1-8480-1a48d6ead14d": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "a5bff576-1135-48dc-814f-a1cba2240cae": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "b46c3fe0-67c9-4862-ac23-c11851da8815": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "b6cd17dc-1028-4144-b581-428c48543f98": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "d53bd0eb-b19e-4431-a0f8-2a6a8b13fccc": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          },
-          "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T01:48:30Z"
-          }
-        },
-        "opened_at": "2026-10-16T01:48:30Z",
-        "budget": {
-          "seconds": 34450,
-          "basis": "twice the median time (4h47m) of 3 shipped medium items"
-        },
-        "req": "R190",
-        "reason": "scope violation: 32f17ce8f51d (P144.3) changed tests/panel/r189/now-box.test.mjs, which is not in the plan",
-        "reverts": [
-          "bd48805faca914477fe22fe57f717273210a6071",
-          "39608cbf01077b8a2a30321706bb38c50d35be53",
-          "67881f9a23bbc9f4f0f210783ecd5ee1d8234e6e"
-        ],
-        "cost": {
-          "usd": 1340.853051,
-          "in": 275572,
-          "out": 513
-        },
-        "at": "2026-10-16T02:28:25Z",
-        "left": "left unreverted: 0760206 (changes the record too)"
-      },
-      {
-        "id": "T102",
-        "text": "Every long VBW step (planning, build, proof, QA) shows what it is doing now and when it should end, as a clock time from how long the same step took before in this project, in the panel, status line and VBW's messages; absorbs T85. Final polish before 2.1.0 (owner 2026-10-10: cosmetics last, core first unless a technical reason makes it urgent)",
-        "proof": "auto",
-        "status": "in_progress",
-        "milestone": "M36",
-        "head": "5c088ca141a278a41ac4b3c427ab8df46015c816",
-        "baseline": {
-          "08215c4b-a532-4631-97a7-fc456d305a2d": {
-            "usd": 1244.340821,
-            "in": 658637,
-            "out": 312,
-            "at": "2026-10-16T02:28:41Z"
-          },
-          "0998a6b2-8631-43de-9da7-063dec09aa18": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
-            "usd": 1340.853051,
-            "in": 275572,
-            "out": 513,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "1c35771f-52c4-41e8-956d-5ce15298d991": {
-            "usd": 0.349007,
-            "in": 58901,
-            "out": 580,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "242ff0cc-4ea5-4f6b-9665-932974b21b29": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "3c1b9ed2-943d-4e23-a044-a01958ae20b8": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "43f0b3be-e6e5-4701-b39b-64b7c7f4bc45": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "59f46f8b-3baf-431a-99de-51583f2885ac": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "60723b89-7950-4ffa-bf04-6cdf30e3ec96": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "689c5465-3aa1-49af-9115-8192ae092ecf": {
-            "usd": 36.332158,
-            "in": 176815,
-            "out": 348,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "69afb011-3850-41d9-8620-9b59aa9fe082": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "6c761191-76a0-4136-9123-f41780837c28": {
-            "usd": 0.462324,
-            "in": 56499,
-            "out": 517,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "7bb0d4fc-0bbf-4fcb-a770-a9f18afa977d": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "868abfef-9fb7-492e-afba-751d9042e56a": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "a0c9069c-b087-42d1-8480-1a48d6ead14d": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "a5bff576-1135-48dc-814f-a1cba2240cae": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "b46c3fe0-67c9-4862-ac23-c11851da8815": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "b6cd17dc-1028-4144-b581-428c48543f98": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "d53bd0eb-b19e-4431-a0f8-2a6a8b13fccc": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          },
-          "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
-            "usd": 0,
-            "in": 0,
-            "out": 0,
-            "at": "2026-10-16T02:28:42Z"
-          }
-        },
-        "opened_at": "2026-10-16T02:28:42Z",
-        "budget": {
-          "seconds": 34450,
-          "basis": "twice the median time (4h47m) of 3 shipped medium items"
-        },
-        "req": "R190"
-      },
-      {
         "id": "T139",
         "text": "ETA quality for T102 (cosmetic leg, brainstorm inbox 2026-10-10): estimate per unit of work (plan, task, check by tier from .git/vbw/steps.json) times the work size, and the whole road (build, proof, QA, likely fix rounds from this machine's history), not only the current step",
         "proof": "auto",
@@ -48137,159 +47816,156 @@
         "text": "Brainstorm F4 (cosmetic leg): show which session holds the run, by name, in the status line, Comms and a Sessions-tab mark; names need the session name as data (ties to cosmetic.md D14); optionally /vbw:vibe suggests /rename vbw · <project> at first setup, never applies it",
         "proof": "auto",
         "status": "waiting"
+      },
+      {
+        "id": "T94",
+        "text": "Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92",
+        "proof": "auto",
+        "status": "waiting"
       }
     ],
     "ceiling": null,
     "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
-    "started_at": "2026-10-16T01:48:07Z",
+    "started_at": "2026-10-17T11:58:13Z",
     "baseline": {
       "08215c4b-a532-4631-97a7-fc456d305a2d": {
         "usd": 1244.340821,
         "in": 658637,
         "out": 312,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:12Z"
       },
       "0998a6b2-8631-43de-9da7-063dec09aa18": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:12Z"
       },
       "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
-        "usd": 1334.21049,
-        "in": 238229,
-        "out": 396,
-        "at": "2026-10-16T01:48:07Z"
+        "usd": 1387.240186,
+        "in": 158363,
+        "out": 657,
+        "at": "2026-10-17T11:58:12Z"
       },
       "1c35771f-52c4-41e8-956d-5ce15298d991": {
         "usd": 0.349007,
         "in": 58901,
         "out": 580,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:12Z"
       },
       "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:12Z"
       },
       "242ff0cc-4ea5-4f6b-9665-932974b21b29": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:12Z"
       },
       "3c1b9ed2-943d-4e23-a044-a01958ae20b8": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:12Z"
       },
       "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:12Z"
       },
       "43f0b3be-e6e5-4701-b39b-64b7c7f4bc45": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:12Z"
       },
       "59f46f8b-3baf-431a-99de-51583f2885ac": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:12Z"
       },
       "60723b89-7950-4ffa-bf04-6cdf30e3ec96": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:12Z"
       },
       "689c5465-3aa1-49af-9115-8192ae092ecf": {
         "usd": 36.332158,
         "in": 176815,
         "out": 348,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:12Z"
       },
       "69afb011-3850-41d9-8620-9b59aa9fe082": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:12Z"
       },
       "6c761191-76a0-4136-9123-f41780837c28": {
         "usd": 0.462324,
         "in": 56499,
         "out": 517,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:13Z"
       },
       "7bb0d4fc-0bbf-4fcb-a770-a9f18afa977d": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:13Z"
       },
       "868abfef-9fb7-492e-afba-751d9042e56a": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:13Z"
       },
       "a0c9069c-b087-42d1-8480-1a48d6ead14d": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:13Z"
       },
       "a5bff576-1135-48dc-814f-a1cba2240cae": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:13Z"
       },
       "b46c3fe0-67c9-4862-ac23-c11851da8815": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:13Z"
       },
       "b6cd17dc-1028-4144-b581-428c48543f98": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:13Z"
       },
       "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:13Z"
       },
       "d53bd0eb-b19e-4431-a0f8-2a6a8b13fccc": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:13Z"
       },
       "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
         "usd": 0,
         "in": 0,
         "out": 0,
-        "at": "2026-10-16T01:48:07Z"
+        "at": "2026-10-17T11:58:13Z"
       }
-    },
-    "report": ".vbw/loop-report.md",
-    "stopping": {
-      "at": "2026-10-16T02:29:47Z",
-      "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
-    },
-    "ended": {
-      "at": "2026-10-16T02:33:24Z",
-      "reason": "stopped by the user (session 0ee781c3-c5b6-4a6c-889f-04b89f1fba4a)"
     }
   },
   "parked": [
