@@ -50,6 +50,16 @@ def step_label($k; $ids; $n):
   elif $k == "plan" then "Planning the work"
   elif $k == "proof" then "Proving \($n) \(if $n == 1 then "check" else "checks" end)"
   else "Mapping the project" end;
+# step_move($t): a note whose parts.done just changed, with its end moved to the
+# pace of this run when that ends after the first end time (D424, D429), marked later
+# than usual; never earlier than the first end time, unchanged while nothing is done.
+def step_move($t):
+  if .first_end == null or .parts.done == 0 then .
+  else ($t - (.started_at | fromdateiso8601)) as $el
+    | ($t + ($el / .parts.done * (.parts.total - .parts.done) | round)) as $proj
+    | (.first_end | fromdateiso8601) as $fe
+    | (if $proj > $fe then $proj else $fe end) as $end
+    | .end = ($end | todateiso8601) | .late = ($end > $fe) end;
 def step_say($s; $t):
   step_label($s.kind; $s.ids // []; if ($s.parts | type) == "object" then $s.parts.total else ($s.parts // 0) end)
   + ": " + step_words($s; $t);
@@ -205,17 +215,12 @@ step_plan_done() {
   run=$(record_read | jq -r '.lease.run // ""')
   [ -n "$(step_live_note "$run")" ] || return 0
   note=$(step_note_file)
-  out=$(jq -c --slurpfile r "$VBW_RECORD" '
+  out=$(jq -c --slurpfile r "$VBW_RECORD" "$VBW_STEP_DEFS"'
     . as $n | ($r[0].plans) as $pl
     | select($n.kind == "build" and ($n.parts | type) == "object")
     | ([$n.ids[] | select(. as $i | any($pl[]; .id == $i and .status == "done"))] | length) as $done
     | .parts.done = $done
-    | if .first_end == null or $done == 0 then .
-      else (now | floor) as $t | ($t - (.started_at | fromdateiso8601)) as $el
-        | ($t + ($el / $done * (.parts.total - $done) | round)) as $proj
-        | (.first_end | fromdateiso8601) as $fe
-        | (if $proj > $fe then $proj else $fe end) as $end
-        | .end = ($end | todateiso8601) | .late = ($end > $fe) end' "$note" 2> /dev/null) || return 0
+    | step_move(now | floor)' "$note" 2> /dev/null) || return 0
   [ -z "$out" ] || step_note_write "$out"
 }
 
