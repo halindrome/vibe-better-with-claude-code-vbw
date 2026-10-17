@@ -49382,7 +49382,12 @@
         "out": 0,
         "at": "2026-10-17T11:58:13Z"
       }
-    }
+    },
+    "ended": {
+      "at": "2026-10-17T15:39:25Z",
+      "reason": "time budget spent: item T139 stopped before step build after 3h40m of a 2h48m budget (twice the median time (1h24m) of 5 shipped small items), $1418.30 spent; its work is kept in M37"
+    },
+    "report": ".vbw/loop-report.md"
   },
   "parked": [
     {
