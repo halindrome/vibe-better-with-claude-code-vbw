@@ -25,14 +25,15 @@ last() { jq -c --arg k "$1" '[.steps[] | select(.kind == $k)] | last' "$STEPS"; 
 
 @test "R191: a finished build records each plan done with its id, tier, tasks and own seconds; the note counts them as they finish" {
   "$VBW" run start build P1.1 P1.2 > /dev/null
+  sleep 2
   step_finish P1.1 src/a.txt
   jq -e '.parts == {done: 1, total: 2}' "$NOTE" || { cat "$NOTE"; false; }
-  jq -e '[.units[] | select(.id == "P1.1")][0] | .tier == "standard" and .tasks == 2 and (.seconds | type == "number" and . >= 0)' "$NOTE" || { cat "$NOTE"; false; }
+  jq -e '[.units[] | select(.id == "P1.1")][0] | .tier == "standard" and .tasks == 2 and (.seconds | type == "number" and . >= 2)' "$NOTE" || { cat "$NOTE"; false; }
   jq -e '[.units[] | select(.id == "P1.2")][0] | .tier == "standard" and .tasks == 5 and .seconds == null' "$NOTE" || { cat "$NOTE"; false; }
   step_finish P1.2 src/b.txt
   "$VBW" run end > /dev/null
   last build | jq -e '.kind == "build" and .parts == 2 and (.units | length == 2)
-    and (.units[0] | .id == "P1.1" and .tier == "standard" and .tasks == 2 and (.seconds | type == "number" and . >= 0))
+    and (.units[0] | .id == "P1.1" and .tier == "standard" and .tasks == 2 and (.seconds | type == "number" and . >= 2))
     and (.units[1] | .id == "P1.2" and .tier == "standard" and .tasks == 5 and (.seconds | type == "number" and . >= 0))' || { cat "$STEPS"; false; }
 }
 
