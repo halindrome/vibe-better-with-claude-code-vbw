@@ -20084,6 +20084,12 @@
           "from": "standard",
           "to": "deep",
           "reason": "Dev blocked P149.1: Code done and committed (166c87e0): tasks 1-4 in plugin/lib/steps.sh. C389 cannot go green as approved: tests/step-units-history.bats test 6 ('entries from before stay...') has a jq precedence bug at its first jq -e: '[.steps[]|select(...)] | length == 49 and ([.steps[]...' applies '.steps' to the array, so jq errors 'Cannot index array with string steps' whatever the code does. With the one-line fix (wrap the first operand in parentheses: '([...] | length == 49) and (...)') all 7 tests of C389 pass, but vbw commit refuses that check file (not a survivor's rule file) and vbw mutate refuses to run with it uncommitted. The fix is left uncommitted in the working tree for you to approve/commit. Separately, tests/step-proof.bats test 'R190 (D429): a late fix moves its end to its own pace' (line 240, an R190 check) now fails at line 247: it expects a 3-fix round to take 3x the per-fix median (900 s), which R191.15 replaces with the round's wall median (300 s); that R190 assertion needs updating with R191's approval. Mutation step not run (needs the check file committed)."
+        },
+        {
+          "at": "2026-10-17T15:29:27Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P149.2: Code and tasks 1-5 are done and committed; C390 mutations (R191.8-19) are red. R191.21-23 can only be mutation-checked through C391 (tests/step-proof-units.bats). Tests 3-6 pass, but tests 1-2 (a proof records its units) need P149.3, which runs after this plan. vbw mutate refuses with 'checks do not pass on the unbroken code', so the gate cannot be met here. Needs a decision: run P149.3 first (reorder), or move C391's tests 1-2 to P149.3. Tasks 1-5 also still need mutation records (task break/--none), which I did not add since the same gate applies to C391 for task5."
         }
       ]
     },
@@ -36193,7 +36199,7 @@
         "plugin/lib/steps-expect.jq"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "A new lib/steps-expect.jq with the interface in its header: input none; $h[0] the history ({steps}) or null, $runs[0] the runs store ({runs}) or null, $kind, $size (as P149.1 defines); output one integer (seconds) or empty; medians of an even count take the mean of the two middle values; every list is 'the latest 10' by the history's order",
@@ -36417,7 +36423,8 @@
           "at": "2026-10-17T14:39:25Z",
           "head": "f8291355986fdb7437bd555efef2915ab2b91f90"
         }
-      ]
+      ],
+      "note": "Code and tasks 1-5 are done and committed; C390 mutations (R191.8-19) are red. R191.21-23 can only be mutation-checked through C391 (tests/step-proof-units.bats). Tests 3-6 pass, but tests 1-2 (a proof records its units) need P149.3, which runs after this plan. vbw mutate refuses with 'checks do not pass on the unbroken code', so the gate cannot be met here. Needs a decision: run P149.3 first (reorder), or move C391's tests 1-2 to P149.3. Tasks 1-5 also still need mutation records (task break/--none), which I did not add since the same gate applies to C391 for task5."
     },
     {
       "id": "P149.3",
@@ -36536,7 +36543,7 @@
         "plugin/skills/status/SKILL.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/skills/vibe/SKILL.md: the step.say rule also says road.say from vbw next --json, as given, on the same line or the next, before planning, a build, a fix, QA or a background proof; the line keeps naming plan, build, fix, qa, prove and background",
@@ -36575,6 +36582,53 @@
           "result": "red",
           "at": "2026-10-17T14:12:54Z",
           "head": "7e863abfea64845766a77c710875212af5683f5d"
+        },
+        {
+          "task": 3,
+          "none": "task only runs tests, no code to break",
+          "at": "2026-10-17T15:35:05Z"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "the router says road.say with step.say, as given, before it starts planning, a build, a fix, QA or a background proof"
+          },
+          "what": "dropped road.say from the step rule",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C396": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T15:35:57Z",
+          "head": "3888195845fa49fee173e22ad6a955b69f4ccba3"
+        },
+        {
+          "task": 1,
+          "what": "removed road.say from the step rule",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C396": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T15:36:42Z",
+          "head": "3888195845fa49fee173e22ad6a955b69f4ccba3"
+        },
+        {
+          "task": 2,
+          "what": "removed the milestone end sentence",
+          "files": [
+            "plugin/skills/status/SKILL.md"
+          ],
+          "checks": {
+            "C396": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T15:37:01Z",
+          "head": "3888195845fa49fee173e22ad6a955b69f4ccba3"
         }
       ]
     },
@@ -47874,6 +47928,19 @@
           "usd": 3.057367,
           "in": 6417,
           "out": 304
+        }
+      },
+      {
+        "id": "build-20261017T152543Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-17T15:25:43Z",
+        "ended": "2026-10-17T15:37:18Z",
+        "cost": {
+          "usd": 0.670064,
+          "in": 5493,
+          "out": 308
         }
       }
     ],
