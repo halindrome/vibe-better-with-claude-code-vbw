@@ -236,3 +236,38 @@ until_note() {
   VBW_SESSION_ID=s1 "$VBW" prove > "$TEST_ROOT/prove2.out" 2>&1 || { cat "$TEST_ROOT/prove2.out"; false; }
   [ ! -e "$lock" ] || { echo "the dead owner's lock stayed"; false; }
 }
+
+@test "R190 (D429): a late fix moves its end to its own pace, marked later than usual, never earlier than the first end" {
+  step_seed fix 300 1 3
+  step_edit '.plans[].status = "done" | .fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "C1 fail"},
+    {id: "F2", req: "R1", attempts: 0, status: "open", note: "C1 fail"}, {id: "F3", req: "R1", attempts: 0, status: "open", note: "C1 fail"}]'
+  git add -A && git commit -q -m "chore(vbw): fixes"
+  "$VBW" approve > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" run start fix F1 F2 F3 > /dev/null
+  [ "$(step_secs first_end)" -eq 900 ]
+  step_back 1000
+  VBW_SESSION_ID=s1 "$VBW" fix done F1 > /dev/null
+  [ "$(step_secs end)" -ge 2990 ] && [ "$(step_secs end)" -le 3030 ] || { cat "$NOTE"; false; }
+  jq -e '.late == true and .end != .first_end' "$NOTE" || { cat "$NOTE"; false; }
+  step_back 500
+  VBW_SESSION_ID=s1 "$VBW" fix done F2 > /dev/null
+  [ "$(step_secs end)" -ge 2240 ] && [ "$(step_secs end)" -le 2270 ] || { cat "$NOTE"; false; }
+}
+
+@test "R190 (D429): a late proof of its own moves its end at its own pace as units finish, never before the first end" {
+  # lateunit.sh: the first unit back-dates the note by 1000 s; every unit copies the note as it starts.
+  cat > tests/lateunit.sh << 'SH'
+if [ ! -e "$CONC/back" ]; then
+  touch "$CONC/back"
+  jq -c 'def back: fromdateiso8601 - 1000 | todateiso8601; .started_at |= back | .first_end |= back | .end |= back' "$NOTE" > "$CONC/n.json" && cp "$CONC/n.json" "$NOTE"
+fi
+jq -c . "$NOTE" >> "$SNAPS"
+SH
+  checks 3 lateunit
+  "$VBW" config set check_jobs 1 > /dev/null
+  step_seed proof 30 3 3
+  VBW_SESSION_ID=s1 "$VBW" prove > "$TEST_ROOT/prove.out" 2>&1 || { cat "$TEST_ROOT/prove.out"; false; }
+  jq -s -e '.[0].late == false
+    and (.[1].parts.done == 1 and .[1].late == true and .[1].end > .[1].first_end)
+    and (.[2].parts.done == 2 and .[2].late == true and .[2].end > .[2].first_end and .[2].end != .[1].end)' "$SNAPS" || { cat "$SNAPS"; false; }
+}
