@@ -8,7 +8,7 @@
 // ('until around tomorrow 00:20'); under a minute left, 'less than a minute'.
 // The time keeps the estimate colour. It is gone at the next refresh (2 s) once
 // the step ends. The panel never works the step's time out itself: a lease and a
-// history without a note show no step time; the milestone estimate (R58) stays.
+// history without a note show no step time, and no milestone time either (R191: the milestone's end is the kernel's road).
 // Times are local to Europe/Zurich (UTC+01:00, +02:00 in summer), so a UTC clock shows.
 import test from 'node:test'
 import assert from 'node:assert/strict'
@@ -143,11 +143,11 @@ test("with nothing running no step time shows; a note of another run is not this
   assert.match(await paneText(control), /until around/)
 })
 
-test("the panel never works the step's time out itself; the milestone estimate stays", async () => {
+test("the panel never works the step's time out itself, nor the milestone's", async () => {
   const h = await session(building(), null, { [STEPS]: JSON.stringify(HISTORY) })
   const text = await paneText(h)
   assert.doesNotMatch(text, /until around|this step/i)
-  assert.match(text, /About \d+ min left in the milestone/)
+  assert.doesNotMatch(text, /min left in the milestone|Milestone end|No estimate yet/)
   const timeline = { runId: 'wf_1', kind: 'building', phase: 'Build', startedAt: T0 - 300 * S, endedAt: null, status: 'running', agents: [] }
   const bare = live.timelineModel({ run: timeline, now: NOW, steps: HISTORY.steps, width: 20 })
   assert.equal(bare.left, null, 'the Timeline worked a time out from the history')

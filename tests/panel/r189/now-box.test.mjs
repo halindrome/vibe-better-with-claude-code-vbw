@@ -26,7 +26,8 @@ const steps = (kind, secs) => secs.map((s, i) => ({ kind, run: kind + '-' + i, s
 const HISTORY = { steps: [...steps('build', [600, 900, 1200]), ...steps('qa', [100, 200, 300])] }
 // The kernel's note for the build of P44.1 (R190): it ends at END.
 const note = (end, over = {}) => JSON.stringify({ kind: 'build', run: 'build-1', session: 'sess-1', pid: null, started_at: iso(T0 - 300 * S),
-  ids: ['P44.1'], doing: 'building P44.1', parts: { done: 0, total: 1 }, proof: null, first_end: iso(end), end: iso(end), late: false, ...over })
+  ids: ['P44.1'], doing: 'building P44.1', parts: { done: 0, total: 1 }, proof: null, first_end: iso(end), end: iso(end), late: false,
+  road: { seconds: 7800, end: iso(end + 7200000), rounds: { deep: 2 }, basis: '2 waves, 2 proofs', say: 'milestone end: about 2 h 10 min, until around 16:40' }, ...over })
 const PLANS = [{ id: 'P44.1', phase: 'P44', title: 'Show the cost', status: 'building' }]
 const WIDTH = 60
 const EL = (name) => Object.freeze({ element: name })
@@ -106,7 +107,7 @@ test("Mission Control's need sentence starts with the time the gate was reached"
 test('the time-left sentences start with [HH:MM], as in "[14:08] This step: about 12 min, until around 14:20."', async () => {
   const h = await session(record({ lease: lease('build', T0 - 300 * S), plans: PLANS }), next({ action: 'run' }), { [STEPS]: JSON.stringify(HISTORY), [NOTE]: note(T0 + 600 * S) })
   const lines = await paneLines(h)
-  const left = lines.filter((l) => /until around \d\d:\d\d|min left in the milestone/.test(l))
+  const left = lines.filter((l) => /until around \d\d:\d\d|Milestone end: about 2 h/.test(l))
   assert.ok(left.length >= 2, 'no time-left sentence for the step and the milestone')
   for (const l of left) assert.match(l.trim(), /^\[\d\d:\d\d\] /)
 })
