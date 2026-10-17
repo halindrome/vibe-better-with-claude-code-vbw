@@ -165,3 +165,15 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
   "$VBW" run start qa > /dev/null
   jq -e '.first_end == null and .end == null' "$NOTE" || { cat "$NOTE"; false; }
 }
+
+@test "R191: QA with several phases sums the median seconds per phase, each at its own tier" {
+  step_edit '.plans[].status = "done"
+    | .phases += [{id: "P2", title: "Receipt", reqs: ["R1"], milestone: "M1", tier: "deep"}]
+    | .plans += [{id: "P2.1", phase: "P2", title: "D", reqs: ["R1"], files: ["src/d.txt"], after: [], status: "done"}]'
+  git add -A && git commit -q -m "chore(vbw): built"
+  "$VBW" approve > /dev/null
+  "$VBW" prove --full > /dev/null
+  hist_qa standard 120 3
+  hist_qa deep 900 3
+  step_of | jq -e '.kind == "qa" and .ids == ["P1", "P2"] and .seconds == 1020' || { step_of; false; }
+}
