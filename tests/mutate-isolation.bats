@@ -109,16 +109,25 @@ appears() {
 
 @test "R188: a mutation check takes machine slots: with the computer-wide limit taken, it waits its turn and says so" {
   local holder pid
-  # 2 cores: the computer-wide limit is 1 slot, held by another run's check.
+  local other="$TEST_ROOT/other" store="$CLAUDE_CONFIG_DIR/vbw/slots.json" i=0
+  # 2 cores: the computer-wide limit is 1 slot, held by a check of another project (another
+  # run of the same project would hold the mutation check at the project's own gate instead).
   printf '2\n' > "$TEST_ROOT/cores"
-  HOLD_RECEIPT="$TEST_ROOT/go-receipt" "$VBW" check C2 < /dev/null > "$TEST_ROOT/check.out" 2>&1 &
+  git clone -q . "$other"
+  (cd "$other" && "$VBW" approve > /dev/null)
+  (cd "$other" && HOLD_RECEIPT="$TEST_ROOT/go-receipt" exec "$VBW" check C2 < /dev/null > "$TEST_ROOT/check.out" 2>&1) &
   holder=$!
   appears "$TEST_ROOT/go-receipt.in" "$holder" || { cat "$TEST_ROOT/check.out"; false; }
   printf 'echo unpaid\n' > src/pay.sh
   "$VBW" mutate P1.1 task1 --check C3 "prints unpaid" src/pay.sh < /dev/null > "$TEST_ROOT/mutate.out" 2>&1 &
   pid=$!
-  sleep 2
-  kill -0 "$pid" 2> /dev/null || { echo "the mutation check did not wait for a slot"; cat "$TEST_ROOT/mutate.out"; false; }
+  # It waits its turn once the store lists it as a waiter (a fixed sleep lost the race on a busy machine).
+  until jq -e --argjson p "$pid" 'any(.waiting[]; .run == $p)' "$store" > /dev/null 2>&1; do
+    kill -0 "$pid" 2> /dev/null || { echo "the mutation check did not wait for a slot"; cat "$TEST_ROOT/mutate.out"; false; }
+    i=$((i + 1))
+    [ "$i" -lt 600 ] || { echo "the mutation check never waited for a slot"; cat "$store"; false; }
+    sleep 0.1
+  done
   [ ! -s "$CONC/seen" ] || { echo "its check ran beside the held slot"; false; }
   : > "$TEST_ROOT/go-receipt"
   wait "$holder" || true
