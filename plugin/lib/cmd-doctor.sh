@@ -5,6 +5,8 @@
 
 # shellcheck source=cmd-statusline.sh
 . "$VBW_LIB/cmd-statusline.sh"
+# shellcheck source=sessions.sh
+. "$VBW_LIB/sessions.sh"
 
 VBW_MIN_CLAUDE=2.1.286
 
@@ -14,6 +16,7 @@ cmd_doctor() {
   doctor_tools
   doctor_path
   doctor_claude
+  doctor_sessions
   doctor_statusline
   if VBW_ROOT=$(git rev-parse --show-toplevel 2> /dev/null); then
     doctor_project
@@ -111,6 +114,17 @@ doctor_claude() {
     off) doctor_line fail "workflows are disabled in your settings (disableWorkflows)" "remove disableWorkflows, then turn on Dynamic workflows in /config" ;;
     *) doctor_line warn "workflows: Claude Code's default (off on some plans)" "vbw workflows on" ;;
   esac
+}
+
+doctor_sessions() {
+  local dir n
+  dir="$(vbw_claude_dir)/sessions"
+  if [ -d "$dir" ] && [ -r "$dir" ]; then
+    n=$(sessions_registry | jq 'length' 2> /dev/null || echo 0)
+    doctor_line ok "session names: Claude Code's list of chats ($dir) is readable, $n entries"
+  else
+    doctor_line info "session names: Claude Code's list of chats ($dir) not found: run holders are shown by their id"
+  fi
 }
 
 doctor_statusline() {
