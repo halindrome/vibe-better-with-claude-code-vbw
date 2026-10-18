@@ -97,6 +97,16 @@ start() { VBW_SESSION_ID="$1" "$VBW" run start build P1.1 > /dev/null; }
   [ "$(printf '%s\n' "$without" | wc -l | tr -d ' ')" -eq 4 ]
 }
 
+@test "R192: a malformed file in the list does not cost the good entries their names" {
+  registry_entry 101 "$SESSION_A" "Payments work"
+  start "$SESSION_A"
+  printf '{"sessionId": "%s", "name": "Broken' "$SESSION_B" > "$(registry_dir)/100.json"
+  printf 'not json at all' > "$(registry_dir)/99.json"
+  local l
+  l=$(render "$SESSION_B")
+  [[ "$l" == *"· held by Payments work"* ]] || { echo "$l"; false; }
+}
+
 @test "R192: the list is read with one jq pass per render, only while a lease is open" {
   local real log="$TEST_ROOT/jq.log"
   real=$(command -v jq)
@@ -117,6 +127,7 @@ start() { VBW_SESSION_ID="$1" "$VBW" run start build P1.1 > /dev/null; }
 
 @test "R192: the hook bench measures the status line with a lease open and a list of chats on disk" {
   local b="$REPO_ROOT/tools/bench-hooks.sh"
-  grep -q 'run-open' "$b"
-  grep -qE 'sessions/[^ ]*\.json' "$b"
+  # Code lines only: a comment that names them measures nothing.
+  grep -vE '^[[:space:]]*#' "$b" | grep -qE '> *"[^"]*run-open"'
+  grep -vE '^[[:space:]]*#' "$b" | grep -qE 'sessions/[^ ]*\.json'
 }
