@@ -137,6 +137,24 @@ non-owner session is refused. Two exceptions: the user states the owning session
 is closed (`vbw run end --owner-closed`), or the run is older than 24 hours
 (`VBW_LEASE_HOURS`).
 
+The holder's name never enters the record or git history. `vbw run start` reads
+it from Claude Code's list of chats (`<claude-config-dir>/sessions/`; with
+several entries for one session the newest wins) and stores
+`{run, session, session_name}` in `.vbw/runtime/holder.json` (never in the record, on this
+computer only) and in the glance's `holder`. `vbw run end` removes both. The record
+validator refuses a lease that carries `session_name`. With no list, no entry for
+the session or an unreadable folder, `session_name` is `null` and the run still
+starts; a malformed file in the list is skipped.
+
+Messages show a display name, chosen in this order: the list's current name for
+the lease's session (so a `/rename` during the run shows at once), else the
+stored name (a closed chat keeps it), else the first 8 characters of the session
+id, else `a session VBW cannot name`. A name is cleaned of control characters and
+escape sequences, and one longer than 40 characters is cut to its first 39 plus
+`…`. It shows in `vbw next`, in the `vbw run start` and `vbw run end` refusals
+(which keep the words "another session"), in the loop's stop, and in the guards'
+reason (which uses the glance's stored name alone, else 8 characters of the id).
+
 `files` holds the paths the
 run's agents may write: the plans' files for `build`; for `fix`, the files of
 every plan that serves a fixed requirement; `[".vbw/"]` for `plan` (planning
