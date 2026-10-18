@@ -20622,7 +20622,21 @@
         "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R33 (C29), R35 (C31), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R58 (C62, C63, C64, C67), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R65 (C86, C87, C88, C89, C90), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R95 (C149, C150), R96 (C151, C152), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R145 (C210), R146 (C211), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-18T21:26:40Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P152.4: Docs written and committed (3 commits). Mutation of R192.17 and tasks 2-3 cannot run: C406 (tests/sessions-docs.bats) is red on the unbroken tree because docs/statusline.md, docs/panel.md and docs/next.md (other plans' docs) are not finished yet. Rerun vbw mutate P152.4 R192.17 and task2/task3 once those land. Note: task1 was recorded --none by mistake while probing usage."
+        },
+        {
+          "at": "2026-10-18T21:32:07Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P152.1: Code for tasks 1-4 is committed (holder.jq, sessions.sh, cmd-run.sh, record.sh; C401 tests 1-3 and 5-9 pass, glance-write, kernel-sessions, record, hooks-guard stay green). The mutation step cannot start: vbw mutate refuses because C401 fails on unbroken code. Tests 4 (vbw next names the holder) and 10 (vbw doctor line) of tests/sessions-name.bats need P152.2's files (cmd-next.sh, next.jq, cmd-doctor.sh), outside this plan. It also waits for approval of tests/panel/r192/holder.test.mjs. Next: build P152.2, approve the new checks, then run the 14 mutations (R192.1-10 and tasks 1-4) for P152.1; first break tried: holder_write stores no name."
+        }
+      ]
     },
     {
       "id": "P153",
@@ -20653,7 +20667,21 @@
         "guarded: R13 (C12), R14 (C13), R16 (C15), R22 (C19), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R35 (C31), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R56 (C61, C65), R57 (C59, C70, C71), R58 (C62, C63, C64, C67), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R82 (C117), R83 (C119), R84 (C123), R85 (C125), R86 (C124), R87 (C126, C127), R88 (C129), R89 (C128), R91 (C130), R98 (C154), R100 (C156), R102 (C158, C159), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R121 (C187, C188), R122 (C189), R123 (C190, C191), R124 (C192, C193), R132 (C199), R134 (C201), R135 (C202), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R160 (C247, C263, C264), R161 (C248, C265, C266), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-18T21:26:46Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P153.4: Tasks 1-4 committed (3fb10d97). Mutation of R192.33 cannot run: C406 already fails on unbroken docs (tests 1,2,5,7: docs/guards.md, workflows.md, next.md and the Sessions tab in docs/panel.md belong to other plans, outside this plan's files). Re-run 'vbw mutate P153.4 R192.33 ...' once those land."
+        },
+        {
+          "at": "2026-10-18T21:31:30Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P153.2: Code and checks C407 done and mutation-clean, but tests/panel/wiring.test.mjs ('outside the project it reads only this session's own folder') now fails: reading Claude Code's list of chats (<config>/sessions) while a lease is open is the plan's own task 2, yet that approved test allows only the project, the session folder and ~/.config/claude-code. The file is not in P153.2's files (P154.1 owns it). Needed: allow the sessions folder in that test's path check (and keep credentials/settings/.ssh forbidden); then run vbw plan done P153.2."
+        }
+      ]
     },
     {
       "id": "P154",
@@ -38700,14 +38728,15 @@
         "plugin/lib/record.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/lib/holder.jq (new): the one jq rule for a holder's display name: `clean_name` (drops CSI and OSC escape sequences, then every control character U+0000-U+001F, U+007F, U+0080-U+009F), `cut_name($n)` (a name longer than $n becomes its first $n-1 characters plus …) and `holder_name($lease; $stored; $live)`: the list's live name, else the stored name, else the first 8 characters of $lease.session, else 'a session VBW cannot name'; cleaned, then cut to 40. The hooks and the status line include it with `include \"holder\" {search: \"../lib\"}`; kernel commands prepend its text to their jq programs (as VBW_JQ_DEFS is).",
         "plugin/lib/sessions.sh (new): VBW's read-only view of Claude Code's list of chats, <claude-config-dir>/sessions/*.json (vbw_claude_dir). `sessions_registry`: one `jq -R` pass over the files grouped by input_filename, keeping objects with a string sessionId, skipping malformed files, `[]` when the folder is missing or unreadable, exit 0 always. `sessions_name SID`: the newest updatedAt entry's name, cleaned, or nothing. `sessions_project_entries ROOT`: the entries whose cwd is ROOT or a folder under it. `holder_write RUN SID` and `holder_clear`: .vbw/runtime/holder.json {run, session, session_name} (session_name null when unknown), written through a temporary name and a rename. `holder_display SID`: holder.jq's rule applied to the live name, holder.json's name (only when its session is SID) and the id.",
         "plugin/lib/cmd-run.sh: `vbw run start` computes the run id into a variable first, writes holder.json before the record write (so the glance that write produces carries it), and keeps everything else; `vbw run end` removes holder.json after the record write. Both refusals name the holder with `holder_display`: `a run is active (<run>) in another session, <name>. Next: wait for it, or check vbw status` and `run <run> belongs to another session, <name>. Next: wait for it, or if the user says that session is closed, vbw run end --owner-closed` (tests/kernel-sessions.bats keeps passing: 'another session' stays in both).",
         "plugin/lib/record.sh: `record_glance_write` adds a top-level `holder` to the glance: holder.json's {run, session, session_name} when the file parses and its run equals the lease's run, else null (read with --slurpfile or --rawfile and try, never --arg). The glance's `lease` stays byte-equal to the record's (tests/glance-write.bats and glance-helper.bash's glance_same are protected and must stay green); record.jq is untouched, so a lease carrying session_name stays corrupt (D442, D445)."
-      ]
+      ],
+      "note": "Code for tasks 1-4 is committed (holder.jq, sessions.sh, cmd-run.sh, record.sh; C401 tests 1-3 and 5-9 pass, glance-write, kernel-sessions, record, hooks-guard stay green). The mutation step cannot start: vbw mutate refuses because C401 fails on unbroken code. Tests 4 (vbw next names the holder) and 10 (vbw doctor line) of tests/sessions-name.bats need P152.2's files (cmd-next.sh, next.jq, cmd-doctor.sh), outside this plan. It also waits for approval of tests/panel/r192/holder.test.mjs. Next: build P152.2, approve the new checks, then run the 14 mutations (R192.1-10 and tasks 1-4) for P152.1; first break tried: holder_write stores no name."
     },
     {
       "id": "P152.2",
@@ -38767,13 +38796,21 @@
         "docs/record.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "docs",
       "tasks": [
         "docs/guards.md, the paragraph 'VBW itself writes nothing outside the project except three things': add that VBW's one read outside the project is Claude Code's list of chats, `<claude-config-dir>/sessions/*.json`, read for the holder's name and never written (R192); the three writes stay as listed.",
         "docs/workflows.md, 'The run lease': `record.lease` keeps `{run, kind, started_at, session, files}`; the holder's `session_name` lives on this computer only, in `.vbw/runtime/holder.json` {run, session, session_name} written by `vbw run start` and removed by `vbw run end`, and in the glance's `holder`, never in the record or git history (D442, D445); the display name order (the list's current name, else the stored name, else the first 8 characters of the id, else 'a session VBW cannot name'), the cleaning and the 40-character cut, and where it shows (vbw next, the run start and run end refusals, the loop's stop, the guards' reason).",
         "docs/record.md: the glance paragraph names the glance's `holder` field ({run, session, session_name} while a run is open, null otherwise) and says the record and `costs.runs` never carry `session_name`; the `lease` row says the same in one clause."
-      ]
+      ],
+      "mutations": [
+        {
+          "task": 1,
+          "none": "x",
+          "at": "2026-10-18T21:26:29Z"
+        }
+      ],
+      "note": "Docs written and committed (3 commits). Mutation of R192.17 and tasks 2-3 cannot run: C406 (tests/sessions-docs.bats) is red on the unbroken tree because docs/statusline.md, docs/panel.md and docs/next.md (other plans' docs) are not finished yet. Rerun vbw mutate P152.4 R192.17 and task2/task3 once those land. Note: task1 was recorded --none by mistake while probing usage."
     },
     {
       "id": "P153.1",
@@ -38816,14 +38853,262 @@
         "tests/panel/lines.test.mjs"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/hooks/panel-sessions.js (new): the panel's one JS helper for chats: `cleanName` (drops CSI and OSC escape sequences and every control character; '' for a non-string), `cutName(s, n)` (longer than n becomes n-1 characters plus …), `registryEntries(texts)` (the file texts that parse to an object with a string sessionId, newest updatedAt first; [] for anything else), `holderName({lease, registry, stored, sessionId})` (null unless lease.session is a string; else {name, self, known}: the list's newest name for lease.session, else stored.session_name when stored.session is lease.session, else lease.session.slice(0, 8) with known false; cleaned, cut to 40; self = sessionId === lease.session) and `readRegistry($, root)` ($.fs.list of <claude-config-dir>/sessions found as sessionDir finds the config folder, $.fs.read of each .json, never throwing, [] when missing).",
         "plugin/hooks/panel.js: `gather` reads the list (readRegistry) and `.vbw/runtime/holder.json` (st.stored, parsed or null) on the tick only while a lease is open (P154 adds: or the Sessions tab is shown), sets `st.holder = holderName(...)`, and hands it to the view input, the sites (panel-sites.js) and `facts()`; sessionDir's config-folder lookup moves to panel-sessions.js so both share it.",
         "plugin/hooks/panel-lines.js and panel-sites.js: `recordDiffIntent(diff, holder)` and `recordEditIntent(call, holder)` read `VBW · <kind> run started by <name>` or `VBW · <kind> run started by this chat` when a holder is given, unchanged (`VBW · <kind> run started`) without one; `VBW · run closed` stays; the ToolUse site passes st.holder.",
         "plugin/hooks/panel-view.js and panel-commands.js: panelView's input gains `holder`; the Now box's state sentence ends with `, held by <name>.` when holder.self is false (unchanged when this chat holds the run or no holder is given); whyText reads `held by this chat (\"<name>\")` or `held by \"<name>\"` when holder.known, and `held by this session (<8 chars>)` / `held by another session (<8 chars>)` as today when not, keeping ' since HH:MM UTC (N min ago)', the file count and 'Wait for it to finish in that session.'; statusText's doing line carries the same `, held by <name>` suffix as the Now box; tests/panel/commands.test.mjs and lines.test.mjs stay green (they pass no holder)."
-      ]
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the panel's JS helper cleans and cuts names, lists valid entries newest first skipping malformed ones, and resolves the holder in the shared order with self and known flags"
+          },
+          "what": "cut keeps n instead of n-1",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:27:42Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the panel's JS helper cleans and cuts names, lists valid entries newest first skipping malformed ones, and resolves the holder in the shared order with self and known flags"
+          },
+          "what": "list not newest first",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:27:50Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the panel's JS helper cleans and cuts names, lists valid entries newest first skipping malformed ones, and resolves the holder in the shared order with self and known flags"
+          },
+          "what": "self flag always false",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:27:59Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "Comms' record-change line reads VBW · <kind> run started by <name>, or by this chat in the holder, and is unchanged without a holder; run closed stays"
+          },
+          "what": "by this chat ignored",
+          "files": [
+            "plugin/hooks/panel-lines.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:28:10Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the Now box's state sentence ends with , held by <name> only when another chat holds the run"
+          },
+          "what": "held by shown to holder",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:28:20Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "/vbw-why reads held by this chat (\"<name>\") or held by \"<name>\", the id in brackets only when no name is known, keeping since, the file count and wait for it, never saying to end the run"
+          },
+          "what": "why drops quotes",
+          "files": [
+            "plugin/hooks/panel-commands.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:28:30Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "/vbw-status carries the same held by <name> wording as the Now box"
+          },
+          "what": "status ignores holder",
+          "files": [
+            "plugin/hooks/panel-commands.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:28:39Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "task": 1,
+          "what": "OSC not removed",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:29:08Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "task": 1,
+          "what": "malformed entries not skipped",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:29:20Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "task": 1,
+          "what": "stored name used for any session",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:29:29Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "task": 1,
+          "what": "no null without session",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:29:38Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "task": 2,
+          "what": "gather skips holder read",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C407": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T21:29:47Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "task": 3,
+          "what": "edit intent drops holder",
+          "files": [
+            "plugin/hooks/panel-lines.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:29:56Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "task": 4,
+          "what": "panelView ignores holder",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:30:06Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "task": 4,
+          "what": "why unnamed wording changed",
+          "files": [
+            "plugin/hooks/panel-commands.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:30:17Z",
+          "head": "8db056d9beed387e868f1838d3812941971ad256"
+        },
+        {
+          "task": 2,
+          "what": "gather skips holder read",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:31:01Z",
+          "head": "0a6ead58ad70d396c0e3cb940bcf42fffca6571d",
+          "strengthened": [
+            "tests/panel/r192/holder.test.mjs"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "reads the list with no lease",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C407": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T21:31:19Z",
+          "head": "0a6ead58ad70d396c0e3cb940bcf42fffca6571d"
+        }
+      ],
+      "note": "Code and checks C407 done and mutation-clean, but tests/panel/wiring.test.mjs ('outside the project it reads only this session's own folder') now fails: reading Claude Code's list of chats (<config>/sessions) while a lease is open is the plan's own task 2, yet that approved test allows only the project, the session folder and ~/.config/claude-code. The file is not in P153.2's files (P154.1 owns it). Needed: allow the sessions folder in that test's path check (and keep credentials/settings/.ssh forbidden); then run vbw plan done P153.2."
     },
     {
       "id": "P153.3",
@@ -38862,14 +39147,15 @@
         "docs/panel.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "docs",
       "tasks": [
         "docs/statusline.md, line 1 of the status line: the run cell forms `▶ build P1.2, P2.1 · 1 of 2 · until 14:20 · leading` in the chat that holds the run and `· held by <name>` in any other, the name cut to 20 characters with …, the first 8 characters of the id when no name is known, nothing when the lease has no session.",
         "docs/statusline.md, 'What it reads': Claude Code's list of chats (`<claude-config-dir>/sessions/*.json`), read in one jq pass per render only while a lease is open, never written; with the list missing the line renders as before; the hook bench measures it with a lease open.",
         "docs/panel.md, Comms table and the 'What's happening now' section: the record-change line `VBW · build run started by <name>` (or `by this chat`); the Now box's state sentence ending `, held by <name>` when another chat holds the run, unchanged when this chat does.",
         "docs/panel.md, 'Instant commands': `/vbw-why` names the holder by name (`held by this chat (\"<name>\")` or `held by \"<name>\"`), with the id in brackets only when no name is known, keeping since, the file count and 'wait for it'; `/vbw-status` says the same about the holder as the Now box."
-      ]
+      ],
+      "note": "Tasks 1-4 committed (3fb10d97). Mutation of R192.33 cannot run: C406 already fails on unbroken docs (tests 1,2,5,7: docs/guards.md, workflows.md, next.md and the Sessions tab in docs/panel.md belong to other plans, outside this plan's files). Re-run 'vbw mutate P153.4 R192.33 ...' once those land."
     },
     {
       "id": "P154.1",
@@ -50553,6 +50839,15 @@
         "milestone": "M38",
         "started": "2026-10-18T20:34:54Z",
         "ended": "2026-10-18T21:23:54Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261018T212535Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M38",
+        "started": "2026-10-18T21:25:35Z",
+        "ended": "2026-10-18T21:32:22Z",
         "cost": null
       }
     ],
