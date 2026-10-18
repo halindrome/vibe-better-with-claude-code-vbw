@@ -350,15 +350,15 @@ step_proof_units() {
     cd "$VBW_ROOT" || exit 1
     # shellcheck source=cmd-prove.sh
     . "$VBW_LIB/cmd-prove.sh"
-    local causes alln=0 c names='[]'
+    local causes alln=0
     proofreuse_plan "$1" "$2"
     causes=$(proofcauses_find "$1" "$2" "$(vbw_head_tree 2> /dev/null)")
     [ -z "$causes" ] || alln=1
     testfiles_plan "$1" "$alln"
     [ -z "$causes" ] || prove_plan_all "$1"
-    for c in ${TODO_CHECKS[@]+"${TODO_CHECKS[@]}"}; do names=$(printf '%s' "$names" | jq -c --arg n "check:$c" '. + [$n]'); done
-    for c in ${TF_TODO[@]+"${TF_TODO[@]}"}; do names=$(printf '%s' "$names" | jq -c --arg n "file:$c" '. + [$n]'); done
-    printf '%s' "$TODO_COMMANDS" | jq -c --argjson names "$names" '$names + [.[] | "command:\(.)"]'
+    # The same list the proof itself names (held checks and unapproved commands left out), in one jq.
+    CHECK_HELD=$(contract_held "$1")
+    prove_unit_names "$1"
   ) 2> /dev/null || echo '[]'
 }
 
