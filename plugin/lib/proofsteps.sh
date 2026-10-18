@@ -102,7 +102,7 @@ proofsteps_clean() {
 # units. Sets PROOFSTEPS_ON, PS_MODE (own, inside or none) and what the later
 # calls need.
 proofsteps_begin() {
-  local record lease run me live now expect first_end=null size
+  local record lease run me live expect first_end=null size
   PROOFSTEPS_ON=1
   PS_TOTAL=$1
   PS_UNITS=
@@ -127,8 +127,8 @@ proofsteps_begin() {
     if [ -z "$lease" ] || ! printf '%s' "$lease" | jq -e --arg me "$me" '(.session // "") == $me' > /dev/null; then
       PS_MODE=own
       expect=$(step_expect proof "$size")
-      now=$(vbw_now)
-      [ -z "$expect" ] || first_end=$(jq -n -r --arg now "$now" --argjson e "$expect" '($now | fromdateiso8601) + $e | todateiso8601')
+      # The end counts from the note's own start, never from a later second.
+      [ -z "$expect" ] || first_end=$(jq -n -r --arg start "$PS_START" --argjson e "$expect" '($start | fromdateiso8601) + $e | todateiso8601')
       vbw_guard_add file "$(step_note_file)"
       step_note_write "$(jq -n -c --arg me "$me" --argjson pid "$$" --arg now "$PS_START" --argjson t "$PS_TOTAL" --arg fe "$first_end" '
         {kind: "proof", run: null, session: (if $me == "" then null else $me end), pid: $pid, started_at: $now, ids: [],
