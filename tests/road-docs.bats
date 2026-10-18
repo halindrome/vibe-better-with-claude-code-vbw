@@ -86,11 +86,11 @@ has() { printf '%s\n' "$1" | grep -qE -- "$2" || { echo "missing: $2"; return 1;
 }
 
 @test "R191: docs/rigor.md says outcome.fix_rounds feeds the usual fix rounds of the milestone's end" {
-  tr '\n' ' ' < "$RIGOR" | tr -s ' ' | grep -qiE 'fix_rounds.{0,300}(milestone.s end|milestone end|usual fix rounds|end of the milestone)' \
+  tr '\n' ' ' < "$RIGOR" | tr -s ' ' | grep -qiE 'fix_rounds.{0,150}.{0,150}(milestone.s end|milestone end|usual fix rounds|end of the milestone)' \
     || { echo "docs/rigor.md does not connect fix_rounds to the milestone's end"; false; }
 }
 
 @test "R191: the README names the milestone's end where it describes the panel" {
-  tr '\n' ' ' < "$README" | tr -s ' ' | grep -qiE "(mission control|panel).{0,400}(milestone.s end|milestone end|when the milestone should end|end of the milestone)" \
+  tr '\n' ' ' < "$README" | tr -s ' ' | grep -qiE "(mission control|panel).{0,200}.{0,200}(milestone.s end|milestone end|when the milestone should end|end of the milestone)" \
     || { echo "README.md does not name the milestone's end with the panel"; false; }
 }
