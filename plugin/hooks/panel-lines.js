@@ -221,14 +221,15 @@ export function vbwRowIntent(input) {
 }
 
 // A diff shown on .vbw/record.json, as what changed.
-export function recordDiffIntent(diffText) {
+export function recordDiffIntent(diffText, holder) {
   if (typeof diffText !== 'string' || !diffText.trim()) return null
   const lines = diffText.split('\n')
   const added = lines.filter((l) => l.startsWith('+')).join('\n')
   const removed = lines.filter((l) => l.startsWith('-')).join('\n')
   if (/"lease":\s*\{/.test(added)) {
     const k = /"kind":\s*"([a-z]+)"/.exec(added)
-    return 'VBW · ' + (k ? k[1] + ' ' : '') + 'run started'
+    const by = isObj(holder) && typeof holder.name === 'string' && holder.name ? ' by ' + (holder.self ? 'this chat' : holder.name) : ''
+    return 'VBW · ' + (k ? k[1] + ' ' : '') + 'run started' + by
   }
   if (/"lease":\s*null/.test(added) && /"lease":\s*\{/.test(removed)) return 'VBW · run closed'
   if (/"text":\s*"Contract approved/.test(added)) return 'VBW · plan approved'
@@ -239,7 +240,7 @@ export function recordDiffIntent(diffText) {
 }
 
 // An Edit, MultiEdit or Write of .vbw/record.json, as what changed; null for any other call.
-export function recordEditIntent(call) {
+export function recordEditIntent(call, holder) {
   if (!isObj(call) || !isObj(call.input) || typeof call.input.file_path !== 'string' || !/\/\.vbw\/record\.json$/.test(call.input.file_path)) return null
   const { tool, input } = call
   if (tool === 'Write') return typeof input.content === 'string' ? 'VBW · record updated' : null
@@ -248,5 +249,5 @@ export function recordEditIntent(call) {
   const sign = (c, t) => String(t).split('\n').map((l) => c + l).join('\n')
   const ok = edits.filter((x) => isObj(x) && typeof x.old_string === 'string' && typeof x.new_string === 'string')
   if (!ok.length) return null
-  return recordDiffIntent(ok.map((x) => sign('-', x.old_string) + '\n' + sign('+', x.new_string)).join('\n'))
+  return recordDiffIntent(ok.map((x) => sign('-', x.old_string) + '\n' + sign('+', x.new_string)).join('\n'), holder)
 }

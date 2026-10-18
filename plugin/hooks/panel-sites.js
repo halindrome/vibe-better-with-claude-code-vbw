@@ -76,7 +76,7 @@ export const SITES = {
     const p = props(e)
     if (p.isErrored) return null
     if (p.tool === 'Workflow') return textOr(workflowCard({ input: p.input, run: st.run }))
-    if (p.tool === 'Edit' || p.tool === 'MultiEdit' || p.tool === 'Write') return p.isExpanded ? null : textOr(recordEditIntent({ tool: p.tool, input: p.input }))
+    if (p.tool === 'Edit' || p.tool === 'MultiEdit' || p.tool === 'Write') return p.isExpanded ? null : textOr(recordEditIntent({ tool: p.tool, input: p.input }, st.holder))
     return textOr(p.tool === 'Bash' && isObj(p.input) ? vbwRowIntent({ command: p.input.command }) : null)
   },
   // The notification of this session's VBW run ending: the run receipt. Kept once
