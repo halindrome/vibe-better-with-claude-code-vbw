@@ -20166,7 +20166,15 @@
           "to": "deep",
           "reason": "Dev blocked P150.1: Built: wave schedule in VBW_JQ_DEFS (waves($m)), lib/road.sh road_compute, lib/road.jq; commits e515ddb3, 3d7e717e, 3b41c592. Tests 1-8 of tests/road-next.bats pass when road_compute is called directly (scratch copy), but the plan's checks cannot go green: C392 (and the status/note tests) need steps.sh and cmd-next.sh/cmd-status.sh to call road_compute, which is P150.2's files. vbw mutate refuses ('checks do not pass on the unbroken code') for R191.24-31, so the mutation step cannot run in this plan. Needs: run the mutation for R191.24-31 after P150.2 wires the road (or move the mutation of these rules to P150.2)."
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "374b565f614346d6d047ee51fc643d03348ac9482a642d29cc93d7de29ed0bf0",
+        "at": "2026-10-18T17:50:04Z",
+        "note": "29/30 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P151",
@@ -40204,6 +40212,15 @@
       "status": "open",
       "note": "step_proof_units (plugin/lib/steps.sh, lines 359-361, added by P149.1 commit 166c87e0) builds the proof's unit names with one separate jq process per unit, appending to a growing JSON string. vbw next --json runs it every time the next step is a proof. A micro-benchmark of the same loop for 400 units took 1.5 s (this repo's full proof has 398 units, steps.json shows it); the cost grows with the square of the unit count (every spawn re-parses the whole list) and is paid on each vbw next, where the old code counted with plain arithmetic. The same phase already has the cheap design: prove_unit_names (plugin/lib/cmd-prove.sh) pipes the names through one jq (proofsteps_names). The two lists also disagree: step_proof_units names every TODO_CHECKS entry (held ones too) and every TODO_COMMANDS entry (unapproved ones too), while prove_unit_names, used when the proof really starts, leaves out held checks and commands the user has not approved. So next --json can size a proof by units that the proof then does not run. Regression test: with a fixture of 30 approved checks, count the jq processes step_proof_units starts (a PATH shim that logs each call) and require the count not to grow with the unit count; and a fixture with one unapproved project command and one held check must give the same unit names from step_proof_units as the proof's own note uses (parts and expected seconds equal between vbw next --json and the proof's note).",
       "phase": "P149"
+    },
+    {
+      "id": "F252",
+      "req": "R191",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "road.jq labels the proof and the QA recheck inside the usual fix rounds as 'fix rounds' (plugin/lib/road.jq, the $fp list: label: \"fix rounds\" on the kind proof and kind qa pieces). When the only piece without a basis is one of those, the milestone end is withheld with the wrong kind named. Evidence: I ran road_compute on this project's real record with the proof entries removed from the step history (in memory) and got basis 'VBW has timed fewer than 3 fix rounds here' although fix rounds are plentiful in the history; the missing kind is proofs. Criterion: when a needed piece has no basis, say names the missing kind. It shows when a phase is built, its checks pass and only QA is left (no 'proofs' piece before it) and QA and fix history exist but fewer than 3 proofs were timed. A regression test should seed a road_project with all plans done and checks passing in evidence, QA and fix history present, no proof history, and expect say == 'no milestone end time yet (VBW has timed fewer than 3 proofs here)'; a second case with no QA history for a phase that already stands QA-passed but has a failing check should name QA checks. Fix: label those pieces 'proofs' and 'QA checks'.",
+      "phase": "P150"
     }
   ],
   "todos": [
