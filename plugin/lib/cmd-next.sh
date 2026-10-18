@@ -12,6 +12,15 @@
 . "$VBW_LIB/cmd-approve.sh"
 # shellcheck source=steps.sh
 . "$VBW_LIB/steps.sh"
+# shellcheck source=sessions.sh
+. "$VBW_LIB/sessions.sh"
+
+# next_holder RECORD: the display name of the lease's session, empty without a lease session.
+next_holder() {
+  local sid
+  sid=$(printf '%s' "$1" | jq -r '.lease.session // empty')
+  [ -z "$sid" ] || holder_display "$sid"
+}
 
 # qa_state RECORD [DIGESTS]: lib/qa.jq's answer (closure, recheck, standing, problems).
 # The one judgment of whether a pass stands; a pass of another fingerprint
@@ -58,7 +67,7 @@ next_answer() {
   effort=$(effort_table "$(printf '%s' "$record" | jq -r '.settings.profile')") || exit 1
   profile=$(interview_effective "$record")
   next=$(printf '%s' "$record" | jq -c --argjson effort "$effort" --argjson tracked "$counts" --argjson approved "$approved" --arg waiting "$waiting" --arg problems "$problems" --arg contract "$hash" \
-    --argjson code_changed "$changed" --argjson legacy "$legacy" --slurpfile qa <(printf '%s' "$qa") --argjson profile "$profile" --arg session "$(vbw_session)" --slurpfile tiers "$VBW_LIB/tiers.json" "$VBW_JQ_DEFS$(cat "$VBW_LIB/next.jq")")
+    --argjson code_changed "$changed" --argjson legacy "$legacy" --slurpfile qa <(printf '%s' "$qa") --argjson profile "$profile" --arg session "$(vbw_session)" --arg holder "$(next_holder "$record")" --slurpfile tiers "$VBW_LIB/tiers.json" "$VBW_JQ_DEFS$(cat "$VBW_LIB/next.jq")")
   printf '%s\n' "$next"
 }
 

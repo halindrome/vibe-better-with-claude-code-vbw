@@ -89,7 +89,7 @@ def fix_files($r): if .command then ["*"]
 | ([(.phases[].id), (.plans[] | .id, .phase), (.decisions[]?.text // empty), ((.parked // [])[].ids[]?)]
    | map(strings | [scan("(?<![A-Za-z0-9])P([0-9]+)") | .[0] | tonumber] | .[]) | max // 0 | . + 1) as $next_phase
 | (if .lease != null and .lease.session != null and .lease.session != $session then
-    result("run"; false; "A VBW \(.lease.kind) run (\(.lease.run)) belongs to another session: wait for it, or check vbw status"; {lease: .lease})
+    result("run"; false; "A VBW \(.lease.kind) run (\(.lease.run)) belongs to another session, \($holder): wait for it, or check vbw status"; {lease: .lease})
   elif .lease != null then
     result("run"; false; "A VBW \(.lease.kind) run (\(.lease.run)) is open: if its workflow is still running in this session, wait for it; otherwise run vbw run end"; {lease: .lease})
   elif .milestone.status == "parked" then
