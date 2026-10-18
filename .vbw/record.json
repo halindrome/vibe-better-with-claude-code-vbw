@@ -244,6 +244,8 @@
     "tests/panel/r190/step-panel.test.mjs",
     "tests/panel/r191/road-panel.test.mjs",
     "tests/panel/r191/road-same-time.test.mjs",
+    "tests/panel/r192/holder.test.mjs",
+    "tests/panel/r192/sessions-tab.test.mjs",
     "tests/panel/record-row.test.mjs",
     "tests/panel/safe.test.mjs",
     "tests/panel/schema4.test.mjs",
@@ -347,6 +349,13 @@
     "tests/router-triage-line.bats",
     "tests/rules.bats",
     "tests/run-confirm.bats",
+    "tests/sessions-docs.bats",
+    "tests/sessions-guards.bats",
+    "tests/sessions-helper.bash",
+    "tests/sessions-name.bats",
+    "tests/sessions-next.bats",
+    "tests/sessions-rename-hint.bats",
+    "tests/sessions-statusline.bats",
     "tests/small-change.bats",
     "tests/small-request.bats",
     "tests/statusline-handback.bats",
@@ -5255,6 +5264,107 @@
         "tests/road-review-fixes.bats"
       ],
       "fix": "F252"
+    },
+    {
+      "id": "C401",
+      "req": "R192",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/sessions-name.bats"
+      ],
+      "files": [
+        "tests/sessions-name.bats",
+        "tests/sessions-helper.bash"
+      ]
+    },
+    {
+      "id": "C402",
+      "req": "R192",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/sessions-guards.bats"
+      ],
+      "files": [
+        "tests/sessions-guards.bats",
+        "tests/sessions-helper.bash"
+      ]
+    },
+    {
+      "id": "C403",
+      "req": "R192",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/sessions-next.bats"
+      ],
+      "files": [
+        "tests/sessions-next.bats",
+        "tests/sessions-helper.bash"
+      ]
+    },
+    {
+      "id": "C404",
+      "req": "R192",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/sessions-statusline.bats"
+      ],
+      "files": [
+        "tests/sessions-statusline.bats",
+        "tests/sessions-helper.bash"
+      ]
+    },
+    {
+      "id": "C405",
+      "req": "R192",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/sessions-rename-hint.bats"
+      ],
+      "files": [
+        "tests/sessions-rename-hint.bats",
+        "tests/sessions-helper.bash"
+      ]
+    },
+    {
+      "id": "C406",
+      "req": "R192",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/sessions-docs.bats"
+      ],
+      "files": [
+        "tests/sessions-docs.bats"
+      ]
+    },
+    {
+      "id": "C407",
+      "req": "R192",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r192/holder.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r192/holder.test.mjs"
+      ]
+    },
+    {
+      "id": "C408",
+      "req": "R192",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r192/sessions-tab.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r192/sessions-tab.test.mjs"
+      ]
     }
   ],
   "project": {
@@ -13207,7 +13317,208 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M38",
-      "rules": []
+      "rules": [
+        {
+          "text": "vbw run start stores the holder's name from Claude Code's list in .vbw/runtime/holder.json and the glance's holder, never in the record",
+          "check": "C401",
+          "plan": "P152.1"
+        },
+        {
+          "text": "with several list entries for one session id the newest updatedAt wins",
+          "check": "C401",
+          "plan": "P152.1"
+        },
+        {
+          "text": "with no list, no entry for the session or an unreadable folder, session_name is null and the run still starts",
+          "check": "C401",
+          "plan": "P152.1"
+        },
+        {
+          "text": "a malformed file in the list never fails a kernel command and the good entries still count",
+          "check": "C401",
+          "plan": "P152.1"
+        },
+        {
+          "text": "a name is cleaned of control characters and escape sequences before it is stored or shown",
+          "check": "C401",
+          "plan": "P152.1"
+        },
+        {
+          "text": "a name longer than 40 characters is cut to its first 39 plus an ellipsis in messages",
+          "check": "C401",
+          "plan": "P152.1"
+        },
+        {
+          "text": "the display name is the list's current name for the lease's session, else the stored name, else the first 8 characters of the id, so a /rename during the run shows at once and a closed chat keeps its stored name",
+          "check": "C401",
+          "plan": "P152.1"
+        },
+        {
+          "text": "vbw run start and vbw run end refusals name the holder by its display name and keep the words another session",
+          "check": "C401",
+          "plan": "P152.1"
+        },
+        {
+          "text": "vbw run end removes holder.json and the glance's holder",
+          "check": "C401",
+          "plan": "P152.1"
+        },
+        {
+          "text": "the record validator refuses a lease carrying session_name, so a name never reaches git history (D442)",
+          "check": "C401",
+          "plan": "P152.1"
+        },
+        {
+          "text": "vbw doctor prints exactly one line saying whether Claude Code's list of chats is readable or not found",
+          "check": "C401",
+          "plan": "P152.2"
+        },
+        {
+          "text": "vbw next's run action in another session names the holder by display name, says to wait and check vbw status, and never says to end the run",
+          "check": "C403",
+          "plan": "P152.2"
+        },
+        {
+          "text": "vbw next shows a /rename made during the run at once, the stored name once the chat is gone, and 8 characters of the id with no name, cleaned of escape sequences",
+          "check": "C403",
+          "plan": "P152.2"
+        },
+        {
+          "text": "the loop's stop for a run of another session names the holder by display name",
+          "check": "C403",
+          "plan": "P152.2"
+        },
+        {
+          "text": "the file and Bash guards' reason names the holder from the glance's stored name alone, else the first 8 characters of the id, clean, with no extra file read",
+          "check": "C402",
+          "plan": "P152.3"
+        },
+        {
+          "text": "when the glance is not current the guards read the record, which carries no name, and name the id; the holder's own session is not refused",
+          "check": "C402",
+          "plan": "P152.3"
+        },
+        {
+          "text": "docs/guards.md names the list of chats as VBW's one read-only access outside the project, docs/workflows.md the unchanged lease shape and holder.json, docs/record.md the glance's holder",
+          "check": "C406",
+          "plan": "P152.4"
+        },
+        {
+          "text": "in the chat that holds the run the status line's run cell ends with · leading after the step's cell",
+          "check": "C404",
+          "plan": "P153.1"
+        },
+        {
+          "text": "in any other chat the run cell ends with · held by <name>, the name cut to 20 characters with an ellipsis, the list's current name first and the stored name when the list is gone",
+          "check": "C404",
+          "plan": "P153.1"
+        },
+        {
+          "text": "the status line shows 8 characters of the id when no name is known and no holder when the lease has no session",
+          "check": "C404",
+          "plan": "P153.1"
+        },
+        {
+          "text": "escape sequences in a name never reach the terminal through the status line",
+          "check": "C404",
+          "plan": "P153.1"
+        },
+        {
+          "text": "the status line reads the list with one jq pass per render only while a lease is open; with the list missing it renders exactly as with an empty list, and a malformed entry is skipped",
+          "check": "C404",
+          "plan": "P153.1"
+        },
+        {
+          "text": "the hook bench measures the status line with a lease open and a list of chats on disk",
+          "check": "C404",
+          "plan": "P153.1"
+        },
+        {
+          "text": "the panel's JS helper cleans and cuts names, lists valid entries newest first skipping malformed ones, and resolves the holder in the shared order with self and known flags",
+          "check": "C407",
+          "plan": "P153.2"
+        },
+        {
+          "text": "Comms' record-change line reads VBW · <kind> run started by <name>, or by this chat in the holder, and is unchanged without a holder; run closed stays",
+          "check": "C407",
+          "plan": "P153.2"
+        },
+        {
+          "text": "the Now box's state sentence ends with , held by <name> only when another chat holds the run",
+          "check": "C407",
+          "plan": "P153.2"
+        },
+        {
+          "text": "/vbw-why reads held by this chat (\"<name>\") or held by \"<name>\", the id in brackets only when no name is known, keeping since, the file count and wait for it, never saying to end the run",
+          "check": "C407",
+          "plan": "P153.2"
+        },
+        {
+          "text": "/vbw-status carries the same held by <name> wording as the Now box",
+          "check": "C407",
+          "plan": "P153.2"
+        },
+        {
+          "text": "with a second chat open on the project and this chat still auto-named, vbw next --json carries the one-sentence rename_hint naming /rename vbw · <project name>, once per clone",
+          "check": "C405",
+          "plan": "P153.3"
+        },
+        {
+          "text": "no rename_hint with one chat, with a chat of another project or a sibling folder, with no list, with an unknown session, or for a chat the user already named; a malformed file never fails vbw next",
+          "check": "C405",
+          "plan": "P153.3"
+        },
+        {
+          "text": "/vbw:vibe says rename_hint once, as given, and never runs /rename itself",
+          "check": "C405",
+          "plan": "P153.3"
+        },
+        {
+          "text": "docs/next.md describes rename_hint: when it comes, once per project, never applied by VBW",
+          "check": "C406",
+          "plan": "P153.3"
+        },
+        {
+          "text": "docs/statusline.md shows the leading and held by forms with the 20-character cut and the list it reads; docs/panel.md describes Comms' run started by line, the Now box's held by and /vbw-why by name",
+          "check": "C406",
+          "plan": "P153.4"
+        },
+        {
+          "text": "the tab row has Sessions right after Team, Sess in a narrow pane",
+          "check": "C408",
+          "plan": "P154.1"
+        },
+        {
+          "text": "the Sessions tab lists this project's chats newest first with name, state word, last active HH:MM and claude --resume <id>, leaving out chats of other projects and sibling folders",
+          "check": "C408",
+          "plan": "P154.1"
+        },
+        {
+          "text": "this chat's row says this chat; the holder's row shows ● holds the run with the run kind in the accent colour; a holder with no entry is listed from the lease as closed or not seen",
+          "check": "C408",
+          "plan": "P154.1"
+        },
+        {
+          "text": "with no list or no other chat on the project the tab shows the one sentence No other chats are open on this project; a malformed file skips its row and never breaks the panel",
+          "check": "C408",
+          "plan": "P154.1"
+        },
+        {
+          "text": "the tab is read-only: no button or input, nothing run or written; the list is re-read on the tick only while the tab is shown or a lease is open",
+          "check": "C408",
+          "plan": "P154.1"
+        },
+        {
+          "text": "names in the tab are cleaned and cut to the panel width with an ellipsis",
+          "check": "C408",
+          "plan": "P154.1"
+        },
+        {
+          "text": "docs/panel.md lists the Sessions tab with its short name and describes its rows and the empty sentence",
+          "check": "C406",
+          "plan": "P154.2"
+        }
+      ]
     }
   ],
   "phases": [
@@ -20281,6 +20592,98 @@
         "qa_findings": 2,
         "escalations": 3
       }
+    },
+    {
+      "id": "P152",
+      "title": "The run remembers who holds it, by name",
+      "reqs": [
+        "R192"
+      ],
+      "milestone": "M38",
+      "goal": "Every VBW run records the name of the chat (Claude Code session) that started it, and every VBW message that names another chat uses that name instead of a code.",
+      "criteria": [
+        "`vbw run start` stores the holding session's name in the lease as `session_name` (a string), read from Claude Code's list of running chats (`<Claude config folder>/sessions/*.json`, the entry whose `sessionId` is this session's id; with several entries for one id, the newest `updatedAt` wins); when no entry exists or the folder is unreadable, `session_name` is null and the run still starts.",
+        "The record validator (`plugin/lib/record.jq`) accepts `lease.session_name` as null or a non-empty string and rejects any other type; the glance (`plugin/lib/record.sh`) carries it unchanged, so the status line sees it without reading the full record.",
+        "A shared resolver (one kernel helper in `plugin/lib`, one jq rule for `next.jq`/`common.jq`, one JS helper for the panel) gives a holder's display name in this order: the registry's current name for `lease.session` (so a `/rename` made during the run shows at once), else `lease.session_name`, else the first 8 characters of the id, else 'a session VBW cannot name'.",
+        "Names are treated as untrusted text: control characters and escape sequences are removed before display, and a name is cut to 40 characters with an ellipsis in messages (the panel shows up to its own width).",
+        "`vbw next` (action run), `vbw run start`/`vbw run end` refusals, the loop's 'a run of another session is open' message (`plugin/lib/loop-step.sh`) and the file guards' 'being written by run ... of another session' reason (`plugin/hooks/common.jq`) name the holder by its display name; the guards use only the lease's recorded name (no extra file read on the hot path), and their per-call CPU stays within 20 ms.",
+        "When the run ends, the finished run kept under `costs.runs` carries `session_name` too, so the holder of a past run can still be named.",
+        "`vbw doctor` prints one line saying whether session names can be read from Claude Code's list (found and readable, or not found), so a silent fall-back to id codes is diagnosable.",
+        "Reading the registry is the only new access outside the project and it is read-only: docs/guards.md's 'nothing outside the project' section and docs/workflows.md's lease shape (`{run, kind, started_at, session, session_name, files}`) and docs/record.md say so, and the docs test that pins the outside-the-project list is updated.",
+        "Tests (bats, hermetic under `CLAUDE_CONFIG_DIR`): a registry fixture gives the name; a missing registry gives null and a successful start; a renamed-later entry wins over the stored name; a malformed registry file never fails a kernel command; an entry with escape sequences is shown clean."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 12 (159041 bytes)",
+        "files: more than 2 in a repository tracking 1045 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R15 (C14), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R33 (C29), R35 (C31), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R58 (C62, C63, C64, C67), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R65 (C86, C87, C88, C89, C90), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R95 (C149, C150), R96 (C151, C152), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R120 (C185), R121 (C187, C188), R123 (C190, C191), R127 (C194), R128 (C200), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R145 (C210), R146 (C211), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P153",
+      "title": "Status line and Comms say who leads",
+      "reqs": [
+        "R192"
+      ],
+      "milestone": "M38",
+      "goal": "In every chat on the project, the status line and Comms show which chat holds the run, by name, and the chat that holds it sees that it leads.",
+      "criteria": [
+        "Status line, holding session: the run cell ends with ` · leading` (e.g. `▶ build P1.2 · 1 of 2 · until 14:20 · leading`); the clock time of D425 stays in place.",
+        "Status line, any other session: the run cell ends with ` · held by <name>`, the name cut to 20 characters with an ellipsis; when no name is known the first 8 characters of the id are shown; no holder is shown when the lease has no session.",
+        "The status line reads the registry once per render with one jq pass only while a lease is open, and `tools/bench-hooks.sh` keeps it within 60 ms; with the registry missing it renders exactly as today.",
+        "Comms (the strip above the prompt): the record-change line reads `VBW · build run started by <name>` (or `by this chat` in the holder) and `VBW · run closed` stays; the Now box's state sentence ends with `, held by <name>` when another chat holds the run and is unchanged when this chat holds it.",
+        "`/vbw-why` reads `held by this chat (\"<name>\")` or `held by \"<name>\"`, keeping the 'since' clock, file count and 'wait for it' sentence; the id in brackets appears only when no name is known.",
+        "`/vbw-status` shows the same holder wording as the Now box, so the panel and the command say the same thing.",
+        "`/vbw:vibe`, when it sets a project up (the 'not a VBW project' step), tells the user once, in one sentence, that `/rename vbw · <project name>` gives this chat a name other chats will see, and never runs `/rename` itself; a skill test pins the sentence and that no step applies it.",
+        "Docs updated: docs/statusline.md (run cell forms with `leading` and `held by`), docs/panel.md (Comms line, Now box sentence, `/vbw-why`); the docs tests for the panel and status line are updated.",
+        "Tests: bats for the status line (holding session, other session, no name, no registry, name with escape sequences, long name cut); node tests for `panel-lines.js`, `panel-view.js` and `panel-commands.js` wording."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 17 (211269 bytes)",
+        "files: more than 2 in a repository tracking 1045 files",
+        "risk: none",
+        "breaks: R125",
+        "guarded: R13 (C12), R14 (C13), R16 (C15), R22 (C19), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R35 (C31), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R56 (C61, C65), R57 (C59, C70, C71), R58 (C62, C63, C64, C67), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R67 (C96), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R82 (C117), R83 (C119), R84 (C123), R85 (C125), R86 (C124), R87 (C126, C127), R88 (C129), R89 (C128), R91 (C130), R98 (C154), R100 (C156), R102 (C158, C159), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R121 (C187, C188), R122 (C189), R123 (C190, C191), R124 (C192, C193), R132 (C199), R134 (C201), R135 (C202), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R160 (C247, C263, C264), R161 (C248, C265, C266), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P154",
+      "title": "Sessions tab with a 'holds the run' mark",
+      "reqs": [
+        "R192"
+      ],
+      "milestone": "M38",
+      "goal": "Mission Control gets a read-only Sessions tab listing every chat on this project, and the one holding the run carries a visible mark.",
+      "criteria": [
+        "A `Sessions` tab (short label `Sess` in narrow panels) joins the tab row after Team; the tab list in docs/panel.md names it.",
+        "The tab lists every entry of Claude Code's registry whose `cwd` is this project's root folder or a folder inside it, newest `updatedAt` first: name, state word from `status` (busy, idle, or the raw word), last active as `HH:MM` local time (another day named as the rest of the panel does), and the line `claude --resume <session id>` to copy; this chat's row is marked `this chat`.",
+        "The chat holding the open run shows `● holds the run` on its row, in the panel's accent colour, with the run kind (e.g. `build P1.2`); a holder with no registry entry is still listed from the lease with the stored name (or id) and the words `closed or not seen`.",
+        "The tab is read-only: no button, input or command that sends anything to another chat; no write to any file.",
+        "With no registry or no entries for this project, the tab shows one sentence: 'No other chats are open on this project' (plus this chat when known); a malformed registry file never breaks the panel (the row is skipped).",
+        "The panel re-reads the registry on its regular refresh tick only while the Sessions tab is shown or a lease is open, and the panel render benchmark (`tests/panel-bench-render.bats`) stays within its limit.",
+        "Names are shown clean (control characters removed) and cut to the panel width with an ellipsis.",
+        "Node tests under `tests/panel/` cover: list order, project filter (an entry from another project is excluded), the holder mark, `this chat`, the closed holder row, the empty state, a malformed entry; the docs test for the tab list is updated."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 5 (101444 bytes)",
+        "files: more than 2 in a repository tracking 1045 files",
+        "risk: none",
+        "breaks: R125",
+        "guarded: R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R56 (C61, C65), R57 (C59, C70, C71), R58 (C62, C63, C64, C67), R64 (C84, C85), R82 (C117), R84 (C123), R85 (C125), R86 (C124), R87 (C126, C127), R88 (C129), R89 (C128), R91 (C130), R124 (C192, C193), R184 (C328, C329, C330, C331, C332, C333), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -38282,6 +38685,237 @@
       "tasks": [
         "tests/panel/pane.test.mjs: the step() fixture carries a road (the patch in .vbw/runtime/scratch/pane.patch), because Mission Control shows the milestone row only from the kernel road (P151.1); the test keeps pinning the colours"
       ]
+    },
+    {
+      "id": "P152.1",
+      "phase": "P152",
+      "title": "Kernel: the holder's name, kept on this computer (holder.json and the glance)",
+      "reqs": [
+        "R192"
+      ],
+      "files": [
+        "plugin/lib/holder.jq",
+        "plugin/lib/sessions.sh",
+        "plugin/lib/cmd-run.sh",
+        "plugin/lib/record.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/holder.jq (new): the one jq rule for a holder's display name: `clean_name` (drops CSI and OSC escape sequences, then every control character U+0000-U+001F, U+007F, U+0080-U+009F), `cut_name($n)` (a name longer than $n becomes its first $n-1 characters plus …) and `holder_name($lease; $stored; $live)`: the list's live name, else the stored name, else the first 8 characters of $lease.session, else 'a session VBW cannot name'; cleaned, then cut to 40. The hooks and the status line include it with `include \"holder\" {search: \"../lib\"}`; kernel commands prepend its text to their jq programs (as VBW_JQ_DEFS is).",
+        "plugin/lib/sessions.sh (new): VBW's read-only view of Claude Code's list of chats, <claude-config-dir>/sessions/*.json (vbw_claude_dir). `sessions_registry`: one `jq -R` pass over the files grouped by input_filename, keeping objects with a string sessionId, skipping malformed files, `[]` when the folder is missing or unreadable, exit 0 always. `sessions_name SID`: the newest updatedAt entry's name, cleaned, or nothing. `sessions_project_entries ROOT`: the entries whose cwd is ROOT or a folder under it. `holder_write RUN SID` and `holder_clear`: .vbw/runtime/holder.json {run, session, session_name} (session_name null when unknown), written through a temporary name and a rename. `holder_display SID`: holder.jq's rule applied to the live name, holder.json's name (only when its session is SID) and the id.",
+        "plugin/lib/cmd-run.sh: `vbw run start` computes the run id into a variable first, writes holder.json before the record write (so the glance that write produces carries it), and keeps everything else; `vbw run end` removes holder.json after the record write. Both refusals name the holder with `holder_display`: `a run is active (<run>) in another session, <name>. Next: wait for it, or check vbw status` and `run <run> belongs to another session, <name>. Next: wait for it, or if the user says that session is closed, vbw run end --owner-closed` (tests/kernel-sessions.bats keeps passing: 'another session' stays in both).",
+        "plugin/lib/record.sh: `record_glance_write` adds a top-level `holder` to the glance: holder.json's {run, session, session_name} when the file parses and its run equals the lease's run, else null (read with --slurpfile or --rawfile and try, never --arg). The glance's `lease` stays byte-equal to the record's (tests/glance-write.bats and glance-helper.bash's glance_same are protected and must stay green); record.jq is untouched, so a lease carrying session_name stays corrupt (D442, D445)."
+      ]
+    },
+    {
+      "id": "P152.2",
+      "phase": "P152",
+      "title": "vbw next, the loop and vbw doctor name the holder",
+      "reqs": [
+        "R192"
+      ],
+      "files": [
+        "plugin/lib/next.jq",
+        "plugin/lib/cmd-next.sh",
+        "plugin/lib/loop-step.sh",
+        "plugin/lib/cmd-doctor.sh"
+      ],
+      "after": [
+        "P152.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/cmd-next.sh and plugin/lib/next.jq: next_answer sources sessions.sh and passes `--arg holder \"$(holder_display <lease.session>)\"` (empty when the lease has no session); next.jq's run row for another session reads `A VBW <kind> run (<run>) belongs to another session, <holder>: wait for it, or check vbw status` and never says to end it; the owner's own row is unchanged.",
+        "plugin/lib/loop-step.sh: the stop for a run of another session reads `a run of another session (<holder>) is open`, the holder from `holder_display` (the list's current name, else the stored name, else 8 characters of the id).",
+        "plugin/lib/cmd-doctor.sh: one `doctor_sessions` line after doctor_claude: `✓ session names: Claude Code's list of chats (<dir>/sessions) is readable, N entries` when the folder is a readable directory, else `· session names: Claude Code's list of chats (<dir>/sessions) not found: run holders are shown by their id`; info or ok, never a failure; the phrase 'session names' appears on that one line only."
+      ]
+    },
+    {
+      "id": "P152.3",
+      "phase": "P152",
+      "title": "The guards name the holder from the glance alone",
+      "reqs": [
+        "R192"
+      ],
+      "files": [
+        "plugin/hooks/common.jq"
+      ],
+      "after": [
+        "P152.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/hooks/common.jq: `include \"holder\" {search: \"../lib\"}` (plugin/lib/holder.jq); guard_context carries `holder`: the glance's top-level holder when the glance was used, null when the record was read (the record never carries a name, D442); the header comment names the glance's holder field as the guards' only source of the name.",
+        "`foreign_denial` reads `<path> is being written by run <run> of another session (<name>): wait for it; if the user says that session is closed, they run vbw run end --owner-closed` with <name> = holder_name($f; (holder.session_name when holder.run == $f.run); null): the stored name, else the first 8 characters of the id, cleaned and cut; the Bash guard gets the same words through the same def; no new input, --rawfile or file read in hooks.json.",
+        "Measure: run `bash tools/bench-hooks.sh` once and put each guard's own CPU per call in the plan note (budget 20 ms; a machine too busy to measure is reported as busy); tests/hooks-guard.bats, glance-guards.bats, guard-protected.bats and big-record-hooks.bats keep passing ('another session' stays in the reason)."
+      ]
+    },
+    {
+      "id": "P152.4",
+      "phase": "P152",
+      "title": "Docs: where the name lives, and VBW's one read outside the project",
+      "reqs": [
+        "R192"
+      ],
+      "files": [
+        "docs/guards.md",
+        "docs/workflows.md",
+        "docs/record.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/guards.md, the paragraph 'VBW itself writes nothing outside the project except three things': add that VBW's one read outside the project is Claude Code's list of chats, `<claude-config-dir>/sessions/*.json`, read for the holder's name and never written (R192); the three writes stay as listed.",
+        "docs/workflows.md, 'The run lease': `record.lease` keeps `{run, kind, started_at, session, files}`; the holder's `session_name` lives on this computer only, in `.vbw/runtime/holder.json` {run, session, session_name} written by `vbw run start` and removed by `vbw run end`, and in the glance's `holder`, never in the record or git history (D442, D445); the display name order (the list's current name, else the stored name, else the first 8 characters of the id, else 'a session VBW cannot name'), the cleaning and the 40-character cut, and where it shows (vbw next, the run start and run end refusals, the loop's stop, the guards' reason).",
+        "docs/record.md: the glance paragraph names the glance's `holder` field ({run, session, session_name} while a run is open, null otherwise) and says the record and `costs.runs` never carry `session_name`; the `lease` row says the same in one clause."
+      ]
+    },
+    {
+      "id": "P153.1",
+      "phase": "P153",
+      "title": "Status line: leading, and held by name",
+      "reqs": [
+        "R192"
+      ],
+      "files": [
+        "plugin/scripts/vbw-statusline.sh",
+        "plugin/scripts/statusline.jq",
+        "tools/bench-hooks.sh"
+      ],
+      "after": [
+        "P152.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/scripts/vbw-statusline.sh: only while `.vbw/runtime/run-open` exists (a lease is open; no jq needed to know), one `jq -R` pass with the list's files `<cdir>/sessions/*.json` as its inputs (grouped by input_filename, a malformed file skipped) gives {sessionId: name} of each id's newest entry, handed to the render as $registry through --slurpfile from a process substitution ({} when the folder is missing or empty); no pass when no lease is open.",
+        "plugin/scripts/statusline.jq: `include \"holder\" {search: \"../lib\"}`; the run cell ($state while a lease is open, the step's cell included) ends with ` · leading` when the lease's session equals $sid, else ` · held by <name>` with holder_name($rec.lease; $rec.holder.session_name when $rec is the glance; $registry[$rec.lease.session]) cut to 20 (19 plus …); nothing added when the lease has no session; the `until` clock of D425 stays where it is.",
+        "tools/bench-hooks.sh: the status line fixtures ($work and $large) get `.vbw/runtime/run-open` and a `<cdir>/sessions/` list of a few chats (one of them the lease's session) so the registry pass is inside the measure; run `bash tools/bench-hooks.sh` once and put the status line's CPU per call in the plan note (budget 60 ms; too busy to measure is reported, not failed)."
+      ]
+    },
+    {
+      "id": "P153.2",
+      "phase": "P153",
+      "title": "Comms, the Now box, /vbw-why and /vbw-status name the holder",
+      "reqs": [
+        "R192"
+      ],
+      "files": [
+        "plugin/hooks/panel-sessions.js",
+        "plugin/hooks/panel.js",
+        "plugin/hooks/panel-view.js",
+        "plugin/hooks/panel-lines.js",
+        "plugin/hooks/panel-sites.js",
+        "plugin/hooks/panel-commands.js",
+        "tests/panel/commands.test.mjs",
+        "tests/panel/lines.test.mjs"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/hooks/panel-sessions.js (new): the panel's one JS helper for chats: `cleanName` (drops CSI and OSC escape sequences and every control character; '' for a non-string), `cutName(s, n)` (longer than n becomes n-1 characters plus …), `registryEntries(texts)` (the file texts that parse to an object with a string sessionId, newest updatedAt first; [] for anything else), `holderName({lease, registry, stored, sessionId})` (null unless lease.session is a string; else {name, self, known}: the list's newest name for lease.session, else stored.session_name when stored.session is lease.session, else lease.session.slice(0, 8) with known false; cleaned, cut to 40; self = sessionId === lease.session) and `readRegistry($, root)` ($.fs.list of <claude-config-dir>/sessions found as sessionDir finds the config folder, $.fs.read of each .json, never throwing, [] when missing).",
+        "plugin/hooks/panel.js: `gather` reads the list (readRegistry) and `.vbw/runtime/holder.json` (st.stored, parsed or null) on the tick only while a lease is open (P154 adds: or the Sessions tab is shown), sets `st.holder = holderName(...)`, and hands it to the view input, the sites (panel-sites.js) and `facts()`; sessionDir's config-folder lookup moves to panel-sessions.js so both share it.",
+        "plugin/hooks/panel-lines.js and panel-sites.js: `recordDiffIntent(diff, holder)` and `recordEditIntent(call, holder)` read `VBW · <kind> run started by <name>` or `VBW · <kind> run started by this chat` when a holder is given, unchanged (`VBW · <kind> run started`) without one; `VBW · run closed` stays; the ToolUse site passes st.holder.",
+        "plugin/hooks/panel-view.js and panel-commands.js: panelView's input gains `holder`; the Now box's state sentence ends with `, held by <name>.` when holder.self is false (unchanged when this chat holds the run or no holder is given); whyText reads `held by this chat (\"<name>\")` or `held by \"<name>\"` when holder.known, and `held by this session (<8 chars>)` / `held by another session (<8 chars>)` as today when not, keeping ' since HH:MM UTC (N min ago)', the file count and 'Wait for it to finish in that session.'; statusText's doing line carries the same `, held by <name>` suffix as the Now box; tests/panel/commands.test.mjs and lines.test.mjs stay green (they pass no holder)."
+      ]
+    },
+    {
+      "id": "P153.3",
+      "phase": "P153",
+      "title": "The /rename hint: once per project, when a second chat opens (D444)",
+      "reqs": [
+        "R192"
+      ],
+      "files": [
+        "plugin/lib/sessions.sh",
+        "plugin/lib/cmd-next.sh",
+        "plugin/skills/vibe/SKILL.md",
+        "docs/next.md"
+      ],
+      "after": [
+        "P152.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/sessions.sh: `sessions_rename_hint SID ROOT NAME` prints the one sentence `Another chat is open on this project: /rename vbw · <NAME> gives this chat a name the other chats will see.` when the list holds two or more entries whose cwd is ROOT or a folder under it, SID's newest entry exists with nameSource auto or derived (anything else is the user's own name), and this clone's settings file ($(git common dir)/vbw/settings.json, vbw_clone_settings_file) has no `rename_hint`; it then records `rename_hint` (the time) there under the settings lock as vbw_check_jobs_set does; prints nothing otherwise (one chat, another project's chat, no list, unknown SID, a malformed file never fails it).",
+        "plugin/lib/cmd-next.sh: `cmd_next` run from the command line (the main caller, as for step and road) adds `rename_hint` (the sentence or null) to the answer it prints and writes to next.json; next_answer and kernel-internal callers never compute it (no registry read in the Stop hook's gate or the loop).",
+        "plugin/skills/vibe/SKILL.md: one rule next to the step.say rule: when `rename_hint` in `vbw next --json` is a sentence, say it once, as given, and never run /rename yourself (the user renames the chat); no shell block of the skill runs a rename.",
+        "docs/next.md: a `rename_hint` entry: a string or null in `vbw next --json`; when it comes (a second chat open on this project, this chat still carrying the name Claude Code gave it), once per clone (the mark in this clone's settings), the sentence with `/rename vbw · <project name>`, and that VBW never runs or applies the rename itself (D444)."
+      ]
+    },
+    {
+      "id": "P153.4",
+      "phase": "P153",
+      "title": "Docs: the status line's leading and held by, Comms and the instant commands",
+      "reqs": [
+        "R192"
+      ],
+      "files": [
+        "docs/statusline.md",
+        "docs/panel.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/statusline.md, line 1 of the status line: the run cell forms `▶ build P1.2, P2.1 · 1 of 2 · until 14:20 · leading` in the chat that holds the run and `· held by <name>` in any other, the name cut to 20 characters with …, the first 8 characters of the id when no name is known, nothing when the lease has no session.",
+        "docs/statusline.md, 'What it reads': Claude Code's list of chats (`<claude-config-dir>/sessions/*.json`), read in one jq pass per render only while a lease is open, never written; with the list missing the line renders as before; the hook bench measures it with a lease open.",
+        "docs/panel.md, Comms table and the 'What's happening now' section: the record-change line `VBW · build run started by <name>` (or `by this chat`); the Now box's state sentence ending `, held by <name>` when another chat holds the run, unchanged when this chat does.",
+        "docs/panel.md, 'Instant commands': `/vbw-why` names the holder by name (`held by this chat (\"<name>\")` or `held by \"<name>\"`), with the id in brackets only when no name is known, keeping since, the file count and 'wait for it'; `/vbw-status` says the same about the holder as the Now box."
+      ]
+    },
+    {
+      "id": "P154.1",
+      "phase": "P154",
+      "title": "The Sessions tab",
+      "reqs": [
+        "R192"
+      ],
+      "files": [
+        "plugin/hooks/panel-sessions.js",
+        "plugin/hooks/panel-pane.js",
+        "plugin/hooks/panel.js",
+        "tests/panel/wiring.test.mjs"
+      ],
+      "after": [
+        "P153.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/hooks/panel-sessions.js: `sessionsModel({registry, root, sessionId, lease, stored, now, width, plans})` → {rows, empty}: the entries whose cwd is root or a folder under it, newest updatedAt first, each {id, name (cleaned, cut to width), state (the status word as given), last (HH:MM local; another day named as panel-view's clock names it), resume ('claude --resume <id>'), self, holder, closed}; the lease's session gets holder {kind: '<kind> <building plan ids>'} ('<kind>' alone with none); a holder with no entry is appended from the lease with the stored name (stored.session_name when stored.session is lease.session) or the first 8 characters of the id, closed true; `empty` is 'No other chats are open on this project' when no row besides this chat is listed, else null.",
+        "plugin/hooks/panel-sessions.js: `renderSessions(ui, model)`: text only (no Button, no input): per row the name, the state word, `last HH:MM`, the resume line to copy, `this chat` on this chat's row, `● holds the run · <kind>` in ACCENT (panel-palette.js) on the holder's row and `closed or not seen` on an appended one; the empty sentence when `empty` is set.",
+        "plugin/hooks/panel-pane.js: TABS gets ['sessions', 'Sessions'] right after team; SHORT.sessions = 'Sess' (export SHORT); the body switch draws renderSessions for the tab from the pane input (registry, stored, holder, plans); the short row still fits one line at 40 columns beside the portrait; tests/panel/wiring.test.mjs's TABS list gains 'Sessions' after 'Team' and a Sessions entry in its per-tab view check.",
+        "plugin/hooks/panel.js: the list and holder.json are read on the tick also while st.tab is 'sessions' (P153.2 reads them while a lease is open), never otherwise; the pane input carries registry, stored and the lease's holder; run `bash tools/bench-panel.sh` once and put the render and tick figures in the plan note (tests/panel-bench-render.bats's budget is judged at release)."
+      ]
+    },
+    {
+      "id": "P154.2",
+      "phase": "P154",
+      "title": "Docs: the Sessions tab",
+      "reqs": [
+        "R192"
+      ],
+      "files": [
+        "docs/panel.md"
+      ],
+      "after": [
+        "P153.4"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/panel.md, 'Mission Control': the tab row becomes `Now │ Plan │ Proof │ Timeline │ Decisions │ Team │ Sessions │ Costs` and the narrow names `Now Plan Proof Time Log Team Sess Cost`; the tab list of the Now section's intro says eight tabs.",
+        "docs/panel.md, a 'Sessions' subsection beside Team's: every chat of Claude Code's list on this project (its folder or one inside it), newest first, with name, state word, last active `HH:MM`, and `claude --resume <session id>` to copy; `this chat`; `● holds the run` with the run kind on the holder's row; a holder with no entry listed from the lease as `closed or not seen`; the sentence 'No other chats are open on this project' when there is nothing else; read-only (no button, nothing sent, nothing written); re-read on the tick only while shown or a lease is open; a malformed file skips its row.",
+        "docs/panel.md: a note that the tab is the one place the panel reads outside the project, Claude Code's own list, read-only, with a link to docs/guards.md's paragraph."
+      ]
     }
   ],
   "fixes": [
@@ -43703,6 +44337,30 @@
       "id": "D441",
       "at": "2026-10-18T20:23:44Z",
       "text": "Shipped M37 ETA quality for T102 (cosmetic leg, brainstorm inbox 2026-10-10): estimate per unit of work (plan, task, check by tier from .git/vbw/steps.json) times the work size, and the whole road (build, proof, QA, likely fix rounds from this machine's history), not only the current step: 1 requirement proven or accepted"
+    },
+    {
+      "id": "D442",
+      "text": "The holder's session name is kept on this computer only: read from Claude Code's list of open sessions, a private copy in VBW's local scratch folder, never in the record or git history",
+      "why": "chosen by the loop: on another computer or in a copy of the project the short id and start time show instead of the name; no conversation summaries land in the project's history",
+      "at": "2026-10-18T20:34:49Z"
+    },
+    {
+      "id": "D443",
+      "text": "Build the Sessions tab (T95) now, with the holder mark, in this milestone",
+      "why": "chosen by the loop: the milestone grows from small to medium; the panel files are opened once instead of twice, saving a later proof round",
+      "at": "2026-10-18T20:34:50Z"
+    },
+    {
+      "id": "D444",
+      "text": "VBW suggests /rename once per project, when a second session opens on it and this one still has its automatic name; never renames itself",
+      "why": "chosen by the loop: a little more work (it notices the second session from the same list the Sessions tab reads) instead of the requirement's 'at first setup', so the hint comes when names start to matter",
+      "at": "2026-10-18T20:34:51Z"
+    },
+    {
+      "id": "D445",
+      "text": "R192 (P152 to P154) is built under D442 and D444 where the Architect's criteria differ: the holder's name never enters the record (no lease.session_name, no costs.runs session_name; the validator stays as it is and refuses the field); vbw run start keeps it in .vbw/runtime/holder.json {run, session, session_name} and the glance carries it as a top-level holder field (not inside lease, which protected R150 tests require byte-equal to the record's) for the status line and the guards; a past run's holder shows by its short id; the /rename hint is rename_hint in vbw next --json, once per clone, when a second chat is open on the project and this chat still has its automatic name, said by /vbw:vibe as given and never run",
+      "why": "D442 (chosen by the loop 2026-10-18 20:34) keeps the name on this computer only, never in the record or git history (Claude Code's automatic names are conversation summaries); D444 moves the hint from first setup to the moment a second chat opens; the Lead follows every decision (lead brief), and the R150 glance tests (tests/glance-helper.bash glance_same) are finished work whose check files cannot change",
+      "at": "2026-10-18T21:18:42Z"
     }
   ],
   "commands": {
@@ -49882,6 +50540,15 @@
           "in": 1736,
           "out": 175
         }
+      },
+      {
+        "id": "plan-20261018T203454Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M38",
+        "started": "2026-10-18T20:34:54Z",
+        "ended": "2026-10-18T21:23:54Z",
+        "cost": null
       }
     ],
     "milestones": {
