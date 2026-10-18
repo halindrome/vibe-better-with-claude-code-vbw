@@ -2,7 +2,7 @@
 // VBW workflow from its Workflow tool call (or finds it after a reload) and reads it
 // on the panel's timer; Comms, above the prompt, draws the crew, the one needs-you
 // line and the nudges, with buttons that only fill or open; the pane is Mission Control
-// with seven tabs. Driven through the stand-in for Claude Code's mods API (L1).
+// with eight tabs. Driven through the stand-in for Claude Code's mods API (L1).
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mount, record, next, lease, collect, find, walk, ROOT, T0 } from './helpers/fake-mod.mjs'
@@ -11,12 +11,15 @@ import { ENV, SESSION_DIR, RUN, RUN_DIR, ARCH, LEAD, writeRun, finish, launch, b
 const TEST_MODE = ROOT + '/.vbw/runtime/test-mode'
 const approve = () => next({ action: 'approve', gate: true })
 
+// Eight full tab names need 53 columns; the stand-in's default pane is 50, which draws the short names.
+const WIDE = { title: 'VBW', isFocused: false, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} }
+const wide = (h) => { const render = h.render; h.render = (extra = {}) => render({ props: WIDE, ...extra }); return h }
 async function started(options = {}, rec = record(), nxt = next()) {
   const h = await mount({ env: ENV, ...options })
   h.project(rec, nxt)
   await h.start()
   await h.settle()
-  return h
+  return wide(h)
 }
 const texts = (tree) => collect(tree)
 const text = (tree) => texts(tree).join('\n')
@@ -179,9 +182,9 @@ test('motion: calm by default (a spinner), off in a test session and when the re
 
 // ---- Mission Control ----
 
-const TABS = ['Now', 'Plan', 'Proof', 'Timeline', 'Decisions', 'Team', 'Costs']
+const TABS = ['Now', 'Plan', 'Proof', 'Timeline', 'Decisions', 'Team', 'Sessions', 'Costs']
 
-test('the pane is Mission Control: seven tabs, Now first with the panel rows and the sound switch', async () => {
+test('the pane is Mission Control: eight tabs, Now first with the panel rows and the sound switch', async () => {
   const h = await started()
   const pane = await h.render()
   assert.deepEqual(buttons(pane).filter((b) => /^tab-/.test(b.props.key)).map((b) => b.props.label), TABS)
@@ -191,9 +194,24 @@ test('the pane is Mission Control: seven tabs, Now first with the panel rows and
   assert.match(t, /No VBW workflow runs/)
 })
 
+test('the tab row is one line at 40 columns: short names, and the portrait only where it fits beside them', async () => {
+  const h = await started()
+  const SHORT = ['Now', 'Plan', 'Proof', 'Time', 'Log', 'Team', 'Sess', 'Cost']
+  const at = async (columns) => {
+    const pane = await h.render({ props: { title: 'VBW', isFocused: false, bodyColumns: columns, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} } })
+    return { labels: buttons(pane).filter((b) => /^tab-/.test(b.props.key)).map((b) => b.props.label), portrait: find(pane, (n) => n.type === 'Image') }
+  }
+  const narrow = await at(40)
+  assert.deepEqual(narrow.labels, SHORT)
+  assert.ok(!narrow.portrait, 'the portrait would push the short row past 40 columns')
+  const mid = await at(50)
+  assert.deepEqual(mid.labels, SHORT)
+  assert.ok(mid.portrait, 'the portrait stays where the short row fits beside it')
+})
+
 test('each tab draws its view, and the choice holds across redraws', async () => {
   const h = await started({}, record({ settings: { profile: 'quality' }, decisions: [{ id: 'D1', text: 'Which db? sqlite', at: '2026-10-01T00:00:00Z' }] }))
-  const want = { Plan: /P44 Cost/, Proof: /No checks are approved/, Timeline: /No VBW workflow runs/, Decisions: /sqlite/, Team: /Profile: quality/, Costs: /This session: \$1\.42/ }
+  const want = { Plan: /P44 Cost/, Proof: /No checks are approved/, Timeline: /No VBW workflow runs/, Decisions: /sqlite/, Team: /Profile: quality/, Sessions: /No other chats are open on this project/, Costs: /This session: \$1\.42/ }
   for (const [tab, re] of Object.entries(want)) {
     await press(h, await h.render(), tab)
     assert.match(text(await h.render()), re, tab)

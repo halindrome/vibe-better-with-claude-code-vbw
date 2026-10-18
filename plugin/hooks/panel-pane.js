@@ -7,6 +7,7 @@
 // no `$` here; presses go to `on.act(action)` and the sound switch to `on.sound()`.
 import { nowModel, timelineModel, costsModel, renderNow, renderTimeline, renderCosts } from './panel-mission-live.js'
 import { planModel, proofModel, decisionsModel, teamModel, renderPlan, renderProof, renderDecisions, renderTeam } from './panel-mission-record.js'
+import { sessionsModel, renderSessions } from './panel-sessions.js'
 import { renderNext } from './panel-next.js'
 import { renderWrapped } from './panel-candy.js'
 import { NEED, PROGRESS, ESTIMATE, ACCENT } from './panel-palette.js'
@@ -21,9 +22,10 @@ const GAP_ROWS = 6
 const FIXED_ROWS = 30
 const PORTRAIT_COLS = 6
 
-export const TABS = [['now', 'Now'], ['plan', 'Plan'], ['proof', 'Proof'], ['timeline', 'Timeline'], ['decisions', 'Decisions'], ['team', 'Team'], ['costs', 'Costs']]
+const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
+export const TABS = [['now', 'Now'], ['plan', 'Plan'], ['proof', 'Proof'], ['timeline', 'Timeline'], ['decisions', 'Decisions'], ['team', 'Team'], ['sessions', 'Sessions'], ['costs', 'Costs']]
 // The tab labels in a narrow pane: short enough for one line at 40 columns beside the portrait.
-const SHORT = { now: 'Now', plan: 'Plan', proof: 'Proof', timeline: 'Time', decisions: 'Log', team: 'Team', costs: 'Cost' }
+export const SHORT = { now: 'Now', plan: 'Plan', proof: 'Proof', timeline: 'Time', decisions: 'Log', team: 'Team', sessions: 'Sess', costs: 'Cost' }
 const tabsWidth = (label) => TABS.reduce((n, [id, name]) => n + [...label(id, name)].length, 0) + TABS.length - 1
 
 // --- how many rows a drawing takes ----------------------------------------------
@@ -154,7 +156,7 @@ function summary(ui, v, st, on) {
   return rows
 }
 
-function body(ui, { st, now, width, motion }, act) {
+function body(ui, { st, now, width, motion, registry, stored }, act) {
   const rec = st.record
   switch (st.tab) {
     case 'plan': return renderPlan({ ...ui, Input: undefined }, planModel({ record: rec, phase: st.phase }), act) // Ask is not wired yet
@@ -162,6 +164,7 @@ function body(ui, { st, now, width, motion }, act) {
     case 'timeline': return renderTimeline(ui, timelineModel({ run: st.run, now, steps: st.steps, step: st.step, width: Math.max(10, width - 24) }))
     case 'decisions': return renderDecisions(ui, decisionsModel({ record: rec }))
     case 'team': return renderTeam(ui, teamModel({ record: rec }), act)
+    case 'sessions': return renderSessions(ui, sessionsModel({ registry, root: st.root, sessionId: st.sessionId, lease: isObj(rec) ? rec.lease : null, stored, now, width: Math.max(10, width - 4), plans: isObj(rec) ? rec.plans : null }))
     case 'costs': return renderCosts(ui, costsModel({ runs: st.leases, sessionCost: st.cost, width: Math.max(1, Math.floor(width / 3)) }))
     default: return renderNow(ui, nowModel({ run: st.run, now, selected: st.agent, seen: Object.keys(st.helpersSeen || {}), motion }), act)
   }
@@ -178,8 +181,10 @@ export function renderPane(ui, input, on) {
   const sc = input.scroll
   const rows = sc && Number.isInteger(sc.bodyRows) ? sc.bodyRows : 0
   // The portrait goes when the room is short; the tabs are one line either way.
-  const withPortrait = Image && typeof input.portrait === 'string' && (rows < 1 || rows >= PORTRAIT_ROWS)
   const width = Number.isFinite(input.width) ? input.width : 50
+  // Nor does it stay when even the short names would not fit one line beside it.
+  const withPortrait = Image && typeof input.portrait === 'string' && (rows < 1 || rows >= PORTRAIT_ROWS) &&
+    width >= tabsWidth((id) => SHORT[id]) + PORTRAIT_COLS
   const narrow = width < tabsWidth((id, name) => name) + (withPortrait ? PORTRAIT_COLS : 0)
   const tabs = h(Box, { key: 'tabs', flexDirection: 'row', columnGap: 1, flexShrink: 1 },
     ...TABS.map(([id, label]) => h(Button, {
