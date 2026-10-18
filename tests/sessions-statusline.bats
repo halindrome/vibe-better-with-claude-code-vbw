@@ -100,11 +100,13 @@ start() { VBW_SESSION_ID="$1" "$VBW" run start build P1.1 > /dev/null; }
 @test "R192: a malformed file in the list does not cost the good entries their names" {
   registry_entry 101 "$SESSION_A" "Payments work"
   start "$SESSION_A"
+  # A /rename after the start: only the list has the new name, the stored one is old.
+  registry_entry 101 "$SESSION_A" "Renamed chat" 1792300009000
   printf '{"sessionId": "%s", "name": "Broken' "$SESSION_B" > "$(registry_dir)/100.json"
   printf 'not json at all' > "$(registry_dir)/99.json"
   local l
   l=$(render "$SESSION_B")
-  [[ "$l" == *"· held by Payments work"* ]] || { echo "$l"; false; }
+  [[ "$l" == *"· held by Renamed chat"* ]] || { echo "$l"; false; }
 }
 
 @test "R192: the list is read with one jq pass per render, only while a lease is open" {
