@@ -42,6 +42,17 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
   last proof | jq -e '.parts == 4 and (.units | length == 4) and ([.units[].name] | sort == ["check:C1", "check:C2", "check:C3", "check:C4"])' || { cat "$STEPS"; false; }
 }
 
+@test "R191: each unit records its own seconds, not a shared or zero value" {
+  step_edit '.checks = [{id: "C1", req: "R1", run: ["sleep", "2"]}, {id: "C2", req: "R1", run: ["true"]}]'
+  git add -A && git commit -q -m "chore(vbw): a slow check"
+  "$VBW" approve > /dev/null
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  last proof | jq -e '([.units[] | select(.name == "check:C1")][0].seconds) as $slow
+    | ([.units[] | select(.name == "check:C2")][0].seconds) as $fast
+    | $slow >= 2 and $fast < $slow and .seconds >= $slow' || { cat "$STEPS"; false; }
+}
+
 @test "R191: a proof's expected time is the sum of its units' last recorded seconds, times the learned ratio, rounded" {
   runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
   hist_proof '[{"name": "check:C1", "seconds": 40}, {"name": "check:C2", "seconds": 60}]' 150 3
