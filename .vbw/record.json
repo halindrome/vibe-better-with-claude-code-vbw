@@ -36178,7 +36178,7 @@
         "plugin/lib/steps.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Build units in the note and the history: vbw run start build writes note.units = [{id, tier, tasks, seconds: null}] per plan (tier = the plan's phase tier at that moment, 'standard' when the phase has none; tasks = the plan's tasks count, 0 without tasks); step_plan_done stamps the plan's own seconds (run start to now) on its unit; step_record copies the units of plans done into the history entry (a plan left unfinished is no unit), beside parts as today",
@@ -36382,6 +36382,60 @@
           "result": "red",
           "at": "2026-10-17T19:19:03Z",
           "head": "bf3aaec0fc5b516c68ccbb770cf6330fdbedd170"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "planning records how many open requirements of the milestone it planned"
+          },
+          "what": "accepted counts as open",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:41:32Z",
+          "head": "4ab0041137401929fb2ce2bc6bfcf17e5cc173c6",
+          "strengthened": [
+            "tests/step-units-history.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "QA records the phases it checked, each with its tier"
+          },
+          "what": "QA tier always standard",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C389": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:42:32Z",
+          "head": "4ab0041137401929fb2ce2bc6bfcf17e5cc173c6",
+          "strengthened": [
+            "tests/step-units-history.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "vbw next --json's step, the note vbw run start writes and run start's sentence use the new expected times in D425's unchanged wording, within a minute of each other"
+          },
+          "what": "note's expected time ignores the work size",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:44:25Z",
+          "head": "4ab0041137401929fb2ce2bc6bfcf17e5cc173c6"
         }
       ]
     },
@@ -36789,6 +36843,104 @@
           "result": "survivor",
           "at": "2026-10-17T18:33:57Z",
           "head": "70cf7b279c3a360e9223e1e995e9e0bd2f95cdec"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a road of null, or none at all, shows no milestone row, and a history alone shows none: the panel works no milestone time out itself and panel-estimate.js returns no milestone"
+          },
+          "what": "null note road falls through to next.json",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C394": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:38:24Z",
+          "head": "dabe8598f3ba14fad96f09756b922b45fed281bf",
+          "strengthened": [
+            "tests/panel/r191/road-panel.test.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "Mission Control shows the kernel's road sentence from the step note while a step runs, stamped, in place of the old milestone row, in the estimate colour"
+          },
+          "what": "milestone row not stamped",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C394": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:39:12Z",
+          "head": "dabe8598f3ba14fad96f09756b922b45fed281bf"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "when road.end is null Mission Control shows 'No estimate yet' with the kernel's reason, plain"
+          },
+          "what": "no-basis wording changed",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C394": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:39:28Z",
+          "head": "dabe8598f3ba14fad96f09756b922b45fed281bf"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "with nothing running Mission Control shows the road of the last vbw next from next.json, and the note's road wins while its step runs"
+          },
+          "what": "next.json road beats the note",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C394": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:39:45Z",
+          "head": "dabe8598f3ba14fad96f09756b922b45fed281bf"
+        },
+        {
+          "task": 1,
+          "what": "milestone row never shown",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C394": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:49:28Z",
+          "head": "4ab0041137401929fb2ce2bc6bfcf17e5cc173c6"
+        },
+        {
+          "task": 2,
+          "what": "estimate returns a milestone again",
+          "files": [
+            "plugin/hooks/panel-estimate.js"
+          ],
+          "checks": {
+            "C394": "red"
+          },
+          "result": "red",
+          "at": "2026-10-17T19:49:44Z",
+          "head": "4ab0041137401929fb2ce2bc6bfcf17e5cc173c6"
+        },
+        {
+          "task": 3,
+          "none": "task 3 edits check files only; they are the tests that notice breaks",
+          "at": "2026-10-17T19:49:50Z"
         }
       ]
     },
@@ -48259,6 +48411,15 @@
           "in": 1971,
           "out": 100
         }
+      },
+      {
+        "id": "build-20261017T193406Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-17T19:34:06Z",
+        "ended": "2026-10-18T10:38:50Z",
+        "cost": null
       }
     ],
     "milestones": {
