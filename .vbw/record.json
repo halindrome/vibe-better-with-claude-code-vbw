@@ -20096,6 +20096,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P149.4: tests/step-proof.bats is an approved check file of R190, not of R191; the run's lease lists only R191's check files as editable, so the guard denies the edit the task needs (update the expected seconds in the D429 late-fix test to the R191.15 round median). Also the plan's checks C389-C398 do not cover that file. Needs the user to approve this edit (or move the test into R191's checks) so the plan can proceed."
+        },
+        {
+          "at": "2026-10-18T11:14:01Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P149.4: edit committed by the maintainer (45c7cc9d; the guard denies a Dev an approved R190 check file); close with vbw plan done once R191's checks pass"
         }
       ]
     },
@@ -20162,6 +20168,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P151.1: tests/panel/pane.test.mjs (approved check file, not among the plan's files) fails after the change: test 'progress is green, the estimate amber and the cost in the accent colour' needs an estimate-milestone row, which now comes only from a road. Fix: add road:{seconds:7800,end:iso(NOW+7800*S),rounds:{deep:2},basis:'2 waves, 2 proofs',say:'milestone end: about 2 h 10 min, until around 16:40'} to the step() fixture there (patch saved at .vbw/runtime/scratch/pane.patch, applies with git apply). The plan needs pane.test.mjs added to its files. Tasks 1-3 are otherwise done and committed (57bd896e, e7fc5bf8, 7e863abf); panel-pane.js and panel.js needed no change; mutation step not run."
+        },
+        {
+          "at": "2026-10-18T11:14:03Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P151.5: edit committed by the maintainer (pane fixture; the guard denies a Dev an approved check file); close with vbw plan done once R191's checks pass"
         }
       ]
     }
@@ -36456,7 +36468,7 @@
         "plugin/lib/steps-expect.jq"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "A new lib/steps-expect.jq with the interface in its header: input none; $h[0] the history ({steps}) or null, $runs[0] the runs store ({runs}) or null, $kind, $size (as P149.1 defines); output one integer (seconds) or empty; medians of an even count take the mean of the two middle values; every list is 'the latest 10' by the history's order",
@@ -36679,9 +36691,84 @@
           "result": "red",
           "at": "2026-10-17T14:39:25Z",
           "head": "f8291355986fdb7437bd555efef2915ab2b91f90"
+        },
+        {
+          "task": 1,
+          "what": "even median takes lower middle",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T11:18:51Z",
+          "head": "d582f2a50778d886bdc5d859c4fa32370778774c"
+        },
+        {
+          "task": 2,
+          "what": "wave takes shortest plan",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T11:20:24Z",
+          "head": "d582f2a50778d886bdc5d859c4fa32370778774c"
+        },
+        {
+          "task": 3,
+          "what": "fix ignores tier filter",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T11:21:58Z",
+          "head": "d582f2a50778d886bdc5d859c4fa32370778774c"
+        },
+        {
+          "task": 5,
+          "what": "proof ratio not applied",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "green",
+            "C391": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T11:36:30Z",
+          "head": "d582f2a50778d886bdc5d859c4fa32370778774c"
+        },
+        {
+          "task": 4,
+          "what": "qa today's-rule fallback dropped",
+          "files": [
+            "plugin/lib/steps-expect.jq"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T11:41:33Z",
+          "head": "d582f2a50778d886bdc5d859c4fa32370778774c"
         }
-      ],
-      "note": "Code and tasks 1-5 are done and committed; C390 mutations (R191.8-19) are red. R191.21-23 can only be mutation-checked through C391 (tests/step-proof-units.bats). Tests 3-6 pass, but tests 1-2 (a proof records its units) need P149.3, which runs after this plan. vbw mutate refuses with 'checks do not pass on the unbroken code', so the gate cannot be met here. Needs a decision: run P149.3 first (reorder), or move C391's tests 1-2 to P149.3. Tasks 1-5 also still need mutation records (task break/--none), which I did not add since the same gate applies to C391 for task5."
+      ]
     },
     {
       "id": "P149.3",
@@ -37390,7 +37477,7 @@
       "tasks": [
         "tests/step-proof.bats, test \"R190 (D429): a late fix moves its end to its own pace\": its first end now comes from the fix round wall-time median (R191.15), not 3x the per-fix median; update only the expected seconds so the test still pins D429 (the end moves at its own pace, marked late, never before the first end)"
       ],
-      "note": "tests/step-proof.bats is an approved check file of R190, not of R191; the run's lease lists only R191's check files as editable, so the guard denies the edit the task needs (update the expected seconds in the D429 late-fix test to the R191.15 round median). Also the plan's checks C389-C398 do not cover that file. Needs the user to approve this edit (or move the test into R191's checks) so the plan can proceed."
+      "note": "edit committed by the maintainer (45c7cc9d; the guard denies a Dev an approved R190 check file); close with vbw plan done once R191's checks pass"
     },
     {
       "id": "P151.5",
@@ -37405,11 +37492,12 @@
       "after": [
         "P151.1"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "tests/panel/pane.test.mjs: the step() fixture carries a road (the patch in .vbw/runtime/scratch/pane.patch), because Mission Control shows the milestone row only from the kernel road (P151.1); the test keeps pinning the colours"
-      ]
+      ],
+      "note": "edit committed by the maintainer (pane fixture; the guard denies a Dev an approved check file); close with vbw plan done once R191's checks pass"
     }
   ],
   "fixes": [
@@ -48711,6 +48799,15 @@
           "in": 2490,
           "out": 66
         }
+      },
+      {
+        "id": "build-20261018T111436Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-18T11:14:36Z",
+        "ended": "2026-10-18T11:41:58Z",
+        "cost": null
       }
     ],
     "milestones": {
