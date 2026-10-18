@@ -39,7 +39,7 @@ qa_combined() {
 next_answer() {
   vbw_require_project
   local effort record hash counts approved=false changed=false legacy=false next qa waiting profile problems=""
-  record=$(record_read)
+  record=$(record_read) || return $?
   hash=$(contract_hash "$record")
   # Check files edited since the approval wait: the build goes on, the one approval comes before proof.
   waiting=$(contract_waiting "$record") && commands_approved "$record" && approved=true
