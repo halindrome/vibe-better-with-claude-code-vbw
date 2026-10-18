@@ -38167,12 +38167,11 @@
       "after": [
         "P149.1"
       ],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tests/step-proof.bats, test \"R190 (D429): a late fix moves its end to its own pace\": its first end now comes from the fix round wall-time median (R191.15), not 3x the per-fix median; update only the expected seconds so the test still pins D429 (the end moves at its own pace, marked late, never before the first end)"
-      ],
-      "note": "edit committed by the maintainer (45c7cc9d; the guard denies a Dev an approved R190 check file); close with vbw plan done once R191's checks pass"
+      ]
     },
     {
       "id": "P151.5",
@@ -38187,12 +38186,11 @@
       "after": [
         "P151.1"
       ],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tests/panel/pane.test.mjs: the step() fixture carries a road (the patch in .vbw/runtime/scratch/pane.patch), because Mission Control shows the milestone row only from the kernel road (P151.1); the test keeps pinning the colours"
-      ],
-      "note": "edit committed by the maintainer (pane fixture; the guard denies a Dev an approved check file); close with vbw plan done once R191's checks pass"
+      ]
     }
   ],
   "fixes": [
@@ -43560,6 +43558,11 @@
       "id": "D438",
       "at": "2026-10-18T12:03:03Z",
       "text": "Contract approved: 180 requirements, 393 checks, 454 plans (30bcfba941bd)"
+    },
+    {
+      "id": "D439",
+      "at": "2026-10-18T15:46:58Z",
+      "text": "Contract approved: 180 requirements, 393 checks, 454 plans (7ef592865de1)"
     }
   ],
   "commands": {
