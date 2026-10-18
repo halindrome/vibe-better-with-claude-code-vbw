@@ -208,12 +208,21 @@ statusline() {
   jq -nc --arg d "$dir" '{session_id: "bench", workspace: {project_dir: $d}, cwd: $d, model: {display_name: "Opus"},
     cost: {total_cost_usd: 1.25}, context_window: {total_input_tokens: 12000, total_output_tokens: 3400, context_window_size: 200000}}' > "$work/statusline.json"
   rm -f "$dir/.vbw/runtime/cost.bench.json"
+  # A lease is open (R192, .vbw/runtime/run-open) and Claude Code's list of chats
+  # is on disk (<config>/sessions/*.json, one of them the lease's session), so the
+  # status line's one jq pass over the list is inside the measure.
+  local cfg="$work/chats-config"
+  mkdir -p "$dir/.vbw/runtime" "$cfg/sessions"
+  : > "$dir/.vbw/runtime/run-open"
+  jq -nc '{pid: 101, sessionId: "bench", name: "Payments work", updatedAt: 1760000000000}' > "$cfg/sessions/101.json"
+  jq -nc '{pid: 102, sessionId: "bench-two", name: "Other chat", updatedAt: 1760000001000}' > "$cfg/sessions/102.json"
+  jq -nc '{pid: 103, sessionId: "bench-three", name: "Docs", updatedAt: 1760000002000}' > "$cfg/sessions/103.json"
   if [ "${3:-}" = step ]; then
     mkdir -p "$dir/.vbw/runtime"
     jq -nc 'def s($n): (now | floor) + $n | todateiso8601;
       {kind: "build", run: "build-1", session: "bench", pid: null, started_at: s(-300), ids: ["P1.1", "P1.2"], doing: "building P1.1, P1.2",
        parts: {done: 1, total: 2}, proof: null, first_end: s(720), end: s(720), late: false}' > "$dir/.vbw/runtime/step.json"
-    first=$(NO_COLOR=1 bash "$PLUGIN/scripts/vbw-statusline.sh" < "$work/statusline.json" 2> /dev/null | head -n 1) || first=""
+    first=$(CLAUDE_CONFIG_DIR="$cfg" NO_COLOR=1 bash "$PLUGIN/scripts/vbw-statusline.sh" < "$work/statusline.json" 2> /dev/null | head -n 1) || first=""
     case "$first" in
       *"1 of 2 · until "[0-9][0-9]:[0-9][0-9]*) ;;
       *)
@@ -221,13 +230,14 @@ statusline() {
         status=1 ;;
     esac
   fi
-  cmd="NO_COLOR=1 bash '$PLUGIN/scripts/vbw-statusline.sh'"
+  cmd="CLAUDE_CONFIG_DIR='$cfg' NO_COLOR=1 bash '$PLUGIN/scripts/vbw-statusline.sh'"
   read -r _ total < <(cpu_pair "$work/statusline.json" true "$cmd")
   if ! jq -e '.session == "bench" and .usd == 1.25 and .in == 12000 and .out == 3400' "$dir/.vbw/runtime/cost.bench.json" > /dev/null 2>&1; then
     printf 'status line%s: the cost side file was not written, so the measure left the write out\n' "$label" >&2
     status=1
   fi
-  rm -f "$dir/.vbw/runtime/cost.bench.json" "$dir/.vbw/runtime/step.json"
+  rm -f "$dir/.vbw/runtime/cost.bench.json" "$dir/.vbw/runtime/step.json" "$dir/.vbw/runtime/run-open"
+  rm -rf "$cfg"
   line=$(printf 'status line%s: %s ms CPU per call; budget %s ms' "$label" "$total" "$STATUS_MS")
   if perl -e 'exit($ARGV[0] <= $ARGV[1] ? 0 : 1)' -- "$total" "$STATUS_MS"; then
     printf '%s\n' "$line"
