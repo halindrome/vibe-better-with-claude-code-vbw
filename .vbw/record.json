@@ -5267,7 +5267,7 @@
   "milestone": {
     "id": "M37",
     "title": "ETA quality for T102 (cosmetic leg, brainstorm inbox 2026-10-10): estimate per unit of work (plan, task, check by tier from .git/vbw/steps.json) times the work size, and the whole road (build, proof, QA, likely fix rounds from this machine's history), not only the current step",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -5444,6 +5444,11 @@
       "id": "M36",
       "title": "Every long VBW step (planning, build, proof, QA) shows what it is doing now and when it should end, as a clock time from how long the same step took before in this project, in the panel, status line and VBW's messages; absorbs T85. Final polish before 2.1.0 (owner 2026-10-10: cosmetics last, core first unless a technical reason makes it urgent)",
       "at": "2026-10-17T11:41:37Z"
+    },
+    {
+      "id": "M37",
+      "title": "ETA quality for T102 (cosmetic leg, brainstorm inbox 2026-10-10): estimate per unit of work (plan, task, check by tier from .git/vbw/steps.json) times the work size, and the whole road (build, proof, QA, likely fix rounds from this machine's history), not only the current step",
+      "at": "2026-10-18T20:23:44Z"
     }
   ],
   "requirements": [
@@ -43685,6 +43690,11 @@
       "id": "D440",
       "at": "2026-10-18T18:32:33Z",
       "text": "Contract approved: 180 requirements, 395 checks, 454 plans (4adaddf37ebc)"
+    },
+    {
+      "id": "D441",
+      "at": "2026-10-18T20:23:44Z",
+      "text": "Shipped M37 ETA quality for T102 (cosmetic leg, brainstorm inbox 2026-10-10): estimate per unit of work (plan, task, check by tier from .git/vbw/steps.json) times the work size, and the whole road (build, proof, QA, likely fix rounds from this machine's history), not only the current step: 1 requirement proven or accepted"
     }
   ],
   "commands": {
@@ -50936,6 +50946,12 @@
             "out": 0,
             "at": "2026-10-17T11:58:35Z"
           }
+        },
+        "total": {
+          "usd": 1437.794834,
+          "in": 207838,
+          "out": 229,
+          "sessions": 23
         }
       }
     }
