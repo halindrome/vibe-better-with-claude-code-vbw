@@ -20214,7 +20214,14 @@
           "to": "deep",
           "reason": "Dev blocked P151.3: Docs written and committed (6 of 8 C397 tests and step-docs, panel-now-docs, panel-glance green). tests/road-docs.bats tests 7 and 8 use grep -E with {0,300} and {0,400}; macOS /usr/bin/grep (BSD) caps repetition at 255 ('maximum repetition exceeds 255'), so they error on this host whatever the docs say. With perl the same regexes match docs/rigor.md and README.md. Fix needs an approved check file edit (use {0,250} or perl) outside this plan's files."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "893139dbd3c784a1a0851bc23973f9b9f23acc5b25a6002936af849c816a9948",
+        "at": "2026-10-18T17:47:52Z",
+        "note": "30/30 checks"
+      }
     }
   ],
   "plans": [
