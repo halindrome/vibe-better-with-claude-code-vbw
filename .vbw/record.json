@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261018T194805Z",
+    "kind": "qa",
+    "started_at": "2026-10-18T19:48:05Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1436.932123,
+      "in": 198647,
+      "out": 428
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -20138,12 +20149,11 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "98133261b125fd216eeca04ec357e692e51505ce2cb646d32ad640106538435d",
-        "at": "2026-10-18T17:47:42Z",
-        "note": "29/30 checks",
-        "rounds": 1
+        "tree": "ac8aca121da4b80b1b3b468f4e9b779f0247bb14a2299e61ce3103221b8921ab",
+        "at": "2026-10-18T19:49:00Z",
+        "note": "8/8 checks (re-check round 2)"
       }
     },
     {
@@ -40225,7 +40235,7 @@
       "req": "R191",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "step_proof_units (plugin/lib/steps.sh, lines 359-361, added by P149.1 commit 166c87e0) builds the proof's unit names with one separate jq process per unit, appending to a growing JSON string. vbw next --json runs it every time the next step is a proof. A micro-benchmark of the same loop for 400 units took 1.5 s (this repo's full proof has 398 units, steps.json shows it); the cost grows with the square of the unit count (every spawn re-parses the whole list) and is paid on each vbw next, where the old code counted with plain arithmetic. The same phase already has the cheap design: prove_unit_names (plugin/lib/cmd-prove.sh) pipes the names through one jq (proofsteps_names). The two lists also disagree: step_proof_units names every TODO_CHECKS entry (held ones too) and every TODO_COMMANDS entry (unapproved ones too), while prove_unit_names, used when the proof really starts, leaves out held checks and commands the user has not approved. So next --json can size a proof by units that the proof then does not run. Regression test: with a fixture of 30 approved checks, count the jq processes step_proof_units starts (a PATH shim that logs each call) and require the count not to grow with the unit count; and a fixture with one unapproved project command and one held check must give the same unit names from step_proof_units as the proof's own note uses (parts and expected seconds equal between vbw next --json and the proof's note).",
       "phase": "P149"
     },
