@@ -314,6 +314,11 @@ once:
 | `qa_findings` | fixes opened by QA |
 | `escalations` | number of escalation events |
 
+`fix_rounds` also feeds the milestone's end: the usual fix rounds of a tier are
+the rounded median of `fix_rounds` over the latest 10 finished phases of that
+tier (at least 3 needed), and the milestone's end counts them (docs/panel.md,
+Time left).
+
 `vbw show rigor` lists every phase's tier and prediction, then how often the
 prediction held among finished phases.
 
