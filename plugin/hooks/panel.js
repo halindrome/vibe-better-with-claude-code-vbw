@@ -92,7 +92,7 @@ function fresh() {
   return {
     live: false, born: {}, timer: null, busy: false, question: null, sound: true, keys: keys(false), silent: false, wouldPlay: 0,
     record: null, next: null, history: null, cost: null, health: null, auto: null, stepsPath: null, steps: null, shown: '', seen: {}, sized: false,
-    root: null, sessionId: null, holder: null, stored: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
+    root: null, sessionId: null, holder: null, registry: null, stored: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
     lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {},
     sprites: null, burst: null, sweep: null, cheer: null, wrapped: null, nextSeen: null, nextAt: null, nextAnim: null,
@@ -236,14 +236,21 @@ async function sessionDir($, root, id) {
 }
 
 // Who holds the open run: Claude Code's list of chats and what `vbw run start` stored
-// (.vbw/runtime/holder.json), read on the tick only while a lease is open.
+// (.vbw/runtime/holder.json), read on the tick only while a lease is open; the list
+// alone also while the Sessions tab is shown.
 async function readHolder($, st) {
   const lease = isObj(st.record) && isObj(st.record.lease) ? st.record.lease : null
+  if (!lease && st.tab !== 'sessions') {
+    st.holder = null
+    st.registry = null
+    return
+  }
+  const registry = await readRegistry($, st.root)
+  st.registry = registry
   if (!lease) {
     st.holder = null
     return
   }
-  const registry = await readRegistry($, st.root)
   await refresh($, st, st.root + '/.vbw/runtime/holder.json', 'stored', true)
   st.holder = holderName({ lease, registry, stored: isObj(st.stored) ? st.stored : null, sessionId: st.sessionId })
 }
@@ -465,7 +472,7 @@ async function suggest($, st) {
 
 const cheering = (st, now) => (st.cheer && st.cheer.until > now ? st.cheer.text : null)
 const recOf = (st) => (isObj(st.record) ? st.record.recommendation : undefined)
-const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st), unseenNext(st), st.needSeen,  nextCandy({ motion: motion(st), arrivedAt: st.nextAt, now }), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent,
+const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st), unseenNext(st), st.needSeen,  nextCandy({ motion: motion(st), arrivedAt: st.nextAt, now }), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent, st.tab === 'sessions' ? st.registry : null,
   cheering(st, now), !!st.burst, !!st.sweep])
 
 // Remember when each agent first showed; at full motion a new row flashes for a
@@ -638,6 +645,7 @@ async function act($, st, a) {
     if (a.open === 'mission') {
       st.tab = typeof a.tab === 'string' ? a.tab : 'now'
       if (st.tab === 'now') await seen($, st, ['next', 'need'])
+      if (st.tab === 'sessions') await readHolder($, st)
       if (typeof a.agent === 'string') {
         st.agent = a.agent
         await seeHelper($, st, a.agent) // opened in Mission Control: a failed helper counts as seen
@@ -652,6 +660,7 @@ async function act($, st, a) {
     else if (typeof a.show === 'string') {
       st.tab = a.show
       if (a.show === 'now') await seen($, st, ['next', 'need'])
+      if (a.show === 'sessions') await readHolder($, st) // shown at once, not at the next tick
     }
     else return
     await redrawIfChanged($, st, true)
@@ -938,7 +947,7 @@ export function register(on) {
       const cells = st.sweep && st.tab === 'proof' && ui.Raster ? drawn(st.sweep, width, PANE) : null
       if (cells) animate($, st)
       const sweep = cells ? { cols: st.sweep.cols, cells } : null
-      return renderPane(ui, { st, v, now, width, sweep, recommendation: recOf(st), unseen: unseenNext(st), motion: motion(st), arrivedAt: st.nextAt, wrapped: st.wrapped, scroll: isObj(e.props) ? e.props.scroll : null, portrait: $.plugin.root + '/assets/portrait.png' }, {
+      return renderPane(ui, { st, v, now, width, sweep, registry: st.registry, stored: st.stored, holder: st.holder, recommendation: recOf(st), unseen: unseenNext(st), motion: motion(st), arrivedAt: st.nextAt, wrapped: st.wrapped, scroll: isObj(e.props) ? e.props.scroll : null, portrait: $.plugin.root + '/assets/portrait.png' }, {
         act: (a) => act($, st, a),
         sound: () => setSound($, st, !st.sound),
       })
