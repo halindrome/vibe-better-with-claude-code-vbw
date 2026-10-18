@@ -55,6 +55,8 @@ has() { printf '%s\n' "$1" | grep -qE -- "$2" || { echo "missing: $2"; return 1;
   has "$s" 'qa'
   has "$s" 'fix rounds'
   has "$s" 'median'
+  has "$s" 'rounded median of .outcome\.fix_rounds. over the latest 10 finished phases'
+  has "$s" '1, 2, 2 and 5 give 2'
   has "$s" 'the usual here'
   has "$s" 'counting no fix rounds'
   has "$s" 'no milestone end time yet'
@@ -77,10 +79,13 @@ has() { printf '%s\n' "$1" | grep -qE -- "$2" || { echo "missing: $2"; return 1;
   done
   grep -qF 'road.say' "$NEXT" || { echo "docs/next.md does not name road.say"; false; }
   grep -qiF 'no milestone end time yet' "$NEXT" || { echo "docs/next.md does not show the no-basis sentence"; false; }
+  grep -qE 'latest 10 finished phases' "$NEXT" || { echo "docs/next.md does not give the rounds window"; false; }
   grep -qF 'Milestone end: about' "$NEXT" || { echo "docs/next.md shows no road sentence"; false; }
 }
 
 @test "R191: docs/statusline.md says the status line shows the step's time only, never the milestone's" {
+  tr '\n' ' ' < "$STATUSLINE" | tr -s ' ' | grep -qiE "shows the step.s time only" \
+    || { echo "docs/statusline.md does not say the status line shows the step's time only"; false; }
   tr '\n' ' ' < "$STATUSLINE" | tr -s ' ' | grep -qiE "milestone.{0,80}(mission control|panel|not|never|only)|(only|never|not).{0,80}milestone" \
     || { echo "docs/statusline.md does not say the status line leaves the milestone time to Mission Control"; false; }
 }
@@ -88,6 +93,8 @@ has() { printf '%s\n' "$1" | grep -qE -- "$2" || { echo "missing: $2"; return 1;
 @test "R191: docs/rigor.md says outcome.fix_rounds feeds the usual fix rounds of the milestone's end" {
   tr '\n' ' ' < "$RIGOR" | tr -s ' ' | grep -qiE 'fix_rounds.{0,150}.{0,150}(milestone.s end|milestone end|usual fix rounds|end of the milestone)' \
     || { echo "docs/rigor.md does not connect fix_rounds to the milestone's end"; false; }
+  tr '\n' ' ' < "$RIGOR" | tr -s ' ' | grep -qiE 'rounded median of .fix_rounds. over the latest 10 finished phases of that tier \(at least 3 needed\)' \
+    || { echo "docs/rigor.md does not give how the usual fix rounds are counted"; false; }
 }
 
 @test "R191: the README names the milestone's end where it describes the panel" {
