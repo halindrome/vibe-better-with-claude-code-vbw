@@ -20635,6 +20635,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P152.1: Code for tasks 1-4 is committed (holder.jq, sessions.sh, cmd-run.sh, record.sh; C401 tests 1-3 and 5-9 pass, glance-write, kernel-sessions, record, hooks-guard stay green). The mutation step cannot start: vbw mutate refuses because C401 fails on unbroken code. Tests 4 (vbw next names the holder) and 10 (vbw doctor line) of tests/sessions-name.bats need P152.2's files (cmd-next.sh, next.jq, cmd-doctor.sh), outside this plan. It also waits for approval of tests/panel/r192/holder.test.mjs. Next: build P152.2, approve the new checks, then run the 14 mutations (R192.1-10 and tasks 1-4) for P152.1; first break tried: holder_write stores no name."
+        },
+        {
+          "at": "2026-10-18T23:27:47Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P152.3: C402 test 4 (tests/sessions-guards.bats 'a stored name with escape sequences is shown clean') fails every time on macOS: it does touch .vbw/record.json then vbw status, so record_read (plugin/lib/record.sh) rewrites the glance in the SAME second; the hook runs under sh -c where /bin/sh is bash 3.2 and [ -nt ] compares whole seconds, so the glance counts as stale and the guard reads the record (no name -> id). Verified: record and glance both mtime 1792365627. common.jq is done (tests 1,2,3,5 pass; hooks-guard, glance-guards, guard-protected, big-record-hooks all pass; bench guards 10.8 ms max, status line 34-51 ms, budget 20/60). Fix needs a file outside the plan: plugin/lib/record.sh record_read must write the rewritten glance strictly newer in whole seconds (e.g. record_back on the record is forbidden by its comment, so touch the glance forward or set the record one second back), or the test needs a sleep 1 (protected file)."
         }
       ]
     },
@@ -20680,6 +20686,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P153.2: Code and checks C407 done and mutation-clean, but tests/panel/wiring.test.mjs ('outside the project it reads only this session's own folder') now fails: reading Claude Code's list of chats (<config>/sessions) while a lease is open is the plan's own task 2, yet that approved test allows only the project, the session folder and ~/.config/claude-code. The file is not in P153.2's files (P154.1 owns it). Needed: allow the sessions folder in that test's path check (and keep credentials/settings/.ssh forbidden); then run vbw plan done P153.2."
+        },
+        {
+          "at": "2026-10-18T23:46:09Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P153.1: Tasks 1-3 are built, committed and green (C404 pass; rules R192.18-23 each broken once and caught; bench status line 36.6 ms CPU per call, budget 60). The three task-level mutations cannot run: vbw mutate refuses while tests/panel/r192/sessions-tab.test.mjs (C408, P154.1's blocked check, edited uncommitted and waiting for owner approval) differs from the last commit. Re-run 'vbw mutate P153.1 task1|task2|task3' after that file is approved and committed."
         }
       ]
     },
@@ -20718,6 +20730,12 @@
           "from": "standard",
           "to": "deep",
           "reason": "Dev blocked P154.2: R192.40: docs/panel.md is written and committed (96973c62), but vbw mutate refuses to run because C406 is red on unbroken code: tests/sessions-docs.bats test 7 needs docs/next.md to describe rename_hint, which is outside this plan's files. Re-run the R192.40 mutation after the next.md docs plan lands."
+        },
+        {
+          "at": "2026-10-18T23:19:00Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P154.1: Code for tasks 1-4 is committed (panel-pane.js, panel.js, wiring.test.mjs). The approved check C408 (tests/panel/r192/sessions-tab.test.mjs) cannot pass as written, and the mutation step refuses to run while its fixed version is uncommitted. Two faults, both fixed uncommitted in the working tree: (1) test 'the empty sentence, cleaned names...' gives the second entry updatedAt T0-1, newer than the first (T0-60000), then expects the first row to be the older one, against the newest-first rule; fix: T0-120000. (2) The panel tests press the button 'Sessions' at the stand-in's default 50 columns; with eight tabs the full names need 53 columns, so a 50-column pane correctly shows the short names (Sess); fix: render those tests at 60 columns. Same cause forces one token in tests/panel/cost.test.mjs (outside this plan's files: it excludes the tab button 'Costs', now also 'Cost') and a 60-column render in wiring.test.mjs (committed). Needs the owner to approve the edited check files and the cost.test.mjs edit, then re-run P154.1 for commit and mutation (one per rule R192.34-39 and per task)."
         }
       ]
     }
@@ -38760,12 +38778,133 @@
         "plugin/lib/cmd-doctor.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/cmd-next.sh and plugin/lib/next.jq: next_answer sources sessions.sh and passes `--arg holder \"$(holder_display <lease.session>)\"` (empty when the lease has no session); next.jq's run row for another session reads `A VBW <kind> run (<run>) belongs to another session, <holder>: wait for it, or check vbw status` and never says to end it; the owner's own row is unchanged.",
         "plugin/lib/loop-step.sh: the stop for a run of another session reads `a run of another session (<holder>) is open`, the holder from `holder_display` (the list's current name, else the stored name, else 8 characters of the id).",
         "plugin/lib/cmd-doctor.sh: one `doctor_sessions` line after doctor_claude: `✓ session names: Claude Code's list of chats (<dir>/sessions) is readable, N entries` when the folder is a readable directory, else `· session names: Claude Code's list of chats (<dir>/sessions) not found: run holders are shown by their id`; info or ok, never a failure; the phrase 'session names' appears on that one line only."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R192",
+            "text": "vbw next's run action in another session names the holder by display name, says to wait and check vbw status, and never says to end the run"
+          },
+          "what": "run row tells to end the run",
+          "files": [
+            "plugin/lib/next.jq"
+          ],
+          "checks": {
+            "C403": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:17:55Z",
+          "head": "da380fd74ca9a92e3bb9796a903b00eba9d47761"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "vbw next shows a /rename made during the run at once, the stored name once the chat is gone, and 8 characters of the id with no name, cleaned of escape sequences"
+          },
+          "what": "next shows the raw id instead of the display name",
+          "files": [
+            "plugin/lib/cmd-next.sh"
+          ],
+          "checks": {
+            "C403": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:18:29Z",
+          "head": "da380fd74ca9a92e3bb9796a903b00eba9d47761"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the loop's stop for a run of another session names the holder by display name"
+          },
+          "what": "loop stop shows raw id",
+          "files": [
+            "plugin/lib/loop-step.sh"
+          ],
+          "checks": {
+            "C403": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:19:21Z",
+          "head": "412b7268cacd96f705931e11714001e2060d642f"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "vbw doctor prints exactly one line saying whether Claude Code's list of chats is readable or not found"
+          },
+          "what": "doctor says readable even when the folder is missing",
+          "files": [
+            "plugin/lib/cmd-doctor.sh"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:20:17Z",
+          "head": "bbf182409e7ee5be3d010d997b9f3339a448538b"
+        },
+        {
+          "task": 1,
+          "what": "row drops the holder",
+          "files": [
+            "plugin/lib/next.jq"
+          ],
+          "checks": {
+            "C403": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:21:12Z",
+          "head": "b4c9dffd9ddcdf75a58e07d636fea786470ca02d"
+        },
+        {
+          "task": 2,
+          "what": "stop drops the holder",
+          "files": [
+            "plugin/lib/loop-step.sh"
+          ],
+          "checks": {
+            "C403": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:21:49Z",
+          "head": "b4c9dffd9ddcdf75a58e07d636fea786470ca02d"
+        },
+        {
+          "task": 3,
+          "what": "doctor line drops the entry count",
+          "files": [
+            "plugin/lib/cmd-doctor.sh"
+          ],
+          "checks": {
+            "C401": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T23:23:28Z",
+          "head": "b4c9dffd9ddcdf75a58e07d636fea786470ca02d"
+        },
+        {
+          "task": 3,
+          "what": "doctor line drops the entry count",
+          "files": [
+            "plugin/lib/cmd-doctor.sh"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:26:02Z",
+          "head": "b48b8f04cedf2edf76ff3a1f4091334c578e2008",
+          "strengthened": [
+            "tests/sessions-name.bats"
+          ]
+        }
       ]
     },
     {
@@ -38779,13 +38918,14 @@
         "plugin/hooks/common.jq"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/hooks/common.jq: `include \"holder\" {search: \"../lib\"}` (plugin/lib/holder.jq); guard_context carries `holder`: the glance's top-level holder when the glance was used, null when the record was read (the record never carries a name, D442); the header comment names the glance's holder field as the guards' only source of the name.",
         "`foreign_denial` reads `<path> is being written by run <run> of another session (<name>): wait for it; if the user says that session is closed, they run vbw run end --owner-closed` with <name> = holder_name($f; (holder.session_name when holder.run == $f.run); null): the stored name, else the first 8 characters of the id, cleaned and cut; the Bash guard gets the same words through the same def; no new input, --rawfile or file read in hooks.json.",
         "Measure: run `bash tools/bench-hooks.sh` once and put each guard's own CPU per call in the plan note (budget 20 ms; a machine too busy to measure is reported as busy); tests/hooks-guard.bats, glance-guards.bats, guard-protected.bats and big-record-hooks.bats keep passing ('another session' stays in the reason)."
-      ]
+      ],
+      "note": "C402 test 4 (tests/sessions-guards.bats 'a stored name with escape sequences is shown clean') fails every time on macOS: it does touch .vbw/record.json then vbw status, so record_read (plugin/lib/record.sh) rewrites the glance in the SAME second; the hook runs under sh -c where /bin/sh is bash 3.2 and [ -nt ] compares whole seconds, so the glance counts as stale and the guard reads the record (no name -> id). Verified: record and glance both mtime 1792365627. common.jq is done (tests 1,2,3,5 pass; hooks-guard, glance-guards, guard-protected, big-record-hooks all pass; bench guards 10.8 ms max, status line 34-51 ms, budget 20/60). Fix needs a file outside the plan: plugin/lib/record.sh record_read must write the rewritten glance strictly newer in whole seconds (e.g. record_back on the record is forbidden by its comment, so touch the glance forward or set the record one second back), or the test needs a sleep 1 (protected file)."
     },
     {
       "id": "P152.4",
@@ -38829,13 +38969,214 @@
         "tools/bench-hooks.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/scripts/vbw-statusline.sh: only while `.vbw/runtime/run-open` exists (a lease is open; no jq needed to know), one `jq -R` pass with the list's files `<cdir>/sessions/*.json` as its inputs (grouped by input_filename, a malformed file skipped) gives {sessionId: name} of each id's newest entry, handed to the render as $registry through --slurpfile from a process substitution ({} when the folder is missing or empty); no pass when no lease is open.",
         "plugin/scripts/statusline.jq: `include \"holder\" {search: \"../lib\"}`; the run cell ($state while a lease is open, the step's cell included) ends with ` · leading` when the lease's session equals $sid, else ` · held by <name>` with holder_name($rec.lease; $rec.holder.session_name when $rec is the glance; $registry[$rec.lease.session]) cut to 20 (19 plus …); nothing added when the lease has no session; the `until` clock of D425 stays where it is.",
         "tools/bench-hooks.sh: the status line fixtures ($work and $large) get `.vbw/runtime/run-open` and a `<cdir>/sessions/` list of a few chats (one of them the lease's session) so the registry pass is inside the measure; run `bash tools/bench-hooks.sh` once and put the status line's CPU per call in the plan note (budget 60 ms; too busy to measure is reported, not failed)."
-      ]
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R192",
+            "text": "in the chat that holds the run the status line's run cell ends with · leading after the step's cell"
+          },
+          "what": "leading cell dropped",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C404": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:20:42Z",
+          "head": "b4c9dffd9ddcdf75a58e07d636fea786470ca02d"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "in any other chat the run cell ends with · held by <name>, the name cut to 20 characters with an ellipsis, the list's current name first and the stored name when the list is gone"
+          },
+          "what": "held by cut to 40 instead of 20",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C404": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:21:13Z",
+          "head": "b4c9dffd9ddcdf75a58e07d636fea786470ca02d"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the status line shows 8 characters of the id when no name is known and no holder when the lease has no session"
+          },
+          "what": "no id fallback: stored/live only",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C404": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:21:43Z",
+          "head": "b4c9dffd9ddcdf75a58e07d636fea786470ca02d"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "escape sequences in a name never reach the terminal through the status line"
+          },
+          "what": "name not cleaned",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C404": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:22:14Z",
+          "head": "b4c9dffd9ddcdf75a58e07d636fea786470ca02d"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the status line reads the list with one jq pass per render only while a lease is open; with the list missing it renders exactly as with an empty list, and a malformed entry is skipped"
+          },
+          "what": "pass runs without a lease",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C404": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:23:29Z",
+          "head": "b4c9dffd9ddcdf75a58e07d636fea786470ca02d"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the status line reads the list with one jq pass per render only while a lease is open; with the list missing it renders exactly as with an empty list, and a malformed entry is skipped"
+          },
+          "what": "malformed entry fails whole pass",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C404": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T23:24:04Z",
+          "head": "b4c9dffd9ddcdf75a58e07d636fea786470ca02d"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the hook bench measures the status line with a lease open and a list of chats on disk"
+          },
+          "what": "bench drops run-open",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C404": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T23:25:11Z",
+          "head": "b4c9dffd9ddcdf75a58e07d636fea786470ca02d"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the status line reads the list with one jq pass per render only while a lease is open; with the list missing it renders exactly as with an empty list, and a malformed entry is skipped"
+          },
+          "what": "malformed entry fails whole pass",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C404": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T23:38:05Z",
+          "head": "31ecf20604adbb58dc1ba45fb0a85685e513971a"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the hook bench measures the status line with a lease open and a list of chats on disk"
+          },
+          "what": "bench drops run-open",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C404": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:38:38Z",
+          "head": "31ecf20604adbb58dc1ba45fb0a85685e513971a",
+          "strengthened": [
+            "tests/sessions-statusline.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the status line reads the list with one jq pass per render only while a lease is open; with the list missing it renders exactly as with an empty list, and a malformed entry is skipped"
+          },
+          "what": "malformed entry fails whole pass",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C404": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T23:39:40Z",
+          "head": "31ecf20604adbb58dc1ba45fb0a85685e513971a"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the hook bench measures the status line with a lease open and a list of chats on disk"
+          },
+          "what": "bench drops run-open",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C404": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:40:12Z",
+          "head": "31ecf20604adbb58dc1ba45fb0a85685e513971a"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the status line reads the list with one jq pass per render only while a lease is open; with the list missing it renders exactly as with an empty list, and a malformed entry is skipped"
+          },
+          "what": "malformed entry fails whole pass",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C404": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T23:45:18Z",
+          "head": "af17d6f5ce1e4b47f5972a1e6dfaee8d3cbb370d",
+          "strengthened": [
+            "tests/sessions-statusline.bats"
+          ]
+        }
+      ],
+      "note": "Tasks 1-3 are built, committed and green (C404 pass; rules R192.18-23 each broken once and caught; bench status line 36.6 ms CPU per call, budget 60). The three task-level mutations cannot run: vbw mutate refuses while tests/panel/r192/sessions-tab.test.mjs (C408, P154.1's blocked check, edited uncommitted and waiting for owner approval) differs from the last commit. Re-run 'vbw mutate P153.1 task1|task2|task3' after that file is approved and committed."
     },
     {
       "id": "P153.2",
@@ -39174,14 +39515,15 @@
       "after": [
         "P153.2"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/hooks/panel-sessions.js: `sessionsModel({registry, root, sessionId, lease, stored, now, width, plans})` → {rows, empty}: the entries whose cwd is root or a folder under it, newest updatedAt first, each {id, name (cleaned, cut to width), state (the status word as given), last (HH:MM local; another day named as panel-view's clock names it), resume ('claude --resume <id>'), self, holder, closed}; the lease's session gets holder {kind: '<kind> <building plan ids>'} ('<kind>' alone with none); a holder with no entry is appended from the lease with the stored name (stored.session_name when stored.session is lease.session) or the first 8 characters of the id, closed true; `empty` is 'No other chats are open on this project' when no row besides this chat is listed, else null.",
         "plugin/hooks/panel-sessions.js: `renderSessions(ui, model)`: text only (no Button, no input): per row the name, the state word, `last HH:MM`, the resume line to copy, `this chat` on this chat's row, `● holds the run · <kind>` in ACCENT (panel-palette.js) on the holder's row and `closed or not seen` on an appended one; the empty sentence when `empty` is set.",
         "plugin/hooks/panel-pane.js: TABS gets ['sessions', 'Sessions'] right after team; SHORT.sessions = 'Sess' (export SHORT); the body switch draws renderSessions for the tab from the pane input (registry, stored, holder, plans); the short row still fits one line at 40 columns beside the portrait; tests/panel/wiring.test.mjs's TABS list gains 'Sessions' after 'Team' and a Sessions entry in its per-tab view check.",
         "plugin/hooks/panel.js: the list and holder.json are read on the tick also while st.tab is 'sessions' (P153.2 reads them while a lease is open), never otherwise; the pane input carries registry, stored and the lease's holder; run `bash tools/bench-panel.sh` once and put the render and tick figures in the plan note (tests/panel-bench-render.bats's budget is judged at release)."
-      ]
+      ],
+      "note": "Code for tasks 1-4 is committed (panel-pane.js, panel.js, wiring.test.mjs). The approved check C408 (tests/panel/r192/sessions-tab.test.mjs) cannot pass as written, and the mutation step refuses to run while its fixed version is uncommitted. Two faults, both fixed uncommitted in the working tree: (1) test 'the empty sentence, cleaned names...' gives the second entry updatedAt T0-1, newer than the first (T0-60000), then expects the first row to be the older one, against the newest-first rule; fix: T0-120000. (2) The panel tests press the button 'Sessions' at the stand-in's default 50 columns; with eight tabs the full names need 53 columns, so a 50-column pane correctly shows the short names (Sess); fix: render those tests at 60 columns. Same cause forces one token in tests/panel/cost.test.mjs (outside this plan's files: it excludes the tab button 'Costs', now also 'Cost') and a 60-column render in wiring.test.mjs (committed). Needs the owner to approve the edited check files and the cost.test.mjs edit, then re-run P154.1 for commit and mutation (one per rule R192.34-39 and per task)."
     },
     {
       "id": "P154.2",
@@ -50863,6 +51205,19 @@
         "started": "2026-10-18T21:35:29Z",
         "ended": "2026-10-18T23:15:06Z",
         "cost": null
+      },
+      {
+        "id": "build-20261018T231538Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M38",
+        "started": "2026-10-18T23:15:38Z",
+        "ended": "2026-10-18T23:46:25Z",
+        "cost": {
+          "usd": 1.905682,
+          "in": 2053,
+          "out": 424
+        }
       }
     ],
     "milestones": {

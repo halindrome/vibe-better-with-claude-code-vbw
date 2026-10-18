@@ -40,6 +40,9 @@ const press = async (h, label) => {
   await b.props.onPress({ surface: 'terminal' })
   await h.settle()
 }
+// Eight full tab names need 53 columns; the stand-in's default pane is 50, which draws the short names.
+const WIDE = { title: 'VBW', isFocused: false, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} }
+const wide = (h) => { const render = h.render; h.render = (extra = {}) => render({ props: WIDE, ...extra }); return h }
 const lists = (h) => h.calls.filter((c) => c.name === 'fs.list' && c.args[0] === REG).length
 
 test('the tab row has Sessions after Team, Sess in a narrow pane', () => {
@@ -85,7 +88,7 @@ test('the empty sentence, cleaned names, and names cut to the width', () => {
   assert.equal(mine.empty, 'No other chats are open on this project')
   assert.deepEqual(mine.rows.map((r) => [r.id, r.self]), [[ME, true]])
   const long = 'A very long chat name that keeps going on and on past forty'
-  const m = S.sessionsModel({ registry: registry(entry({ name: 'Pay\u001b[31mments\u0007 work' }), entry({ sessionId: OTHER, name: long, updatedAt: T0 - 1 })), root: ROOT, sessionId: ME, lease: null, stored: null, now: T0, width: 30 })
+  const m = S.sessionsModel({ registry: registry(entry({ name: 'Pay\u001b[31mments\u0007 work' }), entry({ sessionId: OTHER, name: long, updatedAt: T0 - 120000 })), root: ROOT, sessionId: ME, lease: null, stored: null, now: T0, width: 30 })
   assert.equal(m.rows[0].name, 'Payments work')
   assert.equal(m.rows[1].name, long.slice(0, 29) + '…')
 })
@@ -116,6 +119,7 @@ test('in the panel: the Sessions tab lists the chats from the files, skips a mal
     [REG + '/12.json']: '{"sessionId": "zzz", "name": "Half',
     [REG + '/13.json']: entry({ sessionId: 'far', name: 'Elsewhere', cwd: '/other' }),
   } })
+  wide(h)
   h.project(record(), next())
   await h.start()
   await h.settle()
@@ -132,6 +136,7 @@ test('in the panel: the Sessions tab lists the chats from the files, skips a mal
 
 test('the list is re-read on the tick only while the Sessions tab is shown or a lease is open', async () => {
   const h = await mount({ env: ENV, files: { [REG + '/10.json']: entry({ sessionId: ME, name: 'Me' }) } })
+  wide(h)
   h.project(record(), next())
   await h.start()
   await h.settle()
@@ -160,6 +165,7 @@ test('the list is re-read on the tick only while the Sessions tab is shown or a 
 
 test('with no list at all the tab shows the one sentence and this chat when known', async () => {
   const h = await mount({ env: ENV })
+  wide(h)
   h.project(record(), next())
   await h.start()
   await h.settle()
