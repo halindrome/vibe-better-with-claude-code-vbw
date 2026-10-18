@@ -1219,6 +1219,19 @@ scenario_road() {
   rd_read() {
     local s
     s=$(screen) || return 1
+    # Claude Code's own "Teach auto mode about your environment?" dialog can open after
+    # a turn and takes the next typed text: the user would press Esc, so the scenario does.
+    case "$s" in *"Teach auto mode about your environment"*) l3 keys "$scenario" Escape; sleep 1; s=$(screen) || return 1 ;; esac
+    # The seeded ship opens Mission Control on VBW Wrapped, which hides its rows until a tab
+    # is chosen: the user would click Now, so the scenario does.
+    case "$s" in *"VBW Wrapped"*)
+      row=$(printf '%s\n' "$s" | grep -n '\[ Now \]' | head -1 | cut -d: -f1)
+      pre=$(printf '%s\n' "$s" | grep '\[ Now \]' | head -1 | sed 's/\[ Now \].*//')
+      if [ -n "$row" ]; then
+        l3 click "$scenario" "$(($(printf '%s' "$pre" | LC_ALL=en_US.UTF-8 wc -m) + 4))" "$row"
+        sleep 1; s=$(screen) || return 1
+      fi ;;
+    esac
     rd_status=$(printf '%s\n' "$s" | awk '/^─/ { n = NR } { l[NR] = $0 } END { for (i = n + 1; i <= NR; i++) print l[i] }')
     rd_chat=$(printf '%s\n' "$s" | sed 's/│.*//' | awk '/^─/ { exit } /VBW ▸/ { exit } { print }' | tr '\n' ' ' | tr -s ' ')
     rd_panel=$(printf '%s\n' "$s" | sed -n 's/^[^│]*│//p' | sed 's/│//g' | tr '\n' ' ' | tr -s ' ')
@@ -1240,9 +1253,11 @@ scenario_road() {
     cr=$(printf '%s\n' "$rd_chat" | rd_road_time)
     pr=$(printf '%s\n' "$rd_panel" | rd_road_time)
     sh=0
-    printf '%s\n' "$rd_status" | grep -qi 'milestone' && sh=1
+    printf '%s\n' "$rd_status" | grep -qiE 'milestone end|no milestone end' && sh=1
     sl=$(printf '%s\n' "$rd_status" | grep -oE 'until (tomorrow )?[0-9]{2}:[0-9]{2}' | head -1 | grep -oE '[0-9]{2}:[0-9]{2}$' || true)
     nr=$(jq -r '(.road.end // empty) | fromdateiso8601 | localtime | strftime("%H:%M")' "$dir/.vbw/runtime/step.json" 2> /dev/null || true)
+    # The screen while the build runs and the chat has the milestone's time (kept for the reader).
+    case "$rd_panel" in *"Current step: building"*) printf '%s\n' "$rd_screen" > "$dir.road.building.screen.txt" ;; esac
     printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$cs" "$cr" "$pr" "$sh" "$sl" "$nr" >> "$rd_samples"
   }
   rd_sampler() { while [ ! -f "$rd_stop" ]; do rd_sample || break; sleep 2; done; }
@@ -1256,6 +1271,8 @@ scenario_road() {
     for ((i = 0; i < 20; i++)); do
       sleep 2
       rd_read
+      # Mission Control opens by itself in a wide window; if not, the user opens it with /vbw-panel.
+      if [ "$i" -eq 5 ]; then case "$rd_screen" in *"[ Now ]"*) ;; *) l3 type "$scenario" "/vbw-panel" ;; esac; fi
       case "$rd_screen" in *"No estimate yet"*) rd_nohist_screen=true ;; esac
       jq -e '.road != null and .road.end == null and (.road.say | test("no milestone end time yet"))' "$dir/.vbw/runtime/step.json" > /dev/null 2>&1 && rd_nohist_note=true
       [ "$rd_nohist_screen" = true ] && [ "$rd_nohist_note" = true ] && break
@@ -1306,7 +1323,7 @@ scenario_road() {
     passed=$(jq -r '.chat_step_end != "" and .chat_road_end != "" and .panel_road_end != "" and .same_road_end and .statusline_end != "" and (.statusline_has_road | not) and .no_history_no_end_time' <<< "$facts")
     [ "$passed" = true ] || failed=1
     result_write road "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
-      '["a build that ran late: the milestone end moving with each late plan was not seen in the window (held by tests/road-note.bats, L1)","fix rounds, QA, planning and mapping steps in the window: the road was read at the build'"'"'s start and during the proof","a milestone end on another day, and a duration over an hour","the times are read from the visible screen text at 2 s steps, by the first time each place showed one, not by a reader","the project with no history had a build run started by the scenario with vbw run start, not by the router, so the router saying both sentences in chat without history was not seen (vbw next --json and the note gave them)","the earlier phases, the history and the runs store are seeded by the scenario in the clone and the record, not made by earlier real runs","the chat, Mission Control and the status line were read in one 200-column window only","the milestone time being right to the minute against real elapsed time"]'
+      '["a build that ran late: the milestone end moving with each late plan was not seen in the window (held by tests/road-note.bats, L1)","fix rounds, QA, planning and mapping steps in the window: the road was read at the build'"'"'s start and during the proof","a milestone end on another day, and a duration over an hour","the times are read from the visible screen text at 2 s steps, by the first time each place showed one, not by a reader","the project with no history had a build run started by the scenario with vbw run start, not by the router, so the router saying both sentences in chat without history was not seen (vbw next --json and the note gave them)","the earlier phases, the history and the runs store are seeded by the scenario in the clone and the record, not made by earlier real runs","the chat, Mission Control and the status line were read in one 200-column window only","the milestone time being right to the minute against real elapsed time","Claude Code'"'"'s own Teach auto mode dialog and the VBW Wrapped card the seeded ship opens were dismissed by the scenario (Esc, a click on Now), as a user would"]'
   }
 }
 
