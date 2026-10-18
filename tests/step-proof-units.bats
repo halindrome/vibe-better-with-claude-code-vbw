@@ -75,6 +75,16 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
   jq -e '.kind == "proof" and .run == null and ((.first_end | fromdateiso8601) - (.started_at | fromdateiso8601)) == 120' "$SNAP" || { cat "$SNAP"; false; }
 }
 
+@test "R191 (D429): the proof inside vbw fix done leaves the fix step's parts to the fixes closed" {
+  step_edit '.fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "C1 fail"}, {id: "F2", req: "R1", attempts: 0, status: "open", note: "C1 fail"}]'
+  git add -A && git commit -q -m "chore(vbw): fixes"
+  "$VBW" approve > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" run start fix F1 F2 > /dev/null
+  jq -e '.kind == "fix" and .parts == {done: 0, total: 2}' "$NOTE" || { cat "$NOTE"; false; }
+  VBW_SESSION_ID=s1 "$VBW" fix done F1 > /dev/null
+  jq -e '.kind == "fix" and .parts == {done: 1, total: 2} and .proof == null and (.doing | startswith("fixing"))' "$NOTE" || { cat "$NOTE"; false; }
+}
+
 @test "R191: the ratio is the median over the latest 10 proofs that recorded units" {
   runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
   hist_proof '[{"name": "check:C1", "seconds": 100}]' 100 1
