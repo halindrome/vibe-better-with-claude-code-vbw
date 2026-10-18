@@ -337,7 +337,9 @@ holds the state sentence, the step with the time it started (`HH:MM`) and the
 session cost. The state reads one of: planning, building (with its phase),
 proving, checking, waiting for you (and for what), or nothing running. The box
 follows a change of state within one refresh (about 2 seconds), with no other
-event needed. When nothing is going on it says so:
+event needed. When another chat holds the run, the state sentence ends with
+`, held by <name>` (the chat's name, else the first 8 characters of its id);
+in the chat that holds the run it is unchanged. When nothing is going on it says so:
 
 ```
 +------------------------------------------+
@@ -444,7 +446,7 @@ Claude Code's own drawing whenever VBW has nothing to say.
 | The line that closes a turn | `VBW · plan approved · 3s` after a turn that moved VBW on |
 | The Workflow row | `VBW planning · started 16:33 · [p] watch live` |
 | A `vbw` command's row | what it did: `VBW · recorded P53.1 done` (its output stays below) |
-| A change to `.vbw/record.json` | one line saying what happened, for example `VBW · build run started`, instead of the full diff. Expand the row (ctrl+o) to see the full diff |
+| A change to `.vbw/record.json` | one line saying what happened, for example `VBW · build run started by <name>` (`by this chat` in the chat that holds the run; the first 8 characters of the id when no name is known; unchanged when the run has no holder), instead of the full diff. Expand the row (ctrl+o) to see the full diff |
 | The "workflow finished" row | `✓ VBW planning finished · 3 phases · 9 plans · 21 checks · 14m · ≈$4.10`; the full row shows in the expanded transcript (ctrl+o) |
 
 The transcript Claude Code stores is never changed: these are drawings only.
@@ -455,8 +457,8 @@ These answer at once, even while Claude is busy, and cost no model turn:
 
 | Command | What it does |
 |---|---|
-| `/vbw-status` | Where the project stands: milestone, progress, what VBW is doing, what comes next |
-| `/vbw-why` | Who holds the VBW run and since when, and what is blocked |
+| `/vbw-status` | Where the project stands: milestone, progress, what VBW is doing (with the same `held by <name>` as the Now box), what comes next |
+| `/vbw-why` | Who holds the VBW run, by name, and since when, and what is blocked: `held by this chat ("<name>")` or `held by "<name>"`, with the id in brackets only when no name is known; then the file count and `wait for it` |
 | `/vbw-todo [idea]` | Parks an idea for later. With no text it takes the text you selected. VBW's own `vbw todo add` writes it |
 | `/vbw-panel` | Opens Mission Control |
 | `/vbw-sound` | Turns the "needs you" sound on or off |

@@ -24,7 +24,12 @@ Sonnet 5.5 │ 10m22s (API 5m55s) │ main │ VBW 2.0.6 │ CC 2.1.286
    P2.1 · 1 of 2`. The status line reads the time from the running step's note
    and never works it out itself (see [Time left](panel.md#time-left)). It shows
    the step's time only; the milestone's end is Mission Control's and the chat
-   message's, never the status line's. Other states: a step that needs
+   message's, never the status line's. While a run is open, the cell ends with who holds it:
+   `▶ build P1.2, P2.1 · 1 of 2 · until 14:20 · leading` in the chat that holds
+   the run, `· held by <name>` in any other chat, the name (from `/rename`) cut to 20
+   characters with `…`. With no name known the cell shows the first 8 characters of the session id, and with a lease that has no session
+   there is nothing after the step. Escape sequences in a name are removed.
+   Other states: a step that needs
    the user (`needs you: approve`), or the next step (`next: prove`, from the
    last `vbw next`). `⟳ auto 3/25` while this session's autonomous run is armed (another session's is not shown). Outside a
    VBW project: `/vbw:vibe to start` (this line, then lines 3 to 5).
@@ -125,6 +130,13 @@ status line still renders. It never writes `.vbw/record.json`.
   the record otherwise (docs/record.md). The glance holds only what the status
   line shows, so the 60 ms limit holds on a record over 2 MB. Any `vbw` command
   refreshes a missing or stale glance.
+- While a lease is open it also reads Claude Code's list of chats
+  (`<claude-config-dir>/sessions/*.json`) in one jq pass per render, to get the
+  holder's current name. It reads the list only then, never writes it, and
+  skips a malformed entry. With the list missing, the line renders as with an
+  empty list: the stored name from the glance, else the 8 characters of the id.
+  `tools/bench-hooks.sh` measures the status line with a lease open and a list
+  on disk, within the same 60 ms.
 - No network, no git process (the branch is read from
   `.git/HEAD`, also in linked worktrees). The one thing it writes is the cost side
   file below, never the record.
