@@ -81,8 +81,8 @@ $rec[0] as $r
               | {kind: "qa", size: [.[] | {id: .ph.id, tier: .tier}], mult: 1, label: "QA checks"} ] as $qp
           | [ $left[] | . as $l | (usual($l.tier) // 0) as $n | select($n > 0)
               | {kind: "fix", size: {tier: $l.tier}, mult: $n, label: "fix rounds"},
-                (select(($l.cs | length) > 0) | {kind: "proof", size: {units: units($l.cs)}, mult: $n, label: "fix rounds"}),
-                (select($l.nq) | {kind: "qa", size: [{id: $l.ph.id, tier: $l.tier}], mult: $n, label: "fix rounds"}) ] as $fp
+                (select(($l.cs | length) > 0) | {kind: "proof", size: {units: units($l.cs)}, mult: $n, label: "proofs", fixr: true}),
+                (select($l.nq) | {kind: "qa", size: [{id: $l.ph.id, tier: $l.tier}], mult: $n, label: "QA checks", fixr: true}) ] as $fp
           | $wp + $pp + $qp + $fp
         end
       ) as $pieces
@@ -93,9 +93,9 @@ $rec[0] as $r
     | ($pieces | map(. as $p | . + {seconds: (first_of(expect($p.kind; $p.size)) | if . == null then null else . * $p.mult end)})) as $timed
     | (if $live == null then $timed else
         ( [ $timed | to_entries[] | select(.value.kind == $live.kind)
-            | select($live.kind == "plan" or $live.kind == "proof" and (.value.label == "proofs")
+            | select($live.kind == "plan" or $live.kind == "proof" and (.value.label == "proofs") and (.value.fixr | not)
                      or $live.kind == "build" and any(.value.ids[]?; . as $i | any($live.ids[]; . == $i))
-                     or $live.kind == "qa" and .value.label == "QA checks" and ((.value.size | map(.id)) as $q | any($live.ids[]; . as $i | any($q[]; . == $i)))) | .key ] | first) as $k
+                     or $live.kind == "qa" and .value.label == "QA checks" and (.value.fixr | not) and ((.value.size | map(.id)) as $q | any($live.ids[]; . as $i | any($q[]; . == $i)))) | .key ] | first) as $k
         | if $k != null then ($timed | .[$k] |= (.seconds = $live.seconds | .mult = 1)) else
             $timed + [{kind: $live.kind, size: null, mult: 1, label: (if $live.kind == "build" then "plans" elif $live.kind == "fix" then "fix rounds" elif $live.kind == "qa" then "QA checks" elif $live.kind == "proof" then "proofs" else "planning steps" end), seconds: $live.seconds}] end
       end) as $all
@@ -115,9 +115,9 @@ $rec[0] as $r
            ([$all[] | select(.kind == "plan")] | length) as $np
            | if $np > 0 then "the planning step, sized by the open requirements"
              else ([ ($all | map(select(.kind == "build")) | length | select(. > 0) | plural(.; "build wave"; "build waves")),
-                     ($all | map(select(.label == "proofs")) | length | select(. > 0) | plural(.; "proof"; "proofs")),
-                     ($all | map(select(.label == "QA checks") | (.size // []) | length) | add // 0 | select(. > 0) | plural(.; "QA check"; "QA checks")),
-                     ($all | map(select(.label == "fix rounds")) | map(select(.kind == "fix") | .mult) | add // 0 | select(. > 0)
+                     ($all | map(select(.label == "proofs" and (.fixr | not))) | length | select(. > 0) | plural(.; "proof"; "proofs")),
+                     ($all | map(select(.label == "QA checks" and (.fixr | not)) | (.size // []) | length) | add // 0 | select(. > 0) | plural(.; "QA check"; "QA checks")),
+                     ($all | map(select(.kind == "fix" and .label == "fix rounds")) | map(select(true) | .mult) | add // 0 | select(. > 0)
                         | "\(plural(.; "usual fix round"; "usual fix rounds")) (median of the latest 10 finished phases of each tier)") ] | step_and) end
          end) as $basis
       | {seconds: $sec, end: $end,
