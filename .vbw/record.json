@@ -1,17 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "fix-20261018T164721Z",
-    "kind": "fix",
-    "started_at": "2026-10-18T16:47:21Z",
-    "files": null,
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
-    "cost": {
-      "usd": 1431.988353,
-      "in": 158856,
-      "out": 191
-    }
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -40171,14 +40160,14 @@
       "id": "F249",
       "req": "R150",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C223 fail (exit 1)"
     },
     {
       "id": "F250",
       "command": "lint",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "lint fail"
     }
   ],
@@ -49696,6 +49685,19 @@
         "started": "2026-10-18T14:53:49Z",
         "ended": "2026-10-18T15:35:43Z",
         "cost": null
+      },
+      {
+        "id": "fix-20261018T164721Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-18T16:47:21Z",
+        "ended": "2026-10-18T17:35:22Z",
+        "cost": {
+          "usd": 0.831123,
+          "in": 9548,
+          "out": 16
+        }
       }
     ],
     "milestones": {
