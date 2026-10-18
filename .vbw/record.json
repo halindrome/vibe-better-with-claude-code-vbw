@@ -38751,9 +38751,7 @@
         "plugin/lib/loop-step.sh",
         "plugin/lib/cmd-doctor.sh"
       ],
-      "after": [
-        "P152.1"
-      ],
+      "after": [],
       "status": "planned",
       "role": "dev",
       "tasks": [
@@ -38772,9 +38770,7 @@
       "files": [
         "plugin/hooks/common.jq"
       ],
-      "after": [
-        "P152.1"
-      ],
+      "after": [],
       "status": "planned",
       "role": "dev",
       "tasks": [
@@ -38824,9 +38820,7 @@
         "plugin/scripts/statusline.jq",
         "tools/bench-hooks.sh"
       ],
-      "after": [
-        "P152.1"
-      ],
+      "after": [],
       "status": "planned",
       "role": "dev",
       "tasks": [
@@ -38853,7 +38847,7 @@
         "tests/panel/lines.test.mjs"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/hooks/panel-sessions.js (new): the panel's one JS helper for chats: `cleanName` (drops CSI and OSC escape sequences and every control character; '' for a non-string), `cutName(s, n)` (longer than n becomes n-1 characters plus …), `registryEntries(texts)` (the file texts that parse to an object with a string sessionId, newest updatedAt first; [] for anything else), `holderName({lease, registry, stored, sessionId})` (null unless lease.session is a string; else {name, self, known}: the list's newest name for lease.session, else stored.session_name when stored.session is lease.session, else lease.session.slice(0, 8) with known false; cleaned, cut to 40; self = sessionId === lease.session) and `readRegistry($, root)` ($.fs.list of <claude-config-dir>/sessions found as sessionDir finds the config folder, $.fs.read of each .json, never throwing, [] when missing).",
@@ -39107,8 +39101,7 @@
           "at": "2026-10-18T21:31:19Z",
           "head": "0a6ead58ad70d396c0e3cb940bcf42fffca6571d"
         }
-      ],
-      "note": "Code and checks C407 done and mutation-clean, but tests/panel/wiring.test.mjs ('outside the project it reads only this session's own folder') now fails: reading Claude Code's list of chats (<config>/sessions) while a lease is open is the plan's own task 2, yet that approved test allows only the project, the session folder and ~/.config/claude-code. The file is not in P153.2's files (P154.1 owns it). Needed: allow the sessions folder in that test's path check (and keep credentials/settings/.ssh forbidden); then run vbw plan done P153.2."
+      ]
     },
     {
       "id": "P153.3",
@@ -39192,9 +39185,7 @@
       "files": [
         "docs/panel.md"
       ],
-      "after": [
-        "P153.4"
-      ],
+      "after": [],
       "status": "planned",
       "role": "docs",
       "tasks": [
@@ -44652,6 +44643,11 @@
       "id": "D446",
       "at": "2026-10-18T21:25:07Z",
       "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-18T20:27:28Z, items T138, T94: 181 requirements, 403 checks, 464 plans (da104ea3e2f4))"
+    },
+    {
+      "id": "D447",
+      "at": "2026-10-18T21:35:00Z",
+      "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-18T20:27:28Z, items T138, T94: 181 requirements, 403 checks, 464 plans (4c3c9df8b36a))"
     }
   ],
   "commands": {
