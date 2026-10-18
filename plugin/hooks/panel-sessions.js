@@ -4,7 +4,9 @@
 // long names are cut with an ellipsis. Pure over its input except readRegistry,
 // which reads through `$` and never throws.
 
-const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
+import { ACCENT } from './panel-palette.js'
+
+const isObj =(x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const NAME_MAX = 40
 const ESC = String.fromCharCode(27) // the sequences are matched, never written out
 const OSC = new RegExp(ESC + '\\][^\\u0007' + ESC + ']*(?:\\u0007|' + ESC + '\\\\)?', 'g')
@@ -89,4 +91,55 @@ export function holderName({ lease, registry, stored, sessionId } = {}) {
   const fromStore = isObj(stored) && stored.session === lease.session ? cleanName(stored.session_name) : ''
   const name = fromList || fromStore
   return { name: cutName(name || lease.session.slice(0, 8), NAME_MAX), self, known: Boolean(name) }
+}
+
+const EMPTY = 'No other chats are open on this project'
+const inside = (cwd, root) => typeof cwd === 'string' && typeof root === 'string' && root !== '' && (cwd === root || cwd.startsWith(root.replace(/\/+$/, '') + '/'))
+// 'HH:MM' on the local clock, the same hand as panel-view's clock; '' without a moment.
+const hhmm = (ms) => (Number.isFinite(ms) ? String(new Date(ms).getHours()).padStart(2, '0') + ':' + String(new Date(ms).getMinutes()).padStart(2, '0') : '')
+
+// The Sessions tab: the chats of this project (cwd is the root or a folder under it),
+// newest first, and the holder of the run, listed from the lease when no entry has it.
+export function sessionsModel({ registry, root, sessionId, lease, stored, width, plans } = {}) {
+  const room = Number.isInteger(width) && width > 1 ? width : 80
+  const held = isObj(lease) && typeof lease.session === 'string' && lease.session ? lease.session : null
+  const kind = held
+    ? [String(lease.kind || 'run'), ...(Array.isArray(plans) ? plans : []).filter((p) => isObj(p) && p.status === 'building' && typeof p.id === 'string').map((p) => p.id)].join(' ')
+    : ''
+  const rows = (Array.isArray(registry) ? registry : [])
+    .filter((e) => isObj(e) && typeof e.sessionId === 'string' && inside(e.cwd, root))
+    .map((e) => ({
+      id: e.sessionId,
+      name: cutName(cleanName(e.name) || e.sessionId.slice(0, 8), room),
+      state: typeof e.status === 'string' ? cleanName(e.status) : '',
+      last: hhmm(e.updatedAt),
+      resume: 'claude --resume ' + e.sessionId,
+      self: e.sessionId === sessionId,
+      holder: e.sessionId === held ? { kind } : null,
+      closed: false,
+    }))
+  const empty = rows.some((r) => !r.self) ? null : EMPTY
+  if (held && !rows.some((r) => r.id === held)) {
+    const name = isObj(stored) && stored.session === held ? cleanName(stored.session_name) : ''
+    rows.push({ id: held, name: cutName(name || held.slice(0, 8), room), state: '', last: '', resume: 'claude --resume ' + held, self: held === sessionId, holder: { kind }, closed: true })
+  }
+  return { rows, empty }
+}
+
+// Text only: no button and no input; the resume line is there to copy.
+export function renderSessions(ui, model) {
+  const { Box, Text } = ui
+  const m = isObj(model) && Array.isArray(model.rows) ? model : { rows: [], empty: EMPTY }
+  const kids = m.rows.map((r) => {
+    const marks = []
+    if (r.holder) marks.push(h(Text, { key: 'holder', color: ACCENT }, '● holds the run · ' + r.holder.kind))
+    if (r.closed) marks.push(h(Text, { key: 'closed', dimColor: true }, 'closed or not seen'))
+    if (r.self) marks.push(h(Text, { key: 'self', dimColor: true }, 'this chat'))
+    return h(Box, { key: 'chat-' + r.id, flexDirection: 'column', marginBottom: 1 },
+      h(Text, { bold: true }, r.name + (r.state ? ' · ' + r.state : '') + (r.last ? ' · last ' + r.last : '')),
+      h(Text, { dimColor: true }, r.resume),
+      ...marks)
+  })
+  if (m.empty) kids.push(h(Text, { key: 'empty' }, m.empty))
+  return h(Box, { key: 'sessions', flexDirection: 'column' }, ...kids)
 }
