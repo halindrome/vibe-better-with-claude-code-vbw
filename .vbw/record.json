@@ -37032,7 +37032,7 @@
         "P149.1",
         "P149.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "The waves definition of vbw show contract (cmd-show.sh's waves($m)) moves into VBW_JQ_DEFS (record.sh) as the one wave schedule, used by show contract and by road.jq, so the road counts the waves exactly as the approval lists them",
@@ -37237,6 +37237,39 @@
           "result": "red",
           "at": "2026-10-18T13:45:08Z",
           "head": "1ba147aedee37db1e86eb1587493ddeb700943de"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "vbw next --json carries road {seconds, end, rounds, basis, say}: the waves still to build at their longest plan, one proof per wave over the phase's checks not yet passed, QA where the tier needs it, and the usual fix rounds each as one fix round plus one proof plus one QA recheck"
+          },
+          "what": "the QA piece is left off the road",
+          "files": [
+            "plugin/lib/road.jq"
+          ],
+          "checks": {
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T14:56:34Z",
+          "head": "aa6f9b350484c200abc91efdc2fd0fc71b34ef23"
+        },
+        {
+          "task": 4,
+          "what": "usual fix rounds read only the latest finished phase",
+          "files": [
+            "plugin/lib/road.jq"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "green",
+            "C391": "green",
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T15:03:09Z",
+          "head": "08a85d9ac3aa7d4d6ecf2c3f87d3368dcaf4a3c0"
         }
       ]
     },
@@ -37841,14 +37874,188 @@
         "P150.2",
         "P151.1"
       ],
-      "status": "blocked",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/panel.md 'Time left': time per unit at a tier (a plan's task, a fix round, a proof's unit, a QA phase, a requirement), the fallback ladder and its 3-step minimum, side-by-side plans not added (the longest counts, never their sum), the proof's unit times from runs.json and its learned ratio, the road's pieces (waves, proofs, QA, the usual fix rounds), how the rounds are counted (median of outcome.fix_rounds, 3 finished phases of the tier at least) and named ('(the usual here)', 'counting no fix rounds: ...'), 'no milestone end time yet', 'the rest follows once the work is planned', and that the history is this project's only (D433); the Now tab example shows the 'Milestone end: ...' sentence and the old 'About 40 min left in the milestone.' and 'No estimate yet: there are not enough finished steps' sentences are gone everywhere in the file",
         "docs/next.md 'The step': road {seconds, end, rounds, basis, say} with an example, road.say, and the no-basis sentence; docs/statusline.md: the status line shows the step's time only, the milestone's end is Mission Control's and the chat message's (D435)",
         "docs/rigor.md: the outcome record's fix_rounds feeds the usual fix rounds of the milestone's end; README.md: where it describes the panel, Mission Control shows when the milestone should end; tests/road-docs.bats green, tests/step-docs.bats, tests/panel-now-docs.bats and tests/panel-glance.bats still green"
       ],
-      "note": "Docs written and committed (6 of 8 C397 tests and step-docs, panel-now-docs, panel-glance green). tests/road-docs.bats tests 7 and 8 use grep -E with {0,300} and {0,400}; macOS /usr/bin/grep (BSD) caps repetition at 255 ('maximum repetition exceeds 255'), so they error on this host whatever the docs say. With perl the same regexes match docs/rigor.md and README.md. Fix needs an approved check file edit (use {0,250} or perl) outside this plan's files."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R191",
+            "text": "docs/panel.md explains the time per unit at a tier, the fallback ladder and its 3-step minimum, that side-by-side plans are not added, the proof's unit times and ratio, the road's pieces, how the usual fix rounds are counted and named, 'no milestone end time yet', and that the history is this project's only"
+          },
+          "what": "panel.md: median becomes mean",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C397": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T14:55:15Z",
+          "head": "aa6f9b350484c200abc91efdc2fd0fc71b34ef23"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "docs/next.md describes road with its fields and sentence; docs/statusline.md says the status line shows the step's time only; docs/rigor.md connects fix_rounds to the milestone's end; the README names the milestone's end with the panel"
+          },
+          "what": "statusline.md: drop step's time only",
+          "files": [
+            "docs/statusline.md"
+          ],
+          "checks": {
+            "C397": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T14:55:31Z",
+          "head": "aa6f9b350484c200abc91efdc2fd0fc71b34ef23"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "docs/panel.md explains the time per unit at a tier, the fallback ladder and its 3-step minimum, that side-by-side plans are not added, the proof's unit times and ratio, the road's pieces, how the usual fix rounds are counted and named, 'no milestone end time yet', and that the history is this project's only"
+          },
+          "what": "panel.md: median becomes mean",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C397": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T14:57:23Z",
+          "head": "08a85d9ac3aa7d4d6ecf2c3f87d3368dcaf4a3c0",
+          "strengthened": [
+            "tests/road-docs.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "docs/next.md describes road with its fields and sentence; docs/statusline.md says the status line shows the step's time only; docs/rigor.md connects fix_rounds to the milestone's end; the README names the milestone's end with the panel"
+          },
+          "what": "statusline.md: step's time only dropped",
+          "files": [
+            "docs/statusline.md"
+          ],
+          "checks": {
+            "C397": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T14:57:39Z",
+          "head": "08a85d9ac3aa7d4d6ecf2c3f87d3368dcaf4a3c0",
+          "strengthened": [
+            "tests/road-docs.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "what": "panel.md: 3-phase minimum becomes 1",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C397": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T15:11:28Z",
+          "head": "08a85d9ac3aa7d4d6ecf2c3f87d3368dcaf4a3c0"
+        },
+        {
+          "task": 2,
+          "what": "next.md: window 10 becomes 5",
+          "files": [
+            "docs/next.md"
+          ],
+          "checks": {
+            "C397": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T15:11:43Z",
+          "head": "08a85d9ac3aa7d4d6ecf2c3f87d3368dcaf4a3c0"
+        },
+        {
+          "task": 3,
+          "what": "rigor.md: milestone end dropped",
+          "files": [
+            "docs/rigor.md"
+          ],
+          "checks": {
+            "C397": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T15:11:58Z",
+          "head": "08a85d9ac3aa7d4d6ecf2c3f87d3368dcaf4a3c0"
+        },
+        {
+          "task": 1,
+          "what": "panel.md: 3-phase minimum becomes 1",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C397": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T15:12:34Z",
+          "head": "5a8f3b713285b59e97e41d85115778d6cacf0d38",
+          "strengthened": [
+            "tests/road-docs.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "next.md: window 10 becomes 5",
+          "files": [
+            "docs/next.md"
+          ],
+          "checks": {
+            "C397": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T15:12:49Z",
+          "head": "5a8f3b713285b59e97e41d85115778d6cacf0d38",
+          "strengthened": [
+            "tests/road-docs.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "what": "rigor.md: milestone end dropped",
+          "files": [
+            "docs/rigor.md"
+          ],
+          "checks": {
+            "C397": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T15:13:04Z",
+          "head": "5a8f3b713285b59e97e41d85115778d6cacf0d38",
+          "strengthened": [
+            "tests/road-docs.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "docs/next.md describes road with its fields and sentence; docs/statusline.md says the status line shows the step's time only; docs/rigor.md connects fix_rounds to the milestone's end; the README names the milestone's end with the panel"
+          },
+          "what": "README: milestone end dropped",
+          "files": [
+            "README.md"
+          ],
+          "checks": {
+            "C397": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T15:13:50Z",
+          "head": "5a8f3b713285b59e97e41d85115778d6cacf0d38"
+        }
+      ]
     },
     {
       "id": "P151.4",
@@ -37866,12 +38073,85 @@
         "P151.1",
         "P151.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "scenario_road in tools/l3-suite.sh (in ALL and the header): a two-plan project like steptime's with a seeded tiered history (plan units with tiers and tasks, proofs with units and runs.json, QA phases with tiers, fix rounds with tiers) and seeded phase outcomes in a shipped milestone; phase A without history: vbw next --json says no end time yet for the step and for the road, and the screen shows it; phase B: the user types /vbw:vibe and the build runs through the real window",
         "Facts from the screen at 2 s steps and from next.json: chat_step_end and chat_road_end (both sentences at the build's start), panel_road_end (Mission Control's milestone row), same_road_end (within a minute), statusline_has_road (false), no_history_no_end_time; result_write road with a not_tested list",
         "Run it (bash tools/l3-suite.sh road) and commit tools/l3-results/road.json; tests/l3-road.bats green; the run's summary names the scenarios run and not run for the progress log"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R191",
+            "text": "the L3 road scenario exists, seeds a tiered history and phase outcomes, and its committed result shows both sentences in chat, the same milestone HH:MM in Mission Control, the status line without the milestone time, and 'no end time yet' for both without history"
+          },
+          "what": "scenario_road no longer records no_history_no_end_time",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C398": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T15:33:49Z",
+          "head": "93c1ebe12f5ee1458acb5a615e5d4b6d5ba844ff"
+        },
+        {
+          "task": 1,
+          "what": "scenario seeds no step history file name",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C398": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T15:34:03Z",
+          "head": "93c1ebe12f5ee1458acb5a615e5d4b6d5ba844ff"
+        },
+        {
+          "task": 2,
+          "what": "same_road_end fact renamed",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C398": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T15:34:18Z",
+          "head": "93c1ebe12f5ee1458acb5a615e5d4b6d5ba844ff"
+        },
+        {
+          "task": 3,
+          "what": "committed result says it did not pass",
+          "files": [
+            "tools/l3-results/road.json"
+          ],
+          "checks": {
+            "C398": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T15:34:32Z",
+          "head": "93c1ebe12f5ee1458acb5a615e5d4b6d5ba844ff"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "the L3 road scenario exists, seeds a tiered history and phase outcomes, and its committed result shows both sentences in chat, the same milestone HH:MM in Mission Control, the status line without the milestone time, and 'no end time yet' for both without history"
+          },
+          "what": "scenario_road records no no_history_no_end_time fact",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C398": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T15:34:51Z",
+          "head": "93c1ebe12f5ee1458acb5a615e5d4b6d5ba844ff"
+        }
       ]
     },
     {
@@ -49275,6 +49555,15 @@
         "milestone": "M37",
         "started": "2026-10-18T13:12:50Z",
         "ended": "2026-10-18T14:52:54Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261018T145349Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-18T14:53:49Z",
+        "ended": "2026-10-18T15:35:43Z",
         "cost": null
       }
     ],
