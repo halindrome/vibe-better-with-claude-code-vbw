@@ -108,6 +108,7 @@ proofsteps_begin() {
   PS_UNITS=
   size=$(jq -nc --argjson n "${2:-null}" --argjson t "$1" '{units: ($n // [range(0; $t) | "unit:\(.)"])}') || size=$1
   PS_MODE=none
+  PS_ROAD_NEXT=
   PS_RUN=
   PS_DOING=
   PS_START=$(vbw_now)
@@ -133,6 +134,9 @@ proofsteps_begin() {
         {kind: "proof", run: null, session: (if $me == "" then null else $me end), pid: $pid, started_at: $now, ids: [],
          doing: "proving 0 of \($t) checks", parts: {done: 0, total: $t}, proof: null,
          first_end: (if $fe == "null" then null else $fe end), end: (if $fe == "null" then null else $fe end), late: false}')"
+      # The road the proof sits on; its answer stays for the units that follow.
+      PS_ROAD_NEXT=$(step_road_input)
+      step_road_note_set "$PS_ROAD_NEXT"
     fi
   elif printf '%s' "$live" | jq -e --arg me "$me" '.pid == null and (.session // "") == $me' > /dev/null; then
     PS_MODE=inside
@@ -145,16 +149,20 @@ proofsteps_begin() {
 
 # proofsteps_note_update N: the note says N units done (the lock is held).
 proofsteps_note_update() {
-  local note out total=$PS_TOTAL
+  local note out total=$PS_TOTAL before after
   [ "$PS_MODE" != none ] || return 0
   note=$(step_note_file)
   [ -f "$note" ] || return 0
+  before=$(jq -r '.end // ""' "$note" 2> /dev/null) || before=
   [ "$1" -le "$total" ] || total=$1
   out=$(jq -c --argjson d "$1" --argjson t "$total" --arg mode "$PS_MODE" --arg run "$PS_RUN" --argjson pid "$$" "$VBW_STEP_DEFS"'
     if $mode == "own" then select(.kind == "proof" and .pid == $pid) | .parts = {done: $d, total: $t} | step_move(now | floor)
     else select(.pid == null and .run == $run and (.proof | type) == "object") | .proof = {done: $d, total: $t} end
     | .doing = "proving \($d) of \($t) checks"' "$note" 2> /dev/null) || return 0
   [ -z "$out" ] || step_note_write "$out"
+  # A unit that made the proof late moves the milestone's end with it.
+  after=$(printf '%s' "$out" | jq -r '.end // ""' 2> /dev/null) || after=''
+  if [ "$PS_MODE" = own ] && [ "$before" != "$after" ]; then step_road_note_set "${PS_ROAD_NEXT:-}"; fi
 }
 
 # proofsteps_unit_done: a unit just finished (called from the unit's own
