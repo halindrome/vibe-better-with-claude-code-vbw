@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "fix-20261018T164721Z",
+    "kind": "fix",
+    "started_at": "2026-10-18T16:47:21Z",
+    "files": null,
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1431.988353,
+      "in": 158856,
+      "out": 191
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -41188,6 +41199,13 @@
       "id": "T163",
       "text": "Park keeps ids; scope skips park-undone commits (done 2026-10-16, T102 scope false alarm)",
       "status": "done"
+    },
+    {
+      "id": "T164",
+      "text": "Loop time budget from the item's own road, not its size label (owner 2026-10-18 after T139 was stopped at 3h40m of a 2h48m budget: labelled small, really 11 plans in 3 phases, five network drops counted as time): once an item is planned, its budget is twice the kernel's road estimate (R191) for it; the stuck test counts progress (plans done, fixes closed) so time lost to dropped connections or waiting for the user is not grinding; before planning the size default stays. After T94",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
