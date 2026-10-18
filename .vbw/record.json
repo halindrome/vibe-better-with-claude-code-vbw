@@ -37053,13 +37053,216 @@
       "after": [
         "P149.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "cmd_next: where it computes step (the command itself), it computes road once with road_compute (the live note when a step runs) and writes {step, road} into the answer and next.json; an inner caller (the Stop hook's gate, ship, the loop) keeps the road of the previous next.json instead of dropping it, so Mission Control keeps the last vbw next's road",
         "vbw status --json carries road (the live note's road while a step runs, else road_compute now); vbw status prints 'milestone: <road.say>' under the now: line, or alone when nothing runs; nothing when road is null",
         "steps.sh sources road.sh; step_start writes road into the note (vbw run start prints the step's sentence, then the road's); proofsteps_begin writes road into a proof's own note",
         "step_plan_done and proofsteps_note_update recompute road from the moved end, so a late step moves the milestone's end by the same amount at once; the gap road.end minus end is the rest of the road; only the kernel writes next.json and the note (tests/road-next.bats and tests/road-note.bats green; tests/big-record-commands.bats still green)"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R191",
+            "text": "vbw status --json carries the same road as vbw next --json and vbw status prints its sentence"
+          },
+          "what": "vbw status --json always gives road null",
+          "files": [
+            "plugin/lib/cmd-status.sh"
+          ],
+          "checks": {
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T12:34:57Z",
+          "head": "ba7fbd3d21afb9030bcd1372be507c930ddd79d5"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "while a step runs, vbw next --json, vbw status --json and the note give the identical milestone end"
+          },
+          "what": "vbw next computes the road without the running step's note",
+          "files": [
+            "plugin/lib/cmd-next.sh"
+          ],
+          "checks": {
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T12:35:45Z",
+          "head": "ba7fbd3d21afb9030bcd1372be507c930ddd79d5"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "vbw next writes the road into next.json beside the step"
+          },
+          "what": "vbw next leaves the road out of its answer and next.json",
+          "files": [
+            "plugin/lib/cmd-next.sh"
+          ],
+          "checks": {
+            "C393": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T12:36:35Z",
+          "head": "ba7fbd3d21afb9030bcd1372be507c930ddd79d5"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "the note's road goes with the note when the run ends and next.json keeps the last vbw next's road"
+          },
+          "what": "an inner caller drops the previous next.json road",
+          "files": [
+            "plugin/lib/cmd-next.sh"
+          ],
+          "checks": {
+            "C393": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T12:37:06Z",
+          "head": "ba7fbd3d21afb9030bcd1372be507c930ddd79d5"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "the note's road goes with the note when the run ends and next.json keeps the last vbw next's road"
+          },
+          "what": "an inner caller drops the previous next.json road",
+          "files": [
+            "plugin/lib/cmd-next.sh"
+          ],
+          "checks": {
+            "C393": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T12:38:57Z",
+          "head": "54b87fa19b23036998063ba7a1ef899b3ab0975b",
+          "strengthened": [
+            "tests/road-note.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "vbw run start writes the road into the note as the running wave's end plus the rest, and says it"
+          },
+          "what": "run start no longer says the road",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C393": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T12:39:45Z",
+          "head": "54b87fa19b23036998063ba7a1ef899b3ab0975b"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a plan done on a late build moves the step's end and the milestone's end by the same amount at once"
+          },
+          "what": "plan done no longer moves the note's road",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C393": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T12:40:20Z",
+          "head": "54b87fa19b23036998063ba7a1ef899b3ab0975b"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a proof of its own carries the road in its note and moves it with each unit that makes it late"
+          },
+          "what": "a late proof unit no longer moves the note's road",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C393": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T12:40:55Z",
+          "head": "54b87fa19b23036998063ba7a1ef899b3ab0975b"
+        },
+        {
+          "task": 1,
+          "what": "vbw next always writes road null",
+          "files": [
+            "plugin/lib/cmd-next.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "green",
+            "C391": "green",
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T12:46:40Z",
+          "head": "54b87fa19b23036998063ba7a1ef899b3ab0975b"
+        },
+        {
+          "task": 2,
+          "what": "vbw status prints no milestone line",
+          "files": [
+            "plugin/lib/cmd-status.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "green",
+            "C391": "green",
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T12:49:34Z",
+          "head": "54b87fa19b23036998063ba7a1ef899b3ab0975b"
+        },
+        {
+          "task": 3,
+          "what": "a proof of its own writes no road into its note",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "green",
+            "C391": "green",
+            "C392": "green",
+            "C393": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T12:52:51Z",
+          "head": "54b87fa19b23036998063ba7a1ef899b3ab0975b"
+        },
+        {
+          "task": 4,
+          "what": "the note's road counts plans done in the step as built, so the rest shrinks",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "green",
+            "C391": "green",
+            "C392": "green",
+            "C393": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T12:56:08Z",
+          "head": "54b87fa19b23036998063ba7a1ef899b3ab0975b"
+        }
       ]
     },
     {
@@ -48846,6 +49049,19 @@
           "usd": 0.043578,
           "in": 715,
           "out": 62
+        }
+      },
+      {
+        "id": "build-20261018T121530Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-18T12:15:30Z",
+        "ended": "2026-10-18T13:02:42Z",
+        "cost": {
+          "usd": 1.641274,
+          "in": 4802,
+          "out": 281
         }
       }
     ],
