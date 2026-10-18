@@ -49869,6 +49869,19 @@
         "started": "2026-10-18T19:48:05Z",
         "ended": "2026-10-18T19:50:26Z",
         "cost": null
+      },
+      {
+        "id": "plan-20261018T202825Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M38",
+        "started": "2026-10-18T20:28:25Z",
+        "ended": "2026-10-18T20:34:36Z",
+        "cost": {
+          "usd": 2.011953,
+          "in": 1736,
+          "out": 175
+        }
       }
     ],
     "milestones": {
