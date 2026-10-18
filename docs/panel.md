@@ -28,7 +28,7 @@ build
 about 10 min, until around 14:20
 estimate, approximate
 
-About 40 min left in the milestone.
+Milestone end: about 40 min, until around 14:50.
 estimate, approximate
 
 This session has cost $1.42 so far.
@@ -487,45 +487,95 @@ Building P1.2, P2.1 · 1 of 2 · about 12 min, until around 14:20
 ```
 
 Five kinds of step get an end time: **planning**, **build**, **fix**, **QA**
-and **proof**. The same time shows in the status line, Comms, Mission Control
-and VBW's own messages. The panel also estimates the time left for **the
-milestone** (all the phases not yet passed). When nothing is running, it
-estimates only the milestone. When no phase is left, it shows no milestone
-estimate.
+and **proof**. The same step time shows in the status line, Comms, Mission
+Control and VBW's own messages. Mission Control (and the chat message VBW says
+before a step) also shows when **the milestone** should end, the "road": the
+step now running plus everything still ahead until the milestone is done. The
+status line shows the step's time only, never the milestone's. When no phase is
+left, there is no milestone end.
+
+```
+Milestone end: about 36 min, until around 14:56, counting 2 fix rounds per standard phase (the usual here)
+```
 
 - **It is approximate.** "about 12 min" is whole minutes, never an exact
-  figure. Under a minute it says "less than a minute". An end on another day
-  names the day: "until around tomorrow 00:20". Times are 24-hour, local.
-- **It needs history.** VBW gives an end time only after
-  **at least 3 finished steps** of the same kind (for example 3 builds). With fewer, the panel says
+  figure. Under a minute it says "less than a minute". Over an hour it reads
+  "about 2 h 36 min". An end on another day names the day: "until around
+  tomorrow 00:20". Times are 24-hour, local.
+- **It needs history.** VBW gives an end time only after **at least 3 finished**
+  units of the same kind (for example 3 plans). With fewer, the panel says
   "No end time yet: VBW has timed fewer than 3 steps like this here" and shows
-  no time. VBW never guesses. The milestone estimate also needs 3 finished
-  builds and 3 finished checks; before that it says "No estimate yet: there are
-  not enough finished steps to go on."
-- **Time per part.** A build, a fix and a proof count their parts: the plans of
-  a build, the fixes of a fix, the checks a proof really runs. VBW takes the
-  median time per plan (or fix, or check) over the latest 10 steps of that kind
-  that recorded parts, and multiplies it by this step's parts. A bigger build
-  gets a longer time. Planning and QA have no parts: they use the median time
-  of their latest 10 steps. With an even count, the median is the mean of the
-  two middle values.
+  no time. VBW never guesses.
+- **Time per unit at a tier.** Each kind of step is sized by its own unit, and
+  VBW takes the median time per unit over the latest 10 finished ones **at the
+  same tier** (an older plan or another tier does not count):
+  - a build: the median time **per task** of the plan's tier, times the plan's
+    tasks, so a bigger plan gets a longer time;
+  - a fix round: the median wall time of a **fix round** at the tier, whatever
+    the number of fixes;
+  - a proof: its units (see below);
+  - QA: the median time **per phase** checked at the phase's tier, added over
+    the phases it checks;
+  - planning: the median time **per open requirement**, times the requirements
+    to plan now.
+
+  With an even count, the median is the mean of the two middle values.
+- **The fallback ladder.** A unit with fewer than 3 finished ones at its tier
+  falls back one rung at a time: first the median time per plan (or per phase)
+  at that tier, then the median of any tier, then the plain median time of the
+  step as older VBW kept it (builds that recorded only parts use the median time
+  per plan times the plan count). Each rung needs at least 3 finished units;
+  with fewer than 3 in all, there is no time and the panel says so.
+- **Side-by-side plans are not added.** Plans of one wave build at the same time
+  (in parallel), so a wave takes its longest plan's time, never their sum.
+- **A proof's time comes from its units.** Every proof records each unit it ran
+  (a check, or a test file) and that unit's own seconds in `runs.json`, next to
+  `steps.json`. A proof is expected to take the sum of its units' last recorded
+  seconds, times the **learned ratio**: the median ratio of the proof's wall
+  time to its summed unit time over the latest 10 proofs that recorded units. A
+  unit never run before counts as the median of the proof's known units. Without
+  such proofs, the time per unit of older proofs is used; with fewer than 3
+  finished proofs, there is no time.
+- **The road's pieces.** The milestone end adds up: the build waves still to
+  build (a wave already built leaves the road), one proof per wave over the
+  phase's checks not yet passed (a built phase whose checks are not passed still
+  counts one proof), QA where the phase's tier asks for it, and the **usual fix
+  rounds**, each counted as one fix round plus one proof plus one QA recheck.
+- **The usual fix rounds.** For each tier, the usual number is the rounded
+  median of `outcome.fix_rounds` over the latest 10 finished phases of that tier
+  (1, 2, 2 and 5 give 2). It needs at least 3 finished phases of the tier. The
+  sentence names what it counted: "counting 2 fix rounds per standard phase (the
+  usual here)". With fewer than 3 finished phases of a tier, the road counts no
+  fix rounds for it and says so: "counting no fix rounds: fewer than 3 finished
+  deep phases here".
+- **Before planning.** Until the work is planned, the road is the planning step
+  alone: "Milestone end: planning about 2 min, until around 14:22; the rest
+  follows once the work is planned". VBW never guesses unplanned work.
+- **No milestone end time yet.** When any piece the road needs has no basis, the
+  road has no end and no time, and the sentence names the missing kind: "no
+  milestone end time yet (VBW has timed fewer than 3 plans here)". A made-up time
+  never appears.
 - **Later than usual.** When a step with parts runs past its end time, VBW moves
   the end to this run's own pace and shows
   "until around 14:35, later than usual". It can move again, and never earlier
-  than the first end time.
+  than the first end time. The milestone end moves by the same amount at once.
 - **N min late.** A step without parts (planning, QA) keeps its first end time
   and shows "until around 14:20, 6 min late" once it is a minute past it.
 - **A proof inside a build or fix** shows as what the build or fix is doing
   ("proving 12 of 40 checks"); the build's own end time stays. A proof that
   reused every result ran nothing and has no time.
-- **It comes from this clone's own history.** When a step finishes, VBW adds it
-  (its kind, start, end, seconds and parts) to `steps.json` in your clone's git
-  directory (`.git/vbw/steps.json`), keeping the latest 50 steps of each kind,
-  so many steps of one kind never push out another. The file is private to your
-  machine: it is not committed and not part of `.vbw/record.json`. To reset it,
-  delete it: end times start again from none. A missing, unwritable or damaged
-  file never fails a step; it only means no end time yet. The panel only reads
-  it.
+- **It comes from this project's own history, only.** When a step finishes, VBW
+  adds it (its kind, start, end, seconds, parts, and for a build each plan's
+  tier and tasks) to `steps.json` in your clone's git directory
+  (`.git/vbw/steps.json`), keeping the latest 50 steps of each kind, so many
+  steps of one kind never push out another. Entries written before stay
+  readable. The file is private to your machine and to this project: it is not
+  committed, not part of `.vbw/record.json`, and never shared with other
+  projects (no computer-wide history, D433). To reset it, delete it: end times
+  start again from none. A missing, unwritable or damaged file (also
+  `runs.json`) never fails a step; it only means no end time yet. The panel only
+  reads: it works no milestone time out itself and shows the road the kernel
+  wrote.
 - **It never shows a negative time.** Past the end, the wording above says
   "later than usual" or "N min late" instead of a number of minutes left.
 
