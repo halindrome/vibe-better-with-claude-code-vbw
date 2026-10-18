@@ -40225,7 +40225,7 @@
       "req": "R191",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "step_proof_units (plugin/lib/steps.sh, lines 359-361, added by P149.1 commit 166c87e0) builds the proof's unit names with one separate jq process per unit, appending to a growing JSON string. vbw next --json runs it every time the next step is a proof. A micro-benchmark of the same loop for 400 units took 1.5 s (this repo's full proof has 398 units, steps.json shows it); the cost grows with the square of the unit count (every spawn re-parses the whole list) and is paid on each vbw next, where the old code counted with plain arithmetic. The same phase already has the cheap design: prove_unit_names (plugin/lib/cmd-prove.sh) pipes the names through one jq (proofsteps_names). The two lists also disagree: step_proof_units names every TODO_CHECKS entry (held ones too) and every TODO_COMMANDS entry (unapproved ones too), while prove_unit_names, used when the proof really starts, leaves out held checks and commands the user has not approved. So next --json can size a proof by units that the proof then does not run. Regression test: with a fixture of 30 approved checks, count the jq processes step_proof_units starts (a PATH shim that logs each call) and require the count not to grow with the unit count; and a fixture with one unapproved project command and one held check must give the same unit names from step_proof_units as the proof's own note uses (parts and expected seconds equal between vbw next --json and the proof's note).",
       "phase": "P149"
     },
@@ -40234,7 +40234,7 @@
       "req": "R191",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "road.jq labels the proof and the QA recheck inside the usual fix rounds as 'fix rounds' (plugin/lib/road.jq, the $fp list: label: \"fix rounds\" on the kind proof and kind qa pieces). When the only piece without a basis is one of those, the milestone end is withheld with the wrong kind named. Evidence: I ran road_compute on this project's real record with the proof entries removed from the step history (in memory) and got basis 'VBW has timed fewer than 3 fix rounds here' although fix rounds are plentiful in the history; the missing kind is proofs. Criterion: when a needed piece has no basis, say names the missing kind. It shows when a phase is built, its checks pass and only QA is left (no 'proofs' piece before it) and QA and fix history exist but fewer than 3 proofs were timed. A regression test should seed a road_project with all plans done and checks passing in evidence, QA and fix history present, no proof history, and expect say == 'no milestone end time yet (VBW has timed fewer than 3 proofs here)'; a second case with no QA history for a phase that already stands QA-passed but has a failing check should name QA checks. Fix: label those pieces 'proofs' and 'QA checks'.",
       "phase": "P150"
     }
@@ -49792,6 +49792,15 @@
         "milestone": "M37",
         "started": "2026-10-18T17:51:07Z",
         "ended": "2026-10-18T18:27:40Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261018T183247Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-18T18:32:47Z",
+        "ended": "2026-10-18T19:36:02Z",
         "cost": null
       }
     ],
