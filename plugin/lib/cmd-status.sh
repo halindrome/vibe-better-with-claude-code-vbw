@@ -10,11 +10,13 @@
 
 cmd_status() {
   vbw_require_project
-  local record interview
+  local record interview step road
   record=$(record_read)
   interview=$(interview_effective)
+  step=$(step_status "$(printf '%s' "$record" | jq -r '.lease.run // ""')")
+  road=$(step_road_status "$record" "$step")
   if [ "${1:-}" = "--json" ]; then
-    printf '%s\n' "$record" | jq --argjson iv "$interview" --argjson step "$(step_status "$(printf '%s' "$record" | jq -r '.lease.run // ""')")" '.milestone.id as $m | [.requirements[] | select(.milestone == $m)] as $cur | {
+    printf '%s\n' "$record" | jq --argjson iv "$interview" --argjson step "$step" --argjson road "${road:-null}" '.milestone.id as $m | [.requirements[] | select(.milestone == $m)] as $cur | {
       milestone: .milestone,
       shipped: [.shipped[].id],
       parked: [(.parked // [])[].id],
@@ -25,15 +27,17 @@ cmd_status() {
       open_todos: ([.todos[] | select(.status == "open" or .status == "in_progress")] | length),
       interview: $iv,
       recommendation: (.recommendation // null),
-      step: $step
+      step: $step,
+      road: $road
     }'
     return 0
   fi
-  printf '%s\n' "$record" | jq -r --argjson iv "$interview" --argjson step "$(step_status "$(printf '%s' "$record" | jq -r '.lease.run // ""')")" "$VBW_STEP_DEFS"'.milestone.id as $m | [.requirements[] | select(.milestone == $m)] as $cur |
+  printf '%s\n' "$record" | jq -r --argjson iv "$interview" --argjson step "$step" --argjson road "${road:-null}" "$VBW_STEP_DEFS"'.milestone.id as $m | [.requirements[] | select(.milestone == $m)] as $cur |
     "\(.project.name) · \(.milestone.id) \(.milestone.title) (\(.milestone.status))",
     "requirements: \([$cur[] | select(.status == "proven" or .status == "accepted")] | length)/\($cur | length) proven",
     "phases: \([.phases[] | select(.milestone == $m)] | length) · open fixes: \([.fixes[] | select(.status == "open")] | length) · open todos: \([.todos[] | select(.status == "open" or .status == "in_progress")] | length)",
     (if $step != null then "now: \(step_sentence($step; now | floor))" else empty end),
+    (if $road != null then $road.say else empty end),
     (if (.shipped | length) > 0 then "shipped: \([.shipped[] | "\(.id) \(.title)"] | join(", "))" else empty end),
     (if ((.parked // []) | length) > 0 then "parked: \([.parked[] | "\(.id) (\(.reason))"] | join(", "))" else empty end),
     (if $iv.interviewed then "interview (kept \($iv.kept)): level \($iv.level) · depth \($iv.depth) · involvement \($iv.involvement)" else "interview: the interview has not been done" end),
