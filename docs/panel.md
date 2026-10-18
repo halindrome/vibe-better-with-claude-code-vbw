@@ -5,7 +5,7 @@ The panel is VBW inside Claude Code's own screen. It has two parts:
 - **Comms**, the strip above the prompt: the helpers at work while a VBW
   workflow runs, or one line when VBW needs you (see [Comms](#comms)).
 - **Mission Control**, a pane beside the conversation: where your project
-  stands, in plain words, and seven tabs for the detail (see
+  stands, in plain words, and eight tabs for the detail (see
   [Mission Control](#mission-control)). It opens by itself when a session
   starts in a VBW project.
 
@@ -291,14 +291,14 @@ portrait (a picture on terminals that draw images, such as kitty and Ghostty;
 the word `VBW` elsewhere); press one to switch:
 
 ```
-Now │ Plan │ Proof │ Timeline │ Decisions │ Team │ Costs
+Now │ Plan │ Proof │ Timeline │ Decisions │ Team │ Sessions │ Costs
 ```
 
 The tabs stay at the top of the pane however long the content is. When the
 content is taller than the pane, only the part under the tabs scrolls.
 
 The tab row is always one line. In a narrow pane (40 columns, beside the
-portrait) the tabs use short names: `Now Plan Proof Time Log Team Cost`.
+portrait) the tabs use short names: `Now Plan Proof Time Log Team Sess Cost`.
 
 Mission Control never draws more rows than the pane has. When Claude Code
 reports no height for the pane, it has one fixed height of at most 30 rows.
@@ -326,9 +326,42 @@ scroll it) to read the rest.
 - **Decisions:** the milestone's decisions, newest first.
 - **Team:** which model each role uses, the profile, autonomy and rigor, with
   buttons that fill `/vbw:config` and `/vbw:profile`.
+- **Sessions:** the chats open on this project, and which one holds the run (see
+  [Sessions](#sessions)).
 - **Costs:** each VBW run of this session with its cost (the session cost added
   while the run was open, so "about"), by kind, and the session total. The list
   starts with the session: a new session starts again from zero.
+
+### Sessions
+
+The **Sessions** tab lists every chat in Claude Code's own list that belongs to
+this project (its folder or one inside it), newest first. Chats of other
+projects and sibling folders are left out. Each row shows:
+
+```
+vbw · myapp      ● holds the run · build    idle    14:32
+                 claude --resume 3f9c1a2e-...
+```
+
+- the chat's name, cut to the pane width with an ellipsis;
+- a state word and the time it was last active (`HH:MM`);
+- `claude --resume <session id>`, ready to copy.
+
+The row of the chat you are in says `this chat`. The row of the chat that holds
+the run shows `● holds the run` and the run kind (build, plan, ...) in the
+accent colour. If the holder has no entry in the list, it is still shown, taken
+from the run's lease, as `closed or not seen`.
+
+When there is nothing else to show (no list, or no other chat on the project),
+the tab says `No other chats are open on this project`.
+
+The tab is read-only: no button, nothing is sent to a chat, nothing is written.
+The list is re-read on the panel's tick only while the tab is shown or a run
+holds a lease. A malformed entry skips its own row and never breaks the panel.
+
+This tab is the one place the panel reads outside the project: Claude Code's
+own list of chats, read-only. See the paragraph on it in
+[guards](guards.md#sessionstart).
 
 ### What's happening now
 
