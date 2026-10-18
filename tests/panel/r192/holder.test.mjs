@@ -12,7 +12,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
-import { record, next, lease, PLUGIN, T0 } from '../helpers/fake-mod.mjs'
+import { mount, record, next, lease, PLUGIN, T0 } from '../helpers/fake-mod.mjs'
+import { ENV } from '../helpers/run.mjs'
 
 const S = await import(pathToFileURL(PLUGIN + '/hooks/panel-sessions.js').href)
 const L = await import(pathToFileURL(PLUGIN + '/hooks/panel-lines.js').href)
@@ -114,4 +115,31 @@ test('/vbw-status says the same about the holder as the Now box', () => {
   assert.doesNotMatch(mine[2], /held by/)
   const plain = lines(C.statusText({ record: build(), next: next({ action: 'run' }), now: NOW }))
   assert.doesNotMatch(plain[2], /held by/)
+})
+
+test('mounted: the panel reads the list and holder.json while a lease is open, and /vbw-why and /vbw-status name the holder', async () => {
+  const h = await mount({ env: ENV })
+  h.project(build(), next({ action: 'run' }))
+  h.write('/home/u/.claude/sessions/1.json', entry({ name: 'Payments work' }))
+  h.write('/home/u/.claude/sessions/2.json', 'not json')
+  h.write('/proj/.vbw/runtime/holder.json', { run: 'build-1', session: SID, session_name: 'Stored name' })
+  await h.start()
+  await h.settle()
+  const why = (await h.cmd('vbw-why')).text
+  assert.match(lines(why)[0], /^A build run is open, held by "Payments work" since /)
+  assert.match((await h.cmd('vbw-status')).text, /, held by Payments work\./)
+  // The list is gone: the stored name stands in.
+  h.remove('/home/u/.claude/sessions/1.json')
+  await h.advance(6000)
+  assert.match(lines((await h.cmd('vbw-why')).text)[0], /held by "Stored name"/)
+})
+
+test('mounted: with no lease the list is not read at all', async () => {
+  const h = await mount({ env: ENV })
+  h.project(record(), next())
+  h.write('/home/u/.claude/sessions/1.json', entry())
+  await h.start()
+  await h.advance(6000)
+  assert.ok(!h.callsOf('fs.list').some((a) => a[0].endsWith('/sessions')), 'the list was read with no lease')
+  assert.ok(!h.callsOf('fs.read').some((a) => a[0].endsWith('holder.json')))
 })
