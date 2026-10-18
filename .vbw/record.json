@@ -20123,7 +20123,7 @@
         "Clock times follow the step's rules (local 24-hour HH:MM, 'tomorrow 00:20' on another day); durations over an hour read 'about 2 h 10 min'. A test with one fixed history shows vbw next --json, vbw status --json and the note give the identical end time.",
         "Bash 3.2, JSON only through jq, record-sized data by pipe or file (never --arg), and vbw next stays within its current test's time budget on the 2 MB record used by tests/big-record tests (the road is computed once per vbw next, not per phase per call)."
       ],
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 8 (69669 bytes)",
@@ -20133,7 +20133,15 @@
         "guarded: R1 (C1), R2 (C2), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R33 (C29), R37 (C35), R38 (C33, C34), R40 (C37), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R65 (C86, C87, C88, C89, C90), R71 (C115, C121), R79 (C107), R81 (C109, C111, C112, C113), R102 (C158, C159), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R115 (C181), R118 (C184), R121 (C187, C188), R123 (C190, C191), R132 (C199), R146 (C211), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R160 (C247, C263, C264), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "escalations": [
+        {
+          "at": "2026-10-18T11:54:27Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "Dev blocked P150.1: Built: wave schedule in VBW_JQ_DEFS (waves($m)), lib/road.sh road_compute, lib/road.jq; commits e515ddb3, 3d7e717e, 3b41c592. Tests 1-8 of tests/road-next.bats pass when road_compute is called directly (scratch copy), but the plan's checks cannot go green: C392 (and the status/note tests) need steps.sh and cmd-next.sh/cmd-status.sh to call road_compute, which is P150.2's files. vbw mutate refuses ('checks do not pass on the unbroken code') for R191.24-31, so the mutation step cannot run in this plan. Needs: run the mutation for R191.24-31 after P150.2 wires the road (or move the mutation of these rules to P150.2)."
+        }
+      ]
     },
     {
       "id": "P151",
@@ -37018,7 +37026,7 @@
         "P149.1",
         "P149.2"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "The waves definition of vbw show contract (cmd-show.sh's waves($m)) moves into VBW_JQ_DEFS (record.sh) as the one wave schedule, used by show contract and by road.jq, so the road counts the waves exactly as the approval lists them",
@@ -37026,7 +37034,8 @@
         "road.jq pieces, for the milestone's phases not passed by QA: each build wave still to build (plans not done or blocked, in wave order) at its longest plan's expected time; per phase one proof per remaining wave holding a plan of the phase (one proof at least when any of its checks is not passing in the evidence), sized by the phase's checks not yet passing and, with an approved single-file form, their test files; QA when needs_qa (the same rule as next.jq) at the QA rule for [{id, tier}]; the phase's usual fix rounds times (one fix round at the phase's tier + one proof of the phase's checks + one QA recheck); a live step (the note) contributes its current end instead of its own piece's first estimate",
         "Usual fix rounds per tier: median of outcome.fix_rounds over the latest 10 finished phases (those with an outcome, in record order) of that tier, rounded; fewer than 3 such phases counts 0 and is named; before planning (no phases) and at spec or convert the road is the planning step alone, sized by the open requirements; with no milestone, a shipped or parked milestone, or nothing left to build, prove or check, the road is null",
         "The sentence: 'Milestone end: about 2 h 10 min, until around 16:40, counting 2 fix rounds per deep phase (the usual here)'; tiers in the order deep, standard, express joined with ' and '; a tier with fewer than 3 finished phases reads 'counting no fix rounds: fewer than 3 finished deep phases here' (several lacking tiers: 'deep and standard phases'); durations under an hour 'about 12 min', from an hour 'about 2 h 10 min' ('about 2 h' when the minutes are 0); clock by step_clock ('tomorrow 00:20'); before planning 'Milestone end: planning about 2 min, until around 12:50; the rest follows once the work is planned'; any piece without a basis gives seconds and end null, basis 'VBW has timed fewer than 3 proofs here' (kinds: plans, fix rounds, proofs, planning steps, QA checks; the first missing in road order) and say 'no milestone end time yet (' + basis + ')'; basis otherwise names the pieces and the rounds' source; computed in one jq run; bash 3.2"
-      ]
+      ],
+      "note": "Built: wave schedule in VBW_JQ_DEFS (waves($m)), lib/road.sh road_compute, lib/road.jq; commits e515ddb3, 3d7e717e, 3b41c592. Tests 1-8 of tests/road-next.bats pass when road_compute is called directly (scratch copy), but the plan's checks cannot go green: C392 (and the status/note tests) need steps.sh and cmd-next.sh/cmd-status.sh to call road_compute, which is P150.2's files. vbw mutate refuses ('checks do not pass on the unbroken code') for R191.24-31, so the mutation step cannot run in this plan. Needs: run the mutation for R191.24-31 after P150.2 wires the road (or move the mutation of these rules to P150.2)."
     },
     {
       "id": "P150.2",
@@ -48808,6 +48817,19 @@
         "started": "2026-10-18T11:14:36Z",
         "ended": "2026-10-18T11:41:58Z",
         "cost": null
+      },
+      {
+        "id": "build-20261018T114238Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-18T11:42:38Z",
+        "ended": "2026-10-18T11:54:46Z",
+        "cost": {
+          "usd": 0.891246,
+          "in": 1710,
+          "out": 232
+        }
       }
     ],
     "milestones": {
