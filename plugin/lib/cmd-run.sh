@@ -9,6 +9,8 @@ VBW_LEASE_HOURS=24
 
 # shellcheck source=steps.sh
 . "$VBW_LIB/steps.sh"
+# shellcheck source=sessions.sh
+. "$VBW_LIB/sessions.sh"
 
 # run_id KIND AT: the id of a run of KIND started at AT (the time, to the
 # second): KIND-20260101T120000Z, unique among the runs the record holds. A
@@ -65,14 +67,15 @@ cmd_run() {
     # Plans an interrupted Dev left "building" go back to the next wave.
     # Only the session that owns the run ends it, unless the user states the
     # owner is closed or the run is over VBW_LEASE_HOURS old.
-    local run me refusal
+    local run me refusal holder
     # No run open: nothing to end, nothing to record (a workflow ends its own run).
     record_read | jq -e '.lease != null' > /dev/null || { printf 'no run is open\n'; return 0; }
     me=$(vbw_session)
-    refusal=$(record_read | jq -r --arg me "$me" --argjson h "$VBW_LEASE_HOURS" --arg closed "${1:-}" '
+    holder=$(holder_display "$(record_read | jq -r '.lease.session // empty')")
+    refusal=$(record_read | jq -r --arg me "$me" --arg holder "$holder" --argjson h "$VBW_LEASE_HOURS" --arg closed "${1:-}" '
       .lease | select(. != null and .session != null and .session != $me
         and $closed != "--owner-closed" and (now - (.started_at | fromdateiso8601) <= $h * 3600))
-      | "run \(.run) belongs to another session\(if $me == "" then " (this session is unknown)" else "" end). Next: wait for it, or if the user says that session is closed, vbw run end --owner-closed"')
+      | "run \(.run) belongs to another session, \($holder)\(if $me == "" then " (this session is unknown)" else "" end). Next: wait for it, or if the user says that session is closed, vbw run end --owner-closed"')
     [ -z "$refusal" ] || vbw_die "$refusal"
     run=$(record_read | jq -r '.lease.run // "no run"')
     local lease sid opening closing cost
@@ -92,6 +95,7 @@ cmd_run() {
       | .costs.runs = ((.costs.runs // []) + [$r]) | .costs.milestones = (.costs.milestones // {})' \
       --arg m "$m" --arg at "$(vbw_now)" --argjson cost "$cost"
     record_commit "chore(vbw): record after $run"
+    holder_clear
     if [ -n "$lease" ]; then step_record "$lease"; fi
     rm -f "$(step_note_file)" 2> /dev/null || true
     printf 'run ended\n'
@@ -101,11 +105,12 @@ cmd_run() {
   local kind="$1" record ids
   shift
   record=$(record_read)
-  local open
-  open=$(printf '%s' "$record" | jq -r --arg me "$(vbw_session)" --argjson h "$VBW_LEASE_HOURS" '
+  local open holder
+  holder=$(holder_display "$(printf '%s' "$record" | jq -r '.lease.session // empty')")
+  open=$(printf '%s' "$record" | jq -r --arg me "$(vbw_session)" --arg holder "$holder" --argjson h "$VBW_LEASE_HOURS" '
     .lease | select(. != null and (now - (.started_at | fromdateiso8601) <= $h * 3600))
     | if .session != null and .session != $me
-      then "a run is active (\(.run)) in another session. Next: wait for it, or check vbw status"
+      then "a run is active (\(.run)) in another session, \($holder). Next: wait for it, or check vbw status"
       else "a run is active (\(.run)) in this session. Next: wait for it, or vbw run end" end')
   [ -z "$open" ] || vbw_die "$open"
   ids=$(printf '%s\n' "$@" | jq -R . | jq -sc 'map(select(length > 0))')
@@ -139,8 +144,10 @@ cmd_run() {
 
   # shellcheck source=costs.sh
   . "$VBW_LIB/costs.sh"
-  local at
+  local at runid
   at=$(vbw_now)
+  runid=$(run_id "$kind" "$at")
+  holder_write "$runid" "$(vbw_session)"
   record_update '
     (if $k == "build" then [.plans[] | select(.id as $i | any($ids[]; . == $i)) | .files[]] | unique
      elif $k == "fix" then
@@ -162,7 +169,7 @@ cmd_run() {
        + (if $me == "" then {} else {session: $me} end) + $qa
        + (if $cost == null then {} else {cost: $cost} end)
     | if $k == "build" then (.plans[] | select(.id as $i | any($ids[]; . == $i))).status = "building" else . end' \
-    --arg k "$kind" --arg me "$(vbw_session)" --argjson ids "$ids" --arg at "$at" --arg run "$(run_id "$kind" "$at")" \
+    --arg k "$kind" --arg me "$(vbw_session)" --argjson ids "$ids" --arg at "$at" --arg run "$runid" \
     --argjson cost "$(costs_figures "$(vbw_session)")"
   step_start "$kind" "$ids"
   step_say_note

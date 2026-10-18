@@ -17,10 +17,17 @@ sessions_registry() {
     printf '[]\n'
     return 0
   fi
-  jq -Rn -c '[inputs | {f: input_filename, l: .}] | group_by(.f)
-    | map(map(.l) | join("\n") | try fromjson catch empty)
-    | map(select(type == "object" and (.sessionId | type) == "string"))' \
-    "${files[@]}" 2> /dev/null || printf '[]\n'
+  # One jq pass. A marker line before each file keeps files apart even when one
+  # has no final newline (jq would join its last line to the next file's first).
+  {
+    for f in "${files[@]}"; do
+      printf '\001VBW-FILE\n'
+      cat "$f" 2> /dev/null || true
+      printf '\n'
+    done
+  } | jq -Rn -c '[(reduce inputs as $l ([]; if $l == "\u0001VBW-FILE" then . + [[]] elif length == 0 then . else .[-1] += [$l] end))[]
+      | join("\n") | try fromjson catch empty
+      | select(type == "object" and (.sessionId | type) == "string")]' 2> /dev/null || printf '[]\n'
   return 0
 }
 
