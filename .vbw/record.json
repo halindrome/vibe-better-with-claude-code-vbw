@@ -39544,6 +39544,23 @@
         "docs/panel.md: a note that the tab is the one place the panel reads outside the project, Claude Code's own list, read-only, with a link to docs/guards.md's paragraph."
       ],
       "note": "R192.40: docs/panel.md is written and committed (96973c62), but vbw mutate refuses to run because C406 is red on unbroken code: tests/sessions-docs.bats test 7 needs docs/next.md to describe rename_hint, which is outside this plan's files. Re-run the R192.40 mutation after the next.md docs plan lands."
+    },
+    {
+      "id": "P152.5",
+      "phase": "P152",
+      "title": "A glance a read rewrites is newer than the record in whole seconds",
+      "reqs": [
+        "R192"
+      ],
+      "files": [
+        "plugin/lib/record.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/record.sh record_read: when it rewrites a stale glance, the glance ends strictly newer than the record even compared in whole seconds (macOS /bin/sh [ -nt ]): set the new glance one second after the record (touch -r with -A +01 on macOS/BSD, -d +1 second on GNU; when neither works the guards read the record as today). The record and its file time stay unchanged. Root cause of P152.3 block: tests/sessions-guards.bats test 4 touches the record then runs vbw status in the same second, so the rewritten glance counted as stale and the guard showed the id, not the name. C402 must pass whole; tests/record.bats, glance-write.bats and glance-guards.bats keep passing."
+      ]
     }
   ],
   "fixes": [
@@ -44999,6 +45016,11 @@
       "id": "D447",
       "at": "2026-10-18T21:35:00Z",
       "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-18T20:27:28Z, items T138, T94: 181 requirements, 403 checks, 464 plans (4c3c9df8b36a))"
+    },
+    {
+      "id": "D448",
+      "at": "2026-10-18T23:48:10Z",
+      "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-18T20:27:28Z, items T138, T94: 181 requirements, 403 checks, 465 plans (c0b0a6eed454))"
     }
   ],
   "commands": {
