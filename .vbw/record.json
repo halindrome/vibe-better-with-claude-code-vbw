@@ -44361,6 +44361,11 @@
       "text": "R192 (P152 to P154) is built under D442 and D444 where the Architect's criteria differ: the holder's name never enters the record (no lease.session_name, no costs.runs session_name; the validator stays as it is and refuses the field); vbw run start keeps it in .vbw/runtime/holder.json {run, session, session_name} and the glance carries it as a top-level holder field (not inside lease, which protected R150 tests require byte-equal to the record's) for the status line and the guards; a past run's holder shows by its short id; the /rename hint is rename_hint in vbw next --json, once per clone, when a second chat is open on the project and this chat still has its automatic name, said by /vbw:vibe as given and never run",
       "why": "D442 (chosen by the loop 2026-10-18 20:34) keeps the name on this computer only, never in the record or git history (Claude Code's automatic names are conversation summaries); D444 moves the hint from first setup to the moment a second chat opens; the Lead follows every decision (lead brief), and the R150 glance tests (tests/glance-helper.bash glance_same) are finished work whose check files cannot change",
       "at": "2026-10-18T21:18:42Z"
+    },
+    {
+      "id": "D446",
+      "at": "2026-10-18T21:25:07Z",
+      "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-18T20:27:28Z, items T138, T94: 181 requirements, 403 checks, 464 plans (da104ea3e2f4))"
     }
   ],
   "commands": {
