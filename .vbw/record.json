@@ -52782,7 +52782,12 @@
         "out": 0,
         "at": "2026-10-18T20:27:28Z"
       }
-    }
+    },
+    "ended": {
+      "at": "2026-10-18T23:48:23Z",
+      "reason": "time budget spent: item T138 stopped before step build after 3h20m of a 2h48m budget (twice the median time (1h24m) of 5 shipped small items), $1462.84 spent; its work is kept in M38"
+    },
+    "report": ".vbw/loop-report.md"
   },
   "parked": [
     {
