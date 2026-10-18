@@ -265,14 +265,16 @@ test('outside a VBW project, or on an old Claude Code, Comms and the pane draw n
   }
 })
 
-test('outside the project it reads only this session\'s own folder, and never settings or credentials', async () => {
+test('outside the project it reads only this session\'s own folder and Claude Code\'s list of chats (R192), and never settings or credentials', async () => {
   const h = await started({}, record({ lease: lease('plan', T0) }), next({ action: 'run' }))
   writeRun(h, h.now())
   await launch(h)
   await h.advance(6000)
   const paths = [...h.callsOf('fs.read'), ...h.callsOf('fs.stat'), ...h.callsOf('fs.exists'), ...h.callsOf('fs.list')].map((a) => a[0])
   for (const p of paths) {
-    assert.ok(p === ROOT || p.startsWith(ROOT + '/') || p.startsWith(SESSION_DIR) || p === '/home/u/.config/claude-code', 'outside: ' + p)
+    // the Claude config folder here is ~/.claude (~/.config/claude-code is only probed)
+    const chats = '/home/u/.claude/sessions'
+    assert.ok(p === ROOT || p.startsWith(ROOT + '/') || p.startsWith(SESSION_DIR) || p === '/home/u/.config/claude-code' || p === chats || p.startsWith(chats + '/'), 'outside: ' + p)
     assert.doesNotMatch(p, /credentials|settings\.json|\.ssh/)
   }
   assert.ok(paths.some((p) => p.startsWith(RUN_DIR)), 'the run was read')
