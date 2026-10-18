@@ -145,6 +145,35 @@ the sentence the router says as given before the step starts. With fewer than 3
 finished steps of the kind, `seconds` and `end` are `null` and `say` reads
 `Building P1.1, P1.2 and P1.3: no end time yet (VBW has timed fewer than 3 steps like this here)`.
 
+### The road
+
+`vbw next --json` and `vbw status --json` also carry `road`: when the whole
+milestone should end, not only the current step. It is `null` when no phase is
+left (the milestone shipped).
+
+```json
+{"seconds": 2160, "end": "2026-10-18T14:56:00Z",
+ "rounds": {"standard": 2, "deep": 0},
+ "basis": "2 build waves, 2 proofs, 1 QA check and 2 usual fix rounds (median of the latest 10 finished phases of each tier)",
+ "say": "Milestone end: about 36 min, until around 14:56, counting 2 fix rounds per standard phase (the usual here)"}
+```
+
+- `seconds` and `end`: the time still ahead and the clock time it ends. Both
+  are `null` when any needed piece has no basis; a made-up time never appears.
+- `rounds`: the usual fix rounds per tier, the rounded median of
+  `outcome.fix_rounds` over the latest 10 finished phases of the tier (a tier
+  with fewer than 3 finished phases counts 0).
+- `basis`: what the time adds up, or the first kind with no basis.
+- `road.say`: the sentence, said as given together with `step.say` before a
+  step starts. Before planning it reads `Milestone end: planning about 2 min,
+  until around 14:22; the rest follows once the work is planned`. With no basis
+  it reads `no milestone end time yet (VBW has timed fewer than 3 plans here)`.
+
+`vbw next` writes the road into `next.json` beside the step; `vbw run start`
+writes it into the step's note, where a late plan done moves it with the step.
+The note's road goes with the note when the run ends. See
+[Time left](panel.md#time-left).
+
 ## Build waves
 
 `vbw show contract` prints one line under `plans:`, before the approval

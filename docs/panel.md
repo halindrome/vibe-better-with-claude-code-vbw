@@ -502,8 +502,8 @@ Milestone end: about 36 min, until around 14:56, counting 2 fix rounds per stand
   figure. Under a minute it says "less than a minute". Over an hour it reads
   "about 2 h 36 min". An end on another day names the day: "until around
   tomorrow 00:20". Times are 24-hour, local.
-- **It needs history.** VBW gives an end time only after **at least 3 finished**
-  units of the same kind (for example 3 plans). With fewer, the panel says
+- **It needs history.** VBW gives an end time only after **at least 3 finished steps**
+  of the same kind (for example 3 builds). With fewer, the panel says
   "No end time yet: VBW has timed fewer than 3 steps like this here" and shows
   no time. VBW never guesses.
 - **Time per unit at a tier.** Each kind of step is sized by its own unit, and
