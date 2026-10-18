@@ -1299,7 +1299,7 @@ scenario_road() {
   checks() {
     : > "$rd_stop"
     wait
-    local cs cr pr sh sl nr same facts_ok
+    local cs cr pr sh sl nr same
     first() { awk -F'\t' -v c="$1" '$c != "" { print $c; exit }' "$rd_samples"; }
     cs=$(first 1) cr=$(first 2) pr=$(first 3) sl=$(first 5) nr=$(first 6)
     sh=$(awk -F'\t' '$4 == 1 { f = 1 } END { print f ? "true" : "false" }' "$rd_samples")
