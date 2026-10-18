@@ -244,7 +244,8 @@ until_note() {
   git add -A && git commit -q -m "chore(vbw): fixes"
   "$VBW" approve > /dev/null
   VBW_SESSION_ID=s1 "$VBW" run start fix F1 F2 F3 > /dev/null
-  [ "$(step_secs first_end)" -eq 900 ]
+  # R191.15: the first end is the median wall time of a whole fix round (three seeded 300 s rounds).
+  [ "$(step_secs first_end)" -eq 300 ]
   step_back 1000
   VBW_SESSION_ID=s1 "$VBW" fix done F1 > /dev/null
   [ "$(step_secs end)" -ge 2990 ] && [ "$(step_secs end)" -le 3030 ] || { cat "$NOTE"; false; }
