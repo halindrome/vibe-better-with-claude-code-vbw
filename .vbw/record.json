@@ -20090,6 +20090,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P149.2: Code and tasks 1-5 are done and committed; C390 mutations (R191.8-19) are red. R191.21-23 can only be mutation-checked through C391 (tests/step-proof-units.bats). Tests 3-6 pass, but tests 1-2 (a proof records its units) need P149.3, which runs after this plan. vbw mutate refuses with 'checks do not pass on the unbroken code', so the gate cannot be met here. Needs a decision: run P149.3 first (reorder), or move C391's tests 1-2 to P149.3. Tasks 1-5 also still need mutation records (task break/--none), which I did not add since the same gate applies to C391 for task5."
+        },
+        {
+          "at": "2026-10-18T10:47:22Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P149.4: tests/step-proof.bats is an approved check file of R190, not of R191; the run's lease lists only R191's check files as editable, so the guard denies the edit the task needs (update the expected seconds in the D429 late-fix test to the R191.15 round median). Also the plan's checks C389-C398 do not cover that file. Needs the user to approve this edit (or move the test into R191's checks) so the plan can proceed."
         }
       ]
     },
@@ -36692,14 +36698,221 @@
       "after": [
         "P149.1"
       ],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "proofsteps_end takes the units that really ran (a JSON object name -> result with seconds: checks as check:ID, test files as file:PATH, project commands as command:NAME) through a scratch file under .vbw/runtime, and proofsteps_record writes units [{name, seconds}] beside parts; a proof that ran nothing still records nothing",
         "vbw prove hands its checks, test files and commands results to proofsteps_end; vbw fix done hands its results and test-file results; the record-sized results reach jq by file, never --arg",
         "proofsteps_begin sizes the proof's own note through step_expect proof {units: [names]} (the names of TODO_CHECKS, TF_TODO and the approved TODO_COMMANDS), so a proof of its own gets the units-times-ratio time; inside a build or fix the step's end stays and 'proving N of M checks' is unchanged",
         "The fix round's parts done still move the end at vbw fix done (D429); tests/step-proof-units.bats green, tests/step-proof.bats and tests/step-proof-history.bats still green"
       ],
-      "role": "dev"
+      "role": "dev",
+      "mutations": [
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a proof records every unit it ran with that unit's own seconds, in vbw prove and in the proof inside vbw fix done"
+          },
+          "what": "units record seconds 0 instead of their own",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C391": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T10:50:39Z",
+          "head": "09ef21e20488960585913db442e88552bb3cb962"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a proof records every unit it ran with that unit's own seconds, in vbw prove and in the proof inside vbw fix done"
+          },
+          "what": "units record seconds 0 instead of their own",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C391": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T10:52:14Z",
+          "head": "d3734351f5796c438c14ed4ec74403a3f42ad49a",
+          "strengthened": [
+            "tests/step-proof-units.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a proof records every unit it ran with that unit's own seconds, in vbw prove and in the proof inside vbw fix done"
+          },
+          "what": "fix done no longer hands its results to the proof step",
+          "files": [
+            "plugin/lib/cmd-fix.sh"
+          ],
+          "checks": {
+            "C391": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T10:53:05Z",
+          "head": "d3734351f5796c438c14ed4ec74403a3f42ad49a"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a proof's expected time is the sum of its units' last recorded seconds in runs.json times the median ratio of wall time to summed unit time over the latest 10 proofs that recorded units, rounded"
+          },
+          "what": "own proof sized by bare count, not by its units",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C391": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T10:53:48Z",
+          "head": "d3734351f5796c438c14ed4ec74403a3f42ad49a"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a unit never run before counts as the median of the proof's known units"
+          },
+          "what": "names ignored: every unit unknown",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C391": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T10:54:30Z",
+          "head": "d3734351f5796c438c14ed4ec74403a3f42ad49a"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a proof's expected time is the sum of its units' last recorded seconds in runs.json times the median ratio of wall time to summed unit time over the latest 10 proofs that recorded units, rounded"
+          },
+          "what": "own proof sized by bare count, not by its units",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C391": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T10:56:51Z",
+          "head": "c520c493e73d31d57a7fa7a6d1a2648b2f9abb79",
+          "strengthened": [
+            "tests/step-proof-units.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a unit never run before counts as the median of the proof's known units"
+          },
+          "what": "names ignored: every unit unknown",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C391": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T10:57:38Z",
+          "head": "c520c493e73d31d57a7fa7a6d1a2648b2f9abb79",
+          "strengthened": [
+            "tests/step-proof-units.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "without proofs that recorded units, proofs that recorded only parts give today's time per unit; with fewer than 3 finished proofs there is no time"
+          },
+          "what": "a proof records no parts",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C391": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T10:58:37Z",
+          "head": "c520c493e73d31d57a7fa7a6d1a2648b2f9abb79"
+        },
+        {
+          "task": 1,
+          "what": "the end hands no units file to the record",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C391": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T10:59:25Z",
+          "head": "c520c493e73d31d57a7fa7a6d1a2648b2f9abb79"
+        },
+        {
+          "task": 2,
+          "what": "vbw prove hands no results",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C391": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T11:00:11Z",
+          "head": "c520c493e73d31d57a7fa7a6d1a2648b2f9abb79"
+        },
+        {
+          "task": 3,
+          "what": "prove does not name its units to the step",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C391": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T11:00:58Z",
+          "head": "c520c493e73d31d57a7fa7a6d1a2648b2f9abb79"
+        },
+        {
+          "task": 4,
+          "what": "fix done no longer moves parts done",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C391": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T11:01:48Z",
+          "head": "c520c493e73d31d57a7fa7a6d1a2648b2f9abb79"
+        },
+        {
+          "task": 4,
+          "what": "fix done no longer moves parts done",
+          "files": [
+            "plugin/lib/proofsteps.sh"
+          ],
+          "checks": {
+            "C391": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T11:07:01Z",
+          "head": "376b51f7ce44edfa373f7270f9b011ea767ca318",
+          "strengthened": [
+            "tests/step-proof-units.bats"
+          ]
+        }
+      ]
     },
     {
       "id": "P150.1",
@@ -36772,7 +36985,7 @@
         "tests/panel/r189/now-box.test.mjs"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "panel-view.js: the estimate-milestone row is the kernel's road: the live step note's road while a step runs, else next.json's road; its text is road.say with a capital first letter and a final period, stamped [HH:MM] like estimate-step; road.end null gives 'No estimate yet: ' + road.basis + '.' (plain); road null or absent gives no row; the 'About N min left in the milestone' row, NO_BASIS and the panel's milestone arithmetic are gone",
@@ -36941,6 +37154,70 @@
           "task": 3,
           "none": "task 3 edits check files only; they are the tests that notice breaks",
           "at": "2026-10-17T19:49:50Z"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "the panel only reads while it shows the road"
+          },
+          "what": "panel writes a file while it shows the road",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C394": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T10:40:36Z",
+          "head": "14911158b1c816d8a116eed8195cd397ce860490"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "the status line, Comms and Mission Control show the identical step HH:MM, and the road's HH:MM shows in Mission Control only"
+          },
+          "what": "step row stamped with the road's time",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C395": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T10:40:52Z",
+          "head": "14911158b1c816d8a116eed8195cd397ce860490"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "the status line, Comms and Mission Control show the identical step HH:MM, and the road's HH:MM shows in Mission Control only"
+          },
+          "what": "Mission Control drops the step row, so its HH:MM is missing",
+          "files": [
+            "plugin/hooks/panel-view.js"
+          ],
+          "checks": {
+            "C395": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T10:41:27Z",
+          "head": "14911158b1c816d8a116eed8195cd397ce860490"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "the panel only reads while it shows the road"
+          },
+          "what": "panel writes a file (real write) while it shows the road",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C394": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T10:41:46Z",
+          "head": "14911158b1c816d8a116eed8195cd397ce860490"
         }
       ]
     },
@@ -37108,11 +37385,12 @@
       "after": [
         "P149.1"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "tests/step-proof.bats, test \"R190 (D429): a late fix moves its end to its own pace\": its first end now comes from the fix round wall-time median (R191.15), not 3x the per-fix median; update only the expected seconds so the test still pins D429 (the end moves at its own pace, marked late, never before the first end)"
-      ]
+      ],
+      "note": "tests/step-proof.bats is an approved check file of R190, not of R191; the run's lease lists only R191's check files as editable, so the guard denies the edit the task needs (update the expected seconds in the D429 late-fix test to the R191.15 round median). Also the plan's checks C389-C398 do not cover that file. Needs the user to approve this edit (or move the test into R191's checks) so the plan can proceed."
     },
     {
       "id": "P151.5",
@@ -48420,6 +48698,19 @@
         "started": "2026-10-17T19:34:06Z",
         "ended": "2026-10-18T10:38:50Z",
         "cost": null
+      },
+      {
+        "id": "build-20261018T103929Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-18T10:39:29Z",
+        "ended": "2026-10-18T11:07:36Z",
+        "cost": {
+          "usd": 1.026119,
+          "in": 2490,
+          "out": 66
+        }
       }
     ],
     "milestones": {
