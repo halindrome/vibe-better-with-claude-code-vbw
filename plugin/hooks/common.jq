@@ -19,23 +19,31 @@
 # --arg open 1 while .vbw/runtime/run-open exists, and then the guard fails
 # (R165), which the hook command turns into a block.
 #
+# The one name a reason gives for the holder of the run is the glance's top-level
+# holder field (R192, D442): the name vbw run start stored, never read from
+# anywhere else on this hot path. The record carries no name, so a call that read
+# the record has holder null and the reason names the first 8 characters of the id.
+#
 # Membership tests are anchored regexes, not array literals: they compile to far
 # fewer jq instructions, and compiling is most of a guard's cost.
+
+include "holder" {search: "../lib"};
 
 # The glance as an object when it holds schema, lease and protected, else null.
 def glance_object:
   (try fromjson catch null) | select(type == "object" and has("schema") and has("lease") and has("protected"));
 
-# {project, record}: from the current glance, else from the record input.
+# {project, record, holder}: from the current glance (holder: its top-level
+# holder), else from the record input (holder: null).
 def read_record:
   ([$glance | glance_object][0]) as $gl
-  | if $gl != null then {project: true, record: $gl}
+  | if $gl != null then {project: true, record: $gl, holder: ($gl.holder // null)}
     else (try input catch "vbw-guard-corrupt") as $rec
       | if $rec == "vbw-guard-corrupt" and ($ARGS.named.open // "") == "1" then error("the record cannot be parsed during a run") else . end
-      | {project: ($rec != "vbw-guard-end"), record: (if $rec | type == "object" then $rec else {} end)}
+      | {project: ($rec != "vbw-guard-end"), record: (if $rec | type == "object" then $rec else {} end), holder: null}
     end;
 
-# {hook, project, record, loop_on, lease, foreign}: loop_on is true while the
+# {hook, project, record, holder, loop_on, lease, foreign}: loop_on is true while the
 # record (or glance) holds a loop that has not ended; foreign is the open run lease (under
 # 24 hours, with an owning session) when the hook input comes from a different
 # session, main conversation or agent alike (D11), else null. lease is the active run lease when this call
@@ -47,10 +55,10 @@ def guard_context(writes):
   | read_record as $r
   | ($r.record) as $record
   | (($record.lease | select(type == "object" and (try (now - (.started_at | fromdateiso8601) < 86400) catch false))) // null) as $live
-  | {hook: $hook, project: $r.project, record: $record,
+  | {hook: $hook, project: $r.project, record: $record, holder: $r.holder,
      loop_on: ($record.loop | type == "object" and (.ended // null) == null),
      lease: (if ($hook.agent_type // "") != "" then $live else null end),
-     foreign: (($live | select((.session // "") != "" and ($hook.session_id // .session) != .session)) // null)};
+     foreign: (($live | select((.session // "") != "" and ($hook.session_id // .session) != .session) | . + {holder: $r.holder}) // null)};
 
 def basename: split("/") | last // "";
 def secret_path: basename
@@ -142,8 +150,8 @@ def shell_write_denial($g):
 # Why another session may not write PATH (project-relative) while FOREIGN's run
 # is open, or empty: it writes lease.files (null: any project file, []: none).
 def foreign_denial($f):
-  . as $p | select($p != null and (($f.files // [$p]) | any(.[]; covers($p))))
-  | "\($p) is being written by run \($f.run) of another session (\($f.session)): wait for it; if the user says that session is closed, they run vbw run end --owner-closed\nNext: work on files outside \($f.files // ["the project"] | join(", ")) meanwhile, or wait until run \($f.run) ends";
+  . as $p | holder_name($f; (($f.holder // null) | if type == "object" and .run == $f.run then .session_name else null end); null) as $name | select($p != null and (($f.files // [$p]) | any(.[]; covers($p))))
+  | "\($p) is being written by run \($f.run) of another session (\($name)): wait for it; if the user says that session is closed, they run vbw run end --owner-closed\nNext: work on files outside \($f.files // ["the project"] | join(", ")) meanwhile, or wait until run \($f.run) ends";
 
 def secret_reason: "\(basename) may hold secrets; VBW never reads or writes secret files\nNext: do not open \(basename); ask the user for the value you need, or use an example file such as .env.example";
 def record_reason: ".vbw/record.json is written only by vbw (vbw help lists the commands)\nNext: run the vbw command that makes this change (vbw help lists them); read the record with vbw show or vbw status";
