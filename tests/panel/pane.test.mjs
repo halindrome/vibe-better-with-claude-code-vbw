@@ -26,7 +26,8 @@ const steps = (kind, secs) => secs.map((s, i) => ({ kind, run: kind + '-' + i, s
 const HISTORY = [...steps('build', [600, 900, 1200]), ...steps('qa', [100, 200, 300])]
 const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z')
 const step = (over = {}) => ({ kind: 'build', run: 'build-1', session: 'sess-1', pid: null, started_at: iso(NOW - 300 * S), ids: ['P44.1'],
-  doing: 'building P44.1', parts: { done: 0, total: 1 }, proof: null, first_end: iso(NOW + 300 * S), end: iso(NOW + 300 * S), late: false, ...over })
+  doing: 'building P44.1', parts: { done: 0, total: 1 }, proof: null, first_end: iso(NOW + 300 * S), end: iso(NOW + 300 * S), late: false,
+  road: { seconds: 7800, end: iso(NOW + 7800 * S), rounds: { deep: 2 }, basis: '2 waves, 2 proofs', say: 'milestone end: about 2 h 10 min, until around 16:40' }, ...over })
 const busy = () => deepFreeze(record({
   requirements: reqs(2, 5),
   lease: lease('build', NOW - 300 * S),
