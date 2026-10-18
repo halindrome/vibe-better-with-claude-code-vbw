@@ -20182,6 +20182,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P151.5: edit committed by the maintainer (pane fixture; the guard denies a Dev an approved check file); close with vbw plan done once R191's checks pass"
+        },
+        {
+          "at": "2026-10-18T13:25:27Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P151.3: Docs written and committed (6 of 8 C397 tests and step-docs, panel-now-docs, panel-glance green). tests/road-docs.bats tests 7 and 8 use grep -E with {0,300} and {0,400}; macOS /usr/bin/grep (BSD) caps repetition at 255 ('maximum repetition exceeds 255'), so they error on this host whatever the docs say. With perl the same regexes match docs/rigor.md and README.md. Fix needs an approved check file edit (use {0,250} or perl) outside this plan's files."
         }
       ]
     }
@@ -37026,7 +37032,7 @@
         "P149.1",
         "P149.2"
       ],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "The waves definition of vbw show contract (cmd-show.sh's waves($m)) moves into VBW_JQ_DEFS (record.sh) as the one wave schedule, used by show contract and by road.jq, so the road counts the waves exactly as the approval lists them",
@@ -37035,7 +37041,204 @@
         "Usual fix rounds per tier: median of outcome.fix_rounds over the latest 10 finished phases (those with an outcome, in record order) of that tier, rounded; fewer than 3 such phases counts 0 and is named; before planning (no phases) and at spec or convert the road is the planning step alone, sized by the open requirements; with no milestone, a shipped or parked milestone, or nothing left to build, prove or check, the road is null",
         "The sentence: 'Milestone end: about 2 h 10 min, until around 16:40, counting 2 fix rounds per deep phase (the usual here)'; tiers in the order deep, standard, express joined with ' and '; a tier with fewer than 3 finished phases reads 'counting no fix rounds: fewer than 3 finished deep phases here' (several lacking tiers: 'deep and standard phases'); durations under an hour 'about 12 min', from an hour 'about 2 h 10 min' ('about 2 h' when the minutes are 0); clock by step_clock ('tomorrow 00:20'); before planning 'Milestone end: planning about 2 min, until around 12:50; the rest follows once the work is planned'; any piece without a basis gives seconds and end null, basis 'VBW has timed fewer than 3 proofs here' (kinds: plans, fix rounds, proofs, planning steps, QA checks; the first missing in road order) and say 'no milestone end time yet (' + basis + ')'; basis otherwise names the pieces and the rounds' source; computed in one jq run; bash 3.2"
       ],
-      "note": "Built: wave schedule in VBW_JQ_DEFS (waves($m)), lib/road.sh road_compute, lib/road.jq; commits e515ddb3, 3d7e717e, 3b41c592. Tests 1-8 of tests/road-next.bats pass when road_compute is called directly (scratch copy), but the plan's checks cannot go green: C392 (and the status/note tests) need steps.sh and cmd-next.sh/cmd-status.sh to call road_compute, which is P150.2's files. vbw mutate refuses ('checks do not pass on the unbroken code') for R191.24-31, so the mutation step cannot run in this plan. Needs: run the mutation for R191.24-31 after P150.2 wires the road (or move the mutation of these rules to P150.2)."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R191",
+            "text": "the usual fix rounds per tier are the rounded median of outcome.fix_rounds over the latest 10 finished phases of that tier (1, 2, 2 and 5 give 2)"
+          },
+          "what": "usual rounds use max instead of the rounded median",
+          "files": [
+            "plugin/lib/road.jq"
+          ],
+          "checks": {
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T13:16:34Z",
+          "head": "d37d636b8c25caebf9519aecb370c5e7eb9fe8a5"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "with fewer than 3 finished phases of a tier the road counts no fix rounds for it and the sentence says so"
+          },
+          "what": "a tier with fewer than 3 phases still counts rounds",
+          "files": [
+            "plugin/lib/road.jq"
+          ],
+          "checks": {
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T13:17:23Z",
+          "head": "d37d636b8c25caebf9519aecb370c5e7eb9fe8a5"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a wave already built leaves the road, and a built phase whose checks are not passed still counts one proof"
+          },
+          "what": "a built wave stays on the road",
+          "files": [
+            "plugin/lib/road.jq"
+          ],
+          "checks": {
+            "C392": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-18T13:18:14Z",
+          "head": "d37d636b8c25caebf9519aecb370c5e7eb9fe8a5"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "before planning the road is the planning step alone and its sentence says the rest follows once the work is planned; it never guesses the unplanned work"
+          },
+          "what": "before planning the road adds nothing for unplanned work: planning step dropped",
+          "files": [
+            "plugin/lib/road.jq"
+          ],
+          "checks": {
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T13:19:33Z",
+          "head": "6607bc5da0fa533c972b21da2dfc67cff10c0f5d"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "when any needed piece has no basis, road.end and road.seconds are null and say names the missing kind; a made-up time never appears"
+          },
+          "what": "a piece without basis counts as zero seconds",
+          "files": [
+            "plugin/lib/road.jq"
+          ],
+          "checks": {
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T13:20:53Z",
+          "head": "2eda4002bdeee269fd93c07d76f2783c7c5a8886"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "durations over an hour read 'about 2 h 36 min' and the clock follows the step's rules"
+          },
+          "what": "hours read without minutes",
+          "files": [
+            "plugin/lib/road.jq"
+          ],
+          "checks": {
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T13:21:43Z",
+          "head": "2eda4002bdeee269fd93c07d76f2783c7c5a8886"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "with no phase left (the milestone shipped) road is null and vbw status shows no milestone end"
+          },
+          "what": "a shipped milestone still has a road",
+          "files": [
+            "plugin/lib/road.jq"
+          ],
+          "checks": {
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T13:22:32Z",
+          "head": "2eda4002bdeee269fd93c07d76f2783c7c5a8886"
+        },
+        {
+          "rule": {
+            "req": "R191",
+            "text": "a wave already built leaves the road, and a built phase whose checks are not passed still counts one proof"
+          },
+          "what": "a built phase whose checks are not passed no longer counts a proof",
+          "files": [
+            "plugin/lib/road.jq"
+          ],
+          "checks": {
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T13:26:33Z",
+          "head": "1ba147aedee37db1e86eb1587493ddeb700943de"
+        },
+        {
+          "task": 1,
+          "what": "the wave schedule keeps only the last wave",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "green",
+            "C391": "green",
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T13:32:11Z",
+          "head": "1ba147aedee37db1e86eb1587493ddeb700943de"
+        },
+        {
+          "task": 2,
+          "what": "the runs store is read from the wrong file",
+          "files": [
+            "plugin/lib/road.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "green",
+            "C391": "green",
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T13:35:19Z",
+          "head": "1ba147aedee37db1e86eb1587493ddeb700943de"
+        },
+        {
+          "task": 3,
+          "what": "fix rounds count one proof instead of the usual number",
+          "files": [
+            "plugin/lib/road.jq"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "green",
+            "C391": "green",
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T13:38:25Z",
+          "head": "1ba147aedee37db1e86eb1587493ddeb700943de"
+        },
+        {
+          "task": 5,
+          "what": "durations lose the word about",
+          "files": [
+            "plugin/lib/road.jq"
+          ],
+          "checks": {
+            "C1": "green",
+            "C389": "green",
+            "C390": "green",
+            "C391": "green",
+            "C392": "red"
+          },
+          "result": "red",
+          "at": "2026-10-18T13:45:08Z",
+          "head": "1ba147aedee37db1e86eb1587493ddeb700943de"
+        }
+      ]
     },
     {
       "id": "P150.2",
@@ -37638,13 +37841,14 @@
         "P150.2",
         "P151.1"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "docs",
       "tasks": [
         "docs/panel.md 'Time left': time per unit at a tier (a plan's task, a fix round, a proof's unit, a QA phase, a requirement), the fallback ladder and its 3-step minimum, side-by-side plans not added (the longest counts, never their sum), the proof's unit times from runs.json and its learned ratio, the road's pieces (waves, proofs, QA, the usual fix rounds), how the rounds are counted (median of outcome.fix_rounds, 3 finished phases of the tier at least) and named ('(the usual here)', 'counting no fix rounds: ...'), 'no milestone end time yet', 'the rest follows once the work is planned', and that the history is this project's only (D433); the Now tab example shows the 'Milestone end: ...' sentence and the old 'About 40 min left in the milestone.' and 'No estimate yet: there are not enough finished steps' sentences are gone everywhere in the file",
         "docs/next.md 'The step': road {seconds, end, rounds, basis, say} with an example, road.say, and the no-basis sentence; docs/statusline.md: the status line shows the step's time only, the milestone's end is Mission Control's and the chat message's (D435)",
         "docs/rigor.md: the outcome record's fix_rounds feeds the usual fix rounds of the milestone's end; README.md: where it describes the panel, Mission Control shows when the milestone should end; tests/road-docs.bats green, tests/step-docs.bats, tests/panel-now-docs.bats and tests/panel-glance.bats still green"
-      ]
+      ],
+      "note": "Docs written and committed (6 of 8 C397 tests and step-docs, panel-now-docs, panel-glance green). tests/road-docs.bats tests 7 and 8 use grep -E with {0,300} and {0,400}; macOS /usr/bin/grep (BSD) caps repetition at 255 ('maximum repetition exceeds 255'), so they error on this host whatever the docs say. With perl the same regexes match docs/rigor.md and README.md. Fix needs an approved check file edit (use {0,250} or perl) outside this plan's files."
     },
     {
       "id": "P151.4",
@@ -49063,6 +49267,15 @@
           "in": 4802,
           "out": 281
         }
+      },
+      {
+        "id": "build-20261018T131250Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-18T13:12:50Z",
+        "ended": "2026-10-18T14:52:54Z",
+        "cost": null
       }
     ],
     "milestones": {
