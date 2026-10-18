@@ -11,14 +11,14 @@
 # L3_JOBS at a time (default 4); each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime pluginoff tools legacy nolegacy smallchange costs loop plugindir"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -1156,6 +1156,157 @@ scenario_steptime() {
     [ "$passed" = true ] || failed=1
     result_write steptime "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
       '["a build that ran late: the end moving to this run'"'"'s pace was not seen in the window (held by tests/step-note.bats, L1)","an end time on another day","a fix, QA, planning or mapping step in the window","the three times are read from the visible screen text at 2 s steps, by the first time each place showed one, not by a reader","the project with no history had a build started by the scenario with vbw run start, not by the router, so the router saying no end time yet in chat was not seen (vbw next --json gave it)","the status line, Comms and the chat message were read in one 200-column window only","the proof counted was the one the build flow ran with check_jobs 2; its pace on a machine with more lanes","the time left shrinking, a user watching, and the clock time being right to the minute against real elapsed time"]'
+  }
+}
+
+# road (R191, phase P151): the end of the milestone, the road, in the real window.
+# The steptime project (two plans in two phases of one milestone, six slow real
+# checks), with a history of the kind R191 reads: plan units with tiers and tasks,
+# proofs with their units (and the runs store), QA phases with tiers, fix rounds
+# with tiers, and the outcomes of three finished phases in an earlier, shipped
+# milestone. Phase A has no history: vbw next --json says no end time yet for the
+# step and for the road, a run started by hand writes the same into the note, and
+# the screen shows it. Phase B seeds the history and the outcomes (the way a project
+# that shipped before has them) and the user types /vbw:vibe; the build runs through
+# the real window. Sampled every 2 s from the screen: VBW's message in the chat (the
+# step's sentence, then "Milestone end: ... until around HH:MM"), Mission Control's
+# milestone row, the status line under the prompt box (it shows the step's time
+# only), and from the step note the road's end. The two milestone times must agree
+# within a minute.
+scenario_road() {
+  new_project
+  export L3_STATUSLINE=1
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor standard > /dev/null && steptime_seed) \
+    || { say "setup failed: could not seed the two-plan project"; return 1; }
+  fixture="greet.sh and farewell.sh (two plans in two standard phases of one milestone, the second after the first), six real checks that wait 5 s each (check_jobs 2), approved; the working tree's status line on, the panel in a wide window; no history first (a build run started by the scenario with vbw run start build, then ended), then a seeded history (three builds of one plan of one task at 5 min, three proofs of the six checks, three QA checks of one phase at 2 min, three fix rounds at 200 s, the runs store with the six checks at 5 s) and three finished phases of a shipped milestone with 1, 1 and 2 fix rounds, and the user types /vbw:vibe for the real build"
+  start="/vbw:status"
+  road_history() {
+    local common
+    common=$(git rev-parse --path-format=absolute --git-common-dir) || return 1
+    mkdir -p "$common/vbw"
+    # Three earlier builds of one plan of one task (5 min), three proofs of the six
+    # checks (5 s each, 20 s of wall time), three QA checks of one phase (2 min) and
+    # three fix rounds (200 s), all at the standard tier; the runs store knows the six checks.
+    jq -n '[range(1; 7) | "check:C\(.)"] as $names
+      | {steps: [
+        (range(0; 3) as $i | {kind: "build", run: "build-seed-\($i)", started_at: "2026-10-15T09:00:00Z", ended_at: "2026-10-15T09:05:00Z", seconds: 300, parts: 1,
+           units: [{id: "P9.\($i)", tier: "standard", tasks: 1, seconds: 300}]}),
+        (range(0; 3) as $i | {kind: "proof", run: "proof-seed-\($i)", started_at: "2026-10-15T09:10:00Z", ended_at: "2026-10-15T09:10:20Z", seconds: 20, parts: 6,
+           units: [$names[] | {name: ., seconds: 5}]}),
+        (range(0; 3) as $i | {kind: "qa", run: "qa-seed-\($i)", started_at: "2026-10-15T09:11:00Z", ended_at: "2026-10-15T09:13:00Z", seconds: 120,
+           phases: [{id: "P9\($i)", tier: "standard"}]}),
+        (range(0; 3) as $i | {kind: "fix", run: "fix-seed-\($i)", started_at: "2026-10-15T09:14:00Z", ended_at: "2026-10-15T09:17:20Z", seconds: 200, parts: 1,
+           fixes: ["F\($i)"], tier: "standard"})]}' > "$common/vbw/steps.json"
+    jq -n '[range(1; 7) | "check:C\(.)"] as $names
+      | {runs: ($names | map({key: ., value: {fp: "seed", tree: "seed", status: "pass", at: "2026-10-15T09:10:00Z", seconds: 5, tail: "", reads: null, dirs: [], git: false}}) | from_entries)}' \
+      > "$common/vbw/runs.json"
+  }
+
+  # Three finished phases of an earlier milestone, shipped, each at the standard tier
+  # with its fix rounds (1, 1 and 2: the usual is 1), as a project that shipped before has them.
+  road_outcomes() {
+    local r=.vbw/record.json
+    jq '.shipped = [{id: "M0", title: "Before", at: "2026-10-01T00:00:00Z"}]
+      | .phases += [([1, 1, 2] | to_entries[]) as $e | {id: "P9\($e.key)", title: "Earlier phase \($e.key)", reqs: ["R1"], milestone: "M0", tier: "standard",
+          qa: {result: "pass", tier: "standard", tree: "old", at: "2026-10-01T00:00:00Z"},
+          outcome: {tier: "standard", predicted: "standard", held: true, fix_rounds: $e.value, qa_findings: 0, escalations: 0}}]' "$r" > "$r.tmp" \
+      && mv "$r.tmp" "$r" && git add .vbw/record.json && git commit -qm "chore(vbw): earlier phases" || return 1
+  }
+  rd_phase=A rd_nohist_next=false rd_nohist_note=false rd_nohist_screen=false
+  rd_samples="$dir.road.samples" rd_stop="$dir.road.stop"
+  rm -f "$rd_samples" "$rd_stop"
+  # What the places say now: sets rd_* variables (text without the panel, the panel's text, the status line).
+  rd_read() {
+    local s
+    s=$(screen) || return 1
+    rd_status=$(printf '%s\n' "$s" | awk '/^─/ { n = NR } { l[NR] = $0 } END { for (i = n + 1; i <= NR; i++) print l[i] }')
+    rd_chat=$(printf '%s\n' "$s" | sed 's/│.*//' | awk '/^─/ { exit } /VBW ▸/ { exit } { print }' | tr '\n' ' ' | tr -s ' ')
+    rd_panel=$(printf '%s\n' "$s" | sed -n 's/^[^│]*│//p' | sed 's/│//g' | tr '\n' ' ' | tr -s ' ')
+    rd_screen=$s
+  }
+  # The first "Milestone end: ... until around HH:MM" in a text, the HH:MM.
+  rd_road_time() { grep -oE 'Milestone end:[^.]*until around [0-9]{2}:[0-9]{2}' | head -1 | grep -oE '[0-9]{2}:[0-9]{2}$' || true; }
+  # The chat's step time: the first "until around HH:MM" that comes before the first "Milestone end:".
+  rd_step_time() {
+    grep -oE 'Milestone end:|until around [0-9]{2}:[0-9]{2}' \
+      | awk '/^Milestone end:/ { exit } { print; exit }' | grep -oE '[0-9]{2}:[0-9]{2}$' || true
+  }
+  # One sample, a tab-separated line: the chat's step time, the chat's road time, Mission Control's
+  # road time, whether the status line mentions the milestone, the status line's time and the note's road end.
+  rd_sample() {
+    local cs cr pr sh sl nr
+    rd_read || return 1
+    cs=$(printf '%s\n' "$rd_chat" | rd_step_time)
+    cr=$(printf '%s\n' "$rd_chat" | rd_road_time)
+    pr=$(printf '%s\n' "$rd_panel" | rd_road_time)
+    sh=0
+    printf '%s\n' "$rd_status" | grep -qi 'milestone' && sh=1
+    sl=$(printf '%s\n' "$rd_status" | grep -oE 'until (tomorrow )?[0-9]{2}:[0-9]{2}' | head -1 | grep -oE '[0-9]{2}:[0-9]{2}$' || true)
+    nr=$(jq -r '(.road.end // empty) | fromdateiso8601 | localtime | strftime("%H:%M")' "$dir/.vbw/runtime/step.json" 2> /dev/null || true)
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$cs" "$cr" "$pr" "$sh" "$sl" "$nr" >> "$rd_samples"
+  }
+  rd_sampler() { while [ ! -f "$rd_stop" ]; do rd_sample || break; sleep 2; done; }
+  # Phase A: no history. The scenario starts the build run; the window shows no end time.
+  rd_no_history() {
+    local i
+    case "$(cd "$dir" && "$VBW" next --json 2> /dev/null | jq -r '(.step.say // "") + " | " + (.road.say // "")')" in
+      *"no end time yet"*"no milestone end time yet"*) rd_nohist_next=true ;;
+    esac
+    (cd "$dir" && "$VBW" run start build P1.1 > /dev/null 2>&1) || { say "could not start the run by hand"; return; }
+    for ((i = 0; i < 20; i++)); do
+      sleep 2
+      rd_read
+      case "$rd_screen" in *"No estimate yet"*) rd_nohist_screen=true ;; esac
+      jq -e '.road != null and .road.end == null and (.road.say | test("no milestone end time yet"))' "$dir/.vbw/runtime/step.json" > /dev/null 2>&1 && rd_nohist_note=true
+      [ "$rd_nohist_screen" = true ] && [ "$rd_nohist_note" = true ] && break
+    done
+    printf '%s\n' "$rd_screen" > "$dir.road.nohistory.screen.txt"
+    (cd "$dir" && "$VBW" run end > /dev/null 2>&1) || say "could not end the run started by hand"
+  }
+  plans_done() { jq -e '[.plans[]? | .status] | length > 0 and all(. == "done")' "$dir/.vbw/record.json" > /dev/null 2>&1; }
+  done_yet() {
+    if [ "$rd_phase" = A ]; then
+      rd_no_history
+      (cd "$dir" && road_history && road_outcomes) || { say "could not seed the history"; return 0; }
+      say "seeded the clone's history (builds, proofs, QA, fix rounds, runs) and three finished phases of a shipped milestone"
+      rd_phase=B
+      rd_sampler &
+      l3 type "$scenario" "/vbw:vibe"
+      return 1
+    fi
+    shipped && return 0
+    plans_done || return 1
+    case "$(next_action)" in build | run | prove) return 1 ;; esac
+    awk -F'\t' '$2 != "" { a = 1 } $3 != "" { b = 1 } END { exit !(a && b) }' "$rd_samples" 2> /dev/null
+  }
+  checks() {
+    : > "$rd_stop"
+    wait
+    local cs cr pr sh sl nr same facts_ok
+    first() { awk -F'\t' -v c="$1" '$c != "" { print $c; exit }' "$rd_samples"; }
+    cs=$(first 1) cr=$(first 2) pr=$(first 3) sl=$(first 5) nr=$(first 6)
+    sh=$(awk -F'\t' '$4 == 1 { f = 1 } END { print f ? "true" : "false" }' "$rd_samples")
+    # Within a minute of each other (the clock wraps at midnight).
+    within() { awk -v a="$1" -v b="$2" 'function m(t) { split(t, p, ":"); return p[1] * 60 + p[2] }
+      BEGIN { d = m(a) - m(b); if (d < 0) d = -d; if (1440 - d < d) d = 1440 - d; exit !(d <= 1) }'; }
+    same=false
+    if [ -n "$cr" ] && [ -n "$pr" ] && [ -n "$nr" ] && within "$cr" "$pr" && within "$cr" "$nr" && within "$pr" "$nr"; then same=true; fi
+    facts=$(jq -n --arg cs "$cs" --arg cr "$cr" --arg pr "$pr" --arg nr "$nr" --arg sl "$sl" --argjson same "$same" --argjson sh "$sh" \
+      --argjson nhn "$rd_nohist_next" --argjson nht "$rd_nohist_note" --argjson nhs "$rd_nohist_screen" \
+      --argjson samples "$(wc -l < "$rd_samples" | tr -d ' ')" \
+      '{chat_step_end: $cs, chat_road_end: $cr, panel_road_end: $pr, note_road_end: $nr, same_road_end: $same,
+        statusline_end: $sl, statusline_has_road: $sh,
+        no_history_no_end_time: ($nhn and $nht and $nhs), no_history_next_says_no_end_time: $nhn, no_history_note_says_no_end_time: $nht, no_history_screen_says_no_end_time: $nhs,
+        screen_samples: $samples}')
+    expect "the chat gave the step's time and the milestone's" jq -e '.chat_step_end != "" and .chat_road_end != ""' <<< "$facts"
+    expect "Mission Control gave the milestone's time" jq -e '.panel_road_end != ""' <<< "$facts"
+    expect "chat, Mission Control and the note give the same milestone time" jq -e '.same_road_end == true' <<< "$facts"
+    expect "the status line showed a time and no milestone" jq -e '.statusline_end != "" and .statusline_has_road == false' <<< "$facts"
+    expect "with no history the window and vbw next show no end time" jq -e '.no_history_no_end_time == true' <<< "$facts"
+    passed=$(jq -r '.chat_step_end != "" and .chat_road_end != "" and .panel_road_end != "" and .same_road_end and .statusline_end != "" and (.statusline_has_road | not) and .no_history_no_end_time' <<< "$facts")
+    [ "$passed" = true ] || failed=1
+    result_write road "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
+      '["a build that ran late: the milestone end moving with each late plan was not seen in the window (held by tests/road-note.bats, L1)","fix rounds, QA, planning and mapping steps in the window: the road was read at the build'"'"'s start and during the proof","a milestone end on another day, and a duration over an hour","the times are read from the visible screen text at 2 s steps, by the first time each place showed one, not by a reader","the project with no history had a build run started by the scenario with vbw run start, not by the router, so the router saying both sentences in chat without history was not seen (vbw next --json and the note gave them)","the earlier phases, the history and the runs store are seeded by the scenario in the clone and the record, not made by earlier real runs","the chat, Mission Control and the status line were read in one 200-column window only","the milestone time being right to the minute against real elapsed time"]'
   }
 }
 
