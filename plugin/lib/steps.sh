@@ -69,6 +69,9 @@ def step_sentence($s; $t):
   + " · " + step_words($s; $t);
 '
 
+# shellcheck source=road.sh
+. "$VBW_LIB/road.sh"
+
 # step_history_file: the history's path, empty outside a git repository.
 step_history_file() {
   local common
@@ -210,6 +213,57 @@ step_size() {
     else null end' 2> /dev/null || echo null
 }
 
+# step_road RECORD NEXT NOTE: the road (lib/road.sh) with the running build's
+# plans counted as the run started them: a plan done during the step leaves the
+# step's own piece, not the rest, so the rest of the road stays what it was when
+# the step began and only the step's own end moves (R191.36, D438).
+step_road() {
+  local rec="$1"
+  if [ -n "${3:-}" ]; then
+    rec=$(printf '%s' "$1" | jq -c --slurpfile n <(printf '%s' "$3") '
+      ($n[0] // {}) as $n
+      | if $n.kind == "build" then .plans |= map(if .status == "done" and (.id as $i | any($n.ids[]?; . == $i)) then .status = "building" else . end) else . end' 2> /dev/null) || rec=$1
+  fi
+  road_compute "$rec" "$2" "${3:-}"
+}
+
+# step_road_input: vbw next's answer for the road, {} when it cannot be judged.
+step_road_input() {
+  # shellcheck source=cmd-next.sh
+  . "$VBW_LIB/cmd-next.sh"
+  next_answer 2> /dev/null || echo '{}'
+}
+
+# step_road_note_set [NEXT [START]]: the live note gets the road computed now from
+# the record and the note as it is. NEXT is the answer to use (step_road_input when
+# empty). START=start counts the road's seconds from the step's own start, which
+# is the moment of a run that just began, not the moment the sum was done. No note
+# stays no note; a road that cannot be told is null.
+step_road_note_set() {
+  local note record cur next="${1:-}" road out
+  note=$(step_note_file)
+  [ -f "$note" ] || return 0
+  cur=$(jq -c . "$note" 2> /dev/null) || return 0
+  [ -n "$cur" ] || return 0
+  record=$(record_read) || return 0
+  [ -n "$next" ] || next=$(step_road_input)
+  road=$(step_road "$record" "$next" "$cur")
+  out=$(printf '%s' "$cur" | jq -c --argjson road "${road:-null}" --arg start "${2:-}" '.road = $road
+    | if $start == "start" and (.road.seconds? // null) != null
+      then .road.seconds = ((.road.end | fromdateiso8601) - (.started_at | fromdateiso8601)) else . end' 2> /dev/null) || return 0
+  [ -z "$out" ] || step_note_write "$out"
+}
+
+# step_road_status RECORD STEP_JSON: the road vbw status carries: the live note's
+# own road while a step runs (STEP_JSON is the note, or null), else the road now.
+step_road_status() {
+  local road note=""
+  road=$(printf '%s' "$2" | jq -c 'select(type == "object") | .road | select(type == "object")' 2> /dev/null) || road=
+  if [ -n "$road" ]; then printf '%s\n' "$road"; return 0; fi
+  [ "$2" = null ] || note=$2
+  step_road "$1" "$(step_road_input)" "$note"
+}
+
 # step_start KIND IDS_JSON: write the note of the run that just started (the
 # open run of the record), after removing a note that is not live.
 step_start() {
@@ -242,6 +296,7 @@ step_start() {
        elif $k == "fix" then {tier: ($size.tier // null)}
        elif $k == "plan" then {reqs: ($size.reqs // null)}
        else {} end)')"
+  step_road_note_set "" start
 }
 
 # step_plan_done: a plan was just recorded done; count the running build's
@@ -263,6 +318,8 @@ step_plan_done() {
         then .seconds = ($t - (($n.started_at | fromdateiso8601))) else . end]
     | step_move($t)' "$note" 2> /dev/null) || return 0
   [ -z "$out" ] || step_note_write "$out"
+  # The milestone's end moves with the step's, at once (D438).
+  step_road_note_set
 }
 
 # step_status RUN: the running step as vbw status --json gives it: the live
@@ -276,13 +333,13 @@ step_status() {
       then (((now | floor) - (.first_end | fromdateiso8601)) / 60 | floor | if . >= 1 then . else null end) else null end)}' 2> /dev/null || echo null
 }
 
-# step_say_note: the sentence of the note just written (run start), nothing
+# step_say_note: the sentence of the note just written (run start), then the road's, nothing
 # without a note.
 step_say_note() {
   local note
   note=$(step_note_file)
   [ -f "$note" ] || return 0
-  jq -r "$VBW_STEP_DEFS"'step_say(.; now | floor)' "$note" 2> /dev/null || true
+  jq -r "$VBW_STEP_DEFS"'step_say(.; now | floor), (.road.say? // empty)' "$note" 2> /dev/null || true
 }
 
 # step_proof_units RECORD FULL: the names of the units a proof would run now (a
