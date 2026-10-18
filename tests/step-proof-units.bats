@@ -61,6 +61,20 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
   printf '%s' "$s" | jq -e '.kind == "proof" and .parts == 4 and .seconds == 150 and (.say | startswith("Proving 4 checks: about 3 min"))' || { echo "$s"; false; }
 }
 
+@test "R191: a proof of its own sizes its note by its units' recorded seconds, the learned ratio and the median for an unknown unit" {
+  # C1..C3 are known (10, 20, 30 s), C4 never ran: it counts as 20, so 80 s times the ratio 1.5.
+  runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30}'
+  hist_proof '[{"name": "check:C1", "seconds": 40}, {"name": "check:C2", "seconds": 60}]' 150 3
+  SNAP="$TEST_ROOT/snap"
+  export SNAP
+  step_edit '.checks[0].run = ["sh", "-c", "cp \"$NOTE\" \"$SNAP\""]'
+  git add -A && git commit -q -m "chore(vbw): a check that reads the note"
+  "$VBW" approve > /dev/null
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  jq -e '.kind == "proof" and .run == null and ((.first_end | fromdateiso8601) - (.started_at | fromdateiso8601)) == 120' "$SNAP" || { cat "$SNAP"; false; }
+}
+
 @test "R191: the ratio is the median over the latest 10 proofs that recorded units" {
   runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
   hist_proof '[{"name": "check:C1", "seconds": 100}]' 100 1
