@@ -6,12 +6,15 @@
 # no time out); the sentinel; this session's .vbw/runtime/auto.SESSION.json if
 # it armed an autonomous run. jq skips missing files, so the sentinels mark which
 # optional input is which. Args: $branch, $color ("1" or ""), $sid (this session),
+# $registry ([{sessionId: name}] of Claude Code's list of chats, [{}] without one),
 # $deadpid (the pid of a proof note whose process is gone, or 0),
 # $legacy (a VBW 1 plan, not converted), $agents (the workflow agents working
 # now: [{role, label, model}]), $profiles ([lib/profiles.json]). Output: 4
 # lines; in a VBW project under Claude Code older than 2.1.287, 5 (the team or
 # its working agents on line 2); then, when $cc carries a cost, one last line of
 # compact JSON for the cost side file.
+
+include "holder" {search: "../lib"};
 
 def c($code; $s): if $color == "1" then "\u001b[\($code)m\($s)\u001b[0m" else $s end;
 def dim: c("2"; .);
@@ -95,9 +98,12 @@ def progress($done; $total): (if $total > 0 then $done * 100 / $total else 0 end
       | ($cur | length) as $total
       | ($agents | length) as $n_agents
       | (if $n_agents > 0 then " · \($n_agents) agent\(if $n_agents == 1 then "" else "s" end) working" else "" end) as $working
-      | (if $step != null then c("36"; "▶ " + step_line($step) + $working)
+      | (if $rec.lease == null or (($rec.lease.session // "") == "") then ""
+         elif $rec.lease.session == $sid then " · leading"
+         else " · held by " + (holder_name($rec.lease; $rec.holder.session_name; ($registry[0] // {})[$rec.lease.session]) | cut_name(20)) end) as $lead
+      | (if $step != null then c("36"; "▶ " + step_line($step) + $working + $lead)
          elif $rec.lease != null then
-           c("36"; "▶ \($rec.lease.kind)\(if $rec.lease.kind == "build" then ": " + ([$rec.plans[]? | select(.status == "building") | .id] | join(", ")) else "" end)" + $working)
+           c("36"; "▶ \($rec.lease.kind)\(if $rec.lease.kind == "build" then ": " + ([$rec.plans[]? | select(.status == "building") | .id] | join(", ")) else "" end)" + $working + $lead)
          elif $n_agents > 0 then c("36"; "▶ \($n_agents) agent\(if $n_agents == 1 then "" else "s" end) working")
          elif $next != null and $next.gate then c("33"; "needs you: \($next.action)")
          elif $next != null then "next: \($next.action)"
