@@ -280,4 +280,14 @@ def proof_complete: (.evidence.commands // {}) as $m | .evidence.full != false
      and all($m | to_entries[] | select(.key != "quick"); .value.status != "skipped");
 def wave($done): [.[] | select(all((.after // [])[]; . as $a | any($done[]; . == $a)))]
   | reduce .[] as $p ({ids: [], files: []}; if overlaps(.files; $p.files) then . else .ids += [$p.id] | .files += $p.files end) | .ids;
+# waves($m): on the record, the milestone'"'"'s build waves as vbw next schedules them
+# (blocked plans are skipped): the ids of the plans each wave runs, in wave order.
+# The approval'"'"'s waves line (vbw show contract) and the road (lib/road.jq) both use it.
+def waves($m): . as $r
+  | {done: [.plans[] | select(.status == "done") | .id],
+     left: [.plans[] | select(.status != "done" and .status != "blocked" and (.phase as $p | any($r.phases[]; .id == $p and .milestone == $m)))], w: []}
+  | until(.left | length == 0; .done as $d
+      | (.left | wave($d)) as $ids
+      | if ($ids | length) == 0 then .left = [] else .w += [$ids] | .done += $ids | .left |= map(select(.id as $i | any($ids[]; . == $i) | not)) end)
+  | .w;
 '"$(cat "$VBW_LIB/rigor-defs.jq")"

@@ -82,14 +82,6 @@ cmd_show() {
       contract_approved "$hash" && state="approved"
       printf 'contract %s (%s)\n' "${hash:0:12}" "$state"
       printf '%s' "$record" | jq -r "$VBW_JQ_DEFS$SHOW_JQ_DEFS"'
-        # The milestone'"'"'s build waves as vbw next schedules them (blocked plans are skipped): the plans each wave runs.
-        def waves($m): . as $r
-          | {done: [.plans[] | select(.status == "done") | .id],
-             left: [.plans[] | select(.status != "done" and .status != "blocked" and (.phase as $p | any($r.phases[]; .id == $p and .milestone == $m)))], w: []}
-          | until(.left | length == 0; .done as $d
-              | (.left | wave($d)) as $ids
-              | if ($ids | length) == 0 then .left = [] else .w += [$ids | length] | .done += $ids | .left |= map(select(.id as $i | any($ids[]; . == $i) | not)) end)
-          | .w;
         def express_line($r): $r.phases[] | select(.milestone == $r.milestone.id and .tier == "express") | .id as $p | .reqs as $q
           | "express: \($p) (\(([$q[], ($r.checks[] | select(.req as $c | any($q[]; . == $c)) | .id), ($r.plans[] | select(.phase == $p) | .id)]) | join(", ")))";
         . as $r
@@ -102,7 +94,7 @@ cmd_show() {
           (express_line($r) | "  " + .),
           "plans:",
           (.plans[] | "  \(.id) \(.title): \(.files | join(", "))\(if (.after | length) > 0 then " (after \(.after | join(", ")))" else "" end)"),
-          (waves($r.milestone.id) | select(length > 0)
+          (waves($r.milestone.id) | map(length) | select(length > 0)
             | "build waves: \(length) (the widest runs \(max) plan\(if max == 1 then "" else "s" end) at once)"),
           "project commands:",
           (.commands | to_entries[] | "  \(.key): \(.value | argv_line)"),
