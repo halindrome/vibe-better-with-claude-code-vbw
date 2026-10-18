@@ -260,7 +260,7 @@ loop_step() {
       loop_emit "$next"; return 0
     fi
     if printf '%s' "$rec" | jq -e '.lease != null' > /dev/null; then
-      loop_end "$(printf '%s' "$rec" | jq -r '"a run of another session (\(.lease.session)) is open"')"; return 0
+      loop_end "$(printf '%s' "$rec" | jq -r --arg h "$(holder_display "$(printf '%s' "$rec" | jq -r '.lease.session // empty')")" '"a run of another session (\($h)) is open"')"; return 0
     fi
     if printf '%s' "$rec" | jq -e '.loop.stopping != null' > /dev/null; then
       loop_end "$(printf '%s' "$rec" | jq -r '.loop.stopping | "stopped by the user (\(if .session == null then "no session" else "session \(.session)" end))"')"; return 0
