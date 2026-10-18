@@ -84,5 +84,8 @@ SH
   "$VBW" run start build P1.1 P1.2 > /dev/null
   "$VBW" run end > /dev/null
   [ ! -f "$NOTE" ]
+  # vbw ship asks vbw next from inside the kernel (an inner caller): next.json is rewritten with the road kept.
+  run "$VBW" ship
+  [ "$status" -ne 0 ]
   jq -e '.road.seconds == 1030' .vbw/runtime/next.json || { cat .vbw/runtime/next.json; false; }
 }
