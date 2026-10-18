@@ -4,7 +4,7 @@
 // commands and the panel say the same thing. The kernel writes: /vbw-todo only
 // builds the argv the mod hands to `vbw`.
 
-import { panelView } from './panel-view.js'
+import { panelView, heldBy } from './panel-view.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const NEUTRAL = 'No VBW project is open here yet.'
@@ -18,9 +18,9 @@ const STEPS = {
 
 const clock = (n) => (Number.isFinite(n) ? n : Date.now())
 const project = (input) => {
-  const { record, next, nextAt, health, now, sessionId } = isObj(input) ? input : {}
+  const { record, next, nextAt, health, now, sessionId, holder } = isObj(input) ? input : {}
   const v = panelView({ record, next, nextAt, health, now: clock(now) })
-  return v.rows[0].id === 'neutral' ? null : { v, rec: record, nx: next, now: clock(now), sessionId }
+  return v.rows[0].id === 'neutral' ? null : { v, rec: record, nx: next, now: clock(now), sessionId, holder: isObj(holder) ? holder : null }
 }
 
 // /vbw-status: the milestone, its progress, what VBW is doing, then the user's turn or the next step.
@@ -28,7 +28,8 @@ export function statusText(input) {
   const p = project(input)
   if (!p) return NEUTRAL
   const row = (id) => p.v.rows.find((r) => r.id === id).text
-  const out = [row('milestone'), row('progress'), row('doing')]
+  const doing = isObj(p.rec.lease) ? row('doing').replace(/\.$/, heldBy(p.holder) + '.') : row('doing')
+  const out = [row('milestone'), row('progress'), doing]
   if (!isObj(p.rec.lease)) {
     if (p.v.need) out.push(p.v.need.text)
     else if (!isObj(p.nx) || !p.nx.action || p.nx.gate === true) out.push('Next: run /vbw:vibe.')
@@ -37,12 +38,14 @@ export function statusText(input) {
   return out.join('\n')
 }
 
-function leaseLine(l, now, sessionId) {
+function leaseLine(l, now, sessionId, holder) {
   const start = Date.parse(l.started_at)
   const ms = now - start
   const mins = Number.isFinite(ms) ? Math.floor(ms / 60000) : NaN
+  const named = isObj(holder) && holder.known === true && typeof holder.name === 'string' && holder.name
   const who = typeof l.session !== 'string' || !l.session ? 'a session VBW cannot name'
-    : (l.session === sessionId ? 'this session' : 'another session') + ' (' + l.session.slice(0, 8) + ')'
+    : named ? (l.session === sessionId ? 'this chat ("' + holder.name + '")' : '"' + holder.name + '"')
+      : (l.session === sessionId ? 'this session' : 'another session') + ' (' + l.session.slice(0, 8) + ')'
   const since = Number.isFinite(start)
     ? ' since ' + new Date(start).toISOString().slice(11, 16) + ' UTC (' + (mins >= 1 ? mins + ' min ago' : 'just started') + ')' : ''
   const f = l.files
@@ -64,7 +67,7 @@ export function whyText(input) {
     .map((x) => x.id + (x.title ? ' (' + x.title + ')' : '') + ' is blocked: ' + (x.note || 'no reason given') + '.')
   const open = isObj(p.rec.lease)
   if (!open && !p.v.need && blocked.length === 0) return 'Nothing is running and nothing is blocked.'
-  const out = open ? leaseLine(p.rec.lease, p.now, p.sessionId) : ['Nothing is running.']
+  const out = open ? leaseLine(p.rec.lease, p.now, p.sessionId, p.holder) : ['Nothing is running.']
   if (p.v.need) out.push(p.v.need.text)
   return out.concat(blocked).join('\n')
 }

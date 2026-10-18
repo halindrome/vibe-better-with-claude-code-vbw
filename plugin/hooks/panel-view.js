@@ -134,10 +134,13 @@ function costRow(cost) {
     : { id: 'cost', text: 'The cost so far is not available.', term: 'cost, not available' }
 }
 
+// ', held by <name>' when another chat holds the run; '' otherwise (R192).
+export const heldBy = (holder) => (isObj(holder) && holder.self === false && typeof holder.name === 'string' && holder.name ? ', held by ' + holder.name : '')
+
 // The 'what's happening now' box: VBW's state as one plain sentence, the current step
 // with the time it started, and the cost line. `proving` comes from panel.js (a proof
 // is running with no lease); `stamps.proving` is when it began.
-function nowBox(rec, need, proving, stamps, cost, step) {
+function nowBox(rec, need, proving, stamps, cost, step, holder) {
   const l = isObj(rec.lease) ? rec.lease : null
   const cl = costRow(cost)
   if (l) {
@@ -153,7 +156,7 @@ function nowBox(rec, need, proving, stamps, cost, step) {
     }[l.kind] || ['working', String(l.kind || 'run')]
     const at = Date.parse(l.started_at)
     const name = step && step.doing ? step.doing : what[1]
-    return { state: { text: 'VBW is ' + what[0] + '.', term: 'state' }, step: Number.isFinite(at) ? { text: 'Current step: ' + name + ', started at ' + clock(at) + '.', at } : null, cost: cl }
+    return { state: { text: 'VBW is ' + what[0] + heldBy(holder) + '.', term: 'state' }, step: Number.isFinite(at) ? { text: 'Current step: ' + name + ', started at ' + clock(at) + '.', at } : null, cost: cl }
   }
   if (proving) {
     const at = stamps.proving
@@ -213,7 +216,7 @@ export function panelView(input) {
   const t = Number.isFinite(now) ? now : Date.now()
   return {
     need,
-    box: nowBox(rec, need, proving === true, stamps, cost, step),
+    box: nowBox(rec, need, proving === true, stamps, cost, step, input.holder),
     rows: [
       { id: 'milestone', text: 'Working on ' + rec.milestone.id + ': ' + (rec.milestone.title || 'untitled') + '.', term: 'milestone' },
       { id: 'progress', text: progress, term: 'requirements' },
