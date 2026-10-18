@@ -207,11 +207,15 @@ cmd_fix() {
     c=${#todo[@]}
     [ "$c" -ge ${#TF_TODO[@]} ] || c=${#TF_TODO[@]}
     proofcopy_create_slots "$(proofcopy_slots "$c")"
-    proofsteps_begin "$((${#todo[@]} + ${#TF_TODO[@]}))"
+    proofsteps_begin "$((${#todo[@]} + ${#TF_TODO[@]}))" "$({
+      for c in ${todo[@]+"${todo[@]}"}; do printf 'check:%s\n' "$c"; done
+      for c in ${TF_TODO[@]+"${TF_TODO[@]}"}; do printf 'file:%s\n' "$c"; done
+    } | proofsteps_names)"
     [ ${#todo[@]} -eq 0 ] || results=$(checks_run_all "$record" "${todo[@]}")
     [ ${#TF_TODO[@]} -eq 0 ] || tfres=$(testfiles_run "$record")
     proofcopy_remove
     checks_end
+    proofsteps_units "$results" '{}' "$tfres"
     proofsteps_end
     results=$(printf '%s' "$results" | jq -c --argjson off "$off" "$PROVE_FLAT")
     tfres=$(printf '%s' "$tfres" | jq -c --argjson off "$off" "$PROVE_FLAT")

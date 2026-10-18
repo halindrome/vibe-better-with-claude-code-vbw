@@ -60,12 +60,13 @@ cmd_prove() {
     [ "$n" -ge ${#TF_TODO[@]} ] || n=${#TF_TODO[@]}
     [ "$n" -gt 0 ] || n=1
     proofcopy_create_slots "$(proofcopy_slots "$n")"
-    proofsteps_begin "$(prove_units "$record")"
+    proofsteps_begin "$(prove_units "$record")" "$(prove_unit_names "$record")"
     proofcopy_verify "$CHECK_HASH" "$record"
     # Checks and commands run in clean copies; evidence and the record stay here.
     [ ${#TODO_CHECKS[@]} -eq 0 ] || checks=$(checks_run_all "$record" "${TODO_CHECKS[@]}")
     commands=$(prove_commands "$record" "$TODO_COMMANDS")
     [ ${#TF_TODO[@]} -eq 0 ] || files=$(testfiles_run "$record")
+    proofsteps_units "$checks" "$commands" "$files"
     checks_keep "$checks" "$commands" "$files"
     proofcopy_remove
   fi
@@ -143,6 +144,19 @@ prove_commands() {
   done < <(printf '%s' "$1" | jq -j --argjson t "$2" '.commands | keys[] | select(. as $k | $t | index($k)) | . + "\u0000"')
   res=$(checks_run_units "$units")
   printf '%s' "$res" | jq -c --slurpfile s <(printf '%s' "$skipped") 'with_entries(.key |= ltrimstr("cmd-")) + $s[0]'
+}
+
+# prove_unit_names RECORD: the names of the units this proof runs (check:ID,
+# file:PATH, command:NAME), as a JSON array: what prove_units counts.
+prove_unit_names() {
+  local c
+  {
+    for c in ${TODO_CHECKS[@]+"${TODO_CHECKS[@]}"}; do
+      printf '%s\n' "${CHECK_HELD:-}" | grep -qx -- "$c" || printf 'check:%s\n' "$c"
+    done
+    for c in ${TF_TODO[@]+"${TF_TODO[@]}"}; do printf 'file:%s\n' "$c"; done
+    proofsteps_command_names "$1" "$TODO_COMMANDS" | sed 's/^/command:/'
+  } | proofsteps_names
 }
 
 # prove_units RECORD: how many units this proof runs: the checks that are not held,
