@@ -125,8 +125,27 @@ auto="$root/.vbw/runtime/auto.${sid:-none}.json"
 # The running step's note (R190) is one more input of the same call. A proof's
 # note counts only while its process lives: the render names the pid first
 # ({"step_pid":N}); a dead one is rendered again without the note (rare).
+# Who leads (R192): while a lease is open (.vbw/runtime/run-open, no jq to know),
+# one jq pass over Claude Code's list of chats (<cdir>/sessions/*.json, a file
+# that is not valid JSON skipped) gives {sessionId: name} of each id's newest
+# entry. No lease open, no pass; a missing or empty folder gives {}.
+registry_files=()
+if [ -e "$root/.vbw/runtime/run-open" ]; then
+  for f in "$cdir"/sessions/*.json; do
+    [ -f "$f" ] && registry_files+=("$f")
+  done
+fi
+if [ ${#registry_files[@]} -gt 0 ]; then
+  registry() {
+    jq -nR 'reduce inputs as $l ([]; if length > 0 and .[-1][0] == input_filename then .[-1][1] += $l + "\n" else . + [[input_filename, $l + "\n"]] end)
+      | [.[] | (.[1] | try fromjson catch empty) | select(type == "object" and (.sessionId | type) == "string" and (.name | type) == "string")]
+      | group_by(.sessionId) | map(sort_by(.updatedAt // 0) | last | {key: .sessionId, value: .name}) | from_entries' "${registry_files[@]}" 2> /dev/null || echo '{}'
+  }
+else
+  registry() { echo '{}'; }
+fi
 render() {
-  jq -nr --argjson cc "$input" --arg branch "$branch" --arg color "$color" --arg legacy "$legacy" --arg sid "$sid" --argjson deadpid "$1" --argjson agents "$agents" --slurpfile profiles "$plugin/lib/profiles.json" -f "$here/statusline.jq" \
+  jq -nr --slurpfile registry <(registry) --argjson cc "$input" --arg branch "$branch" --arg color "$color" --arg legacy "$legacy" --arg sid "$sid" --argjson deadpid "$1" --argjson agents "$agents" --slurpfile profiles "$plugin/lib/profiles.json" -f "$here/statusline.jq" \
     "$plugin/.claude-plugin/plugin.json" "$recfile" "$end" \
     "$root/.vbw/runtime/next.json" "$end" "$root/.vbw/runtime/step.json" "$end" "$auto" 2> /dev/null
 }
