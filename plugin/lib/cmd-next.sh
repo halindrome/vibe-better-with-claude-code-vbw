@@ -33,9 +33,12 @@ qa_combined() {
     + ([$r.phases[] | select(.id as $i | $s.standing | index($i)) | select(.qa.tree != null) | {(.id): .qa.tree}] | add // {})'
 }
 
-cmd_next() {
+# next_answer: vbw next's answer without the step and the road (lib/next.jq), on
+# stdout; it writes nothing. The one place the answer is judged, so the command,
+# vbw status and the road (lib/road.sh) read the same one.
+next_answer() {
   vbw_require_project
-  local effort record hash counts approved=false changed=false legacy=false next qa waiting profile problems="" step
+  local effort record hash counts approved=false changed=false legacy=false next qa waiting profile problems=""
   record=$(record_read)
   hash=$(contract_hash "$record")
   # Check files edited since the approval wait: the build goes on, the one approval comes before proof.
@@ -56,12 +59,26 @@ cmd_next() {
   profile=$(interview_effective "$record")
   next=$(printf '%s' "$record" | jq -c --argjson effort "$effort" --argjson tracked "$counts" --argjson approved "$approved" --arg waiting "$waiting" --arg problems "$problems" --arg contract "$hash" \
     --argjson code_changed "$changed" --argjson legacy "$legacy" --slurpfile qa <(printf '%s' "$qa") --argjson profile "$profile" --arg session "$(vbw_session)" --slurpfile tiers "$VBW_LIB/tiers.json" "$VBW_JQ_DEFS$(cat "$VBW_LIB/next.jq")")
-  # The step to run, with its end time and the sentence to say (R190, D425). Only the
-  # command asks for it: a caller inside the kernel (the Stop hook's gate, ship, the
-  # loop) never pays for the proof's reuse plan.
+  printf '%s\n' "$next"
+}
+
+cmd_next() {
+  vbw_require_project
+  local next record step road
+  next=$(next_answer) || exit $?
+  # The step to run, with its end time and the sentence to say (R190, D425), and the
+  # road, the end of the milestone (R191, D438). Only the command asks for them: a
+  # caller inside the kernel (the Stop hook's gate, ship, the loop) never pays for
+  # the proof's reuse plan and keeps the road of the previous answer, so the
+  # status line and Mission Control keep the last vbw next's road.
   if [ "${FUNCNAME[1]:-main}" = main ]; then
+    record=$(record_read)
     step=$(step_next "$record" "$next")
-    next=$(printf '%s' "$next" | jq -c --argjson step "$step" '. + {step: $step}')
+    road=$(step_road "$record" "$next" "$(step_live_note "$(printf '%s' "$record" | jq -r '.lease.run // ""')")")
+    next=$(printf '%s' "$next" | jq -c --argjson step "$step" --argjson road "${road:-null}" '. + {step: $step, road: $road}')
+  else
+    road=$(jq -c '.road // empty' "$VBW_RUNTIME/next.json" 2> /dev/null) || road=
+    [ -z "$road" ] || next=$(printf '%s' "$next" | jq -c --argjson road "$road" '. + {road: $road}')
   fi
   # The status line shows the last answer (docs/statusline.md).
   printf '%s\n' "$next" > "$VBW_RUNTIME/next.json.$$" && mv "$VBW_RUNTIME/next.json.$$" "$VBW_RUNTIME/next.json"
