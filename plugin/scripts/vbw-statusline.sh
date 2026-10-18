@@ -126,20 +126,23 @@ auto="$root/.vbw/runtime/auto.${sid:-none}.json"
 # note counts only while its process lives: the render names the pid first
 # ({"step_pid":N}); a dead one is rendered again without the note (rare).
 # Who leads (R192): while a lease is open (.vbw/runtime/run-open, no jq to know),
-# one jq pass over Claude Code's list of chats (<cdir>/sessions/*.json, a file
-# that is not valid JSON skipped) gives {sessionId: name} of each id's newest
-# entry. No lease open, no pass; a missing or empty folder gives {}.
-registry_files=()
+# one jq pass over Claude Code's list of chats (<cdir>/sessions/*.json, a file that
+# is not valid JSON skipped) gives {sessionId: name} of each id's newest entry. No
+# lease open, no pass; a missing or empty folder gives {}.
+registry_args=()
 if [ -e "$root/.vbw/runtime/run-open" ]; then
+  n=0
   for f in "$cdir"/sessions/*.json; do
-    [ -f "$f" ] && registry_files+=("$f")
+    [ -f "$f" ] && { registry_args+=(--rawfile "f$n" "$f"); n=$((n + 1)); }
   done
 fi
-if [ ${#registry_files[@]} -gt 0 ]; then
+# Each file is its own variable ($ARGS.named), so a file that is cut off without a
+# final newline cannot run into the next file's first line.
+if [ ${#registry_args[@]} -gt 0 ]; then
   registry() {
-    jq -nR 'reduce inputs as $l ([]; if length > 0 and .[-1][0] == input_filename then .[-1][1] += $l + "\n" else . + [[input_filename, $l + "\n"]] end)
-      | [.[] | (.[1] | try fromjson catch empty) | select(type == "object" and (.sessionId | type) == "string" and (.name | type) == "string")]
-      | group_by(.sessionId) | map(sort_by(.updatedAt // 0) | last | {key: .sessionId, value: .name}) | from_entries' "${registry_files[@]}" 2> /dev/null || echo '{}'
+    jq -n ${registry_args[@]+"${registry_args[@]}"} '[$ARGS.named[] | try fromjson catch empty
+      | select(type == "object" and (.sessionId | type) == "string" and (.name | type) == "string")]
+      | group_by(.sessionId) | map(sort_by(.updatedAt // 0) | last | {key: .sessionId, value: .name}) | from_entries' 2> /dev/null || echo '{}'
   }
 else
   registry() { echo '{}'; }
