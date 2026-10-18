@@ -9,6 +9,7 @@
 // is worked out by the pure modules: panel-stage.js (Comms), panel-sites.js (the
 // one-line sites and rows), panel-pane.js (Mission Control), panel-view.js, and
 // panel-candy.js (motion, sprites, celebrations), whose frames this file blits.
+import { holderName, readRegistry, configDir } from './panel-sessions.js'
 import { panelView, liveNeed, supports, clock, COMMS_MIN_VERSION } from './panel-view.js'
 import { SOUNDS } from './panel-sounds.js'
 import { gatherRun, findRun } from './panel-feed.js'
@@ -91,7 +92,7 @@ function fresh() {
   return {
     live: false, born: {}, timer: null, busy: false, question: null, sound: true, keys: keys(false), silent: false, wouldPlay: 0,
     record: null, next: null, history: null, cost: null, health: null, auto: null, stepsPath: null, steps: null, shown: '', seen: {}, sized: false,
-    root: null, sessionId: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
+    root: null, sessionId: null, holder: null, stored: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
     lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {},
     sprites: null, burst: null, sweep: null, cheer: null, wrapped: null, nextSeen: null, nextAt: null, nextAnim: null,
@@ -108,7 +109,7 @@ const bare = (t) => String(t).replace(/^\[\d\d:\d\d\] /, '')
 function view(st, now) {
   const input = {
     record: st.record, next: st.next, nextAt: st.nextFileAt, question: st.question, questionAt: st.questionAt,
-    health: st.health, now, cost: st.cost, steps: st.steps, step: st.step, proving: st.proving !== null,
+    health: st.health, now, cost: st.cost, steps: st.steps, step: st.step, proving: st.proving !== null, holder: st.holder,
   }
   const proving = st.proving && num(st.proving.at) ? st.proving.at : undefined
   const first = panelView({ ...input, stamps: { proving } })
@@ -227,16 +228,24 @@ async function stepsPath($, root) {
 async function sessionDir($, root, id) {
   try {
     if (typeof id !== 'string' || !/^[A-Za-z0-9_-]+$/.test(id)) return null
-    let dir = await $.env.get('CLAUDE_CONFIG_DIR')
-    if (!dir) {
-      const home = await $.env.get('HOME')
-      if (!home) return null
-      dir = (await $.fs.exists(home + '/.config/claude-code')) ? home + '/.config/claude-code' : home + '/.claude'
-    }
-    return dir.replace(/\/+$/, '') + '/projects/' + root.replace(/[^A-Za-z0-9]/g, '-') + '/' + id
+    const dir = await configDir($)
+    return dir ? dir + '/projects/' + root.replace(/[^A-Za-z0-9]/g, '-') + '/' + id : null
   } catch {
     return null
   }
+}
+
+// Who holds the open run: Claude Code's list of chats and what `vbw run start` stored
+// (.vbw/runtime/holder.json), read on the tick only while a lease is open.
+async function readHolder($, st) {
+  const lease = isObj(st.record) && isObj(st.record.lease) ? st.record.lease : null
+  if (!lease) {
+    st.holder = null
+    return
+  }
+  const registry = await readRegistry($, st.root)
+  await refresh($, st, st.root + '/.vbw/runtime/holder.json', 'stored', true)
+  st.holder = holderName({ lease, registry, stored: isObj(st.stored) ? st.stored : null, sessionId: st.sessionId })
 }
 
 // The session cost so far, the context fill and the weekly limit: numbers, or null
@@ -406,6 +415,7 @@ async function gather($, st) {
     st.steps = isObj(st.history) && Array.isArray(st.history.steps) ? st.history.steps : null
   }
   await readUsage($, st)
+  await readHolder($, st)
   trackLeases(st)
   await feed($, st)
 }
@@ -679,7 +689,7 @@ async function facts($, st) {
   } catch {
     // the machine's clock will do
   }
-  return { record: st.record, next: st.next, nextAt: st.nextFileAt, health: st.health, now, sessionId: st.sessionId }
+  return { record: st.record, next: st.next, nextAt: st.nextFileAt, health: st.health, now, sessionId: st.sessionId, holder: st.holder }
 }
 
 const COMMANDS = [

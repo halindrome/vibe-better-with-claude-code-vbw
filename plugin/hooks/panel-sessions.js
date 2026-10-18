@@ -6,13 +6,16 @@
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const NAME_MAX = 40
+const ESC = String.fromCharCode(27) // the sequences are matched, never written out
+const OSC = new RegExp(ESC + '\\][^\\u0007' + ESC + ']*(?:\\u0007|' + ESC + '\\\\)?', 'g')
+const CSI = new RegExp(ESC + '\\[[0-?]*[ -/]*[@-~]', 'g')
 
 // A text with its CSI and OSC escape sequences and every control character removed.
 export function cleanName(s) {
   if (typeof s !== 'string') return ''
   return s
-    .replace(/\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)?/g, '')
-    .replace(/\u001b\[[0-?]*[ -/]*[@-~]/g, '')
+    .replace(OSC, '')
+    .replace(CSI, '')
     .replace(/[\u0000-\u001f\u007f-\u009f]/g, '')
     .trim()
 }
