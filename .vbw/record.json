@@ -341,6 +341,7 @@
     "tests/road-helper.bash",
     "tests/road-next.bats",
     "tests/road-note.bats",
+    "tests/road-review-fixes.bats",
     "tests/road-skill.bats",
     "tests/router-spec-rules.bats",
     "tests/router-triage-line.bats",
@@ -5228,6 +5229,32 @@
       "files": [
         "tests/l3-road.bats"
       ]
+    },
+    {
+      "id": "C399",
+      "req": "R191",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/road-review-fixes.bats"
+      ],
+      "files": [
+        "tests/road-review-fixes.bats"
+      ],
+      "fix": "F251"
+    },
+    {
+      "id": "C400",
+      "req": "R191",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/road-review-fixes.bats"
+      ],
+      "files": [
+        "tests/road-review-fixes.bats"
+      ],
+      "fix": "F252"
     }
   ],
   "project": {
@@ -49752,6 +49779,15 @@
           "in": 2245,
           "out": 146
         }
+      },
+      {
+        "id": "fix-20261018T175107Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M37",
+        "started": "2026-10-18T17:51:07Z",
+        "ended": "2026-10-18T18:27:40Z",
+        "cost": null
       }
     ],
     "milestones": {
