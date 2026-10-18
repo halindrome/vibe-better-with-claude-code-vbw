@@ -20154,6 +20154,14 @@
         "tree": "ac8aca121da4b80b1b3b468f4e9b779f0247bb14a2299e61ce3103221b8921ab",
         "at": "2026-10-18T19:49:00Z",
         "note": "8/8 checks (re-check round 2)"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 2,
+        "qa_findings": 2,
+        "escalations": 4
       }
     },
     {
@@ -20194,12 +20202,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "374b565f614346d6d047ee51fc643d03348ac9482a642d29cc93d7de29ed0bf0",
-        "at": "2026-10-18T17:50:04Z",
-        "note": "29/30 checks",
-        "rounds": 1
+        "tree": "87655def545726bdcfe33d1726ee8f9ca46899bf55267b3ef0c46534224fea7c",
+        "at": "2026-10-18T19:50:00Z",
+        "note": "9/9 checks (re-check round 2)"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 2,
+        "qa_findings": 2,
+        "escalations": 1
       }
     },
     {
@@ -20255,6 +20270,14 @@
         "tree": "cf0eaf7b38ccb50ce14c77ca6dcfee862c826f0412f6db4854692bbd7e943b92",
         "at": "2026-10-18T19:49:42Z",
         "note": "30/30 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 2,
+        "qa_findings": 2,
+        "escalations": 3
       }
     }
   ],
@@ -40244,7 +40267,7 @@
       "req": "R191",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "road.jq labels the proof and the QA recheck inside the usual fix rounds as 'fix rounds' (plugin/lib/road.jq, the $fp list: label: \"fix rounds\" on the kind proof and kind qa pieces). When the only piece without a basis is one of those, the milestone end is withheld with the wrong kind named. Evidence: I ran road_compute on this project's real record with the proof entries removed from the step history (in memory) and got basis 'VBW has timed fewer than 3 fix rounds here' although fix rounds are plentiful in the history; the missing kind is proofs. Criterion: when a needed piece has no basis, say names the missing kind. It shows when a phase is built, its checks pass and only QA is left (no 'proofs' piece before it) and QA and fix history exist but fewer than 3 proofs were timed. A regression test should seed a road_project with all plans done and checks passing in evidence, QA and fix history present, no proof history, and expect say == 'no milestone end time yet (VBW has timed fewer than 3 proofs here)'; a second case with no QA history for a phase that already stands QA-passed but has a failing check should name QA checks. Fix: label those pieces 'proofs' and 'QA checks'.",
       "phase": "P150"
     }
