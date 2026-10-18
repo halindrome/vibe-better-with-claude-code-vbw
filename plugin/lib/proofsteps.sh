@@ -20,6 +20,8 @@
 
 # shellcheck source=steps.sh
 . "$VBW_LIB/steps.sh"
+# shellcheck source=qa-inputs.sh
+. "$VBW_LIB/qa-inputs.sh"
 
 # proofsteps_lock: one writer of the note at a time (a mkdir lock; one whose
 # owner process is gone, or that is over 5 s old, is taken over). Fails, and the
@@ -49,17 +51,42 @@ proofsteps_unlock() {
   rm -rf "$VBW_RUNTIME/step.lock" 2> /dev/null || true
 }
 
-# proofsteps_commands RECORD NAMES: how many of the project commands in NAMES (a
-# JSON array) a proof will run: those whose exact argv the user approved.
-proofsteps_commands() {
-  local name argv a n=0
+# proofsteps_command_names RECORD NAMES: the project commands in NAMES (a JSON
+# array) a proof will run, one per line: those whose exact argv the user approved.
+proofsteps_command_names() {
+  local name argv a
   while IFS= read -r -d '' name; do
     argv=()
     while IFS= read -r -d '' a; do argv+=("$a"); done \
       < <(printf '%s' "$1" | jq -j --arg n "$name" '.commands[$n][] + "\u0000"')
-    if consent_has command "$(vbw_sha256_argv "${argv[@]}")"; then n=$((n + 1)); fi
+    if consent_has command "$(vbw_sha256_argv "${argv[@]}")"; then printf '%s\n' "$name"; fi
   done < <(printf '%s' "$1" | jq -j --argjson t "$2" '.commands | keys[] | select(. as $k | $t | index($k)) | . + "\u0000"')
-  printf '%s\n' "$n"
+}
+
+# proofsteps_commands RECORD NAMES: how many of those a proof will run.
+proofsteps_commands() {
+  proofsteps_command_names "$1" "$2" | wc -l | tr -d ' '
+}
+
+# proofsteps_names: the names of the units a proof will run, as a JSON array, from
+# lines of NAME on stdin (check:ID, file:PATH, command:NAME).
+proofsteps_names() {
+  jq -R . | jq -sc 'map(select(length > 0))'
+}
+
+# proofsteps_units CHECKS COMMANDS FILES: what the proof's runs gave (JSON objects
+# id -> result, command name -> result, test file path -> result), as one scratch
+# file of the units that really ran, name -> {seconds}; its path is PS_UNITS. A held
+# or skipped unit did not run. Results reach jq by file, never as an argument.
+proofsteps_units() {
+  local _u
+  [ "${PROOFSTEPS_ON:-}" = 1 ] || return 0
+  _u=$({ printf '%s' "$1" | jq -c '{prefix: "check:", r: .}'
+         printf '%s' "$2" | jq -c '{prefix: "command:", r: .}'
+         printf '%s' "$3" | jq -c '{prefix: "file:", r: .}'; } 2> /dev/null \
+    | jq -sc 'map(.prefix as $p | .r | to_entries[] | select(.value | type == "object" and (.status // "") != "waiting" and (.status // "") != "skipped")
+        | {key: ($p + .key), value: {seconds: (.value.seconds // 0)}}) | from_entries' 2> /dev/null) || return 0
+  vbw_scratch_json PS_UNITS "$_u"
 }
 
 # proofsteps_clean: remove a note that is not a running step (an ended run's, a
@@ -70,12 +97,16 @@ proofsteps_clean() {
   proofsteps_unlock
 }
 
-# proofsteps_begin TOTAL: a proof of TOTAL units starts. Sets PROOFSTEPS_ON,
-# PS_MODE (own, inside or none) and what the later calls need.
+# proofsteps_begin TOTAL [NAMES]: a proof of TOTAL units starts; NAMES (a JSON
+# array of the units' names, proofsteps_names) sizes a proof of its own by those
+# units. Sets PROOFSTEPS_ON, PS_MODE (own, inside or none) and what the later
+# calls need.
 proofsteps_begin() {
-  local record lease run me live now expect first_end=null
+  local record lease run me live now expect first_end=null size
   PROOFSTEPS_ON=1
   PS_TOTAL=$1
+  PS_UNITS=
+  size=$(jq -nc --argjson n "${2:-null}" --argjson t "$1" '{units: ($n // [range(0; $t) | "unit:\(.)"])}') || size=$1
   PS_MODE=none
   PS_RUN=
   PS_DOING=
@@ -94,7 +125,7 @@ proofsteps_begin() {
   if [ -z "$live" ]; then
     if [ -z "$lease" ] || ! printf '%s' "$lease" | jq -e --arg me "$me" '(.session // "") == $me' > /dev/null; then
       PS_MODE=own
-      expect=$(step_expect proof "$PS_TOTAL")
+      expect=$(step_expect proof "$size")
       now=$(vbw_now)
       [ -z "$expect" ] || first_end=$(jq -n -r --arg now "$now" --argjson e "$expect" '($now | fromdateiso8601) + $e | todateiso8601')
       vbw_guard_add file "$(step_note_file)"
@@ -140,8 +171,9 @@ proofsteps_unit_done() {
   proofsteps_unlock
 }
 
-# proofsteps_record N: the history gets a step of kind proof with N parts. The
-# latest 50 of each kind are kept. Best effort, never fails the caller.
+# proofsteps_record N [UNITS_FILE]: the history gets a step of kind proof with N
+# parts and the units (name, own seconds) in UNITS_FILE, a JSON object name ->
+# {seconds}. The latest 50 of each kind are kept. Best effort, never fails the caller.
 proofsteps_record() {
   local file now tmp
   file=$(step_history_file)
@@ -151,17 +183,20 @@ proofsteps_record() {
   tmp="$file.$$"
   mkdir -p "$(dirname "$file")" 2> /dev/null || return 0
   { jq -n -c --arg now "$now" --arg start "$PS_START" --argjson parts "$1" \
+      --slurpfile u <(jq -c 'select(type == "object")' "${2:-/dev/null}" 2> /dev/null) \
       --slurpfile old <(jq -c 'select(type == "object" and (.steps | type) == "array")' "$file" 2> /dev/null) '
       ([$old[0].steps[]? | select(type == "object" and (.kind | type) == "string")]
         + [{kind: "proof", run: "proof-\($start | gsub("[-:]"; ""))", started_at: $start, ended_at: $now,
-            seconds: (($now | fromdateiso8601) - ($start | fromdateiso8601)), parts: $parts}])
+            seconds: (($now | fromdateiso8601) - ($start | fromdateiso8601)), parts: $parts}
+            + (if ($u | length) > 0 then {units: [$u[0] | to_entries[] | {name: .key, seconds: .value.seconds}]} else {} end)])
       | {steps: (group_by(.kind) | map(.[-50:]) | add | sort_by(.ended_at))}' > "$tmp" \
     && mv -f "$tmp" "$file"; } 2> /dev/null || rm -f "$tmp" 2> /dev/null || true
   return 0
 }
 
 # proofsteps_end: the proof ended. Removes its own note, or gives the step its
-# own wording back; records the units that really finished.
+# own wording back; records the units that really finished, each with its own
+# seconds from the file proofsteps_units wrote (PS_UNITS).
 proofsteps_end() {
   local n note out
   [ "${PROOFSTEPS_ON:-}" = 1 ] || return 0
@@ -184,7 +219,9 @@ proofsteps_end() {
   fi
   vbw_guard_drop "$PS_COUNT"
   PROOFSTEPS_ON=0
-  [ "$n" -le 0 ] || proofsteps_record "$n"
+  [ "$n" -le 0 ] || proofsteps_record "$n" "${PS_UNITS:-}"
+  [ -z "${PS_UNITS:-}" ] || vbw_guard_drop "$PS_UNITS"
+  PS_UNITS=
   return 0
 }
 
