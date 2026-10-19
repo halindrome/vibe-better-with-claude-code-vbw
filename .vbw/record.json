@@ -5574,7 +5574,7 @@
   "milestone": {
     "id": "M40",
     "title": "Session start runs the kernel once",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -5766,6 +5766,11 @@
       "id": "M39",
       "title": "Developers unblocked: own-check task breaks, fix commits of own check files, failing output kept",
       "at": "2026-10-19T19:27:18Z"
+    },
+    {
+      "id": "M40",
+      "title": "Session start runs the kernel once",
+      "at": "2026-10-19T20:53:56Z"
     }
   ],
   "requirements": [
@@ -49319,6 +49324,11 @@
       "id": "D465",
       "at": "2026-10-19T20:18:09Z",
       "text": "Contract approved: 187 requirements, 418 checks, 478 plans (566ad9f4a8a2)"
+    },
+    {
+      "id": "D466",
+      "at": "2026-10-19T20:53:56Z",
+      "text": "Shipped M40 Session start runs the kernel once: 1 requirement proven or accepted"
     }
   ],
   "commands": {
@@ -57563,6 +57573,12 @@
             "out": 0,
             "at": "2026-10-19T20:11:48Z"
           }
+        },
+        "total": {
+          "usd": 1525.063749,
+          "in": 208268,
+          "out": 330,
+          "sessions": 23
         }
       }
     }
