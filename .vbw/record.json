@@ -45466,7 +45466,7 @@
       "req": "R195",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Test gap: the promised 'failing tests:' under a failing PROJECT COMMAND (and failing_tests in --json .commands[]) has no test. tests/show-fix-failing-tests.bats only plants C1-C9 and one test-file log; it never plants command-<name>.log or asserts .commands[].failing_tests or the text under 'failing project commands:'. The code path is cmd-show.sh line ~340 (tests(\"command-\\(.name).log\")); breaking it to [] leaves every check green, and no recorded mutation (R195.6/R195.8/task2/task3) breaks it. A regression test should plant .vbw/runtime/output/command-test.log with TAP output for a failing project command and assert both the text lines under 'failing project commands:' and .commands[].failing_tests.",
       "phase": "P157"
     },
@@ -45475,7 +45475,7 @@
       "req": "R195",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Document states a false fact: docs/proof.md ('vbw check' reference, 'reports, and writes nothing') and docs/workflows.md line 214 ('run approved checks, report, write nothing') still say vbw check writes nothing, but it now writes .vbw/runtime/output/<check>.log for each failing check and prints '  full output: PATH' under the check's line. Neither reference says so; only the kept-output section does, and its generic bullet 'A pass removes the file' is not true for vbw check (a pass leaves the file) and is not corrected there. A regression test should check that the vbw check reference entries mention the kept output and that a passing vbw check leaves an existing kept file.",
       "phase": "P157"
     },
@@ -45484,7 +45484,7 @@
       "req": "R195",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Wrong behaviour in failing-tests.jq: the pytest pattern '^FAILED \\S' is too loose and the mocha '  N) name' pattern runs on any output with no 'N passing/failing' line. Python unittest ends with 'FAILED (failures=1)', which show fix lists as a failing test named '(failures=1)'; any output with a line like '  1) item one' (a numbered list in a non-mocha log) lists 'item one'. Both should say 'none recognised' (the criterion lists only the named forms). Evidence: printf 'Ran 3 tests\\n\\nFAILED (failures=1)\\n' | jq -Rs -c -f plugin/lib/failing-tests.jq prints [\"(failures=1)\"]. A regression test should plant a unittest log and a numbered-list log and assert 'none recognised in the output'.",
       "phase": "P157"
     },
@@ -45493,7 +45493,7 @@
       "req": "R194",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "File guard loosened for a QA fix run whose requirement has no exclusive check file. plugin/hooks/common.jq lease_write_denial: the new 'other requirement' denial needs (editable length > 0), so with new_tests true and editable [] it is skipped and the next clause 'new_tests == true and test_path' allows ANY protected test file under tests/. Evidence: jq on HEAD with lease {kind:fix,new_tests:true,editable:[]} and protected [tests/other.bats] gives ALLOWED for tests/other.bats; on e743a8dd^ it was denied ('protected check file of another requirement'). Happens when the finding's requirement shares all its check files or has none (e.g. a [human] requirement). Criterion: 'nothing else loosened'. Regression test: a QA fix run with editable [] must deny a protected check file with the vbw fix check advice, while a new unprotected test file stays allowed.",
       "phase": "P156"
     },
@@ -45502,7 +45502,7 @@
       "req": "R194",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "A run that mixes a requirement fix with a project-command fix opens none of the requirement fix's check files. plugin/lib/cmd-run.sh run start fix: $files is null when any fix in the run has a command, and the editable/new_tests block runs only when $files != null, so it yields {}. vbw:vibe starts one run for all open fixes (SKILL.md line 108), so a failing check plus a failing test command together is a normal case; the Dev then cannot edit its own requirement's check file (generic 'protected check file' denial) and vbw commit --fix has nothing to commit. Criterion 4: editable for each requirement fix in the run, a command fix opening none. Tests only cover F1 alone, F2 alone, F1+QA. Regression test: run start fix with one proof requirement fix and one command fix must give editable = that requirement's own check files, and the guard allows them.",
       "phase": "P156"
     },
@@ -45511,7 +45511,7 @@
       "req": "R194",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/record.md line 98 (lease field table) still says editable for a fix run exists only 'for a fix run of QA findings' and new_tests only for it. Since P156.2 every requirement fix's run (a proof's fix too) carries editable. The record format is documented wrongly, and P156.3 did not list docs/record.md. Regression test: tests/fix-commit-own-checks-docs.bats should assert docs/record.md describes editable for a requirement fix of any source, new_tests only for QA.",
       "phase": "P156"
     }
@@ -55724,6 +55724,19 @@
         "started": "2026-10-19T17:42:55Z",
         "ended": "2026-10-19T18:23:11Z",
         "cost": null
+      },
+      {
+        "id": "fix-20261019T182431Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M39",
+        "started": "2026-10-19T18:24:31Z",
+        "ended": "2026-10-19T19:07:55Z",
+        "cost": {
+          "usd": 0.100437,
+          "in": 1213,
+          "out": 87
+        }
       }
     ],
     "milestones": {
