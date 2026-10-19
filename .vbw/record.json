@@ -43949,7 +43949,7 @@
       "text": "A QA fix whose code change lands in a file no plan of its requirement declares has no provenance-true commit path (2026-10-12: F138 changed tools/bench-hooks.sh and the Dev committed it under P103.1, an old plan that declares the file; the trailers then name the wrong plan and requirement). Decide: let vbw commit --fix FIX take such a file when the fix is QA's, with VBW-Fix and VBW-Req trailers, or make the Dev replan. Research the commit paths first",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T125",
