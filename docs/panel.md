@@ -546,8 +546,9 @@ Building P1.2, P2.1 · 1 of 2 · about 12 min, until around 14:20
 
 Five kinds of step get an end time: **planning**, **build**, **fix**, **QA**
 and **proof**. The same step time shows in the status line, Comms, Mission
-Control and VBW's own messages. In a one-row Comms, the step's time sits on the helper line. Mission Control (and the chat message VBW says
-before a step) also shows when **the milestone** should end, the "road": the
+Control and VBW's own messages. In a one-row Comms, the step's time sits on
+the helper line. Mission Control (and the chat message VBW says before a step)
+also shows when **the milestone** should end, the "road": the
 step now running plus everything still ahead until the milestone is done. The
 status line shows the step's time only, never the milestone's. When no phase is
 left, there is no milestone end.
