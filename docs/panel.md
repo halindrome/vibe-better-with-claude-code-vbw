@@ -336,7 +336,7 @@ scroll it) to read the rest.
 
 The **Sessions** tab lists every chat in Claude Code's own list that belongs to
 this project (its folder or one inside it), newest first. Chats of other
-projects and sibling folders are left out. Each row shows:
+projects and sibling folders are left out. A chat that has several files in the list shows once, from the newest. Each row shows:
 
 ```
 vbw · myapp      ● holds the run · build    idle    14:32
@@ -344,7 +344,7 @@ vbw · myapp      ● holds the run · build    idle    14:32
 ```
 
 - the chat's name, cut to the pane width with an ellipsis;
-- a state word and the time it was last active (`HH:MM`);
+- a state word and the time it was last active (`HH:MM` on your clock; a chat last active on another day says `yesterday 14:20` or the weekday, `Monday 14:20`, as the rest of the panel does);
 - `claude --resume <session id>`, ready to copy.
 
 The row of the chat you are in says `this chat`. The row of the chat that holds
