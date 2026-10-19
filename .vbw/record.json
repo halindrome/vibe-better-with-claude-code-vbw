@@ -21935,6 +21935,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P159.1: All work and commits are done and C424 is green. Mutations are recorded for R199.1-9 and R199.14 and tasks 1-5. R199.10 (wiring.test.mjs, C425) cannot be recorded: vbw mutate refuses while C425 is red, and C425 stays red on parts that belong to other work (r189/containment.test.mjs whole tab rows, R199.11; the committed L3 panel result, R199.12). I broke the portrait ranking by hand: wiring.test.mjs went red (1 fail), restored green (25 pass). Needs: a later plan finishes R199.11/12, then run 'vbw mutate P159.1 R199.10 ...' and 'vbw plan done P159.1'. Pending approval: tests/panel/r189/helpers/screen.mjs. Bench: render 0.510 ms (budget 0.5, judged at release), tick 0.067 ms, refresh 0.205 ms."
+        },
+        {
+          "at": "2026-10-19T23:11:49Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P159.3: Test change committed (ad49f2aa, node --test containment passes 9/9, C424 and C426 pass). Mutation step cannot run: R199.11 and R200.9 live only in the plan's one file, tests/panel/r189/containment.test.mjs, and 'vbw mutate' refuses a break in a check file. Tasks 1-3 recorded --none. 'vbw plan done' needs a recorded break per rule. C425/C427 still fail only on the committed L3 panel result (P160.3's run), not on this file."
         }
       ]
     },
@@ -21971,6 +21977,12 @@
           "from": "standard",
           "to": "deep",
           "reason": "Dev blocked P160.2: Docs done and committed (cbe051f2). R201.10 mutation not run: C428 is red on unbroken code (router and triage cases for R201.1-9 not yet delivered by other plans) and a file awaits approval (tests/panel/r189/helpers/screen.mjs). Re-run: vbw mutate P160.2 R201.10 after those land."
+        },
+        {
+          "at": "2026-10-19T23:11:48Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P160.3: Built and committed (7b00913d): scenario_qafix reads 'config autonomy' and records autonomy and autonomy_set_before_first_run, expected in the passed chain. C429 stays red by design: its third test pins the committed tools/l3-results/qafix.json, which only the owner's run ('bash tools/l3-suite.sh qafix') writes. Mutation (R201.11, R201.12) and plan done need C429 green; after the owner runs the scenario and commits the result, re-run mutation and 'vbw plan done P160.3'. Tests 1-2 of C429, l3-results.bats and l3-scenarios.bats pass; lint clean."
         }
       ]
     }
@@ -44414,13 +44426,31 @@
         "tests/panel/r189/containment.test.mjs"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "Replace 'the tab row never wraps onto a second line at 40 columns' with: on every tab (the TABS list gains 'sessions') at 100, 64, 60, 50 and 40 body columns (bodyRows 22), each of the eight tab names appears whole on one line of screen(dock, columns) as '[ Name ]' (its full or its short name), no line is wider than the columns, and the head's drawn rows (screen of the head Box) equal the head row count the pane clips with (bodyRows minus the body Box's height prop).",
         "The Comms crew containment test gains a live step note: write ROOT + '/.vbw/runtime/step.json' for the lease's run ('build-1', kind 'build', end = now + 12 min) and h.git() before the crew is drawn; at 1, 2, 3, 4 and 8 rows at 80 and 40 columns the row count is held and no line is wider than the columns.",
         "Update the header comment (whole rows, the step note); run node --test tests/panel/r189/containment.test.mjs. The file is a check file of R189 (C369): it goes through the pre-proof approval."
-      ]
+      ],
+      "mutations": [
+        {
+          "task": 1,
+          "none": "the plan's only file is an approved check file; the kernel refuses a break in a check file (code under test belongs to P159.1 and P159.4)",
+          "at": "2026-10-19T23:11:34Z"
+        },
+        {
+          "task": 2,
+          "none": "the plan's only file is an approved check file; the kernel refuses a break in a check file (code under test belongs to P159.1 and P159.4)",
+          "at": "2026-10-19T23:11:37Z"
+        },
+        {
+          "task": 3,
+          "none": "the plan's only file is an approved check file; the kernel refuses a break in a check file (code under test belongs to P159.1 and P159.4)",
+          "at": "2026-10-19T23:11:39Z"
+        }
+      ],
+      "note": "Test change committed (ad49f2aa, node --test containment passes 9/9, C424 and C426 pass). Mutation step cannot run: R199.11 and R200.9 live only in the plan's one file, tests/panel/r189/containment.test.mjs, and 'vbw mutate' refuses a break in a check file. Tasks 1-3 recorded --none. 'vbw plan done' needs a recorded break per rule. C425/C427 still fail only on the committed L3 panel result (P160.3's run), not on this file."
     },
     {
       "id": "P159.4",
@@ -44704,13 +44734,14 @@
         "tests/l3-qafix-autonomy.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "Written by the Lead on 2026-10-19 and red today (the approval freezes it: read it, change nothing in it): tests/l3-qafix-autonomy.bats (load helper, the style of tests/l3-results.bats): scenario_qafix in tools/l3-suite.sh reads 'config autonomy' and records the facts autonomy and autonomy_set_before_first_run, expecting guided and true; a committed tools/l3-results/qafix.json is L3, passed, with .facts.autonomy == \"guided\" and .facts.autonomy_set_before_first_run == true and its first_qa_verdict still 'fail'. It fails today (facts absent, the result not passed).",
         "tools/l3-suite.sh scenario_qafix checks(): autonomy=$(cd \"$dir\" && \"$VBW\" config autonomy); autonomy_set_before_first_run from the main session transcript (transcripts | grep -v /subagents/, the jq of scenario_balanced): the timestamp of the first assistant tool_use whose input.command contains 'config set autonomy' is earlier than the record's first 'Contract approved' decision .at and than the timestamp of the first tool_use whose command contains 'run start' or whose name is Workflow (the first run lease); false when no such write exists. Both expect()ed, in the passed chain, and in result_write's facts; the fixture text names guided autonomy stated in words.",
         "shellcheck -S warning -x clean (bash tools/test.sh --lint); bats tests/l3-qafix-autonomy.bats, tests/l3-results.bats and tests/l3-scenarios.bats. Do not run the scenario in the build: the owner runs 'bash tools/l3-suite.sh qafix' before the push and commits the result; until then the result pin fails, as tests/l3-panel-comms.bats did before its run. Say so in the plan note."
-      ]
+      ],
+      "note": "Built and committed (7b00913d): scenario_qafix reads 'config autonomy' and records autonomy and autonomy_set_before_first_run, expected in the passed chain. C429 stays red by design: its third test pins the committed tools/l3-results/qafix.json, which only the owner's run ('bash tools/l3-suite.sh qafix') writes. Mutation (R201.11, R201.12) and plan done need C429 green; after the owner runs the scenario and commits the result, re-run mutation and 'vbw plan done P160.3'. Tests 1-2 of C429, l3-results.bats and l3-scenarios.bats pass; lint clean."
     }
   ],
   "fixes": [
@@ -50505,6 +50536,12 @@
       "id": "D469",
       "at": "2026-10-19T23:09:30Z",
       "text": "Contract approved: 190 requirements, 424 checks, 486 plans (84de397c84eb)"
+    },
+    {
+      "id": "D470",
+      "text": "P159.3 and P160.3 no longer wait for P159.1/P159.2 and P159.4",
+      "why": "Their inputs were committed by the blocked plans; the blocked plans' mutation step needs C425/C427 green, which needs P159.3 and the L3 results, so the order deadlocked (chosen by VBW; owner re-approved 84de397c84eb)",
+      "at": "2026-10-19T23:09:44Z"
     }
   ],
   "commands": {
@@ -57242,6 +57279,19 @@
         "started": "2026-10-19T22:56:08Z",
         "ended": "2026-10-19T23:07:35Z",
         "cost": null
+      },
+      {
+        "id": "build-20261019T231001Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M41",
+        "started": "2026-10-19T23:10:01Z",
+        "ended": "2026-10-19T23:12:06Z",
+        "cost": {
+          "usd": 0.642464,
+          "in": 2073,
+          "out": 310
+        }
       }
     ],
     "milestones": {
