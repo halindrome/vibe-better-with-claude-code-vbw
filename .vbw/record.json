@@ -44192,7 +44192,7 @@
       "text": "Deep-tier task breaks deadlock early plans (M34, 2026-10-15): a plan whose requirement's checks only turn green after a later plan wires the code cannot break its tasks (vbw mutate refuses red checks; --check takes only that requirement's checks), so its Devs block (P142.1, P145.1) and a loop retry would block again and park the item. The kernel should know it: a task break of such a plan is asked of the plan that completes the check (as T152 does for rules), or plan done accepts --none naming that plan without a hand-written reason",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T160",
