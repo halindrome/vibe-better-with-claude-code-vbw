@@ -5,12 +5,13 @@
 def trim: sub("^\\s+"; "") | sub("\\s+$"; "");
 def first_match($re): capture($re) | .n | trim;
 split("\n") as $lines
+# mocha lines count only before a "N passing/failing" summary line (none: not mocha).
 # mocha's own summary repeats each failure after "N passing"; only the inline lines count.
-| ([$lines | to_entries[] | select(.value | test("^\\s*\\d+ (passing|failing)")) | .key] | (min // ($lines | length))) as $summary
+| ([$lines | to_entries[] | select(.value | test("^\\s*\\d+ (passing|failing)")) | .key] | (min // 0)) as $summary
 | [ $lines | to_entries[] | .key as $i | .value as $l
     | (  ($l | select(test("^not ok \\d+"))        | first_match("^not ok \\d+\\s*(- )?(?<n>.*?)(\\s+#\\s*(TODO|SKIP).*)?$"))
       // ($l | select(test("^test .+ \\.\\.\\. FAILED$")) | first_match("^test (?<n>.+) \\.\\.\\. FAILED$"))
-      // ($l | select(test("^FAILED \\S"))          | first_match("^FAILED (?<n>.*?)( - .*)?$"))
+      // ($l | select(test("^FAILED \\S+::"))       | first_match("^FAILED (?<n>\\S+::.*?)( - .*)?$"))
       // ($l | select(test("^\\s*--- FAIL: \\S"))   | first_match("^\\s*--- FAIL: (?<n>\\S+)"))
       // ($l | select(test("^\\s*✕ "))              | first_match("^\\s*✕ (?<n>.*?)( \\(\\d+(\\.\\d+)? ?m?s\\))?$"))
       // ($l | select(test("^\\s*× "))              | first_match("^\\s*× (?<n>.*?)( \\d+(\\.\\d+)? ?m?s)?$"))
