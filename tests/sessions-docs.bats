@@ -69,3 +69,12 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
   has "$NEXT" 'rename_hint[^.]*(once|second chat|another chat)|(once|second chat|another chat)[^.]*rename_hint'
   has "$NEXT" 'never (runs|applies)'
 }
+
+@test "R192: docs/panel.md's /vbw-why row names the holder by name and keeps the file count and wait for it" {
+  local row
+  row=$(grep -F '| `/vbw-why`' "$PANEL")
+  [ -n "$row" ]
+  echo "$row" | grep -qF 'held by this chat'
+  echo "$row" | grep -qF 'wait for it'
+  echo "$row" | grep -qi 'file count'
+}
