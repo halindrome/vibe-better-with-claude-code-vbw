@@ -41994,13 +41994,155 @@
         "P155.2",
         "P157.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "record.jq mutation_ok: a recorded red break may carry pending, the check files waiting for approval that caught it (relative paths)",
         "cmd-mutate.sh: when the red check's file is in checks_begin's waiting list and an earlier survivor of the same target (rule or task) in this plan ran that check at another commit, the line reads TARGET survives the approved check; caught by the pending one: FILE..., exit 0, and the entry carries pending",
         "cmd-mutate.sh: a pending file with no such survivor says the break was caught by a check file waiting for approval and names it, without survives; no pending file keeps today's plain red line and strengthened as before; the contract's fingerprint stays unchanged",
         "cmd-show.sh show plan: the same words for a pending red break, and --json carries pending"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R196",
+            "text": "a red check whose file waits for approval, after a survivor of the same target recorded with that check at an earlier commit, prints TARGET survives the approved check; caught by the pending one: FILE... and exits 0"
+          },
+          "what": "survived never set",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C415": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:40:50Z",
+          "head": "775cf66872a46de8b378e1c7bc5ad697a1ea34e4"
+        },
+        {
+          "rule": {
+            "req": "R196",
+            "text": "a pending file with no earlier survivor of the target: the output says the break was caught by a check file waiting for approval and names it, without claiming it survived the approved one"
+          },
+          "what": "always says survives",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C415": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:42:27Z",
+          "head": "cea096131fd4687caa3344eef4768aa5b335536d"
+        },
+        {
+          "rule": {
+            "req": "R196",
+            "text": "a red check whose file is not waiting for approval prints today's plain red line, with strengthened after a prior survivor as before"
+          },
+          "what": "pending ignores waiting list",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C415": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T13:44:03Z",
+          "head": "d1725285993d38fae72062ad36aa5eda12d3f725"
+        },
+        {
+          "rule": {
+            "req": "R196",
+            "text": "the recorded break carries pending (the waiting files) beside result red, the record stays valid, and the contract's fingerprint is unchanged by recording it"
+          },
+          "what": "pending not recorded",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C415": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:44:55Z",
+          "head": "d1725285993d38fae72062ad36aa5eda12d3f725"
+        },
+        {
+          "rule": {
+            "req": "R196",
+            "text": "vbw show plan shows the same words for that break and --json carries pending; the red break counts for vbw plan done"
+          },
+          "what": "show hides pending words",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C415": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T13:45:45Z",
+          "head": "d1725285993d38fae72062ad36aa5eda12d3f725"
+        },
+        {
+          "rule": {
+            "req": "R196",
+            "text": "the plan files are byte-identical to their last commit after the break, and the new code is bash 3.2 with JSON only through jq"
+          },
+          "what": "eval added",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C415": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:46:34Z",
+          "head": "d1725285993d38fae72062ad36aa5eda12d3f725"
+        },
+        {
+          "rule": {
+            "req": "R196",
+            "text": "a red check whose file is not waiting for approval prints today's plain red line, with strengthened after a prior survivor as before"
+          },
+          "what": "pending ignores waiting list",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C415": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:49:36Z",
+          "head": "4822f832616b5ec9a0897da9de853505d3936eae",
+          "strengthened": [
+            "tests/mutate-pending-check.bats"
+          ],
+          "pending": [
+            "tests/mutate-pending-check.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R196",
+            "text": "vbw show plan shows the same words for that break and --json carries pending; the red break counts for vbw plan done"
+          },
+          "what": "show hides pending words",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C415": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:50:37Z",
+          "head": "4822f832616b5ec9a0897da9de853505d3936eae",
+          "strengthened": [
+            "tests/mutate-pending-check.bats"
+          ],
+          "pending": [
+            "tests/mutate-pending-check.bats"
+          ]
+        }
       ]
     },
     {
@@ -42898,12 +43040,113 @@
         "P156.1",
         "P156.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "docs/proof.md, the kept-output section (.vbw/runtime/output): vbw fix done and vbw check keep failing output beside vbw prove; vbw show fix names the file and the failing test names",
         "docs/proof.md, Fix items: vbw show fix lists the failing test files with their kept file and the failing test names, and says when none is recognised",
         "plugin/workflows/fixing.js, the Dev instruction: read the full output and the failing test names with vbw show fix instead of rerunning the suite; no mutation word"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R195",
+            "text": "docs/proof.md's kept-output section names vbw fix done and vbw check beside vbw prove and points to vbw show fix for the failing test names; docs/proof.md's fix section and the fixing workflow's Dev instruction point to vbw show fix for the full output and the failing test names"
+          },
+          "what": "removed the vbw show fix pointer from the Dev instruction",
+          "files": [
+            "plugin/workflows/fixing.js"
+          ],
+          "checks": {
+            "C422": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T13:40:55Z",
+          "head": "cea096131fd4687caa3344eef4768aa5b335536d"
+        },
+        {
+          "rule": {
+            "req": "R195",
+            "text": "docs/proof.md's kept-output section names vbw fix done and vbw check beside vbw prove and points to vbw show fix for the failing test names; docs/proof.md's fix section and the fixing workflow's Dev instruction point to vbw show fix for the full output and the failing test names"
+          },
+          "what": "removed the vbw show fix pointer from the Dev instruction",
+          "files": [
+            "plugin/workflows/fixing.js"
+          ],
+          "checks": {
+            "C422": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:41:26Z",
+          "head": "d1725285993d38fae72062ad36aa5eda12d3f725",
+          "strengthened": [
+            "tests/kept-output-docs.bats"
+          ],
+          "pending": [
+            "tests/kept-output-docs.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "what": "kept-output section no longer names vbw fix done and vbw check",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C422": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:41:50Z",
+          "head": "d1725285993d38fae72062ad36aa5eda12d3f725",
+          "pending": [
+            "tests/kept-output-docs.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "Fix items no longer mentions failing tests",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C422": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T13:42:07Z",
+          "head": "d1725285993d38fae72062ad36aa5eda12d3f725"
+        },
+        {
+          "task": 3,
+          "what": "removed the Dev sentence",
+          "files": [
+            "plugin/workflows/fixing.js"
+          ],
+          "checks": {
+            "C422": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:42:27Z",
+          "head": "d1725285993d38fae72062ad36aa5eda12d3f725",
+          "pending": [
+            "tests/kept-output-docs.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "removed the failing test files and names paragraph",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C422": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:42:53Z",
+          "head": "d1725285993d38fae72062ad36aa5eda12d3f725",
+          "pending": [
+            "tests/kept-output-docs.bats"
+          ]
+        }
       ]
     },
     {
@@ -42968,10 +43211,41 @@
       "after": [
         "P157.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Own rule R195.9 at its boundary: the status line path (plugin/lib/cmd-statusline.sh) never reads .vbw/runtime/output; no code change is expected (C421 test 4 already pins it): run vbw mutate P157.4 R195.9 with a break that makes the status line read a kept output file, see C421 go red, then vbw plan done. Moved from P157.2, whose files cannot hold that break (D458)."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R195",
+            "text": "the names are extracted only when vbw show fix runs: no hook or status-line path reads the kept output"
+          },
+          "what": "status line code reads a kept output file",
+          "files": [
+            "plugin/lib/cmd-statusline.sh"
+          ],
+          "checks": {
+            "C421": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:39:00Z",
+          "head": "59d8a6f4f78bb2f13d518dd081dec0b1e630183b"
+        },
+        {
+          "task": 1,
+          "what": "status line code reads a kept output file",
+          "files": [
+            "plugin/lib/cmd-statusline.sh"
+          ],
+          "checks": {
+            "C421": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:43:11Z",
+          "head": "d1725285993d38fae72062ad36aa5eda12d3f725"
+        }
       ]
     }
   ],
@@ -55032,6 +55306,19 @@
           "usd": 0.904662,
           "in": 2254,
           "out": 237
+        }
+      },
+      {
+        "id": "build-20261019T133554Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M39",
+        "started": "2026-10-19T13:35:54Z",
+        "ended": "2026-10-19T13:52:22Z",
+        "cost": {
+          "usd": 0.775643,
+          "in": 1739,
+          "out": 116
         }
       }
     ],
