@@ -49,6 +49,9 @@
   process has ended, or after 10 minutes, and never from a holder that is
   still writing, so many VBW commands at once no longer overwrite each
   other's changes.
+- **Session start is quick again.** The session-start hook asks the kernel
+  once for where the project stands, instead of twice, so a new session no
+  longer waits about half a second longer than it needs to.
 
 ## [2.0.39] - 2026-10-15
 
