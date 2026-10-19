@@ -36,6 +36,8 @@ mutate_put() {
       cp -pP "$dir/files/$f" "$dest/$f"
     fi
   done
+  # Newer than every file in the copy, so a build that decides by file times remakes it.
+  vbw_stamp_newer "$dest" "$@"
 }
 
 # mutate_clean DEST FILE...: the files back to their last commit in DEST (removed when HEAD has none).
@@ -48,6 +50,8 @@ mutate_clean() {
       git archive HEAD -- "$f" | tar -x -C "$dest" || vbw_die "cannot restore $f in the proof copy"
     fi
   done
+  # Newer than the broken build, so the next unbroken run rebuilds the clean code.
+  vbw_stamp_newer "$dest" "$@"
 }
 
 cmd_mutate() {
