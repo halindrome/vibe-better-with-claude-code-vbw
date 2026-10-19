@@ -93,6 +93,16 @@ record_back() {
   touch -A -01 "$1" 2> /dev/null || touch -r "$1" -d '-1 second' "$1" 2> /dev/null || true
 }
 
+# record_glance_forward: a glance a read just rewrote is always set one second after
+# the record (touch -r with -A on macOS and BSD, -d on GNU), so it is strictly
+# newer even in whole seconds. The record and its time stay as they are; when
+# neither touch works the guards read the record, as before.
+record_glance_forward() {
+  [ -f "$VBW_RUNTIME/glance.json" ] || return 0
+  touch -r "$VBW_RECORD" -A 01 "$VBW_RUNTIME/glance.json" 2> /dev/null \
+    || touch -r "$VBW_RECORD" -d '+1 second' "$VBW_RUNTIME/glance.json" 2> /dev/null || true
+}
+
 # True when the glance is a regular file strictly newer than the record.
 record_glance_current() {
   [ -f "$VBW_RUNTIME/glance.json" ] && [ "$VBW_RUNTIME/glance.json" -nt "$VBW_RECORD" ]
@@ -112,7 +122,7 @@ record_read() {
       vbw_guard_reset
       mkdir -p "$VBW_RUNTIME" 2> /dev/null || exit 0
       record_lock
-      record_glance_current || record_glance_write
+      record_glance_current || { record_glance_write; record_glance_forward; }
       record_unlock
     ) || true
   fi
