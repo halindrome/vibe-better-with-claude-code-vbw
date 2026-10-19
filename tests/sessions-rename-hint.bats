@@ -45,6 +45,8 @@ hint() { VBW_SESSION_ID="${1:-$SESSION_A}" "$VBW" next --json < /dev/null | jq -
   registry_entry 101 "$SESSION_A" "Visual candy color coding"
   registry_entry 102 "$SESSION_B" "Market data recorder" 1792300050000
   [ "$("$VBW" next --json < /dev/null | jq -r '.rename_hint // "null"')" = null ]
+  # A session id the list does not know gets no hint either, with two chats open.
+  [ "$(hint unknown-session-0000)" = null ]
   [ ! -e "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/settings.json" ] \
     || jq -e 'has("rename_hint") | not' "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/settings.json"
 }
