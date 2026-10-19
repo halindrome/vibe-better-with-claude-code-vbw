@@ -44007,7 +44007,7 @@
       "text": "Brainstorm F4 (cosmetic leg): show which session holds the run, by name, in the status line, Comms and a Sessions-tab mark; names need the session name as data (ties to cosmetic.md D14); optionally /vbw:vibe suggests /rename vbw · <project> at first setup, never applies it",
       "sort": "later",
       "size": "small",
-      "status": "in_progress"
+      "status": "done"
     },
     {
       "id": "T139",
