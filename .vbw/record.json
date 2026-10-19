@@ -46695,6 +46695,13 @@
       "sort": "next",
       "size": "medium",
       "status": "open"
+    },
+    {
+      "id": "T170",
+      "text": "tools/bump-version.sh --help bumps the version instead of printing usage (2026-10-19): unknown flags should print usage and change nothing",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
