@@ -213,6 +213,8 @@ cmd_fix() {
     } | proofsteps_names)"
     [ ${#todo[@]} -eq 0 ] || results=$(checks_run_all "$record" "${todo[@]}")
     [ ${#TF_TODO[@]} -eq 0 ] || tfres=$(testfiles_run "$record")
+    # A failure's complete output stays readable under vbw prove's names (R195).
+    checks_keep "$results" '{}' "$tfres"
     proofcopy_remove
     checks_end
     proofsteps_units "$results" '{}' "$tfres"
