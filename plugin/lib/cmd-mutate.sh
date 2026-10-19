@@ -52,7 +52,7 @@ mutate_clean() {
 
 cmd_mutate() {
   [ $# -ge 3 ] || mutate_usage "vbw mutate needs a plan, a rule or task, and what to break"
-  local plan="$1" target="$2" kind req="" rk="" tk="" none="" nonef=0 what="" f ids i
+  local plan="$1" target="$2" kind req="" rk="" tk="" none="" nonef=0 what="" f ids i owed owns=1 ways
   shift 2
   if [[ "$target" =~ ^R([0-9]+)\.([0-9]+)$ ]]; then
     kind=rule req="R${BASH_REMATCH[1]}" rk=$((10#${BASH_REMATCH[2]}))
@@ -116,7 +116,19 @@ cmd_mutate() {
         || vbw_die "$i is not a check of the requirements $plan serves: vbw show plan $plan lists them"
     done
   else
-    ids=$(printf '%s' "$record" | jq -c --arg p "$plan" '(.plans[] | select(.id == $p).reqs) as $q | [.checks[] | select([.req] | inside($q)) | .id]')
+    # The rules the plan owes: those naming it, and every rule of a requirement it completes (no other
+    # open plan serves it). Their checks, each once. A plan owing no rule keeps the checks of its requirements.
+    owed=$(printf '%s' "$record" | jq -c --arg p "$plan" '
+      (.plans[] | select(.id == $p).reqs) as $q
+      | [.plans[] | select(.id != $p and .status != "done") | .reqs[]] as $others
+      | [$q[] | select(. as $r | $others | index($r) == null)] as $done
+      | [.requirements[] | .id as $r | (.rules // [])[] | select(.plan == $p or ($done | index($r) != null)) | .check] | unique')
+    if [ "$owed" != '[]' ]; then
+      ids=$owed
+    else
+      owns=0
+      ids=$(printf '%s' "$record" | jq -c --arg p "$plan" '(.plans[] | select(.id == $p).reqs) as $q | [.checks[] | select([.req] | inside($q)) | .id]')
+    fi
   fi
   [ "$ids" != '[]' ] || vbw_die "$plan has no check to run for $target: add one with the plan's Lead, or mark the task --none"
   local idl=() cfiles=() broke=()
@@ -170,6 +182,13 @@ cmd_mutate() {
       if [ -n "$bad" ]; then
         proofcopy_remove
         checks_end
+        if [ "$kind" = task ]; then
+          ways="ways out: make it pass and commit, then break again; or narrow the run with --check ID; or, when a later plan completes the requirement, record vbw mutate $plan task$tk --none \"REASON naming the completing plan\""
+          [ "$owns" = 1 ] || ways="$plan owns no rule: the Lead names a plan on each rule, and until then every check of its requirements runs.
+$ways"
+          vbw_die "checks do not pass on the unbroken code, so a break proves nothing: $bad
+$ways"
+        fi
         vbw_die "checks do not pass on the unbroken code, so a break proves nothing: $bad; make them pass and commit, then break again"
       fi
     fi
