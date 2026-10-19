@@ -3,17 +3,24 @@
 // spills past the room Claude Code gives it. Mission Control never draws more
 // rows than scroll.bodyRows, on any tab or VBW Wrapped; where that size is not
 // reported (inline, the main screen) it is capped at a fixed height and ends
-// with '+N more · open Mission Control'. Its tab row never wraps onto a second
-// line at 40 columns. Comms stays within its maxRows in every mode (crew,
-// needs-you line, celebration, after a ship) and within its columns. Every
-// surface is drawn at 80x24, at 40 columns and in a short terminal.
+// with '+N more · open Mission Control'. Its tabs sit in whole rows (R199): on
+// every tab, at 100, 64, 60, 50 and 40 body columns, each of the eight names
+// appears whole as '[ Name ]' on one line, no line is wider than the pane, and
+// the head draws the rows the pane clips the body for. Comms stays within its
+// maxRows in every mode (crew, needs-you line, a live step note, celebration,
+// after a ship) and within its columns (R200). Every surface is drawn at 80x24,
+// at 40 columns and in a short terminal.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { record, next, lease, find, T0 } from '../helpers/fake-mod.mjs'
+import { record, next, lease, find, ROOT, T0 } from '../helpers/fake-mod.mjs'
 import { TICK, writeCrew, working, building } from './helpers/crew.mjs'
 import { screen, widest } from './helpers/screen.mjs'
 
-const TABS = ['now', 'plan', 'proof', 'timeline', 'decisions', 'team', 'costs']
+const TABS = ['now', 'plan', 'proof', 'timeline', 'decisions', 'team', 'sessions', 'costs']
+// id, full name, short name
+const NAMES = [['now', 'Now', 'Now'], ['plan', 'Plan', 'Plan'], ['proof', 'Proof', 'Proof'], ['timeline', 'Timeline', 'Time'],
+  ['decisions', 'Decisions', 'Log'], ['team', 'Team', 'Team'], ['sessions', 'Sessions', 'Sess'], ['costs', 'Costs', 'Cost']]
+const WIDTHS = [100, 64, 60, 50, 40]
 const MORE = /^\+\d+ more · open Mission Control$/
 const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z')
 
@@ -87,19 +94,27 @@ test('a short Mission Control without a reported height has no fold line', async
   assert.ok(!lines.some((l) => MORE.test(l.trim())), lines.join('\n'))
 })
 
-test('the tab row never wraps onto a second line at 40 columns', async () => {
+test('on every tab at 100, 64, 60, 50 and 40 body columns each of the eight tab names is whole as [ Name ] on one line, no line is wider than the pane, and the head draws the rows the body is clipped for', async () => {
   const { h } = await crowded()
   for (const tab of TABS) {
     await h.press('tab-' + tab)
-    const tree = await dock(h, 40, 22)
-    const tabs = find(tree, (n) => n.type === 'Box' && n.children.some((c) => c.type === 'Button' && /^tab-/.test(String(c.props.key))))
-    assert.ok(tabs, 'no tab row')
-    const head = find(tree, (n) => n.type === 'Box' && n.children.includes(tabs)) || { props: {}, children: [] }
-    const image = head.children.find((c) => c.type === 'Image')
-    const room = 40 - (image ? image.props.columns + (head.props.columnGap || 0) : 0)
-    const lines = screen(tabs, room)
-    assert.equal(lines.length, 1, tab + ': the tabs take ' + lines.length + ' lines in ' + room + ' columns')
-    assert.ok(widest(screen(tabs, Infinity)) <= room, tab + ': the tabs are ' + widest(screen(tabs, Infinity)) + ' wide in ' + room + ' columns')
+    for (const columns of WIDTHS) {
+      const where = tab + ' at ' + columns + ' columns'
+      const tree = await dock(h, columns, 22)
+      const lines = screen(tree, columns)
+      assert.ok(widest(lines) <= columns, where + ': ' + widest(lines) + ' wide')
+      for (const [id, full, short] of NAMES) {
+        const shown = lines.filter((l) => l.includes('[ ' + full + ' ]') || l.includes('[ ' + short + ' ]'))
+        assert.ok(shown.length >= 1, where + ': ' + full + ' is not whole on one line: ' + JSON.stringify(lines.slice(0, 5)))
+        const count = lines.join('\n').split('[ ' + full + ' ]').length - 1 + (short === full ? 0 : lines.join('\n').split('[ ' + short + ' ]').length - 1)
+        assert.equal(count, 1, where + ': ' + id + ' shows ' + count + ' times')
+      }
+      const head = tree.children[0]
+      const body = tree.children.find((c, i) => i > 0 && c && typeof c === 'object' && Number.isInteger((c.props || {}).height))
+      assert.ok(head && body, where + ': no head and clipped body')
+      assert.ok(widest(screen(head, Infinity)) <= columns, where + ': the head is ' + widest(screen(head, Infinity)) + ' wide')
+      assert.equal(screen(head, columns).length, 22 - body.props.height, where + ': the head draws ' + screen(head, columns).length + ' rows, the body is clipped as if it took ' + (22 - body.props.height))
+    }
   }
 })
 
@@ -113,6 +128,24 @@ test('Comms stays within its rows and columns with a crew, at full and calm moti
         assert.ok(screen(tree, columns).length <= rows, name + ': ' + screen(tree, columns).length + ' rows')
         assert.ok(widest(screen(tree, Infinity)) <= columns, name + ': ' + widest(screen(tree, Infinity)) + ' columns')
       }
+    }
+  }
+})
+
+test('Comms stays within its rows and columns with a crew and a live step note, at 1, 2, 3, 4 and 8 rows', async () => {
+  const { h } = await crowded(1)
+  h.write(ROOT + '/.vbw/runtime/step.json', {
+    kind: 'build', run: 'build-1', session: 'sess-1', pid: null, started_at: iso(T0), ids: ['P1.1'],
+    doing: 'building P1.1', parts: { done: 0, total: 1 }, proof: null, first_end: iso(h.now() + 12 * 60000), end: iso(h.now() + 12 * 60000), late: false,
+  })
+  h.git()
+  await h.advance(TICK)
+  for (const columns of [80, 40]) {
+    for (const rows of [1, 2, 3, 4, 8]) {
+      const tree = await comms(h, columns, rows)
+      const name = 'step note at ' + columns + 'x' + rows
+      assert.ok(screen(tree, columns).length <= rows, name + ': ' + screen(tree, columns).length + ' rows')
+      assert.ok(widest(screen(tree, Infinity)) <= columns, name + ': ' + widest(screen(tree, Infinity)) + ' columns')
     }
   }
 })
