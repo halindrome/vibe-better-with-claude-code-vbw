@@ -1,5 +1,55 @@
 # Changelog
 
+## [2.0.40] - 2026-10-19
+
+### Added
+
+- **Every long step says when it should end.** Planning, builds, proofs, QA
+  and fix rounds name what they are doing and a clock time for their end, in
+  the status line, the panel and VBW's messages. The time comes from how long
+  the same work took before in this project, per unit of work at its rigor
+  tier, times the work's size.
+- **The whole milestone has an end time too.** VBW adds up the build, the
+  proofs, QA and the fix rounds usual in this project, and shows when the
+  milestone should end in Mission Control and its messages.
+- **You see who holds the run, by name.** The run remembers the session that
+  started it by its Claude Code session name. The status line, Comms and
+  `vbw next` say who leads, and the new Sessions tab lists every chat working
+  on the project, marks the one holding the run and gives its resume line.
+  `/vbw:vibe` may suggest a `/rename` once; it never renames for you.
+- **Failing output is kept.** After `vbw prove`, `vbw fix done` and
+  `vbw check`, a failing check or project command keeps its full output under
+  `.vbw/runtime/output/`. `vbw show fix` names that file and the failing tests
+  (bats, pytest, cargo, go, jest, vitest, mocha), so nobody reruns the suite to
+  see what failed.
+
+### Changed
+
+- **A task break judges a plan by its own tests.** Without `--check`, a task
+  break runs the checks of the rules the plan owns, so an early plan whose
+  requirement a later plan completes can still break its tasks.
+- **A fix can commit its own requirement's test files.** `vbw commit --fix`
+  takes the protected check files of the fix's own requirement, with trailers
+  naming the fix and the requirement. They still wait for your one approval
+  before the proof, and every other protected file stays closed.
+- **The mutation check rebuilds what it breaks.** The broken file and its
+  restore get a modification time newer than any build output, so cargo or
+  make rebuild them and a break is never reported as surviving because of a
+  stale build. When only a test file waiting for approval catches a break,
+  `vbw mutate` says so.
+- **Comms and the panel show only what is true now.** A message disappears as
+  soon as it stops being true, the sound plays once per question when the
+  question is on screen, and Mission Control's Now tab shows what is running
+  and what is new.
+
+### Fixed
+
+- **No lost record updates under heavy load.** The record lock now names the
+  process holding it. A waiting command takes the lock over only when that
+  process has ended, or after 10 minutes, and never from a holder that is
+  still writing, so many VBW commands at once no longer overwrite each
+  other's changes.
+
 ## [2.0.39] - 2026-10-15
 
 ### Changed
