@@ -66,6 +66,7 @@ line() { show | grep -Eiq -- "$1" || { echo "no line matches $1:"; show; return 
   line 'C1[: ]+green'
   printf '[ "$(sh src/pay.sh 2>&1)" = paid ]\n' > tests/pay.sh
   git commit -q -am "test(pay): nothing but paid, on either stream"
+  "$VBW" approve > /dev/null
   printf 'echo paid\necho oops >&2\n' > src/pay.sh
   "$VBW" mutate P1.1 R1.2 "prints oops on stderr" src/pay.sh < /dev/null > /dev/null
   line 'R1\.2.*prints oops on stderr.*red'
