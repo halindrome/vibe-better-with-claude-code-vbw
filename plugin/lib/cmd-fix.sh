@@ -143,12 +143,14 @@ cmd_fix() {
   . "$VBW_LIB/testfiles.sh"
   # shellcheck source=proofsteps.sh
   . "$VBW_LIB/proofsteps.sh"
-  local todo=() cands=() c at results='{}' held head noreads causes fp why served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0
+  local wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes fp why served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0
   if [ ${#ids[@]} -gt 0 ]; then
     for id in "${ids[@]}"; do
       served=$(printf '%s' "$served" | jq -c --slurpfile s <(cmd_fix_checks "$record" "$id" | jq -R . | jq -sc 'map(select(length > 0))') '. + $s[0] | unique')
     done
     held=$(contract_held "$record")
+    # Check files new or changed since the approval wait for it, whatever opened the fix.
+    wait_files=$(contract_waiting "$record") || wait_files=
     cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
     mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
     proofsteps_clean
@@ -168,6 +170,15 @@ cmd_fix() {
         printf '%s waits for the user'"'"'s approval (a check %s added: %s); vbw next asks, then vbw prove runs it\n' "$c" \
           "$(printf '%s' "$record" | jq -r --arg c "$c" '.checks[] | select(.id == $c) | .fix')" \
           "$(printf '%s' "$record" | jq -r --arg c "$c" '.checks[] | select(.id == $c) | .files | join(", ")')"
+        continue
+      fi
+      mine=''
+      while IFS= read -r wf; do
+        [ -n "$wf" ] || continue
+        printf '%s' "$record" | jq -e --arg c "$c" --arg f "$wf" 'any(.checks[]; .id == $c and ((.files // []) | index($f)))' > /dev/null && mine="$mine${mine:+, }$wf"
+      done <<< "$wait_files"
+      if [ -n "$mine" ]; then
+        printf '%s waiting for approval (check files new or changed since the approval: %s); vbw next asks, then vbw prove runs it\n' "$c" "$mine"
         continue
       fi
       why=$causes
