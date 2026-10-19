@@ -44093,6 +44093,13 @@
       "sort": "next",
       "size": "medium",
       "status": "open"
+    },
+    {
+      "id": "T166",
+      "text": "Proof speed on a Rust project (Portfolium feedback 2026-10-19; owner agreed 2026-10-19; after the Dev unblock item, with T129): measure on Portfolium why fix done reuses so little (17 of 184) and the CPU of VBW's own read/write tracking (jq near 100% for minutes, load 23-66; also seen 2026-10-19 here: vbw next over 2 min), then make the tracking cheap and count VBW's own work in the machine-wide limit",
+      "sort": "next",
+      "size": "medium",
+      "status": "open"
     }
   ],
   "decisions": [
