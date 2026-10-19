@@ -171,7 +171,13 @@ vbw_is_stale() {
   pid=$(vbw_lock_holder "$1")
   m=$(vbw_mtime "$1")
   if [ -n "$pid" ]; then
-    vbw_lock_alive "$pid" || return 0
+    if ! vbw_lock_alive "$pid"; then
+      # The holder may have ended normally after its id was read, and a new
+      # writer taken the lock: only a lock that still names the ended holder is
+      # abandoned (an ended process can no longer release it).
+      [ "$(vbw_lock_holder "$1")" = "$pid" ]
+      return
+    fi
     [ "$m" -gt 0 ] && [ $(( $(date +%s) - m )) -gt "$VBW_LOCK_HELD_SECONDS" ]
     return
   fi
@@ -210,18 +216,16 @@ vbw_lock_remove() {
 # vbw_lock_take LOCK WHAT: take the lock LOCK, as described above; it is
 # released by vbw_guard_drop (and by the interrupt cleanup).
 vbw_lock_take() {
-  local lock="$1" brk="$1.break" deadline seen="" m pid
-  # The wait counts from the last sign of progress: the lock changed hands (its
-  # time moved) or its holder still runs. A long queue of writers or one slow
-  # writer on a busy machine is waited for, never given up on; a running holder
-  # is broken only past VBW_LOCK_HELD_SECONDS (vbw_is_stale). A lock that names
-  # no running holder and does not move becomes breakable within the stale
-  # window, so waiting twice that long is always enough.
+  local lock="$1" brk="$1.break" deadline seen="" m
+  # The wait counts from the last time the lock changed hands (its time moved):
+  # a long queue of writers on a busy machine is progress, never a reason to
+  # give up. One holder that keeps the lock twice the stale window (a deadlock,
+  # or a write far slower than any seen) makes the waiter stop with an error;
+  # it is never broken while it runs (vbw_is_stale), so no write is lost.
   deadline=$(( $(date +%s) + 2 * VBW_LOCK_STALE_SECONDS ))
   until vbw_lock_create "$lock"; do
     m=$(vbw_mtime "$lock")
-    pid=$(vbw_lock_holder "$lock")
-    if [ "$m" != "$seen" ] || { [ -n "$pid" ] && vbw_lock_alive "$pid"; }; then
+    if [ "$m" != "$seen" ]; then
       seen=$m
       deadline=$(( $(date +%s) + 2 * VBW_LOCK_STALE_SECONDS ))
     fi

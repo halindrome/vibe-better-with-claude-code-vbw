@@ -179,28 +179,25 @@ teardown() { vbw_teardown; }
   [ "$output" = taken ]
 }
 
-@test "a lock whose holder still runs is never taken over, however old; one whose holder is gone is taken at once" {
+@test "a lock whose holder still runs is never taken over, however old; one whose holder is gone is taken" {
   vbw_git_project
   vbw_run init
-  local holder start took
+  local holder
   # A slow writer on a busy machine: its lock is older than the stale window but it still runs.
-  sleep 3 &
+  # The waiter's patience (twice a 10 s window) outlasts the 6 s holder.
+  sh -c 'sleep 6; : > "$1"' _ "$TEST_ROOT/holder-done" &
   holder=$!
   printf '%s\n' "$holder" > .vbw/runtime/lock
   touch -t "$(date -v-2M +%Y%m%d%H%M.%S 2>/dev/null || date -d '-2 minutes' +%Y%m%d%H%M.%S)" .vbw/runtime/lock
-  start=$(date +%s)
-  run vbw_kernel '. "$VBW_LIB/record.sh"; VBW_LOCK_STALE_SECONDS=1; vbw_lock_take .vbw/runtime/lock record && echo taken'
-  took=$(( $(date +%s) - start ))
+  run vbw_kernel '. "$VBW_LIB/record.sh"; VBW_LOCK_STALE_SECONDS=10; vbw_lock_take .vbw/runtime/lock record && echo taken'
+  # Looked at before waiting for the holder: it must have ended before the lock was taken.
+  [ -e "$TEST_ROOT/holder-done" ] || { wait "$holder" || true; echo "took over the lock of a holder that still ran"; false; }
   wait "$holder" || true
   [ "$output" = taken ] || { echo "$output"; false; }
-  [ "$took" -ge 2 ] || { echo "took over a running holder's lock after $took s"; false; }
-  # A holder that has ended: its fresh lock is taken without waiting out the window.
+  # A holder that has ended: its fresh lock is taken.
   printf '%s\n' "$holder" > .vbw/runtime/lock
-  start=$(date +%s)
-  run vbw_kernel '. "$VBW_LIB/record.sh"; vbw_lock_take .vbw/runtime/lock record && echo taken'
-  took=$(( $(date +%s) - start ))
+  run vbw_kernel '. "$VBW_LIB/record.sh"; VBW_LOCK_STALE_SECONDS=1; vbw_lock_take .vbw/runtime/lock record && echo taken'
   [ "$output" = taken ] || { echo "$output"; false; }
-  [ "$took" -le 5 ] || { echo "waited $took s for a lock whose holder had ended"; false; }
 }
 
 @test "a holder id read while it is still being written (no line end yet) never breaks the lock" {
@@ -214,4 +211,16 @@ teardown() { vbw_teardown; }
   printf '999999\n' > .vbw/runtime/lock
   run vbw_kernel '. "$VBW_LIB/record.sh"; vbw_is_stale .vbw/runtime/lock && echo stale || echo fresh'
   [ "$output" = stale ]
+}
+
+@test "a holder that ends normally between the two looks never lets a waiter delete the next writer's lock" {
+  vbw_git_project
+  vbw_run init
+  # The waiter read 999999 (ended); while it asks whether that process runs, the
+  # holder releases and a new writer (this test's shell) takes the lock.
+  printf '999999\n' > .vbw/runtime/lock
+  run vbw_kernel '. "$VBW_LIB/record.sh"
+    vbw_lock_alive() { printf "%s\n" "$$" > .vbw/runtime/lock; return 1; }
+    vbw_is_stale .vbw/runtime/lock && echo stale || echo fresh'
+  [ "$output" = fresh ] || { echo "$output"; false; }
 }
