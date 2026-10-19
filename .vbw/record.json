@@ -21916,7 +21916,27 @@
         "guarded: R4 (C4), R5 (C5), R8 (C8), R34 (C30), R42 (C38), R48 (C49, C50), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R56 (C61, C65), R57 (C59, C70, C71), R58 (C62, C63, C64, C67), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R72 (C116, C118), R82 (C117), R84 (C123), R85 (C125), R86 (C124), R87 (C126, C127), R88 (C129), R89 (C128), R91 (C130), R116 (C182, C183), R124 (C192, C193), R173 (C281, C282, C283, C284, C285, C286, C289), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-19T22:57:06Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P159.5: Docs committed (d2f732d9). Mutation for R199.13/R200.11 impossible: checks C425/C427 fail on unbroken code and screen.mjs awaits approval; rerun mutation once the test tasks land and are approved."
+        },
+        {
+          "at": "2026-10-19T22:58:36Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P159.4: Task 3 is committed (tools/l3-suite.sh, lint clean). The plan cannot finish: C425 and C427 stay red until the owner runs 'bash tools/l3-suite.sh panel' and commits tools/l3-results/panel.json, and until the sibling plans update tests/panel/r189/containment.test.mjs (step note at 1,2,3,4,8 rows; whole tab rows at 100,64,60,50,40) and the Comms code; C426 is red on the Comms code. Mutation (R199.12, R200.10, task3) refuses to run on non-green checks. Rerun mutation and plan done after those land."
+        },
+        {
+          "at": "2026-10-19T23:07:19Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P159.1: All work and commits are done and C424 is green. Mutations are recorded for R199.1-9 and R199.14 and tasks 1-5. R199.10 (wiring.test.mjs, C425) cannot be recorded: vbw mutate refuses while C425 is red, and C425 stays red on parts that belong to other work (r189/containment.test.mjs whole tab rows, R199.11; the committed L3 panel result, R199.12). I broke the portrait ranking by hand: wiring.test.mjs went red (1 fail), restored green (25 pass). Needs: a later plan finishes R199.11/12, then run 'vbw mutate P159.1 R199.10 ...' and 'vbw plan done P159.1'. Pending approval: tests/panel/r189/helpers/screen.mjs. Bench: render 0.510 ms (budget 0.5, judged at release), tick 0.067 ms, refresh 0.205 ms."
+        }
+      ]
     },
     {
       "id": "P160",
@@ -21934,7 +21954,7 @@
         "R201: an L1 bats test pins the router rule (the 'vbw config set autonomy' write before the first step, the no-change case, the 'auto off' on a switch to guided) and the triage exclusion; README.md's autonomy row and docs/interview.md say the setting can be stated to /vbw:vibe in words.",
         "R201: the L3 qafix scenario (start text 'Use guided autonomy for this project. ...') records the fact 'autonomy' from 'vbw config autonomy' as the balanced scenario does, expects 'guided', and expects the setting to be written before the first run starts (the record's first 'Contract approved' decision or first run lease is later than the settings write); the scenario passes."
       ],
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 7 (196397 bytes)",
@@ -21944,7 +21964,15 @@
         "guarded: R3 (C3), R4 (C4), R5 (C5), R8 (C8), R13 (C12), R14 (C13), R22 (C19), R24 (C23), R26 (C22), R31 (C27), R34 (C30), R37 (C35), R38 (C33, C34), R39 (C36), R40 (C37), R42 (C38), R48 (C49, C50), R50 (C51), R51 (C52, C53, C66), R52 (C58, C91), R53 (C54, C55), R55 (C56, C57), R57 (C59, C70, C71), R59 (C68, C92), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R67 (C96), R70 (C114), R72 (C116, C118), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R106 (C164, C165), R107 (C166, C167), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R119 (C180), R121 (C187, C188), R122 (C189), R123 (C190, C191), R134 (C201), R135 (C202), R152 (C233, C234), R157 (C244), R161 (C248, C265, C266), R165 (C252), R171 (C270), R173 (C281, C282, C283, C284, C285, C286, C289), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "escalations": [
+        {
+          "at": "2026-10-19T22:57:11Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "Dev blocked P160.2: Docs done and committed (cbe051f2). R201.10 mutation not run: C428 is red on unbroken code (router and triage cases for R201.1-9 not yet delivered by other plans) and a file awaits approval (tests/panel/r189/helpers/screen.mjs). Re-run: vbw mutate P160.2 R201.10 after those land."
+        }
+      ]
     }
   ],
   "plans": [
@@ -43924,7 +43952,7 @@
         "tests/panel/wiring.test.mjs"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "tasks": [
         "Written by the Lead on 2026-10-19 and red today (the approval freezes it: read it, change nothing in it): tests/panel/r199/tab-rows.test.mjs (node:test, the stand-in tests/panel/helpers/fake-mod.mjs and screen.mjs, as tests/panel/wiring.test.mjs mounts it). It renders the pane (placement dock, scroll.bodyRows 30) at 100, 64, 60, 50 and 40 body columns on each of the eight tabs (h.press('tab-<id>')), then checks on the lines of screen(pane, columns): every tab shows exactly one of its two names whole on one line as '[ Now ]', '[ Timeline ]' or '[ Time ]' and so on (no line holds a cut name such as '[ Timelin' or a lone ']'); no line is wider than the columns; the head's rows (the lines above the body: scroll.bodyRows minus the body Box's height prop) equal the lines screen() draws for the head Box, gap included. Expected layouts (the fewest rows, then the full names over the short ones, then the portrait): 120, 100 and 91 columns: the eight full names on one row beside the portrait (85 cells of buttons and gaps, 6 of portrait); 90 and 85: the full names on one row, no Image; 69, 64, 60 and 54: the full names on two rows beside the portrait; 50 and 45: the full names on two rows, no Image; 44: the short names (Now Plan Proof Time Log Team Sess Cost) on two rows beside the portrait; 40: the short names on two rows, no Image (beside it they would take three). The portrait, when drawn, is an Image of 6 columns whose alt 'VBW' is whole. The fixed-height case (placement inline, no scroll) on a busy record is at most 30 lines and ends with '+N more · open Mission Control', the head counted the same way. It fails today (the stand-in draws no chrome and the pane puts every tab on one row).",
         "tests/panel/r189/helpers/screen.mjs: a Button with no hotkey draws '[ ' + label + ' ]' (4 cells of chrome, as Claude Code 2.1.302 draws a tab button: the 2026-10-19 capture shows '[ Now ] [ Plan ]'); a Button with a hotkey keeps '[k] label', the same 4 cells of width. Update the file's header comment. Every check that lists screen.mjs is re-approved once before the proof (the pre-proof approval names them).",
@@ -43932,7 +43960,247 @@
         "tests/panel/wiring.test.mjs: replace 'the tab row is one line at 40 columns: short names, and the portrait only where it fits beside them' with whole-row assertions through screen(): at 40 columns the short names on two rows and no portrait; at 50 the full names on two rows and no portrait; at 60 (WIDE) the full names on two rows beside the portrait; every name whole as '[ Name ]' and no line wider than the columns. Fix the header comment about 53 columns. The file goes through the pre-proof approval if a check lists it.",
         "Run node --test tests/panel/r199/tab-rows.test.mjs, tests/panel/wiring.test.mjs, tests/panel/pane.test.mjs and the r189, r190, r191, r192 folders; run bash tools/bench-panel.sh once and put the render and tick figures in the plan note (tests/panel-bench-render.bats's budget is judged at release)."
       ],
-      "role": "dev"
+      "role": "dev",
+      "mutations": [
+        {
+          "rule": {
+            "req": "R199",
+            "text": "the pane's width model counts a tab button's chrome ('[ ' and ' ]', 4 cells) and the 1-cell gap between buttons as named constants, and the stand-in draws a Button without a hotkey as '[ Name ]'"
+          },
+          "what": "chrome counted as 3",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C424": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T22:58:42Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R199",
+            "text": "a tab name is never split across lines: at 100, 64, 60, 50 and 40 body columns, on every tab, each of the eight names appears whole on one line"
+          },
+          "what": "label cut",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C424": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T22:59:22Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R199",
+            "text": "no tab row is wider than the pane's body width at 100, 64, 60, 50 and 40 body columns"
+          },
+          "what": "rows allowed wider",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C424": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:00:07Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R199",
+            "text": "the layout with the fewest rows wins: at 90 or more body columns the eight full names sit on one row"
+          },
+          "what": "full names before fewest rows",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C424": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:00:46Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R199",
+            "text": "at about 64 body columns the full names sit on two rows: at an equal number of rows the full names win over the short ones"
+          },
+          "what": "short names preferred",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C424": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:01:24Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R199",
+            "text": "at 40 body columns the short names (Now Plan Proof Time Log Team Sess Cost) sit on two rows"
+          },
+          "what": "short name changed",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C424": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:02:02Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R199",
+            "text": "the portrait keeps its 6 columns and its text 'VBW' is never split; it is left out when keeping it would give the tabs more rows than without it, and when the pane is short"
+          },
+          "what": "no portrait preferred",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C424": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:02:40Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R199",
+            "text": "the head's row count used to clip the body is the real count (the portrait's rows or the tab rows, whichever is more, plus the gap): on every tab the pane draws no more rows than Claude Code reports"
+          },
+          "what": "head ignores tab rows",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C424": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:03:18Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R199",
+            "text": "with no height reported the head counts the same way and the pane still ends with '+N more · open Mission Control' within its fixed height"
+          },
+          "what": "fold line row not counted",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C424": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:03:56Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R199",
+            "text": "the portrait is also left out when keeping it would force the short names where the full names fit on as many rows without it (the fewest rows, then the full names, then the portrait): at 90 and 85 body columns the full names sit on one row with no portrait and at 50 and 45 on two rows with no portrait; at 91 and from 54 to 69 the portrait stays beside the full names, at 44 beside the short names"
+          },
+          "what": "portrait before full names",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C424": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:04:50Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "task": 1,
+          "none": "task 1 is the frozen test file itself; there is no behaviour in it to break",
+          "at": "2026-10-19T23:05:01Z"
+        },
+        {
+          "task": 2,
+          "none": "task 2 is the stand-in (a check file); vbw mutate refuses breaks in check files, and R199.1 mutation covers the chrome",
+          "at": "2026-10-19T23:05:25Z"
+        },
+        {
+          "task": 3,
+          "what": "tab gap 2",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C424": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:06:01Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "task": 4,
+          "what": "tab gap 2",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C424": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:06:38Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "task": 5,
+          "none": "task 5 is a run of tests and the bench; no code",
+          "at": "2026-10-19T23:06:43Z"
+        }
+      ],
+      "note": "All work and commits are done and C424 is green. Mutations are recorded for R199.1-9 and R199.14 and tasks 1-5. R199.10 (wiring.test.mjs, C425) cannot be recorded: vbw mutate refuses while C425 is red, and C425 stays red on parts that belong to other work (r189/containment.test.mjs whole tab rows, R199.11; the committed L3 panel result, R199.12). I broke the portrait ranking by hand: wiring.test.mjs went red (1 fail), restored green (25 pass). Needs: a later plan finishes R199.11/12, then run 'vbw mutate P159.1 R199.10 ...' and 'vbw plan done P159.1'. Pending approval: tests/panel/r189/helpers/screen.mjs. Bench: render 0.510 ms (budget 0.5, judged at release), tick 0.067 ms, refresh 0.205 ms."
     },
     {
       "id": "P159.2",
@@ -43946,13 +44214,193 @@
         "tests/panel/r200/comms-short.test.mjs"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "Written by the Lead on 2026-10-19 and red today (the approval freezes it: read it, change nothing in it): tests/panel/r200/comms-short.test.mjs (node:test; process.env.TZ = 'Europe/Zurich' as tests/panel/r190/step-comms.test.mjs; the helpers tests/panel/r189/helpers/crew.mjs building(working(1)), ../helpers/fake-mod.mjs, ../r189/helpers/screen.mjs). The 2.0.40 capture: a building run (lease build-1), one working helper, a live step note at ROOT + '/.vbw/runtime/step.json' {kind 'build', run 'build-1', session 'sess-1', doing 'building P1.1', parts {done 0, total 1}, end null, first_end null, late false} written before the run is launched (h.git() as step-comms does). Comms drawn with h.draw('AbovePrompt', { hasSurvey: false, isWorking: true, maxRows: N, bodyColumns: 80 }): at maxRows 1 exactly one line, starting 'VBW ▸', with '1 working' and the Mission Control button; at 2 the helper line then the step line ('No end time yet'); at 3 the header then the step line and no more than 3 lines. With an end time (end = now + 12 min): at 1 row the one line reads 'VBW ▸ build · 1 working · <m>m<ss>s · about 12 min, until around HH:MM' (own parts first, the step's time words after them, hhmm from screen.mjs) and at 40 columns it is cut to the width with the button still drawn (widest(screen(tree, Infinity)) <= 40). A needs-you line (next.json {action 'approve', gate true}) with maxRows 1: the needs-you line alone, no 'VBW ▸'. The step line alone: a proof note (kind 'proof', run null, pid process.pid, session 'sess-1') with no lease and no crew at maxRows 1 draws the step line only, and a run with no helper at work (crew all done, run ended) draws no 'VBW ▸'. Row count held: with the live note at 1, 2, 3, 4 and 8 rows at 80 and 40 columns, screen(tree, columns).length <= rows and no line wider. It fails today (at 1 row the step line wins and the helper line is dropped).",
         "plugin/hooks/panel-stage.js stageModel: the order in little room is the needs-you line, then the helper line while helpers work, then the step line. Compute stepText (stepOf) and the step's time words (stepWords(step, now), used only when timed) once. When a crew is at work (crewOf would give a model) and the rows left after the needs-you line are exactly one, call crewOf with maxRows 1 and no step line, the one-line header's parts followed by the step's time words ('VBW ▸ build · 1 working · 0m30s · until around 14:20'), cut to room with the button kept; a note with no end time adds nothing to that line (the 'No end time yet' sentence shows on the step line from two rows up). With two rows the helper line and the step line (crewOf maxRows 1 plus stepLine); with three or more rows as today. The step line alone only when crewOf gives nothing (no helper works, for example a proof). The needs-you line with one row stays alone. Update the file's header comment.",
         "Run node --test on tests/panel/r200, tests/panel/r189, tests/panel/r190 and tests/panel/stage.test.mjs; all pass, nothing else changed."
       ],
-      "role": "dev"
+      "role": "dev",
+      "mutations": [
+        {
+          "rule": {
+            "req": "R200",
+            "text": "the order of lines in little room is the needs-you line, then the helper line while helpers work, then the step line"
+          },
+          "what": "step wins at one row",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C426": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T22:58:23Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R200",
+            "text": "with one row and no needs-you line the helper line shows and carries the step's time after its own parts ('VBW ▸ build · 1 working · 0m30s · until around 14:20'), cut to the width with the Mission Control button kept"
+          },
+          "what": "no time words on helper line",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C426": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T22:59:03Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R200",
+            "text": "with two rows the helper line and the step line show"
+          },
+          "what": "no step line at two rows",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C426": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T22:59:43Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R200",
+            "text": "with three or more rows Comms draws as today: the header, the helper rows, the step line"
+          },
+          "what": "no step line at 3+ rows",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C426": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:00:24Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R200",
+            "text": "a needs-you line with one row shows the needs-you line alone"
+          },
+          "what": "need with one row still gets a helper line",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C426": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:01:03Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R200",
+            "text": "the step line alone (no helper line) shows only when no helper works, for example during a proof"
+          },
+          "what": "step line alone never shows",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C426": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:01:41Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R200",
+            "text": "the 2.0.40 capture is reproduced: a building run with one working helper and a step note with no end time draws, at 1 row, one line starting with 'VBW ▸'; at 2 and 3 rows the helper line is there too"
+          },
+          "what": "header loses its VBW mark in line mode",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C426": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:02:19Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R200",
+            "text": "Comms never draws more rows than Claude Code gives it: with a live step note at 1, 2, 3, 4 and 8 rows at 80 and 40 columns the row count is held and no line is wider"
+          },
+          "what": "crew ignores the step row",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C426": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:02:57Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "untimed note adds its words",
+          "files": [
+            "plugin/hooks/panel-stage.js"
+          ],
+          "checks": {
+            "C426": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:03:35Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6",
+          "pending": [
+            "tests/panel/r189/helpers/screen.mjs"
+          ]
+        },
+        {
+          "task": 1,
+          "none": "the task is the Lead's approved check file itself; it holds no product code to break",
+          "at": "2026-10-19T23:03:41Z"
+        },
+        {
+          "task": 3,
+          "none": "a test run, no code",
+          "at": "2026-10-19T23:03:43Z"
+        }
+      ]
     },
     {
       "id": "P159.3",
@@ -43991,14 +44439,15 @@
         "tests/panel-comms-short.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "tasks": [
         "Written by the Lead on 2026-10-19 and red today (the approval freezes it: read it, change nothing in it): tests/panel-tab-rows.bats (R199, load helper, the style of tests/l3-panel-comms.bats): scenario_panel in tools/l3-suite.sh records tabs_whole_short and tabs_whole_narrow and lists both in its pass set (the 'for k in' list); a committed tools/l3-results/panel.json is L3, passed, with .facts.tabs_whole_short == true and .facts.tabs_whole_narrow == true; tests/panel/r189/containment.test.mjs and tests/panel/wiring.test.mjs no longer contain 'never wraps onto a second line' or 'the tab row is one line' and both name 100, 64, 60, 50 and 40 columns; docs/panel.md no longer says 'always one line' and states the whole-row rule (whole names, never wider than the pane, fewest rows, full names win ties) with 90, 64 and 40 columns. It fails today (facts absent, the result not passed, the docs sentence present).",
         "Written by the Lead on 2026-10-19 and red today (the approval freezes it: read it, change nothing in it): tests/panel-comms-short.bats (R200): scenario_panel records helper_line_short (the 'VBW ▸' line drawn exactly once at 200x24 while helpers work, the prompt box whole) in its pass set; a committed panel.json is passed with .facts.helper_line_short == true and .facts.no_spill_short == true; tests/panel/r189/containment.test.mjs names the live step note at 1, 2, 3, 4 and 8 rows; docs/panel.md's Comms section states the order of lines in little room (needs-you line, helper line, step line; one row carries the step's time after the helper line's own parts). It fails today.",
         "tools/l3-suite.sh scenario_panel: a tabs_whole() reader on the captured screen text of fits_window at both sizes: true when every one of the eight tabs appears as '[ Now ]', '[ Plan ]', '[ Proof ]', '[ Timeline ]' or '[ Time ]', '[ Decisions ]' or '[ Log ]', '[ Team ]', '[ Sessions ]' or '[ Sess ]', '[ Costs ]' or '[ Cost ]' (whitespace collapsed as panel_text does); facts tabs_whole_short (200x24) and tabs_whole_narrow (60x40) from the crew-time resize (spill_checks while helpers work), and helper_line_short as the crew-time short-window result (crew_sh) on its own; all three added to the facts, the pass list and the passed expression; the not_tested list adjusted. shellcheck -S warning -x clean (bash tools/test.sh --lint).",
         "Do not run the scenario in the build (it needs a real Claude Code session and money): the owner runs 'bash tools/l3-suite.sh panel' before the push and commits tools/l3-results/panel.json; until then the two bats files fail on the result pin, as tests/l3-panel-comms.bats did before its run. Say so in the plan note."
       ],
-      "role": "dev"
+      "role": "dev",
+      "note": "Task 3 is committed (tools/l3-suite.sh, lint clean). The plan cannot finish: C425 and C427 stay red until the owner runs 'bash tools/l3-suite.sh panel' and commits tools/l3-results/panel.json, and until the sibling plans update tests/panel/r189/containment.test.mjs (step note at 1,2,3,4,8 rows; whole tab rows at 100,64,60,50,40) and the Comms code; C426 is red on the Comms code. Mutation (R199.12, R200.10, task3) refuses to run on non-green checks. Rerun mutation and plan done after those land."
     },
     {
       "id": "P159.5",
@@ -44012,13 +44461,14 @@
         "docs/panel.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "tasks": [
         "docs/panel.md, Mission Control: replace 'The tab row is always one line. In a narrow pane (40 columns, beside the portrait) the tabs use short names' with the whole-row rule: a tab name is never split, a row is never wider than the pane, the layout with the fewest rows wins, and at an equal number of rows the full names win over the short ones (Now Plan Proof Time Log Team Sess Cost); the widths: at 90 or more columns the full names on one row (the portrait beside them from 91), at about 64 columns (beside a 200-column window) the full names on two rows beside the portrait, at 40 columns (the minimum) the short names on two rows; the portrait is left out when keeping it would cost a tab row or a full name, as well as when the pane is short.",
         "docs/panel.md, Comms: a paragraph on little room: the order of lines is the needs-you line, then the helper line ('VBW ▸ ...') while helpers work, then the step line; with one row the helper line carries the step's end time after its own parts ('VBW ▸ build · 1 working · 0m30s · until around 14:20'); with two rows the helper line and the step line; with three or more rows the header, the helper rows and the step line; a needs-you line with one row shows alone; the step line alone shows only when no helper works (a proof); Comms never draws more rows than Claude Code gives it, so the prompt box stays whole.",
         "docs/panel.md, Time left: one sentence that in a one-row Comms the step's time sits on the helper line. Keep the facts a reader needs, not exact sentences (D400)."
       ],
-      "role": "docs"
+      "role": "docs",
+      "note": "Docs committed (d2f732d9). Mutation for R199.13/R200.11 impossible: checks C425/C427 fail on unbroken code and screen.mjs awaits approval; rerun mutation once the test tasks land and are approved."
     },
     {
       "id": "P160.1",
@@ -44033,14 +44483,196 @@
         "tests/autonomy-words.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "tasks": [
         "Written by the Lead on 2026-10-19 and red today (the approval freezes it: read it, change nothing in it): tests/autonomy-words.bats (load helper; flat()/has() as tests/triage-skill.bats). plugin/skills/vibe/SKILL.md: before the '## Autonomy' heading there is a rule that words naming guided, balanced or hands-off, or a plain phrase clearly meaning one (the file gives 'ask me before each step' for guided and 'do not ask, just go' for hands-off), run 'vbw config set autonomy' first, before any step; it says in one line what was set and follows the Autonomy section with that value, not the line loaded before; the same setting as the current one writes nothing and says nothing; words that do not clearly name one change nothing (no guessing); a setting stated later in the session is recorded at once and applies from the next step; a switch to guided while armed runs 'vbw auto off' with the session id; a switch to balanced or hands-off arms 'vbw auto on' once; '--auto' runs alone this time only and never changes the setting. plugin/skills/triage/SKILL.md lists a setting stated in words among what is not a new idea and says the rest of the message still goes to triage. README.md's autonomy row and docs/interview.md say the setting can be stated to /vbw:vibe in words. It fails today.",
         "plugin/skills/vibe/SKILL.md: a section '## Setting stated in words' between 'User said: $ARGUMENTS' (after the triage line) and '## Autonomy': the rule above, with the two phrase examples, the one-line report, the no-change and the no-guessing cases, the later-in-session case (recorded at once, applies from the next step; guided while armed: 'vbw auto off ${CLAUDE_SESSION_ID}'; balanced or hands-off: 'vbw auto on ${CLAUDE_SESSION_ID}' once), and that '--auto' never changes the setting. The Autonomy section's first line becomes 'Last line above, or the value just set, = how much VBW does alone'.",
         "plugin/skills/triage/SKILL.md, 'When it applies': the not-a-new-idea list gains 'an autonomy setting stated in words (guided, balanced, hands-off, or a phrase that means one): the router records it; the rest of the same message goes to triage as usual'.",
         "Run bats on tests/autonomy-words.bats, tests/skills.bats, tests/triage-skill.bats, tests/router-triage-line.bats, tests/stop-line.bats, tests/rules-prompts.bats and tests/standards.bats; all pass."
       ],
-      "role": "dev"
+      "role": "dev",
+      "mutations": [
+        {
+          "rule": {
+            "req": "R201",
+            "text": "the router has a rule before any step: words naming guided, balanced or hands-off, or a plain phrase clearly meaning one ('ask me before each step', 'do not ask, just go'), run 'vbw config set autonomy <value>' first"
+          },
+          "what": "dropped the config set",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T22:58:27Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6"
+        },
+        {
+          "rule": {
+            "req": "R201",
+            "text": "after the write the router says in one line what was set and follows the Autonomy section with that value, not the line loaded before the words were read"
+          },
+          "what": "dropped one-line report",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T22:59:08Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6"
+        },
+        {
+          "rule": {
+            "req": "R201",
+            "text": "a stated setting equal to the current one writes nothing and says nothing about it"
+          },
+          "what": "same setting rewritten",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T22:59:49Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6"
+        },
+        {
+          "rule": {
+            "req": "R201",
+            "text": "words that do not clearly name one setting change nothing (no guessing)"
+          },
+          "what": "guessing allowed",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:00:29Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6"
+        },
+        {
+          "rule": {
+            "req": "R201",
+            "text": "a setting stated later in the session is recorded at once and applies from the next step"
+          },
+          "what": "later ignored",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:01:09Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6"
+        },
+        {
+          "rule": {
+            "req": "R201",
+            "text": "a switch to guided while the autonomous run is armed runs 'vbw auto off' for this session"
+          },
+          "what": "no auto off",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:01:47Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6"
+        },
+        {
+          "rule": {
+            "req": "R201",
+            "text": "a switch to balanced or hands-off arms 'vbw auto on' once"
+          },
+          "what": "no auto on",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:02:26Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6"
+        },
+        {
+          "rule": {
+            "req": "R201",
+            "text": "'--auto' runs alone this time only and never changes the setting"
+          },
+          "what": "auto changes setting",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:03:05Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6"
+        },
+        {
+          "rule": {
+            "req": "R201",
+            "text": "the triage skill lists a setting stated in words among what is not a new idea, and the rest of the same message still goes to triage"
+          },
+          "what": "rest not triaged",
+          "files": [
+            "plugin/skills/triage/SKILL.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:03:44Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6"
+        },
+        {
+          "task": 1,
+          "none": "the approved test file; its break is every rule's break above",
+          "at": "2026-10-19T23:03:54Z"
+        },
+        {
+          "task": 4,
+          "none": "a test run, no code",
+          "at": "2026-10-19T23:03:57Z"
+        },
+        {
+          "task": 2,
+          "what": "Autonomy first line loses 'value just set'",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:04:36Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6"
+        },
+        {
+          "task": 3,
+          "what": "triage list loses hands-off",
+          "files": [
+            "plugin/skills/triage/SKILL.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:05:13Z",
+          "head": "e67aa2404c6488a096fbec1b8f866a8dba90ddc6"
+        }
+      ]
     },
     {
       "id": "P160.2",
@@ -44054,13 +44686,14 @@
         "docs/interview.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "docs",
       "tasks": [
         "README.md, the Configuration table's autonomy row: 'How much /vbw:vibe does on its own; you can also say it to /vbw:vibe in words (\"use guided autonomy\", \"ask me before each step\", \"do not ask, just go\") and it is recorded before the first step'.",
         "docs/interview.md, 'What never changes', the autonomy bullet: how much VBW does alone is 'vbw config set autonomy', or the setting stated to /vbw:vibe in words (guided, balanced, hands-off, or a phrase that clearly means one), recorded before the first step; it is a setting, never an idea for triage.",
         "Run bats tests/autonomy-words.bats (its README and docs cases) and tests/interview-wording.bats; both pass."
-      ]
+      ],
+      "note": "Docs done and committed (cbe051f2). R201.10 mutation not run: C428 is red on unbroken code (router and triage cases for R201.1-9 not yet delivered by other plans) and a file awaits approval (tests/panel/r189/helpers/screen.mjs). Re-run: vbw mutate P160.2 R201.10 after those land."
     },
     {
       "id": "P160.3",
@@ -56600,6 +57233,15 @@
           "in": 2704,
           "out": 120
         }
+      },
+      {
+        "id": "build-20261019T225608Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M41",
+        "started": "2026-10-19T22:56:08Z",
+        "ended": "2026-10-19T23:07:35Z",
+        "cost": null
       }
     ],
     "milestones": {
