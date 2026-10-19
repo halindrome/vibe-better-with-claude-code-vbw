@@ -287,20 +287,31 @@ show_commits_for_req() {
 show_work() {
   # A fix names the kept output of each failing check and project command
   # (R118): its path when the file exists, else null.
-  local json dir='' have='[]'
+  local json dir='' have='[]' names='{}' fids='{}' f
   if [ "$2" = fix ]; then
     # shellcheck source=checks.sh
     . "$VBW_LIB/checks.sh"
+    # shellcheck source=testfiles.sh
+    . "$VBW_LIB/testfiles.sh"
+    # A test file's kept file is named by its path's id, which the evidence does not carry.
+    while IFS= read -r -d '' f; do
+      fids=$(printf '%s' "$fids" | jq -c --arg p "$f" --arg i "$(testfiles_id "$f")" '.[$p] = $i')
+    done < <(printf '%s' "$1" | jq -j '(.evidence.test_files // {}) | keys[] + "\u0000"')
     dir=$(checks_kept check _)
     dir=${dir%/*}
     if [ -d "$VBW_ROOT/$dir" ]; then
       have=$(find "$VBW_ROOT/$dir" -maxdepth 1 -type f -name '*.log' -print0 \
         | jq -Rsc 'split("\u0000") | map(select(length > 0) | sub("^.*/"; ""))')
+      # The failing test names are read here and nowhere else (R195.9).
+      for f in $(printf '%s' "$have" | jq -r '.[]'); do
+        names=$(printf '%s' "$names" | jq -c --arg f "$f" --argjson n "$(jq -Rs -c -f "$VBW_LIB/failing-tests.jq" < "$VBW_ROOT/$dir/$f")" '.[$f] = $n')
+      done
     fi
   fi
-  json=$(printf '%s' "$1" | jq -c --arg kind "$2" --arg id "$3" --arg dir "$dir" --argjson have "$have" '
+  json=$(printf '%s' "$1" | jq -c --arg kind "$2" --arg id "$3" --arg dir "$dir" --argjson have "$have" --argjson names "$names" --argjson fids "$fids" '
     . as $r
     | def kept($file): if any($have[]; . == $file) then "\($dir)/\($file)" else null end;
+      def tests($file): $names[$file] // [];
       def failing: . != null and .status != "pass";
       # A skipped command was not approved: vbw prove counts it as passed (R118).
       def command_failing: .status == "fail" or .status == "timeout";
@@ -322,11 +333,17 @@ show_work() {
           {fix: $f,
            requirement: (if $f.req then [$r.requirements[] | select(.id == $f.req) | {id, text, proof}][0] else null end),
            checks: (if $f.req then checks_for([$f.req]) else [] end
-             | map(. + {kept: (if .last | failing then kept("\(.id).log") else null end)})),
+             | map(. + {kept: (if .last | failing then kept("\(.id).log") else null end)}
+                 | . + {failing_tests: (if .kept then tests("\(.id).log") else [] end)})),
            command: (if $f.command then {name: $f.command, argv: $r.commands[$f.command],
                                           last: ($r.evidence.commands[$f.command] // null)} else null end),
            commands: [($r.evidence.commands // {}) | to_entries[] | select(.value | command_failing)
-             | {name: .key, status: .value.status, kept: kept("command-\(.key).log")}],
+             | {name: .key, status: .value.status, kept: kept("command-\(.key).log")}
+             | . + {failing_tests: (if .kept then tests("command-\(.name).log") else [] end)}],
+           test_files: [($r.evidence.test_files // {}) | to_entries[] | select(.value | command_failing)
+             | "file-\($fids[.key] // "").log" as $file
+             | {path: .key, status: .value.status, kept: kept($file)}
+             | . + {failing_tests: (if .kept then tests($file) else [] end)}],
            plans: [$r.plans[] | select($f.req != null and any(.reqs[]; . == $f.req)) | {id, title, files}]} end
       end')
   [ "$json" != null ] || vbw_die "unknown $2 $3"
@@ -337,7 +354,10 @@ show_work() {
   printf '%s' "$json" | jq -r "$SHOW_JQ_DEFS"'
     def check_lines: .checks[] | "  \(.id) (\(.req)) " + check_line
       + (if .last then " — last: \(.last.status)" else "" end);
-    def full_output: if .kept then "    full output: \(.kept)" else "    full output not kept: run vbw prove again" end;
+    def full_output: if .kept then "    full output: \(.kept)",
+        (if (.failing_tests | length) > 0 then "    failing tests:", (.failing_tests[] | "      " + .)
+         else "    failing tests: none recognised in the output; read the full output file" end)
+      else "    full output not kept: run vbw prove again" end;
     if .plan then
       .rules as $rules |
       "\(.plan.id) \(.plan.title) [\(.plan.status)]\(if .plan.note then ": " + .plan.note else "" end)",
@@ -367,6 +387,7 @@ show_work() {
         | (.last.tail | select(length > 0) | split("\n")[] | "    | " + .), full_output),
       ((.command.name // null) as $n | [.commands[] | select(.name != $n)]
         | if length > 0 then "failing project commands:", (.[] | "  \(.name) — last: \(.status)", full_output) else empty end),
+      (if (.test_files | length) > 0 then "failing test files:", (.test_files[] | "  \(.path) — last: \(.status)", full_output) else empty end),
       (if (.plans | length) > 0 then "files (plans serving the requirement):", (.plans[] | "  \(.id): \(.files | join(", "))") else empty end)
     end'
 }
