@@ -44240,7 +44240,7 @@
       "text": "Mutation break file gets a fresh modification time in the proof copy (Portfolium feedback 2026-10-16; owner agreed 2026-10-19): cargo and other time-based builds otherwise test the unbroken build and report false survivors; regression test with a time-based build stand-in",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     }
   ],
   "decisions": [
