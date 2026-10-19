@@ -800,8 +800,13 @@ reused and counted), and saves the files it ran for the next proof to reuse.
 `vbw show fix F1` names each failing check's or project command's kept full output
 file (`full output: .vbw/runtime/output/C1.log`), listed under it. When no file is
 kept, for example after it was removed, it says
-`full output not kept: run vbw prove again`. With `--json`, each failing check
-and command has a `kept` field: the file's path, or `null`.
+`full output not kept: run vbw prove again`. Under each failing check, test file
+and project command it also lists `failing tests:`, one line per failing test name
+it recognises (TAP/bats, cargo test, pytest, go test, jest, vitest, mocha); when
+none is recognised it says `failing tests: none recognised in the output; read the
+full output file`. A failing single-form test file is listed by its path with its
+kept file. With `--json`, each failing unit has `kept`, the file's path or `null`,
+and `failing_tests`.
 
 A requirement fix commits the check files of its own requirement with
 `vbw commit --fix F1 "<msg>" FILE...`; the commit carries `VBW-Fix` and
