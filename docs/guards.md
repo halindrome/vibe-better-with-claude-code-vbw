@@ -260,7 +260,9 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
 
 ## SessionStart
 
-In a VBW project, one line of context: the project state and `vbw next`.
+In a VBW project, one line of context: the project state and what comes next.
+The hook runs `vbw next` once, never `vbw status`, and reads the project line
+from the glance that command refreshes.
 Started in a subdirectory of a VBW project, it says the guards are off and
 where to start instead. It never injects resume directives (ledger D289). It
 writes only for a copy loaded with `claude --plugin-dir`: a PATH line in the
