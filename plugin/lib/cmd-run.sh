@@ -156,14 +156,16 @@ cmd_run() {
          else [$fx[].req as $q | .plans[] | select(any(.reqs[]; . == $q)) | .files[]] | unique end
      elif $k == "qa" or $k == "map" then []
      else [".vbw/"] end) as $files
-    | (if $k == "fix" and $files != null and all(.fixes[] | select(.id as $i | any($ids[]; . == $i)); .source == "qa") then
-         # Fixes QA opened (R160): the Dev may add test files and edit the check
-         # files of the findings requirements that no other requirement uses.
+    | (if $k == "fix" and $files != null then
+         # A requirement fix, whatever its source (R194): the Dev may edit the
+         # check files of the fixes requirements that no other requirement
+         # uses. When a fix of the run comes from QA (R160) it may also add test files.
          ([.fixes[] | select(.id as $i | any($ids[]; . == $i)) | .req] | unique) as $qs
-         | {new_tests: true,
-            editable: (([.checks[] | select(.req as $q | any($qs[]; . == $q)) | (.files // [])[]] | unique) as $mine
-              | ([.checks[] | select(.req as $q | any($qs[]; . == $q) | not) | (.files // [])[]] | unique) as $others
-              | $mine - $others)}
+         | ([$qs[] as $q | [.checks[] | select(.req == $q) | (.files // [])[]] as $mine
+            | [.checks[] | select(.req != $q) | (.files // [])[]] as $others
+            | ($mine - $others)[]] | unique) as $own
+         | (if any(.fixes[] | select(.id as $i | any($ids[]; . == $i)); .source == "qa") then {new_tests: true} else {} end)
+           + {editable: $own}
        else {} end) as $qa
     | .lease = {run: $run, kind: $k, started_at: $at, files: $files}
        + (if $me == "" then {} else {session: $me} end) + $qa
