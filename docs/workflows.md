@@ -237,8 +237,15 @@ cannot fail, and QA would otherwise find it one round at a time.
 - **When it runs:** at standard and deep. Never at express, and never in a fix.
 - **Rule form** (`Rn.k`): break rule k of requirement Rn in the named files.
   Only that rule's own check runs. `vbw show plan` numbers the rules this way.
-- **Task form** (`taskK`): break task K. The checks of the plan's requirements
-  run, or only the `--check` ones. `--none REASON` records that the task has
+- **Task form** (`taskK`): break task K. Without `--check`, a task break runs
+  the checks of the plan's own rules: those of every rule that names the plan,
+  plus those of the requirements the plan completes. A check shared by several
+  of these rules runs once, and no other requirement's check runs. Only `--check
+  ID` narrows the run, to the named checks of the plan's requirements. A plan
+  that owns no rule runs the checks of its requirements. If an owed check is red
+  on the unbroken code, the command refuses and writes nothing. It names the
+  check and three ways out: make it pass and commit, `--check ID`, or `--none
+  REASON` naming the plan that completes the rule. `--none REASON` records that the task has
   no behaviour a test could notice; a rule cannot be recorded this way.
 - **VBW undoes the break.** The named files go back to their last commit,
   whether a check noticed (red) or not (a survivor). The command refuses, and
