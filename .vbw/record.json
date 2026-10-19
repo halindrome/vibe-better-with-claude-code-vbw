@@ -13552,6 +13552,46 @@
           "plan": "P154.2"
         }
       ]
+    },
+    {
+      "id": "R193",
+      "text": "A task break (vbw mutate PLAN taskK) without --check runs the plan's own rule checks, and is refused only when one of those fails on the unbroken code, so an early plan of a requirement that later plans complete can still break its tasks (T165, T159; Portfolium feedback 2026-10-16)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M39",
+      "rules": []
+    },
+    {
+      "id": "R194",
+      "text": "A fix (from QA or a failing test) can commit the protected check files of its own requirement with vbw commit --fix, with VBW-Fix and VBW-Req trailers naming that fix and requirement; the files still wait for one user approval before they are proved, and a check file of another requirement is still refused (T165, T124)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M39",
+      "rules": []
+    },
+    {
+      "id": "R195",
+      "text": "A failing check or project command keeps its full output after vbw prove, vbw fix done and vbw check end, and vbw show fix names where it is and the failing test names, so nobody has to rerun the suite to see what failed (T165; Portfolium feedback 2026-10-19)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M39",
+      "rules": []
+    },
+    {
+      "id": "R196",
+      "text": "When a break survives the approved check but a strengthened check file waiting for approval catches it, vbw mutate says so in those words ('survives the approved check; caught by the pending one') (T165; Portfolium feedback 2026-10-16)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M39",
+      "rules": []
+    },
+    {
+      "id": "R197",
+      "text": "The file vbw mutate breaks in the proof copy gets a modification time newer than any build output, so a build that decides by file times (cargo, make) rebuilds it and a break is never reported as surviving because the old build was tested (T167; Portfolium feedback 2026-10-16)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M39",
+      "rules": []
     }
   ],
   "phases": [
@@ -44186,7 +44226,7 @@
       "text": "Dev unblock (Portfolium feedback 2026-10-16/19 + T138 evidence; owner agreed 2026-10-19; after T138, before T94; absorbs T159 and T124): (1) a task break of vbw mutate defaults to the plan's own rule checks and refuses only when those fail on unbroken code; (2) a fix may commit the protected check files of its own requirement (they still wait for one approval; no standalone check drop, which would remove protection unapproved), with provenance-true trailers instead of an old plan; (3) failing checks and commands keep their full output after the run and print the failing test names; (4) the mutate report says 'survives the approved check; caught by the pending one' when a strengthened check waits for approval",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T166",
