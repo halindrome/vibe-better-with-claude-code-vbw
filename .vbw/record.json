@@ -1,20 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "build-20261019T201844Z",
-    "kind": "build",
-    "started_at": "2026-10-19T20:18:44Z",
-    "files": [
-      "docs/guards.md",
-      "plugin/hooks/session-start.sh"
-    ],
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
-    "cost": {
-      "usd": 1523.943064,
-      "in": 194005,
-      "out": 356
-    }
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -43458,10 +43444,92 @@
         "docs/guards.md"
       ],
       "after": [],
-      "status": "building",
+      "status": "done",
       "tasks": [
         "session-start.sh runs vbw next once (its exit 4 gives the newer-VBW notice) and takes the project line from the glance with the words of vbw status line 1, never vbw status",
         "docs/guards.md SessionStart says the hook runs vbw next once and reads the project line from the glance"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R198",
+            "text": "in a VBW project the hook runs vbw next exactly once and never vbw status"
+          },
+          "what": "also ran vbw status",
+          "files": [
+            "plugin/hooks/session-start.sh"
+          ],
+          "checks": {
+            "C423": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T20:20:48Z",
+          "head": "71dda5c53c073d6e242aeabd3233a904927b80ab"
+        },
+        {
+          "rule": {
+            "req": "R198",
+            "text": "the context names the project with the words of vbw status line 1"
+          },
+          "what": "changed context wording",
+          "files": [
+            "plugin/hooks/session-start.sh"
+          ],
+          "checks": {
+            "C423": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T20:21:24Z",
+          "head": "71dda5c53c073d6e242aeabd3233a904927b80ab"
+        },
+        {
+          "rule": {
+            "req": "R198",
+            "text": "a glance older than the record gives the record milestone, not the glance one"
+          },
+          "what": "glance title replaced",
+          "files": [
+            "plugin/hooks/session-start.sh"
+          ],
+          "checks": {
+            "C423": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T20:21:59Z",
+          "head": "71dda5c53c073d6e242aeabd3233a904927b80ab"
+        },
+        {
+          "rule": {
+            "req": "R198",
+            "text": "a record written by a newer VBW still gives the update context and message, without vbw status"
+          },
+          "what": "newer exit code ignored",
+          "files": [
+            "plugin/hooks/session-start.sh"
+          ],
+          "checks": {
+            "C423": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T20:22:36Z",
+          "head": "71dda5c53c073d6e242aeabd3233a904927b80ab"
+        },
+        {
+          "rule": {
+            "req": "R198",
+            "text": "docs/guards.md SessionStart says the hook runs vbw next once, reads the project line from the glance, never vbw status"
+          },
+          "what": "docs say twice",
+          "files": [
+            "docs/guards.md"
+          ],
+          "checks": {
+            "C423": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T20:23:12Z",
+          "head": "71dda5c53c073d6e242aeabd3233a904927b80ab"
+        }
       ]
     }
   ],
@@ -55916,6 +55984,19 @@
         "started": "2026-10-19T19:23:08Z",
         "ended": "2026-10-19T19:26:00Z",
         "cost": null
+      },
+      {
+        "id": "build-20261019T201844Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M40",
+        "started": "2026-10-19T20:18:44Z",
+        "ended": "2026-10-19T20:23:55Z",
+        "cost": {
+          "usd": 0.31766,
+          "in": 2806,
+          "out": 240
+        }
       }
     ],
     "milestones": {
