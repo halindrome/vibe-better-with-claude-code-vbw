@@ -1,5 +1,7 @@
-// Mission Control (mods_4_vbw.md §3.3): the pane, seven tabs as buttons across the
-// top, after the VBW portrait where the terminal draws images (§3.7). Now opens
+// Mission Control (mods_4_vbw.md §3.3): the pane, eight tabs as buttons across the
+// top in whole rows (a name is never split, no row is wider than the pane; the fewest rows
+// win, then the full names over the short ones, then the portrait), after the VBW portrait
+// where the terminal draws images and it costs the tabs nothing (§3.7). Now opens
 // with the panel's own sentences and its sound switch above the live workflow; the
 // other tabs are the views of panel-mission-live.js and panel-mission-record.js.
 // At ship the pane shows VBW Wrapped (panel-candy.js) until a tab is chosen; the
@@ -12,21 +14,51 @@ import { renderNext } from './panel-next.js'
 import { renderWrapped } from './panel-candy.js'
 import { NEED, PROGRESS, ESTIMATE, ACCENT } from './panel-palette.js'
 
-// The head: the portrait's 3 rows and the gap under it, with the one-line tab row beside the portrait.
-// A short pane (fewer than PORTRAIT_ROWS) drops the portrait: the tab row alone, and a gap under
-// it only with room to spare.
-const HEAD_ROWS = 4
+// The head: the portrait's PORTRAIT_DRAWN_ROWS rows or the tab rows, whichever are more, and the gap
+// under them. A short pane (fewer than PORTRAIT_ROWS) drops the portrait, and gets a gap
+// under the tabs only with room to spare.
 const PORTRAIT_ROWS = 8
 const GAP_ROWS = 6
 // Where Claude Code reports no height (inline, the main screen) the pane is at most this tall.
 const FIXED_ROWS = 30
 const PORTRAIT_COLS = 6
+const PORTRAIT_DRAWN_ROWS = 3
+// Claude Code draws a button as '[ ' + label + ' ]' (a hotkey button as '[k] ' + label): 4 cells
+// around the label. The tab buttons sit one cell apart.
+const BUTTON_CHROME = 4
+const TAB_GAP = 1
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 export const TABS = [['now', 'Now'], ['plan', 'Plan'], ['proof', 'Proof'], ['timeline', 'Timeline'], ['decisions', 'Decisions'], ['team', 'Team'], ['sessions', 'Sessions'], ['costs', 'Costs']]
-// The tab labels in a narrow pane: short enough for one line at 40 columns beside the portrait.
+// The tab labels in a narrow pane: with them the eight tabs take two rows at 44 columns beside the portrait.
 export const SHORT = { now: 'Now', plan: 'Plan', proof: 'Proof', timeline: 'Time', decisions: 'Log', team: 'Team', sessions: 'Sess', costs: 'Cost' }
-const tabsWidth = (label) => TABS.reduce((n, [id, name]) => n + [...label(id, name)].length, 0) + TABS.length - 1
+
+// The tabs packed in order into whole rows: each row holds as many whole buttons as fit (first-fit
+// in order gives the fewest rows) and a name is never split; a width narrower than one button still
+// gives one button per row. -> arrays of names.
+export function tabRows(names, width) {
+  const rows = []
+  let used = 0
+  for (const name of names) {
+    const w = [...name].length + BUTTON_CHROME
+    if (rows.length && used + TAB_GAP + w <= width) { rows[rows.length - 1].push(name); used += TAB_GAP + w } else { rows.push([name]); used = w }
+  }
+  return rows
+}
+
+// The head's layout: every candidate (the full names or SHORT, with the portrait, its columns taken
+// from the width, or without) ranked by the fewest rows, then the full names over SHORT, then the
+// portrait over none: the portrait never costs a row or a full name.
+export function layout(width, portraitWanted) {
+  const found = []
+  for (const portrait of portraitWanted ? [true, false] : [false]) {
+    for (const short of [false, true]) {
+      const rows = tabRows(TABS.map(([id, name]) => (short ? SHORT[id] : name)), width - (portrait ? PORTRAIT_COLS : 0))
+      found.push({ portrait, short, rows, rank: [rows.length, short ? 1 : 0, portrait ? 0 : 1] })
+    }
+  }
+  return found.sort((a, b) => a.rank[0] - b.rank[0] || a.rank[1] - b.rank[1] || a.rank[2] - b.rank[2])[0]
+}
 
 // --- how many rows a drawing takes ----------------------------------------------
 // A model of Ink's layout (a Box stacks or sets side by side, a Text wraps or is cut),
@@ -56,7 +88,7 @@ function measure(node, cols) {
     }
     case 'Raster': case 'Image': m = { w: int(p.columns), h: int(p.rows) }; break
     case 'Button': {
-      const label = p.label === undefined || p.label === null ? [] : [{ type: 'Text', props: {}, children: [(p.hotkey ? '[' + p.hotkey + '] ' : '') + String(p.label)] }]
+      const label = p.label === undefined || p.label === null ? [] : [{ type: 'Text', props: {}, children: [' '.repeat(BUTTON_CHROME) + String(p.label)] }]
       m = setBeside([...label, ...(node.children || [])], cols, { columnGap: 1 })
       break
     }
@@ -180,20 +212,21 @@ export function renderPane(ui, input, on) {
   const tab = wrapped ? 'wrapped' : TABS.some(([id]) => id === st.tab) ? st.tab : 'now'
   const sc = input.scroll
   const rows = sc && Number.isInteger(sc.bodyRows) ? sc.bodyRows : 0
-  // The portrait goes when the room is short; the tabs are one line either way.
+  // The portrait goes when the room is short or costs the tabs a row or a full name.
   const width = Number.isFinite(input.width) ? input.width : 50
-  // Nor does it stay when even the short names would not fit one line beside it.
-  const withPortrait = Image && typeof input.portrait === 'string' && (rows < 1 || rows >= PORTRAIT_ROWS) &&
-    width >= tabsWidth((id) => SHORT[id]) + PORTRAIT_COLS
-  const narrow = width < tabsWidth((id, name) => name) + (withPortrait ? PORTRAIT_COLS : 0)
-  const tabs = h(Box, { key: 'tabs', flexDirection: 'row', columnGap: 1, flexShrink: 1 },
-    ...TABS.map(([id, label]) => h(Button, {
-      key: 'tab-' + id, label: narrow ? SHORT[id] : label, ...(id === tab ? { variant: 'primary' } : { dimColor: true }), onPress: () => act({ show: id }),
-    })))
+  const wanted = Boolean(Image) && typeof input.portrait === 'string' && (rows < 1 || rows >= PORTRAIT_ROWS)
+  const lay = layout(width, wanted)
+  const withPortrait = lay.portrait
+  const tabs = h(Box, { key: 'tabs', flexDirection: 'column' },
+    ...lay.rows.map((names, r) => h(Box, { key: 'tab-row-' + r, flexDirection: 'row', columnGap: TAB_GAP, flexShrink: 0 },
+      ...names.map((label) => {
+        const id = TABS.find(([i, name]) => (lay.short ? SHORT[i] : name) === label)[0]
+        return h(Button, { key: 'tab-' + id, label, ...(id === tab ? { variant: 'primary' } : { dimColor: true }), onPress: () => act({ show: id }) })
+      }))))
   const portrait = withPortrait
-    ? [h(Image, { key: 'vbw-portrait', source: { file: input.portrait, format: 'png' }, columns: PORTRAIT_COLS, rows: 3, alt: 'VBW' })] : []
+    ? [h(Image, { key: 'vbw-portrait', source: { file: input.portrait, format: 'png' }, columns: PORTRAIT_COLS, rows: PORTRAIT_DRAWN_ROWS, alt: 'VBW' })] : []
   const gap = rows < 1 || withPortrait || rows >= GAP_ROWS
-  const headRows = withPortrait ? HEAD_ROWS : gap ? 2 : 1
+  const headRows = Math.max(withPortrait ? PORTRAIT_DRAWN_ROWS : 0, lay.rows.length) + (gap ? 1 : 0)
   const head = h(Box, { key: 'head', flexDirection: 'row', ...(gap ? { marginBottom: 1 } : {}) }, ...portrait, tabs)
   const sweep = tab === 'proof' && Raster && input.sweep ? [h(Raster, { key: 'vbw-sweep', columns: input.sweep.cols, rows: 1, cells: input.sweep.cells })] : []
   const view = wrapped ? renderWrapped(ui, wrapped) : body(ui, { ...input, st: { ...st, tab } }, act)
