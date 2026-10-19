@@ -206,7 +206,7 @@ $ways"
   proofcopy_remove
   checks_end
   # What was recorded for this target before: a survivor, if the last one was.
-  local prior='' strong='[]' marks result entry
+  local prior='' strong='[]' marks result entry pending='[]' survived=0
   marks=$(printf '%s' "$results" | jq -c 'map_values(if .status == "pass" then "green" else "red" end)')
   result=red
   printf '%s' "$marks" | jq -e 'all(.[]; . == "green")' > /dev/null && result=survivor
@@ -218,11 +218,24 @@ $ways"
       strong=$(for f in ${cfiles[@]+"${cfiles[@]}"}; do git diff --quiet "$prior" HEAD -- "$f" 2> /dev/null || printf '%s\n' "$f"; done | jq -R . | jq -sc 'map(select(length > 0))')
     fi
   fi
+  if [ "$result" = red ] && [ -n "${CHECK_WAITING:-}" ]; then
+    # The check files that went red and wait for approval, and whether an earlier survivor of this
+    # target ran that very check at another commit (so the approved version let the break through).
+    pending=$(printf '%s' "$record" | jq -c --argjson marks "$marks" --arg w "$CHECK_WAITING" \
+      '[.checks[] | select($marks[.id] == "red") | .files // [] | .[]] | unique | map(select(. as $f | ($w | split("\n")) | index($f) != null))')
+    if [ "$pending" != '[]' ]; then
+      printf '%s' "$record" | jq -e --arg p "$plan" --arg h "$head" --argjson rule "${ruledoc:-null}" --argjson k "${tk:-0}" --argjson marks "$marks" '.plans[] | select(.id == $p)
+        | any((.mutations // [])[]; has("result") and .result == "survivor" and .head != $h
+            and (if $rule != null then .rule == {req: $rule.req, text: $rule.text} else .task == $k end)
+            and ((($marks | keys) - (.checks | keys)) | length == 0))' > /dev/null && survived=1
+    fi
+  fi
   entry=$(jq -nc --argjson rule "${ruledoc:-null}" --argjson k "${tk:-0}" --arg what "$what" --argjson files "$(printf '%s\n' "${files[@]}" | jq -R . | jq -sc .)" \
-    --argjson marks "$marks" --arg result "$result" --arg at "$(vbw_now)" --arg head "$head" --argjson strong "$strong" '
+    --argjson marks "$marks" --arg result "$result" --arg at "$(vbw_now)" --arg head "$head" --argjson strong "$strong" --argjson pending "$pending" '
     (if $rule != null then {rule: {req: $rule.req, text: $rule.text}} else {task: $k} end)
     + {what: $what, files: $files, checks: $marks, result: $result, at: $at, head: $head}
-    + (if ($strong | length) > 0 then {strengthened: $strong} else {} end)')
+    + (if ($strong | length) > 0 then {strengthened: $strong} else {} end)
+    + (if ($pending | length) > 0 then {pending: $pending} else {} end)')
   # A survivor of a plan of the open build run opens its check files for the run (R188.33).
   record_update "$COMMIT_SURVIVOR_DEFS"'(.plans[] | select(.id == $p)).mutations += [$e]
     | if $e.result == "survivor" and .lease.kind == "build" and (.plans[] | select(.id == $p).status) == "building"
@@ -233,6 +246,19 @@ $ways"
       "$(printf '%s' "$marks" | jq -r 'keys | join(", ")')"
     slots_say
     return 1
+  fi
+  if [ "$pending" != '[]' ]; then
+    local pl
+    pl=$(printf '%s' "$pending" | jq -r 'join(", ")')
+    if [ "$survived" = 1 ]; then
+      printf '%s survives the approved check; caught by the pending one: %s\n' "$target" "$pl"
+    else
+      printf '%s red: %s\ncaught by a check file waiting for approval: %s\n' "$target" "$what" "$pl"
+    fi
+    printf '%s' "$marks" | jq -r 'to_entries[] | "\(.key) \(.value)"'
+    printf 'the pending file still needs the one approval before the proof\n'
+    slots_say
+    return 0
   fi
   printf '%s red: %s\n' "$target" "$what"
   printf '%s' "$marks" | jq -r 'to_entries[] | "\(.key) \(.value)"'
