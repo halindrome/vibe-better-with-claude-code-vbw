@@ -6,12 +6,13 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mount, record, next, lease, collect, find, walk, ROOT, T0 } from './helpers/fake-mod.mjs'
+import { screen, widest } from './r189/helpers/screen.mjs'
 import { ENV, SESSION_DIR, RUN, RUN_DIR, ARCH, LEAD, writeRun, finish, launch, band } from './helpers/run.mjs'
 
 const TEST_MODE = ROOT + '/.vbw/runtime/test-mode'
 const approve = () => next({ action: 'approve', gate: true })
 
-// Eight full tab names need 53 columns; the stand-in's default pane is 50, which draws the short names.
+// WIDE: eight full tab names take two rows beside the portrait at 60 columns.
 const WIDE = { title: 'VBW', isFocused: false, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} }
 const wide = (h) => { const render = h.render; h.render = (extra = {}) => render({ props: WIDE, ...extra }); return h }
 async function started(options = {}, rec = record(), nxt = next()) {
@@ -194,19 +195,31 @@ test('the pane is Mission Control: eight tabs, Now first with the panel rows and
   assert.match(t, /No VBW workflow runs/)
 })
 
-test('the tab row is one line at 40 columns: short names, and the portrait only where it fits beside them', async () => {
+test('the tabs sit in whole rows: at 40 columns the short names on two rows and no portrait, at 50 the full names on two rows and no portrait, at 60 the full names on two rows beside the portrait', async () => {
   const h = await started()
+  const FULL = TABS
   const SHORT = ['Now', 'Plan', 'Proof', 'Time', 'Log', 'Team', 'Sess', 'Cost']
   const at = async (columns) => {
     const pane = await h.render({ props: { title: 'VBW', isFocused: false, bodyColumns: columns, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} } })
-    return { labels: buttons(pane).filter((b) => /^tab-/.test(b.props.key)).map((b) => b.props.label), portrait: find(pane, (n) => n.type === 'Image') }
+    const lines = screen(pane, columns)
+    const shown = lines.flatMap((l) => (l.match(/\[ [A-Za-z]+ \]/g) || []).map((b) => b.slice(2, -2)))
+    const rows = lines.filter((l) => /\[ [A-Za-z]+ \]/.test(l)).length
+    assert.ok(widest(lines) <= columns, columns + ' columns: a line is ' + widest(lines) + ' wide')
+    assert.ok(lines.every((l) => !/\[ [A-Za-z]*$|^[A-Za-z]* \]/.test(l.replace(/\[ [A-Za-z]+ \]/g, ''))), columns + ' columns: a cut name in ' + JSON.stringify(lines.slice(0, 4)))
+    return { shown, rows, portrait: find(pane, (n) => n.type === 'Image') }
   }
   const narrow = await at(40)
-  assert.deepEqual(narrow.labels, SHORT)
-  assert.ok(!narrow.portrait, 'the portrait would push the short row past 40 columns')
+  assert.deepEqual(narrow.shown, SHORT)
+  assert.equal(narrow.rows, 2)
+  assert.ok(!narrow.portrait, 'beside the portrait the short names would take three rows')
   const mid = await at(50)
-  assert.deepEqual(mid.labels, SHORT)
-  assert.ok(mid.portrait, 'the portrait stays where the short row fits beside it')
+  assert.deepEqual(mid.shown, FULL)
+  assert.equal(mid.rows, 2)
+  assert.ok(!mid.portrait, 'beside the portrait the full names would not fit two rows')
+  const wide60 = await at(60)
+  assert.deepEqual(wide60.shown, FULL)
+  assert.equal(wide60.rows, 2)
+  assert.ok(wide60.portrait, 'the portrait costs the tabs nothing at 60 columns')
 })
 
 test('each tab draws its view, and the choice holds across redraws', async () => {
