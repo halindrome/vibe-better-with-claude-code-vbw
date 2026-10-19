@@ -133,3 +133,16 @@ start() { VBW_SESSION_ID="$1" "$VBW" run start build P1.1 > /dev/null; }
   grep -vE '^[[:space:]]*#' "$b" | grep -qE '> *"[^"]*run-open"'
   grep -vE '^[[:space:]]*#' "$b" | grep -qE 'sessions/[^ ]*\.json'
 }
+
+@test "R192: with several entries for one session the newest updatedAt wins, whatever the file order" {
+  start "$SESSION_A"
+  registry_entry 101 "$SESSION_A" "Newest name" 1792300090000
+  registry_entry 102 "$SESSION_A" "Older name" 1792300010000
+  local l
+  l=$(first "$SESSION_B")
+  [[ "$l" == *"held by Newest name" ]] || { echo "$l"; false; }
+  registry_entry 101 "$SESSION_A" "Older name" 1792300010000
+  registry_entry 102 "$SESSION_A" "Newest name" 1792300090000
+  l=$(first "$SESSION_B")
+  [[ "$l" == *"held by Newest name" ]] || { echo "$l"; false; }
+}
