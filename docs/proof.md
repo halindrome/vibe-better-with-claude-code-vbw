@@ -899,6 +899,14 @@ At standard and deep, the builder breaks the plan's code on purpose (one
 statement per rule) with `vbw mutate` and runs the rule's own check. See
 docs/workflows.md for the command and docs/rigor.md for the levels.
 
+A task break (`taskK`) without `--check` runs the checks of the plan's own
+rules: those of the rules that name the plan and those of the requirements it
+completes, each check once. A red check of a rule the plan does not owe does not
+refuse the break, so an early plan of a requirement that later plans complete
+can still break its tasks. A plan that owns no rule runs the checks of its
+requirements, and a refusal then says it owns no rule and that the Lead names a
+plan on each rule.
+
 A break with several checks (a task at deep) runs them one at a time, fastest
 first by their last recorded time, and stops at the first that goes red; a
 survivor runs them all. Each check first runs once on the unbroken code at that
@@ -918,6 +926,19 @@ suite therefore pays for the checks a break needs, not for every check.
   breaks its own rules. At deep each task also needs a red break or a
   written reason. At express it asks for nothing. A survivor alone covers
   nothing.
+
+The broken file, and its restore, get a fresh modification time, newer than
+every file in the proof copy (even one stamped ahead of the clock). Builds that
+decide by file times (make, cargo) rebuild the broken code, so a break is never
+called a survivor because the old build was tested, and rebuild the clean code
+after the restore. A break that deletes a file stamps nothing.
+
+When a break stays green on the approved check but a strengthened check file
+that waits for approval catches it, `vbw mutate` prints `TARGET survives the
+approved check; caught by the pending one: FILE...` and exits 0. Without an
+earlier survivor of that target, it says a check file waiting for approval
+caught the break and names it. The pending file still needs the one approval
+before the proof, as below.
 
 A strengthened check file adds one approval. The build finishes, then `vbw next`
 asks you to approve the file before the proof, and `vbw prove` refuses until
