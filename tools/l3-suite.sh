@@ -388,7 +388,7 @@ record_history() {
 # would look.
 scenario_qafix() {
   new_project
-  fixture="greet.sh plus NOTES.md (no check names it); the built NOTES.md is deleted after the build, so only QA can see the deviation"
+  fixture="greet.sh plus NOTES.md (no check names it); guided autonomy stated in words; the built NOTES.md is deleted after the build, so only QA can see the deviation"
   deviation=""
   # Guided autonomy: the session asks before each step, which is where a user
   # (and this scenario) can act between the build and QA.
@@ -416,7 +416,18 @@ scenario_qafix() {
   # Human requirements (NOTES.md wording) are accepted as a user would.
   checks() {
     common_checks
-    local hist first note rounds=0 final=none proved=false passed=true fv=none
+    local hist first note rounds=0 final=none proved=false passed=true fv=none autonomy first_approval set_before=false
+    autonomy=$(cd "$dir" && "$VBW" config autonomy 2> /dev/null)
+    # The settings write comes from the main session (not a subagent) and must be
+    # earlier than the first 'Contract approved' decision and the first run lease
+    # (a 'run start' command or a Workflow call). Timestamps are cut to the second.
+    first_approval=$(jq -r '[.decisions[] | select(.text | startswith("Contract approved")) | .at[0:19]] | first // "9999"' "$dir/.vbw/record.json" 2> /dev/null)
+    if transcripts | grep -v /subagents/ | xargs cat 2> /dev/null | jq -sre --arg a "${first_approval:-9999}" '
+        [.[] | select(.type == "assistant") | . as $m | .message.content[]?
+          | select(.type == "tool_use") | {at: ($m.timestamp[0:19]), name: .name, cmd: (.input.command // "")}] as $u
+        | ([$u[] | select(.cmd | contains("config set autonomy")) | .at] | first) as $w
+        | ([$u[] | select((.cmd | contains("run start")) or .name == "Workflow") | .at] | first // "9999") as $r
+        | $w != null and $w <= $a and $w <= $r' > /dev/null 2>&1; then set_before=true; fi
     hist=$(record_history)
     first=$(printf '%s\n' "$hist" | jq -sr '[.[] | .phases[]? | select(.qa != null) | .qa] | first // {} | .result // "none"')
     fv=$first
@@ -433,10 +444,12 @@ scenario_qafix() {
     expect "at least one fix round ran ($rounds)" [ "$rounds" -ge 1 ]
     expect "QA's final verdict is pass ($final)" [ "$final" = pass ]
     expect "every requirement is proven or accepted" [ "$proved" = true ]
-    [ "$failed" -eq 0 ] && [ "$fv" = fail ] && [ "$rounds" -ge 1 ] && [ "$final" = pass ] && [ "$proved" = true ] || { passed=false; failed=1; }
+    expect "the autonomy stated in words was recorded: guided ($autonomy)" [ "$autonomy" = guided ]
+    expect "autonomy_set_before_first_run: the setting was written before the first Contract approved and the first run ($set_before)" [ "$set_before" = true ]
+    [ "$failed" -eq 0 ] && [ "$autonomy" = guided ] && [ "$set_before" = true ] && [ "$fv" = fail ] && [ "$rounds" -ge 1 ] && [ "$final" = pass ] && [ "$proved" = true ] || { passed=false; failed=1; }
     result_write qafix "$fixture" "${cost_usd:-0}" "$passed" \
-      "$(jq -n --arg d "${deviation:-}" --arg fv "$fv" --arg n "$note" --argjson r "$rounds" --arg fin "$final" --argjson p "$proved" \
-        '{deviation: $d, first_qa_verdict: $fv, first_qa_note: $n, fix_rounds: $r, final_qa_verdict: $fin, phase_proved: $p}')" \
+      "$(jq -n --arg d "${deviation:-}" --arg fv "$fv" --arg n "$note" --argjson r "$rounds" --arg fin "$final" --argjson p "$proved" --arg au "$autonomy" --argjson sb "$set_before" \
+        '{deviation: $d, first_qa_verdict: $fv, first_qa_note: $n, fix_rounds: $r, final_qa_verdict: $fin, phase_proved: $p, autonomy: $au, autonomy_set_before_first_run: $sb}')" \
       '["a deviation other than one missing file","a deviation the Dev introduces itself (the seed is played by the scenario)","the fix cap (three failed rounds) and its escalation","a project larger than the greet.sh fixture"]'
   }
 }
