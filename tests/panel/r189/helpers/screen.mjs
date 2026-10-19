@@ -6,8 +6,9 @@
 // columns; a Box with a height shows exactly that many rows (a negative
 // marginTop scrolls its content up). A Text is one line per line of its text
 // when it truncates (cut to the width), else it wraps at the width it is given.
-// A Button is its label ("[k] label" with a hotkey), then its children on the
-// same row. A Raster or an Image takes its rows and columns. Claude Code's own
+// A Button is its label in 4 cells of chrome ("[ label ]" with no hotkey, as
+// Claude Code 2.1.302 draws a tab button; "[k] label" with a hotkey, the same 4
+// cells of width), then its children on the same row. A Raster or an Image takes its rows and columns. Claude Code's own
 // drawing (the stand-in's 'engine') is none of VBW's, so it takes no line.
 
 const width = (s) => [...s].length
@@ -120,7 +121,7 @@ function draw(node, cols) {
     case 'Raster': out = Array.from({ length: int(p.rows) }, () => '▒'.repeat(int(p.columns))); break
     case 'Image': out = Array.from({ length: int(p.rows) }, () => '▓'.repeat(int(p.columns))); break
     case 'Button': {
-      const label = p.label === undefined || p.label === null ? [] : [{ type: 'Text', props: {}, children: [(p.hotkey ? '[' + p.hotkey + '] ' : '') + String(p.label)] }]
+      const label = p.label === undefined || p.label === null ? [] : [{ type: 'Text', props: {}, children: [p.hotkey ? '[' + p.hotkey + '] ' + String(p.label) : '[ ' + String(p.label) + ' ]'] }]
       out = row([...label, ...(node.children || [])], cols, { columnGap: 1 })
       break
     }
