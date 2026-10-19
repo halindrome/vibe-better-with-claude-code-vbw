@@ -67,7 +67,7 @@ plant() {
 show() { "$VBW" show fix "$F_REQ" < /dev/null; }
 # after ID: the lines of show fix after the line naming check ID's kept file, up to the next kept-file or heading line.
 after() {
-  show | awk -v f="full output: $OUT/$1.log" 'found && (/full output/ || /^[a-z].*:$/) { exit } found { print } $0 ~ f { found = 1 }'
+  show | awk -v f="full output: $OUT/$1.log" 'found && (/full output: / || /full output not kept/ || /^[a-z].*:$/) { exit } found { print } $0 ~ f { found = 1 }'
 }
 # has_name ID NAME: under check ID one line is NAME alone (indented).
 has_name() { after "$1" | grep -qE "^ *$(printf '%s' "$2" | sed 's/[][\\.*^$/]/\\&/g')\$" || { echo "under $1, no line reads: $2"; after "$1"; return 1; }; }

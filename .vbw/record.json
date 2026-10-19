@@ -42452,6 +42452,24 @@
         "docs/proof.md, Fix items: vbw show fix lists the failing test files with their kept file and the failing test names, and says when none is recognised",
         "plugin/workflows/fixing.js, the Dev instruction: read the full output and the failing test names with vbw show fix instead of rerunning the suite; no mutation word"
       ]
+    },
+    {
+      "id": "P156.4",
+      "phase": "P156",
+      "title": "vbw fix done holds a check whose files wait for approval",
+      "reqs": [
+        "R194"
+      ],
+      "files": [
+        "plugin/lib/cmd-fix.sh",
+        "plugin/lib/contract.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/cmd-fix.sh (with contract.sh if the rule belongs there): vbw fix done never runs a check whose files are new or changed since the approval and wait for it (contract_waiting), whatever opened the fix, not only checks a fix added; it says the check waits for approval, as it does today for a fix check, and the proof after the approval runs it fresh. Root cause of P156.1 block: C417 test 7 (R194.10) saw fix done run the changed, unapproved tests/c1.sh, and the proof then reused that run. C417 must pass whole; tests/fix-done*.bats and tests/fix-regression-test.bats keep passing."
+      ]
     }
   ],
   "fixes": [
@@ -48017,6 +48035,11 @@
       "id": "D456",
       "at": "2026-10-19T11:45:37Z",
       "text": "Contract approved: 186 requirements, 417 checks, 475 plans (bf08d012a648)"
+    },
+    {
+      "id": "D457",
+      "at": "2026-10-19T12:18:39Z",
+      "text": "Contract approved: 186 requirements, 417 checks, 476 plans (1200b2d29400)"
     }
   ],
   "commands": {
