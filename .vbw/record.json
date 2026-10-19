@@ -1,6 +1,20 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "build-20261019T201844Z",
+    "kind": "build",
+    "started_at": "2026-10-19T20:18:44Z",
+    "files": [
+      "docs/guards.md",
+      "plugin/hooks/session-start.sh"
+    ],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1523.943064,
+      "in": 194005,
+      "out": 356
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -43444,7 +43458,7 @@
         "docs/guards.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "building",
       "tasks": [
         "session-start.sh runs vbw next once (its exit 4 gives the newer-VBW notice) and takes the project line from the glance with the words of vbw status line 1, never vbw status",
         "docs/guards.md SessionStart says the hook runs vbw next once and reads the project line from the glance"
@@ -46673,6 +46687,13 @@
       "text": "The Lead cannot reword an approved rule (F269, 2026-10-19): vbw apply --patch matches a rule by requirement and text, so new wording adds a rule and the stale one stays; a shipped milestone's rule cannot be reached at all. Give rules a stable address (R188.10) that a patch can reword or retire, with re-approval, so a later requirement that changes behaviour can update the earlier rule instead of leaving it stale (R188.10 is superseded by R193 meanwhile)",
       "sort": "next",
       "size": "small",
+      "status": "open"
+    },
+    {
+      "id": "T169",
+      "text": "L3 scenarios missing for M38 and M39 (owner 2026-10-19: push first, then these first): session names and the Sessions tab (holder named in the status line, Comms and vbw next; resume line), and M39 (a task break by own rules on an early plan, a fix committing its own requirement's check file with one approval, kept failing output named by vbw show fix). Each milestone should add its scenarios while built; find why M38 and M39 did not",
+      "sort": "next",
+      "size": "medium",
       "status": "open"
     }
   ],
