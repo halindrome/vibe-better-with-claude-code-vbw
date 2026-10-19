@@ -20711,7 +20711,14 @@
           "to": "deep",
           "reason": "Dev blocked P153.1: Tasks 1-3 are built, committed and green (C404 pass; rules R192.18-23 each broken once and caught; bench status line 36.6 ms CPU per call, budget 60). The three task-level mutations cannot run: vbw mutate refuses while tests/panel/r192/sessions-tab.test.mjs (C408, P154.1's blocked check, edited uncommitted and waiting for owner approval) differs from the last commit. Re-run 'vbw mutate P153.1 task1|task2|task3' after that file is approved and committed."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "8fe20ddcf53ad5f4a14b7a61871a1a269137643195be37349a37a643baebe225",
+        "at": "2026-10-19T10:04:36Z",
+        "note": "26/26 checks"
+      }
     },
     {
       "id": "P154",
