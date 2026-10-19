@@ -339,7 +339,7 @@ Approval, checking and shipping always stop for you, whatever the preset. Autono
 | :--- | :--- | :--- |
 | `profile` | `quality` / `balanced` / `budget` | Which models the agents run on |
 | `model.<role>` | `opus` / `sonnet` / `haiku` / a model id / `default` | Override one agent. QA never runs on Haiku: whatever judges your work doesn't get the cheap seat |
-| `autonomy` | `guided` / `balanced` / `hands-off` | How much `/vbw:vibe` does on its own |
+| `autonomy` | `guided` / `balanced` / `hands-off` | How much `/vbw:vibe` does on its own. You can also say it to `/vbw:vibe` in words ("use guided autonomy", "ask me before each step", "do not ask, just go") and it is recorded before the first step |
 | `autonomy_cap` | a number | Steps one autonomous run takes before stopping. `/vbw:loop` steps are not counted: its ceiling is its cap |
 | `rigor` | `auto` / `express` / `standard` / `deep` | How thorough each phase is: sized to the work (`auto`, the default) or forced |
 | `check_jobs` | `1` to `64` | How many checks run at once. Default: about three quarters of the processor cores, at least 1. Kept in this clone |

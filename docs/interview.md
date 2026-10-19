@@ -154,7 +154,9 @@ The answers never change:
 
 - rigor: the tier of each phase and its checks come from the requirements and
   the code (docs/rigor.md), not from your level;
-- autonomy: how much VBW does alone is `vbw config set autonomy`;
+- autonomy: how much VBW does alone is `vbw config set autonomy`, or the setting stated in words to `/vbw:vibe`
+  (guided, balanced, hands-off, or a phrase that clearly means one), recorded before the first step;
+  it is a setting, never an idea for triage;
 - proof: approved checks run the same for everyone (docs/proof.md);
 - machine-read output: `vbw next --json` is the same for every level except its
   `profile` field, and agent result schemas keep their fields and values;
