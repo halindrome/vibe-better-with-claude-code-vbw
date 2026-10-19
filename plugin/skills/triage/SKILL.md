@@ -18,7 +18,7 @@ Router calls this for each new idea, before any requirement, planning or file ch
 
 ## When it applies
 
-New idea: a feature, change, fix or wish not yet in the spec. Not a new idea, so no triage: an answer to a question VBW asked, "continue" or "go on", an approval, a question about the project.
+New idea: a feature, change, fix or wish not yet in the spec. Not a new idea, so no triage: an answer to a question VBW asked, "continue" or "go on", an approval, a question about the project, an autonomy setting stated in words (guided, balanced, hands-off, or a phrase that means one): the router records it; the rest of the same message goes to triage as usual.
 
 Idea already matches a requirement or open backlog item: name it, no new entry. For a backlog item, offer to move it to now (`vbw spec add`, then `vbw todo done`).
 
