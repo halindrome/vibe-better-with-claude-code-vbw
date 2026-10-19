@@ -45457,7 +45457,7 @@
       "req": "R193",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Criterion not met: the approved rule R188.10 was not rewritten. The record still says 'a task break runs the checks of the plan's requirements, only the named ones with --check, never another requirement's' (vbw show req R188, rule 10), which is now false for a plan that owns rules (it runs the plan's own rules' checks). Its test, 'R188: a task break runs the checks of the plan's requirements; --check narrows it to the named ones' in tests/mutate-command.bats (line 194), is unchanged; the file's last commit is 85bf0aaf, before P155. No P155 plan task covers this, so it is also a plan omission. A regression test should fail while R188.10's text still says 'the plan's requirements' and while the tests/mutate-command.bats task-break test does not assert the own-rules behaviour (a plan that owns a rule, with another rule's check red, still breaks and records red). Fix: the Lead rewrites R188.10 to the own-rules behaviour (re-approval of the contract), and the test in tests/mutate-command.bats is changed with it.",
       "phase": "P155"
     },
@@ -55749,6 +55749,19 @@
           "usd": 0.100437,
           "in": 1213,
           "out": 87
+        }
+      },
+      {
+        "id": "fix-20261019T190938Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M39",
+        "started": "2026-10-19T19:09:38Z",
+        "ended": "2026-10-19T19:11:54Z",
+        "cost": {
+          "usd": 0,
+          "in": 0,
+          "out": 0
         }
       }
     ],
