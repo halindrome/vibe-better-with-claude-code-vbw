@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261019T103607Z",
+    "kind": "qa",
+    "started_at": "2026-10-19T10:36:07Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1479.208779,
+      "in": 285467,
+      "out": 337
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -20781,12 +20792,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "7836638d8b38c3e082e6a7b47eed6dfd532e8bceab138501e5e9211f2faee9b1",
-        "at": "2026-10-19T10:01:06Z",
-        "note": "27/30 checks",
-        "rounds": 1
+        "tree": "922eb0777dc98bfd7160961eeee30983a6c024bcb5cb1d14129d3b805c4a31fa",
+        "at": "2026-10-19T10:37:28Z",
+        "note": "6/6 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 3,
+        "qa_findings": 3,
+        "escalations": 2
       }
     }
   ],
@@ -43105,7 +43123,7 @@
       "req": "R192",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The Sessions tab never names another day. The criterion and plan task 1 say last active is HH:MM local with another day named as the rest of the panel does (panel-step.js says 'yesterday 14:20' or a weekday). plugin/hooks/panel-sessions.js hhmm() always returns bare HH:MM and sessionsModel takes 'now' but never uses it. Evidence: a chat last active 3 days ago (updatedAt now minus 3 days, now 12:00) gives last '12:00', identical to a chat active this minute. A reader cannot tell a stale chat from a live one. docs/panel.md also does not say how another day is shown. Regression test: sessionsModel with an entry from yesterday and one from three days ago must give 'yesterday HH:MM' and '<Weekday> HH:MM' (same wording as panel-step when()), today stays bare HH:MM; add the sentence to docs/panel.md and a docs-test check.",
       "phase": "P154"
     },
@@ -43114,7 +43132,7 @@
       "req": "R192",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The tab lists the same chat twice when Claude Code's list has two files for one session id. registryEntries() in plugin/hooks/panel-sessions.js sorts but does not merge by sessionId, and sessionsModel() maps every entry to a row. R192.2 already states the rule 'several list entries for one session id: the newest updatedAt wins' for the kernel, so this case is expected. Evidence: registryEntries of two files with sessionId a (names old, new) plus one b gives rows a/new, a/old, b; both a rows have the same resume line and the same React key 'chat-a'. Regression test: sessionsModel (or registryEntries) with two entries of one session id returns one row, the newest, and a panel mount with two such files draws the name and resume line once.",
       "phase": "P154"
     },
@@ -43123,7 +43141,7 @@
       "req": "R192",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Deviation from the plan's files. Commit 1856cef3 edits tests/panel/cost.test.mjs (the Costs button check now also excludes 'Cost'), a file not listed in P154.1 (files: panel-sessions.js, panel-pane.js, panel.js, tests/panel/wiring.test.mjs), and no recorded decision covers it (decisions D442-D451 are about the holder name, hint and contract approvals; none names cost.test.mjs). The Dev's blocked note declared it and asked for the owner to approve, but the contract approval D451 is a hash approval, not a decision accepting the file outside the plan. Fix: record a decision naming the edit and why (the 8-tab row needs the short 'Cost' button name to be excluded), or move the edit into a plan that lists the file. Regression test: none beyond the existing cost test, which must stay green; the fix is the decision record.",
       "phase": "P154"
     }
