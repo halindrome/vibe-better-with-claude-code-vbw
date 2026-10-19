@@ -3,6 +3,9 @@
 # record_update: lock, apply one jq program, validate, rename into place.
 
 VBW_LOCK_STALE_SECONDS=30
+# A lock whose holder still runs is broken only past this age, for a holder id
+# the system has since given to another process.
+VBW_LOCK_HELD_SECONDS=600
 
 # Print the first violation of FILE (empty output = valid). Status 1 if invalid.
 record_violation() {
@@ -133,28 +136,59 @@ record_unlock() {
   vbw_guard_drop "$VBW_RUNTIME/lock"
 }
 
-# True only when the lock's age is known and too old. An age that cannot be read
-# (the lock vanished between the two looks, as happens under contention) is
-# never "stale": treating it as age 0 once let a waiter delete a lock another
-# writer had just taken, and two writes overlapped (lost updates, CI 2.0.2).
+# vbw_lock_alive PID: true while process PID runs (kill -0 is only a liveness
+# probe; a process of another user answers "not permitted" and counts as running).
+vbw_lock_alive() {
+  local e
+  e=$(kill -0 "$1" 2>&1) && return 0
+  case "$e" in *ermitted*) return 0 ;; esac
+  return 1
+}
+
+# vbw_lock_holder LOCK: the holder's process id, only when the whole line is
+# there. A lock read while its holder is still writing the id shows part of it
+# ("69" of "6980"): that once named a process that does not run and broke a
+# live writer's lock. Without the line's newline the id is unknown (empty).
+vbw_lock_holder() {
+  local pid=""
+  { IFS= read -r pid < "$1"; } 2> /dev/null || pid=""
+  case "$pid" in "" | *[!0-9]*) pid="" ;; esac
+  printf '%s' "$pid"
+}
+
+# True when the lock is abandoned. A lock names its holder's process id: it is
+# abandoned once that process has ended, and while it runs only past
+# VBW_LOCK_HELD_SECONDS. Age alone once broke the lock of a writer still at work
+# on a busy machine (a write over 30 s), and two writes overlapped: updates were
+# lost with no error (2026-10-19). A lock without a readable id (just created,
+# or a directory an older VBW left) goes by age. An age that cannot be read (the
+# lock vanished between the two looks, as happens under contention) is never
+# "stale": treating it as age 0 once let a waiter delete a lock another writer
+# had just taken (lost updates, CI 2.0.2).
 vbw_is_stale() {
-  local m
+  local m pid
   [ -e "$1" ] || return 1
+  pid=$(vbw_lock_holder "$1")
   m=$(vbw_mtime "$1")
+  if [ -n "$pid" ]; then
+    vbw_lock_alive "$pid" || return 0
+    [ "$m" -gt 0 ] && [ $(( $(date +%s) - m )) -gt "$VBW_LOCK_HELD_SECONDS" ]
+    return
+  fi
   [ "$m" -gt 0 ] && [ $(( $(date +%s) - m )) -gt "$VBW_LOCK_STALE_SECONDS" ]
 }
 
-# Take the project lock. A lock older than VBW_LOCK_STALE_SECONDS belongs to a
-# crashed writer (writes take milliseconds) and is broken, but only while
-# holding the "break" mutex and after re-checking that it is still stale, so two
-# processes can never both break it and one delete the other's fresh lock.
-# No process probing and no signals.
+# Take the project lock. An abandoned lock (vbw_is_stale) is broken, but only
+# while holding the "break" mutex and after re-checking that it is still
+# abandoned, so two processes can never both break it and one delete the
+# other's fresh lock. No signals: kill -0 only asks whether the holder runs.
 record_lock() {
   mkdir -p "$VBW_RUNTIME"
   vbw_lock_take "$VBW_RUNTIME/lock" "record"
 }
 
-# vbw_lock_create LOCK: create the lock file LOCK, failing when it exists. It
+# vbw_lock_create LOCK: create the lock file LOCK holding this process's id,
+# failing when it exists. It
 # uses bash's own noclobber open (O_CREAT|O_EXCL), never an outside tool: the
 # Rust mkdir of Ubuntu 25.10 and 26.04 succeeds on an existing directory, so a
 # mkdir lock let two writers in (lost writes, CI 2026-10-09). A lock directory
@@ -162,7 +196,7 @@ record_lock() {
 vbw_lock_create() {
   local r o="$-"
   set -C
-  { : > "$1"; } 2> /dev/null
+  { printf '%s\n' "$$" > "$1"; } 2> /dev/null
   r=$?
   case "$o" in *C*) ;; *) set +C ;; esac
   return "$r"
@@ -176,11 +210,21 @@ vbw_lock_remove() {
 # vbw_lock_take LOCK WHAT: take the lock LOCK, as described above; it is
 # released by vbw_guard_drop (and by the interrupt cleanup).
 vbw_lock_take() {
-  local lock="$1" brk="$1.break" deadline
-  # A held lock is released or becomes breakable within the stale window, so
-  # waiting twice that long is always enough, even under heavy load.
+  local lock="$1" brk="$1.break" deadline seen="" m pid
+  # The wait counts from the last sign of progress: the lock changed hands (its
+  # time moved) or its holder still runs. A long queue of writers or one slow
+  # writer on a busy machine is waited for, never given up on; a running holder
+  # is broken only past VBW_LOCK_HELD_SECONDS (vbw_is_stale). A lock that names
+  # no running holder and does not move becomes breakable within the stale
+  # window, so waiting twice that long is always enough.
   deadline=$(( $(date +%s) + 2 * VBW_LOCK_STALE_SECONDS ))
   until vbw_lock_create "$lock"; do
+    m=$(vbw_mtime "$lock")
+    pid=$(vbw_lock_holder "$lock")
+    if [ "$m" != "$seen" ] || { [ -n "$pid" ] && vbw_lock_alive "$pid"; }; then
+      seen=$m
+      deadline=$(( $(date +%s) + 2 * VBW_LOCK_STALE_SECONDS ))
+    fi
     if vbw_is_stale "$lock"; then
       vbw_is_stale "$brk" && vbw_lock_remove "$brk"
       if vbw_lock_create "$brk"; then
