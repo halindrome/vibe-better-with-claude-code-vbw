@@ -109,6 +109,29 @@ strengthen() {
   last_break | jq -e '.result == "red" and (has("pending") | not) and .strengthened == ["tests/pay.sh"]' || { last_break; false; }
 }
 
+@test "R196: a waiting check file of another check does not make the red check pending: the plain red line" {
+  survivor R1.1
+  strengthen
+  "$VBW" approve > /dev/null
+  printf '[ "$(sh src/receipt.sh)" = receipt ] && true\n' > tests/receipt.sh
+  git commit -q -am "test(receipt): touched"
+  break_pay R1.1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -q '^R1\.1 red: prints unpaid instead of paid$' || { echo "$output"; false; }
+  [[ "$output" != *"caught by"* && "$output" != *survives* ]] || { echo "$output"; false; }
+  last_break | jq -e '.result == "red" and (has("pending") | not)' || { last_break; false; }
+}
+
+@test "R196: vbw show plan words a pending break with no earlier survivor as caught by a check file waiting for approval" {
+  printf '[ "$(sh src/pay.sh)" = paid ]\n' > tests/pay.sh
+  git commit -q -am "test(pay): check what is printed"
+  break_pay R1.1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  run "$VBW" show plan P1.1 < /dev/null
+  printf '%s\n' "$output" | grep -F 'caught by a check file waiting for approval' | grep -q 'tests/pay\.sh' || { echo "$output"; false; }
+  [[ "$output" != *survives* ]] || { echo "$output"; false; }
+}
+
 @test "R196: vbw show plan shows the same words and --json carries the pending files; the red break counts for vbw plan done; the fingerprint is unchanged" {
   survivor R1.1
   strengthen
