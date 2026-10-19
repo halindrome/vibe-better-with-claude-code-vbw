@@ -24,7 +24,7 @@ setup() {
     plans: [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1"], files: ["src/pay.sh"], after: [], role: "dev", tasks: ["pay"]}],
     checks: [{id: "C1", req: "R1", run: ["sh", "tests/slow.sh"], files: ["tests/slow.sh"]},
              {id: "C2", req: "R1", run: ["sh", "tests/fast.sh"], files: ["tests/fast.sh"]}],
-    rules: [{req: "R1", text: "paying prints paid", check: "C1"}]}' | "$VBW" apply > /dev/null
+    rules: [{req: "R1", text: "paying prints paid", check: "C1"}, {req: "R1", text: "paying is quick to check", check: "C2"}]}' | "$VBW" apply > /dev/null
   git add -A && git commit -q -m "feat(shop): start"
   "$VBW" approve > /dev/null
   VBW_SESSION_ID=s1 "$VBW" run start build P1.1 > /dev/null
