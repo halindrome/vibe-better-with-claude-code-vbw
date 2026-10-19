@@ -41,9 +41,28 @@ sessions_name() {
 }
 
 # sessions_project_entries ROOT: the entries whose cwd is ROOT or a folder under it.
+# Folders are compared by their physical path (symbolic links resolved, as git
+# reports the project root), so /var and /private/var on macOS are one folder; a
+# folder that no longer exists is resolved through its nearest existing parent.
 sessions_project_entries() {
-  sessions_registry | jq -c --arg r "${1%/}" '[.[] | select((.cwd | type) == "string"
-    and (.cwd | rtrimstr("/")) as $c | $c == $r or ($c | startswith($r + "/")))]' 2> /dev/null || printf '[]\n'
+  local reg root cwd phys map='{}' up tail
+  reg=$(sessions_registry)
+  root=$(cd "$1" 2> /dev/null && pwd -P) || root=${1%/}
+  while IFS= read -r cwd; do
+    [ -n "$cwd" ] || continue
+    up=$cwd tail=
+    case "$cwd" in /*) ;; *) up=/ ;; esac
+    until phys=$(cd "$up" 2> /dev/null && pwd -P); do
+      case "$up" in / | . | '') phys=$cwd tail=; break ;; esac
+      tail=/${up##*/}$tail
+      up=${up%/*}
+      [ -n "$up" ] || up=/
+    done
+    case "$cwd" in /*) phys=${phys%/}$tail ;; *) phys=$cwd ;; esac
+    map=$(printf '%s' "$map" | jq -c --arg k "$cwd" --arg v "$phys" '. + {($k): $v}')
+  done < <(printf '%s' "$reg" | jq -r '.[] | .cwd | select(type == "string")' 2> /dev/null)
+  printf '%s' "$reg" | jq -c --arg r "${root%/}" --argjson m "$map" '[.[] | select((.cwd | type) == "string"
+    and ($m[.cwd] // .cwd | rtrimstr("/")) as $c | $c == $r or ($c | startswith($r + "/")))]' 2> /dev/null || printf '[]\n'
   return 0
 }
 
@@ -77,4 +96,42 @@ holder_display() {
     "$(cat "$VBW_LIB/holder.jq")"'
     ($h | try fromjson catch null) as $f
     | holder_name({session: $s}; (if ($f | type) == "object" and $f.session == $s then $f.session_name else null end); $live)'
+}
+
+# sessions_rename_hint SID ROOT NAME: the one sentence that suggests /rename
+# (D444), printed once per clone: when the list holds two or more chats on ROOT,
+# SID's newest entry still has the name Claude Code gave it (nameSource auto or
+# derived), and this clone's settings carry no rename_hint. It records
+# rename_hint (the time) there under the settings lock, then prints. VBW never
+# renames a chat. Prints nothing otherwise; exit 0 always.
+sessions_rename_hint() {
+  [ -n "${1:-}" ] || return 0
+  local file lock tmp ok marked
+  ok=$(sessions_project_entries "$2" | jq -r --arg s "$1" 'if length >= 2 then
+      ([.[] | select(.sessionId == $s)] | sort_by(.updatedAt | if type == "number" then . else 0 end) | last
+        | if . == null then false else (.nameSource // "auto") as $n | $n == "auto" or $n == "derived" end)
+    else false end' 2> /dev/null) || ok=false
+  [ "$ok" = true ] || return 0
+  file=$(vbw_clone_settings_file 2> /dev/null) || return 0
+  jq -e 'type == "object" and (has("rename_hint") | not)' "$file" > /dev/null 2>&1 || [ ! -e "$file" ] || return 0
+  marked=$(
+    mkdir -p "${file%/*}" 2> /dev/null || exit 1
+    lock="${file%/*}/settings.lock"
+    vbw_lock_take "$lock" "this clone's settings" 2> /dev/null
+    [ -f "$file" ] || printf '{}\n' > "$file"
+    tmp=$(mktemp "${file%/*}/settings.XXXXXX") || exit 1
+    vbw_guard_add file "$tmp"
+    # Checked again under the lock: two chats asking at once give the hint once.
+    jq -e 'has("rename_hint") | not' "$file" > /dev/null 2>&1 || exit 1
+    jq --arg t "$(vbw_now)" '.rename_hint = $t' "$file" > "$tmp" 2> /dev/null || exit 1
+    mv "$tmp" "$file"
+    vbw_guard_drop "$tmp"
+    vbw_guard_drop "$lock"
+    printf 'marked'
+  ) 2> /dev/null || true
+  # The subshell's own exit status is not trusted (its cleanup may fail): only
+  # reaching the end, after the mark was written, gives the hint.
+  [ "$marked" = marked ] || return 0
+  printf 'Another chat is open on this project: /rename vbw · %s gives this chat a name the other chats will see.\n' "$3"
+  return 0
 }
