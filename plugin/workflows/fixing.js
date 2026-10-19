@@ -86,7 +86,7 @@ const fixDoneAlone = async fixCmd => {
 }
 
 phase('Fix')
-const NO_SUITE = ' Do not run the project\'s test command or its quick command: run only your fixes\' checks (vbw check). Commit your fix, check it with vbw check, then return. Do not run vbw fix done: the workflow runs it once for the round, after every Dev returns. The whole test command runs once, in the proof after this round. If your fix is for a failure of the test command itself, run only the failing tests you need to fix.'
+const NO_SUITE = ' Do not run the project\'s test command or its quick command: run only your fixes\' checks (vbw check). Commit your fix (a requirement fix commits its own requirement's check files with vbw commit --fix FIX MSG FILE..., and they wait for one approval by the user; code goes through its plan with vbw commit PLAN), check it with vbw check, then return. Do not run vbw fix done: the workflow runs it once for the round, after every Dev returns. The whole test command runs once, in the proof after this round. If your fix is for a failure of the test command itself, run only the failing tests you need to fix.'
 // T123: a decision recorded after the approval may correct the plan the fix serves; the brief names them.
 const SINCE = 'vbw show decisions --since-approval (decisions recorded after the contract was approved: where one differs from the plan, the decision wins).'
 // A fix a QA finding opened is a gap in the tests too: the Dev adds the regression test (R160).
