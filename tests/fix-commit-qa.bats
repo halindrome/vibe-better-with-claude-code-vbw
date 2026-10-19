@@ -58,7 +58,7 @@ teardown() { vbw_teardown; }
   before=$(git rev-parse HEAD)
   run "$VBW" commit --fix "$F_QA" "test(refund): stricter" tests/c2.sh
   [ "$status" -ne 0 ]
-  [[ "$output" == *"tests/c2.sh is not a check file of the requirement"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"tests/c2.sh is a check file of R2, not of R1"* ]] || { echo "$output"; false; }
   [ "$(git rev-parse HEAD)" = "$before" ]
 }
 
@@ -72,13 +72,13 @@ teardown() { vbw_teardown; }
   [ "$(git rev-parse HEAD)" = "$before" ]
 }
 
-@test "R160: a fix that QA did not open cannot commit check files this way" {
+@test "R160: a fix that is not open cannot commit check files this way" {
   local other before
   before=$(git rev-parse HEAD)
-  jq '.fixes += [{id: "F77", req: "R2", attempts: 0, status: "open", note: "proof"}]' .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
+  jq '.fixes += [{id: "F77", req: "R2", attempts: 0, status: "closed", note: "proof"}]' .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
   printf 'test -s src/refund.txt\n' > tests/c2.sh
   run "$VBW" commit --fix F77 "test(refund): stricter" tests/c2.sh
   [ "$status" -ne 0 ]
-  [[ "$output" == *"not an open project-command or QA fix"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"F77 is not open: only an open fix commits"* ]] || { echo "$output"; false; }
   [ "$(git rev-parse HEAD)" = "$before" ]
 }
