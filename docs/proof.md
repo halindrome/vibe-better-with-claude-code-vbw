@@ -800,6 +800,12 @@ kept, for example after it was removed, it says
 `full output not kept: run vbw prove again`. With `--json`, each failing check
 and command has a `kept` field: the file's path, or `null`.
 
+A requirement fix commits the check files of its own requirement with
+`vbw commit --fix F1 "<msg>" FILE...`; the commit carries `VBW-Fix` and
+`VBW-Req` trailers. These check files wait for one approval before the proof;
+`vbw next` asks for it. A check file of another requirement is refused, and code
+goes through its plan with `vbw commit PLAN`.
+
 ### Closing several fixes
 
 ```text
