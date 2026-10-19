@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261019T204545Z",
+    "kind": "qa",
+    "started_at": "2026-10-19T20:45:45Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1524.671125,
+      "in": 202973,
+      "out": 248
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -21566,7 +21577,22 @@
         "tests: project test command",
         "raised by the Architect"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "qa": {
+        "result": "pass",
+        "tier": "quick",
+        "tree": "72c8e06092240473281a604a2903f08c172eb046697bc676c4311d3933ad8faf",
+        "at": "2026-10-19T20:46:39Z",
+        "note": "6/6 checks"
+      },
+      "outcome": {
+        "tier": "standard",
+        "predicted": "standard",
+        "held": true,
+        "fix_rounds": 0,
+        "qa_findings": 0,
+        "escalations": 0
+      }
     }
   ],
   "plans": [
