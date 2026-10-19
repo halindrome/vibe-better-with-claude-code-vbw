@@ -39468,13 +39468,298 @@
       "after": [
         "P152.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/sessions.sh: `sessions_rename_hint SID ROOT NAME` prints the one sentence `Another chat is open on this project: /rename vbw · <NAME> gives this chat a name the other chats will see.` when the list holds two or more entries whose cwd is ROOT or a folder under it, SID's newest entry exists with nameSource auto or derived (anything else is the user's own name), and this clone's settings file ($(git common dir)/vbw/settings.json, vbw_clone_settings_file) has no `rename_hint`; it then records `rename_hint` (the time) there under the settings lock as vbw_check_jobs_set does; prints nothing otherwise (one chat, another project's chat, no list, unknown SID, a malformed file never fails it).",
         "plugin/lib/cmd-next.sh: `cmd_next` run from the command line (the main caller, as for step and road) adds `rename_hint` (the sentence or null) to the answer it prints and writes to next.json; next_answer and kernel-internal callers never compute it (no registry read in the Stop hook's gate or the loop).",
         "plugin/skills/vibe/SKILL.md: one rule next to the step.say rule: when `rename_hint` in `vbw next --json` is a sentence, say it once, as given, and never run /rename yourself (the user renames the chat); no shell block of the skill runs a rename.",
         "docs/next.md: a `rename_hint` entry: a string or null in `vbw next --json`; when it comes (a second chat open on this project, this chat still carrying the name Claude Code gave it), once per clone (the mark in this clone's settings), the sentence with `/rename vbw · <project name>`, and that VBW never runs or applies the rename itself (D444)."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R192",
+            "text": "with a second chat open on the project and this chat still auto-named, vbw next --json carries the one-sentence rename_hint naming /rename vbw · <project name>, once per clone"
+          },
+          "what": "the mark is never recorded, so the hint repeats",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C405": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:44:42Z",
+          "head": "39bd3869cb758d88e139cea321260cb6f1ecfeee"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "no rename_hint with one chat, with a chat of another project or a sibling folder, with no list, with an unknown session, or for a chat the user already named; a malformed file never fails vbw next"
+          },
+          "what": "any name source gets the hint",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C405": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:44:57Z",
+          "head": "39bd3869cb758d88e139cea321260cb6f1ecfeee"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "no rename_hint with one chat, with a chat of another project or a sibling folder, with no list, with an unknown session, or for a chat the user already named; a malformed file never fails vbw next"
+          },
+          "what": "a sibling folder counts as the project",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C405": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:45:13Z",
+          "head": "39bd3869cb758d88e139cea321260cb6f1ecfeee"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "no rename_hint with one chat, with a chat of another project or a sibling folder, with no list, with an unknown session, or for a chat the user already named; a malformed file never fails vbw next"
+          },
+          "what": "one chat is enough",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C405": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:45:29Z",
+          "head": "39bd3869cb758d88e139cea321260cb6f1ecfeee"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "no rename_hint with one chat, with a chat of another project or a sibling folder, with no list, with an unknown session, or for a chat the user already named; a malformed file never fails vbw next"
+          },
+          "what": "an unknown session gets the hint",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C405": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T00:45:44Z",
+          "head": "39bd3869cb758d88e139cea321260cb6f1ecfeee"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "no rename_hint with one chat, with a chat of another project or a sibling folder, with no list, with an unknown session, or for a chat the user already named; a malformed file never fails vbw next"
+          },
+          "what": "a damaged settings file is overwritten blind",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C405": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:45:58Z",
+          "head": "39bd3869cb758d88e139cea321260cb6f1ecfeee"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "/vbw:vibe says rename_hint once, as given, and never runs /rename itself"
+          },
+          "what": "the router stops saying never rename",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C405": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:47:39Z",
+          "head": "dcc159053f22031782a2d4e42d794b528d92d61d"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "docs/next.md describes rename_hint: when it comes, once per project, never applied by VBW"
+          },
+          "what": "docs drop the rename_hint section",
+          "files": [
+            "docs/next.md"
+          ],
+          "checks": {
+            "C406": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T00:47:51Z",
+          "head": "dcc159053f22031782a2d4e42d794b528d92d61d"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "no rename_hint with one chat, with a chat of another project or a sibling folder, with no list, with an unknown session, or for a chat the user already named; a malformed file never fails vbw next"
+          },
+          "what": "an unknown session gets the hint",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C405": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:48:50Z",
+          "head": "6d012543a50e194e4e4d6e2e948104c92e28ba1b"
+        },
+        {
+          "task": 1,
+          "what": "the hint names no /rename command",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:52:02Z",
+          "head": "6d012543a50e194e4e4d6e2e948104c92e28ba1b"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "/vbw:vibe says rename_hint once, as given, and never runs /rename itself"
+          },
+          "what": "the router stops saying never rename",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C405": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:52:24Z",
+          "head": "6d012543a50e194e4e4d6e2e948104c92e28ba1b"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "docs/next.md describes rename_hint: when it comes, once per project, never applied by VBW"
+          },
+          "what": "docs drop the rename_hint section",
+          "files": [
+            "docs/next.md"
+          ],
+          "checks": {
+            "C406": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T00:52:45Z",
+          "head": "6d012543a50e194e4e4d6e2e948104c92e28ba1b"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "docs/next.md describes rename_hint: when it comes, once per project, never applied by VBW"
+          },
+          "what": "docs say VBW runs the rename itself",
+          "files": [
+            "docs/next.md"
+          ],
+          "checks": {
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:53:11Z",
+          "head": "6d012543a50e194e4e4d6e2e948104c92e28ba1b"
+        },
+        {
+          "task": 1,
+          "what": "the hint is printed without the /rename command",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:54:51Z",
+          "head": "6d012543a50e194e4e4d6e2e948104c92e28ba1b"
+        },
+        {
+          "task": 2,
+          "what": "vbw next never adds rename_hint",
+          "files": [
+            "plugin/lib/cmd-next.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:56:26Z",
+          "head": "6d012543a50e194e4e4d6e2e948104c92e28ba1b"
+        },
+        {
+          "task": 3,
+          "what": "the router never mentions rename_hint",
+          "files": [
+            "plugin/skills/vibe/SKILL.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:58:03Z",
+          "head": "6d012543a50e194e4e4d6e2e948104c92e28ba1b"
+        },
+        {
+          "task": 4,
+          "what": "docs lose the once-per-clone statement",
+          "files": [
+            "docs/next.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:59:39Z",
+          "head": "6d012543a50e194e4e4d6e2e948104c92e28ba1b"
+        }
       ]
     },
     {
@@ -39556,10 +39841,43 @@
         "plugin/lib/record.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/record.sh record_read: when it rewrites a stale glance, the glance ends strictly newer than the record even compared in whole seconds (macOS /bin/sh [ -nt ]): set the new glance one second after the record (touch -r with -A +01 on macOS/BSD, -d +1 second on GNU; when neither works the guards read the record as today). The record and its file time stay unchanged. Root cause of P152.3 block: tests/sessions-guards.bats test 4 touches the record then runs vbw status in the same second, so the rewritten glance counted as stale and the guard showed the id, not the name. C402 must pass whole; tests/record.bats, glance-write.bats and glance-guards.bats keep passing."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R192",
+            "text": "when the glance is not current the guards read the record, which carries no name, and name the id; the holder's own session is not refused"
+          },
+          "what": "read no longer moves the rewritten glance one second after the record",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C402": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:48:04Z",
+          "head": "dcc159053f22031782a2d4e42d794b528d92d61d"
+        },
+        {
+          "task": 1,
+          "what": "forward offset 0 instead of 1 second",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T00:51:08Z",
+          "head": "6d012543a50e194e4e4d6e2e948104c92e28ba1b"
+        }
       ]
     }
   ],
@@ -51239,6 +51557,19 @@
           "usd": 1.905682,
           "in": 2053,
           "out": 424
+        }
+      },
+      {
+        "id": "build-20261019T003908Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M38",
+        "started": "2026-10-19T00:39:08Z",
+        "ended": "2026-10-19T01:00:25Z",
+        "cost": {
+          "usd": 1.152427,
+          "in": 2006,
+          "out": 28
         }
       }
     ],
