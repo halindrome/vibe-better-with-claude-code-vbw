@@ -41681,13 +41681,143 @@
         "plugin/agents/dev.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "cmd-mutate.sh: the checks a task break runs without --check are those of the rules the plan owes (every rule whose plan field names it, plus every rule of a requirement it completes), each check once; a plan owing no rule keeps today's set, the checks of its requirements (one jq helper over the record)",
         "cmd-mutate.sh: the unbroken run judges only the checks the break runs (the T159 case); an owed check red on the unbroken code refuses, writes nothing, names the check and the three ways out (make it pass and commit, --check ID, --none REASON naming the completing plan); a plan owning no rule adds that it owns no rule and that the Lead names a plan on each rule",
         "cmd-mutate.sh: --check and rule breaks unchanged; the recorded checks map and the output list exactly the checks that ran; the plan files stay byte-identical to their last commit after red, survivor or refusal; bash 3.2, JSON only through jq",
         "plugin/agents/dev.md, the mutation step: a task break runs the checks of the plan's own rules, and what to do when an owed check is still red"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R193",
+            "text": "a task break without --check runs the checks of the rules the plan owes: every rule naming it plus every rule of a requirement it completes"
+          },
+          "what": "dropped rules naming the plan",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C411": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T11:51:46Z",
+          "head": "82dd631b68656ceaa66e2f77ba5af98987d7edb3"
+        },
+        {
+          "rule": {
+            "req": "R193",
+            "text": "a check shared by several owed rules runs once, and no check of another requirement runs"
+          },
+          "what": "owed set takes every check",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C411": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T11:52:24Z",
+          "head": "82dd631b68656ceaa66e2f77ba5af98987d7edb3"
+        },
+        {
+          "rule": {
+            "req": "R193",
+            "text": "the unbroken run judges only the checks the break runs: a red check of a rule the plan does not owe does not refuse the break (the T159 case)"
+          },
+          "what": "always the requirement's checks",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C411": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T11:53:07Z",
+          "head": "82dd631b68656ceaa66e2f77ba5af98987d7edb3"
+        },
+        {
+          "rule": {
+            "req": "R193",
+            "text": "an owed check red on the unbroken code refuses, writes nothing, names the check and the three ways out: make it pass and commit, --check ID, or --none REASON naming the completing plan"
+          },
+          "what": "ways out dropped",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C411": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T11:53:50Z",
+          "head": "82dd631b68656ceaa66e2f77ba5af98987d7edb3"
+        },
+        {
+          "rule": {
+            "req": "R193",
+            "text": "a plan owing no rule runs the checks of its requirements as before, and its refusal adds that it owns no rule and that the Lead names a plan on each rule"
+          },
+          "what": "no-rule note dropped",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C411": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T11:54:30Z",
+          "head": "82dd631b68656ceaa66e2f77ba5af98987d7edb3"
+        },
+        {
+          "rule": {
+            "req": "R193",
+            "text": "--check narrows the run to the named checks of the plan's requirements and refuses another requirement's; a rule break runs its own check as before; the record and the output list exactly the checks that ran"
+          },
+          "what": "--check validation off",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C411": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T11:55:12Z",
+          "head": "82dd631b68656ceaa66e2f77ba5af98987d7edb3"
+        },
+        {
+          "rule": {
+            "req": "R193",
+            "text": "the plan files are byte-identical to their last commit after a red, a survivor or a refusal, and the new code is bash 3.2 with JSON only through jq"
+          },
+          "what": "no restore",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C411": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T11:55:49Z",
+          "head": "82dd631b68656ceaa66e2f77ba5af98987d7edb3"
+        },
+        {
+          "rule": {
+            "req": "R193",
+            "text": "plugin/agents/dev.md says a task break runs the checks of the plan's own rules"
+          },
+          "what": "dev.md phrase",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C411": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T11:56:32Z",
+          "head": "82dd631b68656ceaa66e2f77ba5af98987d7edb3"
+        }
       ]
     },
     {
@@ -53889,6 +54019,19 @@
           "usd": 23.74877,
           "in": 3224,
           "out": 571
+        }
+      },
+      {
+        "id": "build-20261019T114626Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M39",
+        "started": "2026-10-19T11:46:26Z",
+        "ended": "2026-10-19T11:57:15Z",
+        "cost": {
+          "usd": 0.429876,
+          "in": 1641,
+          "out": 85
         }
       }
     ],
