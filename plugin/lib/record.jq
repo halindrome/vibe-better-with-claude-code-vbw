@@ -47,11 +47,12 @@ def loop_item: type == "object"
                                  and (.seconds | type == "number" and . > 0) and (.basis | nonempty)));
 
 # One recorded break of a plan (vbw mutate): a rule or a task K with what was broken,
-# the files, each check red or green and the result, or a task with nothing to break.
+# the files, each check red or green and the result (a red one may carry pending: the
+# check files waiting for approval that caught it), or a task with nothing to break.
 def mutation_ok:
   type == "object" and (.at | iso)
   and (if has("none") then (keys | sort) == ["at","none","task"] and (.none | nonempty) and (.task | int_in(1; 9999))
-      else (keys - ["rule","task","what","files","checks","result","at","head","strengthened"] == [])
+      else (keys - ["rule","task","what","files","checks","result","at","head","strengthened","pending"] == [])
         and (has("rule") != has("task"))
         and ((has("rule") | not) or (.rule | type == "object" and (keys | sort) == ["req","text"] and (.req | nonempty) and (.text | nonempty)))
         and ((has("task") | not) or (.task | int_in(1; 9999)))
@@ -61,6 +62,7 @@ def mutation_ok:
         and (.result == (if all(.checks[]; . == "green") then "survivor" else "red" end))
         and (.head | type == "string" and test("^[0-9a-f]{40}$"))
         and ((has("strengthened") | not) or (.strengthened | type == "array" and all(.[]; safe_path)))
+        and ((has("pending") | not) or (.pending | type == "array" and length > 0 and all(.[]; safe_path)))
       end);
 
 # Plan ids reachable from $n through "after" edges ($g: id -> [ids]).
