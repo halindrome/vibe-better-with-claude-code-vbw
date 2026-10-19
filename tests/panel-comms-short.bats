@@ -57,6 +57,7 @@ section() { sed -n "/^## $2\$/,/^## /p" "$1" | tr '\n' ' ' | tr -s ' ' | tr '[:u
   [ -n "$s" ] || { echo "docs/panel.md has no Comms section"; false; }
   printf '%s' "$s" | grep -qE 'needs-you line.*helper line.*step line' || { echo "the Comms section does not give the order: the needs-you line, the helper line, the step line"; false; }
   printf '%s' "$s" | grep -q 'one row' || { echo "the Comms section does not describe the one-row form"; false; }
+  printf '%s' "$s" | grep -qE 'one row: the helper line carries the step.s end time' || { echo "the Comms section does not say the one-row helper line carries the step's end time"; false; }
   printf '%s' "$s" | grep -qE 'vbw ▸ [a-z]+ · 1 working · [0-9]+m[0-9]+s · .*until around' || { echo "the Comms section gives no one-row example with the step's time after the helper line's own parts"; false; }
   printf '%s' "$s" | grep -q 'two rows' || { echo "the Comms section does not describe the two-row form"; false; }
   printf '%s' "$s" | grep -qE 'no helper works|proof' || { echo "the Comms section does not say when the step line shows alone"; false; }
