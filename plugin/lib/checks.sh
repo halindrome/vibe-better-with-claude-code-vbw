@@ -51,14 +51,15 @@ checks_kept() {
   esac
 }
 
-# checks_keep CHECKS COMMANDS [FILES]: the results ({name: result}) of the checks and
+# checks_keep CHECKS COMMANDS [FILES [pass-leaves]]: the results ({name: result}) of the checks and
 # project commands that just ran, their output still in CHECK_OUT. Each failure
 # or timeout moves its complete output to its kept file, replacing the older
 # one (renamed from a temporary file in the same folder, so a reader never sees
-# half a file); a pass removes it. Reused results are not in CHECKS or COMMANDS,
+# half a file); a pass removes it, except with "pass-leaves" (vbw check: a
+# passing check never removes the proof's or another Dev's failure). Reused results are not in CHECKS or COMMANDS,
 # and a check or command that did not run (skipped) leaves its file as it is.
 checks_keep() {
-  local kind name status out kept dir tmp files=${3:-}
+  local kind name status out kept dir tmp files=${3:-} leaves=${4:-}
   [ -n "$files" ] || files='{}'
   dir="$VBW_RUNTIME/output"
   while IFS=$'\x1f' read -r -d '' kind name status; do
@@ -74,7 +75,7 @@ checks_keep() {
         tmp=$(mktemp "$dir/keep.XXXXXX") || vbw_die "cannot create a temporary file in $dir"
         mv -f "$out" "$tmp" && mv -f "$tmp" "$kept" || { rm -f "$tmp"; vbw_die "cannot keep the output of $name in $kept"; }
         ;;
-      pass) rm -f "$kept" ;;
+      pass) [ "$leaves" = pass-leaves ] || rm -f "$kept" ;;
     esac
   done < <(jq -n -j --slurpfile cs <(printf '%s' "$1") --slurpfile ms <(printf '%s' "$2") --slurpfile fs <(printf '%s' "$files") \
     '$cs[0] as $c | $ms[0] as $m | ($c | to_entries[] | "check\u001f\(.key)\u001f\(.value.status)\u0000"), ($m | to_entries[] | "command\u001f\(.key)\u001f\(.value.status)\u0000"),
