@@ -103,7 +103,8 @@ test('the drawing: rows as text, this chat and the holder mark in the accent col
   assert.match(t, /build P44\.1/)
   assert.match(t, /this chat/)
   assert.match(t, /claude --resume 0123456789abcdef-aaaa/)
-  assert.match(t, new RegExp(hhmm(T0)))
+  assert.match(t, new RegExp('last ' + hhmm(T0)))
+  assert.match(t, /Payments work · busy/)
   let accent = false
   walk(tree, (n) => { if (n.type === 'Text' && n.props.color === palette.ACCENT && /holds the run/.test(n.children.join(''))) accent = true })
   assert.ok(accent, 'the holder mark is drawn in the accent colour')
