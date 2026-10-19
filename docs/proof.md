@@ -615,8 +615,9 @@ Evidence (`record.evidence`):
 Statuses: `pass`, `fail`, `timeout`, `skipped`.
 
 `tail` holds only the end of the output. When a check or project command fails
-or times out, `vbw prove` keeps its full output in a file, so you can read the
-whole failure without running everything again:
+or times out, `vbw prove`, `vbw fix done` and `vbw check` keep its full output in
+a file, so you can read the whole failure without running everything again.
+`vbw show fix` names the file and lists the failing test names:
 
 ```text
 .vbw/runtime/output/C1.log            check C1
@@ -628,6 +629,8 @@ whole failure without running everything again:
 - A pass removes the file.
 - A reused result, or a check that was skipped, leaves the file as it is.
 - `.vbw/runtime/` is git-ignored, so these files are never committed.
+- `vbw check` keeps a failing check's output the same way; `--expect-red` keeps
+  nothing. `vbw show fix` reads the file and lists the failing test names.
 
 An `auto` requirement is `proven` when all its checks pass and `failing`
 otherwise. Human requirements are untouched.
