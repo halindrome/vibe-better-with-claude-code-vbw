@@ -21385,12 +21385,19 @@
       ],
       "predicted": "standard",
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "standard",
-        "tree": "f2402e5133949fcc58e120e52e54056203b34b928f075c5b17bf5145de5b873a",
-        "at": "2026-10-19T17:38:06Z",
-        "note": "19/20 checks",
-        "rounds": 1
+        "tree": "1de95c75e0bd852ef93c3c66f78bafed3dcb32b1d3d0172c1632216477a70b54",
+        "at": "2026-10-19T19:25:40Z",
+        "note": "5/5 checks"
+      },
+      "outcome": {
+        "tier": "standard",
+        "predicted": "standard",
+        "held": true,
+        "fix_rounds": 1,
+        "qa_findings": 1,
+        "escalations": 0
       }
     },
     {
@@ -45482,7 +45489,7 @@
       "req": "R193",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Criterion not met: the approved rule R188.10 was not rewritten. The record still says 'a task break runs the checks of the plan's requirements, only the named ones with --check, never another requirement's' (vbw show req R188, rule 10), which is now false for a plan that owns rules (it runs the plan's own rules' checks). Its test, 'R188: a task break runs the checks of the plan's requirements; --check narrows it to the named ones' in tests/mutate-command.bats (line 194), is unchanged; the file's last commit is 85bf0aaf, before P155. No P155 plan task covers this, so it is also a plan omission. A regression test should fail while R188.10's text still says 'the plan's requirements' and while the tests/mutate-command.bats task-break test does not assert the own-rules behaviour (a plan that owns a rule, with another rule's check red, still breaks and records red). Fix: the Lead rewrites R188.10 to the own-rules behaviour (re-approval of the contract), and the test in tests/mutate-command.bats is changed with it.",
       "phase": "P155"
     },
