@@ -213,8 +213,12 @@ fixed_and_ended() {
   local f
   f=$(jq -r '[.fixes[] | select(.req == "R2" and (.source // "") != "qa")][0].id' .vbw/record.json)
   VBW_SESSION_ID=s1 "$VBW" run start fix "$f" > /dev/null
+  # Since R194 (D450) a proof's fix may edit its own requirement's check file (it waits for one approval).
   out=$(file_call Edit tests/c2.sh)
-  denied "$out" || { echo "proof fix run, its check file: $out"; false; }
+  ! denied "$out" || { echo "proof fix run, its own check file: $out"; false; }
+  # Another requirement's check file stays protected.
+  out=$(file_call Edit tests/c1.sh)
+  denied "$out" || { echo "proof fix run, another requirement's check file: $out"; false; }
   out=$(file_call Write tests/r2-new.sh)
   denied "$out" || { echo "proof fix run, new test file: $out"; false; }
   # Another session's main conversation, outside the run: the same answer as before (none).

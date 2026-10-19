@@ -13907,7 +13907,7 @@
         {
           "text": "the names are extracted only when vbw show fix runs: no hook or status-line path reads the kept output",
           "check": "C421",
-          "plan": "P157.2"
+          "plan": "P157.4"
         },
         {
           "text": "docs/proof.md's kept-output section names vbw fix done and vbw check beside vbw prove and points to vbw show fix for the failing test names; docs/proof.md's fix section and the fixing workflow's Dev instruction point to vbw show fix for the full output and the failing test names",
@@ -42484,7 +42484,7 @@
       "after": [
         "P155.1"
       ],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "plugin/lib/failing-tests.jq: the failing test names in a kept output, each once: TAP/bats (not ok N name), cargo test (test name ... FAILED and the failures: list), pytest (FAILED path::name), go test (--- FAIL: Name), jest (✕ name, duration stripped), vitest (× name), mocha (N) name)",
@@ -42579,8 +42579,7 @@
           "at": "2026-10-19T12:27:04Z",
           "head": "30ac704c4a4630214b2b02d162fad6f57df39be1"
         }
-      ],
-      "note": "R195.9 has no mutation: its check greps plugin/hooks, plugin/scripts and cmd-statusline.sh for runtime/output, none of which is a P157.2 file, so the guard denies the break; the only other plan file that could carry it (cmd-fix.sh) holds another run's uncommitted edits. Code and tasks 1-3 and R195.6-8 mutations are red. Needs the owner to allow a break in cmd-statusline.sh or accept R195.9 as covered by the grep."
+      ]
     },
     {
       "id": "P157.3",
@@ -42652,6 +42651,25 @@
           "at": "2026-10-19T12:34:47Z",
           "head": "56c0541247590d79416995486c9e75f9b59dd7ac"
         }
+      ]
+    },
+    {
+      "id": "P157.4",
+      "phase": "P157",
+      "title": "The status line never reads kept output",
+      "reqs": [
+        "R195"
+      ],
+      "files": [
+        "plugin/lib/cmd-statusline.sh"
+      ],
+      "after": [
+        "P157.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Own rule R195.9 at its boundary: the status line path (plugin/lib/cmd-statusline.sh) never reads .vbw/runtime/output; no code change is expected (C421 test 4 already pins it): run vbw mutate P157.4 R195.9 with a break that makes the status line read a kept output file, see C421 go red, then vbw plan done. Moved from P157.2, whose files cannot hold that break (D458)."
       ]
     }
   ],
@@ -48223,6 +48241,17 @@
       "id": "D457",
       "at": "2026-10-19T12:18:39Z",
       "text": "Contract approved: 186 requirements, 417 checks, 476 plans (1200b2d29400)"
+    },
+    {
+      "id": "D458",
+      "text": "D456: rule R195.9 (no hook or status-line path reads kept output) moves from P157.2 to a new plan P157.4 owning plugin/lib/cmd-statusline.sh",
+      "why": "A rule about absence in files P157.2 does not own cannot be broken from P157.2's files (vbw mutate refuses, and a started plan cannot gain files). Kernel gap noted for T165 follow-up: a boundary rule's break target",
+      "at": "2026-10-19T12:36:59Z"
+    },
+    {
+      "id": "D459",
+      "at": "2026-10-19T12:49:04Z",
+      "text": "Contract approved: 186 requirements, 417 checks, 477 plans (ce95d49627dd)"
     }
   ],
   "commands": {
