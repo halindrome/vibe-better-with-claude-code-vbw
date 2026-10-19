@@ -45355,70 +45355,70 @@
       "id": "F258",
       "req": "R68",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C97 fail (exit 1)"
     },
     {
       "id": "F259",
       "req": "R78",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C106 fail (exit 1)"
     },
     {
       "id": "F260",
       "req": "R95",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C150 fail (exit 1)"
     },
     {
       "id": "F261",
       "req": "R96",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C152 fail (exit 1)"
     },
     {
       "id": "F262",
       "req": "R107",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C167 fail (exit 1)"
     },
     {
       "id": "F263",
       "req": "R148",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C214 fail (exit 1), C216 fail (exit 1)"
     },
     {
       "id": "F264",
       "req": "R160",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C263 fail (exit 1)"
     },
     {
       "id": "F265",
       "req": "R182",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C322 fail (exit 1), C323 fail (exit 1), C326 fail (exit 1)"
     },
     {
       "id": "F266",
       "req": "R186",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C344 fail (exit 1)"
     },
     {
       "id": "F267",
       "req": "R188",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C353 fail (exit 1), C356 fail (exit 1)"
     },
     {
@@ -55595,6 +55595,15 @@
         "milestone": "M39",
         "started": "2026-10-19T15:01:24Z",
         "ended": "2026-10-19T15:21:37Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261019T162543Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M39",
+        "started": "2026-10-19T16:25:43Z",
+        "ended": "2026-10-19T17:23:14Z",
         "cost": null
       }
     ],
