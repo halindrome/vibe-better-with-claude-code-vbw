@@ -38754,7 +38754,7 @@
         "plugin/lib/record.sh"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/holder.jq (new): the one jq rule for a holder's display name: `clean_name` (drops CSI and OSC escape sequences, then every control character U+0000-U+001F, U+007F, U+0080-U+009F), `cut_name($n)` (a name longer than $n becomes its first $n-1 characters plus …) and `holder_name($lease; $stored; $live)`: the list's live name, else the stored name, else the first 8 characters of $lease.session, else 'a session VBW cannot name'; cleaned, then cut to 40. The hooks and the status line include it with `include \"holder\" {search: \"../lib\"}`; kernel commands prepend its text to their jq programs (as VBW_JQ_DEFS is).",
@@ -38762,7 +38762,241 @@
         "plugin/lib/cmd-run.sh: `vbw run start` computes the run id into a variable first, writes holder.json before the record write (so the glance that write produces carries it), and keeps everything else; `vbw run end` removes holder.json after the record write. Both refusals name the holder with `holder_display`: `a run is active (<run>) in another session, <name>. Next: wait for it, or check vbw status` and `run <run> belongs to another session, <name>. Next: wait for it, or if the user says that session is closed, vbw run end --owner-closed` (tests/kernel-sessions.bats keeps passing: 'another session' stays in both).",
         "plugin/lib/record.sh: `record_glance_write` adds a top-level `holder` to the glance: holder.json's {run, session, session_name} when the file parses and its run equals the lease's run, else null (read with --slurpfile or --rawfile and try, never --arg). The glance's `lease` stays byte-equal to the record's (tests/glance-write.bats and glance-helper.bash's glance_same are protected and must stay green); record.jq is untouched, so a lease carrying session_name stays corrupt (D442, D445)."
       ],
-      "note": "Code for tasks 1-4 is committed (holder.jq, sessions.sh, cmd-run.sh, record.sh; C401 tests 1-3 and 5-9 pass, glance-write, kernel-sessions, record, hooks-guard stay green). The mutation step cannot start: vbw mutate refuses because C401 fails on unbroken code. Tests 4 (vbw next names the holder) and 10 (vbw doctor line) of tests/sessions-name.bats need P152.2's files (cmd-next.sh, next.jq, cmd-doctor.sh), outside this plan. It also waits for approval of tests/panel/r192/holder.test.mjs. Next: build P152.2, approve the new checks, then run the 14 mutations (R192.1-10 and tasks 1-4) for P152.1; first break tried: holder_write stores no name."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R192",
+            "text": "vbw run start stores the holder's name from Claude Code's list in .vbw/runtime/holder.json and the glance's holder, never in the record"
+          },
+          "what": "no holder_write at run start",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:06:56Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "with several list entries for one session id the newest updatedAt wins"
+          },
+          "what": "oldest entry wins",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:07:47Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "with no list, no entry for the session or an unreadable folder, session_name is null and the run still starts"
+          },
+          "what": "unknown name stored as empty string",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:08:30Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "a name is cleaned of control characters and escape sequences before it is stored or shown"
+          },
+          "what": "control chars kept",
+          "files": [
+            "plugin/lib/holder.jq"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:09:11Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "a name longer than 40 characters is cut to its first 39 plus an ellipsis in messages"
+          },
+          "what": "cut at 40 not 39",
+          "files": [
+            "plugin/lib/holder.jq"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:09:55Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "a malformed file in the list never fails a kernel command and the good entries still count"
+          },
+          "what": "malformed file not skipped",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:10:45Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the display name is the list's current name for the lease's session, else the stored name, else the first 8 characters of the id, so a /rename during the run shows at once and a closed chat keeps its stored name"
+          },
+          "what": "stored name before live",
+          "files": [
+            "plugin/lib/holder.jq"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:11:24Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "vbw run start and vbw run end refusals name the holder by its display name and keep the words another session"
+          },
+          "what": "start refusal drops the holder name",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:12:03Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "vbw run start and vbw run end refusals name the holder by its display name and keep the words another session"
+          },
+          "what": "end refusal says another chat",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:12:42Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "vbw run end removes holder.json and the glance's holder"
+          },
+          "what": "run end keeps holder.json",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:13:21Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 4,
+          "what": "glance holder always null",
+          "files": [
+            "plugin/lib/record.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:14:26Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 3,
+          "what": "holder_write run id wrong",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:15:31Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 2,
+          "what": "holder_display ignores stored session check",
+          "files": [
+            "plugin/lib/sessions.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:17:16Z",
+          "head": "6bfb0ca3c6c0b463b13abd1c31e8690644997f11"
+        },
+        {
+          "task": 1,
+          "what": "name falls back to 9 chars of id",
+          "files": [
+            "plugin/lib/holder.jq"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:19:49Z",
+          "head": "0564119fbd327816ea92e03d4f8482315edc6692"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the record validator refuses a lease carrying session_name, so a name never reaches git history (D442)"
+          },
+          "what": "run start puts session_name in the lease",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C401": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:20:49Z",
+          "head": "0564119fbd327816ea92e03d4f8482315edc6692"
+        }
+      ]
     },
     {
       "id": "P152.2",
@@ -38918,14 +39152,127 @@
         "plugin/hooks/common.jq"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/hooks/common.jq: `include \"holder\" {search: \"../lib\"}` (plugin/lib/holder.jq); guard_context carries `holder`: the glance's top-level holder when the glance was used, null when the record was read (the record never carries a name, D442); the header comment names the glance's holder field as the guards' only source of the name.",
         "`foreign_denial` reads `<path> is being written by run <run> of another session (<name>): wait for it; if the user says that session is closed, they run vbw run end --owner-closed` with <name> = holder_name($f; (holder.session_name when holder.run == $f.run); null): the stored name, else the first 8 characters of the id, cleaned and cut; the Bash guard gets the same words through the same def; no new input, --rawfile or file read in hooks.json.",
         "Measure: run `bash tools/bench-hooks.sh` once and put each guard's own CPU per call in the plan note (budget 20 ms; a machine too busy to measure is reported as busy); tests/hooks-guard.bats, glance-guards.bats, guard-protected.bats and big-record-hooks.bats keep passing ('another session' stays in the reason)."
       ],
-      "note": "C402 test 4 (tests/sessions-guards.bats 'a stored name with escape sequences is shown clean') fails every time on macOS: it does touch .vbw/record.json then vbw status, so record_read (plugin/lib/record.sh) rewrites the glance in the SAME second; the hook runs under sh -c where /bin/sh is bash 3.2 and [ -nt ] compares whole seconds, so the glance counts as stale and the guard reads the record (no name -> id). Verified: record and glance both mtime 1792365627. common.jq is done (tests 1,2,3,5 pass; hooks-guard, glance-guards, guard-protected, big-record-hooks all pass; bench guards 10.8 ms max, status line 34-51 ms, budget 20/60). Fix needs a file outside the plan: plugin/lib/record.sh record_read must write the rewritten glance strictly newer in whole seconds (e.g. record_back on the record is forbidden by its comment, so touch the glance forward or set the record one second back), or the test needs a sleep 1 (protected file)."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the file and Bash guards' reason names the holder from the glance's stored name alone, else the first 8 characters of the id, clean, with no extra file read"
+          },
+          "what": "glance holder dropped, guards never get the stored name",
+          "files": [
+            "plugin/hooks/common.jq"
+          ],
+          "checks": {
+            "C402": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:15:48Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "when the glance is not current the guards read the record, which carries no name, and name the id; the holder's own session is not refused"
+          },
+          "what": "record branch invents a holder name",
+          "files": [
+            "plugin/hooks/common.jq"
+          ],
+          "checks": {
+            "C402": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T01:16:47Z",
+          "head": "6bfb0ca3c6c0b463b13abd1c31e8690644997f11"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "when the glance is not current the guards read the record, which carries no name, and name the id; the holder's own session is not refused"
+          },
+          "what": "record read invents a stored name",
+          "files": [
+            "plugin/hooks/common.jq"
+          ],
+          "checks": {
+            "C402": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:18:49Z",
+          "head": "0564119fbd327816ea92e03d4f8482315edc6692"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "when the glance is not current the guards read the record, which carries no name, and name the id; the holder's own session is not refused"
+          },
+          "what": "own session refused",
+          "files": [
+            "plugin/hooks/common.jq"
+          ],
+          "checks": {
+            "C402": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:19:24Z",
+          "head": "0564119fbd327816ea92e03d4f8482315edc6692"
+        },
+        {
+          "task": 1,
+          "what": "foreign lease no longer carries the holder",
+          "files": [
+            "plugin/hooks/common.jq"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:21:10Z",
+          "head": "0564119fbd327816ea92e03d4f8482315edc6692"
+        },
+        {
+          "task": 2,
+          "what": "reason drops the words another session",
+          "files": [
+            "plugin/hooks/common.jq"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:22:10Z",
+          "head": "0564119fbd327816ea92e03d4f8482315edc6692"
+        },
+        {
+          "task": 2,
+          "what": "stored name never used",
+          "files": [
+            "plugin/hooks/common.jq"
+          ],
+          "checks": {
+            "C402": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:22:39Z",
+          "head": "0564119fbd327816ea92e03d4f8482315edc6692"
+        },
+        {
+          "task": 3,
+          "none": "a measurement, no code to break",
+          "at": "2026-10-19T01:22:44Z"
+        }
+      ]
     },
     {
       "id": "P152.4",
@@ -38940,7 +39287,7 @@
         "docs/record.md"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/guards.md, the paragraph 'VBW itself writes nothing outside the project except three things': add that VBW's one read outside the project is Claude Code's list of chats, `<claude-config-dir>/sessions/*.json`, read for the holder's name and never written (R192); the three writes stay as listed.",
@@ -38952,9 +39299,81 @@
           "task": 1,
           "none": "x",
           "at": "2026-10-18T21:26:29Z"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "docs/guards.md names the list of chats as VBW's one read-only access outside the project, docs/workflows.md the unchanged lease shape and holder.json, docs/record.md the glance's holder"
+          },
+          "what": "guards: never written -> sometimes written",
+          "files": [
+            "docs/guards.md"
+          ],
+          "checks": {
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:04:57Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 1,
+          "what": "guards: dropped sessions path",
+          "files": [
+            "docs/guards.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:09:36Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 2,
+          "what": "workflows: renamed holder.json",
+          "files": [
+            "docs/workflows.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:11:33Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 3,
+          "what": "record: glance holder renamed",
+          "files": [
+            "docs/record.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:13:23Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
         }
-      ],
-      "note": "Docs written and committed (3 commits). Mutation of R192.17 and tasks 2-3 cannot run: C406 (tests/sessions-docs.bats) is red on the unbroken tree because docs/statusline.md, docs/panel.md and docs/next.md (other plans' docs) are not finished yet. Rerun vbw mutate P152.4 R192.17 and task2/task3 once those land. Note: task1 was recorded --none by mistake while probing usage."
+      ]
     },
     {
       "id": "P153.1",
@@ -38969,7 +39388,7 @@
         "tools/bench-hooks.sh"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/scripts/vbw-statusline.sh: only while `.vbw/runtime/run-open` exists (a lease is open; no jq needed to know), one `jq -R` pass with the list's files `<cdir>/sessions/*.json` as its inputs (grouped by input_filename, a malformed file skipped) gives {sessionId: name} of each id's newest entry, handed to the render as $registry through --slurpfile from a process substitution ({} when the folder is missing or empty); no pass when no lease is open.",
@@ -39174,9 +39593,85 @@
           "strengthened": [
             "tests/sessions-statusline.bats"
           ]
+        },
+        {
+          "task": 1,
+          "what": "newest entry became oldest",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "green",
+            "C407": "green",
+            "C408": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T01:12:33Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 2,
+          "what": "glance stored name ignored",
+          "files": [
+            "plugin/scripts/statusline.jq"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:14:17Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 3,
+          "what": "bench lease dropped",
+          "files": [
+            "tools/bench-hooks.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:16:25Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 1,
+          "what": "newest entry became oldest",
+          "files": [
+            "plugin/scripts/vbw-statusline.sh"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:20:49Z",
+          "head": "0564119fbd327816ea92e03d4f8482315edc6692",
+          "strengthened": [
+            "tests/panel/r192/sessions-tab.test.mjs",
+            "tests/sessions-docs.bats",
+            "tests/sessions-statusline.bats"
+          ]
         }
-      ],
-      "note": "Tasks 1-3 are built, committed and green (C404 pass; rules R192.18-23 each broken once and caught; bench status line 36.6 ms CPU per call, budget 60). The three task-level mutations cannot run: vbw mutate refuses while tests/panel/r192/sessions-tab.test.mjs (C408, P154.1's blocked check, edited uncommitted and waiting for owner approval) differs from the last commit. Re-run 'vbw mutate P153.1 task1|task2|task3' after that file is approved and committed."
+      ]
     },
     {
       "id": "P153.2",
@@ -39774,7 +40269,7 @@
         "docs/panel.md"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/statusline.md, line 1 of the status line: the run cell forms `▶ build P1.2, P2.1 · 1 of 2 · until 14:20 · leading` in the chat that holds the run and `· held by <name>` in any other, the name cut to 20 characters with …, the first 8 characters of the id when no name is known, nothing when the lease has no session.",
@@ -39782,7 +40277,126 @@
         "docs/panel.md, Comms table and the 'What's happening now' section: the record-change line `VBW · build run started by <name>` (or `by this chat`); the Now box's state sentence ending `, held by <name>` when another chat holds the run, unchanged when this chat does.",
         "docs/panel.md, 'Instant commands': `/vbw-why` names the holder by name (`held by this chat (\"<name>\")` or `held by \"<name>\"`), with the id in brackets only when no name is known, keeping since, the file count and 'wait for it'; `/vbw-status` says the same about the holder as the Now box."
       ],
-      "note": "Tasks 1-4 committed (3fb10d97). Mutation of R192.33 cannot run: C406 already fails on unbroken docs (tests 1,2,5,7: docs/guards.md, workflows.md, next.md and the Sessions tab in docs/panel.md belong to other plans, outside this plan's files). Re-run 'vbw mutate P153.4 R192.33 ...' once those land."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R192",
+            "text": "docs/statusline.md shows the leading and held by forms with the 20-character cut and the list it reads; docs/panel.md describes Comms' run started by line, the Now box's held by and /vbw-why by name"
+          },
+          "what": "statusline cut 20 -> 30",
+          "files": [
+            "docs/statusline.md"
+          ],
+          "checks": {
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:04:32Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 1,
+          "what": "drop leading form",
+          "files": [
+            "docs/statusline.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:09:13Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 2,
+          "what": "drop sessions path",
+          "files": [
+            "docs/statusline.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:11:13Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 3,
+          "what": "rename run started by",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:13:02Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 4,
+          "what": "drop wait for it",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "green",
+            "C407": "green",
+            "C408": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T01:15:07Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 4,
+          "what": "drop wait for it",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:19:24Z",
+          "head": "6bfb0ca3c6c0b463b13abd1c31e8690644997f11",
+          "strengthened": [
+            "tests/panel/r192/sessions-tab.test.mjs",
+            "tests/sessions-docs.bats",
+            "tests/sessions-statusline.bats"
+          ]
+        }
+      ]
     },
     {
       "id": "P154.1",
@@ -39800,7 +40414,7 @@
       "after": [
         "P153.2"
       ],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/hooks/panel-sessions.js: `sessionsModel({registry, root, sessionId, lease, stored, now, width, plans})` → {rows, empty}: the entries whose cwd is root or a folder under it, newest updatedAt first, each {id, name (cleaned, cut to width), state (the status word as given), last (HH:MM local; another day named as panel-view's clock names it), resume ('claude --resume <id>'), self, holder, closed}; the lease's session gets holder {kind: '<kind> <building plan ids>'} ('<kind>' alone with none); a holder with no entry is appended from the lease with the stored name (stored.session_name when stored.session is lease.session) or the first 8 characters of the id, closed true; `empty` is 'No other chats are open on this project' when no row besides this chat is listed, else null.",
@@ -39808,7 +40422,293 @@
         "plugin/hooks/panel-pane.js: TABS gets ['sessions', 'Sessions'] right after team; SHORT.sessions = 'Sess' (export SHORT); the body switch draws renderSessions for the tab from the pane input (registry, stored, holder, plans); the short row still fits one line at 40 columns beside the portrait; tests/panel/wiring.test.mjs's TABS list gains 'Sessions' after 'Team' and a Sessions entry in its per-tab view check.",
         "plugin/hooks/panel.js: the list and holder.json are read on the tick also while st.tab is 'sessions' (P153.2 reads them while a lease is open), never otherwise; the pane input carries registry, stored and the lease's holder; run `bash tools/bench-panel.sh` once and put the render and tick figures in the plan note (tests/panel-bench-render.bats's budget is judged at release)."
       ],
-      "note": "Code for tasks 1-4 is committed (panel-pane.js, panel.js, wiring.test.mjs). The approved check C408 (tests/panel/r192/sessions-tab.test.mjs) cannot pass as written, and the mutation step refuses to run while its fixed version is uncommitted. Two faults, both fixed uncommitted in the working tree: (1) test 'the empty sentence, cleaned names...' gives the second entry updatedAt T0-1, newer than the first (T0-60000), then expects the first row to be the older one, against the newest-first rule; fix: T0-120000. (2) The panel tests press the button 'Sessions' at the stand-in's default 50 columns; with eight tabs the full names need 53 columns, so a 50-column pane correctly shows the short names (Sess); fix: render those tests at 60 columns. Same cause forces one token in tests/panel/cost.test.mjs (outside this plan's files: it excludes the tab button 'Costs', now also 'Cost') and a 60-column render in wiring.test.mjs (committed). Needs the owner to approve the edited check files and the cost.test.mjs edit, then re-run P154.1 for commit and mutation (one per rule R192.34-39 and per task)."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the tab row has Sessions right after Team, Sess in a narrow pane"
+          },
+          "what": "Sessions tab placed after Costs",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:05:05Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the tab row has Sessions right after Team, Sess in a narrow pane"
+          },
+          "what": "short name is the full word",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:05:46Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the Sessions tab lists this project's chats newest first with name, state word, last active HH:MM and claude --resume <id>, leaving out chats of other projects and sibling folders"
+          },
+          "what": "sibling folder counted as inside the project",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:06:33Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "this chat's row says this chat; the holder's row shows ● holds the run with the run kind in the accent colour; a holder with no entry is listed from the lease as closed or not seen"
+          },
+          "what": "this chat mark blanked",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:07:01Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "this chat's row says this chat; the holder's row shows ● holds the run with the run kind in the accent colour; a holder with no entry is listed from the lease as closed or not seen"
+          },
+          "what": "holder mark loses accent colour",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:07:31Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "this chat's row says this chat; the holder's row shows ● holds the run with the run kind in the accent colour; a holder with no entry is listed from the lease as closed or not seen"
+          },
+          "what": "appended holder not marked closed",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:07:57Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "with no list or no other chat on the project the tab shows the one sentence No other chats are open on this project; a malformed file skips its row and never breaks the panel"
+          },
+          "what": "empty sentence missing when only this chat is listed",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:08:24Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "with no list or no other chat on the project the tab shows the one sentence No other chats are open on this project; a malformed file skips its row and never breaks the panel"
+          },
+          "what": "malformed file throws instead of being skipped",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:08:49Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the tab is read-only: no button or input, nothing run or written; the list is re-read on the tick only while the tab is shown or a lease is open"
+          },
+          "what": "a copy button added to each row",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:09:13Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the tab is read-only: no button or input, nothing run or written; the list is re-read on the tick only while the tab is shown or a lease is open"
+          },
+          "what": "list read on every tick whatever the tab",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:09:40Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "names in the tab are cleaned and cut to the panel width with an ellipsis"
+          },
+          "what": "names not cut to the width",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:10:04Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "names in the tab are cleaned and cut to the panel width with an ellipsis"
+          },
+          "what": "name shown uncleaned",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:10:31Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 1,
+          "what": "resume line carries only 8 characters of the id",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "green",
+            "C407": "green",
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:14:05Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 2,
+          "what": "state word left out of the row",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C408": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T01:14:47Z",
+          "head": "8196dd4dc29827d48660b3f10a98a888555ba4b1"
+        },
+        {
+          "task": 2,
+          "what": "state word left out of the row",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:15:27Z",
+          "head": "7c10cc5f699317fbebbbcea24b1b4f981410dc9e",
+          "strengthened": [
+            "tests/panel/r192/sessions-tab.test.mjs"
+          ]
+        },
+        {
+          "task": 3,
+          "what": "pane passes no lease to the Sessions tab",
+          "files": [
+            "plugin/hooks/panel-pane.js"
+          ],
+          "checks": {
+            "C407": "green",
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:15:57Z",
+          "head": "6bfb0ca3c6c0b463b13abd1c31e8690644997f11"
+        },
+        {
+          "task": 4,
+          "what": "the tab press no longer reads the list at once",
+          "files": [
+            "plugin/hooks/panel.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:16:29Z",
+          "head": "6bfb0ca3c6c0b463b13abd1c31e8690644997f11"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the Sessions tab lists this project's chats newest first with name, state word, last active HH:MM and claude --resume <id>, leaving out chats of other projects and sibling folders"
+          },
+          "what": "oldest first",
+          "files": [
+            "plugin/hooks/panel-sessions.js"
+          ],
+          "checks": {
+            "C408": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:16:58Z",
+          "head": "6bfb0ca3c6c0b463b13abd1c31e8690644997f11"
+        }
+      ]
     },
     {
       "id": "P154.2",
@@ -39821,14 +40721,13 @@
         "docs/panel.md"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "docs",
       "tasks": [
         "docs/panel.md, 'Mission Control': the tab row becomes `Now │ Plan │ Proof │ Timeline │ Decisions │ Team │ Sessions │ Costs` and the narrow names `Now Plan Proof Time Log Team Sess Cost`; the tab list of the Now section's intro says eight tabs.",
         "docs/panel.md, a 'Sessions' subsection beside Team's: every chat of Claude Code's list on this project (its folder or one inside it), newest first, with name, state word, last active `HH:MM`, and `claude --resume <session id>` to copy; `this chat`; `● holds the run` with the run kind on the holder's row; a holder with no entry listed from the lease as `closed or not seen`; the sentence 'No other chats are open on this project' when there is nothing else; read-only (no button, nothing sent, nothing written); re-read on the tick only while shown or a lease is open; a malformed file skips its row.",
         "docs/panel.md: a note that the tab is the one place the panel reads outside the project, Claude Code's own list, read-only, with a link to docs/guards.md's paragraph."
-      ],
-      "note": "R192.40: docs/panel.md is written and committed (96973c62), but vbw mutate refuses to run because C406 is red on unbroken code: tests/sessions-docs.bats test 7 needs docs/next.md to describe rename_hint, which is outside this plan's files. Re-run the R192.40 mutation after the next.md docs plan lands."
+      ]
     },
     {
       "id": "P152.5",
@@ -51570,6 +52469,19 @@
           "usd": 1.152427,
           "in": 2006,
           "out": 28
+        }
+      },
+      {
+        "id": "build-20261019T010305Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M38",
+        "started": "2026-10-19T01:03:05Z",
+        "ended": "2026-10-19T01:23:27Z",
+        "cost": {
+          "usd": 1.684833,
+          "in": 1900,
+          "out": 292
         }
       }
     ],
