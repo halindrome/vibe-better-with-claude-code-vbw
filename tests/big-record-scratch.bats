@@ -30,7 +30,7 @@ teardown() { vbw_teardown; }
 leftovers() {
   local gd
   (cd "$1/.vbw/runtime" && find . -mindepth 1 -path ./output -prune -o -print) | sed 's|^\./||' \
-    | grep -vxE 'approved-contract\.json|next\.json|step\.json|glance\.json|run-open|auto\.[A-Za-z0-9_-]+\.json|prove\.unfinished|gate|output' || true
+    | grep -vxE 'approved-contract\.json|next\.json|step\.json|glance\.json|holder\.json|run-open|auto\.[A-Za-z0-9_-]+\.json|prove\.unfinished|gate|output' || true
   gd=$(git -C "$1" rev-parse --git-common-dir)
   case "$gd" in /*) ;; *) gd="$1/$gd" ;; esac
   [ ! -d "$gd/vbw" ] || (cd "$gd/vbw" && find . -mindepth 1 -print) | sed 's|^\./||' | grep -vE '^[A-Za-z0-9_-]+\.json$' || true
