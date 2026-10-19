@@ -20653,7 +20653,14 @@
           "to": "deep",
           "reason": "Dev blocked P152.3: C402 test 4 (tests/sessions-guards.bats 'a stored name with escape sequences is shown clean') fails every time on macOS: it does touch .vbw/record.json then vbw status, so record_read (plugin/lib/record.sh) rewrites the glance in the SAME second; the hook runs under sh -c where /bin/sh is bash 3.2 and [ -nt ] compares whole seconds, so the glance counts as stale and the guard reads the record (no name -> id). Verified: record and glance both mtime 1792365627. common.jq is done (tests 1,2,3,5 pass; hooks-guard, glance-guards, guard-protected, big-record-hooks all pass; bench guards 10.8 ms max, status line 34-51 ms, budget 20/60). Fix needs a file outside the plan: plugin/lib/record.sh record_read must write the rewritten glance strictly newer in whole seconds (e.g. record_back on the record is forbidden by its comment, so touch the glance forward or set the record one second back), or the test needs a sleep 1 (protected file)."
         }
-      ]
+      ],
+      "qa": {
+        "result": "pass",
+        "tier": "deep",
+        "tree": "820ab33d15c018547fd18996c7b99cdd7db5d176a6c898a8f6c850df211698cc",
+        "at": "2026-10-19T10:02:40Z",
+        "note": "28/28 checks"
+      }
     },
     {
       "id": "P153",
