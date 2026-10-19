@@ -626,7 +626,8 @@ a file, so you can read the whole failure without running everything again.
 
 - There is one file per check or command, holding its latest failure; a newer
   failure replaces it.
-- A pass removes the file.
+- A pass in `vbw prove` or `vbw fix done` removes the file; a pass in `vbw check`
+  leaves it as it is.
 - A reused result, or a check that was skipped, leaves the file as it is.
 - `.vbw/runtime/` is git-ignored, so these files are never committed.
 - `vbw check` keeps a failing check's output the same way; `--expect-red` keeps
@@ -1131,7 +1132,9 @@ the evidence covers the code you will keep.
 ### `vbw check [--expect-red] [CHECK...]`
 
 Runs the given approved checks (all when none are given) on the working folder,
-uncommitted and untracked files included, reports, and writes nothing: the
+uncommitted and untracked files included, and reports. It writes only the full
+output of each failing check to `.vbw/runtime/output/<check>.log` and prints
+`  full output: PATH` under that check's line (`--expect-red` keeps nothing): the
 Dev's tool for the red and green steps. Exit 0 when all pass. With `--expect-red`, red-first:
 before a plan is built its checks must fail, and a check that already passes
 proves nothing, so exit 0 only when every check fails.
