@@ -42093,7 +42093,7 @@
       "after": [
         "P155.1"
       ],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "cmd-commit.sh cmd_commit_fix: an open requirement fix of any source commits the named changed check files of its requirement with the trailers VBW-Fix: FIX and VBW-Req: REQ, touching only them and leaving staged work staged; a project-command fix keeps today's path; the message is validated as today",
@@ -42101,7 +42101,309 @@
         "plugin/agents/dev.md, Fix and Finish: a requirement fix commits its own requirement's check files with vbw commit --fix, code goes through its plan (vbw commit PLAN), the files wait for one approval before the proof",
         "plugin/workflows/fixing.js, the Dev instruction: the same in one sentence, without the word mutation"
       ],
-      "note": "R194.10 / C417 test 7 needs a file outside this plan. Tasks 1-4 are committed and 7 of 8 C417 tests pass. Test 7 fails because vbw fix done runs C1 with the changed, unapproved tests/c1.sh (it only holds checks that carry a fix key; contract_held in plugin/lib/contract.sh and the candidate loop in plugin/lib/cmd-fix.sh), then vbw prove after approval reuses that run, so evidence.checks.C1.reused is true where the test wants a fresh run. Fix: fix done should not run a check whose files wait for approval (contract_waiting), so the proof runs it. Needs plugin/lib/cmd-fix.sh (and maybe contract.sh) added to a plan, then vbw apply."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R194",
+            "text": "vbw commit --fix FIX MSG FILE... for an open requirement fix of any source commits the named changed check files of its requirement with VBW-Fix and VBW-Req trailers, touching only them and leaving staged work staged"
+          },
+          "what": "drop the VBW-Req trailer",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:56:33Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "the commit message is validated as today"
+          },
+          "what": "skip message validation in fix",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:58:02Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "a check file of another requirement is refused, committing nothing, naming that requirement"
+          },
+          "what": "other-requirement refusal never taken",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:59:51Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "a code file is refused, committing nothing, pointing to vbw commit PLAN"
+          },
+          "what": "code-file refusal no longer points to vbw commit PLAN",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:01:26Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "a path under .vbw/ or outside the project is refused, committing nothing"
+          },
+          "what": "drop the .vbw/outside-project guard",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T13:02:58Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "an unknown or non-open fix is refused, committing nothing"
+          },
+          "what": "unknown and non-open fixes accepted",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:04:29Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "a named file that did not change is refused with nothing to commit"
+          },
+          "what": "no refusal when nothing changed",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:05:59Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "a fix of a [human] requirement has no check files to commit and is refused the same way"
+          },
+          "what": "human requirement fix may commit any check file",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:07:32Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "a project-command fix keeps today's behaviour, and a QA fix's check files commit as today (R160 unchanged), with both trailers"
+          },
+          "what": "project-command fix goes through the requirement check",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:09:05Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "the commit is listed under its requirement by vbw show req, and the proof's scope check blames no plan for it"
+          },
+          "what": "VBW-Req trailer names the wrong requirement",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:10:36Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "plugin/agents/dev.md and the fixing workflow's Dev instruction say a requirement fix commits its own requirement's check files with vbw commit --fix, code goes through the plan, and the files wait for one approval"
+          },
+          "what": "dev.md no longer names vbw commit --fix for check files",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:12:05Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "task": 1,
+          "what": "commit without --only takes staged work along",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "green",
+            "C418": "green",
+            "C419": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T13:15:04Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "task": 2,
+          "what": "path outside the project allowed",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "green",
+            "C418": "green",
+            "C419": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T13:17:29Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "task": 3,
+          "what": "dev.md Fix paragraph loses the approval wait",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:19:05Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "task": 4,
+          "what": "fixing.js loses the vbw commit PLAN sentence",
+          "files": [
+            "plugin/workflows/fixing.js"
+          ],
+          "checks": {
+            "C417": "green",
+            "C418": "green",
+            "C419": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T13:21:32Z",
+          "head": "fe634c3dd6d6baea3147e89e27fff3fca4d3f959"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "a path under .vbw/ or outside the project is refused, committing nothing"
+          },
+          "what": "drop the .vbw/outside-project guard",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:26:52Z",
+          "head": "01a870b965ff67acc24a6ac0ae6b04346ea0e994",
+          "strengthened": [
+            "tests/fix-commit-own-checks.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "what": "requirement-fix commit without a pathspec takes staged work along",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:28:42Z",
+          "head": "01a870b965ff67acc24a6ac0ae6b04346ea0e994",
+          "strengthened": [
+            "tests/fix-commit-own-checks.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "path outside the project allowed",
+          "files": [
+            "plugin/lib/cmd-commit.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:30:35Z",
+          "head": "01a870b965ff67acc24a6ac0ae6b04346ea0e994",
+          "strengthened": [
+            "tests/fix-commit-own-checks.bats"
+          ]
+        },
+        {
+          "task": 4,
+          "what": "fixing.js loses the vbw commit PLAN sentence",
+          "files": [
+            "plugin/workflows/fixing.js"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T13:32:24Z",
+          "head": "01a870b965ff67acc24a6ac0ae6b04346ea0e994",
+          "strengthened": [
+            "tests/fix-commit-own-checks.bats"
+          ]
+        }
+      ]
     },
     {
       "id": "P156.2",
@@ -42484,7 +42786,7 @@
       "after": [
         "P155.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/failing-tests.jq: the failing test names in a kept output, each once: TAP/bats (not ok N name), cargo test (test name ... FAILED and the failures: list), pytest (FAILED path::name), go test (--- FAIL: Name), jest (✕ name, duration stripped), vitest (× name), mocha (N) name)",
@@ -54717,6 +55019,19 @@
           "usd": 0.736448,
           "in": 2498,
           "out": 2
+        }
+      },
+      {
+        "id": "build-20261019T124931Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M39",
+        "started": "2026-10-19T12:49:31Z",
+        "ended": "2026-10-19T13:35:06Z",
+        "cost": {
+          "usd": 0.904662,
+          "in": 2254,
+          "out": 237
         }
       }
     ],
