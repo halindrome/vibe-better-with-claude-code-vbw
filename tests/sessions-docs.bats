@@ -78,3 +78,16 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
   echo "$row" | grep -qF 'wait for it'
   echo "$row" | grep -qi 'file count'
 }
+
+@test "R192: docs/panel.md counts eight tabs, names Sess in the narrow row, and links the one read outside the project to guards.md" {
+  has "$PANEL" 'eight tabs'
+  has "$PANEL" 'Team Sess Cost'
+  has "$PANEL" 'one place the panel reads outside the project'
+  grep -qF '(guards.md#sessionstart)' "$PANEL"
+  grep -qE '^## SessionStart' "$GUARDS"
+}
+
+@test "R192: docs/panel.md says the Sessions tab is read-only and re-read on the tick only while shown or a lease is open" {
+  has "$PANEL" 'read-only: no button'
+  has "$PANEL" 're-read on the panel.s tick only while the tab is shown or a run holds a lease'
+}
