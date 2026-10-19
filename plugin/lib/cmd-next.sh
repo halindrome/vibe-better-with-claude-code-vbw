@@ -47,7 +47,7 @@ qa_combined() {
 # vbw status and the road (lib/road.sh) read the same one.
 next_answer() {
   vbw_require_project
-  local effort record hash counts approved=false changed=false legacy=false next qa waiting profile problems=""
+  local effort record hash counts approved=false changed=false legacy=false next qa waiting profile problems="" holder
   record=$(record_read) || return $?
   hash=$(contract_hash "$record")
   # Check files edited since the approval wait: the build goes on, the one approval comes before proof.
