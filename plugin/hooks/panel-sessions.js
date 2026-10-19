@@ -95,24 +95,37 @@ export function holderName({ lease, registry, stored, sessionId } = {}) {
 
 const EMPTY = 'No other chats are open on this project'
 const inside = (cwd, root) => typeof cwd === 'string' && typeof root === 'string' && root !== '' && (cwd === root || cwd.startsWith(root.replace(/\/+$/, '') + '/'))
-// 'HH:MM' on the local clock, the same hand as panel-view's clock; '' without a moment.
-const hhmm = (ms) => (Number.isFinite(ms) ? String(new Date(ms).getHours()).padStart(2, '0') + ':' + String(new Date(ms).getMinutes()).padStart(2, '0') : '')
+const two = (n) => String(n).padStart(2, '0')
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const midnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+// 'HH:MM' on the local clock; another day is named as panel-step's times are
+// ('yesterday 14:20', a weekday, 'tomorrow'); '' without a moment.
+function hhmm(ms, now) {
+  if (!Number.isFinite(ms)) return ''
+  const d = new Date(ms)
+  const days = Number.isFinite(now) ? Math.round((midnight(d) - midnight(new Date(now))) / 86400000) : 0
+  const day = days === 0 ? '' : days === 1 ? 'tomorrow ' : days === -1 ? 'yesterday ' : DAY_NAMES[d.getDay()] + ' '
+  return day + two(d.getHours()) + ':' + two(d.getMinutes())
+}
 
 // The Sessions tab: the chats of this project (cwd is the root or a folder under it),
 // newest first, and the holder of the run, listed from the lease when no entry has it.
-export function sessionsModel({ registry, root, sessionId, lease, stored, width, plans } = {}) {
+export function sessionsModel({ registry, root, sessionId, lease, stored, now, width, plans } = {}) {
   const room = Number.isInteger(width) && width > 1 ? width : 80
   const held = isObj(lease) && typeof lease.session === 'string' && lease.session ? lease.session : null
   const kind = held
     ? [String(lease.kind || 'run'), ...(Array.isArray(plans) ? plans : []).filter((p) => isObj(p) && p.status === 'building' && typeof p.id === 'string').map((p) => p.id)].join(' ')
     : ''
-  const rows = (Array.isArray(registry) ? registry : [])
-    .filter((e) => isObj(e) && typeof e.sessionId === 'string' && inside(e.cwd, root))
+  // One row per session id: the newest updatedAt wins, as the kernel reads the list.
+  const at = (e) => (Number.isFinite(e.updatedAt) ? e.updatedAt : -Infinity)
+  const list = (Array.isArray(registry) ? registry : []).filter((e) => isObj(e) && typeof e.sessionId === 'string' && inside(e.cwd, root))
+  const rows = list
+    .filter((e, i) => list.findIndex((o) => o.sessionId === e.sessionId && at(o) > at(e)) < 0 && list.findIndex((o) => o.sessionId === e.sessionId && at(o) === at(e)) === i)
     .map((e) => ({
       id: e.sessionId,
       name: cutName(cleanName(e.name) || e.sessionId.slice(0, 8), room),
       state: typeof e.status === 'string' ? cleanName(e.status) : '',
-      last: hhmm(e.updatedAt),
+      last: hhmm(e.updatedAt, now),
       resume: 'claude --resume ' + e.sessionId,
       self: e.sessionId === sessionId,
       holder: e.sessionId === held ? { kind } : null,
