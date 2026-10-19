@@ -280,6 +280,25 @@ vbw_mtime() {
   printf '%s\n' "$t"
 }
 
+# vbw_stamp_newer DIR FILE...: gives each FILE (a path under DIR) a modification
+# time one second later than the newest file under DIR, build output included. The
+# time comes from the files' times, never from the clock, so it holds when a file is
+# stamped ahead of now. A missing FILE is left missing.
+vbw_stamp_newer() {
+  local dir="$1" newest t f stamp
+  shift
+  newest=$(
+    { find "$dir" ! -type d -exec stat -c %Y {} + 2> /dev/null || find "$dir" ! -type d -exec stat -f %m {} + 2> /dev/null; } \
+      | sort -n | tail -n 1
+  )
+  case "$newest" in "" | *[!0-9]*) newest=0 ;; esac
+  t=$((newest + 1))
+  stamp=$(date -d "@$t" +%Y%m%d%H%M.%S 2> /dev/null) || stamp=$(date -r "$t" +%Y%m%d%H%M.%S 2> /dev/null) || return 0
+  for f in "$@"; do
+    if [ -e "$dir/$f" ] || [ -L "$dir/$f" ]; then touch -h -t "$stamp" "$dir/$f" 2> /dev/null || touch -t "$stamp" "$dir/$f" 2> /dev/null || true; fi
+  done
+}
+
 # vbw_dirty_files FILE...: those of the project-relative FILEs that differ from
 # HEAD or are new, comma-separated.
 vbw_dirty_files() {
