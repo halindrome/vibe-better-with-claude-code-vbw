@@ -47452,6 +47452,17 @@
       "id": "D454",
       "at": "2026-10-19T10:42:30Z",
       "text": "Shipped M38 Brainstorm F4 (cosmetic leg): show which session holds the run, by name, in the status line, Comms and a Sessions-tab mark; names need the session name as data (ties to cosmetic.md D14); optionally /vbw:vibe suggests /rename vbw · <project> at first setup, never applies it: 1 requirement proven or accepted"
+    },
+    {
+      "id": "D455",
+      "text": "R188.10 and its test stay as approved; R193 pins the new task-break behaviour in its own test file",
+      "why": "The old test still holds under the new behaviour (its plan completes its requirement, so its own rules are its requirement's checks); rewriting a shipped rule in place needs a kernel feature apply does not have, not worth a milestone of its own",
+      "at": "2026-10-19T11:30:27Z"
+    },
+    {
+      "id": "D456",
+      "at": "2026-10-19T11:45:37Z",
+      "text": "Contract approved: 186 requirements, 417 checks, 475 plans (bf08d012a648)"
     }
   ],
   "commands": {
