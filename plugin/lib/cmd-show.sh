@@ -372,9 +372,13 @@ show_work() {
       "checks:", check_lines,
       (def tname: if .rule then (.rule.req as $q | .rule.text as $t | ($rules | map(select(.text == $t and (.n | startswith($q + "."))))[0].n // $q)) else "task\(.task)" end;
        if (.plan.mutations // [] | length) > 0 then "mutations:",
-         (.plan.mutations[] | if .none then "  task\(.task): no testable behaviour: \(.none)"
-           else "  \(tname): \(.what): \(.result)"
-             + (if .strengthened then " (strengthened: \(.strengthened | join(", ")))" else "" end),
+         (.plan.mutations as $ms | $ms | to_entries[] | .key as $i | .value as $e | $e | if .none then "  task\(.task): no testable behaviour: \(.none)"
+           else (if .pending then
+               "  \(tname) \(if ([$ms[:$i][] | select(.result == "survivor" and .head != $e.head and (if $e.rule then .rule == $e.rule else .task == $e.task end)
+                    and ((($e.checks | to_entries | map(select(.value == "red") | .key)) - (.checks | keys)) | length == 0))] | length) > 0
+                 then "survives the approved check; caught by the pending one" else "caught by a check file waiting for approval" end): \(.pending | join(", ")) (\(.what))"
+             else "  \(tname): \(.what): \(.result)"
+               + (if .strengthened then " (strengthened: \(.strengthened | join(", ")))" else "" end) end),
              (.checks | to_entries[] | "    \(.key): \(.value)") end) else empty end)
     else
       "\(.fix.id) [\(.fix.status), attempts \(.fix.attempts)]: \(.fix.note)",
