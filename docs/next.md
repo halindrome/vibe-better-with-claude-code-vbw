@@ -174,6 +174,19 @@ writes it into the step's note, where a late plan done moves it with the step.
 The note's road goes with the note when the run ends. See
 [Time left](panel.md#time-left).
 
+### The rename hint
+
+`rename_hint` in `vbw next --json` is a string or `null`. It is a string when a
+second chat is open on this project (a chat of Claude Code's list whose folder
+is the project or a folder under it) and this chat still carries the name
+Claude Code gave it. A name you chose with `/rename` gets no hint. The sentence
+reads `Another chat is open on this project: /rename vbw · <project name> gives
+this chat a name the other chats will see.` and comes once per clone: the mark
+is `rename_hint` in this clone's settings, so the next answer carries `null`.
+The router says it once, as given. VBW never runs or applies the rename itself
+(D444): you rename the chat. Only the command computes it, not the Stop hook's
+gate or the loop.
+
 ## Build waves
 
 `vbw show contract` prints one line under `plans:`, before the approval
