@@ -121,3 +121,26 @@ lease() { jq -c "$1" .vbw/record.json; }
   start F1 "$qa"
   lease '.lease' | jq -e '(.editable | sort) == ["tests/c1.sh", "tests/c2.sh"] and .new_tests == true' || { lease .lease; false; }
 }
+
+@test "R194: a run of a proof's fix and a project-command fix together opens the requirement's own check files, the guard allows them and denies the others" {
+  start F1 F2
+  lease '.lease' | jq -e '.editable == ["tests/c1.sh"] and .files == null' || { lease .lease; false; }
+  local out
+  out=$(file_call Edit tests/c1.sh)
+  ! denied "$out" || { echo "$out"; false; }
+  out=$(file_call Edit tests/c2.sh)
+  denied "$out" || { echo "not denied: $out"; false; }
+}
+
+@test "R194: a QA fix run whose requirement has no exclusive check file denies every protected check file with the vbw fix check advice, and allows a new test file" {
+  edit_record '.checks |= map(if .req == "R2" then .files = ["tests/shared.sh"] else . end) | .protected = ([.checks[].files[]] | unique)'
+  local qa out
+  qa=$(qa_fix)
+  start "$qa"
+  lease '.lease' | jq -e '(.editable // []) == [] and .new_tests == true' || { lease .lease; false; }
+  out=$(file_call Edit tests/c1.sh)
+  denied "$out" || { echo "not denied: $out"; false; }
+  reason "$out" | grep -q 'vbw fix check' || { reason "$out"; false; }
+  out=$(file_call Write tests/r2-regression.sh)
+  ! denied "$out" || { echo "$out"; false; }
+}
