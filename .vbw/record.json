@@ -46561,6 +46561,13 @@
       "sort": "next",
       "size": "small",
       "status": "done"
+    },
+    {
+      "id": "T168",
+      "text": "The Lead cannot reword an approved rule (F269, 2026-10-19): vbw apply --patch matches a rule by requirement and text, so new wording adds a rule and the stale one stays; a shipped milestone's rule cannot be reached at all. Give rules a stable address (R188.10) that a patch can reword or retire, with re-approval, so a later requirement that changes behaviour can update the earlier rule instead of leaving it stale (R188.10 is superseded by R193 meanwhile)",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
@@ -49079,6 +49086,12 @@
       "id": "D462",
       "at": "2026-10-19T18:24:17Z",
       "text": "Contract approved: 186 requirements, 417 checks, 477 plans (f3a3e6c8a414)"
+    },
+    {
+      "id": "D463",
+      "text": "F269: rule R188.10 ('a task break runs the checks of the plan's requirements') is superseded by R193 (a task break runs the checks of the rules the plan owns; a plan owning no rule keeps the requirements' checks); its text stays as recorded and its test in tests/mutate-command.bats stays, since that fixture's plan owns both rules of R1 and the test holds under both readings",
+      "why": "The kernel cannot reword an approved rule: apply --patch matches rules by text (new text adds a rule, the old stays) and R188 belongs to a shipped milestone. R193's checks C411 and C412 pin the new behaviour. Building rule rewording now would grow M39 for one sentence; it goes to the backlog (chosen by VBW, as the owner delegates technical decisions)",
+      "at": "2026-10-19T19:09:35Z"
     }
   ],
   "commands": {
