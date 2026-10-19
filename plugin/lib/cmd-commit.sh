@@ -4,8 +4,8 @@
 # task), with VBW-Plan/VBW-Req trailers. Nothing else in the working tree or the index is
 # touched: the user's own staged work stays staged. vbw commit --fix FIX MESSAGE
 # FILE...: an open project-command fix commits the named changed files (VBW-Fix);
-# an open fix QA opened commits the check files of its requirement (its new
-# regression test included). Commits are serialized with
+# an open requirement fix, whatever opened it, commits the changed check files of
+# its requirement (VBW-Fix, VBW-Req). Commits are serialized with
 # the project lock, so parallel Devs never collide on git's index lock.
 
 # jq text, prepended to a filter over the record: survivor_files($plan) are the
@@ -100,26 +100,35 @@ commit_escalate() {
   fi
 }
 
-# cmd_commit_fix FIX MESSAGE FILE...: an open fix for a project command, or one
-# QA opened (then only check files of its requirement); FILEs must have changed
-# and may not be under .vbw/.
+# cmd_commit_fix FIX MESSAGE FILE...: an open fix for a project command (any
+# changed file), or an open requirement fix of any source (QA or a failing
+# proof): then only changed check files of its requirement, with VBW-Fix and
+# VBW-Req. FILEs must have changed and may not be under .vbw/.
 cmd_commit_fix() {
   [ $# -ge 3 ] || vbw_usage_error "usage: vbw commit --fix FIX MESSAGE FILE..."
-  local fix="$1" msg="$2" f changed=()
+  local fix="$1" msg="$2" f changed=() req=""
   shift 2
   printf '%s' "$msg" | grep -Eq "$VBW_COMMIT_RE" || vbw_usage_error "commit message must be 'type(scope): description'"
   vbw_require_project
-  local record qa=false
+  local record
   record=$(record_read)
-  printf '%s' "$record" | jq -e --arg f "$fix" 'any(.fixes[]?; .id == $f and .status == "open" and (.source // "") == "qa")' > /dev/null && qa=true
-  [ "$qa" = true ] || printf '%s' "$record" | jq -e --arg f "$fix" 'any(.fixes[]?; .id == $f and .status == "open" and (.command // "") != "")' > /dev/null \
-    || vbw_die "$fix is not an open project-command or QA fix: a requirement fix commits through its plan (vbw commit PLAN MESSAGE)"
+  printf '%s' "$record" | jq -e --arg f "$fix" 'any(.fixes[]?; .id == $f)' > /dev/null || vbw_die "unknown fix $fix"
+  printf '%s' "$record" | jq -e --arg f "$fix" 'any(.fixes[]?; .id == $f and .status == "open")' > /dev/null \
+    || vbw_die "$fix is not open: only an open fix commits"
+  req=$(printf '%s' "$record" | jq -r --arg f "$fix" '[.fixes[] | select(.id == $f)][0] | if (.command // "") != "" then "" else (.req // "") end')
+  [ -n "$req" ] || printf '%s' "$record" | jq -e --arg f "$fix" 'any(.fixes[]; .id == $f and (.command // "") != "")' > /dev/null \
+    || vbw_die "$fix is not an open project-command or requirement fix"
   for f in "$@"; do
     f="${f#./}"
     case "/$f/" in /.vbw/* | */../*) vbw_die "$f: .vbw/ and paths outside the project cannot be committed by a fix" ;; esac
-    [ "$qa" = false ] || printf '%s' "$record" | jq -e --arg f "$fix" --arg p "$f" '[.fixes[] | select(.id == $f)][0].req as $q
-        | any(.checks[]; .req == $q and any(.files[]?; . == $p))' > /dev/null \
-      || vbw_die "$f is not a check file of the requirement $fix is about: commit code through its plan (vbw commit PLAN MESSAGE), test files through vbw fix check first"
+    [ -z "$req" ] && continue
+    printf '%s' "$record" | jq -e --arg q "$req" --arg p "$f" 'any(.checks[]; .req == $q and any(.files[]?; . == $p))' > /dev/null && continue
+    local other
+    other=$(printf '%s' "$record" | jq -r --arg q "$req" --arg p "$f" '[.checks[] | select(.req != $q and any(.files[]?; . == $p)) | .req] | unique | join(", ")')
+    if [ -n "$other" ]; then
+      vbw_die "$f is a check file of $other, not of $req, the requirement $fix is about: it is not this fix's to commit"
+    fi
+    vbw_die "$f is not a check file of $req, the requirement $fix is about (a requirement with no check file has none to commit): commit code through its plan (vbw commit PLAN MESSAGE), new test files through vbw fix check first"
   done
   cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
   record_lock
@@ -128,7 +137,12 @@ cmd_commit_fix() {
     git ls-files -z --others --exclude-standard -- "$@")
   [ ${#changed[@]} -gt 0 ] || vbw_die "nothing to commit for $fix: none of the named files changed"
   git add -- "${changed[@]}"
-  git commit --quiet --only -m "$msg" -m "VBW-Fix: $fix" -- "${changed[@]}" || vbw_die "git commit failed"
+  if [ -n "$req" ]; then
+    git commit --quiet --only -m "$msg" -m "VBW-Fix: $fix
+VBW-Req: $req" -- "${changed[@]}" || vbw_die "git commit failed"
+  else
+    git commit --quiet --only -m "$msg" -m "VBW-Fix: $fix" -- "${changed[@]}" || vbw_die "git commit failed"
+  fi
   record_unlock
   printf 'committed %s for %s (%d file%s)\n' "$(git rev-parse --short HEAD)" "$fix" \
     "${#changed[@]}" "$([ ${#changed[@]} -eq 1 ] || printf s)"
