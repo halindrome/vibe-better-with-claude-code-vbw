@@ -82,9 +82,12 @@ fi
 [ "$removed" -eq 0 ] || context="${context}VBW removed $removed outdated VBW 1 command copies that would have run instead of the VBW 2 commands. Tell the user once: run /reload-skills now (or restart Claude Code) before using any /vbw: command, because this session loaded the old copies. "
 
 if [ -f "$root/.vbw/record.json" ]; then
-  state=$(cd "$root" && "$vbw" status 2>&1 < /dev/null)
+  # One kernel call: vbw next refreshes the glance, whose project line has the
+  # words of vbw status line 1 (never vbw status, which runs vbw next again).
+  next=$(cd "$root" && "$vbw" next 2>&1 < /dev/null)
   newer=$?
-  state=$(printf '%s\n' "$state" | head -n 1)
+  next=$(printf '%s\n' "$next" | head -n 1)
+  state=$next
   if [ "$newer" -eq 4 ]; then
     # Written by a newer VBW: nothing works until VBW is updated (exit 4).
     context="${context}VBW project made by a newer VBW (${state#vbw: }). Tell the user once: update VBW with /vbw:update, then restart Claude Code; VBW cannot work on this project until then."
@@ -95,7 +98,7 @@ if [ -f "$root/.vbw/record.json" ]; then
     case $("$vbw" statusline status 2> /dev/null) in
       *"refreshed on events only"* | *"an older VBW status line"*) "$vbw" statusline on > /dev/null 2>&1 || true ;;
     esac
-    next=$(cd "$root" && "$vbw" next 2>&1 < /dev/null | head -n 1)
+    state=$(jq -r '"\(.project.name) · \(.milestone.id) \(.milestone.title) (\(.milestone.status))"' "$root/.vbw/runtime/glance.json" 2> /dev/null || true)
     context="${context}VBW project ($state). Next: $next. Continue with /vbw:vibe. The vbw command is on PATH (vbw help); this session's kernel is ${kernel}${kversion:+ (version $kversion)}."
   fi
 elif [ -d "$root/.vbw-planning" ]; then
