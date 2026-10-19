@@ -208,6 +208,7 @@
     "tests/panel-glance.bats",
     "tests/panel-light.bats",
     "tests/panel-now-docs.bats",
+    "tests/panel-sessions-days-docs.bats",
     "tests/panel-skill-open.bats",
     "tests/panel-sound-audio.bats",
     "tests/panel-sound.bats",
@@ -245,6 +246,7 @@
     "tests/panel/r191/road-panel.test.mjs",
     "tests/panel/r191/road-same-time.test.mjs",
     "tests/panel/r192/holder.test.mjs",
+    "tests/panel/r192/sessions-days.test.mjs",
     "tests/panel/r192/sessions-tab.test.mjs",
     "tests/panel/record-row.test.mjs",
     "tests/panel/safe.test.mjs",
@@ -5365,6 +5367,32 @@
       "files": [
         "tests/panel/r192/sessions-tab.test.mjs"
       ]
+    },
+    {
+      "id": "C409",
+      "req": "R192",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r192/sessions-days.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r192/sessions-days.test.mjs"
+      ],
+      "fix": "F255"
+    },
+    {
+      "id": "C410",
+      "req": "R192",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/panel-sessions-days-docs.bats"
+      ],
+      "files": [
+        "tests/panel-sessions-days-docs.bats"
+      ],
+      "fix": "F255"
     }
   ],
   "project": {
@@ -43077,7 +43105,7 @@
       "req": "R192",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The Sessions tab never names another day. The criterion and plan task 1 say last active is HH:MM local with another day named as the rest of the panel does (panel-step.js says 'yesterday 14:20' or a weekday). plugin/hooks/panel-sessions.js hhmm() always returns bare HH:MM and sessionsModel takes 'now' but never uses it. Evidence: a chat last active 3 days ago (updatedAt now minus 3 days, now 12:00) gives last '12:00', identical to a chat active this minute. A reader cannot tell a stale chat from a live one. docs/panel.md also does not say how another day is shown. Regression test: sessionsModel with an entry from yesterday and one from three days ago must give 'yesterday HH:MM' and '<Weekday> HH:MM' (same wording as panel-step when()), today stays bare HH:MM; add the sentence to docs/panel.md and a docs-test check.",
       "phase": "P154"
     },
@@ -43086,7 +43114,7 @@
       "req": "R192",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The tab lists the same chat twice when Claude Code's list has two files for one session id. registryEntries() in plugin/hooks/panel-sessions.js sorts but does not merge by sessionId, and sessionsModel() maps every entry to a row. R192.2 already states the rule 'several list entries for one session id: the newest updatedAt wins' for the kernel, so this case is expected. Evidence: registryEntries of two files with sessionId a (names old, new) plus one b gives rows a/new, a/old, b; both a rows have the same resume line and the same React key 'chat-a'. Regression test: sessionsModel (or registryEntries) with two entries of one session id returns one row, the newest, and a panel mount with two such files draws the name and resume line once.",
       "phase": "P154"
     },
@@ -43095,7 +43123,7 @@
       "req": "R192",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation from the plan's files. Commit 1856cef3 edits tests/panel/cost.test.mjs (the Costs button check now also excludes 'Cost'), a file not listed in P154.1 (files: panel-sessions.js, panel-pane.js, panel.js, tests/panel/wiring.test.mjs), and no recorded decision covers it (decisions D442-D451 are about the holder name, hint and contract approvals; none names cost.test.mjs). The Dev's blocked note declared it and asked for the owner to approve, but the contract approval D451 is a hash approval, not a decision accepting the file outside the plan. Fix: record a decision naming the edit and why (the 8-tab row needs the short 'Cost' button name to be excluded), or move the edit into a plan that lists the file. Regression test: none beyond the existing cost test, which must stay green; the fix is the decision record.",
       "phase": "P154"
     }
@@ -46605,6 +46633,12 @@
       "id": "D451",
       "at": "2026-10-19T09:52:30Z",
       "text": "Contract approved: 181 requirements, 403 checks, 465 plans (0cc3be63a6ad)"
+    },
+    {
+      "id": "D452",
+      "text": "F257: P154.1's edit to tests/panel/cost.test.mjs (outside its files, in 1856cef3) is accepted: the Costs button check also excludes 'Cost'",
+      "why": "With eight tabs a narrow pane shows the short names (Sess, Cost); the cost test's exclusion of the tab button had to cover the short name or it would match the button instead of the tab content. Assertion unchanged in intent; the owner approved the file in the pre-proof approval",
+      "at": "2026-10-19T10:05:52Z"
     }
   ],
   "commands": {
@@ -52983,6 +53017,15 @@
           "in": 2241,
           "out": 71
         }
+      },
+      {
+        "id": "fix-20261019T100554Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M38",
+        "started": "2026-10-19T10:05:54Z",
+        "ended": "2026-10-19T10:27:16Z",
+        "cost": null
       }
     ],
     "milestones": {
