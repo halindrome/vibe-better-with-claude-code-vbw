@@ -169,4 +169,18 @@ refused() {
   grep -F 'vbw commit --fix' "$PLUGIN_ROOT/agents/dev.md" | grep -qi 'check file' || { echo "dev.md: no line with vbw commit --fix and check file"; false; }
   grep -F 'vbw commit --fix' "$PLUGIN_ROOT/agents/dev.md" | grep -qi 'approval' || { echo "dev.md: no line with vbw commit --fix and approval"; false; }
   grep -F 'vbw commit --fix' "$PLUGIN_ROOT/workflows/fixing.js" | grep -qi 'check file' || { echo "fixing.js: no line with vbw commit --fix and check file"; false; }
+  grep -F 'vbw commit --fix' "$PLUGIN_ROOT/workflows/fixing.js" | grep -qi 'approval' || { echo "fixing.js: no line with vbw commit --fix and approval"; false; }
+  grep -F 'vbw commit --fix' "$PLUGIN_ROOT/workflows/fixing.js" | grep -qF 'vbw commit PLAN' || { echo "fixing.js: code does not go through vbw commit PLAN"; false; }
+  grep -F 'vbw commit --fix' "$PLUGIN_ROOT/agents/dev.md" | grep -qF 'vbw commit PLAN' || { echo "dev.md: code does not go through vbw commit PLAN"; false; }
+}
+
+@test "R194: a project-command fix still refuses a path under .vbw/ or reaching outside its folder, committing nothing" {
+  edit_record '.commands = {test: ["true"]} | .fixes += [{id: "F93", command: "test", attempts: 0, status: "open", note: "t"}]'
+  printf 'tool\n' > src/tool.txt
+  printf 'more\n' >> .vbw/spec.md
+  git add -f .vbw/spec.md
+  refused F93 "fix(test): spec" .vbw/spec.md
+  [[ "$output" == *".vbw/"* ]] || { echo "$output"; false; }
+  refused F93 "fix(test): detour" src/../src/tool.txt
+  [[ "$output" == *"outside the project"* ]] || { echo "$output"; false; }
 }
