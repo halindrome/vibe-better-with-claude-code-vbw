@@ -21473,7 +21473,15 @@
           "to": "deep",
           "reason": "Dev blocked P157.2: R195.9 has no mutation: its check greps plugin/hooks, plugin/scripts and cmd-statusline.sh for runtime/output, none of which is a P157.2 file, so the guard denies the break; the only other plan file that could carry it (cmd-fix.sh) holds another run's uncommitted edits. Code and tasks 1-3 and R195.6-8 mutations are red. Needs the owner to allow a break in cmd-statusline.sh or accept R195.9 as covered by the grep."
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "ad3c4fa7cc8feb3658579a24cec1151a4c2de9a3741d462f5270f7a18dc53bfa",
+        "at": "2026-10-19T17:39:17Z",
+        "note": "27/30 checks",
+        "rounds": 1
+      }
     }
   ],
   "plans": [
@@ -45455,6 +45463,33 @@
       "status": "open",
       "note": "Criterion not met: the approved rule R188.10 was not rewritten. The record still says 'a task break runs the checks of the plan's requirements, only the named ones with --check, never another requirement's' (vbw show req R188, rule 10), which is now false for a plan that owns rules (it runs the plan's own rules' checks). Its test, 'R188: a task break runs the checks of the plan's requirements; --check narrows it to the named ones' in tests/mutate-command.bats (line 194), is unchanged; the file's last commit is 85bf0aaf, before P155. No P155 plan task covers this, so it is also a plan omission. A regression test should fail while R188.10's text still says 'the plan's requirements' and while the tests/mutate-command.bats task-break test does not assert the own-rules behaviour (a plan that owns a rule, with another rule's check red, still breaks and records red). Fix: the Lead rewrites R188.10 to the own-rules behaviour (re-approval of the contract), and the test in tests/mutate-command.bats is changed with it.",
       "phase": "P155"
+    },
+    {
+      "id": "F270",
+      "req": "R195",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Test gap: the promised 'failing tests:' under a failing PROJECT COMMAND (and failing_tests in --json .commands[]) has no test. tests/show-fix-failing-tests.bats only plants C1-C9 and one test-file log; it never plants command-<name>.log or asserts .commands[].failing_tests or the text under 'failing project commands:'. The code path is cmd-show.sh line ~340 (tests(\"command-\\(.name).log\")); breaking it to [] leaves every check green, and no recorded mutation (R195.6/R195.8/task2/task3) breaks it. A regression test should plant .vbw/runtime/output/command-test.log with TAP output for a failing project command and assert both the text lines under 'failing project commands:' and .commands[].failing_tests.",
+      "phase": "P157"
+    },
+    {
+      "id": "F271",
+      "req": "R195",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Document states a false fact: docs/proof.md ('vbw check' reference, 'reports, and writes nothing') and docs/workflows.md line 214 ('run approved checks, report, write nothing') still say vbw check writes nothing, but it now writes .vbw/runtime/output/<check>.log for each failing check and prints '  full output: PATH' under the check's line. Neither reference says so; only the kept-output section does, and its generic bullet 'A pass removes the file' is not true for vbw check (a pass leaves the file) and is not corrected there. A regression test should check that the vbw check reference entries mention the kept output and that a passing vbw check leaves an existing kept file.",
+      "phase": "P157"
+    },
+    {
+      "id": "F272",
+      "req": "R195",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Wrong behaviour in failing-tests.jq: the pytest pattern '^FAILED \\S' is too loose and the mocha '  N) name' pattern runs on any output with no 'N passing/failing' line. Python unittest ends with 'FAILED (failures=1)', which show fix lists as a failing test named '(failures=1)'; any output with a line like '  1) item one' (a numbered list in a non-mocha log) lists 'item one'. Both should say 'none recognised' (the criterion lists only the named forms). Evidence: printf 'Ran 3 tests\\n\\nFAILED (failures=1)\\n' | jq -Rs -c -f plugin/lib/failing-tests.jq prints [\"(failures=1)\"]. A regression test should plant a unittest log and a numbered-list log and assert 'none recognised in the output'.",
+      "phase": "P157"
     }
   ],
   "todos": [
