@@ -8,6 +8,10 @@
 // (panel-candy.js; panel.js animates them). Rows beyond the room fold into
 // one '+N more · [m] Mission Control' line. Otherwise nothing: the hint line
 // already says what comes next.
+// In little room the order is: the needs-you line, then the helper line while
+// helpers work, then the step line. With one row left the helper line is the only
+// one and carries the step's time words after its own parts; with two, the helper
+// line and the step line; with the step line alone only when no helper works.
 // Pure: data in, a model out (stageModel), a tree out (renderStage). No `$`,
 // never changes its input, never throws.
 import { poseOf, spriteFrame, encodeCells } from './panel-candy.js'
@@ -82,10 +86,8 @@ function health(hl, action) {
 // The running step, one line: what it is doing and its end time in the panel's
 // wording ('proving 12 of 40 checks · about 8 min, until around 14:26'). '' with no
 // step (the note went, or was never live), so the line goes at the next refresh.
-function stepOf(step, now, columns) {
-  if (!isObj(step)) return ''
-  const words = stepWords(step, now)
-  if (!words) return ''
+function stepOf(step, words, columns) {
+  if (!isObj(step) || !words) return ''
   const doing = str(step.doing) || str(step.kind)
   return cut((doing ? doing + ' · ' : '') + words.text, columns)
 }
@@ -136,7 +138,7 @@ function fit(rows, columns, full) {
 }
 
 // The crew: the helpers still at work, the failures not yet seen. Null when there is nothing to draw.
-function crewOf(rn, now, columns, maxRows, motion, cost, born, seen, stepLine) {
+function crewOf(rn, now, columns, maxRows, motion, cost, born, seen, stepLine, timeWords) {
   const running = rn.status === 'running'
   const ended = num(rn.endedAt) ? rn.endedAt : null
   const agents = rn.agents.filter((a) => isObj(a) && typeof a.id === 'string' && a.id)
@@ -151,7 +153,7 @@ function crewOf(rn, now, columns, maxRows, motion, cost, born, seen, stepLine) {
   const room = columns - len(button.label) - 6
   if (maxRows < 4) {
     const working = agents.filter((a) => a.state === 'working' || a.state === 'quiet').length
-    const parts = ['VBW ▸ ' + kind, status, working ? working + ' working' : '', doneAll ? doneAll + ' done' : '', time].filter(Boolean)
+    const parts = ['VBW ▸ ' + kind, status, working ? working + ' working' : '', doneAll ? doneAll + ' done' : '', time, timeWords].filter(Boolean)
     return { kind: 'crew', mode: 'line', header: { text: cut(parts.join(' · '), room), button }, rows: [], more: 0, ...(stepLine ? { step: stepLine } : {}) }
   }
   let failedKey = false
@@ -200,11 +202,14 @@ export function stageModel(input) {
     const need = needOf(input.need, columns, input.fresh, motion)
     // The needs-you line comes first; the step line takes the next row when there is one.
     const left = maxRows - (need ? 1 : 0)
-    const stepText = left >= 1 ? stepOf(input.step, now, columns) : ''
-    const room = left - (stepText ? 1 : 0)
+    const words = left >= 1 && isObj(input.step) ? stepWords(input.step, now) : null
+    const stepText = stepOf(input.step, words, columns)
     const seen = new Set(Array.isArray(input.seen) ? input.seen.filter((x) => typeof x === 'string') : [])
-    if (room >= 1 && isObj(rn) && Array.isArray(rn.agents) && rn.agents.some((a) => isObj(a) && typeof a.id === 'string' && a.id)) {
-      const crew = crewOf(rn, now, columns, room, motion, cost, born, seen, stepText)
+    if (left >= 1 && isObj(rn) && Array.isArray(rn.agents) && rn.agents.some((a) => isObj(a) && typeof a.id === 'string' && a.id)) {
+      // One row left: the helper line carries the step's time words, the step line gives way.
+      const crew = left === 1
+        ? crewOf(rn, now, columns, 1, motion, cost, born, seen, '', words && words.timed ? words.text : '')
+        : crewOf(rn, now, columns, left - (stepText ? 1 : 0), motion, cost, born, seen, stepText, '')
       if (crew) return need ? { ...crew, need } : crew
     }
     if (stepText) return { kind: 'step', step: stepText, ...(need ? { need } : {}), lines: [] }
