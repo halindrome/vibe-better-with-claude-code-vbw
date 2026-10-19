@@ -40721,12 +40721,279 @@
         "docs/panel.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/panel.md, 'Mission Control': the tab row becomes `Now │ Plan │ Proof │ Timeline │ Decisions │ Team │ Sessions │ Costs` and the narrow names `Now Plan Proof Time Log Team Sess Cost`; the tab list of the Now section's intro says eight tabs.",
         "docs/panel.md, a 'Sessions' subsection beside Team's: every chat of Claude Code's list on this project (its folder or one inside it), newest first, with name, state word, last active `HH:MM`, and `claude --resume <session id>` to copy; `this chat`; `● holds the run` with the run kind on the holder's row; a holder with no entry listed from the lease as `closed or not seen`; the sentence 'No other chats are open on this project' when there is nothing else; read-only (no button, nothing sent, nothing written); re-read on the tick only while shown or a lease is open; a malformed file skips its row.",
         "docs/panel.md: a note that the tab is the one place the panel reads outside the project, Claude Code's own list, read-only, with a link to docs/guards.md's paragraph."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R192",
+            "text": "docs/panel.md lists the Sessions tab with its short name and describes its rows and the empty sentence"
+          },
+          "what": "tab row without Sessions",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:25:45Z",
+          "head": "29c283932b488361e548192b8c7450e79d41ea86"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the tab row has Sessions right after Team, Sess in a narrow pane"
+          },
+          "what": "narrow names without Sess",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C408": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T01:26:08Z",
+          "head": "29c283932b488361e548192b8c7450e79d41ea86"
+        },
+        {
+          "task": 2,
+          "what": "drop closed or not seen",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:29:24Z",
+          "head": "29c283932b488361e548192b8c7450e79d41ea86"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "with no list or no other chat on the project the tab shows the one sentence No other chats are open on this project; a malformed file skips its row and never breaks the panel"
+          },
+          "what": "drop empty sentence",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C408": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T01:29:40Z",
+          "head": "29c283932b488361e548192b8c7450e79d41ea86"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the Sessions tab lists this project's chats newest first with name, state word, last active HH:MM and claude --resume <id>, leaving out chats of other projects and sibling folders"
+          },
+          "what": "drop resume",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C408": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T01:29:58Z",
+          "head": "29c283932b488361e548192b8c7450e79d41ea86"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "this chat's row says this chat; the holder's row shows ● holds the run with the run kind in the accent colour; a holder with no entry is listed from the lease as closed or not seen"
+          },
+          "what": "drop holds the run",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C408": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T01:30:16Z",
+          "head": "29c283932b488361e548192b8c7450e79d41ea86"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "this chat's row says this chat; the holder's row shows ● holds the run with the run kind in the accent colour; a holder with no entry is listed from the lease as closed or not seen"
+          },
+          "what": "drop this chat",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C408": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T01:30:34Z",
+          "head": "29c283932b488361e548192b8c7450e79d41ea86"
+        },
+        {
+          "task": 1,
+          "what": "eight tabs to seven",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "green",
+            "C407": "green",
+            "C408": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T01:32:25Z",
+          "head": "29c283932b488361e548192b8c7450e79d41ea86"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "the tab is read-only: no button or input, nothing run or written; the list is re-read on the tick only while the tab is shown or a lease is open"
+          },
+          "what": "readonly",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C408": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T01:32:43Z",
+          "head": "29c283932b488361e548192b8c7450e79d41ea86"
+        },
+        {
+          "task": 3,
+          "what": "link",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "green",
+            "C407": "green",
+            "C408": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T01:34:32Z",
+          "head": "29c283932b488361e548192b8c7450e79d41ea86"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "docs/statusline.md shows the leading and held by forms with the 20-character cut and the list it reads; docs/panel.md describes Comms' run started by line, the Now box's held by and /vbw-why by name"
+          },
+          "what": "run started by",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:34:51Z",
+          "head": "29c283932b488361e548192b8c7450e79d41ea86"
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "docs/statusline.md shows the leading and held by forms with the 20-character cut and the list it reads; docs/panel.md describes Comms' run started by line, the Now box's held by and /vbw-why by name"
+          },
+          "what": "held by",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:35:09Z",
+          "head": "29c283932b488361e548192b8c7450e79d41ea86"
+        },
+        {
+          "task": 1,
+          "what": "eight tabs to seven",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:39:20Z",
+          "head": "e3a7636b0fb6f930e86ed818fa2ab95755a666ef",
+          "strengthened": [
+            "tests/sessions-docs.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "what": "link",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C1": "green",
+            "C401": "green",
+            "C402": "green",
+            "C403": "green",
+            "C404": "green",
+            "C405": "green",
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:41:08Z",
+          "head": "e3a7636b0fb6f930e86ed818fa2ab95755a666ef",
+          "strengthened": [
+            "tests/sessions-docs.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R192",
+            "text": "docs/panel.md lists the Sessions tab with its short name and describes its rows and the empty sentence"
+          },
+          "what": "readonly",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C406": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T01:41:25Z",
+          "head": "e3a7636b0fb6f930e86ed818fa2ab95755a666ef"
+        }
       ]
     },
     {
@@ -52482,6 +52749,19 @@
           "usd": 1.684833,
           "in": 1900,
           "out": 292
+        }
+      },
+      {
+        "id": "build-20261019T012408Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M38",
+        "started": "2026-10-19T01:24:08Z",
+        "ended": "2026-10-19T01:42:50Z",
+        "cost": {
+          "usd": 0.378789,
+          "in": 1654,
+          "out": 300
         }
       }
     ],
