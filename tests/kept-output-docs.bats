@@ -43,3 +43,12 @@ section_with() {
   grep -qi 'full output' "$FIXING" || { echo "fixing.js does not mention the full output"; false; }
   grep -qi 'failing test' "$FIXING" || { echo "fixing.js does not mention the failing test names"; false; }
 }
+
+@test "R195: the vbw check reference entries say a failing check's output is kept, and a pass in vbw check leaves the file" {
+  local e
+  e=$(awk '/^### `vbw check/ { f = 1; next } /^#{1,3} / { f = 0 } f { printf "%s ", $0 }' "$DOCS/proof.md")
+  printf '%s' "$e" | grep -qF 'runtime/output' || { echo "docs/proof.md's vbw check reference does not name the kept output"; false; }
+  ! printf '%s' "$e" | grep -q 'writes nothing' || { echo "docs/proof.md's vbw check reference still says it writes nothing"; false; }
+  grep -E '^\| `vbw check ' "$DOCS/workflows.md" | grep -qF 'runtime/output' || { echo "docs/workflows.md's vbw check row does not name the kept output"; false; }
+  grep -qE 'a pass in `vbw check`[[:space:]]*$|a pass in `vbw check`' "$DOCS/proof.md" || { echo "docs/proof.md does not say a pass in vbw check leaves the file"; false; }
+}
