@@ -25,9 +25,18 @@ models`, `vbw config autonomy` with Bash first. "not a VBW project": set it up
 yourself (`vbw init`, `vbw statusline on`; say what was set up in one line),
 then `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw next --json` again.
 
+## Setting stated in words
+
+Before any step, read the user's words (now, or later in the session). Words naming guided, balanced or hands-off, or a plain phrase clearly meaning one ("ask me before each step" = guided, "do not ask, just go" = hands-off), run `vbw config set autonomy <value>` first. Say in one line what was set, then follow the Autonomy section with that value, not the line loaded above.
+
+- Same as the current setting: it writes nothing and says nothing about it.
+- Words that do not clearly name one setting change nothing: never guess.
+- Stated later in the session: record it at once; it applies from the next step. A switch to guided while the autonomous run is armed runs `vbw auto off ${CLAUDE_SESSION_ID}`; a switch to balanced or hands-off runs `vbw auto on ${CLAUDE_SESSION_ID}` once.
+- `--auto` runs alone this time only and never changes the setting.
+
 ## Autonomy
 
-Last line above = how much VBW does alone. Approval, `accept` and shipping always stop for user.
+Last line above, or the value just set, = how much VBW does alone. Approval, `accept` and shipping always stop for user.
 
 - **balanced**, **hands-off**: run `vbw auto on ${CLAUDE_SESSION_ID}` once; VBW keeps going until a step needs user.
 - **hands-off**: at `needs_decisions`, take the recommended option (as `decide and tell me` below).
