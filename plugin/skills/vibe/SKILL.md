@@ -44,6 +44,8 @@ Claim only what kernel shows.
 
 Before starting a plan, build, fix, qa or prove step (a background proof too), say `step.say` and then `road.say` from `vbw next --json` as given, unchanged, on the same line or the next.
 
+When `rename_hint` in `vbw next --json` is a sentence, say it once, as given. Never run /rename yourself: the user renames the chat.
+
 `plan`, `build`, `fix` need the **Workflow** tool (the `workflows` line above turned it on). None: say why, stop. Pass
 `session` (`${CLAUDE_SESSION_ID}`, so the workflow confirms and ends its own run), `models` (from `vbw config models`), the next JSON's top-level `rigor`, `effort` and its `profile` in every workflow's args.
 
