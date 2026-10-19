@@ -19,16 +19,24 @@ cmd_check() {
   record=$(record_read)
   checks_begin "$record"
   results=$(checks_run_all "$record" "$@")
+  # A failure's complete output is kept (a pass removes nothing); --expect-red keeps nothing.
+  [ $red -eq 1 ] || checks_keep "$results" '{}' '{}' pass-leaves
   checks_end
   [ "$results" != "{}" ] || vbw_die "no checks to run"
-  printf '%s' "$results" | jq -r --argjson red "$red" 'to_entries[]
-    | if $red == 1 then
+  local key line status
+  while IFS=$'\x1f' read -r key status line; do
+    printf '%s\n' "$line"
+    if [ $red -eq 0 ] && { [ "$status" = fail ] || [ "$status" = timeout ]; } && [ -f "$VBW_ROOT/$(checks_kept check "$key")" ]; then
+      printf '  full output: %s\n' "$(checks_kept check "$key")"
+    fi
+  done < <(printf '%s' "$results" | jq -r --argjson red "$red" 'to_entries[]
+    | "\(.key)\u001f\(.value.status)\u001f" + (if $red == 1 then
         (if .value.status == "pass" then "\(.key) passed before building: it proves nothing"
          else "\(.key) red (\(.value.status)), as expected" end)
       else
         "\(.key) \(.value.status) \(.value.seconds)s" + (if .value.status == "pass" then ""
           else ": " + (.value.tail | split("\n") | last // "") end)
-      end'
+      end)')
   slots_say
   if [ $red -eq 1 ]; then
     printf '%s' "$results" | jq -e 'all(.[]; .status != "pass")' > /dev/null
