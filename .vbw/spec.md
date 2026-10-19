@@ -196,6 +196,7 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 - R195 [auto] A failing check or project command keeps its full output after vbw prove, vbw fix done and vbw check end, and vbw show fix names where it is and the failing test names, so nobody has to rerun the suite to see what failed (T165; Portfolium feedback 2026-10-19)
 - R196 [auto] When a break survives the approved check but a strengthened check file waiting for approval catches it, vbw mutate says so in those words ('survives the approved check; caught by the pending one') (T165; Portfolium feedback 2026-10-16)
 - R197 [auto] The file vbw mutate breaks in the proof copy gets a modification time newer than any build output, so a build that decides by file times (cargo, make) rebuilds it and a break is never reported as surviving because the old build was tested (T167; Portfolium feedback 2026-10-16)
+- R198 [auto] In a VBW project the SessionStart hook runs vbw next once and never vbw status, and takes its project line from the glance that command refreshes, so session start no longer pays for vbw next twice (vbw status computes the road from vbw next since R191); its context line keeps the same words, and a record written by a newer VBW still gives the update notice (found by the 2.0.40 release run, 2026-10-19: the hook took 0.91 s against 0.8 s)
 
 <!-- One requirement per line: an id, how it is proved, and a user-observable
      statement. [auto] = a check can prove it; [human] = only a person can judge it.

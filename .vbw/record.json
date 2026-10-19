@@ -362,6 +362,7 @@
     "tests/router-triage-line.bats",
     "tests/rules.bats",
     "tests/run-confirm.bats",
+    "tests/session-start-once.bats",
     "tests/sessions-docs.bats",
     "tests/sessions-guards.bats",
     "tests/sessions-helper.bash",
@@ -5548,6 +5549,18 @@
       ],
       "files": [
         "tests/kept-output-docs.bats"
+      ]
+    },
+    {
+      "id": "C423",
+      "req": "R198",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/session-start-once.bats"
+      ],
+      "files": [
+        "tests/session-start-once.bats"
       ]
     }
   ],
@@ -14003,6 +14016,35 @@
           "plan": "P155.4"
         }
       ]
+    },
+    {
+      "id": "R198",
+      "text": "In a VBW project the SessionStart hook runs vbw next once and never vbw status, and takes its project line from the glance that command refreshes, so session start no longer pays for vbw next twice (vbw status computes the road from vbw next since R191); its context line keeps the same words, and a record written by a newer VBW still gives the update notice (found by the 2.0.40 release run, 2026-10-19: the hook took 0.91 s against 0.8 s)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M40",
+      "rules": [
+        {
+          "text": "in a VBW project the hook runs vbw next exactly once and never vbw status",
+          "check": "C423"
+        },
+        {
+          "text": "the context names the project with the words of vbw status line 1",
+          "check": "C423"
+        },
+        {
+          "text": "a glance older than the record gives the record milestone, not the glance one",
+          "check": "C423"
+        },
+        {
+          "text": "a record written by a newer VBW still gives the update context and message, without vbw status",
+          "check": "C423"
+        },
+        {
+          "text": "docs/guards.md SessionStart says the hook runs vbw next once, reads the project line from the glance, never vbw status",
+          "check": "C423"
+        }
+      ]
     }
   ],
   "phases": [
@@ -21505,6 +21547,26 @@
         "qa_findings": 3,
         "escalations": 2
       }
+    },
+    {
+      "id": "P158",
+      "title": "Session start runs vbw next once",
+      "reqs": [
+        "R198"
+      ],
+      "milestone": "M40",
+      "proposed": "standard",
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 2 (26007 bytes)",
+        "risk: none",
+        "breaks: none",
+        "guarded: R15 (C14), R61 (C73, C74, C75, C76, C77), R75 (C101), R76 (C102, C103), R77 (C104), R120 (C185), R128 (C200), R141 (C203), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R160 (C247, C263, C264), R162 (C249), R165 (C252), R166 (C253, C254, C255, C256, C267), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R194 (C417, C418, C419)",
+        "tests: project test command",
+        "raised by the Architect"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -43369,6 +43431,24 @@
           "head": "d1725285993d38fae72062ad36aa5eda12d3f725"
         }
       ]
+    },
+    {
+      "id": "P158.1",
+      "phase": "P158",
+      "title": "One kernel call at session start",
+      "reqs": [
+        "R198"
+      ],
+      "files": [
+        "plugin/hooks/session-start.sh",
+        "docs/guards.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "tasks": [
+        "session-start.sh runs vbw next once (its exit 4 gives the newer-VBW notice) and takes the project line from the glance with the words of vbw status line 1, never vbw status",
+        "docs/guards.md SessionStart says the hook runs vbw next once and reads the project line from the glance"
+      ]
     }
   ],
   "fixes": [
@@ -49123,6 +49203,11 @@
       "id": "D464",
       "at": "2026-10-19T19:27:18Z",
       "text": "Shipped M39 Developers unblocked: own-check task breaks, fix commits of own check files, failing output kept: 5 requirements proven or accepted"
+    },
+    {
+      "id": "D465",
+      "at": "2026-10-19T20:18:09Z",
+      "text": "Contract approved: 187 requirements, 418 checks, 478 plans (566ad9f4a8a2)"
     }
   ],
   "commands": {
