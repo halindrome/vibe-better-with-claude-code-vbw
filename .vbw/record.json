@@ -5561,7 +5561,7 @@
   "milestone": {
     "id": "M39",
     "title": "Developers unblocked: own-check task breaks, fix commits of own check files, failing output kept",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -5748,6 +5748,11 @@
       "id": "M38",
       "title": "Brainstorm F4 (cosmetic leg): show which session holds the run, by name, in the status line, Comms and a Sessions-tab mark; names need the session name as data (ties to cosmetic.md D14); optionally /vbw:vibe suggests /rename vbw · <project> at first setup, never applies it",
       "at": "2026-10-19T10:42:30Z"
+    },
+    {
+      "id": "M39",
+      "title": "Developers unblocked: own-check task breaks, fix commits of own check files, failing output kept",
+      "at": "2026-10-19T19:27:18Z"
     }
   ],
   "requirements": [
@@ -49113,6 +49118,11 @@
       "text": "F269: rule R188.10 ('a task break runs the checks of the plan's requirements') is superseded by R193 (a task break runs the checks of the rules the plan owns; a plan owning no rule keeps the requirements' checks); its text stays as recorded and its test in tests/mutate-command.bats stays, since that fixture's plan owns both rules of R1 and the test holds under both readings",
       "why": "The kernel cannot reword an approved rule: apply --patch matches rules by text (new text adds a rule, the old stays) and R188 belongs to a shipped milestone. R193's checks C411 and C412 pin the new behaviour. Building rule rewording now would grow M39 for one sentence; it goes to the backlog (chosen by VBW, as the owner delegates technical decisions)",
       "at": "2026-10-19T19:09:35Z"
+    },
+    {
+      "id": "D464",
+      "at": "2026-10-19T19:27:18Z",
+      "text": "Shipped M39 Developers unblocked: own-check task breaks, fix commits of own check files, failing output kept: 5 requirements proven or accepted"
     }
   ],
   "commands": {
@@ -57174,6 +57184,12 @@
             "out": 0,
             "at": "2026-10-19T10:42:43Z"
           }
+        },
+        "total": {
+          "usd": 1521.676111,
+          "in": 141413,
+          "out": 266,
+          "sessions": 23
         }
       }
     }
