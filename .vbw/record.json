@@ -21375,6 +21375,12 @@
           "from": "standard",
           "to": "deep",
           "reason": "Dev blocked P157.2: C421 test 2 (tests/show-fix-failing-tests.bats) cannot pass: its after() helper stops at any line containing 'full output', but the required line 'failing tests: none recognised in the output; read the full output file' contains it, so after C8 is always empty. Fix needed in the test helper: stop only at 'full output: ' or 'full output not kept' (file is outside this plan's files; guard denied my edit). Implementation of tasks 1-3 is committed; C421 tests 1,3,4 pass. Mutation step not run."
+        },
+        {
+          "at": "2026-10-19T12:27:21Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P157.2: R195.9 has no mutation: its check greps plugin/hooks, plugin/scripts and cmd-statusline.sh for runtime/output, none of which is a P157.2 file, so the guard denies the break; the only other plan file that could carry it (cmd-fix.sh) holds another run's uncommitted edits. Code and tasks 1-3 and R195.6-8 mutations are red. Needs the owner to allow a break in cmd-statusline.sh or accept R195.9 as covered by the grep."
         }
       ]
     }
@@ -42255,12 +42261,69 @@
       "after": [
         "P155.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/workflows.md, the vbw commit --fix row: a requirement fix of any source commits its requirement's check files with VBW-Fix and VBW-Req, code goes through its plan (vbw commit PLAN), the files wait for one approval before the proof",
         "docs/guards.md, the fix-run row for protected check files: every requirement fix's run opens the check files of its own requirement that no other requirement lists, a proof's fix included (it no longer stays fully protected); the QA fix keeps its new test files and the vbw fix check advice",
         "docs/proof.md, Fix items: a requirement fix commits its own requirement's check files with vbw commit --fix, and they wait for one approval before the proof"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R194",
+            "text": "docs/workflows.md's vbw commit --fix row, docs/guards.md's fix-run row and docs/proof.md's fix section say a requirement fix commits its own requirement's check files, code goes through the plan, and the files wait for one approval"
+          },
+          "what": "workflows row drops approval and plan",
+          "files": [
+            "docs/workflows.md"
+          ],
+          "checks": {
+            "C419": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:20:08Z",
+          "head": "30ac704c4a4630214b2b02d162fad6f57df39be1"
+        },
+        {
+          "task": 2,
+          "what": "guards row drops approval",
+          "files": [
+            "docs/guards.md"
+          ],
+          "checks": {
+            "C419": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:20:18Z",
+          "head": "30ac704c4a4630214b2b02d162fad6f57df39be1"
+        },
+        {
+          "task": 3,
+          "what": "proof fix items drop approval and command",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C419": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:20:28Z",
+          "head": "30ac704c4a4630214b2b02d162fad6f57df39be1"
+        },
+        {
+          "task": 1,
+          "what": "workflows row drops VBW-Req",
+          "files": [
+            "docs/workflows.md"
+          ],
+          "checks": {
+            "C419": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:20:41Z",
+          "head": "30ac704c4a4630214b2b02d162fad6f57df39be1"
+        }
       ]
     },
     {
@@ -42428,7 +42491,96 @@
         "cmd-show.sh show fix: under each failing check and failing project command, full output: PATH then failing tests: with one line per name; none recognised says failing tests: none recognised in the output; read the full output file; a missing file keeps full output not kept: run vbw prove again",
         "cmd-show.sh show fix: failing single-form test files (evidence.test_files) listed by path with their kept file (file-<id>.log) and failing tests; --json carries kept and failing_tests for each failing check, command and test file (test_files: [{path, status, kept, failing_tests}]); the names are read only here, never on a hook or status-line path"
       ],
-      "note": "C421 test 2 (tests/show-fix-failing-tests.bats) cannot pass: its after() helper stops at any line containing 'full output', but the required line 'failing tests: none recognised in the output; read the full output file' contains it, so after C8 is always empty. Fix needed in the test helper: stop only at 'full output: ' or 'full output not kept' (file is outside this plan's files; guard denied my edit). Implementation of tasks 1-3 is committed; C421 tests 1,3,4 pass. Mutation step not run."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R195",
+            "text": "vbw show fix lists under each failing check, test file and project command full output: PATH and failing tests: with one line per name recognised: TAP/bats, cargo test, pytest, go test, jest, vitest, mocha, each name once"
+          },
+          "what": "failing-tests.jq: stopped listing each name once",
+          "files": [
+            "plugin/lib/failing-tests.jq"
+          ],
+          "checks": {
+            "C421": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:22:04Z",
+          "head": "30ac704c4a4630214b2b02d162fad6f57df39be1"
+        },
+        {
+          "rule": {
+            "req": "R195",
+            "text": "none recognised says failing tests: none recognised in the output; read the full output file; a missing file keeps full output not kept: run vbw prove again"
+          },
+          "what": "none-recognised line shortened",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C421": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:22:52Z",
+          "head": "30ac704c4a4630214b2b02d162fad6f57df39be1"
+        },
+        {
+          "rule": {
+            "req": "R195",
+            "text": "failing single-form test files are listed by path with their kept file; --json carries kept and failing_tests for each failing unit"
+          },
+          "what": "test_files entries lose kept",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C421": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:23:36Z",
+          "head": "30ac704c4a4630214b2b02d162fad6f57df39be1"
+        },
+        {
+          "task": 1,
+          "what": "go test pattern broken",
+          "files": [
+            "plugin/lib/failing-tests.jq"
+          ],
+          "checks": {
+            "C421": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:25:34Z",
+          "head": "30ac704c4a4630214b2b02d162fad6f57df39be1"
+        },
+        {
+          "task": 2,
+          "what": "missing-file line changed",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C421": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:26:20Z",
+          "head": "30ac704c4a4630214b2b02d162fad6f57df39be1"
+        },
+        {
+          "task": 3,
+          "what": "test_files always empty",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C421": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:27:04Z",
+          "head": "30ac704c4a4630214b2b02d162fad6f57df39be1"
+        }
+      ],
+      "note": "R195.9 has no mutation: its check greps plugin/hooks, plugin/scripts and cmd-statusline.sh for runtime/output, none of which is a P157.2 file, so the guard denies the break; the only other plan file that could carry it (cmd-fix.sh) holds another run's uncommitted edits. Code and tasks 1-3 and R195.6-8 mutations are red. Needs the owner to allow a break in cmd-statusline.sh or accept R195.9 as covered by the grep."
     },
     {
       "id": "P157.3",
@@ -42465,10 +42617,41 @@
         "plugin/lib/contract.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/cmd-fix.sh (with contract.sh if the rule belongs there): vbw fix done never runs a check whose files are new or changed since the approval and wait for it (contract_waiting), whatever opened the fix, not only checks a fix added; it says the check waits for approval, as it does today for a fix check, and the proof after the approval runs it fresh. Root cause of P156.1 block: C417 test 7 (R194.10) saw fix done run the changed, unapproved tests/c1.sh, and the proof then reused that run. C417 must pass whole; tests/fix-done*.bats and tests/fix-regression-test.bats keep passing."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R194",
+            "text": "after the commit vbw fix done runs and names the file as waiting, vbw next asks the approval naming it, vbw prove refuses until then and runs the file after"
+          },
+          "what": "fix done ignores waiting check files",
+          "files": [
+            "plugin/lib/cmd-fix.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:33:04Z",
+          "head": "56c0541247590d79416995486c9e75f9b59dd7ac"
+        },
+        {
+          "task": 1,
+          "what": "wait_files never computed",
+          "files": [
+            "plugin/lib/cmd-fix.sh"
+          ],
+          "checks": {
+            "C417": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:34:47Z",
+          "head": "56c0541247590d79416995486c9e75f9b59dd7ac"
+        }
       ]
     }
   ],
@@ -54492,6 +54675,19 @@
           "usd": 1.75861,
           "in": 1902,
           "out": 131
+        }
+      },
+      {
+        "id": "build-20261019T121912Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M39",
+        "started": "2026-10-19T12:19:12Z",
+        "ended": "2026-10-19T12:35:18Z",
+        "cost": {
+          "usd": 0.736448,
+          "in": 2498,
+          "out": 2
         }
       }
     ],
