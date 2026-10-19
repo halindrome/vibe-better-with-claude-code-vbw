@@ -39,6 +39,7 @@ section_with() {
 
 @test "R195: the fixing workflow's Dev instruction points to vbw show fix for the full output and the failing test names" {
   grep -q 'vbw show fix' "$FIXING"
+  grep -qi 'full output and the failing test names with vbw show fix' "$FIXING" || { echo "the Dev instruction does not point to vbw show fix for them"; false; }
   grep -qi 'full output' "$FIXING" || { echo "fixing.js does not mention the full output"; false; }
   grep -qi 'failing test' "$FIXING" || { echo "fixing.js does not mention the failing test names"; false; }
 }
