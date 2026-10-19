@@ -287,11 +287,11 @@ vbw_mtime() {
 vbw_stamp_newer() {
   local dir="$1" newest t f stamp
   shift
-  newest=$(
-    { find "$dir" ! -type d -exec stat -c %Y {} + 2> /dev/null || find "$dir" ! -type d -exec stat -f %m {} + 2> /dev/null; } \
-      | sort -n | tail -n 1
-  )
-  case "$newest" in "" | *[!0-9]*) newest=0 ;; esac
+  newest=0
+  while IFS= read -r -d '' f; do
+    t=$(vbw_mtime "$f")
+    if [ "$t" -gt "$newest" ]; then newest=$t; fi
+  done < <(find "$dir" ! -type d -print0 2> /dev/null)
   t=$((newest + 1))
   stamp=$(date -d "@$t" +%Y%m%d%H%M.%S 2> /dev/null) || stamp=$(date -r "$t" +%Y%m%d%H%M.%S 2> /dev/null) || return 0
   for f in "$@"; do
