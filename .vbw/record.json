@@ -21331,7 +21331,15 @@
         "tests: project test command",
         "raised by the Architect"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-19T12:05:40Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P156.1: R194.10 / C417 test 7 needs a file outside this plan. Tasks 1-4 are committed and 7 of 8 C417 tests pass. Test 7 fails because vbw fix done runs C1 with the changed, unapproved tests/c1.sh (it only holds checks that carry a fix key; contract_held in plugin/lib/contract.sh and the candidate loop in plugin/lib/cmd-fix.sh), then vbw prove after approval reuses that run, so evidence.checks.C1.reused is true where the test wants a fresh run. Fix: fix done should not run a check whose files wait for approval (contract_waiting), so the proof runs it. Needs plugin/lib/cmd-fix.sh (and maybe contract.sh) added to a plan, then vbw apply."
+        }
+      ]
     },
     {
       "id": "P157",
@@ -21350,7 +21358,7 @@
         "The per-unit lines of `vbw fix done` keep their pinned form (one line per check or test file, then the two count lines, then one line per fix); `vbw check` tells where the kept file is for each failing check without changing its existing lines' meaning.",
         "The fixing workflow's Dev instruction and docs/proof.md point to `vbw show fix` for the full output and the failing test names, and docs/proof.md's kept-output section names `vbw fix done` and `vbw check` beside `vbw prove`."
       ],
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 7 (125661 bytes)",
@@ -21360,7 +21368,15 @@
         "guarded: R12 (C11), R22 (C19), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R32 (C28), R39 (C36), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R100 (C156), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "escalations": [
+        {
+          "at": "2026-10-19T12:04:35Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "Dev blocked P157.2: C421 test 2 (tests/show-fix-failing-tests.bats) cannot pass: its after() helper stops at any line containing 'full output', but the required line 'failing tests: none recognised in the output; read the full output file' contains it, so after C8 is always empty. Fix needed in the test helper: stop only at 'full output: ' or 'full output not kept' (file is outside this plan's files; guard denied my edit). Implementation of tasks 1-3 is committed; C421 tests 1,3,4 pass. Mutation step not run."
+        }
+      ]
     }
   ],
   "plans": [
@@ -41834,12 +41850,126 @@
       "after": [
         "P155.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "core.sh: a helper beside vbw_mtime that stamps given files one second later than the newest file under a folder (build output included), computed from the files' times and never from the clock, with touch -t through GNU date -d @N or BSD date -r N; a missing file is left missing",
         "cmd-mutate.sh mutate_put: after the broken bytes are copied into the proof copy, each broken file present gets that stamp, so a build that decides by file times remakes it",
         "cmd-mutate.sh mutate_clean: after the committed bytes are restored, each restored file gets that stamp, so the next unbroken run rebuilds the clean code instead of judging the broken build"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R197",
+            "text": "a broken file put into the proof copy gets a modification time strictly newer than every file in the copy, build output included, so a time-based build rebuilds it and the break is red"
+          },
+          "what": "put does not stamp",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C413": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:01:03Z",
+          "head": "e7a7020d9584afc0d41d8881178d57ef9a436d6f"
+        },
+        {
+          "rule": {
+            "req": "R197",
+            "text": "the restored file gets a time strictly newer than every file in the copy, so the next unbroken run rebuilds the clean code instead of judging the broken build"
+          },
+          "what": "clean does not stamp",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C413": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:02:02Z",
+          "head": "dc9a1b3ad6ad3c1c5f482771d6fada7916f0cf05"
+        },
+        {
+          "rule": {
+            "req": "R197",
+            "text": "the time is set later than the newest file in the copy even when that file is stamped ahead of the clock: the kernel never relies on now"
+          },
+          "what": "stamp from the clock",
+          "files": [
+            "plugin/lib/core.sh"
+          ],
+          "checks": {
+            "C413": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:02:57Z",
+          "head": "0aafd7b501d928ee89e14c7b177cc7d3e9d75a57"
+        },
+        {
+          "rule": {
+            "req": "R197",
+            "text": "a break that deletes a file is judged on its absence: nothing is stamped and no file is created"
+          },
+          "what": "stamp creates missing files",
+          "files": [
+            "plugin/lib/core.sh"
+          ],
+          "checks": {
+            "C413": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T12:03:52Z",
+          "head": "27afecf94a068e4f79e167ef2a1f9a5caed5963f"
+        },
+        {
+          "rule": {
+            "req": "R197",
+            "text": "a break that deletes a file is judged on its absence: nothing is stamped and no file is created"
+          },
+          "what": "stamp creates missing files",
+          "files": [
+            "plugin/lib/core.sh"
+          ],
+          "checks": {
+            "C413": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T12:05:01Z",
+          "head": "e743a8dd875b388a0b63490d4235a25044d0b2d8"
+        },
+        {
+          "rule": {
+            "req": "R197",
+            "text": "a break that deletes a file is judged on its absence: nothing is stamped and no file is created"
+          },
+          "what": "stamp creates missing files",
+          "files": [
+            "plugin/lib/core.sh"
+          ],
+          "checks": {
+            "C413": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:06:52Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "rule": {
+            "req": "R197",
+            "text": "the plan files are byte-identical to their last commit after the break, and the new code is bash 3.2 with JSON only through jq"
+          },
+          "what": "uses eval",
+          "files": [
+            "plugin/lib/core.sh"
+          ],
+          "checks": {
+            "C413": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:07:30Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        }
       ]
     },
     {
@@ -41883,13 +42013,63 @@
       "after": [
         "P155.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md, The mutation check: a task break runs the checks of the plan's own rules (those naming the plan plus those of the requirements it completes); a red owed check refuses with the three ways out; a plan owning no rule runs its requirements' checks as before",
         "docs/workflows.md, The mutation check and the vbw mutate row: the task form runs the checks of the plan's own rules, only the named ones with --check",
         "docs/proof.md, The mutation check: the broken file and its restore get a fresh modification time, so builds that decide by file times (make, cargo) rebuild and never judge a stale build",
         "docs/proof.md, The mutation check: the sentence survives the approved check; caught by the pending one, when it is printed, and that the pending file still needs the one approval before the proof"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R193",
+            "text": "docs/proof.md's mutation section and docs/workflows.md say a task break runs the checks of the plan's own rules"
+          },
+          "what": "proof.md: dropped 'own rules'",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C412": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T11:58:47Z",
+          "head": "839c0b82c38d09b2eb46d27ed48212135bec0ff8"
+        },
+        {
+          "rule": {
+            "req": "R196",
+            "text": "docs/proof.md's mutation section gives the sentence in its exact words and says the pending file still needs the one approval before the proof"
+          },
+          "what": "proof.md: changed the sentence",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C416": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T11:59:05Z",
+          "head": "839c0b82c38d09b2eb46d27ed48212135bec0ff8"
+        },
+        {
+          "rule": {
+            "req": "R197",
+            "text": "docs/proof.md's mutation section says the broken file and its restore get a fresh modification time so time-based builds rebuild"
+          },
+          "what": "proof.md: dropped modification time",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C414": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:00:20Z",
+          "head": "e7a7020d9584afc0d41d8881178d57ef9a436d6f"
+        }
       ]
     },
     {
@@ -41907,14 +42087,15 @@
       "after": [
         "P155.1"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "cmd-commit.sh cmd_commit_fix: an open requirement fix of any source commits the named changed check files of its requirement with the trailers VBW-Fix: FIX and VBW-Req: REQ, touching only them and leaving staged work staged; a project-command fix keeps today's path; the message is validated as today",
         "cmd-commit.sh refusals, each committing nothing and naming the reason: a check file of another requirement (names it), a code file (vbw commit PLAN), a path under .vbw/ or outside the project, an unknown or non-open fix, a file that did not change (nothing to commit), a fix of a [human] requirement (no check files)",
         "plugin/agents/dev.md, Fix and Finish: a requirement fix commits its own requirement's check files with vbw commit --fix, code goes through its plan (vbw commit PLAN), the files wait for one approval before the proof",
         "plugin/workflows/fixing.js, the Dev instruction: the same in one sentence, without the word mutation"
-      ]
+      ],
+      "note": "R194.10 / C417 test 7 needs a file outside this plan. Tasks 1-4 are committed and 7 of 8 C417 tests pass. Test 7 fails because vbw fix done runs C1 with the changed, unapproved tests/c1.sh (it only holds checks that carry a fix key; contract_held in plugin/lib/contract.sh and the candidate loop in plugin/lib/cmd-fix.sh), then vbw prove after approval reuses that run, so evidence.checks.C1.reused is true where the test wants a fresh run. Fix: fix done should not run a check whose files wait for approval (contract_waiting), so the proof runs it. Needs plugin/lib/cmd-fix.sh (and maybe contract.sh) added to a plan, then vbw apply."
     },
     {
       "id": "P156.2",
@@ -41930,12 +42111,133 @@
       "after": [
         "P155.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "cmd-run.sh run start fix: editable lists, for each requirement fix of the run whatever its source, the check files of its requirement that no other requirement's check lists; new_tests when any fix of the run is QA's; a project-command fix opens no check file",
         "common.jq lease_write_denial: under a fix run a path in editable is allowed whatever new_tests; another requirement's check file is denied naming the file and the editable files, with the vbw fix check advice only when new_tests; a new test file stays denied for a proof's fix alone",
         "common.jq: the guard's per-call CPU stays within 20 ms (tools/bench-hooks.sh), the documented answer pinned by tests/fix-run-own-checks.bats"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R194",
+            "text": "vbw run start fix opens as editable, for each requirement fix whatever its source, the check files of its requirement that no other requirement's check lists, and nothing more: no new test file for a proof's fix alone"
+          },
+          "what": "run start fix opens no editable check file",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C418": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:07:54Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "the file guard denies any other check file during the run with its documented answer, naming the file and the files the fix may edit; a QA fix keeps the vbw fix check advice, a proof's fix gets none"
+          },
+          "what": "proof fix gets the vbw fix check advice",
+          "files": [
+            "plugin/hooks/common.jq"
+          ],
+          "checks": {
+            "C418": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:08:52Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "a project-command fix opens no check file"
+          },
+          "what": "command fix still opens, shared files not excluded",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C418": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:09:40Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "a project-command fix opens no check file"
+          },
+          "what": "a command fix opens every requirement's own check files",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C418": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:10:42Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "rule": {
+            "req": "R194",
+            "text": "a run of a proof's fix and a QA fix together opens both requirements' own check files and allows new test files"
+          },
+          "what": "new test files only when every fix is QA's",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C418": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:11:37Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "task": 1,
+          "what": "editable lists shared check files too",
+          "files": [
+            "plugin/lib/cmd-run.sh"
+          ],
+          "checks": {
+            "C418": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:12:25Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "task": 2,
+          "what": "guard does not allow editable files to a proof's fix",
+          "files": [
+            "plugin/hooks/common.jq"
+          ],
+          "checks": {
+            "C418": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:13:15Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "task": 3,
+          "what": "denial does not name the files the fix may edit",
+          "files": [
+            "plugin/hooks/common.jq"
+          ],
+          "checks": {
+            "C418": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:14:07Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        }
       ]
     },
     {
@@ -41976,12 +42278,133 @@
       "after": [
         "P155.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "checks.sh checks_keep: a mode that leaves a kept file on a pass (for vbw check) beside today's (a pass removes), each failure's complete output moved into .vbw/runtime/output by rename, so concurrent callers never leave half a file",
         "cmd-fix.sh fix done: the output of every failing or timed-out check and test file it ran is kept under vbw prove's names (C1.log, file-<id>.log), a pass removes, a reused unit leaves; the per-unit lines keep their pinned form",
         "cmd-check.sh: vbw check keeps each failing or timed-out check's output and prints full output: PATH under the check's line, whose meaning is unchanged; --expect-red keeps nothing"
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R195",
+            "text": "vbw fix done keeps the complete output of every failing or timed-out check and test file it ran under vbw prove's names (C1.log, file-<id>.log), replacing an older file; the files outlive the command and the proof copies"
+          },
+          "what": "fix done no longer keeps output",
+          "files": [
+            "plugin/lib/cmd-fix.sh"
+          ],
+          "checks": {
+            "C420": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:04:49Z",
+          "head": "27afecf94a068e4f79e167ef2a1f9a5caed5963f"
+        },
+        {
+          "rule": {
+            "req": "R195",
+            "text": "in vbw fix done a pass removes that unit's kept file and a reused unit leaves it"
+          },
+          "what": "fix done leaves a kept file on a pass",
+          "files": [
+            "plugin/lib/cmd-fix.sh"
+          ],
+          "checks": {
+            "C420": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:06:33Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "rule": {
+            "req": "R195",
+            "text": "vbw check keeps the complete output of every failing or timed-out check and says where it is under the check's own line, whose meaning is unchanged; a passing check removes nothing; --expect-red keeps nothing"
+          },
+          "what": "vbw check --expect-red keeps output",
+          "files": [
+            "plugin/lib/cmd-check.sh"
+          ],
+          "checks": {
+            "C420": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:09:09Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "rule": {
+            "req": "R195",
+            "text": "two vbw check runs of the same check at once each leave a whole file, never a half-written one"
+          },
+          "what": "kept file written in place, not renamed",
+          "files": [
+            "plugin/lib/checks.sh"
+          ],
+          "checks": {
+            "C420": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:10:02Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "rule": {
+            "req": "R195",
+            "text": "kept output is never committed and never written outside .vbw/runtime"
+          },
+          "what": "check output kept outside .vbw/runtime",
+          "files": [
+            "plugin/lib/checks.sh"
+          ],
+          "checks": {
+            "C420": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:10:54Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "task": 1,
+          "what": "pass-leaves mode ignored",
+          "files": [
+            "plugin/lib/checks.sh"
+          ],
+          "checks": {
+            "C420": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:11:57Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "task": 2,
+          "what": "fix done keeps nothing",
+          "files": [
+            "plugin/lib/cmd-fix.sh"
+          ],
+          "checks": {
+            "C420": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:12:51Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        },
+        {
+          "task": 3,
+          "what": "full output line reworded",
+          "files": [
+            "plugin/lib/cmd-check.sh"
+          ],
+          "checks": {
+            "C420": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T12:13:44Z",
+          "head": "aeb295a26e09073c4be2230e2a3a05ad477652a0"
+        }
       ]
     },
     {
@@ -41998,13 +42421,14 @@
       "after": [
         "P155.1"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "plugin/lib/failing-tests.jq: the failing test names in a kept output, each once: TAP/bats (not ok N name), cargo test (test name ... FAILED and the failures: list), pytest (FAILED path::name), go test (--- FAIL: Name), jest (✕ name, duration stripped), vitest (× name), mocha (N) name)",
         "cmd-show.sh show fix: under each failing check and failing project command, full output: PATH then failing tests: with one line per name; none recognised says failing tests: none recognised in the output; read the full output file; a missing file keeps full output not kept: run vbw prove again",
         "cmd-show.sh show fix: failing single-form test files (evidence.test_files) listed by path with their kept file (file-<id>.log) and failing tests; --json carries kept and failing_tests for each failing check, command and test file (test_files: [{path, status, kept, failing_tests}]); the names are read only here, never on a hook or status-line path"
-      ]
+      ],
+      "note": "C421 test 2 (tests/show-fix-failing-tests.bats) cannot pass: its after() helper stops at any line containing 'full output', but the required line 'failing tests: none recognised in the output; read the full output file' contains it, so after C8 is always empty. Fix needed in the test helper: stop only at 'full output: ' or 'full output not kept' (file is outside this plan's files; guard denied my edit). Implementation of tasks 1-3 is committed; C421 tests 1,3,4 pass. Mutation step not run."
     },
     {
       "id": "P157.3",
@@ -54032,6 +54456,19 @@
           "usd": 0.429876,
           "in": 1641,
           "out": 85
+        }
+      },
+      {
+        "id": "build-20261019T115746Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M39",
+        "started": "2026-10-19T11:57:46Z",
+        "ended": "2026-10-19T12:16:22Z",
+        "cost": {
+          "usd": 1.75861,
+          "in": 1902,
+          "out": 131
         }
       }
     ],
