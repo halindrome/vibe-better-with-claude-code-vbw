@@ -73,7 +73,7 @@ next_answer() {
 
 cmd_next() {
   vbw_require_project
-  local next record step road
+  local next record step road hint
   next=$(next_answer) || exit $?
   # The step to run, with its end time and the sentence to say (R190, D425), and the
   # road, the end of the milestone (R191, D438). Only the command asks for them: a
@@ -85,6 +85,9 @@ cmd_next() {
     step=$(step_next "$record" "$next")
     road=$(step_road "$record" "$next" "$(step_live_note "$(printf '%s' "$record" | jq -r '.lease.run // ""')")")
     next=$(printf '%s' "$next" | jq -c --argjson step "$step" --argjson road "${road:-null}" '. + {step: $step, road: $road}')
+    # The /rename hint (D444): once per clone, only for the command.
+    hint=$(sessions_rename_hint "$(vbw_session)" "$VBW_ROOT" "$(basename "$VBW_ROOT")")
+    next=$(printf '%s' "$next" | jq -c --arg hint "$hint" '. + {rename_hint: (if $hint == "" then null else $hint end)}')
   else
     road=$(jq -c '.road // empty' "$VBW_RUNTIME/next.json" 2> /dev/null) || road=
     [ -z "$road" ] || next=$(printf '%s' "$next" | jq -c --argjson road "$road" '. + {road: $road}')
