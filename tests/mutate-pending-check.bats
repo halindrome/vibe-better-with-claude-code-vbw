@@ -1,0 +1,137 @@
+#!/usr/bin/env bats
+# R196 (T165; docs/proof.md): when a break survived the approved check and a
+# strengthened check file waiting for approval catches it, vbw mutate says so in
+# those words. When the check that went red has a file waiting for approval
+# (changed since the approved contract, as checks_begin lists) and a survivor of
+# the same target (rule or task) in this plan was recorded with that check at an
+# earlier commit, the output line reads
+# `TARGET survives the approved check; caught by the pending one: FILE...` and the
+# command exits 0. With a pending file but no such survivor, the output says the
+# break was caught by a check file waiting for approval and names the file,
+# without claiming it survived the approved one. With no pending file the output
+# is today's plain red line (`strengthened:` after a prior survivor, as before).
+# The recorded break carries the pending files beside result red; vbw show plan
+# shows the same words and --json carries them; such a red break counts for
+# vbw plan done; recording it leaves the contract's fingerprint unchanged. L1:
+# the kernel on a fixture project, in a build run.
+
+load helper
+
+setup() {
+  vbw_setup
+  vbw_git_project
+  "$VBW" init > /dev/null
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n- R2 [auto] A customer gets a receipt\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  mkdir -p src tests
+  printf 'echo paid\n' > src/pay.sh
+  printf 'echo receipt\n' > src/receipt.sh
+  # C1 cannot fail on what is printed.
+  printf 'sh src/pay.sh > /dev/null\n' > tests/pay.sh
+  printf '[ "$(sh src/receipt.sh)" = receipt ]\n' > tests/receipt.sh
+  jq -nc '{phases: [{id: "P1", title: "Shop", reqs: ["R1", "R2"], goal: "g", criteria: ["c"], tier: "standard"}],
+    plans: [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1"], files: ["src/pay.sh"], after: [], role: "dev", tasks: ["pay"]},
+            {id: "P1.2", phase: "P1", title: "Receipt", reqs: ["R2"], files: ["src/receipt.sh"], after: [], role: "dev", tasks: ["receipt"]}],
+    checks: [{id: "C1", req: "R1", run: ["sh", "tests/pay.sh"], files: ["tests/pay.sh"]},
+             {id: "C2", req: "R2", run: ["sh", "tests/receipt.sh"], files: ["tests/receipt.sh"]}],
+    rules: [{req: "R1", text: "paying prints paid", check: "C1", plan: "P1.1"},
+            {req: "R2", text: "a receipt is printed", check: "C2", plan: "P1.2"}]}' | "$VBW" apply > /dev/null
+  git add -A && git commit -q -m "feat(shop): start"
+  "$VBW" approve > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" run start build P1.1 P1.2 > /dev/null
+}
+
+teardown() { vbw_teardown; }
+
+PENDING='survives the approved check; caught by the pending one'
+
+breaks() { jq -c '[.plans[] | select(.id == "P1.1") | .mutations // [] | .[]]' .vbw/record.json; }
+last_break() { breaks | jq -c 'last'; }
+# same_as_head FILE: the working file is byte-identical to its last commit.
+same_as_head() {
+  [ -z "$(git status --porcelain -- "$1")" ] || { echo "$1 differs from HEAD: $(git status --porcelain -- "$1")"; return 1; }
+  cmp -s "$1" <(git show "HEAD:$1") || { echo "$1 is not its last commit"; return 1; }
+}
+# break_pay TARGET: the break C1 cannot notice as approved, for TARGET (R1.1 or task1).
+break_pay() {
+  printf 'echo unpaid\n' > src/pay.sh
+  run "$VBW" mutate P1.1 "$1" "prints unpaid instead of paid" src/pay.sh < /dev/null
+}
+# survivor TARGET: that break recorded as a survivor of TARGET.
+survivor() {
+  break_pay "$1"
+  [ "$status" -ne 0 ] && [[ "$output" == *survivor* ]] || { echo "no survivor: $output"; return 1; }
+}
+# strengthen: tests/pay.sh checks what is printed; committed as the plan's (a survivor opened it).
+strengthen() {
+  printf '[ "$(sh src/pay.sh)" = paid ]\n' > tests/pay.sh
+  "$VBW" commit P1.1 "test(pay): check what is printed" tests/pay.sh > /dev/null
+}
+
+@test "R196: after a survivor, a red check whose file waits for approval says the break survives the approved check and the pending one caught it; exit 0" {
+  survivor R1.1
+  strengthen
+  break_pay R1.1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qF "R1.1 $PENDING: tests/pay.sh" || { echo "$output"; false; }
+  last_break | jq -e '.rule.text == "paying prints paid" and .result == "red" and .checks == {C1: "red"} and .pending == ["tests/pay.sh"]' || { last_break; false; }
+  same_as_head src/pay.sh
+}
+
+@test "R196: the same words for a task break whose earlier survivor was recorded as a task" {
+  survivor task1
+  strengthen
+  break_pay task1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qF "task1 $PENDING: tests/pay.sh" || { echo "$output"; false; }
+  last_break | jq -e '.task == 1 and .result == "red" and .pending == ["tests/pay.sh"]' || { last_break; false; }
+}
+
+@test "R196: a pending file with no earlier survivor of the target: caught by a check file waiting for approval, named, without claiming it survived the approved one" {
+  printf '[ "$(sh src/pay.sh)" = paid ]\n' > tests/pay.sh
+  git commit -q -am "test(pay): check what is printed"
+  break_pay R1.1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -v '^vbw:' | grep 'waiting for approval' | grep -q 'tests/pay\.sh' || { echo "$output"; false; }
+  [[ "$output" != *"survives"* ]] || { echo "claims it survived: $output"; false; }
+  last_break | jq -e '.result == "red" and .pending == ["tests/pay.sh"]' || { last_break; false; }
+}
+
+@test "R196: with no file waiting for approval the output is today's plain red line, strengthened after a prior survivor as before" {
+  survivor R1.1
+  strengthen
+  "$VBW" approve > /dev/null
+  break_pay R1.1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -q '^R1\.1 red: prints unpaid instead of paid$' || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -q '^strengthened: tests/pay\.sh$' || { echo "$output"; false; }
+  [[ "$output" != *pending* && "$output" != *survives* ]] || { echo "$output"; false; }
+  last_break | jq -e '.result == "red" and (has("pending") | not) and .strengthened == ["tests/pay.sh"]' || { last_break; false; }
+}
+
+@test "R196: vbw show plan shows the same words and --json carries the pending files; the red break counts for vbw plan done; the fingerprint is unchanged" {
+  survivor R1.1
+  strengthen
+  local before
+  before=$("$VBW" show contract < /dev/null | head -n 1)
+  break_pay R1.1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$("$VBW" show contract < /dev/null | head -n 1)" = "$before" ]
+  run "$VBW" show plan P1.1 < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -F "$PENDING" | grep -q 'tests/pay\.sh' || { echo "$output"; false; }
+  "$VBW" show plan P1.1 --json < /dev/null | jq -e '.plan.mutations | last | .pending == ["tests/pay.sh"] and .result == "red"'
+  # shellcheck disable=SC1010 # "done" is a vbw subcommand
+  run "$VBW" plan done P1.1 < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  jq -e '.plans[0].status == "done"' .vbw/record.json
+}
+
+@test "R196: the kernel code is bash 3.2 code that passes JSON only through jq" {
+  local f
+  for f in "$PLUGIN_ROOT"/lib/cmd-mutate.sh "$PLUGIN_ROOT"/lib/cmd-show.sh; do
+    /bin/bash -n "$f"
+    ! grep -nE '^[^#]*(\b(mapfile|readarray|eval)\b|(declare|local|typeset) -[a-zA-Z]*A|\$\{[A-Za-z_][A-Za-z_0-9]*(,,|\^\^|,|\^)\})' "$f" || false
+    ! grep -nE '^[^#]*\b(grep|sed|awk|cut)\b[^|;]*(record\.json|\.json\b)' "$f" || false
+  done
+}

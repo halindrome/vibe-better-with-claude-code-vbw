@@ -73,6 +73,8 @@
     "tests/effort-profile.bats",
     "tests/effort-workflows.bats",
     "tests/fix-check-refusals.bats",
+    "tests/fix-commit-own-checks-docs.bats",
+    "tests/fix-commit-own-checks.bats",
     "tests/fix-commit-qa.bats",
     "tests/fix-commit.bats",
     "tests/fix-done-docs.bats",
@@ -87,6 +89,7 @@
     "tests/fix-round-docs.bats",
     "tests/fix-round-measure.bats",
     "tests/fix-round-once.bats",
+    "tests/fix-run-own-checks.bats",
     "tests/fix-suite-once.bats",
     "tests/fixtures/records/future.json",
     "tests/fixtures/records/v1.json",
@@ -120,6 +123,8 @@
     "tests/interview-store.bats",
     "tests/interview-tools-permission.bats",
     "tests/interview-wording.bats",
+    "tests/kept-output-docs.bats",
+    "tests/kept-output-fix-check.bats",
     "tests/kernel-accept.bats",
     "tests/kernel-approval.bats",
     "tests/kernel-auto-sessions.bats",
@@ -185,8 +190,14 @@
     "tests/machine-turns.bats",
     "tests/machine-wait-line.bats",
     "tests/mutate-command.bats",
+    "tests/mutate-fresh-mtime-docs.bats",
+    "tests/mutate-fresh-mtime.bats",
     "tests/mutate-isolation.bats",
     "tests/mutate-loop.bats",
+    "tests/mutate-own-rules-docs.bats",
+    "tests/mutate-own-rules.bats",
+    "tests/mutate-pending-check-docs.bats",
+    "tests/mutate-pending-check.bats",
     "tests/mutate-plan-done.bats",
     "tests/mutate-prompts.bats",
     "tests/mutate-show.bats",
@@ -358,6 +369,7 @@
     "tests/sessions-next.bats",
     "tests/sessions-rename-hint.bats",
     "tests/sessions-statusline.bats",
+    "tests/show-fix-failing-tests.bats",
     "tests/small-change.bats",
     "tests/small-request.bats",
     "tests/statusline-handback.bats",
@@ -5393,6 +5405,150 @@
         "tests/panel-sessions-days-docs.bats"
       ],
       "fix": "F255"
+    },
+    {
+      "id": "C411",
+      "req": "R193",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/mutate-own-rules.bats"
+      ],
+      "files": [
+        "tests/mutate-own-rules.bats"
+      ]
+    },
+    {
+      "id": "C412",
+      "req": "R193",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/mutate-own-rules-docs.bats"
+      ],
+      "files": [
+        "tests/mutate-own-rules-docs.bats"
+      ]
+    },
+    {
+      "id": "C413",
+      "req": "R197",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/mutate-fresh-mtime.bats"
+      ],
+      "files": [
+        "tests/mutate-fresh-mtime.bats"
+      ]
+    },
+    {
+      "id": "C414",
+      "req": "R197",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/mutate-fresh-mtime-docs.bats"
+      ],
+      "files": [
+        "tests/mutate-fresh-mtime-docs.bats"
+      ]
+    },
+    {
+      "id": "C415",
+      "req": "R196",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/mutate-pending-check.bats"
+      ],
+      "files": [
+        "tests/mutate-pending-check.bats"
+      ]
+    },
+    {
+      "id": "C416",
+      "req": "R196",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/mutate-pending-check-docs.bats"
+      ],
+      "files": [
+        "tests/mutate-pending-check-docs.bats"
+      ]
+    },
+    {
+      "id": "C417",
+      "req": "R194",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/fix-commit-own-checks.bats"
+      ],
+      "files": [
+        "tests/fix-commit-own-checks.bats"
+      ]
+    },
+    {
+      "id": "C418",
+      "req": "R194",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/fix-run-own-checks.bats"
+      ],
+      "files": [
+        "tests/fix-run-own-checks.bats"
+      ]
+    },
+    {
+      "id": "C419",
+      "req": "R194",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/fix-commit-own-checks-docs.bats"
+      ],
+      "files": [
+        "tests/fix-commit-own-checks-docs.bats"
+      ]
+    },
+    {
+      "id": "C420",
+      "req": "R195",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/kept-output-fix-check.bats"
+      ],
+      "files": [
+        "tests/kept-output-fix-check.bats"
+      ]
+    },
+    {
+      "id": "C421",
+      "req": "R195",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/show-fix-failing-tests.bats"
+      ],
+      "files": [
+        "tests/show-fix-failing-tests.bats"
+      ]
+    },
+    {
+      "id": "C422",
+      "req": "R195",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/kept-output-docs.bats"
+      ],
+      "files": [
+        "tests/kept-output-docs.bats"
+      ]
     }
   ],
   "project": {
@@ -13559,7 +13715,53 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M39",
-      "rules": []
+      "rules": [
+        {
+          "text": "a task break without --check runs the checks of the rules the plan owes: every rule naming it plus every rule of a requirement it completes",
+          "check": "C411",
+          "plan": "P155.1"
+        },
+        {
+          "text": "a check shared by several owed rules runs once, and no check of another requirement runs",
+          "check": "C411",
+          "plan": "P155.1"
+        },
+        {
+          "text": "the unbroken run judges only the checks the break runs: a red check of a rule the plan does not owe does not refuse the break (the T159 case)",
+          "check": "C411",
+          "plan": "P155.1"
+        },
+        {
+          "text": "an owed check red on the unbroken code refuses, writes nothing, names the check and the three ways out: make it pass and commit, --check ID, or --none REASON naming the completing plan",
+          "check": "C411",
+          "plan": "P155.1"
+        },
+        {
+          "text": "a plan owing no rule runs the checks of its requirements as before, and its refusal adds that it owns no rule and that the Lead names a plan on each rule",
+          "check": "C411",
+          "plan": "P155.1"
+        },
+        {
+          "text": "--check narrows the run to the named checks of the plan's requirements and refuses another requirement's; a rule break runs its own check as before; the record and the output list exactly the checks that ran",
+          "check": "C411",
+          "plan": "P155.1"
+        },
+        {
+          "text": "the plan files are byte-identical to their last commit after a red, a survivor or a refusal, and the new code is bash 3.2 with JSON only through jq",
+          "check": "C411",
+          "plan": "P155.1"
+        },
+        {
+          "text": "plugin/agents/dev.md says a task break runs the checks of the plan's own rules",
+          "check": "C411",
+          "plan": "P155.1"
+        },
+        {
+          "text": "docs/proof.md's mutation section and docs/workflows.md say a task break runs the checks of the plan's own rules",
+          "check": "C412",
+          "plan": "P155.4"
+        }
+      ]
     },
     {
       "id": "R194",
@@ -13567,7 +13769,93 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M39",
-      "rules": []
+      "rules": [
+        {
+          "text": "vbw commit --fix FIX MSG FILE... for an open requirement fix of any source commits the named changed check files of its requirement with VBW-Fix and VBW-Req trailers, touching only them and leaving staged work staged",
+          "check": "C417",
+          "plan": "P156.1"
+        },
+        {
+          "text": "the commit message is validated as today",
+          "check": "C417",
+          "plan": "P156.1"
+        },
+        {
+          "text": "a check file of another requirement is refused, committing nothing, naming that requirement",
+          "check": "C417",
+          "plan": "P156.1"
+        },
+        {
+          "text": "a code file is refused, committing nothing, pointing to vbw commit PLAN",
+          "check": "C417",
+          "plan": "P156.1"
+        },
+        {
+          "text": "a path under .vbw/ or outside the project is refused, committing nothing",
+          "check": "C417",
+          "plan": "P156.1"
+        },
+        {
+          "text": "an unknown or non-open fix is refused, committing nothing",
+          "check": "C417",
+          "plan": "P156.1"
+        },
+        {
+          "text": "a named file that did not change is refused with nothing to commit",
+          "check": "C417",
+          "plan": "P156.1"
+        },
+        {
+          "text": "a fix of a [human] requirement has no check files to commit and is refused the same way",
+          "check": "C417",
+          "plan": "P156.1"
+        },
+        {
+          "text": "a project-command fix keeps today's behaviour, and a QA fix's check files commit as today (R160 unchanged), with both trailers",
+          "check": "C417",
+          "plan": "P156.1"
+        },
+        {
+          "text": "after the commit vbw fix done runs and names the file as waiting, vbw next asks the approval naming it, vbw prove refuses until then and runs the file after",
+          "check": "C417",
+          "plan": "P156.1"
+        },
+        {
+          "text": "the commit is listed under its requirement by vbw show req, and the proof's scope check blames no plan for it",
+          "check": "C417",
+          "plan": "P156.1"
+        },
+        {
+          "text": "plugin/agents/dev.md and the fixing workflow's Dev instruction say a requirement fix commits its own requirement's check files with vbw commit --fix, code goes through the plan, and the files wait for one approval",
+          "check": "C417",
+          "plan": "P156.1"
+        },
+        {
+          "text": "vbw run start fix opens as editable, for each requirement fix whatever its source, the check files of its requirement that no other requirement's check lists, and nothing more: no new test file for a proof's fix alone",
+          "check": "C418",
+          "plan": "P156.2"
+        },
+        {
+          "text": "the file guard denies any other check file during the run with its documented answer, naming the file and the files the fix may edit; a QA fix keeps the vbw fix check advice, a proof's fix gets none",
+          "check": "C418",
+          "plan": "P156.2"
+        },
+        {
+          "text": "a project-command fix opens no check file",
+          "check": "C418",
+          "plan": "P156.2"
+        },
+        {
+          "text": "a run of a proof's fix and a QA fix together opens both requirements' own check files and allows new test files",
+          "check": "C418",
+          "plan": "P156.2"
+        },
+        {
+          "text": "docs/workflows.md's vbw commit --fix row, docs/guards.md's fix-run row and docs/proof.md's fix section say a requirement fix commits its own requirement's check files, code goes through the plan, and the files wait for one approval",
+          "check": "C419",
+          "plan": "P156.3"
+        }
+      ]
     },
     {
       "id": "R195",
@@ -13575,7 +13863,58 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M39",
-      "rules": []
+      "rules": [
+        {
+          "text": "vbw fix done keeps the complete output of every failing or timed-out check and test file it ran under vbw prove's names (C1.log, file-<id>.log), replacing an older file; the files outlive the command and the proof copies",
+          "check": "C420",
+          "plan": "P157.1"
+        },
+        {
+          "text": "in vbw fix done a pass removes that unit's kept file and a reused unit leaves it",
+          "check": "C420",
+          "plan": "P157.1"
+        },
+        {
+          "text": "vbw check keeps the complete output of every failing or timed-out check and says where it is under the check's own line, whose meaning is unchanged; a passing check removes nothing; --expect-red keeps nothing",
+          "check": "C420",
+          "plan": "P157.1"
+        },
+        {
+          "text": "two vbw check runs of the same check at once each leave a whole file, never a half-written one",
+          "check": "C420",
+          "plan": "P157.1"
+        },
+        {
+          "text": "kept output is never committed and never written outside .vbw/runtime",
+          "check": "C420",
+          "plan": "P157.1"
+        },
+        {
+          "text": "vbw show fix lists under each failing check, test file and project command full output: PATH and failing tests: with one line per name recognised: TAP/bats, cargo test, pytest, go test, jest, vitest, mocha, each name once",
+          "check": "C421",
+          "plan": "P157.2"
+        },
+        {
+          "text": "none recognised says failing tests: none recognised in the output; read the full output file; a missing file keeps full output not kept: run vbw prove again",
+          "check": "C421",
+          "plan": "P157.2"
+        },
+        {
+          "text": "failing single-form test files are listed by path with their kept file; --json carries kept and failing_tests for each failing unit",
+          "check": "C421",
+          "plan": "P157.2"
+        },
+        {
+          "text": "the names are extracted only when vbw show fix runs: no hook or status-line path reads the kept output",
+          "check": "C421",
+          "plan": "P157.2"
+        },
+        {
+          "text": "docs/proof.md's kept-output section names vbw fix done and vbw check beside vbw prove and points to vbw show fix for the failing test names; docs/proof.md's fix section and the fixing workflow's Dev instruction point to vbw show fix for the full output and the failing test names",
+          "check": "C422",
+          "plan": "P157.3"
+        }
+      ]
     },
     {
       "id": "R196",
@@ -13583,7 +13922,43 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M39",
-      "rules": []
+      "rules": [
+        {
+          "text": "a red check whose file waits for approval, after a survivor of the same target recorded with that check at an earlier commit, prints TARGET survives the approved check; caught by the pending one: FILE... and exits 0",
+          "check": "C415",
+          "plan": "P155.3"
+        },
+        {
+          "text": "a pending file with no earlier survivor of the target: the output says the break was caught by a check file waiting for approval and names it, without claiming it survived the approved one",
+          "check": "C415",
+          "plan": "P155.3"
+        },
+        {
+          "text": "a red check whose file is not waiting for approval prints today's plain red line, with strengthened after a prior survivor as before",
+          "check": "C415",
+          "plan": "P155.3"
+        },
+        {
+          "text": "the recorded break carries pending (the waiting files) beside result red, the record stays valid, and the contract's fingerprint is unchanged by recording it",
+          "check": "C415",
+          "plan": "P155.3"
+        },
+        {
+          "text": "vbw show plan shows the same words for that break and --json carries pending; the red break counts for vbw plan done",
+          "check": "C415",
+          "plan": "P155.3"
+        },
+        {
+          "text": "the plan files are byte-identical to their last commit after the break, and the new code is bash 3.2 with JSON only through jq",
+          "check": "C415",
+          "plan": "P155.3"
+        },
+        {
+          "text": "docs/proof.md's mutation section gives the sentence in its exact words and says the pending file still needs the one approval before the proof",
+          "check": "C416",
+          "plan": "P155.4"
+        }
+      ]
     },
     {
       "id": "R197",
@@ -13591,7 +13966,38 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M39",
-      "rules": []
+      "rules": [
+        {
+          "text": "a broken file put into the proof copy gets a modification time strictly newer than every file in the copy, build output included, so a time-based build rebuilds it and the break is red",
+          "check": "C413",
+          "plan": "P155.2"
+        },
+        {
+          "text": "the restored file gets a time strictly newer than every file in the copy, so the next unbroken run rebuilds the clean code instead of judging the broken build",
+          "check": "C413",
+          "plan": "P155.2"
+        },
+        {
+          "text": "the time is set later than the newest file in the copy even when that file is stamped ahead of the clock: the kernel never relies on now",
+          "check": "C413",
+          "plan": "P155.2"
+        },
+        {
+          "text": "a break that deletes a file is judged on its absence: nothing is stamped and no file is created",
+          "check": "C413",
+          "plan": "P155.2"
+        },
+        {
+          "text": "the plan files are byte-identical to their last commit after the break, and the new code is bash 3.2 with JSON only through jq",
+          "check": "C413",
+          "plan": "P155.2"
+        },
+        {
+          "text": "docs/proof.md's mutation section says the broken file and its restore get a fresh modification time so time-based builds rebuild",
+          "check": "C414",
+          "plan": "P155.4"
+        }
+      ]
     }
   ],
   "phases": [
@@ -20856,6 +21262,105 @@
         "qa_findings": 3,
         "escalations": 2
       }
+    },
+    {
+      "id": "P155",
+      "title": "The mutation check judges a plan by its own tests, on a rebuilt copy, and says which test version caught the break",
+      "reqs": [
+        "R193",
+        "R196",
+        "R197"
+      ],
+      "milestone": "M39",
+      "goal": "A deliberate break of a plan's code (the mutation check) is judged only by the tests of the rules that plan owns, those tests always run against a freshly rebuilt copy, and the result says plainly when only a not-yet-approved test caught it.",
+      "criteria": [
+        "R193: `vbw mutate PLAN taskK WHAT FILE...` without `--check` runs exactly the checks of the rules the plan owes: every rule whose `plan` field names PLAN, plus every rule of a requirement PLAN completes (no other open plan serves it); a check shared by several of those rules runs once; no check of another requirement runs.",
+        "R193: the run on the unbroken code judges only the checks the break runs: a check of the plan's requirements that is red but belongs to a rule the plan does not owe does not refuse the break. Regression (the T159 case): one requirement, two plans, rule 1 names P1 and its check passes after P1, rule 2 names P2 and its check stays red until P2 is built; `vbw mutate P1 task1 ...` runs only rule 1's check and records a red break; without the change the same command is refused.",
+        "R193: when a check the break runs fails on the unbroken code, the command refuses, writes nothing, names the failing check, and says what to do: make it pass and commit, or `--check ID` for a passing check of the plan's requirements, or `--none REASON` naming the plan that completes the requirement.",
+        "R193: when the plan owes no rule at all (no rule names it and it completes nothing), the task break runs the checks of the plan's requirements as before, and a refusal for a red check adds that the plan owns no rule and that the Lead names a plan on each rule (`plan` in the rules) so each plan breaks its own.",
+        "R193: `--check ID` still narrows the run to the named checks of the plan's requirements and still refuses a check of another requirement; rule breaks (`Rn.k`) run that rule's own check exactly as before; the recorded entry's `checks` map and the output list exactly the checks that ran.",
+        "R193: the approved rule R188.10 is rewritten to the new behaviour and its test in tests/mutate-command.bats changed with it; docs/proof.md's mutation section, docs/workflows.md and plugin/agents/dev.md say that a task break runs the checks of the plan's own rules.",
+        "R197: when the break is put into the proof copy, each broken file's modification time is strictly newer than every file in the copy at that moment, build output included; when the file is restored to its committed bytes it again gets a time strictly newer than every file in the copy, so the next unbroken run also rebuilds.",
+        "R197: the guarantee holds on a file system with one-second time stamps (the kernel waits or sets a later time rather than relying on 'now'); a break that deletes a file is still judged correctly (no file to stamp, the build sees it gone).",
+        "R197: a bats regression test uses a time-based build stand-in (a check that rebuilds its output only when the source is newer than the output, as make and cargo decide); a break that the stale build would hide is reported red, and the same test is shown to report a false survivor without the fix.",
+        "R197: docs/proof.md's mutation section states that the broken file and its restore get a fresh modification time so time-based builds rebuild.",
+        "R196: when the check that went red has a file waiting for approval (changed since the approved contract, as `checks_begin` lists) and a survivor of the same target (same rule or same task) in this plan was recorded with that check at an earlier commit, the output line reads `TARGET survives the approved check; caught by the pending one: FILE...`, with exactly the words 'survives the approved check; caught by the pending one'; the command exits 0.",
+        "R196: when the red check's file is waiting for approval but no survivor of that target was recorded, the output says the break was caught by a check file waiting for approval and names the file, without claiming it survived the approved one; when the file is not waiting for approval the output is today's plain red line (with `strengthened:` after a prior survivor as before).",
+        "R196: the recorded break carries the pending state (the waiting files) beside `result: red`; `vbw show plan` shows the same words for that break, `--json` carries it; such a red break still counts for `vbw plan done` (R188 rule 19); the contract's fingerprint is unchanged by recording it.",
+        "R196: docs/proof.md's mutation section explains the sentence and that the pending file still needs the one approval before the proof.",
+        "All of P155: the plan files are byte-identical to their last commit after every mutation check, red, survivor or refused; the new code is bash 3.2 compatible and passes JSON only through jq; every behaviour above has a bats test in the mutate test files."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 3",
+        "files: 7 (179510 bytes)",
+        "files: more than 2 in a repository tracking 1059 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R1 (C1), R2 (C2), R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R58 (C62, C63, C64, C67), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R121 (C187, C188), R123 (C190, C191), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R152 (C233, C234), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P156",
+      "title": "A fix can commit the protected test files of its own requirement",
+      "reqs": [
+        "R194"
+      ],
+      "milestone": "M39",
+      "goal": "A Dev fixing a requirement, whether QA or a failing test found the problem, can edit and commit the protected test files (check files) of that requirement under the fix's own name, with nothing else loosened and one user approval still required before the proof.",
+      "criteria": [
+        "`vbw commit --fix FIX MSG FILE...` for an open requirement fix of any source (QA-opened, or opened by `vbw prove` for a failing check) commits the named changed check files of FIX's requirement, with both trailers `VBW-Fix: FIX` and `VBW-Req: REQ`; the message is validated as today; the commit touches only the named changed files and leaves the user's staged work staged.",
+        "Refusals, each committing nothing and naming the reason: a check file of another requirement (names that requirement); a code file (commit code through its plan, `vbw commit PLAN`); a path under .vbw/ or outside the project; an unknown or non-open fix; a named file that did not change ('nothing to commit'); a fix of a [human] requirement has no check files to commit and is refused the same way.",
+        "A project-command fix keeps today's behaviour (the named changed files, `VBW-Fix` trailer); a QA fix's new test file registered with `vbw fix check` still commits as today (R160 tests pass unchanged).",
+        "`vbw run start fix F1 F2...` opens as editable, for each requirement fix in the run whatever its source, the check files of that fix's requirement that no other requirement's check lists, and nothing more; the file guard denies any other check file during the run with its documented answer (pinned test), and a project-command fix opens no check file.",
+        "After such a commit: `vbw prove` refuses until the user approves the changed file once (naming it), `vbw next` asks that approval naming the file, `vbw fix done` runs and names the file as waiting; after the approval the proof runs the changed file; under a loop the file still waits for the user (R188 rule 38 unchanged).",
+        "The commit shows under its requirement in the requirement view that lists commits by `VBW-Req` trailer, and the proof's scope check does not blame any plan for it (`scope ok` after the commit).",
+        "plugin/agents/dev.md, the fixing workflow's Dev instruction and the docs (docs/workflows.md's `vbw commit --fix` row, docs/guards.md's fix-run row, docs/proof.md's fix section) say: a requirement fix commits its own requirement's check files with `vbw commit --fix`, code goes through the plan, and the files wait for one approval before the proof."
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 8 (157046 bytes)",
+        "files: more than 2 in a repository tracking 1059 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R1 (C1), R2 (C2), R12 (C11), R13 (C12), R14 (C13), R15 (C14), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R32 (C28), R39 (C36), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R58 (C62, C63, C64, C67), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R120 (C185), R123 (C190, C191), R128 (C200), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R165 (C252), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410)",
+        "tests: project test command",
+        "raised by the Architect"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P157",
+      "title": "Failing output kept after every test run, and the failing tests named",
+      "reqs": [
+        "R195"
+      ],
+      "milestone": "M39",
+      "goal": "After any VBW test run (`vbw prove`, `vbw fix done`, `vbw check`) the complete output of every failing check, test file or project command is on disk, and `vbw show fix` says where it is and which tests failed, so nobody reruns the suite to see what broke.",
+      "criteria": [
+        "`vbw fix done` keeps the complete output of every check and every single-form test file it ran that failed or timed out, in `.vbw/runtime/output/` under the same names `vbw prove` uses (C1.log, file-<id>.log), replacing an older file; a pass removes that unit's kept file; a reused unit leaves its file as it is; the kept files survive the end of the command and the removal of the proof copies.",
+        "`vbw check [ID...]` keeps the complete output of every check that failed or timed out; a passing check does not remove an existing kept file (the proof's or another Dev's failure stays readable); `vbw check --expect-red` keeps nothing; two Devs checking the same check at once each leave a whole file, never a half-written one.",
+        "Kept output is never committed and never written outside `.vbw/runtime` (the R118 rules hold for every command that keeps output).",
+        "`vbw show fix F` lists, under each failing check, failing single-form test file and failing project command of the fix, `full output: PATH` and `failing tests:` with one line per failing test name recognised in the kept output; recognised forms: TAP/bats (`not ok N name`), cargo test (`test name ... FAILED` and the `failures:` list), pytest (`FAILED path::name`), go test (`--- FAIL: Name`), jest/vitest/mocha (`✕ name`, `× name`, `N) name`); when none is recognised it says `failing tests: none recognised in the output; read the full output file`; when the file is missing it keeps today's `full output not kept: run vbw prove again`.",
+        "Failing single-form test files are listed by their path with their kept file (today only project commands are); `vbw show fix --json` carries `kept` (path or null) and `failing_tests` (array of names) for each failing unit; the names are extracted only when `vbw show fix` runs, never on a hook or status-line path.",
+        "The per-unit lines of `vbw fix done` keep their pinned form (one line per check or test file, then the two count lines, then one line per fix); `vbw check` tells where the kept file is for each failing check without changing its existing lines' meaning.",
+        "The fixing workflow's Dev instruction and docs/proof.md point to `vbw show fix` for the full output and the failing test names, and docs/proof.md's kept-output section names `vbw fix done` and `vbw check` beside `vbw prove`."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 7 (125661 bytes)",
+        "files: more than 2 in a repository tracking 1059 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R22 (C19), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R32 (C28), R39 (C36), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R100 (C156), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -41163,6 +41668,236 @@
           "head": "6d012543a50e194e4e4d6e2e948104c92e28ba1b"
         }
       ]
+    },
+    {
+      "id": "P155.1",
+      "phase": "P155",
+      "title": "A task break runs the checks of the plan's own rules",
+      "reqs": [
+        "R193"
+      ],
+      "files": [
+        "plugin/lib/cmd-mutate.sh",
+        "plugin/agents/dev.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "cmd-mutate.sh: the checks a task break runs without --check are those of the rules the plan owes (every rule whose plan field names it, plus every rule of a requirement it completes), each check once; a plan owing no rule keeps today's set, the checks of its requirements (one jq helper over the record)",
+        "cmd-mutate.sh: the unbroken run judges only the checks the break runs (the T159 case); an owed check red on the unbroken code refuses, writes nothing, names the check and the three ways out (make it pass and commit, --check ID, --none REASON naming the completing plan); a plan owning no rule adds that it owns no rule and that the Lead names a plan on each rule",
+        "cmd-mutate.sh: --check and rule breaks unchanged; the recorded checks map and the output list exactly the checks that ran; the plan files stay byte-identical to their last commit after red, survivor or refusal; bash 3.2, JSON only through jq",
+        "plugin/agents/dev.md, the mutation step: a task break runs the checks of the plan's own rules, and what to do when an owed check is still red"
+      ]
+    },
+    {
+      "id": "P155.2",
+      "phase": "P155",
+      "title": "The broken file and its restore get a fresh modification time",
+      "reqs": [
+        "R197"
+      ],
+      "files": [
+        "plugin/lib/cmd-mutate.sh",
+        "plugin/lib/core.sh"
+      ],
+      "after": [
+        "P155.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "core.sh: a helper beside vbw_mtime that stamps given files one second later than the newest file under a folder (build output included), computed from the files' times and never from the clock, with touch -t through GNU date -d @N or BSD date -r N; a missing file is left missing",
+        "cmd-mutate.sh mutate_put: after the broken bytes are copied into the proof copy, each broken file present gets that stamp, so a build that decides by file times remakes it",
+        "cmd-mutate.sh mutate_clean: after the committed bytes are restored, each restored file gets that stamp, so the next unbroken run rebuilds the clean code instead of judging the broken build"
+      ]
+    },
+    {
+      "id": "P155.3",
+      "phase": "P155",
+      "title": "The result says when only a pending test caught the break",
+      "reqs": [
+        "R196"
+      ],
+      "files": [
+        "plugin/lib/cmd-mutate.sh",
+        "plugin/lib/record.jq",
+        "plugin/lib/cmd-show.sh"
+      ],
+      "after": [
+        "P155.2",
+        "P157.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "record.jq mutation_ok: a recorded red break may carry pending, the check files waiting for approval that caught it (relative paths)",
+        "cmd-mutate.sh: when the red check's file is in checks_begin's waiting list and an earlier survivor of the same target (rule or task) in this plan ran that check at another commit, the line reads TARGET survives the approved check; caught by the pending one: FILE..., exit 0, and the entry carries pending",
+        "cmd-mutate.sh: a pending file with no such survivor says the break was caught by a check file waiting for approval and names it, without survives; no pending file keeps today's plain red line and strengthened as before; the contract's fingerprint stays unchanged",
+        "cmd-show.sh show plan: the same words for a pending red break, and --json carries pending"
+      ]
+    },
+    {
+      "id": "P155.4",
+      "phase": "P155",
+      "title": "Docs: own rules, fresh times and the pending-check sentence",
+      "reqs": [
+        "R193",
+        "R196",
+        "R197"
+      ],
+      "files": [
+        "docs/proof.md",
+        "docs/workflows.md"
+      ],
+      "after": [
+        "P155.1"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/proof.md, The mutation check: a task break runs the checks of the plan's own rules (those naming the plan plus those of the requirements it completes); a red owed check refuses with the three ways out; a plan owning no rule runs its requirements' checks as before",
+        "docs/workflows.md, The mutation check and the vbw mutate row: the task form runs the checks of the plan's own rules, only the named ones with --check",
+        "docs/proof.md, The mutation check: the broken file and its restore get a fresh modification time, so builds that decide by file times (make, cargo) rebuild and never judge a stale build",
+        "docs/proof.md, The mutation check: the sentence survives the approved check; caught by the pending one, when it is printed, and that the pending file still needs the one approval before the proof"
+      ]
+    },
+    {
+      "id": "P156.1",
+      "phase": "P156",
+      "title": "vbw commit --fix commits a requirement fix's own check files",
+      "reqs": [
+        "R194"
+      ],
+      "files": [
+        "plugin/lib/cmd-commit.sh",
+        "plugin/agents/dev.md",
+        "plugin/workflows/fixing.js"
+      ],
+      "after": [
+        "P155.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "cmd-commit.sh cmd_commit_fix: an open requirement fix of any source commits the named changed check files of its requirement with the trailers VBW-Fix: FIX and VBW-Req: REQ, touching only them and leaving staged work staged; a project-command fix keeps today's path; the message is validated as today",
+        "cmd-commit.sh refusals, each committing nothing and naming the reason: a check file of another requirement (names it), a code file (vbw commit PLAN), a path under .vbw/ or outside the project, an unknown or non-open fix, a file that did not change (nothing to commit), a fix of a [human] requirement (no check files)",
+        "plugin/agents/dev.md, Fix and Finish: a requirement fix commits its own requirement's check files with vbw commit --fix, code goes through its plan (vbw commit PLAN), the files wait for one approval before the proof",
+        "plugin/workflows/fixing.js, the Dev instruction: the same in one sentence, without the word mutation"
+      ]
+    },
+    {
+      "id": "P156.2",
+      "phase": "P156",
+      "title": "A fix run opens its requirement's check files to the Dev",
+      "reqs": [
+        "R194"
+      ],
+      "files": [
+        "plugin/lib/cmd-run.sh",
+        "plugin/hooks/common.jq"
+      ],
+      "after": [
+        "P155.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "cmd-run.sh run start fix: editable lists, for each requirement fix of the run whatever its source, the check files of its requirement that no other requirement's check lists; new_tests when any fix of the run is QA's; a project-command fix opens no check file",
+        "common.jq lease_write_denial: under a fix run a path in editable is allowed whatever new_tests; another requirement's check file is denied naming the file and the editable files, with the vbw fix check advice only when new_tests; a new test file stays denied for a proof's fix alone",
+        "common.jq: the guard's per-call CPU stays within 20 ms (tools/bench-hooks.sh), the documented answer pinned by tests/fix-run-own-checks.bats"
+      ]
+    },
+    {
+      "id": "P156.3",
+      "phase": "P156",
+      "title": "Docs: a fix commits its own check files",
+      "reqs": [
+        "R194"
+      ],
+      "files": [
+        "docs/workflows.md",
+        "docs/guards.md",
+        "docs/proof.md"
+      ],
+      "after": [
+        "P155.4"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/workflows.md, the vbw commit --fix row: a requirement fix of any source commits its requirement's check files with VBW-Fix and VBW-Req, code goes through its plan (vbw commit PLAN), the files wait for one approval before the proof",
+        "docs/guards.md, the fix-run row for protected check files: every requirement fix's run opens the check files of its own requirement that no other requirement lists, a proof's fix included (it no longer stays fully protected); the QA fix keeps its new test files and the vbw fix check advice",
+        "docs/proof.md, Fix items: a requirement fix commits its own requirement's check files with vbw commit --fix, and they wait for one approval before the proof"
+      ]
+    },
+    {
+      "id": "P157.1",
+      "phase": "P157",
+      "title": "vbw fix done and vbw check keep failing output",
+      "reqs": [
+        "R195"
+      ],
+      "files": [
+        "plugin/lib/checks.sh",
+        "plugin/lib/cmd-fix.sh",
+        "plugin/lib/cmd-check.sh"
+      ],
+      "after": [
+        "P155.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "checks.sh checks_keep: a mode that leaves a kept file on a pass (for vbw check) beside today's (a pass removes), each failure's complete output moved into .vbw/runtime/output by rename, so concurrent callers never leave half a file",
+        "cmd-fix.sh fix done: the output of every failing or timed-out check and test file it ran is kept under vbw prove's names (C1.log, file-<id>.log), a pass removes, a reused unit leaves; the per-unit lines keep their pinned form",
+        "cmd-check.sh: vbw check keeps each failing or timed-out check's output and prints full output: PATH under the check's line, whose meaning is unchanged; --expect-red keeps nothing"
+      ]
+    },
+    {
+      "id": "P157.2",
+      "phase": "P157",
+      "title": "vbw show fix names the kept output and the failing tests",
+      "reqs": [
+        "R195"
+      ],
+      "files": [
+        "plugin/lib/cmd-show.sh",
+        "plugin/lib/failing-tests.jq"
+      ],
+      "after": [
+        "P155.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/failing-tests.jq: the failing test names in a kept output, each once: TAP/bats (not ok N name), cargo test (test name ... FAILED and the failures: list), pytest (FAILED path::name), go test (--- FAIL: Name), jest (✕ name, duration stripped), vitest (× name), mocha (N) name)",
+        "cmd-show.sh show fix: under each failing check and failing project command, full output: PATH then failing tests: with one line per name; none recognised says failing tests: none recognised in the output; read the full output file; a missing file keeps full output not kept: run vbw prove again",
+        "cmd-show.sh show fix: failing single-form test files (evidence.test_files) listed by path with their kept file (file-<id>.log) and failing tests; --json carries kept and failing_tests for each failing check, command and test file (test_files: [{path, status, kept, failing_tests}]); the names are read only here, never on a hook or status-line path"
+      ]
+    },
+    {
+      "id": "P157.3",
+      "phase": "P157",
+      "title": "Docs and the Dev instruction point to vbw show fix",
+      "reqs": [
+        "R195"
+      ],
+      "files": [
+        "docs/proof.md",
+        "plugin/workflows/fixing.js"
+      ],
+      "after": [
+        "P156.1",
+        "P156.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "docs/proof.md, the kept-output section (.vbw/runtime/output): vbw fix done and vbw check keep failing output beside vbw prove; vbw show fix names the file and the failing test names",
+        "docs/proof.md, Fix items: vbw show fix lists the failing test files with their kept file and the failing test names, and says when none is recognised",
+        "plugin/workflows/fixing.js, the Dev instruction: read the full output and the failing test names with vbw show fix instead of rerunning the suite; no mutation word"
+      ]
     }
   ],
   "fixes": [
@@ -53131,6 +53866,19 @@
         "started": "2026-10-19T10:36:07Z",
         "ended": "2026-10-19T10:41:35Z",
         "cost": null
+      },
+      {
+        "id": "plan-20261019T104410Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M39",
+        "started": "2026-10-19T10:44:10Z",
+        "ended": "2026-10-19T11:30:07Z",
+        "cost": {
+          "usd": 23.74877,
+          "in": 3224,
+          "out": 571
+        }
       }
     ],
     "milestones": {
