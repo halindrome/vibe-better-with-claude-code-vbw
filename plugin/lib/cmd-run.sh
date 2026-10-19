@@ -156,11 +156,11 @@ cmd_run() {
          else [$fx[].req as $q | .plans[] | select(any(.reqs[]; . == $q)) | .files[]] | unique end
      elif $k == "qa" or $k == "map" then []
      else [".vbw/"] end) as $files
-    | (if $k == "fix" and $files != null then
+    | (if $k == "fix" and any(.fixes[] | select(.id as $i | any($ids[]; . == $i)); has("req") and .req != null) then
          # A requirement fix, whatever its source (R194): the Dev may edit the
          # check files of the fixes requirements that no other requirement
          # uses. When a fix of the run comes from QA (R160) it may also add test files.
-         ([.fixes[] | select(.id as $i | any($ids[]; . == $i)) | .req] | unique) as $qs
+         ([.fixes[] | select(.id as $i | any($ids[]; . == $i)) | .req | select(. != null)] | unique) as $qs
          | ([$qs[] as $q | [.checks[] | select(.req == $q) | (.files // [])[]] as $mine
             | [.checks[] | select(.req != $q) | (.files // [])[]] as $others
             | ($mine - $others)[]] | unique) as $own

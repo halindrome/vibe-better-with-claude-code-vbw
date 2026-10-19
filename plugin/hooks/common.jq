@@ -100,8 +100,8 @@ def lease_write_denial($lease; $record):
   elif $lease.kind == "plan" and test_path then empty
   elif $lease.kind == "build" and (. as $p | any($lease.editable[]?; . == $p)) then empty
   elif $lease.kind == "fix" and (. as $p | any($lease.editable[]?; . == $p)) then empty
-  elif $lease.kind == "fix" and (($lease.editable // []) | length) > 0 and (. as $p | any($record.protected[]?; . == $p)) then
-    "\(.) is a protected check file of another requirement: the fix may edit only the check files of its own requirement (\($lease.editable | join(", ")))\n"
+  elif $lease.kind == "fix" and ((($lease.editable // []) | length) > 0 or $lease.new_tests == true) and (. as $p | any($record.protected[]?; . == $p)) then
+    "\(.) is a protected check file of another requirement: the fix may edit only the check files of its own requirement (\(($lease.editable // []) | if length > 0 then join(", ") else "none is exclusive to it" end))\n"
     + (if $lease.new_tests == true then "Next: leave \(.) as it is; put the regression test in a new test file and register it with vbw fix check"
        else "Next: leave \(.) as it is; fix the code through the plan, and edit only the files named above" end)
   elif $lease.new_tests == true and test_path then empty
