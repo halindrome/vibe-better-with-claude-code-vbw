@@ -901,11 +901,16 @@ scenario_panel() {
   # R199: true when every one of the eight tabs is drawn whole as '[ Name ]' (the full
   # name or its short form) in the screen captured at $1 columns by $2 rows.
   tabs_whole() {
-    local t pair
+    local t
     t=$(sed 's/[[:space:]][[:space:]]*/ /g' "$dir.panel.$1x$2.last.txt" 2> /dev/null)
-    for pair in "Now|Now" "Plan|Plan" "Proof|Proof" "Timeline|Time" "Decisions|Log" "Team|Team" "Sessions|Sess" "Costs|Cost"; do
-      case "$t" in *"[ ${pair%|*} ]"* | *"[ ${pair#*|} ]"*) ;; *) echo false; return ;; esac
-    done
+    case "$t" in *"[ Now ]"*) ;; *) echo false; return ;; esac
+    case "$t" in *"[ Plan ]"*) ;; *) echo false; return ;; esac
+    case "$t" in *"[ Proof ]"*) ;; *) echo false; return ;; esac
+    case "$t" in *"[ Timeline ]"* | *"[ Time ]"*) ;; *) echo false; return ;; esac
+    case "$t" in *"[ Decisions ]"* | *"[ Log ]"*) ;; *) echo false; return ;; esac
+    case "$t" in *"[ Team ]"*) ;; *) echo false; return ;; esac
+    case "$t" in *"[ Sessions ]"* | *"[ Sess ]"*) ;; *) echo false; return ;; esac
+    case "$t" in *"[ Costs ]"* | *"[ Cost ]"*) ;; *) echo false; return ;; esac
     echo true
   }
   # Both windows in turn, then the first size back. Echoes "short narrow tabs_short
