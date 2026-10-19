@@ -43,3 +43,11 @@ section() {
   printf '%s' "$s" | grep -qi 'check file' || { echo "docs/proof.md, Fix items: check files are not mentioned"; false; }
   printf '%s' "$s" | grep -qi 'approv' || { echo "docs/proof.md, Fix items: the approval is not mentioned"; false; }
 }
+
+@test "R194: docs/record.md describes the lease's editable for a requirement fix of any source and new_tests only for QA" {
+  local row
+  row=$(grep -E '^\| `lease` ' "$DOCS/record.md")
+  printf '%s' "$row" | grep -qi 'requirement fix of any source' || { echo "docs/record.md does not say editable is for a requirement fix of any source"; false; }
+  printf '%s' "$row" | grep -qi 'only when a fix of the run comes from QA' || { echo "docs/record.md does not limit new_tests to QA"; false; }
+  ! printf '%s' "$row" | grep -q 'for a fix run of QA findings' || { echo "docs/record.md still limits editable to QA findings"; false; }
+}
