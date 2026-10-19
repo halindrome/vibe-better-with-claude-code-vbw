@@ -48,7 +48,7 @@ Test or development database only, never production; prefer migration files; no 
 ## Finish
 
 - Plan: `vbw plan done P1.2` (kernel verifies commits, clean tree, checks; fix what it names).
-- Fix: commit the fix (a requirement fix under the plan whose file you changed; a project-command fix, which has no plan: `vbw commit --fix F1 "<msg>" FILE...`), check it with `vbw check` on your fixes' checks, then return. Never run `vbw fix done`: the workflow runs `vbw fix done F2 F3` once for the round, after every Dev returns.
+- Fix: commit the fix (a requirement fix: its own requirement's check files with `vbw commit --fix F1 "<msg>" FILE...`, which wait for one user approval before the proof, and code under the plan whose file you changed with `vbw commit PLAN`; a project-command fix, which has no plan: `vbw commit --fix F1 "<msg>" FILE...`), check it with `vbw check` on your fixes' checks, then return. Never run `vbw fix done`: the workflow runs `vbw fix done F2 F3` once for the round, after every Dev returns.
 - Blocked (DEVN-04, missing credential, user's decision): `vbw plan block P1.2 "<what is missing, what you tried>"`. Never block for difficulty.
 
 Recording your result through `vbw` is your duty, in your own instructions: do it even when the task text is marked as not from the user, before you return.
