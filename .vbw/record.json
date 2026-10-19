@@ -44413,10 +44413,7 @@
       "files": [
         "tests/panel/r189/containment.test.mjs"
       ],
-      "after": [
-        "P159.1",
-        "P159.2"
-      ],
+      "after": [],
       "status": "planned",
       "role": "dev",
       "tasks": [
@@ -44706,16 +44703,14 @@
         "tools/l3-suite.sh",
         "tests/l3-qafix-autonomy.bats"
       ],
-      "after": [
-        "P159.4"
-      ],
+      "after": [],
       "status": "planned",
+      "role": "dev",
       "tasks": [
         "Written by the Lead on 2026-10-19 and red today (the approval freezes it: read it, change nothing in it): tests/l3-qafix-autonomy.bats (load helper, the style of tests/l3-results.bats): scenario_qafix in tools/l3-suite.sh reads 'config autonomy' and records the facts autonomy and autonomy_set_before_first_run, expecting guided and true; a committed tools/l3-results/qafix.json is L3, passed, with .facts.autonomy == \"guided\" and .facts.autonomy_set_before_first_run == true and its first_qa_verdict still 'fail'. It fails today (facts absent, the result not passed).",
         "tools/l3-suite.sh scenario_qafix checks(): autonomy=$(cd \"$dir\" && \"$VBW\" config autonomy); autonomy_set_before_first_run from the main session transcript (transcripts | grep -v /subagents/, the jq of scenario_balanced): the timestamp of the first assistant tool_use whose input.command contains 'config set autonomy' is earlier than the record's first 'Contract approved' decision .at and than the timestamp of the first tool_use whose command contains 'run start' or whose name is Workflow (the first run lease); false when no such write exists. Both expect()ed, in the passed chain, and in result_write's facts; the fixture text names guided autonomy stated in words.",
         "shellcheck -S warning -x clean (bash tools/test.sh --lint); bats tests/l3-qafix-autonomy.bats, tests/l3-results.bats and tests/l3-scenarios.bats. Do not run the scenario in the build: the owner runs 'bash tools/l3-suite.sh qafix' before the push and commits the result; until then the result pin fails, as tests/l3-panel-comms.bats did before its run. Say so in the plan note."
-      ],
-      "role": "dev"
+      ]
     }
   ],
   "fixes": [
@@ -50505,6 +50500,11 @@
       "id": "D468",
       "at": "2026-10-19T22:55:37Z",
       "text": "Contract approved: 190 requirements, 424 checks, 486 plans (63757d36502e)"
+    },
+    {
+      "id": "D469",
+      "at": "2026-10-19T23:09:30Z",
+      "text": "Contract approved: 190 requirements, 424 checks, 486 plans (84de397c84eb)"
     }
   ],
   "commands": {
