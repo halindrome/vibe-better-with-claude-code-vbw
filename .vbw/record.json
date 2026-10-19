@@ -1,17 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "fix-20261019T080313Z",
-    "kind": "fix",
-    "started_at": "2026-10-19T08:03:13Z",
-    "files": null,
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
-    "cost": {
-      "usd": 1474.779293,
-      "in": 234891,
-      "out": 484
-    }
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -43051,14 +43040,14 @@
       "id": "F253",
       "req": "R149",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C220 fail (exit 1), C221 fail (exit 1)"
     },
     {
       "id": "F254",
       "command": "test",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "test fail"
     }
   ],
@@ -46556,6 +46545,12 @@
       "id": "D449",
       "at": "2026-10-19T01:59:52Z",
       "text": "Contract approved: 181 requirements, 403 checks, 465 plans (9f7abd6e99d4)"
+    },
+    {
+      "id": "D450",
+      "text": "Portfolium feedback addenda 2026-10-16/19 evaluated: adopt task-break scope, fix commits its own requirement's check files, keep failing output, pending-check survivor wording, fresh mtime for mutation breaks, proof-speed measurement on Portfolium; decline a standalone vbw check drop. Order after T138, before T94: T165, T167, T166",
+      "why": "Owner agreed 2026-10-19: core before cosmetics; three of the problems were hit in T138 itself; check drop would remove protection without approval",
+      "at": "2026-10-19T08:51:58Z"
     }
   ],
   "commands": {
@@ -52908,6 +52903,19 @@
         "started": "2026-10-19T04:41:07Z",
         "ended": "2026-10-19T06:47:53Z",
         "cost": null
+      },
+      {
+        "id": "fix-20261019T080313Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M38",
+        "started": "2026-10-19T08:03:13Z",
+        "ended": "2026-10-19T09:17:17Z",
+        "cost": {
+          "usd": 0.976661,
+          "in": 24287,
+          "out": 8
+        }
       }
     ],
     "milestones": {
