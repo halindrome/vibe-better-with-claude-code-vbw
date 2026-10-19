@@ -211,7 +211,7 @@ merely contains `--help` (for example a todo) is still text. The test is
 |---|---|---|
 | `vbw show plan P1.2 [--json]` | Dev | the plan, its requirements, its checks, its files |
 | `vbw show fix F1 [--json]` | Dev | the fix, its requirement, failing checks and output (with the path of each kept full output, under `.vbw/runtime/output/`), the files it may touch |
-| `vbw check [--expect-red] [C1 ...]` | Dev | run approved checks, report, write nothing. `--expect-red`: every check must fail (red-first) |
+| `vbw check [--expect-red] [C1 ...]` | Dev | run approved checks and report; a failing check's full output is kept in `.vbw/runtime/output/<check>.log` and named under its line, nothing else is written. `--expect-red`: every check must fail (red-first) |
 | `vbw mutate P1.2 R3.1 "what you broke" FILE...` | Dev, Docs | break one rule (or `taskK`) of the plan on purpose and record whether a check noticed; VBW undoes the break. Standard and deep only (below) |
 | `vbw commit P1.2 "feat(x): ..."` | Dev | commit the plan's changed files with provenance trailers |
 | `vbw commit --fix F1 "fix(x): ..." FILE...` | Dev | commit the named changed files of an open fix. For a requirement fix of any source (QA finding or failing test), the files are check files of its own requirement; the commit carries `VBW-Fix: F1` and `VBW-Req` trailers, and the files wait for one approval before the proof. Code goes through its plan with `vbw commit PLAN`. A check file of another requirement, a code file and `.vbw/` files are refused. For a failing project command, the named changed files commit even when no plan lists them, with the `VBW-Fix` trailer |
