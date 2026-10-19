@@ -113,6 +113,22 @@ check_json() { json | jq -c --arg id "$1" '.checks[] | select(.id == $id)'; }
   "$VBW" show fix "$F_TEST" --json < /dev/null | jq -e '[.test_files[] | select(.path == "tests/t_a.sh")] | length == 1 and .[0].failing_tests == ["t_a pays"]'
 }
 
+@test "R195: a failing project command's kept output gives its failing tests, as text under 'failing project commands:' (and under the command's own fix) and as JSON" {
+  printf '1..2\nok 1 all pays\nnot ok 2 all refunds\n' > "$OUT/command-test.log"
+  show | awk '/^failing project commands:/ { f = 1 } f' | grep -qE '^ +all refunds$' || { show; false; }
+  json | jq -e --arg o "$OUT" '[.commands[] | select(.name == "test")] | length == 1 and .[0].kept == "\($o)/command-test.log" and .[0].failing_tests == ["all refunds"]'
+  "$VBW" show fix "$F_TEST" < /dev/null | grep -qE '^ +all refunds$' || { "$VBW" show fix "$F_TEST" < /dev/null; false; }
+}
+
+@test "R195: a unittest ending and a numbered list outside mocha name no test" {
+  printf 'Ran 3 tests\n\nFAILED (failures=1)\n' > "$OUT/C8.log"
+  printf 'Steps that failed:\n  1) item one\n  2) item two\n' > "$OUT/C7.log"
+  after C8 | grep -qF 'failing tests: none recognised in the output; read the full output file' || { after C8; false; }
+  after C7 | grep -qF 'failing tests: none recognised in the output; read the full output file' || { after C7; false; }
+  check_json C8 | jq -e '.failing_tests == []'
+  check_json C7 | jq -e '.failing_tests == []'
+}
+
 @test "R195: the names are read only when vbw show fix runs: no hook or status-line path reads the kept output" {
   ! grep -rl 'runtime/output' "$PLUGIN_ROOT/hooks" "$PLUGIN_ROOT/scripts" "$PLUGIN_ROOT/lib/cmd-statusline.sh" || false
 }
