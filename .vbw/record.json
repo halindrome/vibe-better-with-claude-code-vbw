@@ -5572,9 +5572,9 @@
     ]
   },
   "milestone": {
-    "id": "M40",
-    "title": "Session start runs the kernel once",
-    "status": "shipped"
+    "id": "M41",
+    "title": "Release fixes from the 2.0.40 user runs",
+    "status": "active"
   },
   "shipped": [
     {
@@ -49329,6 +49329,12 @@
       "id": "D466",
       "at": "2026-10-19T20:53:56Z",
       "text": "Shipped M40 Session start runs the kernel once: 1 requirement proven or accepted"
+    },
+    {
+      "id": "D467",
+      "text": "Fix the three L3 findings of the 2.0.40 release runs before the push (pane tab row garbled at about 66 columns; Comms helper line missing in a 24-row window; a stated autonomy preference not recorded)",
+      "why": "Owner, 2026-10-19 22:45: the garbled pane would reach every pane user; about 2 hours, push around 00:30-01:00",
+      "at": "2026-10-19T21:50:04Z"
     }
   ],
   "commands": {
@@ -57579,6 +57585,148 @@
           "in": 208268,
           "out": 330,
           "sessions": 23
+        }
+      },
+      "M41": {
+        "baseline": {
+          "08215c4b-a532-4631-97a7-fc456d305a2d": {
+            "usd": 1244.340821,
+            "in": 658637,
+            "out": 312,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "0998a6b2-8631-43de-9da7-063dec09aa18": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a": {
+            "usd": 1526.409646,
+            "in": 230731,
+            "out": 1318,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "1c35771f-52c4-41e8-956d-5ce15298d991": {
+            "usd": 0.349007,
+            "in": 58901,
+            "out": 580,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "22cc2dff-7b30-4e94-abda-a8f53fc17f0f": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "242ff0cc-4ea5-4f6b-9665-932974b21b29": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "3c1b9ed2-943d-4e23-a044-a01958ae20b8": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "3dc7e3bb-f92c-4324-a8a6-a0a996f19a72": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "43f0b3be-e6e5-4701-b39b-64b7c7f4bc45": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "59f46f8b-3baf-431a-99de-51583f2885ac": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "60723b89-7950-4ffa-bf04-6cdf30e3ec96": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "689c5465-3aa1-49af-9115-8192ae092ecf": {
+            "usd": 36.332158,
+            "in": 176815,
+            "out": 348,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "69afb011-3850-41d9-8620-9b59aa9fe082": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "6c761191-76a0-4136-9123-f41780837c28": {
+            "usd": 0.462324,
+            "in": 56499,
+            "out": 517,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "7bb0d4fc-0bbf-4fcb-a770-a9f18afa977d": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "868abfef-9fb7-492e-afba-751d9042e56a": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:06Z"
+          },
+          "a0c9069c-b087-42d1-8480-1a48d6ead14d": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:07Z"
+          },
+          "a5bff576-1135-48dc-814f-a1cba2240cae": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:07Z"
+          },
+          "b46c3fe0-67c9-4862-ac23-c11851da8815": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:07Z"
+          },
+          "b6cd17dc-1028-4144-b581-428c48543f98": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:07Z"
+          },
+          "c9a04b4b-a51e-44e9-b189-1906c1ea97b6": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:07Z"
+          },
+          "d53bd0eb-b19e-4431-a0f8-2a6a8b13fccc": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:07Z"
+          },
+          "d87a245f-e4f2-4bb4-948c-63397be7e79e": {
+            "usd": 0,
+            "in": 0,
+            "out": 0,
+            "at": "2026-10-19T21:50:07Z"
+          }
         }
       }
     }
