@@ -901,7 +901,8 @@ scenario_panel() {
   # R199: true when every one of the eight tabs is drawn whole as '[ Name ]' (the full
   # name or its short form) in the screen captured at $1 columns by $2 rows.
   tabs_whole() {
-    local t=$(sed 's/[[:space:]][[:space:]]*/ /g' "$dir.panel.$1x$2.last.txt" 2> /dev/null) pair
+    local t pair
+    t=$(sed 's/[[:space:]][[:space:]]*/ /g' "$dir.panel.$1x$2.last.txt" 2> /dev/null)
     for pair in "Now|Now" "Plan|Plan" "Proof|Proof" "Timeline|Time" "Decisions|Log" "Team|Team" "Sessions|Sess" "Costs|Cost"; do
       case "$t" in *"[ ${pair%|*} ]"* | *"[ ${pair#*|} ]"*) ;; *) echo false; return ;; esac
     done
@@ -1013,7 +1014,7 @@ scenario_panel() {
     passed=$(jq -r '[.milestone_shown, .progress_shown, .doing_shown, .need_shown, .tabs_shown, .next_row_shown, .cost_shown, .sound_shown_off, .closed_by_click, .closed_stays_closed, .sound_toggle_persisted, .need_line_shown, .need_line_cleared, .helper_seen_working, .helper_done_cleared, .no_spill_short, .no_spill_narrow, .helper_line_short, .tabs_whole_short, .tabs_whole_narrow, (.estimate_shown | length > 0)] | all' <<< "$facts")
     [ "$passed" = true ] || failed=1
     result_write panel "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
-      '["the sound itself (nothing was heard: the run only checks the switch)","what a person reads at a glance: wording and layout are judged on the screen text, not by a reader","no spill is read from the visible tmux screen after a resize (prompt box whole, Comms drawn once), not from a real terminal'"'"'s scrollback","one short window (200 columns, 24 rows) and one narrow window (60 columns, 40 rows), with the needs-you line and with helpers at work; no other size","Comms in the 60-column window: Mission Control fills that window and Comms'"'"' own line is not on screen there (seen in the run, not judged), so the narrow check holds the prompt box and the pane'"'"'s bottom edge only","Mission Control'"'"'s own rows and tabs at those sizes (held by tests/panel/r189/containment.test.mjs, L1)","figure counts and the motion levels (full, calm, off)","a failed helper, a celebration and a ship in the real window","a milestone shipped before the recommendation (the seed stores the recommendation on an active milestone)","a time estimate with a number"]'
+      '["the sound itself (nothing was heard: the run only checks the switch)","what a person reads at a glance: wording and layout are judged on the screen text, not by a reader","no spill is read from the visible tmux screen after a resize (prompt box whole, Comms drawn once), not from a real terminal'"'"'s scrollback","one short window (200 columns, 24 rows) and one narrow window (60 columns, 40 rows), with the needs-you line and with helpers at work; no other size","Comms in the 60-column window: Mission Control fills that window and Comms'"'"' own line is not on screen there (seen in the run, not judged), so the narrow check holds the prompt box and the pane'"'"'s bottom edge only","the tab names read as whole [ Name ] buttons in the visible screen text, not their look or other sizes","Mission Control'"'"'s own rows and tabs at those sizes (held by tests/panel/r189/containment.test.mjs, L1)","figure counts and the motion levels (full, calm, off)","a failed helper, a celebration and a ship in the real window","a milestone shipped before the recommendation (the seed stores the recommendation on an active milestone)","a time estimate with a number"]'
   }
 }
 
