@@ -5405,7 +5405,7 @@
   "milestone": {
     "id": "M38",
     "title": "Brainstorm F4 (cosmetic leg): show which session holds the run, by name, in the status line, Comms and a Sessions-tab mark; names need the session name as data (ties to cosmetic.md D14); optionally /vbw:vibe suggests /rename vbw · <project> at first setup, never applies it",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -5587,6 +5587,11 @@
       "id": "M37",
       "title": "ETA quality for T102 (cosmetic leg, brainstorm inbox 2026-10-10): estimate per unit of work (plan, task, check by tier from .git/vbw/steps.json) times the work size, and the whole road (build, proof, QA, likely fix rounds from this machine's history), not only the current step",
       "at": "2026-10-18T20:23:44Z"
+    },
+    {
+      "id": "M38",
+      "title": "Brainstorm F4 (cosmetic leg): show which session holds the run, by name, in the status line, Comms and a Sessions-tab mark; names need the session name as data (ties to cosmetic.md D14); optionally /vbw:vibe suggests /rename vbw · <project> at first setup, never applies it",
+      "at": "2026-10-19T10:42:30Z"
     }
   ],
   "requirements": [
@@ -46667,6 +46672,11 @@
       "id": "D453",
       "at": "2026-10-19T10:29:17Z",
       "text": "Contract approved: 181 requirements, 405 checks, 465 plans (bde349f9c90a)"
+    },
+    {
+      "id": "D454",
+      "at": "2026-10-19T10:42:30Z",
+      "text": "Shipped M38 Brainstorm F4 (cosmetic leg): show which session holds the run, by name, in the status line, Comms and a Sessions-tab mark; names need the session name as data (ties to cosmetic.md D14); optionally /vbw:vibe suggests /rename vbw · <project> at first setup, never applies it: 1 requirement proven or accepted"
     }
   ],
   "commands": {
@@ -54314,6 +54324,12 @@
             "out": 0,
             "at": "2026-10-18T20:27:42Z"
           }
+        },
+        "total": {
+          "usd": 1480.532011,
+          "in": 297417,
+          "out": 275,
+          "sessions": 23
         }
       }
     }
