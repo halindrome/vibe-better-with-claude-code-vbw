@@ -203,6 +203,19 @@ VBW ▸ planning · Plan · 10m04s · ≈$3.20 this run · 1 done        [p] Mis
   not shown. With little room the rows shrink, down to one summary line.
 - The cost is the session cost added since the run started, so it is "about".
 
+**In little room**, Comms shows lines in this order: the needs-you line, then
+the helper line (`VBW ▸ ...`) while helpers work, then the step line.
+
+- One row: the helper line carries the step's end time after its own parts,
+  for example `VBW ▸ build · 1 working · 0m30s · until around 14:20`.
+- Two rows: the helper line and the step line.
+- Three or more rows: the header, the helper rows and the step line.
+- A needs-you line with one row shows alone.
+- The step line shows alone only when no helper works, for example during a proof.
+
+Comms never draws more rows than Claude Code gives it, so the prompt box stays
+whole.
+
 VBW reads this from the files Claude Code writes for each workflow run in this
 session's own folder (`<Claude config folder>/projects/<project>/<session>/`):
 which agents started, their type, their transcripts and the run's end. It finds
@@ -297,8 +310,18 @@ Now │ Plan │ Proof │ Timeline │ Decisions │ Team │ Sessions │ Cost
 The tabs stay at the top of the pane however long the content is. When the
 content is taller than the pane, only the part under the tabs scrolls.
 
-The tab row is always one line. In a narrow pane (40 columns, beside the
-portrait) the tabs use short names: `Now Plan Proof Time Log Team Sess Cost`.
+The tabs follow one rule: a tab name is never split, and a row is never wider
+than the pane. The layout with the fewest rows wins; at an equal number of rows
+the full names win over the short ones (`Now Plan Proof Time Log Team Sess Cost`).
+
+- At 90 or more columns the full names fit on one row (the portrait sits beside
+  them from 91 columns).
+- At about 64 columns (beside a 200-column window) the full names take two rows,
+  beside the portrait.
+- At 40 columns (the minimum) the short names take two rows.
+
+The portrait is left out when keeping it would cost a tab row or a full name,
+and when the pane is short.
 
 Mission Control never draws more rows than the pane has. When Claude Code
 reports no height for the pane, it has one fixed height of at most 30 rows.
@@ -523,7 +546,7 @@ Building P1.2, P2.1 · 1 of 2 · about 12 min, until around 14:20
 
 Five kinds of step get an end time: **planning**, **build**, **fix**, **QA**
 and **proof**. The same step time shows in the status line, Comms, Mission
-Control and VBW's own messages. Mission Control (and the chat message VBW says
+Control and VBW's own messages. In a one-row Comms, the step's time sits on the helper line. Mission Control (and the chat message VBW says
 before a step) also shows when **the milestone** should end, the "road": the
 step now running plus everything still ahead until the milestone is done. The
 status line shows the step's time only, never the milestone's. When no phase is
