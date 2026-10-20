@@ -338,6 +338,10 @@ if type != "object" then ["record must be a JSON object"] else
           , ( select(has("own") and ((.own | type == "object" and (keys == ["copies","planning","record","saving","tracking","wall"])
                     and all(.[]; nonneg)) | not))
             | "evidence.own must be an object with exactly planning, copies, tracking, saving, record and wall, each a number of at least 0 (docs/record.md)" )
+          , ( select(has("undone") and ((.undone | type == "array" and all(.[]; type == "object" and (keys == ["by","commit","plan"])
+                    and (.commit | type == "string" and test("^[0-9a-f]{40}$")) and (.by | type == "string" and test("^[0-9a-f]{40}$"))
+                    and (.plan | type == "string" and test("^P[0-9]+\\.[0-9]+$")))) | not))
+            | "evidence.undone must be an array of {commit, plan, by}: commit and by 40 hex digits, plan a plan id P<n>.<m> (docs/record.md)" )
           , ( select(has("causes") and ((.causes | type == "array" and all(.[]; type == "string")) | not))
             | "evidence.causes must be an array of strings (docs/record.md)" )
         end ),
