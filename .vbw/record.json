@@ -48155,7 +48155,7 @@
       "text": "Every long VBW step (planning, build, proof, QA) shows what it is doing now and when it should end, as a clock time from how long the same step took before in this project, in the panel, status line and VBW's messages; absorbs T85. Final polish before 2.1.0 (owner 2026-10-10: cosmetics last, core first unless a technical reason makes it urgent)",
       "sort": "later",
       "size": "medium",
-      "status": "in_progress"
+      "status": "done"
     },
     {
       "id": "T103",
