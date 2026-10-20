@@ -63,5 +63,5 @@ section_states() { section "$1" "$2" | grep -Eiq -- "$3" || { echo "${1##*/} '$2
 @test "R203: the Dev uses the rule form of --none only for a rule whose check reads nothing the plans build, and knows the kernel verifies it" {
   states "$DEV" 'R[0-9]+\.[0-9]+ --none'
   states "$DEV" '--none.*(only|solely).*(check|test).*(reads|read list).*(nothing|none|no file)|(check|test).*(reads|read list).*(nothing|none|no file).*--none'
-  states "$DEV" '--none.*kernel (verifies|checks|proves|judges)|--none.*verified by (vbw|the kernel)'
+  states "$DEV" '--none[^.]*(only|solely)[^.]*(kernel (verifies|checks|proves|judges)|verified by (vbw|the kernel))'
 }
