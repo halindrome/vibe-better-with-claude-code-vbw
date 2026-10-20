@@ -999,6 +999,14 @@ suite therefore pays for the checks a break needs, not for every check.
   written reason. At express it asks for nothing. A survivor alone covers
   nothing.
 
+- A rule whose check judges only the record (a measurement kept as a decision,
+  for example) has no code to break. It is recorded with `vbw mutate PLAN Rn.k
+  --none REASON` after the kernel verifies the check's read list against the
+  files of the requirement's plans: the list must name none of them. The command
+  may run the check once in a clean copy of the committed code, with read
+  tracking on, and records that run in the store as a proof would. `vbw plan
+  done` counts such a rule covered.
+
 The broken file, and its restore, get a fresh modification time, newer than
 every file in the proof copy (even one stamped ahead of the clock). Builds that
 decide by file times (make, cargo) rebuild the broken code, so a break is never
