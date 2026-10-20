@@ -61,8 +61,10 @@ sessions_project_entries() {
     case "$cwd" in /*) phys=${phys%/}$tail ;; *) phys=$cwd ;; esac
     map=$(printf '%s' "$map" | jq -c --arg k "$cwd" --arg v "$phys" '. + {($k): $v}')
   done < <(printf '%s' "$reg" | jq -r '.[] | .cwd | select(type == "string")' 2> /dev/null)
+  # The binding is in parentheses of its own: after "and", jq 1.7 binds only the
+  # term and jq 1.8 the whole "A and B" (its binding precedence changed).
   printf '%s' "$reg" | jq -c --arg r "${root%/}" --argjson m "$map" '[.[] | select((.cwd | type) == "string"
-    and ($m[.cwd] // .cwd | rtrimstr("/")) as $c | $c == $r or ($c | startswith($r + "/")))]' 2> /dev/null || printf '[]\n'
+    and (($m[.cwd] // .cwd | rtrimstr("/")) as $c | $c == $r or ($c | startswith($r + "/"))))]' 2> /dev/null || printf '[]\n'
   return 0
 }
 
