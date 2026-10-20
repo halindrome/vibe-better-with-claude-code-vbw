@@ -47892,7 +47892,7 @@
     {
       "id": "T61",
       "text": "Standards rule: no 'printf/echo ... | grep -q' under pipefail when the input can exceed ~4 KB (SIGPIPE makes the pipe fail); found in tools/test.sh quick mode on Linux 2026-10-08 (fixed); kernel uses are short strings; tools/l3*.sh use it on screen dumps",
-      "status": "open",
+      "status": "dropped",
       "sort": "later",
       "size": "small"
     },
