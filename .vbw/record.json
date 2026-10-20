@@ -1,19 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "plan-20261020T072109Z",
-    "kind": "plan",
-    "started_at": "2026-10-20T07:21:09Z",
-    "files": [
-      ".vbw/"
-    ],
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
-    "cost": {
-      "usd": 1572.092139,
-      "in": 395934,
-      "out": 705
-    }
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -152,6 +139,8 @@
     "tests/l3-interview.bats",
     "tests/l3-legacy.bats",
     "tests/l3-loop.bats",
+    "tests/l3-ownfix.bats",
+    "tests/l3-ownrules.bats",
     "tests/l3-panel-comms.bats",
     "tests/l3-panel.bats",
     "tests/l3-plugindir-probe.bats",
@@ -162,8 +151,10 @@
     "tests/l3-results.bats",
     "tests/l3-road.bats",
     "tests/l3-scenarios.bats",
+    "tests/l3-sessions.bats",
     "tests/l3-smallchange-added.bats",
     "tests/l3-smallchange.bats",
+    "tests/l3-stale.bats",
     "tests/l3-step-time.bats",
     "tests/l3-testmode.bats",
     "tests/l3-tools.bats",
@@ -5693,6 +5684,55 @@
         "tests/panel/helpers/fake-mod.mjs",
         "tests/panel/helpers/run.mjs",
         "tests/panel/helpers/feed-fs.mjs"
+      ]
+    },
+    {
+      "id": "C432",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-sessions.bats"
+      ],
+      "files": [
+        "tests/l3-sessions.bats"
+      ]
+    },
+    {
+      "id": "C433",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-ownrules.bats"
+      ],
+      "files": [
+        "tests/l3-ownrules.bats"
+      ]
+    },
+    {
+      "id": "C434",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-ownfix.bats"
+      ],
+      "files": [
+        "tests/l3-ownfix.bats"
+      ]
+    },
+    {
+      "id": "C435",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-stale.bats"
+      ],
+      "files": [
+        "tests/l3-stale.bats",
+        "tests/release-reuse-helper.bash"
       ]
     }
   ],
@@ -14406,7 +14446,133 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M42",
-      "rules": []
+      "rules": [
+        {
+          "text": "tools/l3.sh runs two chats on one folder at once: each chat has its own tmux session and its own debug log, named from the folder and the chat, and l3 debuglog finds each one (one chat's path with DIR NAME, the folder's logs with DIR alone)",
+          "check": "C432",
+          "plan": "P161.1"
+        },
+        {
+          "text": "the sessions scenario exists in ALL and the header, seeds a two-plan project with waiting checks at rigor standard with the status line on, renames chat A vbw-l3-holder as a user would, and opens chat B on the same folder once a run is open",
+          "check": "C432",
+          "plan": "P161.2"
+        },
+        {
+          "text": "the holder is named in the status line of both chats (chat A '· leading', chat B 'held by vbw-l3-holder'), in chat B's Comms Now box (', held by vbw-l3-holder') and by vbw next run from another chat ('belongs to another session, vbw-l3-holder'), each read from the real window or vbw next, never by a reader",
+          "check": "C432",
+          "plan": "P161.2"
+        },
+        {
+          "text": "the Sessions tab, clicked in chat B, lists both chats, marks the holder's row with its name and '● holds the run · build', marks chat B's row 'this chat', and shows the holder's 'claude --resume <id>' line with the id equal to the record's lease.session at that moment",
+          "check": "C432",
+          "plan": "P161.2"
+        },
+        {
+          "text": "the /rename hint ('/rename vbw · <folder name>') is said to chat B exactly once over the run, the clone's settings carry rename_hint, and chat B's entry in Claude Code's list of chats keeps nameSource auto or derived to the end: VBW never renamed it",
+          "check": "C432",
+          "plan": "P161.2"
+        },
+        {
+          "text": "chat B answers the another-chat question with 'Still running: wait' and never ends the run: the lease keeps chat A's session id until chat A's own vbw run end, every run end comes from chat A, the milestone ships through chat A and the suite's common checks hold",
+          "check": "C432",
+          "plan": "P161.2"
+        },
+        {
+          "text": "the committed tools/l3-results/sessions.json is L3, passed, dated on or after 2026-10-20, with a fixture, a cost above 0 (both chats' /cost added), every sessions fact true, and a not_tested list naming the closed holder's row, a name longer than 20 characters, a holder renamed mid-run, the guards' reason and the single 200-column window",
+          "check": "C432",
+          "plan": "P161.2"
+        },
+        {
+          "text": "the ownrules scenario exists in ALL and the header and seeds one requirement with two plans on greet.sh (P1.2 after P1.1), one bats-checked rule per plan with its plan field set (C1 to P1.1, C2 to P1.2), at rigor standard, approved by the seed",
+          "check": "C433",
+          "plan": "P162.1"
+        },
+        {
+          "text": "own_rule_break is read from the record's history: P1.1's task mutation entry with result red whose checks map lists C1 only, while P1.2 is not done in that same record; false for a break that ran C2, a --none mark, or no break at all",
+          "check": "C433",
+          "plan": "P162.1"
+        },
+        {
+          "text": "after the build the scenario commits greet.sh with the default greeting removed, the proof fails C2 and opens a fix for R1 (no qa source), and while the fix is open vbw show fix prints 'full output: .vbw/runtime/output/C2.log' and 'failing tests:' with the failing bats test's name; the kept file exists, is not empty and contains 'not ok'; vbw show fix --json gives the same in kept and failing_tests",
+          "check": "C433",
+          "plan": "P162.1"
+        },
+        {
+          "text": "the committed tools/l3-results/ownrules.json is L3, passed, dated on or after 2026-10-20, with own_rule_break, proof_failed_fix_opened, kept_output_named and kept_exists true, a non-empty failing_test_names array, and a not_tested list naming the other name forms (cargo, pytest and the rest), a timed-out check, two vbw check runs at once, a survivor with a pending test file and vbw check keeping output",
+          "check": "C433",
+          "plan": "P162.1"
+        },
+        {
+          "text": "the ownfix scenario exists in ALL and the header and seeds a one-plan project at rigor standard: R1 in three clauses (a name; no name; nothing on stderr), rules and checks for the first two only in tests/greet.bats, README.md naming 'one bats file per requirement, tests/greet.bats'",
+          "check": "C434",
+          "plan": "P162.2"
+        },
+        {
+          "text": "after the build the scenario commits greet.sh with one extra line on stderr and runs vbw prove, so the evidence is the deviating build; the first QA verdict is fail and its note names stderr or the extra output",
+          "check": "C434",
+          "plan": "P162.2"
+        },
+        {
+          "text": "git holds a commit with both trailers VBW-Fix: <id> and VBW-Req: R1 whose changed files are tests/greet.bats and nothing else, <id> being a fix of R1 with source qa; a new test file added through vbw fix check instead leaves own_check_commit false and fails the scenario",
+          "check": "C434",
+          "plan": "P162.2"
+        },
+        {
+          "text": "between that commit and the proof that closed the fix, vbw next asked once to approve the edited file naming tests/greet.bats, exactly one approval decision was recorded, and the closing proof's evidence time is later than it; the fix is closed, the final QA verdict is pass, the milestone shipped and the common checks hold",
+          "check": "C434",
+          "plan": "P162.2"
+        },
+        {
+          "text": "the committed tools/l3-results/ownfix.json is L3, passed, dated on or after 2026-10-20, with qa_found_deviation, own_check_commit, one_approval, fix_closed and final_qa_pass true, and a not_tested list naming a wrong test file, another requirement's file, a [human] requirement's fix, a project-command fix and the loop",
+          "check": "C434",
+          "plan": "P162.2"
+        },
+        {
+          "text": "the cause of the missing scenarios is a recorded decision naming P148, P151, P159 and P160 against P152 to P157, D95 among about 470 decisions and tools/test.sh --release knowing nothing of scenarios, and what P163 changes for each gap (the spec Constraints rule, the stale check)",
+          "check": "C435",
+          "plan": "P163.1"
+        },
+        {
+          "text": ".vbw/spec.md's Constraints section states the scenario rule (a milestone changing what a person sees or does in a real session adds or extends its scenario in tools/l3-suite.sh, runs it while built, commits its result in tools/l3-results/; an older result is stale), and every requirement line of the record is in the spec unchanged",
+          "check": "C435",
+          "plan": "P163.1"
+        },
+        {
+          "text": "CLAUDE.md and AGENTS.md carry one identical Real-user scenarios paragraph naming the covers lines and --stale",
+          "check": "C435",
+          "plan": "P163.1"
+        },
+        {
+          "text": "a result older than the newest commit of its covered files is reported stale, a scenario with no committed result is reported stale, and a result newer than that commit is not; the exit is 1 when any is stale and 0 otherwise",
+          "check": "C435",
+          "plan": "P163.2"
+        },
+        {
+          "text": "each stale line names the scenario, its result's date (or that there is none) and the newest covering commit (hash and date), and the output ends with the command to run the stale scenarios in the suite's order",
+          "check": "C435",
+          "plan": "P163.2"
+        },
+        {
+          "text": "the stale check is bash 3.2 code with no data run as code, needs no Claude Code, network or money, and finishes within seconds",
+          "check": "C435",
+          "plan": "P163.2"
+        },
+        {
+          "text": "bash tools/test.sh --release runs the stale check first on the reuse path and on the full path, fails before any test file when a scenario is stale, naming it; CI's shard 1 runs it first in the same way; the default run, --quick, --lint and the other shards never run it",
+          "check": "C435",
+          "plan": "P163.2"
+        },
+        {
+          "text": "every scenario in ALL has a covers line whose pathspecs each match a tracked file; sessions covers the M38 files and ownrules with ownfix cover the M39 files",
+          "check": "C435",
+          "plan": "P163.3"
+        },
+        {
+          "text": "bash tools/l3-suite.sh --stale is the stale check (it runs tools/l3-stale.sh and starts no Claude Code), and the suite's header names the covers lines and --stale",
+          "check": "C435",
+          "plan": "P163.3"
+        }
+      ]
     }
   ],
   "phases": [
@@ -22081,6 +22247,103 @@
         "qa_findings": 1,
         "escalations": 2
       }
+    },
+    {
+      "id": "P161",
+      "title": "Real-session proof of session names: who holds the run, the Sessions tab and the rename hint",
+      "reqs": [
+        "R202"
+      ],
+      "milestone": "M42",
+      "goal": "A real-user scenario (a script that drives the real Claude Code window as a user would) shows, with two chats open on one project, that VBW names the chat holding the run in the status line, Comms and vbw next, that the Sessions tab lists both chats with the holder marked and its resume line, and that the /rename hint is said once and never applied; its result is committed and pinned by a test.",
+      "criteria": [
+        "tools/l3-suite.sh has a `sessions` scenario, listed in ALL and in the header like the others: a fresh project the scenario seeds itself (two plans with real checks that wait a few seconds, as the steptime scenario seeds, so the build is long enough to watch), rigor set to standard, the working tree's status line on (L3_STATUSLINE=1). Chat A types `/rename vbw-l3-holder` (giving the chat a name, as a user would) and then `/vbw:vibe`; as soon as a run is open (`vbw next --json` says action run) the scenario opens chat B on the same folder.",
+        "tools/l3.sh supports two chats on one folder at the same time: each chat has its own tmux session and its own debug log (today both would write `<folder>.debug.log`), `l3 debuglog` finds each one, and the scenario's cost figure adds both chats' `/cost` readings. Every existing scenario behaves as before (the resume scenario still closes and reopens one chat).",
+        "Facts (true/false results the run writes into its result file) are read from the real window, the record, git and Claude Code's own list of chats, never by a reader: `next_names_holder` (the scenario runs `vbw next --json` in the folder with no session id, which counts as another chat: action is run and the instruction contains 'belongs to another session, vbw-l3-holder'); `statusline_leading` (chat A's status line run cell contains '· leading'); `statusline_holder` (chat B's contains 'held by vbw-l3-holder'); `comms_holder` (chat B's Mission Control Now box, opened with /vbw-panel when not open by itself, ends its state sentence with ', held by vbw-l3-holder').",
+        "Facts about the Sessions tab, clicked in chat B as a user would: `sessions_two_rows` (both chats are listed); `holder_marked` (the holder's row shows 'vbw-l3-holder' and '● holds the run · build'); `this_chat_marked` (chat B's row shows 'this chat'); `resume_line_matches_lease` (the holder's row shows 'claude --resume <id>' where <id> equals `lease.session` in the record at that moment).",
+        "Facts about the rename hint: chat B keeps the name Claude Code gave it (its entry in `<Claude config folder>/sessions/` has nameSource auto or derived); after chat B types `/vbw:vibe`, `rename_hint_shown_once` is true when chat B's main conversation (its transcript, not its helpers') contains the sentence with '/rename vbw · <folder name>' exactly once over the whole run; `hint_marked_once` is true when this clone's settings file (`<git common dir>/vbw/settings.json`) carries `rename_hint`; `no_rename_applied` is true when chat B's entry still has nameSource auto or derived at the end, so VBW never renamed it.",
+        "Chat B answers VBW's question about another chat's run with the recommended 'Still running: wait' and never ends the run: `lease_never_taken` is true when the record's lease keeps chat A's session id until chat A's own `vbw run end`, and every 'run end' comes from chat A. The milestone ships through chat A and the common checks of the suite hold (milestone shipped, every requirement proven or accepted, no open fix, no lease).",
+        "The pass set is every fact above; `not_tested` names at least: the holder's row after chat A is closed ('closed or not seen'), a name longer than 20 characters (the cut with …), a holder renamed while the run is open, the file guards' reason naming the holder on chat B's screen, and that the two chats were read in one 200-column window.",
+        "tests/l3-sessions.bats (a check of R202, in the style of tests/l3-qafix-autonomy.bats) is red today and green after the run: the scenario exists in ALL and the header and calls `result_write sessions`; a committed tools/l3-results/sessions.json has scenario 'sessions', evidence_level L3, passed true, `at` on or after 2026-10-20, a non-empty fixture, cost above 0, every fact above true and a non-empty not_tested list.",
+        "The plan that writes the scenario runs it in its build on this Mac (`bash tools/l3-suite.sh sessions`) and commits tools/l3-results/sessions.json exactly as the run wrote it; a Dev that cannot start Claude Code (no tmux, no claude, no money) blocks the plan saying so and never writes a result by hand; the plan note names the scenarios run and not run. `bash tools/test.sh --lint` (shellcheck on tools/) is clean."
+      ],
+      "proposed": "standard",
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 3 (153476 bytes)",
+        "files: more than 2 in a repository tracking 1079 files",
+        "risk: none",
+        "breaks: R41",
+        "guarded: R4 (C4), R5 (C5), R8 (C8), R18 (C18), R29 (C26), R34 (C30), R42 (C38), R48 (C49, C50), R51 (C52, C53, C66), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R72 (C116, C118), R116 (C182, C183), R173 (C281, C282, C283, C284, C285, C286, C289), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R199 (C424, C425, C430), R200 (C426, C427, C431), R201 (C428, C429)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P162",
+      "title": "Real-session proof of the Dev unblocks: own-rule task breaks, a fix committing its own test file, kept failing output",
+      "reqs": [
+        "R202"
+      ],
+      "milestone": "M42",
+      "goal": "Two real-user scenarios show, on real projects in the real Claude Code window, that an early plan can break its task judged by its own rules while a later plan's check is still red, that a fix commits its own requirement's protected test file with one user approval, and that a failing check's full output is kept and named with the failing test names by vbw show fix; both results are committed and pinned by tests.",
+      "criteria": [
+        "tools/l3-suite.sh has an `ownrules` scenario (in ALL and the header): a project the scenario seeds (vbw init, rigor standard, approved by the scenario) with one requirement R1 ('./greet.sh Ana prints Hello, Ana!; without a name prints Hello, world!'), one phase and two plans on the same file greet.sh: P1.1 'the greeting with a name' and P1.2 'the default greeting' (after P1.1); two rules, each with its own check and its `plan` field set: rule 1 → P1.1 (check C1), rule 2 → P1.2 (check C2); the checks are bats tests (tests/greet.bats with --filter, or one bats file per rule), a form whose failing test names `vbw show fix` recognises ('not ok N name'). The user types /vbw:vibe and the build runs.",
+        "Fact `own_rule_break`: the record's plan P1.1 carries a task mutation entry (a recorded deliberate break) with result red whose `checks` map lists C1 only, never C2, and at the record commit carrying that entry P1.2's status is not done; so the early plan broke its task by its own rule while the requirement's other check was still red (R193, the T159 case). The fact is false when the break ran C2, when P1.1 was marked `--none`, or when no break was recorded.",
+        "After the build, before the proof (`vbw next --json` action prove or qa, as the qafix scenario seeds), the scenario as the user commits greet.sh with the default greeting removed (C2 fails, C1 passes) and lets /vbw:vibe prove: fact `proof_failed_fix_opened` is true when the proof's evidence shows C2 failed and a fix for R1 (field req R1, no source qa) is open.",
+        "Fact `kept_output_named`: while that fix is open (`vbw next --json` action fix), `vbw show fix <id>` run in the folder prints `full output: .vbw/runtime/output/C2.log` and the line `failing tests:` followed by the failing bats test's name; `kept_exists` is true when that file exists, is not empty and contains 'not ok'; `failing_test_names` (from `vbw show fix <id> --json`: `kept` and `failing_tests`) is a non-empty array holding that name. The fix loop repairs the code: fix closed, final proof passed, milestone shipped, the suite's common checks hold.",
+        "`ownrules` not_tested names at least: the other recognised name forms (cargo, pytest, go, jest, vitest, mocha), a timed-out check, two Devs running `vbw check` at once, a survivor at the task break with a pending test file, and `vbw check` keeping output.",
+        "tools/l3-suite.sh has an `ownfix` scenario (in ALL and the header): a one-plan project the scenario seeds at rigor standard: R1 with three clauses (with a name; without a name; the greeting is the only output, nothing on stderr), rules and checks for the first two only, both in tests/greet.bats, with README.md naming the project's convention 'one bats file per requirement, tests/greet.bats'. After the build (next action prove or qa) the scenario commits greet.sh with one extra line written to stderr (the approved checks still pass, so only QA can see it) and runs `vbw prove` so the evidence is the deviating build; the user then continues with /vbw:vibe and answers every question with the recommendation.",
+        "Fact `qa_found_deviation`: the first QA verdict is fail and its note names stderr or the extra output. Fact `own_check_commit`: git holds a commit with both trailers `VBW-Fix: <fix id>` and `VBW-Req: R1`, whose changed files are check files of R1 (tests/greet.bats) and nothing else, and <fix id> is a fix of R1 with source qa. When the Dev instead adds a new test file through `vbw fix check` (the R160 path), `own_check_commit` is false and the scenario fails: that is a finding about the Dev brief, never a pass.",
+        "Fact `one_approval`: between that commit and the proof that closed the fix, `vbw next` asked once to approve the edited test file (its instruction named tests/greet.bats), the user approved once (exactly one approval decision recorded in that interval), and the proof that closed the fix ran after it (its evidence time is later than the decision). Facts `fix_closed`, `final_qa_pass`, shipped and the common checks hold.",
+        "`ownfix` not_tested names at least: a fix opened by a failing test whose test file is wrong, the refusal of another requirement's test file, a [human] requirement's fix, a project-command fix, and the loop (the user approves here, not the loop).",
+        "tests/l3-ownrules.bats and tests/l3-ownfix.bats (checks of R202, the style of tests/l3-qafix-autonomy.bats) are red today and green after the runs: each scenario exists in ALL and the header with its `result_write`; each committed result (tools/l3-results/ownrules.json, ownfix.json) is L3, passed, `at` on or after 2026-10-20, with every fact above true and a non-empty not_tested.",
+        "Each scenario is run in the build by the plan that writes it (`bash tools/l3-suite.sh ownrules`, `... ownfix`) and its result committed as the run wrote it; a Dev that cannot start Claude Code blocks the plan with the reason and never writes a result by hand; the plan notes name the scenarios run and not run; `bash tools/test.sh --lint` is clean."
+      ],
+      "proposed": "standard",
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 3 (146259 bytes)",
+        "files: more than 2 in a repository tracking 1079 files",
+        "risk: none",
+        "breaks: R41",
+        "guarded: R4 (C4), R5 (C5), R8 (C8), R34 (C30), R42 (C38), R48 (C49, C50), R51 (C52, C53, C66), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R72 (C116, C118), R116 (C182, C183), R173 (C281, C282, C283, C284, C285, C286, C289), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R199 (C424, C425, C430), R200 (C426, C427, C431), R201 (C428, C429)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P163",
+      "title": "Why M38 and M39 shipped without scenarios, and the rule that stops it happening again",
+      "reqs": [
+        "R202"
+      ],
+      "milestone": "M42",
+      "goal": "The cause of the missing scenarios is established from the record and written down, VBW's own spec carries the rule every planner reads, and a stale real-session result (older than the code it covers) is found mechanically and stops a release run.",
+      "criteria": [
+        "The cause is established from the record and recorded as a decision (`vbw decide`) with its evidence: phases P148, P151, P159 and P160 (M36, M37, M41) carried a criterion asking for a real-session scenario, written by the Architect; phases P152 to P157 (M38, M39) carried none, so no plan listed tools/l3-suite.sh; nothing in the planning path demands one (no prompt, workflow, kernel step or spec constraint; D95 is one of about 470 decisions); and tools/test.sh --release knows nothing of scenarios, so the 2.0.40 release gave no signal. The decision names what P163 changes for each of the two gaps.",
+        "`.vbw/spec.md`'s `## Constraints` section (empty today) states the rule the Architect reads at every planning: a milestone that changes what a person sees or does in a real Claude Code session adds or extends its real-user scenario in tools/l3-suite.sh, runs it while the milestone is built, and commits its result in tools/l3-results/; a result older than the code it covers is stale. `vbw spec sync` keeps the spec and record in step; no requirement text changes.",
+        "Every scenario in tools/l3-suite.sh declares the files it covers: a `covers:` line per scenario (git pathspecs of the plugin, hook and skill files whose behaviour its facts depend on, kept narrow so a release does not re-run the whole suite). A structural test fails when a scenario in ALL has no covers line or names a pathspec that matches no tracked file.",
+        "`bash tools/l3-suite.sh --stale` prints, for each scenario whose covered files have a commit newer than its result's `at` (or that has no committed result), one line with the scenario, the result's date and the newest covering commit, then the command to run them; exit 1 when any is stale, 0 otherwise; it needs no Claude Code, no network and no money, runs under bash 3.2 and finishes within a few seconds on this repository.",
+        "`bash tools/test.sh --release` runs the stale check first, on the full path and on the reuse path alike, and fails naming the stale scenarios and the command to run them; the default run, `--quick`, `--lint` and `vbw prove` never run it (scenarios cost money and stay at release, D189). CI's `--shard` runs include it as information in the same way the release run does.",
+        "tests/l3-stale.bats (hermetic, under tests/helper.bash) covers: a scenario whose covered file changed after its result is reported stale (exit 1); one whose result is newer is not; a scenario with no result is stale; the lines name the scenario, date and commit; and that `--release` calls the check before the test files.",
+        "The three scenarios of P161 and P162 carry covers lines naming the M38 and M39 files (plugin/lib/sessions.sh, holder.jq, cmd-run.sh, cmd-next.sh, next.jq, plugin/scripts/statusline.jq, plugin/hooks/panel-sessions.js, panel-pane.js, plugin/skills/vibe/SKILL.md; plugin/lib/cmd-mutate.sh, cmd-commit.sh, cmd-fix.sh, cmd-check.sh, checks.sh, cmd-show.sh, failing-tests.jq, plugin/workflows/fixing.js, plugin/agents/dev.md), and `--stale` run at the end of this milestone reports nothing stale.",
+        "The tools/l3-suite.sh header, CLAUDE.md and AGENTS.md (the Testing paragraph, kept identical) name the covers lines and `--stale`, and tests/standards-selftest.bats still passes; `bash tools/test.sh --lint` is clean."
+      ],
+      "proposed": "standard",
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 7 (215825 bytes)",
+        "files: more than 2 in a repository tracking 1079 files",
+        "risk: none",
+        "breaks: R41",
+        "guarded: R4 (C4), R5 (C5), R8 (C8), R21 (C16), R34 (C30), R42 (C38), R48 (C49, C50), R51 (C52, C53, C66), R55 (C56, C57), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R67 (C96), R72 (C116, C118), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R128 (C200), R142 (C204, C205), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234), R164 (C251), R167 (C257, C258, C259, C260), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R199 (C424, C425, C430), R200 (C426, C427, C431), R201 (C428, C429)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -45356,6 +45619,181 @@
           "head": "8374b78c01eacc0ee4bd8aaf824bf3ca1b5e078a"
         }
       ]
+    },
+    {
+      "id": "P161.1",
+      "phase": "P161",
+      "title": "The window driver can run two chats on one folder",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "tools/l3.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/l3.sh start NAME DIR: the debug log is per chat, named from the folder and the chat (DIR.NAME.debug.log, one path built in one place and used by start and by debuglog), so two chats on one folder never share a log; `tools/l3.sh debuglog DIR NAME` prints that chat's path. The tmux session stays vbw-l3-NAME, so chats differ by NAME.",
+        "`tools/l3.sh debuglog DIR` with no NAME lists the debug logs that exist for DIR, one per line, so today's callers (tools/l3-suite.sh calls `l3 debuglog \"$dir\"` in three places) keep working when one chat ran; the usage header documents both forms. Nothing else in start changes: trust dialog, modes, PATH cleaning, L3_STATUSLINE, and the resume scenario's close-and-reopen path (same NAME, same log).",
+        "bash tools/test.sh --lint clean; bats tests/l3-sessions.bats: its three tools/l3.sh tests green (the scenario and result tests stay red until P161.2 runs the scenario); tests/l3-wait.bats, tests/l3-testmode.bats still green."
+      ]
+    },
+    {
+      "id": "P161.2",
+      "phase": "P161",
+      "title": "The sessions scenario: two chats, who holds the run, the Sessions tab, the rename hint; run it and keep its result",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3-results/sessions.json"
+      ],
+      "after": [
+        "P161.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "scenario_sessions in tools/l3-suite.sh (in ALL and the header): sessions_seed like steptime_seed (two plans, P2.1 after P1.1, six real checks that sleep 5 s, check_jobs 2, approved by the seed), `config rigor standard`, `export L3_STATUSLINE=1`; fixture text; start is `/rename vbw-l3-holder`, then `/vbw:vibe` (two l3 type calls; the scenario's first words are typed by the main loop, so start is the rename and the scenario types /vbw:vibe itself); an idle() like scenario_resume's that returns as soon as `vbw next --json` says action run; then chat B: `l3 start sessions-b \"$dir\"` (same folder, second tmux session, own debug log); read_session_cost takes an optional chat name (default $scenario) and the three `l3 debuglog \"$dir\"` callers pass the chat name; the result's cost_usd is chat A's plus chat B's /cost readings (read B's before stopping B).",
+        "Facts from the real window and vbw next, read as the steptime scenario reads the screen (the status line is the lines under the prompt box; the Now box is the Mission Control text): next_names_holder = `(cd $dir && env -u VBW_SESSION_ID -u CLAUDE_CODE_SESSION_ID $VBW next --json)` has action run and an instruction containing 'belongs to another session, vbw-l3-holder'; statusline_leading = chat A's status line run cell contains '· leading'; statusline_holder = chat B's contains 'held by vbw-l3-holder'; comms_holder = chat B's Now box state sentence ends with ', held by vbw-l3-holder.' (open Mission Control with /vbw-panel when it is not open by itself). The holder's name reaches the status line and the panel from Claude Code's list of chats and .vbw/runtime/holder.json only, never the record (D442, D445): the scenario asserts nothing about the record carrying a name.",
+        "Sessions tab facts in chat B, the tab clicked as a user would (find the '[ Sessions ]' button's column and row in the screen capture, `l3 click sessions-b COL ROW`): sessions_two_rows (both chats' rows: the holder's name 'vbw-l3-holder' and a row marked 'this chat'), holder_marked (the holder's row shows 'vbw-l3-holder' and '● holds the run · build'), this_chat_marked (chat B's row shows 'this chat'), resume_line_matches_lease (the holder's row shows 'claude --resume <id>' and <id> equals `.lease.session` read from $dir/.vbw/record.json at that moment); save the screen capture beside the project as the panel scenario does.",
+        "Rename-hint and lease facts: chat B types /vbw:vibe and answers the another-chat question with the recommended 'Still running: wait' (on_question, as scenario_resume picks its option), never 'That session is closed'; chat B's session id is the entry in `$(claude_dir)/sessions/*.json` whose cwd is $dir and whose sessionId is not the lease's; no_rename_applied = that entry's nameSource is auto or derived at the end; rename_hint_shown_once = chat B's main transcript (transcripts | grep -v /subagents/, the file named by B's session id) holds an assistant text containing '/rename vbw · <basename of $dir>' exactly once; hint_marked_once = `$(git -C $dir rev-parse --path-format=absolute --git-common-dir)/vbw/settings.json` has rename_hint; lease_never_taken = in record_history every lease.session is chat A's id (the first lease's session) or null, the last run end is after the milestone work, and no 'vbw run end' tool_use appears in chat B's transcript; drive to shipped through chat A; common_checks; every fact expect()ed and in the passed chain; result_write sessions with the not_tested list naming at least: the holder's row after chat A is closed ('closed or not seen'), a name longer than 20 characters (the cut with …), a holder renamed while the run is open, the file guards' reason naming the holder on chat B's screen, and that both chats were read in one 200-column window.",
+        "Run it on this Mac: `bash tools/l3-suite.sh sessions` in the background (it takes 20 to 40 minutes), wait for it to end, read its whole output; commit tools/l3-results/sessions.json exactly as the run wrote it with the scenario (`vbw commit P161.2 \"test(P161.2): sessions scenario result\" tools/l3-results/sessions.json`); a scenario that fails on a real VBW bug is reported in the plan note and the plan blocked naming it, never a result edited by hand; cannot start Claude Code (no tmux, no claude, no credit): `vbw plan block` saying so. bash tools/test.sh --lint clean; bats tests/l3-sessions.bats green; the plan note names the scenarios run and not run."
+      ]
+    },
+    {
+      "id": "P162.1",
+      "phase": "P162",
+      "title": "The ownrules scenario: an early plan breaks its task by its own rule, and the kept failing output is named; run it and keep its result",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3-results/ownrules.json"
+      ],
+      "after": [
+        "P161.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "scenario_ownrules in tools/l3-suite.sh (in ALL and the header) with ownrules_seed: vbw init, `config rigor standard`, spec with R1 [auto] './greet.sh Ana prints \"Hello, Ana!\"; without a name it prints \"Hello, world!\"', tests/greet.bats with two @test (the greeting with a name; the default greeting), checks C1 and C2 as `[\"bats\", \"--filter\", \"<name>\", \"tests/greet.bats\"]` (one per rule; the TAP 'not ok N name' form vbw show fix recognises), one phase P1 at tier standard with plans P1.1 'the greeting with a name' and P1.2 'the default greeting' (\"after\": [\"P1.1\"]), both on greet.sh, rules {rule 1, check C1, \"plan\": \"P1.1\"} and {rule 2, check C2, \"plan\": \"P1.2\"}, committed and approved by the seed; fixture text; start is `/vbw:vibe`.",
+        "Fact own_rule_break from record_history: the first committed record where plan P1.1 has a mutation entry with a task field and result red; its checks map's keys are exactly [\"C1\"] (never C2, never a --none entry), and in that same record P1.2's status is not done. False when no such entry exists, when the break ran C2, or when P1.1's task was marked --none.",
+        "After the build (on_idle/on_question as scenario_qafix's seed_deviation: next action prove or qa, once): commit greet.sh with the default greeting removed (a name still greets; no name prints nothing or the wrong text), so C2 fails and C1 passes, then let /vbw:vibe prove. Facts: proof_failed_fix_opened = the record's evidence has checks.C2.status fail and an open fix with req R1 and no source qa; while `vbw next --json` says action fix: kept_output_named = `vbw show fix <id>` prints 'full output: .vbw/runtime/output/C2.log' and 'failing tests:' followed by the failing @test's name; kept_exists = $dir/.vbw/runtime/output/C2.log exists, is not empty and contains 'not ok'; failing_test_names = `vbw show fix <id> --json`'s failing_tests (a non-empty array holding that name) with kept naming the file. Then the fix loop runs to shipped; common_checks; every fact expect()ed and in the passed chain; result_write ownrules with not_tested naming at least: the other recognised name forms (cargo, pytest, go, jest, vitest, mocha), a timed-out check, two Devs running vbw check at once, a survivor at the task break with a pending test file, and vbw check keeping output.",
+        "Run it on this Mac: `bash tools/l3-suite.sh ownrules` in the background, wait for its end, read its whole output; commit tools/l3-results/ownrules.json as the run wrote it; a failure on a real VBW bug (for example P1.1's Dev marking the task --none, or a break running C2) is a finding: block the plan naming it, never edit the result; cannot start Claude Code: block saying so. bash tools/test.sh --lint clean; bats tests/l3-ownrules.bats green; the plan note names the scenarios run and not run."
+      ]
+    },
+    {
+      "id": "P162.2",
+      "phase": "P162",
+      "title": "The ownfix scenario: QA finds extra output, the fix commits its own test file after one approval; run it and keep its result",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3-results/ownfix.json"
+      ],
+      "after": [
+        "P162.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "scenario_ownfix in tools/l3-suite.sh (in ALL and the header) with ownfix_seed: vbw init, `config rigor standard`, README.md stating the convention 'one bats file per requirement, tests/greet.bats', spec with R1 [auto] in three clauses (./greet.sh Ana prints \"Hello, Ana!\"; without a name it prints \"Hello, world!\"; the greeting is the only output, nothing on stderr), tests/greet.bats with two @test for the first two clauses, checks C1 and C2 (`bats --filter`), one phase P1 at tier standard with one plan P1.1 on greet.sh, two rules (both with \"plan\": \"P1.1\"), committed and approved by the seed; fixture text; start is `/vbw:vibe`.",
+        "After the build (next action prove or qa, once, as scenario_qafix's seed_deviation): commit greet.sh with one extra line written to stderr (`echo note >&2`), the approved checks still passing, then `(cd $dir && $VBW prove)` so the evidence is the deviating build; the user goes on with /vbw:vibe and answers every question with the recommendation (the approval of the edited test file included).",
+        "Facts: qa_found_deviation = in record_history the first QA verdict is fail and its note (or the qa-sourced fix's note) names stderr or the extra output; own_check_commit = `git log --format='%H%n%B'` holds a commit with both trailers 'VBW-Fix: <id>' and 'VBW-Req: R1', `git show --name-only --format= <hash>` lists tests/greet.bats and nothing else, and <id> is a fix with req R1 and source == \"qa\" (a Dev adding a new test file through vbw fix check instead leaves own_check_commit false: the scenario fails and the note names the Dev brief as the finding, never a pass); one_approval = between that commit's time and the proof that closed the fix (the evidence's at), exactly one approval decision was recorded and vbw next asked once to approve the edited file with an instruction naming tests/greet.bats (read from chat's main transcript: the vbw next --json tool results, or the approval decision's text), and the closing proof's at is later than that decision; fix_closed (that fix closed), final_qa_pass (the last QA verdict pass), shipped and common_checks; every fact expect()ed and in the passed chain; result_write ownfix with not_tested naming at least: a fix opened by a failing test whose test file is wrong, the refusal of another requirement's test file, a [human] requirement's fix, a project-command fix, and the loop (the user approves here, not the loop).",
+        "Run it on this Mac: `bash tools/l3-suite.sh ownfix` in the background, wait for its end, read its whole output; commit tools/l3-results/ownfix.json as the run wrote it; a failure on a real VBW bug is a finding: block the plan naming it, never edit the result; cannot start Claude Code: block saying so. bash tools/test.sh --lint clean; bats tests/l3-ownfix.bats green; tests/l3-sessions.bats, tests/l3-ownrules.bats, tests/l3-scenarios.bats, tests/l3-results.bats still green; the plan note names the scenarios run and not run."
+      ]
+    },
+    {
+      "id": "P163.1",
+      "phase": "P163",
+      "title": "Why the scenarios were missed, written down; the rule in VBW's spec and in the rulebook",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        ".vbw/spec.md",
+        "CLAUDE.md",
+        "AGENTS.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Establish the cause from the record and the code, with jq on .vbw/record.json and grep: phases P148, P151, P159 and P160 carry a criterion naming a real-session scenario (and plans P148.4, P151.4, P159.4, P160.3 list tools/l3-suite.sh); phases P152 to P157 carry none, so no plan of M38 or M39 listed tools/l3-suite.sh; nothing in the planning path demands one (plugin/agents/architect.md, plugin/agents/lead.md, plugin/workflows/planning.js, plugin/lib/cmd-apply.sh and the spec's Constraints say nothing of scenarios; D95 is one decision among about 470); tools/test.sh --release knows nothing of scenarios, so the 2.0.40 release gave no signal. Record it with `vbw decide TEXT WHY`: TEXT names P148, P151, P159, P160 against P152 to P157, D95 and tools/test.sh --release; WHY names the evidence and what P163 changes for each gap: the Constraints rule the Architect reads at every planning, and the stale check (tools/l3-stale.sh, run first by tools/test.sh --release).",
+        ".vbw/spec.md `## Constraints` (empty today): the rule, in plain words: a milestone that changes what a person sees or does in a real Claude Code session adds or extends its real-user scenario in tools/l3-suite.sh, runs it while the milestone is built, and commits its result in tools/l3-results/; a result older than the code it covers (its scenario's covers line) is stale and stops the release run. Then `vbw spec sync`; no requirement line changes (tests/l3-stale.bats compares them with the record).",
+        "CLAUDE.md and AGENTS.md: the one Testing bullet '**Real-user scenarios**' (kept byte-identical in both files) names the covers line each scenario declares and `bash tools/l3-suite.sh --stale`, which the release run runs first and which stops it on a stale result; the rest of the bullet stays.",
+        "bats tests/standards.bats tests/standards-selftest.bats tests/release-run-docs.bats tests/outside-writes-docs.bats tests/contributor-files.bats green; bats tests/l3-stale.bats: its decision, Constraints and rulebook tests green (the stale-check and covers tests turn green with P163.2 and P163.3)."
+      ]
+    },
+    {
+      "id": "P163.2",
+      "phase": "P163",
+      "title": "The stale check: find a real-session result older than the code it covers, and stop the release run on it",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "tools/l3-stale.sh",
+        "tools/test.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/l3-stale.sh (new; bash 3.2 rules of CLAUDE.md: no mapfile, no associative arrays, no eval, arrays guarded under set -u; jq for JSON; shellcheck clean): `bash tools/l3-stale.sh [--repo DIR]` (default: the repository this script is in) reads DIR/tools/l3-suite.sh's ALL list and, for each scenario, its covers line (the nearest `# covers: <git pathspecs>` comment line above `scenario_NAME()` with only comment lines between), then DIR/tools/l3-results/NAME.json's `at` (epoch through jq fromdateiso8601) and the newest commit touching the pathspecs (`git -C DIR log -1 --format='%h %cI %ct' -- <pathspecs>`, committer time). Stale: no result file, or the commit's time is after `at`. Output: one line per stale scenario `stale: NAME  result <at or 'no result'>  newest commit <short hash> <date>`, in ALL's order, then `run: bash tools/l3-suite.sh NAME...`, exit 1; nothing stale: one line `no stale real-session result (N scenarios)`, exit 0; a scenario with no covers line or a shallow clone (git rev-parse --is-shallow-repository): `cannot judge: <why>`, exit 2. No Claude Code, no network, no money; a few seconds on this repository.",
+        "tools/test.sh: `--release` runs `bash tools/l3-stale.sh` first, before the reuse decision, on the reuse path and the full path alike, and exits with its code when it is not 0 (its lines name the stale scenarios and the command to run them); `--shard 1/N` runs it first in the same way (CI has fetch-depth 0); the default run, `--quick`, `--lint` and the other shards never run it (scenarios cost money and stay at release, D189); when tools/l3-stale.sh is not in the tree (a copy of the runner alone, as the hermetic release tests make) the step prints that no scenario suite is here and goes on; the header comment names the step. `--shard K/N --list` lists the step for shard 1.",
+        "bats tests/l3-stale.bats: its stale-check and release-runner tests green (the covers, --stale way-in, decision, Constraints and rulebook tests belong to P163.1 and P163.3); tests/release-run.bats, tests/release-reuse.bats, tests/release-reuse-partial.bats, tests/release-reads.bats, tests/test-shards.bats, tests/ci-shards.bats, tests/quick-mode.bats still green; bash tools/test.sh --lint clean; run `bash tools/l3-stale.sh` on this repository and put its output in the plan note (it is expected to list stale scenarios until P163.3 adds the covers lines and P163.4 re-runs them)."
+      ]
+    },
+    {
+      "id": "P163.3",
+      "phase": "P163",
+      "title": "Every scenario says which files it covers; --stale in the suite; every scenario leaves a result",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "tools/l3-suite.sh"
+      ],
+      "after": [
+        "P162.2",
+        "P163.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "A `# covers: <git pathspecs>` comment line right above every `scenario_NAME()` in ALL, naming the plugin, hook, skill and workflow files whose behaviour the scenario's facts depend on, truthful and narrow (read each scenario's facts and the code they exercise; never widen to 'plugin/' and never narrow to make a result look fresh); every pathspec matches a tracked file. sessions covers at least plugin/lib/sessions.sh plugin/lib/holder.jq plugin/lib/cmd-run.sh plugin/lib/cmd-next.sh plugin/lib/next.jq plugin/scripts/statusline.jq plugin/hooks/panel-sessions.js plugin/hooks/panel-pane.js plugin/skills/vibe/SKILL.md; ownrules at least plugin/lib/cmd-mutate.sh plugin/lib/cmd-check.sh plugin/lib/checks.sh plugin/lib/cmd-show.sh plugin/lib/failing-tests.jq plugin/lib/cmd-fix.sh; ownfix at least plugin/lib/cmd-commit.sh plugin/lib/cmd-fix.sh plugin/workflows/fixing.js plugin/agents/dev.md.",
+        "`bash tools/l3-suite.sh --stale` runs `bash \"$ROOT/tools/l3-stale.sh\"` and exits with its code before anything else (no tmux, no Claude Code); the header (first 30 lines) names the covers lines and --stale, and the scenario list names sessions, ownrules and ownfix.",
+        "Every scenario leaves evidence the stale check can date: when a scenario's checks() wrote no result (result_write sets a flag the main loop reads), the main loop writes tools/l3-results/NAME.json itself through result_write with the scenario's fixture (or the user's first words), its cost, passed from its own checks (failed == 0), facts holding each common check's outcome, and not_tested saying only the common checks were judged. tests/l3-results.bats and tests/l3-scenarios.bats keep their meaning (their scenarios write their own results).",
+        "bats tests/l3-stale.bats green except the result-freshness that P163.4 delivers (its covers and --stale tests green now); bats tests/l3-*.bats and tests/l3-suite-jobs.bats green; bash tools/test.sh --lint clean; run `bash tools/l3-suite.sh --stale` and put its list in the plan note: it is the work list of P163.4."
+      ]
+    },
+    {
+      "id": "P163.4",
+      "phase": "P163",
+      "title": "Run every scenario the stale check names, so nothing is stale at the end of the milestone",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "tools/l3-results/"
+      ],
+      "after": [
+        "P163.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "`bash tools/l3-suite.sh --stale`: read its list (the scenarios whose covered files changed after their result, and those with no committed result). Run exactly those, 4 at a time as the suite does (`bash tools/l3-suite.sh <names>` in the background; about 1.5 to 2 hours and 50 to 100 USD of model usage for the whole list; never two suite runs at once on this Mac), wait for its end and read its whole output.",
+        "Commit every result file the runs wrote, exactly as written (`vbw commit P163.4 \"test(P163.4): real-session results re-run for the stale check\" tools/l3-results/...`), transcripts the newcomer and senior scenarios write included. A scenario that fails on a real VBW bug is a finding: the plan note names the scenario, the failed check and the project folder, and the plan is blocked (`vbw plan block`) so the fix loop sees it; never a result edited by hand, never a scenario removed from ALL or its covers line narrowed to make it fresh.",
+        "`bash tools/l3-suite.sh --stale` exits 0 ('no stale real-session result'); bats tests/l3-stale.bats, tests/l3-results.bats, tests/l3-scenarios.bats and every tests/l3-*.bats green; the plan note names every scenario run, its cost from its result, and those not run, for the progress log."
+      ]
     }
   ],
   "fixes": [
@@ -58133,6 +58571,19 @@
           "usd": 0.545801,
           "in": 2359,
           "out": 106
+        }
+      },
+      {
+        "id": "plan-20261020T072109Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T07:21:09Z",
+        "ended": "2026-10-20T08:02:58Z",
+        "cost": {
+          "usd": 16.672576,
+          "in": 35470,
+          "out": 219
         }
       }
     ],
