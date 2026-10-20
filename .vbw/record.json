@@ -1,6 +1,31 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "fix-20261020T200542Z",
+    "kind": "fix",
+    "started_at": "2026-10-20T20:05:42Z",
+    "files": null,
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "editable": [
+      "tests/big-record-commands.bats",
+      "tests/big-record-docs.bats",
+      "tests/big-record-helper.bash",
+      "tests/big-record-hooks.bats",
+      "tests/big-record-scratch.bats",
+      "tests/big-record-writes.bats",
+      "tests/fix-commit.bats",
+      "tests/panel/big-record.test.mjs",
+      "tests/proof-stale-links.bats",
+      "tests/record-args-rule.bats",
+      "tests/release-run-docs.bats",
+      "tests/release-run.bats"
+    ],
+    "cost": {
+      "usd": 1667.242423,
+      "in": 186658,
+      "out": 218
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -55276,6 +55301,11 @@
       "id": "D488",
       "at": "2026-10-20T18:46:58Z",
       "text": "Contract approved: 193 requirements, 449 checks, 506 plans (d250a00b1ad2)"
+    },
+    {
+      "id": "D489",
+      "at": "2026-10-20T21:04:47Z",
+      "text": "Contract approved: 193 requirements, 449 checks, 506 plans (9a0b80aeb37e)"
     }
   ],
   "commands": {
