@@ -83,7 +83,7 @@ $missing"
 # plan_missing_breaks ID (record on stdin): the refusal lines for what the
 # mutation check still lacks, empty when nothing is asked (a plan not building in
 # a build run, an express or untiered phase, requirements without checks). A rule
-# counts once any plan of its requirement has a red break of it; at deep every
+# counts once any plan of its requirement has a red break of it or a --none entry for it; at deep every
 # task needs a red break or a reason in this plan's own entries.
 plan_missing_breaks() {
   jq -r --arg p "$1" '
@@ -98,7 +98,7 @@ plan_missing_breaks() {
           | select(any($r.checks[]; .req == $q))
           | ($r.requirements[] | select(.id == $q and .proof == "auto")) as $rq
           | ($rq.rules // []) | to_entries[] | select($completes or .value.plan == $p) | select(.value.text as $t
-              | [$r.plans[].mutations[]? | select(.result == "red" and .rule.req == $q and .rule.text == $t)] | length == 0)
+              | [$r.plans[].mutations[]? | select((.result == "red" or has("none")) and .rule.req == $q and .rule.text == $t)] | length == 0)
           | "  \($q).\(.key + 1) \(.value.text)"] as $rules
         | [if $tier == "deep" then range(1; ($pl.tasks // [] | length) + 1) as $k
             | select([$pl.mutations[]? | select(.task == $k and (.result == "red" or has("none")))] | length == 0)
@@ -106,7 +106,7 @@ plan_missing_breaks() {
         | if ($rules | length) + ($tasks | length) == 0 then empty else
             ($rules | if length > 0 then ["Rules no recorded break has made a check fail:"] + . else [] end)
             + ($tasks | if length > 0 then ["Tasks with no red break and no reason:"] + . else [] end)
-            + (if ($rules | length) > 0 then ["Next: break what each rule promises in this plan'"'"'s code and run vbw mutate \($p) Rn.k \"what you broke\" FILE..."] else [] end)
+            + (if ($rules | length) > 0 then ["Next: break what each rule promises in this plan'"'"'s code and run vbw mutate \($p) Rn.k \"what you broke\" FILE..., or vbw mutate \($p) Rn.k --none REASON when its check reads nothing the plans build"] else [] end)
             + (if ($tasks | length) > 0 then ["For a task: vbw mutate \($p) taskK \"what you broke\" FILE..., or vbw mutate \($p) taskK --none REASON when it has no testable behaviour"] else [] end)
             | join("\n") end
       end'
