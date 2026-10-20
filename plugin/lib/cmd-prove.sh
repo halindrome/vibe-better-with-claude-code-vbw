@@ -28,7 +28,7 @@ cmd_prove() {
   esac
   vbw_require_project
   cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
-  local causes record checks commands scope tree head ev at evf curf noreads mark="" n files='{}' tfs='{}' tfsum alln=0 t0 own causes_json
+  local causes record checks commands scope undone tree head ev at evf curf noreads mark="" n files='{}' tfs='{}' tfsum alln=0 t0 own causes_json
   # This session's Stop hook waits while the mark names a live process (R98).
   if [ -n "$(vbw_session)" ]; then
     mark="$VBW_RUNTIME/proving.$(vbw_session)"
@@ -105,6 +105,8 @@ cmd_prove() {
     commands=$(printf '%s' "$commands" | jq -c --argjson t "$tfsum" '. + {test: $t}')
   fi
   scope=$(prove_scope "$record")
+  undone=$(printf '%s' "$scope" | jq -c '.undone')
+  scope=$(printf '%s' "$scope" | jq -c '.scope')
   tree=$(vbw_code_tree) || vbw_die "cannot fingerprint the project files"
   # tree: the working folder (QA freshness, R12); head: the committed code the
   # checks ran on, so committing unproved edits later makes the proof stale.
@@ -113,9 +115,9 @@ cmd_prove() {
   own=$(prooftime_total)
   causes_json=$(printf '%s' "$causes" | jq -R -s -c 'split("\n") | map(select(length > 0))')
   ev=$(jq -n --arg at "$at" --arg h "$CHECK_HASH" --argjson standin "$QUICK_STANDIN" --arg tree "$tree" --arg head "$head" \
-    --slurpfile cf <(printf '%s' "$checks") --slurpfile mf <(printf '%s' "$commands") --slurpfile sf <(printf '%s' "$scope") --slurpfile tf <(printf '%s' "$tfs") \
+    --slurpfile cf <(printf '%s' "$checks") --slurpfile mf <(printf '%s' "$commands") --slurpfile sf <(printf '%s' "$scope") --slurpfile uf <(printf '%s' "$undone") --slurpfile tf <(printf '%s' "$tfs") \
     --argjson own "$own" --argjson causes "$causes_json" \
-    '$cf[0] as $c | $mf[0] as $m | $sf[0] as $s | $tf[0] as $t | {at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, test_files: $t, scope: $s, own: $own, causes: $causes,
+    '$cf[0] as $c | $mf[0] as $m | $sf[0] as $s | $uf[0] as $u | $tf[0] as $t | {at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, test_files: $t, scope: $s, undone: $u, own: $own, causes: $causes,
       full: (($standin | not) and all($c[]; (.reused // false) | not) and all($m[]; (.reused // false) | not) and all($t[]; (.reused // false) | not)
              and all($m | to_entries[] | select(.key != "quick"); .value.status != "skipped")),
       passed: (all($c[]; .status == "pass") and all($m[]; .status == "pass" or .status == "skipped") and all($t[]; .status == "pass") and ($s | length) == 0)}')
@@ -209,13 +211,15 @@ prove_stamp() { proofreuse_annotate "$@"; }
 prove_scope() {
   local tok t want_path=0 n=-1 i j r path rest om nm ob nb gs=$'\x1d' us=$'\x1f' rs=$'\x1e'
   local -a C_HASH=() C_PLAN=() C_FILES=() C_FWD=() C_BWD=() C_TAKEN=() C_TOOK=()
-  local undone="" out="" pool=$gs
+  local undone="" out="" cleared="" pool=$gs by sha
   # shellcheck source=cmd-commit.sh
   . "$VBW_LIB/cmd-commit.sh"
   # The commits a park undid: their changes are gone and the park recorded why, so a later plan that
   # took their plan id is not blamed for them (T163).
   while IFS= read -r r; do
-    undone="$undone $(git log -1 --format=%B "$r" 2> /dev/null | sed -n 's/^This reverts commit \([0-9a-f]\{40\}\)\..*/\1/p')"
+    while IFS= read -r sha; do
+      [ -z "$sha" ] || undone="$undone $sha>$r "
+    done < <(git log -1 --format=%B "$r" 2> /dev/null | sed -n 's/^This reverts commit \([0-9a-f]\{40\}\)\..*/\1/p')
   done < <(printf '%s' "$1" | jq -r '(.loop.items // [])[].reverts[]?')
   # One walk of the history, however long it is (R204): per commit its hash, its first VBW-Plan value and,
   # per changed path, git's raw entry. The stream is NUL separated: a header (hash, unit separator,
@@ -267,6 +271,9 @@ prove_scope() {
             git merge-base --is-ancestor "${C_HASH[i]}" "${C_HASH[j]}" 2> /dev/null || continue
             C_TAKEN[i]=1
             [ -n "${C_PLAN[i]}" ] && C_TOOK[j]=2 || C_TOOK[j]=1
+            # Cleared pairs, as found, newest first: the undoing commit's entry before its original's.
+            [ -z "${C_PLAN[j]}" ] || [ -z "${C_PLAN[i]}" ] || cleared="${cleared}U$us${C_HASH[j]}$us${C_PLAN[j]}$us${C_HASH[i]}"$'\n'
+            [ -z "${C_PLAN[i]}" ] || cleared="${cleared}U$us${C_HASH[i]}$us${C_PLAN[i]}$us${C_HASH[j]}"$'\n'
             break
           done
           ;;
@@ -277,21 +284,30 @@ prove_scope() {
   for ((i = 0; i <= n; i++)); do
     [ -n "${C_PLAN[i]}" ] || continue
     [ "${C_TAKEN[i]}" = 0 ] && [ "${C_TOOK[i]}" != 2 ] || continue
-    case "$undone " in *" ${C_HASH[i]} "*) continue ;; esac
+    case "$undone" in
+      *" ${C_HASH[i]}>"*)
+        # A park's revert cleared it; listed after the exact undos, once (the exact route lists a commit first).
+        by=${undone#*" ${C_HASH[i]}>"}
+        cleared="${cleared}U$us${C_HASH[i]}$us${C_PLAN[i]}$us${by%% *}"$'\n'
+        continue
+        ;;
+    esac
     path=${C_FILES[i]}
     while [ -n "$path" ]; do
-      out="$out${C_HASH[i]:0:12}"$'\x1f'"${C_PLAN[i]}"$'\x1f'"${path%%$'\x1f'*}"$'\n'
+      out="$out"J$us"${C_HASH[i]:0:12}"$us"${C_PLAN[i]}"$us"${path%%$us*}"$'\n'
       path=${path#*$'\x1f'}
     done
   done
-  printf '%s' "$out" | jq -R -s -c --slurpfile rec <(printf '%s' "$1") "$VBW_JQ_DEFS$COMMIT_SURVIVOR_DEFS"'
+  printf '%s%s' "$out" "$cleared" | jq -R -s -c --slurpfile rec <(printf '%s' "$1") "$VBW_JQ_DEFS$COMMIT_SURVIVOR_DEFS"'
     $rec[0] as $r
     | ([$r.phases[] | select(.milestone == $r.milestone.id) | .id]) as $now
     | ($r.plans | map(select(.phase as $p | $now | index($p) != null)) | map({key: .id, value: .files}) | from_entries) as $files
     | ($r.plans | map(.id as $i | {key: $i, value: ($r | survivor_files($i))}) | from_entries) as $own
-    | [split("\n")[] | select(length > 0) | split("\u001f") | select($files[.[1]] != null)
-       | select(.[2] as $f | (any($files[.[1]][]; covers($f)) or ($own[.[1]] | index($f) != null)) | not)
-       | "\(.[0]) (\(.[1])) changed \(.[2]), which is not in the plan"]'
+    | [split("\n")[] | select(length > 0) | split("\u001f") | select($files[.[2]] != null)] as $rows
+    | {scope: [$rows[] | select(.[0] == "J")
+        | select(.[3] as $f | (any($files[.[2]][]; covers($f)) or ($own[.[2]] | index($f) != null)) | not)
+        | "\(.[1]) (\(.[2])) changed \(.[3]), which is not in the plan"],
+       undone: [$rows[] | select(.[0] == "U") | {commit: .[1], plan: .[2], by: .[3]}]}'
 }
 
 # One screen: what ran, what it means, what is next. $1: the causes that ran everything, one per line.
@@ -318,6 +334,7 @@ prove_summary() {
           (if ($e.commands | has("quick") and (.quick.status != "skipped") and (has("test") | not)) then "quick stood in for the test command" else empty end),
           ($e.commands | to_entries[] | select(.key != "quick" and .value.status == "skipped") | "\(.key) not approved") ] | join(", ")) + "]" end),
       (if ($e.scope | length) == 0 then "  scope ok" else ($e.scope[] | "  scope: " + .) end),
+      (($e.undone // [])[] | "  scope: \(.commit[0:12]) (\(.plan)) undone by \(.by[0:12]), not judged"),
       (.requirements[] | select(.proof == "auto") | "\(.id) \(.status)"),
       (.fixes[] | select(.status == "open" or .status == "escalated") | "\(.id) \(.status) (\(.req // .command), attempts \(.attempts)): \(.note)"),
       $own,
