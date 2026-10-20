@@ -83,8 +83,8 @@ hold() {
 
 @test "R202: the command's time limit counts from the command's start, not from the tracking or the wait" {
   cores 2
-  machine_project "$PROJECT" A 1 0 '[{"id": "C2", "req": "R1", "run": ["sh", "tests/unit.sh", "A-C2", "1", "0"], "files": ["tests/unit.sh"], "timeout": 2}]'
-  hold 4
+  machine_project "$PROJECT" A 1 0 '[{"id": "C2", "req": "R1", "run": ["sh", "tests/unit.sh", "A-C2", "2", "0"], "files": ["tests/unit.sh"], "timeout": 3}]'
+  hold 5
   run within 120 "$VBW" prove < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; show; false; }
   [[ "$output" == *"C2 pass"* ]] || { echo "$output"; false; }
