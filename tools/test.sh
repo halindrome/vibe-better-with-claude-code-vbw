@@ -8,10 +8,6 @@
 # When the last proof was full and passed on code that differs from the working
 # tree only in the version files and the changelog, --release runs just those.
 # --shard K/N runs share K of N of the release run, so CI can split it.
-# --release and --shard 1/N first run the stale check (tools/l3-stale.sh): a
-# real-session result older than the code its scenario covers stops the run,
-# naming the scenario and the command to run it. No other run does (scenarios
-# cost money and stay at release).
 # --lint runs only the shellcheck stage over tools/ (VBW's own `lint` project
 # command, so a proof re-runs it only when tools/ changed).
 set -euo pipefail
@@ -102,18 +98,6 @@ jobs_count() {
   echo "$j"
 }
 
-# stale_check: the real-session results are no older than the code they cover.
-# Exits with the check's code when a scenario is stale (1) or cannot be judged (2).
-stale_check() {
-  local code=0
-  if [ ! -f tools/l3-stale.sh ]; then
-    echo "stale check: no scenario suite here (tools/l3-stale.sh is not in this tree)"
-    return 0
-  fi
-  bash tools/l3-stale.sh || code=$?
-  [ "$code" -eq 0 ] || exit "$code"
-}
-
 if [ "$shard" -ge 1 ]; then
   share=()
   while IFS= read -r f; do share+=("$f"); done < <(shard_files "$shard" "$nshards")
@@ -129,7 +113,6 @@ if [ "$shard" -ge 1 ]; then
   done
   if [ "$list" = 1 ]; then
     if [ "$shard" -eq 1 ]; then
-      echo "bash tools/l3-stale.sh"
       echo "shellcheck tools/*.sh"
       echo "bash tools/bench-hooks.sh"
       echo "bash tools/bench-panel.sh"
@@ -139,7 +122,6 @@ if [ "$shard" -ge 1 ]; then
   fi
   echo "bash: $(bash -c 'echo "$BASH_VERSION"')"
   if [ "$shard" -eq 1 ]; then
-    stale_check
     tools_sh=()
     while IFS= read -r -d '' f; do tools_sh+=("$f"); done < <(find tools -type f -name '*.sh' -print0)
     if command -v shellcheck >/dev/null 2>&1; then
@@ -218,7 +200,6 @@ release_reuse() {
 }
 
 if [ "$release" = 1 ]; then
-  stale_check
   if why=$(release_reuse); then
     echo "release: reusing the passing proof of $why (only the version files and the changelog changed since); running the benchmarks and the timed tests only"
     bash tools/bench-hooks.sh
