@@ -131,6 +131,22 @@ common_checks() {
 claude_dir() { printf '%s' "${CLAUDE_CONFIG_DIR:-$HOME/.claude}"; }
 
 # Session transcripts of the project in $dir, the main one and its subagents'.
+# Reads a session transcript on stdin and the record's path: succeeds only when the
+# settings write (config set autonomy) is at or before the record's first
+# 'Contract approved' decision and the first run lease. A record with no such
+# decision, or a lookup that fails, is never 'before'. Timestamps are cut to the second.
+autonomy_written_before_run() {
+  local first_approval
+  first_approval=$(jq -r '[.decisions[] | select(.text | startswith("Contract approved")) | .at[0:19]] | first // empty' "$1" 2> /dev/null)
+  [ -n "$first_approval" ] || return 1
+  jq -sre --arg a "$first_approval" '
+    [.[] | select(.type == "assistant") | . as $m | .message.content[]?
+      | select(.type == "tool_use") | {at: ($m.timestamp[0:19]), name: .name, cmd: (.input.command // "")}] as $u
+    | ([$u[] | select(.cmd | contains("config set autonomy")) | .at] | first) as $w
+    | ([$u[] | select((.cmd | contains("run start")) or .name == "Workflow") | .at] | first // "9999") as $r
+    | $w != null and $w <= $a and $w <= $r' > /dev/null 2>&1
+}
+
 transcripts() {
   local real enc
   real=$(cd "$dir" && pwd -P)
@@ -416,18 +432,12 @@ scenario_qafix() {
   # Human requirements (NOTES.md wording) are accepted as a user would.
   checks() {
     common_checks
-    local hist first note rounds=0 final=none proved=false passed=true fv=none autonomy first_approval set_before=false
+    local hist first note rounds=0 final=none proved=false passed=true fv=none autonomy set_before=false
     autonomy=$(cd "$dir" && "$VBW" config autonomy 2> /dev/null)
     # The settings write comes from the main session (not a subagent) and must be
     # earlier than the first 'Contract approved' decision and the first run lease
     # (a 'run start' command or a Workflow call). Timestamps are cut to the second.
-    first_approval=$(jq -r '[.decisions[] | select(.text | startswith("Contract approved")) | .at[0:19]] | first // "9999"' "$dir/.vbw/record.json" 2> /dev/null)
-    if transcripts | grep -v /subagents/ | xargs cat 2> /dev/null | jq -sre --arg a "${first_approval:-9999}" '
-        [.[] | select(.type == "assistant") | . as $m | .message.content[]?
-          | select(.type == "tool_use") | {at: ($m.timestamp[0:19]), name: .name, cmd: (.input.command // "")}] as $u
-        | ([$u[] | select(.cmd | contains("config set autonomy")) | .at] | first) as $w
-        | ([$u[] | select((.cmd | contains("run start")) or .name == "Workflow") | .at] | first // "9999") as $r
-        | $w != null and $w <= $a and $w <= $r' > /dev/null 2>&1; then set_before=true; fi
+    if transcripts | grep -v /subagents/ | xargs cat 2> /dev/null | autonomy_written_before_run "$dir/.vbw/record.json"; then set_before=true; fi
     hist=$(record_history)
     first=$(printf '%s\n' "$hist" | jq -sr '[.[] | .phases[]? | select(.qa != null) | .qa] | first // {} | .result // "none"')
     fv=$first
