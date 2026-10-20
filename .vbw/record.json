@@ -58046,6 +58046,15 @@
         "started": "2026-10-20T00:59:40Z",
         "ended": "2026-10-20T01:03:30Z",
         "cost": null
+      },
+      {
+        "id": "fix-20261020T010359Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M41",
+        "started": "2026-10-20T01:03:59Z",
+        "ended": "2026-10-20T01:16:44Z",
+        "cost": null
       }
     ],
     "milestones": {
