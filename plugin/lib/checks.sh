@@ -265,7 +265,7 @@ checks_unit() {
 # checks_unit_run UNIT [SLOT]: run one unit, in slot copy number SLOT when
 # given; print its result object.
 checks_unit_run() {
-  local f=() a name out t want re alone copy st="" reads=true res t0
+  local f=() a name out t want re alone copy st="" reads=true res t0 collected
   while IFS= read -r -d '' a; do f+=("$a"); done \
     < <(printf '%s' "$1" | jq -j '[.name, .out, (.timeout | tostring), (.exit | tostring), .output, (.alone | tostring)] + .argv | .[] + "\u0000"')
   name=${f[0]} out=$CHECK_OUT/${f[1]} t=${f[2]} want=${f[3]} re=${f[4]} alone=${f[5]}
@@ -273,16 +273,26 @@ checks_unit_run() {
     copy=${PROOF_COPIES[$2]}
     st="$(dirname "$copy")/reads"
     cd "$copy" || return 1
+  fi
+  checks_gate_enter "$name" "$alone"
+  # The slot is taken after the gate and before the reset and the command, and kept
+  # until the read list is collected: the tracking is the unit's own work, inside
+  # its slot. The timeout counts from the command's start, never from the wait.
+  slots_take "$name"
+  if [ -n "$st" ]; then
     t0=
     [ -z "${PROOFTIME_FILE:-}" ] || t0=$(prooftime_clock)
     reads_reset "$copy" "$st" || reads=false
     [ -z "$t0" ] || prooftime_span tracking "$t0"
   fi
-  checks_gate_enter "$name" "$alone"
-  # The slot is taken after the gate and before the command: the timeout counts
-  # from the command's start, never from the wait.
-  slots_take "$name"
   checks_exec "$t" "$out" ${f[@]+"${f[@]:6}"}
+  collected=false
+  if [ -n "$st" ]; then
+    t0=
+    [ -z "${PROOFTIME_FILE:-}" ] || t0=$(prooftime_clock)
+    if [ "$reads" = true ] && reads_collect "$copy" "$st" > "$st/result.json"; then collected=true; fi
+    [ -z "$t0" ] || prooftime_span tracking "$t0"
+  fi
   slots_give "$name"
   checks_gate_leave "$name"
   res=$(checks_result "$out" "$t" "$want" "$re")
@@ -290,16 +300,10 @@ checks_unit_run() {
   proofsteps_unit_done
   if [ -z "$st" ]; then
     printf '%s\n' "$res"
+  elif [ "$collected" = true ]; then
+    printf '%s' "$res" | jq -c --slurpfile r "$st/result.json" '. + {reads: $r[0]}'
   else
-    t0=
-    [ -z "${PROOFTIME_FILE:-}" ] || t0=$(prooftime_clock)
-    if [ "$reads" = true ] && reads_collect "$copy" "$st" > "$st/result.json"; then
-      [ -z "$t0" ] || prooftime_span tracking "$t0"
-      printf '%s' "$res" | jq -c --slurpfile r "$st/result.json" '. + {reads: $r[0]}'
-    else
-      [ -z "$t0" ] || prooftime_span tracking "$t0"
-      printf '%s' "$res" | jq -c '. + {reads: null}'
-    fi
+    printf '%s' "$res" | jq -c '. + {reads: null}'
   fi
 }
 
