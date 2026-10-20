@@ -48614,6 +48614,13 @@
       "sort": "next",
       "size": "small",
       "status": "dropped"
+    },
+    {
+      "id": "T172",
+      "text": "Cores per heavy check (D340, M42 measurement): heavy test commands (cargo, make) each use every core, so several at once overload the Mac (load 23-66 seen). Decide from M42's measured core use: tell each command its share through the standard variables (CARGO_BUILD_JOBS, MAKEFLAGS, GOMAXPROCS) or a per-check cores mark",
+      "sort": "next",
+      "size": "medium",
+      "status": "open"
     }
   ],
   "decisions": [
@@ -51219,6 +51226,18 @@
       "text": "T169 removed by the owner (2026-10-20): its plans reset, its five commits reverted (5b45651d..f6a63da7), its check files deleted, R202 removed from the spec; T171, T140, T158, T164 and T52 dropped from the backlog for the public known-issues roadmap; next: T166 only, then the push",
       "why": "Owner: speed up 2.1.0; T166 speeds up every later proof",
       "at": "2026-10-20T08:24:16Z"
+    },
+    {
+      "id": "D479",
+      "text": "Proof speed report built into VBW for every user: each proof and fix-round summary gives VBW's own work (X of Y minutes) and units run again (N of M, top reasons), detail via vbw show evidence; the fix is proven on a stand-in large project built here; the owner runs one Portfolium proof privately to confirm; nothing about Portfolium enters VBW",
+      "why": "Chosen by VBW (owner: not technical, Portfolium must stay private): general, useful to every user, no project-specific code",
+      "at": "2026-10-20T08:45:12Z"
+    },
+    {
+      "id": "D480",
+      "text": "Cores per heavy check: not in this milestone; measure how many cores test commands use and decide the rein-in after the push (backlog item, per D340)",
+      "why": "Chosen by VBW (owner: not technical): smallest milestone, earliest push; Portfolium load stays high until then",
+      "at": "2026-10-20T08:45:13Z"
     }
   ],
   "commands": {
