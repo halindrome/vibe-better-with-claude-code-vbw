@@ -206,10 +206,36 @@ result_write() {
 
 GREET='/vbw:vibe a command-line script greet.sh: "./greet.sh Ana" prints "Hello, Ana!" and without a name prints "Hello, world!". One small milestone.'
 
+# report_line_in_proof_output REGEX: succeeds when a tool result of a 'vbw prove'
+# or 'vbw fix done' call in the session transcripts (main and subagents) carries
+# a line matching REGEX. Read from the transcripts, never from screen text.
+report_line_in_proof_output() {
+  transcripts | xargs cat 2> /dev/null | jq -se --arg re "$1" '
+    [.[] | select(.type == "assistant") | .message.content[]?
+      | select(.type == "tool_use" and ((.input.command // "") | test("vbw[^|;&]* (prove|fix done)|bin/vbw[^|;&]* (prove|fix done)"))) | .id] as $ids
+    | any(.[] | select(.type == "user") | .message.content[]?
+        | select(.type == "tool_result" and ([.tool_use_id] | inside($ids)))
+        | (if (.content | type) == "string" then .content else ([.content[]? | .text? // ""] | join("\n")) end)
+        | split("\n")[]; test($re))' > /dev/null 2>&1
+}
+
 scenario_greenfield() {
   new_project
   start=$GREET
-  checks() { common_checks; }
+  fixture="greet.sh from scratch; one small milestone; the user types /vbw:vibe and the build runs to the end"
+  checks() {
+    common_checks
+    local own=false ran=false passed=true
+    # The printed forms of the two proof report lines (docs/proof.md, R202).
+    if report_line_in_proof_output "^VBW.s own work: [0-9]+\\.[0-9] of [0-9]+\\.[0-9] min"; then own=true; fi
+    if report_line_in_proof_output "^ran again: [0-9]+ of [0-9]+ units; top reasons: "; then ran=true; fi
+    expect "a proof's output in the session carried the own-work line ($own)" [ "$own" = true ]
+    expect "a proof's output in the session carried the ran-again line ($ran)" [ "$ran" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write greenfield "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson o "$own" --argjson r "$ran" '{report_own_work_line: $o, report_ran_again_line: $r}')" \
+      '["acceptance by a human (greet.sh has only auto requirements)","a project larger than the greet.sh fixture, so the figures in the lines are small","the lines on screen: they are read from the tool results in the transcripts, not from what the window showed","a proof that reused units, so the top reasons are mostly never-passed","vbw fix done output (no fix round in this run)"]'
+  }
 }
 
 scenario_reject() {
@@ -344,7 +370,6 @@ scenario_balanced() {
     expect "QA ran in the background (a vbw:verifying workflow)" [ "$qa_bg" = true ]
     expect "VBW's next step is accept ($stopped)" [ "$stopped" = accept ]
     [ "$failed" -eq 0 ] && [ "$te" -eq 0 ] && [ "$dl" -eq 0 ] && [ "$stopped" = accept ] && [ "$qa_bg" = true ] || passed=false
-    cost=$(session_cost)
     result_write balanced "$fixture" "${cost:-0}" "$passed" \
       "$(jq -n --arg a "$autonomy" --argjson q "$qa_bg" --argjson t "$te" --argjson d "$dl" --arg s "$stopped" \
         '{autonomy: $a, qa_background: $q, stop_hook_errors_transcript: $t, stop_hook_errors_debug_log: $d, stopped_at: $s}')" \
