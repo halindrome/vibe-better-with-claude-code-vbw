@@ -35,38 +35,37 @@
 
 > **Platform:** macOS and Linux. Windows is not supported natively: VBW runs on bash. On Windows, run Claude Code inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
 
-VBW 2.0.0 is a complete rewrite of v1, in both philosophy and execution. Token savings are now a side effect, not the core objective. VBW 1.x cut coordination overhead by 86% and cost per phase by half compared with stock Agent Teams; VBW 2 hasn't been measured yet (numbers ship with 2.1.0). [See the token savings](#token-efficiency).
+VBW 2 is a rewrite of VBW 1, in philosophy and execution. It is built to prove that work is done, not to save tokens: on the small cases in [docs/benchmark.md](docs/benchmark.md) it costs more than plain Claude Code. [See the numbers](#cost).
 
-### **Built for pure vibe coders and the most demanding engineers alike.**
+### For people who don't read code, and people who do
 
-One of them can't read code. The other can't read a room. VBW gets them both to done, and neither has to talk to the other.
+You do not need to read code to use VBW. You describe what you want, answer questions in plain words and judge what only a person can judge. If you do read code, you get the contract, the checks and a git history to review.
 
-VBW is not a plugin. Calling VBW a plugin is like calling a parachute a backpack: technically accurate right up until the moment it matters. VBW is a harness with superpowers, an intelligence layer on top of Anthropic's models that makes Claude a quadrillion times smarter, by the only measure that counts: it can no longer tell you it's done when it isn't. You say what you want. It builds it, then proves it works before anyone is allowed to say "done".
+VBW is a Claude Code plugin that works as a harness around the model: it builds what you asked for, then proves it works before anyone is allowed to say "done". A requirement counts as done only when an approved check passes on a clean copy of the code, or when you accept it.
 
-### The problem: 
+### The problem
 
-***Vibe coders***: You've shipped an app you can't read, written by an AI you can't question, tested by no one. You know it works because the AI told you so, and the AI has never lied to you, except every time. 
+***Vibe coders***: You've shipped an app you can't read, written by an AI you can't question, tested by no one. You know it works because the AI told you so.
 
-***Seasoned devs***: You spent twenty years writing tests nobody ran for specs nobody approved, and now you're able to trust 4,000 lines a robot wrote in the time it took you to find your reading glasses. 
+***Seasoned devs***: You've spent years writing tests nobody ran for specs nobody approved, and now you have to trust 4,000 lines a model wrote in minutes.
 
-### What VBW does about it:
+### What VBW does about it
 
-You type `/vbw:vibe` and what you want. VBW runs this loop and stops only when it needs you. Senior devs will call this an orchestration layer. Vibe coders will call it the button. Both are right, and only one of them will admit they press it all day.
+You type `/vbw:vibe` and what you want. VBW runs the loop below and stops only when it needs you.
 
 **Meet the team.** Each is an AI agent with one job; several can run at once.
 
 | Agent | Job | How many |
 | :--- | :--- | :--- |
-| **Architect** | The one you talk to. Asks you the decisions that matter, then splits the work into **phases** (a goal each). The rest of the team has only heard about you. | 1 |
+| **Architect** | Works out the decisions only you should make (cost, data, security, anything hard to undo), then splits the work into **phases** (a goal each). Writes nothing. | 1 |
 | **Lead** | Turns each phase into small **plans**: a few tasks, their own files. Writes the tests first and makes sure they fail today (*red*). | 1 |
-| **Dev** | Writes the code for one plan, one commit per task, until its tests pass (*green*). Also fixes what fails later. | 1 per plan, in parallel |
+| **Dev** | Writes the code for one plan, one commit per task, until its tests pass (*green*). At standard and deep rigor it also breaks its own code on purpose, to confirm a test notices. Also fixes what fails later. | 1 per plan, in parallel |
 | **QA** | Reads a finished phase against its goal and reports what's wrong. Never touches the code. | 1 per phase, in parallel |
 | **Scout** | Looks things up, one angle each: your code, the web, the docs. Reports with sources; changes nothing. | up to 4 |
 | **Debugger** | Reproduces a bug, finds the root cause, then makes the smallest fix plus a test that proves it. | 3 to investigate, 1 to fix |
 | **Docs** | Writes the README, guides and changelog. Documentation files only. | 1 per documentation plan |
 
-
-**Who's the boss?** No agent. The Lead's plans decide what gets built; the kernel decides who builds it: how many Devs run at once (as many as there are plans that share no files) and how much checking each phase gets (one Dev for a typo, the full team for your payments code). Management by a program. No feelings, no favourites, no all-hands.
+**Who's the boss?** No agent. The Lead's plans decide what gets built; the kernel decides how it runs: how many Devs work at once (as many as there are ready plans that share no files) and how much checking each phase gets (one Dev for a typo, the full team for payments code). Management by a program.
 
 ```text
   STEP                                        PRACTICE
@@ -98,11 +97,11 @@ You type `/vbw:vibe` and what you want. VBW runs this loop and stops only when i
   ┌──────────────────────────────────────┐    ┌─────────────────────────┐
   │ 3. APPROVE                           │    │ "Not yet": the plan     │
   │ You approve one contract: spec,      │ ◀──│ changes, you're asked   │
-  │ plans, checks, check-file bytes.     │    │ again                   │
+  │ plans, checks, test files, commands. │    │ again                   │
   │ Any change to it un-approves it.     │    └─────────────────────────┘
   └──────────────────────────────────────┘    Frozen contract (SHA-256).
                      │                        Check files write-protected
-                     │                        by hooks during build and fix.
+                     │                        by hooks while building.
                      ▼
   ┌──────────────────────────────────────┐
   │ 4. BUILD                             │    TDD: green
@@ -114,9 +113,9 @@ You type `/vbw:vibe` and what you want. VBW runs this loop and stops only when i
                      ▼
   ┌──────────────────────────────────────┐    ┌─────────────────────────┐
   │ 5. PROVE                             │    │ FIX                     │
-  │ The kernel runs every approved check │─ ─▶│ Agents fix the code,    │
-  │ and the test command on a clean      │fail│ never the checks.       │
-  │ copy of HEAD, and checks each commit │ ◀──│ 3 failed attempts: it   │
+  │ The kernel runs every approved check │─ ─▶│ Agents fix the code;    │
+  │ and the test command on a clean      │fail│ a QA fix adds a test.   │
+  │ copy of HEAD, and checks each commit │ ◀──│ 3 failed tries: it      │
   │ stayed in its plan's files.          │    │ comes to you.           │
   └──────────────────────────────────────┘    └─────────────────────────┘
                      │                        Executable definition of done.
@@ -126,8 +125,8 @@ You type `/vbw:vibe` and what you want. VBW runs this loop and stops only when i
   ┌──────────────────────────────────────┐    ┌─────────────────────────┐
   │ 6. REVIEW                            │    │ Findings become fixes   │
   │ QA reviews against the goal and      │─ ─▶│ (back to FIX)           │
-  │ changes nothing. You judge the       │    └─────────────────────────┘
-  │ [human] requirements.                │    Goal-backward review.
+  │ changes nothing. You judge each      │    └─────────────────────────┘
+  │ [human] one, or Skip for now.        │    Goal-backward review.
   └──────────────────────────────────────┘    Manual acceptance testing.
                      │
                      ▼
@@ -136,41 +135,36 @@ You type `/vbw:vibe` and what you want. VBW runs this loop and stops only when i
   │ More to build: /vbw:vibe again.      │    Every later proof covers every
   │                                      │    check: re-run if a file it
   │                                      │    read changed, reused if not.
-  │                                      │    Nothing proven breaks quietly.
-  └──────────────────────────────────────┘
+  └──────────────────────────────────────┘    Nothing proven breaks quietly.
 ```
 
-Every stop ends with one line, **What I need from you:**, and the one thing you must do now, or "nothing". You will never again wonder whether the AI is waiting for you.
-
-It's the entire software development lifecycle, except the engineering team is a plugin and the QA department is a program that has never once been talked into anything.
+Every stop ends with one line, **What I need from you:**, and the one thing you must do now, or "nothing". You never have to guess whether VBW is waiting for you.
 
 ### For engineers: the model proposes, the kernel disposes
 
-VBW 2 is built around a **kernel**: `vbw`, a small bash + `jq` + `git` program that the model cannot argue with. Agents do the work; the kernel decides what counts. It's acceptance test-driven development, enforced by code instead of good intentions.
+VBW 2 is built around a **kernel**: `vbw`, a bash + `jq` + `git` program that the model cannot argue with. Agents do the work; the kernel decides what counts. It's acceptance test-driven development, enforced by code instead of good intentions.
 
 | | Claude Code on its own | Claude Code + the VBW kernel |
 | :--- | :--- | :--- |
 | **Who says it's done** | The model | The exit code of an approved check, run on a clean copy of `HEAD` |
-| **Who can edit the tests** | Anyone, including the agent being tested | Nobody after approval: SHA-256 contract, enforced by hooks |
+| **Who can edit the tests** | Anyone, including the agent being tested | Not the building agents: check files are in a SHA-256 contract and write-protected by hooks. A change waits for your approval |
 | **Where the state lives** | The chat context, until compaction eats it | `.vbw/record.json`: one writer, locked, validated, atomic |
 | **Who runs the process** | The model, improvising | Dynamic workflows: deterministic JavaScript |
-| **Parallel agents** | Hope | Waves with no shared files; guards deny writes outside each plan |
+| **Parallel agents** | Up to the model | Waves with no shared files; guards deny writes outside each plan |
 | **Running repo commands** | Whatever the model types | Argv only, no `eval`, after you consent to the content hash |
 | **Several sessions, one folder** | Last write wins | A run's files are leased to its session; everything else stays open |
 
-
 <p align="center"><img src="assets/kernel-diagram.jpg" alt="VBW architecture: /vbw:vibe goes to the skills surface, which hands state to the engine where Devs build in parallel under hook guards; agents write only through the vbw kernel (record, contract, prove); a failed proof goes back to the Devs as a fix, three tries then you; a pass is done, proven, not claimed." width="640"/></p>
 
-Two design choices worth knowing:
+Three design choices worth knowing:
 
 - **No per-agent worktrees, on purpose.** A worktree has no `node_modules` or virtualenv, so an agent either reinstalls everything or proves the main checkout's code instead of its own. A false proof is the one failure VBW refuses to have. File-disjoint waves plus guards give the same isolation without it.
-- **Proof reuses what didn't change.** VBW records what each check reads while it runs; a check whose definition, last result and every file it read are unchanged keeps its pass, and your test command runs one test file at a time when you declare the form. `vbw prove --full` re-runs everything.
+- **Proof reuses what didn't change.** VBW records what each check reads while it runs; a check whose definition, last result and every file it read are unchanged keeps its pass. If your test runner can run one test file at a time, say so in the spec's `## Test files` section (`- run: bats {file}` and `- files: tests/*.bats`) and your tests are reused per file too; you approve the form with the contract. `vbw prove --full` re-runs everything.
+- **One limit per computer.** Every VBW run on a computer, in any project or session, shares one limit on how many checks and test files run at once (about three quarters of the processor cores), so parallel sessions take turns instead of overloading the machine.
 
-How many agents? One per plan in a wave, and VBW keeps the wave as wide as the file boundaries allow. The theoretical ceiling is your token budget. Somewhere right now, a college freshman is running 140 VBW sessions on his trust fund to build Uber for houseplants. The idea is garbage, but it was built once, proven once, and cost less than watching plain Claude Code rebuild it five times. VBW can't fix a bad startup idea, but it makes it work.
+How many agents? One Dev per plan in a wave, and VBW keeps the wave as wide as the file boundaries allow.
 
-### **Think of it as project management for the post-dignity era of software development.**
-
-Inspired by **[Ralph](https://github.com/frankbria/ralph-claude-code)** and **[Get Shit Done](https://github.com/glittercowboy/get-shit-done)**, however, an entirely new architecture.
+Inspired by **[Ralph](https://github.com/frankbria/ralph-claude-code)** and **[Get Shit Done](https://github.com/glittercowboy/get-shit-done)**; the architecture is new.
 
 ---
 
@@ -190,9 +184,13 @@ Open Claude Code and run these two commands inside the session, **one at a time*
 /plugin install vbw@vbw-marketplace
 ```
 
-Two commands, two separate inputs. Paste them together and Claude Code reads them as one command, the URL breaks, and you'll blame us.
+Two commands, two separate inputs. Pasted together, Claude Code reads them as one command and the URL breaks.
 
-Restart Claude Code. VBW turns on what it needs (Dynamic workflows and its status line) the first time you use it. `/vbw:doctor` checks the rest. To update later: `/vbw:update`.
+Restart Claude Code. VBW turns on what it needs (Dynamic workflows and its status line) the first time you use it. `/vbw:doctor` checks the rest.
+
+### Updating
+
+Run `/vbw:update`. It runs `claude plugin marketplace update vbw-marketplace` and `claude plugin update vbw@vbw-marketplace`, then asks you to run `/reload-plugins` (or restart Claude Code). `/vbw:whats-new` then says what changed; the full history is in [plugin/CHANGELOG.md](plugin/CHANGELOG.md). PLACEHOLDER (T136): one sentence on how VBW tells you a new version is out.
 
 ### Running VBW
 
@@ -201,11 +199,11 @@ Restart Claude Code. VBW turns on what it needs (Dynamic workflows and its statu
 | **Start with** | `claude` | Sonnet, Opus or Fable, then Shift+Tab for auto mode |
 | **Claude Code asks you** | Before file writes and commands, once per tool per project | Only when it must |
 | **VBW stops for** | Decisions, approval, checking, shipping | Decisions, approval, checking, shipping |
-| **Feels like** | Some clicking in the first session, then smooth | Agents keep building until the work is done or your budget isn't |
+| **Feels like** | Some clicking in the first session, then smooth | Agents keep building until a step needs you |
 
-Most vibe coders run auto mode: the agents work longer, the flow stays unbroken, and you get to pretend you're supervising while scrolling Twitter.
+Auto mode keeps the flow unbroken: the agents work longer between stops.
 
-> **Disclaimer:** `--dangerously-skip-permissions` is called that for a reason. It is not called `--everything-will-be-fine`. VBW's guards are guard rails, not a sandbox; the Claude Code sandbox and permission rules remain the security boundary. You are trusting software written by an AI, managed by an AI, and checked by a program an AI also wrote. If that doesn't concern you, you are exactly the target audience for this plugin.
+> **Disclaimer:** `--dangerously-skip-permissions` turns off Claude Code's permission prompts, and VBW does not make that safe. VBW's guards are guard rails, not a sandbox; the Claude Code sandbox and permission rules remain the security boundary. Read what you approve.
 
 ---
 
@@ -218,17 +216,11 @@ You only need to remember one command. In any git repository, new or existing:
 ```
 
 1. **Setup.** The first run sets up the project and the VBW status line.
-2. **Questions.** Three about you, once. Then the decisions that matter, one at a time.
-
-   ![VBW asking a decision with a recommendation](assets/first-question.png)
-
-3. **Approve.** Enter approves; **Not yet** or your own words change the plan. Seniors: you'll skim. They're short so skimming is enough. You can change your mind any time: VBW re-plans without touching finished work, and a check you aren't ready to judge can wait for the next milestone when it is all that holds up shipping.
-
-   ![The plan and its checks, ready for approval](assets/approve.png)
-
-4. **Build and prove.** Agents build in parallel, then VBW runs the checks.
-
-   ![Requirements proven by passing checks](assets/proof.png)
+2. **Questions.** Three about you, once. Then what you are building and for whom, then the decisions that matter, one at a time, each with a recommendation.
+3. **Approve.** VBW shows the plan and its checks and asks. Enter approves; **Not yet** or your own words change the plan. Seniors will skim, and both are short enough for that. You can change your mind any time: VBW re-plans without touching finished work.
+4. **Build and prove.** Agents build in parallel, then VBW runs the checks and QA reviews each phase against its goal. Failures become fixes; after three failed attempts at one, it comes to you.
+5. **Judge what only you can.** For each `[human]` requirement (look, feel, wording) VBW shows the thing to judge and asks: **Works**, **Something's wrong** (VBW fixes it and asks again) or **Skip for now**. A requirement you are not ready to judge can wait: when skipped ones are all that holds up shipping, you choose to ship and judge them in the next milestone, where they keep their id, checks and history.
+6. **Ship.** VBW asks whether to ship, then recommends what to do next.
 
 Come back any time and type `/vbw:vibe`: it continues where things stand. Used an earlier VBW in this project? VBW reviews the old folder and recommends converting or starting fresh; you choose ([docs/convert.md](docs/convert.md)).
 
@@ -242,41 +234,53 @@ The loop above is the core. Around it:
 | :--- | :--- |
 | **Triage** | Every new idea is sorted into now, next or later, with a size. You confirm or overrule in one menu. [docs/triage.md](docs/triage.md) |
 | **What's next** | After each ship, and whenever you ask, the Architect recommends a top pick and up to two runners-up, each with a reason and a size. [docs/whats-next.md](docs/whats-next.md) |
-| **Decisions, recorded** | Cost, where data lives, security, anything hard to undo: asked one at a time with a recommendation, recorded with your reason. Six months from now, when someone asks "who decided this?", git will say it was you. |
-| **Rigor that fits** | A typo gets one Dev and one approval. Your billing code gets research, a full team and deep review. VBW sizes the process from what the work touches, raises the bar when a build goes badly, and tells you why. [docs/rigor.md](docs/rigor.md) |
-| **Talks at your level** | Three questions, once per project. Beginners get plain words. Seniors get terse output and the trade-offs, which is what they'd have asked for if they ever read the docs. |
-| **Picks up where you left off** | Everything lives in `.vbw/` in your project, not in a chat window. Disappear for a weekend of pretending you have hobbies; `/vbw:vibe` continues exactly where things stand. |
-| **Status line and panel** | Progress, what's proven and what VBW needs from you, after every response. On Claude Code 2.1.287+, the panel has Comms (the strip above the prompt: the helpers at work, or one line when VBW needs you) and Mission Control (the side pane: where the project stands, in plain words), each showing the running step's end time ("about 12 min, until around 14:20"); Mission Control also shows when the milestone should end, with an optional sound when it needs you. [docs/panel.md](docs/panel.md) |
+| **Decisions, recorded** | Cost, where data lives, security, anything hard to undo: asked one at a time with a recommendation, recorded with your reason (`vbw show decisions`). When someone asks "who decided this?", the record and git say it was you. |
+| **Rigor that fits** | A typo gets one Dev and one approval. Payments or sign-in code gets the full team and deep review. VBW sizes the process from what the work touches, raises the bar when a build goes badly, and tells you why. [docs/rigor.md](docs/rigor.md) |
+| **Tests that can fail** | At standard and deep rigor each Dev breaks its own code on purpose (`vbw mutate`), and VBW records whether a check noticed. A test that stays green on broken code is strengthened before the plan can finish. [docs/workflows.md](docs/workflows.md) |
+| **Fixes that leave a test behind** | When QA finds a problem, the fix can add a regression test that would have caught it: the Dev writes the test file and registers it with `vbw fix check FIX`. It waits for one approval from you, then runs in every later proof. [docs/proof.md](docs/proof.md) |
+| **Failures you can read** | A failing check or project command keeps its full output under `.vbw/runtime/output/`; `vbw show fix` names the file and the failing tests. |
+| **Talks at your level** | Three questions, once per project. Beginners get plain words. Seniors get terse output and the trade-offs. [docs/interview.md](docs/interview.md) |
+| **Picks up where you left off** | Everything lives in `.vbw/` in your project, not in a chat window. `/vbw:vibe` continues exactly where things stand. |
+| **What it cost** | Each run and each milestone is priced from the figures Claude Code gives the status line. `vbw show costs`. [docs/costs.md](docs/costs.md) |
+| **Status line and panel** | Progress, what's proven and what VBW needs from you, always visible. On Claude Code 2.1.287+, the panel has Mission Control (the side pane: where the project stands, in plain words) and, from 2.1.290, Comms (the strip above the prompt: the helpers at work, or one line when VBW needs you). Each shows the running step's end time ("about 12 min, until around 14:20"); Mission Control also shows when the milestone should end, and a sound plays when a question needs you (on by default, `/vbw-sound` switches it). [docs/panel.md](docs/panel.md) |
 
-![VBW statusline example](assets/statusline.png)
+The status line, under the prompt:
 
-Everything a senior engineer would track on a whiteboard, except the whiteboard is now a terminal and the senior engineer is now you.
+```text
+[VBW] expenses │ M1 First milestone │ ▓▓▓▓▓▓▓░░░ 4/6 done │ ▶ build P1.2, P2.1 · 1 of 2 · until 14:20
+Context ▓▓▓░░░░░░░ 31% 62K/200K │ Tokens 2 in 195 out │ Cache 93% hit 3.8K write 55.5K read │ Cost $1.42 │ +303 −12
+Limits 5h ▓▓░░░░░░░░ 23% (resets 2h13m) │ 7d ▓▓▓▓░░░░░░ 41% (resets 3d)
+```
 
 ---
 
 ## Commands
 
-You need one: `/vbw:vibe`. The rest exist for people who like to feel in control.
+You need one: `/vbw:vibe`. The rest exist for people who want more control.
 
 | When | Command | What it does |
 | :--- | :--- | :--- |
 | **Always** | `/vbw:vibe [what you want]` | The next step, every time. This is the whole product |
-| **Deciding** | `/vbw:approve` | Approve the plan and its checks. Only you can |
+| **Deciding** | `/vbw:approve` | Approve the plan and its checks. Only you can; VBW also asks as a choice where Enter approves |
 | | `/vbw:discuss`, `/vbw:research` | Think a decision through; get a sourced answer to a question |
 | | `/vbw:loop ITEM... --ceiling USD` | Work through named todo items while you are away, within a spend ceiling; leaves `.vbw/loop-report.md` ([docs/loop.md](docs/loop.md)) |
-| | `/vbw:todo [idea]`, `/vbw:list-todos` | Park an idea; see the list. Where "we should really..." goes instead of dying in a terminal tab |
+| | `/vbw:todo [idea]`, `/vbw:list-todos` | Park an idea; see the list |
 | **Checking** | `/vbw:status` | Where the project stands |
-| | `/vbw:qa`, `/vbw:verify` | Run every check now; judge what only you can |
-| | `/vbw:debug [problem]`, `/vbw:fix [what]` | Root cause from three angles at once; a quick fix with every check re-run, for when you don't need seven agents to add a comma |
+| | `/vbw:qa`, `/vbw:verify` | Run every check now; judge, one at a time, what only you can |
+| | `/vbw:debug [problem]`, `/vbw:fix [what]` | Root cause from three angles at once; a quick fix with every proof re-run afterwards, for when you don't need seven agents to add a comma |
 | **Existing code** | `/vbw:map`, `/vbw:teach [convention]` | Map the codebase; teach VBW your conventions |
 | | `/vbw:init`, `/vbw:convert` | Set up VBW (vibe does it too); bring in a project from an earlier VBW |
 | **Session** | `/vbw:pause`, `/vbw:resume` | Stop safely; pick up where you left off |
-| | `/vbw-status`, `/vbw-why`, `/vbw-todo [idea]` | Instant, even mid-run, no model turn: where things stand; who holds the run and why; park an idea |
+| | `/vbw-status`, `/vbw-why`, `/vbw-todo [idea]` | Instant, even mid-run, no model turn (Claude Code 2.1.287+): where things stand; who holds the run and why; park an idea |
 | | `/vbw:panel`, `/vbw-panel`, `/vbw-sound` | Does the panel work here; open Mission Control; sound on or off ([docs/panel.md](docs/panel.md)) |
 | **Setup** | `/vbw:profile`, `/vbw:config` | How VBW works in one go; one setting at a time |
-| | `/vbw:skills`, `/vbw:rtk`, `/vbw:compress` | Find the best tools for your project ([docs/tools.md](docs/tools.md)); compress command output; terser instruction files |
-| | `/vbw:help`, `/vbw:doctor`, `/vbw:report` | List the commands; check the setup; prepare a bug report |
-| | `/vbw:update`, `/vbw:whats-new`, `/vbw:uninstall` | Stay current, or remove VBW and go back to prompting manually like it's 2024 |
+| | `/vbw:skills`, `/vbw:rtk`, `/vbw:compress` | Find tools for your project ([docs/tools.md](docs/tools.md)); set up RTK to compress command output; shrink an instruction file |
+| | `/vbw:help`, `/vbw:doctor`, `/vbw:report` | List the commands; check the setup; prepare a bug report (you read it before anything is sent) |
+| | `/vbw:update`, `/vbw:whats-new`, `/vbw:uninstall` | Update; see what changed; remove VBW (your `.vbw/` folders stay) |
+
+### The kernel, `vbw`
+
+The `/vbw:` commands call the kernel, `vbw`. Wherever `vbw` is on your PATH (`/vbw:doctor` says whether it is), `vbw help` lists its commands and `vbw CMD --help` (or `-h`) prints that command's usage. Help works right after a subcommand too (`vbw fix --help` lists `fix done`, `fix retry` and `fix check`), needs no project, works while a run is open and changes nothing. Views worth knowing: `vbw status`, `vbw next`, `vbw show contract`, `vbw show evidence`, `vbw show costs`.
 
 ---
 
@@ -288,12 +292,13 @@ The team is in [What VBW does about it](#what-vbw-does-about-it); their specific
 | :--- | :--- | :--- |
 | Planning | `/vbw:vibe` at the plan step | Architect (decisions) → Architect (scope) → Lead |
 | Building | `/vbw:vibe` at the build step | a Dev per ready plan (Docs for documentation), in parallel |
-| Fixing | `/vbw:vibe` when a check fails | a Dev per group of related fixes, in parallel |
+| Fixing | `/vbw:vibe` when a check fails or QA finds a problem | a Dev per group of related fixes, in parallel |
 | Verifying | `/vbw:vibe` after the checks pass | a QA agent per built phase, in parallel |
 | Mapping | `/vbw:map`, or planning on existing code | a Scout per angle, then one merged map |
 | Researching | `/vbw:research` | four Scouts, then one sourced answer |
 | Investigating | `/vbw:debug` | three Debuggers (reproduce, trace, history), one diagnosis, then one fix |
 | Recommending | `/vbw:vibe` after a ship, or when you ask what's next | the Architect, once |
+| Tool search | `/vbw:skills`, or the interview once you agree | a Scout per angle (safety, quality, tests, skills) |
 
 Full reference: [docs/workflows.md](docs/workflows.md).
 
@@ -301,9 +306,9 @@ Full reference: [docs/workflows.md](docs/workflows.md).
 
 ## Night shift
 
-`/vbw:loop` works through todo items you name while you are away: for each it plans, builds, proves and ships on its own, approving only a contract that is exactly the item you named. You set a spend ceiling, or choose none on purpose. An item that fails twice is reverted with `git revert` and parked, and the loop moves on; a `[human]` requirement waits for you. It stops at the ceiling, at the end of the list, or on `vbw loop stop`, and leaves `.vbw/loop-report.md`: what shipped, what was parked and why, what it cost. Details: [docs/loop.md](docs/loop.md).
+`/vbw:loop` works through todo items you name while you are away: for each it plans, builds, proves and ships on its own, approving only a contract that is exactly the item you named. You set a spend ceiling, or choose none on purpose; a ceiling needs the cost figures of the VBW status line. An item that fails twice is reverted with `git revert` and parked, and the loop moves on; a `[human]` requirement waits for you. An item that runs past its time budget (twice the usual time of items of its size) stops the loop before the item's next step, with its work kept. The loop stops at the ceiling, at the end of the list, or on `vbw loop stop`, and leaves `.vbw/loop-report.md`: what shipped, what was parked and why, what it cost. Details: [docs/loop.md](docs/loop.md).
 
-The promise: nothing is approved without a record of who approved it, and nothing the loop does leaves the project. The loop never leaves the project: it never pushes, releases, publishes or deploys; every ship is a local commit for you to review.
+The promise: nothing is approved without a record of who approved it, and nothing the loop does leaves the project. The loop never pushes, releases, publishes or deploys; every ship is a local commit for you to review.
 
 ---
 
@@ -313,11 +318,12 @@ The promise: nothing is approved without a record of who approved it, and nothin
 | :--- | :--- |
 | An agent runs `rm -rf`, force-pushes or `git reset --hard` | Guards check every command before it runs, and read what the shell would actually execute: `git commit -m "never rm -rf /"` passes, `sh -c 'rm -rf .'` doesn't |
 | An agent opens your `.env` or your keys | Guards block secret files. VBW never handles secrets |
-| An agent writes outside its part of the plan | Guards deny it |
-| The AI approves its own plan | It can't, however creatively it spells the command. Approval lives in your clone's `.git` folder, so a repository you download can't approve itself |
-| An agent edits a test until it passes | Approved checks are frozen while building. If the code doesn't pass, the code changes. Revolutionary, we know |
+| An agent writes outside its part of the plan, or outside the project | Guards deny it during a run. Scratch work goes in `.vbw/runtime/scratch/` |
+| The AI approves its own plan | It can't, however creatively it spells the command. Approval is your answer in Claude Code's own menu, or `/vbw:approve`. It is stored in your clone's `.git` folder, so a repository you download can't approve itself |
+| An agent edits a test until it passes | Approved check files are write-protected while agents build. If the code doesn't pass, the code changes. A test an agent strengthens or adds for a fix waits for one approval from you before the proof |
 | A guard itself breaks: it crashes, cannot start or times out | During a VBW run, the action it guards is blocked, not let through. Outside VBW projects and outside runs nothing changes |
-| Nobody knows who changed what | Every change is committed with the requirement it serves. `git log` reads like an audit, not a crime scene |
+| An unattended loop pushes or publishes | While `/vbw:loop` is on, `git push`, releases, publishes and deploys are denied for every caller, you through Claude included |
+| Nobody knows who changed what | Every VBW commit names its plan and requirement in trailers (`VBW-Plan`, `VBW-Req`), so `git log` is an audit trail |
 
 How it's enforced: [For engineers](#for-engineers-the-model-proposes-the-kernel-disposes). Every rule and why it exists: [docs/guards.md](docs/guards.md).
 
@@ -342,8 +348,9 @@ Approval, checking and shipping always stop for you, whatever the preset. Autono
 | `autonomy` | `guided` / `balanced` / `hands-off` | How much `/vbw:vibe` does on its own. You can also say it to `/vbw:vibe` in words ("use guided autonomy", "ask me before each step", "do not ask, just go") and it is recorded before the first step |
 | `autonomy_cap` | a number | Steps one autonomous run takes before stopping. `/vbw:loop` steps are not counted: its ceiling is its cap |
 | `rigor` | `auto` / `express` / `standard` / `deep` | How thorough each phase is: sized to the work (`auto`, the default) or forced |
-| `check_jobs` | `1` to `64` | How many checks run at once. Default: about three quarters of the processor cores, at least 1. Kept in this clone |
+| `check_jobs` | `1` to `64` | How many checks run at once in this project. Default: about three quarters of the processor cores, at least 1. The computer-wide limit caps it. Kept in this clone |
 | `command_timeout` | `1` to `86400` seconds | How long the project's own commands may run in a proof. Default: 3600 |
+| `motion` | `full` / `calm` / `off` / `default` | Panel animation; `default` follows your interview level |
 | status line | `vbw statusline on` / `off` | The status line |
 
 Your own session keeps the model you chose with `/model`; it must be Sonnet, Opus or Fable for auto mode.
@@ -352,23 +359,59 @@ Your own session keeps the model you chose with `/model`; it must be Sonnet, Opu
 
 ## Project Structure
 
+In your project:
+
 ```text
 your-project/.vbw/
   spec.md        What you want, in plain words. You own this file
   record.json    The plan of record: phases, plans, checks, results. Only the kernel writes it
   map.md         The map of your codebase, when there is existing code
+  runtime/       Scratch space, kept failing output and proof copies. Ignored by git
+```
 
+Your consent to the contract and its commands, the read lists that proofs reuse, and your private interview answers live in your clone's `.git/vbw/`, never in the repository.
+
+`spec.md` is free prose, except for four sections the kernel reads:
+
+```markdown
+## Requirements
+
+- R1 [auto] A visitor can sign up with an email address
+- R2 [human] The landing page feels trustworthy
+
+## Commands
+
+- test: bats tests
+
+## Test files
+
+- run: bats {file}
+- files: tests/*.bats
+
+## Test results
+
+- results/
+```
+
+- `## Requirements`: one requirement per bullet, `[auto]` when a check can prove it, `[human]` when only a person can judge it. `vbw spec add auto|human TEXT` appends one.
+- `## Commands`: the project's own test, lint and build commands. Every proof runs them once you approve them.
+- `## Test files`: how to run one test file, so a change re-runs only the files it reaches. The Lead proposes it, you approve it with the contract; without it the test command runs whole.
+- `## Test results`: folders where your project commits saved test output.
+
+After editing the spec, `vbw spec sync` brings the record in line; the change needs approval like any other change to the contract. Details: [docs/proof.md](docs/proof.md).
+
+In this repository:
+
+```text
 plugin/
   bin/vbw        The kernel: decides the next step, runs the checks, keeps the record
   lib/           Kernel libraries (bash, jq, git)
-  workflows/     Planning, building, fixing, verifying, mapping, researching, investigating
+  workflows/     Planning, building, fixing, verifying, mapping, researching, investigating, recommending, tool search
   agents/        Architect, Lead, Dev, QA, Scout, Debugger, Docs
   skills/        /vbw:vibe and every other command
-  hooks/         The guards
+  hooks/         The guards and the panel
   scripts/       The status line
 ```
-
-Your AI-managed project now has more structure than most startups that raised a Series A.
 
 ---
 
@@ -376,9 +419,9 @@ Your AI-managed project now has more structure than most startups that raised a 
 
 | You need | Why |
 | :--- | :--- |
-| **Claude Code** 2.1.286+ (2.1.287+ for the panel) | Dynamic workflows and the hooks VBW runs on |
+| **Claude Code** 2.1.286+ (2.1.287+ for Mission Control and the instant commands, 2.1.290+ for Comms) | Dynamic workflows and the hooks VBW runs on |
 | A **Sonnet, Opus or Fable** session | Auto mode; workflow agents may also use Haiku |
-| **`jq`** and **`git`** | The kernel. `brew install jq` (macOS) or `apt install jq` (Linux) |
+| **`bash`** (3.2 or newer), **`jq`** and **`git`** | The kernel. `brew install jq` (macOS) or `apt install jq` (Linux) |
 | A git repository, new or existing | Everything VBW does is committed |
 | The willingness to let an AI build your software and a program check its homework | This is the real barrier to entry |
 
@@ -386,17 +429,16 @@ Your AI-managed project now has more structure than most startups that raised a 
 
 ---
 
-## Token Efficiency
+## Cost
 
 VBW records what each run and each milestone cost ([docs/costs.md](docs/costs.md)).
 
-> **Coming soon.** The benchmark of VBW 2 against VBW 1.x and plain Claude Code ships with **2.1.0**.
+**VBW 2 against plain Claude Code.** [docs/benchmark.md](docs/benchmark.md) reports seven small cases on Sonnet 5.5 and Opus 5.5, measured in early October 2026 on an earlier 2.0 release. In the first set (three runs per cell) plain Claude Code passed 41 of 42 runs and VBW 2 passed 42 of 42; the one failure was plain Sonnet destroying uncommitted work. VBW 2 cost 6 to 10 times as much per run and asked for a median of 2 to 3 answers where plain asked for none. With automatic rigor (one run per cell) every case passed at 2.06 to 9.14 times plain's cost. On three projects of four requirements each, plain passed 6 of 6 and VBW 2 5 of 6, at 4.9 to 7.0 times the cost; its one failure was an edge case its checks never tried. The VBW 2 runs were driven by a script, not by a person (L3), on toy-sized fixtures, and do not test what VBW 2 is built for: guarding proven work on larger projects. A larger benchmark ships with 2.1.0.
 
-### VBW 1.x vs stock Opus 4.6 Agent Teams
+<details>
+<summary>Legacy measurements: VBW 1.x against stock Opus 4.6 Agent Teams</summary>
 
-*Legacy measurements from VBW 1.x.*
-
-Every capability was shell-only: 85 scripts ran as bash subprocesses at zero model token cost. The codebase grew 42% since v1.21.30 while per-request overhead grew just 12% (still 7% below v1.20.0). 845 bats tests validated the stack.
+These describe VBW 1.x, not VBW 2. VBW 1 ran every capability as a shell script at zero model token cost (85 scripts, 845 bats tests).
 
 **Analysis reports:** [v1.30.0](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/blob/main/docs/vbw-1-30-0-full-spec-token-analysis.md) | [v1.21.30](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/blob/main/docs/vbw-1-21-30-full-spec-token-analysis.md) | [v1.20.0](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/blob/main/docs/vbw-1-20-0-full-spec-token-analysis.md) | [v1.10.7](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/blob/main/docs/vbw-1-10-7-context-compiler-token-analysis.md) | [v1.10.2](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/blob/main/docs/vbw-1-10-2-vs-stock-agent-teams-token-analysis.md) | [v1.0.99](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/blob/main/docs/vbw-1-0-99-vs-stock-teams-token-analysis.md)
 
@@ -420,17 +462,21 @@ Every capability was shell-only: 85 scripts ran as bash subprocesses at zero mod
 
 *Based on [API pricing](https://claude.com/pricing) at the time of each report.*
 
+</details>
+
 ---
 
 ## Documentation
 
 | Read | To understand |
 | :--- | :--- |
-| [docs/proof.md](docs/proof.md) | Requirements, checks, approval and proof |
+| [docs/proof.md](docs/proof.md) | Requirements, checks, approval, proof, fixes and test files |
 | [docs/next.md](docs/next.md) | How VBW decides the next step |
 | [docs/rigor.md](docs/rigor.md) | How VBW sizes the process to the work |
-| [docs/workflows.md](docs/workflows.md) | The team and the workflows |
+| [docs/workflows.md](docs/workflows.md) | The team, the workflows and `--help` on every command |
 | [docs/guards.md](docs/guards.md) | The safety guards |
+| [docs/loop.md](docs/loop.md) | The night shift: `/vbw:loop` |
+| [docs/triage.md](docs/triage.md), [docs/whats-next.md](docs/whats-next.md) | Sorting new ideas; the recommendation after a ship |
 | [docs/interview.md](docs/interview.md) | The questions about you, and how they shape every message |
 | [docs/record.md](docs/record.md) | The plan of record (`.vbw/record.json`) |
 | [docs/costs.md](docs/costs.md) | What each run and each milestone cost (`vbw show costs`) |
@@ -438,13 +484,16 @@ Every capability was shell-only: 85 scripts ran as bash subprocesses at zero mod
 | [docs/diagnostics.md](docs/diagnostics.md) | `vbw report` for bug reports, and `vbw rtk` |
 | [docs/tools.md](docs/tools.md) | Finding the best tools for your project (nothing installed without your approval) |
 | [docs/convert.md](docs/convert.md) | Coming from an earlier VBW |
+| [docs/benchmark.md](docs/benchmark.md) | VBW 2 against plain Claude Code, with the evidence level of each result |
+| [docs/known-issues.md](docs/known-issues.md) | The public roadmap and known issues |
+| [docs/ideas.md](docs/ideas.md) | Ideas open for community contributions |
 | [plugin/CHANGELOG.md](plugin/CHANGELOG.md) | What changed |
 
 ---
 
 ## Contributing
 
-VBW is open source because the best tools are built by the people who use them. The kernel, the workflows, the agents, the guards: all of it is open to improvement. Found a better way to plan, build or prove code with Claude? File an issue, open a PR, or **[join the Discord](https://discord.gg/zh6pV53SaP)**.
+VBW is open source because the best tools are built by the people who use them. The kernel, the workflows, the agents, the guards: all of it is open to improvement. Found a better way to plan, build or prove code with Claude? Look at [docs/ideas.md](docs/ideas.md) for ideas open to contributors and [docs/known-issues.md](docs/known-issues.md) for the roadmap and known problems, then file an issue, open a PR, or **[join the Discord](https://discord.gg/zh6pV53SaP)**. Every request is weighed against VBW's design before it is built; [CONTRIBUTING.md](CONTRIBUTING.md) explains how.
 
 Tests: `bash tools/test.sh` is the run a proof uses; `bash tools/test.sh --release` is the full run with the timed speed checks (macOS bash 3.2 and bash 5). Local development and pull requests: [CONTRIBUTING.md](CONTRIBUTING.md).
 
