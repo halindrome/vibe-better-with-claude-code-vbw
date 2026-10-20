@@ -138,3 +138,30 @@ startup_ms() {
   cat "$copy/w.txt" > /dev/null
   reads_collect "$copy" "$st" | jq -e '.files == ["sub/a.txt"] and (.dirs | map(.path) == ["sub"])' > /dev/null || { echo "the written file's list was not inherited"; false; }
 }
+
+# Remaining cost (M42 after decision): the first reset of every slot copy waited for the next whole
+# second (half a second on average, once per copy, in the unit's own tracking) so that no file of
+# a fresh copy could look written. On a file system with finer times the marks are exact and
+# nothing needs to wait: the first reset sleeps only where the times are whole seconds.
+@test "R202: the first reset of a fresh copy does not wait for the next second where times are finer than a second" {
+  local copy="$TEST_ROOT/copy" st="$TEST_ROOT/state" i
+  mkdir -p "$copy" "$TEST_ROOT/shim" "$TEST_ROOT/probe"
+  # shellcheck disable=SC1091
+  source "$PLUGIN_ROOT/lib/reads.sh"
+  reads_subsecond "$TEST_ROOT/probe" || skip "this file system has whole-second times"
+  git -C "$copy" init -q
+  printf 'a\n' > "$copy/a.txt"
+  git -C "$copy" add -A
+  git -C "$copy" commit -q -m "feat: file"
+  printf '#!/bin/sh\necho slept >> "%s/slept"\nexec /bin/sleep "$@"\n' "$TEST_ROOT" > "$TEST_ROOT/shim/sleep"
+  chmod +x "$TEST_ROOT/shim/sleep"
+  # Several fresh states: a wait that ends at once by luck (the second just changed) cannot hide it.
+  for i in 1 2 3 4 5 6; do
+    PATH="$TEST_ROOT/shim:$PATH" reads_reset "$copy" "$TEST_ROOT/state$i"
+  done
+  [ ! -e "$TEST_ROOT/slept" ] || { echo "the first resets slept $(wc -l < "$TEST_ROOT/slept" | tr -d ' ') times"; false; }
+  # Nothing of the fresh copy looks written by a first run that reads one file.
+  cat "$copy/a.txt" > /dev/null
+  reads_collect "$copy" "$TEST_ROOT/state1" | jq -e '.files == ["a.txt"]' > /dev/null
+  [ ! -s "$TEST_ROOT/state1/new" ] || { echo "files of the fresh copy look written: $(tr '\0' ' ' < "$TEST_ROOT/state1/new")"; false; }
+}

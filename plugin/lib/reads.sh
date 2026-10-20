@@ -61,6 +61,24 @@ reads_touch() {
   (cd "$2" && xargs -0 -r touch -h -a -t "$READS_OLD" -- < "$1") 2> /dev/null || true
 }
 
+# reads_subsecond DIR: whether the file system DIR is on tells the order of files made
+# a moment apart (times finer than a second): three files made one after the other must
+# come out in that order. A file system whose times are whole seconds cannot (it would
+# take two second changes within a few milliseconds).
+reads_subsecond() {
+  local d=$1 k
+  for k in 1 2 3 4 5; do
+    : > "$d/subsec.a" && : > "$d/subsec.b" && : > "$d/subsec.c" || break
+    if [ -n "$(find "$d/subsec.b" -maxdepth 0 -newer "$d/subsec.a" 2> /dev/null)" ] \
+      && [ -n "$(find "$d/subsec.c" -maxdepth 0 -newer "$d/subsec.b" 2> /dev/null)" ]; then
+      rm -f "$d/subsec.a" "$d/subsec.b" "$d/subsec.c"
+      return 0
+    fi
+  done
+  rm -f "$d/subsec.a" "$d/subsec.b" "$d/subsec.c"
+  return 1
+}
+
 # reads_reset COPY STATE: before a run (STATE absolute). The first call also
 # records the copy's tracked files and folders (they never change: the copy is
 # a detached checkout) and where its git HEAD and index files are. "Written by
@@ -68,15 +86,20 @@ reads_touch() {
 # systems), but never before the copy's first reset. A file the previous run
 # wrote just before may be taken for this run's, and then carries both lists.
 reads_reset() {
-  local copy=$1 st=$2 gd slack=2 sec
+  local copy=$1 st=$2 gd slack=2 sec exact=true
   mkdir -p "$st" || return 1
   if [ ! -f "$st/gitdir" ]; then
-    # The copy was just made: wait for the next whole second, so that no file of
-    # it can look written by the first run on a file system with whole-second times.
-    sec=$(date +%s)
-    while [ "$(date +%s)" = "$sec" ]; do sleep 0.05; done
+    # The copy was just made. On a file system with whole-second times, wait for the next whole
+    # second, so that no file of it can look written by the first run; with finer times the
+    # marks below are exact and nothing waits.
+    if ! reads_subsecond "$st"; then
+      sec=$(date +%s)
+      while [ "$(date +%s)" = "$sec" ]; do sleep 0.05; done
+      exact=false
+    fi
     slack=0
-    : > "$st/mark0" && touch -t "$(reads_stamp 0)" "$st/mark0" || return 1
+    : > "$st/mark0" || return 1
+    [ "$exact" = true ] || touch -t "$(reads_stamp 0)" "$st/mark0" || return 1
     gd=$(git -C "$copy" rev-parse --absolute-git-dir) || return 1
     git -C "$copy" ls-files -z | jq -Rs -j '
       (split("\u0000") | map(select(length > 0))) as $f
@@ -91,7 +114,8 @@ reads_reset() {
   gd=$(cat "$st/gitdir")
   [ -f "$st/written.json" ] || printf '{"lists":{},"files":{}}\n' > "$st/written.json"
   : > "$st/ref" && touch -t "$READS_OLD_DAY" "$st/ref" || return 1
-  : > "$st/mark" && touch -t "$(reads_stamp "$slack")" "$st/mark" || return 1
+  : > "$st/mark" || return 1
+  [ "$slack" -eq 0 ] && [ "$exact" = true ] || touch -t "$(reads_stamp "$slack")" "$st/mark" || return 1
   # Never earlier than the first mark: nothing made with the copy is a write.
   [ ! "$st/mark0" -nt "$st/mark" ] || touch -r "$st/mark0" "$st/mark" || return 1
   # A run moves the access time of only what it read, and its collection left those paths
@@ -119,9 +143,8 @@ reads_kids() {
   jq -Rs -c '
     def strip: if . == "." then "" else sub("^\\./"; "") end;
     (split("\u0000") | map(select(length > 0) | strip)) as $f
-    | {kids: (reduce $f[] as $x ({};
-        ($x | split("/")) as $p
-        | reduce range(0; $p | length) as $i (.; .[$p[:$i] | join("/")] += [$p[$i]]))),
+    | {kids: ([$f[] | split("/") as $p | range(0; $p | length) | {k: ($p[:.] | join("/")), v: $p[.]}]
+        | group_by(.k) | map({key: .[0].k, value: (map(.v) | unique)}) | from_entries),
        files: ([$f[] | {key: ., value: true}] | from_entries)}' "$1"
 }
 
