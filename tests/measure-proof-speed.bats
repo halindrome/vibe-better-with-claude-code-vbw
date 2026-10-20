@@ -93,5 +93,9 @@ units() {
 @test "R202: nothing of a real user project is in the tool or in what it generates" {
   run bash "$TOOL" --generate "$TEST_ROOT/gen" --files 60 --folders 12 --units 4 < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  ! grep -rqi 'portfolium\|market_recorder' "$TOOL" "$TEST_ROOT/gen" --exclude-dir=.git
+  # The names to look for are the maintainer's private list (tools/check-private-words.sh);
+  # without that list, this one check is skipped.
+  run bash "$REPO_ROOT/tools/check-private-words.sh" paths "$TOOL" "$TEST_ROOT/gen"
+  [ "$status" -ne 3 ] || skip "$output"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
 }

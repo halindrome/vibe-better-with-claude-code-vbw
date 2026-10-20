@@ -148,3 +148,11 @@ code_grep() {
   run bash "$REPO_ROOT/tools/check-hook-answers.sh" "$PLUGIN_ROOT/hooks" "$REPO_ROOT/tests/hook-answers.bats"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
 }
+
+@test "no tracked file, .vbw/ included, names a private project of the owner (owner rule, 2026-10-21; needs the maintainer-local list, skipped without it)" {
+  # The self-tests run these rules against a stand-in plugin and expect only its defect to fail.
+  [ "$PLUGIN_ROOT" = "$REPO_ROOT/plugin" ] || skip "not the shipped plugin"
+  run bash "$REPO_ROOT/tools/check-private-words.sh" tracked
+  [ "$status" -ne 3 ] || skip "$output"
+  [ "$status" -eq 0 ] || { echo "files that name a private project:"; echo "$output"; false; }
+}

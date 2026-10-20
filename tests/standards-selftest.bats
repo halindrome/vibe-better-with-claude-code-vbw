@@ -145,6 +145,62 @@ vision_copy() {
   [[ "$output" == *"not the first rule"* ]]
 }
 
+# The privacy guard (tools/check-private-words.sh), driven by a list of its own.
+guard() { bash "$REPO_ROOT/tools/check-private-words.sh" --list "$TEST_ROOT/words.txt" "$@"; }
+
+@test "the privacy guard lists the files that hold a word, in any case, and never the word" {
+  printf '# private names\n\n  Secret Name  \nfoo_bar\n' > "$TEST_ROOT/words.txt"
+  mkdir -p "$TEST_ROOT/tree/sub"
+  printf 'x secret name y\n' > "$TEST_ROOT/tree/sub/a.txt"
+  printf 'the FOO_BAR folder\n' > "$TEST_ROOT/tree/b.txt"
+  printf 'nothing here\n' > "$TEST_ROOT/tree/c.txt"
+  run guard paths "$TEST_ROOT/tree"
+  [ "$status" -eq 1 ]
+  [ "$(printf '%s\n' "$output" | sort)" = "$(printf '%s\n%s\n' "$TEST_ROOT/tree/b.txt" "$TEST_ROOT/tree/sub/a.txt")" ]
+}
+
+@test "the privacy guard passes a clean tree: comments and blank lines in the list are not words" {
+  printf '# a comment\n\n   \nfoo_bar\n' > "$TEST_ROOT/words.txt"
+  mkdir -p "$TEST_ROOT/tree"
+  printf '# a comment\n\nplain text\n' > "$TEST_ROOT/tree/a.txt"
+  run guard paths "$TEST_ROOT/tree"
+  [ "$status" -eq 0 ] && [ -z "$output" ]
+}
+
+@test "the privacy guard checks nothing, and says so, without a list or without words" {
+  run guard paths "$TEST_ROOT"
+  [ "$status" -eq 3 ] && [[ "$output" == *"nothing checked"* ]]
+  printf '# only a comment\n\n' > "$TEST_ROOT/words.txt"
+  run guard paths "$TEST_ROOT"
+  [ "$status" -eq 3 ] && [[ "$output" == *"nothing checked"* ]]
+}
+
+@test "the privacy guard in tracked mode reads every tracked file of this repository, .vbw/ included" {
+  printf 'Engineering Standard\n' > "$TEST_ROOT/words.txt"
+  run guard tracked
+  [ "$status" -eq 1 ] && [[ "$output" == *"AGENTS.md"* ]]
+  # The plan of record is searched too: every VBW project's record names itself.
+  printf 'vbw\n' > "$TEST_ROOT/words.txt"
+  run guard tracked
+  [ "$status" -eq 1 ] && [[ "$output" == *".vbw/record.json"* ]]
+  # A word that is in no file: the pieces are joined here so this file does not hold it.
+  printf '%s%s\n' 'zq' 'x-no-such-word' > "$TEST_ROOT/words.txt"
+  run guard tracked
+  [ "$status" -eq 0 ] && [ -z "$output" ]
+}
+
+@test "the privacy guard refuses bad usage" {
+  run guard
+  [ "$status" -eq 2 ]
+  run guard paths
+  [ "$status" -eq 2 ]
+  run guard tracked "$TEST_ROOT"
+  [ "$status" -eq 2 ]
+  printf 'foo\n' > "$TEST_ROOT/words.txt"
+  run guard paths "$TEST_ROOT/no-such-folder"
+  [ "$status" -eq 2 ]
+}
+
 @test "the hook answer check passes on the repository as it is" {
   run bash "$REPO_ROOT/tools/check-hook-answers.sh" "$PLUGIN_ROOT/hooks" "$REPO_ROOT/tests/hook-answers.bats"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
