@@ -89,6 +89,7 @@ reads_reset() {
       (split("\u0000") | map(select(length > 0))) as $f
       | ([$f[] | split("/") | . as $p | range(1; length) | $p[:.] | join("/")] | unique | map("./" + .)) as $d
       | ("." , $d[]) + "\u0000"' > "$st/dirs" || return 1
+    reads_kids "$st/files" > "$st/kids.json" || return 1
     printf '%s\n' "$gd" > "$st/gitdir"
   fi
   gd=$(cat "$st/gitdir")
@@ -103,6 +104,16 @@ reads_reset() {
   reads_touch "$st/wlist" "$copy"
   [ ! -e "$gd/HEAD" ] || touch -a -t "$READS_OLD" "$gd/HEAD" 2> /dev/null || true
   [ ! -e "$gd/index" ] || touch -a -t "$READS_OLD" "$gd/index" 2> /dev/null || true
+}
+
+# reads_kids FILES: the map of each folder (the empty text for the top) to the names
+# directly in it, from the NUL-separated tracked paths in FILES, as one JSON object.
+reads_kids() {
+  jq -Rs -c '
+    def strip: if . == "." then "" else sub("^\\./"; "") end;
+    reduce (split("\u0000") | map(select(length > 0) | strip))[] as $f ({};
+      ($f | split("/")) as $p
+      | reduce range(0; $p | length) as $i (.; .[$p[:$i] | join("/")] += [$p[$i]]))' "$1"
 }
 
 # reads_collect COPY STATE: after a run; prints its read list as one JSON
@@ -122,14 +133,15 @@ reads_collect() {
   reads_moved "$st/files" "$copy" "$st/ref" > "$st/opened"
   reads_moved "$st/dirs" "$copy" "$st/ref" > "$st/listed"
   reads_moved "$st/wlist" "$copy" "$st/ref" > "$st/inherited"
-  jq -Rs -c --rawfile listed "$st/listed" '
+  # The parent-to-names map of the tracked paths never changes (the copy is a detached
+  # checkout): built once at the first reset, here only when a state lacks it.
+  [ -s "$st/kids.json" ] || reads_kids "$st/files" > "$st/kids.json" || return 1
+  jq -nc --rawfile listed "$st/listed" --slurpfile k "$st/kids.json" '
     def strip: if . == "." then "" else sub("^\\./"; "") end;
-    (reduce (split("\u0000") | map(select(length > 0) | strip))[] as $f ({};
-      ($f | split("/")) as $p
-      | reduce range(0; $p | length) as $i (.; .[$p[:$i] | join("/")] += [$p[$i]]))) as $kids
+    $k[0] as $kids
     | ($listed | split("\u0000") | map(select(length > 0)))[]
     | strip as $d
-    | [(if $d == "" then "." else $d end), ($kids[$d] // [] | unique)]' "$st/files" > "$st/listings"
+    | [(if $d == "" then "." else $d end), ($kids[$d] // [] | unique)]' > "$st/listings"
   rm -rf "$st/fp"; mkdir -p "$st/fp"
   while IFS= read -r line; do
     printf '%s' "$line" > "$st/fp/$n"

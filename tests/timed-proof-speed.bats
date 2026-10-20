@@ -53,3 +53,26 @@ startup_ms() {
   awk -v p="$planning" -v l="$PLANNING_LIMIT" 'BEGIN { exit !(p + 0 <= l) }' \
     || { echo "planning $planning s exceeds $PLANNING_LIMIT s"; false; }
 }
+
+# Remaining cost (M42 after decision): collecting a read list rebuilt the folder-to-names map of
+# every tracked path on every unit (0.34 s of 0.67 s on 5,206 files). The map never changes in a
+# copy, so it is built once at the first reset and only looked up by a collection: a map put in
+# the state after the first reset is the one the fingerprints are taken from.
+@test "R202: a collection looks the folder names up in the map the first reset built, it does not rebuild it" {
+  local copy="$TEST_ROOT/copy" st="$TEST_ROOT/state" want got
+  mkdir -p "$copy/sub"
+  git -C "$copy" init -q
+  printf 'a\n' > "$copy/sub/a.txt"
+  printf 'b\n' > "$copy/top.txt"
+  git -C "$copy" add -A
+  git -C "$copy" commit -q -m "feat: files"
+  # shellcheck disable=SC1091
+  source "$PLUGIN_ROOT/lib/reads.sh"
+  reads_reset "$copy" "$st"
+  [ -s "$st/kids.json" ] || { echo "the first reset left no folder map in the state"; false; }
+  printf '{"":["poison"]}\n' > "$st/kids.json"
+  ls "$copy" > /dev/null
+  got=$(reads_collect "$copy" "$st" | jq -r '.dirs[] | select(.path == ".") | .fp')
+  want=$(printf '%s' '[".",["poison"]]' | { if command -v sha256sum > /dev/null 2>&1; then sha256sum; else shasum -a 256; fi; } | cut -d' ' -f1)
+  [ "$got" = "$want" ] || { echo "fingerprint $got, wanted $want"; false; }
+}
