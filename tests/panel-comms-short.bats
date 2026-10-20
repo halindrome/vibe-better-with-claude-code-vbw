@@ -62,3 +62,9 @@ section() { sed -n "/^## $2\$/,/^## /p" "$1" | tr '\n' ' ' | tr -s ' ' | tr '[:u
   printf '%s' "$s" | grep -q 'two rows' || { echo "the Comms section does not describe the two-row form"; false; }
   printf '%s' "$s" | grep -qE 'no helper works|proof' || { echo "the Comms section does not say when the step line shows alone"; false; }
 }
+
+@test "R200: docs/panel.md's Time left section says that in a one-row Comms the step's time sits on the helper line" {
+  local s
+  s=$(section "$DOC" "Time left")
+  printf '%s' "$s" | grep -qE 'one-row comms, the step.s time sits on the helper line' || { echo "the Time left section does not say the step's time sits on the helper line in a one-row Comms"; false; }
+}
