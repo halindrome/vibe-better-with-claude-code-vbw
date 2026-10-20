@@ -198,7 +198,9 @@ test('a milestone shipped opens the pane on VBW Wrapped at every motion level, w
 
 test('Mission Control wears the VBW portrait (a shipped PNG) where the terminal draws images, alt VBW', async () => {
   const h = await started()
-  const img = find(await h.render(), (n) => n.type === 'Image')
+  // At 100 body columns the portrait sits beside the eight full names on one row; at 50 the pane drops it (R199).
+  const wide = { props: { title: 'VBW', isFocused: false, bodyColumns: 100, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} } }
+  const img = find(await h.render(wide), (n) => n.type === 'Image')
   assert.ok(img)
   assert.equal(img.props.alt, 'VBW')
   assert.deepEqual(img.props.source, { file: PLUGIN + '/assets/portrait.png', format: 'png' })
