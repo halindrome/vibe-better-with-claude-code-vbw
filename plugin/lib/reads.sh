@@ -11,7 +11,8 @@
 # tracked paths, "./"-prefixed, NUL-separated), ref (modification and access
 # time set to the old date plus a day: the yardstick "read since" compares
 # with), mark (just before the run started: "written since"), wlist (written
-# files the reset set back) and written.json (path -> read list).
+# files the reset set back), written.json ({lists: run id -> read list, files:
+# path -> [run id]}) and runid (the last run id given).
 
 # The old date, for touch -t (local time): a set-back time is a day before the
 # yardstick file (READS_OLD_DAY) that "read since" is compared with.
@@ -91,8 +92,8 @@ reads_reset() {
     printf '%s\n' "$gd" > "$st/gitdir"
   fi
   gd=$(cat "$st/gitdir")
-  [ -f "$st/written.json" ] || printf '{}\n' > "$st/written.json"
-  jq -j 'keys[] | "./" + . + "\u0000"' "$st/written.json" > "$st/wlist" || return 1
+  [ -f "$st/written.json" ] || printf '{"lists":{},"files":{}}\n' > "$st/written.json"
+  jq -j '.files | keys[] | "./" + . + "\u0000"' "$st/written.json" > "$st/wlist" || return 1
   : > "$st/ref" && touch -t "$READS_OLD_DAY" "$st/ref" || return 1
   : > "$st/mark" && touch -t "$(reads_stamp "$slack")" "$st/mark" || return 1
   # Never earlier than the first mark: nothing made with the copy is a write.
@@ -106,40 +107,60 @@ reads_reset() {
 
 # reads_collect COPY STATE: after a run; prints its read list as one JSON
 # object {files, dirs: [{path, fp}], git}. fp fingerprints the names of the
-# tracked files and folders directly in the listed folder. Reads the written
-# files this run opened (set back by the reset) for their lists, and records
-# the files it wrote with this list.
+# tracked files and folders directly in the listed folder: the SHA-256 of the
+# compact JSON text [path, names]. A fixed number of processes whatever the
+# number of listed folders: one jq builds every listing text from one parent-
+# to-names map, bash writes one scratch file per text, one sha256 call hashes
+# them all, one jq assembles the list. Reads the written files this run opened
+# (set back by the reset) for their lists, and records the files it wrote with
+# a single copy of this list (written.json: lists by run id, files by path).
 reads_collect() {
-  local copy=$1 st=$2 gd git=false line fp
+  local copy=$1 st=$2 gd git=false line n=0 id
+  local -a names
   gd=$(cat "$st/gitdir")
   [ -z "$(find "$gd/HEAD" "$gd/index" -maxdepth 0 -anewer "$st/ref" -print 2> /dev/null)" ] || git=true
   reads_moved "$st/files" "$copy" "$st/ref" > "$st/opened"
   reads_moved "$st/dirs" "$copy" "$st/ref" > "$st/listed"
   reads_moved "$st/wlist" "$copy" "$st/ref" > "$st/inherited"
-  : > "$st/dirs.json"
-  while IFS= read -r line; do
-    fp=$(printf '%s' "$line" | vbw_sha256)
-    printf '%s' "$line" | jq -c --arg fp "$fp" '{path: .[0], fp: $fp}' >> "$st/dirs.json"
-  done < <(jq -Rs -c --rawfile listed "$st/listed" '
+  jq -Rs -c --rawfile listed "$st/listed" '
     def strip: if . == "." then "" else sub("^\\./"; "") end;
-    (split("\u0000") | map(select(length > 0) | strip)) as $f
-    | ($listed | split("\u0000") | map(select(length > 0)))[] as $raw | ($raw | strip) as $d
-    | [($raw | strip | if . == "" then "." else . end),
-       ([$f[] | select($d == "" or startswith($d + "/")) | ltrimstr($d + "/") | split("/")[0]] | unique)]' "$st/files")
-  jq -nc --rawfile o "$st/opened" --rawfile i "$st/inherited" --slurpfile d "$st/dirs.json" --slurpfile w "$st/written.json" --argjson g "$git" '
+    (reduce (split("\u0000") | map(select(length > 0) | strip))[] as $f ({};
+      ($f | split("/")) as $p
+      | reduce range(0; $p | length) as $i (.; .[$p[:$i] | join("/")] += [$p[$i]]))) as $kids
+    | ($listed | split("\u0000") | map(select(length > 0)))[]
+    | strip as $d
+    | [(if $d == "" then "." else $d end), ($kids[$d] // [] | unique)]' "$st/files" > "$st/listings"
+  rm -rf "$st/fp"; mkdir -p "$st/fp"
+  while IFS= read -r line; do
+    printf '%s' "$line" > "$st/fp/$n"
+    names[n]=$n
+    n=$((n + 1))
+  done < "$st/listings"
+  : > "$st/hashes"
+  if [ "$n" -gt 0 ]; then
+    # One call; each line is "<hash>  <file>" with either sha256sum or shasum.
+    (cd "$st/fp" && { if command -v sha256sum > /dev/null 2>&1; then sha256sum "${names[@]}"; else shasum -a 256 "${names[@]}"; fi; }) > "$st/hashes" || return 1
+  fi
+  jq -nc --rawfile o "$st/opened" --rawfile i "$st/inherited" --rawfile l "$st/listings" --rawfile h "$st/hashes" --slurpfile w "$st/written.json" --argjson g "$git" '
     def strip: sub("^\\./"; "");
     def paths: split("\u0000") | map(select(length > 0) | strip);
-    {files: ($o | paths), dirs: $d, git: $g} as $own
-    | reduce ($i | paths)[] as $p ($own; ($w[0][$p] // {files: [], dirs: [], git: false}) as $l
+    ($h | split("\n") | map(select(length > 0) | split("  ")[0])) as $fps
+    | ($l | split("\n") | map(select(length > 0) | fromjson)) as $ls
+    | {files: ($o | paths), dirs: [range(0; $ls | length) as $k | {path: $ls[$k][0], fp: $fps[$k]}], git: $g} as $own
+    | ([($i | paths)[] as $p | ($w[0].files[$p] // [])[]] | unique) as $ids
+    | reduce $ids[] as $id ($own; ($w[0].lists[$id]) as $l
         | {files: (.files + $l.files), dirs: (.dirs + $l.dirs), git: (.git or $l.git)})
     | {files: (.files | unique), dirs: (.dirs | unique_by(.path)), git}' > "$st/last.json" || return 1
-  # What the run wrote (not in .git) now carries its read list.
+  # What the run wrote (not in .git) now carries its read list, stored once.
   (cd "$copy" && find . -path ./.git -prune -o -type f -newer "$st/mark" -print0) > "$st/new" 2> /dev/null || true
-  jq -c --rawfile n "$st/new" --slurpfile r "$st/last.json" '
-    def strip: sub("^\\./"; "");
-    reduce ($n | split("\u0000") | map(select(length > 0) | strip))[] as $p (.;
-      (.[$p] // {files: [], dirs: [], git: false}) as $l
-      | .[$p] = {files: ($l.files + $r[0].files | unique), dirs: ($l.dirs + $r[0].dirs | unique_by(.path)), git: ($l.git or $r[0].git)})' \
-    "$st/written.json" > "$st/written.tmp" && mv "$st/written.tmp" "$st/written.json" || return 1
+  if [ -s "$st/new" ]; then
+    id=$(( $(cat "$st/runid" 2> /dev/null || echo 0) + 1 ))
+    printf '%s\n' "$id" > "$st/runid"
+    jq -c --rawfile n "$st/new" --slurpfile r "$st/last.json" --arg id "$id" '
+      def strip: sub("^\\./"; "");
+      .lists[$id] = $r[0]
+      | reduce ($n | split("\u0000") | map(select(length > 0) | strip))[] as $p (.; .files[$p] += [$id])' \
+      "$st/written.json" > "$st/written.tmp" && mv "$st/written.tmp" "$st/written.json" || return 1
+  fi
   cat "$st/last.json"
 }
