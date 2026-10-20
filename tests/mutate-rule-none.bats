@@ -132,6 +132,16 @@ no_reads() {
   says "P1.2 covers every file" "break the rule in that code instead"
 }
 
+@test "R203: a folder entry (dir/) covers a read file inside it" {
+  local sum
+  edit_record '(.plans[] | select(.id == "P1.1")).files = ["src/"]'
+  "$VBW" approve > /dev/null
+  sum=$(record_sum)
+  run "$VBW" mutate P1.1 R2.1 --none "nothing to break" < /dev/null
+  refused "$sum"
+  says "C2 reads src/pay.sh (P1.1)" "break the rule in that code instead"
+}
+
 @test "R203: a listed folder is covered by a plan file directly inside it or by a folder entry covering it, not by a file deeper down" {
   local sum
   sum=$(record_sum)
