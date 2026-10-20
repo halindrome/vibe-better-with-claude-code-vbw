@@ -141,10 +141,20 @@ mixed_change() {
 
 @test "R202: the validator refuses a malformed own split" {
   "$VBW" prove > /dev/null
+  local bad good
+  good=$(cat .vbw/record.json)
   edit_record '.evidence.own = {planning: "x"}'
   vbw_run show evidence
   [ "$status" -ne 0 ] || { echo "$output"; false; }
   [[ "$output" == *corrupt* ]] || { echo "$output"; false; }
+  for bad in '.evidence.own |= del(.record)' '.evidence.own.extra = 1' '.evidence.own.wall = -1' '.evidence.own = []' \
+             '.evidence.causes = "x"' '.evidence.causes = [1]'; do
+    printf '%s\n' "$good" > .vbw/record.json
+    edit_record "$bad"
+    vbw_run show evidence
+    [ "$status" -ne 0 ] || { echo "accepted: $bad"; echo "$output"; false; }
+    [[ "$output" == *corrupt* ]] || { echo "$bad: $output"; false; }
+  done
 }
 
 @test "R202: vbw fix done prints both lines right after its count lines" {
@@ -163,4 +173,19 @@ mixed_change() {
   after_counts
   [[ "$L1" =~ $OWN_RE ]] || { echo "after the counts: $L1"; echo "$output"; false; }
   [ "$L2" = "ran again: 0 of 0 units; top reasons: none" ] || { echo "$output"; false; }
+}
+
+@test "R202: the own-work line says the five steps over the command's wall time, in minutes with one decimal" {
+  # A unit that takes a while: the wall time is a tenth of a minute or more, the VBW's own steps stay small.
+  printf 'sleep 13\ngrep -q . src/a.txt\n' > tests/c1.sh
+  git add -A && git commit -q -m "test: a slow unit"
+  "$VBW" approve > /dev/null
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  want=$(jq -r '.evidence.own | def min: (. / 6 | round) as $t | "\($t / 10 | floor).\($t % 10)";
+    "VBW'"'"'s own work: \((.planning + .copies + .tracking + .saving + .record) | min) of \(.wall | min) min"' .vbw/record.json)
+  [ "$(nth 3)" = "$want" ] || { echo "wanted: $want"; echo "$output"; false; }
+  [ "$(jq '.evidence.own.wall >= 13' .vbw/record.json)" = true ] || { jq .evidence.own .vbw/record.json; false; }
+  [[ "$(nth 3)" != *" of 0.0 min" ]] || { echo "$output"; false; }
+  [ "$(jq '.evidence.own.record > 0 and .evidence.own.planning > 0 and .evidence.own.copies > 0 and .evidence.own.saving > 0 and .evidence.own.tracking > 0' .vbw/record.json)" = true ] || { jq .evidence.own .vbw/record.json; false; }
 }
