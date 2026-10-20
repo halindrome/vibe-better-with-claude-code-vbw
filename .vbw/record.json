@@ -48176,7 +48176,7 @@
       "text": "Public doc docs/parallel-sessions.md (owner 2026-10-10, for the next version): how to run several Claude Code sessions on one VBW project - start each at the project root, give each a different area, say what to leave alone, what 'another session holds the run' means and when to choose wait or closed, worktrees vs one folder, the shared check limit; linked from the README",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T106",
