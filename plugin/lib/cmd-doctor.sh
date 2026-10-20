@@ -9,6 +9,8 @@
 . "$VBW_LIB/sessions.sh"
 
 VBW_MIN_CLAUDE=2.1.286
+# The marketplace VBW is installed from (the name in marketplace.json).
+VBW_MARKETPLACE=vbw-marketplace
 
 cmd_doctor() {
   [ $# -eq 0 ] || vbw_usage_error "usage: vbw doctor"
@@ -16,6 +18,7 @@ cmd_doctor() {
   doctor_tools
   doctor_path
   doctor_claude
+  doctor_updates
   doctor_sessions
   doctor_statusline
   if VBW_ROOT=$(git rev-parse --show-toplevel 2> /dev/null); then
@@ -114,6 +117,60 @@ doctor_claude() {
     off) doctor_line fail "workflows are disabled in your settings (disableWorkflows)" "remove disableWorkflows, then turn on Dynamic workflows in /config" ;;
     *) doctor_line warn "workflows: Claude Code's default (off on some plans)" "vbw workflows on" ;;
   esac
+}
+
+# env_truthy VALUE: how Claude Code reads an on/off variable: 1, true, yes or on.
+env_truthy() {
+  case "$1" in 1 | [Tt][Rr][Uu][Ee] | [Yy][Ee][Ss] | [Oo][Nn]) return 0 ;; esac
+  return 1
+}
+
+# Does a new VBW reach the user, and are they told (docs/update.md)? VBW makes no
+# network call to find out: that is Claude Code's auto-update of this marketplace,
+# off by default for a third-party one. Its state is the marketplace's autoUpdate in
+# the settings files (the highest precedence wins: local, then shared project, then
+# user), else the one in known_marketplaces.json, else off. DISABLE_UPDATES,
+# DISABLE_AUTOUPDATER and CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC switch the whole
+# pass off unless FORCE_AUTOUPDATE_PLUGINS is set. Says nothing when Claude Code
+# knows no such marketplace here (a working tree loaded with --plugin-dir).
+doctor_updates() {
+  local files=() f root v state="" listed=0 blocked="" how
+  files=("$(statusline_settings)")
+  root=$(git rev-parse --show-toplevel 2> /dev/null) || root=""
+  [ -z "$root" ] || files+=("$root/.claude/settings.json" "$root/.claude/settings.local.json")
+  for f in "${files[@]}"; do
+    [ -f "$f" ] || continue
+    v=$(jq -r --arg m "$VBW_MARKETPLACE" '.extraKnownMarketplaces[$m] | if type == "object" then (.autoUpdate | if type == "boolean" then tostring else "none" end) else "absent" end' "$f" 2> /dev/null) || continue
+    case "$v" in
+      true | false) state=$v; listed=1 ;;
+      none) listed=1 ;;
+    esac
+  done
+  f="${CLAUDE_CODE_PLUGIN_CACHE_DIR:-$(vbw_claude_dir)/plugins}/known_marketplaces.json"
+  if [ -f "$f" ]; then
+    v=$(jq -r --arg m "$VBW_MARKETPLACE" 'if type == "object" and (.[$m] | type) == "object" then (.[$m].autoUpdate | if type == "boolean" then tostring else "none" end) else "absent" end' "$f" 2> /dev/null) || v=absent
+    case "$v" in
+      true | false) [ -n "$state" ] || state=$v; listed=1 ;;
+      none) listed=1 ;;
+    esac
+  fi
+  [ "$listed" -eq 1 ] || return 0
+  if ! env_truthy "${FORCE_AUTOUPDATE_PLUGINS:-}"; then
+    if env_truthy "${DISABLE_UPDATES:-}"; then blocked=DISABLE_UPDATES
+    elif env_truthy "${DISABLE_AUTOUPDATER:-}"; then blocked=DISABLE_AUTOUPDATER
+    elif [ -n "${CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC:-}" ]; then blocked=CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+    fi
+  fi
+  how="/plugin, Marketplaces tab, $VBW_MARKETPLACE, Enable auto-update"
+  if [ -n "$blocked" ]; then
+    how="unset $blocked, or set FORCE_AUTOUPDATE_PLUGINS=1 to keep Claude Code's plugin updates on; /vbw:update updates by hand"
+    [ "$state" = true ] || how="unset $blocked, or set FORCE_AUTOUPDATE_PLUGINS=1; then turn it on in Claude Code ($VBW_MARKETPLACE: /plugin, Marketplaces tab, Enable auto-update). /vbw:update updates by hand"
+    doctor_line warn "auto-update is off for VBW's marketplace ($VBW_MARKETPLACE): $blocked is set, which switches off Claude Code's plugin updates too, so nothing tells you a new VBW is out" "$how"
+  elif [ "$state" = true ]; then
+    doctor_line ok "auto-update is on for VBW's marketplace ($VBW_MARKETPLACE): Claude Code updates VBW in the background and tells you with \"Plugin updated: vbw · Run /reload-plugins to apply\""
+  else
+    doctor_line warn "auto-update is off for VBW's marketplace ($VBW_MARKETPLACE): Claude Code does not fetch a new VBW and nothing tells you one is out" "update by hand with /vbw:update, or have Claude Code do it: $how"
+  fi
 }
 
 doctor_sessions() {

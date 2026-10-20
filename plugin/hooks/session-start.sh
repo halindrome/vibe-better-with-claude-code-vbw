@@ -4,7 +4,8 @@
 # and what comes next, in one line. Started in a subdirectory of a VBW project:
 # say that the guards are off. Never a resume directive (ledger D289).
 #
-# Also, in every session: remove VBW 1's command copies (build plan K15).
+# Also, in every session: remove VBW 1's command copies (build plan K15). And in a
+# VBW project, after VBW was updated: offer /vbw:whats-new once (docs/update.md).
 
 # Without jq VBW can neither build its answer nor run its kernel (and the VBW 1
 # reload notice below needs jq too): end quietly, like the per-tool-call hooks.
@@ -39,6 +40,22 @@ if [ -d "$claude_dir/commands/vbw" ]; then
 fi
 
 context="" notice=""
+
+# version_ok V: V is a plain dotted version, X.Y.Z (VBW's versions are).
+version_ok() {
+  [[ $1 =~ ^[0-9]{1,9}\.[0-9]{1,9}\.[0-9]{1,9}$ ]]
+}
+
+# version_newer A B: A is a higher version than B, compared as numbers
+# (2.0.100 is higher than 2.0.41). Both pass version_ok.
+version_newer() {
+  local a1 a2 a3 b1 b2 b3
+  IFS=. read -r a1 a2 a3 <<< "$1"
+  IFS=. read -r b1 b2 b3 <<< "$2"
+  [ $((10#$a1)) -ne $((10#$b1)) ] && { [ $((10#$a1)) -gt $((10#$b1)) ]; return; }
+  [ $((10#$a2)) -ne $((10#$b2)) ] && { [ $((10#$a2)) -gt $((10#$b2)) ]; return; }
+  [ $((10#$a3)) -gt $((10#$b3)) ]
+}
 
 # Which copy of VBW is this? A copy loaded with claude --plugin-dir is named
 # vbw@inline, so Claude Code gives its hooks a plugin data folder named
@@ -100,6 +117,26 @@ if [ -f "$root/.vbw/record.json" ]; then
     esac
     state=$(jq -r '"\(.project.name) · \(.milestone.id) \(.milestone.title) (\(.milestone.status))"' "$root/.vbw/runtime/glance.json" 2> /dev/null || true)
     context="${context}VBW project ($state). Next: $next. Continue with /vbw:vibe. The vbw command is on PATH (vbw help); this session's kernel is ${kernel}${kversion:+ (version $kversion)}."
+    # After an update (docs/update.md), offer /vbw:whats-new once. No network
+    # call: the plugin's version is compared with the highest version this
+    # clone's sessions have seen, kept in the clone's git folder (shared by its
+    # worktrees). The first session in a clone only records; a copy loaded with
+    # claude --plugin-dir is a working tree, so it neither offers nor records.
+    if [ "$loaded" -eq 0 ] && version_ok "$kversion"; then
+      seen_dir=$(git -C "$root" rev-parse --path-format=absolute --git-common-dir 2> /dev/null || true)
+      if [ -n "$seen_dir" ]; then
+        seen_file=$seen_dir/vbw/seen-version
+        seen=""
+        { IFS= read -r seen < "$seen_file"; } 2> /dev/null || seen=""
+        if ! version_ok "$seen"; then
+          { mkdir -p "$seen_dir/vbw" && printf '%s\n' "$kversion" > "$seen_file"; } 2> /dev/null || true
+        elif version_newer "$kversion" "$seen"; then
+          notice="${notice:+$notice }VBW updated from $seen to $kversion. /vbw:whats-new shows what changed."
+          context="${context} VBW was updated from $seen to $kversion since this project last started a session. The user was just shown a notice that /vbw:whats-new shows what changed; do not repeat it."
+          { printf '%s\n' "$kversion" > "$seen_file"; } 2> /dev/null || true
+        fi
+      fi
+    fi
   fi
 elif [ -d "$root/.vbw-planning" ]; then
   context="${context}This project has a VBW 1 plan (.vbw-planning/). Tell the user once: VBW 2 leaves it untouched, and /vbw:vibe or /vbw:convert brings it into VBW 2 through a few questions."
