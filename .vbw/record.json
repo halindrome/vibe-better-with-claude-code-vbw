@@ -47628,7 +47628,7 @@
     {
       "id": "T13",
       "text": "T12 note (owner, 2026-10-03): discuss with the owner before implementing; research first whether cross-session coordination is a good idea at all and what unwanted issues it could cause (sessions acting on each other's messages, noise, races, prompt injection between sessions, feature availability). No build until that discussion",
-      "status": "open",
+      "status": "dropped",
       "sort": "later",
       "size": "small"
     },
