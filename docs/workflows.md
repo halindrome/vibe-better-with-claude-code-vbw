@@ -228,6 +228,7 @@ merely contains `--help` (for example a todo) is still text. The test is
 vbw mutate P1.2 R3.1 "return true always" src/pay.sh
 vbw mutate P1.2 task2 --check C7 "drop the retry" src/pay.sh
 vbw mutate P1.2 task2 --none "documentation only"
+vbw mutate P1.2 R3.1 --none "the figures are a decision in the record"
 ```
 
 After its checks are green, the Dev of a plan breaks its own code on purpose
@@ -245,8 +246,20 @@ cannot fail, and QA would otherwise find it one round at a time.
   that owns no rule runs the checks of its requirements. If an owed check is red
   on the unbroken code, the command refuses and writes nothing. It names the
   check and three ways out: make it pass and commit, `--check ID`, or `--none
-  REASON` naming the plan that completes the rule. `--none REASON` records that the task has
-  no behaviour a test could notice; a rule cannot be recorded this way.
+  REASON` naming the plan that completes the rule. `--none REASON` on a task
+  records that the task has no behaviour a test could notice.
+- **A rule with no code to break** (`Rn.k --none REASON`): a rule may be
+  recorded `--none` only when its check reads nothing that any plan of its
+  requirement builds, for example a check that judges a measurement kept as a
+  decision in the record. The kernel verifies this from the check's recorded
+  read list (the run store in the clone, where every proof keeps what each unit
+  read; the command runs the check once in a clean copy when the store has no
+  current run). The rule is accepted only when the list names no file and no
+  listed folder that a `files` entry of any plan of the requirement covers, done
+  or not. Otherwise it refuses, writes nothing, names each file with its plan
+  and ends "break the rule in that code instead". It also refuses a run that
+  reads the project through git ("reads the project through git, so its files
+  are unknown") and a run with no read list (the file system recorded none).
 - **VBW undoes the break.** The named files go back to their last commit,
   whether a check noticed (red) or not (a survivor). The command refuses, and
   writes nothing, if none of the named files differs from their last commit (the
