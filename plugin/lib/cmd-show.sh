@@ -147,7 +147,8 @@ cmd_show() {
           ((.checks + (.commands | map_values(select(.of_files | not))) + (.test_files // {})) | to_entries[]
             | "  \(.key) \(.value.status)\(if .value.exit != null then " exit \(.value.exit)" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif (.value.why // "") != "" then " ran: \(.value.why)" else " not recorded" end)",
               (.value.tail | select(length > 0) | split("\n")[] | "    | " + .)),
-          (.scope[] | "  scope: " + .)
+          (.scope[] | "  scope: " + .),
+          ((.undone // [])[] | "  scope: \(.commit[0:12]) (\(.plan)) undone by \(.by[0:12]), not judged")
         end'
       ;;
   esac
