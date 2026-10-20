@@ -244,6 +244,8 @@ export function renderPane(ui, input, on) {
   // The tabs are a fixed head; everything under them is one clipped body, shifted by the scroll offset.
   const off = Number.isInteger(sc.offset) && sc.offset > 0 ? sc.offset : 0
   const inner = h(Box, { key: 'body-rows', flexDirection: 'column', flexShrink: 0, marginTop: -off }, ...content)
-  return h(Box, { flexDirection: 'column' }, head,
+  // A pane shorter than its head clips the head to the reported rows: never more rows than Claude Code gives.
+  const top = headRows > rows ? h(Box, { key: 'head-clip', flexDirection: 'column', overflow: 'hidden', height: rows }, head) : head
+  return h(Box, { flexDirection: 'column' }, top,
     h(Box, { key: 'body', flexDirection: 'column', overflow: 'hidden', height: Math.max(0, rows - headRows) }, inner))
 }

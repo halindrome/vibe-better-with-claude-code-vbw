@@ -223,3 +223,17 @@ test("with no height reported the head counts the same way and the pane still en
   }
   assert.deepEqual(h.errors, [])
 })
+
+test('a pane 1 or 2 rows high draws no more rows than Claude Code reports, on every tab, at 40, 64 and 100 columns', async () => {
+  const h = await opened()
+  for (const [id] of TABS) {
+    await h.press('tab-' + id)
+    for (const columns of [40, 64, 100]) {
+      for (const rows of [1, 2]) {
+        const lines = screen(await dock(h, columns, rows), columns)
+        assert.ok(lines.length <= rows, id + ' at ' + columns + ' columns, ' + rows + ' rows: drew ' + lines.length)
+      }
+    }
+  }
+  assert.deepEqual(h.errors, [])
+})
