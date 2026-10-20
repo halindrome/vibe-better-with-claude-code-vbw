@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261020T024905Z",
+    "kind": "qa",
+    "started_at": "2026-10-20T02:49:05Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1565.852611,
+      "in": 355592,
+      "out": 267
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -22034,12 +22045,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "a3cd76475aa6620df601381b0286a608f8924f1bb90588c6f02bdd8e0cf45e79",
-        "at": "2026-10-20T01:00:56Z",
-        "note": "19/20 checks",
-        "rounds": 1
+        "tree": "f62579d3c149d4ac61267ca6d8008bed78faee723ecb467eedbd2d00ba5bdedb",
+        "at": "2026-10-20T02:50:03Z",
+        "note": "7/7 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "standard",
+        "held": false,
+        "fix_rounds": 1,
+        "qa_findings": 1,
+        "escalations": 2
       }
     }
   ],
@@ -47500,7 +47518,7 @@
       "req": "R201",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "Test gap in the L3 qafix scenario (P160.3 task 2). The check that the settings write came before the first 'Contract approved' decision (tools/l3-suite.sh scenario_qafix, first_approval lookup) is pinned by no test that can fail: the recorded mutation 'first approval lookup broken' is a survivor (C428 and C429 both green) and was never strengthened. If the lookup breaks, first_approval silently becomes '9999' (jq error hidden by 2>/dev/null and '// \"9999\"'), the comparison always passes, and the scenario reports autonomy_set_before_first_run true without checking the approval half of R201.12. I checked the lookup works today against the real .vbw/record.json (decisions have .at, text starts 'Contract approved'), so this is a missing guard, not a live bug. Regression test: run the scenario's approval-and-write comparison (extract the jq into a helper or test it on a fixture record plus fixture transcript) and show it returns false when the settings write is later than the first 'Contract approved' decision, and that a record with no such decision is not treated as 'before'.",
       "phase": "P160"
     },
