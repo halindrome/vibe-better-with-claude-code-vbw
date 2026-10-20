@@ -17,9 +17,7 @@
 #   tools/l3.sh screen NAME              print the screen
 #   tools/l3.sh settled NAME             filter a screen (stdin) to what wait compares: above the prompt box
 #   tools/l3.sh stop NAME                end the session
-#   tools/l3.sh debuglog DIR NAME        print the debug log path of chat NAME started in DIR
-#   tools/l3.sh debuglog DIR             list the debug logs that exist for DIR, one per line
-#                                        (two chats on one folder: start them with different NAMEs)
+#   tools/l3.sh debuglog DIR             print the debug log path of the session started in DIR
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -29,10 +27,6 @@ cmd="${1:-}"
 name="${2:-}"
 [ -n "$cmd" ] && [ -n "$name" ] || { sed -n '6,15p' "$0" >&2; exit 2; }
 session="vbw-l3-$name"
-
-# The one place a chat's debug log path is built: beside the folder, named from
-# the folder and the chat, so two chats on one folder never share a log.
-debug_log_path() { printf '%s.%s.debug.log\n' "$1" "$2"; }
 
 screen() { tmux capture-pane -t "$session" -p -S -60; }
 # What wait compares: the screen above the prompt box. The box is the last two
@@ -76,7 +70,7 @@ case "$cmd" in
     [ -z "${L3_INSTALLED_BIN:-}" ] || clean="$L3_INSTALLED_BIN${clean:+:$clean}"
     tmux kill-session -t "$session" 2> /dev/null || true
     tmux new-session -d -s "$session" -x 200 -y 60 -c "$dir" \
-      "env PATH='$clean' claude --model $model --permission-mode auto $plugin --settings '$settings' --debug-file '$(debug_log_path "$dir" "$name")'"
+      "env PATH='$clean' claude --model $model --permission-mode auto $plugin --settings '$settings' --debug-file '$dir.debug.log'"
     sleep 6
     # First run in a directory: accept the folder-trust dialog, as a user would.
     if screen | grep -q 'Yes, I trust this folder'; then
@@ -133,17 +127,7 @@ case "$cmd" in
     ;;
   screen) screen ;;
   settled) settled ;;
-  debuglog)
-    # Here the second argument is the folder; a third names one chat.
-    if [ -n "${3:-}" ]; then
-      debug_log_path "$name" "$3"
-    else
-      for f in "$name".*.debug.log; do
-        [ -e "$f" ] && printf '%s\n' "$f"
-      done
-      true
-    fi
-    ;;
+  debuglog) printf '%s.debug.log\n' "$name" ;;
   stop)
     # Escape first: a question left on screen would take "/exit" + Enter as
     # its answer (the first option), acting for the user.
