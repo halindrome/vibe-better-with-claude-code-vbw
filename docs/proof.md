@@ -685,6 +685,41 @@ file only makes the checks run again. The store is protected
 **Speed.** Checks still run several at a time (`check_jobs`), each in its own
 clean copy of the committed code.
 
+### The two report lines: where the time went
+
+`vbw prove` prints two lines just before its verdict (`proved` or `not proved`).
+`vbw fix done` prints the same two lines right after its `test files: N ran, M
+reused` line; its closing lines and exit code are unchanged.
+
+```text
+VBW's own work: 0.4 of 6.2 min
+ran again: 3 of 52 units; top reasons: src/a.txt changed (2), definition changed (1)
+```
+
+**`VBW's own work: X of Y min`.** Y is the command's wall-clock time; X is the
+part VBW spent on its own bookkeeping instead of running a unit's command (both
+in minutes, one decimal). Own work is: planning the reuse, making the clean
+copies, read tracking (resetting access times before a unit and collecting its
+read list after it), saving the run store, and writing the record. The clock
+inside the proof measures each step; nothing is estimated.
+
+**`ran again: N of M units; top reasons: ...`.** M counts every unit the proof
+covers (checks, approved commands, test files); N counts those that really ran.
+A reason is the unit's own (the list under "When a check runs again", for
+example `src/a.txt changed`) or, when the whole proof decided, that cause (for
+example `this clone has no earlier recorded run`). The line names at most three
+reasons, most frequent first, with their counts; ties keep the order of the
+units in the evidence.
+
+When nothing ran, both lines still print:
+
+```text
+ran again: 0 of 52 units; top reasons: none
+```
+
+The steps stay in the evidence as `evidence.own` and the whole-proof causes as
+`evidence.causes` (docs/record.md). `vbw show evidence` prints them.
+
 Other things to know:
 
 - An uncommitted change in the working folder does not make a check run again,
