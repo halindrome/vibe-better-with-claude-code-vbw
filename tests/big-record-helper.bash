@@ -113,6 +113,7 @@ twin_norm() {
     | gsub("\\b[0-9a-f]{7,64}\\b"; "<hex>")
     | gsub("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z"; "<time>")
     | gsub("[0-9]{8}T[0-9]{6}Z"; "<time>")
+    | gsub("own work: .*"; "own work: <dur>")
     | gsub("\\b[0-9]+(\\.[0-9]+)? ?(ms|s|sec|seconds?|min|minutes?)\\b"; "<dur>")'
 }
 
