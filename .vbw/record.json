@@ -53893,6 +53893,11 @@
       "text": "Proof speed before (M42) on this Mac: stand-in (5000 files, 500 folders, 200 units); prove 86.29 s wall, own work 142.06 s (165%) (VBW's own seconds summed over parallel units, so above wall; 2.4 min of a 1.4 min proof); fix done after one file: reused 99 of 100 units (99 expected from the read lists; a fix of R1 judges its 100 checks, not the test files); jq 52.42 CPU s in 11142 processes; store 78042 bytes; written lists 1266537 bytes; vbw next 31.35 s with the store full; own-work steps: planning 6.22 s, copies 7.21 s, read tracking 121.78 s, saving 6.67 s, record 0.17 s. (a) cleared: jq process count is the same (906 vs 907) for 24 and 96 folders, since no unit of the stand-in lists a folder, so per-folder fingerprints cost nothing here; (b) confirmed: written lists reach 1266537 bytes (about 11 times the 114789 bytes seen with the later one-list-per-run store), and the cache-writing units inflate them; (c) cleared: store and record parsing is about 4 of roughly 55 jq processes per unit and the store is only 78042 bytes, so the cost is not there; (d) confirmed: vbw next takes 31.35 s because it redoes the proof's reuse planning on every call. Biggest own cost: read tracking is 86% of own work (resetting access times over 5206 files and collecting per unit), which the two named fixes alone do not remove.",
       "why": "Measured with tools/measure-proof-speed.sh at its default size on 2026-10-20, on the tree with the P162 speed changes (reads.sh list store, vbw next cache) taken out, so these are the figures before any fix; the same run on the tree with them in showed written lists 114789 bytes and vbw next 28.64 s.",
       "at": "2026-10-20T10:47:56Z"
+    },
+    {
+      "id": "D483",
+      "at": "2026-10-20T13:05:52Z",
+      "text": "Contract approved: 192 requirements, 445 checks, 503 plans (2ebd80422752)"
     }
   ],
   "commands": {
