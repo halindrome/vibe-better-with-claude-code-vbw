@@ -283,6 +283,7 @@
     "tests/panel/view.test.mjs",
     "tests/panel/whats-next.test.mjs",
     "tests/panel/width.test.mjs",
+    "tests/park-ids.bats",
     "tests/plan-block-done.bats",
     "tests/plan-done-committed.bats",
     "tests/plan-scope.bats",
@@ -387,6 +388,9 @@
     "tests/router-triage-line.bats",
     "tests/rules.bats",
     "tests/run-confirm.bats",
+    "tests/scope-undone-docs.bats",
+    "tests/scope-undone-record.bats",
+    "tests/scope-undone.bats",
     "tests/session-start-once.bats",
     "tests/sessions-docs.bats",
     "tests/sessions-guards.bats",
@@ -5942,6 +5946,58 @@
         "tests/mutate-rule-none-docs.bats"
       ],
       "timeout": 300
+    },
+    {
+      "id": "C451",
+      "req": "R204",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/scope-undone.bats"
+      ],
+      "files": [
+        "tests/scope-undone.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C452",
+      "req": "R204",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/park-ids.bats"
+      ],
+      "files": [
+        "tests/park-ids.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C453",
+      "req": "R204",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/scope-undone-record.bats"
+      ],
+      "files": [
+        "tests/scope-undone-record.bats"
+      ],
+      "timeout": 300
+    },
+    {
+      "id": "C454",
+      "req": "R204",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/scope-undone-docs.bats"
+      ],
+      "files": [
+        "tests/scope-undone-docs.bats"
+      ],
+      "timeout": 120
     }
   ],
   "project": {
@@ -14950,6 +15006,100 @@
           "plan": "P164.3"
         }
       ]
+    },
+    {
+      "id": "R204",
+      "text": "The scope check does not judge a commit that a later commit on the branch exactly undoes: the later commit's change is the exact inverse of the earlier one's (verified with git, file by file), whoever made it; a partial or edited revert is still judged (found 2026-10-20: T169's five commits, reverted by hand after park refused, shared plan ids with M42 and blocked its proof)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M42",
+      "rules": [
+        {
+          "text": "a commit with a VBW-Plan trailer naming a plan of the current milestone is not judged when a later standing commit on the branch exactly undoes it, whoever made it and whatever its message says (a hand git revert, a plain commit by another author with no revert line)",
+          "check": "C451",
+          "plan": "P165.1"
+        },
+        {
+          "text": "exact means git's own view, file by file: the same set of paths, and for each path the undo takes it from the commit's new mode and blob back to its old mode and blob; a file added is deleted, a file deleted is added back with the same content and mode, a mode-only change is put back",
+          "check": "C451",
+          "plan": "P165.1"
+        },
+        {
+          "text": "an edited undo (one extra line), a partial undo (one of two files restored) or an undo touching an extra path is not exact: the commit is judged as today and the violation names the file",
+          "check": "C451",
+          "plan": "P165.1"
+        },
+        {
+          "text": "an undo that is itself exactly undone by a later standing commit clears nothing: a revert of a revert leaves the original judged; a re-apply after a revert is a fresh commit, judged on its own when it carries a trailer, and the first commit is judged again",
+          "check": "C451",
+          "plan": "P165.1"
+        },
+        {
+          "text": "each standing commit clears at most one commit, the nearest earlier one it is the mirror image of: a chain of apply, undo, apply, undo leaves all four unjudged",
+          "check": "C451",
+          "plan": "P165.1"
+        },
+        {
+          "text": "the undoing commit is not judged either when it carries a trailer naming a plan of the current milestone, and is listed with itself as commit and its original as by",
+          "check": "C451",
+          "plan": "P165.1"
+        },
+        {
+          "text": "evidence.undone lists one {commit, plan, by} with 40-hex ids per cleared commit whose trailer names a plan of the current milestone, newest pair first, [] when none; a cleared commit naming a shipped milestone's plan is not listed",
+          "check": "C451",
+          "plan": "P165.1"
+        },
+        {
+          "text": "the proof's summary prints, after its scope line, one line per entry in the form 'scope: <12 hex> (<plan>) undone by <12 hex>, not judged'",
+          "check": "C451",
+          "plan": "P165.1"
+        },
+        {
+          "text": "a commit of the current plan that nothing undoes is judged in today's words, evidence.passed and scope[] keep their shape and vbw next's scope action is unchanged",
+          "check": "C451",
+          "plan": "P165.1"
+        },
+        {
+          "text": "the scope check runs the same number of git processes for 5 plan-trailer commits as for 50 with no undone pair: one git log walk plus at most one ancestry check per undone pair found",
+          "check": "C451",
+          "plan": "P165.1"
+        },
+        {
+          "text": "a commit undone by hand with an edit is still judged and nothing is listed; an exact hand revert with no park is no longer judged and is listed with the revert as by",
+          "check": "C452",
+          "plan": "P165.1"
+        },
+        {
+          "text": "a park's recorded revert that merged over a later edit of the same file still clears its commit through the park's list, and the entry names the park's revert as by",
+          "check": "C452",
+          "plan": "P165.1"
+        },
+        {
+          "text": "the record validator accepts evidence without undone, with [] and with well-formed entries, and refuses an entry missing commit, plan or by, an id that is not 40 hex digits, a plan id of a wrong shape, an extra field or a non-array, naming evidence.undone, while passed and scope keep their rules",
+          "check": "C453",
+          "plan": "P165.2"
+        },
+        {
+          "text": "vbw show evidence prints one line per undone entry in the summary's words after the scope lines, and prints nothing for a record written before the field, which still reads",
+          "check": "C453",
+          "plan": "P165.2"
+        },
+        {
+          "text": "docs/proof.md step 4 of vbw prove states the exact-undo rule in plain words (exactly undone, file by file, mirror image, an undo of an undo clears nothing, the undoing commit is not judged either, a partial or edited revert is still judged) and names the summary line; the sentence 'A commit reverted by hand is still judged' is gone",
+          "check": "C454",
+          "plan": "P165.3"
+        },
+        {
+          "text": "docs/record.md's evidence row documents undone with its shape {commit, plan, by}, 40-hex ids, [] when none, and that a record written before the field still reads",
+          "check": "C454",
+          "plan": "P165.3"
+        },
+        {
+          "text": "docs/loop.md keeps the park's rule and says the loop's park and a hand revert clear a commit the same way, so a scope violation parks an item only for a change that is still in the code",
+          "check": "C454",
+          "plan": "P165.3"
+        }
+      ]
     }
   ],
   "phases": [
@@ -22768,6 +22918,34 @@
         "risk: none",
         "breaks: none",
         "guarded: R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R152 (C233, C234), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P165",
+      "title": "A commit exactly undone by a later commit is not judged by the scope check",
+      "reqs": [
+        "R204"
+      ],
+      "milestone": "M42",
+      "goal": "A proof no longer fails because of a commit (a saved change) that a later commit on the branch put back exactly, whoever made that later commit and whether or not it says it is a revert; a partial or edited undo is still judged, and the proof says which commits it left unjudged and why.",
+      "criteria": [
+        "What counts as an exact undo, verified with git and nothing else: a later commit B exactly undoes an earlier commit A when git shows that A is an ancestor of B (A comes before B on the branch that leads to the current HEAD), that both change exactly the same set of file paths, and that for every path B's change is the mirror image of A's as git lists them (`git log --raw --no-abbrev --no-renames`: A takes the path from old mode and old blob id to new mode and new blob id; B takes it from A's new pair back to A's old pair; a file A added is deleted by B, a file A deleted is added back by B with the same content and mode, a mode-only change is put back). A blob id is git's fingerprint of a file's exact content, so an edited revert (one extra or missing line, a whitespace change, a different mode), a partial revert (one path of two restored, or an extra path touched) or a revert made from a commit message alone is not exact and the earlier commit is judged as today. No commit message, trailer or author is read for this: a hand-made `git revert`, a revert by the loop's park, a revert made with any other tool and a commit that happens to restore the same content all count the same.",
+        "Which commits are left unjudged: in the proof's scope check (the step that confirms every commit naming a plan of the current milestone changed only that plan's files), a commit with a `VBW-Plan:` trailer naming a plan of the current milestone is not judged when a standing later commit exactly undoes it; the undoing commit itself, when it carries such a trailer, is not judged either, since the pair leaves every file as it was. A later commit stands only while it is not itself exactly undone by a later standing commit, and each standing commit clears at most one commit: the nearest earlier one it is the mirror image of. So: an undo that is itself undone (revert of a revert, `Reapply`) clears nothing and the original is judged again; a re-apply made after a revert is a fresh commit, judged on its own when it carries a trailer; a chain of apply, undo, apply, undo leaves all four unjudged. A park's recorded reverts (`.loop.items[].reverts`, T163) keep clearing their originals as today, since a park's revert that git had to merge over a later change is not exact at the file level. Everything not covered here is judged exactly as today (a shipped milestone's commits are not judged, every other commit of the current milestone's plans is).",
+        "The proof reports what it skipped, in the record and on screen: the evidence gains `evidence.undone`, an array of `{commit, plan, by}` (the 40-hex id of the unjudged commit, the plan its trailer names, the 40-hex id of the commit that undid it), one entry per cleared commit whose trailer names a plan of the current milestone (an undoing commit left unjudged because of its own trailer is listed with itself as `commit` and its original as `by`), `[]` when none. The proof's summary prints, after its scope line, one line per entry `scope: abc123456789 (P163.2) undone by def123456789, not judged` (12-character ids), and `vbw show evidence` prints the same lines; a record written before this field still reads and both print nothing for it. The record validator accepts the field and refuses an entry missing `commit`, `plan` or `by`, with a non-40-hex id, or with a plan id of a wrong shape; `evidence.passed` and the `scope[]` violations keep their meaning and shape, `vbw next --json`'s `scope` action and the loop's park on a scope violation are unchanged, and the contract fingerprint is untouched.",
+        "The scope check costs a fixed number of git processes however long the history is: one `git log --topo-order --no-renames --raw --no-abbrev -z` walk (with the `VBW-Plan` trailer in its format) replaces today's walk plus one `git diff-tree` per trailer commit (1,255 such commits on this repository; 500 of them took 8.4 s on this Mac), plus at most one ancestry check (`git merge-base --is-ancestor`) per undone pair found; a test counts the git processes of a proof on a history with 5 plan-trailer commits and one with 50, with no undone pair, and finds the same number. The violations found, their wording and their order are exactly today's for every commit not cleared (the existing scope tests in tests/kernel-prove.bats, tests/scope-shipped.bats and tests/park-ids.bats stay green except the one test the next criterion rewrites). The walk uses `-z` for paths, parses nothing with grep or sed on JSON, and builds the per-commit pairs without reading any file content.",
+        "Tests, each shown red before its code, in a new test file and in tests/park-ids.bats: the T169 shape (five commits naming a current plan and touching a file outside it, reverted newest first by hand with `git revert`, no park: the proof passes, `scope ok`, five `undone` entries, five summary lines); the same with the reverts made as plain commits that restore the content without any `This reverts commit` line (still cleared); an undo with one extra line (judged, the violation names the file); an undo that restores one of two files (judged); a mode-only change and its exact undo (cleared); a file added then deleted again (cleared); a revert made before the original, that is, a re-apply after a revert (the re-apply is judged, the first commit is judged again); a revert of a revert (the original is judged again); a park's revert that merged over a later edit of the same file (still cleared through the park's list); the existing test `a commit undone by hand, not by a park, is still judged` becomes `a commit undone by hand with an edit is still judged` (its revert gains one extra change) and a sibling test pins that an exact hand revert is no longer judged; the validator's accept and refuse cases; a record without `undone` read by `vbw show evidence`; the process-count test. All existing proof, loop, park and `show` tests stay green.",
+        "Docs: docs/proof.md step 4 of `vbw prove` replaces `A commit reverted by hand is still judged` with the exact-undo rule in plain words (what exact means, that git verifies it file by file, that an undo of an undo does not count, that the undoing commit is not judged either, and that a partial or edited revert is still judged), and names the summary line; docs/record.md documents `evidence.undone` with its shape and the not-recorded case; docs/loop.md keeps the park's rule and adds that the loop's park and a hand revert now clear a commit the same way, so a scope violation parks an item only for a change that is still in the code. A docs test pins the three statements."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 6 (181378 bytes)",
+        "files: more than 2 in a repository tracking 1102 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414), R202 (C432, C433, C434, C435, C436, C437, C438, C439, C440, C441, C442, C443, C444, C445, C446, C447), R203 (C448, C449, C450)",
         "tests: project test command"
       ],
       "predicted": "standard"
@@ -48712,6 +48890,67 @@
           ]
         }
       ]
+    },
+    {
+      "id": "P165.1",
+      "phase": "P165",
+      "title": "One git walk finds exact undos; the proof leaves them unjudged and lists them",
+      "reqs": [
+        "R204"
+      ],
+      "files": [
+        "plugin/lib/cmd-prove.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: tests/scope-undone.bats and the three R204 tests of tests/park-ids.bats fail on today's code (62 git processes for 5 commits against 107 for 50; no evidence.undone). plugin/lib/cmd-prove.sh, prove_scope: replace the walk plus one git diff-tree per trailer commit with one `git log --topo-order --no-renames --raw --no-abbrev -z --format='%H%x1f%(trailers:key=VBW-Plan,valueonly)'` (stderr dropped, as today). The -z stream is NUL-separated: a commit header `<hash>\\x1f<trailer values, newline-separated>` then, for a commit that changes files, a leading newline and raw entries `:<old mode> <new mode> <old blob> <new blob> <status>` NUL `<path>` NUL (a merge commit lists nothing, as git diff-tree lists nothing for it today). Read it with `read -r -d ''` loops in bash 3.2 (no mapfile, no associative arrays), never grep or sed on JSON, never reading any file content. Per commit keep: the hash, the first VBW-Plan value (as today), and per path its old pair (mode, blob) and new pair (mode, blob). The park's reverts are read as today (`.loop.items[].reverts`, one `git log -1` per recorded revert: bounded by the record, not by the history). One commit: perf(P165.1): one git log walk builds the scope check's per-commit pairs.",
+        "The mirror-image match, in the same prove_scope, newest first in the walk's order. A commit B is the mirror image of an earlier commit A when both change exactly the same set of paths and, for every path, B's old pair equals A's new pair and B's new pair equals A's old pair (a file A added is deleted by B; a file A deleted is added back with the same mode and blob; a mode-only change is put back). Compute per commit a forward key (the sorted lines `path old-mode old-blob new-mode new-blob`, hashed with vbw_sha256 or compared as one string) and a backward key (the same lines with the pairs swapped): B mirrors A exactly when B's backward key equals A's forward key. Standing: a commit stands while no later standing commit has taken it; each standing commit takes at most one commit, the nearest earlier one it mirrors, as the walk reaches that earlier commit (the nearest unconsumed later standing commit whose backward key equals the earlier one's forward key takes it); before a pair counts, one `git merge-base --is-ancestor EARLIER LATER` confirms the earlier commit is an ancestor of the later one (a candidate that fails is skipped and the next nearest is tried). A taken commit no longer stands, so it takes nothing and clears nothing: a revert of a revert leaves the original standing and judged; a re-apply after a revert takes the revert (which carries no trailer) and is itself judged when it carries a trailer; apply, undo, apply, undo pairs newest first and leaves all four unjudged. Judged set: a commit whose trailer names a plan of the current milestone is judged (today's covers/survivor_files jq, today's wording and order) unless it was taken, unless it is a park-cleared original, or unless it is a standing commit that took a commit carrying a VBW-Plan trailer (the pair cancels). No message, trailer or author is read for the match itself. One commit: feat(P165.1): the scope check leaves a commit exactly undone by a later standing commit unjudged.",
+        "The report. prove_scope also prints the cleared list, and cmd_prove puts it in the evidence as `undone`: an array of {commit, plan, by} with 40-hex ids, one entry per cleared commit whose trailer names a plan of the current milestone, emitted as each pair is found (newest pair first; for a pair the undoing commit's own entry, when its trailer names a current plan, comes before the original's), the park-cleared originals included with the park's revert as `by` (each commit listed once; the exact-undo route first when both clear it), `[]` when none; the contract fingerprint and `evidence.passed` (false exactly when a violation or a failing unit exists) and `scope[]` (today's strings) unchanged, so next.jq's scope action and the loop's park are untouched. prove_summary prints, right after its `scope ok` or `scope: ...` lines, one line per entry: `  scope: <commit[0:12]> (<plan>) undone by <by[0:12]>, not judged`. Keep prove_scope's output a single JSON object or two arrays handed to cmd_prove through --slurpfile from a scratch file, never --arg or --argjson. tests/scope-undone.bats green except the process-count test. One commit: feat(P165.1): the proof records and prints the commits it left unjudged.",
+        "A fixed number of git processes and every existing test green: the process-count test of tests/scope-undone.bats (5 against 50 plan-trailer commits, no undone pair, the same count: only the walk, one ancestry check per candidate pair, and the per-park-revert reads); then bats on tests/scope-undone.bats, tests/park-ids.bats (the renamed test, the exact hand revert, the park's merged revert listed through the park's list), tests/kernel-prove.bats, tests/scope-shipped.bats, tests/prove-summary.bats, tests/loop-retry-park.bats, tests/loop-park-report.bats, tests/prove-own-work.bats, all green, under /bin/bash 3.2 as well (PATH=/bin:$PATH). One commit: perf(P165.1): the scope check costs the same git processes for 5 commits as for 50."
+      ]
+    },
+    {
+      "id": "P165.2",
+      "phase": "P165",
+      "title": "The record validator and vbw show evidence know evidence.undone",
+      "reqs": [
+        "R204"
+      ],
+      "files": [
+        "plugin/lib/record.jq",
+        "plugin/lib/cmd-show.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: tests/scope-undone-record.bats fails on today's code (the validator accepts a malformed undone; show evidence prints no undone line). plugin/lib/record.jq, the evidence block: when `undone` is present it must be an array whose every entry is an object with exactly the keys commit, plan and by, commit and by matching ^[0-9a-f]{40}$ and plan matching ^P[0-9]+\\.[0-9]+$; anything else (a non-array, a missing key, an extra key, a short or non-hex id, a plan id like P1 or a title) is one violation: `evidence.undone must be an array of {commit, plan, by}: commit and by 40 hex digits, plan a plan id P<n>.<m> (docs/record.md)`. A record without the field stays valid; `passed` and `scope` keep their rules. tests/record.bats, tests/record-v4-compat.bats, tests/record-compat.bats green. One commit: feat(P165.2): the record validator accepts evidence.undone and refuses a malformed entry.",
+        "plugin/lib/cmd-show.sh, the evidence view: after the `  scope: ` violation lines, one line per entry of `(.undone // [])`: `  scope: \\(.commit[0:12]) (\\(.plan)) undone by \\(.by[0:12]), not judged`, the proof summary's exact words; a record written before the field prints nothing for it and exits 0 (`vbw status` reads it too). tests/scope-undone-record.bats green; tests/kernel-show.bats, tests/prove-own-work.bats, tests/prove-testfiles.bats, tests/proof-selective.bats green. One commit: feat(P165.2): vbw show evidence lists the commits the proof left unjudged.",
+        "Both files under /bin/bash 3.2 (PATH=/bin:$PATH bats on tests/scope-undone-record.bats, tests/record.bats, tests/kernel-show.bats), and the validator's message and the view's line checked against docs/record.md's and docs/proof.md's wording once P165.3 lands (the words are fixed by the test: no change expected). One commit only if something had to move: fix(P165.2): bash 3.2 wording."
+      ]
+    },
+    {
+      "id": "P165.3",
+      "phase": "P165",
+      "title": "Docs: the exact-undo rule, evidence.undone, the park and a hand revert",
+      "reqs": [
+        "R204"
+      ],
+      "files": [
+        "docs/proof.md",
+        "docs/record.md",
+        "docs/loop.md"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "Red first: tests/scope-undone-docs.bats fails on today's docs. docs/proof.md, step 4 of the `vbw prove` list (the `## \\`vbw prove\\`` section): remove the sentence `A commit reverted by hand is still judged` and state the exact-undo rule in plain words, inside step 4 (before step 5), using these phrases verbatim so the docs test finds them: a commit that is `exactly undone` by a later commit is not judged; git verifies it `file by file` (the same files, and each file taken back from the commit's content and mode to what it had before: the later commit is the `mirror image` of the earlier one, as git's own fingerprints of file content show, whoever made it and whatever its message says); `an undo of an undo clears nothing` (the original is judged again, a re-apply is judged as a fresh commit); `the undoing commit is not judged either` when it names a plan of this milestone, since the pair leaves every file as it was; `A partial or edited revert is still judged` (one extra line, one of two files restored, an extra file touched); a park's recorded revert still clears its commit even when git had to merge it over a later change. Name the summary line with a literal example in the form `scope: abc123456789 (P163.2) undone by def123456789, not judged` and the words `undone by` and `, not judged`. Keep the shipped-milestone and park sentences. One commit: docs(P165.3): the proof's scope step explains the exact-undo rule.",
+        "docs/record.md, the `| \\`evidence\\` |` table row (one line): add `undone`, an array of `{commit, plan, by}` (the 40-hex id of the commit the scope check left unjudged, the plan its trailer names, the 40-hex id of the commit that undid it), `[]` when none, with the not-recorded case in the words `a record written before` this field still reads and `vbw show evidence` prints nothing for it; a malformed entry makes the record corrupt. Also update the evidence JSON example in docs/proof.md (`\"scope\": []`) to show `\"undone\": []`. One commit: docs(P165.3): record.md documents evidence.undone.",
+        "docs/loop.md, the park section: keep the park's rule as it is (the steps 1 to 7, `Reverts the item's commits made since its milestone began, newest first`) and add, after the steps or under Bringing the work back, that the loop's park and `a hand revert` now `clear a commit the same way` in the proof's scope check (an exact revert, verified by git file by file), so a scope violation parks an item only for a change that is `still in the code`; a park's recorded revert keeps clearing its commit even when git merged it over a later change. tests/scope-undone-docs.bats green; tests/loop-docs.bats, tests/proof-causes-docs.bats, tests/proof-speed-docs.bats and every other docs test green (bats on tests/*-docs.bats). One commit: docs(P165.3): loop.md says a park and a hand revert clear a commit the same way."
+      ]
     }
   ],
   "fixes": [
@@ -54682,6 +54921,12 @@
       "id": "D486",
       "at": "2026-10-20T16:40:54Z",
       "text": "Contract approved: 192 requirements, 445 checks, 503 plans (f32c8ef1c2ba)"
+    },
+    {
+      "id": "D487",
+      "text": "Scope: a commit exactly undone by a later git revert is not judged (R204)",
+      "why": "owner chose the general fix over rewriting history (2026-10-20 19:00): the five T169 commits reverted by hand this morning share plan ids with M42; park could not run after loop stop; git verifies the inverse, so nothing is taken on trust",
+      "at": "2026-10-20T18:13:57Z"
     }
   ],
   "commands": {
@@ -61930,6 +62175,19 @@
           "usd": 5.363974,
           "in": 3469,
           "out": 335
+        }
+      },
+      {
+        "id": "plan-20261020T181427Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T18:14:27Z",
+        "ended": "2026-10-20T18:45:52Z",
+        "cost": {
+          "usd": 10.61462,
+          "in": 2864,
+          "out": 128
         }
       }
     ],
