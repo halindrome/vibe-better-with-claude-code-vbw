@@ -8,7 +8,9 @@
 # included. When the store cannot be used, the steps run under check_jobs
 # alone with the existing message. L1 (tests/machine-helper.bash): the store is
 # sampled every 50 ms while the runs go; a stand-in jq logs when the run store
-# (runs.json) is read.
+# (runs.json) is read. Events are ordered by their line in the one shared log
+# ($LOG, one small append each), never by a clock: a sample's line follows its
+# snapshot, a store read's line comes before the read.
 
 load helper
 load machine-helper
@@ -21,31 +23,35 @@ setup() {
   REAL_JQ=$(command -v jq)
   cat > "$TEST_ROOT/standin/jq" << SH
 #!/bin/sh
-case " \$* " in *runs.json*) printf '%s\\n' "\$(date +%s)" >> "\$STORE_READS" ;; esac
+case " \$* " in *runs.json*) printf 'read runs.json\\n' >> "\$LOG" ;; esac
 exec "$REAL_JQ" "\$@"
 SH
   chmod +x "$TEST_ROOT/standin/jq"
-  export STORE_READS="$TEST_ROOT/store-reads"
-  : > "$STORE_READS"
 }
 
 teardown() { machine_teardown; }
 
 # sample SECONDS: in the background, every 50 ms for SECONDS, copy the store to
-# $SNAPS/N.json (nothing when there is none) and note the time and whether a
-# proof copy exists in $PROJECT; SAMPLER is its pid.
+# $SNAPS/N.json (nothing when there is none), note whether a proof copy exists in
+# $PROJECT, then log "sample N"; SAMPLER is its pid.
 sample() {
   (
     local i n=$(($1 * 20))
     for ((i = 0; i < n; i++)); do
       cp "$STORE" "$SNAPS/$i.json" 2> /dev/null || true
-      date +%s > "$SNAPS/$i.t"
       ls -d "$PROJECT"/.vbw/runtime/proof.* 2> /dev/null | wc -l | tr -d ' ' > "$SNAPS/$i.copies"
+      printf 'sample %s\n' "$i" >> "$LOG"
       sleep 0.05
     done
   ) &
   SAMPLER=$!
 }
+
+# sample_line N: the log line of sample N (empty: it was never logged).
+sample_line() { awk -v n="$1" '$1 == "sample" && $2 == n { print NR; exit }' "$LOG"; }
+
+# samples_before LINE: the samples logged before log line LINE, one number per line.
+samples_before() { awk -v l="$1" 'NR < l && $1 == "sample" { print $2 }' "$LOG"; }
 
 # snaps_where JQ: the sample numbers whose store satisfies JQ.
 snaps_where() {
@@ -84,27 +90,25 @@ hold() {
   local pa=$!
   wait_ok "$HOLDER" "$pa" || { show; false; }
   wait "$SAMPLER" 2> /dev/null || true
-  local release i t
-  release=$(awk '$1 == "end" && $3 == "B-C1" { print $2; exit }' "$LOG")
+  local release i l first
+  # B's unit logs its end before B gives the slot back: a line before it happened during the hold.
+  release=$(end_line B-C1)
   [ -n "$release" ] || { show; false; }
   # While B held the slot: A waited as vbw:plan, made no copy, read no run store.
   local waiting='' during=0
   for i in $(snaps_where 'any(.waiting[]; .id == "vbw:plan")'); do
-    t=$(cat "$SNAPS/$i.t")
-    [ "$t" -ge "$release" ] || waiting=1
+    l=$(sample_line "$i")
+    [ -z "$l" ] || [ "$l" -gt "$release" ] || waiting=1
   done
-  [ -n "$waiting" ] || { echo "no sample during the hold showed vbw:plan waiting"; cat "$SNAPS"/*.json; false; }
-  for i in "$SNAPS"/*.t; do
-    t=$(cat "$i")
-    [ "$t" -ge "$release" ] && continue
+  [ -n "$waiting" ] || { echo "no sample during the hold showed vbw:plan waiting"; show; cat "$SNAPS"/*.json; false; }
+  for i in $(samples_before "$release"); do
     during=$((during + 1))
-    [ "$(cat "${i%.t}.copies")" = 0 ] || { echo "a proof copy existed while the slot was held elsewhere"; false; }
+    [ "$(cat "$SNAPS/$i.copies")" = 0 ] || { echo "a proof copy existed while the slot was held elsewhere (sample $i)"; show; false; }
   done
-  [ "$during" -gt 0 ] || { echo "no sample fell inside the hold"; false; }
-  while IFS= read -r t; do
-    [ -z "$t" ] || [ "$t" -ge "$release" ] || { echo "the run store was read at $t, before the holder let go at $release"; false; }
-  done < "$STORE_READS"
-  [ -s "$STORE_READS" ] || { echo "the stand-in jq never saw the run store read"; false; }
+  [ "$during" -gt 0 ] || { echo "no sample fell inside the hold"; show; false; }
+  first=$(awk '$1 == "read" && $2 == "runs.json" { print NR; exit }' "$LOG")
+  [ -n "$first" ] || { echo "the stand-in jq never saw the run store read"; show; false; }
+  [ "$first" -gt "$release" ] || { echo "the run store was read (log line $first) before the holder let go (line $release)"; show; false; }
   # Once it ran: the store listed a bookkeeping step as held.
   [ -n "$(snaps_where 'any(.held[]; .id == "vbw:plan" or .id == "vbw:copies" or .id == "vbw:save")')" ] \
     || { echo "no sample showed vbw:plan, vbw:copies or vbw:save held"; cat "$SNAPS"/*.json; false; }

@@ -261,9 +261,7 @@ tests/timed-speed.bats'
   cd "$REPO_ROOT"
   local f bad=""
   for f in tests/*.bats; do
-    # tests/machine-bookkeeping.bats stamps events with the wall clock to put them in order
-    # against the moment another command let go; no assertion in it is about how long anything took.
-    case "$f" in tests/timed-* | tests/release-run.bats | tests/machine-bookkeeping.bats) continue ;; esac
+    case "$f" in tests/timed-* | tests/release-run.bats) continue ;; esac
     # A duration: bash's SECONDS clock or the wall clock in seconds.
     if grep -vE '^[[:space:]]*#' "$f" | grep -qwE 'SECONDS|date \+%s'; then bad="$bad $f(clock)"; fi
     # A speed benchmark judged at its real limit: every run of one sets the
