@@ -47728,12 +47728,93 @@
       "after": [
         "P161.3"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md, Reusing results: a file a unit writes carries that unit's read list (kept once per run, by name, in the copy's written-file store written.json), a later unit that reads it inherits the list, and vbw next keeps the planned unit list in .vbw/runtime/proof-units.json.",
         "docs/next.md, The step: the proof sizing is cached in .vbw/runtime/proof-units.json, keyed on the committed tree, the record's fingerprint and the run store's digest, and recomputed when any of them changes.",
         "tests/proof-speed-reuse-docs.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "docs/proof.md says how written files carry read lists and names the vbw next cache; docs/next.md names the cached proof sizing, its key and when it is recomputed"
+          },
+          "what": "next.md: removed the word recomputed",
+          "files": [
+            "docs/next.md"
+          ],
+          "checks": {
+            "C443": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:08:16Z",
+          "head": "dcf1e9569e19c7bacdc875986701e818672ee843"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "docs/proof.md says how written files carry read lists and names the vbw next cache; docs/next.md names the cached proof sizing, its key and when it is recomputed"
+          },
+          "what": "proof.md: wrong store file name",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C443": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:08:52Z",
+          "head": "dcf1e9569e19c7bacdc875986701e818672ee843"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "docs/proof.md says how written files carry read lists and names the vbw next cache; docs/next.md names the cached proof sizing, its key and when it is recomputed"
+          },
+          "what": "proof.md: wrong cache name",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C443": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:10:07Z",
+          "head": "dcf1e9569e19c7bacdc875986701e818672ee843"
+        },
+        {
+          "task": 1,
+          "what": "wrong store file name",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C443": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:10:45Z",
+          "head": "dcf1e9569e19c7bacdc875986701e818672ee843"
+        },
+        {
+          "task": 2,
+          "what": "wrong cache name",
+          "files": [
+            "docs/next.md"
+          ],
+          "checks": {
+            "C443": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:11:16Z",
+          "head": "dcf1e9569e19c7bacdc875986701e818672ee843"
+        },
+        {
+          "task": 3,
+          "none": "task runs the check; nothing to break",
+          "at": "2026-10-20T13:11:19Z"
+        }
       ]
     },
     {
@@ -47860,13 +47941,79 @@
       "after": [
         "P162.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Red first: tests/machine-bookkeeping.bats fails on the current code (no vbw:plan entry; the store is read and a copy made while the slot is held elsewhere).",
         "plugin/lib/slots.sh: slots_hold NAME and slots_release NAME for a bookkeeping step of the run (take and give under the run's pid and the given name, the wait counted like a unit's; they never set the unit mark VBW_SLOT_STORE; a nested run takes none; a store that cannot be used lets the step run anyway, with the existing message).",
         "plugin/lib/cmd-prove.sh: vbw:plan held around the planning (proofreuse_plan, proofcauses_find, testfiles_plan), vbw:copies around proofcopy_create_slots, vbw:save around proofreuse_save and testfiles_save; plugin/lib/cmd-fix.sh: checks_begin moved before its planning so the store is open, then the same three steps; step_proof_units (vbw next) never opens the store, so it never waits.",
         "kernel-next.bats, sessions-next.bats, machine-recovery.bats, machine-midrun.bats, machine-turns.bats, machine-wait-line.bats, fix-done-output.bats, prove-own-work.bats and machine-bookkeeping.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "with the only slot held, vbw prove waits as vbw:plan before reading the run store or making a copy, and the store lists the bookkeeping step while it runs"
+          },
+          "what": "prove no longer holds vbw:plan",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C445": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:21:32Z",
+          "head": "b0ec7ff46051b34a730f7779923749eeda1e708b"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "when the store cannot be used the bookkeeping steps run under check_jobs alone with the existing message, and a nested run takes no slot"
+          },
+          "what": "a nested run takes bookkeeping slots",
+          "files": [
+            "plugin/lib/slots.sh"
+          ],
+          "checks": {
+            "C445": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:24:00Z",
+          "head": "feabe9ee63f211bacfbb46cfd4b00911a43916e6"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "two proofs at once with limit 2 and three units each never hold more than 2, VBW's own entries included"
+          },
+          "what": "bookkeeping steps ignore the limit",
+          "files": [
+            "plugin/lib/slots.sh"
+          ],
+          "checks": {
+            "C445": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:26:20Z",
+          "head": "98b5623c0bdc1a649bedf6f586bae5b9890f96c8"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "vbw next --json never waits for a slot: it answers at once while every slot is held"
+          },
+          "what": "loading the prove code waits for a slot",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C445": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:28:50Z",
+          "head": "98b5623c0bdc1a649bedf6f586bae5b9890f96c8"
+        }
       ]
     },
     {
@@ -47923,13 +48070,197 @@
         "plugin/lib/record.jq"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Red first: tests/mutate-rule-none.bats fails on the current code (every rule --none is refused). plugin/lib/proofreuse.sh: proofreuse_judge KEYS HEAD OFF [ANY] skips its 'last result failed' clause when ANY is 1 (a failed run is judged like a passing one: the one reuse rule, applied whatever the status), and proofreuse_current KEY FP HEAD is a front over it like proofreuse_reason (succeeds printing nothing when the stored run is current; else prints the reason: never passed, no read list, definition changed, reads the project through git, <file> changed, <file> deleted, <dir> listing changed, the code it ran on is unknown). proofreuse-rule.bats, proof-plan-batch.bats, proof-reuse.bats green.",
         "plugin/lib/record.jq, mutation_ok: an entry with none is either a task entry with exactly the keys at, none, task (as today) or a rule entry with exactly at, head, none, rule, where rule is {req, text} both non-empty strings, head a 40-hex string and none a non-empty string; a rule none entry carrying checks, result, files or what, lacking head, or whose rule lacks req or text is a violation in the existing wording ('<plan> mutations must be recorded breaks (vbw mutate)'). The validator case of tests/mutate-rule-none.bats green; record.bats, apply-keeps-mutations.bats green.",
         "plugin/lib/cmd-mutate.sh, the rule --none path up to the judged run: --none is accepted for a rule; an empty reason ('--none needs a reason: ...'), extra words after it (usage), --check with a rule, an unknown plan, a rule number the requirement lacks and a plan not serving the requirement are refused as today, nothing written and no run made. Then: vbw_require_project, a committed HEAD (git rev-parse HEAD), checks_begin RECORD (the contract must be approved), PROOFREUSE_STORE=$(proofreuse_store_read), the head tree (vbw_head_tree) and the check's fingerprint (proofreuse_check_fp); proofreuse_current 'check:ID' FP TREE decides: when it prints a reason, make the run once: reads_probe as vbw prove does (a failing probe means reads off), proofcopy_create_slots 1, checks_run_all RECORD ID, proofcopy_remove, the result flattened with PROVE_FLAT (off when the probe failed), proofreuse_save RECORD RESULT '{}' TREE \"$(vbw_now)\" (the store entry exactly as a proof's: status as it came, reads, dirs, git, tree, at, seconds, fp), then print 'ran ID once to record its read list' and read the store again; checks_end. The command never judges a list it did not record and never derives one from file names.",
         "plugin/lib/cmd-mutate.sh, the judgement and the write, one jq over the store entry and the record's plans serving Rn (done or not): reads null -> refuse 'Rn.k: ID has no read list: the file system recorded none'; git true -> refuse 'Rn.k: ID reads the project through git, so its files are unknown: break the rule in the plan'\\''s code instead'; a files entry matches a read file when it equals it, ends with / and prefixes it, or is *; it matches a listed folder (dirs[].path) when it equals the folder, equals the folder plus /, ends with / and prefixes the folder plus /, is * or is a file directly inside it (its parent folder is the listed path); any match -> refuse (exit 1, nothing written) 'Rn.k is a rule its plans'\\'' code could break: ID reads <file> (<plan>, <plan>), <file> (<plan>) and lists <folder> (<plan>): break the rule in that code instead', a * plan named as '<plan> covers every file' in place of its per-file entries; no match -> record_update appends {rule: {req, text}, none: REASON, at: vbw_now, head: git rev-parse HEAD} to the plan'\\''s mutations (the contract fingerprint is untouched: mutations are outside it) and prints 'Rn.k recorded: ID read N files and M folders, none of them of Rn'\\''s plans (<plan>, <plan>)' ('1 file', '1 folder' in the singular) and then the reason on its own line, exit 0. Note: tests/mutate-command.bats pins the words 'a rule' in the refusal of a rule --none, so the coverage refusal keeps them. tests/mutate-rule-none.bats, mutate-command.bats, mutate-own-rules.bats, mutate-rule-owner.bats, mutate-plan-done.bats, mutate-show.bats, mutate-pending-check.bats, mutate-strengthen.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R203",
+            "text": "vbw mutate PLAN Rn.k --none REASON is accepted (exit 0, the entry written) only when the rule's check has a current recorded run with a read list, no git flag, and no read file or listed folder covered by a files entry of any plan of Rn, done or not"
+          },
+          "what": "never refuse on coverage",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C448": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:31:55Z",
+          "head": "a2877be31308cb749a8d085f363609aa0be9265b"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "a files entry covers a read file when it is the same path, a folder entry (dir/) containing it, or *; it covers a listed folder when it covers that folder or is a file directly inside it, never when it only lies deeper down"
+          },
+          "what": "folder entries cover nothing",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C448": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T13:33:11Z",
+          "head": "a2877be31308cb749a8d085f363609aa0be9265b"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "the acceptance prints one line naming the check, how many files and folders it read and that none belongs to the requirement's plans, then the recorded reason"
+          },
+          "what": "reason line not printed",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C448": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:34:22Z",
+          "head": "a2877be31308cb749a8d085f363609aa0be9265b"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "a read list naming plan files is refused, nothing written: each read file or listed folder with the plan or plans covering it, ending 'break the rule in that code instead'; a plan whose files are * is named as covering every file"
+          },
+          "what": "refusal drops its ending",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C448": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:35:31Z",
+          "head": "a2877be31308cb749a8d085f363609aa0be9265b"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "a run that read the project through git is refused saying its files are unknown; a run with no read list is refused saying the file system recorded none"
+          },
+          "what": "git flag ignored",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C448": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:36:42Z",
+          "head": "a2877be31308cb749a8d085f363609aa0be9265b"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "an empty reason, extra words after it, --check with a rule, an unknown plan, a rule number the requirement lacks or a plan not serving the requirement are refused as today, nothing written and no run made"
+          },
+          "what": "empty reason accepted for a rule",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C448": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:38:01Z",
+          "head": "a2877be31308cb749a8d085f363609aa0be9265b"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "the judged run is the check's last recorded run in the clone's run store, used only while current: its approved definition unchanged and, between its tree and the committed code, no file on its read list changed or deleted and no listed folder's listing changed, whatever its pass or fail"
+          },
+          "what": "stale run judged as current",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C448": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:38:57Z",
+          "head": "a2877be31308cb749a8d085f363609aa0be9265b"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "with no run of the check in the store, or a stale one, the command runs the check once in a clean copy of the committed code with read tracking on, records that run in the store as vbw prove would (status, read list, tree, time), says it made that run, and judges that list"
+          },
+          "what": "run not recorded",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C448": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:40:05Z",
+          "head": "a2877be31308cb749a8d085f363609aa0be9265b"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "the accepted entry is {rule: {req, text}, none, at, head} with head the 40-hex commit of the committed code the judged run was current for; the validator accepts it and refuses a rule none entry carrying checks, result, files or what, or lacking head or the rule's req and text; a task none entry keeps its shape"
+          },
+          "what": "validator drops the head test",
+          "files": [
+            "plugin/lib/record.jq"
+          ],
+          "checks": {
+            "C448": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:41:20Z",
+          "head": "a2877be31308cb749a8d085f363609aa0be9265b"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "the write leaves the contract fingerprint unchanged, so nothing waits for approval again"
+          },
+          "what": "the write touches the contract",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C448": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:42:44Z",
+          "head": "a2877be31308cb749a8d085f363609aa0be9265b"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "a files entry covers a read file when it is the same path, a folder entry (dir/) containing it, or *; it covers a listed folder when it covers that folder or is a file directly inside it, never when it only lies deeper down"
+          },
+          "what": "folder entries cover nothing",
+          "files": [
+            "plugin/lib/cmd-mutate.sh"
+          ],
+          "checks": {
+            "C448": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:46:37Z",
+          "head": "5adb40fa6a019d3b671c6bb68d9feced6c643544",
+          "strengthened": [
+            "tests/mutate-rule-none.bats"
+          ],
+          "pending": [
+            "tests/mutate-rule-none.bats"
+          ]
+        }
       ]
     },
     {
@@ -60895,6 +61226,19 @@
           "usd": 11.718263,
           "in": 9755,
           "out": 138
+        }
+      },
+      {
+        "id": "build-20261020T130615Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T13:06:15Z",
+        "ended": "2026-10-20T13:47:30Z",
+        "cost": {
+          "usd": 1.789426,
+          "in": 2529,
+          "out": 183
         }
       }
     ],
