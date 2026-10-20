@@ -48594,6 +48594,13 @@
       "sort": "later",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T171",
+      "text": "Panel render headroom (2026-10-20): R199's whole-row tab layout raised 'render, Comms and Mission Control' from about 0.44 ms to 0.47-0.51 ms CPU against the 0.5 ms budget (release run 2.0.40: 0.473). Profile the render path and win back headroom (measure the head once per width, not per candidate), so a slower Mac does not fail the release bench",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
