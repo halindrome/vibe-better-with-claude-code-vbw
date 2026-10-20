@@ -47840,7 +47840,7 @@
       "id": "T52",
       "text": "Panel does not open at session launch in a wide window (owner, Portfolium, 2.0.22 build via --plugin-dir); it opens once a VBW run starts. R52 says it opens by itself: find the launch trigger gap and add the case to the panel L3 scenario",
       "status": "open",
-      "sort": "later",
+      "sort": "next",
       "size": "small"
     },
     {
