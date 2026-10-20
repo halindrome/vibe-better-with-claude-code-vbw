@@ -21995,12 +21995,19 @@
         }
       ],
       "qa": {
-        "result": "fail",
+        "result": "pass",
         "tier": "deep",
-        "tree": "eb56f68fc91026d60b88f93ec89a45337606c54dd70b2e3575869d213e78e139",
-        "at": "2026-10-20T01:03:00Z",
-        "note": "27/28 checks",
-        "rounds": 1
+        "tree": "30cbfde0d5ea0dd0766a087d09383f2f43859a5a54a6133de8aae4242bba0a1e",
+        "at": "2026-10-20T02:50:05Z",
+        "note": "6/6 checks"
+      },
+      "outcome": {
+        "tier": "deep",
+        "predicted": "deep",
+        "held": true,
+        "fix_rounds": 1,
+        "qa_findings": 1,
+        "escalations": 5
       }
     },
     {
@@ -47527,7 +47534,7 @@
       "req": "R199",
       "source": "qa",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "The pane draws more rows than Claude Code reports when the pane is 1 row high and narrow. Evidence: with the L1 stand-in at bodyRows 1, the pane draws 2 lines at 40 columns and at 64 columns (tab rows = 2, headRows = 2, body height clamps to 0, the head is not clipped); at 100 columns it draws 1. The old code drew 1 row at bodyRows 1 at every width, so this is a regression of criterion 'on every tab the pane draws no more rows than Claude Code reports' (R189 containment too). panel-pane.js headRows = max(portrait rows, tab rows) + gap is never limited to the reported rows; tests only try bodyRows 4 and up (containment SIZES) and 22/30 (tab-rows). Regression test: draw the pane at bodyRows 1 (and 2) at 40, 64 and 100 columns on every tab and assert screen(...).length <= bodyRows; fix by limiting the head to the reported rows (clip the tab rows / overflow hidden with height = rows) when headRows > rows.",
       "phase": "P159"
     }
