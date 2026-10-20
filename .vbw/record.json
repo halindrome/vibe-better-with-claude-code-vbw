@@ -22268,7 +22268,7 @@
         "The plan that writes the scenario runs it in its build on this Mac (`bash tools/l3-suite.sh sessions`) and commits tools/l3-results/sessions.json exactly as the run wrote it; a Dev that cannot start Claude Code (no tmux, no claude, no money) blocks the plan saying so and never writes a result by hand; the plan note names the scenarios run and not run. `bash tools/test.sh --lint` (shellcheck on tools/) is clean."
       ],
       "proposed": "standard",
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 3 (153476 bytes)",
@@ -22278,7 +22278,15 @@
         "guarded: R4 (C4), R5 (C5), R8 (C8), R18 (C18), R29 (C26), R34 (C30), R42 (C38), R48 (C49, C50), R51 (C52, C53, C66), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R72 (C116, C118), R116 (C182, C183), R173 (C281, C282, C283, C284, C285, C286, C289), R180 (C307, C308, C309, C310), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R199 (C424, C425, C430), R200 (C426, C427, C431), R201 (C428, C429)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "escalations": [
+        {
+          "at": "2026-10-20T08:07:11Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "Dev blocked P161.1: Code done and committed (f34b413c). R202.1 mutation cannot be recorded: vbw mutate refuses because C432 is red on unbroken code (its scenario/result tests wait for P161.2). By hand, breaking debug_log_path to ignore the chat name turned the 3 driver tests red. Needs a decision: allow mutate with a narrowed check for R202.1, or record it after P161.2."
+        }
+      ]
     },
     {
       "id": "P162",
@@ -22333,7 +22341,7 @@
         "The tools/l3-suite.sh header, CLAUDE.md and AGENTS.md (the Testing paragraph, kept identical) name the covers lines and `--stale`, and tests/standards-selftest.bats still passes; `bash tools/test.sh --lint` is clean."
       ],
       "proposed": "standard",
-      "tier": "standard",
+      "tier": "deep",
       "reasons": [
         "requirements: 1",
         "files: 7 (215825 bytes)",
@@ -22343,7 +22351,21 @@
         "guarded: R4 (C4), R5 (C5), R8 (C8), R21 (C16), R34 (C30), R42 (C38), R48 (C49, C50), R51 (C52, C53, C66), R55 (C56, C57), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R67 (C96), R72 (C116, C118), R111 (C171, C172, C173, C174, C175), R116 (C182, C183), R128 (C200), R142 (C204, C205), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R151 (C231, C232), R152 (C233, C234), R164 (C251), R167 (C257, C258, C259, C260), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R199 (C424, C425, C430), R200 (C426, C427, C431), R201 (C428, C429)",
         "tests: project test command"
       ],
-      "predicted": "standard"
+      "predicted": "standard",
+      "escalations": [
+        {
+          "at": "2026-10-20T08:08:38Z",
+          "from": "standard",
+          "to": "deep",
+          "reason": "Dev blocked P163.1: Tasks 1-4 are committed (D477 decision, spec Constraints rule, AGENTS.md paragraph via the CLAUDE.md symlink; tests 14-16 of C435 and the standards/contributor bats pass). The mutation step for R202.17-19 cannot run: vbw mutate refuses because C435 fails on unbroken code (tests 11-13, covers lines and --stale, belong to P163.3). Re-run vbw mutate for R202.17, R202.18, R202.19 once P163.3 makes C435 green, then vbw plan done P163.1."
+        },
+        {
+          "at": "2026-10-20T08:11:24Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P163.2: Code and tests done (commits 1f28a792, 03e7f7b0; tools/l3-stale.sh, tools/test.sh). vbw mutate refuses R202.20-23 because check C435 is red on unbroken code: its covers, --stale, decision, Constraints and rulebook tests belong to P163.1/P163.3. I broke each rule by hand and the matching C435 tests failed (R20 comparison reversed: 4; exit 1->0: 1; commit date dropped: 1; run line renamed: 1; eval added: 1; stale_check removed from release: 3); files restored. Tasks 1-3 recorded --none naming P163.3. Needs: rerun 'vbw mutate P163.2 R202.20..23' after P163.3 turns C435 green, or a decision to accept the manual breaks. bash tools/l3-stale.sh now prints 'cannot judge: scenario greenfield has no # covers: line' (exit 2) until P163.3 adds covers lines."
+        }
+      ]
     }
   ],
   "plans": [
@@ -45631,13 +45653,14 @@
         "tools/l3.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "tools/l3.sh start NAME DIR: the debug log is per chat, named from the folder and the chat (DIR.NAME.debug.log, one path built in one place and used by start and by debuglog), so two chats on one folder never share a log; `tools/l3.sh debuglog DIR NAME` prints that chat's path. The tmux session stays vbw-l3-NAME, so chats differ by NAME.",
         "`tools/l3.sh debuglog DIR` with no NAME lists the debug logs that exist for DIR, one per line, so today's callers (tools/l3-suite.sh calls `l3 debuglog \"$dir\"` in three places) keep working when one chat ran; the usage header documents both forms. Nothing else in start changes: trust dialog, modes, PATH cleaning, L3_STATUSLINE, and the resume scenario's close-and-reopen path (same NAME, same log).",
         "bash tools/test.sh --lint clean; bats tests/l3-sessions.bats: its three tools/l3.sh tests green (the scenario and result tests stay red until P161.2 runs the scenario); tests/l3-wait.bats, tests/l3-testmode.bats still green."
-      ]
+      ],
+      "note": "Code done and committed (f34b413c). R202.1 mutation cannot be recorded: vbw mutate refuses because C432 is red on unbroken code (its scenario/result tests wait for P161.2). By hand, breaking debug_log_path to ignore the chat name turned the 3 driver tests red. Needs a decision: allow mutate with a narrowed check for R202.1, or record it after P161.2."
     },
     {
       "id": "P161.2",
@@ -45722,14 +45745,15 @@
         "AGENTS.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "Establish the cause from the record and the code, with jq on .vbw/record.json and grep: phases P148, P151, P159 and P160 carry a criterion naming a real-session scenario (and plans P148.4, P151.4, P159.4, P160.3 list tools/l3-suite.sh); phases P152 to P157 carry none, so no plan of M38 or M39 listed tools/l3-suite.sh; nothing in the planning path demands one (plugin/agents/architect.md, plugin/agents/lead.md, plugin/workflows/planning.js, plugin/lib/cmd-apply.sh and the spec's Constraints say nothing of scenarios; D95 is one decision among about 470); tools/test.sh --release knows nothing of scenarios, so the 2.0.40 release gave no signal. Record it with `vbw decide TEXT WHY`: TEXT names P148, P151, P159, P160 against P152 to P157, D95 and tools/test.sh --release; WHY names the evidence and what P163 changes for each gap: the Constraints rule the Architect reads at every planning, and the stale check (tools/l3-stale.sh, run first by tools/test.sh --release).",
         ".vbw/spec.md `## Constraints` (empty today): the rule, in plain words: a milestone that changes what a person sees or does in a real Claude Code session adds or extends its real-user scenario in tools/l3-suite.sh, runs it while the milestone is built, and commits its result in tools/l3-results/; a result older than the code it covers (its scenario's covers line) is stale and stops the release run. Then `vbw spec sync`; no requirement line changes (tests/l3-stale.bats compares them with the record).",
         "CLAUDE.md and AGENTS.md: the one Testing bullet '**Real-user scenarios**' (kept byte-identical in both files) names the covers line each scenario declares and `bash tools/l3-suite.sh --stale`, which the release run runs first and which stops it on a stale result; the rest of the bullet stays.",
         "bats tests/standards.bats tests/standards-selftest.bats tests/release-run-docs.bats tests/outside-writes-docs.bats tests/contributor-files.bats green; bats tests/l3-stale.bats: its decision, Constraints and rulebook tests green (the stale-check and covers tests turn green with P163.2 and P163.3)."
-      ]
+      ],
+      "note": "Tasks 1-4 are committed (D477 decision, spec Constraints rule, AGENTS.md paragraph via the CLAUDE.md symlink; tests 14-16 of C435 and the standards/contributor bats pass). The mutation step for R202.17-19 cannot run: vbw mutate refuses because C435 fails on unbroken code (tests 11-13, covers lines and --stale, belong to P163.3). Re-run vbw mutate for R202.17, R202.18, R202.19 once P163.3 makes C435 green, then vbw plan done P163.1."
     },
     {
       "id": "P163.2",
@@ -45743,13 +45767,31 @@
         "tools/test.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "tools/l3-stale.sh (new; bash 3.2 rules of CLAUDE.md: no mapfile, no associative arrays, no eval, arrays guarded under set -u; jq for JSON; shellcheck clean): `bash tools/l3-stale.sh [--repo DIR]` (default: the repository this script is in) reads DIR/tools/l3-suite.sh's ALL list and, for each scenario, its covers line (the nearest `# covers: <git pathspecs>` comment line above `scenario_NAME()` with only comment lines between), then DIR/tools/l3-results/NAME.json's `at` (epoch through jq fromdateiso8601) and the newest commit touching the pathspecs (`git -C DIR log -1 --format='%h %cI %ct' -- <pathspecs>`, committer time). Stale: no result file, or the commit's time is after `at`. Output: one line per stale scenario `stale: NAME  result <at or 'no result'>  newest commit <short hash> <date>`, in ALL's order, then `run: bash tools/l3-suite.sh NAME...`, exit 1; nothing stale: one line `no stale real-session result (N scenarios)`, exit 0; a scenario with no covers line or a shallow clone (git rev-parse --is-shallow-repository): `cannot judge: <why>`, exit 2. No Claude Code, no network, no money; a few seconds on this repository.",
         "tools/test.sh: `--release` runs `bash tools/l3-stale.sh` first, before the reuse decision, on the reuse path and the full path alike, and exits with its code when it is not 0 (its lines name the stale scenarios and the command to run them); `--shard 1/N` runs it first in the same way (CI has fetch-depth 0); the default run, `--quick`, `--lint` and the other shards never run it (scenarios cost money and stay at release, D189); when tools/l3-stale.sh is not in the tree (a copy of the runner alone, as the hermetic release tests make) the step prints that no scenario suite is here and goes on; the header comment names the step. `--shard K/N --list` lists the step for shard 1.",
         "bats tests/l3-stale.bats: its stale-check and release-runner tests green (the covers, --stale way-in, decision, Constraints and rulebook tests belong to P163.1 and P163.3); tests/release-run.bats, tests/release-reuse.bats, tests/release-reuse-partial.bats, tests/release-reads.bats, tests/test-shards.bats, tests/ci-shards.bats, tests/quick-mode.bats still green; bash tools/test.sh --lint clean; run `bash tools/l3-stale.sh` on this repository and put its output in the plan note (it is expected to list stale scenarios until P163.3 adds the covers lines and P163.4 re-runs them)."
-      ]
+      ],
+      "mutations": [
+        {
+          "task": 1,
+          "none": "C435 completes in P163.3 (covers lines, spec, docs), so its checks cannot be green on unbroken code until then; the stale-check break is mutated there",
+          "at": "2026-10-20T08:09:55Z"
+        },
+        {
+          "task": 2,
+          "none": "same: C435 stays red until P163.3 completes it",
+          "at": "2026-10-20T08:09:57Z"
+        },
+        {
+          "task": 3,
+          "none": "a test run and a note, no code to break",
+          "at": "2026-10-20T08:10:03Z"
+        }
+      ],
+      "note": "Code and tests done (commits 1f28a792, 03e7f7b0; tools/l3-stale.sh, tools/test.sh). vbw mutate refuses R202.20-23 because check C435 is red on unbroken code: its covers, --stale, decision, Constraints and rulebook tests belong to P163.1/P163.3. I broke each rule by hand and the matching C435 tests failed (R20 comparison reversed: 4; exit 1->0: 1; commit date dropped: 1; run line renamed: 1; eval added: 1; stale_check removed from release: 3); files restored. Tasks 1-3 recorded --none naming P163.3. Needs: rerun 'vbw mutate P163.2 R202.20..23' after P163.3 turns C435 green, or a decision to accept the manual breaks. bash tools/l3-stale.sh now prints 'cannot judge: scenario greenfield has no # covers: line' (exit 2) until P163.3 adds covers lines."
     },
     {
       "id": "P163.3",
@@ -51658,6 +51700,12 @@
       "id": "D476",
       "at": "2026-10-20T08:03:27Z",
       "text": "Contract approved by the loop on the user's behalf (loop started 2026-10-20T07:20:04Z, items T169, T171, T166, T168, T94: 191 requirements, 430 checks, 494 plans (1cfdaddf6720))"
+    },
+    {
+      "id": "D477",
+      "text": "Why M38 and M39 shipped without real-user scenarios: phases P148, P151, P159 and P160 each carry a criterion naming a real-session scenario (plans P148.4, P151.4, P159.4, P160.3 list tools/l3-suite.sh), while phases P152 to P157 carry none, so no plan of M38 or M39 listed tools/l3-suite.sh. Nothing in the planning path demands one: the Architect, the Lead, the planning workflow, the apply code and the spec's Constraints say nothing of scenarios, and D95 (the scenario rule) is one decision among about 470 that no planner reads. tools/test.sh --release knows nothing of scenarios, so the 2.0.40 release gave no signal. P163 adds the scenario rule to the spec Constraints and a stale check.",
+      "why": "Evidence: jq on .vbw/record.json (phase criteria and plan files) and grep of plugin/agents/architect.md, plugin/agents/lead.md, plugin/workflows/planning.js, plugin/lib/cmd-apply.sh and tools/test.sh. What P163 changes: (1) the Constraints rule in .vbw/spec.md, which the Architect reads at every planning, closes the gap of a rule buried among decisions; (2) the stale check (tools/l3-stale.sh, run first by tools/test.sh --release) closes the release gap by stopping the run when a scenario's result is older than the code it covers or missing.",
+      "at": "2026-10-20T08:05:07Z"
     }
   ],
   "commands": {
@@ -58589,6 +58637,19 @@
           "usd": 16.672576,
           "in": 35470,
           "out": 219
+        }
+      },
+      {
+        "id": "build-20261020T080403Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T08:04:03Z",
+        "ended": "2026-10-20T08:11:40Z",
+        "cost": {
+          "usd": 1.455801,
+          "in": 9411,
+          "out": 877
         }
       }
     ],
