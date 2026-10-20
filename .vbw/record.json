@@ -22658,6 +22658,12 @@
           "from": "deep",
           "to": "deep",
           "reason": "Dev blocked P161.4: R202.14 (the before numbers as a decision) has no code in this plan's one file (tools/measure-proof-speed.sh) to break: its only evidence is the decision D482 in .vbw/record.json, which only vbw writes, and C435 reads that decision, not the tool. vbw mutate refuses --none for a rule, so plan done cannot pass. Everything else is done and committed: tool (d9393b19), strengthened tests/measure-proof-speed.bats (d71f8e50, waits for one approval), decision D482 recorded; C434 and C435 green; every other rule and task 1-4 mutated and caught. Needs: the owner or Lead to accept R202.14 as covered by C435 (mutation --none for rules, or a mutation target that is the record)."
+        },
+        {
+          "at": "2026-10-20T13:51:33Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P161.4: R202.14 is met by a recorded decision (vbw decide), not by code in tools/measure-proof-speed.sh, so no break of the plan's file can turn C435 red. 'vbw mutate P161.4 R202.14 --none' is recorded but plan done still lists the rule as unshown, and the command reports 'waiting for approval: tests/mutate-rule-none.bats' (P164.1's check file). Needs that approval, then re-run vbw plan done P161.4."
         }
       ]
     },
@@ -47012,8 +47018,18 @@
           "task": 4,
           "none": "task 4 runs the script and records a decision in the record (vbw decide); it changes no code, and tests/proof-speed-before.bats (C435) reads that decision",
           "at": "2026-10-20T11:16:20Z"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the before numbers on this Mac are a decision naming the stand-in's size, every figure, the time of each own-work step, and confirming or clearing each of the suspects (a) to (d)"
+          },
+          "none": "the rule is satisfied by the recorded decision (vbw decide), not by code in this plan's file; tests/proof-speed-before.bats (C435) reads the decision",
+          "at": "2026-10-20T13:50:44Z",
+          "head": "362c690e62d660a6a17bfc0a5ade11339eba6744"
         }
-      ]
+      ],
+      "note": "R202.14 is met by a recorded decision (vbw decide), not by code in tools/measure-proof-speed.sh, so no break of the plan's file can turn C435 red. 'vbw mutate P161.4 R202.14 --none' is recorded but plan done still lists the rule as unshown, and the command reports 'waiting for approval: tests/mutate-rule-none.bats' (P164.1's check file). Needs that approval, then re-run vbw plan done P161.4."
     },
     {
       "id": "P161.5",
@@ -48050,11 +48066,29 @@
       "after": [
         "P162.5"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md, The computer-wide limit: a unit's slot covers its read tracking (taken before the reset, given back after the collection); the proof-wide steps hold one slot each as vbw:plan (reuse planning), vbw:copies (making the clean copies) and vbw:save (saving the run store); vbw next never waits for a slot; a nested run takes none; the waited line's wording unchanged (waited ... for other VBW runs on this computer).",
         "tests/machine-bookkeeping-docs.bats, machine-limit-docs.bats and check-jobs-docs.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "docs/proof.md names the bookkeeping slots (a unit's slot covers its read tracking; vbw:plan, vbw:copies, vbw:save), says vbw next never waits, and keeps the waited line's wording"
+          },
+          "what": "said vbw next often waits",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C447": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T13:51:28Z",
+          "head": "d7197a166e80ccd4095ff4057f4d639233f092af"
+        }
       ]
     },
     {
@@ -48277,12 +48311,78 @@
       "after": [
         "P164.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Red first: tests/mutate-rule-none-done.bats fails on the current code (plan done ignores a rule none entry; its Next: line names one way; show plan prints the entry as a task).",
         "plugin/lib/cmd-plan.sh, plan_missing_breaks: at standard and deep a rule is covered when any plan of its requirement holds a mutation with result red for that rule, or a none entry whose rule is {req, text} of that rule; a rule with neither stays listed; the Next: line reads 'Next: break what each rule promises in this plan'\\''s code and run vbw mutate <plan> Rn.k \"what you broke\" FILE..., or vbw mutate <plan> Rn.k --none REASON when its check reads nothing the plans build'; the task line and the task none meaning are unchanged; nothing changes at express. mutate-plan-done.bats, plan-done-committed.bats, mutate-own-rules.bats, mutate-rule-owner.bats green.",
         "plugin/lib/cmd-show.sh (show plan): under mutations:, a none entry with a rule prints '  Rn.k: no code could change its outcome: REASON' (Rn.k numbered as the rules list is, by req and text), a none entry with a task prints '  taskK: no testable behaviour: REASON' as today; --json carries the entry as recorded (the plan object is printed whole). mutate-show.bats, kernel-show.bats and the show case of tests/mutate-rule-none-done.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R203",
+            "text": "at standard and deep, vbw plan done counts a rule covered when any plan of its requirement has a red break of it or an accepted --none entry for it; a rule with neither is still listed as missing"
+          },
+          "what": "a rule --none entry no longer covers",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C449": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T14:01:20Z",
+          "head": "ded7830af929e9e95df3c22a9cfb2b61bd277945"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "the Next: line of that refusal names both ways: vbw mutate PLAN Rn.k \"what you broke\" FILE..., or --none REASON when the check reads nothing the plans build"
+          },
+          "what": "Next line drops --none REASON",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C449": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T14:02:54Z",
+          "head": "ded7830af929e9e95df3c22a9cfb2b61bd277945"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "vbw show plan lists the entry as 'Rn.k: no code could change its outcome: REASON' under mutations:, and vbw show plan --json carries it"
+          },
+          "what": "show wording changed",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C449": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T14:04:15Z",
+          "head": "ded7830af929e9e95df3c22a9cfb2b61bd277945"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "a task --none keeps its meaning at deep and nothing changes at express"
+          },
+          "what": "task none no longer counts at deep",
+          "files": [
+            "plugin/lib/cmd-plan.sh"
+          ],
+          "checks": {
+            "C449": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T14:05:57Z",
+          "head": "ded7830af929e9e95df3c22a9cfb2b61bd277945"
+        }
       ]
     },
     {
@@ -61239,6 +61339,19 @@
           "usd": 1.789426,
           "in": 2529,
           "out": 183
+        }
+      },
+      {
+        "id": "build-20261020T134853Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T13:48:53Z",
+        "ended": "2026-10-20T14:07:05Z",
+        "cost": {
+          "usd": 0.495986,
+          "in": 2443,
+          "out": 132
         }
       }
     ],
