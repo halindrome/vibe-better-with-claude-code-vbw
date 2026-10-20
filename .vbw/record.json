@@ -47676,7 +47676,7 @@
     {
       "id": "T21",
       "text": "panel.js: give the two gating hooks (ui.close, tool.call AskUserQuestion) a .catch so a failure clears st.question explicitly; CC 2.1.291 validate now lists gating hooks without .catch (informational: a failed hook is skipped, never blocks)",
-      "status": "open",
+      "status": "dropped",
       "sort": "later",
       "size": "small"
     },
