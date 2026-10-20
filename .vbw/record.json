@@ -52612,7 +52612,7 @@
     {
       "id": "T173",
       "text": "Step estimates learn from idle time (2026-10-20, seen on a large private project: 'proving 32 of 174 checks, about 732 min'): a fix or build step whose run stayed open overnight or waiting for the user is recorded at its whole length (13 h, 18 h, 40 h), so the median estimate is hours too long. Time only active work (exclude waits for the user, approvals and other runs), or drop steps far beyond their size",
-      "sort": "next",
+      "sort": "later",
       "size": "small",
       "status": "open"
     },
