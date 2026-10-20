@@ -47476,7 +47476,7 @@
       "id": "F276",
       "command": "test",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "test fail"
     }
   ],
@@ -57993,6 +57993,15 @@
         "milestone": "M41",
         "started": "2026-10-20T00:22:56Z",
         "ended": "2026-10-20T00:24:49Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261020T004510Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M41",
+        "started": "2026-10-20T00:45:10Z",
+        "ended": "2026-10-20T00:50:42Z",
         "cost": null
       }
     ],
