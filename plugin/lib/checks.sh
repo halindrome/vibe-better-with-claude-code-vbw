@@ -9,6 +9,8 @@
 . "$VBW_LIB/slots.sh"
 # shellcheck source=proofsteps.sh
 . "$VBW_LIB/proofsteps.sh"
+# shellcheck source=prooftime.sh
+. "$VBW_LIB/prooftime.sh"
 
 # checks_begin RECORD [strict]: die unless the contract is approved. Check
 # files edited since the approval wait for it (CHECK_WAITING): the checks still
@@ -263,7 +265,7 @@ checks_unit() {
 # checks_unit_run UNIT [SLOT]: run one unit, in slot copy number SLOT when
 # given; print its result object.
 checks_unit_run() {
-  local f=() a name out t want re alone copy st="" reads=true res
+  local f=() a name out t want re alone copy st="" reads=true res t0
   while IFS= read -r -d '' a; do f+=("$a"); done \
     < <(printf '%s' "$1" | jq -j '[.name, .out, (.timeout | tostring), (.exit | tostring), .output, (.alone | tostring)] + .argv | .[] + "\u0000"')
   name=${f[0]} out=$CHECK_OUT/${f[1]} t=${f[2]} want=${f[3]} re=${f[4]} alone=${f[5]}
@@ -271,7 +273,10 @@ checks_unit_run() {
     copy=${PROOF_COPIES[$2]}
     st="$(dirname "$copy")/reads"
     cd "$copy" || return 1
+    t0=
+    [ -z "${PROOFTIME_FILE:-}" ] || t0=$(prooftime_clock)
     reads_reset "$copy" "$st" || reads=false
+    [ -z "$t0" ] || prooftime_span tracking "$t0"
   fi
   checks_gate_enter "$name" "$alone"
   # The slot is taken after the gate and before the command: the timeout counts
@@ -285,10 +290,16 @@ checks_unit_run() {
   proofsteps_unit_done
   if [ -z "$st" ]; then
     printf '%s\n' "$res"
-  elif [ "$reads" = true ] && reads_collect "$copy" "$st" > "$st/result.json"; then
-    printf '%s' "$res" | jq -c --slurpfile r "$st/result.json" '. + {reads: $r[0]}'
   else
-    printf '%s' "$res" | jq -c '. + {reads: null}'
+    t0=
+    [ -z "${PROOFTIME_FILE:-}" ] || t0=$(prooftime_clock)
+    if [ "$reads" = true ] && reads_collect "$copy" "$st" > "$st/result.json"; then
+      [ -z "$t0" ] || prooftime_span tracking "$t0"
+      printf '%s' "$res" | jq -c --slurpfile r "$st/result.json" '. + {reads: $r[0]}'
+    else
+      [ -z "$t0" ] || prooftime_span tracking "$t0"
+      printf '%s' "$res" | jq -c '. + {reads: null}'
+    fi
   fi
 }
 
