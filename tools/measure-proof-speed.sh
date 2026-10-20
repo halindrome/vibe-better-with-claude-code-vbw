@@ -10,6 +10,10 @@
 #   --files N      source files of the stand-in (default 5000)
 #   --folders N    folders holding them (default 500)
 #   --units N      units: half checks, half test files (default 200)
+#   --two          instead of the usual measurement: a second copy of the stand-in
+#                  (its own folder, same home and slot store), both proved at once
+#                  while the slot store is sampled every second; prints the machine
+#                  limit, the most slots held and the wall seconds
 #   --generate DIR build the stand-in at DIR in the caller's environment, print
 #                  its 'fixture:' line and stop
 # Without --generate it builds the stand-in in an isolated HOME and
@@ -20,8 +24,8 @@
 # printing one 'name: value' line per figure.
 set -euo pipefail
 
-usage='usage: tools/measure-proof-speed.sh [--files N] [--folders N] [--units N] [--generate DIR]'
-files=5000 folders=500 units=200 gen=''
+usage='usage: tools/measure-proof-speed.sh [--files N] [--folders N] [--units N] [--two] [--generate DIR]'
+files=5000 folders=500 units=200 gen='' two=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --files | --folders | --units)
@@ -29,6 +33,9 @@ while [ $# -gt 0 ]; do
       case "$2" in '' | *[!0-9]* | 0*) echo "$1 takes a whole number of 1 or more" >&2; exit 2 ;; esac
       case "$1" in --files) files="$2" ;; --folders) folders="$2" ;; *) units="$2" ;; esac
       shift 2 ;;
+    --two)
+      two=1
+      shift ;;
     --generate)
       [ $# -ge 2 ] && [ -n "$2" ] || { echo "$usage" >&2; exit 2; }
       gen="$2"
@@ -37,6 +44,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ "$folders" -le "$files" ] || { echo "--folders cannot exceed --files" >&2; exit 2; }
+[ -z "$gen" ] || [ "$two" -eq 0 ] || { echo "--two and --generate cannot be combined" >&2; exit 2; }
 [ "$units" -ge 2 ] || { echo "--units takes 2 or more" >&2; exit 2; }
 
 here="$(cd "$(dirname "$0")/.." && pwd)"
@@ -152,6 +160,54 @@ out="$dir/out"
 mkdir -p "$out"
 fixture=$(generate "$proj")
 cd "$proj"
+
+if [ "$two" -eq 1 ]; then
+  now_s() { perl -MTime::HiRes=time -e 'printf "%.3f", time'; }
+  proj2="$dir/project2"
+  generate "$proj2" > /dev/null
+  limit=$(bash -c 'source "$1/plugin/lib/core.sh"; vbw_machine_limit' _ "$here")
+  slots="$CLAUDE_CONFIG_DIR/vbw/slots.json"
+  # Once a second until told to stop: the held count of the slot store (units and
+  # VBW's own vbw:* entries) and, as a cross-check, the gate registrations of both projects.
+  (
+    max=0 gmax=0
+    while [ ! -e "$out/stop" ]; do
+      h=0
+      [ ! -f "$slots" ] || h=$(jq '.held | length' "$slots" 2> /dev/null) || h=0
+      [ -n "$h" ] || h=0
+      g=0
+      for f in "$proj"/.vbw/runtime/gate/reg.* "$proj2"/.vbw/runtime/gate/reg.*; do
+        [ -e "$f" ] && g=$((g + 1))
+      done
+      [ "$h" -le "$max" ] || max="$h"
+      [ "$g" -le "$gmax" ] || gmax="$g"
+      printf '%s %s\n' "$max" "$gmax" > "$out/twomax"
+      sleep 1
+    done
+  ) &
+  sampler=$!
+  s=$(now_s)
+  rc1=0 rc2=0
+  (cd "$proj" && "$vbw" prove < /dev/null > "$out/prove1" 2>&1) & p1=$!
+  (cd "$proj2" && "$vbw" prove < /dev/null > "$out/prove2" 2>&1) & p2=$!
+  wait "$p1" || rc1=$?
+  wait "$p2" || rc2=$?
+  e=$(now_s)
+  touch "$out/stop"
+  wait "$sampler"
+  if [ "$rc1" -ne 0 ] || [ "$rc2" -ne 0 ]; then
+    cat "$out/prove1" "$out/prove2" >&2
+    echo "vbw: a proof did not pass" >&2
+    exit 1
+  fi
+  read -r held gates < "$out/twomax" || { held=0; gates=0; }
+  printf '%s\n' "$fixture"
+  printf 'machine limit: %s\n' "$limit"
+  printf 'two proofs max held: %s\n' "$held"
+  printf 'two proofs gate registrations max: %s\n' "$gates"
+  printf 'two proofs wall seconds: %s\n' "$(awk -v a="$s" -v b="$e" 'BEGIN { printf "%.2f", b - a }')"
+  exit 0
+fi
 
 # A jq wrapper, first on the PATH of the measured commands: it runs the real jq
 # and appends the CPU time of its children (the shell's times builtin: the user
