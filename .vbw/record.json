@@ -48522,7 +48522,7 @@
       "text": "Status line where VBW is off sits near its 60 ms budget (2.0.38 CI, 2026-10-15): 60.2 ms on GitHub's macOS runner (OVER, shard 1 failed), 42 ms on the owner's Mac; the hand-back path (R184) is the slowest status line path. Make it cheaper before 2.1.0 (slower Macs of public users), or measure CI against a calibrated budget as the panel bench already is (VBW_PANEL_BUDGET_MS)",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T159",
