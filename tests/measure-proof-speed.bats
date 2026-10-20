@@ -54,6 +54,8 @@ units() {
   grep -q 'buildcache' "$TEST_ROOT/gen/.gitignore" || { echo ".buildcache is not git-ignored"; cat "$TEST_ROOT/gen/.gitignore"; false; }
   # At least two unit scripts use the cache folder: one writes it, a later one reads it.
   [ "$(grep -l 'buildcache' "$TEST_ROOT/gen"/tests/*.sh | wc -l | tr -d ' ')" -ge 2 ] || { ls "$TEST_ROOT/gen/tests"; false; }
+  [ -n "$(grep -l 'mkdir -p .buildcache' "$TEST_ROOT/gen"/tests/*.sh)" ] || { echo "no unit writes the cache"; false; }
+  [ -n "$(grep -l 'cat .buildcache' "$TEST_ROOT/gen"/tests/*.sh)" ] || { echo "no unit reads the cache back"; false; }
   # Run every unit script in place once: the writers leave hundreds of cache files.
   (cd "$TEST_ROOT/gen" && for s in tests/*.sh; do sh "$s" > /dev/null 2>&1 || true; done)
   [ "$(find "$TEST_ROOT/gen/.buildcache" -type f | wc -l | tr -d ' ')" -ge 100 ] || { echo "the writers left fewer than 100 cache files"; false; }
@@ -76,9 +78,16 @@ units() {
   printf '%s\n' "$output" | grep -Eq '^prove: ran again: [0-9]+ of [0-9]+ units; top reasons: ' || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -Eq "^fix done: VBW's own work: [0-9]+\.[0-9] of [0-9]+\.[0-9] min$" || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -Eq '^fix done: ran again: [0-9]+ of [0-9]+ units; top reasons: ' || { echo "$output"; false; }
-  [ "$(field 'jq processes')" -gt 0 ] && [ "$(field 'store bytes')" -gt 0 ] || { echo "$output"; false; }
+  [ "$(field 'jq processes')" -gt 0 ] && [ "$(field 'store bytes')" -gt 0 ] && [ "$(field 'written lists bytes')" -gt 0 ] || { echo "$output"; false; }
   # The first proof of a fresh clone runs every unit; the one-file change reuses the rest.
   [ "$(field 'reused expected')" -gt 0 ] || { echo "$output"; false; }
+  # Those reused are exactly the units whose read lists do not hold the changed file.
+  [ "$(field reused)" -eq "$(field 'reused expected')" ] || { echo "$output"; false; }
+  # The clocks ran: wall seconds of each command and the time vbw next took are above zero.
+  local c
+  for c in 'prove wall seconds' 'fix done wall seconds' 'next seconds'; do
+    awk -v v="$(field "$c")" 'BEGIN { exit !(v > 0) }' || { echo "$c is not above zero"; echo "$output"; false; }
+  done
 }
 
 @test "R202: nothing of a real user project is in the tool or in what it generates" {
