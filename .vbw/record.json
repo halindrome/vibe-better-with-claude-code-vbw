@@ -48148,7 +48148,7 @@
       "text": "R144 known limit: a test inside the project test command that reads a documentation file no check lists is not re-run after a documentation-only change; consider vbw ship always running the test command fresh (M19 planning note)",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T102",
