@@ -14174,7 +14174,7 @@
       "id": "R199",
       "text": "The pane's title and tab row fit the pane at every width it draws at: at about 66 columns, the width the panel scenario shows next to a 200-column window, 'VBW' and the eight tabs (Now, Plan, Proof, Timeline, Decisions, Team, Sessions, Costs) sit on whole lines, with no letter of a name spilling down the right edge (found by the 2.0.40 panel L3 run, 2026-10-19)",
       "proof": "auto",
-      "status": "open",
+      "status": "proven",
       "milestone": "M41",
       "rules": [
         {
@@ -14253,7 +14253,7 @@
       "id": "R200",
       "text": "In a short window (24 rows) Comms still shows its helper line ('VBW ▸ ...', the crew at work) while helpers work, beside the step and end-time lines, and still leaves the prompt box whole (R189; found by the 2.0.40 panel L3 run, 2026-10-19: the line showed on 2026-10-16)",
       "proof": "auto",
-      "status": "open",
+      "status": "proven",
       "milestone": "M41",
       "rules": [
         {
@@ -14317,7 +14317,7 @@
       "id": "R201",
       "text": "When the user states an autonomy setting in their words to /vbw:vibe (for example 'use guided autonomy'), the router records it with vbw config autonomy before the first step, so the session then runs under that setting (found by the 2.0.40 qafix L3 run, 2026-10-19: guided was asked, balanced ran)",
       "proof": "auto",
-      "status": "open",
+      "status": "proven",
       "milestone": "M41",
       "rules": [
         {
@@ -47471,6 +47471,13 @@
       "status": "closed",
       "note": "docs/record.md line 98 (lease field table) still says editable for a fix run exists only 'for a fix run of QA findings' and new_tests only for it. Since P156.2 every requirement fix's run (a proof's fix too) carries editable. The record format is documented wrongly, and P156.3 did not list docs/record.md. Regression test: tests/fix-commit-own-checks-docs.bats should assert docs/record.md describes editable for a requirement fix of any source, new_tests only for QA.",
       "phase": "P156"
+    },
+    {
+      "id": "F276",
+      "command": "test",
+      "attempts": 0,
+      "status": "open",
+      "note": "test fail"
     }
   ],
   "todos": [
@@ -51144,10 +51151,10 @@
     }
   },
   "evidence": {
-    "at": "2026-10-19T20:29:13Z",
-    "contract": "566ad9f4a8a255c1b8b1825d865792bb0e49618e1def9e0f15c4bf9951e1fb26",
-    "tree": "54389bde81a75a282173edd45c0264250cfa2baa",
-    "head": "54389bde81a75a282173edd45c0264250cfa2baa",
+    "at": "2026-10-20T00:29:58Z",
+    "contract": "f796caff106073ed4d12efd8aa88e9ade052976b1e3640776248bad7fbf577a2",
+    "tree": "487f8b8999a05a0460daad714cb3380727f3a18b",
+    "head": "487f8b8999a05a0460daad714cb3380727f3a18b",
     "checks": {
       "C1": {
         "status": "pass",
@@ -51172,45 +51179,45 @@
         "exit": 0,
         "seconds": 8,
         "tail": "1..11\nok 1 report: versions, doctor, and project state as counts and ids\nok 2 report: an empty count says none, never a blank\nok 3 report: never the spec's text, check output or file contents\nok 4 report: a corrupt record is named as corrupt without echoing its content\nok 5 report: outside a git repository it still prints, and says so\nok 6 report and rtk take no arguments beyond their usage\nok 7 rtk: not installed, with the install command that matches the machine\nok 8 rtk: installed shows its version and path; status equals no argument\nok 9 rtk: the Claude hook is on only when RTK's hook is in the user's settings\nok 10 rtk and report write nothing: no file in the project or settings changes\nok 11 docs/diagnostics.md says what the help says about both commands",
-        "fp": "24fce9b6fc2ad76ba8a50f31aeb9959d02c832fbfb496e5fc64f5335de5fb2ca",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "24fce9b6fc2ad76ba8a50f31aeb9959d02c832fbfb496e5fc64f5335de5fb2ca",
+        "reused": true
       },
       "C4": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..1\nok 1 R4: the Docs agent built a documentation requirement and it is proved",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "b3bc0ce42d0434a0016798727ea285c516c041eed9617341c752af0f6d0c5ed2",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C5": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..1\nok 1 R5: QA failed a deviating build, naming the deviation; the fix loop closed it",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "2403c3f21cb90a13812bd1b7604170e90ea05abdc8ae25a7932ae84425782d1b",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-results/qafix.json changed"
       },
       "C8": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..1\nok 1 R8: balanced autonomy, background QA: no Stop-hook errors, stopped at accept",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "7551dc1fdf59595ad4ad37d65f35b59e3349ffafb259c1212ad42c6354ed2ea9",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C9": {
         "status": "pass",
         "exit": 0,
         "seconds": 16,
         "tail": "1..5\nok 1 blocking an approved plan keeps the approval and proceeds without re-approval\nok 2 resetting a blocked plan keeps the approval and the approved hash\nok 3 a plan's note does not change the contract hash\nok 4 changing a plan definition still withdraws the approval\nok 5 changing a check or a requirement still withdraws the approval",
-        "fp": "028ae8882193bb27f784d5dd474a85be5905fb1d479edb314ac4fd3a443f71f3",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "028ae8882193bb27f784d5dd474a85be5905fb1d479edb314ac4fd3a443f71f3",
+        "reused": true
       },
       "C10": {
         "status": "pass",
@@ -51272,7 +51279,7 @@
         "seconds": 2,
         "tail": "1..7\nok 1 the repository's contributor files name only what exists\nok 2 no contributor file mentions .vbw-planning\nok 3 selftest: a clean tree passes\nok 4 selftest: a nonexistent path fails and is named\nok 5 selftest: a nonexistent /vbw: command fails\nok 6 selftest: .vbw-planning fails\nok 7 selftest: a bad path in an issue template fails",
         "fp": "42d52543809ac338e2220d67cea0076337b4c85be5d7b0a08e4efc2e6fc50fe2",
-        "at": "2026-10-19T20:29:13Z",
+        "at": "2026-10-20T00:29:58Z",
         "why": ". listing changed"
       },
       "C17": {
@@ -51325,9 +51332,9 @@
         "exit": 0,
         "seconds": 12,
         "tail": "1..6\nok 1 the profile defines, for each tier, the agents with their count, the QA tier and the models\nok 2 express is one Dev; standard and deep keep the profile's models and QA tiers as before\nok 3 vbw next --json gives each phase exactly its profile cell, for every profile and tier\nok 4 a user's model override still wins over the tier's models\nok 5 a phase planned before tiers existed counts as standard\nok 6 the workflows and the router pass the tier's models and QA tier through",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "171d11d3a2126a14155e79ecb13941153e233153e2c0d238fef4758a3bf507a2",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C23": {
         "status": "pass",
@@ -51388,27 +51395,27 @@
         "exit": 0,
         "seconds": 6,
         "tail": "1..5\nok 1 R33: a record with a newer schema exits non-zero and says the project needs a newer VBW\nok 2 R33: the message never calls a newer record corrupt\nok 3 R33: a newer record is not modified, rewritten or locked by the older VBW\nok 4 R33: a record that is damaged, not newer, is still reported as corrupt\nok 5 R33: the record of every earlier schema version still loads and shows correctly",
-        "fp": "b85a9d42eac1bde99d5aaf35b00109467ef6300095cebf37cbd7db91abf9a016",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "b85a9d42eac1bde99d5aaf35b00109467ef6300095cebf37cbd7db91abf9a016",
+        "reused": true
       },
       "C30": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..5\nok 1 R34: the edge-case scenario exists, runs the real app and states its fixture and level\nok 2 R34: the edge case got a rule and a check before approval, and the check tests that edge\nok 3 R34: the leftover-file scenario exists, runs the real app and states its fixture and level\nok 4 R34: a leftover untracked file left the proof unchanged and was not in the proof copy\nok 5 R34: each scenario's result reflects only its own checks",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "dfd9ca3c788b48433d6f36b5dd82d2ebcb79520cb88849f406168b04088532ab",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C31": {
         "status": "pass",
         "exit": 0,
         "seconds": 20,
         "tail": "1..8\nok 1 no profile and no tier cell gives QA Haiku, in the tables or in vbw next\nok 2 the budget profile shows QA on Sonnet in vbw config models and in the status line\nok 3 other roles keep their models: budget scout on haiku, express dev on haiku, the rest as before\nok 4 a record that already holds a Haiku QA override gets Sonnet in vbw next\nok 5 a QA override to opus or a full non-Haiku id is honoured, and the dev override still wins\nok 6 a forced rigor and an escalation never lower QA below Sonnet\nok 7 the status line shows the effective QA model: a Haiku override reads Sonnet, an opus one Opus\nok 8 the docs say QA never uses Haiku, and the budget profile no longer lists Haiku for QA",
-        "fp": "f14a566613c5fb88dbcb9cc70d56fa5c88a61582e2e6e6a94929be8746885ae7",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "f14a566613c5fb88dbcb9cc70d56fa5c88a61582e2e6e6a94929be8746885ae7",
+        "reused": true
       },
       "C32": {
         "status": "pass",
@@ -51431,47 +51438,47 @@
       "C34": {
         "status": "pass",
         "exit": 0,
-        "seconds": 25,
+        "seconds": 14,
         "tail": "1..7\nok 1 R38: a new project, at its spec step with no answers, is asked the interview\nok 2 R38: once the answers exist the interview is never asked again, whatever the location or session\nok 3 R38: a new milestone does not ask again once the answers exist, shared or private\nok 4 R38: a project started before this version is not asked mid-run or mid-phase, only at its next milestone\nok 5 R38: a project record from an older VBW is read, is not mid-run asked, and counts as not yet interviewed\nok 6 R38: answers shared by choice are not asked again in a second worktree\nok 7 R38: the router asks the interview on profile.ask",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "fc5475927fec82f42869b07011f181a03868b283c6fed78052b8cecf3e27477b",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C35": {
         "status": "pass",
         "exit": 0,
-        "seconds": 13,
+        "seconds": 7,
         "tail": "1..9\nok 1 R37: the interview is a skill of its own, named interview\nok 2 R37: the three fixed questions are asked in order with exactly the listed options\nok 3 R37: after the three, the answer on what is being built and for whom goes into the spec's Goals section\nok 4 R37: at most three follow-up questions, after the three fixed ones\nok 5 R37: the last question asks where to keep the personal answers and applies the choice through the kernel\nok 6 R37: each answer is recorded as it is given, so an interrupted interview resumes at the first unanswered question\nok 7 R37: an interrupted interview records nothing as complete and resumes at the first unanswered question\nok 8 R37: an unrecognised answer to a fixed question is refused and never recorded\nok 9 R37: the router runs the interview before spec work, after mapping for existing code,",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "ed4bf2b3012baaaf890fde99b011a526fb9029c1cd5f33a0f67d3b776ae0597c",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C36": {
         "status": "pass",
         "exit": 0,
-        "seconds": 13,
+        "seconds": 10,
         "tail": "1..9\nok 1 R39: vbw next --json carries the user's level, explanation depth and involvement\nok 2 R39: with no answers it carries an explicit neutral default\nok 3 R39: a partly answered interview fills the gaps with the neutral default\nok 4 R39: machine-read output does not change with the level: only the profile field differs\nok 5 R39: every skill hands the user's three values to its prompt, and none is skipped\nok 6 R39: every agent that can reach the user receives and applies the three values\nok 7 R39: involvement is honored: the three settings each name what VBW does with a decision\nok 8 R39: every workflow agent call carries the profile in its task text and still passes a schema\nok 9 R39: the router hands the profile to every workflow it starts",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "63414c456d25a0fe1df0e51bea8b9b7ea2e99398e5e7cc2478c5169ce075ff8b",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/triage/SKILL.md changed"
       },
       "C37": {
         "status": "pass",
         "exit": 0,
-        "seconds": 11,
+        "seconds": 9,
         "tail": "1..10\nok 1 R40: a declined suggestion is recorded in the project record by the kernel and never offered again\nok 2 R40: declining the same text twice is deduplicated, even with other case or spacing\nok 3 R40: a declined suggestion stays declined across sessions and milestones\nok 4 R40: a record from an older VBW (nothing declined) is read: none declined\nok 5 R40: the declined list is written only through the kernel's validated write path\nok 6 R40: the record change is additive under project: no new top-level key, so older VBWs read the project or ask for a newer VBW\nok 7 R40: the suggest skill states its limit of three suggestions\nok 8 R40: the skill names the commands for each answer: vbw spec add, vbw decide, vbw suggest decline\nok 9 R40: the skill reads the requirements and decisions to check for duplicates: vbw show requirements and vbw show decisions\nok 10 R40: the router offers suggestions at spec proposal and at plan approval, and nowhere else",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "369c020104f4ca61baaf23c1b672f838faaf3573edc7ef3749d629fffc306d78",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C38": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
         "tail": "1..9\nok 1 R42: the newcomer scenario exists, runs the real app and states its fixture and level\nok 2 R42: the senior-engineer scenario exists, runs the real app and states its fixture and level\nok 3 R42: the newcomer answered the three fixed questions, what and for whom, the follow-ups and where to keep them\nok 4 R42: the senior engineer answered the three fixed questions, what and for whom, the follow-ups and where to keep them\nok 5 R42: each scenario's recorded answers (vbw interview, taken from the project) match what was answered\nok 6 R42: in each scenario a second request in a new session did not trigger the interview again\nok 7 R42: each scenario reaches the ship step\nok 8 R42: the two scenarios record different explanation depth and involvement, and their transcripts are saved for comparison\nok 9 R42: the release gate runs every scenario for a milestone release: both new scenarios are in the default list",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "4fcdda79e46b1b556c06d89c0c79430dc624de8da8e7ddfa4a2c9fbf26a79a26",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C39": {
         "status": "pass",
@@ -51496,9 +51503,9 @@
         "exit": 0,
         "seconds": 2,
         "tail": "1..4\nok 1 docs/proof.md names the alone marker of a check\nok 2 docs/record.md lists alone among a check's fields\nok 3 the kernel code stays bash 3.2 compatible, without eval and without /tmp\nok 4 docs/record.md says a record whose checks use alone is schema 2",
-        "fp": "5fe202fa9288cf93c06209123b69c26a2d5675dcd92e7dd7a6fce3852f311b1e",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/hooks/session-start.sh changed"
+        "fp": "5fe202fa9288cf93c06209123b69c26a2d5675dcd92e7dd7a6fce3852f311b1e",
+        "reused": true
       },
       "C42": {
         "status": "pass",
@@ -51577,18 +51584,18 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..4\nok 1 R48: the recheck scenario exists, is in the default list and is named in the suite's header\nok 2 R48: it plays a fix round on a project of two phases, and takes its facts from the record and git\nok 3 R48: it states what it did not test and its fixture\nok 4 R48: a committed result of it is honest: L3, passed, with the phases checked again and the reason named; none is committed before it ran",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "7bbe28031f5621929d1620debfb7d1e5d7bf196bb0862fcf9e4e300c63d0e7b8",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C51": {
         "status": "pass",
         "exit": 0,
-        "seconds": 15,
+        "seconds": 14,
         "tail": "1..10\nok 1 R50: vbw next --json carries only the active milestone's requirements, with their text, and no shipped id\nok 2 R50: a requirement carried over to the active milestone counts as active\nok 3 R50: a requirement with no milestone is reported by name, never silently dropped\nok 4 R50: the Architect's decision step is given the active requirements and no shipped one\nok 5 R50: a decision for an active requirement is still asked\nok 6 R50: a milestone with only technical changes returns no decision and planning goes on without a user round\nok 7 R50: the scoping step, after the user decided, also sees only the active requirements\nok 8 R50: without the requirements, planning stops and says so instead of letting the Architect read every requirement\nok 9 R50: the decision step still passes a schema and carries the user's level, explanation depth and involvement\nok 10 R50: the Architect reads only the requirements its task lists, and the router hands them to the planning workflow",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "2ee7a544ebbbc63eb9f9901ca61164a24449429c4061bb299053a8c74f81f66d",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C52": {
         "status": "pass",
@@ -51602,74 +51609,74 @@
       "C53": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
-        "tail": "ok 8 - with no good state yet, an invalid file shows a neutral line\n  ---\n  duration_ms: 3.810042\n  type: 'test'\n  ...\n# Subtest: the panel is never drawn with undefined, NaN or object text\nok 9 - the panel is never drawn with undefined, NaN or object text\n  ---\n  duration_ms: 3.888916\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 121.39025",
-        "at": "2026-10-19T10:09:31Z",
+        "seconds": 0,
+        "tail": "ok 8 - with no good state yet, an invalid file shows a neutral line\n  ---\n  duration_ms: 4.28825\n  type: 'test'\n  ...\n# Subtest: the panel is never drawn with undefined, NaN or object text\nok 9 - the panel is never drawn with undefined, NaN or object text\n  ---\n  duration_ms: 4.796708\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 136.502417",
         "fp": "8609bc142bb3171b0d45af9934d3b59f2e9195b5a65fe8ac40ae96833760c352",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C54": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 8 - a project set up during the session turns the panel on at the next question or prompt\n  ---\n  duration_ms: 4.771583\n  type: 'test'\n  ...\n# Subtest: a prompt sent after the project appeared turns the panel on too\nok 9 - a prompt sent after the project appeared turns the panel on too\n  ---\n  duration_ms: 2.9125\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 120.672959",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 8 - a project set up during the session turns the panel on at the next question or prompt\n  ---\n  duration_ms: 6.981458\n  type: 'test'\n  ...\n# Subtest: a prompt sent after the project appeared turns the panel on too\nok 9 - a prompt sent after the project appeared turns the panel on too\n  ---\n  duration_ms: 3.952334\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 146.001167",
         "fp": "440a6bd875f1d519c4bba17717a3f87049a6103be0b2ff54403f384d010b063a",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C55": {
         "status": "pass",
         "exit": 0,
-        "seconds": 4,
+        "seconds": 5,
         "tail": "1..5\nok 1 R53: the panel is a mod named by hooks.json, next to the hooks it had, which are unchanged\nok 2 R53: Claude Code's own validator reads the module and lists the hooks the panel registers\nok 3 R53: the status line is byte for byte what it is without the panel, in a VBW project\nok 4 R53: the status line is byte for byte what it is without the panel, outside a VBW project, with colour too\nok 5 R53: the status line and the kernel know nothing of the panel, so an older Claude Code prints nothing extra",
         "fp": "99b0b5dfc176cee0cb0aac0aaba7deaddcbf8b4074c02958b48278313fd54b6e",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C56": {
         "status": "pass",
         "exit": 0,
         "seconds": 2,
         "tail": "1..7\nok 1 R55: the bench measures the CPU of a refresh that found nothing new and of one that redraws, against the stated budget\nok 2 R55: the budget is enforced: a budget no refresh can meet fails the bench\nok 3 R55: the budget is stated for people too, in docs/panel.md\nok 4 R55: the panel's code reaches no network and no credentials and never writes\nok 5 mods plan: the one process the panel starts is the kernel, and it reads two environment names only\nok 6 R55: the panel never names the record as something to write\nok 7 R55: the panel's node tests are part of the suite, so a regression fails bash tools/test.sh",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "1413102b73d30469f3e66a8bb6362dc933f8ce755daf88f190d94bcb9822dff1",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "docs/panel.md changed"
       },
       "C57": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 5 - during a run the panel redraws only when the minute it shows changes\n  ---\n  duration_ms: 23.104583\n  type: 'test'\n  ...\n# Subtest: a changed file is read once and drawn once, however many ticks follow\nok 6 - a changed file is read once and drawn once, however many ticks follow\n  ---\n  duration_ms: 7.15975\n  type: 'test'\n  ...\n1..6\n# tests 6\n# suites 0\n# pass 6\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 136.934583",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 5 - during a run the panel redraws only when the minute it shows changes\n  ---\n  duration_ms: 24.873875\n  type: 'test'\n  ...\n# Subtest: a changed file is read once and drawn once, however many ticks follow\nok 6 - a changed file is read once and drawn once, however many ticks follow\n  ---\n  duration_ms: 8.348792\n  type: 'test'\n  ...\n1..6\n# tests 6\n# suites 0\n# pass 6\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 144.791417",
         "fp": "ed936d4e77bbda39978f03a5b0d680436b7763abd57cbb5bb81562d4bae17aa1",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C58": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 10 - opening and closing change no project data and no tracked file: the choice lives in the user store only\n  ---\n  duration_ms: 3.939917\n  type: 'test'\n  ...\n# Subtest: outside a VBW project the panel is never opened\nok 11 - outside a VBW project the panel is never opened\n  ---\n  duration_ms: 2.04775\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 141.155458",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 10 - opening and closing change no project data and no tracked file: the choice lives in the user store only\n  ---\n  duration_ms: 4.329125\n  type: 'test'\n  ...\n# Subtest: outside a VBW project the panel is never opened\nok 11 - outside a VBW project the panel is never opened\n  ---\n  duration_ms: 2.670375\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 152.362375",
         "fp": "c53e88c5a6a3a5db5a4e08eda71fa3602f875169a1dff6c09e6853575f5b9b51",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C59": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 11 - a missing file or no player is silent: nothing plays and nothing is shown\n  ---\n  duration_ms: 5.110291\n  type: 'test'\n  ...\n# Subtest: on a version without mods the sound command does not exist and the panel stays off\nok 12 - on a version without mods the sound command does not exist and the panel stays off\n  ---\n  duration_ms: 2.183791\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 142.701334",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 11 - a missing file or no player is silent: nothing plays and nothing is shown\n  ---\n  duration_ms: 5.260417\n  type: 'test'\n  ...\n# Subtest: on a version without mods the sound command does not exist and the panel stays off\nok 12 - on a version without mods the sound command does not exist and the panel stays off\n  ---\n  duration_ms: 2.668041\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 160.03375",
         "fp": "cecaff4b28d4f71701b8289a4feee8fc35ec4cae15eba7354a4b4b18f3f283de",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C61": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 4 - when the cost is not available the line is left out or says so, never a number\n  ---\n  duration_ms: 25.730583\n  type: 'test'\n  ...\n# Subtest: only read-only calls are made to learn the cost\nok 5 - only read-only calls are made to learn the cost\n  ---\n  duration_ms: 3.888625\n  type: 'test'\n  ...\n1..5\n# tests 5\n# suites 0\n# pass 5\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 110.591125",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 4 - when the cost is not available the line is left out or says so, never a number\n  ---\n  duration_ms: 27.669083\n  type: 'test'\n  ...\n# Subtest: only read-only calls are made to learn the cost\nok 5 - only read-only calls are made to learn the cost\n  ---\n  duration_ms: 3.427125\n  type: 'test'\n  ...\n1..5\n# tests 5\n# suites 0\n# pass 5\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 115.904292",
         "fp": "998c38db1d89d1b6079396a9decbf9cb18b297940fdf3ef194846eb5e05f82be",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C62": {
         "status": "pass",
@@ -51692,47 +51699,47 @@
       "C64": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
-        "tail": "ok 10 - the estimate follows the clock: a minute later it has gone down, and it redraws only for that\n  ---\n  duration_ms: 35.449458\n  type: 'test'\n  ...\n# Subtest: the cost and the estimates share the panel\nok 11 - the cost and the estimates share the panel\n  ---\n  duration_ms: 4.778875\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 177.044292",
-        "at": "2026-10-19T10:09:31Z",
+        "seconds": 1,
+        "tail": "ok 10 - the estimate follows the clock: a minute later it has gone down, and it redraws only for that\n  ---\n  duration_ms: 28.684875\n  type: 'test'\n  ...\n# Subtest: the cost and the estimates share the panel\nok 11 - the cost and the estimates share the panel\n  ---\n  duration_ms: 4.5375\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 169.732083",
         "fp": "3b253a9ff6055efdbbf0c82f298ec66f7935914005bb72a28e850d719009bfee",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C65": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
         "tail": "1..2\nok 1 R56 and R58: the panel bench measures a refresh that also reads the cost and works out two estimates\nok 2 R56: docs/panel.md names the cost",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "cfe5e4a06ad06830098d87c53c4f24fc2f40bed4e3c77847636e8c7082cc3360",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "docs/panel.md changed"
       },
       "C66": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..4\nok 1 R51: the panel scenario exists, is in the default list and is named in the suite's header\nok 2 R51: it runs the real app in a window wide enough for the panel, and writes its own result with its fixture and what it did not test\nok 3 R51: a committed result of it is honest: L3, passed, and the panel facts are all there\nok 4 R51: the result says what was seen on the screen was read from the panel, and the sound was not heard",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "3b57d18751935740ec8c659a0e862e5e0e2871f9bb0bfacfe6f00333e25e5427",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-results/panel.json changed"
       },
       "C67": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
         "tail": "1..4\nok 1 R56 and R58: the panel bench measures a refresh that also reads the cost and works out two estimates\nok 2 R58: the estimate code is pure and local: it reaches nothing but its inputs\nok 3 R58: the panel reads the history only from the clone cache file steps.json\nok 4 R58: docs/panel.md states how many finished steps an estimate needs and names steps.json",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "b0c414c1b0a6db845bada2778df5ecab99ec74ee1843f43086e2edfb670bccc5",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "docs/panel.md changed"
       },
       "C68": {
         "status": "pass",
         "exit": 0,
-        "seconds": 10,
+        "seconds": 3,
         "tail": "1..6\nok 1 R59: the first question of the interview skill is exactly the new greeting\nok 2 R59: the four level options are the kernel's values, and the skill names each\nok 3 R59: choosing a level still records it and the interview continues at the next question\nok 4 R59: the interview doc shows the greeting\nok 5 R59: the interview prompt holds the greeting\nok 6 R59: a returning user whose level is recorded is not asked the level question again",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "928767506f35851e735fd18bbee204edc2ecf5606e101457c45c56e9c3fdcc46",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "docs/interview.md changed"
       },
       "C70": {
         "status": "pass",
@@ -51748,18 +51755,18 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..3\nok 1 R57: the panel bench measures what raising a need and playing the sound costs\nok 2 R57: on Claude Code without mods /vbw:panel says plainly that the panel and its sound need 2.1.287 or newer\nok 3 R57: the help and the README list the panel and the sound commands",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "950bb8aaa50847f3dc81cd2246427448d71caacfb2efb8f04deca58a4dbaa961",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C72": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..1\nok 1 R60: the router names the stop line What I need from you",
-        "at": "2026-10-19T02:04:25Z",
         "fp": "157a85aa047a6cb059be6f29e8eef90adcd11577c5f3e06c81b9336fde67edd5",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C73": {
         "status": "pass",
@@ -51784,9 +51791,9 @@
         "exit": 0,
         "seconds": 33,
         "tail": "1..6\nok 1 R61: a call to vbw approve from the model is still refused by the guard\nok 2 R61: an answer-shaped message that is not an AskUserQuestion answer approves nothing\nok 3 R61: a message written by the model that merely contains the answer does not approve\nok 4 R61: a question asked by a subagent approves nothing\nok 5 R61: the guard's rule and the hook are documented together: the hook does not appear as a way for agents\nok 6 R61: the answer hook's own cost on an unrelated answer is measured by the hook bench",
-        "fp": "34ef9e9bae37f1bea2af836d3a5be9a0f3a4eff6f6a1e5fb5a00cf8fa2b218b0",
         "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "fp": "34ef9e9bae37f1bea2af836d3a5be9a0f3a4eff6f6a1e5fb5a00cf8fa2b218b0",
+        "reused": true
       },
       "C76": {
         "status": "pass",
@@ -51794,26 +51801,26 @@
         "seconds": 1,
         "tail": "1..5\nok 1 R61: the router's approve step asks with AskUserQuestion, Approve first and Not yet second, from the question vbw show contract prints\nok 2 R61: the help lists /vbw:approve\nok 3 R61: docs/proof.md names the options Approve and Not yet, the Enter key, /vbw:approve and the fingerprint\nok 4 R61: docs/guards.md names the answer hook: AskUserQuestion and PostToolUse\nok 5 R61: the README says approval is a choice where Enter approves, and /vbw:approve still works",
         "fp": "7b2f3c8fd16b43a30bbb02ec8ea26bcd6eaa001391d3d84ccf1a14ee0a449aca",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C77": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..3\nok 1 R61: the approval scenario exists, is in the default list and is named in the suite's header\nok 2 R61: it answers the approval question with Enter, never by typing /vbw:approve, and checks the record and git\nok 3 R61: a committed result of it is honest: L3, passed, the choice was shown and Enter approved the shown contract; none is committed before it ran",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "7a1189f7a1dddc360b59fca07f41681aa5f20b103eab671f4198e2a88404b0a1",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C78": {
         "status": "pass",
         "exit": 0,
         "seconds": 7,
         "tail": "1..7\nok 1 R62: a new project has not been asked: vbw tools --json says asked false with no answer\nok 2 R62: the answer yes is remembered in the project record and any session or location sees it\nok 3 R62: on no the record shows the answer was no, and the build flow is unchanged\nok 4 R62: only yes or no is accepted; anything else is refused naming the choices and records nothing\nok 5 R62: the answer can be given again later (/vbw:skills after a no): the latest wins and the record stays valid\nok 6 R62: a record holding another project.tools answer is refused as corrupt\nok 7 R62: vbw --help lists the tools command",
-        "fp": "9363157971128977364e4387d13c1682b49835d79a87a9eae719805bbb982cf4",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "9363157971128977364e4387d13c1682b49835d79a87a9eae719805bbb982cf4",
+        "reused": true
       },
       "C79": {
         "status": "pass",
@@ -51845,38 +51852,38 @@
       "C82": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..2\nok 1 R62: docs/tools.md names /vbw:skills and vbw tools\nok 2 R62: the README links the page",
-        "at": "2026-10-18T15:50:58Z",
         "fp": "3236e3a54670bb5374cc381784713c2c633056041ae8b65556f5c96ea47d4d2f",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C83": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
         "tail": "1..4\nok 1 R62: the tools scenario exists, is in the default list and is named in the suite's header\nok 2 R62: it answers yes once, reads the stored answer, and checks nothing was installed before approval, from the record and git\nok 3 R62: it states what it did not test and its fixture\nok 4 R62: a committed result of it is honest: L3, passed, the answer stored once, nothing installed before approval; none is committed before it ran",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "64460ee3163ff9e511be4127cabde76951cca9d98517b7d635143a5b9b464c25",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C84": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 3 - outside test mode the sound plays and the switch uses the user keys\n  ---\n  duration_ms: 9.229833\n  type: 'test'\n  ...\n# Subtest: a change on disk redraws the panel by itself, with the redraw naming ui.render\nok 4 - a change on disk redraws the panel by itself, with the redraw naming ui.render\n  ---\n  duration_ms: 6.3505\n  type: 'test'\n  ...\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 100.01825",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 3 - outside test mode the sound plays and the switch uses the user keys\n  ---\n  duration_ms: 7.4185\n  type: 'test'\n  ...\n# Subtest: a change on disk redraws the panel by itself, with the redraw naming ui.render\nok 4 - a change on disk redraws the panel by itself, with the redraw naming ui.render\n  ---\n  duration_ms: 6.705208\n  type: 'test'\n  ...\n1..4\n# tests 4\n# suites 0\n# pass 4\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 100.388458",
         "fp": "499ed3ba3cee05f5b5173b444d8f3b9fa419bd719904a23b0c3a4e0908617c7b",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C85": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..2\nok 1 R64: new_project marks every scenario project with .vbw/runtime/test-mode\nok 2 R64: scenarios read only the test keys, and never write into Claude Code's store",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "45f2460b530dde4e461a7ca0a0d6aa3ec3d396e6b1992e2ea817bc29c8c65b68",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C86": {
         "status": "pass",
@@ -51899,29 +51906,29 @@
       "C88": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..5\nok 1 R65: the interview skill has an old-folder section, and reads the review with its other facts\nok 2 R65: the choice is asked with AskUserQuestion, the recommended option marked (Recommended)\nok 3 R65: each choice is recorded with its command: vbw legacy choose convert runs /vbw:convert, vbw legacy choose fresh\nok 4 R65: the review can still be run on demand from the convert skill\nok 5 R65: the router's convert step defers to this step instead of a fixed recommendation",
-        "at": "2026-10-19T02:04:25Z",
         "fp": "eca5d3a9a9ad312fb465c37f579184c464a55fbbbc73154362823c836e5fd69f",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C89": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..3\nok 1 R65: docs/convert.md names the review and choice commands and the setting that stores the answer\nok 2 R65: docs/convert.md states the age limit behind the recommendation\nok 3 R65: docs/interview.md and the README link docs/convert.md",
-        "at": "2026-10-18T15:50:58Z",
         "fp": "dcdd6a772209b03149224c0c91be900ef081a8d4e1630677220b1acdb816c00b",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C90": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..5\nok 1 R65: both scenarios exist, are in the default list and are named in the suite's header\nok 2 R65: legacy builds a fixture with a VBW 1 folder, picks the option that is not recommended, and reads the record and git\nok 3 R65: nolegacy uses a project without a VBW 1 folder and checks from the transcript that no review question was asked\nok 4 R65: the committed result of legacy: L3, passed, the review shown before another question, recommended option first, the other picked, nothing converted, folder untouched, not asked again\nok 5 R65: the committed result of nolegacy: L3, passed, the review question never asked, the interview completed",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "ae9d78a5b0670495f52d26070b10c15ea89a86a4c45ae032d2e57ed12701ffd4",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C91": {
         "status": "pass",
@@ -51937,9 +51944,9 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..3\nok 1 R59: the real-user script no longer looks for the old level question\nok 2 R59: the level options check is keyed on the greeting's question, with the four options in order\nok 3 R59: the interview counts as asked when the level question was asked",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "b150d0c4ec034a179d372e5421f228b933a942212ffc02d9cc593da27688814e",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C93": {
         "status": "pass",
@@ -51953,11 +51960,11 @@
       "C94": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..1\nok 1 R60: the spec step keeps its rules: recommend, and the commands' sub-project and interpreter",
-        "at": "2026-10-19T02:04:25Z",
         "fp": "7ee54693335fcd09ff08f77adb1918ebde718b26ff2ef80e4419d0af77e57a74",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C95": {
         "status": "pass",
@@ -51971,20 +51978,20 @@
       "C96": {
         "status": "pass",
         "exit": 0,
-        "seconds": 4,
+        "seconds": 3,
         "tail": "1..3\nok 1 R67: a project with a VBW 1 folder and no interview is asked the interview at the convert step, from the level\nok 2 R67: once the interview is done, the convert step no longer asks for it\nok 3 R67: the router interviews before spec or convert work, not only before spec",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "775bee41e69ed9689f6f192035a734bfd8b9ccd715d9245d577f93b8c222689a",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C97": {
         "status": "pass",
         "exit": 0,
-        "seconds": 2,
+        "seconds": 1,
         "tail": "1..2\nok 1 R68: with GNU stat, an untracked folder is reviewed: readable, last use from its newest file\nok 2 R68: file times in the kernel come only from vbw_mtime",
         "fp": "bb8ea38fec4360bc66b1d2cd7183b5a7fddd5c424ce6119cd0cae7f37a7c0eae",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/hooks/session-start.sh changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C98": {
         "status": "pass",
@@ -52036,9 +52043,9 @@
         "exit": 0,
         "seconds": 27,
         "tail": "1..1\nok 1 R76: the hook benchmark measures a program command during a run",
-        "fp": "ba7885469fdc13e677a646fe51787e42904237e7c3b9b3d208b345629e216b3d",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "ba7885469fdc13e677a646fe51787e42904237e7c3b9b3d208b345629e216b3d",
+        "reused": true
       },
       "C104": {
         "status": "pass",
@@ -52117,9 +52124,9 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..5\nok 1 R81: if the closing agent dies, the workflow still returns its results and says to end the run by hand\nok 2 R81: the planning workflow ends its own run on every way out: decisions, planned and blocked\nok 3 R81: the mapping workflow ends its own run too\nok 4 R81: the router hands every workflow the session and no longer ends the run after it, but still ends an interrupted one\nok 5 R81: without the session in its args a workflow runs as before and starts no closing agent",
-        "at": "2026-10-19T02:04:25Z",
         "fp": "6c749f2b60062d761eb8232622aa468aa81301d966438fa4049ca1793a16a2ba",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C113": {
         "status": "pass",
@@ -52133,11 +52140,11 @@
       "C114": {
         "status": "pass",
         "exit": 0,
-        "seconds": 7,
+        "seconds": 9,
         "tail": "1..8\nok 1 R70: at the qa step, vbw next carries the proof's one run of the test command; the step's detail is unchanged\nok 2 R70: a project with no test command has no suite to hand over\nok 3 R70: a test command that did not run in the proof is handed over as not run or skipped, never as passing\nok 4 R70: every QA agent of the round is given the one result and told not to run the suite\nok 5 R70: no agent is started to run the suite: only the QA agents (and the run's closing step)\nok 6 R70: when the one run did not start, the round says so once and no agent is told to retry\nok 7 R70: a suite that ran and failed is handed over as failed, and is not a reason to run it again\nok 8 R70: without a round the QA workflow still works, and the QA agent and the router say the same",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "6f015c57b1c38134ba4d094bddfbdea4d814d15883d107da990d1bc4ab20d229",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C115": {
         "status": "pass",
@@ -52151,29 +52158,29 @@
       "C116": {
         "status": "pass",
         "exit": 0,
-        "seconds": 22,
+        "seconds": 26,
         "tail": "1..10\nok 1 R72: in a large repository a one-requirement, low-risk request is marked small, and its early tier is unchanged\nok 2 R72: two [auto] requirements with no risk word are still small\nok 3 R72: three requirements are not small\nok 4 R72: a [human] requirement is not small\nok 5 R72: a request that names a risk path (sign-in, payments, migrations, secrets, deletion, CI) is not small\nok 6 R72: a forced standard or deep rigor is never small\nok 7 R72: in a large repository an express phase of two files is accepted\nok 8 R72: in a large repository a change over more than two files is not small: express is refused, the tier is standard when left to the kernel\nok 9 R72: a small change goes from plan to done with one approval: build, check, close, ship\nok 10 R72: the router and docs tell the small path: plan it itself, no planning workflow, more than two files or a risk path plans normally",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "4bb723f9b60488219e9355b10b7dce181f39338593b50e410c526dd19642d10c",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C117": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 10 - a drawing with a missing, zero or odd width neither crashes nor asks\n  ---\n  duration_ms: 19.096959\n  type: 'test'\n  ...\n# Subtest: the width is never stored as if the user had chosen it\nok 11 - the width is never stored as if the user had chosen it\n  ---\n  duration_ms: 4.681458\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 162.563",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 10 - a drawing with a missing, zero or odd width neither crashes nor asks\n  ---\n  duration_ms: 22.857833\n  type: 'test'\n  ...\n# Subtest: the width is never stored as if the user had chosen it\nok 11 - the width is never stored as if the user had chosen it\n  ---\n  duration_ms: 4.624958\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 179.245208",
         "fp": "0d117f0ffe8b5a416d12ff7d470f5eb4bf604f7b1a1ae9a234a12ec790ff7253",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C118": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..3\nok 1 R72: the smallchange scenario exists, is in the default list and is named in the suite's header\nok 2 R72: it asks for one small change in plain words and reads the record, git and the transcript\nok 3 R72: the committed result: L3, passed, no planning workflow, one approval, one plan, its check passed, QA quick at most, the change committed",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "5b1366e875b970cd6a41aa186a3fc23d64bb6e0d619079e4b070bb525372f33f",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C119": {
         "status": "pass",
@@ -52181,8 +52188,8 @@
         "seconds": 2,
         "tail": "1..3\nok 1 R83: no text VBW hands Claude says to type or run /vbw:approve\nok 2 R83: when Claude tries to approve, the guard refuses and tells it to ask with the approval menu\nok 3 R83: the router's approve step asks with AskUserQuestion",
         "fp": "bb1596fe035817bd4eaa46b97e826a3915ebd4c4d6066bb3b0acd1ebc50ab441",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/hooks/session-start.sh changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C120": {
         "status": "pass",
@@ -52214,20 +52221,20 @@
       "C123": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
-        "tail": "ok 14 - no panel file but the palette holds a colour literal: no colour name, \\#rrggbb, 0xrrggbb or escape code\n  ---\n  duration_ms: 2.596167\n  type: 'test'\n  ...\n# Subtest: a rendered tree has no colour outside the palette: every colour prop is one the palette defines\nok 15 - a rendered tree has no colour outside the palette: every colour prop is one the palette defines\n  ---\n  duration_ms: 1.244583\n  type: 'test'\n  ...\n1..15\n# tests 15\n# suites 0\n# pass 15\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 79.360458",
-        "at": "2026-10-19T10:09:31Z",
+        "seconds": 0,
+        "tail": "ok 14 - no panel file but the palette holds a colour literal: no colour name, \\#rrggbb, 0xrrggbb or escape code\n  ---\n  duration_ms: 3.966583\n  type: 'test'\n  ...\n# Subtest: a rendered tree has no colour outside the palette: every colour prop is one the palette defines\nok 15 - a rendered tree has no colour outside the palette: every colour prop is one the palette defines\n  ---\n  duration_ms: 1.46425\n  type: 'test'\n  ...\n1..15\n# tests 15\n# suites 0\n# pass 15\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 82.353875",
         "fp": "2506ecd0ee7bf4544cb01a87888838a31a557fe4192d5b3aea00880442952e38",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C124": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 6 - a failed row keeps its label in the role colour\n  ---\n  duration_ms: 0.375833\n  type: 'test'\n  ...\n# Subtest: with colour off the states are still told apart by a mark and a word\nok 7 - with colour off the states are still told apart by a mark and a word\n  ---\n  duration_ms: 0.441667\n  type: 'test'\n  ...\n1..7\n# tests 7\n# suites 0\n# pass 7\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 108.014625",
-        "at": "2026-10-17T02:52:52Z",
+        "tail": "ok 6 - a failed row keeps its label in the role colour\n  ---\n  duration_ms: 0.241291\n  type: 'test'\n  ...\n# Subtest: with colour off the states are still told apart by a mark and a word\nok 7 - with colour off the states are still told apart by a mark and a word\n  ---\n  duration_ms: 0.250541\n  type: 'test'\n  ...\n1..7\n# tests 7\n# suites 0\n# pass 7\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 66.6905",
         "fp": "dbc1710ed958feca8fe771b92c6b46bcc2b8f04da23acda687713e86c06b4375",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-stage.js changed"
       },
       "C125": {
         "status": "pass",
@@ -52250,38 +52257,38 @@
       "C127": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
-        "tail": "ok 11 - comms: what an agent says (not a tool) stays one quoted line, not split into a verb and an object\n  ---\n  duration_ms: 1.183375\n  type: 'test'\n  ...\n# Subtest: comms: quiet and failed rows keep one state-coloured phrase\nok 12 - comms: quiet and failed rows keep one state-coloured phrase\n  ---\n  duration_ms: 0.349542\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 83.070833",
-        "at": "2026-10-19T02:04:25Z",
+        "seconds": 0,
+        "tail": "ok 11 - comms: what an agent says (not a tool) stays one quoted line, not split into a verb and an object\n  ---\n  duration_ms: 0.873167\n  type: 'test'\n  ...\n# Subtest: comms: quiet and failed rows keep one state-coloured phrase\nok 12 - comms: quiet and failed rows keep one state-coloured phrase\n  ---\n  duration_ms: 0.2695\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 77.028584",
         "fp": "62f14a0b4be2d9ab4f22699a9c4a2076bac90d90f627c5381ac142c7c4c629ba",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-stage.js changed"
       },
       "C128": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 7 - scrolling still moves the content: the body shows other rows at another offset\n  ---\n  duration_ms: 72.343792\n  type: 'test'\n  ...\n# Subtest: without a scroll hint the pane still draws its tabs and its content\nok 8 - without a scroll hint the pane still draws its tabs and its content\n  ---\n  duration_ms: 2.446416\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 156.991542",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 7 - scrolling still moves the content: the body shows other rows at another offset\n  ---\n  duration_ms: 75.368459\n  type: 'test'\n  ...\n# Subtest: without a scroll hint the pane still draws its tabs and its content\nok 8 - without a scroll hint the pane still draws its tabs and its content\n  ---\n  duration_ms: 1.930417\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 166.804625",
         "fp": "2f5916ba5a8ce8909440c688bd6f0e85e7994bfcfaf39074a82dc57f5afe6466",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C129": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
-        "tail": "ok 8 - outside a VBW project the engine row stays\n  ---\n  duration_ms: 2.082583\n  type: 'test'\n  ...\n# Subtest: the summary is the pure recordEditIntent of the call: one line, null when it is not the record\nok 9 - the summary is the pure recordEditIntent of the call: one line, null when it is not the record\n  ---\n  duration_ms: 0.311625\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 99.457584",
-        "at": "2026-10-19T10:09:31Z",
+        "seconds": 0,
+        "tail": "ok 8 - outside a VBW project the engine row stays\n  ---\n  duration_ms: 2.582959\n  type: 'test'\n  ...\n# Subtest: the summary is the pure recordEditIntent of the call: one line, null when it is not the record\nok 9 - the summary is the pure recordEditIntent of the call: one line, null when it is not the record\n  ---\n  duration_ms: 0.344625\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 110.874792",
         "fp": "58c428680759e0ab1538a451bbcb76dbe2fab6d32b11f3784cf6283a9a76e9e4",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C130": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 7 - wired: a new agent flashes on Comms at full motion, and the flash ends by itself with a redraw\n  ---\n  duration_ms: 21.526416\n  type: 'test'\n  ...\n# Subtest: wired: with calm or off motion nothing ever flashes\nok 8 - wired: with calm or off motion nothing ever flashes\n  ---\n  duration_ms: 12.522542\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 98.778916",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 7 - wired: a new agent flashes on Comms at full motion, and the flash ends by itself with a redraw\n  ---\n  duration_ms: 23.301583\n  type: 'test'\n  ...\n# Subtest: wired: with calm or off motion nothing ever flashes\nok 8 - wired: with calm or off motion nothing ever flashes\n  ---\n  duration_ms: 12.010375\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 103.2935",
         "fp": "3f439efd08c606400b3166e63d09c53400522b4927c97fc2f87dd8d08a72779d",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C131": {
         "status": "pass",
@@ -52439,11 +52446,11 @@
       "C148": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 2,
         "tail": "1..1\nok 1 R94: the wait setting VBW_CHECK_WAIT_SECONDS is gone from the code and the docs no longer say it ends a wait",
         "fp": "2ed97e5d717f44f17f3acfc62ad02946f6c63db9ed0f63290d362963ff046d77",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C149": {
         "status": "pass",
@@ -52513,9 +52520,9 @@
         "exit": 0,
         "seconds": 7,
         "tail": "1..3\nok 1 R100: vbw doctor on a planned, unapproved contract does not tell the user to type /vbw:approve and says VBW asks with the approval menu\nok 2 R100: after a changed plan the contract view ends with the approval question and names no typed command\nok 3 R100: no output of apply, spec sync or a plan reset tells the user to type /vbw:approve",
-        "fp": "31fc489db439fa913052880c5b4380800b3b4d60d97488bebaec92bacbac7961",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "31fc489db439fa913052880c5b4380800b3b4d60d97488bebaec92bacbac7961",
+        "reused": true
       },
       "C158": {
         "status": "pass",
@@ -52583,20 +52590,20 @@
       "C165": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..7\nok 1 R106: the Architect's scoping task states the next free phase number\nok 2 R106: the number follows the args, not a fixed text\nok 3 R106: a planning run has no renumbering step: the phases come back numbered and reach the Lead as given\nok 4 R106: planning again (decided) also states the number, and keeps started phases as they are\nok 5 R106: without a number in the args (an older router) planning still runs\nok 6 R106: the router passes next_phase to the planning workflow, on the first run and on the run after the user's decisions\nok 7 R106: the Architect reads vbw show roadmap before planning again",
-        "at": "2026-10-19T02:04:25Z",
         "fp": "30134dc9c31cc9b8ac875f65abcb0282040365a9e542552c018cf2f334027cdc",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C166": {
         "status": "pass",
         "exit": 0,
-        "seconds": 10,
+        "seconds": 11,
         "tail": "1..12\nok 1 R107: the profile file has a table for each profile, and every role and step the workflows use has a value Claude Code accepts\nok 2 R107: closing a run and documentation get a lower effort than building, planning and QA a higher one, in every profile\nok 3 R107: vbw config effort prints the table of the current profile, and follows a profile change\nok 4 R107: vbw next --json carries the same table, so the router can pass it to every workflow\nok 5 R107: a value Claude Code does not accept is refused with the role and the step, by vbw config effort and by vbw next\nok 6 R107: a value that is not text is refused the same way\nok 7 R107: a missing role or step is refused with its name, so no workflow starts with a gap\nok 8 R107: only the profile in use is judged: a bad value in another profile does not stop this one\nok 9 R107: the router and every skill that starts a workflow pass the effort table in the workflow's args\nok 10 R107: the effort table is described for people: the effort levels, the steps and where the table lives\nok 11 F88: a missing or invalid architect recommend step is refused like every other step\nok 12 F89: docs/workflows.md lists the architect recommend step in the table and the example",
         "fp": "ccdb89baa82f463ca04b47659bf6e485ed4405ac953f454d10bc2c8b942f46b6",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C167": {
         "status": "pass",
@@ -52657,17 +52664,17 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..5\nok 1 R111: the QA agent's instruction for a refused verdict says to run vbw prove --full, then try the record once more\nok 2 R111: the verifying workflow tells each QA agent to run vbw prove --full after a refused verdict, then record once more\nok 3 R111: the verifying workflow gives QA agents the test result of the round, which comes from the full proof\nok 4 R111: the router runs vbw prove --full when the next step marks the proof as full\nok 5 R111: the QA skill proves with vbw prove --full",
-        "at": "2026-10-19T02:04:25Z",
         "fp": "91e13acc11565f187ad4231a3ca64c45931e4289b151542ce4ea4cd966b33ece",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C174": {
         "status": "pass",
         "exit": 0,
-        "seconds": 27,
+        "seconds": 28,
         "tail": "1..5\nok 1 R111: tools/test.sh --quick --list names shellcheck and the engineering rules\nok 2 R111: the quick mode runs every test file no approved check runs, and none that a check runs\nok 3 R111: the quick mode leaves out the timing benchmarks\nok 4 R111: tools/test.sh refuses other arguments with its usage line and runs nothing\nok 5 R111: VBW's spec names the quick mode as its quick command, and the record carries it",
         "fp": "ea8410462fa6587957008ad2de1329f5331f01d5fd1afc382372b9bc0886273a",
-        "at": "2026-10-19T20:29:13Z",
+        "at": "2026-10-20T00:29:58Z",
         "why": "tests listing changed"
       },
       "C175": {
@@ -52684,9 +52691,9 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..2\nok 1 R112: the interview skill exists and reads its answers with vbw interview\nok 2 R112: the router names vbw:interview on the profile.ask line and at the convert step",
-        "at": "2026-10-19T02:04:25Z",
         "fp": "4002fa3f1a9fa44d566bb65c40a6ece1616f5b349c654bee74c3f8e06a36e976",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C177": {
         "status": "pass",
@@ -52718,11 +52725,11 @@
       "C180": {
         "status": "pass",
         "exit": 0,
-        "seconds": 9,
+        "seconds": 6,
         "tail": "1..6\nok 1 R119: vbw config models in the balanced profile: Architect and Lead on Opus, every other role on Sonnet\nok 2 R119: the planning workflow started with the balanced models runs the Architect and the Lead on Opus, nothing else\nok 3 R119: the quality and budget profiles give every role the same model as before\nok 4 R119: a user's own per-role model still wins over the balanced default\nok 5 R119: the panel's team table matches plugin/lib/profiles.json and shows the Lead on Opus\nok 6 R119: README, the config and profile skills and docs/record.md show the Lead on Opus in balanced",
-        "at": "2026-10-19T18:26:36Z",
         "fp": "89acdcc2152e88fb2087cd7fc580b7d2b2988411953dfa496bd0e299d03defbe",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C181": {
         "status": "pass",
@@ -52736,20 +52743,20 @@
       "C182": {
         "status": "pass",
         "exit": 0,
-        "seconds": 87,
+        "seconds": 58,
         "tail": "1..15\nok 1 R116: one new [auto] requirement naming one file, added to a milestone with planned and proven requirements, is small\nok 2 R116: a [human] requirement already planned in the milestone does not make a new small request big\nok 3 R116: one or two new [auto] requirements naming one or two files and no risk are small\nok 4 R116: a request naming three or more files is not small\nok 5 R116: a request naming a risk-path file or a risk category is not small\nok 6 R116: three or more new requirements, or a new [human] one, are not small\nok 7 R116: rigor forced to standard or deep is never small; auto and express keep the rules\nok 8 R116: vbw apply --add adds one express phase to a milestone with started work; every other phase, plan, check and rule stays as it was\nok 9 R116: vbw apply --add refuses a phase that exists and changes nothing; a requirement a started phase covers may get a new phase beside it (R157)\nok 10 R116: in a milestone where no work has started, vbw apply --add refuses each conflict with its own reason and changes nothing\nok 11 R116: vbw apply --add refuses a requirement of an earlier milestone, covered there or not, and changes nothing\nok 12 R116: in a repository tracking more than 30 files, an express phase over more than two files is refused, through --add as through a full apply\nok 13 R116: vbw apply --add judges only the phases it brings: a finished express phase whose floor is now standard keeps its tier, plans and status\nok 14 R116: a small request added mid-milestone goes from plan to done with one approval\nok 15 R116: the router takes the small path with vbw apply --add numbered from next_phase and no planning workflow; anything else plans as before",
-        "at": "2026-10-19T18:26:36Z",
         "fp": "e39821200ff1ad7ca18b2f20a8b3269f2e76ed5f1840a2be1950179bba93ea52",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C183": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..2\nok 1 R116: the smallchange scenario seeds a milestone with earlier requirements and records what it kept\nok 2 R116: the committed result: L3, passed, the request added to a milestone with earlier work, no planning workflow, one approval, one new plan",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "df75cb2836ebec15ccdcabf7e080a7792ceb3404f3e3ae68a1dc64823746314a",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C184": {
         "status": "pass",
@@ -52784,62 +52791,62 @@
         "seconds": 24,
         "tail": "1..11\nok 1 R121: vbw triage --json names the active milestone, its open requirements, the run and the sorted backlog in one call\nok 2 R121: vbw triage shows an open run, and leaves out accepted requirements and closed backlog items\nok 3 R121: after ship there is no active milestone and no open requirement\nok 4 R121: vbw triage (text) prints the same facts and writes nothing\nok 5 R121: vbw todo add keeps the sort and size, and vbw todo list shows them, next before later\nok 6 R121: backlog items added before sorting existed still list as before, without a sort or size, and nothing about them changes\nok 7 R121: a sort or size outside the allowed values, or one without the other, is refused and nothing is added\nok 8 R121: the record validator accepts sorted items and refuses a bad sort or size\nok 9 R121: a sorted backlog item raises the schema to 3 or above, so an older VBW asks for an update instead of calling the record corrupt\nok 10 R121: a 'now' idea added while a run is open is recorded at once, and planning waits for the run to end\nok 11 R121: the kernel help lists vbw triage and the sort and size of vbw todo add",
         "fp": "9a3b037c82f6e23518475860fbc46760c87b2e8a98ce9b9e8dca5ac3adcf8a06",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C188": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..8\nok 1 R121: the triage skill exists, loads the kernel's summary in one call and starts no agent or workflow\nok 2 R121: the router points to the triage skill\nok 3 R121: the skill names the three sorts and the three sizes\nok 4 R121: the line is asked in an AskUserQuestion menu, VBW's sort marked (Recommended), at most four ideas at a time\nok 5 R121: 'now' uses vbw spec add and vbw milestone start; 'next' and 'later' use vbw todo add with its sort and size\nok 6 R121: the skill names the three autonomy settings: guided, balanced and hands-off\nok 7 R121: the user documentation names the three sorts, the sizes and vbw todo list, and the README links it\nok 8 F90: docs/triage.md shows the real vbw todo list format",
-        "at": "2026-10-19T02:04:25Z",
         "fp": "3c7cac510b2181c43f9f019c9862f47f547e6fc41d3a20d6c364158699fa6278",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C189": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
         "tail": "1..2\nok 1 R122: the overrule question is asked with AskUserQuestion and recorded with vbw decide\nok 2 R122: the decision the skill records is kept by the kernel with the reason as its why",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "527ccd74504ef52fbd46b63d3e9db739bc728ce1961e5041ee25c3072d275c3a",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/triage/SKILL.md changed"
       },
       "C190": {
         "status": "pass",
         "exit": 0,
-        "seconds": 34,
+        "seconds": 32,
         "tail": "1..14\nok 1 R123: vbw recommend stores the top pick, its reason and size, the runners-up and the time it was written\nok 2 R123: zero runners-up is fine, and a pick may have no source\nok 3 R123: a new recommendation replaces the earlier one, so only one is kept\nok 4 R123: every malformed recommendation is refused with a message naming what is wrong, and the earlier one stays\nok 5 R123: a pick whose source is not open is refused: a shipped or proven requirement, a closed or unknown todo\nok 6 R123: a pick that is a declined suggestion is refused\nok 7 R123: with no open requirement and an empty backlog the stored recommendation says the backlog is empty; with work open, 'empty' is refused\nok 8 R123: while a run is open the kernel stores no recommendation and says so\nok 9 R123: the validator accepts a record with and without a recommendation, and refuses a damaged one\nok 10 R123: a stored recommendation raises the schema to 3 or above; an older VBW asks for an update; without one and without sorted todos the schema stays as before\nok 11 R123: vbw status shows the what's-next part: the top pick, its reason and size, each runner-up with its size, and the date\nok 12 R123: with none stored, vbw status says there is none yet and how to ask for one\nok 13 R123: vbw status --json carries the recommendation, or null when none is stored\nok 14 R123: the kernel help lists vbw recommend",
         "fp": "1298cf4f726813ed091d7c7cd224c97eafc08e4e8d56837e310e1c52709b6d91",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C191": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
         "tail": "1..10\nok 1 R123: the recommending workflow runs the Architect once, with its model, its effort and a reply schema, and returns its recommendation\nok 2 R123: the Architect is given the record: the open requirements, the backlog with each sort and size, the declined suggestions\nok 3 R123: with no open requirement and an empty backlog no Architect runs and the result says the backlog is empty\nok 4 R123: when the Architect fails, the workflow returns an error and no recommendation\nok 5 R123: the profile's effort table has an Architect step for the recommendation in every profile\nok 6 R123: the what's-next skill loads the summary, runs the workflow and stores the result with vbw recommend\nok 7 R123: the router starts vbw:whats-next\nok 8 R123: the Architect's what's-next job names its output: a top pick, runners-up and the sizes small, medium and large\nok 9 R123: the user documentation names the commands: /vbw:vibe what's next and vbw status, and the README links it\nok 10 R123: fields the kernel does not know are dropped from every pick, so a runner-up with a reason still stores",
-        "at": "2026-10-19T02:04:25Z",
         "fp": "fb501a7aeb06d9a48ba7dc7075f80bb368b1b49ea7e05d8fc7911bc343dba6c4",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C192": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
-        "tail": "ok 12 - with motion off or calm, by setting or by the interview level, the section is still\n  ---\n  duration_ms: 34.6055\n  type: 'test'\n  ...\n# Subtest: a level new to code moves by default (full motion), as the rest of the panel does\nok 13 - a level new to code moves by default (full motion), as the rest of the panel does\n  ---\n  duration_ms: 18.99375\n  type: 'test'\n  ...\n1..13\n# tests 13\n# suites 0\n# pass 13\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 311.13075",
-        "at": "2026-10-19T10:09:31Z",
+        "seconds": 1,
+        "tail": "ok 12 - with motion off or calm, by setting or by the interview level, the section is still\n  ---\n  duration_ms: 25.402625\n  type: 'test'\n  ...\n# Subtest: a level new to code moves by default (full motion), as the rest of the panel does\nok 13 - a level new to code moves by default (full motion), as the rest of the panel does\n  ---\n  duration_ms: 11.723625\n  type: 'test'\n  ...\n1..13\n# tests 13\n# suites 0\n# pass 13\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 268.697916",
         "fp": "c10afd455e9c6f086666e6f17b831f271858a6fc321d51b62e655f903c0c4953",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C193": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..2\nok 1 R124: the panel bench measures a refresh that draws the What's next section\nok 2 R124: docs/panel.md names the What's next section, the Suggest next button, its labels and /vbw:vibe what's next",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "52f5760f9c9a7a2cd863868276d4bd0653f8399ac59586f549d308686e719b24",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "docs/panel.md changed"
       },
       "C194": {
         "status": "pass",
@@ -52889,20 +52896,20 @@
       "C199": {
         "status": "pass",
         "exit": 0,
-        "seconds": 73,
+        "seconds": 83,
         "tail": "1..8\nok 1 R132: the fingerprint stored for a passed phase carries the version of how it was computed, in the clone's QA cache\nok 2 R132: after an update that changes the fingerprint's version, an unchanged passed phase still stands\nok 3 R132: at the same version, a different stored fingerprint is a change, as today\nok 4 R132: a fingerprint written by an older VBW with no version is an older version, not a change\nok 5 R132: after an update, a real change to the phase's files sends it back to QA\nok 6 R132: a change to the phase's files made before the update still sends it back to QA after it\nok 7 R132: after an update, a change to the phase's tests, plan or requirements sends it back to QA\nok 8 R132: a change to the phase's requirement made before an update of a version-less fingerprint sends it back to QA",
         "fp": "aa6f03034434abe1895e674e456d849a5fbff135a921984c8e7694be26905cba",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C200": {
         "status": "pass",
         "exit": 0,
-        "seconds": 32,
+        "seconds": 35,
         "tail": "1..17\nok 1 R128: session-start.sh additionalContext: in a VBW project SessionStart adds context for Claude to read, and nothing else\nok 2 R128: session-start.sh systemMessage: a project made by a newer VBW also shows the user a message, next to the context\nok 3 R128: session-start.sh no output: outside a VBW project SessionStart says nothing\nok 4 R128: guard-bash.jq and common.jq deny: a guarded Bash call is denied with a 'VBW guard:' reason, which blocks it and tells Claude why\nok 5 R128: guard-bash.jq no output: an ordinary Bash call gets no answer, so Claude Code's own permission flow decides\nok 6 R128: guard-file.jq deny: writing the record with a file tool is denied with a 'VBW guard:' reason\nok 7 R128: guard-file.jq no output: an ordinary read gets no answer\nok 8 R128: each guard's failure gives no output and exit 0, never an allow (Claude Code goes on as normal)\nok 9 R128: approve-ask.sh ask with updatedInput: the approval menu is rewritten and handed back as ask, so the user still sees and answers it\nok 10 R128: approve-ask.sh no output: other questions, subagents' questions and an approved contract get no answer\nok 11 R128: approve-answer.sh systemMessage and additionalContext: after the user answered, the hook only adds a message and context; only the exact answer Approve approves\nok 12 R128: approve-answer.sh no output: other questions and subagents' answers get no answer and approve nothing\nok 13 R128: no hook ever answers allow, for any input below, and a failing hook gives no output\nok 14 R128: the hook answer inventory passes on the hooks as they are\nok 15 R128: the hook answer inventory fails on a new answer shape with no pinning test, names it, and passes once a test pins it\nok 16 R128: the hook answer inventory fails when any hook could answer allow, even with a test named for it\nok 17 R128: the engineering standards run the hook answer inventory, and their selftest shows it failing",
         "fp": "f955847254a739f97a03d0475fae1b27b117168f9aa33d1e3f32d06c22ff7c6d",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C201": {
         "status": "pass",
@@ -52918,26 +52925,26 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..1\nok 1 R135: the router takes the user's words as $ARGUMENTS and names vbw:triage",
-        "at": "2026-10-19T02:04:25Z",
         "fp": "2d1c82a054bcf5f324e57b2400798f91e17a2c3e11fde9d77428e7a0ffdff15c",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C203": {
         "status": "pass",
         "exit": 0,
         "seconds": 20,
         "tail": "ok 6 R141: without jq, in a folder that is not a VBW project the hook ends quietly\nok 7 outside a VBW project the hook says nothing\nok 8 in a VBW project it gives the state and the next step, and writes no project file\nok 9 a corrupt record is reported, not hidden\nok 10 a project made by a newer VBW asks for an update, not /vbw:vibe\nok 11 a session started in a subdirectory of a VBW project is told the guards are off\nok 12 VBW 1's command copies are removed (they would shadow VBW 2's commands); nothing else is touched\nok 13 the copies' directory is removed once empty, and a clean setup says nothing\nok 14 only the config directory this session uses is cleaned\nok 15 a VBW 1 project is told its plan is safe and how to bring it in, and nothing is written\nok 16 another session's main conversation cannot edit a file the run writes\nok 17 another session's subagent cannot edit it either\nok 18 another session cannot write the file with a shell command either\nok 19 files the run does not write stay editable from another session\nok 20 the owning session and its agents can edit the file\nok 21 after the user states the owner is closed, the edit is allowed\nok 22 a run older than 24 hours no longer guards its files\nok 23 with no open run, or outside a VBW project, edits are allowed\nok 24 a plan run in another session guards every project file\nok 25 a QA run in another session guards no file",
-        "fp": "b1a035ea2ad48bf498f3bf6b77f243ca43a493963c7a8ca58cf0042e87d9ab57",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "b1a035ea2ad48bf498f3bf6b77f243ca43a493963c7a8ca58cf0042e87d9ab57",
+        "reused": true
       },
       "C204": {
         "status": "pass",
         "exit": 0,
-        "seconds": 56,
+        "seconds": 67,
         "tail": "1..8\nok 1 R142: for 1 to 5 shards, together the shards list every tests/*.bats file exactly once\nok 2 R142: the same inputs give the same shares\nok 3 R142: shares are balanced by test count: no shard of 4 holds much more than a quarter of the tests\nok 4 R142: a newly added test file lands in exactly one shard, with no list to edit\nok 5 R142: the tool lint and the hook and panel benchmarks are listed by shard 1 only\nok 6 R142: a shard runs its share in one parallel batch, then its timed files alone, and only shard 1 lints and benchmarks\nok 7 R142: a failing test file in a shard makes the shard fail, in the batch and in the timed files\nok 8 R142: an invalid shard argument exits 2 with the usage line and runs nothing",
         "fp": "a7a168580dd6010bf07effe9337ea968f9b2d34565451af92b8c3264f462f124",
-        "at": "2026-10-19T20:29:13Z",
+        "at": "2026-10-20T00:29:58Z",
         "why": "tests listing changed"
       },
       "C205": {
@@ -53069,29 +53076,29 @@
       "C219": {
         "status": "pass",
         "exit": 0,
-        "seconds": 60,
+        "seconds": 61,
         "tail": "1..6\nok 1 R149: the session-start hook says the same on a record over 2 MB, with no error\nok 2 R149: the Bash and file guards answer the same on a record over 2 MB, with and without a run\nok 3 R149: the approve hooks answer the same on a record over 2 MB\nok 4 R149: the status line shows the same on a record over 2 MB, before and during a run\nok 5 R149: the panel shows the same on a record over 2 MB\nok 6 R149: tools/bench-hooks.sh measures the guards and the status line on a record over 2 MB",
         "fp": "977b1d17bebb3a7f2a05f6e1a086e4ab8ea822a542fe24ac6594a9471630b94f",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C220": {
         "status": "pass",
         "exit": 0,
         "seconds": 2,
         "tail": "1..5\nok 1 R149: no shipped shell line passes record-sized data to jq as a command-line argument\nok 2 R149 self-test: the rule catches the record passed with --argjson or --arg\nok 3 R149 self-test: the rule catches values derived from the whole record\nok 4 R149 self-test: the rule catches a function's record parameter passed to jq or in a here-string\nok 5 R149 self-test: standard input, --slurpfile, --rawfile, small values and comments pass the rule",
-        "fp": "3b3e40c22a7555bda91ce1634757d284ba95cce72a7881bb567eb22962e922ba",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/hooks/session-start.sh changed"
+        "fp": "3b3e40c22a7555bda91ce1634757d284ba95cce72a7881bb567eb22962e922ba",
+        "reused": true
       },
       "C221": {
         "status": "pass",
         "exit": 0,
         "seconds": 253,
         "tail": "1..4\nok 1 R149: every mktemp in shipped shell code names a folder, so no scratch file goes to the system's temporary folder\nok 2 R149: reads and writes of a record over 2 MB leave no scratch file behind and never use the system's temporary folder\nok 3 R149: a build, a proof and a QA verdict on a record over 2 MB leave no scratch file behind\nok 4 R149: commands that fail on a record over 2 MB leave no scratch file behind either",
-        "fp": "e857adbecdbc0f2e4144fbca3299c6326a9dc886b0c4cdfe05ccaa6682d65500",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/hooks/session-start.sh changed"
+        "fp": "e857adbecdbc0f2e4144fbca3299c6326a9dc886b0c4cdfe05ccaa6682d65500",
+        "reused": true
       },
       "C222": {
         "status": "pass",
@@ -53107,18 +53114,18 @@
         "exit": 0,
         "seconds": 37,
         "tail": "1..11\nok 1 R150: vbw init and every later write leave a format-4 record, with an empty list when there are no checks\nok 2 R150: with 1, 50, 51 and 2,000 checks the record is format 4 and protected holds every check file once, sorted\nok 3 R150: a check with no files adds nothing and a file several checks share appears once\nok 4 R150: a contract change that adds, removes or edits a check updates the list in the same write\nok 5 R150: a record an older VBW wrote (schema 1, 2 or 3, no list) is read by every command and becomes format 4 on its next write, all else kept\nok 6 R150: there is no migration command\nok 7 R150: a schema-4 record without the list is corrupt for every command, which names the protected field\nok 8 R150: a list that differs from the checks' files is corrupt: one missing, one extra, out of order, repeated or not a list\nok 9 R150: a record below schema 4 that carries a protected list is corrupt for every command\nok 10 R150: this VBW reads schema 4 and asks for a newer VBW on schema 5, naming schema 4 as its highest\nok 11 R150: the writer and the validator hold no 50-check threshold",
-        "fp": "8e53862f178ce2645c79587f95a9ce6d6cc6104d2ae00bf23b8b800693244ee0",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "8e53862f178ce2645c79587f95a9ce6d6cc6104d2ae00bf23b8b800693244ee0",
+        "reused": true
       },
       "C224": {
         "status": "pass",
         "exit": 0,
-        "seconds": 28,
+        "seconds": 29,
         "tail": "1..6\nok 1 R150: the schema-4 fixture loads and shows correctly in this VBW\nok 2 R150: a VBW that reads up to schema 3 asks for a newer VBW on the schema-4 fixture, never calling it corrupt\nok 3 R150: a VBW that reads up to schema 3 asks for a newer VBW on every record this VBW writes: 0, 1, 3 and 51 checks\nok 4 R150: the status line shows the same on a format-4 record with 0 and 60 checks as on an older one, idle and during a run, with no error\nok 5 R150: the session-start hook says the same on a format-4 record as on an older one, with no error\nok 6 R150: the panel shows the same on a format-4 record with 0 and 60 checks as on an older one",
         "fp": "9546374c2244d2d507a4683c474557bb6a5653d90a82065dbd248f02e95b030d",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C225": {
         "status": "pass",
@@ -53134,18 +53141,18 @@
         "exit": 0,
         "seconds": 25,
         "tail": "1..1\nok 1 R150: the hook benchmark measures every guard input on records of 51, 500 and 2,000 checks, all against one budget",
-        "fp": "da11d145cc49d2451d968128783b795bfaf954e1626818665b5ad00263fb1bb9",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "da11d145cc49d2451d968128783b795bfaf954e1626818665b5ad00263fb1bb9",
+        "reused": true
       },
       "C227": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..5\nok 1 R150: docs/record.md names the protected field and schema 4 as the current format\nok 2 R150: docs/record.md and docs/guards.md no longer mention a 50-check threshold\nok 3 R150: docs/record.md no longer says this VBW writes schema 1, 2 or 3\nok 4 R150: docs/guards.md no longer says the guards read the checks on older records\nok 5 R150: docs/guards.md quotes the refusal on a record without the list: not saved by this VBW yet",
-        "fp": "fde15b5a39bf902f673c2924685ace71849bdab140a62410c61e6b35e46eea79",
         "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "fp": "fde15b5a39bf902f673c2924685ace71849bdab140a62410c61e6b35e46eea79",
+        "reused": true
       },
       "C228": {
         "status": "pass",
@@ -53161,44 +53168,44 @@
         "exit": 0,
         "seconds": 54,
         "tail": "1..9\nok 1 R150: the guards and the doctor's guard self-test read the glance and never stream the record\nok 2 R150: while the glance is current the guards answer from it alone, without reading the record\nok 3 R150: a missing, unreadable, incomplete or older glance gives the answers of the record\nok 4 R150: after git checkout, git reset or a hand edit within the glance's second, the guards answer from the record\nok 5 R150: the guards give identical answers from the glance and from the record in every state\nok 6 R150: a forged glance with an empty protected list or no lease, older than the record, changes no answer\nok 7 R150: under any run an agent's write of the glance is refused as a record write is; the main conversation outside a run is not\nok 8 R150: outside a VBW project the guards give no answer and print no error, with or without a stray glance\nok 9 R150: vbw doctor's guard self-test passes with a current glance and with none",
-        "fp": "bf0e478872297dbc04b4e710dec85a54c2d9ecd65222d6899f0de1dd6073fc25",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "bf0e478872297dbc04b4e710dec85a54c2d9ecd65222d6899f0de1dd6073fc25",
+        "reused": true
       },
       "C230": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..3\nok 1 R150: docs/guards.md names the glance and the record file\nok 2 R150: docs/record.md names the glance's fields: schema, lease and protected\nok 3 R150: no guide says the guards stream the record or read only its beginning",
         "fp": "931236c6f466e60b04dd647e3ca23cb248f98899cd547bb9dae01a725e6feeb5",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C231": {
         "status": "pass",
         "exit": 0,
-        "seconds": 232,
+        "seconds": 226,
         "tail": "1..7\nok 1 R151: a guard whose own cost is above 20 ms per call fails the bench, and the line names the input, the cost and the 20 ms limit\nok 2 R151: a guard whose own cost is at or below 20 ms passes, however it compares with the startup (the old 1x limit no longer fails)\nok 3 R151: the status line above 60 ms per call fails the bench on the small and the large record, naming the cost and the 60 ms limit\nok 4 R151: without settings the limits are 20 ms per guard call and 60 ms for the status line, also in the bench's defaults\nok 5 R151: a machine too busy to measure is reported with its startup and the run passes without judging any guard\nok 6 R151: the same run with a startup below the limit judges the guards and the status line as usual\nok 7 R151: VBW_HOOK_BUDGET_MS and VBW_STATUSLINE_BUDGET_MS override the two limits, the busy threshold following the hook limit",
         "fp": "e793b124a2853ca98406f9890c1b9dfdad8f49b126f175a6b723f4671450cecf",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C232": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..4\nok 1 R151: CI runs the benchmark with the local defaults: no CI-only hook or status line limit\nok 2 R151: docs/guards.md states the 20 ms limit per hook call and the busy-machine report, and no longer 8 ms\nok 3 R151: docs/statusline.md states the 60 ms limit, and no longer 30 ms\nok 4 R151: the hot-path rule of CLAUDE.md states 20 ms per hook call, 60 ms for the status line and the busy report",
-        "fp": "d7937c95b020615d8e2067e59f4c70693e4f3ef976f8188a026ed9786c3f1097",
         "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "fp": "d7937c95b020615d8e2067e59f4c70693e4f3ef976f8188a026ed9786c3f1097",
+        "reused": true
       },
       "C233": {
         "status": "pass",
         "exit": 0,
-        "seconds": 11,
+        "seconds": 13,
         "tail": "1..8\nok 1 R152: bash tools/test.sh with no option runs the lint and every test file except the timed ones, and neither benchmark\nok 2 R152: bash tools/test.sh --release runs the lint, both benchmarks, the suite in one parallel batch, then the timed files alone\nok 3 R152: the release run fails when a benchmark, the batch or a timed file fails\nok 4 R152: --quick still runs without the benchmarks and without any timed file\nok 5 R152: the CI shards together make one release run: shard 1 runs both benchmarks, each shard runs its timed files alone after its batch\nok 6 R152: tools/test.sh refuses --release with other arguments, naming the release way in its usage line, and runs nothing\nok 7 R152: CI runs the release way: every job runs its shard of the release run\nok 8 R152: no test file of the default run measures a duration; the timed tests live in tests/timed-*.bats",
         "fp": "d6a91300a2cc3c178950148fe6689a3b3301183cc8e7951d2509592e254757f9",
-        "at": "2026-10-19T20:29:13Z",
+        "at": "2026-10-20T00:29:58Z",
         "why": "tests listing changed"
       },
       "C234": {
@@ -53269,9 +53276,9 @@
         "exit": 0,
         "seconds": 99,
         "tail": "ok 16 R145: a phase that never escalated keeps the small-change discount\nok 17 R145: a tier forced with vbw config rigor, never escalated, keeps the small-change discount\nok 18 R145: the QA round's tier is the raised depth when an escalated phase is among those to verify\nok 19 with no setting the mode is auto, and the config listing says so\nok 20 vbw config rigor sets each of auto, express, standard and deep\nok 21 an invalid mode is refused with the allowed list and the setting stays\nok 22 a forced mode overrides the computed tier when planning, up or down\nok 23 changing the mode re-tiers phases whose work has not started, and auto computes again\nok 24 a phase whose work has started keeps its tier when the mode changes\nok 25 changing the mode never makes the approved contract need approving again\nok 26 init writes the detected commands into spec.md and the record\nok 27 sync makes the record's commands exactly the spec's: changed, added and removed\nok 28 an empty Commands section removes every command\nok 29 a spec without a Commands section leaves the record's commands as they are\nok 30 a JSON array keeps an argument that contains spaces\nok 31 malformed command lines and duplicate names are errors with line numbers; nothing changes\nok 32 after the commands change, next asks for approval until the user approves them\nok 33 approval is refused while the spec's commands and the record's differ\nok 34 vbw config rigor re-tiers unstarted phases only, forced or recomputed\nok 35 a phase the Architect raised to deep is deep again after config rigor express then auto",
-        "fp": "c3836073bec4f93d2e4494fed8606d7db8de4dec09b7f9a14777f400792ec841",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "c3836073bec4f93d2e4494fed8606d7db8de4dec09b7f9a14777f400792ec841",
+        "reused": true
       },
       "C242": {
         "status": "pass",
@@ -53330,11 +53337,11 @@
       "C248": {
         "status": "pass",
         "exit": 0,
-        "seconds": 117,
+        "seconds": 106,
         "tail": "1..11\nok 1 R161: the verify and vibe skills keep the three answers, and Skip for now is recorded with vbw req skip\nok 2 R161: with nothing skipped, vbw next asks for the verdict as before\nok 3 R161: when only skipped [human] requirements remain, vbw next offers to ship and judge them in the next milestone\nok 4 R161: no such offer while other work remains\nok 5 R161: judging now changes nothing in the record\nok 6 R161: shipping now counts only what was proven or accepted and names the moved requirement\nok 7 R161: after vbw milestone start the moved requirement belongs to the new milestone, open, with the same id, text, proof, rules and history\nok 8 R161: in the new milestone vbw next offers the moved requirement for judgement\nok 9 R161: the spec line stays as it was, and vbw spec sync neither resets nor duplicates the moved requirement\nok 10 R161: an [auto] requirement is never skipped or moved\nok 11 R161: a [human] requirement with an open fix from the user's rejection does not move",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "3202a3a2596b00cc7a6113fb692ab4ef772898230cc9378a9953a402fbe2bf39",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C249": {
         "status": "pass",
@@ -53342,8 +53349,8 @@
         "seconds": 34,
         "tail": "1..7\nok 1 R162: every refusal written out in cmd-apply.sh and cmd-run.sh carries its next step\nok 2 R162: every refusal of a full apply ends with its next step\nok 3 R162: every refusal of vbw apply --add ends with its next step\nok 4 R162: every refusal of vbw apply --patch ends with its next step\nok 5 R162: every refusal of vbw run start ends with its next step\nok 6 R162: every block of the file guard and the Bash guard ends with its next step\nok 7 R162: a guard that failed during a run blocks with a next step",
         "fp": "519896c0dfda601738e1bd71b8b65877e664a9d86e471d0b96c2aef1efda7c2e",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C250": {
         "status": "pass",
@@ -53360,17 +53367,17 @@
         "seconds": 16,
         "tail": "1..8\nok 1 R164: with only the version files and the changelog changed since a passing proof, the release run reuses it\nok 2 R164: the same holds when the version change is committed\nok 3 R164: any other changed file, committed or not, runs everything and says why\nok 4 R164: a new untracked file runs everything and says why\nok 5 R164: with no proof recorded, the release run runs everything and says why\nok 6 R164: when the last proof failed, the release run runs everything and says why\nok 7 R164: when the proof is reused, a failing benchmark or timed check still fails the run\nok 8 R164: the CI shards run their whole share whatever proof is recorded",
         "fp": "80591fb718986fab415be8f70c38cc801722e12ccc05aad150c6441f83794838",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C252": {
         "status": "pass",
         "exit": 0,
-        "seconds": 54,
+        "seconds": 51,
         "tail": "1..9\nok 1 R165: during a run a guard that crashes blocks the write or command, saying the guard failed and to run vbw doctor\nok 2 R165: during a run a guard that cannot start blocks: the guard file missing or unreadable\nok 3 R165: during a run a guard that cannot start because jq is missing blocks\nok 4 R165: during a run a guard that runs past its time limit is stopped and the action blocked; docs/guards.md states the limit\nok 5 R165: during a run a record that cannot be parsed blocks the action when the guard must read it\nok 6 R165: the run-open marker exists exactly while a run is open, outlives a record that cannot be read, and a broken guard goes quiet when the run ends\nok 7 R165: in a VBW project with no open run a failing guard lets the action through as before\nok 8 R165: outside VBW projects a failing or missing guard changes nothing and prints nothing\nok 9 R165: with the guards intact a run still gets their ordinary answers, and the doctor's guard self-test passes",
         "fp": "3974be14db366f168f2e9b291226dfca3486024f14d0076397606898b8e370f2",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C253": {
         "status": "pass",
@@ -53405,8 +53412,8 @@
         "seconds": 4,
         "tail": "1..7\nok 1 R166: docs/proof.md names the read list\nok 2 R166: docs/proof.md names where read lists are kept\nok 3 R166: docs/proof.md names the limits and how to run everything fresh\nok 4 R166: docs/proof.md no longer describes the served-files rule, the passes cache or the documentation-only rule\nok 5 R166: recording read lists adds no tracing tool as a runtime dependency\nok 6 R166: the guards and the status line never read the read lists\nok 7 R166: the guards never open the store of recorded runs, even when they refuse a write to it",
         "fp": "66fea21440b31ca4347a91b43a1ac9e4fcba994caae0c29a018400cf716b39ec",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C257": {
         "status": "pass",
@@ -53432,7 +53439,7 @@
         "seconds": 1,
         "tail": "1..5\nok 1 R167: VBW's spec declares its single-file form: bats on one file\nok 2 R167: VBW's declared test files are every tracked tests/*.bats except the timed ones\nok 3 R167: VBW's spec names the shell lint as its own project command\nok 4 R167: bash tools/test.sh --lint runs shellcheck on every shell file under tools/ and runs no test file\nok 5 R167: tools/test.sh keeps its usage line and documents --lint in it",
         "fp": "a4c3fc4a1c937f7ed83dbad83a14a23b4a955b4576464496a0b301351ed0b484",
-        "at": "2026-10-19T20:29:13Z",
+        "at": "2026-10-20T00:29:58Z",
         "why": "reads the project through git"
       },
       "C260": {
@@ -53522,8 +53529,8 @@
         "seconds": 7,
         "tail": "1..3\nok 1 R170: a passing proof that reused results is reused by the release run\nok 2 R170: a proof that skipped a command not yet approved is not reused, and the reason says so\nok 3 R170: a proof where the quick command stood in for the test command is not reused, and the reason says so",
         "fp": "cca5744f1bf77d15e4a186f9542f9b6d64295f4334e6d2f6ac8581598920a628",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C270": {
         "status": "pass",
@@ -53558,7 +53565,7 @@
         "seconds": 5,
         "tail": "1..2\nok 1 R172: no test file writes a bats file and also starts the real bats\nok 2 R172: the rule sees the pattern that failed on Linux, and passes the filter form and the stand-in form",
         "fp": "ab7e91af533b5933eea6fff46b276d511c63f30112f526ece27beda6a441b2d5",
-        "at": "2026-10-19T20:29:13Z",
+        "at": "2026-10-20T00:29:58Z",
         "why": "tests listing changed"
       },
       "C274": {
@@ -53629,9 +53636,9 @@
         "exit": 0,
         "seconds": 5,
         "tail": "1..6\nok 1 R173: a render in a VBW project writes the session's figures to its own side file\nok 2 R173: a render with no cost field leaves the side file unchanged\nok 3 R173: the record is never written by a render, and no temporary file is left behind\nok 4 R173: outside a VBW project nothing is written\nok 5 R173: a session id that is not a safe token writes no file\nok 6 R173: when the runtime folder cannot be written the status line still renders",
-        "fp": "c052807c1ec346404bbfd08fdc45f7de2b58f91b0749e988a4b4dbec181a1512",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "c052807c1ec346404bbfd08fdc45f7de2b58f91b0749e988a4b4dbec181a1512",
+        "reused": true
       },
       "C282": {
         "status": "pass",
@@ -53672,11 +53679,11 @@
       "C286": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..2\nok 1 R173: the costs scenario exists, is in the suite's list and its saved result passed at L3\nok 2 R173: the result shows a known, non-zero cost for the run and the milestone, of the same order as /cost",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "a4ed0f2ccc18fb7928cac6b9b5861027881da42ec1bf08bcf60f0c0622e84909",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C287": {
         "status": "pass",
@@ -53692,18 +53699,18 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..3\nok 1 R177: the refusal's advice, the Dev brief, the Lead brief and docs/guards.md name the one scratch folder\nok 2 R177: no brief and no refusal sends an agent to /tmp or to .vbw/runtime/ itself\nok 3 R177 (F136): the Lead brief keeps its dependency rule on after",
-        "fp": "3e98485614a739e4cec0fd2e91ea371c29fee63d138061b8cf75037a80949557",
         "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "fp": "3e98485614a739e4cec0fd2e91ea371c29fee63d138061b8cf75037a80949557",
+        "reused": true
       },
       "C289": {
         "status": "pass",
         "exit": 0,
-        "seconds": 57,
+        "seconds": 52,
         "tail": "1..2\nok 1 R173: the bench's status line cases write the cost side file, and pass\nok 2 R173: a status line that never writes the side file fails the bench, on both records",
         "fp": "fbe13635ca6021b4583a358cf68ff6ab8e9119a2fe8377ba7eb14d6645ccb075",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C290": {
         "status": "pass",
@@ -53744,11 +53751,11 @@
       "C294": {
         "status": "pass",
         "exit": 0,
-        "seconds": 6,
+        "seconds": 4,
         "tail": "1..7\nok 1 R178: vbw loop start from any tool call is denied, however it is spelled, with the pinned text\nok 2 R178: the kernel's loop steps, vbw loop next and vbw loop park, are denied from any tool call with the pinned text\nok 3 R178: vbw loop stop, status and help, and the words in text, stay allowed\nok 4 R178: the /vbw:loop skill is user-invoked only and arms the loop in its preamble with the user's own arguments\nok 5 R178: no other skill arms the loop, and the guards doc names the denial\nok 6 R178 (F167): --help as a value arms nothing: only a bare help form passes the guard\nok 7 R178 (D324): the /vbw:loop preamble has three lines: the interview answers, vbw loop start with the user's arguments, vbw loop status",
         "fp": "cc6dd087b3b5e652ca0d1d5b2ad7badaa9dd137a8c8f849a6f4f613246a179dd",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/triage/SKILL.md changed"
       },
       "C295": {
         "status": "pass",
@@ -53771,11 +53778,11 @@
       "C297": {
         "status": "pass",
         "exit": 0,
-        "seconds": 5,
+        "seconds": 3,
         "tail": "1..6\nok 1 R179: the skill exists, is user-invoked only, names its arguments, and runs vbw loop start with them\nok 2 R179: the one message says what changed and what never happens, and how to stop\nok 3 R179: /vbw:loop stop runs vbw loop stop and says what the loop was doing\nok 4 R179: the steps are the router's, run the same way, and the loop never asks\nok 5 R179: the skill never arms autonomy steps, never approves and never asks the approval menu\nok 6 R179: the skill follows the shell-block rules of tests/skills.bats",
-        "at": "2026-10-19T04:43:52Z",
         "fp": "cde4f08f4426175100446a52033cf24f86a2c469e081c067bb2a7297cb764e4b",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/triage/SKILL.md changed"
       },
       "C298": {
         "status": "pass",
@@ -53827,9 +53834,9 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..5\nok 1 R179: docs/loop.md describes the cycle, the stops, the report and the skill\nok 2 R179: docs/next.md names the loop step and that vbw next is unchanged\nok 3 R179: docs/workflows.md and the autonomy section say the loop's steps are not counted against autonomy_cap\nok 4 R179 (F187): docs/next.md row 1 names a parked milestone beside a shipped one\nok 5 R179 (F192): docs/loop.md names the three kinds of commit a park leaves in place, and says they are named",
-        "at": "2026-10-19T18:26:36Z",
         "fp": "c916236f392f1586b29cde0a5454d7dd87556035ea2fc1e49d3483292528bed2",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C304": {
         "status": "pass",
@@ -53863,9 +53870,9 @@
         "exit": 0,
         "seconds": 126,
         "tail": "1..11\nok 1 R180: under a loop every form of git push is denied for the main session and for agents\nok 2 R180: under a loop releases, publishes and deploys are denied with their pinned texts\nok 3 R180: the words in text, reads and the project's own commands stay allowed under a loop\nok 4 R180: the denial holds when the guard reads the record instead of the glance, and ends with the loop\nok 5 R180: outside a loop today's rules stand: a plain git push, a pull request and a publish stay allowed\nok 6 R180: the hook bench measures the guard with a loop on\nok 7 R180 (F164): git's global options with their value as the next word hide no push: --git-dir, --work-tree, --namespace\nok 8 R180 (F165): heroku pipelines:promote is denied with its pinned text\nok 9 R180 (F175): an option's value or a toolchain word before the subcommand hides nothing: cargo +nightly publish, npm --tag next publish, docker --context x push, gh -R a/b release create\nok 10 R180 (F180): a trigger word that is an argument, not the subcommand, is allowed while a loop is on: cargo test publish, npm run publish, gh issue list --label release, docker run --name push\nok 11 R180 (F206): a redirect glued to the subcommand hides no push or publish: git push>out.log, npm publish>log, docker push>x; a descriptor number stays with its redirect",
-        "fp": "ed92d94276e5d6e4e244c9bc9e25195d97802233c37c07095a6a627fad8bf79d",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "ed92d94276e5d6e4e244c9bc9e25195d97802233c37c07095a6a627fad8bf79d",
+        "reused": true
       },
       "C308": {
         "status": "pass",
@@ -53891,8 +53898,8 @@
         "seconds": 0,
         "tail": "1..6\nok 1 R180: the loop scenario exists, is in the default list and the header, and writes its own result\nok 2 R180: the scenario arms two items with a small ceiling, one ships and one escalates twice and parks, checked in the record, the report and git\nok 3 R180: a committed result of the loop scenario, when there is one, is labelled honestly\nok 4 R180: docs/loop.md, docs/guards.md and README name the loop's commands and status\nok 5 R180 (F183): the scenario judges reverts only when the parked item had commits, and names the gap in not_tested when it had none; a committed result keeps that promise\nok 6 R180 (F190): the loop result's remote and tag counts are the ones the scenario measured, never constants",
         "fp": "c24572d1e9fcd2c40bd783369a81a8b57084a86a4dad1a08dfbed0930f59fd41",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C311": {
         "status": "pass",
@@ -54052,18 +54059,18 @@
         "exit": 0,
         "seconds": 6,
         "tail": "1..9\nok 1 R184: the project's .claude/settings.json turns VBW off: nothing printed, exit 3\nok 2 R184: the user's settings.json turns VBW off when the project says nothing; the project's true wins over it\nok 3 R184: the project's .claude/settings.local.json wins over its .claude/settings.json, both ways\nok 4 R184: the user's settings file is found as VBW finds it: CLAUDE_CONFIG_DIR, else ~/.config/claude-code, else ~/.claude\nok 5 R184: started in a subfolder, the settings are read from the project folder (the nearest folder up holding .git)\nok 6 R184: nothing that does not turn VBW off changes anything: missing files, no entry, another plugin off, or a file that is not JSON\nok 7 R184: where VBW is on, the output is byte-for-byte the same as with no settings at all, and the cost file is still written\nok 8 R184: where VBW is off, the status line writes no file anywhere in the project\nok 9 R184: the script never runs the saved earlier status line, nor any command from the settings (D356)",
-        "fp": "fa0b912f5fa912133e2d5305699e3e1e521407eda241159669c51b7ae4fe6e45",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "fa0b912f5fa912133e2d5305699e3e1e521407eda241159669c51b7ae4fe6e45",
+        "reused": true
       },
       "C329": {
         "status": "pass",
         "exit": 0,
         "seconds": 10,
         "tail": "1..8\nok 1 R184: where VBW is off, the setting shows the user's earlier status line, given Claude Code's own input\nok 2 R184: where VBW is off and there was no earlier status line, the setting shows nothing\nok 3 R184: where VBW is on, the setting shows VBW's lines only and never runs the earlier status line\nok 4 R184: with no input and stdin left open, the setting does not hang\nok 5 R184: vbw statusline on updates an older VBW setting in place, keeping the refresh interval, every other field and the saved earlier status line\nok 6 R184: vbw statusline off still brings back the earlier status line exactly, or removes VBW's when there was none\nok 7 R184: vbw doctor flags an older VBW setting with vbw statusline on as the fix, and not once it is updated\nok 8 R184: a session that starts in a VBW project updates an older VBW setting, keeping its interval and the saved earlier status line",
-        "fp": "6d706f057c5ccd5364eb4a01ddad3a85fb3f2728190fc67e76f9f47c8ec51f97",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "6d706f057c5ccd5364eb4a01ddad3a85fb3f2728190fc67e76f9f47c8ec51f97",
+        "reused": true
       },
       "C330": {
         "status": "pass",
@@ -54071,26 +54078,26 @@
         "seconds": 3,
         "tail": "1..4\nok 1 R184: in a project that turns VBW off, the real setting shows the user's earlier status line with Claude Code's input\nok 2 R184: in a project that turns VBW off, with no earlier status line, nothing shows: no VBW line, no 'unavailable'\nok 3 R184: where VBW is on, the real setting prints exactly what VBW's script prints, and the earlier status line never runs\nok 4 R184: a setting from an older VBW, not yet updated, shows no VBW line in a project that turns VBW off",
         "fp": "3b50fe4150340023c092a793ef6a3955eb329bb7051768079a0c60dd3c49c50b",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C331": {
         "status": "pass",
         "exit": 0,
-        "seconds": 103,
+        "seconds": 104,
         "tail": "1..4\nok 1 R184: the bench measures the hand-back where VBW is off against the 60 ms status line limit, and passes\nok 2 R184: VBW's script above 60 ms makes the hand-back fail the bench, naming the cost and the limit\nok 3 R184: a hand-back that never shows the earlier status line fails the bench\nok 4 R184: on a machine too busy to measure, the hand-back is not judged either",
         "fp": "4fa21950dd10ab4b8ba500e56341e5b7e18c6ce9f2aa1b422a8cd9dd4db2811f",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C332": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..4\nok 1 R184: the pluginoff scenario exists, is in the default list and is named in the suite's header\nok 2 R184: it turns VBW off in the project's own settings and writes its result with its fixture and what it did not test\nok 3 R184: a committed result is honest: L3, passed, VBW confirmed off by Claude Code, and nothing of VBW shown\nok 4 R184: if Claude Code loads the panel where VBW is off, the result names the panel test that proves it shows nothing there",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "acaf5d6eba3b42334c4ce02a14ff39ed0354785d4d3c7846c768a805ef96979f",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C333": {
         "status": "pass",
@@ -54107,26 +54114,26 @@
         "seconds": 12,
         "tail": "1..9\nok 1 R185: a session that loaded VBW from a working tree runs that tree's vbw, ahead of an installed release\nok 2 R185: the same holds outside a VBW project and with the installed VBW turned off for the project\nok 3 R185: the env file keeps what it held, and a working tree whose path has a space and a quote is put first whole\nok 4 R185: a normal installed session leaves the PATH to Claude Code: the installed copy writes nothing to the env file\nok 5 R185: in a VBW project the session's one line names the kernel in use, its path and its version\nok 6 R185: when the env file cannot be written, the session is told once, naming the exact kernel path to use\nok 7 R185: an approval answered in the menu is recorded by the loaded kernel, with an installed release that cannot read the record first on PATH\nok 8 R185: with an installed release first on PATH, VBW's hooks (session start, approval menu, guards) never run it\nok 9 R185: the unwritable-env-file warning survives a VBW 1 command copy removal and a project made by a newer VBW",
         "fp": "1690eeddc1c35f8732ce10b2b2161b14398b314403a88668913e2ed0dcac015c",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C335": {
         "status": "pass",
         "exit": 0,
         "seconds": 3,
         "tail": "1..5\nok 1 R185: vbw --version prints the plugin's version, as vbw version does, in and outside a project\nok 2 R185: vbw doctor says the vbw on PATH is the loaded plugin's, with its path and version\nok 3 R185: in a session that loaded a working tree, an installed release first on PATH is a warning, with the fix naming the loaded kernel\nok 4 R185: with no session recorded, the loaded plugin is the one running doctor, and a different vbw on PATH is a warning\nok 5 R185: no vbw on PATH at all is a warning too, with the fix naming the loaded kernel",
-        "fp": "f5983a0b28e3c1ae40625b58f7e03a16996882f5ff8cbd47570acc5ab6cfbd75",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "f5983a0b28e3c1ae40625b58f7e03a16996882f5ff8cbd47570acc5ab6cfbd75",
+        "reused": true
       },
       "C336": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..4\nok 1 R185: the plugindir scenario exists, is in the default list and is named in the suite's header\nok 2 R185: it starts the session with the working tree and the installed VBW on, and can name its result plugindir-probe\nok 3 R185: the committed probe is an honest L3 run of two different versions\nok 4 R185: the probe names the copies loaded, the PATH order, the vbw resolved by the session and an agent, and whose hooks ran",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "bec483e42e8dfdd81be7e3ee4e509e8b450ff311ee6ef08fefff8c4b1c3d164c",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C337": {
         "status": "pass",
@@ -54134,8 +54141,8 @@
         "seconds": 18,
         "tail": "1..8\nok 1 R185: a session that loaded a working tree shows the tree's version, rendered by the tree's own script\nok 2 R185: in a normal installed session the status line shows the newest installed version, as before\nok 3 R185: the choice never leaks: a later normal session, and the same session resumed without the tree, show the installed copy\nok 4 R185: a working tree that was moved or deleted falls back to the installed copy instead of failing\nok 5 R185: a recorded folder that is no VBW plugin any more is never run: the installed copy renders\nok 6 R185: with the installed VBW turned off for the project, a session that loaded the tree still shows VBW, and one without it still hands back\nok 7 R185: the session start writes only to the project's runtime folder, VBW's Claude config folder and the env file, whatever the session id\nok 8 R185: the status line of a loaded tree runs no git process",
         "fp": "cc14417e3b3a29df3c3de96f5819f39f5250e20e9e16ef0c75494cfed3d2c880",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C338": {
         "status": "pass",
@@ -54143,8 +54150,8 @@
         "seconds": 93,
         "tail": "1..3\nok 1 R185: the bench measures the loaded copy's status line against the 60 ms limit, and the hooks against 20 ms\nok 2 R185: a loaded copy's status line above 60 ms fails the bench, naming the cost and the limit\nok 3 R185: when the session start does not record the loaded copy, the bench fails instead of measuring the installed one",
         "fp": "70edcfbe7dc6a57d89688d5212c7cffc2e1b541cb671ddf7f2f420eba2706a3d",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C339": {
         "status": "pass",
@@ -54160,27 +54167,27 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..3\nok 1 R185: the plugindir scenario's committed result is an honest, passing L3 run of two different versions\nok 2 R185: the session and an agent it started ran the working tree's vbw, at the working tree's version\nok 3 R185: the status line showed the working tree's version, the first line named the kernel, and the installed copy's hooks did not run",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "b395b1a1313447a3669235a0c0075e9c5fc0ab2c93589b5ab162a888327b0e7b",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "C341": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..3\nok 1 R185 (F218): docs/guards.md names the session record as an allowed write outside the project, with its folder and lifetime\nok 2 R185 (F218): AGENTS.md's nothing-outside-the-project rule names three exceptions, the session record among them\nok 3 R185 (F218): the session-start hook writes its record only under the documented folder",
-        "fp": "6d3502ce93460d91d522a738ddbd30fd4fb8c53c280a4713577144e4023c7a46",
         "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "fp": "6d3502ce93460d91d522a738ddbd30fd4fb8c53c280a4713577144e4023c7a46",
+        "reused": true
       },
       "C342": {
         "status": "pass",
         "exit": 0,
-        "seconds": 12,
+        "seconds": 13,
         "tail": "1..9\nok 1 R185: a session that loaded VBW from a working tree runs that tree's vbw, ahead of an installed release\nok 2 R185: the same holds outside a VBW project and with the installed VBW turned off for the project\nok 3 R185: the env file keeps what it held, and a working tree whose path has a space and a quote is put first whole\nok 4 R185: a normal installed session leaves the PATH to Claude Code: the installed copy writes nothing to the env file\nok 5 R185: in a VBW project the session's one line names the kernel in use, its path and its version\nok 6 R185: when the env file cannot be written, the session is told once, naming the exact kernel path to use\nok 7 R185: an approval answered in the menu is recorded by the loaded kernel, with an installed release that cannot read the record first on PATH\nok 8 R185: with an installed release first on PATH, VBW's hooks (session start, approval menu, guards) never run it\nok 9 R185: the unwritable-env-file warning survives a VBW 1 command copy removal and a project made by a newer VBW",
         "fp": "794a3e0cbb4e606196379a5c8d05a4be79bf87a9966d37c842ec316c49e53fc8",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C343": {
         "status": "pass",
@@ -54188,8 +54195,8 @@
         "seconds": 13,
         "tail": "1..9\nok 1 R185: a session that loaded VBW from a working tree runs that tree's vbw, ahead of an installed release\nok 2 R185: the same holds outside a VBW project and with the installed VBW turned off for the project\nok 3 R185: the env file keeps what it held, and a working tree whose path has a space and a quote is put first whole\nok 4 R185: a normal installed session leaves the PATH to Claude Code: the installed copy writes nothing to the env file\nok 5 R185: in a VBW project the session's one line names the kernel in use, its path and its version\nok 6 R185: when the env file cannot be written, the session is told once, naming the exact kernel path to use\nok 7 R185: an approval answered in the menu is recorded by the loaded kernel, with an installed release that cannot read the record first on PATH\nok 8 R185: with an installed release first on PATH, VBW's hooks (session start, approval menu, guards) never run it\nok 9 R185: the unwritable-env-file warning survives a VBW 1 command copy removal and a project made by a newer VBW",
         "fp": "127086ffc1beb40afcf45403b24f260f7be8f18d24e422dd3f03fbb17beaf85e",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C344": {
         "status": "pass",
@@ -54338,119 +54345,119 @@
       "C360": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
-        "tail": "ok 14 - every other gate kind clears too once the record says it is done, with next.json unchanged: Comms, Mission Control, the hint line and /vbw-status\n  ---\n  duration_ms: 27.712084\n  type: 'test'\n  ...\n# Subtest: after a newer \"Contract approved\" decision no /vbw:approve is suggested, in the running session or in a new one\nok 15 - after a newer \"Contract approved\" decision no /vbw:approve is suggested, in the running session or in a new one\n  ---\n  duration_ms: 7.51075\n  type: 'test'\n  ...\n1..15\n# tests 15\n# suites 0\n# pass 15\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 393.651792",
-        "at": "2026-10-19T10:09:31Z",
+        "seconds": 1,
+        "tail": "ok 14 - every other gate kind clears too once the record says it is done, with next.json unchanged: Comms, Mission Control, the hint line and /vbw-status\n  ---\n  duration_ms: 31.091208\n  type: 'test'\n  ...\n# Subtest: after a newer \"Contract approved\" decision no /vbw:approve is suggested, in the running session or in a new one\nok 15 - after a newer \"Contract approved\" decision no /vbw:approve is suggested, in the running session or in a new one\n  ---\n  duration_ms: 6.987667\n  type: 'test'\n  ...\n1..15\n# tests 15\n# suites 0\n# pass 15\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 241.502417",
         "fp": "e8c17dbd12a07ec2706c56b38aa68fe66de4f593ec131cd2829691214fc45ffa",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C361": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
-        "tail": "ok 9 - while the run works, Mission Control draws its working helpers as running, never as cut off or ended\n  ---\n  duration_ms: 4.550209\n  type: 'test'\n  ...\n# Subtest: a card opened while its helper still works does not hide the later failure: Comms shows the red row until it is opened after the failure\nok 10 - a card opened while its helper still works does not hide the later failure: Comms shows the red row until it is opened after the failure\n  ---\n  duration_ms: 6.508958\n  type: 'test'\n  ...\n1..10\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 185.233791",
-        "at": "2026-10-19T10:09:31Z",
+        "seconds": 1,
+        "tail": "ok 9 - while the run works, Mission Control draws its working helpers as running, never as cut off or ended\n  ---\n  duration_ms: 7.082292\n  type: 'test'\n  ...\n# Subtest: a card opened while its helper still works does not hide the later failure: Comms shows the red row until it is opened after the failure\nok 10 - a card opened while its helper still works does not hide the later failure: Comms shows the red row until it is opened after the failure\n  ---\n  duration_ms: 7.799959\n  type: 'test'\n  ...\n1..10\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 186.44075",
         "fp": "c74752feecce83b49756c6216442aa78a3b6a185d7163e4ad4e58a8f51b55c5a",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C362": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..8\nok 1 R189: docs/panel.md calls the strip Comms and the pane Mission Control, never the band or Telemetry\nok 2 R189: README.md and the skills never call the strip the band or the pane Telemetry\nok 3 R189: docs/panel.md shows the needs-you line and says it has no buttons\nok 4 R189: docs/panel.md says when each message clears, and how helpers come and go\nok 5 R189: docs/panel.md ties each clearing to its event: ship, answer, a run starting, the run ending\nok 6 R189: docs/panel.md states the helper-row facts: a finished helper leaves at once, a failed one stays red until opened\nok 7 R189: docs/panel.md says at most 3 working helpers get a figure at full motion and the rest are text rows\nok 8 R189: docs/panel.md never draws a figure for every agent, nor a done, failed or quiet figure on Comms",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "0a9c121c7d47d025c9b677c6359be0772bb30797ca599ddaa4c3ac7e46a7a52d",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C363": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 10 - without $.ui.notify, or with notify and audio failing, nothing fails and nothing is shown in their place\n  ---\n  duration_ms: 16.452916\n  type: 'test'\n  ...\n# Subtest: one failing call does not stop the other, nor the redraw that shows the question\nok 11 - one failing call does not stop the other, nor the redraw that shows the question\n  ---\n  duration_ms: 10.536042\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 192.389209",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 10 - without $.ui.notify, or with notify and audio failing, nothing fails and nothing is shown in their place\n  ---\n  duration_ms: 13.033458\n  type: 'test'\n  ...\n# Subtest: one failing call does not stop the other, nor the redraw that shows the question\nok 11 - one failing call does not stop the other, nor the redraw that shows the question\n  ---\n  duration_ms: 8.256125\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 184.5445",
         "fp": "d7a066272db2d2135dfbcf922c0f5de8e678b416cffacb60f6f3b4c5cfa3b859",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C364": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..5\nok 1 R189: docs/panel.md ties the sound to Claude Code's own question menu, once per question\nok 2 R189: docs/panel.md describes the notification: when it comes, for a new recommendation too, and that it follows the sound switch\nok 3 R189: docs/panel.md says the sound plays once per question and not for a gate on its own\nok 4 R189: docs/panel.md says the notification is titled VBW and never fires twice for one question\nok 5 R189: docs/panel.md says what happens without notifications or sound",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "b95ab46e4d345205bcd3f08e25e9e82d7e74a3244b310097668a27602595f209",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "docs/panel.md changed"
       },
       "C365": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
-        "tail": "ok 11 - a time-left sentence keeps the time it began saying what it says while the words stay the same\n  ---\n  duration_ms: 57.844458\n  type: 'test'\n  ...\n# Subtest: the state sentence itself, the box's first line, names each state; the step line below it never stands in for it\nok 12 - the state sentence itself, the box's first line, names each state; the step line below it never stands in for it\n  ---\n  duration_ms: 9.055292\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 216.050875",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 11 - a time-left sentence keeps the time it began saying what it says while the words stay the same\n  ---\n  duration_ms: 92.328083\n  type: 'test'\n  ...\n# Subtest: the state sentence itself, the box's first line, names each state; the step line below it never stands in for it\nok 12 - the state sentence itself, the box's first line, names each state; the step line below it never stands in for it\n  ---\n  duration_ms: 9.392958\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 304.599958",
         "fp": "ed2137f53ff398dd3f39f4cd82080c6154c18d6e28c8936d3fb0a65a5ced2dd9",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C366": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 11 - a seen needs-you line stays seen after a restart on the same project state, a new one is marked; kept in the store\n  ---\n  duration_ms: 15.659708\n  type: 'test'\n  ...\n# Subtest: an opened failed helper stays opened after a restart on the same project state: no mark on its card\nok 12 - an opened failed helper stays opened after a restart on the same project state: no mark on its card\n  ---\n  duration_ms: 11.325125\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 180.429208",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 11 - a seen needs-you line stays seen after a restart on the same project state, a new one is marked; kept in the store\n  ---\n  duration_ms: 15.164708\n  type: 'test'\n  ...\n# Subtest: an opened failed helper stays opened after a restart on the same project state: no mark on its card\nok 12 - an opened failed helper stays opened after a restart on the same project state: no mark on its card\n  ---\n  duration_ms: 21.390375\n  type: 'test'\n  ...\n1..12\n# tests 12\n# suites 0\n# pass 12\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 215.885541",
         "fp": "2425f470b37ca8e25e69e2c4fa3f8289d80a200475ac0f625126ae86a853d260",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C367": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
         "tail": "1..4\nok 1 R189: docs/panel.md describes the what's happening now box at the top of the Now tab\nok 2 R189: docs/panel.md shows events and messages starting with their clock time\nok 3 R189: docs/panel.md says each What's next row is a button that fills the prompt, with a size chip\nok 4 R189: docs/panel.md says new things stay marked until you have seen them",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "48b511ca85c7e42f6fae876587ba1711959f96c5fca1ebf28235beb691faa441",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "docs/panel.md changed"
       },
       "C368": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
-        "tail": "ok 7 - the palette tests that pinned R84's old role colours are rewritten to the D407 rule, naming D407\n  ---\n  duration_ms: 0.337\n  type: 'test'\n  ...\n# Subtest: red is drawn only for a failure: the weekly limit and the other Comms and Mission Control text never use the failed colour without one\nok 8 - red is drawn only for a failure: the weekly limit and the other Comms and Mission Control text never use the failed colour without one\n  ---\n  duration_ms: 6.99525\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 99.736208",
-        "at": "2026-10-19T10:09:31Z",
+        "seconds": 1,
+        "tail": "ok 7 - the palette tests that pinned R84's old role colours are rewritten to the D407 rule, naming D407\n  ---\n  duration_ms: 0.399917\n  type: 'test'\n  ...\n# Subtest: red is drawn only for a failure: the weekly limit and the other Comms and Mission Control text never use the failed colour without one\nok 8 - red is drawn only for a failure: the weekly limit and the other Comms and Mission Control text never use the failed colour without one\n  ---\n  duration_ms: 8.047792\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 114.948916",
         "fp": "00ccd3708113f978a4352b17a43a5427909c0ac549f656478af329023278a522",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C369": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 7 - Comms stays within its rows and columns with the needs-you line\n  ---\n  duration_ms: 5.512542\n  type: 'test'\n  ...\n# Subtest: Comms stays within its rows during a celebration (a phase passing QA, all checks passing) and after a ship\nok 8 - Comms stays within its rows during a celebration (a phase passing QA, all checks passing) and after a ship\n  ---\n  duration_ms: 20.555167\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 211.281791",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 8 - Comms stays within its rows and columns with the needs-you line\n  ---\n  duration_ms: 8.049209\n  type: 'test'\n  ...\n# Subtest: Comms stays within its rows during a celebration (a phase passing QA, all checks passing) and after a ship\nok 9 - Comms stays within its rows during a celebration (a phase passing QA, all checks passing) and after a ship\n  ---\n  duration_ms: 28.730125\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 295.168292",
         "fp": "bfa641d181f071bf3d8b8bd9b4141c574a9e626172a5a5f20a814cd9d41cbf8b",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C370": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 2,
         "tail": "1..4\nok 1 R189: the panel bench measures a redraw of Comms and Mission Control with a crew at work\nok 2 R189: the bench's sound case raises the need through Claude Code's question menu\nok 3 R189: the render case runs with a crew at work and draws both Comms and Mission Control each refresh\nok 4 R189: the render measure is judged against the same budget as the others",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "3aed7e0b8a90fb6a193ac2b237f4d8a90008bfab2ab879a0e4313b16c0963e19",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C371": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..3\nok 1 R189: the panel scenario records the Comms facts and the short and narrow windows it used\nok 2 R189: a committed result of the panel scenario shows Comms clearing and nothing spilling, at L3\nok 3 R189: the scenario resizes to a short window of at most 30 rows and a narrow one of at most 100 columns",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "312776745ed9eb747f4757556c5b5ac157c5d6a32789b408c81ae595045be843",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-results/panel.json changed"
       },
       "C372": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..4\nok 1 R189: docs/panel.md no longer gives a role a state's colour\nok 2 R189: docs/panel.md says what each state colour means\nok 3 R189: README.md names Comms and Mission Control\nok 4 R189: the state table gives each state its one colour",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "064e5e227c51b3bfc3240e830deec58430018e8cfb293394916e5d0f27449262",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C373": {
         "status": "pass",
@@ -54502,36 +54509,36 @@
         "exit": 0,
         "seconds": 24,
         "tail": "1..10\nok 1 R190: a build shows the step, its plans, parts done and the clock time only\nok 2 R190: a background proof shows 'proving N of M checks' and its clock time, and counts up\nok 3 R190: a proof inside a fix shows as what the fix is doing; the time stays the fix's\nok 4 R190: a late step with parts shows its moved clock time, later than usual\nok 5 R190 (F246): a step with parts past its end that the kernel has not moved says later than usual too\nok 6 R190: a late step without parts keeps its clock time and says how many minutes late\nok 7 R190: with no basis the step and what it is doing show, with no time\nok 8 R190: an end on another day names the day, in 24-hour local time\nok 9 R190: a note whose run is not the open run, or whose proof process is gone, shows no step\nok 10 R190: the status line works no time out itself: with the run open and no note, no end time",
-        "fp": "a64cd25059185ff6fd8615d7d43907835b9d2c2c79261d7fe4954ca529efaf90",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "a64cd25059185ff6fd8615d7d43907835b9d2c2c79261d7fe4954ca529efaf90",
+        "reused": true
       },
       "C379": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 12 - a proof of another session is not this panel's step; a proof of its own is\n  ---\n  duration_ms: 9.305292\n  type: 'test'\n  ...\n# Subtest: a proof of this session whose process is gone is no step in Mission Control; a live one is\nok 13 - a proof of this session whose process is gone is no step in Mission Control; a live one is\n  ---\n  duration_ms: 39.721917\n  type: 'test'\n  ...\n1..13\n# tests 13\n# suites 0\n# pass 13\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 190.947709",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 12 - a proof of another session is not this panel's step; a proof of its own is\n  ---\n  duration_ms: 9.195625\n  type: 'test'\n  ...\n# Subtest: a proof of this session whose process is gone is no step in Mission Control; a live one is\nok 13 - a proof of this session whose process is gone is no step in Mission Control; a live one is\n  ---\n  duration_ms: 44.455208\n  type: 'test'\n  ...\n1..13\n# tests 13\n# suites 0\n# pass 13\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 219.95675",
         "fp": "221f5b47ee454e07adabe9c3d4d93b6151319d1dd1d124e6c2d76132f7ca42ea",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C380": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 7 - the step line is cut to the columns Comms has, never spilled\n  ---\n  duration_ms: 0.256125\n  type: 'test'\n  ...\n# Subtest: the step line never pushes out the needs-you line\nok 8 - the step line never pushes out the needs-you line\n  ---\n  duration_ms: 0.133209\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 153.324792",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 7 - the step line is cut to the columns Comms has, never spilled\n  ---\n  duration_ms: 0.255042\n  type: 'test'\n  ...\n# Subtest: the step line never pushes out the needs-you line\nok 8 - the step line never pushes out the needs-you line\n  ---\n  duration_ms: 0.129667\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 167.396292",
         "fp": "cb38c3294132879c66312a32233fd50fdfc20ddf69c544c7ba40644660112e35",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C381": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "TAP version 13\n# Subtest: one note, one moment: the status line, Comms and Mission Control show the identical HH:MM\nok 1 - one note, one moment: the status line, Comms and Mission Control show the identical HH:MM\n  ---\n  duration_ms: 43.586959\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 101.940958",
+        "tail": "TAP version 13\n# Subtest: one note, one moment: the status line, Comms and Mission Control show the identical HH:MM\nok 1 - one note, one moment: the status line, Comms and Mission Control show the identical HH:MM\n  ---\n  duration_ms: 46.659625\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 107.541125",
         "fp": "0cc0571024804563fa91cf81b555e6529c12a8ce39324ea016f3d87504aa83b9",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-stage.js changed"
       },
       "C382": {
         "status": "pass",
@@ -54539,8 +54546,8 @@
         "seconds": 50,
         "tail": "1..2\nok 1 R190: the hook bench measures the status line with a step running, against the status line budget\nok 2 R190: a status line that does not show the step fails the hook bench",
         "fp": "6155c39e9b957e2c2e8627cc25480eaa4122caa790eb063f6e7bd8fb1b97c037",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "C383": {
         "status": "pass",
@@ -54556,27 +54563,27 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..3\nok 1 R190: the router says step.say, as given, when it starts planning, a build, a fix, QA or a proof\nok 2 R190: the router says it before the step starts, also for a background proof\nok 3 R190: /vbw:status reports the running step and its end time in vbw status's words",
-        "at": "2026-10-19T04:43:52Z",
         "fp": "4aa9b81bfcae6bbbc9de5709a33a1940fa6b94ea65d21fc49457deca05006cbc",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C385": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..7\nok 1 R190: docs/panel.md's Time left section names the steps that get an end time and shows the full wording\nok 2 R190: docs/panel.md explains the 3-step minimum, time per part and the 50-per-kind history\nok 3 R190: docs/panel.md says what 'later than usual' and 'N min late' mean\nok 4 R190: docs/panel.md says where the history lives and how to reset it\nok 5 R190: the status line docs show the step with its clock time, the proof count and the late cases\nok 6 R190: the README names the step's end time where it describes the panel\nok 7 R190: docs/next.md describes the step vbw next --json carries",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "a35bc86c2ad47b1bb64307c0482394a918e7afe1306776375ee335a65bb2c47f",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C386": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
         "tail": "1..3\nok 1 R190: the suite has a steptime scenario that seeds a step history and records each fact\nok 2 R190: a committed result of the steptime scenario shows one end time in chat, status line and Comms, at L3\nok 3 R190: the committed result shows a background proof counting up and 'no end time yet' without history",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "b87a1e707c8f3ace85390fd96d0edc061932ddca3b7da88ce4a9c535feded39f",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-results/steptime.json changed"
       },
       "C387": {
         "status": "pass",
@@ -54590,11 +54597,11 @@
       "C388": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..1\nok 1 R190: the panel bench measures a refresh that reads the step note and draws the step",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "6d653fb4cb3642cbdf66e2c4929402eb49e58585b94a7dc05dc60571731184fd",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C389": {
         "status": "pass",
@@ -54644,47 +54651,47 @@
       "C394": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
-        "tail": "ok 7 - the panel works no milestone time out itself: a history alone, with phases left, shows no milestone row\n  ---\n  duration_ms: 5.884375\n  type: 'test'\n  ...\n# Subtest: the panel only reads: no file is written while it shows the road\nok 8 - the panel only reads: no file is written while it shows the road\n  ---\n  duration_ms: 9.8635\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 140.612042",
-        "at": "2026-10-19T10:09:31Z",
+        "seconds": 1,
+        "tail": "ok 7 - the panel works no milestone time out itself: a history alone, with phases left, shows no milestone row\n  ---\n  duration_ms: 7.881834\n  type: 'test'\n  ...\n# Subtest: the panel only reads: no file is written while it shows the road\nok 8 - the panel only reads: no file is written while it shows the road\n  ---\n  duration_ms: 10.897542\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 139.009417",
         "fp": "f61977724c9dfc02624831447ce773dde528bbd64295e015512b6ee352665d46",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C395": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "TAP version 13\n# Subtest: one note, one moment: the step HH:MM is identical in the status line, Comms and Mission Control; the road HH:MM shows in Mission Control only\nok 1 - one note, one moment: the step HH:MM is identical in the status line, Comms and Mission Control; the road HH:MM shows in Mission Control only\n  ---\n  duration_ms: 46.845917\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 107.672958",
+        "tail": "TAP version 13\n# Subtest: one note, one moment: the step HH:MM is identical in the status line, Comms and Mission Control; the road HH:MM shows in Mission Control only\nok 1 - one note, one moment: the step HH:MM is identical in the status line, Comms and Mission Control; the road HH:MM shows in Mission Control only\n  ---\n  duration_ms: 40.406583\n  type: 'test'\n  ...\n1..1\n# tests 1\n# suites 0\n# pass 1\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 100.15",
         "fp": "996e0ed34580b94a066de7cb67170ac2c9cef6a52ad59fcd6cab85ca3d64dbec",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-stage.js changed"
       },
       "C396": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
+        "seconds": 0,
         "tail": "1..2\nok 1 R191: the router says road.say with step.say, as given, before it starts a step\nok 2 R191: /vbw:status passes the milestone's end on in vbw status's words",
-        "at": "2026-10-19T04:43:52Z",
         "fp": "de2b7cae336c08d85540eb191be57d19c7c64ab37ec8499ad4a7fc49ebf0db77",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C397": {
         "status": "pass",
         "exit": 0,
         "seconds": 1,
         "tail": "1..8\nok 1 R191: docs/panel.md's Time left explains the time per unit at a tier and the fallback ladder with its 3-step minimum\nok 2 R191: docs/panel.md says side-by-side plans are not added, and how a proof's time comes from its units and the learned ratio\nok 3 R191: docs/panel.md explains the road: its pieces, the usual fix rounds and their naming, and when there is no milestone end time yet\nok 4 R191: docs/panel.md says the history is this project's only, never shared across projects (D433)\nok 5 R191: docs/next.md describes road with its fields and sentence\nok 6 R191: docs/statusline.md says the status line shows the step's time only, never the milestone's\nok 7 R191: docs/rigor.md says outcome.fix_rounds feeds the usual fix rounds of the milestone's end\nok 8 R191: the README names the milestone's end where it describes the panel",
-        "at": "2026-10-19T10:09:31Z",
         "fp": "92d92b05e87dce36e17a3cf22ac6e09f0bc3d900b1dba2f004bc83f69dc89697",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "C398": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..3\nok 1 R191: the suite has a road scenario, in its default list, that seeds a tiered history and phase outcomes and records each fact\nok 2 R191: a committed result of the road scenario shows both sentences in chat and the same milestone HH:MM in Mission Control, at L3\nok 3 R191: the committed result shows the status line without the milestone time, and 'no end time yet' for both without history",
-        "at": "2026-10-18T16:52:00Z",
         "fp": "992c188a430a65ef109aa83ac71e81b54531e7e83a5a8a7a48456c9e4cdab1af",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-results/road.json changed"
       },
       "C399": {
         "status": "pass",
@@ -54709,9 +54716,9 @@
         "exit": 0,
         "seconds": 18,
         "tail": "1..10\nok 1 R192: run start stores the holder's name from Claude Code's list in holder.json and the glance, never in the record\nok 2 R192: with several entries for one id the newest updatedAt wins\nok 3 R192: no list, or no entry for this session: session_name is null and the run still starts\nok 4 R192: a malformed file in the list never fails a kernel command, and the good entries still count\nok 5 R192: a name with escape sequences and control characters is stored and shown clean\nok 6 R192: refusals name the holder by its current name: a /rename made during the run shows at once; a closed chat keeps its stored name\nok 7 R192: with no name anywhere the first 8 characters of the id name the holder; a long name is cut to 40 with an ellipsis\nok 8 R192: run end removes the stored name and the glance's holder\nok 9 R192: the record validator refuses a lease that carries session_name, so a name never reaches git history (D442)\nok 10 R192: vbw doctor says in one line whether session names can be read from Claude Code's list",
-        "fp": "81e1fce047fbf3d7babe8edf26ba9dab9b79b9124f2c2c1e273f179b9ce79636",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "81e1fce047fbf3d7babe8edf26ba9dab9b79b9124f2c2c1e273f179b9ce79636",
+        "reused": true
       },
       "C402": {
         "status": "pass",
@@ -54736,18 +54743,18 @@
         "exit": 0,
         "seconds": 18,
         "tail": "1..9\nok 1 R192: the holding session reads leading, another session held by the name, after the step's cell\nok 2 R192: a /rename during the run shows at once; with the list gone the stored name shows\nok 3 R192: no name known gives the first 8 characters of the id; a lease without a session shows no holder\nok 4 R192: a long name is cut to 20 characters with an ellipsis; escape sequences never reach the terminal\nok 5 R192: with the list missing the status line renders exactly as with an empty list, and a malformed entry is skipped\nok 6 R192: a malformed file in the list does not cost the good entries their names\nok 7 R192: the list is read with one jq pass per render, only while a lease is open\nok 8 R192: the hook bench measures the status line with a lease open and a list of chats on disk\nok 9 R192: with several entries for one session the newest updatedAt wins, whatever the file order",
-        "fp": "44369cc18c7c3991534d36feb108f945a05c6f1593d3ad55368e25a16d4671bd",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "44369cc18c7c3991534d36feb108f945a05c6f1593d3ad55368e25a16d4671bd",
+        "reused": true
       },
       "C405": {
         "status": "pass",
         "exit": 0,
         "seconds": 7,
         "tail": "1..4\nok 1 R192: a second chat on the project, this one still auto-named: vbw next carries the one-sentence hint, once per clone\nok 2 R192: no hint with one chat, with a chat of another project, with no list, or when this chat is unknown\nok 3 R192: a chat the user already named gets no hint, and a malformed entry never fails vbw next\nok 4 R192: /vbw:vibe says rename_hint as given, once, and never runs /rename itself",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "8848145d315b6a133a3a2fe648662a036dbd0dc73a32d9992de470e3244bca75",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "C406": {
         "status": "pass",
@@ -54755,26 +54762,26 @@
         "seconds": 1,
         "tail": "1..10\nok 1 R192: docs/guards.md names the list of chats as VBW's one read outside the project, read-only, beside the three writes\nok 2 R192: docs/workflows.md says the record's lease keeps its shape and the name lives in holder.json and the glance\nok 3 R192: docs/record.md names the glance's holder field and that the record never carries the name\nok 4 R192: docs/statusline.md shows the run cell's leading and held by forms, with the 20-character cut\nok 5 R192: docs/panel.md lists the Sessions tab with its short name and describes its rows\nok 6 R192: docs/panel.md describes Comms' run-started line, the Now box's held by, and /vbw-why by name\nok 7 R192: docs/next.md describes rename_hint: when it comes, once per project, never applied\nok 8 R192: docs/panel.md's /vbw-why row names the holder by name and keeps the file count and wait for it\nok 9 R192: docs/panel.md counts eight tabs, names Sess in the narrow row, and links the one read outside the project to guards.md\nok 10 R192: docs/panel.md says the Sessions tab is read-only and re-read on the tick only while shown or a lease is open",
         "fp": "f21a0d89816566896c75354360e174b4462b5930abf6fe5212e1920e8514739b",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "docs/panel.md changed"
       },
       "C407": {
         "status": "pass",
         "exit": 0,
         "seconds": 0,
-        "tail": "ok 8 - mounted: the panel reads the list and holder.json while a lease is open, and /vbw-why and /vbw-status name the holder\n  ---\n  duration_ms: 18.798166\n  type: 'test'\n  ...\n# Subtest: mounted: with no lease the list is not read at all\nok 9 - mounted: with no lease the list is not read at all\n  ---\n  duration_ms: 5.937334\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 91.468125",
-        "at": "2026-10-19T10:09:31Z",
+        "tail": "ok 8 - mounted: the panel reads the list and holder.json while a lease is open, and /vbw-why and /vbw-status name the holder\n  ---\n  duration_ms: 19.64025\n  type: 'test'\n  ...\n# Subtest: mounted: with no lease the list is not read at all\nok 9 - mounted: with no lease the list is not read at all\n  ---\n  duration_ms: 7.338958\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 100.14125",
         "fp": "372fa7c8d795d8cd4fdf56037211bfbf4155c04ca6fc65de1c0228904d16dfaa",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C408": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1,
-        "tail": "ok 7 - the list is re-read on the tick only while the Sessions tab is shown or a lease is open\n  ---\n  duration_ms: 10.617166\n  type: 'test'\n  ...\n# Subtest: with no list at all the tab shows the one sentence and this chat when known\nok 8 - with no list at all the tab shows the one sentence and this chat when known\n  ---\n  duration_ms: 5.630833\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 93.712625",
-        "at": "2026-10-19T10:09:31Z",
+        "seconds": 0,
+        "tail": "ok 7 - the list is re-read on the tick only while the Sessions tab is shown or a lease is open\n  ---\n  duration_ms: 16.798917\n  type: 'test'\n  ...\n# Subtest: with no list at all the tab shows the one sentence and this chat when known\nok 8 - with no list at all the tab shows the one sentence and this chat when known\n  ---\n  duration_ms: 5.955792\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 107.068958",
         "fp": "8f1ab89bbe0a17367edd20095f4191f4e54dcd6a7f42721a61d13143b9db5e88",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C409": {
         "status": "pass",
@@ -54790,9 +54797,9 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..1\nok 1 R192: docs/panel.md says another day is named like the rest of the panel",
-        "at": "2026-10-19T13:58:55Z",
         "fp": "2bead9cd2ca49be003d68b7f66797a7496c0c8f7fca35751f011ecdfa1577549",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "docs/panel.md changed"
       },
       "C411": {
         "status": "pass",
@@ -54871,9 +54878,9 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..4\nok 1 R194: docs/workflows.md's vbw commit --fix row: a requirement fix commits its requirement's check files with both trailers, code through the plan, one approval\nok 2 R194: docs/guards.md's fix-run row: every requirement fix's run opens its own requirement's check files, a proof's fix included\nok 3 R194: docs/proof.md's fix section says a requirement fix commits its own check files with vbw commit --fix and that they wait for one approval\nok 4 R194: docs/record.md describes the lease's editable for a requirement fix of any source and new_tests only for QA",
-        "fp": "f89ea58b7f32bf5842c9606d1054452dad95320daee08467060dad4e5437267f",
         "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "fp": "f89ea58b7f32bf5842c9606d1054452dad95320daee08467060dad4e5437267f",
+        "reused": true
       },
       "C420": {
         "status": "pass",
@@ -54887,11 +54894,11 @@
       "C421": {
         "status": "pass",
         "exit": 0,
-        "seconds": 55,
+        "seconds": 51,
         "tail": "1..6\nok 1 R195: under each failing check, the kept file and the failing test names: TAP, cargo, pytest, go, jest, vitest and mocha\nok 2 R195: no name recognised says so and points to the file; a missing file keeps today's not-kept line\nok 3 R195: failing test files are listed by their path with their kept file and failing tests, as text and as JSON\nok 4 R195: a failing project command's kept output gives its failing tests, as text under 'failing project commands:' (and under the command's own fix) and as JSON\nok 5 R195: a unittest ending and a numbered list outside mocha name no test\nok 6 R195: the names are read only when vbw show fix runs: no hook or status-line path reads the kept output",
         "fp": "0411020ca0e37dcba024a54a9e817f4e4600999755a50f214d8fff035ffb040f",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/hooks/session-start.sh changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "C422": {
         "status": "pass",
@@ -54905,10 +54912,82 @@
       "C423": {
         "status": "pass",
         "exit": 0,
-        "seconds": 9,
+        "seconds": 10,
         "tail": "1..5\nok 1 R198: the hook runs vbw next once and never vbw status\nok 2 R198: the context names the project with the words of vbw status's first line\nok 3 R198: a glance older than the record gives the record's milestone, not the glance's\nok 4 R198: a record written by a newer VBW still gives the update notice, without vbw status\nok 5 R198: docs/guards.md says the hook runs vbw next once and reads the project line from the glance",
         "fp": "dc4f6c9b1783fd4f701cac0220f88ff09b0910f81e4531d312e3b24dcef3f037",
-        "at": "2026-10-19T20:29:13Z",
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
+      },
+      "C424": {
+        "status": "pass",
+        "exit": 0,
+        "seconds": 1,
+        "tail": "ok 9 - on every tab the pane draws no more rows than Claude Code reports, the head counted as the portrait rows or the tab rows plus the gap, at 22, 8, 6 and 4 rows\n  ---\n  duration_ms: 77.876709\n  type: 'test'\n  ...\n# Subtest: with no height reported the head counts the same way and the pane still ends with '+N more · open Mission Control' within its fixed height\nok 10 - with no height reported the head counts the same way and the pane still ends with '+N more · open Mission Control' within its fixed height\n  ---\n  duration_ms: 10.660375\n  type: 'test'\n  ...\n1..10\n# tests 10\n# suites 0\n# pass 10\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 270.642625",
+        "fp": "461b0b3e071d64d05b6332ac84e097e51b8b280e39e1811a19461a92327f6916",
+        "at": "2026-10-20T00:29:58Z",
+        "why": "never passed"
+      },
+      "C425": {
+        "status": "pass",
+        "exit": 0,
+        "seconds": 1,
+        "tail": "1..5\nok 1 R199: tests/panel/wiring.test.mjs asserts whole tab rows at 40, 50 and 60 columns in place of 'the tab row is one line at 40 columns'\nok 2 R199: tests/panel/r189/containment.test.mjs asserts whole tab rows at 100, 64, 60, 50 and 40 body columns on every tab in place of 'never wraps onto a second line at 40 columns'\nok 3 R199: the panel scenario records that each of the eight tab names appears whole as '[ Name ]' at the short and the narrow size, in its pass set\nok 4 R199: a committed result of the panel scenario passed with both tab facts true, at L3\nok 5 R199: docs/panel.md no longer says the tab row is always one line and states the whole-row rule with the widths 90, 64 and 40",
+        "fp": "34233812979f1d926cdb2de59b0f644de03fcffe4c8eb592aa242b752366eb50",
+        "at": "2026-10-20T00:29:58Z",
+        "why": "never passed"
+      },
+      "C426": {
+        "status": "pass",
+        "exit": 0,
+        "seconds": 0,
+        "tail": "ok 7 - the step line alone (no helper line) shows only when no helper works: a proof, or a run whose helpers are all done\n  ---\n  duration_ms: 10.139667\n  type: 'test'\n  ...\n# Subtest: Comms never draws more rows than Claude Code gives it: with a live step note at 1, 2, 3, 4 and 8 rows at 80 and 40 columns the row count is held and no line is wider\nok 8 - Comms never draws more rows than Claude Code gives it: with a live step note at 1, 2, 3, 4 and 8 rows at 80 and 40 columns the row count is held and no line is wider\n  ---\n  duration_ms: 8.925666\n  type: 'test'\n  ...\n1..8\n# tests 8\n# suites 0\n# pass 8\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 131.838417",
+        "fp": "712412958e8bcb2a222f6989c6364070528e06aa44b5268a4385bbdcf54f0bfb",
+        "at": "2026-10-20T00:29:58Z",
+        "why": "never passed"
+      },
+      "C427": {
+        "status": "pass",
+        "exit": 0,
+        "seconds": 0,
+        "tail": "1..5\nok 1 R200: tests/panel/r189/containment.test.mjs draws Comms with a live step note at 1, 2, 3, 4 and 8 rows at 80 and 40 columns\nok 2 R200: the panel scenario records the short-window helper line ('VBW ▸' once at 200x24 while helpers work, the prompt box whole) as its own fact, in its pass set\nok 3 R200: a committed result of the panel scenario passed with helper_line_short and no_spill_short true, at L3\nok 4 R200: docs/panel.md's Comms section states the order of lines in little room and the one-row form\nok 5 R200: docs/panel.md's Time left section says that in a one-row Comms the step's time sits on the helper line",
+        "fp": "acd74ad0282aeb1c7cd933582e07600fc21ef2c68512608f756074c3d088bf2a",
+        "at": "2026-10-20T00:29:58Z",
+        "why": "never passed"
+      },
+      "C428": {
+        "status": "pass",
+        "exit": 0,
+        "seconds": 1,
+        "tail": "1..10\nok 1 R201: before any step, words naming guided, balanced or hands-off, or a plain phrase clearly meaning one, run vbw config set autonomy first\nok 2 R201: after the write the router says in one line what was set and follows the Autonomy section with that value, not the line loaded before\nok 3 R201: a stated setting equal to the current one writes nothing and says nothing about it\nok 4 R201: words that do not clearly name one setting change nothing: no guessing\nok 5 R201: a setting stated later in the session is recorded at once and applies from the next step\nok 6 R201: a switch to guided while the autonomous run is armed runs vbw auto off for this session\nok 7 R201: a switch to balanced or hands-off arms vbw auto on once\nok 8 R201: --auto runs alone this time only and never changes the setting\nok 9 R201: the triage skill lists a setting stated in words among what is not a new idea, and the rest of the same message still goes to triage\nok 10 R201: README.md's autonomy row and docs/interview.md say the setting can be stated to /vbw:vibe in words",
+        "fp": "69837b56440db93c35ed993df777f127073d8bde93ce09d068e90c8a80df3236",
+        "at": "2026-10-20T00:29:58Z",
+        "why": "never passed"
+      },
+      "C429": {
+        "status": "pass",
+        "exit": 0,
+        "seconds": 1,
+        "tail": "1..3\nok 1 R201: the qafix scenario states guided autonomy in the user's words, reads the setting back with vbw config autonomy and expects guided\nok 2 R201: the scenario records that the setting was written before the first run: the settings write in the transcript comes before the first 'Contract approved' decision and the first run lease\nok 3 R201: a committed result of the qafix scenario passed with autonomy guided, set before the first run, and QA's first verdict still fail, at L3",
+        "fp": "3802fca6e39968de1fc83979e485473fc792f03177635598ba42d3b29d372359",
+        "at": "2026-10-20T00:29:58Z",
+        "why": "never passed"
+      },
+      "C430": {
+        "status": "pass",
+        "exit": 0,
+        "seconds": 0,
+        "tail": "ok 8 - Comms stays within its rows and columns with the needs-you line\n  ---\n  duration_ms: 4.69625\n  type: 'test'\n  ...\n# Subtest: Comms stays within its rows during a celebration (a phase passing QA, all checks passing) and after a ship\nok 9 - Comms stays within its rows during a celebration (a phase passing QA, all checks passing) and after a ship\n  ---\n  duration_ms: 19.356958\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 249.156875",
+        "fp": "0944db517e3c832a1d48a2d9bc6847b98b3294c56051ec405fb1b9172789a796",
+        "at": "2026-10-20T00:29:58Z",
+        "why": "never passed"
+      },
+      "C431": {
+        "status": "pass",
+        "exit": 0,
+        "seconds": 0,
+        "tail": "ok 8 - Comms stays within its rows and columns with the needs-you line\n  ---\n  duration_ms: 5.260166\n  type: 'test'\n  ...\n# Subtest: Comms stays within its rows during a celebration (a phase passing QA, all checks passing) and after a ship\nok 9 - Comms stays within its rows during a celebration (a phase passing QA, all checks passing) and after a ship\n  ---\n  duration_ms: 24.202958\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 264.817458",
+        "fp": "e3fa8cf5bf24b391dd9fd6b60edb124bcb38ad38a570cc278dfed4170a93aede",
+        "at": "2026-10-20T00:29:58Z",
         "why": "never passed"
       }
     },
@@ -54916,17 +54995,17 @@
       "lint": {
         "status": "pass",
         "exit": 0,
-        "seconds": 3,
+        "seconds": 4,
         "tail": "bash: 5.3.20(1)-release",
         "fp": "065b393b71dee4232b9b45e3d96e4a1a6552ad444e6fa87346b5ac33b420c740",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "tests listing changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "test": {
-        "status": "pass",
-        "exit": 0,
-        "seconds": 2077,
-        "tail": "",
+        "status": "fail",
+        "exit": null,
+        "seconds": 1900,
+        "tail": "tests/panel-suite.bats fail",
         "command": "bats --print-output-on-failure {file} (one test file per run)",
         "of_files": true
       }
@@ -55090,9 +55169,9 @@
         "exit": 0,
         "seconds": 67,
         "tail": "ok 1 vbw version prints the plugin version\nok 2 vbw without arguments prints usage and exits 2\nok 3 an unknown subcommand exits 2 and names it\nok 4 vbw init needs a git repository\nok 5 vbw init scaffolds .vbw with a valid record and ignores the runtime dir\nok 6 vbw init is idempotent and never overwrites existing state\nok 7 vbw init writes nothing outside the project\nok 8 a corrupt record is reported, never repaired\nok 9 unparseable JSON is reported as corrupt\nok 10 commands outside a VBW project say so\nok 11 concurrent writers never lose an update\nok 12 a write that would make the record invalid is refused and leaves it untouched\nok 13 a stale lock older than 30 seconds is taken over\nok 14 vbw works from a subdirectory of the project\nok 15 file ages are numbers on every platform's stat (Linux stat -f is not BSD stat -f)\nok 16 a lock whose age cannot be read is never stale (it may have just been taken)\nok 17 a writer waits as long as the lock keeps changing hands, and gives up only on a lock that stopped moving\nok 18 a lock whose holder still runs is never taken over, however old; one whose holder is gone is taken\nok 19 a holder id read while it is still being written (no line end yet) never breaks the lock\nok 20 a holder that ends normally between the two looks never lets a waiter delete the next writer's lock",
-        "fp": "3e95137c1892e8c10350cd46c9b89b5a17dc567b856b377db0ce72cb0411b57e",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "3e95137c1892e8c10350cd46c9b89b5a17dc567b856b377db0ce72cb0411b57e",
+        "reused": true
       },
       "tests/kernel-legacy.bats": {
         "status": "pass",
@@ -55171,9 +55250,9 @@
         "exit": 0,
         "seconds": 92,
         "tail": "ok 2 a rejection opens a fix; when it is done the requirement returns for acceptance\nok 3 ship is refused while the working folder has uncommitted files, naming them\nok 4 ship is refused until vbw next says ship, then marks the milestone shipped\nok 5 config resolves VBW 1's seven roles from the profile and per-role overrides\nok 6 overrides saved under the earlier role names move to VBW 1's names\nok 7 docs/rigor.md's balanced tier table gives the Lead, Scout, Dev and QA their profile models\nok 8 config refuses unknown keys and invalid values, and changes nothing\nok 9 auto on needs a well-formed session id and arms only that session\nok 10 the gate is silent when no run is armed\nok 11 the gate blocks the stop with the next step and counts it\nok 12 the gate lets the session wait while a workflow runs\nok 13 the gate stops and disarms at a decision that needs the user\nok 14 the gate stops and disarms at the step cap\nok 15 an escalated fix can be retried once by the user's decision\nok 16 the backlog: add, list, done and drop\nok 17 doctor checks the project and the guards, and changes nothing\nok 18 doctor fails on a corrupt record and names the fix\nok 19 doctor reports disabled workflows\nok 20 doctor works where Claude Code is not installed (CI machines)\nok 21 autonomy is balanced until set; guided and hands-off are the other levels",
-        "fp": "d9c10540341a04fad16ff05f085222890402631f9caa3e8be9ec7f82dc9279ca",
         "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "fp": "d9c10540341a04fad16ff05f085222890402631f9caa3e8be9ec7f82dc9279ca",
+        "reused": true
       },
       "tests/kernel-work.bats": {
         "status": "pass",
@@ -55189,9 +55268,9 @@
         "exit": 0,
         "seconds": 13,
         "tail": "1..3\nok 1 T27: a slow scenario does not hold its slot's successors: the others run through the free slot\nok 2 T27: no more than L3_JOBS scenarios run at once\nok 3 T27: each scenario's exit counts, and the lines print in the order asked",
-        "at": "2026-10-18T17:39:37Z",
         "fp": "fdddcfbd55a61ac7d4f4e5c2ff72113326241d2084fd34eff112fdb47ae7bb84",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "tools/l3-suite.sh changed"
       },
       "tests/l3-wait.bats": {
         "status": "pass",
@@ -55223,20 +55302,20 @@
       "tests/loop-park-schema.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 57,
+        "seconds": 16,
         "tail": "1..1\nok 1 T153: parking an item whose commits changed the record's validator leaves a record the restored kernel reads",
         "fp": "291ed810c558ff1b92eb5190a99ec2212bfed4c236105f13f1bf65718becb72a",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "tests/loop-stop-hook.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 60,
+        "seconds": 56,
         "tail": "1..6\nok 1 T150: one Stop hook, the plugin's own, and no skill declares one\nok 2 T150: the hook gives the loop's next step to the loop's session, and nothing to another\nok 3 T147: one Stop event moves the loop one step: the item opens once\nok 4 T150: after a resume the loop is driven again: vbw loop start of the same session restores its mark\nok 5 T150: the loop's end removes its mark, and the hook is silent again\nok 6 T150: outside a VBW project and with no loop or armed run the hook says nothing",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "8218af5b4d32ae1b0a2d0a3b1edc4eac69f63fe9354d3299da29abb7ef48c9ce",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/triage/SKILL.md changed"
       },
       "tests/mutate-fastest-first.bats": {
         "status": "pass",
@@ -55257,13 +55336,13 @@
         "reused": true
       },
       "tests/panel-suite.bats": {
-        "status": "pass",
-        "exit": 0,
-        "seconds": 2,
-        "tail": "1..1\nok 1 R55: node --test passes over tests/panel",
-        "at": "2026-10-19T13:58:55Z",
+        "status": "fail",
+        "exit": 1,
+        "seconds": 1,
+        "tail": "# ok 398 - Comms draws from Claude Code 2.1.290; on older versions it leaves the engine its own\n#   ---\n#   duration_ms: 8.9465\n#   type: 'test'\n#   ...\n# # Subtest: a proof running in this session (its mark in .vbw/runtime) is the state \"proving\", dated by the mark; it ends with the mark\n# ok 399 - a proof running in this session (its mark in .vbw/runtime) is the state \"proving\", dated by the mark; it ends with the mark\n#   ---\n#   duration_ms: 5.843959\n#   type: 'test'\n#   ...\n# 1..399\n# # tests 399\n# # suites 0\n# # pass 398\n# # fail 1\n# # cancelled 0\n# # skipped 0\n# # todo 0\n# # duration_ms 1159.262875",
         "fp": "4a7d9be335f11741d2c1aeda3586d9c38b4b04d87e6eaaa19e24148d969842ca",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "tests/park-ids.bats": {
         "status": "pass",
@@ -55351,9 +55430,9 @@
         "exit": 0,
         "seconds": 0,
         "tail": "1..3\nok 1 vbw help shows prove with its --full option\nok 2 the qa record refusal for changed code and the proof docs name vbw prove --full\nok 3 the docs name the approval-menu hook that adds the fingerprint (R114)",
-        "fp": "1b5af615b0da59c3548eca6d43770348a3929315e1a56aa14dc604774edf2cd3",
         "at": "2026-10-19T20:29:13Z",
-        "why": "docs/guards.md changed"
+        "fp": "1b5af615b0da59c3548eca6d43770348a3929315e1a56aa14dc604774edf2cd3",
+        "reused": true
       },
       "tests/qa-reused-proof.bats": {
         "status": "pass",
@@ -55376,11 +55455,11 @@
       "tests/readme.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..4\nok 1 every /vbw: command in README.md has a skill\nok 2 install steps name the marketplace source and plugin from the manifests\nok 3 image references point under assets/ or are badges; presence is reported\nok 4 README has the required sections",
         "fp": "d4445c8b3de7053b1f23bd92dc3b1329e002ff8ed859ced9db87e6ebcdf7552f",
-        "at": "2026-10-19T20:29:13Z",
-        "why": ".claude-plugin/marketplace.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "README.md changed"
       },
       "tests/reads-lib.bats": {
         "status": "pass",
@@ -55421,20 +55500,20 @@
       "tests/rigor-early.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 48,
+        "seconds": 45,
         "tail": "ok 2 three requirements are standard, as at apply (C20: 2 express, 3 standard)\nok 3 a [human] requirement is standard\nok 4 a requirement text naming a risk category is standard\nok 5 a repository tracking more than 30 files is standard\nok 6 a repository tracking at most 30 files stays express\nok 7 rigor deep forces deep\nok 8 rigor standard forces standard\nok 9 a forced express on a bigger request still says express\nok 10 detail.tier appears only at the plan step\nok 11 express at the plan step holds at apply: one plan of four small files is express\nok 12 an existing codebase with no project test command is standard at both steps\nok 13 an existing codebase with a project test command stays express at both steps\nok 14 the router's express example is a document vbw apply accepts as express\nok 15 two [auto] risk-free requirements are express before planning, as at apply\nok 16 a project check command counts as the project's tests\nok 17 a document is never a risk path, however it is named\nok 18 re-planning re-tiers an unstarted phase from its signals; a started phase keeps its tier (D49)\nok 19 a re-tier before work moves the predicted tier, so the outcome holds\nok 20 planning an unstarted phase again moves its predicted tier with its tier\nok 21 an escalated express phase is not finished until QA passes",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "4f066e816105ab5d42b0b324bd591fdffd4dc5182a1d959f5bd9787579611264",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "tests/rules-prompts.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 0,
+        "seconds": 1,
         "tail": "1..2\nok 1 the Lead writes rules through the \"rules\" key of vbw apply\nok 2 the router's express apply example carries rules",
-        "at": "2026-10-19T04:43:52Z",
         "fp": "4ddfe12907cb7d6de7804ccaf0241ea2c1b2dfc1cc7fbf1671ea60b4a82030d8",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/vibe/SKILL.md changed"
       },
       "tests/runner-reads.bats": {
         "status": "pass",
@@ -55459,45 +55538,45 @@
         "exit": 0,
         "seconds": 1,
         "tail": "1..2\nok 1 every skill other than the router that starts a workflow passes profile in its args\nok 2 the router's mapping step does not show args without the profile",
-        "at": "2026-10-19T04:43:52Z",
         "fp": "70c6427a506ca52aa057c79674aad1a6e38dded541b83583291e596d9268b065",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/triage/SKILL.md changed"
       },
       "tests/skills.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 5,
+        "seconds": 4,
         "tail": "1..10\nok 1 the vibe, approve, init and status skills exist\nok 2 each skill is named after its directory with a single-line description\nok 3 every shell block runs the kernel by its plugin path and can never abort the skill\nok 4 every skill with shell blocks pre-approves them in allowed-tools (G9)\nok 5 only the user can approve\nok 6 the plugin's Stop hook is the autonomy gate and can never block by accident\nok 7 skills only name vbw commands that exist\nok 8 skills never build paths from $HOME, caches or /tmp (K4)\nok 9 the router says before the user's request that no project file changes before approval\nok 10 the router marks a document's required contents [auto] and how it reads [human]",
-        "at": "2026-10-19T16:27:58Z",
         "fp": "0a3a89199242b32eaf3a2dd0775276ec0bffbd19e0237fb22f5272d5b96506bb",
-        "reused": true
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/skills/triage/SKILL.md changed"
       },
       "tests/standards-selftest.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 92,
+        "seconds": 48,
         "tail": "1..17\nok 1 eval is caught\nok 2 bash-4 features are caught\nok 3 process killing is caught\nok 4 the signal-free liveness probe kill -0 passes, any other kill is caught\nok 5 /tmp paths are caught\nok 6 git path listings without -z are caught, with -z pass\nok 7 plugin-root discovery is caught\nok 8 a clean file breaks no rule\nok 9 hooks naming a missing file are caught\nok 10 per-tool-call hooks that start a shell or can exit non-zero are caught\nok 11 per-tool-call hooks: only assignments and [ ] tests may come before jq, and the command must end in || true\nok 12 the vision rule check passes on the repository as it is\nok 13 the vision rule check catches the rule removed from a contributor file\nok 14 the vision rule check catches the rule moved below another rule in AGENTS.md\nok 15 the hook answer check passes on the repository as it is\nok 16 the hook answer check catches a new unpinned answer shape\nok 17 the hook answer check catches a hook that answers allow",
         "fp": "cea597da7e37298b1c50fd07c24fcfcd6ab9c1e90cc14912ac62ec844e47ba39",
-        "at": "2026-10-19T20:29:13Z",
-        "why": ".claude-plugin/marketplace.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/hooks/panel-pane.js changed"
       },
       "tests/standards.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 53,
+        "seconds": 11,
         "tail": "1..14\nok 1 no eval or data-as-code (ledger D108, D139)\nok 2 no bash-4-only features: macOS /bin/bash 3.2 is the floor (K2, ledger D294)\nok 3 never terminates processes (ledger D54, D285–D288)\nok 4 no predictable /tmp paths or writes outside the project (K3, ledger D296)\nok 5 git path listings are NUL-separated (ledger D293)\nok 6 no plugin-root discovery: paths come from ${CLAUDE_PLUGIN_ROOT} substitution or $0 (K4)\nok 7 shell files parse on the minimum bash and pass shellcheck\nok 8 plugin manifests are valid\nok 9 hooks.json is valid and every file a hook names exists in hooks/\nok 10 per-tool-call hooks run jq directly and never exit non-zero (K20)\nok 11 Claude Code's own validator accepts the plugin and the marketplace\nok 12 no brace-literal parameter defaults (a default of {} written inside the expansion): bash 3.2 keeps the backslash (tests and tools too)\nok 13 the vision rule is VBW's first development rule, and every contributor file states it (owner mandate, 2026-10-06)\nok 14 every answer a hook gives Claude Code has a test pinning its meaning, and no hook answers allow (R128)",
         "fp": "0081e8d9fb717ee39eded21e9282e34e071705efe4349f4a472013dd63d63d6c",
-        "at": "2026-10-19T20:29:13Z",
+        "at": "2026-10-20T00:29:58Z",
         "why": "reads the project through git"
       },
       "tests/statusline.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 57,
+        "seconds": 14,
         "tail": "1..16\nok 1 outside a VBW project it says how to start, and still shows the session\nok 2 in a VBW project it shows progress and the last next step\nok 3 a running build and an armed autonomous run are visible\nok 4 a gate that needs the user says so\nok 5 no data from Claude Code, or garbage, never breaks it\nok 6 the branch is read in a linked worktree too\nok 7 statusline on sets it without asking, and keeps the user's own to restore\nok 8 the setting finds the newest installed VBW and renders it\nok 9 workflows on turns Dynamic workflows on, keeps every other setting, and never overrides a deliberate off\nok 10 started in a subfolder it shows the project; a VBW 1 project is pointed to the conversion\nok 11 a running step shows how long it has run and how many agents are working\nok 12 the team line follows the profile and per-role models; tokens and prompt cache are shown\nok 13 statusline on asks Claude Code to refresh it every 5 seconds, and tops up a setting made without it\nok 14 from Claude Code 2.1.287 the agents and team line is dropped; line 1 keeps the agent count\nok 15 a session in a VBW project tops up the refresh interval of VBW's status line, and leaves any other status line alone\nok 16 doctor warns when VBW's status line has no refresh interval",
         "fp": "4a4f96ffe59d490f5eacbb1ae1d4adf16d0a33c8851971ab35542efdf55174f2",
-        "at": "2026-10-19T20:29:13Z",
-        "why": "plugin/.claude-plugin/plugin.json changed"
+        "at": "2026-10-20T00:29:58Z",
+        "why": "plugin/CHANGELOG.md changed"
       },
       "tests/testfiles-spec.bats": {
         "status": "pass",
@@ -55529,8 +55608,8 @@
     },
     "scope": [],
     "full": false,
-    "passed": true,
-    "record": "b302add50bfebe0d7615c33cd7cbf23052cd983d5777bbf1dc694aedaf56d522"
+    "passed": false,
+    "record": "e33f221e9c8c75e6340c5bb4b1a529250568c056d0e8855fbb4ca144b84adb09"
   },
   "recommendation": {
     "at": "2026-10-09T20:53:56Z",
