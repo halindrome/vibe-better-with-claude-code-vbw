@@ -48141,7 +48141,7 @@
       "text": "Offer CI for the user's project (owner idea 2026-10-09): once, when it matters (a GitHub remote and the project is about to be shared or deployed, or code changed outside VBW), one yes-or-no suggestion with the trade-off in plain words (GitHub minutes, red failure emails vs catching outside changes and the deploy OS); yes sets up CI that runs the same approved checks; no is never asked again. Never in the interview. Before the 2.1 launch, after Lighter rounds",
       "sort": "later",
       "size": "medium",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T101",
