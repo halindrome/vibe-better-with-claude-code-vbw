@@ -49,6 +49,14 @@
   process has ended, or after 10 minutes, and never from a holder that is
   still writing, so many VBW commands at once no longer overwrite each
   other's changes.
+- **The pane's tabs fit at every width.** With eight tabs, the tab names no
+  longer split across lines or spill down the pane's right edge: the tabs sit
+  in whole rows, full names where they fit, and the portrait gives way before
+  a name does.
+- **Comms keeps its helper line in a short window.** With one row, Comms shows
+  the helpers at work and the step's end time on that row.
+- **Say the autonomy you want.** "Use guided autonomy" (or balanced, or
+  hands-off) in your words to `/vbw:vibe` is recorded before the first step.
 - **Session start is quick again.** The session-start hook asks the kernel
   once for where the project stands, instead of twice, so a new session no
   longer waits about half a second longer than it needs to.
