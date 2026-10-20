@@ -145,6 +145,15 @@ the sentence the router says as given before the step starts. With fewer than 3
 finished steps of the kind, `seconds` and `end` are `null` and `say` reads
 `Building P1.1, P1.2 and P1.3: no end time yet (VBW has timed fewer than 3 steps like this here)`.
 
+The proof's `parts` needs the list of units the next proof would run. Planning
+it reads the run store and runs git, so `vbw next` caches the list in
+`.vbw/runtime/proof-units.json`. The cache is keyed on the committed tree, the
+record's fingerprint (SHA-256 of the record file) and the run store's digest
+(SHA-256 of its file; an absent store counts as empty). It also records whether
+the unfinished-proof marker exists and whether the proof is full. When any of
+these changes (a new commit, a changed record, a changed run store), the list
+is recomputed and the file rewritten. A damaged cache file is recomputed too.
+
 ### The road
 
 `vbw next --json` and `vbw status --json` also carry `road`: when the whole
