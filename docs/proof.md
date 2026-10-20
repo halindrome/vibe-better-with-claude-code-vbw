@@ -994,7 +994,7 @@ can still break its tasks. A plan that owns no rule runs the checks of its
 requirements, and a refusal then says it owns no rule and that the Lead names a
 plan on each rule.
 
-A break with several checks (a task at deep) runs them one at a time, fastest
+A break with several checks (a task break) runs them one at a time, fastest
 first by their last recorded time, and stops at the first that goes red; a
 survivor runs them all. Each check first runs once on the unbroken code at that
 commit, unless an earlier break at the same commit already ran it. A slow test
@@ -1010,9 +1010,9 @@ suite therefore pays for the checks a break needs, not for every check.
   lists the rules missing one. A rule that names its plan (`plan` in the
   Lead's rules: the plan that builds its code) is asked of that plan when it
   finishes, even while another plan of the requirement is open, so each plan
-  breaks its own rules. At deep each task also needs a red break or a
-  written reason. At express it asks for nothing. A survivor alone covers
-  nothing.
+  breaks its own rules. Deep asks the same, one break per rule; a task break
+  there is the builder's, for a task whose behaviour no rule's check covers.
+  At express it asks for nothing. A survivor alone covers nothing.
 
 - A rule whose check judges only the record (a measurement kept as a decision,
   for example) has no code to break. It is recorded with `vbw mutate PLAN Rn.k

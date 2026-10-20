@@ -181,10 +181,13 @@ At standard and deep, the builder breaks its own plan's code on purpose with
 |---|---|
 | `express` | nothing; no mutation step |
 | `standard` | each rule: one small break per rule |
-| `deep` | each rule, each task, and each error and edge case the rules state |
+| `deep` | each rule: one break per rule, plus a task whose behaviour no rule's check covers |
 
-A fix never runs it. A phase with no recorded tier, and a plan whose
-requirements are all `[human]`, ask for none.
+One break per rule, however many cases the rule states: its check runs once
+broken. `vbw plan done` asks the same at standard and deep, one red break (or a
+verified `--none`) per rule; a task break at deep is the builder's call, for a
+task no rule's break reaches. A fix never runs it. A phase with no recorded
+tier, and a plan whose requirements are all `[human]`, ask for none.
 
 ## QA depth
 

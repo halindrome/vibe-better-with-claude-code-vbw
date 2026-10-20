@@ -7,9 +7,9 @@
 # whichever plan of the requirement recorded it; the refusal lists the rules
 # still missing one (numbered as vbw show plan lists them) and names vbw mutate.
 # Rules sharing one check each need their own break. A survivor alone covers
-# nothing; a red break after its check file was strengthened does. At deep,
-# every task of the plan also needs a red break or a recorded reason it has no
-# testable behaviour. At express, for plans whose requirements are all [human],
+# nothing; a red break after its check file was strengthened does. At deep it
+# asks the same one red break per rule and nothing per task (T174: a task break
+# is the Dev's, for a task no rule's check covers). At express, for plans whose requirements are all [human],
 # and for a phase with no recorded tier (a record from before tiers), plan done
 # behaves as before; so it does outside a build run (a plan closed by hand). It
 # refuses while the plan's files differ from their last commit, naming them.
@@ -105,14 +105,13 @@ done_ok() {
   done_ok P1.4
 }
 
-@test "R188: at deep, every task also needs a red break or a recorded reason it has no testable behaviour" {
+@test "T174: at deep, plan done asks one red break per rule, as at standard, and none per task" {
   tier deep
+  refuses_naming P1.1 R1.1 R1.2
+  [[ "$output" != *task1* && "$output" != *Tasks* ]] || { echo "the refusal asks for task breaks: $output"; false; }
   red P1.1 R1.1
+  refuses_naming P1.1 R1.2
   red P1.1 R1.2
-  refuses_naming P1.1 task1 task2
-  red P1.1 task1
-  refuses_naming P1.1 task2
-  "$VBW" mutate P1.1 task2 --none "only writes a log line nothing reads" < /dev/null > /dev/null
   done_ok P1.1
 }
 
