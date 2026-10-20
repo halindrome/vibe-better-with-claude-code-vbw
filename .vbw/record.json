@@ -1,31 +1,6 @@
 {
   "schema": 4,
-  "lease": {
-    "run": "fix-20261020T200542Z",
-    "kind": "fix",
-    "started_at": "2026-10-20T20:05:42Z",
-    "files": null,
-    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
-    "editable": [
-      "tests/big-record-commands.bats",
-      "tests/big-record-docs.bats",
-      "tests/big-record-helper.bash",
-      "tests/big-record-hooks.bats",
-      "tests/big-record-scratch.bats",
-      "tests/big-record-writes.bats",
-      "tests/fix-commit.bats",
-      "tests/panel/big-record.test.mjs",
-      "tests/proof-stale-links.bats",
-      "tests/record-args-rule.bats",
-      "tests/release-run-docs.bats",
-      "tests/release-run.bats"
-    ],
-    "cost": {
-      "usd": 1667.242423,
-      "in": 186658,
-      "out": 218
-    }
-  },
+  "lease": null,
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -51521,35 +51496,35 @@
       "id": "F279",
       "req": "R93",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C140 fail (exit 1)"
     },
     {
       "id": "F280",
       "req": "R99",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C155 fail (exit 1)"
     },
     {
       "id": "F281",
       "req": "R149",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C217 fail (exit 1), C220 fail (exit 1), C221 fail (exit 1)"
     },
     {
       "id": "F282",
       "req": "R152",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C233 fail (exit 1)"
     },
     {
       "id": "F283",
       "command": "test",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "test fail"
     }
   ],
@@ -62614,6 +62589,19 @@
           "usd": 2.318487,
           "in": 2274,
           "out": 157
+        }
+      },
+      {
+        "id": "fix-20261020T200542Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T20:05:42Z",
+        "ended": "2026-10-20T22:18:36Z",
+        "cost": {
+          "usd": 2.316685,
+          "in": 27554,
+          "out": 56
         }
       }
     ],
