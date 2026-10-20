@@ -48293,7 +48293,7 @@
       "text": "Blast radius before a change (owner, 2026-10-11 21:40: 'make sure this doesn't happen again' after three edits to tests/helper.bash each re-ran the whole suite): the kernel knows from the run store how many units read each file. (1) vbw show reach FILE...: units that read each file and the minutes their last runs took, from .git/vbw/runs.json. (2) The Lead's plan and the Dev's and fix brief name the files of the plan read by many units ('tests/helper.bash: read by 293 of 316 units, about 33 min per change: make every change to it in one commit, reviewed before the proof'). (3) The approval menu shows the proof cost of the plan's files. For every VBW user: their shared test setup files have the same cost",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T123",
