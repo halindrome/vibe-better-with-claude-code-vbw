@@ -38,7 +38,7 @@ step4() { awk '/^## `vbw prove`/{on=1} on && /^4\. /{s=1} s && /^5\. /{exit} s' 
   printf '%s\n' "$row" | grep -qF '{commit, plan, by}' || { echo "$row"; false; }
   printf '%s\n' "$row" | grep -qF '40' || { echo "$row"; false; }
   printf '%s\n' "$row" | grep -qF 'a record written before' || { echo "$row"; false; }
-  printf '%s\n' "$row" | grep -qF '`[]`' || { echo "$row"; false; }
+  printf '%s\n' "$row" | grep -qF '`[]` when none' || { echo "$row"; false; }
 }
 
 @test "R204: docs/loop.md keeps the park's rule and says a park and a hand revert clear a commit the same way" {
