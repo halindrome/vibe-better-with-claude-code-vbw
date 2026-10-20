@@ -47580,7 +47580,7 @@
     {
       "id": "T5",
       "text": "Status line says what is happening now: set refreshInterval so it stays current while the session waits on background work; one clear state (VBW working: what, for how long / waiting for you: what / idle); and a 'vbw activity' note for long work outside a VBW run (releases, test runs), shown until done",
-      "status": "open",
+      "status": "dropped",
       "sort": "later",
       "size": "medium"
     },
