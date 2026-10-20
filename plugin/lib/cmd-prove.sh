@@ -42,6 +42,7 @@ cmd_prove() {
   mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
   proofsteps_clean
   noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
+  slots_hold vbw:plan || true
   t0=$(prooftime_clock)
   proofreuse_plan "$record" "$full"
   # Any cause (R168) runs every check, test file and command, and the summary names it.
@@ -53,6 +54,7 @@ cmd_prove() {
   # A clone with no recorded run has nothing to compare with: no line gives a reason of its own.
   if printf '%s' "$PROOFREUSE_STORE" | jq -e '(.runs | length) == 0' > /dev/null; then WHY_CHECKS='{}' WHY_COMMANDS='{}'; fi
   prooftime_span planning "$t0"
+  slots_release vbw:plan
   at=$(vbw_now)
   # The marker stays until the evidence is recorded: a proof cut short reuses nothing next time.
   : > "$(proofreuse_marker)" || vbw_die "cannot write $(proofreuse_marker)"
@@ -62,9 +64,11 @@ cmd_prove() {
     n=${#TODO_CHECKS[@]}
     [ "$n" -ge ${#TF_TODO[@]} ] || n=${#TF_TODO[@]}
     [ "$n" -gt 0 ] || n=1
+    slots_hold vbw:copies || true
     t0=$(prooftime_clock)
     proofcopy_create_slots "$(proofcopy_slots "$n")"
     prooftime_span copies "$t0"
+    slots_release vbw:copies
     proofsteps_begin "$(prove_units "$record")" "$(prove_unit_names "$record")"
     proofcopy_verify "$CHECK_HASH" "$record"
     # Checks and commands run in clean copies; evidence and the record stay here.
@@ -81,10 +85,12 @@ cmd_prove() {
   checks=$(printf '%s' "$checks" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
   commands=$(printf '%s' "$commands" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
   files=$(printf '%s' "$files" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
+  slots_hold vbw:save || true
   t0=$(prooftime_clock)
   proofreuse_save "$record" "$checks" "$commands" "$head" "$at"
   [ "$files" = '{}' ] || testfiles_save "$record" "$files" "$head" "$at"
   prooftime_span saving "$t0"
+  slots_release vbw:save
   checks=$(prove_stamp "$record" check "$checks" "$at" "$WHY_CHECKS")
   commands=$(prove_stamp "$record" command "$commands" "$at" "$WHY_COMMANDS")
   # A reused pass ended as the check expects: its exit status is the expected one.

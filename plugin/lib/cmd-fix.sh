@@ -144,7 +144,10 @@ cmd_fix() {
   # shellcheck source=proofsteps.sh
   . "$VBW_LIB/proofsteps.sh"
   prooftime_begin
-  local t0 own_json causes_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes keys served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0
+  local t0 own_json causes_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes keys served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0 began=0
+  # The store opens before the planning, which holds vbw:plan (R202).
+  [ ${#ids[@]} -eq 0 ] || { mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"; checks_begin "$record"; began=1; }
+  slots_hold vbw:plan || true
   t0=$(prooftime_clock)
   if [ ${#ids[@]} -gt 0 ]; then
     for id in "${ids[@]}"; do
@@ -216,16 +219,18 @@ cmd_fix() {
     fi
   fi
   prooftime_span planning "$t0"
+  slots_release vbw:plan
   if [ ${#todo[@]} -gt 0 ] || [ ${#TF_TODO[@]} -gt 0 ]; then
     at=$(vbw_now)
     off=false
     [ -z "$noreads" ] || off=true
-    checks_begin "$record"
     c=${#todo[@]}
     [ "$c" -ge ${#TF_TODO[@]} ] || c=${#TF_TODO[@]}
+    slots_hold vbw:copies || true
     t0=$(prooftime_clock)
     proofcopy_create_slots "$(proofcopy_slots "$c")"
     prooftime_span copies "$t0"
+    slots_release vbw:copies
     proofsteps_begin "$((${#todo[@]} + ${#TF_TODO[@]}))" "$({
       for c in ${todo[@]+"${todo[@]}"}; do printf 'check:%s\n' "$c"; done
       for c in ${TF_TODO[@]+"${TF_TODO[@]}"}; do printf 'file:%s\n' "$c"; done
@@ -236,16 +241,20 @@ cmd_fix() {
     checks_keep "$results" '{}' "$tfres"
     proofcopy_remove
     checks_end
+    began=0
     proofsteps_units "$results" '{}' "$tfres"
     proofsteps_end
     results=$(printf '%s' "$results" | jq -c --argjson off "$off" "$PROVE_FLAT")
     tfres=$(printf '%s' "$tfres" | jq -c --argjson off "$off" "$PROVE_FLAT")
+    slots_hold vbw:save || true
     t0=$(prooftime_clock)
     proofreuse_save "$record" "$results" '{}' "$head" "$at"
     [ "$tfres" = '{}' ] || testfiles_save "$record" "$tfres" "$head" "$at"
     prooftime_span saving "$t0"
+    slots_release vbw:save
     tfbad=$(printf '%s' "$tfres" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')
   fi
+  [ "$began" -eq 0 ] || checks_end
 
   # The fixes are judged and the record written before anything prints, so the
   # report lines can carry the record's time; what the judging says is printed after them.
