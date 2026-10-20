@@ -82,6 +82,40 @@ mutate_rule_none() {
     PROOFREUSE_STORE=$(proofreuse_store_read)
   fi
   checks_end
+  # The judgement: the run's read list against the files of every plan of the requirement, done or not.
+  verdict=$(printf '%s' "$record" | jq -c --arg q "$req" --arg k "$req.$rk" --arg id "$check" --slurpfile st <(printf '%s' "$PROOFREUSE_STORE") '
+    def fcov($f): . as $x | $x == $f or $x == "*" or (($x | endswith("/")) and ($f | startswith($x)));
+    def dcov($d): . as $x | $x == $d or $x == "*" or $x == ($d + "/")
+      or (($x | endswith("/")) and (($d + "/") | startswith($x)))
+      or ((if ($x | test("/")) then ($x | sub("/[^/]*$"; "")) else "." end) == $d);
+    def plural($n; $w): "\($n) \($w)" + (if $n == 1 then "" else "s" end);
+    $st[0].runs["check:" + $id] as $e
+    | [.plans[] | select(.reqs | index($q) != null)] as $pl
+    | ($pl | map(select(.files | index("*") != null) | .id)) as $stars
+    | if $e == null then {refuse: "\($k): \($id) has no recorded run: it did not run (vbw show contract lists check files waiting for approval)"}
+      elif ($e.reads | type) != "array" then {refuse: "\($k): \($id) has no read list: the file system recorded none"}
+      elif $e.git == true then {refuse: "\($k): \($id) reads the project through git, so its files are unknown: break the rule in the plan'"'"'s code instead"}
+      else
+        $e.reads as $rd
+        | [($e.dirs // [])[] | if type == "object" then .path else . end] as $dr
+        | [$rd[] as $f | {n: $f, p: [$pl[] | select(any(.files[]; fcov($f))) | .id]} | select(.p | length > 0)] as $fh
+        | [$dr[] as $d | {n: $d, p: [$pl[] | select(any(.files[]; dcov($d))) | .id]} | select(.p | length > 0)] as $dh
+        | def item: (.p - $stars) as $o | select($o | length > 0) | "\(.n) (\($o | join(", ")))";
+          if ($fh | length) + ($dh | length) > 0 then
+            ([$fh[] | item]) as $fi | ([$dh[] | item]) as $di
+            | {refuse: ("\($k) is a rule its plans'"'"' code could break: \($id)"
+                + (if ($fi | length) > 0 then " reads " + ($fi | join(", ")) elif ($di | length) == 0 then " reads files" else "" end)
+                + (if ($di | length) > 0 then (if ($fi | length) > 0 then " and lists " else " lists " end) + ($di | join(", ")) else "" end)
+                + (if ($stars | length) > 0 then "; " + ($stars | join(", ")) + (if ($stars | length) == 1 then " covers" else " cover" end) + " every file" else "" end)
+                + ": break the rule in that code instead")}
+          else {ok: "\($k) recorded: \($id) read \(plural($rd | length; "file")) and \(plural($dr | length; "folder")), none of them of \($q)'"'"'s plans (\($pl | map(.id) | join(", ")))"} end
+      end')
+  if [ "$(printf '%s' "$verdict" | jq 'has("refuse")')" = true ]; then
+    vbw_die "$(printf '%s' "$verdict" | jq -r .refuse)"
+  fi
+  record_update '(.plans[] | select(.id == $p)).mutations += [{rule: {req: $q, text: $t}, none: $why, at: $at, head: $h}]' \
+    --arg p "$plan" --arg q "$req" --arg t "$(printf '%s' "$ruledoc" | jq -r .text)" --arg why "$reason" --arg at "$(vbw_now)" --arg h "$head"
+  printf '%s\n%s\n' "$(printf '%s' "$verdict" | jq -r .ok)" "$reason"
 }
 
 cmd_mutate() {
