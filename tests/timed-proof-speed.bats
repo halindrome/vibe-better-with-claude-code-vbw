@@ -70,7 +70,7 @@ startup_ms() {
   source "$PLUGIN_ROOT/lib/reads.sh"
   reads_reset "$copy" "$st"
   [ -s "$st/kids.json" ] || { echo "the first reset left no folder map in the state"; false; }
-  printf '{"":["poison"]}\n' > "$st/kids.json"
+  printf '{"kids":{"":["poison"]},"files":{"top.txt":true}}\n' > "$st/kids.json"
   ls "$copy" > /dev/null
   got=$(reads_collect "$copy" "$st" | jq -r '.dirs[] | select(.path == ".") | .fp')
   want=$(printf '%s' '[".",["poison"]]' | { if command -v sha256sum > /dev/null 2>&1; then sha256sum; else shasum -a 256; fi; } | cut -d' ' -f1)
@@ -105,33 +105,36 @@ startup_ms() {
   reads_collect "$copy" "$st" | jq -e '.files == []' > /dev/null
 }
 
-# Remaining cost (M42 after decision): each reset and each collection parsed the written-file
-# store (it grows to 100 KB and more) though a run seldom writes or reads a written file. The
-# written-name list is kept in the state and made again only after a collection stored new names
-# (a list put there by hand stays while no run wrote anything); a collection that inherited
-# nothing does not open the store.
-@test "R202: the written-name list is kept until a run writes, and a run that inherits nothing does not read the store" {
-  local copy="$TEST_ROOT/copy" st="$TEST_ROOT/state" want
-  mkdir -p "$copy"
+# Remaining cost (M42 after decision): a collection asked one find per list (every tracked file,
+# every tracked folder, every written file), each one statting thousands of paths (0.09 s on 5,206
+# files). One walk of the copy finds every path whose access time moved and a single jq sorts them
+# into files read, folders listed and written files opened: three finds a collection, whatever the
+# number of tracked paths (the git flag, the walk, the files the run wrote).
+@test "R202: a collection walks the copy once for what moved: three finds, not one per list" {
+  local copy="$TEST_ROOT/copy" st="$TEST_ROOT/state" real log="$TEST_ROOT/finds" n
+  mkdir -p "$copy/sub" "$TEST_ROOT/shim"
   git -C "$copy" init -q
-  printf 'a\n' > "$copy/a.txt"
+  printf 'a\n' > "$copy/sub/a.txt"
+  printf 'b\n' > "$copy/top.txt"
   git -C "$copy" add -A
-  git -C "$copy" commit -q -m "feat: file"
+  git -C "$copy" commit -q -m "feat: files"
+  real=$(command -v find)
+  printf '#!/bin/sh\necho run >> "%s"\nexec "%s" "$@"\n' "$log" "$real" > "$TEST_ROOT/shim/find"
+  chmod +x "$TEST_ROOT/shim/find"
   # shellcheck disable=SC1091
   source "$PLUGIN_ROOT/lib/reads.sh"
   reads_reset "$copy" "$st"
-  # The store made unreadable: a collection that reads nothing written must not open it.
-  printf 'not json\n' > "$st/written.json"
-  cat "$copy/a.txt" > /dev/null
-  reads_collect "$copy" "$st" | jq -e '.files == ["a.txt"]' > /dev/null || { echo "the collection opened the store"; false; }
-  printf '{"lists":{},"files":{}}\n' > "$st/written.json"
-  printf './marker\0' > "$st/wlist"
-  reads_reset "$copy" "$st"
-  [ "$(tr '\0' '\n' < "$st/wlist")" = "./marker" ] || { echo "the reset made the written-name list again"; false; }
-  # A run that writes a file: the next reset makes the list again, with the name.
+  # A run that read a file, listed a folder and wrote one that a later run reads.
+  cat "$copy/sub/a.txt" > /dev/null
+  ls "$copy/sub" > /dev/null
   printf 'w\n' > "$copy/w.txt"
-  reads_collect "$copy" "$st" > /dev/null
+  : > "$log"
+  PATH="$TEST_ROOT/shim:$PATH" reads_collect "$copy" "$st" > "$TEST_ROOT/first.json"
+  n=$(wc -l < "$log" | tr -d ' ')
+  jq -e '.files == ["sub/a.txt"] and (.dirs | map(.path) == ["sub"])' "$TEST_ROOT/first.json" > /dev/null || { cat "$TEST_ROOT/first.json"; false; }
+  [ "$n" -eq 3 ] || { echo "a collection ran find $n times, wanted 3"; false; }
+  # The next run reads the file the first one wrote: it inherits that run's list.
   reads_reset "$copy" "$st"
-  want=$(tr '\0' '\n' < "$st/wlist")
-  [ "$want" = "./w.txt" ] || { echo "the written-name list after a write: $want"; false; }
+  cat "$copy/w.txt" > /dev/null
+  reads_collect "$copy" "$st" | jq -e '.files == ["sub/a.txt"] and (.dirs | map(.path) == ["sub"])' > /dev/null || { echo "the written file's list was not inherited"; false; }
 }

@@ -8,11 +8,13 @@
 # copy that reads it adds that list to its own.
 #
 # Per slot a state folder (outside the copy) holds: gitdir, files and dirs (the
-# tracked paths, "./"-prefixed, NUL-separated), ref (modification and access
+# tracked paths, "./"-prefixed, NUL-separated), kids.json ({kids: folder -> names
+# directly in it, files: the tracked file paths}), ref (modification and access
 # time set to the old date plus a day: the yardstick "read since" compares
-# with), mark (just before the run started: "written since"), wlist (written
-# files the reset set back), written.json ({lists: run id -> read list, files:
-# path -> [run id]}) and runid (the last run id given).
+# with), mark (just before the run started: "written since"), moved (every path
+# whose access time moved in the last collected run, NUL-separated), wlist
+# (written files, for a full set-back), written.json ({lists: run id -> read
+# list, files: path -> [run id]}) and runid (the last run id given).
 
 # The old date, for touch -t (local time): a set-back time is a day before the
 # yardstick file (READS_OLD_DAY) that "read since" is compared with.
@@ -59,12 +61,6 @@ reads_touch() {
   (cd "$2" && xargs -0 -r touch -h -a -t "$READS_OLD" -- < "$1") 2> /dev/null || true
 }
 
-# reads_moved LIST COPY REF: the paths of LIST (NUL-separated, relative to COPY)
-# read since the reset (REF, absolute, is the yardstick), NUL-separated.
-reads_moved() {
-  (cd "$2" && xargs -0 -r sh -c 'ref=$1; shift; find "$@" -maxdepth 0 -anewer "$ref" -print0' sh "$3" < "$1") 2> /dev/null || true
-}
-
 # reads_reset COPY STATE: before a run (STATE absolute). The first call also
 # records the copy's tracked files and folders (they never change: the copy is
 # a detached checkout) and where its git HEAD and index files are. "Written by
@@ -94,64 +90,69 @@ reads_reset() {
   fi
   gd=$(cat "$st/gitdir")
   [ -f "$st/written.json" ] || printf '{"lists":{},"files":{}}\n' > "$st/written.json"
-  # The written names, made again only after a collection stored new ones (it removes the list).
-  [ -f "$st/wlist" ] || jq -j '.files | keys[] | "./" + . + "\u0000"' "$st/written.json" > "$st/wlist" || return 1
   : > "$st/ref" && touch -t "$READS_OLD_DAY" "$st/ref" || return 1
   : > "$st/mark" && touch -t "$(reads_stamp "$slack")" "$st/mark" || return 1
   # Never earlier than the first mark: nothing made with the copy is a write.
   [ ! "$st/mark0" -nt "$st/mark" ] || touch -r "$st/mark0" "$st/mark" || return 1
-  # A run moves the access time of only the files it read, and its collection left those paths
-  # (moved): the next reset sets back just them. Without that list (the copy's first run, or a
-  # run that was never collected) every tracked file is set back. The folders always are: the
-  # collection itself lists them (find) after it took the list of those that moved.
+  # A run moves the access time of only what it read, and its collection left those paths
+  # (moved: files read, folders listed, written files opened): the next reset sets back just
+  # them. Without that list (the copy's first run, or a run that was never collected) every
+  # tracked file and every written file is set back. The folders always are: the collection
+  # itself lists them (find) after it took the list of those that moved.
   if [ -f "$st/moved" ]; then
     reads_touch "$st/moved" "$copy"
     rm -f "$st/moved"
   else
+    jq -j '.files | keys[] | "./" + . + "\u0000"' "$st/written.json" > "$st/wlist" || return 1
     reads_touch "$st/files" "$copy"
+    reads_touch "$st/wlist" "$copy"
   fi
   reads_touch "$st/dirs" "$copy"
-  reads_touch "$st/wlist" "$copy"
   [ ! -e "$gd/HEAD" ] || touch -a -t "$READS_OLD" "$gd/HEAD" 2> /dev/null || true
   [ ! -e "$gd/index" ] || touch -a -t "$READS_OLD" "$gd/index" 2> /dev/null || true
 }
 
-# reads_kids FILES: the map of each folder (the empty text for the top) to the names
-# directly in it, from the NUL-separated tracked paths in FILES, as one JSON object.
+# reads_kids FILES: what a collection needs to know of the tracked paths in FILES (NUL-
+# separated), as one JSON object {kids, files}: kids maps each folder (the empty text for
+# the top) to the names directly in it, files holds every tracked file path.
 reads_kids() {
   jq -Rs -c '
     def strip: if . == "." then "" else sub("^\\./"; "") end;
-    reduce (split("\u0000") | map(select(length > 0) | strip))[] as $f ({};
-      ($f | split("/")) as $p
-      | reduce range(0; $p | length) as $i (.; .[$p[:$i] | join("/")] += [$p[$i]]))' "$1"
+    (split("\u0000") | map(select(length > 0) | strip)) as $f
+    | {kids: (reduce $f[] as $x ({};
+        ($x | split("/")) as $p
+        | reduce range(0; $p | length) as $i (.; .[$p[:$i] | join("/")] += [$p[$i]]))),
+       files: ([$f[] | {key: ., value: true}] | from_entries)}' "$1"
 }
 
 # reads_collect COPY STATE: after a run; prints its read list as one JSON
 # object {files, dirs: [{path, fp}], git}. fp fingerprints the names of the
 # tracked files and folders directly in the listed folder: the SHA-256 of the
 # compact JSON text [path, names]. A fixed number of processes whatever the
-# number of listed folders: one jq builds every listing text from one parent-
-# to-names map, bash writes one scratch file per text, one sha256 call hashes
-# them all, one jq assembles the list. Reads the written files this run opened
-# (set back by the reset) for their lists, and records the files it wrote with
-# a single copy of this list (written.json: lists by run id, files by path).
+# number of tracked or listed paths: one find walks the copy once for every path
+# whose access time moved, one jq sorts them into files read, folders listed and
+# written files opened (by the tracked paths kept at the first reset), and builds
+# every listing text from the parent-to-names map; bash writes one scratch file per
+# text, one sha256 call hashes them all, one jq assembles the list. Reads the
+# written files this run opened (set back by the reset) for their lists, and records
+# the files it wrote with a single copy of this list (written.json: lists by run id,
+# files by path).
 reads_collect() {
-  local copy=$1 st=$2 gd git=false line n=0 id store
+  local copy=$1 st=$2 gd git=false line n=0 id
   local -a names
   gd=$(cat "$st/gitdir")
   [ -z "$(find "$gd/HEAD" "$gd/index" -maxdepth 0 -anewer "$st/ref" -print 2> /dev/null)" ] || git=true
-  reads_moved "$st/files" "$copy" "$st/ref" > "$st/opened"
-  reads_moved "$st/dirs" "$copy" "$st/ref" > "$st/listed"
-  if [ -s "$st/wlist" ]; then reads_moved "$st/wlist" "$copy" "$st/ref" > "$st/inherited"; else : > "$st/inherited"; fi
-  # The parent-to-names map of the tracked paths never changes (the copy is a detached
-  # checkout): built once at the first reset, here only when a state lacks it.
+  (cd "$copy" && find . -path ./.git -prune -o -anewer "$st/ref" -print0) > "$st/moved" 2> /dev/null || true
+  # The tracked paths never change (the copy is a detached checkout): sorted out once at the
+  # first reset, here only when a state lacks it.
   [ -s "$st/kids.json" ] || reads_kids "$st/files" > "$st/kids.json" || return 1
-  jq -nc --rawfile listed "$st/listed" --slurpfile k "$st/kids.json" '
+  jq -nc --rawfile moved "$st/moved" --slurpfile k "$st/kids.json" '
     def strip: if . == "." then "" else sub("^\\./"; "") end;
-    $k[0] as $kids
-    | ($listed | split("\u0000") | map(select(length > 0)))[]
-    | strip as $d
-    | [(if $d == "" then "." else $d end), ($kids[$d] // [] | unique)]' > "$st/listings"
+    $k[0].kids as $kids
+    | ($moved | split("\u0000") | map(select(length > 0) | strip))[]
+    | . as $d
+    | select($kids | has($d))
+    | [(if $d == "" then "." else $d end), ($kids[$d] | unique)]' > "$st/listings"
   rm -rf "$st/fp"; mkdir -p "$st/fp"
   while IFS= read -r line; do
     printf '%s' "$line" > "$st/fp/$n"
@@ -163,16 +164,13 @@ reads_collect() {
     # One call; each line is "<hash>  <file>" with either sha256sum or shasum.
     (cd "$st/fp" && { if command -v sha256sum > /dev/null 2>&1; then sha256sum "${names[@]}"; else shasum -a 256 "${names[@]}"; fi; }) > "$st/hashes" || return 1
   fi
-  # The written-file store is opened only when the run read a written file.
-  store="$st/written.json"
-  [ -s "$st/inherited" ] || store=/dev/null
-  jq -nc --rawfile o "$st/opened" --rawfile i "$st/inherited" --rawfile l "$st/listings" --rawfile h "$st/hashes" --slurpfile w "$store" --argjson g "$git" '
+  jq -nc --rawfile moved "$st/moved" --slurpfile k "$st/kids.json" --rawfile l "$st/listings" --rawfile h "$st/hashes" --slurpfile w "$st/written.json" --argjson g "$git" '
     def strip: sub("^\\./"; "");
-    def paths: split("\u0000") | map(select(length > 0) | strip);
-    ($h | split("\n") | map(select(length > 0) | split("  ")[0])) as $fps
+    ($moved | split("\u0000") | map(select(length > 0) | strip)) as $m
+    | ($h | split("\n") | map(select(length > 0) | split("  ")[0])) as $fps
     | ($l | split("\n") | map(select(length > 0) | fromjson)) as $ls
-    | {files: ($o | paths), dirs: [range(0; $ls | length) as $k | {path: $ls[$k][0], fp: $fps[$k]}], git: $g} as $own
-    | ([($i | paths)[] as $p | ($w[0].files[$p] // [])[]] | unique) as $ids
+    | {files: [$m[] | select($k[0].files[.])], dirs: [range(0; $ls | length) as $i | {path: $ls[$i][0], fp: $fps[$i]}], git: $g} as $own
+    | ([$m[] as $p | ($w[0].files[$p] // [])[]] | unique) as $ids
     | reduce $ids[] as $id ($own; ($w[0].lists[$id]) as $l
         | {files: (.files + $l.files), dirs: (.dirs + $l.dirs), git: (.git or $l.git)})
     | {files: (.files | unique), dirs: (.dirs | unique_by(.path)), git}' > "$st/last.json" || return 1
@@ -186,9 +184,6 @@ reads_collect() {
       .lists[$id] = $r[0]
       | reduce ($n | split("\u0000") | map(select(length > 0) | strip))[] as $p (.; .files[$p] += [$id])' \
       "$st/written.json" > "$st/written.tmp" && mv "$st/written.tmp" "$st/written.json" || return 1
-    rm -f "$st/wlist"
   fi
-  # What moved: the next reset sets back these and nothing else (see reads_reset).
-  cat "$st/opened" "$st/listed" "$st/inherited" > "$st/moved" || return 1
   cat "$st/last.json"
 }
