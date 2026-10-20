@@ -190,7 +190,7 @@ Restart Claude Code. VBW turns on what it needs (Dynamic workflows and its statu
 
 ### Updating
 
-Run `/vbw:update`. It runs `claude plugin marketplace update vbw-marketplace` and `claude plugin update vbw@vbw-marketplace`, then asks you to run `/reload-plugins` (or restart Claude Code). `/vbw:whats-new` then says what changed; the full history is in [plugin/CHANGELOG.md](plugin/CHANGELOG.md). PLACEHOLDER (T136): one sentence on how VBW tells you a new version is out.
+Run `/vbw:update`. It runs `claude plugin marketplace update vbw-marketplace` and `claude plugin update vbw@vbw-marketplace`, then asks you to run `/reload-plugins` (or restart Claude Code). `/vbw:whats-new` then says what changed; the full history is in [plugin/CHANGELOG.md](plugin/CHANGELOG.md). VBW makes no network call, so nothing tells you a new version is out unless you turn on Claude Code's auto-update for `vbw-marketplace` (`/plugin`, Marketplaces tab, Enable auto-update); `/vbw:doctor` shows whether it is on, and after an update VBW offers `/vbw:whats-new` once. See [docs/update.md](docs/update.md).
 
 ### Running VBW
 
@@ -482,6 +482,7 @@ These describe VBW 1.x, not VBW 2. VBW 1 ran every capability as a shell script 
 | [docs/costs.md](docs/costs.md) | What each run and each milestone cost (`vbw show costs`) |
 | [docs/statusline.md](docs/statusline.md), [docs/panel.md](docs/panel.md) | The status line and the panel |
 | [docs/diagnostics.md](docs/diagnostics.md) | `vbw report` for bug reports, and `vbw rtk` |
+| [docs/update.md](docs/update.md) | Updating VBW, auto-update, and the "what changed" offer |
 | [docs/tools.md](docs/tools.md) | Finding the best tools for your project (nothing installed without your approval) |
 | [docs/convert.md](docs/convert.md) | Coming from an earlier VBW |
 | [docs/benchmark.md](docs/benchmark.md) | VBW 2 against plain Claude Code, with the evidence level of each result |
