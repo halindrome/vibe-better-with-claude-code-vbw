@@ -1,6 +1,17 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261020T005940Z",
+    "kind": "qa",
+    "started_at": "2026-10-20T00:59:40Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1560.920944,
+      "in": 334145,
+      "out": 258
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -22024,7 +22035,15 @@
           "to": "deep",
           "reason": "Dev blocked P160.3: Built and committed (7b00913d): scenario_qafix reads 'config autonomy' and records autonomy and autonomy_set_before_first_run, expected in the passed chain. C429 stays red by design: its third test pins the committed tools/l3-results/qafix.json, which only the owner's run ('bash tools/l3-suite.sh qafix') writes. Mutation (R201.11, R201.12) and plan done need C429 green; after the owner runs the scenario and commits the result, re-run mutation and 'vbw plan done P160.3'. Tests 1-2 of C429, l3-results.bats and l3-scenarios.bats pass; lint clean."
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "a3cd76475aa6620df601381b0286a608f8924f1bb90588c6f02bdd8e0cf45e79",
+        "at": "2026-10-20T01:00:56Z",
+        "note": "19/20 checks",
+        "rounds": 1
+      }
     }
   ],
   "plans": [
@@ -47478,6 +47497,15 @@
       "attempts": 0,
       "status": "closed",
       "note": "test fail"
+    },
+    {
+      "id": "F277",
+      "req": "R201",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Test gap in the L3 qafix scenario (P160.3 task 2). The check that the settings write came before the first 'Contract approved' decision (tools/l3-suite.sh scenario_qafix, first_approval lookup) is pinned by no test that can fail: the recorded mutation 'first approval lookup broken' is a survivor (C428 and C429 both green) and was never strengthened. If the lookup breaks, first_approval silently becomes '9999' (jq error hidden by 2>/dev/null and '// \"9999\"'), the comparison always passes, and the scenario reports autonomy_set_before_first_run true without checking the approval half of R201.12. I checked the lookup works today against the real .vbw/record.json (decisions have .at, text starts 'Contract approved'), so this is a missing guard, not a live bug. Regression test: run the scenario's approval-and-write comparison (extract the jq into a helper or test it on a fixture record plus fixture transcript) and show it returns false when the settings write is later than the first 'Contract approved' decision, and that a record with no such decision is not treated as 'before'.",
+      "phase": "P160"
     }
   ],
   "todos": [
