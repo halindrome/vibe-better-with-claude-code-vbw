@@ -47715,7 +47715,7 @@
     {
       "id": "T28",
       "text": "docs/panel.md and bench-panel.sh header CPU figures are stale (now 0.10-0.21 ms vs written 0.02-0.08; budget 0.5 ms holds)",
-      "status": "open",
+      "status": "dropped",
       "sort": "later",
       "size": "small"
     },
