@@ -208,6 +208,9 @@
     "tests/mutate-pending-check.bats",
     "tests/mutate-plan-done.bats",
     "tests/mutate-prompts.bats",
+    "tests/mutate-rule-none-docs.bats",
+    "tests/mutate-rule-none-done.bats",
+    "tests/mutate-rule-none.bats",
     "tests/mutate-show.bats",
     "tests/mutate-strengthen.bats",
     "tests/mutation-docs.bats",
@@ -5900,6 +5903,45 @@
       "files": [
         "tests/machine-bookkeeping-docs.bats"
       ]
+    },
+    {
+      "id": "C448",
+      "req": "R203",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/mutate-rule-none.bats"
+      ],
+      "files": [
+        "tests/mutate-rule-none.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C449",
+      "req": "R203",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/mutate-rule-none-done.bats"
+      ],
+      "files": [
+        "tests/mutate-rule-none-done.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C450",
+      "req": "R203",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/mutate-rule-none-docs.bats"
+      ],
+      "files": [
+        "tests/mutate-rule-none-docs.bats"
+      ],
+      "timeout": 300
     }
   ],
   "project": {
@@ -14809,6 +14851,105 @@
           "plan": "P163.4"
         }
       ]
+    },
+    {
+      "id": "R203",
+      "text": "A rule whose check judges only what the record holds (a measurement kept as a decision, for example) can pass the mutation step: vbw mutate PLAN Rn.k --none REASON is accepted for a rule only when the check's last recorded read list names none of the files of any plan of its requirement, so no code VBW builds could change its outcome; the kernel verifies this from the run store, records the reason with the rule, and refuses it otherwise with the files that could break it (found 2026-10-20: M42's before and after decisions blocked their plans)",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M42",
+      "rules": [
+        {
+          "text": "vbw mutate PLAN Rn.k --none REASON is accepted (exit 0, the entry written) only when the rule's check has a current recorded run with a read list, no git flag, and no read file or listed folder covered by a files entry of any plan of Rn, done or not",
+          "check": "C448",
+          "plan": "P164.1"
+        },
+        {
+          "text": "a files entry covers a read file when it is the same path, a folder entry (dir/) containing it, or *; it covers a listed folder when it covers that folder or is a file directly inside it, never when it only lies deeper down",
+          "check": "C448",
+          "plan": "P164.1"
+        },
+        {
+          "text": "the acceptance prints one line naming the check, how many files and folders it read and that none belongs to the requirement's plans, then the recorded reason",
+          "check": "C448",
+          "plan": "P164.1"
+        },
+        {
+          "text": "a read list naming plan files is refused, nothing written: each read file or listed folder with the plan or plans covering it, ending 'break the rule in that code instead'; a plan whose files are * is named as covering every file",
+          "check": "C448",
+          "plan": "P164.1"
+        },
+        {
+          "text": "a run that read the project through git is refused saying its files are unknown; a run with no read list is refused saying the file system recorded none",
+          "check": "C448",
+          "plan": "P164.1"
+        },
+        {
+          "text": "an empty reason, extra words after it, --check with a rule, an unknown plan, a rule number the requirement lacks or a plan not serving the requirement are refused as today, nothing written and no run made",
+          "check": "C448",
+          "plan": "P164.1"
+        },
+        {
+          "text": "the judged run is the check's last recorded run in the clone's run store, used only while current: its approved definition unchanged and, between its tree and the committed code, no file on its read list changed or deleted and no listed folder's listing changed, whatever its pass or fail",
+          "check": "C448",
+          "plan": "P164.1"
+        },
+        {
+          "text": "with no run of the check in the store, or a stale one, the command runs the check once in a clean copy of the committed code with read tracking on, records that run in the store as vbw prove would (status, read list, tree, time), says it made that run, and judges that list",
+          "check": "C448",
+          "plan": "P164.1"
+        },
+        {
+          "text": "the accepted entry is {rule: {req, text}, none, at, head} with head the 40-hex commit of the committed code the judged run was current for; the validator accepts it and refuses a rule none entry carrying checks, result, files or what, or lacking head or the rule's req and text; a task none entry keeps its shape",
+          "check": "C448",
+          "plan": "P164.1"
+        },
+        {
+          "text": "the write leaves the contract fingerprint unchanged, so nothing waits for approval again",
+          "check": "C448",
+          "plan": "P164.1"
+        },
+        {
+          "text": "at standard and deep, vbw plan done counts a rule covered when any plan of its requirement has a red break of it or an accepted --none entry for it; a rule with neither is still listed as missing",
+          "check": "C449",
+          "plan": "P164.2"
+        },
+        {
+          "text": "the Next: line of that refusal names both ways: vbw mutate PLAN Rn.k \"what you broke\" FILE..., or --none REASON when the check reads nothing the plans build",
+          "check": "C449",
+          "plan": "P164.2"
+        },
+        {
+          "text": "a task --none keeps its meaning at deep and nothing changes at express",
+          "check": "C449",
+          "plan": "P164.2"
+        },
+        {
+          "text": "vbw show plan lists the entry as 'Rn.k: no code could change its outcome: REASON' under mutations:, and vbw show plan --json carries it",
+          "check": "C449",
+          "plan": "P164.2"
+        },
+        {
+          "text": "docs/workflows.md ('The mutation check') no longer says a rule cannot be recorded --none and says when a rule may be, how the kernel verifies it from the recorded read list, and how the refusals read",
+          "check": "C450",
+          "plan": "P164.3"
+        },
+        {
+          "text": "docs/proof.md ('The mutation check') says a rule whose check judges only the record is recorded --none after the kernel verifies its read list, and that the command may run the check once and record that run",
+          "check": "C450",
+          "plan": "P164.3"
+        },
+        {
+          "text": "docs/record.md documents the plans' mutations entries, the rule --none shape {rule, none, at, head} included",
+          "check": "C450",
+          "plan": "P164.3"
+        },
+        {
+          "text": "plugin/agents/dev.md tells the Dev to use the rule form of --none only for a rule whose check reads nothing the plans build, and that the kernel verifies it",
+          "check": "C450",
+          "plan": "P164.3"
+        }
+      ]
     }
   ],
   "phases": [
@@ -22576,6 +22717,35 @@
         "risk: none",
         "breaks: none",
         "guarded: R12 (C11), R25 (C24), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
+    },
+    {
+      "id": "P164",
+      "title": "A rule judged only by the record passes the mutation step with a verified reason",
+      "reqs": [
+        "R203"
+      ],
+      "milestone": "M42",
+      "goal": "A Dev can record `vbw mutate PLAN Rn.k --none REASON` for a rule whose check reads nothing that any plan of its requirement builds; the kernel proves that from the check's recorded read list (the list of project files the check opened when it last ran) before accepting it, refuses it otherwise naming the files that could break it, and `vbw plan done` then counts the rule as covered.",
+      "criteria": [
+        "Acceptance: `vbw mutate PLAN Rn.k --none REASON` is accepted (exit 0, the entry written) only when the rule's own check has a current recorded run whose read list exists, whose run did not read the project through git (the store's git flag is false), and in which no read file and no listed folder is covered by a `files` entry of any plan of requirement Rn, done or not: an entry matches a read file when it is the same path, a folder entry (`dir/`) that contains it, or `*`; an entry matches a listed folder when the entry covers that folder or the entry is a file directly inside it (a plan adding a file there changes the folder's listing). The command prints one line naming the check, how many files and folders it read, and that none belongs to the requirement's plans, then the recorded reason.",
+        "Refusal names what could break it: when the read list names plan files, the command refuses, writes nothing, and lists each read file or listed folder with the plan (or plans) whose entry covers it, for example `C435 reads plugin/lib/record.jq (P161.2), plugin/lib/cmd-show.sh (P161.2): break the rule in that code instead`; a plan whose files are `*` is named as covering every file; a run that read through git is refused saying so (`the check reads the project through git, so its files are unknown`); a run with no read list is refused saying the file system recorded none. An empty reason, extra words after the reason, `--check` with a rule, an unknown plan, a rule number the requirement does not have, or a plan that does not serve the requirement are refused as today, nothing written.",
+        "Which run is judged, and from where: the kernel reads the check's last recorded run from the clone's run store (`vbw/runs.json` in the git directory, where `vbw prove` and `vbw fix done` keep each unit's read list) and uses it only while it is current: the check's approved definition is unchanged and, between the tree it ran on and the committed code, no file on its read list changed or was deleted and no listed folder's listing changed (the proof's own reuse rule, applied whatever the run's pass or fail). When the store has no run of that check, or the run is stale, `vbw mutate` runs the check once in a clean copy of the committed code with read tracking on, records that run in the store exactly as `vbw prove` would (its status as it came, its read list, the tree and time), says it made that run, and judges that list. The command never judges a list it did not record, and never guesses a read list from file names.",
+        "The record: the accepted entry is kept under the plan's `mutations` as `{rule: {req, text}, none: REASON, at, head}` where `head` is the 40-hex commit of the committed code the judged run was current for; the record validator accepts it, and refuses a rule `none` entry that carries `checks`, `result`, `files` or `what`, or lacks `head` or the rule's `req` and `text`. The contract fingerprint is unchanged by the write, so nothing waits for approval again. `vbw show plan` lists it as `Rn.k: no code could change its outcome: REASON` under `mutations:`, and `vbw show plan --json` carries the entry.",
+        "`vbw plan done` counts it: at standard and deep, a rule is covered when any plan of its requirement has a red break of it or an accepted `--none` entry for it; a rule with neither is still listed as missing, and the `Next:` line of that refusal now names both ways (`vbw mutate PLAN Rn.k \"what you broke\" FILE...`, or `--none REASON` when the check reads nothing the plans build). A task `--none` keeps its current meaning and shape; nothing changes at express.",
+        "Tests, each shown red before its code: a fixture with two approved checks, one that reads only the record through jq and one that reads a plan file; the accepted case and the refused case with the named file and plan; the `*` plan; the folder-listing case (a plan file directly inside a listed folder); the git-flag case; the no-read-list case; the store-less case (the command runs the check, the store gains the run, the judgement uses it); the stale case (a file on the recorded list changed since its tree: the command runs the check again rather than judging the old list); the validator's accept and refuse cases; `plan done` passing with a rule `--none` entry and refusing without; `show plan` text and `--json`. All existing mutate, plan-done and show tests stay green.",
+        "Docs and the Dev's instructions: docs/workflows.md ('The mutation check') replaces 'a rule cannot be recorded this way' with when a rule may be `--none`, the kernel's verification and the refusal's wording; docs/proof.md ('The mutation check') says a rule whose check judges only the record (a measurement kept as a decision, for example) is recorded `--none` after the kernel verifies its read list, and that the command may run the check once and record that run; docs/record.md documents the plans' `mutations` entries, the rule `--none` shape included; plugin/agents/dev.md tells the Dev to use the rule form of `--none` only for such a rule and that the kernel verifies it. A docs test pins the three documents' statements and the prompt test (tests/mutate-prompts.bats) the Dev wording."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 9 (235911 bytes)",
+        "files: more than 2 in a repository tracking 1098 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R38 (C33, C34), R39 (C36), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R60 (C72, C94), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R75 (C101), R76 (C102, C103), R77 (C104), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R95 (C149, C150), R96 (C151, C152), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R129 (C196), R130 (C197), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R152 (C233, C234), R153 (C235, C236, C239), R156 (C242, C243), R157 (C244), R158 (C245), R159 (C246), R160 (C247, C263, C264), R161 (C248, C265, C266), R162 (C249), R163 (C250), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R177 (C287, C288), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R186 (C344, C345, C346, C347, C348), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414)",
         "tests: project test command"
       ],
       "predicted": "standard"
@@ -46843,8 +47013,7 @@
           "none": "task 4 runs the script and records a decision in the record (vbw decide); it changes no code, and tests/proof-speed-before.bats (C435) reads that decision",
           "at": "2026-10-20T11:16:20Z"
         }
-      ],
-      "note": "R202.14 (the before numbers as a decision) has no code in this plan's one file (tools/measure-proof-speed.sh) to break: its only evidence is the decision D482 in .vbw/record.json, which only vbw writes, and C435 reads that decision, not the tool. vbw mutate refuses --none for a rule, so plan done cannot pass. Everything else is done and committed: tool (d9393b19), strengthened tests/measure-proof-speed.bats (d71f8e50, waits for one approval), decision D482 recorded; C434 and C435 green; every other rule and task 1-4 mutated and caught. Needs: the owner or Lead to accept R202.14 as covered by C435 (mutation --none for rules, or a mutation target that is the record)."
+      ]
     },
     {
       "id": "P161.5",
@@ -47533,7 +47702,8 @@
         "P162.3",
         "P163.1",
         "P163.2",
-        "P163.3"
+        "P163.3",
+        "P164.1"
       ],
       "status": "planned",
       "role": "dev",
@@ -47738,6 +47908,77 @@
       "tasks": [
         "docs/proof.md, The computer-wide limit: a unit's slot covers its read tracking (taken before the reset, given back after the collection); the proof-wide steps hold one slot each as vbw:plan (reuse planning), vbw:copies (making the clean copies) and vbw:save (saving the run store); vbw next never waits for a slot; a nested run takes none; the waited line's wording unchanged (waited ... for other VBW runs on this computer).",
         "tests/machine-bookkeeping-docs.bats, machine-limit-docs.bats and check-jobs-docs.bats green."
+      ]
+    },
+    {
+      "id": "P164.1",
+      "phase": "P164",
+      "title": "vbw mutate accepts a rule --none only after judging its check's recorded read list",
+      "reqs": [
+        "R203"
+      ],
+      "files": [
+        "plugin/lib/cmd-mutate.sh",
+        "plugin/lib/proofreuse.sh",
+        "plugin/lib/record.jq"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: tests/mutate-rule-none.bats fails on the current code (every rule --none is refused). plugin/lib/proofreuse.sh: proofreuse_judge KEYS HEAD OFF [ANY] skips its 'last result failed' clause when ANY is 1 (a failed run is judged like a passing one: the one reuse rule, applied whatever the status), and proofreuse_current KEY FP HEAD is a front over it like proofreuse_reason (succeeds printing nothing when the stored run is current; else prints the reason: never passed, no read list, definition changed, reads the project through git, <file> changed, <file> deleted, <dir> listing changed, the code it ran on is unknown). proofreuse-rule.bats, proof-plan-batch.bats, proof-reuse.bats green.",
+        "plugin/lib/record.jq, mutation_ok: an entry with none is either a task entry with exactly the keys at, none, task (as today) or a rule entry with exactly at, head, none, rule, where rule is {req, text} both non-empty strings, head a 40-hex string and none a non-empty string; a rule none entry carrying checks, result, files or what, lacking head, or whose rule lacks req or text is a violation in the existing wording ('<plan> mutations must be recorded breaks (vbw mutate)'). The validator case of tests/mutate-rule-none.bats green; record.bats, apply-keeps-mutations.bats green.",
+        "plugin/lib/cmd-mutate.sh, the rule --none path up to the judged run: --none is accepted for a rule; an empty reason ('--none needs a reason: ...'), extra words after it (usage), --check with a rule, an unknown plan, a rule number the requirement lacks and a plan not serving the requirement are refused as today, nothing written and no run made. Then: vbw_require_project, a committed HEAD (git rev-parse HEAD), checks_begin RECORD (the contract must be approved), PROOFREUSE_STORE=$(proofreuse_store_read), the head tree (vbw_head_tree) and the check's fingerprint (proofreuse_check_fp); proofreuse_current 'check:ID' FP TREE decides: when it prints a reason, make the run once: reads_probe as vbw prove does (a failing probe means reads off), proofcopy_create_slots 1, checks_run_all RECORD ID, proofcopy_remove, the result flattened with PROVE_FLAT (off when the probe failed), proofreuse_save RECORD RESULT '{}' TREE \"$(vbw_now)\" (the store entry exactly as a proof's: status as it came, reads, dirs, git, tree, at, seconds, fp), then print 'ran ID once to record its read list' and read the store again; checks_end. The command never judges a list it did not record and never derives one from file names.",
+        "plugin/lib/cmd-mutate.sh, the judgement and the write, one jq over the store entry and the record's plans serving Rn (done or not): reads null -> refuse 'Rn.k: ID has no read list: the file system recorded none'; git true -> refuse 'Rn.k: ID reads the project through git, so its files are unknown: break the rule in the plan'\\''s code instead'; a files entry matches a read file when it equals it, ends with / and prefixes it, or is *; it matches a listed folder (dirs[].path) when it equals the folder, equals the folder plus /, ends with / and prefixes the folder plus /, is * or is a file directly inside it (its parent folder is the listed path); any match -> refuse (exit 1, nothing written) 'Rn.k is a rule its plans'\\'' code could break: ID reads <file> (<plan>, <plan>), <file> (<plan>) and lists <folder> (<plan>): break the rule in that code instead', a * plan named as '<plan> covers every file' in place of its per-file entries; no match -> record_update appends {rule: {req, text}, none: REASON, at: vbw_now, head: git rev-parse HEAD} to the plan'\\''s mutations (the contract fingerprint is untouched: mutations are outside it) and prints 'Rn.k recorded: ID read N files and M folders, none of them of Rn'\\''s plans (<plan>, <plan>)' ('1 file', '1 folder' in the singular) and then the reason on its own line, exit 0. Note: tests/mutate-command.bats pins the words 'a rule' in the refusal of a rule --none, so the coverage refusal keeps them. tests/mutate-rule-none.bats, mutate-command.bats, mutate-own-rules.bats, mutate-rule-owner.bats, mutate-plan-done.bats, mutate-show.bats, mutate-pending-check.bats, mutate-strengthen.bats green."
+      ]
+    },
+    {
+      "id": "P164.2",
+      "phase": "P164",
+      "title": "vbw plan done counts a rule --none entry; vbw show plan lists it",
+      "reqs": [
+        "R203"
+      ],
+      "files": [
+        "plugin/lib/cmd-plan.sh",
+        "plugin/lib/cmd-show.sh"
+      ],
+      "after": [
+        "P164.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: tests/mutate-rule-none-done.bats fails on the current code (plan done ignores a rule none entry; its Next: line names one way; show plan prints the entry as a task).",
+        "plugin/lib/cmd-plan.sh, plan_missing_breaks: at standard and deep a rule is covered when any plan of its requirement holds a mutation with result red for that rule, or a none entry whose rule is {req, text} of that rule; a rule with neither stays listed; the Next: line reads 'Next: break what each rule promises in this plan'\\''s code and run vbw mutate <plan> Rn.k \"what you broke\" FILE..., or vbw mutate <plan> Rn.k --none REASON when its check reads nothing the plans build'; the task line and the task none meaning are unchanged; nothing changes at express. mutate-plan-done.bats, plan-done-committed.bats, mutate-own-rules.bats, mutate-rule-owner.bats green.",
+        "plugin/lib/cmd-show.sh (show plan): under mutations:, a none entry with a rule prints '  Rn.k: no code could change its outcome: REASON' (Rn.k numbered as the rules list is, by req and text), a none entry with a task prints '  taskK: no testable behaviour: REASON' as today; --json carries the entry as recorded (the plan object is printed whole). mutate-show.bats, kernel-show.bats and the show case of tests/mutate-rule-none-done.bats green."
+      ]
+    },
+    {
+      "id": "P164.3",
+      "phase": "P164",
+      "title": "Docs and the Dev's instructions: when a rule may be --none and how the kernel verifies it",
+      "reqs": [
+        "R203"
+      ],
+      "files": [
+        "docs/workflows.md",
+        "docs/proof.md",
+        "docs/record.md",
+        "plugin/agents/dev.md"
+      ],
+      "after": [
+        "P164.1",
+        "P164.2",
+        "P163.4"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: tests/mutate-rule-none-docs.bats fails on the current text. docs/workflows.md, 'The mutation check': the example block gains 'vbw mutate P1.2 R3.1 --none \"the figures are a decision in the record\"'; 'a rule cannot be recorded this way' is replaced by: a rule may be recorded --none only when its check's recorded read list (the clone's run store, where every proof keeps what each unit read; the command runs the check once in a clean copy when the store has no current run) names no file and no listed folder that a files entry of any plan of its requirement covers, done or not; the kernel verifies that and refuses otherwise, naming each file with its plan and ending 'break the rule in that code instead', a run that read the project through git ('reads the project through git, so its files are unknown') and a run with no read list (the file system recorded none).",
+        "docs/proof.md, 'The mutation check': a rule whose check judges only the record (a measurement kept as a decision, for example) is recorded --none after the kernel verifies its read list against the files of the requirement's plans; the command may run the check once in a clean copy of the committed code, with read tracking on, and records that run in the store as a proof would.",
+        "docs/record.md: the plans row documents mutations[] (vbw mutate): a break {rule: {req, text} | task, what, files, checks, result red | survivor, at, head, optional strengthened and pending}; a task with nothing to break {task, none, at}; a rule with no code to break {rule: {req, text}, none, at, head}, head being the 40-hex commit of the committed code the judged run was current for; mutations never enter the contract fingerprint.",
+        "plugin/agents/dev.md, the Mutation step: the rule form 'vbw mutate P1.2 R1.1 --none \"<reason>\"' only for a rule whose check reads nothing the requirement'\\''s plans build (a check that judges the record, for example); the kernel verifies it from the check'\\''s read list and refuses otherwise, naming the files to break the rule in. mutate-prompts.bats, mutate-own-rules-docs.bats, mutation-docs.bats, mutate-pending-check-docs.bats green; tests/mutate-rule-none-docs.bats green."
       ]
     }
   ],
@@ -60636,6 +60877,19 @@
           "usd": 9.113954,
           "in": 7369,
           "out": 730
+        }
+      },
+      {
+        "id": "plan-20261020T123529Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T12:35:29Z",
+        "ended": "2026-10-20T13:04:56Z",
+        "cost": {
+          "usd": 11.718263,
+          "in": 9755,
+          "out": 138
         }
       }
     ],
