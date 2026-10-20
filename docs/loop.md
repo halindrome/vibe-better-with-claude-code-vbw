@@ -290,8 +290,8 @@ commits. Either:
 
 The loop's park and a hand revert clear a commit the same way in the proof's
 scope check (docs/proof.md): an exact revert, verified by git file by file. A
-scope violation therefore parks an item only for a change that is still in the
-code. A park's recorded revert keeps clearing its commit even when git merged
+scope violation therefore parks an item only for a change that is
+still in the code. A park's recorded revert keeps clearing its commit even when git merged
 it over a later change.
 
 ## The time budget

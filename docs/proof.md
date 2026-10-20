@@ -489,12 +489,14 @@ form in `.vbw/spec.md`.
    same files, and takes each file back from the commit's content and mode to
    what it had before. It is the mirror image of the earlier commit, as git's
    own fingerprints of file content show, whoever made it (a hand `git revert`
-   or a plain commit) and whatever its message says. An undo of an undo clears
-   nothing: the original is judged again, and a re-apply is judged as a fresh
-   commit. The undoing commit is not judged either when it names a plan of
-   this milestone, since the pair leaves every file as it was. A partial or
-   edited revert is still judged (one extra line, one of two files restored,
-   an extra file touched). The summary names each pair after the scope line:
+   or a plain commit) and whatever its message says.
+   The rule: an undo of an undo clears nothing (the original is judged again;
+   a re-apply is judged as a fresh commit). Also, the undoing commit is not judged either
+   when it names a plan of this milestone, since the pair leaves every file as
+   it was.
+   A partial or edited revert is still judged (one extra line, one of two
+   files restored, an extra file touched).
+   The summary names each pair after the scope line:
    `scope: abc123456789 (P163.2) undone by def123456789, not judged`.
 5. Writes the evidence and updates requirements and fixes in one atomic record
    update, then prints a one-screen summary. Exit 0 only when everything passed.
