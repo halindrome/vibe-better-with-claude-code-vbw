@@ -47989,7 +47989,7 @@
     {
       "id": "T78",
       "text": "Panel: raise a native notification with $.ui.notify (CC 2.1.295) when a new What's next recommendation arrives and when VBW waits for the user",
-      "status": "open",
+      "status": "dropped",
       "sort": "later",
       "size": "small"
     },
