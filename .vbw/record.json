@@ -52654,6 +52654,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T176",
+      "text": "tests/machine-bookkeeping.bats orders events by the wall clock in whole seconds and is exempted file-wide from the R152 clock guard (ec91c964): order events with a sequence instead and drop the exemption",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
