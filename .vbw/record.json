@@ -22510,7 +22510,15 @@
         "guarded: R4 (C4), R5 (C5), R8 (C8), R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R34 (C30), R38 (C33, C34), R40 (C37), R42 (C38), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R51 (C52, C53, C66), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R72 (C116, C118), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414), R199 (C424, C425, C430), R200 (C426, C427, C431), R201 (C428, C429)",
         "tests: project test command"
       ],
-      "predicted": "deep"
+      "predicted": "deep",
+      "escalations": [
+        {
+          "at": "2026-10-20T11:16:40Z",
+          "from": "deep",
+          "to": "deep",
+          "reason": "Dev blocked P161.4: R202.14 (the before numbers as a decision) has no code in this plan's one file (tools/measure-proof-speed.sh) to break: its only evidence is the decision D482 in .vbw/record.json, which only vbw writes, and C435 reads that decision, not the tool. vbw mutate refuses --none for a rule, so plan done cannot pass. Everything else is done and committed: tool (d9393b19), strengthened tests/measure-proof-speed.bats (d71f8e50, waits for one approval), decision D482 recorded; C434 and C435 green; every other rule and task 1-4 mutated and caught. Needs: the owner or Lead to accept R202.14 as covered by C435 (mutation --none for rules, or a mutation target that is the record)."
+        }
+      ]
     },
     {
       "id": "P162",
@@ -46337,12 +46345,121 @@
         "P161.1",
         "P161.2"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "docs/proof.md, under vbw prove: the two lines as printed (VBW's own work: X of Y min; ran again: N of M units; top reasons: ...), what own work means (planning the reuse, making the copies, read tracking, saving the run store, writing the record: measured by the clock, never estimated), where each command prints them (before the verdict in vbw prove, after the counts in vbw fix done), the reasons (the units' own and the whole-proof causes, at most three, most frequent first) and the zeros case.",
         "docs/record.md, evidence row: the own object (planning, copies, tracking, saving, record, wall: seconds), causes (the whole-proof causes), that vbw show evidence prints them and says not recorded on a record from before.",
         "tests/proof-speed-docs.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "docs/proof.md describes both report lines and what own work means; docs/record.md describes evidence.own, evidence.causes and the not-recorded case"
+          },
+          "what": "renamed causes field in record.md",
+          "files": [
+            "docs/record.md"
+          ],
+          "checks": {
+            "C433": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:35:34Z",
+          "head": "fac41f1be2a0ed4ed914aeea3f4ea2a6163548eb"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "docs/proof.md describes both report lines and what own work means; docs/record.md describes evidence.own, evidence.causes and the not-recorded case"
+          },
+          "what": "removed own work line from proof.md",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C433": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:36:12Z",
+          "head": "fac41f1be2a0ed4ed914aeea3f4ea2a6163548eb"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "docs/proof.md describes both report lines and what own work means; docs/record.md describes evidence.own, evidence.causes and the not-recorded case"
+          },
+          "what": "removed own work line from proof.md",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C433": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T10:36:22Z",
+          "head": "fac41f1be2a0ed4ed914aeea3f4ea2a6163548eb"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "docs/proof.md describes both report lines and what own work means; docs/record.md describes evidence.own, evidence.causes and the not-recorded case"
+          },
+          "what": "removed own work line from proof.md",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C433": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:37:29Z",
+          "head": "8226124ade5fe9a498b32c0086b31c827dbf8a0d",
+          "strengthened": [
+            "tests/proof-speed-docs.bats"
+          ],
+          "pending": [
+            "tests/proof-speed-docs.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "what": "renamed top reasons",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C433": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:38:13Z",
+          "head": "8226124ade5fe9a498b32c0086b31c827dbf8a0d",
+          "pending": [
+            "tests/proof-speed-docs.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "dropped not recorded",
+          "files": [
+            "docs/record.md"
+          ],
+          "checks": {
+            "C433": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:38:51Z",
+          "head": "8226124ade5fe9a498b32c0086b31c827dbf8a0d",
+          "pending": [
+            "tests/proof-speed-docs.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "none": "the task only runs the existing docs test",
+          "at": "2026-10-20T10:38:53Z"
+        }
       ]
     },
     {
@@ -46358,14 +46475,376 @@
       "after": [
         "P161.1"
       ],
-      "status": "planned",
+      "status": "blocked",
       "role": "dev",
       "tasks": [
         "tools/measure-proof-speed.sh (maintainers only, like tools/measure-fix-round.sh): the generator. Options --files N --folders N --units N (defaults 5000, 500, 200) and --generate DIR (build the stand-in at DIR in the caller's environment, print 'fixture: stand-in (F files, D folders, U units)' and stop). A two-level folder tree, small text source files; units are half approved checks (sh tests/c_N.sh, files tests/c_N.sh) and half test files tests/t_N.sh under the form 'sh {file}' with files tests/t_*.sh; each unit reads a handful of source files; every fourth unit writes 300 files into the git-ignored .buildcache/ (named in .gitignore; not a build-folder name, so the clean copy carries it) and the unit after it reads them back; one plan of R1 done, contract and commands approved, everything committed. No word, path or code of any real user project.",
         "The measurement: an isolated HOME and CLAUDE_CONFIG_DIR under VBW_MEASURE_DIR (default .vbw/runtime/scratch/measure-proof-speed, rebuilt each run); a jq wrapper first on PATH for the measured commands that runs the real jq and appends its children's CPU seconds (the shell's times builtin) and one count line; vbw prove timed by a HiRes clock; then one line appended to one source file some units read, an open fix F1 of R1 written into the record, vbw fix done F1 timed; then vbw next --json timed; a once-a-second sampler keeps the largest size of .vbw/runtime/proof.*/reads/written.json seen; the expected reuse count is read from runs.json before the fix round: the units whose read lists do not contain the changed file.",
         "Output, one 'name: value' line each, exactly these names: fixture, files, folders, units, 'prove: ' followed by each of the two report lines, prove wall seconds, prove own seconds, prove planning seconds, prove copies seconds, prove tracking seconds, prove saving seconds, prove record seconds (from evidence.own), 'fix done: ' followed by each of its two lines, fix done wall seconds, fix done own minutes (from its line), reused, reused expected, jq cpu seconds, jq processes, store bytes, written lists bytes, next seconds. tests/measure-proof-speed.bats green.",
         "Run the script at the default size on this Mac and record the before numbers with vbw decide: text starting 'Proof speed before (M42) on this Mac:' and carrying 'stand-in (F files, D folders, U units)', 'prove W s wall', 'own work O s (P%)', 'fix done after one file: reused N of M units', 'jq C CPU s in K processes', 'store B bytes', 'written lists B bytes', 'vbw next T s', then 'planning A s, copies B s, read tracking C s, saving D s, record E s', then '(a) confirmed|cleared', '(b) ...', '(c) ...', '(d) ...' with one clause each saying what the numbers showed; why: the script, its size and the date. tests/proof-speed-before.bats green."
-      ]
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "tools/measure-proof-speed.sh builds an approved stand-in of at least the asked size (5,000 files, 500 folders, 200 units by default) with units that write hundreds of files into a git-ignored cache folder the clean copy carries and later units that read them back; --generate DIR builds it only"
+          },
+          "what": "cache writers write 3 files instead of 300",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:50:14Z",
+          "head": "362fd3c05b3030374abb68a3a937667bd2d8998e"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "tools/measure-proof-speed.sh builds an approved stand-in of at least the asked size (5,000 files, 500 folders, 200 units by default) with units that write hundreds of files into a git-ignored cache folder the clean copy carries and later units that read them back; --generate DIR builds it only"
+          },
+          "what": "source loop makes 30 files fewer than asked",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:51:33Z",
+          "head": "362fd3c05b3030374abb68a3a937667bd2d8998e"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "tools/measure-proof-speed.sh builds an approved stand-in of at least the asked size (5,000 files, 500 folders, 200 units by default) with units that write hundreds of files into a git-ignored cache folder the clean copy carries and later units that read them back; --generate DIR builds it only"
+          },
+          "what": "files spread over half the folders",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:52:35Z",
+          "head": "362fd3c05b3030374abb68a3a937667bd2d8998e"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "tools/measure-proof-speed.sh builds an approved stand-in of at least the asked size (5,000 files, 500 folders, 200 units by default) with units that write hundreds of files into a git-ignored cache folder the clean copy carries and later units that read them back; --generate DIR builds it only"
+          },
+          "what": "no unit reads the cache back",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T10:53:40Z",
+          "head": "362fd3c05b3030374abb68a3a937667bd2d8998e"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "tools/measure-proof-speed.sh builds an approved stand-in of at least the asked size (5,000 files, 500 folders, 200 units by default) with units that write hundreds of files into a git-ignored cache folder the clean copy carries and later units that read them back; --generate DIR builds it only"
+          },
+          "what": "one unit fewer than asked",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:55:30Z",
+          "head": "754d9c1f2f7b3b371bb1c0d8a75fd84ca85b40eb"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "tools/measure-proof-speed.sh builds an approved stand-in of at least the asked size (5,000 files, 500 folders, 200 units by default) with units that write hundreds of files into a git-ignored cache folder the clean copy carries and later units that read them back; --generate DIR builds it only"
+          },
+          "what": "contract left unapproved",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:56:17Z",
+          "head": "754d9c1f2f7b3b371bb1c0d8a75fd84ca85b40eb"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the measurement runs vbw prove, one small source change and vbw fix done, then vbw next --json, and prints the two report lines of each command, wall-clock seconds, VBW's own work and its steps, jq CPU seconds and process count, the store and written-list sizes, the units reused and the units expected to be reused, and the time vbw next took"
+          },
+          "what": "fix done lines printed under another name",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:58:18Z",
+          "head": "d7a2785e34eadda4def1b9d419ad687aa2631996"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the measurement runs vbw prove, one small source change and vbw fix done, then vbw next --json, and prints the two report lines of each command, wall-clock seconds, VBW's own work and its steps, jq CPU seconds and process count, the store and written-list sizes, the units reused and the units expected to be reused, and the time vbw next took"
+          },
+          "what": "jq wrapper never logs",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:59:19Z",
+          "head": "d7a2785e34eadda4def1b9d419ad687aa2631996"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the measurement runs vbw prove, one small source change and vbw fix done, then vbw next --json, and prints the two report lines of each command, wall-clock seconds, VBW's own work and its steps, jq CPU seconds and process count, the store and written-list sizes, the units reused and the units expected to be reused, and the time vbw next took"
+          },
+          "what": "next timing reported as zero",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T11:00:21Z",
+          "head": "d7a2785e34eadda4def1b9d419ad687aa2631996"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the measurement runs vbw prove, one small source change and vbw fix done, then vbw next --json, and prints the two report lines of each command, wall-clock seconds, VBW's own work and its steps, jq CPU seconds and process count, the store and written-list sizes, the units reused and the units expected to be reused, and the time vbw next took"
+          },
+          "what": "expected reuse always zero",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T11:01:22Z",
+          "head": "d7a2785e34eadda4def1b9d419ad687aa2631996"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the measurement runs vbw prove, one small source change and vbw fix done, then vbw next --json, and prints the two report lines of each command, wall-clock seconds, VBW's own work and its steps, jq CPU seconds and process count, the store and written-list sizes, the units reused and the units expected to be reused, and the time vbw next took"
+          },
+          "what": "store size reported as zero",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:02:23Z",
+          "head": "d7a2785e34eadda4def1b9d419ad687aa2631996"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "nothing of a real user project is in the tool or in the stand-in it generates"
+          },
+          "what": "a real project's name in the tool",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:03:25Z",
+          "head": "d7a2785e34eadda4def1b9d419ad687aa2631996"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "tools/measure-proof-speed.sh builds an approved stand-in of at least the asked size (5,000 files, 500 folders, 200 units by default) with units that write hundreds of files into a git-ignored cache folder the clean copy carries and later units that read them back; --generate DIR builds it only"
+          },
+          "what": "the build cache is not git-ignored",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:06:02Z",
+          "head": "d71f8e50fde141601df706f32689f46cb210a1cc",
+          "pending": [
+            "tests/measure-proof-speed.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "tools/measure-proof-speed.sh builds an approved stand-in of at least the asked size (5,000 files, 500 folders, 200 units by default) with units that write hundreds of files into a git-ignored cache folder the clean copy carries and later units that read them back; --generate DIR builds it only"
+          },
+          "what": "no unit reads the cache back",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:07:04Z",
+          "head": "d71f8e50fde141601df706f32689f46cb210a1cc",
+          "pending": [
+            "tests/measure-proof-speed.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the measurement runs vbw prove, one small source change and vbw fix done, then vbw next --json, and prints the two report lines of each command, wall-clock seconds, VBW's own work and its steps, jq CPU seconds and process count, the store and written-list sizes, the units reused and the units expected to be reused, and the time vbw next took"
+          },
+          "what": "next timing reported as zero",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:08:06Z",
+          "head": "d71f8e50fde141601df706f32689f46cb210a1cc",
+          "pending": [
+            "tests/measure-proof-speed.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the measurement runs vbw prove, one small source change and vbw fix done, then vbw next --json, and prints the two report lines of each command, wall-clock seconds, VBW's own work and its steps, jq CPU seconds and process count, the store and written-list sizes, the units reused and the units expected to be reused, and the time vbw next took"
+          },
+          "what": "expected reuse counts the wrong units",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:09:08Z",
+          "head": "d71f8e50fde141601df706f32689f46cb210a1cc",
+          "pending": [
+            "tests/measure-proof-speed.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the measurement runs vbw prove, one small source change and vbw fix done, then vbw next --json, and prints the two report lines of each command, wall-clock seconds, VBW's own work and its steps, jq CPU seconds and process count, the store and written-list sizes, the units reused and the units expected to be reused, and the time vbw next took"
+          },
+          "what": "the sampler never keeps a size",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:10:10Z",
+          "head": "d71f8e50fde141601df706f32689f46cb210a1cc",
+          "pending": [
+            "tests/measure-proof-speed.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "nothing of a real user project is in the tool or in the stand-in it generates"
+          },
+          "what": "a real project name in a generated file",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:11:10Z",
+          "head": "d71f8e50fde141601df706f32689f46cb210a1cc",
+          "pending": [
+            "tests/measure-proof-speed.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "what": "--units is ignored",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:14:13Z",
+          "head": "d71f8e50fde141601df706f32689f46cb210a1cc",
+          "pending": [
+            "tests/measure-proof-speed.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "the jq wrapper comes last on the PATH",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:15:11Z",
+          "head": "d71f8e50fde141601df706f32689f46cb210a1cc",
+          "pending": [
+            "tests/measure-proof-speed.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "what": "the next seconds line is named differently",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C434": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:16:13Z",
+          "head": "d71f8e50fde141601df706f32689f46cb210a1cc",
+          "pending": [
+            "tests/measure-proof-speed.bats"
+          ]
+        },
+        {
+          "task": 4,
+          "none": "task 4 runs the script and records a decision in the record (vbw decide); it changes no code, and tests/proof-speed-before.bats (C435) reads that decision",
+          "at": "2026-10-20T11:16:20Z"
+        }
+      ],
+      "note": "R202.14 (the before numbers as a decision) has no code in this plan's one file (tools/measure-proof-speed.sh) to break: its only evidence is the decision D482 in .vbw/record.json, which only vbw writes, and C435 reads that decision, not the tool. vbw mutate refuses --none for a rule, so plan done cannot pass. Everything else is done and committed: tool (d9393b19), strengthened tests/measure-proof-speed.bats (d71f8e50, waits for one approval), decision D482 recorded; C434 and C435 green; every other rule and task 1-4 mutated and caught. Needs: the owner or Lead to accept R202.14 as covered by C435 (mutation --none for rules, or a mutation target that is the record)."
     },
     {
       "id": "P161.5",
@@ -46381,12 +46860,89 @@
       "after": [
         "P161.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/l3-suite.sh scenario_greenfield: after common_checks, read the session transcripts (transcripts, main and subagents) for the tool results of vbw prove and vbw fix done calls and set the facts report_own_work_line and report_ran_again_line (true when a tool result carries a line matching the printed form), never from screen text; write tools/l3-results/greenfield.json with result_write greenfield (fixture, cost, passed = common checks and both facts, facts, not_tested naming what the run did not exercise).",
         "Run 'bash tools/l3-suite.sh greenfield' once with the loaded plugin on this Mac and commit tools/l3-results/greenfield.json.",
         "tests/l3-greenfield-report.bats, l3-results.bats and l3-scenarios.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the greenfield scenario records whether each report line appeared in a real session's proof output, was run once, and its committed result shows both at L3"
+          },
+          "what": "own-work fact never set true",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C436": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T10:43:25Z",
+          "head": "faa02ac9b085f98ceb8b6b22747c3048b6ce1ace"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the greenfield scenario records whether each report line appeared in a real session's proof output, was run once, and its committed result shows both at L3"
+          },
+          "what": "own-work fact never set true",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C436": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:44:35Z",
+          "head": "c2af565d625302d8e1f3ac21a0a3078eab1bc7a5",
+          "strengthened": [
+            "tests/l3-greenfield-report.bats"
+          ],
+          "pending": [
+            "tests/l3-greenfield-report.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "what": "passed ignores failed checks",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C436": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:45:21Z",
+          "head": "c2af565d625302d8e1f3ac21a0a3078eab1bc7a5",
+          "pending": [
+            "tests/l3-greenfield-report.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "ran-again fact false in the committed result",
+          "files": [
+            "tools/l3-results/greenfield.json"
+          ],
+          "checks": {
+            "C436": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:46:05Z",
+          "head": "c2af565d625302d8e1f3ac21a0a3078eab1bc7a5",
+          "pending": [
+            "tests/l3-greenfield-report.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "none": "task 3 only runs the three bats files; it adds no code to break (R202.15 and task 1 breaks were run against them)",
+          "at": "2026-10-20T10:46:07Z"
+        }
       ]
     },
     {
@@ -46543,7 +47099,7 @@
       "after": [
         "P161.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Red first: the two process-count tests of tests/proof-plan-batch.bats fail on the current code (today vbw next on 50 units: 100 git diff-tree and 575 jq processes).",
@@ -46551,6 +47107,327 @@
         "Planning in one pass: one git diff-tree per distinct recorded tree (shared with proofcauses_files, which today runs one per store entry) and one git ls-tree -r of HEAD for every listed-folder fingerprint, then one jq that applies the one reuse rule to every unit (checks, commands, test files) and gives the reuse set, the todo list and the reasons in today's words and precedence; proofreuse_reason stays the one-unit front over the same jq rule (proofreuse-rule.bats); testfiles_plan and cmd_fix use the batch.",
         "Saving and stamping in one jq each: proofreuse_save, testfiles_save, prove_stamp and testfiles_finish take the fingerprint map and the results by file; the store and the record are read a fixed number of times per proof.",
         "proof-reuse.bats, proofreuse-rule.bats, fix-reuse.bats, proof-selective.bats, proof-causes.bats, proof-cause-tree.bats, proofcauses-lib.bats, fix-done-output.bats, prove-summary.bats, prove-testfiles.bats, prove-own-work.bats and proof-plan-batch.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "reuse planning runs one git diff-tree per distinct recorded tree: the same count for 5 units and for 50"
+          },
+          "what": "diffs run once per store entry instead of per distinct tree (unique removed)",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:36:31Z",
+          "head": "cf1689bd1112c3b6cf291d7e6e4dc4e8340c43d3"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "reuse planning parses the store and the record, and fingerprints the units, in a fixed number of processes whatever the number of units"
+          },
+          "what": "fingerprints computed one unit at a time (one jq, one sha per unit)",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:39:00Z",
+          "head": "cf1689bd1112c3b6cf291d7e6e4dc4e8340c43d3"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names"
+          },
+          "what": "no read list renamed",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:40:56Z",
+          "head": "cf1689bd1112c3b6cf291d7e6e4dc4e8340c43d3"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names"
+          },
+          "what": "deleted file named changed",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:43:53Z",
+          "head": "cf1689bd1112c3b6cf291d7e6e4dc4e8340c43d3"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names"
+          },
+          "what": "plain listed folders no longer say listing changed",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T11:46:04Z",
+          "head": "cf1689bd1112c3b6cf291d7e6e4dc4e8340c43d3"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names"
+          },
+          "what": "folder fingerprint settle ignores a changed listing",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:48:00Z",
+          "head": "cf1689bd1112c3b6cf291d7e6e4dc4e8340c43d3"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names"
+          },
+          "what": "git flag ignored",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:49:55Z",
+          "head": "cf1689bd1112c3b6cf291d7e6e4dc4e8340c43d3"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names"
+          },
+          "what": "plain listed folders no longer say listing changed",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:55:44Z",
+          "head": "ea97e103f71050c91b0c4a042c5bc8f9a16bc10b",
+          "pending": [
+            "tests/proof-plan-batch.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names"
+          },
+          "what": "never passed reason lost",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T11:58:07Z",
+          "head": "ea97e103f71050c91b0c4a042c5bc8f9a16bc10b",
+          "pending": [
+            "tests/proof-plan-batch.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names"
+          },
+          "what": "last result failed ignored",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T12:01:00Z",
+          "head": "ea97e103f71050c91b0c4a042c5bc8f9a16bc10b",
+          "pending": [
+            "tests/proof-plan-batch.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names"
+          },
+          "what": "unknown tree reuses",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T12:03:18Z",
+          "head": "ea97e103f71050c91b0c4a042c5bc8f9a16bc10b"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names"
+          },
+          "what": "unknown tree reuses",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T12:10:34Z",
+          "head": "22f913ff623f780b3a792b6bd39918570cdc55b6",
+          "strengthened": [
+            "tests/proof-plan-batch.bats"
+          ],
+          "pending": [
+            "tests/proof-plan-batch.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names"
+          },
+          "what": "last result failed ignored",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T12:13:53Z",
+          "head": "22f913ff623f780b3a792b6bd39918570cdc55b6",
+          "pending": [
+            "tests/proof-plan-batch.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names"
+          },
+          "what": "reused unit loses its reused flag",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T12:16:30Z",
+          "head": "22f913ff623f780b3a792b6bd39918570cdc55b6",
+          "pending": [
+            "tests/proof-plan-batch.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "check fingerprint ignores the timeout",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T12:19:17Z",
+          "head": "22f913ff623f780b3a792b6bd39918570cdc55b6",
+          "pending": [
+            "tests/proof-plan-batch.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "what": "the batch rule ignores the reason that stops all reuse",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T12:22:17Z",
+          "head": "22f913ff623f780b3a792b6bd39918570cdc55b6"
+        },
+        {
+          "task": 4,
+          "what": "saving records every run on the wrong tree",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T12:24:48Z",
+          "head": "22f913ff623f780b3a792b6bd39918570cdc55b6",
+          "pending": [
+            "tests/proof-plan-batch.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "what": "the batch rule ignores the reason that stops all reuse",
+          "files": [
+            "plugin/lib/proofreuse.sh"
+          ],
+          "checks": {
+            "C439": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T12:31:58Z",
+          "head": "7cc94765fa00387528931cc26b03d8d808d7e9ee",
+          "strengthened": [
+            "tests/proof-plan-batch.bats"
+          ],
+          "pending": [
+            "tests/proof-plan-batch.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "none": "task 1 only runs the red-first check; it changes no code",
+          "at": "2026-10-20T12:32:13Z"
+        },
+        {
+          "task": 5,
+          "none": "task 5 only runs the listed test files green; it changes no code",
+          "at": "2026-10-20T12:32:16Z"
+        }
       ]
     },
     {
@@ -46702,12 +47579,100 @@
       "after": [
         "P161.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Red first: tests/machine-tracking.bats fails on the current code (the reset runs before the slot is taken, the collection after it is given back).",
         "checks_unit_run: enter the gate, take the slot, then reset the copy's access times, run the command (its time limit still from its own start), collect the read list, then give the slot back and leave the gate; the tracking timers of P161.1 stay around the reset and the collection.",
         "command-timeout.bats, machine-wait-line.bats, machine-turns.bats, machine-slots.bats, gate-waited.bats, runner-reads.bats, prove-parallel.bats and machine-tracking.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "a unit holds its slot while its access times are reset and while its read list is collected"
+          },
+          "what": "slot taken after the reset instead of before",
+          "files": [
+            "plugin/lib/checks.sh"
+          ],
+          "checks": {
+            "C444": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:49:49Z",
+          "head": "362fd3c05b3030374abb68a3a937667bd2d8998e"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "with the only slot held elsewhere no reset and no collection happens before the holder lets go, and the waited line counts that wait"
+          },
+          "what": "slot given back before the collection",
+          "files": [
+            "plugin/lib/checks.sh"
+          ],
+          "checks": {
+            "C444": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:50:52Z",
+          "head": "362fd3c05b3030374abb68a3a937667bd2d8998e"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the command's time limit counts from the command's start, not from the tracking or the wait"
+          },
+          "what": "timeout reduced by the wait before the command",
+          "files": [
+            "plugin/lib/checks.sh"
+          ],
+          "checks": {
+            "C444": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T10:52:01Z",
+          "head": "362fd3c05b3030374abb68a3a937667bd2d8998e"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the command's time limit counts from the command's start, not from the tracking or the wait"
+          },
+          "what": "timeout reduced by the wait before the command",
+          "files": [
+            "plugin/lib/checks.sh"
+          ],
+          "checks": {
+            "C444": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T10:55:04Z",
+          "head": "754d9c1f2f7b3b371bb1c0d8a75fd84ca85b40eb"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the command's time limit counts from the command's start, not from the tracking or the wait"
+          },
+          "what": "timeout reduced by the wait before the command",
+          "files": [
+            "plugin/lib/checks.sh"
+          ],
+          "checks": {
+            "C444": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:57:52Z",
+          "head": "d7a2785e34eadda4def1b9d419ad687aa2631996",
+          "strengthened": [
+            "tests/machine-tracking.bats"
+          ],
+          "pending": [
+            "tests/machine-tracking.bats"
+          ]
+        }
       ]
     },
     {
@@ -52681,6 +53646,12 @@
       "id": "D481",
       "at": "2026-10-20T09:29:56Z",
       "text": "Contract approved: 191 requirements, 442 checks, 500 plans (487e48e1d68b)"
+    },
+    {
+      "id": "D482",
+      "text": "Proof speed before (M42) on this Mac: stand-in (5000 files, 500 folders, 200 units); prove 86.29 s wall, own work 142.06 s (165%) (VBW's own seconds summed over parallel units, so above wall; 2.4 min of a 1.4 min proof); fix done after one file: reused 99 of 100 units (99 expected from the read lists; a fix of R1 judges its 100 checks, not the test files); jq 52.42 CPU s in 11142 processes; store 78042 bytes; written lists 1266537 bytes; vbw next 31.35 s with the store full; own-work steps: planning 6.22 s, copies 7.21 s, read tracking 121.78 s, saving 6.67 s, record 0.17 s. (a) cleared: jq process count is the same (906 vs 907) for 24 and 96 folders, since no unit of the stand-in lists a folder, so per-folder fingerprints cost nothing here; (b) confirmed: written lists reach 1266537 bytes (about 11 times the 114789 bytes seen with the later one-list-per-run store), and the cache-writing units inflate them; (c) cleared: store and record parsing is about 4 of roughly 55 jq processes per unit and the store is only 78042 bytes, so the cost is not there; (d) confirmed: vbw next takes 31.35 s because it redoes the proof's reuse planning on every call. Biggest own cost: read tracking is 86% of own work (resetting access times over 5206 files and collecting per unit), which the two named fixes alone do not remove.",
+      "why": "Measured with tools/measure-proof-speed.sh at its default size on 2026-10-20, on the tree with the P162 speed changes (reads.sh list store, vbw next cache) taken out, so these are the figures before any fix; the same run on the tree with them in showed written lists 114789 bytes and vbw next 28.64 s.",
+      "at": "2026-10-20T10:47:56Z"
     }
   ],
   "commands": {
@@ -59653,6 +60624,19 @@
         "started": "2026-10-20T09:30:21Z",
         "ended": "2026-10-20T10:30:39Z",
         "cost": null
+      },
+      {
+        "id": "build-20261020T103216Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T10:32:16Z",
+        "ended": "2026-10-20T12:33:05Z",
+        "cost": {
+          "usd": 9.113954,
+          "in": 7369,
+          "out": 730
+        }
       }
     ],
     "milestones": {
