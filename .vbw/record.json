@@ -48127,7 +48127,7 @@
       "text": "Are plans split as finely as they safely can be? (brainstorm A2): the Lead splits plans and the kernel schedules waves; more parallel agents cost CPU and tokens, so decide together with the machine-load item (R1)",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T99",
