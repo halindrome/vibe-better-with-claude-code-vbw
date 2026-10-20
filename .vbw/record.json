@@ -48556,7 +48556,7 @@
       "text": "Loop time budget from the item's own road, not its size label (owner 2026-10-18 after T139 was stopped at 3h40m of a 2h48m budget: labelled small, really 11 plans in 3 phases, five network drops counted as time): once an item is planned, its budget is twice the kernel's road estimate (R191) for it; the stuck test counts progress (plans done, fixes closed) so time lost to dropped connections or waiting for the user is not grinding; before planning the size default stays. After T94",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T165",
