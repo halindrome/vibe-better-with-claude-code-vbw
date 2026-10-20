@@ -179,3 +179,14 @@ edit_store() { jq "$1" "$(store_file)" > "$TEST_ROOT/store.json" && cp "$TEST_RO
   [ "$(jq -r '.evidence.checks.C1.why' .vbw/record.json)" = "the code it ran on is unknown" ] || { echo "$output"; false; }
   [ "$(jq -r '.evidence.checks.C2.reused' .vbw/record.json)" = true ]
 }
+
+@test "R202: a proof cut short stops all reuse: every unit's reason is that one, whatever its run says" {
+  build "$PROJECT" 5
+  cd "$PROJECT"
+  # shellcheck disable=SC2016 # expanded by vbw_kernel
+  run vbw_kernel 'for l in checks proofreuse; do . "$VBW_LIB/$l.sh"; done; VBW_COMMAND_TIMEOUT=3600; mkdir -p "$VBW_RUNTIME"
+    : > "$(proofreuse_marker)"; proofreuse_plan "$(record_read)"
+    printf "%s\n%s\n" "$(printf "%s" "$WHY_CHECKS" | jq -c "map_values(.) | [.[]] | unique")" "${#TODO_CHECKS[@]}"'
+  [ "$status" -eq 0 ]
+  [ "$output" = $'["the last proof was cut short"]\n5' ] || { echo "$output"; false; }
+}
