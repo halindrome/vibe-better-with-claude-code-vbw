@@ -43964,7 +43964,7 @@
         "tests/panel/wiring.test.mjs"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "tasks": [
         "Written by the Lead on 2026-10-19 and red today (the approval freezes it: read it, change nothing in it): tests/panel/r199/tab-rows.test.mjs (node:test, the stand-in tests/panel/helpers/fake-mod.mjs and screen.mjs, as tests/panel/wiring.test.mjs mounts it). It renders the pane (placement dock, scroll.bodyRows 30) at 100, 64, 60, 50 and 40 body columns on each of the eight tabs (h.press('tab-<id>')), then checks on the lines of screen(pane, columns): every tab shows exactly one of its two names whole on one line as '[ Now ]', '[ Timeline ]' or '[ Time ]' and so on (no line holds a cut name such as '[ Timelin' or a lone ']'); no line is wider than the columns; the head's rows (the lines above the body: scroll.bodyRows minus the body Box's height prop) equal the lines screen() draws for the head Box, gap included. Expected layouts (the fewest rows, then the full names over the short ones, then the portrait): 120, 100 and 91 columns: the eight full names on one row beside the portrait (85 cells of buttons and gaps, 6 of portrait); 90 and 85: the full names on one row, no Image; 69, 64, 60 and 54: the full names on two rows beside the portrait; 50 and 45: the full names on two rows, no Image; 44: the short names (Now Plan Proof Time Log Team Sess Cost) on two rows beside the portrait; 40: the short names on two rows, no Image (beside it they would take three). The portrait, when drawn, is an Image of 6 columns whose alt 'VBW' is whole. The fixed-height case (placement inline, no scroll) on a busy record is at most 30 lines and ends with '+N more · open Mission Control', the head counted the same way. It fails today (the stand-in draws no chrome and the pane puts every tab on one row).",
         "tests/panel/r189/helpers/screen.mjs: a Button with no hotkey draws '[ ' + label + ' ]' (4 cells of chrome, as Claude Code 2.1.302 draws a tab button: the 2026-10-19 capture shows '[ Now ] [ Plan ]'); a Button with a hotkey keeps '[k] label', the same 4 cells of width. Update the file's header comment. Every check that lists screen.mjs is re-approved once before the proof (the pre-proof approval names them).",
@@ -44210,9 +44210,24 @@
           "task": 5,
           "none": "task 5 is a run of tests and the bench; no code",
           "at": "2026-10-19T23:06:43Z"
+        },
+        {
+          "rule": {
+            "req": "R199",
+            "text": "tests/panel/wiring.test.mjs asserts whole tab rows at 40, 50 and 60 columns in place of 'the tab row is one line at 40 columns'"
+          },
+          "what": "wiring test no longer says whole rows",
+          "files": [
+            "tests/panel/wiring.test.mjs"
+          ],
+          "checks": {
+            "C425": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:55:35Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
         }
-      ],
-      "note": "All work and commits are done and C424 is green. Mutations are recorded for R199.1-9 and R199.14 and tasks 1-5. R199.10 (wiring.test.mjs, C425) cannot be recorded: vbw mutate refuses while C425 is red, and C425 stays red on parts that belong to other work (r189/containment.test.mjs whole tab rows, R199.11; the committed L3 panel result, R199.12). I broke the portrait ranking by hand: wiring.test.mjs went red (1 fail), restored green (25 pass). Needs: a later plan finishes R199.11/12, then run 'vbw mutate P159.1 R199.10 ...' and 'vbw plan done P159.1'. Pending approval: tests/panel/r189/helpers/screen.mjs. Bench: render 0.510 ms (budget 0.5, judged at release), tick 0.067 ms, refresh 0.205 ms."
+      ]
     },
     {
       "id": "P159.2",
@@ -44466,7 +44481,7 @@
         "tests/panel-comms-short.bats"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "tasks": [
         "Written by the Lead on 2026-10-19 and red today (the approval freezes it: read it, change nothing in it): tests/panel-tab-rows.bats (R199, load helper, the style of tests/l3-panel-comms.bats): scenario_panel in tools/l3-suite.sh records tabs_whole_short and tabs_whole_narrow and lists both in its pass set (the 'for k in' list); a committed tools/l3-results/panel.json is L3, passed, with .facts.tabs_whole_short == true and .facts.tabs_whole_narrow == true; tests/panel/r189/containment.test.mjs and tests/panel/wiring.test.mjs no longer contain 'never wraps onto a second line' or 'the tab row is one line' and both name 100, 64, 60, 50 and 40 columns; docs/panel.md no longer says 'always one line' and states the whole-row rule (whole names, never wider than the pane, fewest rows, full names win ties) with 90, 64 and 40 columns. It fails today (facts absent, the result not passed, the docs sentence present).",
         "Written by the Lead on 2026-10-19 and red today (the approval freezes it: read it, change nothing in it): tests/panel-comms-short.bats (R200): scenario_panel records helper_line_short (the 'VBW ▸' line drawn exactly once at 200x24 while helpers work, the prompt box whole) in its pass set; a committed panel.json is passed with .facts.helper_line_short == true and .facts.no_spill_short == true; tests/panel/r189/containment.test.mjs names the live step note at 1, 2, 3, 4 and 8 rows; docs/panel.md's Comms section states the order of lines in little room (needs-you line, helper line, step line; one row carries the step's time after the helper line's own parts). It fails today.",
@@ -44474,7 +44489,132 @@
         "Do not run the scenario in the build (it needs a real Claude Code session and money): the owner runs 'bash tools/l3-suite.sh panel' before the push and commits tools/l3-results/panel.json; until then the two bats files fail on the result pin, as tests/l3-panel-comms.bats did before its run. Say so in the plan note."
       ],
       "role": "dev",
-      "note": "Task 3 is committed (tools/l3-suite.sh, lint clean). The plan cannot finish: C425 and C427 stay red until the owner runs 'bash tools/l3-suite.sh panel' and commits tools/l3-results/panel.json, and until the sibling plans update tests/panel/r189/containment.test.mjs (step note at 1,2,3,4,8 rows; whole tab rows at 100,64,60,50,40) and the Comms code; C426 is red on the Comms code. Mutation (R199.12, R200.10, task3) refuses to run on non-green checks. Rerun mutation and plan done after those land."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R199",
+            "text": "the L3 panel scenario records that each of the eight tab names appears whole as '[ Name ]' at the short and the narrow size, in its pass set, and a committed result passed with both facts true"
+          },
+          "what": "dropped tabs_whole_short from the pass set",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C425": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:55:46Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
+        },
+        {
+          "rule": {
+            "req": "R200",
+            "text": "the L3 panel scenario records the short-window helper line ('VBW ▸' once at 200x24 while helpers work, the prompt box whole) as its own fact in the pass set, and a committed result passed with it and no_spill_short true"
+          },
+          "what": "dropped helper_line_short from the pass set",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C427": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:56:25Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
+        },
+        {
+          "task": 1,
+          "what": "tabs_whole_short read from the narrow result",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C425": "green",
+            "C427": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T23:57:30Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
+        },
+        {
+          "task": 2,
+          "what": "helper_line_short fact not recorded",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C425": "green",
+            "C427": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T23:58:28Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
+        },
+        {
+          "task": 3,
+          "what": "tabs_whole accepts a screen without [ Proof ]",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C425": "green",
+            "C427": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T23:59:28Z",
+          "head": "22939791aa833ef2ea8c91ab7bdb0430eef9281a"
+        },
+        {
+          "task": 4,
+          "none": "an instruction not to run the scenario in the build: no code to break",
+          "at": "2026-10-19T23:59:30Z"
+        },
+        {
+          "task": 1,
+          "what": "dropped tabs_whole_short from the pass set",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C425": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T00:00:14Z",
+          "head": "22939791aa833ef2ea8c91ab7bdb0430eef9281a",
+          "strengthened": [
+            "tests/panel-comms-short.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "what": "tabs_whole no longer reads [ Proof ]",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C425": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T00:00:54Z",
+          "head": "22939791aa833ef2ea8c91ab7bdb0430eef9281a"
+        },
+        {
+          "task": 2,
+          "what": "dropped helper_line_short from the pass list",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C425": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T00:01:36Z",
+          "head": "22939791aa833ef2ea8c91ab7bdb0430eef9281a",
+          "strengthened": [
+            "tests/panel-comms-short.bats"
+          ]
+        }
+      ]
     },
     {
       "id": "P159.5",
@@ -44488,14 +44628,165 @@
         "docs/panel.md"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "tasks": [
         "docs/panel.md, Mission Control: replace 'The tab row is always one line. In a narrow pane (40 columns, beside the portrait) the tabs use short names' with the whole-row rule: a tab name is never split, a row is never wider than the pane, the layout with the fewest rows wins, and at an equal number of rows the full names win over the short ones (Now Plan Proof Time Log Team Sess Cost); the widths: at 90 or more columns the full names on one row (the portrait beside them from 91), at about 64 columns (beside a 200-column window) the full names on two rows beside the portrait, at 40 columns (the minimum) the short names on two rows; the portrait is left out when keeping it would cost a tab row or a full name, as well as when the pane is short.",
         "docs/panel.md, Comms: a paragraph on little room: the order of lines is the needs-you line, then the helper line ('VBW ▸ ...') while helpers work, then the step line; with one row the helper line carries the step's end time after its own parts ('VBW ▸ build · 1 working · 0m30s · until around 14:20'); with two rows the helper line and the step line; with three or more rows the header, the helper rows and the step line; a needs-you line with one row shows alone; the step line alone shows only when no helper works (a proof); Comms never draws more rows than Claude Code gives it, so the prompt box stays whole.",
         "docs/panel.md, Time left: one sentence that in a one-row Comms the step's time sits on the helper line. Keep the facts a reader needs, not exact sentences (D400)."
       ],
       "role": "docs",
-      "note": "Docs committed (d2f732d9). Mutation for R199.13/R200.11 impossible: checks C425/C427 fail on unbroken code and screen.mjs awaits approval; rerun mutation once the test tasks land and are approved."
+      "mutations": [
+        {
+          "rule": {
+            "req": "R199",
+            "text": "docs/panel.md no longer says the tab row is always one line and states the whole-row rule with the widths 90, 64 and 40"
+          },
+          "what": "docs say the tab row is always one line",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C425": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T23:55:11Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
+        },
+        {
+          "rule": {
+            "req": "R200",
+            "text": "docs/panel.md's Comms section states the order of lines in little room and the one-row form"
+          },
+          "what": "one-row form removed",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C427": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T23:55:51Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
+        },
+        {
+          "rule": {
+            "req": "R199",
+            "text": "docs/panel.md no longer says the tab row is always one line and states the whole-row rule with the widths 90, 64 and 40"
+          },
+          "what": "docs say the tab row is always one line",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C425": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:56:56Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
+        },
+        {
+          "rule": {
+            "req": "R200",
+            "text": "docs/panel.md's Comms section states the order of lines in little room and the one-row form"
+          },
+          "what": "one-row form removed",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C427": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T23:57:34Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
+        },
+        {
+          "rule": {
+            "req": "R200",
+            "text": "docs/panel.md's Comms section states the order of lines in little room and the one-row form"
+          },
+          "what": "one-row form removed",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C427": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:58:20Z",
+          "head": "22939791aa833ef2ea8c91ab7bdb0430eef9281a",
+          "strengthened": [
+            "tests/panel-comms-short.bats"
+          ],
+          "pending": [
+            "tests/panel-comms-short.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "what": "tab name may be split",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C425": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:59:05Z",
+          "head": "22939791aa833ef2ea8c91ab7bdb0430eef9281a"
+        },
+        {
+          "task": 2,
+          "what": "one-row form false",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C425": "green",
+            "C427": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T00:00:02Z",
+          "head": "22939791aa833ef2ea8c91ab7bdb0430eef9281a",
+          "pending": [
+            "tests/panel-comms-short.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "what": "time-left sentence false",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C425": "green",
+            "C427": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T00:01:00Z",
+          "head": "22939791aa833ef2ea8c91ab7bdb0430eef9281a"
+        },
+        {
+          "task": 3,
+          "what": "time-left sentence false",
+          "files": [
+            "docs/panel.md"
+          ],
+          "checks": {
+            "C425": "green",
+            "C427": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T00:02:11Z",
+          "head": "9217e1cd58cb4945f40ad6919ff7ac3ef2a80811",
+          "strengthened": [
+            "tests/panel-comms-short.bats"
+          ],
+          "pending": [
+            "tests/panel-comms-short.bats"
+          ]
+        }
+      ]
     },
     {
       "id": "P160.1",
@@ -44713,14 +45004,91 @@
         "docs/interview.md"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "README.md, the Configuration table's autonomy row: 'How much /vbw:vibe does on its own; you can also say it to /vbw:vibe in words (\"use guided autonomy\", \"ask me before each step\", \"do not ask, just go\") and it is recorded before the first step'.",
         "docs/interview.md, 'What never changes', the autonomy bullet: how much VBW does alone is 'vbw config set autonomy', or the setting stated to /vbw:vibe in words (guided, balanced, hands-off, or a phrase that clearly means one), recorded before the first step; it is a setting, never an idea for triage.",
         "Run bats tests/autonomy-words.bats (its README and docs cases) and tests/interview-wording.bats; both pass."
       ],
-      "note": "Docs done and committed (cbe051f2). R201.10 mutation not run: C428 is red on unbroken code (router and triage cases for R201.1-9 not yet delivered by other plans) and a file awaits approval (tests/panel/r189/helpers/screen.mjs). Re-run: vbw mutate P160.2 R201.10 after those land."
+      "mutations": [
+        {
+          "task": 3,
+          "none": "task 3 only runs the tests; no behaviour of its own",
+          "at": "2026-10-19T23:54:31Z"
+        },
+        {
+          "rule": {
+            "req": "R201",
+            "text": "README.md's autonomy row and docs/interview.md say the setting can be stated to /vbw:vibe in words"
+          },
+          "what": "README row says aloud, not in words",
+          "files": [
+            "README.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:55:14Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
+        },
+        {
+          "rule": {
+            "req": "R201",
+            "text": "README.md's autonomy row and docs/interview.md say the setting can be stated to /vbw:vibe in words"
+          },
+          "what": "interview bullet drops in words",
+          "files": [
+            "docs/interview.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:55:54Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
+        },
+        {
+          "task": 1,
+          "what": "README row drops /vbw:vibe",
+          "files": [
+            "README.md"
+          ],
+          "checks": {
+            "C428": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-19T23:56:32Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
+        },
+        {
+          "task": 2,
+          "what": "interview bullet drops /vbw:vibe",
+          "files": [
+            "docs/interview.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-19T23:57:12Z",
+          "head": "126bdcb5eba9dad85660289b98ccb0ddf281f958"
+        },
+        {
+          "task": 1,
+          "what": "README row drops the in-words sentence",
+          "files": [
+            "README.md"
+          ],
+          "checks": {
+            "C428": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T00:02:58Z",
+          "head": "9217e1cd58cb4945f40ad6919ff7ac3ef2a80811"
+        }
+      ]
     },
     {
       "id": "P160.3",
@@ -44734,14 +45102,13 @@
         "tests/l3-qafix-autonomy.bats"
       ],
       "after": [],
-      "status": "blocked",
+      "status": "planned",
       "role": "dev",
       "tasks": [
         "Written by the Lead on 2026-10-19 and red today (the approval freezes it: read it, change nothing in it): tests/l3-qafix-autonomy.bats (load helper, the style of tests/l3-results.bats): scenario_qafix in tools/l3-suite.sh reads 'config autonomy' and records the facts autonomy and autonomy_set_before_first_run, expecting guided and true; a committed tools/l3-results/qafix.json is L3, passed, with .facts.autonomy == \"guided\" and .facts.autonomy_set_before_first_run == true and its first_qa_verdict still 'fail'. It fails today (facts absent, the result not passed).",
         "tools/l3-suite.sh scenario_qafix checks(): autonomy=$(cd \"$dir\" && \"$VBW\" config autonomy); autonomy_set_before_first_run from the main session transcript (transcripts | grep -v /subagents/, the jq of scenario_balanced): the timestamp of the first assistant tool_use whose input.command contains 'config set autonomy' is earlier than the record's first 'Contract approved' decision .at and than the timestamp of the first tool_use whose command contains 'run start' or whose name is Workflow (the first run lease); false when no such write exists. Both expect()ed, in the passed chain, and in result_write's facts; the fixture text names guided autonomy stated in words.",
         "shellcheck -S warning -x clean (bash tools/test.sh --lint); bats tests/l3-qafix-autonomy.bats, tests/l3-results.bats and tests/l3-scenarios.bats. Do not run the scenario in the build: the owner runs 'bash tools/l3-suite.sh qafix' before the push and commits the result; until then the result pin fails, as tests/l3-panel-comms.bats did before its run. Say so in the plan note."
-      ],
-      "note": "Built and committed (7b00913d): scenario_qafix reads 'config autonomy' and records autonomy and autonomy_set_before_first_run, expected in the passed chain. C429 stays red by design: its third test pins the committed tools/l3-results/qafix.json, which only the owner's run ('bash tools/l3-suite.sh qafix') writes. Mutation (R201.11, R201.12) and plan done need C429 green; after the owner runs the scenario and commits the result, re-run mutation and 'vbw plan done P160.3'. Tests 1-2 of C429, l3-results.bats and l3-scenarios.bats pass; lint clean."
+      ]
     }
   ],
   "fixes": [
@@ -57291,6 +57658,19 @@
           "usd": 0.642464,
           "in": 2073,
           "out": 310
+        }
+      },
+      {
+        "id": "build-20261019T235334Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M41",
+        "started": "2026-10-19T23:53:34Z",
+        "ended": "2026-10-20T00:03:40Z",
+        "cost": {
+          "usd": 0.919809,
+          "in": 2237,
+          "out": 119
         }
       }
     ],
