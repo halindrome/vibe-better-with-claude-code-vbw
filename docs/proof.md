@@ -682,6 +682,19 @@ A check removed from the contract is left out of the new proof.
 file only makes the checks run again. The store is protected
 (docs/guards.md).
 
+**Files a unit writes.** A file a unit writes carries that unit's read list. A
+later unit that reads the file inherits the list, so it runs again when
+anything the writer read changed. A file two units wrote carries both lists,
+and inherited lists pass on through a chain of units. The lists live in the
+copy's written-file store, `written.json`: each run's read list is kept once,
+by run id, and each written name once, so a unit that writes 1,000 files adds
+1,000 names and one list.
+
+**What `vbw next` caches.** To size the proof, `vbw next` plans the units the
+next proof would run. It keeps that list in `.vbw/runtime/proof-units.json` and
+plans again only when the committed tree, the record or the run store changes
+([`docs/next.md`](next.md#the-step)).
+
 **Speed.** Checks still run several at a time (`check_jobs`), each in its own
 clean copy of the committed code.
 
