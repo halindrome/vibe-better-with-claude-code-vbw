@@ -54,6 +54,36 @@ mutate_clean() {
   vbw_stamp_newer "$dest" "$@"
 }
 
+# mutate_rule_none PLAN REQ K RULEDOC CHECK RECORD REASON: vbw mutate PLAN Rn.k --none REASON
+# (R203). The rule's check is judged by its last recorded run in the clone's run
+# store, used only while current (proofreuse_current, a failed run too). With no
+# run, or a stale one, the check runs once in a clean copy of the committed code
+# with read tracking on and that run is stored as vbw prove would store it. The
+# command never judges a list it did not record and never derives one from file names.
+mutate_rule_none() {
+  local plan="$1" req="$2" rk="$3" ruledoc="$4" check="$5" record="$6" reason="$7"
+  local head tree fp why noreads res verdict
+  head=$(git rev-parse HEAD 2> /dev/null) || vbw_die "the project has no commit yet"
+  checks_begin "$record"
+  PROOFREUSE_STORE=$(proofreuse_store_read)
+  tree=$(vbw_head_tree) || vbw_die "cannot fingerprint the committed code"
+  fp=$(proofreuse_check_fp "$record" "$check")
+  if why=$(proofreuse_current "check:$check" "$fp" "$tree"); then
+    :
+  else
+    noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
+    proofcopy_create_slots 1
+    rm -f "$CHECK_OUT"/*.res "$CHECK_OUT"/*.res.tmp
+    res=$(checks_run_all "$record" "$check")
+    proofcopy_remove
+    res=$(printf '%s' "$res" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
+    proofreuse_save "$record" "$res" '{}' "$tree" "$(vbw_now)"
+    printf 'ran %s once to record its read list\n' "$check"
+    PROOFREUSE_STORE=$(proofreuse_store_read)
+  fi
+  checks_end
+}
+
 cmd_mutate() {
   [ $# -ge 3 ] || mutate_usage "vbw mutate needs a plan, a rule or task, and what to break"
   local plan="$1" target="$2" kind req="" rk="" tk="" none="" nonef=0 what="" f ids i owed owns=1 ways
@@ -74,8 +104,12 @@ cmd_mutate() {
     esac
   done
   if [ "$nonef" = 1 ]; then
-    [ "$kind" = task ] || vbw_die "$target is a rule: a rule always has behaviour to break; break it with vbw mutate $plan $target WHAT FILE..."
-    [ -n "$none" ] || vbw_die "--none needs a reason: say why task $tk has no behaviour a test could notice"
+    if [ "$kind" = task ]; then
+      [ -n "$none" ] || vbw_die "--none needs a reason: say why task $tk has no behaviour a test could notice"
+    else
+      [ ${#want[@]} -eq 0 ] || vbw_die "--check is for a task; a rule runs its own check"
+      [ -n "$none" ] || vbw_die "--none needs a reason: say why no code the plans build could change what the check of $target judges"
+    fi
     [ $# -eq 0 ] || mutate_usage "--none takes a reason and nothing else"
   else
     [ "$kind" = task ] || [ ${#want[@]} -eq 0 ] || vbw_die "--check is for a task; a rule runs its own check"
@@ -103,6 +137,10 @@ cmd_mutate() {
     ruledoc=$(printf '%s' "$record" | jq -c --arg q "$req" --argjson k "$rk" '.requirements[] | select(.id == $q) | (.rules // []) | if $k >= 1 then (.[$k - 1] // empty | {req: $q, text, check}) else empty end')
     [ -n "$ruledoc" ] || vbw_die "$req has no rule $rk: vbw show plan $plan lists the rules, numbered"
     check=$(printf '%s' "$ruledoc" | jq -r '.check')
+  fi
+  if [ "$nonef" = 1 ] && [ "$kind" = rule ]; then
+    mutate_rule_none "$plan" "$req" "$rk" "$ruledoc" "$check" "$record" "$none"
+    return
   fi
   if [ "$nonef" = 1 ]; then
     record_update '(.plans[] | select(.id == $p)).mutations += [{task: $k, none: $why, at: $at}]' \
