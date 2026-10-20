@@ -170,3 +170,12 @@ edit_store() { jq "$1" "$(store_file)" > "$TEST_ROOT/store.json" && cp "$TEST_RO
   [ "$got" = "src/d41 listing changed" ] || { echo "got: $got"; echo "$output"; false; }
   [ "$(jq -r '.evidence.checks.C42.reused' .vbw/record.json)" = true ]
 }
+
+@test "R202: a unit whose recorded code is unknown to git runs again and says so, and the others are still judged" {
+  build "$PROJECT" 5
+  cd "$PROJECT"
+  edit_store '.runs["check:C1"].tree = "0000000000000000000000000000000000000001"'
+  vbw_run prove
+  [ "$(jq -r '.evidence.checks.C1.why' .vbw/record.json)" = "the code it ran on is unknown" ] || { echo "$output"; false; }
+  [ "$(jq -r '.evidence.checks.C2.reused' .vbw/record.json)" = true ]
+}
