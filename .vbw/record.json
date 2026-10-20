@@ -5693,7 +5693,7 @@
   "milestone": {
     "id": "M41",
     "title": "Release fixes from the 2.0.40 user runs",
-    "status": "active"
+    "status": "shipped"
   },
   "shipped": [
     {
@@ -5890,6 +5890,11 @@
       "id": "M40",
       "title": "Session start runs the kernel once",
       "at": "2026-10-19T20:53:56Z"
+    },
+    {
+      "id": "M41",
+      "title": "Release fixes from the 2.0.40 user runs",
+      "at": "2026-10-20T06:58:30Z"
     }
   ],
   "requirements": [
@@ -51184,6 +51189,11 @@
       "id": "D474",
       "at": "2026-10-20T02:27:33Z",
       "text": "Contract approved: 190 requirements, 426 checks, 486 plans (62474ac44d09)"
+    },
+    {
+      "id": "D475",
+      "at": "2026-10-20T06:58:30Z",
+      "text": "Shipped M41 Release fixes from the 2.0.40 user runs: 3 requirements proven or accepted"
     }
   ],
   "commands": {
@@ -59780,6 +59790,12 @@
             "out": 0,
             "at": "2026-10-19T21:50:07Z"
           }
+        },
+        "total": {
+          "usd": 1569.445405,
+          "in": 366062,
+          "out": 217,
+          "sessions": 23
         }
       }
     }
