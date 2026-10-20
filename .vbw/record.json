@@ -45102,12 +45102,84 @@
         "tests/l3-qafix-autonomy.bats"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Written by the Lead on 2026-10-19 and red today (the approval freezes it: read it, change nothing in it): tests/l3-qafix-autonomy.bats (load helper, the style of tests/l3-results.bats): scenario_qafix in tools/l3-suite.sh reads 'config autonomy' and records the facts autonomy and autonomy_set_before_first_run, expecting guided and true; a committed tools/l3-results/qafix.json is L3, passed, with .facts.autonomy == \"guided\" and .facts.autonomy_set_before_first_run == true and its first_qa_verdict still 'fail'. It fails today (facts absent, the result not passed).",
         "tools/l3-suite.sh scenario_qafix checks(): autonomy=$(cd \"$dir\" && \"$VBW\" config autonomy); autonomy_set_before_first_run from the main session transcript (transcripts | grep -v /subagents/, the jq of scenario_balanced): the timestamp of the first assistant tool_use whose input.command contains 'config set autonomy' is earlier than the record's first 'Contract approved' decision .at and than the timestamp of the first tool_use whose command contains 'run start' or whose name is Workflow (the first run lease); false when no such write exists. Both expect()ed, in the passed chain, and in result_write's facts; the fixture text names guided autonomy stated in words.",
         "shellcheck -S warning -x clean (bash tools/test.sh --lint); bats tests/l3-qafix-autonomy.bats, tests/l3-results.bats and tests/l3-scenarios.bats. Do not run the scenario in the build: the owner runs 'bash tools/l3-suite.sh qafix' before the push and commits the result; until then the result pin fails, as tests/l3-panel-comms.bats did before its run. Say so in the plan note."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R201",
+            "text": "the L3 qafix scenario records the fact 'autonomy' from 'vbw config autonomy' and expects 'guided'"
+          },
+          "what": "renamed the recorded fact autonomy to autonomyy",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C429": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T00:06:29Z",
+          "head": "8374b78c01eacc0ee4bd8aaf824bf3ca1b5e078a"
+        },
+        {
+          "rule": {
+            "req": "R201",
+            "text": "the qafix scenario records that the setting was written before the first run (the first 'Contract approved' decision and the first run lease are later than the settings write), and a committed result passed with it"
+          },
+          "what": "searched for a wrong settings-write command",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C429": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T00:07:06Z",
+          "head": "8374b78c01eacc0ee4bd8aaf824bf3ca1b5e078a"
+        },
+        {
+          "task": 2,
+          "what": "first approval lookup broken",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C428": "green",
+            "C429": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T00:08:03Z",
+          "head": "8374b78c01eacc0ee4bd8aaf824bf3ca1b5e078a"
+        },
+        {
+          "task": 1,
+          "none": "frozen approved check file; nothing of the plan's to break",
+          "at": "2026-10-20T00:08:06Z"
+        },
+        {
+          "task": 3,
+          "none": "lint and test run, no code",
+          "at": "2026-10-20T00:08:08Z"
+        },
+        {
+          "task": 2,
+          "what": "dropped the expect() of autonomy_set_before_first_run",
+          "files": [
+            "tools/l3-suite.sh"
+          ],
+          "checks": {
+            "C428": "green",
+            "C429": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T00:09:10Z",
+          "head": "8374b78c01eacc0ee4bd8aaf824bf3ca1b5e078a"
+        }
       ]
     }
   ],
@@ -57671,6 +57743,19 @@
           "usd": 0.919809,
           "in": 2237,
           "out": 119
+        }
+      },
+      {
+        "id": "build-20261020T000427Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M41",
+        "started": "2026-10-20T00:04:27Z",
+        "ended": "2026-10-20T00:10:08Z",
+        "cost": {
+          "usd": 0.276369,
+          "in": 1516,
+          "out": 174
         }
       }
     ],
