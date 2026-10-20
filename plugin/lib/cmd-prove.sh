@@ -207,26 +207,50 @@ prove_stamp() { proofreuse_annotate "$@"; }
 # judged by its own proofs; today's record can no longer judge them (T162).
 # Prints a JSON array of violations.
 prove_scope() {
-  local entry sha plan f r undone=""
+  local tok t want_path=0 n=-1 i r path rest
+  local -a C_HASH=() C_PLAN=() C_FILES=()
+  local undone="" out=""
   # shellcheck source=cmd-commit.sh
   . "$VBW_LIB/cmd-commit.sh"
   # The commits a park undid: their changes are gone and the park recorded why, so a later plan that
-  # took their plan id is not blamed for them (T163). A revert made by hand is still judged.
+  # took their plan id is not blamed for them (T163).
   while IFS= read -r r; do
     undone="$undone $(git log -1 --format=%B "$r" 2> /dev/null | sed -n 's/^This reverts commit \([0-9a-f]\{40\}\)\..*/\1/p')"
   done < <(printf '%s' "$1" | jq -r '(.loop.items // [])[].reverts[]?')
-  {
-    while IFS= read -r -d '' entry; do
-      sha=${entry%%$'\x1f'*}
-      plan=${entry#*$'\x1f'}
-      plan=${plan%%$'\n'*}
-      [ -n "$plan" ] || continue
-      case "$undone " in *" $sha "*) continue ;; esac
-      while IFS= read -r -d '' f; do
-        printf '%s\x1f%s\x1f%s\n' "${sha:0:12}" "$plan" "$f"
-      done < <(git diff-tree -z --no-commit-id --name-only -r --root "$sha")
-    done < <(git log -z --format='%H%x1f%(trailers:key=VBW-Plan,valueonly)' 2> /dev/null)
-  } | jq -R -s -c --slurpfile rec <(printf '%s' "$1") "$VBW_JQ_DEFS$COMMIT_SURVIVOR_DEFS"'
+  # One walk of the history, however long it is (R204): per commit its hash, its first VBW-Plan value and,
+  # per changed path, git's raw entry. The stream is NUL separated: a header (hash, unit separator,
+  # trailer values), then for a commit that changes files a newline and entries
+  # ":old-mode new-mode old-blob new-blob status" NUL path NUL; a merge lists nothing.
+  while IFS= read -r -d '' tok; do
+    if [ "$want_path" = 1 ]; then
+      C_FILES[n]="${C_FILES[n]}$tok"$'\x1f'
+      want_path=0
+      continue
+    fi
+    t=$tok
+    while [ "${t:0:1}" = $'\n' ]; do t=${t:1}; done
+    case "$t" in
+      '') ;;
+      :*) want_path=1 ;;
+      *)
+        n=$((n + 1))
+        C_HASH[n]=${t%%$'\x1f'*}
+        rest=${t#*$'\x1f'}
+        C_PLAN[n]=${rest%%$'\n'*}
+        C_FILES[n]=""
+        ;;
+    esac
+  done < <(git log -z --topo-order --no-renames --raw --no-abbrev --format='%H%x1f%(trailers:key=VBW-Plan,valueonly)' 2> /dev/null)
+  for ((i = 0; i <= n; i++)); do
+    [ -n "${C_PLAN[i]}" ] || continue
+    case "$undone " in *" ${C_HASH[i]} "*) continue ;; esac
+    path=${C_FILES[i]}
+    while [ -n "$path" ]; do
+      out="$out${C_HASH[i]:0:12}"$'\x1f'"${C_PLAN[i]}"$'\x1f'"${path%%$'\x1f'*}"$'\n'
+      path=${path#*$'\x1f'}
+    done
+  done
+  printf '%s' "$out" | jq -R -s -c --slurpfile rec <(printf '%s' "$1") "$VBW_JQ_DEFS$COMMIT_SURVIVOR_DEFS"'
     $rec[0] as $r
     | ([$r.phases[] | select(.milestone == $r.milestone.id) | .id]) as $now
     | ($r.plans | map(select(.phase as $p | $now | index($p) != null)) | map({key: .id, value: .files}) | from_entries) as $files
