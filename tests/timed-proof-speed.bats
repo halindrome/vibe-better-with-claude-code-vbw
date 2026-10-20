@@ -104,3 +104,34 @@ startup_ms() {
   # The second run reads nothing: its list is empty, whatever the first one read.
   reads_collect "$copy" "$st" | jq -e '.files == []' > /dev/null
 }
+
+# Remaining cost (M42 after decision): each reset and each collection parsed the written-file
+# store (it grows to 100 KB and more) though a run seldom writes or reads a written file. The
+# written-name list is kept in the state and made again only after a collection stored new names
+# (a list put there by hand stays while no run wrote anything); a collection that inherited
+# nothing does not open the store.
+@test "R202: the written-name list is kept until a run writes, and a run that inherits nothing does not read the store" {
+  local copy="$TEST_ROOT/copy" st="$TEST_ROOT/state" want
+  mkdir -p "$copy"
+  git -C "$copy" init -q
+  printf 'a\n' > "$copy/a.txt"
+  git -C "$copy" add -A
+  git -C "$copy" commit -q -m "feat: file"
+  # shellcheck disable=SC1091
+  source "$PLUGIN_ROOT/lib/reads.sh"
+  reads_reset "$copy" "$st"
+  # The store made unreadable: a collection that reads nothing written must not open it.
+  printf 'not json\n' > "$st/written.json"
+  cat "$copy/a.txt" > /dev/null
+  reads_collect "$copy" "$st" | jq -e '.files == ["a.txt"]' > /dev/null || { echo "the collection opened the store"; false; }
+  printf '{"lists":{},"files":{}}\n' > "$st/written.json"
+  printf './marker\0' > "$st/wlist"
+  reads_reset "$copy" "$st"
+  [ "$(tr '\0' '\n' < "$st/wlist")" = "./marker" ] || { echo "the reset made the written-name list again"; false; }
+  # A run that writes a file: the next reset makes the list again, with the name.
+  printf 'w\n' > "$copy/w.txt"
+  reads_collect "$copy" "$st" > /dev/null
+  reads_reset "$copy" "$st"
+  want=$(tr '\0' '\n' < "$st/wlist")
+  [ "$want" = "./w.txt" ] || { echo "the written-name list after a write: $want"; false; }
+}

@@ -94,7 +94,8 @@ reads_reset() {
   fi
   gd=$(cat "$st/gitdir")
   [ -f "$st/written.json" ] || printf '{"lists":{},"files":{}}\n' > "$st/written.json"
-  jq -j '.files | keys[] | "./" + . + "\u0000"' "$st/written.json" > "$st/wlist" || return 1
+  # The written names, made again only after a collection stored new ones (it removes the list).
+  [ -f "$st/wlist" ] || jq -j '.files | keys[] | "./" + . + "\u0000"' "$st/written.json" > "$st/wlist" || return 1
   : > "$st/ref" && touch -t "$READS_OLD_DAY" "$st/ref" || return 1
   : > "$st/mark" && touch -t "$(reads_stamp "$slack")" "$st/mark" || return 1
   # Never earlier than the first mark: nothing made with the copy is a write.
@@ -135,13 +136,13 @@ reads_kids() {
 # (set back by the reset) for their lists, and records the files it wrote with
 # a single copy of this list (written.json: lists by run id, files by path).
 reads_collect() {
-  local copy=$1 st=$2 gd git=false line n=0 id
+  local copy=$1 st=$2 gd git=false line n=0 id store
   local -a names
   gd=$(cat "$st/gitdir")
   [ -z "$(find "$gd/HEAD" "$gd/index" -maxdepth 0 -anewer "$st/ref" -print 2> /dev/null)" ] || git=true
   reads_moved "$st/files" "$copy" "$st/ref" > "$st/opened"
   reads_moved "$st/dirs" "$copy" "$st/ref" > "$st/listed"
-  reads_moved "$st/wlist" "$copy" "$st/ref" > "$st/inherited"
+  if [ -s "$st/wlist" ]; then reads_moved "$st/wlist" "$copy" "$st/ref" > "$st/inherited"; else : > "$st/inherited"; fi
   # The parent-to-names map of the tracked paths never changes (the copy is a detached
   # checkout): built once at the first reset, here only when a state lacks it.
   [ -s "$st/kids.json" ] || reads_kids "$st/files" > "$st/kids.json" || return 1
@@ -162,7 +163,10 @@ reads_collect() {
     # One call; each line is "<hash>  <file>" with either sha256sum or shasum.
     (cd "$st/fp" && { if command -v sha256sum > /dev/null 2>&1; then sha256sum "${names[@]}"; else shasum -a 256 "${names[@]}"; fi; }) > "$st/hashes" || return 1
   fi
-  jq -nc --rawfile o "$st/opened" --rawfile i "$st/inherited" --rawfile l "$st/listings" --rawfile h "$st/hashes" --slurpfile w "$st/written.json" --argjson g "$git" '
+  # The written-file store is opened only when the run read a written file.
+  store="$st/written.json"
+  [ -s "$st/inherited" ] || store=/dev/null
+  jq -nc --rawfile o "$st/opened" --rawfile i "$st/inherited" --rawfile l "$st/listings" --rawfile h "$st/hashes" --slurpfile w "$store" --argjson g "$git" '
     def strip: sub("^\\./"; "");
     def paths: split("\u0000") | map(select(length > 0) | strip);
     ($h | split("\n") | map(select(length > 0) | split("  ")[0])) as $fps
@@ -182,6 +186,7 @@ reads_collect() {
       .lists[$id] = $r[0]
       | reduce ($n | split("\u0000") | map(select(length > 0) | strip))[] as $p (.; .files[$p] += [$id])' \
       "$st/written.json" > "$st/written.tmp" && mv "$st/written.tmp" "$st/written.json" || return 1
+    rm -f "$st/wlist"
   fi
   # What moved: the next reset sets back these and nothing else (see reads_reset).
   cat "$st/opened" "$st/listed" "$st/inherited" > "$st/moved" || return 1
