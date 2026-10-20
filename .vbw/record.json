@@ -48272,7 +48272,7 @@
       "text": "vbw run confirm: the refusal for an unknown plan or fix id (cmd-run.sh:45) carries no Next step (R162 covers run start only; QA round 3 note 2026-10-11)",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T120",
