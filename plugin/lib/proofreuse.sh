@@ -3,6 +3,11 @@
 # the clone's store of recorded runs. A unit (a check, a project command or a
 # test file) is run again only when something it depends on changed; its read
 # list, written down by the run itself, says what it depends on.
+#
+# Planning and saving work on all the units of a proof at once (R202): the
+# fingerprints of the units' definitions come from one pass, the rule is one jq
+# over every unit, and git is asked once per distinct recorded tree. The number
+# of processes does not grow with the number of units.
 
 # A run result's read list ({files, dirs: [{path, fp}], git}) as the store keeps it (null when
 # none was written down). A listed folder keeps its fingerprint (the names directly inside it),
@@ -13,21 +18,106 @@ VBW_COMMAND_TIMEOUT=3600
 PROVE_FLAT='map_values(if $off or (.reads | type) != "object" then . + {reads: null}
   else . + {dirs: .reads.dirs, git: .reads.git, reads: .reads.files} end)'
 
-# proofreuse_check_fp RECORD ID: fingerprint of a check's approved definition.
-proofreuse_check_fp() {
-  printf '%s' "$1" | jq -cS --arg id "$2" '.checks[] | select(.id == $id)
-    | {id, req, run, exit, output, timeout, alone, files}' | vbw_sha256
+# The fingerprints of the units' approved definitions. PROOFREUSE_FPS is the map
+# unit key ("check:ID", "command:NAME", "file:PATH") -> fingerprint (a JSON
+# object kept in the process; PROOFREUSE_FPS_RECORD is the record text it was
+# computed from). A fingerprint is the SHA-256 of the unit's canonical bytes:
+#   check:   its approved definition as key-sorted compact JSON, then a newline;
+#   command: the time limit and the argv, each ended by a NUL;
+#   file:    the same, with the form's argv for that test file.
+PROOFREUSE_FPS=${PROOFREUSE_FPS:-'{}'}
+PROOFREUSE_FPS_RECORD=${PROOFREUSE_FPS_RECORD-}
+# The reuse planning's per-process caches: the diffs between every recorded tree and the
+# committed code (valid for one store and one head), and the store itself.
+PROOFREUSE_DIFFS=${PROOFREUSE_DIFFS-}
+PROOFREUSE_DIFFS_HEAD=${PROOFREUSE_DIFFS_HEAD-}
+PROOFREUSE_DIFFS_STORE=${PROOFREUSE_DIFFS_STORE-}
+
+# Input: $keys (a JSON array of unit keys), $rec (the record), $have (the map so far). Output, per key without a fingerprint yet:
+# key, kind (l: one line, z: NUL-ended fields), field count, fields, all NUL-ended.
+# shellcheck disable=SC2016 # a jq program
+PROOFREUSE_EMIT_JQ='def srt: if type == "object" then . as $o | reduce ($o | keys[]) as $k ({}; .[$k] = ($o[$k] | srt))
+    elif type == "array" then map(srt) else . end;
+  $keys[0] as $keys | $rec[0] as $r | ((($r.settings // {}).command_timeout // $d) | tostring) as $lim
+  | $keys[] | select($have[0][.] == null) | . as $k
+  | if startswith("check:") then
+      ($k | ltrimstr("check:")) as $id | first($r.checks[]? | select(.id == $id)) as $c
+      | $k, "\u0000", "l", "\u0000", "1", "\u0000", ($c | {id, req, run, exit, output, timeout, alone, files} | srt | tojson), "\u0000"
+    elif startswith("command:") then
+      ($k | ltrimstr("command:")) as $n | [$lim] + [$r.commands[$n][]?]
+      | $k, "\u0000", "z", "\u0000", (length | tostring), "\u0000", (.[] | ., "\u0000")
+    elif startswith("file:") then
+      ($k | ltrimstr("file:")) as $f | [$lim] + [$r.test_files.run[]? | split("{file}") | join($f)]
+      | $k, "\u0000", "z", "\u0000", (length | tostring), "\u0000", (.[] | ., "\u0000")
+    else empty end'
+
+# proofreuse_hashes DIR COUNT: the SHA-256 of the files 0 to COUNT-1 in DIR, one
+# hex digest per line, from one sha256sum (or shasum) process.
+proofreuse_hashes() {
+  local names=() i out line
+  [ "$2" -gt 0 ] || return 0
+  for ((i = 0; i < $2; i++)); do names+=("$i"); done
+  if command -v sha256sum > /dev/null 2>&1; then
+    out=$(cd "$1" && sha256sum "${names[@]}") || return 1
+  else
+    out=$(cd "$1" && shasum -a 256 "${names[@]}") || return 1
+  fi
+  while IFS= read -r line; do printf '%s\n' "${line%% *}"; done <<< "$out"
 }
+
+# proofreuse_scratch: makes a scratch folder under the runtime folder and
+# prints its path; the caller registers it with vbw_guard_add and drops it.
+proofreuse_scratch() {
+  mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
+  mktemp -d "$VBW_RUNTIME/reuse.XXXXXX" || vbw_die "cannot create a temporary folder in $VBW_RUNTIME"
+}
+
+# proofreuse_fps_need RECORD KEYS: makes sure PROOFREUSE_FPS has the fingerprint
+# of each unit key in KEYS (a JSON array); call it in the current shell, not in a
+# pipe, so the map stays. The missing ones are computed
+# in one pass (one jq, one sha256 process, one jq) whatever their number. A
+# record that differs from the one the map came from starts the map again.
+proofreuse_fps_need() {
+  local dir n=0 key mode cnt i f fields=()
+  if [ "$PROOFREUSE_FPS_RECORD" != "$1" ]; then
+    PROOFREUSE_FPS='{}'
+    PROOFREUSE_FPS_RECORD=$1
+  fi
+  dir=$(proofreuse_scratch)
+  vbw_guard_add dir "$dir"
+  mkdir "$dir/u"
+  : > "$dir/keys"
+  while IFS= read -r -d '' key && IFS= read -r -d '' mode && IFS= read -r -d '' cnt; do
+    fields=()
+    for ((i = 0; i < cnt; i++)); do
+      IFS= read -r -d '' f || true
+      fields+=("$f")
+    done
+    if [ "$mode" = l ]; then printf '%s\n' "${fields[0]}" > "$dir/u/$n"; else printf '%s\0' ${fields[@]+"${fields[@]}"} > "$dir/u/$n"; fi
+    printf '%s\0' "$key" >> "$dir/keys"
+    n=$((n + 1))
+  done < <(jq -n -j --argjson d "$VBW_COMMAND_TIMEOUT" --slurpfile rec <(printf '%s' "$1") --slurpfile have <(printf '%s' "$PROOFREUSE_FPS") --slurpfile keys <(printf '%s' "$2") "$PROOFREUSE_EMIT_JQ")
+  if [ "$n" -gt 0 ]; then
+    proofreuse_hashes "$dir/u" "$n" > "$dir/hashes" || { vbw_guard_drop "$dir"; vbw_die "cannot fingerprint the units"; }
+    PROOFREUSE_FPS=$(jq -nc --slurpfile have <(printf '%s' "$PROOFREUSE_FPS") --rawfile k "$dir/keys" --rawfile h "$dir/hashes" \
+      '$have[0] + ([($k | split("\u0000"))[:-1], ($h | split("\n"))[:-1]] | transpose | map({key: .[0], value: .[1]}) | from_entries)')
+  fi
+  vbw_guard_drop "$dir"
+}
+
+# proofreuse_fp_of RECORD KEY: the fingerprint of one unit (a one-unit front over
+# the same pass).
+proofreuse_fp_of() {
+  proofreuse_fps_need "$1" "$(jq -nc --arg k "$2" '[$k]')"
+  printf '%s' "$PROOFREUSE_FPS" | jq -r --arg k "$2" '.[$k] // empty'
+}
+
+# proofreuse_check_fp RECORD ID: fingerprint of a check's approved definition.
+proofreuse_check_fp() { proofreuse_fp_of "$1" "check:$2"; }
 
 # proofreuse_command_fp RECORD NAME: fingerprint of a project command's argv
 # and the time limit it runs under (settings.command_timeout, else the default).
-proofreuse_command_fp() {
-  local argv=() a
-  argv+=("$(printf '%s' "$1" | jq -r --argjson d "$VBW_COMMAND_TIMEOUT" '.settings.command_timeout // $d')")
-  while IFS= read -r -d '' a; do argv+=("$a"); done \
-    < <(printf '%s' "$1" | jq -j --arg n "$2" '.commands[$n][] + "\u0000"')
-  vbw_sha256_argv ${argv[@]+"${argv[@]}"}
-}
+proofreuse_command_fp() { proofreuse_fp_of "$1" "command:$2"; }
 
 # proofreuse_marker: the unfinished marker (present while a proof runs, and
 # left behind by one that was interrupted or failed to record).
@@ -112,75 +202,178 @@ proofreuse_merge() {
 # proofreuse_save RECORD CHECKS COMMANDS TREE AT: record the runs that really
 # happened (CHECKS and COMMANDS: JSON objects name -> result, with the read
 # list the runner collected) on the committed code TREE. A unit that was not
-# run (skipped, waiting) leaves its earlier run alone.
+# run (skipped, waiting) leaves its earlier run alone. The fingerprints come
+# from the one pass (proofreuse_fps_need).
 proofreuse_save() {
-  local new='{}' kind name fp res
-  for kind in check command; do
-    res="$2"
-    [ "$kind" = check ] || res="$3"
-    while IFS= read -r -d '' name; do
-      if [ "$kind" = check ]; then fp=$(proofreuse_check_fp "$1" "$name"); else fp=$(proofreuse_command_fp "$1" "$name"); fi
-      new=$(printf '%s' "$new" | jq -c --slurpfile r <(printf '%s' "$res") --arg k "$kind:$name" --arg n "$name" --arg fp "$fp" --arg tree "$4" --arg at "$5" \
-        '$r[0][$n] as $x | if $x.status == "skipped" or $x.status == "waiting" then . else
-          . + {($k): {fp: $fp, tree: $tree, status: $x.status, at: $at, seconds: $x.seconds, tail: ($x.tail // ""),
-            reads: ($x.reads // null), dirs: ($x.dirs // []), git: ($x.git // false)}} end')
-    done < <(printf '%s' "$res" | jq -j 'keys[] | . + "\u0000"')
-  done
+  local new
+  proofreuse_fps_need "$1" "$(jq -nc --slurpfile c <(printf '%s' "$2") --slurpfile m <(printf '%s' "$3") \
+    '[($c[0] | keys[] | "check:" + .), ($m[0] | keys[] | "command:" + .)]')"
+  new=$(jq -nc --slurpfile c <(printf '%s' "$2") --slurpfile m <(printf '%s' "$3") --slurpfile f <(printf '%s' "$PROOFREUSE_FPS") \
+    --arg tree "$4" --arg at "$5" '
+    def runs($kind; $res): $res | keys[] as $n | $res[$n] as $x
+      | select($x.status != "skipped" and $x.status != "waiting")
+      | {key: "\($kind):\($n)", value: {fp: ($f[0]["\($kind):\($n)"] // ""), tree: $tree, status: $x.status, at: $at, seconds: $x.seconds,
+          tail: ($x.tail // ""), reads: ($x.reads // null), dirs: ($x.dirs // []), git: ($x.git // false)}};
+    [runs("check"; $c[0]), runs("command"; $m[0])] | from_entries')
   proofreuse_merge "$new"
 }
 
-# proofreuse_dir_fp HEAD DIR: the fingerprint of DIR's listing on the committed
-# code HEAD, computed as reads.sh computes it from a copy: the names directly
-# inside DIR among the tracked files and folders (DIR "." is the project root).
-proofreuse_dir_fp() {
-  local spec=()
-  [ "$2" = "." ] || spec=(-- "$2")
-  git -C "$VBW_ROOT" ls-tree -r -z --name-only "$1" ${spec[@]+"${spec[@]}"} 2> /dev/null \
-    | jq -R -s -c --arg d "$2" '(split("\u0000") | map(select(length > 0))) as $f
-        | [$d, ([$f[] | (if $d == "." then . else ltrimstr($d + "/") end) | split("/")[0]] | unique)]' | tr -d '\n' | vbw_sha256
+# proofreuse_annotate RECORD KIND RESULTS AT WHY: each result that really ran
+# (KIND check, command or file; RESULTS a JSON object name -> result) carries the
+# fingerprint of its approved definition, the time it ran and the reason it had
+# to run (WHY: JSON object name -> reason). Prints the stamped results.
+proofreuse_annotate() {
+  proofreuse_fps_need "$1" "$(printf '%s' "$3" | jq -c --arg kind "$2" '[keys[] | $kind + ":" + .]')"
+  printf '%s' "$3" | jq -c --arg kind "$2" --arg at "$4" --slurpfile f <(printf '%s' "$PROOFREUSE_FPS") --slurpfile w <(printf '%s' "$5") '
+    with_entries(.key as $n | .value += ({fp: ($f[0][$kind + ":" + $n] // ""), at: $at}
+      + (if $w[0][$n] and .value.status != "skipped" then {why: $w[0][$n]} else {} end)))'
 }
 
-# proofreuse_reason KEY FP HEAD: the one reuse rule. Succeeds, printing
-# nothing, when the unit's pass may be reused: its last result passed, its
-# definition fingerprint FP is unchanged, it has a read list and did not read
-# through git, and one git diff-tree between the tree it ran on and the
-# committed code HEAD shows no file of its read list changed or deleted and no
-# listed folder whose listing changed (a file or sub-folder added or removed
-# directly inside it; a folder recorded without a fingerprint is judged by the
-# changed files' parents). Otherwise fails and prints the reason. Reads the
-# store from PROOFREUSE_STORE (a JSON text).
-proofreuse_reason() {
-  local entry reason diff
-  entry=$(printf '%s' "$PROOFREUSE_STORE" | jq -c --arg k "$1" '.runs[$k] // empty | select(type == "object")') || entry=
-  if [ -z "$entry" ]; then printf 'never passed\n'; return 1; fi
-  reason=$(printf '%s' "$entry" | jq -r --arg fp "$2" '
-    if .status != "pass" then "last result failed"
-    elif (.reads | type) != "array" then "no read list"
-    elif .fp != $fp then "definition changed"
-    elif .git == true then "reads the project through git"
-    else empty end') || reason='no read list'
-  if [ -n "$reason" ]; then printf '%s\n' "$reason"; return 1; fi
-  diff=$(git -C "$VBW_ROOT" diff-tree -z -r --no-renames --name-status "$(printf '%s' "$entry" | jq -r .tree)" "$3" 2> /dev/null | tr '\0' '\n'; exit "${PIPESTATUS[0]}") \
-    || { printf 'the code it ran on is unknown\n'; return 1; }
-  [ -n "$diff" ] || return 0
-  reason=$(printf '%s\n' "$diff" | jq -R -s -r --slurpfile e <(printf '%s' "$entry") '
-    $e[0] as $e | ($e.reads | map({key: ., value: true}) | from_entries) as $reads
-    | [$e.dirs[] | strings] as $plain
-    | [split("\n")[] | select(length > 0)] as $l
-    | [range(0; $l | length; 2) | {s: $l[.][0:1], p: $l[. + 1]}]
-    | (map(select($reads[.p]) | if .s == "D" then "\(.p) deleted" else "\(.p) changed" end)
-       + map(select(.s == "A" or .s == "D") | (.p | if test("/") then sub("/[^/]*$"; "") else "." end) as $d
-             | select($plain | index($d)) | "\($d) listing changed")) | first // empty')
-  if [ -n "$reason" ]; then printf '%s\n' "$reason"; return 1; fi
-  # A listed folder with a recorded fingerprint: its entries on HEAD must read the same. Only
-  # an added or deleted file can change a listing, so nothing is computed for a content change.
-  if printf '%s\n' "$diff" | jq -R -s -e '[split("\n")[] | select(length > 0)] as $l | any(range(0; $l | length; 2); $l[.][0:1] | IN("A", "D"))' > /dev/null; then
-    local d fp
-    while IFS=$'\t' read -r d fp; do
-      [ -n "$d" ] || continue
-      [ "$(proofreuse_dir_fp "$3" "$d")" = "$fp" ] || { printf '%s listing changed\n' "$d"; return 1; }
-    done < <(printf '%s' "$entry" | jq -r '.dirs[] | objects | select(.fp != null) | "\(.path)\t\(.fp)"')
+# proofreuse_diffs HEAD: sets PROOFREUSE_DIFFS, a JSON object recorded tree ->
+# the files that differ between that tree and the committed code HEAD
+# ([{s: status letter, p: path}]), or null when the tree is unknown. One git
+# diff-tree per distinct tree of PROOFREUSE_STORE. Cached for the same store
+# and head, so planning and the proof's causes share it.
+proofreuse_diffs() {
+  local dir tree
+  if [ -n "$PROOFREUSE_DIFFS" ] && [ "$PROOFREUSE_DIFFS_HEAD" = "$1" ] && [ "$PROOFREUSE_DIFFS_STORE" = "${PROOFREUSE_STORE-}" ]; then
+    return 0
   fi
+  dir=$(proofreuse_scratch)
+  vbw_guard_add dir "$dir"
+  : > "$dir/stream"
+  # Per tree: the tree, the name-status pairs git printed, then =OK or =FAIL (a status is never "=").
+  while IFS= read -r -d '' tree; do
+    printf '%s\0' "$tree" >> "$dir/stream"
+    if git -C "$VBW_ROOT" diff-tree -z -r --no-renames --name-status "$tree" "$1" >> "$dir/stream" 2> /dev/null; then
+      printf '=OK\0' >> "$dir/stream"
+    else
+      printf '=FAIL\0' >> "$dir/stream"
+    fi
+  done < <(printf '%s' "${PROOFREUSE_STORE-}" | jq -j '[.runs[]? | select(type == "object") | .tree | select(type == "string")] | unique[] + "\u0000"')
+  PROOFREUSE_DIFFS=$(jq -Rs -c 'split("\u0000") as $F
+    | def endof($j): if (($F[$j] // "=") | startswith("=")) then $j else endof($j + 2) end;
+      def sec($i): if ($F[$i] // "") == "" then empty
+        else endof($i + 1) as $e
+          | {key: $F[$i], value: (if $F[$e] == "=OK" then [range($i + 1; $e; 2) | {s: $F[.][0:1], p: $F[. + 1]}] else null end)}, sec($e + 1) end;
+      reduce sec(0) as $x ({}; . + {($x.key): $x.value})' "$dir/stream")
+  PROOFREUSE_DIFFS_HEAD=$1
+  PROOFREUSE_DIFFS_STORE=${PROOFREUSE_STORE-}
+  vbw_guard_drop "$dir"
+}
+
+# The one reuse rule over every unit at once. Input (all through --slurpfile):
+# $keys (array of unit keys), $st (the store), $fps (key -> fingerprint), $df
+# (the diffs of proofreuse_diffs) and $off (a reason that stops all reuse, or "").
+# Per unit, in order: the reason it must run ({key, why}) or its reused result
+# ({key, result}); a unit that passed its other tests but whose diff adds or
+# removes a file carries {pending: the listed folders with a fingerprint}, which
+# the folders' fingerprints on the committed code settle.
+# shellcheck disable=SC2016 # a jq program
+PROOFREUSE_RULE_JQ='def parent: if test("/") then sub("/[^/]*$"; "") else "." end;
+  $st[0].runs as $runs | $df[0] as $df | $fps[0] as $fps
+  | def verdict($k):
+      ($runs[$k] | if type == "object" then . else null end) as $e
+      | if $off != "" then {key: $k, why: $off}
+        elif $e == null then {key: $k, why: "never passed"}
+        else
+          (if $e.status != "pass" then "last result failed"
+           elif ($e.reads | type) != "array" then "no read list"
+           elif $e.fp != $fps[$k] then "definition changed"
+           elif $e.git == true then "reads the project through git"
+           else null end) as $r1
+          | if $r1 != null then {key: $k, why: $r1}
+            else
+              ($e | {status, exit: null, seconds, tail, at, fp, reads, dirs, git, reused: true}) as $res
+              | ($df[($e.tree | tostring)]) as $ch
+              | if $ch == null then {key: $k, why: "the code it ran on is unknown"}
+                elif ($ch | length) == 0 then {key: $k, result: $res}
+                else
+                  ($e.reads | map({key: ., value: true}) | from_entries) as $reads
+                  | [($e.dirs // [])[] | strings] as $plain
+                  | (([$ch[] | select($reads[.p]) | if .s == "D" then "\(.p) deleted" else "\(.p) changed" end]
+                      + [$ch[] | select(.s == "A" or .s == "D") | (.p | parent) as $d | select($plain | index($d)) | "\($d) listing changed"])
+                     | first // null) as $r2
+                  | if $r2 != null then {key: $k, why: $r2}
+                    elif any($ch[]; .s == "A" or .s == "D") then
+                      {key: $k, result: $res, pending: [($e.dirs // [])[] | objects | select(.fp != null) | {path, fp}]}
+                    else {key: $k, result: $res} end
+                end
+            end
+        end;
+    [$keys[0][] | verdict(.)] as $units
+    | {units: $units, need: ([$units[] | .pending[]? | .path] | unique)}'
+
+# Input: the committed code's file list ($ls, NUL separated) and the folders to
+# fingerprint ($need). Output, per folder: its path and the bytes whose SHA-256
+# is the folder's fingerprint (the names directly inside it among the tracked
+# files and folders, as [folder, sorted unique names] in compact JSON), NUL-ended.
+# shellcheck disable=SC2016 # a jq program
+PROOFREUSE_DIRS_JQ='($need[0] | map({key: ., value: true}) | from_entries) as $want
+  | ($ls | split("\u0000") | map(select(length > 0))) as $f
+  | (reduce $f[] as $p ({}; ($p | split("/")) as $parts
+      | reduce range(0; $parts | length) as $i (.;
+          (if $i == 0 then "." else ($parts[0:$i] | join("/")) end) as $a
+          | if $want[$a] then .[$a] += [$parts[$i]] else . end))) as $names
+  | $need[0][] | ., "\u0000", ([., (($names[.] // []) | unique)] | tojson), "\u0000"'
+
+# shellcheck disable=SC2016 # a jq program
+PROOFREUSE_SETTLE_JQ='$s[0].units | map(. as $u
+    | (first($u.pending[]? | select($h[0][.path] != .fp) | "\(.path) listing changed") // null) as $w
+    | if $w != null then {key: $u.key, why: $w} else del(.pending) end)'
+
+# proofreuse_judge KEYS HEAD OFF: the one reuse rule applied to the units KEYS
+# (a JSON array of unit keys) against PROOFREUSE_STORE and PROOFREUSE_FPS, on the
+# committed code HEAD; OFF is a reason that stops all reuse (then neither git nor
+# the store's diffs are consulted). Prints [{key, why} | {key, result}] in KEYS'
+# order: why is what proofreuse_reason prints, result the stored run as a reused
+# result (it keeps the time it really ran, and its read list for the next proof).
+proofreuse_judge() {
+  local dir diffs='{}' n=0 path bytes need
+  if [ -z "$3" ] && [ -n "$2" ]; then
+    proofreuse_diffs "$2"
+    diffs=$PROOFREUSE_DIFFS
+  fi
+  dir=$(proofreuse_scratch)
+  vbw_guard_add dir "$dir"
+  jq -nc --slurpfile keys <(printf '%s' "$1") --slurpfile st <(printf '%s' "${PROOFREUSE_STORE-}") --slurpfile fps <(printf '%s' "$PROOFREUSE_FPS") \
+    --slurpfile df <(printf '%s' "$diffs") --arg off "$3" "$PROOFREUSE_RULE_JQ" > "$dir/stage1" || { vbw_guard_drop "$dir"; vbw_die "internal error: the reuse rule failed"; }
+  printf '{}' > "$dir/folders"
+  need=$(jq -c '.need' "$dir/stage1")
+  if [ "$need" != '[]' ]; then
+    # A listed folder with a recorded fingerprint: its entries on the committed code must read the same.
+    # Only an added or deleted file can change a listing, so nothing is computed for a content change.
+    mkdir "$dir/u"
+    : > "$dir/keys"
+    git -C "$VBW_ROOT" ls-tree -r -z --name-only "$2" > "$dir/ls" 2> /dev/null || : > "$dir/ls"
+    while IFS= read -r -d '' path && IFS= read -r -d '' bytes; do
+      printf '%s' "$bytes" > "$dir/u/$n"
+      printf '%s\0' "$path" >> "$dir/keys"
+      n=$((n + 1))
+    done < <(jq -n -j --slurpfile need <(printf '%s' "$need") --rawfile ls "$dir/ls" "$PROOFREUSE_DIRS_JQ")
+    proofreuse_hashes "$dir/u" "$n" > "$dir/hashes" || { vbw_guard_drop "$dir"; vbw_die "cannot fingerprint the listed folders"; }
+    jq -nc --rawfile k "$dir/keys" --rawfile h "$dir/hashes" \
+      '[($k | split("\u0000"))[:-1], ($h | split("\n"))[:-1]] | transpose | map({key: .[0], value: .[1]}) | from_entries' > "$dir/folders"
+  fi
+  jq -c --slurpfile s "$dir/stage1" --slurpfile h "$dir/folders" -n "$PROOFREUSE_SETTLE_JQ"
+  vbw_guard_drop "$dir"
+}
+
+# proofreuse_reason KEY FP HEAD: the one reuse rule for one unit (a front over
+# proofreuse_judge). Succeeds, printing nothing, when the unit's pass may be
+# reused: its last result passed, its definition fingerprint FP is unchanged, it
+# has a read list and did not read through git, and one git diff-tree between
+# the tree it ran on and the committed code HEAD shows no file of its read list
+# changed or deleted and no listed folder whose listing changed (a file or
+# sub-folder added or removed directly inside it; a folder recorded without a
+# fingerprint is judged by the changed files' parents). Otherwise fails and
+# prints the reason. Reads the store from PROOFREUSE_STORE (a JSON text).
+proofreuse_reason() {
+  local PROOFREUSE_FPS verdict why
+  PROOFREUSE_FPS=$(jq -nc --arg k "$1" --arg fp "$2" '{($k): $fp}')
+  verdict=$(proofreuse_judge "$(jq -nc --arg k "$1" '[$k]')" "$3" "") || return 1
+  why=$(printf '%s' "$verdict" | jq -r '.[0].why // empty')
+  [ -z "$why" ] || { printf '%s\n' "$why"; return 1; }
 }
 
 # proofreuse_names RECORD FULL: sets PROVE_NAMES (JSON array of the command
@@ -207,13 +400,39 @@ proofreuse_names() {
   fi
 }
 
+# proofreuse_unpack VERDICTS PREFIX: splits the verdicts of the units whose key
+# starts with PREFIX ("check:", "command:" or "file:"), the prefix taken off:
+# sets PU_REUSE (JSON object name -> reused result), PU_WHY (JSON object name ->
+# the reason it runs), PU_TODO_JSON (JSON array of the names that run, in order)
+# and PU_TODO (the same, a bash array).
+proofreuse_unpack() {
+  local n i name
+  PU_TODO=()
+  {
+    IFS= read -r -d '' PU_REUSE
+    IFS= read -r -d '' PU_WHY
+    IFS= read -r -d '' PU_TODO_JSON
+    IFS= read -r -d '' n
+    for ((i = 0; i < n; i++)); do
+      IFS= read -r -d '' name
+      PU_TODO+=("$name")
+    done
+  } < <(printf '%s' "$1" | jq -j --arg p "$2" '
+    map(select(.key | startswith($p)) | .key |= ltrimstr($p)) as $u
+    | ($u | map(select(.result) | {key, value: .result}) | from_entries | tojson), "\u0000",
+      ($u | map(select(.why) | {key, value: .why}) | from_entries | tojson), "\u0000",
+      ($u | map(select(.why) | .key) | tojson), "\u0000",
+      ($u | map(select(.why)) | length | tostring), "\u0000",
+      ($u[] | select(.why) | .key, "\u0000")')
+}
+
 # proofreuse_plan RECORD [FULL]: FULL (1) only picks which commands belong to a
 # full proof; the reuse rule is the same. Sets REUSE_CHECKS and REUSE_COMMANDS
 # (the reused results, as JSON objects), TODO_CHECKS (array) and TODO_COMMANDS
 # (JSON array of names), which are what has to run, and WHY_CHECKS and
 # WHY_COMMANDS (JSON objects name -> the reason it has to run).
 proofreuse_plan() {
-  local record="$1" id name fp why head='' off=''
+  local record="$1" head='' off='' keys verdicts
   proofreuse_names "$record" "${2:-0}"
   REUSE_CHECKS='{}' REUSE_COMMANDS='{}' TODO_CHECKS=() TODO_COMMANDS='[]' WHY_CHECKS='{}' WHY_COMMANDS='{}'
   PROOFREUSE_STORE=$(proofreuse_store_read)
@@ -222,35 +441,17 @@ proofreuse_plan() {
     head=$(vbw_head_tree) || head=
     [ -n "$head" ] || off='no committed code'
   fi
-  while IFS= read -r id; do
-    [ -n "$id" ] || continue
-    fp=$(proofreuse_check_fp "$record" "$id")
-    why=$off
-    [ -n "$why" ] || why=$(proofreuse_reason "check:$id" "$fp" "$head") || true
-    if [ -z "$why" ]; then
-      REUSE_CHECKS=$(printf '%s' "$REUSE_CHECKS" | jq -c --arg id "$id" --argjson r "$(proofreuse_result "check:$id")" '. + {($id): $r}')
-    else
-      TODO_CHECKS+=("$id")
-      WHY_CHECKS=$(printf '%s' "$WHY_CHECKS" | jq -c --arg id "$id" --arg w "$why" '. + {($id): $w}')
-    fi
-  done < <(printf '%s' "$record" | jq -r '.checks[].id')
-  while IFS= read -r -d '' name; do
-    fp=$(proofreuse_command_fp "$record" "$name")
-    why=$off
-    [ -n "$why" ] || why=$(proofreuse_reason "command:$name" "$fp" "$head") || true
-    if [ -z "$why" ]; then
-      REUSE_COMMANDS=$(printf '%s' "$REUSE_COMMANDS" | jq -c --arg n "$name" --argjson r "$(proofreuse_result "command:$name")" '. + {($n): $r}')
-    else
-      TODO_COMMANDS=$(printf '%s' "$TODO_COMMANDS" | jq -c --arg n "$name" '. + [$n]')
-      WHY_COMMANDS=$(printf '%s' "$WHY_COMMANDS" | jq -c --arg n "$name" --arg w "$why" '. + {($n): $w}')
-    fi
-  done < <(printf '%s' "$PROVE_NAMES" | jq -j '.[] + "\u0000"')
-}
-
-# proofreuse_result KEY: a stored run as a reused result (it keeps the time it
-# really ran, and its read list for the next proof).
-proofreuse_result() {
-  printf '%s' "$PROOFREUSE_STORE" | jq -c --arg k "$1" '.runs[$k] | {status, exit: null, seconds, tail, at, fp, reads, dirs, git, reused: true}'
+  keys=$(printf '%s' "$record" | jq -c --argjson names "$PROVE_NAMES" '[(.checks // [])[] | "check:" + .id] + ($names | map("command:" + .))')
+  proofreuse_fps_need "$record" "$keys"
+  verdicts=$(proofreuse_judge "$keys" "$head" "$off")
+  proofreuse_unpack "$verdicts" "check:"
+  # shellcheck disable=SC2034 # read by cmd_prove and cmd_fix
+  REUSE_CHECKS=$PU_REUSE WHY_CHECKS=$PU_WHY
+  # shellcheck disable=SC2034 # read by cmd_prove
+  TODO_CHECKS=(${PU_TODO[@]+"${PU_TODO[@]}"})
+  proofreuse_unpack "$verdicts" "command:"
+  # shellcheck disable=SC2034 # read by cmd_prove
+  REUSE_COMMANDS=$PU_REUSE WHY_COMMANDS=$PU_WHY TODO_COMMANDS=$PU_TODO_JSON
 }
 
 # proofreuse_join ORDER REUSED NEW: one object in ORDER (a JSON array of names).

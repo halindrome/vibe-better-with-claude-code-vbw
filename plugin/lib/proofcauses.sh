@@ -13,13 +13,6 @@
 # shellcheck source=reads.sh
 . "$VBW_LIB/reads.sh"
 
-# proofcauses_changes TREE HEAD: the files that differ between two trees, as
-# [{s: status letter, p: path}]; nothing when the tree is unknown.
-proofcauses_changes() {
-  git -C "$VBW_ROOT" diff-tree -z -r --no-renames --name-status "$1" "$2" 2> /dev/null | tr '\0' '\n' \
-    | jq -R -s -c '[split("\n")[] | select(length > 0)] as $l | [range(0; $l | length; 2) | {s: $l[.][0:1], p: $l[. + 1]}]'
-}
-
 # proofcauses_known RECORD HEAD: the paths that are a run of their own: the
 # test files of the approved form and the files the checks serve. A new one
 # is not unknown, it is run.
@@ -41,24 +34,24 @@ proofcauses_known() {
 # listed: that listing gained or lost an entry, and the reuse rule re-runs the
 # run that listed it; the file was never reachable any other way.
 proofcauses_files() {
-  local key tree entries='[]' ch known head
+  local known head
   [ -n "$2" ] || return 0
   head=$(git -C "$VBW_ROOT" ls-tree -r -z --name-only "$2" 2> /dev/null | jq -R -s -c 'split("\u0000") | map(select(length > 0))')
   [ -n "$head" ] || head='[]'
-  while IFS=$'\t' read -r key tree; do
-    ch=$(proofcauses_changes "$tree" "$2")
-    # An unknown tree prints nothing and must not veto; a known tree with no change prints [] and does.
-    [ -n "$ch" ] || continue
-    entries=$(printf '%s' "$entries" | jq -c --slurpfile s <(printf '%s' "$3") --slurpfile c <(printf '%s' "$ch") --arg k "$key" \
-      '. + [$s[0].runs[$k] | {key: $k, reads, dirs: (.dirs // []), changes: $c[0]}]')
-  done < <(printf '%s' "$3" | jq -r '.runs | to_entries[] | select(.value | type == "object" and (.tree | type) == "string") | [.key, .value.tree] | @tsv')
+  # One git diff-tree per distinct recorded tree, shared with the reuse planning (proofreuse_diffs).
+  # shellcheck disable=SC2034 # read by proofreuse_diffs
+  PROOFREUSE_STORE=$3
+  proofreuse_diffs "$2"
   known=$(proofcauses_known "$1" "$2")
-  jq -nr --slurpfile e <(printf '%s' "$entries") --slurpfile s <(printf '%s' "$3") --slurpfile known <(printf '%s' "$known") \
+  jq -nr --slurpfile df <(printf '%s' "$PROOFREUSE_DIFFS") --slurpfile s <(printf '%s' "$3") --slurpfile known <(printf '%s' "$known") \
     --slurpfile head <(printf '%s' "$head") '
     def parent: if test("/") then sub("/[^/]*$"; "") else "." end;
     # The folders above a path, nearest first, the root (".") last.
     def above: parent as $p | if $p == "." then ["."] else [$p] + ($p | above) end;
-    $e[0] as $e | ($e | map(select(.reads | type == "array"))) as $r
+    # A recorded run with a known tree: an unknown tree prints null and must not veto; a known tree with no change gives [] and does.
+    ([$s[0].runs | to_entries[] | select(.value | type == "object" and (.tree | type) == "string")
+      | select($df[0][.value.tree] != null) | .value as $v | {key: .key, reads: $v.reads, dirs: ($v.dirs // []), changes: $df[0][$v.tree]}]) as $e
+    | ($e | map(select(.reads | type == "array"))) as $r
     | ($known[0] + [$s[0].runs | keys[] | select(startswith("file:")) | ltrimstr("file:")]) as $own
     | ([$r[].reads[]] | unique) as $read
     | ([$r[].dirs[] | if type == "object" then .path else . end] | unique) as $dirs

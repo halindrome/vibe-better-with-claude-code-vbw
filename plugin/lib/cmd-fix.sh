@@ -144,7 +144,7 @@ cmd_fix() {
   # shellcheck source=proofsteps.sh
   . "$VBW_LIB/proofsteps.sh"
   prooftime_begin
-  local t0 own_json causes_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes fp why served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0
+  local t0 own_json causes_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes keys served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0
   t0=$(prooftime_clock)
   if [ ${#ids[@]} -gt 0 ]; then
     for id in "${ids[@]}"; do
@@ -164,6 +164,7 @@ cmd_fix() {
     while IFS= read -r c; do
       [ -z "$c" ] || printf 'every candidate check runs: %s\n' "$c"
     done <<< "$causes"
+    # shellcheck disable=SC2034 # read by proofreuse_judge
     PROOFREUSE_STORE=$(proofreuse_store_read)
     while IFS= read -r c; do
       [ -n "$c" ] || continue
@@ -183,19 +184,19 @@ cmd_fix() {
         printf '%s waiting for approval (check files new or changed since the approval: %s); vbw next asks, then vbw prove runs it\n' "$c" "$mine"
         continue
       fi
-      why=$causes
-      if [ -z "$why" ]; then
-        fp=$(proofreuse_check_fp "$record" "$c")
-        why=$(proofreuse_reason "check:$c" "$fp" "$head") || true
-      fi
       cands+=("$c")
-      if [ -z "$why" ]; then
-        rmap=$(printf '%s' "$rmap" | jq -c --arg c "$c" --slurpfile s <(printf '%s' "$PROOFREUSE_STORE") '. + {($c): $s[0].runs["check:" + $c].at}')
-      else
-        todo+=("$c")
-        [ -n "$causes" ] || wmap=$(printf '%s' "$wmap" | jq -c --arg c "$c" --arg w "$why" '. + {($c): $w}')
-      fi
     done < <(cmd_fix_finished_checks "$record")
+    # The candidates' reuse, decided together: one pass for the fingerprints, one for the rule.
+    if [ ${#cands[@]} -gt 0 ] && [ -n "$causes" ]; then
+      todo=("${cands[@]}")
+    elif [ ${#cands[@]} -gt 0 ]; then
+      keys=$(printf '%s\0' "${cands[@]}" | jq -Rsc 'split("\u0000")[:-1] | map("check:" + .)')
+      proofreuse_fps_need "$record" "$keys"
+      proofreuse_unpack "$(proofreuse_judge "$keys" "$head" "")" "check:"
+      wmap=$PU_WHY
+      todo=(${PU_TODO[@]+"${PU_TODO[@]}"})
+      rmap=$(printf '%s' "$PU_REUSE" | jq -c 'map_values(.at)')
+    fi
   fi
   prooftime_span planning "$t0"
   # A test command that failed as test files is re-run on its own, file by file,

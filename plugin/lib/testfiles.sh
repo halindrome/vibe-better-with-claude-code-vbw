@@ -39,22 +39,25 @@ testfiles_limit() {
   printf '%s' "$1" | jq -r --argjson d "$VBW_COMMAND_TIMEOUT" '.settings.command_timeout // $d'
 }
 
-# testfiles_fp RECORD PATH: fingerprint of a test file's approved definition.
-testfiles_fp() {
-  local argv=() a
-  argv+=("$(testfiles_limit "$1")")
-  while IFS= read -r -d '' a; do argv+=("$a"); done < <(testfiles_argv "$1" "$2")
-  vbw_sha256_argv "${argv[@]}"
+# testfiles_fp RECORD PATH: fingerprint of a test file's approved definition
+# (a one-unit front over the batch of proofreuse_fps_need).
+testfiles_fp() { proofreuse_fp_of "$1" "file:$2"; }
+
+# testfiles_keys: the unit keys of the paths in TF_PATHS, as a JSON array.
+testfiles_keys() {
+  if [ ${#TF_PATHS[@]} -eq 0 ]; then printf '[]\n'; return 0; fi
+  printf '%s\0' "${TF_PATHS[@]}" | jq -Rsc 'split("\u0000")[:-1] | map("file:" + .)'
 }
 
-# testfiles_plan RECORD ALL: after proofreuse_plan. With a form, takes the test
+# testfiles_plan RECORD ALL [KIND]: after proofreuse_plan. With a form, takes the test
 # and quick commands out of the proof and sets TF_PATHS (the test files, an
 # array), TF_REUSE (reused results, JSON path -> result), TF_TODO (array of
 # the paths that run) and TF_WHY (JSON path -> why it runs). ALL (1): nothing
 # is reused. KIND (third argument) is "fix" for vbw fix done, which the proof's
 # "nothing committed" cause does not apply to. Without a form all of them are empty.
+# The files' fingerprints come from one pass and the reuse rule runs over all of them at once.
 testfiles_plan() {
-  local record="$1" off='' head='' p fp why
+  local record="$1" off='' head='' keys verdicts p
   TF_PATHS=() TF_TODO=() TF_REUSE='{}' TF_WHY='{}'
   testfiles_on "$record" || return 0
   PROVE_NAMES=$(printf '%s' "$PROVE_NAMES" | jq -c '. - ["test", "quick"]')
@@ -64,24 +67,22 @@ testfiles_plan() {
   # shellcheck disable=SC2034 # read by cmd_prove
   QUICK_STANDIN=false
   while IFS= read -r -d '' p; do TF_PATHS+=("$p"); done < <(testfiles_list "$record")
-  if [ "$2" != 1 ]; then
-    off=$(proofreuse_allowed "$record" "${3:-prove}") || true
-    if [ -z "$off" ]; then
-      head=$(vbw_head_tree) || head=
-      [ -n "$head" ] || off='no committed code'
-    fi
+  [ ${#TF_PATHS[@]} -gt 0 ] || return 0
+  keys=$(testfiles_keys)
+  proofreuse_fps_need "$record" "$keys"
+  if [ "$2" = 1 ]; then
+    TF_TODO=("${TF_PATHS[@]}")
+    return 0
   fi
-  for p in ${TF_PATHS[@]+"${TF_PATHS[@]}"}; do
-    fp=$(testfiles_fp "$record" "$p")
-    why=$off
-    [ "$2" = 1 ] || [ -n "$why" ] || why=$(proofreuse_reason "file:$p" "$fp" "$head") || true
-    if [ "$2" != 1 ] && [ -z "$why" ]; then
-      TF_REUSE=$(printf '%s' "$TF_REUSE" | jq -c --arg p "$p" --argjson r "$(proofreuse_result "file:$p")" '. + {($p): $r}')
-    else
-      TF_TODO+=("$p")
-      [ "$2" = 1 ] || TF_WHY=$(printf '%s' "$TF_WHY" | jq -c --arg p "$p" --arg w "$why" '. + {($p): $w}')
-    fi
-  done
+  off=$(proofreuse_allowed "$record" "${3:-prove}") || true
+  if [ -z "$off" ]; then
+    head=$(vbw_head_tree) || head=
+    [ -n "$head" ] || off='no committed code'
+  fi
+  verdicts=$(proofreuse_judge "$keys" "$head" "$off")
+  proofreuse_unpack "$verdicts" "file:"
+  TF_REUSE=$PU_REUSE TF_WHY=$PU_WHY
+  TF_TODO=(${PU_TODO[@]+"${PU_TODO[@]}"})
   # A clone with no recorded run has nothing to compare with: no line gives a reason of its own.
   if printf '%s' "$PROOFREUSE_STORE" | jq -e '(.runs | length) == 0' > /dev/null; then TF_WHY='{}'; fi
 }
@@ -108,17 +109,17 @@ testfiles_run() {
 
 # testfiles_save RECORD FILES TREE AT: record the runs that really happened in
 # the store (read list included, and the test file itself: a changed test file
-# always runs). Through proofreuse_merge, under the store's lock.
+# always runs). Through proofreuse_merge, under the store's lock. The
+# fingerprints come from the one pass (proofreuse_fps_need).
 testfiles_save() {
-  local new p fp
-  new='{}'
-  while IFS= read -r -d '' p; do
-    fp=$(testfiles_fp "$1" "$p")
-    new=$(printf '%s' "$new" | jq -c --slurpfile r <(printf '%s' "$2") --arg p "$p" --arg fp "$fp" --arg tree "$3" --arg at "$4" \
-      '$r[0][$p] as $x | if $x.status == "skipped" or $x.status == "waiting" then . else
-        . + {("file:" + $p): {fp: $fp, tree: $tree, status: $x.status, at: $at, seconds: $x.seconds, tail: ($x.tail // ""),
-          reads: (if $x.reads == null then null else ($x.reads + [$p] | unique) end), dirs: ($x.dirs // []), git: ($x.git // false)}} end')
-  done < <(printf '%s' "$2" | jq -j 'keys[] | . + "\u0000"')
+  local new
+  proofreuse_fps_need "$1" "$(printf '%s' "$2" | jq -c 'keys | map("file:" + .)')"
+  new=$(jq -nc --slurpfile r <(printf '%s' "$2") --slurpfile f <(printf '%s' "$PROOFREUSE_FPS") --arg tree "$3" --arg at "$4" '
+    [$r[0] | keys[] as $p | .[$p] as $x
+     | select($x.status != "skipped" and $x.status != "waiting")
+     | {key: ("file:" + $p), value: {fp: ($f[0]["file:" + $p] // ""), tree: $tree, status: $x.status, at: $at, seconds: $x.seconds, tail: ($x.tail // ""),
+         reads: (if $x.reads == null then null else ($x.reads + [$p] | unique) end), dirs: ($x.dirs // []), git: ($x.git // false)}}]
+    | from_entries')
   proofreuse_merge "$new"
 }
 
@@ -126,12 +127,8 @@ testfiles_save() {
 # evidence, in the files' order: the new ones stamped with their definition's
 # fingerprint, the time and the reason they ran, joined with the reused ones.
 testfiles_finish() {
-  local p out="$2" order fp
-  while IFS= read -r -d '' p; do
-    fp=$(testfiles_fp "$1" "$p")
-    out=$(printf '%s' "$out" | jq -c --arg p "$p" --arg fp "$fp" --arg at "$3" --slurpfile w <(printf '%s' "$TF_WHY") \
-      '.[$p] += ({fp: $fp, at: $at} + (if $w[0][$p] and .[$p].status != "skipped" then {why: $w[0][$p]} else {} end))')
-  done < <(printf '%s' "$2" | jq -j 'keys[] | . + "\u0000"')
+  local out order
+  out=$(proofreuse_annotate "$1" file "$2" "$3" "$TF_WHY")
   # No test file left to run gives an empty order: printf with no argument would print one NUL.
   if [ ${#TF_PATHS[@]} -eq 0 ]; then order='[]'
   else order=$(printf '%s\0' "${TF_PATHS[@]}" | jq -Rsc 'split("\u0000")[:-1]'); fi

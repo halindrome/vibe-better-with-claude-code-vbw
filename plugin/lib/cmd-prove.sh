@@ -195,15 +195,7 @@ prove_plan_all() {
 # prove_stamp RECORD KIND RESULTS AT WHY: each result that really ran carries
 # the fingerprint of its approved definition, the time it ran and the reason it
 # had to run (WHY: JSON object name -> reason).
-prove_stamp() {
-  local name fp out="$3"
-  while IFS= read -r -d '' name; do
-    if [ "$2" = check ]; then fp=$(proofreuse_check_fp "$1" "$name"); else fp=$(proofreuse_command_fp "$1" "$name"); fi
-    out=$(printf '%s' "$out" | jq -c --arg n "$name" --arg fp "$fp" --arg at "$4" --slurpfile w <(printf '%s' "$5") \
-      '.[$n] += ({fp: $fp, at: $at} + (if $w[0][$n] and .[$n].status != "skipped" then {why: $w[0][$n]} else {} end))')
-  done < <(printf '%s' "$3" | jq -j 'keys[] | . + "\u0000"')
-  printf '%s\n' "$out"
-}
+prove_stamp() { proofreuse_annotate "$@"; }
 # Scope: every commit whose VBW-Plan trailer names a plan of the current
 # milestone changes only that plan's files. A shipped milestone's commits were
 # judged by its own proofs; today's record can no longer judge them (T162).
