@@ -1,6 +1,19 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "plan-20261020T072109Z",
+    "kind": "plan",
+    "started_at": "2026-10-20T07:21:09Z",
+    "files": [
+      ".vbw/"
+    ],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 1572.092139,
+      "in": 395934,
+      "out": 705
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -48093,7 +48106,7 @@
       "text": "Sessions tab in the pane (brainstorm P8): every Claude Code session working on this project and what it is doing, so after a reboot the user knows which chat to resume (claude --resume <id>) for which work; builds on the run lease; overlaps /vbw:pause and /vbw:resume",
       "sort": "later",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T96",
