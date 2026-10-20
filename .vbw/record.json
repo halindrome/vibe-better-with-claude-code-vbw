@@ -135,6 +135,7 @@
     "tests/kernel-sessions.bats",
     "tests/l3-approval.bats",
     "tests/l3-costs.bats",
+    "tests/l3-greenfield-report.bats",
     "tests/l3-greeting.bats",
     "tests/l3-interview.bats",
     "tests/l3-legacy.bats",
@@ -182,6 +183,8 @@
     "tests/loop-status-spend.bats",
     "tests/loop-stop.bats",
     "tests/loop-stops.bats",
+    "tests/machine-bookkeeping-docs.bats",
+    "tests/machine-bookkeeping.bats",
     "tests/machine-config-line.bats",
     "tests/machine-helper.bash",
     "tests/machine-limit-docs.bats",
@@ -189,8 +192,11 @@
     "tests/machine-midrun.bats",
     "tests/machine-recovery.bats",
     "tests/machine-slots.bats",
+    "tests/machine-tracking.bats",
     "tests/machine-turns.bats",
     "tests/machine-wait-line.bats",
+    "tests/measure-proof-speed.bats",
+    "tests/measure-two-proofs.bats",
     "tests/mutate-command.bats",
     "tests/mutate-fresh-mtime-docs.bats",
     "tests/mutate-fresh-mtime.bats",
@@ -210,6 +216,7 @@
     "tests/next-blocked.bats",
     "tests/next-contract-ready.bats",
     "tests/next-phase.bats",
+    "tests/next-proof-cache.bats",
     "tests/next-table.bats",
     "tests/no-bats-on-generated.bats",
     "tests/outside-writes-docs.bats",
@@ -296,17 +303,24 @@
     "tests/proof-doc-reuse.bats",
     "tests/proof-full-gate.bats",
     "tests/proof-full-prompts.bats",
+    "tests/proof-plan-batch.bats",
     "tests/proof-quick-docs.bats",
     "tests/proof-quick.bats",
     "tests/proof-reuse.bats",
     "tests/proof-selective-docs.bats",
     "tests/proof-selective.bats",
     "tests/proof-selfcontained.bats",
+    "tests/proof-speed-after.bats",
+    "tests/proof-speed-before.bats",
+    "tests/proof-speed-docs.bats",
+    "tests/proof-speed-reuse-docs.bats",
+    "tests/proof-speed-timed.bats",
     "tests/proof-stale-links.bats",
     "tests/protected-docs.bats",
     "tests/protected-helper.bash",
     "tests/prove-clean.bats",
     "tests/prove-kept-output.bats",
+    "tests/prove-own-work.bats",
     "tests/prove-parallel.bats",
     "tests/prove-signal.bats",
     "tests/qa-depth-docs.bats",
@@ -328,10 +342,12 @@
     "tests/qa-vbw-files.bats",
     "tests/quick-mode.bats",
     "tests/reads-docs.bats",
+    "tests/reads-fixed-jq.bats",
     "tests/reads-gates.bats",
     "tests/reads-listing.bats",
     "tests/reads-reuse.bats",
     "tests/reads-traced.bats",
+    "tests/reads-written-store.bats",
     "tests/recommend-flow.bats",
     "tests/recommend-source.bats",
     "tests/recommend-store.bats",
@@ -5680,6 +5696,209 @@
         "tests/panel/helpers/fake-mod.mjs",
         "tests/panel/helpers/run.mjs",
         "tests/panel/helpers/feed-fs.mjs"
+      ]
+    },
+    {
+      "id": "C432",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/prove-own-work.bats"
+      ],
+      "files": [
+        "tests/prove-own-work.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C433",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/proof-speed-docs.bats"
+      ],
+      "files": [
+        "tests/proof-speed-docs.bats"
+      ]
+    },
+    {
+      "id": "C434",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/measure-proof-speed.bats"
+      ],
+      "files": [
+        "tests/measure-proof-speed.bats"
+      ],
+      "timeout": 1800
+    },
+    {
+      "id": "C435",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/proof-speed-before.bats"
+      ],
+      "files": [
+        "tests/proof-speed-before.bats"
+      ]
+    },
+    {
+      "id": "C436",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/l3-greenfield-report.bats"
+      ],
+      "files": [
+        "tests/l3-greenfield-report.bats"
+      ]
+    },
+    {
+      "id": "C437",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/reads-fixed-jq.bats"
+      ],
+      "files": [
+        "tests/reads-fixed-jq.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C438",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/reads-written-store.bats"
+      ],
+      "files": [
+        "tests/reads-written-store.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C439",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/proof-plan-batch.bats"
+      ],
+      "files": [
+        "tests/proof-plan-batch.bats"
+      ],
+      "timeout": 1800
+    },
+    {
+      "id": "C440",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/next-proof-cache.bats"
+      ],
+      "files": [
+        "tests/next-proof-cache.bats"
+      ],
+      "timeout": 600
+    },
+    {
+      "id": "C441",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/proof-speed-after.bats"
+      ],
+      "files": [
+        "tests/proof-speed-after.bats"
+      ]
+    },
+    {
+      "id": "C442",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/proof-speed-timed.bats"
+      ],
+      "files": [
+        "tests/proof-speed-timed.bats"
+      ]
+    },
+    {
+      "id": "C443",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/proof-speed-reuse-docs.bats"
+      ],
+      "files": [
+        "tests/proof-speed-reuse-docs.bats"
+      ]
+    },
+    {
+      "id": "C444",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/machine-tracking.bats"
+      ],
+      "files": [
+        "tests/machine-tracking.bats"
+      ],
+      "timeout": 900,
+      "alone": true
+    },
+    {
+      "id": "C445",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/machine-bookkeeping.bats"
+      ],
+      "files": [
+        "tests/machine-bookkeeping.bats"
+      ],
+      "timeout": 900,
+      "alone": true
+    },
+    {
+      "id": "C446",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/measure-two-proofs.bats"
+      ],
+      "files": [
+        "tests/measure-two-proofs.bats"
+      ],
+      "timeout": 1800
+    },
+    {
+      "id": "C447",
+      "req": "R202",
+      "run": [
+        "bats",
+        "--print-output-on-failure",
+        "tests/machine-bookkeeping-docs.bats"
+      ],
+      "files": [
+        "tests/machine-bookkeeping-docs.bats"
       ]
     }
   ],
@@ -14393,7 +14612,203 @@
       "proof": "auto",
       "status": "open",
       "milestone": "M42",
-      "rules": []
+      "rules": [
+        {
+          "text": "vbw prove prints, just before its verdict line, 'VBW's own work: X of Y min' (minutes with one decimal; Y the command's wall-clock time)",
+          "check": "C432",
+          "plan": "P161.1"
+        },
+        {
+          "text": "vbw prove prints 'ran again: N of M units; top reasons: <reason> (count), ...' with at most three reasons, most frequent first, ties in the units' order, from the units' own reasons and the whole-proof causes",
+          "check": "C432",
+          "plan": "P161.1"
+        },
+        {
+          "text": "vbw fix done prints both lines right after its 'test files: N ran, M reused' line; its closing lines and exit code are unchanged",
+          "check": "C432",
+          "plan": "P161.1"
+        },
+        {
+          "text": "both lines print when nothing ran: 'ran again: 0 of M units; top reasons: none', and the own-work line still prints",
+          "check": "C432",
+          "plan": "P161.1"
+        },
+        {
+          "text": "the split is measured by the clock inside the proof and kept as evidence.own {planning, copies, tracking, saving, record, wall} in seconds",
+          "check": "C432",
+          "plan": "P161.1"
+        },
+        {
+          "text": "the whole-proof causes are kept as evidence.causes ([] when the reuse rule decided alone)",
+          "check": "C432",
+          "plan": "P161.1"
+        },
+        {
+          "text": "vbw show evidence prints the step breakdown (planning, copies, read tracking, saving, record) and, per unit, its status, seconds and reused or the reason it ran",
+          "check": "C432",
+          "plan": "P161.2"
+        },
+        {
+          "text": "a record written before this change still reads, and vbw show evidence says not recorded for the split and for a unit without a reason",
+          "check": "C432",
+          "plan": "P161.2"
+        },
+        {
+          "text": "the record validator accepts the new evidence fields and refuses a malformed own split",
+          "check": "C432",
+          "plan": "P161.2"
+        },
+        {
+          "text": "docs/proof.md describes both report lines and what own work means; docs/record.md describes evidence.own, evidence.causes and the not-recorded case",
+          "check": "C433",
+          "plan": "P161.3"
+        },
+        {
+          "text": "tools/measure-proof-speed.sh builds an approved stand-in of at least the asked size (5,000 files, 500 folders, 200 units by default) with units that write hundreds of files into a git-ignored cache folder the clean copy carries and later units that read them back; --generate DIR builds it only",
+          "check": "C434",
+          "plan": "P161.4"
+        },
+        {
+          "text": "the measurement runs vbw prove, one small source change and vbw fix done, then vbw next --json, and prints the two report lines of each command, wall-clock seconds, VBW's own work and its steps, jq CPU seconds and process count, the store and written-list sizes, the units reused and the units expected to be reused, and the time vbw next took",
+          "check": "C434",
+          "plan": "P161.4"
+        },
+        {
+          "text": "nothing of a real user project is in the tool or in the stand-in it generates",
+          "check": "C434",
+          "plan": "P161.4"
+        },
+        {
+          "text": "the before numbers on this Mac are a decision naming the stand-in's size, every figure, the time of each own-work step, and confirming or clearing each of the suspects (a) to (d)",
+          "check": "C435",
+          "plan": "P161.4"
+        },
+        {
+          "text": "the greenfield scenario records whether each report line appeared in a real session's proof output, was run once, and its committed result shows both at L3",
+          "check": "C436",
+          "plan": "P161.5"
+        },
+        {
+          "text": "reads_collect spawns the same number of jq processes for 1 listed folder and for 300",
+          "check": "C437",
+          "plan": "P162.1"
+        },
+        {
+          "text": "the collected list (files, folders with their listing fingerprints, the git flag) is identical to what the earlier code gave on the same fixture",
+          "check": "C437",
+          "plan": "P162.1"
+        },
+        {
+          "text": "the written-file store keeps each run's read list once and each written name once: a unit that writes 1,000 files adds 1,000 names and one list",
+          "check": "C438",
+          "plan": "P162.1"
+        },
+        {
+          "text": "a later unit that reads a written file inherits the writer's list, a file two runs wrote carries both lists, and inherited lists pass on through a chain of runs",
+          "check": "C438",
+          "plan": "P162.1"
+        },
+        {
+          "text": "reuse planning runs one git diff-tree per distinct recorded tree: the same count for 5 units and for 50",
+          "check": "C439",
+          "plan": "P162.2"
+        },
+        {
+          "text": "reuse planning parses the store and the record, and fingerprints the units, in a fixed number of processes whatever the number of units",
+          "check": "C439",
+          "plan": "P162.2"
+        },
+        {
+          "text": "the per-unit reasons of a 50-unit fixture with every reason (changed, deleted, listing changed, last failed, no read list, definition changed, git, never passed, reused) are exactly the ones the one reuse rule names",
+          "check": "C439",
+          "plan": "P162.2"
+        },
+        {
+          "text": "the second of two consecutive vbw next --json calls reads the cache in .vbw/runtime/proof-units.json: no diff-tree and the same step",
+          "check": "C440",
+          "plan": "P162.3"
+        },
+        {
+          "text": "a changed run store, a changed record or a new commit recomputes the cached unit list",
+          "check": "C440",
+          "plan": "P162.3"
+        },
+        {
+          "text": "measured after on this Mac: VBW's own work for the whole 200-unit proof under 60 s, read tracking under 1 s per unit, jq CPU under 60 s and vbw next --json under 5 s with the store full, recorded as a decision",
+          "check": "C441",
+          "plan": "P162.4"
+        },
+        {
+          "text": "after the one-file change the units reused equal the units whose read lists do not contain the changed file",
+          "check": "C441",
+          "plan": "P162.4"
+        },
+        {
+          "text": "every cost the before decision named as VBW's own is fixed (the after figures meet the targets); an inherent cause stays reported in the top-reasons line",
+          "check": "C441",
+          "plan": "P162.4"
+        },
+        {
+          "text": "tests/timed-proof-speed.bats runs only in the release run, builds the scaled-down stand-in (2,000 files, 300 folders, 40 units) with the tool's --generate, fails above 1 s of read tracking per unit or 5 s of planning, and skips a machine too busy to measure",
+          "check": "C442",
+          "plan": "P162.4"
+        },
+        {
+          "text": "docs/proof.md says how written files carry read lists and names the vbw next cache; docs/next.md names the cached proof sizing, its key and when it is recomputed",
+          "check": "C443",
+          "plan": "P162.5"
+        },
+        {
+          "text": "a unit holds its slot while its access times are reset and while its read list is collected",
+          "check": "C444",
+          "plan": "P163.1"
+        },
+        {
+          "text": "with the only slot held elsewhere no reset and no collection happens before the holder lets go, and the waited line counts that wait",
+          "check": "C444",
+          "plan": "P163.1"
+        },
+        {
+          "text": "the command's time limit counts from the command's start, not from the tracking or the wait",
+          "check": "C444",
+          "plan": "P163.1"
+        },
+        {
+          "text": "with the only slot held, vbw prove waits as vbw:plan before reading the run store or making a copy, and the store lists the bookkeeping step while it runs",
+          "check": "C445",
+          "plan": "P163.2"
+        },
+        {
+          "text": "vbw next --json never waits for a slot: it answers at once while every slot is held",
+          "check": "C445",
+          "plan": "P163.2"
+        },
+        {
+          "text": "two proofs at once with limit 2 and three units each never hold more than 2, VBW's own entries included",
+          "check": "C445",
+          "plan": "P163.2"
+        },
+        {
+          "text": "when the store cannot be used the bookkeeping steps run under check_jobs alone with the existing message, and a nested run takes no slot",
+          "check": "C445",
+          "plan": "P163.2"
+        },
+        {
+          "text": "tools/measure-proof-speed.sh --two runs two proofs at once, samples the held slots every second and reports a maximum that never exceeds the machine limit",
+          "check": "C446",
+          "plan": "P163.3"
+        },
+        {
+          "text": "the two-proof sample joins the after decision as 'two proofs: max held H of limit L' with H at most L",
+          "check": "C441",
+          "plan": "P162.4"
+        },
+        {
+          "text": "docs/proof.md names the bookkeeping slots (a unit's slot covers its read tracking; vbw:plan, vbw:copies, vbw:save), says vbw next never waits, and keeps the waited line's wording",
+          "check": "C447",
+          "plan": "P163.4"
+        }
+      ]
     }
   ],
   "phases": [
@@ -22068,6 +22483,94 @@
         "qa_findings": 1,
         "escalations": 2
       }
+    },
+    {
+      "id": "P161",
+      "title": "Every proof says where its time went and why units ran again",
+      "reqs": [
+        "R202"
+      ],
+      "milestone": "M42",
+      "goal": "After any proof or fix round, the user sees how many minutes were VBW's own bookkeeping versus the tests themselves and the top reasons results could not be reused, and a generated stand-in large project gives the before numbers for this milestone.",
+      "criteria": [
+        "The summary printed by `vbw prove` and by `vbw fix done` ends with two new lines: `VBW's own work: X of Y min` (own work means everything that is not a test or check actually running: deciding what to reuse, making the clean copies, resetting and collecting read lists, saving results, writing the record) and `ran again: N of M units; top reasons: <reason> (count), ...` (at most three reasons, most frequent first, using the existing per-unit reasons such as `never passed`, `no read list`, `<file> changed`, `reads the project through git`, and the whole-proof causes). Both lines print even when nothing ran (zeros).",
+        "The time split is measured by the clock inside the proof, never estimated: seconds for planning the reuse, making the copies, read tracking (counted per unit: the reset before and the collection after its command), saving the run store, and writing the record. The units' own command seconds are the existing per-unit seconds.",
+        "The split and the per-unit reasons are kept with the proof's evidence in the record, so `vbw show evidence` shows afterwards: the step breakdown (planning, copies, read tracking, saving, record) and, per unit, its status, seconds, and `reused` or the reason it ran. The record validator (plugin/lib/record.jq) accepts the new fields; a record written before this change still reads and shows `not recorded` for them; docs/record.md and docs/proof.md describe the lines and fields.",
+        "A maintainer script, tools/measure-proof-speed.sh, builds a generated stand-in project in a temporary folder with at least 5,000 tracked files in at least 500 folders and 200 units (checks plus test files under an approved single-file form), including unit commands that, like a compiler's build cache (Rust's target/ folder), write hundreds of files into a git-ignored folder that the clean copy carries and read them back in later units. It runs `vbw prove`, then one small source change and `vbw fix done`, then `vbw next --json`, and prints: the two report lines, wall-clock time, VBW's own work in seconds, the total CPU seconds of jq processes, the size of the run store (runs.json) and of the written-file lists, and the time `vbw next --json` took. The fixture is generated by the script and contains no file, name or code from any real user project.",
+        "The before numbers on this Mac are recorded as a decision (`vbw decide`): the stand-in's proof wall time, own-work share, units reused after the one-file change, jq CPU seconds, store size, `vbw next` time, and which steps take the time, confirming or clearing each suspect found by reading the code: (a) the folder-fingerprint step in reads_collect whose work grows with files times listed folders; (b) build-cache files written inside the copy entering the written-file lists, inflating written.json and making later units inherit every earlier read list; (c) the whole run store and record parsed again for every unit during planning and saving; (d) `vbw next` running the proof's full reuse planning (steps.sh step_proof_units) on every call.",
+        "The real-session scenario `greenfield` in tools/l3-suite.sh checks that the two report lines appear in the proof output of a real Claude Code session; it is run once in this milestone and its result committed under tools/l3-results."
+      ],
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 11 (338077 bytes)",
+        "files: more than 2 in a repository tracking 1079 files",
+        "risk: none",
+        "breaks: R41",
+        "guarded: R4 (C4), R5 (C5), R8 (C8), R12 (C11), R13 (C12), R14 (C13), R22 (C19), R23 (C20), R24 (C23), R25 (C24), R27 (C21), R28 (C25), R31 (C27), R32 (C28), R33 (C29), R34 (C30), R38 (C33, C34), R40 (C37), R42 (C38), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R51 (C52, C53, C66), R59 (C68, C92), R61 (C73, C74, C75, C76, C77), R62 (C78, C79, C80, C81, C82, C83, C93), R64 (C84, C85), R65 (C86, C87, C88, C89, C90), R66 (C95), R69 (C110, C120, C122), R70 (C114), R72 (C116, C118), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R99 (C155), R100 (C156), R101 (C179), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R119 (C180), R121 (C187, C188), R123 (C190, C191), R127 (C194), R131 (C198), R132 (C199), R133 (C195), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R150 (C223, C224, C225, C226, C227, C228, C229, C230), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R173 (C281, C282, C283, C284, C285, C286, C289), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R178 (C290, C291, C292, C293, C294, C295, C296, C311), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R180 (C307, C308, C309, C310), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R184 (C328, C329, C330, C331, C332, C333), R185 (C334, C335, C336, C337, C338, C339, C340, C341, C342, C343), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R189 (C360, C361, C362, C363, C364, C365, C366, C367, C368, C369, C370, C371, C372, C373), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414), R199 (C424, C425, C430), R200 (C426, C427, C431), R201 (C428, C429)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P162",
+      "title": "Read tracking and reuse planning cost seconds, not minutes, on a large project",
+      "reqs": [
+        "R202"
+      ],
+      "milestone": "M42",
+      "goal": "On the stand-in large project, VBW's own work inside a proof and inside `vbw next` takes seconds, while the read lists it records and the reuse decisions it makes are exactly the same as before.",
+      "criteria": [
+        "Collecting a unit's read list (reads_collect) spawns a fixed number of jq processes whatever the number of folders the unit listed (no process per listed folder), and its work grows with files plus folders, never files times folders. A test with a counting stand-in jq on PATH shows the same process count for 1 listed folder and for 300; the resulting list (files, folders with their fingerprints, the git flag) is identical to what the current code produces on the same fixture; tests/reads-lib.bats, reads-listing.bats, reads-traced.bats stay green.",
+        "Files a unit writes are remembered once per run, not as one full copy of the read list per written file: the written-file store (written.json) grows with the number of runs plus the number of written file names, so a unit that writes 1,000 build-cache files adds 1,000 names and one list. A later unit that reads any of them still inherits the writer's list, so reuse decisions do not change (reads-reuse.bats, runner-reads.bats green; a new test writes 1,000 files in one unit and reads one in the next).",
+        "Reuse planning (proofreuse_plan, testfiles_plan) and saving (proofreuse_save, testfiles_save, prove_stamp) read the run store and the record a fixed number of times per proof, not once per unit, and run one `git diff-tree` per distinct recorded tree rather than one per unit. Decisions and reasons are unchanged: proof-reuse.bats, proofreuse-rule.bats, fix-reuse.bats, proof-selective.bats, proof-causes.bats, proof-cause-tree.bats, fix-done-output.bats, prove-summary.bats stay green, and a new test compares the per-unit reasons of a 50-unit fixture with mixed reasons against the expected list.",
+        "`vbw next` does not redo the proof's reuse planning when nothing it depends on changed: the planned unit list is cached in .vbw/runtime, keyed on the committed tree, the record's fingerprint and the run store's identity (its digest), and reused only while all three match; any change recomputes it. A test shows the second of two consecutive `vbw next --json` calls reads the cache (no diff-tree, same answer) and that a changed store or record invalidates it.",
+        "Every cost the P161 measurement named as VBW's own error is fixed here with a regression test shown red before the fix; a cause that is inherent to the project's build (a unit that truly reads every source file, so any source change re-runs it) is not 'fixed' but reported truthfully in the `top reasons` line.",
+        "Measured after, on the same Mac with the same script (tools/measure-proof-speed.sh): VBW's own work for the whole 200-unit proof is under 60 s, read tracking under 1 s per unit, total jq CPU under 60 s, `vbw next --json` under 5 s with the store full, and the number of units reused after the one-file change equals the number of units whose read lists do not contain the changed file. Before and after numbers are recorded as a decision.",
+        "A timed test file (tests/timed-proof-speed.bats, run only by the release run per D245) runs a scaled-down stand-in (about 2,000 files, 300 folders, 40 units) and fails when read tracking exceeds 1 s per unit or planning exceeds 5 s; a machine too busy to measure is reported as busy, not failed, like the other timed tests.",
+        "docs/proof.md ('Reusing results') describes how written files carry read lists and what `vbw next` caches; docs/next.md names the cached proof sizing and when it is recomputed."
+      ],
+      "proposed": "deep",
+      "tier": "deep",
+      "reasons": [
+        "requirements: 1",
+        "files: 10 (162622 bytes)",
+        "files: more than 2 in a repository tracking 1079 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R13 (C12), R14 (C13), R24 (C23), R25 (C24), R26 (C22), R28 (C25), R31 (C27), R32 (C28), R37 (C35), R40 (C37), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R50 (C51), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R71 (C115, C121), R72 (C116, C118), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R102 (C158, C159), R103 (C160), R104 (C161, C162), R105 (C163), R106 (C164, C165), R107 (C166, C167), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R116 (C182, C183), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R171 (C270), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R179 (C297, C298, C299, C300, C301, C302, C303, C304, C305, C306, C312), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R192 (C401, C402, C403, C404, C405, C406, C407, C408, C409, C410), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414)",
+        "tests: project test command"
+      ],
+      "predicted": "deep"
+    },
+    {
+      "id": "P163",
+      "title": "VBW's own work counts in the machine-wide limit",
+      "reqs": [
+        "R202"
+      ],
+      "milestone": "M42",
+      "goal": "When several proofs run on one computer, the processes VBW runs for its own bookkeeping take turns in the same machine-wide limit as the tests, so VBW as a whole stays within about three quarters of the cores.",
+      "criteria": [
+        "A unit's slot covers its read tracking: the slot is taken before the unit's access times are reset and given back only after its read list is collected. The command's time limit still counts from the command's start, never from the tracking or the wait (command-timeout.bats, machine-wait-line.bats green). A test with a fake core count (tests/machine-helper.bash) and a stand-in process holding the only slot shows the proof's unit has no reads state folder until the holder releases, and the `waited ...` line counts that wait.",
+        "The proof-wide heavy steps, reuse planning, making the clean copies and saving the run store, each hold one slot while they run, under their own unit names (for example vbw:plan, vbw:copies, vbw:save), and give it back at once after; a nested run (VBW_SLOT_STORE set) takes none, as today. A test with the only slot held elsewhere shows `vbw prove` neither reads the run store for planning nor creates a proof copy until the slot frees, and the slot store lists the planning entry while it runs.",
+        "`vbw next` never waits for a slot: its proof sizing (cached by P162) runs outside the limit, so a session is never blocked by other runs when it asks what is next (kernel-next.bats, sessions-next.bats green; a test with every slot held shows `vbw next --json` answers at once).",
+        "The held count never exceeds the limit: the two-proofs test (machine-turns.bats style, limit 2, three units each) samples the store at every unit command and at each bookkeeping step, and the maximum held, VBW's own entries included, is at most 2.",
+        "If the slot store cannot be used, VBW's own steps run anyway under check_jobs alone, with the existing `the computer-wide limit was not in force` message and no new failure (machine-recovery.bats, machine-midrun.bats green).",
+        "docs/proof.md ('The computer-wide limit') says that VBW's own bookkeeping steps take slots too and names them; the `waited` line's wording stays the same.",
+        "On the stand-in, tools/measure-proof-speed.sh --two runs two proofs at once and samples every second how many VBW processes (units plus bookkeeping) run; the maximum never exceeds the machine limit, and the result joins the after decision."
+      ],
+      "tier": "standard",
+      "reasons": [
+        "requirements: 1",
+        "files: 6 (120161 bytes)",
+        "files: more than 2 in a repository tracking 1079 files",
+        "risk: none",
+        "breaks: none",
+        "guarded: R12 (C11), R25 (C24), R31 (C27), R32 (C28), R43 (C42, C43), R44 (C44, C45), R45 (C39, C40, C41), R46 (C46), R47 (C47), R48 (C49, C50), R49 (C48), R61 (C73, C74, C75, C76, C77), R66 (C95), R69 (C110, C120, C122), R70 (C114), R73 (C98), R74 (C99, C100), R78 (C105, C106), R79 (C107), R80 (C108), R81 (C109, C111, C112, C113), R83 (C119), R92 (C131, C132, C133, C134, C135, C136, C137, C138, C139), R93 (C140, C141, C142, C143, C144), R94 (C145, C146, C147, C148), R97 (C153), R98 (C154), R100 (C156), R103 (C160), R104 (C161, C162), R105 (C163), R110 (C169, C170), R111 (C171, C172, C173, C174, C175), R115 (C181), R118 (C184), R131 (C198), R132 (C199), R134 (C201), R135 (C202), R144 (C208, C209), R147 (C212, C215, C237), R148 (C213, C214, C216, C238), R149 (C217, C218, C219, C220, C221, C222), R152 (C233, C234), R153 (C235, C236, C239), R160 (C247, C263, C264), R161 (C248, C265, C266), R166 (C253, C254, C255, C256, C267), R167 (C257, C258, C259, C260), R168 (C261, C262), R169 (C268), R170 (C269), R174 (C279, C280), R175 (C274, C275), R176 (C276, C277, C278), R181 (C313, C314, C315, C316, C317, C318, C319, C320, C321), R182 (C322, C323, C324, C325, C326), R183 (C327), R188 (C350, C351, C352, C353, C354, C355, C356, C357, C358, C359), R190 (C374, C375, C376, C377, C378, C379, C380, C381, C382, C383, C384, C385, C386, C387, C388), R191 (C389, C390, C391, C392, C393, C394, C395, C396, C397, C398, C399, C400), R193 (C411, C412), R194 (C417, C418, C419), R195 (C420, C421, C422), R196 (C415, C416), R197 (C413, C414)",
+        "tests: project test command"
+      ],
+      "predicted": "standard"
     }
   ],
   "plans": [
@@ -45343,6 +45846,320 @@
           "head": "8374b78c01eacc0ee4bd8aaf824bf3ca1b5e078a"
         }
       ]
+    },
+    {
+      "id": "P161.1",
+      "phase": "P161",
+      "title": "A clock inside the proof: five step timers and the two report lines",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "plugin/lib/prooftime.sh",
+        "plugin/lib/cmd-prove.sh",
+        "plugin/lib/cmd-fix.sh",
+        "plugin/lib/checks.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "New plugin/lib/prooftime.sh: prooftime_clock (seconds with milliseconds: date +%s.%N where %N is honoured, else perl Time::HiRes), prooftime_begin (a per-process scratch file under .vbw/runtime, guarded), prooftime_add STEP SECONDS (appends, so a unit's subshell can add its own seconds) and prooftime_total (one JSON object {planning, copies, tracking, saving, record, wall} in seconds), plus prooftime_lines that renders the two report lines from an evidence-shaped object: units are the checks that did not wait, the commands that were not skipped and are not of_files, and the test files; N are those without reused; a unit's reason is its why, or each of the proof's causes when it has none; at most three, most frequent first, ties in the units' order; 'none' when N is 0; minutes with one decimal.",
+        "plugin/lib/checks.sh: in checks_unit_run, time reads_reset and reads_collect with prooftime_clock and add both to the proof's tracking step (nothing when no proof timer is open, so vbw check is unchanged).",
+        "plugin/lib/cmd-prove.sh: time planning (proofreuse_plan, proofcauses_find, testfiles_plan, prove_plan_all), copies (proofcopy_create_slots), saving (proofreuse_save, testfiles_save) and record (the evidence record_update); the evidence gains own (the split; own.record is added by the second record_update, after the wall time is read) and causes (the whole-proof causes, [] when none); the two lines print just before the verdict line (proved / not proved), from the record's evidence. tests/prove-own-work.bats prove cases red before, green after.",
+        "plugin/lib/cmd-fix.sh: the same timers; the fixes are judged and the record written before anything prints (the refusal lines are buffered and printed where they print today, so the output order is unchanged); the two lines print right after 'test files: N ran, M reused', from the round's results, reuse map and causes; zeros and 'none' when nothing was judged. tests/prove-own-work.bats fix done cases green; fix-done-output.bats, fix-many.bats, machine-wait-line.bats, prove-summary.bats green."
+      ]
+    },
+    {
+      "id": "P161.2",
+      "phase": "P161",
+      "title": "vbw show evidence shows the step split and each unit's reason; the validator pins the new fields",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "plugin/lib/cmd-show.sh",
+        "plugin/lib/record.jq"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "plugin/lib/record.jq: evidence.own, when present, is an object with exactly the keys planning, copies, tracking, saving, record and wall, each a number of at least 0; evidence.causes, when present, an array of strings; anything else is a violation in the existing wording style; a record without them stays valid. The validator case of tests/prove-own-work.bats red before, green after.",
+        "plugin/lib/cmd-show.sh (evidence): after the proof-run line, '  own work: X of Y s: planning A, copies B, read tracking C, saving D, record E' (seconds with two decimals) or '  own work: not recorded' when the evidence has no own; each unit line keeps ' reused (proof of ...)', else ends ' ran: <why>' when it has why, else ends ' not recorded'.",
+        "The show-evidence and not-recorded cases of tests/prove-own-work.bats green; kernel-show.bats and record-v4-compat.bats green."
+      ]
+    },
+    {
+      "id": "P161.3",
+      "phase": "P161",
+      "title": "Docs: the two report lines and the evidence fields",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "docs/proof.md",
+        "docs/record.md"
+      ],
+      "after": [
+        "P161.1",
+        "P161.2"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/proof.md, under vbw prove: the two lines as printed (VBW's own work: X of Y min; ran again: N of M units; top reasons: ...), what own work means (planning the reuse, making the copies, read tracking, saving the run store, writing the record: measured by the clock, never estimated), where each command prints them (before the verdict in vbw prove, after the counts in vbw fix done), the reasons (the units' own and the whole-proof causes, at most three, most frequent first) and the zeros case.",
+        "docs/record.md, evidence row: the own object (planning, copies, tracking, saving, record, wall: seconds), causes (the whole-proof causes), that vbw show evidence prints them and says not recorded on a record from before.",
+        "tests/proof-speed-docs.bats green."
+      ]
+    },
+    {
+      "id": "P161.4",
+      "phase": "P161",
+      "title": "The stand-in large project, the measurement script and the before decision",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "tools/measure-proof-speed.sh"
+      ],
+      "after": [
+        "P161.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/measure-proof-speed.sh (maintainers only, like tools/measure-fix-round.sh): the generator. Options --files N --folders N --units N (defaults 5000, 500, 200) and --generate DIR (build the stand-in at DIR in the caller's environment, print 'fixture: stand-in (F files, D folders, U units)' and stop). A two-level folder tree, small text source files; units are half approved checks (sh tests/c_N.sh, files tests/c_N.sh) and half test files tests/t_N.sh under the form 'sh {file}' with files tests/t_*.sh; each unit reads a handful of source files; every fourth unit writes 300 files into the git-ignored .buildcache/ (named in .gitignore; not a build-folder name, so the clean copy carries it) and the unit after it reads them back; one plan of R1 done, contract and commands approved, everything committed. No word, path or code of any real user project.",
+        "The measurement: an isolated HOME and CLAUDE_CONFIG_DIR under VBW_MEASURE_DIR (default .vbw/runtime/scratch/measure-proof-speed, rebuilt each run); a jq wrapper first on PATH for the measured commands that runs the real jq and appends its children's CPU seconds (the shell's times builtin) and one count line; vbw prove timed by a HiRes clock; then one line appended to one source file some units read, an open fix F1 of R1 written into the record, vbw fix done F1 timed; then vbw next --json timed; a once-a-second sampler keeps the largest size of .vbw/runtime/proof.*/reads/written.json seen; the expected reuse count is read from runs.json before the fix round: the units whose read lists do not contain the changed file.",
+        "Output, one 'name: value' line each, exactly these names: fixture, files, folders, units, 'prove: ' followed by each of the two report lines, prove wall seconds, prove own seconds, prove planning seconds, prove copies seconds, prove tracking seconds, prove saving seconds, prove record seconds (from evidence.own), 'fix done: ' followed by each of its two lines, fix done wall seconds, fix done own minutes (from its line), reused, reused expected, jq cpu seconds, jq processes, store bytes, written lists bytes, next seconds. tests/measure-proof-speed.bats green.",
+        "Run the script at the default size on this Mac and record the before numbers with vbw decide: text starting 'Proof speed before (M42) on this Mac:' and carrying 'stand-in (F files, D folders, U units)', 'prove W s wall', 'own work O s (P%)', 'fix done after one file: reused N of M units', 'jq C CPU s in K processes', 'store B bytes', 'written lists B bytes', 'vbw next T s', then 'planning A s, copies B s, read tracking C s, saving D s, record E s', then '(a) confirmed|cleared', '(b) ...', '(c) ...', '(d) ...' with one clause each saying what the numbers showed; why: the script, its size and the date. tests/proof-speed-before.bats green."
+      ]
+    },
+    {
+      "id": "P161.5",
+      "phase": "P161",
+      "title": "The greenfield scenario checks the report lines in a real session; run once, result committed",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "tools/l3-suite.sh",
+        "tools/l3-results/greenfield.json"
+      ],
+      "after": [
+        "P161.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tools/l3-suite.sh scenario_greenfield: after common_checks, read the session transcripts (transcripts, main and subagents) for the tool results of vbw prove and vbw fix done calls and set the facts report_own_work_line and report_ran_again_line (true when a tool result carries a line matching the printed form), never from screen text; write tools/l3-results/greenfield.json with result_write greenfield (fixture, cost, passed = common checks and both facts, facts, not_tested naming what the run did not exercise).",
+        "Run 'bash tools/l3-suite.sh greenfield' once with the loaded plugin on this Mac and commit tools/l3-results/greenfield.json.",
+        "tests/l3-greenfield-report.bats, l3-results.bats and l3-scenarios.bats green."
+      ]
+    },
+    {
+      "id": "P162.1",
+      "phase": "P162",
+      "title": "Read tracking in a fixed number of processes; a written-file store that grows with names",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "plugin/lib/reads.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: tests/reads-fixed-jq.bats and tests/reads-written-store.bats fail on the current code (one jq and one sha256 per listed folder; one copy of the list per written file).",
+        "reads_collect fingerprints: one jq builds every listed folder's listing text (the compact JSON [path, names], names from one pass over the tracked paths through a parent-to-names map, so the work grows with files plus folders), bash writes one scratch file per listed folder with no process (printf and a redirection), one sha256sum or shasum call fingerprints all of them, one jq assembles the list; bytes identical to today's list.",
+        "written.json becomes {lists: {<run id>: {files, dirs, git}}, files: {<path>: [<run id>, ...]}}: a run that wrote files stores its list once under a fresh id (a counter in the state folder); each written path gains that id; a later run that reads a written path inherits the union of the lists its ids name; reads_reset takes the wlist from .files and creates the empty store in the new shape.",
+        "tests/reads-lib.bats, reads-listing.bats, reads-traced.bats, reads-reuse.bats, runner-reads.bats, prove-reads.bats and the two new files green; the library stays bash 3.2 clean."
+      ]
+    },
+    {
+      "id": "P162.2",
+      "phase": "P162",
+      "title": "Reuse planning and saving in batches: fixed store and record reads, one diff-tree per tree",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "plugin/lib/proofreuse.sh",
+        "plugin/lib/testfiles.sh",
+        "plugin/lib/proofcauses.sh",
+        "plugin/lib/cmd-prove.sh",
+        "plugin/lib/cmd-fix.sh"
+      ],
+      "after": [
+        "P161.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: the two process-count tests of tests/proof-plan-batch.bats fail on the current code (today vbw next on 50 units: 100 git diff-tree and 575 jq processes).",
+        "Fingerprints in one pass: proofreuse_fingerprints RECORD writes each unit's canonical bytes (a check's approved definition; a command's time limit and argv; a test file's limit and argv) to one scratch file per unit, runs one sha256sum or shasum call, and keeps the map unit -> fp in a scratch JSON file that planning, saving and stamping read (proofreuse_check_fp, proofreuse_command_fp and testfiles_fp stay as one-unit fronts giving the same values).",
+        "Planning in one pass: one git diff-tree per distinct recorded tree (shared with proofcauses_files, which today runs one per store entry) and one git ls-tree -r of HEAD for every listed-folder fingerprint, then one jq that applies the one reuse rule to every unit (checks, commands, test files) and gives the reuse set, the todo list and the reasons in today's words and precedence; proofreuse_reason stays the one-unit front over the same jq rule (proofreuse-rule.bats); testfiles_plan and cmd_fix use the batch.",
+        "Saving and stamping in one jq each: proofreuse_save, testfiles_save, prove_stamp and testfiles_finish take the fingerprint map and the results by file; the store and the record are read a fixed number of times per proof.",
+        "proof-reuse.bats, proofreuse-rule.bats, fix-reuse.bats, proof-selective.bats, proof-causes.bats, proof-cause-tree.bats, proofcauses-lib.bats, fix-done-output.bats, prove-summary.bats, prove-testfiles.bats, prove-own-work.bats and proof-plan-batch.bats green."
+      ]
+    },
+    {
+      "id": "P162.3",
+      "phase": "P162",
+      "title": "vbw next caches the proof's unit list",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "plugin/lib/steps.sh"
+      ],
+      "after": [],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: tests/next-proof-cache.bats fails on the current code (every call plans again).",
+        "step_proof_units: the key is the committed tree (vbw_head_tree), the SHA-256 of the record file, the SHA-256 of the run store file (an absent store counts as empty) and whether the unfinished marker exists; .vbw/runtime/proof-units.json holds {head, record, store, marker, full, units}, written atomically (a temporary file, then mv); the list is reused only when every part of the key matches, else recomputed and the file rewritten; a damaged file is recomputed.",
+        "kernel-next.bats, sessions-next.bats, step-proof-units.bats, step-next.bats, step-proof.bats, road-next.bats and next-proof-cache.bats green."
+      ]
+    },
+    {
+      "id": "P162.4",
+      "phase": "P162",
+      "title": "After numbers: the timed test, the remaining costs and the after decision",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "tests/timed-proof-speed.bats",
+        "plugin/lib/reads.sh",
+        "plugin/lib/proofreuse.sh",
+        "plugin/lib/steps.sh"
+      ],
+      "after": [
+        "P162.1",
+        "P162.2",
+        "P162.3",
+        "P163.1",
+        "P163.2",
+        "P163.3"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "tests/timed-proof-speed.bats (release run only, like the other tests/timed-*.bats): builds the scaled-down stand-in with 'bash tools/measure-proof-speed.sh --generate DIR --files 2000 --folders 300 --units 40' inside a vbw_setup root, runs vbw prove there, reads evidence.own.tracking and evidence.own.planning, and fails when tracking divided by the units that ran exceeds TRACKING_PER_UNIT_LIMIT=1 or planning exceeds PLANNING_LIMIT=5; first it measures sh and jq startup like tools/bench-hooks.sh and, when the machine is too busy to measure, prints 'machine too busy to measure' and skips (skip ...). tests/proof-speed-timed.bats green.",
+        "The before decision's remaining costs: for each cost it names as VBW's own beyond suspects (a) to (d), a regression test shown red, then the fix in reads.sh, proofreuse.sh or steps.sh; a cause inherent to the stand-in's build (a unit that truly reads every source file) is left as a truthful entry of the top-reasons line and named in the after decision.",
+        "Run tools/measure-proof-speed.sh at the default size and then with --two on this Mac, both with the finished P162 and P163 code.",
+        "Record the after numbers with vbw decide: text starting 'Proof speed after (M42) on this Mac:' with every token of the before decision, 'fix done after one file: reused N of M units (expected E)' and 'two proofs: max held H of limit L'; why: the script, its size and the date. tests/proof-speed-after.bats green."
+      ]
+    },
+    {
+      "id": "P162.5",
+      "phase": "P162",
+      "title": "Docs: written files carry read lists; what vbw next caches",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "docs/proof.md",
+        "docs/next.md"
+      ],
+      "after": [
+        "P161.3"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/proof.md, Reusing results: a file a unit writes carries that unit's read list (kept once per run, by name, in the copy's written-file store written.json), a later unit that reads it inherits the list, and vbw next keeps the planned unit list in .vbw/runtime/proof-units.json.",
+        "docs/next.md, The step: the proof sizing is cached in .vbw/runtime/proof-units.json, keyed on the committed tree, the record's fingerprint and the run store's digest, and recomputed when any of them changes.",
+        "tests/proof-speed-reuse-docs.bats green."
+      ]
+    },
+    {
+      "id": "P163.1",
+      "phase": "P163",
+      "title": "A unit's slot covers its read tracking",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "plugin/lib/checks.sh"
+      ],
+      "after": [
+        "P161.1"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: tests/machine-tracking.bats fails on the current code (the reset runs before the slot is taken, the collection after it is given back).",
+        "checks_unit_run: enter the gate, take the slot, then reset the copy's access times, run the command (its time limit still from its own start), collect the read list, then give the slot back and leave the gate; the tracking timers of P161.1 stay around the reset and the collection.",
+        "command-timeout.bats, machine-wait-line.bats, machine-turns.bats, machine-slots.bats, gate-waited.bats, runner-reads.bats, prove-parallel.bats and machine-tracking.bats green."
+      ]
+    },
+    {
+      "id": "P163.2",
+      "phase": "P163",
+      "title": "Bookkeeping steps take slots: vbw:plan, vbw:copies, vbw:save",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "plugin/lib/cmd-prove.sh",
+        "plugin/lib/cmd-fix.sh",
+        "plugin/lib/slots.sh"
+      ],
+      "after": [
+        "P162.2"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "Red first: tests/machine-bookkeeping.bats fails on the current code (no vbw:plan entry; the store is read and a copy made while the slot is held elsewhere).",
+        "plugin/lib/slots.sh: slots_hold NAME and slots_release NAME for a bookkeeping step of the run (take and give under the run's pid and the given name, the wait counted like a unit's; they never set the unit mark VBW_SLOT_STORE; a nested run takes none; a store that cannot be used lets the step run anyway, with the existing message).",
+        "plugin/lib/cmd-prove.sh: vbw:plan held around the planning (proofreuse_plan, proofcauses_find, testfiles_plan), vbw:copies around proofcopy_create_slots, vbw:save around proofreuse_save and testfiles_save; plugin/lib/cmd-fix.sh: checks_begin moved before its planning so the store is open, then the same three steps; step_proof_units (vbw next) never opens the store, so it never waits.",
+        "kernel-next.bats, sessions-next.bats, machine-recovery.bats, machine-midrun.bats, machine-turns.bats, machine-wait-line.bats, fix-done-output.bats, prove-own-work.bats and machine-bookkeeping.bats green."
+      ]
+    },
+    {
+      "id": "P163.3",
+      "phase": "P163",
+      "title": "tools/measure-proof-speed.sh --two: two proofs at once, sampled every second",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "tools/measure-proof-speed.sh"
+      ],
+      "after": [
+        "P161.4"
+      ],
+      "status": "planned",
+      "role": "dev",
+      "tasks": [
+        "--two: a second copy of the generated stand-in (its own folder, same isolated home and slot store), both proved at once with vbw prove started together.",
+        "A once-a-second sampler while they run: the held count of the slot store (units plus VBW's own vbw:* entries) and, as a cross-check, the gate registrations of both projects; prints 'machine limit: L' (vbw_machine_limit for this Mac), 'two proofs max held: H' and 'two proofs wall seconds: S' after the usual lines.",
+        "tests/measure-two-proofs.bats green; the single-proof output is unchanged."
+      ]
+    },
+    {
+      "id": "P163.4",
+      "phase": "P163",
+      "title": "Docs: bookkeeping steps take slots",
+      "reqs": [
+        "R202"
+      ],
+      "files": [
+        "docs/proof.md"
+      ],
+      "after": [
+        "P162.5"
+      ],
+      "status": "planned",
+      "role": "docs",
+      "tasks": [
+        "docs/proof.md, The computer-wide limit: a unit's slot covers its read tracking (taken before the reset, given back after the collection); the proof-wide steps hold one slot each as vbw:plan (reuse planning), vbw:copies (making the clean copies) and vbw:save (saving the run store); vbw next never waits for a slot; a nested run takes none; the waited line's wording unchanged (waited ... for other VBW runs on this computer).",
+        "tests/machine-bookkeeping-docs.bats, machine-limit-docs.bats and check-jobs-docs.bats green."
+      ]
     }
   ],
   "fixes": [
@@ -58191,6 +59008,15 @@
         "milestone": "M42",
         "started": "2026-10-20T08:24:59Z",
         "ended": "2026-10-20T08:33:23Z",
+        "cost": null
+      },
+      {
+        "id": "plan-20261020T084517Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T08:45:17Z",
+        "ended": "2026-10-20T09:28:55Z",
         "cost": null
       }
     ],

@@ -1,0 +1,166 @@
+#!/usr/bin/env bats
+# R202 (docs/proof.md, docs/record.md): every proof and fix round says where its
+# time went and why units ran again. vbw prove prints, just before its verdict
+# line (proved / not proved), and vbw fix done just after its
+# "test files: N ran, M reused" line, two lines:
+#   VBW's own work: X of Y min
+#   ran again: N of M units; top reasons: <reason> (count), ...
+# Own work is everything that is not a unit's command running: planning the
+# reuse, making the clean copies, read tracking (reset before and collection
+# after each unit), saving the run store and writing the record, each measured
+# by the clock inside the proof; Y is the command's wall-clock time. Minutes
+# carry one decimal. M counts every unit the proof covers (checks, approved
+# commands, test files), N those that really ran. The reasons are the units'
+# own (never passed, <file> changed, definition changed, ...) and, for a unit
+# that ran for a whole-proof cause, that cause; at most three, most frequent
+# first, ties in the order the units appear in the evidence. Both lines print
+# when nothing ran: "ran again: 0 of M units; top reasons: none". The split
+# stays in the evidence as evidence.own {planning, copies, tracking, saving,
+# record, wall} (seconds) and the causes as evidence.causes; vbw show evidence
+# prints the breakdown and each unit's reason, says "not recorded" on a record
+# written before this change, and the validator refuses a malformed own. L1.
+
+load helper
+
+setup() {
+  vbw_setup
+  vbw_git_project
+  "$VBW" init > /dev/null
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n- R2 [human] It feels trustworthy\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  mkdir -p src tests
+  printf 'a\n' > src/a.txt
+  printf 'b\n' > src/b.txt
+  printf 'c\n' > src/c.txt
+  printf 'other\n' > src/other.txt
+  # C1 and C2 read src/a.txt, C3 and C6 read src/c.txt, C4 reads src/b.txt; C5 is added later.
+  printf 'grep -q . src/a.txt\n' > tests/c1.sh
+  printf 'grep -q . src/a.txt\n' > tests/c2.sh
+  printf 'grep -q . src/c.txt\n' > tests/c3.sh
+  printf 'grep -q . src/b.txt\n' > tests/c4.sh
+  printf 'grep -q . src/c.txt\n' > tests/c5.sh
+  printf 'grep -q . src/c.txt\n' > tests/c6.sh
+  edit_record '.checks = [{id:"C1", req:"R1", run:["sh","tests/c1.sh"], files:["tests/c1.sh"]},
+      {id:"C2", req:"R1", run:["sh","tests/c2.sh"], files:["tests/c2.sh"]},
+      {id:"C3", req:"R1", run:["sh","tests/c3.sh"], files:["tests/c3.sh"]},
+      {id:"C4", req:"R1", run:["sh","tests/c4.sh"], files:["tests/c4.sh"]},
+      {id:"C6", req:"R1", run:["sh","tests/c6.sh"], files:["tests/c6.sh"]}]
+    | .phases = [{id:"P1", title:"Shop", reqs:["R1","R2"], milestone:"M1"}]
+    | .plans = [{id:"P1.1", phase:"P1", title:"Pay", reqs:["R1"], files:["src/a.txt","src/b.txt","src/c.txt"], after:[], status:"done"},
+                {id:"P1.2", phase:"P1", title:"Look", reqs:["R2"], files:["src/other.txt"], after:[], status:"done"}]'
+  git add -A && git commit -q -m "chore(vbw): plan"
+  "$VBW" approve > /dev/null
+}
+
+teardown() { vbw_teardown; }
+
+edit_record() {
+  jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
+  rm -f .vbw/runtime/glance.json
+}
+
+OWN_RE="^VBW's own work: [0-9]+\.[0-9] of [0-9]+\.[0-9] min$"
+
+# nth K: line K of $output counted from its end (1 is the last line).
+nth() { printf '%s\n' "$output" | tail -n "$1" | head -n 1; }
+
+# after_counts: the two lines that follow the "test files: ..." count line, in L1 and L2.
+after_counts() {
+  local n
+  n=$(printf '%s\n' "$output" | grep -n '^test files: [0-9]* ran, [0-9]* reused$' | head -n 1 | cut -d: -f1)
+  [ -n "$n" ] || { echo "no test files count line in:"; echo "$output"; return 1; }
+  L1=$(printf '%s\n' "$output" | sed -n "$((n + 1))p")
+  L2=$(printf '%s\n' "$output" | sed -n "$((n + 2))p")
+}
+
+# mixed_change: src/a.txt and src/b.txt change, C3's definition changes, C5 is
+# new, C6 is untouched; approved and committed.
+mixed_change() {
+  printf 'more\n' >> src/a.txt
+  printf 'more\n' >> src/b.txt
+  edit_record '.checks |= map(if .id == "C3" then . + {timeout: 100} else . end)
+    | .checks += [{id:"C5", req:"R1", run:["sh","tests/c5.sh"], files:["tests/c5.sh"]}]
+    | .checks |= sort_by(.id)'
+  git add -A && git commit -q -m "feat: mixed change"
+  "$VBW" approve > /dev/null
+}
+
+@test "R202: the first proof prints both lines just before its verdict, every unit ran for the one cause, and the evidence keeps the split and the cause" {
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(nth 1)" = proved ] || { echo "$output"; false; }
+  [[ "$(nth 3)" =~ $OWN_RE ]] || { echo "line 3 from the end: $(nth 3)"; echo "$output"; false; }
+  [ "$(nth 2)" = "ran again: 5 of 5 units; top reasons: this clone has no earlier recorded run (5)" ] || { echo "$output"; false; }
+  jq -e '.evidence.own | type == "object" and (keys == ["copies","planning","record","saving","tracking","wall"])
+    and all(.[]; type == "number" and . >= 0) and .wall >= .planning' .vbw/record.json || { jq .evidence.own .vbw/record.json; false; }
+  jq -e '.evidence.causes == ["this clone has no earlier recorded run"]' .vbw/record.json || { jq .evidence.causes .vbw/record.json; false; }
+}
+
+@test "R202: a change that affects no unit prints zeros: ran again 0 of 5, top reasons none; the own-work line still prints" {
+  "$VBW" prove > /dev/null
+  printf 'changed\n' >> src/other.txt
+  git add -A && git commit -q -m "chore: unread file"
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(nth 1)" = proved ] || { echo "$output"; false; }
+  [[ "$(nth 3)" =~ $OWN_RE ]] || { echo "$output"; false; }
+  [ "$(nth 2)" = "ran again: 0 of 5 units; top reasons: none" ] || { echo "$output"; false; }
+  jq -e '.evidence.causes == [] and (.evidence.own | type == "object")' .vbw/record.json || { jq .evidence .vbw/record.json; false; }
+}
+
+@test "R202: mixed reasons: at most three, most frequent first, ties in the units' order" {
+  "$VBW" prove > /dev/null
+  mixed_change
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(nth 2)" = "ran again: 5 of 6 units; top reasons: src/a.txt changed (2), definition changed (1), src/b.txt changed (1)" ] || { echo "$output"; false; }
+  jq -e '.evidence.checks.C1.why == "src/a.txt changed" and .evidence.checks.C5.why == "never passed" and .evidence.checks.C6.reused == true
+    and .evidence.causes == []' .vbw/record.json || { jq .evidence.checks .vbw/record.json; false; }
+}
+
+@test "R202: vbw show evidence prints the step breakdown and each unit's reason or reuse" {
+  "$VBW" prove > /dev/null
+  mixed_change
+  "$VBW" prove > /dev/null
+  vbw_run show evidence
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -Eq '^  own work: [0-9]+\.[0-9]+ of [0-9]+\.[0-9]+ s: planning [0-9]+\.[0-9]+, copies [0-9]+\.[0-9]+, read tracking [0-9]+\.[0-9]+, saving [0-9]+\.[0-9]+, record [0-9]+\.[0-9]+$' \
+    || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -Eq '^  C1 pass .* ran: src/a.txt changed$' || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -Eq '^  C6 pass .* reused \(proof of ' || { echo "$output"; false; }
+}
+
+@test "R202: a record written before this change still reads, and vbw show evidence says not recorded" {
+  "$VBW" prove > /dev/null
+  edit_record 'del(.evidence.own, .evidence.causes) | .evidence.checks |= map_values(del(.why))'
+  vbw_run show evidence
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -q '^  own work: not recorded$' || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -Eq '^  C1 pass .* not recorded$' || { echo "$output"; false; }
+}
+
+@test "R202: the validator refuses a malformed own split" {
+  "$VBW" prove > /dev/null
+  edit_record '.evidence.own = {planning: "x"}'
+  vbw_run show evidence
+  [ "$status" -ne 0 ] || { echo "$output"; false; }
+  [[ "$output" == *corrupt* ]] || { echo "$output"; false; }
+}
+
+@test "R202: vbw fix done prints both lines right after its count lines" {
+  edit_record '.fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "a"}]'
+  vbw_run fix done F1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  after_counts
+  [[ "$L1" =~ $OWN_RE ]] || { echo "after the counts: $L1"; echo "$output"; false; }
+  [ "$L2" = "ran again: 5 of 5 units; top reasons: this clone has no earlier recorded run (5)" ] || { echo "$output"; false; }
+  [ "$(nth 1)" = "F1 fixed: vbw prove decides" ] || { echo "$output"; false; }
+}
+
+@test "R202: vbw fix done with nothing to judge prints zeros" {
+  edit_record '.plans |= map(.status = "planned") | .fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "a"}]'
+  vbw_run fix done F1
+  after_counts
+  [[ "$L1" =~ $OWN_RE ]] || { echo "after the counts: $L1"; echo "$output"; false; }
+  [ "$L2" = "ran again: 0 of 0 units; top reasons: none" ] || { echo "$output"; false; }
+}
