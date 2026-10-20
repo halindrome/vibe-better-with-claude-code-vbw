@@ -24,10 +24,13 @@
 # anywhere else on this hot path. The record carries no name, so a call that read
 # the record has holder null and the reason names the first 8 characters of the id.
 #
+# This file includes no other module: each guard includes lib/holder.jq itself and
+# passes the holder's display name in. jq 1.8.2 aborts, on its first call, a program
+# that reaches a module only through another module (jqlang/jq#3636), and that would
+# block every call of a run (R165).
+#
 # Membership tests are anchored regexes, not array literals: they compile to far
 # fewer jq instructions, and compiling is most of a guard's cost.
-
-include "holder" {search: "../lib"};
 
 # The glance as an object when it holds schema, lease and protected, else null.
 def glance_object:
@@ -149,10 +152,16 @@ def shell_write_denial($g):
   | if $o | unresolved_path then $o | outside_denial($g.lease; "cannot be resolved by the guard (~ or a shell expansion), so it counts as outside the project")
     else run_write_denial($g) end;
 
+# The name vbw run start stored for FOREIGN's run: the glance's holder when it is
+# that run's, else null.
+def foreign_stored_name($f):
+  ($f.holder // null) | if type == "object" and .run == $f.run then .session_name else null end;
+
 # Why another session may not write PATH (project-relative) while FOREIGN's run
 # is open, or empty: it writes lease.files (null: any project file, []: none).
-def foreign_denial($f):
-  . as $p | holder_name($f; (($f.holder // null) | if type == "object" and .run == $f.run then .session_name else null end); null) as $name | select($p != null and (($f.files // [$p]) | any(.[]; covers($p))))
+# NAME is the holder's display name: holder_name($f; foreign_stored_name($f); null).
+def foreign_denial($f; $name):
+  . as $p | select($p != null and (($f.files // [$p]) | any(.[]; covers($p))))
   | "\($p) is being written by run \($f.run) of another session (\($name)): wait for it; if the user says that session is closed, they run vbw run end --owner-closed\nNext: work on files outside \($f.files // ["the project"] | join(", ")) meanwhile, or wait until run \($f.run) ends";
 
 def secret_reason: "\(basename) may hold secrets; VBW never reads or writes secret files\nNext: do not open \(basename); ask the user for the value you need, or use an example file such as .env.example";
