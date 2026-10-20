@@ -14,6 +14,17 @@ Before you propose or build a change:
 
 A feature, setting or special case that only one project needs will be declined, however well it is built. The full rule is the first item of the Engineering Standard in `AGENTS.md`.
 
+## Picking up an item from the roadmap
+
+[`docs/known-issues.md`](docs/known-issues.md) lists known issues, planned fixes and options under consideration. [`docs/ideas.md`](docs/ideas.md) lists ideas open for contribution. To pick one up:
+
+1. **Claim it in a GitHub issue.** Open an issue for it in [swt-labs/vibe-better-with-claude-code-vbw](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/issues), or comment on the existing one. Name the item and your approach, so two people do not build the same thing. Your pull request links that issue.
+2. **Read the item as evidence of a problem, not as a specification.** The fix on the page is a first sketch. Check the problem against the design as the first rule says, then state in the issue whether you adopt the sketch, adapt it or propose another. For a medium or large item, agree the design in the issue before you write code.
+3. **Test first.** Reproduce the problem with a failing test, then fix it (see Tests). For a speed or cost item, give the figures before and after, and say exactly what you ran and what you did not.
+4. **Update the page in the same pull request.** When your change fixes a known issue or builds an idea, remove its entry, and update the behaviour docs as usual.
+
+Found a problem that is on neither page? Open a bug report (see Reporting bugs). Have a new idea? Use the feature request template and describe the problem first.
+
 ## Prerequisites
 
 - Claude Code with **Dynamic workflows** enabled (`/config`)
