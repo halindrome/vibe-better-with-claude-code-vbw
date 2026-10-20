@@ -34,15 +34,15 @@ commands_section() {
 @test "sync makes the record's commands exactly the spec's: changed, added and removed" {
   printf '[pytest]\n' > pytest.ini
   "$VBW" init > /dev/null
-  commands_section '- test: cargo test --locked --workspace --manifest-path market_recorder/Cargo.toml
-- pytest: conda run -n portfolium python -m pytest -q market_recorder/'
+  commands_section '- test: cargo test --locked --workspace --manifest-path engine/Cargo.toml
+- pytest: conda run -n analysis python -m pytest -q engine/'
   vbw_run spec sync
   [ "$status" -eq 0 ]
   [[ "$output" == *"changed command test"* && "$output" == *"added command pytest"* ]]
   jq -e '.commands == {
-    test: ["cargo", "test", "--locked", "--workspace", "--manifest-path", "market_recorder/Cargo.toml"],
-    pytest: ["conda", "run", "-n", "portfolium", "python", "-m", "pytest", "-q", "market_recorder/"]}' .vbw/record.json
-  commands_section '- pytest: conda run -n portfolium python -m pytest -q market_recorder/'
+    test: ["cargo", "test", "--locked", "--workspace", "--manifest-path", "engine/Cargo.toml"],
+    pytest: ["conda", "run", "-n", "analysis", "python", "-m", "pytest", "-q", "engine/"]}' .vbw/record.json
+  commands_section '- pytest: conda run -n analysis python -m pytest -q engine/'
   vbw_run spec sync
   [[ "$output" == *"removed command test"* ]]
   jq -e '.commands | keys == ["pytest"]' .vbw/record.json
@@ -97,12 +97,12 @@ commands_section() {
   "$VBW" approve > /dev/null
   vbw_run next --json
   echo "$output" | jq -e '.action == "build"'
-  commands_section '- test: cargo test --manifest-path market_recorder/Cargo.toml'
+  commands_section '- test: cargo test --manifest-path engine/Cargo.toml'
   "$VBW" spec sync > /dev/null
   vbw_run next --json
   echo "$output" | jq -e '.action == "approve"'
   vbw_run show contract
-  [[ "$output" == *"test: cargo test --manifest-path market_recorder/Cargo.toml"* ]]
+  [[ "$output" == *"test: cargo test --manifest-path engine/Cargo.toml"* ]]
   "$VBW" approve > /dev/null
   vbw_run next --json
   echo "$output" | jq -e '.action == "build"'

@@ -354,8 +354,8 @@ array when an argument contains spaces:
 ```markdown
 ## Commands
 
-- test: cargo test --locked --workspace --manifest-path market_recorder/Cargo.toml
-- pytest: conda run -n portfolium python -m pytest -q market_recorder/
+- test: cargo test --locked --workspace --manifest-path engine/Cargo.toml
+- pytest: conda run -n analysis python -m pytest -q engine/
 - e2e: ["sh", "run tests.sh", "--fast"]
 ```
 

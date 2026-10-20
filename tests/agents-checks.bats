@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 # Protected check files are approved byte for byte, so no formatter may change
-# them later (a field report, Portfolium on 2.0.12: the Lead's unformatted Rust
-# tests were rewritten by a Dev's `cargo fmt --all`, which voided the approved
-# contract three times in one day).
+# them later (a field report from a user project on 2.0.12: the Lead's
+# unformatted Rust tests were rewritten by a Dev's `cargo fmt --all`, which
+# voided the approved contract three times in one day).
 
 load helper
 
