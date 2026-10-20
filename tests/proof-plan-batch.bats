@@ -156,3 +156,17 @@ edit_store() { jq "$1" "$(store_file)" > "$TEST_ROOT/store.json" && cp "$TEST_RO
       else "reused" end)}) | from_entries')
   [ "$got" = "$expect" ] || { echo "got:    $got"; echo "expect: $expect"; echo "$output"; false; }
 }
+
+@test "R202: a folder an older store recorded as a plain name (no fingerprint) still re-runs its unit when a file is added to it" {
+  build "$PROJECT" 50
+  cd "$PROJECT"
+  edit_store '.runs |= map_values(.dirs |= map(if type == "object" then .path else . end))'
+  printf 'new\n' > src/d41/new.txt
+  git add -A && git commit -q -m "feat: file added to a listed folder"
+  "$VBW" approve > /dev/null
+  vbw_run prove
+  local got
+  got=$(jq -r '.evidence.checks.C41 | if .reused then "reused" else (.why // "no reason") end' .vbw/record.json)
+  [ "$got" = "src/d41 listing changed" ] || { echo "got: $got"; echo "$output"; false; }
+  [ "$(jq -r '.evidence.checks.C42.reused' .vbw/record.json)" = true ]
+}
