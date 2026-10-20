@@ -277,7 +277,7 @@ PROOFREUSE_RULE_JQ='def parent: if test("/") then sub("/[^/]*$"; "") else "." en
       | if $off != "" then {key: $k, why: $off}
         elif $e == null then {key: $k, why: "never passed"}
         else
-          (if $e.status != "pass" then "last result failed"
+          (if $any != 1 and $e.status != "pass" then "last result failed"
            elif ($e.reads | type) != "array" then "no read list"
            elif $e.fp != $fps[$k] then "definition changed"
            elif $e.git == true then "reads the project through git"
@@ -322,12 +322,14 @@ PROOFREUSE_SETTLE_JQ='$s[0].units | map(. as $u
     | (first($u.pending[]? | select($h[0][.path] != .fp) | "\(.path) listing changed") // null) as $w
     | if $w != null then {key: $u.key, why: $w} else del(.pending) end)'
 
-# proofreuse_judge KEYS HEAD OFF: the one reuse rule applied to the units KEYS
+# proofreuse_judge KEYS HEAD OFF [ANY]: the one reuse rule applied to the units KEYS
 # (a JSON array of unit keys) against PROOFREUSE_STORE and PROOFREUSE_FPS, on the
 # committed code HEAD; OFF is a reason that stops all reuse (then neither git nor
 # the store's diffs are consulted). Prints [{key, why} | {key, result}] in KEYS'
 # order: why is what proofreuse_reason prints, result the stored run as a reused
 # result (it keeps the time it really ran, and its read list for the next proof).
+# ANY 1: a failed run is judged like a passing one (the rule's other clauses apply
+# whatever the status), for a caller that wants the read list of a run, not its pass.
 proofreuse_judge() {
   local dir diffs='{}' n=0 path bytes need
   if [ -z "$3" ] && [ -n "$2" ]; then
@@ -337,7 +339,7 @@ proofreuse_judge() {
   dir=$(proofreuse_scratch)
   vbw_guard_add dir "$dir"
   jq -nc --slurpfile keys <(printf '%s' "$1") --slurpfile st <(printf '%s' "${PROOFREUSE_STORE-}") --slurpfile fps <(printf '%s' "$PROOFREUSE_FPS") \
-    --slurpfile df <(printf '%s' "$diffs") --arg off "$3" "$PROOFREUSE_RULE_JQ" > "$dir/stage1" || { vbw_guard_drop "$dir"; vbw_die "internal error: the reuse rule failed"; }
+    --slurpfile df <(printf '%s' "$diffs") --arg off "$3" --argjson any "${4:-0}" "$PROOFREUSE_RULE_JQ" > "$dir/stage1" || { vbw_guard_drop "$dir"; vbw_die "internal error: the reuse rule failed"; }
   printf '{}' > "$dir/folders"
   need=$(jq -c '.need' "$dir/stage1")
   if [ "$need" != '[]' ]; then
@@ -372,6 +374,17 @@ proofreuse_reason() {
   local PROOFREUSE_FPS verdict why
   PROOFREUSE_FPS=$(jq -nc --arg k "$1" --arg fp "$2" '{($k): $fp}')
   verdict=$(proofreuse_judge "$(jq -nc --arg k "$1" '[$k]')" "$3" "") || return 1
+  why=$(printf '%s' "$verdict" | jq -r '.[0].why // empty')
+  [ -z "$why" ] || { printf '%s\n' "$why"; return 1; }
+}
+
+# proofreuse_current KEY FP HEAD: like proofreuse_reason, but a run that failed is
+# current too (the one reuse rule, whatever the status). Succeeds printing nothing
+# when the stored run is current; else prints the reason and fails.
+proofreuse_current() {
+  local PROOFREUSE_FPS verdict why
+  PROOFREUSE_FPS=$(jq -nc --arg k "$1" --arg fp "$2" '{($k): $fp}')
+  verdict=$(proofreuse_judge "$(jq -nc --arg k "$1" '[$k]')" "$3" "" 1) || return 1
   why=$(printf '%s' "$verdict" | jq -r '.[0].why // empty')
   [ -z "$why" ] || { printf '%s\n' "$why"; return 1; }
 }
