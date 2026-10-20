@@ -76,3 +76,31 @@ startup_ms() {
   want=$(printf '%s' '[".",["poison"]]' | { if command -v sha256sum > /dev/null 2>&1; then sha256sum; else shasum -a 256; fi; } | cut -d' ' -f1)
   [ "$got" = "$want" ] || { echo "fingerprint $got, wanted $want"; false; }
 }
+
+# Remaining cost (M42 after decision): every reset set the access time of all tracked files and
+# folders back (0.13 to 0.27 s on 5,206 files), though a run moves only the ones it read. The
+# collection leaves the paths that moved; the next reset sets back those and no others. A file
+# nothing read keeps the time the earlier reset gave it (here a later one, marked by hand).
+@test "R202: a reset after a collection sets back only the paths that moved, not every tracked file" {
+  local copy="$TEST_ROOT/copy" st="$TEST_ROOT/state" marker="$TEST_ROOT/marker"
+  mkdir -p "$copy/sub"
+  git -C "$copy" init -q
+  printf 'a\n' > "$copy/sub/a.txt"
+  printf 'b\n' > "$copy/top.txt"
+  git -C "$copy" add -A
+  git -C "$copy" commit -q -m "feat: files"
+  # shellcheck disable=SC1091
+  source "$PLUGIN_ROOT/lib/reads.sh"
+  : > "$marker" && touch -t 200001010030 "$marker"
+  reads_reset "$copy" "$st"
+  cat "$copy/sub/a.txt" > /dev/null
+  # Nothing reads top.txt; its time is moved by hand to one a bit later than the set-back time (still before the yardstick).
+  touch -a -t 200001010100 "$copy/top.txt"
+  reads_collect "$copy" "$st" > "$TEST_ROOT/first.json"
+  jq -e '.files == ["sub/a.txt"]' "$TEST_ROOT/first.json" > /dev/null || { cat "$TEST_ROOT/first.json"; false; }
+  reads_reset "$copy" "$st"
+  [ -z "$(find "$copy/sub/a.txt" -maxdepth 0 -anewer "$marker")" ] || { echo "the file the run read was not set back"; false; }
+  [ -n "$(find "$copy/top.txt" -maxdepth 0 -anewer "$marker")" ] || { echo "a file nothing read was set back again"; false; }
+  # The second run reads nothing: its list is empty, whatever the first one read.
+  reads_collect "$copy" "$st" | jq -e '.files == []' > /dev/null
+}

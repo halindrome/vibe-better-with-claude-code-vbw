@@ -99,7 +99,16 @@ reads_reset() {
   : > "$st/mark" && touch -t "$(reads_stamp "$slack")" "$st/mark" || return 1
   # Never earlier than the first mark: nothing made with the copy is a write.
   [ ! "$st/mark0" -nt "$st/mark" ] || touch -r "$st/mark0" "$st/mark" || return 1
-  reads_touch "$st/files" "$copy"
+  # A run moves the access time of only the files it read, and its collection left those paths
+  # (moved): the next reset sets back just them. Without that list (the copy's first run, or a
+  # run that was never collected) every tracked file is set back. The folders always are: the
+  # collection itself lists them (find) after it took the list of those that moved.
+  if [ -f "$st/moved" ]; then
+    reads_touch "$st/moved" "$copy"
+    rm -f "$st/moved"
+  else
+    reads_touch "$st/files" "$copy"
+  fi
   reads_touch "$st/dirs" "$copy"
   reads_touch "$st/wlist" "$copy"
   [ ! -e "$gd/HEAD" ] || touch -a -t "$READS_OLD" "$gd/HEAD" 2> /dev/null || true
@@ -174,5 +183,7 @@ reads_collect() {
       | reduce ($n | split("\u0000") | map(select(length > 0) | strip))[] as $p (.; .files[$p] += [$id])' \
       "$st/written.json" > "$st/written.tmp" && mv "$st/written.tmp" "$st/written.json" || return 1
   fi
+  # What moved: the next reset sets back these and nothing else (see reads_reset).
+  cat "$st/opened" "$st/listed" "$st/inherited" > "$st/moved" || return 1
   cat "$st/last.json"
 }
