@@ -47500,7 +47500,7 @@
       "req": "R201",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Test gap in the L3 qafix scenario (P160.3 task 2). The check that the settings write came before the first 'Contract approved' decision (tools/l3-suite.sh scenario_qafix, first_approval lookup) is pinned by no test that can fail: the recorded mutation 'first approval lookup broken' is a survivor (C428 and C429 both green) and was never strengthened. If the lookup breaks, first_approval silently becomes '9999' (jq error hidden by 2>/dev/null and '// \"9999\"'), the comparison always passes, and the scenario reports autonomy_set_before_first_run true without checking the approval half of R201.12. I checked the lookup works today against the real .vbw/record.json (decisions have .at, text starts 'Contract approved'), so this is a missing guard, not a live bug. Regression test: run the scenario's approval-and-write comparison (extract the jq into a helper or test it on a fixture record plus fixture transcript) and show it returns false when the settings write is later than the first 'Contract approved' decision, and that a record with no such decision is not treated as 'before'.",
       "phase": "P160"
     },
@@ -47509,7 +47509,7 @@
       "req": "R199",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "The pane draws more rows than Claude Code reports when the pane is 1 row high and narrow. Evidence: with the L1 stand-in at bodyRows 1, the pane draws 2 lines at 40 columns and at 64 columns (tab rows = 2, headRows = 2, body height clamps to 0, the head is not clipped); at 100 columns it draws 1. The old code drew 1 row at bodyRows 1 at every width, so this is a regression of criterion 'on every tab the pane draws no more rows than Claude Code reports' (R189 containment too). panel-pane.js headRows = max(portrait rows, tab rows) + gap is never limited to the reported rows; tests only try bodyRows 4 and up (containment SIZES) and 22/30 (tab-rows). Regression test: draw the pane at bodyRows 1 (and 2) at 40, 64 and 100 columns on every tab and assert screen(...).length <= bodyRows; fix by limiting the head to the reported rows (clip the tab rows / overflow hidden with height = rows) when headRows > rows.",
       "phase": "P159"
     }
@@ -58059,6 +58059,15 @@
         "milestone": "M41",
         "started": "2026-10-20T01:03:59Z",
         "ended": "2026-10-20T01:16:44Z",
+        "cost": null
+      },
+      {
+        "id": "fix-20261020T022755Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M41",
+        "started": "2026-10-20T02:27:55Z",
+        "ended": "2026-10-20T02:41:49Z",
         "cost": null
       }
     ],
