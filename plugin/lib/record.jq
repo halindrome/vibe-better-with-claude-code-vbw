@@ -329,6 +329,11 @@ if type != "object" then ["record must be a JSON object"] else
                     and (.passed | type == "boolean") and (.checks | results) and (.commands | results)
                     and (.scope | type == "array" and all(.[]; type == "string"))) | not)
             | "evidence needs at, contract, tree, passed, checks, commands and scope (docs/proof.md)" )
+          , ( select(has("own") and ((.own | type == "object" and (keys == ["copies","planning","record","saving","tracking","wall"])
+                    and all(.[]; nonneg)) | not))
+            | "evidence.own must be an object with exactly planning, copies, tracking, saving, record and wall, each a number of at least 0 (docs/record.md)" )
+          , ( select(has("causes") and ((.causes | type == "array" and all(.[]; type == "string")) | not))
+            | "evidence.causes must be an array of strings (docs/record.md)" )
         end ),
     ( $r.costs
       | select(. != null)
