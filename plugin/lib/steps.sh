@@ -344,8 +344,43 @@ step_say_note() {
 
 # step_proof_units RECORD FULL: the names of the units a proof would run now (a
 # JSON array of check:ID, file:PATH and command:NAME), planned by the proof's own
-# reuse rule (cmd-prove.sh) without running anything.
+# reuse rule (cmd-prove.sh) without running anything. The list is cached in
+# .vbw/runtime/proof-units.json as {head, record, store, marker, full, units}:
+# head is the committed tree, record and store the SHA-256 of the record file
+# and of the run store file (an absent store counts as empty), marker whether
+# the unfinished marker exists. It is reused only while every part matches,
+# else planned again and the file rewritten; a damaged file is planned again.
 step_proof_units() {
+  local head rec store marker cache tmp units storef
+  # shellcheck source=proofreuse.sh
+  . "$VBW_LIB/proofreuse.sh"
+  head=$(vbw_head_tree 2> /dev/null) || head=
+  rec=$(vbw_sha256 < "$VBW_RECORD" 2> /dev/null) || rec=
+  storef=$(proofreuse_store_file 2> /dev/null) || storef=
+  if [ -n "$storef" ] && [ -f "$storef" ]; then store=$(vbw_sha256 < "$storef" 2> /dev/null) || store=
+  else store=$(printf '' | vbw_sha256); fi
+  marker=false
+  [ ! -e "$(proofreuse_marker)" ] || marker=true
+  cache="$VBW_RUNTIME/proof-units.json"
+  if [ -n "$head" ] && [ -n "$rec" ] && [ -n "$store" ] && [ -f "$cache" ] \
+    && units=$(jq -ce --arg h "$head" --arg r "$rec" --arg s "$store" --argjson m "$marker" --argjson f "${2:-0}" '
+        select(type == "object" and .head == $h and .record == $r and .store == $s and .marker == $m and .full == $f
+          and (.units | type) == "array" and all(.units[]; type == "string")) | .units' "$cache" 2> /dev/null) \
+    && [ -n "$units" ]; then
+    printf '%s\n' "$units"
+    return 0
+  fi
+  units=$(step_proof_units_plan "$1" "$2")
+  if [ -n "$head" ] && [ -n "$rec" ] && [ -n "$store" ] && printf '%s' "$units" | jq -e 'type == "array"' > /dev/null 2>&1; then
+    tmp="$cache.$$"
+    { mkdir -p "$VBW_RUNTIME" && jq -nc --arg h "$head" --arg r "$rec" --arg s "$store" --argjson m "$marker" --argjson f "${2:-0}" --argjson u "$units" \
+        '{head: $h, record: $r, store: $s, marker: $m, full: $f, units: $u}' > "$tmp" && mv -f "$tmp" "$cache"; } 2> /dev/null || rm -f "$tmp" 2> /dev/null || true
+  fi
+  printf '%s\n' "$units"
+}
+
+# step_proof_units_plan RECORD FULL: the uncached planning behind step_proof_units.
+step_proof_units_plan() {
   (
     cd "$VBW_ROOT" || exit 1
     # shellcheck source=cmd-prove.sh
