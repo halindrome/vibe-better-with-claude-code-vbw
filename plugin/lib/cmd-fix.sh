@@ -143,7 +143,9 @@ cmd_fix() {
   . "$VBW_LIB/testfiles.sh"
   # shellcheck source=proofsteps.sh
   . "$VBW_LIB/proofsteps.sh"
-  local wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes fp why served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0
+  prooftime_begin
+  local t0 own_json causes_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes fp why served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0
+  t0=$(prooftime_clock)
   if [ ${#ids[@]} -gt 0 ]; then
     for id in "${ids[@]}"; do
       served=$(printf '%s' "$served" | jq -c --slurpfile s <(cmd_fix_checks "$record" "$id" | jq -R . | jq -sc 'map(select(length > 0))') '. + $s[0] | unique')
@@ -195,6 +197,7 @@ cmd_fix() {
       fi
     done < <(cmd_fix_finished_checks "$record")
   fi
+  prooftime_span planning "$t0"
   # A test command that failed as test files is re-run on its own, file by file,
   # through the approved single-file form, never as the whole test command. The
   # files are planned as a proof plans them (a file that did not pass runs, the
@@ -202,6 +205,7 @@ cmd_fix() {
   TF_PATHS=() TF_TODO=() TF_REUSE='{}' TF_WHY='{}'
   # shellcheck disable=SC2034 # read by testfiles_plan
   PROVE_NAMES='[]' TODO_COMMANDS='[]' REUSE_COMMANDS='{}' WHY_COMMANDS='{}'
+  t0=$(prooftime_clock)
   if [ ${#ids[@]} -gt 0 ] && testfiles_on "$record"; then
     for id in "${ids[@]}"; do
       printf '%s' "$record" | jq -e --arg f "$id" 'any(.fixes[]; .id == $f and .command == "test")' > /dev/null && tfwant=1
@@ -210,6 +214,7 @@ cmd_fix() {
       if [ -n "$causes" ]; then testfiles_plan "$record" 1 fix; else testfiles_plan "$record" 0 fix; fi
     fi
   fi
+  prooftime_span planning "$t0"
   if [ ${#todo[@]} -gt 0 ] || [ ${#TF_TODO[@]} -gt 0 ]; then
     at=$(vbw_now)
     off=false
@@ -217,7 +222,9 @@ cmd_fix() {
     checks_begin "$record"
     c=${#todo[@]}
     [ "$c" -ge ${#TF_TODO[@]} ] || c=${#TF_TODO[@]}
+    t0=$(prooftime_clock)
     proofcopy_create_slots "$(proofcopy_slots "$c")"
+    prooftime_span copies "$t0"
     proofsteps_begin "$((${#todo[@]} + ${#TF_TODO[@]}))" "$({
       for c in ${todo[@]+"${todo[@]}"}; do printf 'check:%s\n' "$c"; done
       for c in ${TF_TODO[@]+"${TF_TODO[@]}"}; do printf 'file:%s\n' "$c"; done
@@ -232,35 +239,28 @@ cmd_fix() {
     proofsteps_end
     results=$(printf '%s' "$results" | jq -c --argjson off "$off" "$PROVE_FLAT")
     tfres=$(printf '%s' "$tfres" | jq -c --argjson off "$off" "$PROVE_FLAT")
+    t0=$(prooftime_clock)
     proofreuse_save "$record" "$results" '{}' "$head" "$at"
     [ "$tfres" = '{}' ] || testfiles_save "$record" "$tfres" "$head" "$at"
+    prooftime_span saving "$t0"
     tfbad=$(printf '%s' "$tfres" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')
   fi
 
-  # What ran and what was reused, checks first and then test files, each in its
-  # record's order, in the proof summary's wording; then both counts, after
-  # every per-unit line as the proof summary prints them, every time (D304).
-  local order
-  order=$(printf '%s\n' ${cands[@]+"${cands[@]}"} | jq -R . | jq -sc 'map(select(length > 0))')
-  fix_unit_lines "$results" "$order" "$wmap" "$rmap"
-  if [ ${#TF_PATHS[@]} -gt 0 ]; then order=$(printf '%s\n' "${TF_PATHS[@]}" | jq -R . | jq -sc 'map(select(length > 0))'); else order='[]'; fi
-  fix_unit_lines "$tfres" "$order" "$TF_WHY" "$(printf '%s' "$TF_REUSE" | jq -c 'map_values(.at)')"
-  printf 'checks: %s ran, %s reused\n' "${#todo[@]}" "$(printf '%s' "$rmap" | jq 'length')"
-  printf 'test files: %s ran, %s reused\n' "${#TF_TODO[@]}" "$(printf '%s' "$TF_REUSE" | jq 'length')"
-
+  # The fixes are judged and the record written before anything prints, so the
+  # report lines can carry the record's time; what the judging says is printed after them.
   # Each fix ends as it would alone. A failing check fails the named fixes whose
   # files serve it, or every named fix when it serves none of them.
   local closed=() failed human fixed='[]' humans='[]'
   for id in ${ids[@]+"${ids[@]}"}; do
     if [ -n "$tfbad" ] && printf '%s' "$record" | jq -e --arg f "$id" 'any(.fixes[]; .id == $f and .command == "test")' > /dev/null; then
-      printf 'vbw: %s: these test files still do not pass: %s\n' "$id" "$tfbad" >&2
+      ebuf="$ebuf$(printf 'vbw: %s: these test files still do not pass: %s\n' "$id" "$tfbad")"$'\n'
       bad=1
       continue
     fi
     failed=$(printf '%s' "$results" | jq -r --slurpfile mine <(cmd_fix_checks "$record" "$id" | jq -R . | jq -sc 'map(select(length > 0))') --argjson all "$served" \
       '$mine[0] as $mine | [to_entries[] | select(.value.status != "pass" and (.key as $k | ($mine | index($k)) or (($all | index($k)) | not))) | "\(.key) \(.value.status)"] | join(", ")')
     if [ -n "$failed" ]; then
-      printf 'vbw: %s broke finished work: these checks of finished requirements do not pass: %s\n' "$id" "$failed" >&2
+      ebuf="$ebuf$(printf 'vbw: %s broke finished work: these checks of finished requirements do not pass: %s\n' "$id" "$failed")"$'\n'
       bad=1
       continue
     fi
@@ -274,19 +274,47 @@ cmd_fix() {
     closed+=("$id")
   done
   if [ ${#closed[@]} -gt 0 ]; then
+    t0=$(prooftime_clock)
     record_update '. as $r | (.fixes[] | select(.id as $i | $fixed | index($i))).status = "fixed"
       | (.fixes[] | select(.id as $i | $humans | index($i))).status = "closed"
       | (.requirements[] | select(.id as $q | any($r.fixes[]; (.id as $i | $humans | index($i)) and .req == $q))).status = "open"' \
       --argjson fixed "$fixed" --argjson humans "$humans"
+    prooftime_span record "$t0"
     proofsteps_fix_done "${#closed[@]}"
     for id in "${closed[@]}"; do
       if printf '%s' "$humans" | jq -e --arg f "$id" 'index($f)' > /dev/null; then
-        printf '%s closed: its requirement goes back to the user for acceptance\n' "$id"
+        obuf="$obuf$(printf '%s closed: its requirement goes back to the user for acceptance\n' "$id")"$'\n'
       else
-        printf '%s fixed: vbw prove decides\n' "$id"
+        obuf="$obuf$(printf '%s fixed: vbw prove decides\n' "$id")"$'\n'
       fi
     done
   fi
+  # What ran and what was reused, checks first and then test files, each in its
+  # record's order, in the proof summary's wording; then both counts, after
+  # every per-unit line as the proof summary prints them, every time (D304).
+  local order
+  order=$(printf '%s\n' ${cands[@]+"${cands[@]}"} | jq -R . | jq -sc 'map(select(length > 0))')
+  cands_json=$order
+  fix_unit_lines "$results" "$order" "$wmap" "$rmap"
+  if [ ${#TF_PATHS[@]} -gt 0 ]; then order=$(printf '%s\n' "${TF_PATHS[@]}" | jq -R . | jq -sc 'map(select(length > 0))'); else order='[]'; fi
+  tf_json=$order
+  fix_unit_lines "$tfres" "$order" "$TF_WHY" "$(printf '%s' "$TF_REUSE" | jq -c 'map_values(.at)')"
+  printf 'checks: %s ran, %s reused\n' "${#todo[@]}" "$(printf '%s' "$rmap" | jq 'length')"
+  printf 'test files: %s ran, %s reused\n' "${#TF_TODO[@]}" "$(printf '%s' "$TF_REUSE" | jq 'length')"
+  # The two report lines, from this round's results, reuse map and causes.
+  own_json=$(prooftime_total)
+  causes_json=$(printf '%s' "$causes" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+  jq -n -c --argjson own "$own_json" --argjson causes "$causes_json" --argjson order "$cands_json" --argjson tfo "$tf_json" \
+    --argjson why "$wmap" --argjson re "$rmap" --argjson tfwhy "$TF_WHY" --argjson tfre "$TF_REUSE" \
+    --slurpfile st <(printf '%s' "$results" | jq -c 'map_values(.status)') --slurpfile tfst <(printf '%s' "$tfres" | jq -c 'map_values(.status)') \
+    '{own: $own, causes: $causes,
+      checks: ($order | map({key: ., value: (if $re[.] then {status: "pass", reused: true} else {status: ($st[0][.] // "pass")} + (if $why[.] then {why: $why[.]} else {} end) end)}) | from_entries),
+      test_files: ($tfo | map({key: ., value: (if $tfre[.] then {status: "pass", reused: true} else {status: ($tfst[0][.] // "pass")} + (if $tfwhy[.] then {why: $tfwhy[.]} else {} end) end)}) | from_entries)}' \
+    | prooftime_lines
+  printf '%s' "$ebuf" >&2
+  printf '%s' "$obuf"
+
+  prooftime_end
   slots_say
   return "$bad"
 }
