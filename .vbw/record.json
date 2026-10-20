@@ -48225,7 +48225,7 @@
       "text": "After 2.0.32 is installed: reword the shipped requirements R43, R103, R110, R111 and R144 (reopened into the current milestone, which 2.0.32 can re-plan) so their text states D260's rule: proofs skip what a change cannot reach, QA and shipping reuse those results, the pre-push release run is the one complete run; 2.0.31 refused dropping them and cannot re-plan reopened requirements (2026-10-11)",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T113",
