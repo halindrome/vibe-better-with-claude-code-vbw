@@ -28,19 +28,21 @@ cmd_prove() {
   esac
   vbw_require_project
   cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
-  local causes record checks commands scope tree head ev at evf curf noreads mark="" n files='{}' tfs='{}' tfsum alln=0
+  local causes record checks commands scope tree head ev at evf curf noreads mark="" n files='{}' tfs='{}' tfsum alln=0 t0 own causes_json
   # This session's Stop hook waits while the mark names a live process (R98).
   if [ -n "$(vbw_session)" ]; then
     mark="$VBW_RUNTIME/proving.$(vbw_session)"
     printf '%s\n' "$$" > "$mark" && vbw_guard_add file "$mark"
   fi
   VBW_DIE_HOOK=proofcopy_warn_stale
+  prooftime_begin
   record=$(record_read)
   checks_begin "$record" strict
   # The file-system test first: where reads cannot be recorded nothing is reused.
   mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
   proofsteps_clean
   noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
+  t0=$(prooftime_clock)
   proofreuse_plan "$record" "$full"
   # Any cause (R168) runs every check, test file and command, and the summary names it.
   causes=$(proofcauses_find "$record" "$full" "$(vbw_head_tree 2> /dev/null)")
@@ -50,6 +52,7 @@ cmd_prove() {
   if [ -n "$causes" ]; then prove_plan_all "$record"; fi
   # A clone with no recorded run has nothing to compare with: no line gives a reason of its own.
   if printf '%s' "$PROOFREUSE_STORE" | jq -e '(.runs | length) == 0' > /dev/null; then WHY_CHECKS='{}' WHY_COMMANDS='{}'; fi
+  prooftime_span planning "$t0"
   at=$(vbw_now)
   # The marker stays until the evidence is recorded: a proof cut short reuses nothing next time.
   : > "$(proofreuse_marker)" || vbw_die "cannot write $(proofreuse_marker)"
@@ -59,7 +62,9 @@ cmd_prove() {
     n=${#TODO_CHECKS[@]}
     [ "$n" -ge ${#TF_TODO[@]} ] || n=${#TF_TODO[@]}
     [ "$n" -gt 0 ] || n=1
+    t0=$(prooftime_clock)
     proofcopy_create_slots "$(proofcopy_slots "$n")"
+    prooftime_span copies "$t0"
     proofsteps_begin "$(prove_units "$record")" "$(prove_unit_names "$record")"
     proofcopy_verify "$CHECK_HASH" "$record"
     # Checks and commands run in clean copies; evidence and the record stay here.
@@ -76,8 +81,10 @@ cmd_prove() {
   checks=$(printf '%s' "$checks" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
   commands=$(printf '%s' "$commands" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
   files=$(printf '%s' "$files" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
+  t0=$(prooftime_clock)
   proofreuse_save "$record" "$checks" "$commands" "$head" "$at"
   [ "$files" = '{}' ] || testfiles_save "$record" "$files" "$head" "$at"
+  prooftime_span saving "$t0"
   checks=$(prove_stamp "$record" check "$checks" "$at" "$WHY_CHECKS")
   commands=$(prove_stamp "$record" command "$commands" "$at" "$WHY_COMMANDS")
   # A reused pass ended as the check expects: its exit status is the expected one.
@@ -96,18 +103,25 @@ cmd_prove() {
   # tree: the working folder (QA freshness, R12); head: the committed code the
   # checks ran on, so committing unproved edits later makes the proof stale.
   # full: nothing reused, no quick stand-in, every full command ran (R111).
+  # The split so far; own.record is added once the record is written, after the wall time is read.
+  own=$(prooftime_total)
+  causes_json=$(printf '%s' "$causes" | jq -R -s -c 'split("\n") | map(select(length > 0))')
   ev=$(jq -n --arg at "$at" --arg h "$CHECK_HASH" --argjson standin "$QUICK_STANDIN" --arg tree "$tree" --arg head "$head" \
     --slurpfile cf <(printf '%s' "$checks") --slurpfile mf <(printf '%s' "$commands") --slurpfile sf <(printf '%s' "$scope") --slurpfile tf <(printf '%s' "$tfs") \
-    '$cf[0] as $c | $mf[0] as $m | $sf[0] as $s | $tf[0] as $t | {at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, test_files: $t, scope: $s,
+    --argjson own "$own" --argjson causes "$causes_json" \
+    '$cf[0] as $c | $mf[0] as $m | $sf[0] as $s | $tf[0] as $t | {at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, test_files: $t, scope: $s, own: $own, causes: $causes,
       full: (($standin | not) and all($c[]; (.reused // false) | not) and all($m[]; (.reused // false) | not) and all($t[]; (.reused // false) | not)
              and all($m | to_entries[] | select(.key != "quick"); .value.status != "skipped")),
       passed: (all($c[]; .status == "pass") and all($m[]; .status == "pass" or .status == "skipped") and all($t[]; .status == "pass") and ($s | length) == 0)}')
   vbw_scratch_json evf "$ev"
   vbw_scratch_json curf "$(qa_combined "$record")"
+  t0=$(prooftime_clock)
   record_update "$VBW_JQ_DEFS$(cat "$VBW_LIB/prove.jq")" --slurpfile ev "$evf" --argjson cap "$VBW_FIX_CAP" --slurpfile cur "$curf" --arg at "$at"
+  prooftime_span record "$t0"
   # The record as this proof leaves it, without the evidence (D296): the next prove's
   # "nothing committed" cause fires only while this fingerprint still holds (R175, R103).
-  record_update '.evidence.record = $fp' --arg fp "$(jq -c 'del(.evidence)' "$VBW_RECORD" | vbw_sha256)"
+  record_update '.evidence.record = $fp | .evidence.own.record = $rec' --arg fp "$(jq -c 'del(.evidence)' "$VBW_RECORD" | vbw_sha256)" \
+    --argjson rec "$(prooftime_total | jq -c '.record')"
   vbw_guard_drop "$evf"
   vbw_guard_drop "$curf"
   rm -f "$(proofreuse_marker)"
@@ -115,6 +129,7 @@ cmd_prove() {
   # leaves VBW's own file modified in the user's working tree.
   record_commit "chore(vbw): proof $(jq -r 'if .evidence.passed then "passed" else "not passed" end' "$VBW_RECORD")"
   proofsteps_end
+  prooftime_end
   # shellcheck disable=SC2034
   VBW_DIE_HOOK=; proofcopy_warn_stale
   [ -z "$mark" ] || vbw_guard_drop "$mark"
@@ -225,7 +240,7 @@ prove_scope() {
 
 # One screen: what ran, what it means, what is next. $1: the causes that ran everything, one per line.
 prove_summary() {
-  jq -r --arg causes "$1" --argjson d "$VBW_COMMAND_TIMEOUT" '(.settings.command_timeout // $d) as $limit | .evidence as $e
+  jq -r --arg causes "$1" --arg own "$(jq -c '.evidence' "$VBW_RECORD" | prooftime_lines)" --argjson d "$VBW_COMMAND_TIMEOUT" '(.settings.command_timeout // $d) as $limit | .evidence as $e
     | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
       ($e.commands | to_entries[] | select(.value.of_files | not) | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)" end)"),
@@ -249,6 +264,7 @@ prove_summary() {
       (if ($e.scope | length) == 0 then "  scope ok" else ($e.scope[] | "  scope: " + .) end),
       (.requirements[] | select(.proof == "auto") | "\(.id) \(.status)"),
       (.fixes[] | select(.status == "open" or .status == "escalated") | "\(.id) \(.status) (\(.req // .command), attempts \(.attempts)): \(.note)"),
+      $own,
       (if $e.passed then "proved" else "not proved" end)' "$VBW_RECORD"
   jq -e '.evidence.passed' "$VBW_RECORD" > /dev/null
 }
