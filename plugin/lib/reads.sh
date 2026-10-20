@@ -66,8 +66,8 @@ reads_touch() {
 # come out in that order. A file system whose times are whole seconds cannot (it would
 # take two second changes within a few milliseconds).
 reads_subsecond() {
-  local d=$1 k
-  for k in 1 2 3 4 5; do
+  local d=$1
+  for _ in 1 2 3 4 5; do
     : > "$d/subsec.a" && : > "$d/subsec.b" && : > "$d/subsec.c" || break
     if [ -n "$(find "$d/subsec.b" -maxdepth 0 -newer "$d/subsec.a" 2> /dev/null)" ] \
       && [ -n "$(find "$d/subsec.c" -maxdepth 0 -newer "$d/subsec.b" 2> /dev/null)" ]; then

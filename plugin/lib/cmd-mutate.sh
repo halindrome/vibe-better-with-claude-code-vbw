@@ -62,13 +62,13 @@ mutate_clean() {
 # command never judges a list it did not record and never derives one from file names.
 mutate_rule_none() {
   local plan="$1" req="$2" rk="$3" ruledoc="$4" check="$5" record="$6" reason="$7"
-  local head tree fp why noreads res verdict
+  local head tree fp noreads res verdict
   head=$(git rev-parse HEAD 2> /dev/null) || vbw_die "the project has no commit yet"
   checks_begin "$record"
   PROOFREUSE_STORE=$(proofreuse_store_read)
   tree=$(vbw_head_tree) || vbw_die "cannot fingerprint the committed code"
   fp=$(proofreuse_check_fp "$record" "$check")
-  if why=$(proofreuse_current "check:$check" "$fp" "$tree"); then
+  if proofreuse_current "check:$check" "$fp" "$tree" > /dev/null; then
     :
   else
     noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
