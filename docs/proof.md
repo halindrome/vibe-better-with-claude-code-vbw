@@ -140,6 +140,15 @@ runs. The slots live in `<claude-config-dir>/vbw/slots.json`, where
 `<claude-config-dir>` is `CLAUDE_CONFIG_DIR` if set, else `~/.config/claude-code`
 if that folder exists, else `~/.claude`. The file exists only while runs use it.
 
+VBW's own bookkeeping takes slots too, so it counts in the limit. A unit's slot
+also covers its read tracking: it is taken before the access times are reset
+and given back after the read list is collected. The proof-wide steps hold one
+slot each, listed in the store as `vbw:plan` (reuse planning), `vbw:copies`
+(making the clean copies) and `vbw:save` (saving the run store).
+
+`vbw next` never waits for a slot: it answers at once, even while every slot is held. A
+nested run (a proof started from inside a proof) takes no slot of its own.
+
 Runs take equal turns: when slots free up, the waiting run holding the fewest
 goes first; between equals, the one that waited longest. A run that waits
 prints `waited ... for other VBW runs on this computer`. Waiting changes
