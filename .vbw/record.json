@@ -6155,7 +6155,7 @@
     },
     {
       "id": "M29",
-      "title": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
+      "title": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, a user project): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
       "at": "2026-10-14T00:42:24Z"
     },
     {
@@ -12407,7 +12407,7 @@
     },
     {
       "id": "R184",
-      "text": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
+      "text": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, a user project): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
       "proof": "auto",
       "status": "proven",
       "milestone": "M29",
@@ -14175,7 +14175,7 @@
     },
     {
       "id": "R193",
-      "text": "A task break (vbw mutate PLAN taskK) without --check runs the plan's own rule checks, and is refused only when one of those fails on the unbroken code, so an early plan of a requirement that later plans complete can still break its tasks (T165, T159; Portfolium feedback 2026-10-16)",
+      "text": "A task break (vbw mutate PLAN taskK) without --check runs the plan's own rule checks, and is refused only when one of those fails on the unbroken code, so an early plan of a requirement that later plans complete can still break its tasks (T165, T159; user-project feedback 2026-10-16)",
       "proof": "auto",
       "status": "proven",
       "milestone": "M39",
@@ -14323,7 +14323,7 @@
     },
     {
       "id": "R195",
-      "text": "A failing check or project command keeps its full output after vbw prove, vbw fix done and vbw check end, and vbw show fix names where it is and the failing test names, so nobody has to rerun the suite to see what failed (T165; Portfolium feedback 2026-10-19)",
+      "text": "A failing check or project command keeps its full output after vbw prove, vbw fix done and vbw check end, and vbw show fix names where it is and the failing test names, so nobody has to rerun the suite to see what failed (T165; user-project feedback 2026-10-19)",
       "proof": "auto",
       "status": "proven",
       "milestone": "M39",
@@ -14382,7 +14382,7 @@
     },
     {
       "id": "R196",
-      "text": "When a break survives the approved check but a strengthened check file waiting for approval catches it, vbw mutate says so in those words ('survives the approved check; caught by the pending one') (T165; Portfolium feedback 2026-10-16)",
+      "text": "When a break survives the approved check but a strengthened check file waiting for approval catches it, vbw mutate says so in those words ('survives the approved check; caught by the pending one') (T165; user-project feedback 2026-10-16)",
       "proof": "auto",
       "status": "proven",
       "milestone": "M39",
@@ -14426,7 +14426,7 @@
     },
     {
       "id": "R197",
-      "text": "The file vbw mutate breaks in the proof copy gets a modification time newer than any build output, so a build that decides by file times (cargo, make) rebuilds it and a break is never reported as surviving because the old build was tested (T167; Portfolium feedback 2026-10-16)",
+      "text": "The file vbw mutate breaks in the proof copy gets a modification time newer than any build output, so a build that decides by file times (cargo, make) rebuilds it and a break is never reported as surviving because the old build was tested (T167; user-project feedback 2026-10-16)",
       "proof": "auto",
       "status": "proven",
       "milestone": "M39",
@@ -14706,7 +14706,7 @@
     },
     {
       "id": "R202",
-      "text": "Proof speed on a Rust project (Portfolium feedback 2026-10-19; owner agreed 2026-10-19; after the Dev unblock item, with T129): measure on Portfolium why fix done reuses so little (17 of 184) and the CPU of VBW's own read/write tracking (jq near 100% for minutes, load 23-66; also seen 2026-10-19 here: vbw next over 2 min), then make the tracking cheap and count VBW's own work in the machine-wide limit",
+      "text": "Proof speed on a Rust project (user-project feedback 2026-10-19; owner agreed 2026-10-19; after the Dev unblock item, with T129): measure on a user project why fix done reuses so little (17 of 184) and the CPU of VBW's own read/write tracking (jq near 100% for minutes, load 23-66; also seen 2026-10-19 here: vbw next over 2 min), then make the tracking cheap and count VBW's own work in the machine-wide limit",
       "proof": "auto",
       "status": "proven",
       "milestone": "M42",
@@ -51749,7 +51749,7 @@
     },
     {
       "id": "T29",
-      "text": "Field report (Portfolium market recorder, 2026-10-06), adopt: proof copy links target/ and other build output, so artifacts embed deleted proof paths (Rust); keep the proof copy at a stable path and never link build-output folders (language-agnostic)",
+      "text": "Field report (a user project, 2026-10-06), adopt: proof copy links target/ and other build output, so artifacts embed deleted proof paths (Rust); keep the proof copy at a stable path and never link build-output folders (language-agnostic)",
       "status": "done"
     },
     {
@@ -51866,14 +51866,14 @@
     },
     {
       "id": "T52",
-      "text": "Panel does not open at session launch in a wide window (owner, Portfolium, 2.0.22 build via --plugin-dir); it opens once a VBW run starts. R52 says it opens by itself: find the launch trigger gap and add the case to the panel L3 scenario",
+      "text": "Panel does not open at session launch in a wide window (owner, a user project, 2.0.22 build via --plugin-dir); it opens once a VBW run starts. R52 says it opens by itself: find the launch trigger gap and add the case to the panel L3 scenario",
       "status": "dropped",
       "sort": "next",
       "size": "small"
     },
     {
       "id": "T53",
-      "text": "2.0.21 in Portfolium told the user 'Type /vbw:approve to accept the updated plans' after a plan change (owner screenshot 13:50), against R83; find which path (likely a re-plan/patch stop) still words it that way",
+      "text": "2.0.21 in a user project told the user 'Type /vbw:approve to accept the updated plans' after a plan change (owner screenshot 13:50), against R83; find which path (likely a re-plan/patch stop) still words it that way",
       "status": "done"
     },
     {
@@ -52208,7 +52208,7 @@
     },
     {
       "id": "T106",
-      "text": "Next core milestone 'projects that change' (owner, 2026-10-10: things change often, VBW must be resilient to any scenario): (1) a full apply lets the active milestone plan a requirement it reopened from a shipped milestone, and the refusal names the right mode (brainstorm B3, Portfolium R2); (2) judge whether a new phase may share a requirement with a started phase; (3) apply and --patch check the rigor floor of unstarted phases only, never finished ones; (4) a QA-finding fix can add its regression test (to new or protected check files, with one approval) instead of a hand-made plan; (5) audit every apply/run/guard refusal against re-plans, reopened work and mid-milestone changes. Keep: approved tests stay locked, owner approval still required",
+      "text": "Next core milestone 'projects that change' (owner, 2026-10-10: things change often, VBW must be resilient to any scenario): (1) a full apply lets the active milestone plan a requirement it reopened from a shipped milestone, and the refusal names the right mode (brainstorm B3, user-project item R2); (2) judge whether a new phase may share a requirement with a started phase; (3) apply and --patch check the rigor floor of unstarted phases only, never finished ones; (4) a QA-finding fix can add its regression test (to new or protected check files, with one approval) instead of a hand-made plan; (5) audit every apply/run/guard refusal against re-plans, reopened work and mid-milestone changes. Keep: approved tests stay locked, owner approval still required",
       "status": "done",
       "sort": "next",
       "size": "large"
@@ -52367,7 +52367,7 @@
     },
     {
       "id": "T129",
-      "text": "Measurement milestone on the owner's Portfolium Rust/Python codebase (owner, 2026-10-12: later, after 2.1.0): proof time and where it goes (kernel share vs the tests), and the clean-copy recompile question (the proof's copy never carries target/, so cargo rebuilds from scratch: a shared build cache outside the copy, with the parallel-check lock contention measured), before VBW is relied on there",
+      "text": "Measurement milestone on the owner's private Rust/Python codebase (owner, 2026-10-12: later, after 2.1.0): proof time and where it goes (kernel share vs the tests), and the clean-copy recompile question (the proof's copy never carries target/, so cargo rebuilds from scratch: a shared build cache outside the copy, with the parallel-check lock contention measured), before VBW is relied on there",
       "sort": "later",
       "size": "medium",
       "status": "dropped"
@@ -52388,7 +52388,7 @@
     },
     {
       "id": "T132",
-      "text": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
+      "text": "A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, a user project): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one",
       "sort": "next",
       "size": "small",
       "status": "done"
@@ -52402,7 +52402,7 @@
     },
     {
       "id": "T134",
-      "text": "Brainstorm B3: a full vbw apply of the active milestone is refused when it reopened a shipped requirement (cmd-apply.sh FOREIGN_REQS_JQ counts shipped phases as covering; the message names --add on a full apply), and a new phase cannot share a reopened requirement once work started. Portfolium-webstack report (2.0.30, 2026-10-10), reproduced on a copy: the one rule change applied their full draft. Decide how a reopened requirement is owned; failing test from their record shape first",
+      "text": "Brainstorm B3: a full vbw apply of the active milestone is refused when it reopened a shipped requirement (cmd-apply.sh FOREIGN_REQS_JQ counts shipped phases as covering; the message names --add on a full apply), and a new phase cannot share a reopened requirement once work started. a user project report (2.0.30, 2026-10-10), reproduced on a copy: the one rule change applied their full draft. Decide how a reopened requirement is owned; failing test from their record shape first",
       "sort": "next",
       "size": "medium",
       "status": "done"
@@ -52609,21 +52609,21 @@
     },
     {
       "id": "T165",
-      "text": "Dev unblock (Portfolium feedback 2026-10-16/19 + T138 evidence; owner agreed 2026-10-19; after T138, before T94; absorbs T159 and T124): (1) a task break of vbw mutate defaults to the plan's own rule checks and refuses only when those fail on unbroken code; (2) a fix may commit the protected check files of its own requirement (they still wait for one approval; no standalone check drop, which would remove protection unapproved), with provenance-true trailers instead of an old plan; (3) failing checks and commands keep their full output after the run and print the failing test names; (4) the mutate report says 'survives the approved check; caught by the pending one' when a strengthened check waits for approval",
+      "text": "Dev unblock (user-project feedback 2026-10-16/19 + T138 evidence; owner agreed 2026-10-19; after T138, before T94; absorbs T159 and T124): (1) a task break of vbw mutate defaults to the plan's own rule checks and refuses only when those fail on unbroken code; (2) a fix may commit the protected check files of its own requirement (they still wait for one approval; no standalone check drop, which would remove protection unapproved), with provenance-true trailers instead of an old plan; (3) failing checks and commands keep their full output after the run and print the failing test names; (4) the mutate report says 'survives the approved check; caught by the pending one' when a strengthened check waits for approval",
       "sort": "next",
       "size": "medium",
       "status": "done"
     },
     {
       "id": "T166",
-      "text": "Proof speed on a Rust project (Portfolium feedback 2026-10-19; owner agreed 2026-10-19; after the Dev unblock item, with T129): measure on Portfolium why fix done reuses so little (17 of 184) and the CPU of VBW's own read/write tracking (jq near 100% for minutes, load 23-66; also seen 2026-10-19 here: vbw next over 2 min), then make the tracking cheap and count VBW's own work in the machine-wide limit",
+      "text": "Proof speed on a Rust project (user-project feedback 2026-10-19; owner agreed 2026-10-19; after the Dev unblock item, with T129): measure on a user project why fix done reuses so little (17 of 184) and the CPU of VBW's own read/write tracking (jq near 100% for minutes, load 23-66; also seen 2026-10-19 here: vbw next over 2 min), then make the tracking cheap and count VBW's own work in the machine-wide limit",
       "sort": "next",
       "size": "medium",
       "status": "done"
     },
     {
       "id": "T167",
-      "text": "Mutation break file gets a fresh modification time in the proof copy (Portfolium feedback 2026-10-16; owner agreed 2026-10-19): cargo and other time-based builds otherwise test the unbroken build and report false survivors; regression test with a time-based build stand-in",
+      "text": "Mutation break file gets a fresh modification time in the proof copy (user-project feedback 2026-10-16; owner agreed 2026-10-19): cargo and other time-based builds otherwise test the unbroken build and report false survivors; regression test with a time-based build stand-in",
       "sort": "next",
       "size": "small",
       "status": "done"
@@ -54375,7 +54375,7 @@
     },
     {
       "id": "D305",
-      "text": "Order after 2.0.34 (owner): the machine-wide limit with one fix done per round first, then the loop (T99); the Portfolium Rust/Python measurement waits until after 2.1.0",
+      "text": "Order after 2.0.34 (owner): the machine-wide limit with one fix done per round first, then the loop (T99); the private Rust/Python measurement waits until after 2.1.0",
       "why": "the owner works on several projects at once and the laptop pegged at 100 percent today; VBW 2.1.0 ships first, then the owner returns to the Rust codebase",
       "at": "2026-10-12T08:40:15Z"
     },
@@ -54678,7 +54678,7 @@
     {
       "id": "D361",
       "at": "2026-10-14T00:42:24Z",
-      "text": "Shipped M29 A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, Portfolium-webstack): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one: 1 requirement proven or accepted"
+      "text": "Shipped M29 A project where the VBW plugin is disabled shows no VBW (owner, 2026-10-12 12:30, a user project): the status line VBW installs is a user-level setting that runs in every project, so it keeps showing after a per-project disable (enabledPlugins false in the project's .claude/settings.json; Claude Code itself reports the plugin disabled there). The status line script checks the project's settings and prints nothing (or the previous status line) where the plugin is disabled; the same for the panel if it turns out to persist. Part of the machine-wide-limit milestone or its own small one: 1 requirement proven or accepted"
     },
     {
       "id": "D362",
@@ -55156,7 +55156,7 @@
     },
     {
       "id": "D450",
-      "text": "Portfolium feedback addenda 2026-10-16/19 evaluated: adopt task-break scope, fix commits its own requirement's check files, keep failing output, pending-check survivor wording, fresh mtime for mutation breaks, proof-speed measurement on Portfolium; decline a standalone vbw check drop. Order after T138, before T94: T165, T167, T166",
+      "text": "user-project feedback addenda 2026-10-16/19 evaluated: adopt task-break scope, fix commits its own requirement's check files, keep failing output, pending-check survivor wording, fresh mtime for mutation breaks, proof-speed measurement on a private project; decline a standalone vbw check drop. Order after T138, before T94: T165, T167, T166",
       "why": "Owner agreed 2026-10-19: core before cosmetics; three of the problems were hit in T138 itself; check drop would remove protection without approval",
       "at": "2026-10-19T08:51:58Z"
     },
@@ -55312,14 +55312,14 @@
     },
     {
       "id": "D479",
-      "text": "Proof speed report built into VBW for every user: each proof and fix-round summary gives VBW's own work (X of Y minutes) and units run again (N of M, top reasons), detail via vbw show evidence; the fix is proven on a stand-in large project built here; the owner runs one Portfolium proof privately to confirm; nothing about Portfolium enters VBW",
-      "why": "Chosen by VBW (owner: not technical, Portfolium must stay private): general, useful to every user, no project-specific code",
+      "text": "Proof speed report built into VBW for every user: each proof and fix-round summary gives VBW's own work (X of Y minutes) and units run again (N of M, top reasons), detail via vbw show evidence; the fix is proven on a stand-in large project built here; the owner runs one private proof privately to confirm; nothing about the private project enters VBW",
+      "why": "Chosen by VBW (owner: not technical, the private project must stay private): general, useful to every user, no project-specific code",
       "at": "2026-10-20T08:45:12Z"
     },
     {
       "id": "D480",
       "text": "Cores per heavy check: not in this milestone; measure how many cores test commands use and decide the rein-in after the push (backlog item, per D340)",
-      "why": "Chosen by VBW (owner: not technical): smallest milestone, earliest push; Portfolium load stays high until then",
+      "why": "Chosen by VBW (owner: not technical): smallest milestone, earliest push; the private project's load stays high until then",
       "at": "2026-10-20T08:45:13Z"
     },
     {
@@ -64731,7 +64731,7 @@
       },
       {
         "id": "T166",
-        "text": "Proof speed on a Rust project (Portfolium feedback 2026-10-19; owner agreed 2026-10-19; after the Dev unblock item, with T129): measure on Portfolium why fix done reuses so little (17 of 184) and the CPU of VBW's own read/write tracking (jq near 100% for minutes, load 23-66; also seen 2026-10-19 here: vbw next over 2 min), then make the tracking cheap and count VBW's own work in the machine-wide limit",
+        "text": "Proof speed on a Rust project (user-project feedback 2026-10-19; owner agreed 2026-10-19; after the Dev unblock item, with T129): measure on a user project why fix done reuses so little (17 of 184) and the CPU of VBW's own read/write tracking (jq near 100% for minutes, load 23-66; also seen 2026-10-19 here: vbw next over 2 min), then make the tracking cheap and count VBW's own work in the machine-wide limit",
         "proof": "auto",
         "status": "waiting"
       },
