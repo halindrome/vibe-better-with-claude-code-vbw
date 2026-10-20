@@ -48044,12 +48044,30 @@
       "after": [
         "P161.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "--two: a second copy of the generated stand-in (its own folder, same isolated home and slot store), both proved at once with vbw prove started together.",
         "A once-a-second sampler while they run: the held count of the slot store (units plus VBW's own vbw:* entries) and, as a cross-check, the gate registrations of both projects; prints 'machine limit: L' (vbw_machine_limit for this Mac), 'two proofs max held: H' and 'two proofs wall seconds: S' after the usual lines.",
         "tests/measure-two-proofs.bats green; the single-proof output is unchanged."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "tools/measure-proof-speed.sh --two runs two proofs at once, samples the held slots every second and reports a maximum that never exceeds the machine limit"
+          },
+          "what": "reported max held inflated by 1000",
+          "files": [
+            "tools/measure-proof-speed.sh"
+          ],
+          "checks": {
+            "C446": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T14:24:25Z",
+          "head": "ef53015962d71220aaec508e3543236edd50ac6d"
+        }
       ]
     },
     {
@@ -61468,6 +61486,19 @@
           "usd": 0.419214,
           "in": 2396,
           "out": 209
+        }
+      },
+      {
+        "id": "build-20261020T142004Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T14:20:04Z",
+        "ended": "2026-10-20T14:25:20Z",
+        "cost": {
+          "usd": 0.282205,
+          "in": 2014,
+          "out": 190
         }
       }
     ],
