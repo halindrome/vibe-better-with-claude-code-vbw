@@ -189,3 +189,14 @@ mixed_change() {
   [[ "$(nth 3)" != *" of 0.0 min" ]] || { echo "$output"; false; }
   [ "$(jq '.evidence.own.record > 0 and .evidence.own.planning > 0 and .evidence.own.copies > 0 and .evidence.own.saving > 0 and .evidence.own.tracking > 0' .vbw/record.json)" = true ] || { jq .evidence.own .vbw/record.json; false; }
 }
+
+@test "R202: the read tracking step counts the collection after a unit as well as the reset before it" {
+  # find is what the collection runs several times and the reset never runs: a find that takes a second
+  # puts at least three seconds into the step, which a reset alone (one wait for the next whole second) cannot.
+  mkdir -p "$TEST_ROOT/slowbin"
+  printf '#!/bin/sh\nsleep 1\nexec %s "$@"\n' "$(command -v find)" > "$TEST_ROOT/slowbin/find"
+  chmod +x "$TEST_ROOT/slowbin/find"
+  PATH="$TEST_ROOT/slowbin:$PATH" vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(jq '.evidence.own.tracking >= 3' .vbw/record.json)" = true ] || { jq .evidence.own .vbw/record.json; false; }
+}
