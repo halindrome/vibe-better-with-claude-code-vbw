@@ -5647,6 +5647,40 @@
       "files": [
         "tests/l3-qafix-autonomy.bats"
       ]
+    },
+    {
+      "id": "C430",
+      "req": "R199",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r189/containment.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r189/containment.test.mjs",
+        "tests/panel/r189/helpers/screen.mjs",
+        "tests/panel/r189/helpers/crew.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/helpers/run.mjs",
+        "tests/panel/helpers/feed-fs.mjs"
+      ]
+    },
+    {
+      "id": "C431",
+      "req": "R200",
+      "run": [
+        "node",
+        "--test",
+        "tests/panel/r189/containment.test.mjs"
+      ],
+      "files": [
+        "tests/panel/r189/containment.test.mjs",
+        "tests/panel/r189/helpers/screen.mjs",
+        "tests/panel/r189/helpers/crew.mjs",
+        "tests/panel/helpers/fake-mod.mjs",
+        "tests/panel/helpers/run.mjs",
+        "tests/panel/helpers/feed-fs.mjs"
+      ]
     }
   ],
   "project": {
@@ -14195,8 +14229,8 @@
         },
         {
           "text": "tests/panel/r189/containment.test.mjs asserts whole tab rows at 100, 64, 60, 50 and 40 body columns on every tab in place of 'never wraps onto a second line at 40 columns'",
-          "check": "C425",
-          "plan": "P159.3"
+          "check": "C430",
+          "plan": "P159.1"
         },
         {
           "text": "the L3 panel scenario records that each of the eight tab names appears whole as '[ Name ]' at the short and the narrow size, in its pass set, and a committed result passed with both facts true",
@@ -14264,8 +14298,8 @@
         },
         {
           "text": "tests/panel/r189/containment.test.mjs gains a live step note at 1, 2, 3, 4 and 8 rows at 80 and 40 columns",
-          "check": "C427",
-          "plan": "P159.3"
+          "check": "C431",
+          "plan": "P159.2"
         },
         {
           "text": "the L3 panel scenario records the short-window helper line ('VBW ▸' once at 200x24 while helpers work, the prompt box whole) as its own fact in the pass set, and a committed result passed with it and no_spill_short true",
@@ -50981,6 +51015,17 @@
       "text": "P159.3 and P160.3 no longer wait for P159.1/P159.2 and P159.4",
       "why": "Their inputs were committed by the blocked plans; the blocked plans' mutation step needs C425/C427 green, which needs P159.3 and the L3 results, so the order deadlocked (chosen by VBW; owner re-approved 84de397c84eb)",
       "at": "2026-10-19T23:09:44Z"
+    },
+    {
+      "id": "D471",
+      "text": "R199.11 and R200.9 (the containment test's assertions) are proven by the containment test itself (new checks C430, C431, same files as C369) and owned by the code plans P159.1 and P159.2, which break the pane and Comms code; C425 and C427 keep their structure greps",
+      "why": "A plan that owns only a check file cannot run vbw mutate (it never breaks a check file) and a rule cannot be recorded --none, so P159.3 could not close; the elegant fix is a rule whose break lives in the code it describes (chosen by VBW under the owner's trust, 2026-10-20)",
+      "at": "2026-10-20T00:10:45Z"
+    },
+    {
+      "id": "D472",
+      "at": "2026-10-20T00:18:40Z",
+      "text": "Contract approved: 190 requirements, 426 checks, 486 plans (f796caff1060)"
     }
   ],
   "commands": {
