@@ -12,7 +12,9 @@
 #   ("# name ARG...: ...") names RECORD, RECORD_JSON, DIGESTS or RESULTS.
 # A here-string (<<<) of such data is refused too: bash writes it to a file in
 # the system's temporary folder. A pipe (printf '%s' "$record" | jq), --slurpfile
-# and --rawfile from a file inside the project are the ways in. The self-tests
+# and --rawfile from a file inside the project are the ways in; a process
+# substitution handed to --slurpfile or --rawfile is one when nothing inside it
+# (a jq --arg..., a here-string) takes the data as an argument. The self-tests
 # plant each violation in a copy and show the rule catches it. L1.
 
 load helper
@@ -94,6 +96,28 @@ planted() {
   [[ "$output" == *"cmd-plant.sh:10"* ]] || { echo "$output"; false; }
   [[ "$output" == *"cmd-plant.sh:14"* ]] || { echo "$output"; false; }
   [[ "$output" != *"cmd-plant.sh:4"* && "$output" != *"cmd-plant.sh:8"* ]] || { echo "$output"; false; }
+}
+
+@test "R149 self-test: a process substitution handed to --slurpfile or --rawfile passes only when nothing in it takes the data as an argument" {
+  local d line
+  # printf is the shell's own: the data goes into the pipe, never onto a command line.
+  d=$(planted \
+    '# plant_fps RECORD KEYS: a planted helper.' \
+    'plant_fps() {' \
+    '  jq -n -j --argjson d "$VBW_COMMAND_TIMEOUT" --slurpfile rec <(printf '"'"'%s'"'"' "$1") --slurpfile keys <(printf '"'"'%s'"'"' "$2") '"'"'$rec'"'"'' \
+    '}' \
+    'jq -n --arg id "$id" --rawfile t <(printf '"'"'%s'"'"' "$record") '"'"'$t'"'"'')
+  run rule "$d"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  # jq inside the substitution is a program of its own: the record on its command line is caught.
+  for line in \
+    'jq -n --arg id "$id" --slurpfile r <(jq -n --argjson x "$record" '"'"'$x'"'"') '"'"'$r'"'"'' \
+    'jq -n --argjson n 1 --rawfile r <(jq -rn --arg x "$(record_read)" '"'"'$x'"'"') '"'"'$r'"'"'' \
+    'jq -n --arg id "$id" --slurpfile r <(jq -c . <<< "$record") '"'"'$r'"'"''; do
+    run rule "$(planted "$line")"
+    [ "$status" -ne 0 ] || { echo "not caught: $line"; false; }
+    [[ "$output" == *"cmd-plant.sh:4"* ]] || { echo "not named with its line: $line"; echo "$output"; false; }
+  done
 }
 
 @test "R149 self-test: standard input, --slurpfile, --rawfile, small values and comments pass the rule" {
