@@ -48440,7 +48440,7 @@
       "text": "Status line hand-back carries only the earlier status line's command: its padding and its own refresh interval are not kept, and VBW's 5-second refresh applies, so a slow earlier status line re-runs every 5 s in projects where VBW is off (QA of P134, 2026-10-14). Keep them when vbw statusline on writes the setting",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T144",
