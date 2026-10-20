@@ -47720,13 +47720,177 @@
         "P163.3",
         "P164.1"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tests/timed-proof-speed.bats (release run only, like the other tests/timed-*.bats): builds the scaled-down stand-in with 'bash tools/measure-proof-speed.sh --generate DIR --files 2000 --folders 300 --units 40' inside a vbw_setup root, runs vbw prove there, reads evidence.own.tracking and evidence.own.planning, and fails when tracking divided by the units that ran exceeds TRACKING_PER_UNIT_LIMIT=1 or planning exceeds PLANNING_LIMIT=5; first it measures sh and jq startup like tools/bench-hooks.sh and, when the machine is too busy to measure, prints 'machine too busy to measure' and skips (skip ...). tests/proof-speed-timed.bats green.",
         "The before decision's remaining costs: for each cost it names as VBW's own beyond suspects (a) to (d), a regression test shown red, then the fix in reads.sh, proofreuse.sh or steps.sh; a cause inherent to the stand-in's build (a unit that truly reads every source file) is left as a truthful entry of the top-reasons line and named in the after decision.",
         "Run tools/measure-proof-speed.sh at the default size and then with --two on this Mac, both with the finished P162 and P163 code.",
         "Record the after numbers with vbw decide: text starting 'Proof speed after (M42) on this Mac:' with every token of the before decision, 'fix done after one file: reused N of M units (expected E)' and 'two proofs: max held H of limit L'; why: the script, its size and the date. tests/proof-speed-after.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "reads_collect spawns the same number of jq processes for 1 listed folder and for 300"
+          },
+          "what": "a jq process per listed folder in reads_collect",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C437": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T16:02:21Z",
+          "head": "fa78947fbf6f18c90c9db035d532009a3273108a"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the collected list (files, folders with their listing fingerprints, the git flag) is identical to what the earlier code gave on the same fixture"
+          },
+          "what": "opened files dropped from the collected list",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C437": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T16:03:13Z",
+          "head": "fa78947fbf6f18c90c9db035d532009a3273108a"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "a later unit that reads a written file inherits the writer's list, a file two runs wrote carries both lists, and inherited lists pass on through a chain of runs"
+          },
+          "what": "an inherited list is not added to the reader's list",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C438": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T16:03:50Z",
+          "head": "fa78947fbf6f18c90c9db035d532009a3273108a"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the written-file store keeps each run's read list once and each written name once: a unit that writes 1,000 files adds 1,000 names and one list"
+          },
+          "what": "each written name carries its run id twice",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C438": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T16:04:32Z",
+          "head": "fa78947fbf6f18c90c9db035d532009a3273108a"
+        },
+        {
+          "task": 2,
+          "none": "the P162.4 task 2 fixes are covered by the timed file's own tests, which sit in no check of R202 except C442; rules R202.16 to R202.19 cover reads.sh",
+          "at": "2026-10-20T16:04:34Z"
+        },
+        {
+          "task": 2,
+          "what": "the first reset always waits for the next second",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C442": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T16:19:42Z",
+          "head": "fa78947fbf6f18c90c9db035d532009a3273108a"
+        },
+        {
+          "task": 1,
+          "what": "the tracking limit per unit raised to 100 s",
+          "files": [
+            "tests/timed-proof-speed.bats"
+          ],
+          "checks": {
+            "C442": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T16:21:16Z",
+          "head": "fa78947fbf6f18c90c9db035d532009a3273108a"
+        },
+        {
+          "task": 2,
+          "none": "the fixes in reads.sh are guarded by tests/timed-proof-speed.bats, which only the release run executes (no check of R202 runs it); the collection semantics they keep are broken and caught by the R202.16 to R202.19 mutations (C437, C438), and the plan that completes the timed run is this one at its release run",
+          "at": "2026-10-20T16:21:19Z"
+        },
+        {
+          "task": 3,
+          "none": "task 3 only runs tools/measure-proof-speed.sh and changes no file",
+          "at": "2026-10-20T16:21:21Z"
+        },
+        {
+          "task": 4,
+          "none": "task 4 records a decision (D485) with vbw decide and changes no code; tests/proof-speed-after.bats reads it",
+          "at": "2026-10-20T16:21:23Z"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "tests/timed-proof-speed.bats runs only in the release run, builds the scaled-down stand-in (2,000 files, 300 folders, 40 units) with the tool's --generate, fails above 1 s of read tracking per unit or 5 s of planning, and skips a machine too busy to measure"
+          },
+          "what": "the planning limit raised to 500 s",
+          "files": [
+            "tests/timed-proof-speed.bats"
+          ],
+          "checks": {
+            "C442": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T16:22:04Z",
+          "head": "fa78947fbf6f18c90c9db035d532009a3273108a"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "measured after on this Mac: VBW's own work for the whole 200-unit proof under 60 s, read tracking under 1 s per unit, jq CPU under 60 s and vbw next --json under 5 s with the store full, recorded as a decision"
+          },
+          "none": "C441 reads only the after decision (D485) in the record; there is no code of this plan to break for R202.25, and the plan that measures it is P162.4 itself (the figures come from tools/measure-proof-speed.sh, P162.1)",
+          "at": "2026-10-20T16:26:06Z",
+          "head": "fa78947fbf6f18c90c9db035d532009a3273108a"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "after the one-file change the units reused equal the units whose read lists do not contain the changed file"
+          },
+          "none": "C441 reads only the after decision (D485) in the record; there is no code of this plan to break for R202.26, and the plan that measures it is P162.4 itself (the figures come from tools/measure-proof-speed.sh, P162.1)",
+          "at": "2026-10-20T16:26:23Z",
+          "head": "fa78947fbf6f18c90c9db035d532009a3273108a"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "every cost the before decision named as VBW's own is fixed (the after figures meet the targets); an inherent cause stays reported in the top-reasons line"
+          },
+          "none": "C441 reads only the after decision (D485) in the record; there is no code of this plan to break for R202.27, and the plan that measures it is P162.4 itself (the figures come from tools/measure-proof-speed.sh, P162.1)",
+          "at": "2026-10-20T16:26:39Z",
+          "head": "fa78947fbf6f18c90c9db035d532009a3273108a"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the two-proof sample joins the after decision as 'two proofs: max held H of limit L' with H at most L"
+          },
+          "none": "C441 reads only the after decision (D485) in the record; there is no code of this plan to break for R202.38, and the plan that measures it is P162.4 itself (the figures come from tools/measure-proof-speed.sh, P162.1)",
+          "at": "2026-10-20T16:26:56Z",
+          "head": "fa78947fbf6f18c90c9db035d532009a3273108a"
+        }
       ]
     },
     {
@@ -54450,6 +54614,18 @@
       "id": "D483",
       "at": "2026-10-20T13:05:52Z",
       "text": "Contract approved: 192 requirements, 445 checks, 503 plans (2ebd80422752)"
+    },
+    {
+      "id": "D484",
+      "text": "Proof speed after (M42) on this Mac: stand-in (5000 files, 500 folders, 200 units); prove 57.58 s wall, own work 55.71 s (97%) (VBW's own seconds summed over parallel units; 0.9 min of a 0.9 min proof, from 2.4 min of a 1.4 min proof before); fix done after one file: reused 99 of 100 units (expected 99, the units whose read lists do not contain the changed file); jq 21.82 CPU s in 6289 processes; store 78042 bytes; written lists 131477 bytes; vbw next 3.18 s with the store full; own-work steps: planning 0.87 s, copies 6.12 s, read tracking 48.36 s (0.24 s per unit), saving 0.22 s, record 0.15 s; two proofs: max held 7 of limit 7. Before to after: own work 142.06 s to 55.71 s, read tracking 121.78 s to 48.36 s, jq 52.42 CPU s to 21.82, written lists 1266537 to 131477 bytes, vbw next 31.35 s to 3.18 s. Suspects: (a) cleared before and after; (b) fixed, the store keeps each run's list once; (c) cleared before and after; (d) fixed, vbw next reads the proof-units cache. The remaining cost beyond (a) to (d) was read tracking itself, all VBW's own, now fixed in plugin/lib/reads.sh by four changes, each with a regression test in tests/timed-proof-speed.bats shown red first: the folder-to-names map is built once per copy and not on every collection (collect 0.67 s to 0.17 s); a reset sets back only the files the last run moved, not all 5206; one walk of the copy finds every moved path (three finds a collection, not one per list); the first reset of a fresh copy no longer waits for the next whole second where file times are finer. Inherent and left reported: the first proof of a fresh clone says 'ran again: 200 of 200 units; top reasons: this clone has no earlier recorded run (200)', and each unit still reads every tracked file's access time once (the stand-in's units are built to read), now at 0.24 s per unit. One observation, not a target of this plan: two 200-unit proofs at once took 335.26 s wall together on the shared limit of 7 slots, against 57.58 s for one alone; the held count never exceeded the limit.",
+      "why": "Measured with tools/measure-proof-speed.sh at its default size (default run, then --two) on 2026-10-20, with the finished P162 and P163 code and the P162.4 changes to plugin/lib/reads.sh. Machine limit 7 (10 cores). Figures from one run each, not averaged; the own-work total has about 5 s of margin under the 60 s target.",
+      "at": "2026-10-20T16:00:49Z"
+    },
+    {
+      "id": "D485",
+      "text": "Proof speed after (M42) on this Mac: stand-in (5000 files, 500 folders, 200 units); prove 57.58 s wall, own work 55.71 s (97%) (VBW's own seconds summed over parallel units; 0.9 min of a 0.9 min proof, where the before decision had 2.4 min of a 1.4 min proof); fix done after one file: reused 99 of 100 units (expected 99); the expected count is the units whose read lists do not contain the changed file; jq 21.82 CPU s in 6289 processes; store 78042 bytes; written lists 131477 bytes; vbw next 3.18 s with the store full; own-work steps: planning 0.87 s, copies 6.12 s, read tracking 48.36 s (0.24 s per unit), saving 0.22 s, record 0.15 s; two proofs: max held 7 of limit 7. Against the before decision (D482) own work fell from 142.06 s, read tracking from 121.78 s, jq CPU from 52.42 s, the written lists from 1266537 bytes and vbw next from 31.35 s. Suspects: (a) cleared before and after; (b) fixed, the store keeps each run's list once; (c) cleared before and after; (d) fixed, vbw next reads the proof-units cache. The remaining cost beyond (a) to (d) was read tracking itself, all VBW's own, now fixed in plugin/lib/reads.sh by four changes, each with a regression test in tests/timed-proof-speed.bats shown red first: the folder-to-names map is built once per copy and not on every collection (a collection fell from 0.67 s to 0.17 s); a reset sets back only the files the last run moved, not all 5206; one walk of the copy finds every moved path (three finds a collection, not one per list); the first reset of a fresh copy no longer waits for the next whole second where file times are finer. Inherent and left reported: the first proof of a fresh clone says 'ran again: 200 of 200 units; top reasons: this clone has no earlier recorded run (200)', and each unit still has its access times reset and read back once, now at 0.24 s per unit. One observation, not a target of this plan: two 200-unit proofs at once took 335.26 s wall together on the shared limit of 7 slots, against 57.58 s for one alone; the held count never exceeded the limit. This decision replaces D484, whose repeated figures confused the readers of the text.",
+      "why": "Measured with tools/measure-proof-speed.sh at its default size (default run, then --two) on 2026-10-20, with the finished P162 and P163 code and the P162.4 changes to plugin/lib/reads.sh. Machine limit 7 (10 cores). Figures from one run each, not averaged; the own-work total has about 4 s of margin under the 60 s target.",
+      "at": "2026-10-20T16:01:06Z"
     }
   ],
   "commands": {
@@ -61499,6 +61675,19 @@
           "usd": 0.282205,
           "in": 2014,
           "out": 190
+        }
+      },
+      {
+        "id": "build-20261020T142603Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T14:26:03Z",
+        "ended": "2026-10-20T16:31:30Z",
+        "cost": {
+          "usd": 5.363974,
+          "in": 3469,
+          "out": 335
         }
       }
     ],
