@@ -175,20 +175,38 @@ slots_lose() {
   { [ -f "$CHECK_OUT/lost" ] || printf '%s\n' "$why" > "$CHECK_OUT/lost"; } 2> /dev/null || true
 }
 
-# slots_take UNIT: wait for a slot of the store, then hold it (the mark names the store for the unit's command).
-slots_take() {
-  [ "$SLOTS_STATE" = on ] || return 0
-  [ -z "$SLOTS_SUB" ] || SLOTS_UNIT=$1
+# slots_hold NAME: wait for a slot of the store and hold it under NAME, without
+# the unit mark (a bookkeeping step of the run, R202: vbw:plan, vbw:copies,
+# vbw:save). 1 when no slot is in force (store off, lost on the way, or a nested
+# run, which takes none): the step then runs anyway.
+slots_hold() {
+  [ "$SLOTS_STATE" = on ] || return 1
   slots_traps
   local since="" rc
   while :; do
     slots_apply "$SLOTS_TAKE" --argjson run "$$" --arg id "$1" --argjson limit "$SLOTS_LIMIT" && rc=0 || rc=$?
-    if [ "$rc" -ne 0 ]; then slots_lose "$rc"; return 0; fi
+    if [ "$rc" -ne 0 ]; then slots_lose "$rc"; return 1; fi
     [ "$SLOTS_RESULT" != true ] || break
     [ -n "$since" ] || since=$(date +%s)
     sleep 0.1
   done
   slots_waited "$since"
+}
+
+# slots_release NAME: give a bookkeeping slot back.
+slots_release() {
+  local rc
+  [ "$SLOTS_STATE" = on ] || return 0
+  slots_apply "$SLOTS_DROP" --argjson run "$$" --arg id "$1" && rc=0 || rc=$?
+  [ "$rc" -eq 0 ] || slots_lose "$rc"
+  return 0
+}
+
+# slots_take UNIT: wait for a slot of the store, then hold it (the mark names the store for the unit's command).
+slots_take() {
+  [ "$SLOTS_STATE" = on ] || return 0
+  [ -z "$SLOTS_SUB" ] || SLOTS_UNIT=$1
+  slots_hold "$1" || return 0
   SLOTS_MARK="VBW_SLOT_STORE=$SLOTS_FILE"
 }
 
