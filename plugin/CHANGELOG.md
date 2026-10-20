@@ -1,5 +1,42 @@
 # Changelog
 
+## [2.0.41] - 2026-10-20
+
+### Added
+
+- **Every proof says where its time went.** `vbw prove` and `vbw fix done`
+  print two lines: how much of the run was VBW's own work (planning, clean
+  copies, read tracking, saving, the record), and how many units ran again
+  with the top three reasons. `vbw show evidence` gives the full split and,
+  per unit, why it ran or which proof it reused.
+- **A rule with no code to break can pass the mutation check.** When a rule's
+  check judges only what the record holds (a measurement kept as a decision),
+  `vbw mutate PLAN Rn.k --none REASON` is accepted, but only after the kernel
+  confirms from the check's recorded read list that no file of any plan of the
+  requirement could change its outcome.
+
+### Changed
+
+- **Proofs on large projects cost seconds, not minutes.** Read tracking runs
+  in a fixed number of processes however many folders a test lists, resets
+  only the files the last run read, and walks each copy once; the written-file
+  store keeps each read list once. Reuse planning and saving run in batches.
+  On a generated 5,000-file, 200-unit project on a Mac, VBW's own work in a
+  full proof fell from 142 s to 56 s and read tracking from 122 s to 48 s.
+- **`vbw next` answers in seconds on a large project.** It keeps the proof's
+  unit list in `.vbw/runtime/proof-units.json` and works it out again only when
+  the commit, the record or the run store changes (31 s to 3 s on the same
+  project).
+- **VBW's own work counts in the computer-wide limit.** A test's slot covers
+  its read tracking, and the proof's planning, copies and saving take slots
+  (`vbw:plan`, `vbw:copies`, `vbw:save`). `vbw next` never waits for one.
+- **The scope check skips work that was exactly undone.** A commit that a
+  later commit exactly reverses (checked by git, file by file, whoever made
+  it) is no longer blamed on a plan; a partial or edited undo still is. The
+  proof lists what it skipped, and the check reads the history in one pass.
+- **`vbw fix done` needs an approved contract** even when nothing has to run
+  again.
+
 ## [2.0.40] - 2026-10-19
 
 ### Added
