@@ -257,6 +257,23 @@ after_scope_ok() {
   [ "$(printf '%s\n' "$output" | grep -c 'undone by')" -eq 2 ] || { echo "$output"; false; }
 }
 
+@test "R204: an undo clears at most one commit: a second commit of the same change, with no exact undo of its own between, is still judged" {
+  local a c r
+  a=$(stray 1)
+  git rm -q src/stray1.txt
+  printf 'more\n' >> README.md
+  git add README.md
+  git commit -q -m "chore(stray): out again, plus a note"
+  c=$(stray 1)
+  git revert --no-edit "$c" > /dev/null
+  r=$(git rev-parse HEAD)
+  vbw_run prove
+  [ "$status" -eq 1 ] || { echo "$output"; false; }
+  [[ "$output" == *"  scope: ${a:0:12} (P1.1) changed src/stray1.txt, which is not in the plan"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"  scope: ${c:0:12} (P1.1) changed"* ]] || { echo "$output"; false; }
+  undone_is "$(jq -nc --arg c "$c" --arg r "$r" '[{commit: $c, plan: "P1.1", by: $r}]')"
+}
+
 @test "R204: an exact undo that carries a trailer of its own is not judged either, and both commits are listed" {
   local a b
   a=$(stray 1)
