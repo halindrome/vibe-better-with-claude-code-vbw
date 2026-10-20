@@ -14,6 +14,11 @@ Before you propose or build a change:
 
 A feature, setting or special case that only one project needs will be declined, however well it is built. The full rule is the first item of the Engineering Standard in `AGENTS.md`.
 
+## Where to start
+
+- [docs/known-issues.md](docs/known-issues.md): the public roadmap and the known issues.
+- [docs/ideas.md](docs/ideas.md): ideas open for community contributions.
+
 ## Prerequisites
 
 - Claude Code with **Dynamic workflows** enabled (`/config`)
