@@ -48902,13 +48902,251 @@
         "plugin/lib/cmd-prove.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Red first: tests/scope-undone.bats and the three R204 tests of tests/park-ids.bats fail on today's code (62 git processes for 5 commits against 107 for 50; no evidence.undone). plugin/lib/cmd-prove.sh, prove_scope: replace the walk plus one git diff-tree per trailer commit with one `git log --topo-order --no-renames --raw --no-abbrev -z --format='%H%x1f%(trailers:key=VBW-Plan,valueonly)'` (stderr dropped, as today). The -z stream is NUL-separated: a commit header `<hash>\\x1f<trailer values, newline-separated>` then, for a commit that changes files, a leading newline and raw entries `:<old mode> <new mode> <old blob> <new blob> <status>` NUL `<path>` NUL (a merge commit lists nothing, as git diff-tree lists nothing for it today). Read it with `read -r -d ''` loops in bash 3.2 (no mapfile, no associative arrays), never grep or sed on JSON, never reading any file content. Per commit keep: the hash, the first VBW-Plan value (as today), and per path its old pair (mode, blob) and new pair (mode, blob). The park's reverts are read as today (`.loop.items[].reverts`, one `git log -1` per recorded revert: bounded by the record, not by the history). One commit: perf(P165.1): one git log walk builds the scope check's per-commit pairs.",
         "The mirror-image match, in the same prove_scope, newest first in the walk's order. A commit B is the mirror image of an earlier commit A when both change exactly the same set of paths and, for every path, B's old pair equals A's new pair and B's new pair equals A's old pair (a file A added is deleted by B; a file A deleted is added back with the same mode and blob; a mode-only change is put back). Compute per commit a forward key (the sorted lines `path old-mode old-blob new-mode new-blob`, hashed with vbw_sha256 or compared as one string) and a backward key (the same lines with the pairs swapped): B mirrors A exactly when B's backward key equals A's forward key. Standing: a commit stands while no later standing commit has taken it; each standing commit takes at most one commit, the nearest earlier one it mirrors, as the walk reaches that earlier commit (the nearest unconsumed later standing commit whose backward key equals the earlier one's forward key takes it); before a pair counts, one `git merge-base --is-ancestor EARLIER LATER` confirms the earlier commit is an ancestor of the later one (a candidate that fails is skipped and the next nearest is tried). A taken commit no longer stands, so it takes nothing and clears nothing: a revert of a revert leaves the original standing and judged; a re-apply after a revert takes the revert (which carries no trailer) and is itself judged when it carries a trailer; apply, undo, apply, undo pairs newest first and leaves all four unjudged. Judged set: a commit whose trailer names a plan of the current milestone is judged (today's covers/survivor_files jq, today's wording and order) unless it was taken, unless it is a park-cleared original, or unless it is a standing commit that took a commit carrying a VBW-Plan trailer (the pair cancels). No message, trailer or author is read for the match itself. One commit: feat(P165.1): the scope check leaves a commit exactly undone by a later standing commit unjudged.",
         "The report. prove_scope also prints the cleared list, and cmd_prove puts it in the evidence as `undone`: an array of {commit, plan, by} with 40-hex ids, one entry per cleared commit whose trailer names a plan of the current milestone, emitted as each pair is found (newest pair first; for a pair the undoing commit's own entry, when its trailer names a current plan, comes before the original's), the park-cleared originals included with the park's revert as `by` (each commit listed once; the exact-undo route first when both clear it), `[]` when none; the contract fingerprint and `evidence.passed` (false exactly when a violation or a failing unit exists) and `scope[]` (today's strings) unchanged, so next.jq's scope action and the loop's park are untouched. prove_summary prints, right after its `scope ok` or `scope: ...` lines, one line per entry: `  scope: <commit[0:12]> (<plan>) undone by <by[0:12]>, not judged`. Keep prove_scope's output a single JSON object or two arrays handed to cmd_prove through --slurpfile from a scratch file, never --arg or --argjson. tests/scope-undone.bats green except the process-count test. One commit: feat(P165.1): the proof records and prints the commits it left unjudged.",
         "A fixed number of git processes and every existing test green: the process-count test of tests/scope-undone.bats (5 against 50 plan-trailer commits, no undone pair, the same count: only the walk, one ancestry check per candidate pair, and the per-park-revert reads); then bats on tests/scope-undone.bats, tests/park-ids.bats (the renamed test, the exact hand revert, the park's merged revert listed through the park's list), tests/kernel-prove.bats, tests/scope-shipped.bats, tests/prove-summary.bats, tests/loop-retry-park.bats, tests/loop-park-report.bats, tests/prove-own-work.bats, all green, under /bin/bash 3.2 as well (PATH=/bin:$PATH). One commit: perf(P165.1): the scope check costs the same git processes for 5 commits as for 50."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R204",
+            "text": "a commit with a VBW-Plan trailer naming a plan of the current milestone is not judged when a later standing commit on the branch exactly undoes it, whoever made it and whatever its message says (a hand git revert, a plain commit by another author with no revert line)"
+          },
+          "what": "never take a commit (taken flag stays 0)",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C451": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T19:26:08Z",
+          "head": "f871ed609f92fd8f0dc6bbc6d8ef2aea080bf1cd"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "exact means git's own view, file by file: the same set of paths, and for each path the undo takes it from the commit's new mode and blob back to its old mode and blob; a file added is deleted, a file deleted is added back with the same content and mode, a mode-only change is put back"
+          },
+          "what": "blobs left out of the keys",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C451": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T19:27:56Z",
+          "head": "f871ed609f92fd8f0dc6bbc6d8ef2aea080bf1cd"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "an edited undo (one extra line), a partial undo (one of two files restored) or an undo touching an extra path is not exact: the commit is judged as today and the violation names the file"
+          },
+          "what": "key keeps only the first path",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C451": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T19:29:02Z",
+          "head": "f871ed609f92fd8f0dc6bbc6d8ef2aea080bf1cd"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "an undo that is itself exactly undone by a later standing commit clears nothing: a revert of a revert leaves the original judged; a re-apply after a revert is a fresh commit, judged on its own when it carries a trailer, and the first commit is judged again"
+          },
+          "what": "a taken commit may still take",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C451": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T19:30:56Z",
+          "head": "f871ed609f92fd8f0dc6bbc6d8ef2aea080bf1cd"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "each standing commit clears at most one commit, the nearest earlier one it is the mirror image of: a chain of apply, undo, apply, undo leaves all four unjudged"
+          },
+          "what": "a commit may take many",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C451": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T19:32:51Z",
+          "head": "f871ed609f92fd8f0dc6bbc6d8ef2aea080bf1cd"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "the undoing commit is not judged either when it carries a trailer naming a plan of the current milestone, and is listed with itself as commit and its original as by"
+          },
+          "what": "undoing commit entry not listed",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C451": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T19:34:42Z",
+          "head": "f871ed609f92fd8f0dc6bbc6d8ef2aea080bf1cd"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "evidence.undone lists one {commit, plan, by} with 40-hex ids per cleared commit whose trailer names a plan of the current milestone, newest pair first, [] when none; a cleared commit naming a shipped milestone's plan is not listed"
+          },
+          "what": "undone listed oldest first",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C451": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T19:36:40Z",
+          "head": "f871ed609f92fd8f0dc6bbc6d8ef2aea080bf1cd"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "the proof's summary prints, after its scope line, one line per entry in the form 'scope: <12 hex> (<plan>) undone by <12 hex>, not judged'"
+          },
+          "what": "summary words changed",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C451": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T19:38:46Z",
+          "head": "f871ed609f92fd8f0dc6bbc6d8ef2aea080bf1cd"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "a commit of the current plan that nothing undoes is judged in today's words, evidence.passed and scope[] keep their shape and vbw next's scope action is unchanged"
+          },
+          "what": "violation wording changed",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C451": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T19:40:34Z",
+          "head": "f871ed609f92fd8f0dc6bbc6d8ef2aea080bf1cd"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "the scope check runs the same number of git processes for 5 plan-trailer commits as for 50 with no undone pair: one git log walk plus at most one ancestry check per undone pair found"
+          },
+          "what": "one extra git process per commit",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C451": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T19:42:22Z",
+          "head": "f871ed609f92fd8f0dc6bbc6d8ef2aea080bf1cd"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "a commit undone by hand with an edit is still judged and nothing is listed; an exact hand revert with no park is no longer judged and is listed with the revert as by"
+          },
+          "what": "exact hand revert not listed with the revert as by",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C452": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T19:49:16Z",
+          "head": "f871ed609f92fd8f0dc6bbc6d8ef2aea080bf1cd"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "a park's recorded revert that merged over a later edit of the same file still clears its commit through the park's list, and the entry names the park's revert as by"
+          },
+          "what": "park entry names the commit itself as by",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C452": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T19:53:23Z",
+          "head": "f871ed609f92fd8f0dc6bbc6d8ef2aea080bf1cd"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "an undo that is itself exactly undone by a later standing commit clears nothing: a revert of a revert leaves the original judged; a re-apply after a revert is a fresh commit, judged on its own when it carries a trailer, and the first commit is judged again"
+          },
+          "what": "a taken commit may still take",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C451": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T19:57:25Z",
+          "head": "ac38bb292b3c70d472ddd2e34b59cf09a887ff46",
+          "strengthened": [
+            "tests/scope-undone.bats"
+          ],
+          "pending": [
+            "tests/scope-undone.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "each standing commit clears at most one commit, the nearest earlier one it is the mirror image of: a chain of apply, undo, apply, undo leaves all four unjudged"
+          },
+          "what": "a commit may take many",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C451": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T19:59:30Z",
+          "head": "ac38bb292b3c70d472ddd2e34b59cf09a887ff46",
+          "strengthened": [
+            "tests/scope-undone.bats"
+          ],
+          "pending": [
+            "tests/scope-undone.bats"
+          ]
+        }
       ]
     },
     {
@@ -48923,12 +49161,46 @@
         "plugin/lib/cmd-show.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Red first: tests/scope-undone-record.bats fails on today's code (the validator accepts a malformed undone; show evidence prints no undone line). plugin/lib/record.jq, the evidence block: when `undone` is present it must be an array whose every entry is an object with exactly the keys commit, plan and by, commit and by matching ^[0-9a-f]{40}$ and plan matching ^P[0-9]+\\.[0-9]+$; anything else (a non-array, a missing key, an extra key, a short or non-hex id, a plan id like P1 or a title) is one violation: `evidence.undone must be an array of {commit, plan, by}: commit and by 40 hex digits, plan a plan id P<n>.<m> (docs/record.md)`. A record without the field stays valid; `passed` and `scope` keep their rules. tests/record.bats, tests/record-v4-compat.bats, tests/record-compat.bats green. One commit: feat(P165.2): the record validator accepts evidence.undone and refuses a malformed entry.",
         "plugin/lib/cmd-show.sh, the evidence view: after the `  scope: ` violation lines, one line per entry of `(.undone // [])`: `  scope: \\(.commit[0:12]) (\\(.plan)) undone by \\(.by[0:12]), not judged`, the proof summary's exact words; a record written before the field prints nothing for it and exits 0 (`vbw status` reads it too). tests/scope-undone-record.bats green; tests/kernel-show.bats, tests/prove-own-work.bats, tests/prove-testfiles.bats, tests/proof-selective.bats green. One commit: feat(P165.2): vbw show evidence lists the commits the proof left unjudged.",
         "Both files under /bin/bash 3.2 (PATH=/bin:$PATH bats on tests/scope-undone-record.bats, tests/record.bats, tests/kernel-show.bats), and the validator's message and the view's line checked against docs/record.md's and docs/proof.md's wording once P165.3 lands (the words are fixed by the test: no change expected). One commit only if something had to move: fix(P165.2): bash 3.2 wording."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R204",
+            "text": "the record validator accepts evidence without undone, with [] and with well-formed entries, and refuses an entry missing commit, plan or by, an id that is not 40 hex digits, a plan id of a wrong shape, an extra field or a non-array, naming evidence.undone, while passed and scope keep their rules"
+          },
+          "what": "dropped the exact-keys rule on undone entries",
+          "files": [
+            "plugin/lib/record.jq"
+          ],
+          "checks": {
+            "C453": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T18:56:29Z",
+          "head": "4a239b363c9b4fa787d8cf9028b4205f857ec504"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "vbw show evidence prints one line per undone entry in the summary's words after the scope lines, and prints nothing for a record written before the field, which still reads"
+          },
+          "what": "show evidence prints no undone lines",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C453": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T18:57:24Z",
+          "head": "4a239b363c9b4fa787d8cf9028b4205f857ec504"
+        }
       ]
     },
     {
@@ -48944,12 +49216,84 @@
         "docs/loop.md"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "docs",
       "tasks": [
         "Red first: tests/scope-undone-docs.bats fails on today's docs. docs/proof.md, step 4 of the `vbw prove` list (the `## \\`vbw prove\\`` section): remove the sentence `A commit reverted by hand is still judged` and state the exact-undo rule in plain words, inside step 4 (before step 5), using these phrases verbatim so the docs test finds them: a commit that is `exactly undone` by a later commit is not judged; git verifies it `file by file` (the same files, and each file taken back from the commit's content and mode to what it had before: the later commit is the `mirror image` of the earlier one, as git's own fingerprints of file content show, whoever made it and whatever its message says); `an undo of an undo clears nothing` (the original is judged again, a re-apply is judged as a fresh commit); `the undoing commit is not judged either` when it names a plan of this milestone, since the pair leaves every file as it was; `A partial or edited revert is still judged` (one extra line, one of two files restored, an extra file touched); a park's recorded revert still clears its commit even when git had to merge it over a later change. Name the summary line with a literal example in the form `scope: abc123456789 (P163.2) undone by def123456789, not judged` and the words `undone by` and `, not judged`. Keep the shipped-milestone and park sentences. One commit: docs(P165.3): the proof's scope step explains the exact-undo rule.",
         "docs/record.md, the `| \\`evidence\\` |` table row (one line): add `undone`, an array of `{commit, plan, by}` (the 40-hex id of the commit the scope check left unjudged, the plan its trailer names, the 40-hex id of the commit that undid it), `[]` when none, with the not-recorded case in the words `a record written before` this field still reads and `vbw show evidence` prints nothing for it; a malformed entry makes the record corrupt. Also update the evidence JSON example in docs/proof.md (`\"scope\": []`) to show `\"undone\": []`. One commit: docs(P165.3): record.md documents evidence.undone.",
         "docs/loop.md, the park section: keep the park's rule as it is (the steps 1 to 7, `Reverts the item's commits made since its milestone began, newest first`) and add, after the steps or under Bringing the work back, that the loop's park and `a hand revert` now `clear a commit the same way` in the proof's scope check (an exact revert, verified by git file by file), so a scope violation parks an item only for a change that is `still in the code`; a park's recorded revert keeps clearing its commit even when git merged it over a later change. tests/scope-undone-docs.bats green; tests/loop-docs.bats, tests/proof-causes-docs.bats, tests/proof-speed-docs.bats and every other docs test green (bats on tests/*-docs.bats). One commit: docs(P165.3): loop.md says a park and a hand revert clear a commit the same way."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R204",
+            "text": "docs/proof.md step 4 of vbw prove states the exact-undo rule in plain words (exactly undone, file by file, mirror image, an undo of an undo clears nothing, the undoing commit is not judged either, a partial or edited revert is still judged) and names the summary line; the sentence 'A commit reverted by hand is still judged' is gone"
+          },
+          "what": "removed the phrase mirror image from step 4",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C454": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T18:51:24Z",
+          "head": "403b1bf431d0ffd96be2d6a3c4df377b2c81a36a"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "docs/record.md's evidence row documents undone with its shape {commit, plan, by}, 40-hex ids, [] when none, and that a record written before the field still reads"
+          },
+          "what": "dropped the [] when-none statement",
+          "files": [
+            "docs/record.md"
+          ],
+          "checks": {
+            "C454": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T18:51:55Z",
+          "head": "403b1bf431d0ffd96be2d6a3c4df377b2c81a36a"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "docs/loop.md keeps the park's rule and says the loop's park and a hand revert clear a commit the same way, so a scope violation parks an item only for a change that is still in the code"
+          },
+          "what": "said park and hand revert clear differently",
+          "files": [
+            "docs/loop.md"
+          ],
+          "checks": {
+            "C454": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T18:52:24Z",
+          "head": "403b1bf431d0ffd96be2d6a3c4df377b2c81a36a"
+        },
+        {
+          "rule": {
+            "req": "R204",
+            "text": "docs/record.md's evidence row documents undone with its shape {commit, plan, by}, 40-hex ids, [] when none, and that a record written before the field still reads"
+          },
+          "what": "dropped the [] when-none statement",
+          "files": [
+            "docs/record.md"
+          ],
+          "checks": {
+            "C454": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T18:53:08Z",
+          "head": "4a239b363c9b4fa787d8cf9028b4205f857ec504",
+          "strengthened": [
+            "tests/scope-undone-docs.bats"
+          ],
+          "pending": [
+            "tests/scope-undone-docs.bats"
+          ]
+        }
       ]
     }
   ],
@@ -62193,6 +62537,19 @@
           "usd": 10.61462,
           "in": 2864,
           "out": 128
+        }
+      },
+      {
+        "id": "build-20261020T184722Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T18:47:22Z",
+        "ended": "2026-10-20T20:04:24Z",
+        "cost": {
+          "usd": 2.318487,
+          "in": 2274,
+          "out": 157
         }
       }
     ],
