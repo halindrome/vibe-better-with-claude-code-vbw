@@ -52647,6 +52647,13 @@
       "sort": "next",
       "size": "medium",
       "status": "open"
+    },
+    {
+      "id": "T175",
+      "text": "Two proofs at once took 335 s wall vs 57.6 s for one (M42 after-measurement, limit 7, max held 7): find why sharing the computer-wide limit costs 6x",
+      "sort": "next",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
