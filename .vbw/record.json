@@ -60830,7 +60830,12 @@
     "stopping": {
       "at": "2026-10-20T08:13:28Z",
       "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a"
-    }
+    },
+    "ended": {
+      "at": "2026-10-20T08:13:41Z",
+      "reason": "stopped by the user (session 0ee781c3-c5b6-4a6c-889f-04b89f1fba4a)"
+    },
+    "report": ".vbw/loop-report.md"
   },
   "parked": [
     {
