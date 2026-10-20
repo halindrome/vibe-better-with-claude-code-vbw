@@ -48560,7 +48560,7 @@
     {
       "id": "T161",
       "text": "Mission Control tab plan (owner sketch 2026-10-12, split out of R190 by D419): tabs Now, Plan, Proof, Timeline, Settings; Team, Decisions and Costs fold in (models to Settings, decisions inside each phase in Plan, run costs to Timeline, sound switch to Settings); Settings changes go through the kernel and are read back. Do before T95 (Sessions tab) and T96 (costs) so those are built once",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T162",
