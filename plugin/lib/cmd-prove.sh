@@ -294,8 +294,8 @@ prove_scope() {
     esac
     path=${C_FILES[i]}
     while [ -n "$path" ]; do
-      out="$out"J$us"${C_HASH[i]:0:12}"$us"${C_PLAN[i]}"$us"${path%%$us*}"$'\n'
-      path=${path#*$'\x1f'}
+      out="${out}J$us${C_HASH[i]:0:12}$us${C_PLAN[i]}$us${path%%"$us"*}"$'\n'
+      path=${path#*"$us"}
     done
   done
   printf '%s%s' "$out" "$cleared" | jq -R -s -c --slurpfile rec <(printf '%s' "$1") "$VBW_JQ_DEFS$COMMIT_SURVIVOR_DEFS"'
