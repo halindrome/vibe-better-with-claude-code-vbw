@@ -58164,6 +58164,15 @@
           "in": 9411,
           "out": 877
         }
+      },
+      {
+        "id": "plan-20261020T082459Z",
+        "kind": "plan",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T08:24:59Z",
+        "ended": "2026-10-20T08:33:23Z",
+        "cost": null
       }
     ],
     "milestones": {
