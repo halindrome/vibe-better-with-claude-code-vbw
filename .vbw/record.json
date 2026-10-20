@@ -46651,7 +46651,7 @@
       "after": [
         "P161.1"
       ],
-      "status": "blocked",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "tools/measure-proof-speed.sh (maintainers only, like tools/measure-fix-round.sh): the generator. Options --files N --folders N --units N (defaults 5000, 500, 200) and --generate DIR (build the stand-in at DIR in the caller's environment, print 'fixture: stand-in (F files, D folders, U units)' and stop). A two-level folder tree, small text source files; units are half approved checks (sh tests/c_N.sh, files tests/c_N.sh) and half test files tests/t_N.sh under the form 'sh {file}' with files tests/t_*.sh; each unit reads a handful of source files; every fourth unit writes 300 files into the git-ignored .buildcache/ (named in .gitignore; not a build-folder name, so the clean copy carries it) and the unit after it reads them back; one plan of R1 done, contract and commands approved, everything committed. No word, path or code of any real user project.",
@@ -47028,8 +47028,7 @@
           "at": "2026-10-20T13:50:44Z",
           "head": "362c690e62d660a6a17bfc0a5ade11339eba6744"
         }
-      ],
-      "note": "R202.14 is met by a recorded decision (vbw decide), not by code in tools/measure-proof-speed.sh, so no break of the plan's file can turn C435 red. 'vbw mutate P161.4 R202.14 --none' is recorded but plan done still lists the rule as unshown, and the command reports 'waiting for approval: tests/mutate-rule-none.bats' (P164.1's check file). Needs that approval, then re-run vbw plan done P161.4."
+      ]
     },
     {
       "id": "P161.5",
@@ -48403,13 +48402,117 @@
         "P164.2",
         "P163.4"
       ],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Red first: tests/mutate-rule-none-docs.bats fails on the current text. docs/workflows.md, 'The mutation check': the example block gains 'vbw mutate P1.2 R3.1 --none \"the figures are a decision in the record\"'; 'a rule cannot be recorded this way' is replaced by: a rule may be recorded --none only when its check's recorded read list (the clone's run store, where every proof keeps what each unit read; the command runs the check once in a clean copy when the store has no current run) names no file and no listed folder that a files entry of any plan of its requirement covers, done or not; the kernel verifies that and refuses otherwise, naming each file with its plan and ending 'break the rule in that code instead', a run that read the project through git ('reads the project through git, so its files are unknown') and a run with no read list (the file system recorded none).",
         "docs/proof.md, 'The mutation check': a rule whose check judges only the record (a measurement kept as a decision, for example) is recorded --none after the kernel verifies its read list against the files of the requirement's plans; the command may run the check once in a clean copy of the committed code, with read tracking on, and records that run in the store as a proof would.",
         "docs/record.md: the plans row documents mutations[] (vbw mutate): a break {rule: {req, text} | task, what, files, checks, result red | survivor, at, head, optional strengthened and pending}; a task with nothing to break {task, none, at}; a rule with no code to break {rule: {req, text}, none, at, head}, head being the 40-hex commit of the committed code the judged run was current for; mutations never enter the contract fingerprint.",
         "plugin/agents/dev.md, the Mutation step: the rule form 'vbw mutate P1.2 R1.1 --none \"<reason>\"' only for a rule whose check reads nothing the requirement'\\''s plans build (a check that judges the record, for example); the kernel verifies it from the check'\\''s read list and refuses otherwise, naming the files to break the rule in. mutate-prompts.bats, mutate-own-rules-docs.bats, mutation-docs.bats, mutate-pending-check-docs.bats green; tests/mutate-rule-none-docs.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R203",
+            "text": "docs/workflows.md ('The mutation check') no longer says a rule cannot be recorded --none and says when a rule may be, how the kernel verifies it from the recorded read list, and how the refusals read"
+          },
+          "what": "removed refusal wording",
+          "files": [
+            "docs/workflows.md"
+          ],
+          "checks": {
+            "C450": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T14:12:51Z",
+          "head": "125f8f45790440922bd740ba69915529a7ac180a"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "docs/proof.md ('The mutation check') says a rule whose check judges only the record is recorded --none after the kernel verifies its read list, and that the command may run the check once and record that run"
+          },
+          "what": "removed run-once sentence",
+          "files": [
+            "docs/proof.md"
+          ],
+          "checks": {
+            "C450": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T14:13:36Z",
+          "head": "125f8f45790440922bd740ba69915529a7ac180a"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "docs/record.md documents the plans' mutations entries, the rule --none shape {rule, none, at, head} included"
+          },
+          "what": "renamed mutations",
+          "files": [
+            "docs/record.md"
+          ],
+          "checks": {
+            "C450": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T14:14:17Z",
+          "head": "125f8f45790440922bd740ba69915529a7ac180a"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "plugin/agents/dev.md tells the Dev to use the rule form of --none only for a rule whose check reads nothing the plans build, and that the kernel verifies it"
+          },
+          "what": "removed kernel verifies",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C450": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T14:14:56Z",
+          "head": "125f8f45790440922bd740ba69915529a7ac180a"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "plugin/agents/dev.md tells the Dev to use the rule form of --none only for a rule whose check reads nothing the plans build, and that the kernel verifies it"
+          },
+          "what": "removed kernel verifies",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C450": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T14:16:24Z",
+          "head": "7eb559b2bcea7e2b730d1a450fa499c77046e06d"
+        },
+        {
+          "rule": {
+            "req": "R203",
+            "text": "plugin/agents/dev.md tells the Dev to use the rule form of --none only for a rule whose check reads nothing the plans build, and that the kernel verifies it"
+          },
+          "what": "removed kernel verifies",
+          "files": [
+            "plugin/agents/dev.md"
+          ],
+          "checks": {
+            "C450": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T14:17:36Z",
+          "head": "8c3d1f9ddab02943150e910a8f10815e64c73ed1",
+          "strengthened": [
+            "tests/mutate-rule-none-docs.bats"
+          ],
+          "pending": [
+            "tests/mutate-rule-none-docs.bats"
+          ]
+        }
       ]
     }
   ],
@@ -61352,6 +61455,19 @@
           "usd": 0.495986,
           "in": 2443,
           "out": 132
+        }
+      },
+      {
+        "id": "build-20261020T140805Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T14:08:05Z",
+        "ended": "2026-10-20T14:19:26Z",
+        "cost": {
+          "usd": 0.419214,
+          "in": 2396,
+          "out": 209
         }
       }
     ],
