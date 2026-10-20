@@ -141,8 +141,11 @@ cmd_show() {
       printf '%s' "$record" | jq -r '
         if .evidence == null then "no proof run yet (vbw prove)" else .evidence
         | "proof run \(.at): \(if .passed then "passed" else "FAILED" end) (contract \(.contract[0:12]))",
+          (if .own == null then "  own work: not recorded" else
+             def s: (. * 100 | round) as $n | "\($n / 100 | floor).\(($n % 100) | tostring | if length < 2 then "0" + . else . end)";
+             .own as $o | "  own work: \(($o.planning + $o.copies + $o.tracking + $o.saving + $o.record) | s) of \($o.wall | s) s: planning \($o.planning | s), copies \($o.copies | s), read tracking \($o.tracking | s), saving \($o.saving | s), record \($o.record | s)" end),
           ((.checks + (.commands | map_values(select(.of_files | not))) + (.test_files // {})) | to_entries[]
-            | "  \(.key) \(.value.status)\(if .value.exit != null then " exit \(.value.exit)" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" else "" end)",
+            | "  \(.key) \(.value.status)\(if .value.exit != null then " exit \(.value.exit)" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif (.value.why // "") != "" then " ran: \(.value.why)" else " not recorded" end)",
               (.value.tail | select(length > 0) | split("\n")[] | "    | " + .)),
           (.scope[] | "  scope: " + .)
         end'
