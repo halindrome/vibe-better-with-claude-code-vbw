@@ -375,7 +375,7 @@ show_work() {
       "checks:", check_lines,
       (def tname: if .rule then (.rule.req as $q | .rule.text as $t | ($rules | map(select(.text == $t and (.n | startswith($q + "."))))[0].n // $q)) else "task\(.task)" end;
        if (.plan.mutations // [] | length) > 0 then "mutations:",
-         (.plan.mutations as $ms | $ms | to_entries[] | .key as $i | .value as $e | $e | if .none then "  task\(.task): no testable behaviour: \(.none)"
+         (.plan.mutations as $ms | $ms | to_entries[] | .key as $i | .value as $e | $e | if .none then (if .rule then "  \(tname): no code could change its outcome: \(.none)" else "  task\(.task): no testable behaviour: \(.none)" end)
            else (if .pending then
                "  \(tname) \(if ([$ms[:$i][] | select(.result == "survivor" and .head != $e.head and (if $e.rule then .rule == $e.rule else .task == $e.task end)
                     and ((($e.checks | to_entries | map(select(.value == "red") | .key)) - (.checks | keys)) | length == 0))] | length) > 0
