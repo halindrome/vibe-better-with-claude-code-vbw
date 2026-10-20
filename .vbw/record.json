@@ -45861,13 +45861,276 @@
         "plugin/lib/checks.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "New plugin/lib/prooftime.sh: prooftime_clock (seconds with milliseconds: date +%s.%N where %N is honoured, else perl Time::HiRes), prooftime_begin (a per-process scratch file under .vbw/runtime, guarded), prooftime_add STEP SECONDS (appends, so a unit's subshell can add its own seconds) and prooftime_total (one JSON object {planning, copies, tracking, saving, record, wall} in seconds), plus prooftime_lines that renders the two report lines from an evidence-shaped object: units are the checks that did not wait, the commands that were not skipped and are not of_files, and the test files; N are those without reused; a unit's reason is its why, or each of the proof's causes when it has none; at most three, most frequent first, ties in the units' order; 'none' when N is 0; minutes with one decimal.",
         "plugin/lib/checks.sh: in checks_unit_run, time reads_reset and reads_collect with prooftime_clock and add both to the proof's tracking step (nothing when no proof timer is open, so vbw check is unchanged).",
         "plugin/lib/cmd-prove.sh: time planning (proofreuse_plan, proofcauses_find, testfiles_plan, prove_plan_all), copies (proofcopy_create_slots), saving (proofreuse_save, testfiles_save) and record (the evidence record_update); the evidence gains own (the split; own.record is added by the second record_update, after the wall time is read) and causes (the whole-proof causes, [] when none); the two lines print just before the verdict line (proved / not proved), from the record's evidence. tests/prove-own-work.bats prove cases red before, green after.",
         "plugin/lib/cmd-fix.sh: the same timers; the fixes are judged and the record written before anything prints (the refusal lines are buffered and printed where they print today, so the output order is unchanged); the two lines print right after 'test files: N ran, M reused', from the round's results, reuse map and causes; zeros and 'none' when nothing was judged. tests/prove-own-work.bats fix done cases green; fix-done-output.bats, fix-many.bats, machine-wait-line.bats, prove-summary.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "vbw prove prints, just before its verdict line, 'VBW's own work: X of Y min' (minutes with one decimal; Y the command's wall-clock time)"
+          },
+          "what": "the line's Y is the own work again instead of the wall time",
+          "files": [
+            "plugin/lib/prooftime.sh"
+          ],
+          "checks": {
+            "C432": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T09:45:19Z",
+          "head": "3ba2646a8dc82335175c2b568c6fff90349e8a13"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "vbw prove prints, just before its verdict line, 'VBW's own work: X of Y min' (minutes with one decimal; Y the command's wall-clock time)"
+          },
+          "what": "the line's Y is the own work again instead of the wall time",
+          "files": [
+            "plugin/lib/prooftime.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:50:16Z",
+          "head": "3edea9de21152c9d0a5bf5bdc44861511e808746",
+          "strengthened": [
+            "tests/prove-own-work.bats"
+          ],
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "vbw prove prints 'ran again: N of M units; top reasons: <reason> (count), ...' with at most three reasons, most frequent first, ties in the units' order, from the units' own reasons and the whole-proof causes"
+          },
+          "what": "four reasons instead of at most three",
+          "files": [
+            "plugin/lib/prooftime.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:53:27Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "vbw prove prints 'ran again: N of M units; top reasons: <reason> (count), ...' with at most three reasons, most frequent first, ties in the units' order, from the units' own reasons and the whole-proof causes"
+          },
+          "what": "ties come out in reverse order of the units",
+          "files": [
+            "plugin/lib/prooftime.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:55:19Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "vbw fix done prints both lines right after its 'test files: N ran, M reused' line; its closing lines and exit code are unchanged"
+          },
+          "what": "fix done no longer prints the two lines",
+          "files": [
+            "plugin/lib/cmd-fix.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:57:31Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "both lines print when nothing ran: 'ran again: 0 of M units; top reasons: none', and the own-work line still prints"
+          },
+          "what": "zero ran again says nothing instead of none",
+          "files": [
+            "plugin/lib/prooftime.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:59:21Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the split is measured by the clock inside the proof and kept as evidence.own {planning, copies, tracking, saving, record, wall} in seconds"
+          },
+          "what": "the evidence loses the own split",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:01:02Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the whole-proof causes are kept as evidence.causes ([] when the reuse rule decided alone)"
+          },
+          "what": "the evidence causes are always empty",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:02:52Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "what": "tracking sums a step that never exists",
+          "files": [
+            "plugin/lib/prooftime.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:04:42Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "the read collection time is not counted",
+          "files": [
+            "plugin/lib/checks.sh"
+          ],
+          "checks": {
+            "C432": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T10:06:23Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e"
+        },
+        {
+          "task": 3,
+          "what": "the saving step is not timed",
+          "files": [
+            "plugin/lib/cmd-prove.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:08:06Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "task": 4,
+          "what": "the fix round does not time its copies",
+          "files": [
+            "plugin/lib/cmd-fix.sh"
+          ],
+          "checks": {
+            "C432": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T10:09:50Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e"
+        },
+        {
+          "task": 2,
+          "what": "the read collection time is not counted",
+          "files": [
+            "plugin/lib/checks.sh"
+          ],
+          "checks": {
+            "C432": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T10:15:48Z",
+          "head": "daddd640b893802e3f37674231587c72cb6ca940"
+        },
+        {
+          "task": 2,
+          "what": "the read collection time is not counted",
+          "files": [
+            "plugin/lib/checks.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:19:52Z",
+          "head": "8773b48ceb7099effd29a5c4ad814d07c87c8e64",
+          "strengthened": [
+            "tests/prove-own-work.bats"
+          ],
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "task": 4,
+          "what": "the fix round does not time its copies",
+          "files": [
+            "plugin/lib/cmd-fix.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:29:46Z",
+          "head": "121a6a84c1e45aa3381aa6307362343a0473f7ac",
+          "strengthened": [
+            "tests/prove-own-work.bats"
+          ],
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        }
       ]
     },
     {
@@ -45882,12 +46145,181 @@
         "plugin/lib/record.jq"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "plugin/lib/record.jq: evidence.own, when present, is an object with exactly the keys planning, copies, tracking, saving, record and wall, each a number of at least 0; evidence.causes, when present, an array of strings; anything else is a violation in the existing wording style; a record without them stays valid. The validator case of tests/prove-own-work.bats red before, green after.",
         "plugin/lib/cmd-show.sh (evidence): after the proof-run line, '  own work: X of Y s: planning A, copies B, read tracking C, saving D, record E' (seconds with two decimals) or '  own work: not recorded' when the evidence has no own; each unit line keeps ' reused (proof of ...)', else ends ' ran: <why>' when it has why, else ends ' not recorded'.",
         "The show-evidence and not-recorded cases of tests/prove-own-work.bats green; kernel-show.bats and record-v4-compat.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the record validator accepts the new evidence fields and refuses a malformed own split"
+          },
+          "what": "own validator accepts any object",
+          "files": [
+            "plugin/lib/record.jq"
+          ],
+          "checks": {
+            "C432": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T09:45:11Z",
+          "head": "3ba2646a8dc82335175c2b568c6fff90349e8a13"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the record validator accepts the new evidence fields and refuses a malformed own split"
+          },
+          "what": "own validator accepts any object",
+          "files": [
+            "plugin/lib/record.jq"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:49:03Z",
+          "head": "3edea9de21152c9d0a5bf5bdc44861511e808746",
+          "strengthened": [
+            "tests/prove-own-work.bats"
+          ],
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the record validator accepts the new evidence fields and refuses a malformed own split"
+          },
+          "what": "causes check dropped",
+          "files": [
+            "plugin/lib/record.jq"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:52:14Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "vbw show evidence prints the step breakdown (planning, copies, read tracking, saving, record) and, per unit, its status, seconds and reused or the reason it ran"
+          },
+          "what": "reason not printed",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:54:06Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "a record written before this change still reads, and vbw show evidence says not recorded for the split and for a unit without a reason"
+          },
+          "what": "own not recorded line removed",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:55:57Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "vbw show evidence prints the step breakdown (planning, copies, read tracking, saving, record) and, per unit, its status, seconds and reused or the reason it ran"
+          },
+          "what": "tracking label changed",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:57:48Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "task": 2,
+          "what": "unit with no why shows ran",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:59:39Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "task": 1,
+          "what": "own validation loosened",
+          "files": [
+            "plugin/lib/record.jq"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:01:19Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        },
+        {
+          "task": 3,
+          "none": "task 3 only runs checks (kernel-show, record-v4-compat); nothing of its own to break, tasks 1 and 2 were broken",
+          "at": "2026-10-20T10:01:22Z"
+        },
+        {
+          "task": 2,
+          "what": "reused marker dropped",
+          "files": [
+            "plugin/lib/cmd-show.sh"
+          ],
+          "checks": {
+            "C432": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T10:01:31Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e",
+          "pending": [
+            "tests/prove-own-work.bats"
+          ]
+        }
       ]
     },
     {
@@ -45968,13 +46400,130 @@
         "plugin/lib/reads.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Red first: tests/reads-fixed-jq.bats and tests/reads-written-store.bats fail on the current code (one jq and one sha256 per listed folder; one copy of the list per written file).",
         "reads_collect fingerprints: one jq builds every listed folder's listing text (the compact JSON [path, names], names from one pass over the tracked paths through a parent-to-names map, so the work grows with files plus folders), bash writes one scratch file per listed folder with no process (printf and a redirection), one sha256sum or shasum call fingerprints all of them, one jq assembles the list; bytes identical to today's list.",
         "written.json becomes {lists: {<run id>: {files, dirs, git}}, files: {<path>: [<run id>, ...]}}: a run that wrote files stores its list once under a fresh id (a counter in the state folder); each written path gains that id; a later run that reads a written path inherits the union of the lists its ids name; reads_reset takes the wlist from .files and creates the empty store in the new shape.",
         "tests/reads-lib.bats, reads-listing.bats, reads-traced.bats, reads-reuse.bats, runner-reads.bats, prove-reads.bats and the two new files green; the library stays bash 3.2 clean."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "reads_collect spawns the same number of jq processes for 1 listed folder and for 300"
+          },
+          "what": "a jq per listed folder",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C437": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:49:55Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the collected list (files, folders with their listing fingerprints, the git flag) is identical to what the earlier code gave on the same fixture"
+          },
+          "what": "newline added to fingerprint text",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C437": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:50:45Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the written-file store keeps each run's read list once and each written name once: a unit that writes 1,000 files adds 1,000 names and one list"
+          },
+          "what": "list stored per written file",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C438": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:51:30Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "a later unit that reads a written file inherits the writer's list, a file two runs wrote carries both lists, and inherited lists pass on through a chain of runs"
+          },
+          "what": "only the first writer list inherited",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C438": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:52:08Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e"
+        },
+        {
+          "task": 2,
+          "what": "listing for the root dropped its dot name",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C437": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:53:04Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e"
+        },
+        {
+          "task": 3,
+          "what": "run id never advances",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C437": "green",
+            "C438": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:54:17Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e"
+        },
+        {
+          "task": 4,
+          "what": "mapfile used",
+          "files": [
+            "plugin/lib/reads.sh"
+          ],
+          "checks": {
+            "C437": "green",
+            "C438": "green"
+          },
+          "result": "survivor",
+          "at": "2026-10-20T09:55:31Z",
+          "head": "ee56870b3a5644345d092d2d672ec3102bac109e"
+        },
+        {
+          "task": 4,
+          "none": "bash 3.2 cleanliness is pinned by tests/reads-lib.bats (not a check of this plan; shown red with a mapfile break), no rule check of C437/C438 covers it; the final suite is run by the completing plan",
+          "at": "2026-10-20T09:55:55Z"
+        },
+        {
+          "task": 1,
+          "none": "task 1 is red-first: it changes no code",
+          "at": "2026-10-20T09:55:58Z"
+        }
       ]
     },
     {
@@ -46015,12 +46564,77 @@
         "plugin/lib/steps.sh"
       ],
       "after": [],
-      "status": "planned",
+      "status": "done",
       "role": "dev",
       "tasks": [
         "Red first: tests/next-proof-cache.bats fails on the current code (every call plans again).",
         "step_proof_units: the key is the committed tree (vbw_head_tree), the SHA-256 of the record file, the SHA-256 of the run store file (an absent store counts as empty) and whether the unfinished marker exists; .vbw/runtime/proof-units.json holds {head, record, store, marker, full, units}, written atomically (a temporary file, then mv); the list is reused only when every part of the key matches, else recomputed and the file rewritten; a damaged file is recomputed.",
         "kernel-next.bats, sessions-next.bats, step-proof-units.bats, step-next.bats, step-proof.bats, road-next.bats and next-proof-cache.bats green."
+      ],
+      "mutations": [
+        {
+          "rule": {
+            "req": "R202",
+            "text": "the second of two consecutive vbw next --json calls reads the cache in .vbw/runtime/proof-units.json: no diff-tree and the same step"
+          },
+          "what": "cache never read",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C440": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:43:02Z",
+          "head": "eff64f8cde0f8f83d859509b651176e767ed1609"
+        },
+        {
+          "rule": {
+            "req": "R202",
+            "text": "a changed run store, a changed record or a new commit recomputes the cached unit list"
+          },
+          "what": "store digest left out of the key",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C440": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:44:52Z",
+          "head": "3ba2646a8dc82335175c2b568c6fff90349e8a13"
+        },
+        {
+          "task": 2,
+          "what": "record digest left out of the key",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C440": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:45:56Z",
+          "head": "3ba2646a8dc82335175c2b568c6fff90349e8a13"
+        },
+        {
+          "task": 1,
+          "what": "head left out of the key",
+          "files": [
+            "plugin/lib/steps.sh"
+          ],
+          "checks": {
+            "C440": "red"
+          },
+          "result": "red",
+          "at": "2026-10-20T09:47:50Z",
+          "head": "3edea9de21152c9d0a5bf5bdc44861511e808746"
+        },
+        {
+          "task": 3,
+          "none": "task 3 only runs existing tests; no code of its own",
+          "at": "2026-10-20T09:48:00Z"
+        }
       ]
     },
     {
@@ -59029,6 +59643,15 @@
         "milestone": "M42",
         "started": "2026-10-20T08:45:17Z",
         "ended": "2026-10-20T09:28:55Z",
+        "cost": null
+      },
+      {
+        "id": "build-20261020T093021Z",
+        "kind": "build",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-20T09:30:21Z",
+        "ended": "2026-10-20T10:30:39Z",
         "cost": null
       }
     ],
