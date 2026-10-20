@@ -8,6 +8,8 @@ VBW is a Claude Code plugin that makes it build software properly: the user agre
 
 ## Constraints
 
+A milestone that changes what a person sees or does in a real Claude Code session adds or extends its real-user scenario in tools/l3-suite.sh, runs it while the milestone is built, and commits its result in tools/l3-results/. A result older than the code it covers (the scenario's covers line) is stale and stops the release run.
+
 ## Requirements
 
 - R1 [auto] Two consent grants made at the same time from different worktrees of one clone are both kept
