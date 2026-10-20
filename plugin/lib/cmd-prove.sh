@@ -207,9 +207,9 @@ prove_stamp() { proofreuse_annotate "$@"; }
 # judged by its own proofs; today's record can no longer judge them (T162).
 # Prints a JSON array of violations.
 prove_scope() {
-  local tok t want_path=0 n=-1 i r path rest
-  local -a C_HASH=() C_PLAN=() C_FILES=()
-  local undone="" out=""
+  local tok t want_path=0 n=-1 i j r path rest om nm ob nb gs=$'\x1d' us=$'\x1f' rs=$'\x1e'
+  local -a C_HASH=() C_PLAN=() C_FILES=() C_FWD=() C_BWD=() C_TAKEN=() C_TOOK=()
+  local undone="" out="" pool=$gs
   # shellcheck source=cmd-commit.sh
   . "$VBW_LIB/cmd-commit.sh"
   # The commits a park undid: their changes are gone and the park recorded why, so a later plan that
@@ -223,7 +223,11 @@ prove_scope() {
   # ":old-mode new-mode old-blob new-blob status" NUL path NUL; a merge lists nothing.
   while IFS= read -r -d '' tok; do
     if [ "$want_path" = 1 ]; then
-      C_FILES[n]="${C_FILES[n]}$tok"$'\x1f'
+      C_FILES[n]="${C_FILES[n]}$tok$us"
+      # A commit's change as lines "path old-pair new-pair" (git lists the paths in order, so no sort), and the same
+      # lines with the pairs swapped: B undoes A exactly when B's backward key is A's forward key.
+      C_FWD[n]="${C_FWD[n]}$tok$us$om$us$ob$us$nm$us$nb$rs"
+      C_BWD[n]="${C_BWD[n]}$tok$us$nm$us$nb$us$om$us$ob$rs"
       want_path=0
       continue
     fi
@@ -231,18 +235,48 @@ prove_scope() {
     while [ "${t:0:1}" = $'\n' ]; do t=${t:1}; done
     case "$t" in
       '') ;;
-      :*) want_path=1 ;;
+      :*)
+        want_path=1
+        rest=${t#:}
+        om=${rest%% *}
+        rest=${rest#* }
+        nm=${rest%% *}
+        rest=${rest#* }
+        ob=${rest%% *}
+        rest=${rest#* }
+        nb=${rest%% *}
+        ;;
       *)
         n=$((n + 1))
         C_HASH[n]=${t%%$'\x1f'*}
         rest=${t#*$'\x1f'}
         C_PLAN[n]=${rest%%$'\n'*}
-        C_FILES[n]=""
+        C_FILES[n]="" C_FWD[n]="" C_BWD[n]="" C_TAKEN[n]=0 C_TOOK[n]=0
         ;;
     esac
   done < <(git log -z --topo-order --no-renames --raw --no-abbrev --format='%H%x1f%(trailers:key=VBW-Plan,valueonly)' 2> /dev/null)
+  # Newest first. A commit is taken by the nearest later commit that is still standing, has taken nothing
+  # yet and is its mirror image (and descends from it). A taken commit takes nothing: an undo that is itself
+  # undone clears nothing. The pool is every standing commit's backward key, to skip the scan when none can match.
+  for ((i = 0; i <= n; i++)); do
+    if [ -n "${C_FWD[i]}" ]; then
+      case "$pool" in
+        *"$gs${C_FWD[i]}$gs"*)
+          for ((j = i - 1; j >= 0; j--)); do
+            [ "${C_TAKEN[j]}" = 0 ] && [ "${C_TOOK[j]}" = 0 ] && [ "${C_BWD[j]}" = "${C_FWD[i]}" ] || continue
+            git merge-base --is-ancestor "${C_HASH[i]}" "${C_HASH[j]}" 2> /dev/null || continue
+            C_TAKEN[i]=1
+            [ -n "${C_PLAN[i]}" ] && C_TOOK[j]=2 || C_TOOK[j]=1
+            break
+          done
+          ;;
+      esac
+      [ "${C_TAKEN[i]}" = 1 ] || pool="$pool${C_BWD[i]}$gs"
+    fi
+  done
   for ((i = 0; i <= n; i++)); do
     [ -n "${C_PLAN[i]}" ] || continue
+    [ "${C_TAKEN[i]}" = 0 ] && [ "${C_TOOK[i]}" != 2 ] || continue
     case "$undone " in *" ${C_HASH[i]} "*) continue ;; esac
     path=${C_FILES[i]}
     while [ -n "$path" ]; do
