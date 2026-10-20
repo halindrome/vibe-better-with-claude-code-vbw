@@ -5692,7 +5692,7 @@
   },
   "milestone": {
     "id": "M42",
-    "title": "L3 scenarios missing for M38 and M39 (owner 2026-10-19: push first, then these first): session names and the Sessions tab (holder named in the status line, Comms and vbw next; resume line), and M39 (a task break by own rules on an early plan, a fix committing its own requirement's check file with one approval, kept failing output named by vbw show fix). Each milestone should add its scenarios while built; find why M38 and M39 did not",
+    "title": "Faster proofs on large projects",
     "status": "active"
   },
   "shipped": [
@@ -14386,6 +14386,14 @@
           "plan": "P160.3"
         }
       ]
+    },
+    {
+      "id": "R202",
+      "text": "Proof speed on a Rust project (Portfolium feedback 2026-10-19; owner agreed 2026-10-19; after the Dev unblock item, with T129): measure on Portfolium why fix done reuses so little (17 of 184) and the CPU of VBW's own read/write tracking (jq near 100% for minutes, load 23-66; also seen 2026-10-19 here: vbw next over 2 min), then make the tracking cheap and count VBW's own work in the machine-wide limit",
+      "proof": "auto",
+      "status": "open",
+      "milestone": "M42",
+      "rules": []
     }
   ],
   "phases": [
@@ -48570,7 +48578,7 @@
       "text": "Proof speed on a Rust project (Portfolium feedback 2026-10-19; owner agreed 2026-10-19; after the Dev unblock item, with T129): measure on Portfolium why fix done reuses so little (17 of 184) and the CPU of VBW's own read/write tracking (jq near 100% for minutes, load 23-66; also seen 2026-10-19 here: vbw next over 2 min), then make the tracking cheap and count VBW's own work in the machine-wide limit",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T167",
@@ -51205,6 +51213,12 @@
       "text": "Why M38 and M39 shipped without real-user scenarios: phases P148, P151, P159 and P160 each carry a criterion naming a real-session scenario (plans P148.4, P151.4, P159.4, P160.3 list tools/l3-suite.sh), while phases P152 to P157 carry none, so no plan of M38 or M39 listed tools/l3-suite.sh. Nothing in the planning path demands one: the Architect, the Lead, the planning workflow, the apply code and the spec's Constraints say nothing of scenarios, and D95 (the scenario rule) is one decision among about 470 that no planner reads. tools/test.sh --release knows nothing of scenarios, so the 2.0.40 release gave no signal. P163 adds the scenario rule to the spec Constraints and a stale check.",
       "why": "Evidence: jq on .vbw/record.json (phase criteria and plan files) and grep of plugin/agents/architect.md, plugin/agents/lead.md, plugin/workflows/planning.js, plugin/lib/cmd-apply.sh and tools/test.sh. What P163 changes: (1) the Constraints rule in .vbw/spec.md, which the Architect reads at every planning, closes the gap of a rule buried among decisions; (2) the stale check (tools/l3-stale.sh, run first by tools/test.sh --release) closes the release gap by stopping the run when a scenario's result is older than the code it covers or missing.",
       "at": "2026-10-20T08:05:07Z"
+    },
+    {
+      "id": "D478",
+      "text": "T169 removed by the owner (2026-10-20): its plans reset, its five commits reverted (5b45651d..f6a63da7), its check files deleted, R202 removed from the spec; T171, T140, T158, T164 and T52 dropped from the backlog for the public known-issues roadmap; next: T166 only, then the push",
+      "why": "Owner: speed up 2.1.0; T166 speeds up every later proof",
+      "at": "2026-10-20T08:24:16Z"
     }
   ],
   "commands": {
