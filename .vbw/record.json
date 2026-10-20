@@ -48454,7 +48454,7 @@
       "text": "vbw doctor builds the session-record path from CLAUDE_CODE_SESSION_ID without the plain-name check the SessionStart hook and the status line apply (plugin/lib/cmd-doctor.sh doctor_path); read-only and the id comes from Claude Code, so the risk is nil, but the rule should be one shared check (QA of P135, 2026-10-14)",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "dropped"
     },
     {
       "id": "T146",
