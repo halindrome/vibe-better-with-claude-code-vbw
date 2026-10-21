@@ -9,15 +9,21 @@
 
 load helper
 load replan-helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   replan_project
   # P1 has started; P2 has not.
   replan_start P1.1
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # rest PHASE: what must stay when only the goal or criteria change.
 rest() { replan_part "{phase: (.phases[] | select(.id == \"$1\") | {id, title, reqs}), plans: [.plans[] | select(.phase == \"$1\") | {id, phase, title, reqs, files, after, tasks, status}]}"; }
