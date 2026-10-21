@@ -6,17 +6,30 @@
 # and commands, never more unit commands run at once than the machine limit;
 # check_jobs stays a per-run cap below it and never lifts a run above it. L1:
 # unit commands log their start and end to $LOG (tests/machine-helper.bash).
+# The project two tests share is built once per file (setup_file) and copied;
+# the core count is read when a run starts, so each test sets it after the copy.
 
 load helper
 load machine-helper
+load fixture-helper
 
-setup() { machine_setup; }
+# six_checks: a project of six checks of 1 s. For fixture_build.
+six_checks() {
+  machine_setup
+  machine_project "$PROJECT" A 6 1
+}
 
+setup_file() {
+  fixture_build base machine_setup
+  fixture_build six six_checks
+}
+setup() { fixture_copy base; }
 teardown() { machine_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "R181: two projects each proving 6 units, plus a vbw fix done in one of them, never run more than 3 at once with 4 cores" {
+  fixture_copy six
   cores 4
-  machine_project "$PROJECT" A 6 1
   machine_project "$OTHER" B 6 1
   local p1 p2 p3
   bg "$PROJECT" "$TEST_ROOT/a.out" prove
@@ -31,8 +44,8 @@ teardown() { machine_teardown; }
 }
 
 @test "R181: a run with check_jobs 2 never runs more than 2 units at once, even with free slots" {
+  fixture_copy six
   cores 8
-  machine_project "$PROJECT" A 6 1
   "$VBW" config set check_jobs 2 > /dev/null
   run within 120 "$VBW" prove < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; show; false; }
