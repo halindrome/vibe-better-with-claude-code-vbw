@@ -104,3 +104,12 @@ teardown() { vbw_teardown; }
   [ "$status" -eq 0 ]
   [ -f "$STEPS" ]
 }
+
+@test "R58: steps that end in the same second keep the order they ended in, not their kinds' alphabetical order" {
+  # Two steps already in the history end in the same second, qa before map.
+  mkdir -p "$(dirname "$STEPS")"
+  jq -nc '{steps: [{kind: "qa", run: "qa-1", started_at: "2026-10-21T10:00:00Z", ended_at: "2026-10-21T10:00:05Z", seconds: 5},
+                   {kind: "map", run: "map-1", started_at: "2026-10-21T10:00:01Z", ended_at: "2026-10-21T10:00:05Z", seconds: 4}]}' > "$STEPS"
+  "$VBW" run start plan > /dev/null; "$VBW" run end > /dev/null
+  jq -e '[.steps[].kind] == ["qa", "map", "plan"]' "$STEPS" || { cat "$STEPS"; false; }
+}

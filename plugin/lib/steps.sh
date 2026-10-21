@@ -143,7 +143,8 @@ step_record() {
       ([$old[0].steps[]? | select(type == "object" and (.kind | type) == "string")]
         + [{kind, run, started_at, ended_at: $now,
             seconds: (($now | fromdateiso8601) - (.started_at | fromdateiso8601))} + $extra])
-      | {steps: (group_by(.kind) | map(.[-50:]) | add | sort_by(.ended_at))}' <<< "$1" > "$tmp" \
+      # Steps that end in the same second keep the order they were recorded in.
+      | {steps: (to_entries | group_by(.value.kind) | map(.[-50:]) | add | sort_by(.value.ended_at, .key) | map(.value))}' <<< "$1" > "$tmp" \
     && mv -f "$tmp" "$file"; } 2> /dev/null || rm -f "$tmp" 2> /dev/null || true
   return 0
 }
