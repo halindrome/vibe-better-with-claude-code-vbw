@@ -1,5 +1,34 @@
 # Changelog
 
+## [2.1.0] - 2026-10-21
+
+The first VBW 2 release for the community. VBW gives Claude Code an executable
+definition of done: you approve what to build, VBW writes the checks that prove
+it, builds in parallel, proves every check mechanically, and asks you only what
+checks cannot judge. How it works is in the [README](../README.md); coming from
+VBW 1, `/vbw:convert` brings a `.vbw-planning/` project over through a short Q&A
+([docs/convert.md](../docs/convert.md)). What is known to be missing or planned
+is in [docs/known-issues.md](../docs/known-issues.md), and ideas open for
+contributions are in [docs/ideas.md](../docs/ideas.md); see
+[CONTRIBUTING.md](../CONTRIBUTING.md) to take one on.
+
+### Changed
+
+- **Comms says when a message began.** The step line and the weekly-limit
+  line start with the time their message began, for example
+  `[14:32] building P1.1 · about 12 min, until around 14:44`; on a narrow
+  window the text is cut, never the time.
+
+### Fixed
+
+- **The tools offer is always asked.** VBW asks once whether it may look for
+  tools, even when you chose "decide and tell me": it is your consent to a
+  search and to installs, so VBW never answers it for you.
+- **A file that changed outside VBW is left to QA.** When a proof finds a
+  delivered file changed or missing, VBW tells you in one line and lets QA and a
+  fix round restore it (or records your decision), instead of repairing it
+  itself.
+
 ## [2.0.44] - 2026-10-21
 
 ### Added
