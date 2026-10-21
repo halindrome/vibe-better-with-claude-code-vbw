@@ -21,7 +21,7 @@
 # mutate_usage: the forms, as the message of a refusal that names the next step.
 mutate_usage() {
   vbw_die "$1
-usage: vbw mutate PLAN Rn.k WHAT FILE... | PLAN taskK [--check ID]... WHAT FILE... | PLAN taskK --none REASON"
+usage: vbw mutate PLAN Rn.k WHAT FILE... | PLAN taskK [--check ID]... WHAT FILE... | PLAN taskK --none REASON | PLAN Rn.k --none REASON"
 }
 
 # mutate_put DIR DEST FILE...: DEST (a copy of HEAD) gets the broken bytes of each
