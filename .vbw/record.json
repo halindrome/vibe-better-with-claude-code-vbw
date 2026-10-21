@@ -52675,7 +52675,7 @@
       "text": "Build pace (owner 2026-10-20, top after the push): VBW's step estimates leave out the mutation step (M42 waves ran 3-6x over: 7 min said, 60 taken); make estimates count it, make the mutation step cheaper (one break per rule, breaks in parallel), and never let fix done wait silently for a check-file approval the agent cannot ask for (M42 fix round sat 40 min)",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T175",
