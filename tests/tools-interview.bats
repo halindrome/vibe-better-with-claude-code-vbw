@@ -44,3 +44,10 @@ section() { awk '/^## .*[Tt]ools/ { f = 1; print; next } f && /^## / { exit } f'
   grep -qF 'vbw" interview' "$SKILL"
   grep -qE '^## Keep' "$SKILL"
 }
+
+@test "the tools offer is always asked: it is the user's consent, never answered for them, whatever their involvement" {
+  local s
+  s=$(awk '/^## Tools/ { on = 1; next } /^## / { on = 0 } on' "$REPO_ROOT/plugin/skills/interview/SKILL.md" | tr '\n' ' ')
+  [[ "$s" == *"even under \"decide and tell me\""* ]] || { echo "$s"; false; }
+  [[ "$s" == *"never answer it for them"* ]] || { echo "$s"; false; }
+}

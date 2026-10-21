@@ -67,7 +67,7 @@ Afterwards say in one line how answers shape what follows, and that `/vbw:profil
 
 After keep, ask once whether VBW may look for tools. First `vbw tools`. If it holds an answer, yes or no: skip, never ask again; asked once per project.
 
-Else one plain yes/no question with AskUserQuestion. Explain each kind in a few words at user's level: skills (add-ons teaching Claude a craft), code-safety scanners (programs looking for security holes), linters (flag likely mistakes), formatters (tidy code layout), test frameworks (run automatic tests).
+Else one plain yes/no question with AskUserQuestion. Ask it even under "decide and tell me": it is the user's consent to a search and to installs, so never answer it for them. Explain each kind in a few words at user's level: skills (add-ons teaching Claude a craft), code-safety scanners (programs looking for security holes), linters (flag likely mistakes), formatters (tidy code layout), test frameworks (run automatic tests).
 
 Record at once:
 
