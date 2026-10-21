@@ -153,7 +153,7 @@ isolated_writes() {
   local dir="$TEST_ROOT/inner"
   mkdir -p "$dir/tests" "$dir/sync"
   cp "$REPO_ROOT/tests/helper.bash" "$REPO_ROOT/tests/fixture-helper.bash" "$dir/tests/"
-  cp "$REPO_ROOT/tests/fixtures/fixture-helper-inner.bats" "$dir/tests/inner.bats"
+  cp "$REPO_ROOT/tests/fixtures/fixture-helper-inner.bats.in" "$dir/tests/inner.bats"
   run env COUNT="$dir/count" SYNC="$dir/sync" VBW_TEST_PLUGIN_ROOT="$PLUGIN_ROOT" bats --jobs 4 "$dir/tests/inner.bats"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   # All eight inner tests ran (a bats that reads no test reports 1..0 and exits 0).
