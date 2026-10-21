@@ -35,7 +35,7 @@
 
 > **Platform:** macOS and Linux. Windows is not supported natively: VBW runs on bash. On Windows, run Claude Code inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
 
-VBW 2 is a rewrite of VBW 1, in philosophy and execution. It is built to prove that work is done, not to save tokens: on the small cases in [docs/benchmark.md](docs/benchmark.md) it costs more than plain Claude Code. [See the numbers](#cost).
+VBW 2 is a rewrite of VBW 1, in philosophy and execution. It is built so you pay once for work that is right: every requirement is proven by a check before it ships, so you spend less over time finding, fixing and redoing what broke. [How VBW thinks about cost](#cost).
 
 ### For people who don't read code, and people who do
 
@@ -51,19 +51,19 @@ VBW is a Claude Code plugin that works as a harness around the model: it builds 
 
 ### What VBW does about it
 
-You type `/vbw:vibe` and what you want. VBW runs the loop below and stops only when it needs you.
+You type `/vbw:vibe` and what you want. VBW runs the loop below and stops only when it needs you. And ulinke VBW 1, you type this only once, then chat with Claude Code as you'd usually do. Advanced users have granular controls.
 
-**Meet the team.** Each is an AI agent with one job; several can run at once.
+**Meet the team.** Each is an AI agent with one job, and VBW runs as many of them at once as the work allows: a milestone with ten independent plans gets ten Devs building side by side, then a QA reviewer for every finished phase at the same time.
 
 | Agent | Job | How many |
 | :--- | :--- | :--- |
-| **Architect** | Works out the decisions only you should make (cost, data, security, anything hard to undo), then splits the work into **phases** (a goal each). Writes nothing. | 1 |
-| **Lead** | Turns each phase into small **plans**: a few tasks, their own files. Writes the tests first and makes sure they fail today (*red*). | 1 |
-| **Dev** | Writes the code for one plan, one commit per task, until its tests pass (*green*). At standard and deep rigor it also breaks its own code on purpose, to confirm a test notices. Also fixes what fails later. | 1 per plan, in parallel |
-| **QA** | Reads a finished phase against its goal and reports what's wrong. Never touches the code. | 1 per phase, in parallel |
-| **Scout** | Looks things up, one angle each: your code, the web, the docs. Reports with sources; changes nothing. | up to 4 |
-| **Debugger** | Reproduces a bug, finds the root cause, then makes the smallest fix plus a test that proves it. | 3 to investigate, 1 to fix |
-| **Docs** | Writes the README, guides and changelog. Documentation files only. | 1 per documentation plan |
+| **Architect** | Works out the decisions only you should make (cost, data, security, anything hard to undo), then splits the work into **phases** (a goal each). Writes nothing. | 1, thinking the whole milestone through |
+| **Lead** | Turns each phase into small **plans**: a few tasks, their own files. Writes the tests first and makes sure they fail today (*red*). | 1, planning every phase of the milestone |
+| **Dev** | Writes the code for one plan, one commit per task, until its tests pass (*green*). At standard and deep rigor it also breaks its own code on purpose, to confirm a test notices. Also fixes what fails later. | One for every plan, all at the same time: VBW sets no limit (only plans that touch the same files wait for each other) |
+| **QA** | Reads a finished phase against its goal and reports what's wrong. Never touches the code. | One for every finished phase, all at the same time |
+| **Scout** | Looks things up, one angle each: your code, the web, the docs. Reports with sources; changes nothing. | Up to 4 at the same time, one per angle |
+| **Debugger** | Reproduces a bug, finds the root cause, then makes the smallest fix plus a test that proves it. | 3 at the same time to investigate, then 1 to fix |
+| **Docs** | Writes the README, guides and changelog. Documentation files only. | One for every documentation plan, working alongside the Devs |
 
 **Who's the boss?** No agent. The Lead's plans decide what gets built; the kernel decides how it runs: how many Devs work at once (as many as there are ready plans that share no files) and how much checking each phase gets (one Dev for a typo, the full team for payments code). Management by a program.
 
@@ -163,7 +163,7 @@ Three design choices worth knowing:
 - **Proof reuses what didn't change.** VBW records what each check reads while it runs; a check whose definition, last result and every file it read are unchanged keeps its pass. If your test runner can run one test file at a time, say so in the spec's `## Test files` section (`- run: bats {file}` and `- files: tests/*.bats`) and your tests are reused per file too; you approve the form with the contract. `vbw prove --full` re-runs everything.
 - **One limit per computer.** Every VBW run on a computer, in any project or session, shares one limit on how many checks and test files run at once (about three quarters of the processor cores), so parallel sessions take turns instead of overloading the machine.
 
-How many agents? One Dev per plan in a wave, and VBW keeps the wave as wide as the file boundaries allow.
+How many agents? One Dev for every plan in a wave, all at the same time, and VBW keeps the wave as wide as the file boundaries allow: ten plans that touch different files means ten Devs at once.
 
 Inspired by **[Ralph](https://github.com/frankbria/ralph-claude-code)** and **[Get Shit Done](https://github.com/glittercowboy/get-shit-done)**; the architecture is new.
 
@@ -292,9 +292,9 @@ The team is in [What VBW does about it](#what-vbw-does-about-it); their specific
 | Workflow | Started by | Who runs |
 | :--- | :--- | :--- |
 | Planning | `/vbw:vibe` at the plan step | Architect (decisions) → Architect (scope) → Lead |
-| Building | `/vbw:vibe` at the build step | a Dev per ready plan (Docs for documentation), in parallel |
-| Fixing | `/vbw:vibe` when a check fails or QA finds a problem | a Dev per group of related fixes, in parallel |
-| Verifying | `/vbw:vibe` after the checks pass | a QA agent per built phase, in parallel |
+| Building | `/vbw:vibe` at the build step | one Dev for every ready plan (Docs for documentation), all at the same time |
+| Fixing | `/vbw:vibe` when a check fails or QA finds a problem | one Dev for every group of related fixes, all at the same time |
+| Verifying | `/vbw:vibe` after the checks pass | one QA agent for every built phase, all at the same time |
 | Mapping | `/vbw:map`, or planning on existing code | a Scout per angle, then one merged map |
 | Researching | `/vbw:research` | four Scouts, then one sourced answer |
 | Investigating | `/vbw:debug` | three Debuggers (reproduce, trace, history), one diagnosis, then one fix |
@@ -435,7 +435,9 @@ plugin/
 
 VBW records what each run and each milestone cost ([docs/costs.md](docs/costs.md)).
 
-**VBW 2 against plain Claude Code.** [docs/benchmark.md](docs/benchmark.md) reports seven small cases on Sonnet 5.5 and Opus 5.5, measured in early October 2026 on an earlier 2.0 release. In the first set (three runs per cell) plain Claude Code passed 41 of 42 runs and VBW 2 passed 42 of 42; the one failure was plain Sonnet destroying uncommitted work. VBW 2 cost 6 to 10 times as much per run and asked for a median of 2 to 3 answers where plain asked for none. With automatic rigor (one run per cell) every case passed at 2.06 to 9.14 times plain's cost. On three projects of four requirements each, plain passed 6 of 6 and VBW 2 5 of 6, at 4.9 to 7.0 times the cost; its one failure was an edge case its checks never tried. The VBW 2 runs were driven by a script, not by a person (L3), on toy-sized fixtures, and do not test what VBW 2 is built for: guarding proven work on larger projects. A larger benchmark on realistic projects is planned (see [docs/known-issues.md](docs/known-issues.md)).
+**Why VBW pays off over time.** A quick prompt is cheap per answer, but its mistakes show up later, in review, in production or as rework you pay for again. VBW puts the effort up front: a plan you approve, checks written before the code, a proof before anything ships, and a review where checks cannot judge. On a tiny one-off task that up-front work costs more than a quick prompt; on a real project it saves the tokens, time and trust that redoing broken work costs.
+
+**What we have measured so far.** [docs/benchmark.md](docs/benchmark.md) compares VBW 2 with plain Claude Code on seven small practice cases (October 2026, an earlier 2.0 release). Both solved almost every case. On tasks this small VBW 2 used several times more tokens per run, as expected: its planning and proof are a fixed cost that a tiny task cannot spread. These cases are too small to show the long-term saving VBW is built for; a benchmark on realistic projects is on the [roadmap](docs/known-issues.md), and you are welcome to help run it.
 
 <details>
 <summary>Legacy measurements: VBW 1.x against stock Opus 4.6 Agent Teams</summary>

@@ -173,7 +173,7 @@ Status words:
 
 ### Cost per correct outcome
 
-**What.** VBW's benchmark compares cost per run ([benchmark.md](benchmark.md)), and VBW 2 costs several times plain Claude Code per run on small cases. Cost per run is not the question a user has. Ten cheap turns that ship broken code waste more than five dearer turns that ship proven code. The idea is to measure and show VBW's cost per proven result, with the cost of rework counted on the plain side too.
+**What.** VBW's benchmark so far compares cost per run on small practice cases ([benchmark.md](benchmark.md)), where VBW's up-front planning and proof cost more than a quick prompt. Cost per run is not the question a user has. Ten cheap turns that ship broken code waste more than five dearer turns that ship proven code. The idea is to measure and show VBW's cost per proven result, with the cost of rework counted on the plain side too.
 
 **Who and when.** Everyone choosing whether VBW is worth its cost.
 
