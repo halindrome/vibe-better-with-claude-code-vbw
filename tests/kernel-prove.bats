@@ -4,11 +4,33 @@
 # flagged before building, and fix attempts are capped.
 
 load helper
+load fixture-helper
 
 # Hand edits of the record keep the protected list in step with the checks (R150), as the approved check files do.
 KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end'
 
-setup() {
+# The planned shop, the same shop approved, and approved with P1.1 built (build_pay),
+# each built once per file and copied for every test.
+setup_file() {
+  fixture_build shop shop_project
+  fixture_build approved approved_shop
+  fixture_build built built_shop
+}
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+approved_shop() {
+  shop_project
+  "$VBW" approve > /dev/null
+}
+
+built_shop() {
+  approved_shop
+  build_pay
+}
+
+shop_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -22,8 +44,6 @@ setup() {
     | .plans = [{id:"P1.1", phase:"P1", title:"Pay", reqs:["R1"], files:["src/pay.txt"], after:[], status:"planned"}]'
   git add -A && git commit -q -m "chore(vbw): plan"
 }
-
-teardown() { vbw_teardown; }
 
 edit_record() {
   jq "$1" .vbw/record.json > "$TEST_ROOT/edit.json" && jq "$KEEP_PROTECTED" "$TEST_ROOT/edit.json" > .vbw/record.json
@@ -49,7 +69,7 @@ build_pay() {
 }
 
 @test "approving twice is a no-op" {
-  "$VBW" approve > /dev/null
+  fixture_copy approved
   vbw_run approve
   [ "$status" -eq 0 ]
   [[ "$output" == *"already approved"* ]]
@@ -104,8 +124,7 @@ build_pay() {
 }
 
 @test "hostile update: a command added after approval never runs" {
-  "$VBW" approve > /dev/null
-  build_pay
+  fixture_copy built
   edit_record '.commands = {test: ["sh", "-c", "touch \"$HOME/pwned\""]}'
   vbw_run prove
   [[ "$output" == *"test skipped: not approved"* ]]
@@ -122,8 +141,7 @@ build_pay() {
 }
 
 @test "tamper: editing a protected check file after approval fails prove" {
-  "$VBW" approve > /dev/null
-  build_pay
+  fixture_copy built
   printf 'exit 0\n' > tests/pay.sh
   vbw_run prove
   [ "$status" -eq 1 ]
@@ -132,7 +150,7 @@ build_pay() {
 }
 
 @test "tamper: editing a check or widening a plan in the record withdraws approval" {
-  "$VBW" approve > /dev/null
+  fixture_copy approved
   edit_record '.checks[0].run = ["true"]'
   vbw_run prove
   [ "$status" -eq 1 ]
@@ -161,7 +179,7 @@ build_pay() {
 }
 
 @test "fix cap: three failed attempts escalate to a person" {
-  "$VBW" approve > /dev/null
+  fixture_copy approved
   edit_record '.plans[0].status = "done"'
   printf 'unpaid\n' > src/pay.txt
   git add src/pay.txt && git commit -q -m "feat(pay): unpaid" -- src/pay.txt
@@ -191,8 +209,7 @@ build_pay() {
 }
 
 @test "a passing proof proves the requirement and records the evidence" {
-  "$VBW" approve > /dev/null
-  build_pay
+  fixture_copy built
   vbw_run prove
   [ "$status" -eq 0 ]
   [[ "$output" == *"C1 pass"* ]]
@@ -242,8 +259,7 @@ build_pay() {
 }
 
 @test "scope: a VBW commit that touches files outside its plan fails proof" {
-  "$VBW" approve > /dev/null
-  build_pay
+  fixture_copy built
   printf 'sneaky\n' > src/other.txt
   git add src/other.txt
   git commit -q -m "feat(pay): more" -m "VBW-Plan: P1.1"
@@ -267,7 +283,7 @@ build_pay() {
 }
 
 @test "a requirement still being built fails without opening a fix" {
-  "$VBW" approve > /dev/null
+  fixture_copy approved
   printf 'unpaid\n' > src/pay.txt
   vbw_run prove
   [ "$status" -eq 1 ]
@@ -287,8 +303,7 @@ build_pay() {
 }
 
 @test "a proof commits its evidence: VBW's own files are never left modified" {
-  "$VBW" approve > /dev/null
-  build_pay
+  fixture_copy built
   printf 'mine\n' > staged.txt && git add staged.txt
   vbw_run prove
   [ "$status" -eq 0 ]
@@ -300,8 +315,7 @@ build_pay() {
 # --- prove proves the committed code (R32), and freshness knows it -------
 
 @test "an edit proved while uncommitted, then committed, needs a new proof" {
-  "$VBW" approve > /dev/null
-  build_pay
+  fixture_copy built
   "$VBW" prove --full > /dev/null
   printf 'paid\n# later edit\n' > src/pay.txt
   "$VBW" prove --full > /dev/null
@@ -313,8 +327,7 @@ build_pay() {
 }
 
 @test "committing VBW's own record after a proof keeps the proof fresh" {
-  "$VBW" approve > /dev/null
-  build_pay
+  fixture_copy built
   "$VBW" prove > /dev/null
   "$VBW" decide "keep it" > /dev/null
   vbw_run next --json
