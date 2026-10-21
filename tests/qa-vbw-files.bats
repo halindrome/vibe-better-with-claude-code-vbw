@@ -6,8 +6,9 @@
 load helper
 load qa-recheck-helper
 load qa-skip-helper
+load fixture-helper
 
-setup() {
+vbw_files_project() {
   qa_base 1
   "$VBW" spec sync > /dev/null
   jq -nc '{phases: [{id: "P1", title: "Part", reqs: ["R1"], goal: "The part works", criteria: ["the part file says its name"], tier: "standard"}],
@@ -21,7 +22,10 @@ setup() {
   "$VBW" prove --full > /dev/null
   "$VBW" qa record P1 pass standard > /dev/null
 }
+setup_file() { fixture_build files vbw_files_project; }
+setup() { fixture_copy files; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "R113: an edit to .vbw/spec.md, listed in the plan, does not list the passed phase again" {
   printf '\n## Notes\n\nA note.\n' >> .vbw/spec.md
