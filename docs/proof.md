@@ -819,6 +819,7 @@ The causes, with the text the summary shows:
 |---|---|
 | A file was added that no recorded run read and no recorded run listed its folder | `src/new.txt was added, and no recorded run read it or listed its folder` |
 | A file was deleted under the same condition | `src/old.txt was deleted, and no recorded run read it or listed its folder` |
+| More than three such files (a vendored library, for example): one cause, with their count and the first three paths in path order | `3000 files were added, and no recorded run read them or listed their folders: vendor/a.c, vendor/b.c, vendor/c.c and 2997 more` (`were deleted`, or `were added or deleted (N added, M deleted)`) |
 | The file system cannot record which files are read | `this file system does not record which files are read` |
 | The clone has no earlier recorded run | `this clone has no earlier recorded run` |
 | The last proof was cut short | `the last proof was cut short` |

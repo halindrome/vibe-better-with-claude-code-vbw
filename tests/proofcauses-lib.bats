@@ -211,6 +211,27 @@ prove_passed() {
   [ "$output" = "other/old.txt was deleted, and no recorded run read it or listed its folder" ] || { echo "$output"; false; }
 }
 
+@test "R202: up to three unseen files are one cause each; more are one cause with the count and the first three paths" {
+  mkdir -p other
+  printf 'n\n' > other/c.txt
+  printf 'n\n' > other/a.txt
+  printf 'n\n' > other/b.txt
+  git add other && git commit -q -m "feat: three"
+  run causes
+  [ "${#lines[@]}" -eq 3 ] || { echo "$output"; false; }
+  [ "${lines[0]}" = "other/a.txt was added, and no recorded run read it or listed its folder" ] || { echo "$output"; false; }
+  [ "${lines[2]}" = "other/c.txt was added, and no recorded run read it or listed its folder" ] || { echo "$output"; false; }
+  # A store recorded on these three; then three more and one less: four, one line.
+  store
+  printf 'n\n' > other/d.txt
+  printf 'n\n' > other/e.txt
+  printf 'n\n' > other/f.txt
+  git rm -q other/a.txt
+  git add other && git commit -q -m "feat: three more, one less"
+  run causes
+  [ "$output" = "4 files were added or deleted (3 added, 1 deleted), and no recorded run read them or listed their folders: other/a.txt, other/d.txt, other/e.txt and 1 more" ] || { echo "$output"; false; }
+}
+
 @test "R168: a deletion that a later recorded run already ran without is no cause" {
   local common tree
   mkdir -p other
