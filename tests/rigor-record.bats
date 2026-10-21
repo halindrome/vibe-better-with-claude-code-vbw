@@ -5,8 +5,17 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
+# One requirement and its plan for src/note.txt, built once per file.
+planned_note() {
+  rigor_project 1
+  rigor_apply "$(rigor_doc 1 "" src/note.txt)" > /dev/null
+}
+
+setup_file() { fixture_build planned planned_note; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "apply gives every phase a tier, its reasons and the predicted tier" {
   rigor_project 1
@@ -33,8 +42,7 @@ teardown() { vbw_teardown; }
 }
 
 @test "a phase with nothing risky is a one-line express phase on the approval screen" {
-  rigor_project 1
-  rigor_apply "$(rigor_doc 1 "" src/note.txt)" > /dev/null
+  fixture_copy planned
   vbw_run show contract
   [ "$status" -eq 0 ]
   [ "$(printf '%s\n' "$output" | grep -c '^  P1 ')" -eq 1 ]
@@ -54,8 +62,7 @@ teardown() { vbw_teardown; }
 }
 
 @test "the record validator accepts tier, reasons, escalations and outcome, and still accepts phases without them" {
-  rigor_project 1
-  rigor_apply "$(rigor_doc 1 "" src/note.txt)" > /dev/null
+  fixture_copy planned
   edit_record '.phases[0].escalations = [{at: "2026-10-03T10:00:00Z", from: "express", to: "standard", reason: "Dev blocked P1.1: stuck"}]
     | .phases[0].outcome = {tier: "standard", predicted: "express", held: false, fix_rounds: 1, qa_findings: 0, escalations: 1}'
   vbw_run status
@@ -66,8 +73,7 @@ teardown() { vbw_teardown; }
 }
 
 @test "the record validator refuses a bad tier, a bad escalation and a bad outcome" {
-  rigor_project 1
-  rigor_apply "$(rigor_doc 1 "" src/note.txt)" > /dev/null
+  fixture_copy planned
   phase_json '.phases[0].tier == "express"'
   cp .vbw/record.json "$TEST_ROOT/good.json"
   edit_record '.phases[0].tier = "huge"'

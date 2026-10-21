@@ -6,8 +6,17 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
+# One requirement and its plan for src/note.txt, built once per file.
+planned_note() {
+  rigor_project 1
+  rigor_apply "$(rigor_doc 1 "" src/note.txt)" > /dev/null
+}
+
+setup_file() { fixture_build planned planned_note; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 TIERS="$BATS_TEST_DIRNAME/../plugin/lib/tiers.json"
 PROFILES="$BATS_TEST_DIRNAME/../plugin/lib/profiles.json"
@@ -29,8 +38,7 @@ PROFILES="$BATS_TEST_DIRNAME/../plugin/lib/profiles.json"
 }
 
 @test "vbw next --json gives each phase exactly its profile cell, for every profile and tier" {
-  rigor_project 1
-  rigor_apply "$(rigor_doc 1 "" src/note.txt)" > /dev/null
+  fixture_copy planned
   local p t
   for p in quality balanced budget; do
     for t in express standard deep; do
@@ -44,16 +52,14 @@ PROFILES="$BATS_TEST_DIRNAME/../plugin/lib/profiles.json"
 }
 
 @test "a user's model override still wins over the tier's models" {
-  rigor_project 1
-  rigor_apply "$(rigor_doc 1 "" src/note.txt)" > /dev/null
+  fixture_copy planned
   "$VBW" config set model.dev opus > /dev/null
   vbw_run next --json
   echo "$output" | jq -e '.rigor.P1.models.dev == "opus"'
 }
 
 @test "a phase planned before tiers existed counts as standard" {
-  rigor_project 1
-  rigor_apply "$(rigor_doc 1 "" src/note.txt)" > /dev/null
+  fixture_copy planned
   edit_record '.phases[0] |= del(.tier, .reasons, .predicted)'
   vbw_run next --json
   echo "$output" | jq -e '.rigor.P1.tier == "standard"'
