@@ -6,15 +6,20 @@
 # per wave honestly. Format: "build waves: N (the widest runs M plan(s) at once)".
 
 load helper
+load fixture-helper
 
-setup() {
+waves_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
   printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n' > .vbw/spec.md
   "$VBW" spec sync > /dev/null
 }
+
+setup_file() { fixture_build waves waves_project; }
+setup() { fixture_copy waves; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # plans JSON_ARRAY: the milestone's plans, as [{id, files, after}].
 plans() {
