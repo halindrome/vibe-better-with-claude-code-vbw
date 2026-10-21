@@ -9,8 +9,16 @@
 # vbw prove reuses it. Scripts log their runs to $RANLOG. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+setup_file() { fixture_build shop fixdone_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+# fixdone_project: the project every test starts from (a passing proof, then
+# a failing one that opened a fix), built once per file.
+fixdone_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -42,8 +50,6 @@ setup() {
   FAILED_AT=$(jq -r '.evidence.at' .vbw/record.json)
   : > "$RANLOG"
 }
-
-teardown() { vbw_teardown; }
 
 edit_record() {
   jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
