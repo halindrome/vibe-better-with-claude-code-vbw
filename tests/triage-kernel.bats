@@ -9,8 +9,9 @@
 # does not read, so it raises the record's schema to 3 (R46's rule).
 
 load helper
+load fixture-helper
 
-setup() {
+triage_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -21,7 +22,11 @@ setup() {
   "$VBW" milestone rename "Checkout" > /dev/null
 }
 
+setup_file() { fixture_build triage triage_project; }
+setup() { fixture_copy triage; }
+
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 triage_json() {
   run "$VBW" triage --json < /dev/null
