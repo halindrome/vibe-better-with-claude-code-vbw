@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Drive an interactive Claude Code session for L3 user-path runs (AGENTS.md
-# reporting standard): the real TUI in tmux, with the v2 plugin. The only
+# reporting standard): the real TUI in tmux, with the working tree's plugin. The only
 # input is what a user types; the screen is the only output.
 #
 #   tools/l3.sh start NAME DIR [MODEL] [plain]  start `claude` in DIR (auto mode, sandbox on);
