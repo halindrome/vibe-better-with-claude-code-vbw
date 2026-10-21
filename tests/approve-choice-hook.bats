@@ -6,14 +6,20 @@
 
 load helper
 load approve-choice-helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   approve_choice_project
   FP=$(fingerprint)
   Q="Approve contract $FP?"
 }
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # say: the sentence the user sees (systemMessage), one line.
 say() { printf '%s' "$output" | jq -r '.systemMessage // empty'; }
