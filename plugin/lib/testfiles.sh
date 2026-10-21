@@ -10,8 +10,9 @@
 # shellcheck source=proofreuse.sh
 . "$VBW_LIB/proofreuse.sh"
 
-# testfiles_on RECORD: succeed when the record carries a form. Called after
-# checks_begin, which dies unless the contract, and so the form, is approved.
+# testfiles_on RECORD: succeed when the record carries a form. No file runs
+# before checks_approved, which dies unless the contract, and so the form, is
+# approved (vbw fix done plans before it, and asks only when a file will run).
 testfiles_on() { printf '%s' "$1" | jq -e 'has("test_files")' > /dev/null; }
 
 # testfiles_id PATH: the short name of a test file's unit (a file name cannot

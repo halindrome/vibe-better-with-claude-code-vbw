@@ -221,7 +221,6 @@ edit_record() {
 @test "fix done moves an open fix to fixed, and nothing else" {
   apply_plan
   edit_record '.fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "C1 fail"}]'
-  vbw_consent_contract
   vbw_run fix done F1
   [ "$status" -eq 0 ]
   jq -e '.fixes[0].status == "fixed"' .vbw/record.json

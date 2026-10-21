@@ -8,8 +8,10 @@
 #   named record;
 # - a value derived from the whole record: qa_combined, qa_digests, qa_state
 #   or qa_cache_read, or a variable named digests or results;
+# - a list that grows with the project: a variable named units, causes or
+#   TF_REUSE (Linux caps one argument at 128 KB, about 3,000 test files);
 # - a positional parameter that the function's header comment
-#   ("# name ARG...: ...") names RECORD, RECORD_JSON, DIGESTS or RESULTS.
+#   ("# name ARG...: ...") names RECORD, RECORD_JSON, DIGESTS, RESULTS or UNITS.
 # A here-string (<<<) of such data is refused too: bash writes it to a file in
 # the system's temporary folder. A pipe (printf '%s' "$record" | jq), --slurpfile
 # and --rawfile from a file inside the project are the ways in; a process
@@ -73,6 +75,43 @@ planted() {
     [ "$status" -ne 0 ] || { echo "not caught: $line"; false; }
     [[ "$output" == *"cmd-plant.sh:4"* ]] || { echo "not named with its line: $line"; echo "$output"; false; }
   done
+}
+
+@test "R149 self-test: the rule catches the lists that grow with the project: units, causes and TF_REUSE" {
+  local line
+  for line in \
+    'jq -nc --arg h "$head" --argjson u "$units" '"'"'{units: $u}'"'"'' \
+    'size=$(jq -nc --argjson u "${units}" '"'"'{units: $u}'"'"')' \
+    'jq -n --arg c "$causes" '"'"'$c | split("\n")'"'"'' \
+    'jq -n --argjson r "$TF_REUSE" '"'"'$r | length'"'"'' \
+    '    --argjson own "$own" --arg causes "$causes" \' \
+    'jq -c '"'"'map_values(.at)'"'"' <<< "$TF_REUSE"' \
+    'done <<< "$causes"'; do
+    run rule "$(planted "$line")"
+    [ "$status" -ne 0 ] || { echo "not caught: $line"; false; }
+    [[ "$output" == *"cmd-plant.sh:4"* ]] || { echo "not named with its line: $line"; echo "$output"; false; }
+  done
+  local d
+  d=$(planted \
+    'printf '"'"'%s'"'"' "$units" | jq -c --arg h "$head" '"'"'{units: .}'"'"'' \
+    'printf '"'"'%s'"'"' "$TF_REUSE" | jq -c '"'"'map_values(.at)'"'"'' \
+    'jq -n --rawfile causes <(printf '"'"'%s'"'"' "$causes") '"'"'$causes'"'"'' \
+    'done < <(printf '"'"'%s\n'"'"' "$causes")' \
+    'jq -n --argjson unitsize 3 --arg causes_file "$f" '"'"'$unitsize'"'"'')
+  run rule "$d"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+}
+
+@test "R149 self-test: the rule catches a function's UNITS parameter passed to jq" {
+  local d
+  d=$(planted \
+    '# plant_begin TOTAL [UNITS]: a planted helper.' \
+    'plant_begin() {' \
+    '  jq -nc --argjson n "${2:-null}" --argjson t "$1" '"'"'{units: $n}'"'"'' \
+    '}')
+  run rule "$d"
+  [ "$status" -ne 0 ] || { echo "not caught"; false; }
+  [[ "$output" == *"cmd-plant.sh:6"* ]] || { echo "$output"; false; }
 }
 
 @test "R149 self-test: the rule catches a function's record parameter passed to jq or in a here-string" {

@@ -1,15 +1,23 @@
 #!/usr/bin/env bash
 # The clock inside a proof (R202, docs/proof.md): vbw prove and vbw fix done
 # time the steps that are VBW's own work, not a unit's command running:
-# planning (what to reuse), copies (the clean copies), tracking (each unit's
-# read reset before and read list collected after), saving (the run store) and
-# record (writing the plan of record). A unit runs in a subshell, so each step
-# adds its seconds as a line to a scratch file of this process under the
-# runtime folder; the total sums them. Without a timer open (vbw check) every
-# add is a no-op. Seconds carry milliseconds. JSON only through jq.
+# planning (reading the record and the contract, what to reuse, the scope check
+# and the trees of the committed code and of the working folder), copies (the
+# clean copies), tracking (each unit's read reset before and read list
+# collected after), saving (the run store and the kept output) and record
+# (building the evidence and writing the plan of record). The other steps tile
+# the command from the timer's start to the end of the record step: each
+# prooftime_step counts the time since the last mark into its step, and a wait
+# for a slot or the units' commands are passed uncounted (prooftime_mark). A
+# unit runs in a subshell and counts its own tracking (prooftime_span), so
+# tracking is summed over the units that run side by side. Each count is a line
+# in a scratch file of this process under the runtime folder; the total sums
+# them. Without a timer open (vbw check) every count is a no-op. Seconds carry
+# milliseconds. JSON only through jq.
 
 PROOFTIME_FILE=''
 PROOFTIME_T0=''
+PROOFTIME_AT=''
 PROOFTIME_NS=''
 
 # prooftime_detect: which clock this machine has (date's %N where it is
@@ -47,6 +55,7 @@ prooftime_ms() {
 prooftime_begin() {
   prooftime_detect
   PROOFTIME_T0=$(prooftime_clock)
+  PROOFTIME_AT=$PROOFTIME_T0
   PROOFTIME_FILE=''
   if [ -n "${VBW_RUNTIME:-}" ] && mkdir -p "$VBW_RUNTIME" 2> /dev/null && : > "$VBW_RUNTIME/prooftime.$$" 2> /dev/null; then
     PROOFTIME_FILE=$VBW_RUNTIME/prooftime.$$
@@ -69,7 +78,29 @@ prooftime_span() {
   prooftime_add "$1" "$(printf '%d.%03d' "$((d / 1000))" "$((d % 1000))")"
 }
 
-# prooftime_total: {planning, copies, tracking, saving, record, wall} in seconds.
+# prooftime_step STEP: count the time since the last mark into STEP, and mark
+# now: one clock reading ends this step and starts the next. Called directly,
+# never in $(...) or a subshell.
+prooftime_step() {
+  [ -n "$PROOFTIME_FILE" ] || return 0
+  local now d
+  now=$(prooftime_clock)
+  d=$(($(prooftime_ms "$now") - $(prooftime_ms "$PROOFTIME_AT")))
+  [ "$d" -ge 0 ] || d=0
+  prooftime_add "$1" "$(printf '%d.%03d' "$((d / 1000))" "$((d % 1000))")"
+  PROOFTIME_AT=$now
+}
+
+# prooftime_mark: mark now, counting nothing: the time since the last mark was a
+# wait for a slot or the units' commands. Called directly, never in $(...).
+prooftime_mark() {
+  [ -n "$PROOFTIME_FILE" ] || return 0
+  PROOFTIME_AT=$(prooftime_clock)
+}
+
+# prooftime_total: {planning, copies, tracking, saving, record, wall} in
+# seconds; wall is the time since the timer opened, read now (vbw prove and vbw
+# fix done read it after their record step, so it covers every other step).
 prooftime_total() {
   local wall=0
   if [ -n "$PROOFTIME_T0" ]; then

@@ -2,7 +2,9 @@
 # R204: docs/proof.md step 4 of vbw prove states the exact-undo rule in plain
 # words (what exact means, that git verifies it file by file, that an undo of
 # an undo does not count, that the undoing commit is not judged either, that a
-# partial or edited revert is still judged) and names the summary line;
+# partial or edited revert is still judged, and an undo naming a plan of the
+# milestone that takes back a commit with no trailer is judged) and names the
+# summary line and what the check costs in git processes;
 # docs/record.md documents evidence.undone with its shape and the not-recorded
 # case; docs/loop.md keeps the park's rule and says the loop's park and a hand
 # revert now clear a commit the same way, so a scope violation parks an item
@@ -28,6 +30,17 @@ step4() { awk '/^## `vbw prove`/{on=1} on && /^4\. /{s=1} s && /^5\. /{exit} s' 
     step4 | grep -qF -- "$w" || { echo "docs/proof.md step 4 lacks: $w"; step4; false; }
   done
   step4 | grep -qE 'scope: [0-9a-f]{12} \(P[0-9]+\.[0-9]+\) undone by [0-9a-f]{12}, not judged' || { step4; false; }
+}
+
+@test "R204: docs/proof.md step 4 says an undo of a commit with no trailer is judged, and what the check costs in git processes" {
+  local text w
+  text=$(step4 | tr '\n' ' ' | tr -s ' ')
+  for w in "when the commit it undoes carries a \`VBW-Plan:\` trailer too" \
+    "takes back a commit with no trailer is judged as that plan's commit" \
+    "a plain listing plus a bounded raw walk: a fixed 2 git processes plus one per undone pair"; do
+    printf '%s\n' "$text" | grep -qF -- "$w" || { echo "docs/proof.md step 4 lacks: $w"; step4; false; }
+  done
+  ! printf '%s\n' "$text" | grep -qF 'one git log walk' || { step4; false; }
 }
 
 @test "R204: docs/record.md documents evidence.undone with its shape and the not-recorded case" {

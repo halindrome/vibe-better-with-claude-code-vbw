@@ -103,12 +103,14 @@ step_expect() {
   runs="$(dirname "$file")/runs.json"
   size=$2
   case "$size" in
-    '' | *[!0-9]*) ;;
+    '') return 0 ;;
+    *[!0-9]*) ;;
     *) size=$(jq -nc --argjson n "$size" '{units: [range(0; $n) | "unit:\(.)"]}') ;;
   esac
+  # A proof's size names every unit (Linux caps one argument at 128 KB): through a file.
   out=$(jq -n -r --slurpfile h <(jq -c 'select(type == "object" and (.steps | type) == "array")' "$file" 2> /dev/null) \
     --slurpfile runs <(jq -c 'select(type == "object" and (.runs | type) == "object")' "$runs" 2> /dev/null) \
-    --arg kind "$1" --argjson size "$size" -f "$VBW_LIB/steps-expect.jq" 2> /dev/null) || return 0
+    --arg kind "$1" --slurpfile size <(printf '%s' "$size") -f "$VBW_LIB/steps-expect.jq" 2> /dev/null) || return 0
   printf '%s\n' "$out"
 }
 
@@ -346,16 +348,20 @@ step_say_note() {
 # step_proof_units RECORD FULL: the names of the units a proof would run now (a
 # JSON array of check:ID, file:PATH and command:NAME), planned by the proof's own
 # reuse rule (cmd-prove.sh) without running anything. The list is cached in
-# .vbw/runtime/proof-units.json as {head, record, store, marker, full, units}:
-# head is the committed tree, record and store the SHA-256 of the record file
-# and of the run store file (an absent store counts as empty), marker whether
-# the unfinished marker exists. It is reused only while every part matches,
-# else planned again and the file rewritten; a damaged file is planned again.
+# .vbw/runtime/proof-units.json as {head, index, record, store, marker, full,
+# units}: head is the committed tree, index the SHA-256 of the git index's
+# entries (git ls-files -s: the test files are listed from the index, so a
+# staged new test file counts), record and store the SHA-256 of the record
+# file and of the run store file (an absent store counts as empty), marker
+# whether the unfinished marker exists. It is reused only while every part
+# matches, else planned again and the file rewritten; a damaged file is
+# planned again.
 step_proof_units() {
-  local head rec store marker cache tmp units storef
+  local head idx rec store marker cache tmp units storef
   # shellcheck source=proofreuse.sh
   . "$VBW_LIB/proofreuse.sh"
   head=$(vbw_head_tree 2> /dev/null) || head=
+  idx=$(git -C "$VBW_ROOT" ls-files -s -z 2> /dev/null | vbw_sha256) || idx=
   rec=$(vbw_sha256 < "$VBW_RECORD" 2> /dev/null) || rec=
   storef=$(proofreuse_store_file 2> /dev/null) || storef=
   if [ -n "$storef" ] && [ -f "$storef" ]; then store=$(vbw_sha256 < "$storef" 2> /dev/null) || store=
@@ -363,19 +369,20 @@ step_proof_units() {
   marker=false
   [ ! -e "$(proofreuse_marker)" ] || marker=true
   cache="$VBW_RUNTIME/proof-units.json"
-  if [ -n "$head" ] && [ -n "$rec" ] && [ -n "$store" ] && [ -f "$cache" ] \
-    && units=$(jq -ce --arg h "$head" --arg r "$rec" --arg s "$store" --argjson m "$marker" --argjson f "${2:-0}" '
-        select(type == "object" and .head == $h and .record == $r and .store == $s and .marker == $m and .full == $f
+  if [ -n "$head" ] && [ -n "$idx" ] && [ -n "$rec" ] && [ -n "$store" ] && [ -f "$cache" ] \
+    && units=$(jq -ce --arg h "$head" --arg i "$idx" --arg r "$rec" --arg s "$store" --argjson m "$marker" --argjson f "${2:-0}" '
+        select(type == "object" and .head == $h and .index == $i and .record == $r and .store == $s and .marker == $m and .full == $f
           and (.units | type) == "array" and all(.units[]; type == "string")) | .units' "$cache" 2> /dev/null) \
     && [ -n "$units" ]; then
     printf '%s\n' "$units"
     return 0
   fi
   units=$(step_proof_units_plan "$1" "$2")
-  if [ -n "$head" ] && [ -n "$rec" ] && [ -n "$store" ] && printf '%s' "$units" | jq -e 'type == "array"' > /dev/null 2>&1; then
+  if [ -n "$head" ] && [ -n "$idx" ] && [ -n "$rec" ] && [ -n "$store" ] && printf '%s' "$units" | jq -e 'type == "array"' > /dev/null 2>&1; then
     tmp="$cache.$$"
-    { mkdir -p "$VBW_RUNTIME" && jq -nc --arg h "$head" --arg r "$rec" --arg s "$store" --argjson m "$marker" --argjson f "${2:-0}" --argjson u "$units" \
-        '{head: $h, record: $r, store: $s, marker: $m, full: $f, units: $u}' > "$tmp" && mv -f "$tmp" "$cache"; } 2> /dev/null || rm -f "$tmp" 2> /dev/null || true
+    # The unit list grows with the project (Linux caps one argument at 128 KB): through a pipe.
+    { mkdir -p "$VBW_RUNTIME" && printf '%s' "$units" | jq -c --arg h "$head" --arg i "$idx" --arg r "$rec" --arg s "$store" --argjson m "$marker" --argjson f "${2:-0}" \
+        '{head: $h, index: $i, record: $r, store: $s, marker: $m, full: $f, units: .}' > "$tmp" && mv -f "$tmp" "$cache"; } 2> /dev/null || rm -f "$tmp" 2> /dev/null || true
   fi
   printf '%s\n' "$units"
 }
@@ -415,7 +422,7 @@ step_next() {
       units=$(step_proof_units "$1" "$full")
       parts=$(printf '%s' "$units" | jq 'length' 2> /dev/null) || parts=0
       [ "${parts:-0}" -gt 0 ] 2> /dev/null || { echo null; return 0; }
-      size=$(jq -nc --argjson u "$units" '{units: $u}') ;;
+      size=$(printf '%s' "$units" | jq -c '{units: .}') ;;
     *) echo null; return 0 ;;
   esac
   step_kind_has_parts "$kind" && [ "$parts" = null ] && parts=$(printf '%s' "$ids" | jq 'length')

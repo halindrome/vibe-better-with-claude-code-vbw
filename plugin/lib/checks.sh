@@ -12,13 +12,20 @@
 # shellcheck source=prooftime.sh
 . "$VBW_LIB/prooftime.sh"
 
-# checks_begin RECORD [strict]: die unless the contract is approved. Check
+# checks_begin RECORD [strict]: die unless the contract is approved
+# (checks_approved), then open this invocation's run (checks_open). Called
+# directly, never in $(...).
+checks_begin() {
+  checks_approved "$@"
+  checks_open
+}
+
+# checks_approved RECORD [strict]: die unless the contract is approved. Check
 # files edited since the approval wait for it (CHECK_WAITING): the checks still
 # run and the files are named, but with "strict" (proof) it dies. A check a fix
 # added waits too, and never runs before the approval (CHECK_HELD, its ids).
-# Sets CHECK_HASH and CHECK_OUT, a fresh output directory for this invocation
-# (parallel Devs each get their own). Called directly, never in $(...).
-checks_begin() {
+# Sets CHECK_HASH. Called directly, never in $(...).
+checks_approved() {
   local waiting
   # shellcheck disable=SC2034 # read by the commands that source this file
   CHECK_HASH=$(contract_hash "$1")
@@ -31,6 +38,14 @@ Next: review them, then ask the user to approve them once (vbw next asks), and r
     printf 'vbw: waiting for approval (new or changed since approved): %s\n' "${waiting% }" >&2
   fi
   CHECK_HELD=$(contract_held "$1")
+}
+
+# checks_open: this invocation's run, which needs no approval: CHECK_OUT, a
+# fresh output directory (parallel Devs each get their own; it also keeps the
+# slot waits), and the computer-wide slot store (slots_open). vbw fix done
+# opens it before its planning, which holds vbw:plan, and asks for the approval
+# only when a check or test file will run. Called directly, never in $(...).
+checks_open() {
   CHECK_OUT=$(mktemp -d "$VBW_RUNTIME/run.XXXXXX") || vbw_die "cannot create a directory in $VBW_RUNTIME"
   vbw_guard_add dir "$CHECK_OUT"
   slots_open

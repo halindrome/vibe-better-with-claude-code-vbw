@@ -20,6 +20,11 @@ RECORD="$REPO_ROOT/docs/record.md"
   grep -qF "top reasons" "$PROOF"
   grep -qi 'read tracking' "$PROOF"
   grep -qF 'vbw fix done' "$PROOF"
+  # What own work counts, honestly: the scope check is planning, the wall ends with the
+  # record step, and tracking summed over side-by-side units can exceed the wall.
+  grep -qF 'the scope check' "$PROOF"
+  grep -qF 'end of its record step' "$PROOF"
+  grep -qF 'own work can exceed the wall time' "$PROOF"
 }
 
 @test "R202: docs/record.md describes evidence.own, evidence.causes and the not-recorded case" {

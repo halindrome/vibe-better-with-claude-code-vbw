@@ -32,7 +32,9 @@ proofcauses_known() {
 # not unseen: the proof that ran it judged it. A file whose own folder appeared
 # or vanished with it is seen through the nearest folder above that a run
 # listed: that listing gained or lost an entry, and the reuse rule re-runs the
-# run that listed it; the file was never reachable any other way.
+# run that listed it; the file was never reachable any other way. Up to three
+# such files are a cause each; more are one cause, their count and the first
+# three paths, so the record and the summary stay small (R202).
 proofcauses_files() {
   local known head
   [ -n "$2" ] || return 0
@@ -73,9 +75,16 @@ proofcauses_files() {
                  else ($inside | length) == 0 end);
     $unseen
     | map(select(.p as $p | .s as $s | ($read | index($p) | not) and ($own | index($p) | not)
-          and (($p | parent) as $d | $dirs | index($d) | not) and (through($p; $s) | not))
-         | "\(.p) was \(if .s == "A" then "added" else "deleted" end), and no recorded run read it or listed its folder")
-    | sort | .[]'
+          and (($p | parent) as $d | $dirs | index($d) | not) and (through($p; $s) | not)))
+    | sort_by(.p)
+    # Bounded: up to three files are named one per line; more are one line with
+    # their count and the first three paths (a vendor drop of thousands, R202).
+    | if length <= 3 then
+        .[] | "\(.p) was \(if .s == "A" then "added" else "deleted" end), and no recorded run read it or listed its folder"
+      else
+        ([.[] | select(.s == "A")] | length) as $a | (length - $a) as $d
+        | "\(length) files were \(if $d == 0 then "added" elif $a == 0 then "deleted" else "added or deleted (\($a) added, \($d) deleted)" end), and no recorded run read them or listed their folders: \(.[:3] | map(.p) | join(", ")) and \(length - 3) more"
+      end'
 }
 
 # proofcauses_find RECORD FULL HEAD [KIND]: every cause for this proof, one per

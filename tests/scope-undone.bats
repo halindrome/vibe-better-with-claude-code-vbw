@@ -5,7 +5,8 @@
 # same set of paths, and for each path the later commit takes it from the
 # earlier one's new (mode, blob) back to its old (mode, blob). A partial or
 # edited undo is still judged. The undoing commit is not judged either when it
-# carries a trailer of its own; an undo that is itself undone clears nothing.
+# and the commit it undoes both carry a trailer; one that takes back a commit
+# with no trailer is judged; an undo that is itself undone clears nothing.
 # The evidence lists each cleared commit in evidence.undone ({commit, plan, by})
 # and the summary prints one line per entry after its scope line. The walk
 # costs a fixed number of git processes however long the history is. L1: the
@@ -285,6 +286,20 @@ after_scope_ok() {
   undone_is "$(jq -nc --arg a "$a" --arg b "$b" '[{commit: $b, plan: "P1.1", by: $a}, {commit: $a, plan: "P1.1", by: $b}]')"
   [[ "$output" == *"$(line_entry "$b" "$a")"* ]] || { echo "$output"; false; }
   [[ "$output" == *"$(line_entry "$a" "$b")"* ]] || { echo "$output"; false; }
+}
+
+@test "R204: an exact undo naming a plan of this milestone that takes back a commit with no trailer is judged as that plan's commit" {
+  local b
+  # A plan commit that reverts work outside its plan is out of scope, exact undo or not.
+  printf 'stray\n' > src/stray1.txt
+  git add src/stray1.txt
+  git commit -q -m "chore: a stray file, outside any plan"
+  git rm -q src/stray1.txt
+  b=$(plan_commit "chore(stray): the stray file out again")
+  vbw_run prove
+  [ "$status" -ne 0 ] || { echo "$output"; false; }
+  [[ "$output" == *"  scope: ${b:0:12} (P1.1) changed src/stray1.txt, which is not in the plan"* ]] || { echo "$output"; false; }
+  undone_is '[]'
 }
 
 @test "R204: a cleared commit whose trailer names a shipped milestone's plan is not listed; a current one beside it is" {

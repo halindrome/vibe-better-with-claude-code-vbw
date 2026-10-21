@@ -24,6 +24,8 @@ DOC="$REPO_ROOT/docs/proof.md"
 @test "R168: docs/proof.md lists an added or deleted file no recorded run saw, with its messages" {
   grep -qF 'was added, and no recorded run read it or listed its folder' "$DOC"
   grep -qF 'was deleted, and no recorded run read it or listed its folder' "$DOC"
+  # More than three are one cause: the count and the first three paths (R202).
+  grep -qF 'files were added, and no recorded run read them or listed their folders: ' "$DOC"
 }
 
 @test "R168: docs/proof.md lists a file system that cannot record reads, no earlier run in the clone and a proof cut short, with their messages" {

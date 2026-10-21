@@ -96,7 +96,6 @@ teardown() { vbw_teardown; }
 
 @test "R99: after the commit the fix closes" {
   printf 'fixed\n' >> src/util.txt
-  vbw_consent_contract
   "$VBW" commit --fix F1 "fix(test): make the test command pass" src/util.txt > /dev/null < /dev/null
   run "$VBW" fix done F1 < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }

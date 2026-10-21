@@ -492,12 +492,20 @@ form in `.vbw/spec.md`.
    or a plain commit) and whatever its message says.
    The rule: an undo of an undo clears nothing (the original is judged again;
    a re-apply is judged as a fresh commit). Also, the undoing commit is not judged either
-   when it names a plan of this milestone, since the pair leaves every file as
-   it was.
+   when the commit it undoes carries a `VBW-Plan:` trailer too, since the pair
+   leaves every file as it was. An undo that names a plan of this milestone but
+   takes back a commit with no trailer is judged as that plan's commit: a plan
+   commit that reverts work outside its plan is out of scope.
    A partial or edited revert is still judged (one extra line, one of two
    files restored, an extra file touched).
    The summary names each pair after the scope line:
    `scope: abc123456789 (P163.2) undone by def123456789, not judged`.
+   The check reads the history as a plain listing plus a bounded raw walk: a
+   fixed 2 git processes plus one per undone pair, however long the history.
+   The listing finds the oldest commit with a trailer, the walk reads each
+   commit's file changes back to it, and each pair found costs one ancestry
+   check (does the undo descend from its original?). Each revert a park
+   recorded adds one more, to read which commit it undid.
 5. Writes the evidence and updates requirements and fixes in one atomic record
    update, then prints a one-screen summary. Exit 0 only when everything passed.
 
@@ -716,7 +724,7 @@ by run id, and each written name once, so a unit that writes 1,000 files adds
 
 **What `vbw next` caches.** To size the proof, `vbw next` plans the units the
 next proof would run. It keeps that list in `.vbw/runtime/proof-units.json` and
-plans again only when the committed tree, the record or the run store changes
+plans again only when the committed tree, the git index, the record or the run store changes
 ([`docs/next.md`](next.md#the-step)).
 
 **Speed.** Checks still run several at a time (`check_jobs`), each in its own
@@ -733,12 +741,26 @@ VBW's own work: 0.4 of 6.2 min
 ran again: 3 of 52 units; top reasons: src/a.txt changed (2), definition changed (1)
 ```
 
-**`VBW's own work: X of Y min`.** Y is the command's wall-clock time; X is the
-part VBW spent on its own bookkeeping instead of running a unit's command (both
-in minutes, one decimal). Own work is: planning the reuse, making the clean
-copies, read tracking (resetting access times before a unit and collecting its
-read list after it), saving the run store, and writing the record. The clock
-inside the proof measures each step; nothing is estimated.
+**`VBW's own work: X of Y min`.** Y is the command's wall-clock time, up to the
+end of its record step; X is the part VBW spent on its own bookkeeping instead
+of running a unit's command (both in minutes, one decimal). Own work is five
+steps:
+
+- planning: reading the record and the contract, judging the named fixes
+  (`vbw fix done`), planning the reuse, the scope check, and the trees of the
+  committed code and of the working folder;
+- copies: making, checking and removing the clean copies;
+- read tracking: resetting access times before a unit and collecting its read
+  list after it;
+- saving: the run store and the kept output of failures;
+- record: building the evidence and writing the record.
+
+The clock inside the proof measures each step; nothing is estimated. Up to the
+end of the record step, every second is one of these steps, a unit's command
+running, or a wait for a slot ([The computer-wide limit](#the-computer-wide-limit)).
+Writing the split itself, the record's commit and the printed summary come after
+it. Read tracking is summed over the units, and units run side by side, so with
+several running at once own work can exceed the wall time.
 
 **`ran again: N of M units; top reasons: ...`.** M counts every unit the proof
 covers (checks, approved commands, test files); N counts those that really ran.
@@ -797,6 +819,7 @@ The causes, with the text the summary shows:
 |---|---|
 | A file was added that no recorded run read and no recorded run listed its folder | `src/new.txt was added, and no recorded run read it or listed its folder` |
 | A file was deleted under the same condition | `src/old.txt was deleted, and no recorded run read it or listed its folder` |
+| More than three such files (a vendored library, for example): one cause, with their count and the first three paths in path order | `3000 files were added, and no recorded run read them or listed their folders: vendor/a.c, vendor/b.c, vendor/c.c and 2997 more` (`were deleted`, or `were added or deleted (N added, M deleted)`) |
 | The file system cannot record which files are read | `this file system does not record which files are read` |
 | The clone has no earlier recorded run | `this clone has no earlier recorded run` |
 | The last proof was cut short | `the last proof was cut short` |
@@ -865,6 +888,8 @@ failing check is work in progress, not a defect, and opens nothing.
 `vbw fix done` is verified, not claimed: none of the files the fix may touch has
 uncommitted changes, and the checks of every finished requirement (all its plans
 `done`) that those files serve pass now. A fix cannot quietly break other work.
+Those checks run only on an approved contract, and otherwise `vbw fix done` is
+refused as `vbw prove` is; a fix with nothing to re-check needs no approval.
 A project command's fix is left to `vbw prove`, which runs the command. A fix of
 the test command with a single-file form is the exception: it judges every test
 file by the reuse rule (the failed file and any changed file run, the rest are
@@ -894,7 +919,6 @@ no agent can give. It still refuses an unknown, not open or uncommitted fix, and
 the others end as usual (`fixed`, awaiting the proof):
 
 ```text
-vbw: waiting for approval (new or changed since approved): tests/c1.sh
 check files are waiting for approval, so no check runs before it: tests/c1.sh
 the user approves them first (vbw next asks); then vbw prove runs every check
 checks: 0 ran, 0 reused
