@@ -6,16 +6,20 @@
 
 load helper
 load loop-helper
-
-setup() {
-  case "$BATS_TEST_DESCRIPTION" in *"carried in"*) loop_project human ;; *) loop_project ;; esac
-  "$VBW" todo add "[human] The greeting feels friendly" > /dev/null
-}
-teardown() { vbw_teardown; }
+load fixture-helper
 
 step() { loop_next s1 > "$TEST_ROOT/step.json"; jq -r .action "$TEST_ROOT/step.json"; }
 
-@test "R179: the loop skips a [human] requirement at accept, ships with it moved on, and the report says it waits for the user" {
+# human_todo: the loop project (with "human": R2 [human] skipped in M1 and carried into M2) and a [human] backlog item, T3.
+human_todo() {
+  loop_project "$@"
+  "$VBW" todo add "[human] The greeting feels friendly" > /dev/null
+}
+
+# qa_recorded: the loop over the [human] item T3 up to the QA record of its phase: planned, built, proved and
+# QA passed, the opening steps the first two cases share, built once.
+qa_recorded() {
+  human_todo
   VBW_SESSION_ID=s1 "$VBW" loop start T3 --no-ceiling > /dev/null
   [ "$(step)" = plan ]
   local q
@@ -30,6 +34,29 @@ step() { loop_next s1 > "$TEST_ROOT/step.json"; jq -r .action "$TEST_ROOT/step.j
   loop_prove
   [ "$(step)" = qa ] || { cat "$TEST_ROOT/step.json"; false; }
   "$VBW" qa record P2 pass "$(jq -r .detail.tier "$TEST_ROOT/step.json")" > /dev/null
+}
+
+# carried: the human project after the opening steps that the two "carried in" cases share, built once (carried_to_m3, below).
+carried() {
+  human_todo human
+  carried_to_m3
+}
+
+setup_file() {
+  fixture_build plain human_todo
+  fixture_build qa_recorded qa_recorded
+  fixture_build carried carried
+}
+setup() {
+  case "$BATS_TEST_DESCRIPTION" in *"carried in"*) fixture_copy carried ;; *) fixture_copy plain ;; esac
+}
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+@test "R179: the loop skips a [human] requirement at accept, ships with it moved on, and the report says it waits for the user" {
+  fixture_copy qa_recorded
+  local q
+  q=$(item_req "The greeting feels friendly")
   [ "$(step)" = done ] || { cat "$TEST_ROOT/step.json"; false; }
   jq -e --arg q "$q" '.requirements[] | select(.id == $q) | .status == "open" and .skipped == true and .later == true' .vbw/record.json || { jq .requirements .vbw/record.json; false; }
   jq -e '.milestone.status == "shipped"' .vbw/record.json
@@ -45,19 +72,9 @@ step() { loop_next s1 > "$TEST_ROOT/step.json"; jq -r .action "$TEST_ROOT/step.j
 }
 
 @test "R179: the loop never accepts or rejects on the user's behalf: no acceptance, no rejection, no fix from a rejection" {
-  VBW_SESSION_ID=s1 "$VBW" loop start T3 --no-ceiling > /dev/null
-  [ "$(step)" = plan ]
+  fixture_copy qa_recorded
   local q
   q=$(item_req "The greeting feels friendly")
-  jq -nc --arg q "$q" '{phases: [{id: "P2", title: "Friendly", reqs: [$q], goal: "A friendly greeting", criteria: ["it feels friendly"]}],
-    plans: [{id: "P2.1", phase: "P2", title: "Friendly", reqs: [$q], files: ["src/greet.txt"], after: [], tasks: ["write a friendly greeting"]}],
-    checks: []}' | "$VBW" apply > /dev/null
-  step > /dev/null
-  loop_build P2
-  step > /dev/null
-  loop_prove
-  step > /dev/null
-  "$VBW" qa record P2 pass "$(jq -r .detail.tier "$TEST_ROOT/step.json")" > /dev/null
   [ "$(next_action)" = accept ]
   step > /dev/null
   jq -e --arg q "$q" '[.requirements[] | select(.id == $q) | .status] == ["open"]' .vbw/record.json
@@ -117,7 +134,6 @@ carried_to_m3() {
 }
 
 @test "R179 (F197): a [human] requirement carried in from a ship before the loop stays in Waiting for you after the next item's milestone opens" {
-  carried_to_m3
   VBW_SESSION_ID=s2 "$VBW" loop stop > /dev/null
   [ "$(step)" = stopped ] || { cat "$TEST_ROOT/step.json"; false; }
   awk '/^## Waiting for you/,/^## Cost/' .vbw/loop-report.md | grep -q 'R2 The notes page feels calm' || { cat .vbw/loop-report.md; false; }
@@ -125,7 +141,6 @@ carried_to_m3() {
 }
 
 @test "R179 (F197): a [human] requirement carried in and then judged by the user is no longer in Waiting for you" {
-  carried_to_m3
   "$VBW" req accept R2 > /dev/null
   VBW_SESSION_ID=s2 "$VBW" loop stop > /dev/null
   [ "$(step)" = stopped ] || { cat "$TEST_ROOT/step.json"; false; }
