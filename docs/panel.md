@@ -568,8 +568,11 @@ Milestone end: about 36 min, until around 14:56, counting 2 fix rounds per stand
 - **Time per unit at a tier.** Each kind of step is sized by its own unit, and
   VBW takes the median time per unit over the latest 10 finished ones **at the
   same tier** (an older plan or another tier does not count):
-  - a build: the median time **per task** of the plan's tier, times the plan's
-    tasks, so a bigger plan gets a longer time;
+  - a build: the time **per unit of work** of the plan's tier, times the plan's
+    work: its tasks plus its breaks (the rules it owes the mutation check, one
+    break each; none at express), so a bigger plan, or one with more rules to
+    break, gets a longer time. A build takes a high quantile, not the median
+    (below: a wave waits for its slowest plan);
   - a fix round: the median wall time of a **fix round** at the tier, whatever
     the number of fixes;
   - a proof: its units (see below);
@@ -583,10 +586,20 @@ Milestone end: about 36 min, until around 14:56, counting 2 fix rounds per stand
   falls back one rung at a time: first the median time per plan (or per phase)
   at that tier, then the median of any tier, then the plain median time of the
   step as older VBW kept it (builds that recorded only parts use the median time
-  per plan times the plan count). Each rung needs at least 3 finished units;
+  per plan times the plan count). A build's first rung counts only plans that
+  recorded their breaks; with fewer than 3, it takes the time per task of the
+  plans that recorded tasks, then per plan at the tier, then per plan of any
+  tier, each at the same quantile. Each rung needs at least 3 finished units;
   with fewer than 3 in all, there is no time and the panel says so.
 - **Side-by-side plans are not added.** Plans of one wave build at the same time
   (in parallel), so a wave takes its longest plan's time, never their sum.
+- **A wave waits for its slowest plan.** Plan times vary widely (one plan of a
+  wave can take ten times another), so each plan is timed high: at the upper
+  quartile of its tier's time per unit for a lone plan, and higher the more plans
+  build side by side, the quantile 0.75^(1/n) for n plans (0.87 for two, 0.91 for
+  three, 0.93 for four). That is the time 3 waves in 4 end within when plans
+  vary on their own. A wave that runs past it moves its end (later than usual,
+  below).
 - **A proof's time comes from its units.** Every proof records each unit it ran
   (a check, or a test file) and that unit's own seconds in `runs.json`, next to
   `steps.json`. A proof is expected to take the sum of its units' last recorded

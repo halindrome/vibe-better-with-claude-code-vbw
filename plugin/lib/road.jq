@@ -70,7 +70,8 @@ $rec[0] as $r
           ($r | waves($m)) as $waves
             | [$waves[] | . as $ids | {kind: "build", ids: $ids, mult: 1, label: "plans",
                 size: [$ids[] as $i | ([$r.plans[] | select(.id == $i)][0]) as $p
-                  | {id: $i, tier: ([$phases[] | select(.id == $p.phase)][0] | tier_name), tasks: (($p.tasks // []) | length)}]}] as $wp
+                  | {id: $i, tier: ([$phases[] | select(.id == $p.phase)][0] | tier_name), tasks: (($p.tasks // []) | length),
+                     breaks: ($r | owed_rules($i) | length)}]}] as $wp
           | ( [ $left[] | . as $l
                 | ([$waves[] | select(any(.[]; . as $i | any($r.plans[]; .id == $i and .phase == $l.ph.id)))] | length) as $nw
                 | (if ($l.bad | length) > 0 then $l.bad else $l.cs end) as $us
