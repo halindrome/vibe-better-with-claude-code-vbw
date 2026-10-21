@@ -180,9 +180,9 @@ show_costs() {
     . as $r
     | ([.shipped[] | {id, title, status: "shipped"}] + [(.parked // [])[] | {id, title, status: "parked"}]
        + (if any(.shipped[], (.parked // [])[]; .id == $r.milestone.id) then [] else [{id: .milestone.id, title: .milestone.title, status: .milestone.status}] end)
-       | map(. + ($totals[.id] // null | {usd: (.usd // null), in: (.in // null), out: (.out // null), sessions: (.sessions // 0)}))) as $ms
+       | map(. + ($totals[.id] // null | {usd: (.usd // null), sessions: (.sessions // 0)}))) as $ms
     | {milestones: $ms,
-       runs: [(.costs.runs // [])[] | {id, kind, milestone, session: (.session // null), started, ended, cost: (.cost // null)}],
+       runs: [(.costs.runs // [])[] | {id, kind, milestone, session: (.session // null), started, ended, cost: (if .cost == null then null else {usd: .cost.usd} end)}],
        remedy: $remedy}
     | .unknown = {runs: [.runs[] | select(.cost == null) | .id], milestones: [.milestones[] | select(.usd == null) | .id]}' "$VBW_RECORD")
   case "$mode" in
@@ -199,9 +199,8 @@ show_costs() {
     text)
       printf '%s' "$doc" | jq -r '
         def usd: ((. * 100 | round) as $n | "$\($n / 100 | floor).\(($n % 100) | tostring | if length < 2 then "0" + . else . end)");
-        def k: if . >= 1000000 then "\((. / 100000 | round) / 10)M" elif . >= 1000 then "\((. / 100 | round) / 10)K" else tostring end;
         (.milestones[] | "\(.id) \(.title) (\(.status)): "
-          + (if .usd == null then "unknown" else "\(.usd | usd), \(.in | k) tokens in, \(.out | k) out, \(.sessions) session\(if .sessions == 1 then "" else "s" end) seen" end)),
+          + (if .usd == null then "unknown" else "\(.usd | usd), \(.sessions) session\(if .sessions == 1 then "" else "s" end) seen" end)),
         (if (.runs | length) > 0 then "runs:", (.runs[] | "  \(.id): \(if .cost == null then "unknown" else .cost.usd | usd end) (\(.milestone))") else empty end),
         (if (.unknown.runs | length) + (.unknown.milestones | length) > 0 then "unknown means VBW did not see the figures: " + .remedy else empty end)'
       ;;

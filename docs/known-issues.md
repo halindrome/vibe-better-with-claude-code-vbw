@@ -22,7 +22,6 @@ Status words:
 | Item | Status | Affects | Workaround |
 |---|---|---|---|
 | [Mission Control may not open at session start](#mission-control-may-not-open-at-session-start) | Known issue | Wide windows | `/vbw-panel` |
-| [Spend is over-counted after a compaction](#spend-is-over-counted-after-a-compaction) | Known issue | Loops, costs | Compare with `/cost`; `--no-ceiling` |
 | [The loop's time budget follows the size label](#the-loops-time-budget-follows-the-size-label) | Known issue | Loops | Re-run the item |
 | [Approved rules cannot be reworded or retired](#approved-rules-cannot-be-reworded-or-retired) | Known issue | Re-planning | None clean |
 | [Time estimates absorb idle time](#time-estimates-absorb-idle-time) | Known issue | Estimates | Delete `steps.json` |
@@ -49,18 +48,6 @@ Status words:
 **Plan.** Find the gap in the launch trigger, fix it, and add the case to the panel's real-user scenario.
 
 **Where.** `plugin/hooks/panel.js` (the `session.start` handler and the open request); `tools/l3-suite.sh` (the `panel` scenario).
-
-### Spend is over-counted after a compaction
-
-**What.** The "in" token figure that Claude Code gives the status line is the size of the context, so it falls when the context is compacted. VBW reads a falling token figure as a session restart and then counts the session's whole total as new spend. In one case `vbw loop status` showed about forty times the real spend.
-
-**Who and when.** Anyone whose session compacts while a loop or a milestone is open. It affects `vbw loop status`, the loop's `--ceiling` stop (a loop with a ceiling can stop at once), a milestone's total, and the run costs in `vbw show costs`: a run's cost can come out as unknown, a milestone's or a loop's too high ([costs.md](costs.md)).
-
-**Workaround.** Check a surprising figure against Claude Code's own session cost (`/cost`). A loop started with `--no-ceiling` does not compare spend ([loop.md](loop.md#where-the-loop-stops)); its time budget still applies.
-
-**Plan.** Decide a reset by the dollar figure only: a session whose dollars rose is never a reset. Treat token counts as non-cumulative.
-
-**Where.** `plugin/lib/costs.sh` (the run difference and `costs_milestone_total`); `plugin/lib/loop.sh` (`loop_spend`).
 
 ### The loop's time budget follows the size label
 

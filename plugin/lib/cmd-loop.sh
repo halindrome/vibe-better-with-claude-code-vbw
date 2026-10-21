@@ -196,9 +196,9 @@ loop_status() {
                   else "$\($l.ceiling.usd) (\(if $l.ceiling.finish_item then "finish the item first" else "stop at the next step" end))" end)",
       "session: \($l.session // "none")",
       "started: \($l.started_at)",
-      "baseline: \(if ($l.baseline | length) == 0 then "none" else ($l.baseline | to_entries | map("\(.key) \(.value.usd | usd) (\(.value.in) in, \(.value.out) out)") | join("; ")) end)",
+      "baseline: \(if ($l.baseline | length) == 0 then "none" else ($l.baseline | to_entries | map("\(.key) \(.value.usd | usd)") | join("; ")) end)",
       ( if $spend != null
-        then "spend: \($spend.usd | usd) (\($spend.in) in, \($spend.out) out, \($spend.sessions) session\(if $spend.sessions == 1 then "" else "s" end))\(if $word == "null" then "" else ": \($word)" end)"
+        then "spend: \($spend.usd | usd) (\($spend.sessions) session\(if $spend.sessions == 1 then "" else "s" end))\(if $word == "null" then "" else ": \($word)" end)"
         elif $l.ceiling == null then "spend: cannot tell (no session has a cost figure; vbw statusline on)"
         else "spend: cannot tell (no session has a cost figure; it counts as reached; vbw statusline on)" end ),
       ( $l.stopping // empty | "stopping since \(.at) (asked by \(if .session == null then "no session" else "session \(.session)" end))" ),

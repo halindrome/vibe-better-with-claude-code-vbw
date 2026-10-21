@@ -106,11 +106,12 @@ On each render in a VBW project, the status line writes the session's figures
 from Claude Code to `.vbw/runtime/cost.SESSION.json`:
 
 ```json
-{ "session": "s1", "usd": 1.4234, "in": 62000, "out": 1200, "at": "2026-10-11T21:52:15Z" }
+{ "session": "s1", "usd": 1.4234, "at": "2026-10-11T21:52:15Z" }
 ```
 
-`usd` is the session's total cost, `in` and `out` its total input and output
-tokens, `at` the time of the render. The file goes to a temporary name and is
+`usd` is the session's total cost, `at` the time of the render. Tokens are not
+stored: Claude Code's token fields are the last request's, not running totals
+(docs/costs.md). The file goes to a temporary name and is
 renamed, so a reader never sees half of it. A render with no cost figures leaves
 the file as it was, and a folder that cannot be written is skipped quietly: the
 status line still renders. It never writes `.vbw/record.json`.

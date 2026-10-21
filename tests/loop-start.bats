@@ -26,7 +26,7 @@ loop_json() { "$VBW" loop status --json < /dev/null; }
     and all(.[]; .status == "waiting" and .proof == "auto")' .vbw/record.json || { jq .loop .vbw/record.json; false; }
   jq -e '.loop.ceiling == {usd: 5, finish_item: false} and .loop.session == "s1"
     and (.loop.started_at | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"))
-    and .loop.baseline.s1.usd == 2 and .loop.baseline.s1.in == 1000 and .loop.baseline.s1.out == 100
+    and (.loop.baseline.s1 | keys == ["at", "usd"]) and .loop.baseline.s1.usd == 2
     and (.loop.baseline.s1.at | type == "string")' .vbw/record.json || { jq .loop .vbw/record.json; false; }
   jq -e '.todos[] | select(.id == "T1") | .status == "open"' .vbw/record.json
   [ "$(git rev-parse HEAD)" != "$before" ]

@@ -312,7 +312,7 @@ size is grinding, not progressing; three, because one or two times are not a
 usual time. The defaults are about twice the times of the loop items in VBW's
 own record when the rule was added (small 14 to 99 minutes, medium 69 to 287).
 The budget is wall-clock time from the item's open: spend is already bounded by
-the ceiling, and a token count can over-count after a compaction.
+the ceiling, and tokens are not measured (docs/costs.md).
 
 Before each step of an item, after a delegated approval, the loop compares the
 item's time with its budget. Past it, the loop ends before that step, with a
@@ -355,7 +355,7 @@ running shows as in progress. The sections:
 | Shipped | Each item, its milestone, its requirement and its commits. |
 | Parked | Each parked item, the reason, the commits left in place and why, its revert commits and how to bring the work back. |
 | Waiting for you | Every `[human]` requirement still owed to you: one the loop skipped, one of a shipped `[human]` item, and one carried into the loop's milestones from a ship before it, each listed until you judge it, wherever a later milestone carried it; and why the loop stopped (for example `end of the list` or `stopped by the user` with the session). |
-| Cost | The loop's total and each item's cost, in dollars and tokens (parked items included), with its time and its time budget. |
+| Cost | The loop's total and each item's cost, in dollars (parked items included), with its time and its time budget. |
 
 A cost VBW did not see is written `unknown`, never `0` and never an estimate.
 The record stores the same facts. After the end, `vbw loop status` says the loop

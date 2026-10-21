@@ -163,7 +163,9 @@ def progress($done; $total): (if $total > 0 then $done * 100 / $total else 0 end
     + sep + "VBW \($plugin.version // "?")" + sep + "CC \($cc.version // "?")" ),
 
 # Last line, only when Claude Code sent a cost: the side-file record as compact
-# JSON ({session, usd, in, out, at}); the script splits it off and stores it.
+# JSON ({session, usd, at}); the script splits it off and stores it. Only the
+# dollars are stored: cost.total_cost_usd is the session's running total, but the
+# context_window token fields describe the last request (the context's size now,
+# the last response's output), so they are no spend to diff.
   ( select($cc.cost.total_cost_usd != null)
-    | {session: $cc.session_id, usd: $cc.cost.total_cost_usd, in: $cc.context_window.total_input_tokens,
-       out: $cc.context_window.total_output_tokens, at: ($now | strftime("%Y-%m-%dT%H:%M:%SZ"))} | tojson )
+    | {session: $cc.session_id, usd: $cc.cost.total_cost_usd, at: ($now | strftime("%Y-%m-%dT%H:%M:%SZ"))} | tojson )

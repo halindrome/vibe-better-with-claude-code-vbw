@@ -137,7 +137,7 @@ parked_with_figures() {
   m=$(jq -r '.parked[0].id' .vbw/record.json)
   frozen=$(jq -c --arg m "$m" '.costs.milestones[$m].total' .vbw/record.json)
   [ "$(printf '%s' "$frozen" | jq -r .usd)" = 2 ] || { jq .costs .vbw/record.json; false; }
-  "$VBW" show costs --json | jq -e --arg m "$m" --argjson f "$frozen" '.milestones[] | select(.id == $m) | .status == "parked" and .usd == $f.usd and .in == $f.in and .out == $f.out' \
+  "$VBW" show costs --json | jq -e --arg m "$m" --argjson f "$frozen" '.milestones[] | select(.id == $m) | .status == "parked" and .usd == $f.usd and .sessions == $f.sessions' \
     || { "$VBW" show costs --json; false; }
   "$VBW" show costs | grep -q "$m"
   figures s1 9 5000 500

@@ -147,7 +147,7 @@ snapshot() { find "$PROJECT" -type f -exec cksum {} + | sort; }
     diff "$TEST_ROOT/plain.txt" "$TEST_ROOT/on.txt"
     false
   }
-  jq -e '.session == "s1" and .usd == 1.4234 and .in == 62000 and .out == 1200' "$PROJECT/.vbw/runtime/cost.s1.json"
+  jq -e '.session == "s1" and .usd == 1.4234' "$PROJECT/.vbw/runtime/cost.s1.json"
 }
 
 @test "R184: where VBW is off, the status line writes no file anywhere in the project" {
