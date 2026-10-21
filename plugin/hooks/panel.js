@@ -92,7 +92,7 @@ function fresh() {
   return {
     live: false, born: {}, timer: null, busy: false, question: null, sound: true, keys: keys(false), silent: false, wouldPlay: 0,
     record: null, next: null, history: null, cost: null, health: null, auto: null, stepsPath: null, steps: null, shown: '', seen: {}, sized: false,
-    root: null, sessionId: null, holder: null, registry: null, stored: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
+    root: null, sessionId: null, holder: null, registry: null, stored: null, configDir: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
     lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {},
     sprites: null, burst: null, sweep: null, cheer: null, wrapped: null, nextSeen: null, nextAt: null, nextAnim: null,
@@ -223,16 +223,11 @@ async function stepsPath($, root) {
 }
 
 // This session's folder, where Claude Code writes its workflow runs: the Claude
-// config folder (as tools/resolve-claude-dir.sh finds it), the project's folder
+// config folder `dir` (as tools/resolve-claude-dir.sh finds it), the project's folder
 // (its path, every other character a dash) and the session id. Null when unknown.
-async function sessionDir($, root, id) {
-  try {
-    if (typeof id !== 'string' || !/^[A-Za-z0-9_-]+$/.test(id)) return null
-    const dir = await configDir($)
-    return dir ? dir + '/projects/' + root.replace(/[^A-Za-z0-9]/g, '-') + '/' + id : null
-  } catch {
-    return null
-  }
+function sessionDir(dir, root, id) {
+  if (typeof id !== 'string' || !/^[A-Za-z0-9_-]+$/.test(id)) return null
+  return dir ? dir + '/projects/' + root.replace(/[^A-Za-z0-9]/g, '-') + '/' + id : null
 }
 
 // Who holds the open run: Claude Code's list of chats and what `vbw run start` stored
@@ -245,7 +240,7 @@ async function readHolder($, st) {
     st.registry = null
     return
   }
-  const registry = await readRegistry($, st.root)
+  const registry = await readRegistry($, st.configDir)
   st.registry = registry
   if (!lease) {
     st.holder = null
@@ -798,7 +793,9 @@ async function begin($, st) {
   } catch {
     st.sessionId = null
   }
-  st.sessionDir = await sessionDir($, root, st.sessionId)
+  // The config folder holds this session's folder and the list of chats: found once.
+  st.configDir = await configDir($)
+  st.sessionDir = sessionDir(st.configDir, root, st.sessionId)
   await gather($, st)
   st.lastRec = st.record
   st.sound = (await $.store.get(st.keys.sound)) !== false

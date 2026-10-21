@@ -59,11 +59,11 @@ export async function configDir($) {
   }
 }
 
-// The list of chats, newest first; [] when missing or unreadable.
-export async function readRegistry($, root) {
+// The list of chats in the config folder `dir` (configDir, found once a session), newest
+// first; [] when missing or unreadable.
+export async function readRegistry($, dir) {
   try {
-    const dir = await configDir($)
-    if (!dir) return []
+    if (typeof dir !== 'string' || !dir) return []
     const names = Object.values(await $.fs.list(dir + '/sessions'))
       .map((e) => (isObj(e) ? e.name : e)).filter((n) => typeof n === 'string' && /\.json$/.test(n))
     const texts = []

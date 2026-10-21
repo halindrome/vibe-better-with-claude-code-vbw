@@ -102,6 +102,16 @@ test('a changed file is read once and drawn once, however many ticks follow', as
   assert.equal(h.count('ui.invalidate') - draws, 1)
 })
 
+test('the config folder is found once a session, not on every check while a run holds the lease', async () => {
+  const { h } = await building(working(2))
+  const from = h.calls.length
+  await h.advance(10 * TICK)
+  const ticks = h.calls.slice(from)
+  assert.ok(ticks.some((c) => c.name === 'fs.list' && String(c.args[0]).endsWith('/sessions')), 'the list of chats is read on the checks')
+  assert.deepEqual(ticks.filter((c) => c.name === 'env.get' || c.name === 'fs.exists').map((c) => c.name), [], 'the config folder is not looked for again')
+  assert.ok(h.callsOf('env.get').length > 0, 'it was found at the start')
+})
+
 // The bench's cases (tools/bench-panel.mjs), each refresh as the bench makes it: its
 // 20 warm-up refreshes and 30 more. The step case's lease starts at T0 (the bench
 // takes the wall clock), so every run draws the same.
