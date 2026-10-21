@@ -1,18 +1,18 @@
 {
   "scenario": "docs",
   "fixture": "greet.sh already in the repo; one auto requirement: docs/USAGE.md documents it",
-  "cost_usd": 0.61,
+  "cost_usd": 0.63,
   "evidence_level": "L3",
-  "at": "2026-10-20T23:22:03Z",
-  "passed": false,
+  "at": "2026-10-21T00:48:35Z",
+  "passed": true,
   "facts": {
-    "built_by_agent_type": "none",
-    "check_approved": false,
-    "check_status": "",
-    "commit_has_provenance": false,
-    "requirement_status": "",
-    "docs_plan": "",
-    "build_agents": "vbw:dev vbw:lead "
+    "built_by_agent_type": "docs",
+    "check_approved": true,
+    "check_status": "pass",
+    "commit_has_provenance": true,
+    "requirement_status": "proven",
+    "docs_plan": "P1.1",
+    "build_agents": "vbw:docs "
   },
   "not_tested": [
     "acceptance by a person of the documentation quality",
