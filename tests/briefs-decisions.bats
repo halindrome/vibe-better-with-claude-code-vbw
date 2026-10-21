@@ -9,15 +9,21 @@
 
 load helper
 load approve-choice-helper
+load fixture-helper
 
 RUN="$BATS_TEST_DIRNAME/helpers/run-workflow.js"
 CMD='vbw show decisions --since-approval'
 
-setup() {
+built_project() {
   vbw_setup
   approve_choice_project
 }
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "T123: --since-approval lists the decisions after the approval, none before it" {
   "$VBW" decide "use SQLite" > /dev/null
