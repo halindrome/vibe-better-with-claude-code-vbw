@@ -13,8 +13,9 @@
 load helper
 load step-helper
 load road-helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   step_project
   step_edit '.plans[].status = "done" | .checks = [{id: "C1", req: "R1", run: ["true"]}, {id: "C2", req: "R1", run: ["true"]},
@@ -22,7 +23,12 @@ setup() {
   git add -A && git commit -q -m "chore(vbw): checks"
   "$VBW" approve > /dev/null
 }
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 last() { jq -c --arg k "$1" '[.steps[] | select(.kind == $k)] | last' "$STEPS"; }
 step_of() { "$VBW" next --json | jq -c '.step'; }
