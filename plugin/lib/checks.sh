@@ -327,9 +327,11 @@ checks_unit_run() {
 # is alone still runs by itself (the gate). A unit that names its slot copy
 # (.slot, an index into PROOF_COPIES) runs only in it, when that copy is free
 # (vbw mutate --run: each break is in its own copy). Results are in the units' order.
+# Each run of units keeps its runners' files in a folder of its own under
+# CHECK_OUT: a later run in the same output folder never reads an earlier run's.
 checks_run_units() {
   local units="$1" count jobs slots cap n=0 i k pid pids=() unit name res all='{}' slot running found pin
-  local slot_pid=() names=() j
+  local slot_pid=() names=() j dir
   count=$(printf '%s' "$units" | jq 'length')
   [ "$count" -gt 0 ] || { printf '{}\n'; return 0; }
   jobs=$(vbw_check_jobs) || jobs=1
@@ -357,7 +359,8 @@ checks_run_units() {
   fi
   # In parallel (bash 3.2 cannot wait for any one job: finished jobs are counted with jobs
   # -r). Each unit runs in its own subshell, owning no guard of the parent, and
-  # leaves its result in a file. A slot copy is free when its last job is gone.
+  # leaves its result in a file of this run's folder. A slot copy is free when its last job is gone.
+  dir=$(mktemp -d "$CHECK_OUT/units.XXXXXX") || vbw_die "cannot create a directory in $CHECK_OUT"
   for ((i = 0; i < count; i++)); do
     unit=$(printf '%s' "$units" | jq -c --argjson i "$i" '.[$i]')
     name=$(printf '%s' "$unit" | jq -r '.name')
@@ -376,7 +379,7 @@ checks_run_units() {
       fi
       # A runner killed without a result leaves its place in the gate: freed here.
       for ((j = 0; j < n; j++)); do
-        kill -0 "${pids[$j]}" 2> /dev/null || [ -s "$CHECK_OUT/$((j + 1)).res" ] || checks_gate_forget "${names[$j]}"
+        kill -0 "${pids[$j]}" 2> /dev/null || [ -s "$dir/$((j + 1)).res" ] || checks_gate_forget "${names[$j]}"
       done
       sleep 0.05
     done
@@ -385,12 +388,12 @@ checks_run_units() {
     (
       # The unit's own diagnostics go to its log, never to the proof's output: a
       # runner that outlives its slot (killed, its children still running) prints nowhere.
-      exec 2> "$CHECK_OUT/$n.err"
+      exec 2> "$dir/$n.err"
       vbw_guard_reset
       # shellcheck disable=SC2034 # read by slots.sh
       SLOTS_SUB=1
       res=$(checks_unit_run "$unit" "$slot") || exit 1
-      printf '%s\n' "$res" > "$CHECK_OUT/$n.res.tmp" && mv "$CHECK_OUT/$n.res.tmp" "$CHECK_OUT/$n.res"
+      printf '%s\n' "$res" > "$dir/$n.res.tmp" && mv "$dir/$n.res.tmp" "$dir/$n.res"
     ) &
     pid=$!
     pids+=("$pid")
@@ -403,9 +406,10 @@ checks_run_units() {
   for pid in "${pids[@]}"; do { wait "$pid" || true; } 2> /dev/null; done
   for ((i = 0; i < count; i++)); do
     name=$(printf '%s' "$units" | jq -r --argjson i "$i" '.[$i].name')
-    [ -s "$CHECK_OUT/$((i + 1)).res" ] || { checks_lost "$name" > "$CHECK_OUT/$((i + 1)).res"; checks_gate_forget "$name"; }
-    all=$(printf '%s' "$all" | jq -c --arg id "$name" --slurpfile r "$CHECK_OUT/$((i + 1)).res" '. + {($id): $r[0]}')
+    [ -s "$dir/$((i + 1)).res" ] || { checks_lost "$name" > "$dir/$((i + 1)).res"; checks_gate_forget "$name"; }
+    all=$(printf '%s' "$all" | jq -c --arg id "$name" --slurpfile r "$dir/$((i + 1)).res" '. + {($id): $r[0]}')
   done
+  rm -rf "$dir"
   printf '%s\n' "$all"
 }
 

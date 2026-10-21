@@ -79,7 +79,6 @@ mutate_queue_run() {
   proofcopy_create_slots "$n"
   # Each check once on the unbroken code: a check red there makes every break of it prove nothing.
   if [ ${#unb[@]} -gt 0 ]; then
-    rm -f "$CHECK_OUT"/*.res "$CHECK_OUT"/*.res.tmp
     bad=$(checks_run_all "$record" "${unb[@]}" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')
     if [ -n "$bad" ]; then
       proofcopy_remove
@@ -102,7 +101,6 @@ mutate_queue_run() {
       units=$(printf '%s' "$units" | jq -c --argjson u "$unit" --argjson k "$k" \
         '. + [$u + {name: "break\($k)", out: "break\($k).out", slot: $k}]')
     done
-    rm -f "$CHECK_OUT"/*.res "$CHECK_OUT"/*.res.tmp
     res=$(checks_run_units "$units")
     for ((k = 0; k < n && i + k < ${#keep[@]}; k++)); do
       e=${keep[$((i + k))]}

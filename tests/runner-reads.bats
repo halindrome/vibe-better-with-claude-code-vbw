@@ -3,8 +3,10 @@
 # check, a project command, later a test file) takes a free slot copy; at most
 # check_jobs run at a time, units marked alone run by themselves, the read
 # lists of units running together stay apart, and a runner that dies leaves a
-# "skipped" result instead of taking the proof down. The passes cache and the
-# served-files fingerprint are gone. L1: units are small shell scripts.
+# "skipped" result instead of taking the proof down, and each run of units
+# keeps its results apart from an earlier run's in the same output folder. The
+# passes cache and the served-files fingerprint are gone. L1: units are small
+# shell scripts.
 
 load helper
 load fixture-helper
@@ -181,6 +183,16 @@ peak() { sort -n "$CONC/seen" | tail -1; }
     eval "real_$(declare -f checks_exec)"
     checks_exec() { case "$2" in *DIE.out) sh -c "kill -9 \$PPID" ;; esac; real_checks_exec "$@"; }
     checks_run_units "$(jq -sc . <(unit DIE false true; unit U2 false true))" | jq -c "[.DIE.status, .U2.status]"; proofcopy_remove'
+  [ "$status" -eq 0 ]
+  [ "$output" = '["skipped","pass"]' ]
+}
+
+@test "R166: a second run of units in the same output folder never takes the result of an earlier run's runner for one that died" {
+  jobs_set 2
+  run lib 'eval "real_$(declare -f checks_exec)"
+    checks_exec() { case "$2" in *DIE.out) sh -c "kill -9 \$PPID" ;; esac; real_checks_exec "$@"; }
+    checks_run_units "$(jq -sc . <(unit P1 false true; unit P2 false true))" > /dev/null
+    checks_run_units "$(jq -sc . <(unit DIE false true; unit Q false true))" | jq -c "[.DIE.status, .Q.status]"'
   [ "$status" -eq 0 ]
   [ "$output" = '["skipped","pass"]' ]
 }
