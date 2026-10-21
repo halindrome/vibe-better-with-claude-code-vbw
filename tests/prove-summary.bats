@@ -7,8 +7,9 @@
 # Scripts log their runs to $RANLOG. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -31,7 +32,12 @@ setup() {
   : > "$RANLOG"
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 spec() {
   printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n\n## Commands\n\n- test: sh tests/all.sh\n- lint: %s\n\n## Test files\n\n- run: sh {file}\n- files: tests/t_*.sh\n' "$1" > .vbw/spec.md
