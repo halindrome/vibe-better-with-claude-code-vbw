@@ -2,6 +2,14 @@
 
 ## [2.0.43] - 2026-10-21
 
+### Changed
+
+- **A lighter panel.** A refresh of Comms and Mission Control does less work:
+  the config folder is found once per session, a transcript's start time is read
+  from its first timed line, the tab strip is laid out once per width, and the
+  view is no longer built twice. Drawing is unchanged (pinned by a test of what
+  the panel draws).
+
 ### Fixed
 
 - **Two proofs at once are no slower than one.** A freed slot of the
