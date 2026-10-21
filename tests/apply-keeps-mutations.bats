@@ -6,8 +6,9 @@
 # they had opened as out of scope. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+kept_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -27,7 +28,11 @@ setup() {
   jq -e '[.plans[] | select(.id == "P1.1") | .mutations[]] | length == 1' .vbw/record.json
 }
 
+setup_file() { fixture_build kept kept_project; }
+setup() { fixture_copy kept; }
+
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # doc [FILE...]: the plan document; extra files join the plan's files.
 doc() {
