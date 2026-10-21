@@ -492,12 +492,20 @@ form in `.vbw/spec.md`.
    or a plain commit) and whatever its message says.
    The rule: an undo of an undo clears nothing (the original is judged again;
    a re-apply is judged as a fresh commit). Also, the undoing commit is not judged either
-   when it names a plan of this milestone, since the pair leaves every file as
-   it was.
+   when the commit it undoes carries a `VBW-Plan:` trailer too, since the pair
+   leaves every file as it was. An undo that names a plan of this milestone but
+   takes back a commit with no trailer is judged as that plan's commit: a plan
+   commit that reverts work outside its plan is out of scope.
    A partial or edited revert is still judged (one extra line, one of two
    files restored, an extra file touched).
    The summary names each pair after the scope line:
    `scope: abc123456789 (P163.2) undone by def123456789, not judged`.
+   The check reads the history as a plain listing plus a bounded raw walk: a
+   fixed 2 git processes plus one per undone pair, however long the history.
+   The listing finds the oldest commit with a trailer, the walk reads each
+   commit's file changes back to it, and each pair found costs one ancestry
+   check (does the undo descend from its original?). Each revert a park
+   recorded adds one more, to read which commit it undid.
 5. Writes the evidence and updates requirements and fixes in one atomic record
    update, then prints a one-screen summary. Exit 0 only when everything passed.
 
