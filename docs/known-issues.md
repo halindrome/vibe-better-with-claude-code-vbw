@@ -1,6 +1,6 @@
 # Known issues and roadmap
 
-What is known to be wrong or unfinished in VBW 2.1.0, what is planned, and what is still only an idea. Larger open ideas that need design work are in [ideas.md](ideas.md).
+What is known to be wrong or unfinished in VBW 2 today, what is planned, and what is still only an idea. Larger open ideas that need design work are in [ideas.md](ideas.md).
 
 Nothing here is a promise. An item is evidence of a problem; the fix named under it is the current plan and may change when someone works on it. Every item is judged against VBW's design for all its users, like any other request (see the first rule in [CONTRIBUTING.md](../CONTRIBUTING.md)).
 

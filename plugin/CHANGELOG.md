@@ -1,11 +1,6 @@
 # Changelog
 
-## [2.1.0] - 2026-10-21
-
-The first release for the community. What VBW is and how it works is in the
-[README](../README.md); what is known to be missing or planned is in
-[docs/known-issues.md](../docs/known-issues.md), and ideas open for
-contributions are in [docs/ideas.md](../docs/ideas.md).
+## [2.0.42] - 2026-10-21
 
 ### Added
 
