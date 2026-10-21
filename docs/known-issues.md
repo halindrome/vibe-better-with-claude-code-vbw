@@ -136,13 +136,13 @@ Status words:
 
 ### Panel drawing headroom
 
-**What.** Drawing Comms and Mission Control together costs 0.47 to 0.51 ms of CPU against a 0.5 ms budget, since the tab layout moved to whole rows. The layout measures the head once per candidate; it only needs to once per width.
+**What.** Drawing Comms and Mission Control together measured 0.47 to 0.51 ms of CPU against a 0.5 ms budget once the tab layout moved to whole rows. It now measures about 0.42 to 0.44 ms on a loaded developer Mac, and single runs on a busier machine still reach 0.51 ms. About a fifth of the figure is V8 compiling code on its background threads during the bench's 200 refreshes of a freshly loaded panel, and about a third is the test stand-in's own work.
 
-**Who and when.** A slower Mac could fail the release benchmark. A user would not see it.
+**Who and when.** A busy or slower Mac can still fail the release benchmark now and then. A user would not see it.
 
-**Plan.** Profile the render path and win the headroom back. The figures in [panel.md](panel.md#what-it-reads-and-what-it-costs) should then be re-measured.
+**Plan.** Each refresh works the Comms model out twice (once to decide whether to redraw, once to draw it) and the panel's sentences twice (on the check and on the draw): the next cost to cut, without changing when the panel redraws. Whether the budget should count the main thread's CPU only is a separate decision about what the bench measures.
 
-**Where.** `plugin/hooks/panel-pane.js` (`layout`); `tools/bench-panel.sh`.
+**Where.** `plugin/hooks/panel.js` (`signature`, `comms`), `plugin/hooks/panel-stage.js`; `tools/bench-panel.mjs`.
 
 ### Panel polish
 
