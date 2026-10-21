@@ -3,17 +3,17 @@
 # JSON holding the change and every earlier entry, byte for byte the same
 # apart from the change (no truncation), and the commits it makes hold only
 # the record and the files the command names, exactly as on the small twin
-# (big-record-helper.bash). L1.
+# (big-record-helper.bash). The twins are built once per file (setup_file)
+# and copied for each test. L1.
 
 load helper
 load big-record-helper
+load fixture-helper
 
-setup() {
-  vbw_setup
-  twins
-}
-
+setup_file() { fixture_build twins twin_fixture; }
+setup() { fixture_copy twins; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # snapshot: keep both twins' records and HEADs before a write.
 snapshot() {
