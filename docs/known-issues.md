@@ -28,11 +28,11 @@ Status words:
 | [Heavy checks each use every core](#heavy-checks-each-use-every-core) | Known issue | Cargo, make, similar | Lower `check_jobs` |
 | [Two proofs at once are much slower than one](#two-proofs-at-once-are-much-slower-than-one) | Known issue | Parallel sessions | Prove one at a time |
 | [Slot store edge cases](#slot-store-edge-cases) | Known issue | Sandboxes, many runs | None needed |
+| [Unit times are whole seconds](#unit-times-are-whole-seconds) | Known issue | Proof time reports | None needed |
 | [Status line speed where VBW is off](#status-line-speed-where-vbw-is-off) | Planned | Slower Macs | None needed |
 | [Panel drawing headroom](#panel-drawing-headroom) | Planned | Slower Macs | None needed |
 | [Panel polish](#panel-polish) | Planned | Everyone | None needed |
 | [Real-user scenarios for four features](#real-user-scenarios-for-four-features) | Planned | Test coverage | Not applicable |
-| [A test that orders events by wall clock](#a-test-that-orders-events-by-wall-clock) | Planned | Contributors | Not applicable |
 | [Cost per correct outcome](#cost-per-correct-outcome) | Idea | Everyone | Not applicable |
 
 ## Known issues
@@ -127,6 +127,16 @@ Status words:
 
 **Where.** `plugin/lib/slots.sh` (`slots_lock`, `slots_open`).
 
+### Unit times are whole seconds
+
+**What.** VBW times each unit of a proof (a check, a test file, a project command) in whole wall-clock seconds. A unit that takes 50 ms can be counted as 0 s or 1 s depending on whether it crosses a second, so the "slowest units" line and `vbw show evidence` can name a different order or total between two runs of the same work, and "each under a second" is not always printed when it is true.
+
+**Who and when.** Everyone reading the time reports. Verdicts, reuse decisions and the budget's effect (a report, never a failure) are not affected.
+
+**Plan.** Time units with a sub-second clock where one is available, as the proof's own steps already are.
+
+**Where.** The unit timing in `plugin/lib/checks.sh` and the report in `plugin/lib/unittime.sh`.
+
 ## Planned improvements
 
 ### Status line speed where VBW is off
@@ -173,16 +183,6 @@ Status words:
 **Plan.** One scenario per feature, each checking the outcome in the record and in git, not on screen.
 
 **Where.** `tools/l3-suite.sh` (add a `scenario_NAME` function and the name to the list); `tools/l3.sh` is the driver. Scenarios use model usage, so this needs Claude Code access.
-
-### A test that orders events by wall clock
-
-**What.** `tests/machine-bookkeeping.bats` orders events by the wall clock in whole seconds, and is exempted as a whole from the rule that keeps timing out of the default test run. Two events in the same second cannot be told apart.
-
-**Who and when.** Contributors. The risk is an unreliable test.
-
-**Plan.** Order the events by a sequence number and drop the exemption.
-
-**Where.** `tests/machine-bookkeeping.bats`; the exemption is in `tests/release-run.bats`.
 
 ## Under consideration
 
