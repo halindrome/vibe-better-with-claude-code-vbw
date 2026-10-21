@@ -7,20 +7,46 @@
 # parenthesis reads "(limit 1, as this computer's core count could not be
 # read)"). A run that never waited prints no such line, so the output of an
 # unshared run is unchanged. L1: another project holds the only slot (2 cores:
-# limit 1) while the run starts (tests/machine-helper.bash).
+# limit 1) while the run starts (tests/machine-helper.bash). The projects are
+# built once per file (setup_file) and copied for each test.
 
 load helper
 load machine-helper
+load fixture-helper
 
-setup() { machine_setup; }
+# pair: on 2 cores, project A of one check and project B, whose one unit works
+# 5 s, to hold the slot (hold_start). For fixture_build.
+pair() {
+  machine_setup
+  cores 2
+  machine_project "$PROJECT" A 1 0
+  machine_project "$OTHER" B 1 5
+}
 
+# alone_pair: pair, and beside it the alone project A of one check. For fixture_build.
+alone_pair() {
+  machine_setup
+  cores 2
+  ALONE="$TEST_ROOT/alone project"
+  machine_project "$ALONE" A 1 0
+  machine_project "$PROJECT" A 1 0
+  machine_project "$OTHER" B 1 5
+}
+
+setup_file() {
+  fixture_build base machine_setup
+  fixture_build pair pair
+  fixture_build alone alone_pair
+}
+setup() { fixture_copy base; }
 teardown() { machine_teardown; }
+teardown_file() { fixture_teardown; }
 
 WAITED_RE='^waited ([0-9]+) s for other VBW runs on this computer \(limit 1 of 2 cores\)$'
 
-# hold SECONDS: project B holds the only slot for SECONDS; HOLDER is its vbw.
-hold() {
-  machine_project "$OTHER" B 1 "$1"
+# hold_start: project B (built by pair: its unit works 5 s) holds the only slot
+# for those 5 s; HOLDER is its vbw.
+hold_start() {
   bg "$OTHER" "$TEST_ROOT/b.out" check C1
   HOLDER=$BG_PID
   wait_starts 1 B-
@@ -40,9 +66,8 @@ waited_ok() {
 }
 
 @test "R181: vbw prove whose unit waited ends with the waited line, after its verdict" {
-  cores 2
-  machine_project "$PROJECT" A 1 0
-  hold 5
+  fixture_copy pair
+  hold_start
   run within 60 "$VBW" prove < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; show; false; }
   last_lines "$output"
@@ -53,9 +78,8 @@ waited_ok() {
 }
 
 @test "R181: vbw check whose unit waited ends with the waited line, after its results" {
-  cores 2
-  machine_project "$PROJECT" A 1 0
-  hold 5
+  fixture_copy pair
+  hold_start
   run within 60 "$VBW" check C1 < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; show; false; }
   last_lines "$output"
@@ -65,9 +89,8 @@ waited_ok() {
 }
 
 @test "R181: vbw fix done whose unit waited ends with the waited line, after its fixes" {
-  cores 2
-  machine_project "$PROJECT" A 1 0
-  hold 5
+  fixture_copy pair
+  hold_start
   run within 60 "$VBW" fix "done" F1 < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; show; false; }
   last_lines "$output"
@@ -77,9 +100,9 @@ waited_ok() {
 }
 
 @test "R181: with an unreadable core count the waited line names limit 1 and why" {
+  fixture_copy pair
   cores none
-  machine_project "$PROJECT" A 1 0
-  hold 5
+  hold_start
   run within 60 "$VBW" check C1 < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; show; false; }
   last_lines "$output"
@@ -136,16 +159,14 @@ shape() {
 }
 
 @test "R181: a wait never reaches the evidence, the record or the stored runs: they have the shape of an alone run" {
-  cores 2
+  fixture_copy alone
   ALONE="$TEST_ROOT/alone project"
-  machine_project "$ALONE" A 1 0
   (cd "$ALONE" && "$VBW" prove < /dev/null > /dev/null)
   A_EVIDENCE=$(shape "$ALONE/.vbw/record.json" .evidence)
   A_RECORD=$(shape "$ALONE/.vbw/record.json" 'del(.evidence)')
   A_RUNS=$(shape "$(git -C "$ALONE" rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json" .)
   [ "$A_EVIDENCE" != null ] && [ "$A_RUNS" != null ]
-  machine_project "$PROJECT" A 1 0
-  hold 5
+  hold_start
   run within 60 "$VBW" prove < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; show; false; }
   [[ "$output" == *"for other VBW runs"* ]] || { echo "the unit did not wait: $output"; false; }

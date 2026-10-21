@@ -8,19 +8,32 @@
 # on the same store, takes no slot of its own (the unit's slot covers it, D340)
 # and never waits for its parent. Waiting changes no result: a unit's timeout
 # counts from its command's start. L1: unit commands log their start and end
-# to $LOG (tests/machine-helper.bash).
+# to $LOG (tests/machine-helper.bash). Project B of one quick check, which
+# three tests share, is built once per file (setup_file) and copied; the core
+# count is read when a run starts, so each test sets it after the copy.
 
 load helper
 load machine-helper
+load fixture-helper
 
-setup() { machine_setup; }
+# other_one: project B of one quick check. For fixture_build.
+other_one() {
+  machine_setup
+  machine_project "$OTHER" B 1 0
+}
 
+setup_file() {
+  fixture_build base machine_setup
+  fixture_build b other_one
+}
+setup() { fixture_copy base; }
 teardown() { machine_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "R181: a freed slot goes to the waiting run holding the fewest: B's one unit starts before A's fourth" {
+  fixture_copy b
   cores 4
   machine_project "$PROJECT" A 6 6
-  machine_project "$OTHER" B 1 0
   (cd "$PROJECT" && "$VBW" config set check_jobs 6 > /dev/null)
   local pa pb
   bg "$PROJECT" "$TEST_ROOT/a.out" check
@@ -37,9 +50,9 @@ teardown() { machine_teardown; }
 }
 
 @test "R181: between waiting runs holding the same number of slots, the one that waited longest goes first" {
+  fixture_copy b
   cores 2
   machine_project "$PROJECT" A 1 8
-  machine_project "$OTHER" B 1 0
   machine_project "$THIRD" T 1 0
   local pa pb pt
   bg "$PROJECT" "$TEST_ROOT/a.out" check C1
@@ -73,8 +86,8 @@ teardown() { machine_teardown; }
 }
 
 @test "R181: a vbw run inside a unit's command, on the same store, takes no slot of its own and never waits for its parent" {
+  fixture_copy b
   cores 2
-  machine_project "$OTHER" B 1 0
   mkdir -p "$PROJECT/tests"
   printf 'cd "$OTHER" && "$VBW" check C1\n' > "$PROJECT/tests/nested.sh"
   machine_project "$PROJECT" A 0 0 "$(jq -c --argjson p "$(peek_check C2 "$CLAUDE_CONFIG_DIR/vbw/slots.json")" '. + $p' << 'JSON'

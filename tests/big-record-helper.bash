@@ -151,3 +151,56 @@ twin_step() {
 in_twins() {
   (cd "$SMALL" && "$@") && (cd "$BIG" && "$@")
 }
+
+# leftovers DIR: what a command left in DIR's .vbw/runtime and in its git
+# directory's vbw folder beyond VBW's kept state, one entry per line. The kept
+# state includes proof-units.json, the proof's unit list vbw next keeps
+# (docs/next.md); its temporary file (proof-units.json.PID) is a leftover.
+leftovers() {
+  local gd
+  (cd "$1/.vbw/runtime" && find . -mindepth 1 -path ./output -prune -o -print) | sed 's|^\./||' \
+    | grep -vxE 'approved-contract\.json|next\.json|step\.json|glance\.json|holder\.json|run-open|auto\.[A-Za-z0-9_-]+\.json|prove\.unfinished|proof-units\.json|gate|output' || true
+  gd=$(git -C "$1" rev-parse --git-common-dir)
+  case "$gd" in /*) ;; *) gd="$1/$gd" ;; esac
+  [ ! -d "$gd/vbw" ] || (cd "$gd/vbw" && find . -mindepth 1 -print) | sed 's|^\./||' | grep -vE '^[A-Za-z0-9_-]+\.json$' || true
+}
+
+# clean_step CMD...: the command behaves the same in both twins (twin_step),
+# nothing was written to TMPDIR, and neither twin keeps a leftover file.
+clean_step() {
+  twin_step "$@"
+  [ -z "$(ls -A "$TMPDIR")" ] || { echo "vbw $* wrote to TMPDIR: $(ls -A "$TMPDIR")"; return 1; }
+  local s b
+  s=$(leftovers "$SMALL")
+  b=$(leftovers "$BIG")
+  [ -z "$b" ] || { printf 'vbw %s left files behind on the large record:\n%s\n' "$*" "$b"; return 1; }
+  [ -z "$s" ] || { printf 'vbw %s left files behind on the small record:\n%s\n' "$*" "$s"; return 1; }
+}
+
+# twin_fixture: a test root holding the twins, for fixture_build in setup_file
+# (fixture-helper.bash). TMPDIR is set by twin_copy and twin_tmpdir, not here.
+twin_fixture() {
+  vbw_setup
+  twins
+}
+
+# twin_tmpdir CMD...: run CMD with TMPDIR an empty folder of the test, as
+# clean_step needs (a builder's walk); TMPDIR is left as it was.
+twin_tmpdir() {
+  mkdir -p "$TEST_ROOT/tmpdir"
+  TMPDIR="$TEST_ROOT/tmpdir" "$@"
+}
+
+# The TMPDIR the test started with: a copy's own TMPDIR is a folder inside its
+# test root, which a second copy in the same test removes before making its own.
+TWIN_HOST_TMPDIR=${TMPDIR-}
+TWIN_HOST_TMPDIR_SET=${TMPDIR+1}
+
+# twin_copy NAME: a copy of the twin fixture NAME (fixture_copy), with TMPDIR
+# set to an empty folder of the test, which clean_step keeps empty.
+twin_copy() {
+  if [ -n "$TWIN_HOST_TMPDIR_SET" ]; then export TMPDIR="$TWIN_HOST_TMPDIR"; else unset TMPDIR; fi
+  fixture_copy "$1" || return 1
+  mkdir -p "$TEST_ROOT/tmpdir"
+  export TMPDIR="$TEST_ROOT/tmpdir"
+}

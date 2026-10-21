@@ -78,8 +78,12 @@ echo "unit $1 done"
 exit "$3"
 SH
     cat > tests/peek.sh << 'SH'
-# tests/peek.sh PATH: copies the slot store at PATH, as this unit sees it, to $TEST_ROOT/seen.json.
-cp "$1" "$TEST_ROOT/seen.json"
+# tests/peek.sh PATH: copies the slot store at PATH (a relative PATH is inside
+# $TEST_ROOT), as this unit sees it, to $TEST_ROOT/seen.json.
+case "$1" in
+  /*) cp "$1" "$TEST_ROOT/seen.json" ;;
+  *) cp "$TEST_ROOT/$1" "$TEST_ROOT/seen.json" ;;
+esac
 SH
     printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n%s' "${SPEC_MORE:-}" > .vbw/spec.md
     "$VBW" spec sync > /dev/null
@@ -98,8 +102,13 @@ SH
 }
 
 # peek_check ID PATH: the JSON array of one check ID of R1 that peeks at the store at PATH.
+# A PATH inside TEST_ROOT is named relative to it (tests/peek.sh reads TEST_ROOT
+# when it runs), so the record names no folder of the test and a copy of the
+# project (fixture-helper.bash) peeks into its own test's folder.
 peek_check() {
-  jq -nc --arg id "$1" --arg p "$2" '[{id: $id, req: "R1", run: ["sh", "tests/peek.sh", $p], files: ["tests/peek.sh"]}]'
+  local p="$2"
+  case "$p" in "$TEST_ROOT"/*) p=${p#"$TEST_ROOT"/} ;; esac
+  jq -nc --arg id "$1" --arg p "$p" '[{id: $id, req: "R1", run: ["sh", "tests/peek.sh", $p], files: ["tests/peek.sh"]}]'
 }
 
 # seen_store: a unit saw a slot store, and it was JSON.

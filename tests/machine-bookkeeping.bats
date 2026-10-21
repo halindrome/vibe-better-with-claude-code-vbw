@@ -10,12 +10,15 @@
 # sampled every 50 ms while the runs go; a stand-in jq logs when the run store
 # (runs.json) is read. Events are ordered by their line in the one shared log
 # ($LOG, one small append each), never by a clock: a sample's line follows its
-# snapshot, a store read's line comes before the read.
+# snapshot, a store read's line comes before the read. The projects tests
+# share are built once per file (setup_file) and copied for each test.
 
 load helper
 load machine-helper
+load fixture-helper
 
-setup() {
+# book_setup: the test folder, its samples folder and the stand-in jq. For fixture_build.
+book_setup() {
   machine_setup
   SNAPS="$TEST_ROOT/snaps"
   STORE="$CLAUDE_CONFIG_DIR/vbw/slots.json"
@@ -29,7 +32,20 @@ SH
   chmod +x "$TEST_ROOT/standin/jq"
 }
 
+# book_one: book_setup, then on 2 cores a project of one check. For fixture_build.
+book_one() {
+  book_setup
+  cores 2
+  machine_project "$PROJECT" A 1 0
+}
+
+setup_file() {
+  fixture_build base book_setup
+  fixture_build one book_one
+}
+setup() { fixture_copy base; }
 teardown() { machine_teardown; }
+teardown_file() { fixture_teardown; }
 
 # sample SECONDS: in the background, every 50 ms for SECONDS, copy the store to
 # $SNAPS/N.json (nothing when there is none), note whether a proof copy exists in
@@ -82,8 +98,7 @@ hold() {
 }
 
 @test "R202: with the only slot held, vbw prove waits as vbw:plan before reading the run store or making a copy, and the store lists the step while it runs" {
-  cores 2
-  machine_project "$PROJECT" A 1 0
+  fixture_copy one
   hold 4
   sample 12
   (cd "$PROJECT" && PATH="$TEST_ROOT/standin:$PATH" exec perl -e '$SIG{ALRM} = "DEFAULT"; alarm 120; exec { $ARGV[0] } @ARGV' "$VBW" prove) > "$TEST_ROOT/a.out" 2>&1 < /dev/null 3>&- &
@@ -116,8 +131,7 @@ hold() {
 }
 
 @test "R202: vbw next --json never waits for a slot: it answers at once while every slot is held" {
-  cores 2
-  machine_project "$PROJECT" A 1 0
+  fixture_copy one
   hold 6
   run within 20 "$VBW" next --json < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; show; false; }
@@ -147,8 +161,7 @@ hold() {
 }
 
 @test "R202: when the store cannot be used, the bookkeeping steps run under check_jobs alone with the existing message" {
-  cores 2
-  machine_project "$PROJECT" A 1 0
+  fixture_copy one
   # A file where the store's folder should be: the folder cannot be made.
   rm -rf "$CLAUDE_CONFIG_DIR/vbw"
   : > "$CLAUDE_CONFIG_DIR/vbw"
@@ -159,8 +172,7 @@ hold() {
 }
 
 @test "R202: a nested run takes no slot for its bookkeeping either" {
-  cores 2
-  machine_project "$PROJECT" A 1 0
+  fixture_copy one
   sample 6
   run within 120 env VBW_SLOT_STORE="$STORE" "$VBW" prove < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }
