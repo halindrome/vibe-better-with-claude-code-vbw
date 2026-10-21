@@ -11,8 +11,9 @@
 # given. L1: the kernel and the hooks on a fixture project.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -41,7 +42,12 @@ setup() {
   VBW_SESSION_ID=s1 "$VBW" run start build P1.1 P2.1 > /dev/null
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # file_in TOOL PATH: a build agent's file tool call in session s1.
 file_in() {
