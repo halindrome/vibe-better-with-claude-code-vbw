@@ -3,8 +3,15 @@
 # and names vbw prove as the next step; the QA agent and workflow recover.
 
 load helper
+load fixture-helper
 
-setup() {
+# The built shop with a full proof, built once per file.
+setup_file() { fixture_build proved proved_project; }
+setup() { fixture_copy proved; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+proved_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -20,8 +27,6 @@ setup() {
   "$VBW" plan done P1.1 > /dev/null
   "$VBW" prove --full > /dev/null
 }
-
-teardown() { vbw_teardown; }
 
 @test "R12: after a code change since the last proof, qa record refuses, names vbw prove, writes nothing" {
   printf 'more\n' > src/extra.txt
