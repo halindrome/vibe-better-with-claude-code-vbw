@@ -121,7 +121,10 @@ freed. Checks that run alone are unchanged.
 The results are the same as running the checks one after another: the
 evidence lists them in the checks' own order, whatever order they finish in.
 Checks marked `alone` (below) still run by themselves. A proof of many checks
-takes about as long as its slowest checks, not the sum of all of them. Checks
+takes about as long as its slowest checks, not the sum of all of them. The next
+check starts as soon as a running one gives its slot back, while that one
+still writes its result. Reading what the checks need to start and gathering
+their results take VBW one step each, however many checks there are. Checks
 that share a resource and are not marked `alone` (a database, a fixed port) can
 disturb each other: mark them `alone`, or set `check_jobs` to 1.
 
@@ -142,7 +145,9 @@ if that folder exists, else `~/.claude`. The file exists only while runs use it.
 
 VBW's own bookkeeping takes slots too, so it counts in the limit. A unit's slot
 also covers its read tracking: it is taken before the access times are reset
-and given back after the read list is collected. The proof-wide steps hold one
+and given back after the read list is collected. Writing the unit's result
+comes after that, outside the slot, and the run starts its next unit at once.
+The proof-wide steps hold one
 slot each, listed in the store as `vbw:plan` (reuse planning), `vbw:copies`
 (making the clean copies) and `vbw:save` (saving the run store).
 

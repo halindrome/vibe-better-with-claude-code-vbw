@@ -77,7 +77,6 @@ mutate_rule_none() {
   else
     noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true
     proofcopy_create_slots 1
-    rm -f "$CHECK_OUT"/*.res "$CHECK_OUT"/*.res.tmp
     res=$(checks_run_all "$record" "$check")
     proofcopy_remove
     res=$(printf '%s' "$res" | jq -c --argjson off "$([ -n "$noreads" ] && echo true || echo false)" "$PROVE_FLAT")
@@ -273,7 +272,6 @@ cmd_mutate() {
     | [$ids[] | {id: ., s: ($r["check:" + .].seconds // 1e9)}] | sort_by(.s, .id)[] | .id')
   for c in $order; do
     if ! printf '%s' "$base" | jq -e --arg c "$c" 'index($c) != null' > /dev/null; then
-      rm -f "$CHECK_OUT"/*.res "$CHECK_OUT"/*.res.tmp
       bad=$(checks_run_all "$record" "$c" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')
       if [ -n "$bad" ]; then
         proofcopy_remove
@@ -289,7 +287,6 @@ $ways"
       fi
     fi
     mutate_put "$dir" "$copy" "${broke[@]}"
-    rm -f "$CHECK_OUT"/*.res "$CHECK_OUT"/*.res.tmp
     one=$(checks_run_all "$record" "$c")
     results=$(printf '%s' "$results" | jq -c --argjson o "$one" '. + $o')
     mutate_clean "$copy" "${broke[@]}"

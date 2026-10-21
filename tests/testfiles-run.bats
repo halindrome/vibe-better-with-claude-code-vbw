@@ -7,7 +7,8 @@
 # passing result. Test files run several at a time. A failing test file fails
 # the proof, which names it. A test file an approved check runs runs only as
 # that check (D179: nothing runs twice), and the quick command never stands in
-# for an approved form. Scripts log their runs to $RANLOG. L1.
+# for an approved form. The test files' units are built in one pass, never a
+# jq run or a hash per test file (T179). Scripts log their runs to $RANLOG. L1.
 
 load helper
 load fixture-helper
@@ -68,6 +69,31 @@ change() {
 }
 
 line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
+
+# counted: jq and the hashing tools first on PATH, each counting its runs in $PROCLOG
+# ("jq" or "sha" per line) before it runs the real one.
+counted() {
+  local bin="$TEST_ROOT/countbin" tool real
+  PROCLOG="$TEST_ROOT/procs.log"
+  mkdir -p "$bin"
+  for tool in jq sha256sum shasum; do
+    real=$(command -v "$tool") || continue
+    case "$tool" in jq) printf '#!/bin/sh\necho jq >> "$PROCLOG"\nexec "%s" "$@"\n' "$real" ;; *) printf '#!/bin/sh\necho sha >> "$PROCLOG"\nexec "%s" "$@"\n' "$real" ;; esac > "$bin/$tool"
+    chmod +x "$bin/$tool"
+  done
+  PATH="$bin:$PATH"
+  export PROCLOG PATH
+}
+
+# tf_run PATH...: testfiles_run for those test files, in place (no copies): "jq N sha M",
+# the processes it took; its result in $TEST_ROOT/tf.json.
+tf_run() {
+  # shellcheck disable=SC2016 # expanded by vbw_kernel
+  vbw_kernel '. "$VBW_LIB/checks.sh"; . "$VBW_LIB/testfiles.sh"; mkdir -p "$VBW_RUNTIME"
+    CHECK_OUT=$(mktemp -d "$VBW_RUNTIME/run.XXXXXX"); record=$(cat "$VBW_RECORD"); TF_TODO=('"$*"')
+    : > "$PROCLOG"; testfiles_run "$record" > "$TEST_ROOT/tf.json"
+    echo "jq $(grep -c "^jq$" "$PROCLOG") sha $(grep -c "^sha$" "$PROCLOG")"'
+}
 
 @test "R167: each test file runs once on its own; the one a check runs runs only as that check; neither the test nor the quick command runs" {
   [ "$FIRST_STATUS" -eq 0 ] || { echo "$FIRST_OUTPUT"; false; }
@@ -139,6 +165,25 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 " || true; }
   [ "$status" -ne 0 ] || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -qE '^ +tests/t_b\.sh fail' || { echo "$output"; false; }
   [[ "$output" == *"not proved"* ]] || { echo "$output"; false; }
+}
+
+@test "T179: the units of the test files come from one pass: no jq run or hash per test file but each one's result, and the same unit names" {
+  counted
+  local two four
+  two=$(tf_run tests/t_a.sh tests/t_b.sh)
+  four=$(tf_run tests/t_a.sh tests/t_b.sh tests/t_d.sh tests/t_k.sh)
+  [[ "$two" =~ ^jq\ ([0-9]+)\ sha\ ([0-9]+)$ ]] || { echo "$two"; false; }
+  local jq2=${BASH_REMATCH[1]} sha2=${BASH_REMATCH[2]}
+  [[ "$four" =~ ^jq\ ([0-9]+)\ sha\ ([0-9]+)$ ]] || { echo "$four"; false; }
+  # Two test files more: at most two jq runs more (each one's result object), no hash more.
+  [ $((BASH_REMATCH[1] - jq2)) -le 2 ] && [ "${BASH_REMATCH[2]}" -eq "$sha2" ] || { echo "two files: $two; four files: $four"; false; }
+  # Each result names the unit testfiles_id names, and every one passed.
+  local p id
+  for p in tests/t_a.sh tests/t_b.sh tests/t_d.sh tests/t_k.sh; do
+    # shellcheck disable=SC2016 # expanded by vbw_kernel
+    id=$(vbw_kernel '. "$VBW_LIB/checks.sh"; . "$VBW_LIB/testfiles.sh"; testfiles_id '"$p")
+    jq -e --arg p "$p" --arg id "$id" '.[$p].id == $id and .[$p].status == "pass"' "$TEST_ROOT/tf.json" > /dev/null || { echo "$p ($id):"; cat "$TEST_ROOT/tf.json"; false; }
+  done
 }
 
 @test "R167: vbw prove --full runs every test file on its own and reuses none" {

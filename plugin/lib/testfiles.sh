@@ -19,6 +19,26 @@ testfiles_on() { printf '%s' "$1" | jq -e 'has("test_files")' > /dev/null; }
 # be one: the gate and the output folder take it as a file name).
 testfiles_id() { printf 'tf-%s\n' "$(printf '%s' "$1" | vbw_sha256 | cut -c1-12)"; }
 
+# testfiles_ids PATH...: the testfiles_id of each path, one per line in their
+# order, from one hashing pass whatever their number: each path is written to a
+# numbered file of a scratch folder in CHECK_OUT, and one command hashes them all.
+testfiles_ids() {
+  local d n=0 p
+  [ $# -gt 0 ] || return 0
+  d=$(mktemp -d "$CHECK_OUT/ids.XXXXXX") || vbw_die "cannot create a directory in $CHECK_OUT"
+  for p in "$@"; do
+    printf '%s' "$p" > "$d/$n"
+    n=$((n + 1))
+  done
+  (
+    cd "$d" || exit 1
+    p=0
+    while [ "$p" -lt "$n" ]; do printf '%s\0' "$p"; p=$((p + 1)); done \
+      | if command -v sha256sum > /dev/null 2>&1; then xargs -0 sha256sum; else xargs -0 shasum -a 256; fi
+  ) | awk '{ print "tf-" substr($1, 1, 12) }'
+  rm -rf "$d"
+}
+
 # testfiles_list RECORD: the test files, NUL separated: the committed files the
 # declared pathspecs match, minus every file the run of an approved check names.
 testfiles_list() {
@@ -28,16 +48,6 @@ testfiles_list() {
   git -C "$VBW_ROOT" ls-files -z -- ${specs[@]+"${specs[@]}"} \
     | jq -Rs -j --slurpfile r <(printf '%s' "$1") '[$r[0].checks[].run[]] as $run
         | split("\u0000")[] | . as $p | select(length > 0 and (any($run[]; . == $p) | not)) | . + "\u0000"'
-}
-
-# testfiles_argv RECORD PATH: the form's argv for one test file, NUL separated.
-testfiles_argv() {
-  printf '%s' "$1" | jq -j --arg f "$2" '.test_files.run[] | split("{file}") | join($f) | . + "\u0000"'
-}
-
-# testfiles_limit RECORD: the seconds a test file may take (as a project command).
-testfiles_limit() {
-  printf '%s' "$1" | jq -r --argjson d "$VBW_COMMAND_TIMEOUT" '.settings.command_timeout // $d'
 }
 
 # testfiles_fp RECORD PATH: fingerprint of a test file's approved definition
@@ -90,22 +100,23 @@ testfiles_plan() {
 
 # testfiles_run RECORD: run the test files in TF_TODO, each as a unit of its
 # own (several at a time, in slot copies); {path: result}, each result with
-# "id" (its output file's name) and its read list.
+# "id" (its output file's name) and its read list. The units' names come from
+# one hashing pass (testfiles_ids), the units from one jq pass over the record:
+# the form's argv with {file} replaced, and the command timeout (the seconds a
+# test file may take, as a project command).
 testfiles_run() {
-  local units='[]' p a limit res
-  limit=$(testfiles_limit "$1")
-  for p in ${TF_TODO[@]+"${TF_TODO[@]}"}; do
-    units=$(printf '%s' "$units" | jq -c --arg n "$(testfiles_id "$p")" --argjson t "$limit" \
-      --slurpfile a <(testfiles_argv "$1" "$p" | jq -Rsc 'split("\u0000")[:-1]') \
-      '. + [{name: $n, out: "\($n).out", argv: $a[0], timeout: $t, exit: 0, output: "", alone: false}]')
-  done
-  res=$(checks_run_units "$units")
-  for p in ${TF_TODO[@]+"${TF_TODO[@]}"}; do
-    a=$(testfiles_id "$p")
-    printf '%s\0' "$p" "$a"
-  done | jq -Rs -c --slurpfile r <(printf '%s' "$res") 'split("\u0000")[:-1] as $l
-    | [range(0; $l | length; 2) | {p: $l[.], id: $l[. + 1]}]
-    | map({key: .p, value: ($r[0][.id] + {id: .id})}) | from_entries'
+  local ids res
+  [ ${#TF_TODO[@]} -gt 0 ] || { printf '{}\n'; return 0; }
+  ids=$(testfiles_ids "${TF_TODO[@]}")
+  res=$(checks_run_units "$(printf '%s' "$1" | jq -c --argjson d "$VBW_COMMAND_TIMEOUT" \
+    --rawfile p <(printf '%s\0' "${TF_TODO[@]}") --rawfile n <(printf '%s' "$ids") '
+    (.settings.command_timeout // $d) as $t | .test_files.run as $run
+    | ($p | split("\u0000")[:-1]) as $ps | ($n | split("\n")) as $ns
+    | [range(0; $ps | length) as $k | $ns[$k] as $id
+       | {name: $id, out: "\($id).out", argv: [$run[] | split("{file}") | join($ps[$k])], timeout: $t, exit: 0, output: "", alone: false}]')")
+  printf '%s' "$res" | jq -c --rawfile p <(printf '%s\0' "${TF_TODO[@]}") --rawfile n <(printf '%s' "$ids") '. as $r
+    | ($p | split("\u0000")[:-1]) as $ps | ($n | split("\n")) as $ns
+    | [range(0; $ps | length) as $k | {key: $ps[$k], value: ($r[$ns[$k]] + {id: $ns[$k]})}] | from_entries'
 }
 
 # testfiles_save RECORD FILES TREE AT: record the runs that really happened in
