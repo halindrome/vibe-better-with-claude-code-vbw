@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # End-to-end run of the VBW lifecycle on a fixture (build plan M4, K22): real
-# headless Claude Code sessions, the v2 plugin, auto mode, sandbox on.
+# headless Claude Code sessions, the working tree's plugin, auto mode, sandbox on.
 #
 #   tools/e2e.sh FIXTURE [MODEL]        (MODEL defaults to sonnet)
 #
