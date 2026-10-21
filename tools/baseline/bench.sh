@@ -32,6 +32,13 @@
 # rigor, round and tiers; BENCH_RUNS_DIR=.../results/adaptive keeps the adaptive
 # set apart (verify-adaptive.sh checks it).
 #
+# BENCH_FOLLOWUPS=N (plain-ui and vbw2, 0 to 9, default 0): when the session
+# finishes and the case check fails, the user types BENCH_FOLLOWUP_TEXT (vbw2:
+# after /vbw:vibe) in the same session, up to N times, and the run goes on; the
+# check is never shown. The record then adds first_pass (the check at the first
+# finish), first_finish_at (UTC) and followups (how many were typed); pass is the
+# check at the end, and cost and tokens cover the whole session.
+#
 # Test seams: BENCH_CLAUDE, BENCH_L3, BENCH_NEXT, BENCH_RUNS_DIR, BENCH_SCRATCH, BENCH_CONFIG_DIR.
 set -euo pipefail
 
@@ -47,6 +54,9 @@ LIMIT_RE='usage limit|hit your .*limit|reached your .*limit|limit reached'
 EXIT_LIMIT=75
 EXIT_FAULT=70
 MAX_ROUNDS=90
+FOLLOWUPS="${BENCH_FOLLOWUPS:-0}"
+FOLLOWUP_TEXT="${BENCH_FOLLOWUP_TEXT:-The acceptance tests I ran on your result fail. Fix it.}"
+case "$FOLLOWUPS" in [0-9]) ;; *) echo "bench: BENCH_FOLLOWUPS must be 0 to 9" >&2; exit 2 ;; esac
 
 usage() { sed -n '3,8p' "$0" >&2; exit 2; }
 
@@ -123,6 +133,34 @@ write_record() {
 
 grade() { (cd "$1" && bash "$(case_dir "$2")/check.sh" > /dev/null 2>&1) && echo true || echo false; }
 
+# follow_up NAME WS CASE PREFIX: at a finish, grade the workspace; when the check
+# fails and follow-ups are left, type the follow-up (after any question on screen
+# is dismissed) and return 0, so the run goes on. Sets the caller's first_pass,
+# first_at, followups, awaiting (rounds to wait for the session to react) and
+# follow_head.
+follow_up() {
+  local name=$1 ws=$2 case_name=$3 prefix=$4 pass
+  [ "$FOLLOWUPS" -gt 0 ] || return 1
+  pass=$(grade "$ws" "$case_name")
+  if [ -z "$first_pass" ]; then first_pass=$pass; first_at=$(date -u +%Y-%m-%dT%H:%M:%SZ); fi
+  [ "$pass" = false ] && [ "$followups" -lt "$FOLLOWUPS" ] || return 1
+  followups=$((followups + 1))
+  bash "$L3" keys "$name" Escape > /dev/null 2>&1 || true
+  bash "$L3" wait "$name" 30 > /dev/null 2>&1 || true
+  bash "$L3" type "$name" "$prefix$FOLLOWUP_TEXT" > /dev/null 2>&1 || true
+  awaiting=3
+  follow_head=$(git -C "$ws" rev-parse HEAD 2> /dev/null || true)
+  return 0
+}
+
+# followup_fields OUT PASS: the follow-up fields, added when follow-ups are on.
+followup_fields() {
+  [ "$FOLLOWUPS" -gt 0 ] || return 0
+  jq --argjson first "${first_pass:-$2}" --arg at "$first_at" --argjson n "$followups" \
+    '. + {first_pass: $first, first_finish_at: (if $at == "" then null else $at end), followups: $n}' "$1" > "$1.tmp"
+  mv "$1.tmp" "$1"
+}
+
 # The settings of a plain session: VBW off, and this repository's own
 # maintainer instructions (CLAUDE.md, AGENTS.md) never read.
 excludes_settings() {
@@ -170,12 +208,14 @@ answer_question() {
   bash "$L3" keys "$name" Enter > /dev/null 2>&1 || true
 }
 
-# session_cost NAME: the session's cost from /cost, empty when unreadable.
+# session_cost NAME [FILE]: the session's cost from /cost, empty when unreadable;
+# FILE keeps the /cost screen (its per-model lines; predict-run.sh reads them).
 session_cost() {
   local screen
   bash "$L3" keys "$1" Escape > /dev/null 2>&1 || true
   bash "$L3" type "$1" "/cost" > /dev/null 2>&1 || true
   screen=$(bash "$L3" wait "$1" 120 2> /dev/null) || true
+  [ -z "${2:-}" ] || printf '%s\n' "$screen" > "$2"
   printf '%s' "$screen" | grep -oE '\$[0-9]+(\.[0-9]+)?' | head -1 | tr -d '$' || true
 }
 
@@ -185,6 +225,7 @@ session_cost() {
 # the session settles idle with no question on screen.
 run_plain_ui() {
   local model=$1 case_name=$2 n=$3 out=$4 ws name screen inputs=0 round=0 settled done=0
+  local first_pass="" first_at="" followups=0 awaiting=0 follow_head="" limit=$((MAX_ROUNDS * (FOLLOWUPS + 1)))
   ws=$(seed plain-ui "$model" "$case_name" "$n")
   name="bench-plain-${model//./-}-$case_name-$n"
   if ! bash "$L3" start "$name" "$ws" "$(model_id "$model")" plain > /dev/null 2>&1 \
@@ -193,7 +234,7 @@ run_plain_ui() {
     echo "bench: could not drive a session for $name; no record written" >&2
     return "$EXIT_FAULT"
   fi
-  while [ "$round" -lt "$MAX_ROUNDS" ]; do
+  while [ "$round" -lt "$limit" ]; do
     round=$((round + 1))
     settled=1
     screen=$(bash "$L3" wait "$name" 60 2> /dev/null) || settled=0
@@ -202,22 +243,27 @@ run_plain_ui() {
       echo "bench: usage limit reached; no record written" >&2
       return "$EXIT_LIMIT"
     fi
-    printf '%s' "$screen" | grep -q 'esc to interrupt' && continue
+    if printf '%s' "$screen" | grep -q 'esc to interrupt'; then awaiting=0; continue; fi
     if answer_question "$name" "$screen"; then
       inputs=$((inputs + 1))
+      awaiting=0
       continue
     fi
     if printf '%s' "$screen" | grep -q 'Esc to cancel'; then
       bash "$L3" keys "$name" Escape > /dev/null 2>&1 || true
       continue
     fi
-    [ "$settled" -eq 1 ] || continue
+    if [ "$settled" -eq 0 ]; then awaiting=0; continue; fi
+    # After a follow-up, a quiet screen is finished only once the session has
+    # reacted (or stayed quiet for three rounds).
+    if [ "$awaiting" -gt 0 ]; then awaiting=$((awaiting - 1)); continue; fi
+    follow_up "$name" "$ws" "$case_name" "" && continue
     done=1
     break
   done
-  [ "$done" -eq 1 ] || echo "bench: $name did not go idle in $MAX_ROUNDS rounds" >&2
+  [ "$done" -eq 1 ] || echo "bench: $name did not go idle in $limit rounds" >&2
   local cost tokens pass
-  cost=$(session_cost "$name")
+  cost=$(session_cost "$name" "$ws.cost.txt")
   bash "$L3" stop "$name" > /dev/null 2>&1 || true
   tokens=$(transcript_tokens "$ws")
   if [ "${tokens:-0}" -eq 0 ]; then
@@ -226,6 +272,7 @@ run_plain_ui() {
   fi
   pass=$(grade "$ws" "$case_name")
   write_record "$out" plain "$model" "$case_name" "$n" "$pass" "$tokens" "${cost:-0}" "$inputs" L3
+  followup_fields "$out" "$pass"
 }
 
 # next_action WS: VBW's next step in the workspace, from the plugin under test.
@@ -242,6 +289,7 @@ next_action() {
 # driven is a harness fault: exit 70 and no record.
 run_vbw2() {
   local model=$1 case_name=$2 n=$3 out=$4 ws name screen inputs=0 round=0 action cost done=0
+  local first_pass="" first_at="" followups=0 awaiting=0 follow_head="" limit=$((MAX_ROUNDS * (FOLLOWUPS + 1)))
   ws=$(seed vbw2 "$model" "$case_name" "$n")
   # No dots: tmux reads one in a session name as a window.pane separator.
   name="bench-${model//./-}-$case_name-$n"
@@ -255,7 +303,7 @@ run_vbw2() {
   # need not settle (the status line keeps changing), and a finished run stops
   # whatever the screen shows.
   local settled nudges=0 last_state="" state
-  while [ "$round" -lt "$MAX_ROUNDS" ]; do
+  while [ "$round" -lt "$limit" ]; do
     round=$((round + 1))
     settled=1
     screen=$(bash "$L3" wait "$name" 60 2> /dev/null) || settled=0
@@ -265,7 +313,23 @@ run_vbw2() {
       return "$EXIT_LIMIT"
     fi
     action=$(next_action "$ws")
-    case "$action" in ship | accept | milestone) done=1; break ;; esac
+    # After a follow-up, the session has reacted once it works, commits or runs.
+    if [ "$awaiting" -gt 0 ]; then
+      if [ "$settled" -eq 0 ] || [ "$action" = run ] || printf '%s' "$screen" | grep -q 'esc to interrupt' \
+          || [ "$(git -C "$ws" rev-parse HEAD 2> /dev/null || true)" != "$follow_head" ]; then
+        awaiting=0
+      fi
+    fi
+    case "$action" in
+      ship | accept | milestone)
+        if [ "$awaiting" -eq 0 ]; then
+          if follow_up "$name" "$ws" "$case_name" "/vbw:vibe "; then nudges=0; last_state=""; continue; fi
+          done=1
+          break
+        fi
+        awaiting=$((awaiting - 1))
+        continue ;;
+    esac
     printf '%s' "$screen" | grep -q 'esc to interrupt' && continue
     if answer_question "$name" "$screen"; then
       inputs=$((inputs + 1))
@@ -290,8 +354,8 @@ run_vbw2() {
         bash "$L3" type "$name" "/vbw:vibe" > /dev/null 2>&1 || true; inputs=$((inputs + 1)) ;;
     esac
   done
-  [ "$done" -eq 1 ] || echo "bench: $name did not reach a finished step in $MAX_ROUNDS rounds" >&2
-  cost=$(session_cost "$name")
+  [ "$done" -eq 1 ] || echo "bench: $name did not reach a finished step in $limit rounds" >&2
+  cost=$(session_cost "$name" "$ws.cost.txt")
   bash "$L3" stop "$name" > /dev/null 2>&1 || true
   local tokens pass
   tokens=$(transcript_tokens "$ws")
@@ -301,6 +365,7 @@ run_vbw2() {
   fi
   pass=$(grade "$ws" "$case_name")
   write_record "$out" vbw2 "$model" "$case_name" "$n" "$pass" "$tokens" "${cost:-0}" "$inputs" L3
+  followup_fields "$out" "$pass"
   # Whether VBW was set up at all: a session may do the task without it.
   local engaged=false
   [ -d "$ws/.vbw" ] && engaged=true
