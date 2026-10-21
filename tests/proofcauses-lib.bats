@@ -4,8 +4,9 @@
 # here, on the committed code, the way a proof leaves it. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -27,7 +28,12 @@ setup() {
   store
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # store: the clone's store of runs, as a proof of the committed code leaves it:
 # both test files read the helper and src/a.txt, the check read its own file,
