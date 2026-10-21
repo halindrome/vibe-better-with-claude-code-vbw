@@ -25,6 +25,10 @@ const effortOf = (role, step) => {
   return e ? { effort: e } : {}
 }
 if (phases.length === 0) return { results: [], error: 'no phases given: pass args.phases from vbw next --json' }
+// args.round is the round object of vbw next --json (tiers, suite, focus), absent or null when there is none.
+// Anything else (a round number) would drop the depth and the test run without a word and tell every QA agent the project has no test command.
+const given = args && args.round
+if (given !== undefined && given !== null && (typeof given !== 'object' || Array.isArray(given))) return { results: [], error: `args.round must be the round object of vbw next --json (tiers, suite, focus), not ${JSON.stringify(given)}: read it from vbw next --json` }
 
 const CLOSE_RESULT = {
   type: 'object',

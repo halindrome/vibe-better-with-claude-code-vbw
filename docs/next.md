@@ -245,6 +245,15 @@ none runs the suite again (docs/workflows.md).
 risk (`quick`, `standard` or `deep`; docs/rigor.md). The QA workflow uses it
 instead of the profile's depth, which `rigor` still carries.
 
+The router opens the QA run (`vbw run start qa`) before it starts the QA
+workflow, and an open run turns the `qa` answer into `run` (row 0). While the
+caller's own QA run is open, the `run` answer carries the same `round` the `qa`
+answer did, so the router can read it on either side of `vbw run start qa`. A
+`run` answer for another session's run, and for any run that is not QA, has
+none. Without it a small change would be checked at its profile's depth
+instead of the quick check its size earns, and the QA agents would be told
+the project has no test command.
+
 Rejecting a `human` requirement (`vbw req reject R2 "why"`) opens a fix item at
 once, so it is worked by row 9; when the fix is done the requirement returns to
 row 11 for acceptance.
