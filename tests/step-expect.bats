@@ -10,12 +10,17 @@
 
 load helper
 load step-helper
+load fixture-helper
 
-setup() {
+expect_project() {
   vbw_setup
   step_project
 }
+
+setup_file() { fixture_build expect expect_project; }
+setup() { fixture_copy expect; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "R190: a build's end time is the median time per part of the latest 10 builds with parts, times its plans" {
   # Two old outliers, then ten builds: five at 300 s for 1 plan, five at 1000 s

@@ -7,8 +7,9 @@
 # the same requirement, is allowed since R157: tests/apply-beside-started.bats.) L1.
 
 load helper
+load fixture-helper
 
-setup() {
+narrow_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -29,7 +30,11 @@ setup() {
   printf '%s' "$DOC" | "$VBW" apply > /dev/null
 }
 
+setup_file() { fixture_build narrow narrow_project; }
+setup() { fixture_copy narrow; }
+
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 edit_record() { jq "$1" .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json; }
 

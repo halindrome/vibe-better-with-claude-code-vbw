@@ -8,10 +8,11 @@
 # each refusal gives (R156: "full apply" or "--add").
 
 load helper
+load fixture-helper
 
 # M1 shipped: its phase P1 covers R1 (plan P1.1 done); R2 stayed in M1 with no
 # phase. R3 and R4 belong to the active milestone M2, which has no phase yet.
-setup() {
+foreign_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -30,7 +31,11 @@ setup() {
   cp "$TEST_ROOT/r.json" .vbw/record.json
 }
 
+setup_file() { fixture_build foreign foreign_project; }
+setup() { fixture_copy foreign; }
+
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # modeless MESSAGE: the message without the names of the two modes (R156).
 modeless() {

@@ -7,6 +7,7 @@
 # with stubbed agents, so no model is called (L1).
 
 load helper
+load fixture-helper
 
 RUN="$BATS_TEST_DIRNAME/helpers/run-workflow.js"
 PROFILE='{"level":"never","depth":"plain with technical terms explained","involvement":"options with a recommendation"}'
@@ -16,7 +17,7 @@ edit_record() {
 }
 
 # M3 and M4 shipped; M8 active. R18, R29 and R30 belong to the shipped ones.
-setup() {
+scope_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -29,7 +30,11 @@ setup() {
     | (.requirements[] | select(.id == "R47" or .id == "R48")).milestone = "M8"'
 }
 
+setup_file() { fixture_build scope scope_project; }
+setup() { fixture_copy scope; }
+
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 ids() { jq -c '[.requirements[].id]'; }
 

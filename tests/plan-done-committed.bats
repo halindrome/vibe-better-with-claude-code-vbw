@@ -6,8 +6,9 @@
 # L1: the kernel on a fixture project.
 
 load helper
+load fixture-helper
 
-setup() {
+done_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -21,7 +22,11 @@ setup() {
     | del(.requirements[]?.rules) | if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end' .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
 }
 
+setup_file() { fixture_build done done_project; }
+setup() { fixture_copy done; }
+
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # approve_with CONTENT: commit src/pay.txt (a plain commit, no trailer) and the
 # contract's files, then approve.

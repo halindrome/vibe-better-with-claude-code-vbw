@@ -6,8 +6,9 @@
 # by vbw run start plan.
 
 load helper
+load fixture-helper
 
-setup() {
+planlease_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -15,7 +16,11 @@ setup() {
   VBW_SESSION_ID=sessA "$VBW" run start plan > /dev/null
 }
 
+setup_file() { fixture_build planlease planlease_project; }
+setup() { fixture_copy planlease; }
+
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # write_call SESSION PATH [AGENT_TYPE]: a Write tool call.
 write_call() {

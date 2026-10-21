@@ -6,12 +6,17 @@
 
 load helper
 load approve-choice-helper
+load fixture-helper
 
-setup() {
+choice_project() {
   vbw_setup
   approve_choice_project
 }
+
+setup_file() { fixture_build choice choice_project; }
+setup() { fixture_copy choice; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "R61: the contract view ends with the approval question naming the fingerprint, and the options Approve first, Not yet second" {
   vbw_run show contract

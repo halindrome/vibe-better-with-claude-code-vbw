@@ -8,6 +8,7 @@
 # with a stubbed runtime (tests/helpers/run-workflow.js: no model is called).
 
 load helper
+load fixture-helper
 
 RUN="$BATS_TEST_DIRNAME/helpers/run-workflow.js"
 WF="$PLUGIN_ROOT/workflows/recommending.js"
@@ -16,7 +17,7 @@ SUMMARY='{"milestone": {"id": "M1", "title": "Checkout", "status": "active"},
   "run": null,
   "todos": [{"id": "T1", "text": "Refunds", "sort": "next", "size": "small"}, {"id": "T2", "text": "Gift cards"}]}'
 
-setup() {
+rsrc_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -26,7 +27,11 @@ setup() {
   "$VBW" todo add "Gift cards" > /dev/null
 }
 
+setup_file() { fixture_build rsrc rsrc_project; }
+setup() { fixture_copy rsrc; }
+
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # wf RESPONSE: the stubbed run of the recommending workflow, the Architect
 # answering RESPONSE (null: no answer). Prints {calls, result, logs}.

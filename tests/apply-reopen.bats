@@ -9,10 +9,11 @@
 
 load helper
 load replan-helper
+load fixture-helper
 
 # M1 shipped: P1 covers R1 (plan P1.1 done, R1 proven); R2 stayed in M1,
 # proven, with no phase. R3 belongs to the active milestone M2.
-setup() {
+reopen_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -28,7 +29,10 @@ setup() {
     | (.plans[] | select(.id == "P1.1")).status = "done"'
 }
 
+setup_file() { fixture_build reopen reopen_project; }
+setup() { fixture_copy reopen; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # shipped: the shipped phase P1 and its plans, every field.
 shipped() { replan_part '{phase: (.phases[] | select(.id == "P1")), plans: [.plans[] | select(.phase == "P1")]}'; }
