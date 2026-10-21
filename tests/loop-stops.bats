@@ -12,9 +12,12 @@
 
 load helper
 load loop-helper
+load fixture-helper
 
-setup() { loop_project; }
+setup_file() { fixture_build loop loop_project; }
+setup() { fixture_copy loop; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 step() { loop_next s1 > "$TEST_ROOT/step.json"; jq -r .action "$TEST_ROOT/step.json"; }
 reason() { jq -r .reason "$TEST_ROOT/step.json"; }
