@@ -626,7 +626,10 @@ Milestone end: about 36 min, until around 14:56, counting 2 fix rounds per stand
 - **No milestone end time yet.** When any piece the road needs has no basis, the
   road has no end and no time, and the sentence names the missing kind: "no
   milestone end time yet (VBW has timed fewer than 3 plans here)". A made-up time
-  never appears.
+  never appears. Every shape the history has had is read; an entry of a shape
+  VBW never wrote is skipped, and a piece that still cannot be timed says so
+  ("VBW could not time the plans here from its step history") instead of
+  dropping the milestone end.
 - **Later than usual.** When a step with parts runs past its end time, VBW moves
   the end to this run's own pace and shows
   "until around 14:35, later than usual". It can move again, and never earlier
