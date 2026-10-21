@@ -33,27 +33,6 @@ the untouched fixture and passes after the case's `solution.sh`
 `solution.sh` runs inside a workspace seeded by the fixture and leaves it in a
 state `check.sh` accepts. It is never shown to the agent under test.
 
-## Predicted vs real (one run per side)
-
-`predict-run.sh` runs the protocol of docs/benchmark.md, "Predicted vs real":
-one plain run and one VBW 2 run of the case in `predictions/CASE.json`, the
-prediction committed before any run. It calls no model except under `run`.
-
-- `--dry-run [ARM]` prints each side's environment and `bench.sh` command.
-- `run plain`, then `run vbw2`: `bench.sh` with `BENCH_FOLLOWUPS` (after a
-  finish whose case check fails, the user types the prediction's follow-up text,
-  up to its limit; the record adds `first_pass`, `first_finish_at` and
-  `followups`), then a measures file beside the record: Claude Code version, wall
-  time, the main conversation's cache TTL, a leak check (any tool call naming
-  this repository's `tools/`) and the stages.
-- `stages DIR` prices the session transcripts in DIR per stage (`main`, then
-  each workflow phase: `map`, `plan`, `build`, `mutation` (a Dev's requests from
-  its first `vbw mutate`), `qa`, `fix`, `close`; `followup` after the first
-  finish) with `prices.json`, and spreads each model's shortfall against the
-  saved `/cost` screen (`bench.sh` keeps it as `WS.cost.txt`) over that model's
-  requests: transcripts record few of a thinking request's output tokens.
-- `report` prints the prediction against both measures files, stage by stage.
-
 ## Adaptive rigor (R29)
 
 The adaptive set is VBW 2 with automatic rigor on the seven cases and both
