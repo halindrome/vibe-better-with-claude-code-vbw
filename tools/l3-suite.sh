@@ -1728,8 +1728,8 @@ scenario_edgecase() {
 
 # A leftover untracked file in the working folder (R34): the project command
 # fails on it when run in the working folder, and the proof (run on a clean
-# copy) is unchanged and passes. lint.sh records where it ran and whether the
-# file was there.
+# copy, with nothing reused: leftover_proof) is unchanged and passes. lint.sh
+# records where it ran and whether the file was there.
 scenario_leftover() {
   new_project
   fixture="greet.sh from scratch plus a committed lint.sh that fails when todos.txt exists; project command lint: sh lint.sh"
@@ -1738,33 +1738,57 @@ scenario_leftover() {
   start="$GREET Also make the project command lint (sh lint.sh) part of the project's commands; it is already in the repository."
   checks() {
     common_checks
-    local probe before after f=todos.txt flips=false same=false pp=false inc=true gone=false passed=true where a argv=()
+    local probe facts passed=true
     jq -e '.commands.lint' "$dir/.vbw/record.json" > /dev/null 2>&1 || { say "FAIL no lint command in the record"; failed=1; }
-    before=$(jq -c '.evidence | {passed, checks: (.checks | map_values(.status)), commands: (.commands | map_values(.status))}' "$dir/.vbw/record.json" 2> /dev/null)
-    printf 'buy milk\n' > "$dir/$f"
-    while IFS= read -r -d '' a; do argv+=("$a"); done < <(jq -j '.commands.lint[] + "\u0000"' "$dir/.vbw/record.json" 2> /dev/null)
-    (cd "$dir" && [ "${#argv[@]}" -gt 0 ] && ! "${argv[@]}" > /dev/null 2>&1) && flips=true
     probe=$(mktemp "${TMPDIR:-/tmp}/vbw-l3-probe.XXXXXX")
-    (cd "$dir" && LEFTOVER_PROBE="$probe" "$VBW" prove > /dev/null 2>&1) || true
-    after=$(jq -c '.evidence | {passed, checks: (.checks | map_values(.status)), commands: (.commands | map_values(.status))}' "$dir/.vbw/record.json" 2> /dev/null)
-    [ -n "$before" ] && [ "$before" = "$after" ] && same=true
-    jq -e '.evidence.passed == true' "$dir/.vbw/record.json" > /dev/null 2>&1 && pp=true
-    where=$(sed -n 1p "$probe"); [ "$(sed -n 2p "$probe")" = no ] && inc=false
+    facts=$(leftover_proof "$dir" todos.txt "$probe")
     rm -f "$probe"
-    [ -n "$where" ] && [ "$where" != "$(cd "$dir" && pwd -P)" ] && [ ! -e "$where" ] \
-      && ! git -C "$dir" worktree list --porcelain | grep -qF "$where" && gone=true
-    rm -f "$dir/$f"
-    expect "the check flips in the working folder with the leftover file" [ "$flips" = true ]
-    expect "the proof is unchanged by the leftover file" [ "$same" = true ]
-    expect "the proof passed" [ "$pp" = true ]
-    expect "the file was not in the proof copy" [ "$inc" = false ]
-    expect "the proof copy is gone" [ "$gone" = true ]
+    expect "the check flips in the working folder with the leftover file" jq -e '.check_flips_in_working_folder == true' <<< "$facts"
+    expect "the proof is unchanged by the leftover file" jq -e '.proof_unchanged == true' <<< "$facts"
+    expect "the proof passed" jq -e '.proof_passed == true' <<< "$facts"
+    expect "the project command ran in a proof copy" jq -e '.ran_in_proof_copy == true' <<< "$facts"
+    expect "the file was not in the proof copy" jq -e '.file_in_proof_copy == false' <<< "$facts"
+    expect "the proof copy is gone" jq -e '.copy_removed == true' <<< "$facts"
     [ "$failed" -eq 0 ] || passed=false
-    result_write leftover "$fixture" "${cost_usd:-0}" "$passed" \
-      "$(jq -n --arg f "$f" --argjson fl "$flips" --argjson s "$same" --argjson p "$pp" --argjson i "$inc" --argjson g "$gone" \
-        '{leftover_file: $f, check_flips_in_working_folder: $fl, proof_unchanged: $s, proof_passed: $p, file_in_proof_copy: $i, copy_removed: $g}')" \
-      '["a leftover modified tracked file","a git-ignored leftover (linked into the copy by design)","a project command other than a shell script","a project larger than the greet.sh fixture"]'
+    result_write leftover "$fixture" "${cost_usd:-0}" "$passed" "$facts" \
+      '["a leftover modified tracked file","a git-ignored leftover (copied into the proof copy by design)","a project command other than a shell script","a project larger than the greet.sh fixture"]'
   }
+}
+
+# leftover_proof DIR FILE PROBE: the proof half of the leftover scenario, on the
+# project in DIR whose approved lint command fails while FILE exists and, under
+# LEFTOVER_PROBE, writes to PROBE the folder it ran in and whether FILE was
+# there. Leaves FILE untracked in DIR, runs lint there (the file must flip it),
+# then proves with nothing reused (vbw prove --full): the session leaves a
+# passing proof, and a plain vbw prove reuses lint's pass by its read list
+# (R166: FILE is not committed code), so lint would not run in a proof copy at
+# all. Removes FILE and prints the facts as one JSON object (null: not known,
+# because lint did not run in a proof copy). tests/l3-leftover.bats runs it.
+leftover_proof() {
+  local d=$1 f=$2 probe=$3 ev before after a where real argv=() flips=false same=false pp=false ran=false inc=null gone=null
+  ev='.evidence | {passed, checks: (.checks | map_values(.status)), commands: (.commands | map_values(.status))}'
+  before=$(jq -c "$ev" "$d/.vbw/record.json" 2> /dev/null)
+  printf 'buy milk\n' > "$d/$f"
+  while IFS= read -r -d '' a; do argv+=("$a"); done < <(jq -j '.commands.lint[] + "\u0000"' "$d/.vbw/record.json" 2> /dev/null)
+  (cd "$d" && [ "${#argv[@]}" -gt 0 ] && ! "${argv[@]}" > /dev/null 2>&1) && flips=true
+  : > "$probe"
+  (cd "$d" && LEFTOVER_PROBE="$probe" "$VBW" prove --full > /dev/null 2>&1) || true
+  after=$(jq -c "$ev" "$d/.vbw/record.json" 2> /dev/null)
+  [ -n "$before" ] && [ "$before" = "$after" ] && same=true
+  jq -e '.evidence.passed == true' "$d/.vbw/record.json" > /dev/null 2>&1 && pp=true
+  where=$(sed -n 1p "$probe")
+  real=$(cd "$d" && pwd -P)
+  if [ -n "$where" ] && [ "$where" != "$real" ]; then
+    ran=true
+    case "$(sed -n 2p "$probe")" in yes) inc=true ;; no) inc=false ;; esac
+    # No copy is left: not its folder, not its git worktree entry, no proof.* folder (grep -c reads everything, safe under pipefail).
+    gone=false
+    [ ! -e "$where" ] && [ "$(git -C "$d" worktree list --porcelain | grep -cF -- "$where")" = 0 ] \
+      && [ -z "$(find "$d/.vbw/runtime" -maxdepth 1 -name 'proof.*' 2> /dev/null)" ] && gone=true
+  fi
+  rm -f "$d/$f"
+  jq -nc --arg f "$f" --argjson fl "$flips" --argjson s "$same" --argjson p "$pp" --argjson r "$ran" --argjson i "$inc" --argjson g "$gone" \
+    '{leftover_file: $f, check_flips_in_working_folder: $fl, proof_unchanged: $s, proof_passed: $p, ran_in_proof_copy: $r, file_in_proof_copy: $i, copy_removed: $g}'
 }
 
 # --- The interview (R42): a newcomer and a senior engineer answer it in the real
