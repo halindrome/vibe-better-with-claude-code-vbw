@@ -3,10 +3,14 @@
 # check, a project command, later a test file) takes a free slot copy; at most
 # check_jobs run at a time, units marked alone run by themselves, the read
 # lists of units running together stay apart, and a runner that dies leaves a
-# "skipped" result instead of taking the proof down, and each run of units
-# keeps its results apart from an earlier run's in the same output folder. The
-# passes cache and the served-files fingerprint are gone. L1: units are small
-# shell scripts.
+# "skipped" result instead of taking the proof down. The passes cache and the
+# served-files fingerprint are gone. The runner keeps its places busy (T179):
+# the units' launch data and their results take one jq pass each, never one
+# per unit; a unit's copy and place are free as soon as its slot and gate
+# place are given back, while it still writes its result; the launcher waits
+# for a freed place on the runners' wake-up (a FIFO), never on a fixed pause,
+# unless no FIFO can be made; each run of units keeps its results apart from
+# an earlier run's. L1: units are small shell scripts.
 
 load helper
 load fixture-helper
@@ -69,6 +73,33 @@ lib() {
 
 # peak: the most units registered together.
 peak() { sort -n "$CONC/seen" | tail -1; }
+
+# jq_counted: a jq first on PATH that counts its runs in $JQLOG, then runs the real one.
+jq_counted() {
+  JQLOG="$TEST_ROOT/jq.log"
+  mkdir -p "$TEST_ROOT/jqbin"
+  printf '#!/bin/sh\necho run >> "$JQLOG"\nexec "%s" "$@"\n' "$(command -v jq)" > "$TEST_ROOT/jqbin/jq"
+  chmod +x "$TEST_ROOT/jqbin/jq"
+  PATH="$TEST_ROOT/jqbin:$PATH"
+  export JQLOG PATH
+}
+
+# jq_runs_for N: the jq processes checks_run_all takes for a record of N passing checks.
+jq_runs_for() {
+  # shellcheck disable=SC2016 # expanded by lib
+  lib 'rec=$(jq -nc --argjson n '"$1"' "{checks: [range(1; \$n + 1) | {id: \"C\(.)\", req: \"R1\", run: [\"true\"]}]}")
+    : > "$JQLOG"; checks_run_all "$rec" > "$CONC/res.json"; wc -l < "$JQLOG" | tr -d " "'
+}
+
+# paused BODY: run BODY with the runner library, sleep counted: "launcher N" (pauses of
+# the launcher, this shell itself) and "results" (the statuses of $CONC/res).
+paused() {
+  # shellcheck disable=SC2016 # expanded by lib
+  lib ': > "$CONC/pauses"; sleep() { sh -c "echo \$PPID" >> "$CONC/pauses"; command sleep "$@"; }
+    '"$1"'
+    echo "launcher $(grep -cx "$$" "$CONC/pauses" 2> /dev/null || true)"
+    jq -r "[.[] | .status] | join(\",\")" "$CONC/res"'
+}
 
 @test "R166: at most check_jobs units run together, and they do run together" {
   jobs_set 2
@@ -195,6 +226,53 @@ peak() { sort -n "$CONC/seen" | tail -1; }
     checks_run_units "$(jq -sc . <(unit DIE false true; unit Q false true))" | jq -c "[.DIE.status, .Q.status]"'
   [ "$status" -eq 0 ]
   [ "$output" = '["skipped","pass"]' ]
+}
+
+@test "T179: the runner's own steps take no jq process per unit: only each unit's result is one" {
+  jobs_set 2
+  jq_counted
+  local two eight
+  two=$(jq_runs_for 2)
+  eight=$(jq_runs_for 8)
+  jq -e 'length == 8 and all(.[]; .status == "pass")' "$CONC/res.json" || { cat "$CONC/res.json"; false; }
+  # Six checks more: at most six jq runs more (each one's result object).
+  [ $((eight - two)) -le 6 ] || { echo "2 checks took $two jq runs, 8 checks $eight"; false; }
+}
+
+@test "T179: a unit's copy and place are free once its slot and gate place are given back: the next unit starts while the finished ones still write their results" {
+  jobs_set 2
+  run lib 'proofcopy_create_slots 2
+    eval "real_$(declare -f checks_result)"
+    # W1 and W2 write their results only once N3 has started (or after about 10 s).
+    checks_result() { local i=0; case "$1" in */W*.out)
+        while [ ! -e "$CONC/n3" ] && [ "$i" -lt 100 ]; do sleep 0.1; i=$((i + 1)); done
+        if [ -e "$CONC/n3" ]; then echo saw >> "$CONC/w.log"; else echo "never saw" >> "$CONC/w.log"; fi ;; esac
+      real_checks_result "$@"; }
+    units=$(jq -sc . <(unit W1 false true; unit W2 false true; unit N3 false sh -c "touch \"\$CONC/n3\""))
+    checks_run_units "$units" | jq -r "[.[] | .status] | join(\",\")"; proofcopy_remove'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = "pass,pass,pass" ]
+  [ "$(cat "$CONC/w.log")" = "$(printf 'saw\nsaw')" ] || { cat "$CONC/w.log"; false; }
+}
+
+@test "T179: the launcher waits for a freed place on the runners' wake-up, never on a fixed pause; where no FIFO can be made it pauses and every unit still runs" {
+  jobs_set 2
+  local body='units=$(jq -sc . <(for i in 1 2 3 4 5; do unit U$i false sh tests/conc.sh; done))
+    checks_run_units "$units" > "$CONC/res"'
+  NAP=0.3 run paused "$body"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = "$(printf 'launcher 0\npass,pass,pass,pass,pass')" ] || { echo "$output"; false; }
+  [ "$(peak)" -eq 2 ]
+  # Without a FIFO (mkfifo fails) the launcher looks again after a short pause.
+  mkdir -p "$TEST_ROOT/nofifo"
+  printf '#!/bin/sh\nexit 1\n' > "$TEST_ROOT/nofifo/mkfifo"
+  chmod +x "$TEST_ROOT/nofifo/mkfifo"
+  rm -f "$CONC/seen"
+  PATH="$TEST_ROOT/nofifo:$PATH" NAP=0.3 run paused "$body"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "${lines[0]}" =~ ^launcher\ [1-9][0-9]*$ ]] || { echo "$output"; false; }
+  [ "${lines[1]}" = pass,pass,pass,pass,pass ] || { echo "$output"; false; }
+  [ "$(peak)" -eq 2 ]
 }
 
 @test "R166: checks_run_all runs the checks of a record in order and reports a held check as waiting" {
