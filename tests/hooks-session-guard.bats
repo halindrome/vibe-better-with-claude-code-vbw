@@ -4,20 +4,28 @@
 # `vbw run end --owner-closed`.
 
 load helper
+load fixture-helper
 
-setup() {
+guard_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
   mkdir -p src
   VBW_SESSION_ID=sessA "$VBW" run start qa > /dev/null
-  # A build lease owned by A that writes src/pay.js.
+}
+
+setup_file() { fixture_build guard guard_project; }
+
+setup() {
+  fixture_copy guard
+  # A build lease owned by A that writes src/pay.js. Its start is the time of this test, not of the build.
   jq '.lease = {run: "build-1", kind: "build", session: "sessA", started_at: (now | todate), files: ["src/pay.js"]}' \
     .vbw/record.json > "$TEST_ROOT/e.json"
   cp "$TEST_ROOT/e.json" .vbw/record.json
 }
 
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # edit SESSION PATH [AGENT_TYPE]
 edit() {
