@@ -23,13 +23,14 @@
 # shellcheck source=qa-inputs.sh
 . "$VBW_LIB/qa-inputs.sh"
 
-# proofsteps_lock: one writer of the note at a time (a mkdir lock; one whose
-# owner process is gone, or that is over 5 s old, is taken over). Fails, and the
-# caller skips its update, where the runtime folder is missing.
+# proofsteps_lock: one writer of the note at a time (a lock folder whose owner
+# file decides, vbw_lock_dir; one whose owner process is gone, or that is over
+# 5 s old, is taken over). Fails, and the caller skips its update, where the
+# runtime folder is missing.
 proofsteps_lock() {
   local l="$VBW_RUNTIME/step.lock" i=0 owner
   [ -d "$VBW_RUNTIME" ] || return 1
-  while ! mkdir "$l" 2> /dev/null; do
+  while ! vbw_lock_dir "$l"; do
     owner=$(cat "$l/pid" 2> /dev/null) || owner=
     if [ -n "$owner" ] && ! kill -0 "$owner" 2> /dev/null; then
       rm -rf "$l"
@@ -38,12 +39,11 @@ proofsteps_lock() {
     i=$((i + 1))
     if [ "$i" -gt 500 ]; then
       rm -rf "$l"
-      mkdir "$l" 2> /dev/null || return 1
+      vbw_lock_dir "$l" || return 1
       break
     fi
     sleep 0.01
   done
-  printf '%s\n' "$$" > "$l/pid" 2> /dev/null || true
   return 0
 }
 

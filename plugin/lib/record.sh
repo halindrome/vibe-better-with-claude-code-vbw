@@ -208,6 +208,16 @@ vbw_lock_create() {
   return "$r"
 }
 
+# vbw_lock_dir DIR: take the lock folder DIR, whose owner file DIR/pid holds
+# this process's id; fails when another process holds it. The folder is made
+# with mkdir as before (an older VBW's lock of the same name still excludes),
+# but only the owner file's exclusive create (vbw_lock_create) takes the lock:
+# when several racing mkdir calls for one new folder all succeed (uutils mkdir,
+# Ubuntu 26.04), only one of them creates DIR/pid.
+vbw_lock_dir() {
+  mkdir "$1" 2> /dev/null && vbw_lock_create "$1/pid"
+}
+
 # vbw_lock_remove LOCK: remove a lock file, or a lock directory an older VBW left.
 vbw_lock_remove() {
   rm -f "$1" 2> /dev/null || rmdir "$1" 2> /dev/null || true

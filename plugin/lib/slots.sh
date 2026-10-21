@@ -55,9 +55,11 @@ slots_live() {
 slots_lock() {
   local lock="$SLOTS_DIR/slots.lock" idle=0 owner
   while :; do
-    if mkdir "$lock" 2> /dev/null; then
-      # The lock can vanish before its owner is written (taken as stale): retry.
-      if { printf '%s\n' "$$" > "$lock/pid"; } 2> /dev/null; then SLOTS_LOCKED=$lock; return 0; fi
+    # The owner file decides (vbw_lock_dir): a racing mkdir that also succeeded,
+    # or a lock that vanished before its owner was written, waits and retries.
+    if vbw_lock_dir "$lock"; then
+      SLOTS_LOCKED=$lock
+      return 0
     elif [ ! -d "$lock" ] && [ ! -w "$SLOTS_DIR" ]; then
       return 2
     fi
