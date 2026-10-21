@@ -6,13 +6,18 @@
 
 load helper
 load approve-choice-helper
+load fixture-helper
 
-setup() {
+approve_project() {
   vbw_setup
   approve_choice_project
   FP=$(fingerprint)
 }
+
+setup_file() { fixture_build approve approve_project; }
+setup() { fixture_copy approve; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 say() { printf '%s' "$output" | jq -r '.systemMessage // empty'; }
 
