@@ -98,7 +98,8 @@ cmd_prove() {
   prooftime_step saving
   slots_hold vbw:save || true
   prooftime_mark
-  proofreuse_save "$record" "$checks" "$commands" "$head" "$at"
+  # The save drops the runs of units that no longer exist (a deleted test file, a removed check).
+  proofreuse_save "$record" "$checks" "$commands" "$head" "$at" "$(proofreuse_stale "$record" "$(testfiles_keys)")"
   [ "$files" = '{}' ] || testfiles_save "$record" "$files" "$head" "$at"
   prooftime_step saving
   slots_release vbw:save

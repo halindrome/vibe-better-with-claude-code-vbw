@@ -183,9 +183,10 @@ proofreuse_store_read() {
     "$(proofreuse_store_file)" 2> /dev/null || printf '{"runs":{}}\n'
 }
 
-# proofreuse_merge NEW: the one writer of the store. NEW (a JSON object
-# key -> run) is merged over the recorded runs. The read-modify-write runs
-# under a lock beside the file and ends in an atomic move.
+# proofreuse_merge NEW [DROP]: the one writer of the store. NEW (a JSON object
+# key -> run) is merged over the recorded runs, after the runs of DROP (a JSON
+# array of keys: units that no longer exist) are taken out. The
+# read-modify-write runs under a lock beside the file and ends in an atomic move.
 proofreuse_merge() {
   local file lock tmp
   file=$(proofreuse_store_file)
@@ -194,15 +195,63 @@ proofreuse_merge() {
   vbw_lock_take "$lock" "runs"
   tmp=$(mktemp "${file%/*}/runs.XXXXXX") || vbw_die "cannot create a temporary file in ${file%/*}"
   vbw_guard_add file "$tmp"
-  proofreuse_store_read | jq -c --slurpfile nw <(printf '%s' "$1") '{runs: (.runs + $nw[0])}' > "$tmp" && mv "$tmp" "$file"
+  proofreuse_store_read | jq -c --slurpfile nw <(printf '%s' "$1") --slurpfile dr <(printf '%s' "${2:-[]}") \
+    '{runs: ((.runs | del(.[$dr[0][]])) + $nw[0])}' > "$tmp" && mv "$tmp" "$file"
   vbw_guard_drop "$tmp"
   vbw_guard_drop "$lock"
 }
 
-# proofreuse_save RECORD CHECKS COMMANDS TREE AT: record the runs that really
-# happened (CHECKS and COMMANDS: JSON objects name -> result, with the read
-# list the runner collected) on the committed code TREE. A unit that was not
-# run (skipped, waiting) leaves its earlier run alone. The fingerprints come
+# proofreuse_stale RECORD FILES: the units of the store as this proof read it
+# (PROOFREUSE_STORE) that no longer exist, as a JSON array of keys for the save
+# to drop, so the store holds current units only. A unit exists while it is a
+# check or a project command of the record, or a test file of FILES (the keys
+# of the files the form matches now, a JSON array; a file an approved check
+# runs is that check). The store is shared by the clone's worktrees, so a unit
+# another worktree still has keeps its run: a check or command its record
+# names (records that cannot be read keep them all), a test file present at
+# that path in its folder. Nothing stale costs no git command; the other
+# worktrees' records are read only for a stale check or command. A proof copy
+# is no other worktree.
+proofreuse_stale() {
+  local cand line wt real here others=() recs=() kept=() k have='"none"'
+  cand=$(jq -nc --slurpfile st <(printf '%s' "${PROOFREUSE_STORE-}") --slurpfile r <(printf '%s' "$1") --slurpfile f <(printf '%s' "$2") '
+    ([($r[0].checks // [])[] | "check:" + .id] + [($r[0].commands // {}) | keys[] | "command:" + .] + $f[0]
+     | map({key: ., value: true}) | from_entries) as $now
+    | [($st[0].runs? // {}) | keys[] | select($now[.] | not)]') || { printf '[]\n'; return 0; }
+  [ "$cand" != '[]' ] || { printf '[]\n'; return 0; }
+  here=$(cd "$VBW_ROOT" && pwd -P) || here=$VBW_ROOT
+  while IFS= read -r -d '' line; do
+    case "$line" in "worktree "*) wt=${line#worktree } ;; *) continue ;; esac
+    case "$wt" in */.vbw/runtime/proof.*) continue ;; esac
+    real=$(cd "$wt" 2> /dev/null && pwd -P) || continue
+    [ "$real" = "$here" ] || others+=("$real")
+  done < <(git -C "$VBW_ROOT" worktree list --porcelain -z 2> /dev/null \
+    || git -C "$VBW_ROOT" worktree list --porcelain 2> /dev/null | tr '\n' '\0')
+  if [ ${#others[@]} -gt 0 ]; then
+    while IFS= read -r -d '' k; do
+      for wt in "${others[@]}"; do
+        if [ -e "$wt/${k#file:}" ]; then kept+=("$k"); break; fi
+      done
+    done < <(printf '%s' "$cand" | jq -j '.[] | select(startswith("file:")) | . + "\u0000"')
+    if printf '%s' "$cand" | jq -e 'any(.[]; startswith("file:") | not)' > /dev/null; then
+      for wt in "${others[@]}"; do [ ! -f "$wt/.vbw/record.json" ] || recs+=("$wt/.vbw/record.json"); done
+      if [ ${#recs[@]} -gt 0 ]; then
+        have=$(jq -n -c '[inputs | ((.checks // [])[]? | "check:\(.id)"), ((.commands // {}) | keys[]? | "command:" + .)] | unique' "${recs[@]}" 2> /dev/null) || have='"all"'
+      fi
+    fi
+  fi
+  # have: "none" (no other record), "all" (one could not be read: keep every check and command), or their keys.
+  printf '%s\0' ${kept[@]+"${kept[@]}"} | jq -Rs -c --slurpfile c <(printf '%s' "$cand") --slurpfile hv <(printf '%s' "$have") '
+    (split("\u0000")[:-1] | map({key: ., value: true}) | from_entries) as $kept
+    | ($hv[0] | if . == "none" then {} elif . == "all" then null else map({key: ., value: true}) | from_entries end) as $h
+    | [$c[0][] | select(($kept[.] | not) and (if startswith("file:") then true elif $h == null then false else ($h[.] | not) end))]'
+}
+
+# proofreuse_save RECORD CHECKS COMMANDS TREE AT [DROP]: record the runs that
+# really happened (CHECKS and COMMANDS: JSON objects name -> result, with the
+# read list the runner collected) on the committed code TREE. A unit that was
+# not run (skipped, waiting) leaves its earlier run alone. The runs of DROP (a
+# JSON array of keys, proofreuse_stale) leave the store. The fingerprints come
 # from the one pass (proofreuse_fps_need).
 proofreuse_save() {
   local new
@@ -215,7 +264,7 @@ proofreuse_save() {
       | {key: "\($kind):\($n)", value: {fp: ($f[0]["\($kind):\($n)"] // ""), tree: $tree, status: $x.status, at: $at, seconds: $x.seconds,
           tail: ($x.tail // ""), reads: ($x.reads // null), dirs: ($x.dirs // []), git: ($x.git // false)}};
     [runs("check"; $c[0]), runs("command"; $m[0])] | from_entries')
-  proofreuse_merge "$new"
+  proofreuse_merge "$new" "${6:-[]}"
 }
 
 # proofreuse_annotate RECORD KIND RESULTS AT WHY: each result that really ran

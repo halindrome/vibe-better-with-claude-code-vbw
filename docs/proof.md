@@ -772,7 +772,13 @@ A check removed from the contract is left out of the new proof.
 **Where read lists are kept.** In `vbw/runs.json` in the clone's git directory
 (`git rev-parse --git-common-dir`), never in the record. A lost or damaged
 file only makes the checks run again. The store is protected
-(docs/guards.md).
+(docs/guards.md). It holds current units only: when `vbw prove` saves, the
+runs of units that no longer exist leave it (a deleted test file, a test file
+an approved check now runs, a check taken out of the record). The clone's
+worktrees share the store, so a unit another worktree still has keeps its run:
+a check or command its record names, a test file in its folder. A branch
+checked out in no worktree is not consulted: switching back to it re-runs the
+units only it has, once.
 
 **Files a unit writes.** A file a unit writes carries that unit's read list. A
 later unit that reads the file inherits the list, so it runs again when
