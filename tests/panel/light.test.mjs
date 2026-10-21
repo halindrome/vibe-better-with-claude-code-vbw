@@ -1,9 +1,14 @@
 // R55: the panel stays light. It reads only local project files, calls nothing
 // that reaches the network or credentials, never writes (the record included),
-// and does no redraw when nothing changed (L1, stand-in for the mods API).
+// and does no redraw when nothing changed (L1, stand-in for the mods API). The
+// drawings of the bench's cases are pinned, so work done for speed draws the same.
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { mount, record, next, lease, ALLOWED, ROOT, T0 } from './helpers/fake-mod.mjs'
+import { createHash } from 'node:crypto'
+import { mount, record, next, lease, ALLOWED, ROOT, T0, PLUGIN } from './helpers/fake-mod.mjs'
+import { building, writeCrew, working, TICK } from './r189/helpers/crew.mjs'
+
+process.env.TZ = 'Europe/Zurich' // the drawings' HH:MM are local times
 
 const REC = ROOT + '/.vbw/record.json'
 const NEXT = ROOT + '/.vbw/runtime/next.json'
@@ -95,4 +100,88 @@ test('a changed file is read once and drawn once, however many ticks follow', as
   await h.advance(30000)
   assert.ok(h.count('fs.read') - reads <= 2, 'the changed file is read once, not on every tick')
   assert.equal(h.count('ui.invalidate') - draws, 1)
+})
+
+// The bench's cases (tools/bench-panel.mjs), each refresh as the bench makes it: its
+// 20 warm-up refreshes and 30 more. The step case's lease starts at T0 (the bench
+// takes the wall clock), so every run draws the same.
+const STEPS_FILE = ROOT + '/.git/vbw/steps.json'
+const NOTE = ROOT + '/.vbw/runtime/step.json'
+const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z')
+const pastSteps = (kind, secs) => secs.map((s, i) => ({ kind, run: kind + '-' + i, seconds: s }))
+const RECOMMENDATION = (i) => ({ at: '2026-10-09T10:00:' + String(i % 60).padStart(2, '0') + 'Z', top: { text: 'Refunds for paid orders', reason: 'Customers ask for it most this month.', size: 'small' }, runners: [{ text: 'Gift cards', size: 'large' }, { text: 'Dark mode', size: 'medium' }] })
+async function idle(rec = record()) {
+  const h = await mount()
+  h.project(rec, next())
+  h.git()
+  await h.start()
+  await h.advance(5000)
+  await h.render()
+  return h
+}
+const BENCH = {
+  tick: [() => idle(), async (h) => {
+    await h.advance(2000)
+    return []
+  }],
+  refresh: [() => idle(), async (h, i) => {
+    h.write(NEXT, next({ action: i % 2 ? 'build' : 'ship', gate: i % 2 === 0 }))
+    await h.advance(2000)
+    return [await h.render()]
+  }],
+  glance: [() => idle(), async (h, i) => {
+    h.write(STEPS_FILE, { steps: [...pastSteps('build', [600, 900, 1200 + i]), ...pastSteps('qa', [100, 200, 300])] })
+    h.setUsage({ cost: { usd: 1 + i / 100 } })
+    await h.advance(2000)
+    return [await h.render()]
+  }],
+  'whats-next': [() => idle(), async (h, i) => {
+    h.project(record({ recommendation: RECOMMENDATION(i) }), next())
+    await h.advance(2000)
+    return [await h.render()]
+  }],
+  render: [async () => {
+    const { h } = await building(working(5))
+    h.git()
+    return h
+  }, async (h) => {
+    writeCrew(h, h.now() + TICK, working(5))
+    await h.advance(TICK)
+    return [await h.draw('AbovePrompt', { hasSurvey: false, isWorking: true, maxRows: 12, bodyColumns: 100 }), await h.render()]
+  }],
+  step: [() => idle(record({ lease: lease('build', T0) })), async (h, i) => {
+    const end = h.now() + (12 + (i % 5)) * 60000
+    h.write(NOTE, {
+      kind: 'build', run: 'build-1', session: 'sess-1', pid: null, started_at: iso(h.now() - 300000), ids: ['P44.1'], doing: 'building P44.1',
+      parts: { done: 1, total: 2 }, proof: null, first_end: iso(end), end: iso(end), late: false,
+    })
+    await h.advance(2000)
+    return [await h.render()]
+  }],
+}
+// A drawing as data: each element once (the stand-in's h() also keeps the children in
+// props), a press handler as its name, the plugin's folder as a word.
+const plain = (n) => (n && typeof n === 'object' && !Array.isArray(n) && 'type' in n
+  ? { type: n.type, props: Object.fromEntries(Object.entries(n.props || {}).filter(([k]) => k !== 'children').map(([k, v]) => [k, typeof v === 'function' ? 'fn' : v])), children: (n.children || []).map(plain) }
+  : Array.isArray(n) ? n.map(plain) : n)
+// Each case's drawings and its redraw count after each refresh, as one sha256.
+const PINNED = {
+  tick: 'db362e790d4eba5e4d7f8b9078cad1aeef6b1bf583216186efdfe5cd9801e109',
+  refresh: '5797852ddcbfc7794c64d0d165a05298afa325da7cd5338ff12b35e40dacba8d',
+  glance: '2779bbb4209aa78b5eed08b914ac6dfd3dac788a69d687324db48edcd4e3d51f',
+  'whats-next': '260266d4f49492ef2a7db001485e1e3b65e9e310567ede5dcbdbd53836675324',
+  render: 'cc6e3fe25c3a4eb199afd1bd9f140dbc86b3f2f233ead0d540aed10fc0f8b14d',
+  step: '449da219e48bdd9a69865930c2053bf10fc69f84ad21b58e9c743836b4714fb9',
+}
+
+test("the bench's cases draw what they drew: work done for speed changes no drawing and no redraw", async () => {
+  const got = {}
+  for (const [name, [begin, refresh]] of Object.entries(BENCH)) {
+    const h = await begin()
+    const seen = []
+    for (const runs of [20, 30]) for (let i = 0; i < runs; i++) seen.push((await refresh(h, i)).map(plain), h.invalidations())
+    assert.deepEqual(h.errors, [], name)
+    got[name] = createHash('sha256').update(JSON.stringify(seen).split(PLUGIN).join('<plugin>')).digest('hex')
+  }
+  assert.deepEqual(got, PINNED, 'a bench case drew something else: re-pin it only for a change meant to be seen')
 })
