@@ -4,8 +4,10 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 TIERS="$BATS_TEST_DIRNAME/../plugin/lib/tiers.json"
 PROFILES="$BATS_TEST_DIRNAME/../plugin/lib/profiles.json"
@@ -15,6 +17,9 @@ planned_project() {
   rigor_project 1
   rigor_apply "$(rigor_doc 1 "" src/note.txt)" > /dev/null
 }
+
+# One requirement and its plan, built once per file.
+setup_file() { fixture_build planned planned_project; }
 
 next_models() { # PROFILE TIER: the P1 rigor models of vbw next --json
   edit_record ".settings.profile = \"$1\" | .phases[0].tier = \"$2\""
@@ -26,7 +31,7 @@ next_models() { # PROFILE TIER: the P1 rigor models of vbw next --json
 @test "no profile and no tier cell gives QA Haiku, in the tables or in vbw next" {
   jq -e 'all(.[]; .qa != "haiku")' "$PROFILES"
   jq -e 'all(.[][]; .models.qa | IN("sonnet", "opus", "default"))' "$TIERS"
-  planned_project
+  fixture_copy planned
   local p t
   for p in quality balanced budget; do
     for t in express standard deep; do
@@ -58,7 +63,7 @@ next_models() { # PROFILE TIER: the P1 rigor models of vbw next --json
 }
 
 @test "a record that already holds a Haiku QA override gets Sonnet in vbw next" {
-  planned_project
+  fixture_copy planned
   local v
   for v in haiku Haiku claude-haiku-4-5; do
     edit_record ".settings.profile = \"balanced\" | .phases[0].tier = \"standard\" | .settings.models = {qa: \"$v\"}"
@@ -69,7 +74,7 @@ next_models() { # PROFILE TIER: the P1 rigor models of vbw next --json
 }
 
 @test "a QA override to opus or a full non-Haiku id is honoured, and the dev override still wins" {
-  planned_project
+  fixture_copy planned
   edit_record '.settings.profile = "budget" | .phases[0].tier = "express" | .settings.models = {qa: "opus", dev: "opus"}'
   vbw_run next --json
   echo "$output" | jq -e '.rigor.P1.models == {dev: "opus", qa: "opus"}'
@@ -79,7 +84,7 @@ next_models() { # PROFILE TIER: the P1 rigor models of vbw next --json
 }
 
 @test "a forced rigor and an escalation never lower QA below Sonnet" {
-  planned_project
+  fixture_copy planned
   "$VBW" config set profile budget > /dev/null
   local m
   for m in express standard deep auto; do
