@@ -4,17 +4,23 @@
 # of the computer's processor cores, that every VBW project on this computer
 # shares it, and that it is not a setting. When check_jobs is above it, the
 # line says the machine limit is the one that applies. L1: the core count is
-# faked (tests/machine-helper.bash).
+# faked (tests/machine-helper.bash). The project is built once per file
+# (setup_file) and copied for each test.
 
 load helper
 load machine-helper
+load fixture-helper
 
-setup() {
+# one_check: the project of every test, one check. For fixture_build.
+one_check() {
   machine_setup
   machine_project "$PROJECT" A 1 0
 }
 
+setup_file() { fixture_build one one_check; }
+setup() { fixture_copy one; }
 teardown() { machine_teardown; }
+teardown_file() { fixture_teardown; }
 
 # limit_line: the line of vbw config right after its check_jobs line.
 limit_line() { "$VBW" config < /dev/null | grep -A 1 '^check_jobs:' | sed -n 2p; }
