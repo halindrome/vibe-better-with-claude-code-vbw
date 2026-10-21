@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 1770" width="1320" height="1770" role="img" aria-labelledby="title desc">
+  <title id="title">VBW architecture</title>
+  <desc id="desc">You type /vbw:vibe. The skills surface asks the kernel for the next step and hands it to the engine, where one Dev per ready plan builds at the same time while hooks guard every write and command. Agents write only through the vbw kernel, which keeps the record, fingerprints the contract, proves every check on a clean copy of HEAD and checks that each commit stayed in its plan and every delivered file is still there. A failed proof goes to a fix, back to the Devs, three tries then you. A pass goes to review: a QA agent for every phase at the same time, and you judge the human requirements. Findings become fixes; a clean review is done, proven, not claimed.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FCFAF6"/>
+      <stop offset="1" stop-color="#F6F3FB"/>
+    </linearGradient>
+    <linearGradient id="ink" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4C40CF"/>
+      <stop offset="1" stop-color="#30299A"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F8DE97"/>
+      <stop offset="1" stop-color="#EFC968"/>
+    </linearGradient>
+    <filter id="sh" x="-10%" y="-20%" width="120%" height="150%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#2E2770" flood-opacity="0.13"/>
+    </filter>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2B2940"/>
+    </marker>
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif; fill: #1F1D33; font-size: 27px; text-anchor: middle; }
+      .b { font-weight: 700; }
+      .w { fill: #FFFFFF; }
+      .chip text, text.c { font-size: 25px; fill: #34324A; }
+      .note { font-size: 25px; fill: #5A5778; font-style: italic; }
+      .box { fill: #E9E5FD; stroke: #9C8FE6; stroke-width: 2; }
+      .cont { fill: #FFF8E4; stroke: #EBCF7E; stroke-width: 2; }
+      .chipr { fill: #F3F1EE; stroke: #E4E0DA; stroke-width: 1.5; }
+      .ln { stroke: #2B2940; stroke-width: 2.4; fill: none; }
+      .dash { stroke-dasharray: 7 7; }
+    </style>
+  </defs>
+
+  <rect width="1320" height="1770" rx="28" fill="url(#bg)"/>
+
+  <!-- You -->
+  <rect x="225" y="30" width="290" height="78" rx="39" fill="url(#ink)" filter="url(#sh)"/>
+  <text x="370" y="79" class="w" style="font-size:30px">You: /vbw:vibe</text>
+  <path class="ln" d="M370 108 V184" marker-end="url(#ah)"/>
+
+  <!-- Surface -->
+  <rect class="box" x="120" y="188" width="500" height="200" rx="18" filter="url(#sh)"/>
+  <text x="370" y="262"><tspan class="b">SURFACE</tspan> · skills</text>
+  <text x="370" y="308">the router always knows</text>
+  <text x="370" y="346">the next step</text>
+
+  <!-- Hooks -->
+  <polygon class="box" points="752,170 1168,170 1222,288 1168,406 752,406 698,288" filter="url(#sh)"/>
+  <text x="960" y="230"><tspan class="b">HOOKS</tspan> · guards</text>
+  <text x="960" y="272">deny writes outside each plan,</text>
+  <text x="960" y="309">edits to approved checks,</text>
+  <text x="960" y="346">rm -rf, git reset --hard</text>
+  <text x="960" y="383">and secret files</text>
+
+  <!-- Surface to engine -->
+  <path class="ln" d="M370 388 V556" marker-end="url(#ah)"/>
+  <g class="chip">
+    <rect class="chipr" x="215" y="448" width="310" height="48" rx="24"/>
+    <text x="370" y="481">state: vbw next --json</text>
+  </g>
+
+  <!-- Hooks to engine -->
+  <path class="ln dash" d="M960 406 V556" marker-end="url(#ah)"/>
+  <g class="chip">
+    <rect class="chipr" x="900" y="448" width="120" height="48" rx="24"/>
+    <text x="960" y="481">guard</text>
+  </g>
+
+  <!-- Engine -->
+  <rect class="cont" x="70" y="560" width="1180" height="300" rx="22" filter="url(#sh)"/>
+  <text x="660" y="608"><tspan class="b">ENGINE</tspan> · Claude Code dynamic workflows</text>
+  <rect x="130" y="636" width="235" height="96" rx="16" fill="url(#ink)" filter="url(#sh)"/>
+  <text x="247.5" y="694" class="w">Dev · P1.1</text>
+  <rect class="box" x="400" y="636" width="235" height="96" rx="16" filter="url(#sh)"/>
+  <text x="517.5" y="694">Dev · P1.2</text>
+  <rect x="670" y="636" width="235" height="96" rx="16" fill="url(#gold)" stroke="#D9B04E" stroke-width="2" filter="url(#sh)"/>
+  <text x="787.5" y="694">Dev · P1.3</text>
+  <rect x="940" y="636" width="250" height="96" rx="16" fill="#FFFDF7" stroke="#9C8FE6" stroke-width="2" stroke-dasharray="9 7"/>
+  <text x="1065" y="694">+ Dev · P1.n</text>
+  <text x="660" y="788" class="note">One Dev for every ready plan, all at the same time:</text>
+  <text x="660" y="826" class="note">as many as the work allows</text>
+
+  <!-- Engine to kernel -->
+  <path class="ln" d="M660 860 V956" marker-end="url(#ah)"/>
+  <g class="chip">
+    <rect class="chipr" x="500" y="884" width="320" height="48" rx="24"/>
+    <text x="660" y="917">writes only through vbw</text>
+  </g>
+
+  <!-- Kernel -->
+  <rect class="cont" x="40" y="960" width="1240" height="290" rx="22" filter="url(#sh)"/>
+  <text x="660" y="1008"><tspan class="b">KERNEL</tspan> · vbw (bash + jq + git)</text>
+  <g filter="url(#sh)">
+    <path class="box" d="M80 1060 A100 24 0 0 1 280 1060 V1180 A100 24 0 0 1 80 1180 Z"/>
+    <path d="M80 1060 A100 24 0 0 0 280 1060" fill="none" stroke="#9C8FE6" stroke-width="2"/>
+  </g>
+  <text x="180" y="1124">record.json</text>
+  <text x="180" y="1162">single writer</text>
+  <rect class="box" x="310" y="1036" width="180" height="170" rx="16" filter="url(#sh)"/>
+  <text x="400" y="1112">contract</text>
+  <text x="400" y="1150">SHA-256</text>
+  <rect class="box" x="520" y="1036" width="330" height="170" rx="16" filter="url(#sh)"/>
+  <text x="685" y="1094" class="b">vbw prove</text>
+  <text x="685" y="1134">every check, on a</text>
+  <text x="685" y="1172">clean copy of HEAD</text>
+  <rect class="box" x="880" y="1036" width="360" height="170" rx="16" filter="url(#sh)"/>
+  <text x="1060" y="1094" class="b">delivered files</text>
+  <text x="1060" y="1134">each commit in its plan,</text>
+  <text x="1060" y="1172">all built files still there</text>
+
+  <!-- Fail and pass -->
+  <path class="ln" d="M330 1250 V1348" marker-end="url(#ah)"/>
+  <g class="chip">
+    <rect class="chipr" x="285" y="1276" width="90" height="46" rx="23"/>
+    <text x="330" y="1308">fail</text>
+  </g>
+  <path class="ln" d="M990 1250 V1348" marker-end="url(#ah)"/>
+  <g class="chip">
+    <rect class="chipr" x="940" y="1276" width="100" height="46" rx="23"/>
+    <text x="990" y="1308">pass</text>
+  </g>
+
+  <!-- Fix -->
+  <rect class="box" x="100" y="1352" width="460" height="168" rx="18" filter="url(#sh)"/>
+  <text x="330" y="1418"><tspan class="b">FIX</tspan> · back to the Devs</text>
+  <text x="330" y="1462">3 tries, then it comes to you</text>
+  <path class="ln dash" d="M100 1436 H22 V684 H128" marker-end="url(#ah)"/>
+
+  <!-- Review -->
+  <rect class="box" x="730" y="1352" width="520" height="168" rx="18" filter="url(#sh)"/>
+  <text x="990" y="1404"><tspan class="b">REVIEW</tspan> · a QA for every phase,</text>
+  <text x="990" y="1444">all at once, against its goal;</text>
+  <text x="990" y="1484">you judge the [human] ones</text>
+
+  <!-- Findings back to fix -->
+  <path class="ln" d="M730 1436 H564" marker-end="url(#ah)"/>
+  <g class="chip">
+    <rect class="chipr" x="582" y="1412" width="130" height="46" rx="23"/>
+    <text x="647" y="1444">findings</text>
+  </g>
+
+  <!-- Done -->
+  <path class="ln" d="M990 1520 V1636" marker-end="url(#ah)"/>
+  <g class="chip">
+    <rect class="chipr" x="940" y="1554" width="100" height="46" rx="23"/>
+    <text x="990" y="1586">pass</text>
+  </g>
+  <rect x="780" y="1640" width="420" height="80" rx="40" fill="#DCD6FB" stroke="#8E80E0" stroke-width="2" filter="url(#sh)"/>
+  <text x="990" y="1690" style="font-size:29px">Done. Proven, not claimed.</text>
+</svg>
