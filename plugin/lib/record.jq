@@ -348,6 +348,11 @@ if type != "object" then ["record must be a JSON object"] else
             | "evidence.undone must be an array of {commit, plan, by}: commit and by 40 hex digits, plan a plan id P<n>.<m> (docs/record.md)" )
           , ( select(has("causes") and ((.causes | type == "array" and all(.[]; type == "string")) | not))
             | "evidence.causes must be an array of strings (docs/record.md)" )
+          , ( def oid: type == "string" and test("^([0-9a-f]{40}|[0-9a-f]{64})$");
+              select(has("deviations") and ((.deviations | type == "array" and all(.[]; type == "object" and (keys == ["at","by","change","commit","file","plan"])
+                    and (.file | nonempty) and (.plan | type == "string" and test("^P[0-9]+\\.[0-9]+$")) and (.commit | oid) and (.at | iso)
+                    and (.change | one_of(["deleted","changed"])) and (.by | type == "array" and all(.[]; oid)))) | not))
+            | "evidence.deviations must be an array of {file, plan, commit, at, change, by}: plan a plan id P<n>.<m>, commit a commit id, at an ISO-8601 UTC time, change deleted or changed, by an array of commit ids (docs/record.md)" )
         end ),
     ( $r.costs
       | select(. != null)

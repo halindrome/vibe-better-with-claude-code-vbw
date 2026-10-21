@@ -114,7 +114,7 @@ adding the one phase with `vbw apply --add` (docs/rigor.md).
 | 9 | a fix is `open` | `fix` (`detail.fixes`, and `detail.groups`: fixes whose files overlap, one Dev each; a project command's fix may touch any file) | no |
 | 10 | an `auto` requirement is not `proven`, or the evidence is stale (another contract, or the project files changed since; docs/proof.md) | `prove` | no |
 | 10b | the latest proof is partial (it reused results or used the quick command) and a phase is about to go to QA, or the milestone to ship | `prove` with `detail.full` true: `Run vbw prove --full: ...` (docs/proof.md) | no |
-| 10a | a phase of the current milestone is built and QA must check it again (never passed, failed, its own files, tests, goal or plan changed since it passed, or the tests of a phase it builds on changed; docs/proof.md). An express phase is skipped when every requirement is `auto` and it has no escalations; a `human` requirement or an escalation brings QA back | `qa` (`detail.phases`: only the phases to check again, not the whole project, and `detail.tier`: the highest QA tier of those phases in the profile's table) | no |
+| 10a | a phase of the current milestone is built and QA must check it again (never passed, failed, its own files, tests, goal or plan changed since it passed, the tests of a phase it builds on changed, or a file its plans delivered changed outside any plan with no decision of the user covering it; docs/proof.md). An express phase is skipped when every requirement is `auto` and it has no escalations; a `human` requirement, an escalation or such a changed delivered file brings QA back | `qa` (`detail.phases`: only the phases to check again, not the whole project, and `detail.tier`: the highest QA tier of those phases in the profile's table) | no |
 | 11 | a `human` requirement is `open` and not skipped, or one moved from a shipped milestone is `open` | `accept` (one scenario at a time) | yes |
 | 12 | otherwise | `ship` (`vbw ship`, which refuses while the proven work is not committed: the proof reads files on disk, a shipped milestone must be in git history); when the only unfinished requirements are `human` ones you skipped, `detail.later` lists them: ship now and judge them in the next milestone, or judge them now | yes |
 
@@ -246,6 +246,12 @@ none runs the suite again (docs/workflows.md).
 `round.tiers` maps each phase to check to the QA depth chosen for its size and
 risk (`quick`, `standard` or `deep`; docs/rigor.md). The QA workflow uses it
 instead of the profile's depth, which `rigor` still carries.
+`round.deviations` maps each phase to check that has any to the files its plans
+delivered that the last proof found changed outside any plan, each `{file,
+plan, change, commit, by, decision}` (`change` is `deleted` or `changed`, `by`
+the commits that did it, `decision` the id of the user's decision that covers
+it, or `null`). It is `{}` when there are none (docs/proof.md, Delivered files).
+The QA workflow names each one to that phase's QA agent.
 
 The router opens the QA run (`vbw run start qa`) before it starts the QA
 workflow, and an open run turns the `qa` answer into `run` (row 0). While the

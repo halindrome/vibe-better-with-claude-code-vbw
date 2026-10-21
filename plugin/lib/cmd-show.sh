@@ -35,7 +35,9 @@ cmd_show() {
       [ $# -eq 1 ] || vbw_usage_error "usage: vbw show phase ID"
       printf '%s' "$record" | jq -e --arg p "$1" 'any(.phases[]; .id == $p)' > /dev/null || vbw_die "unknown phase $1"
       vbw_scratch_json cf "$(qa_combined "$record")"
-      printf '%s' "$record" | jq -r --arg p "$1" --slurpfile cf "$cf" "$SHOW_JQ_DEFS"'
+      # shellcheck source=delivered.sh
+      . "$VBW_LIB/delivered.sh"
+      printf '%s' "$record" | jq -r --arg p "$1" --slurpfile cf "$cf" --slurpfile dv <(qa_deviations "$record") "$SHOW_JQ_DEFS$DELIVERED_DEFS"'
         $cf[0] as $cur | . as $r | (.phases[] | select(.id == $p)) as $ph
         | "\($ph.id) \($ph.title) [\($ph | phase_status($r))]",
           (if $ph.goal then "goal: \($ph.goal)" else empty end),
@@ -44,6 +46,7 @@ cmd_show() {
              + (if $ph.qa.result == "pass" and $ph.qa.tree != ($cur[$ph.id] // "") then " [on older code]" else "" end) else empty end),
           (if $ph.tier then "tier: \($ph.tier) (predicted \($ph.predicted // $ph.tier))", ($ph.reasons // [] | map("  - " + .)[]) else empty end),
           (($ph.escalations // [])[] | "escalated \(.from) -> \(.to) (\(.at)): \(.reason)"),
+          (($dv[0][$p] // [])[] | "deviation: \(deviation_line)\(if .decision then ", covered by \(.decision)" else "" end)"),
           "requirements:",
           ($ph.reqs[] as $q | $r.requirements[] | select(.id == $q) | "  \(.id) [\(.proof), \(.status)] \(.text)"),
           "plans:",
@@ -141,7 +144,9 @@ cmd_show() {
       # The unit-time block follows the own-work line (unittime.sh): every current unit as it last ran.
       # shellcheck source=unittime.sh
       . "$VBW_LIB/unittime.sh"
-      printf '%s' "$record" | jq -r --argjson cb "$VBW_CHECK_BUDGET" "$UNITTIME_DEFS"'
+      # shellcheck source=delivered.sh
+      . "$VBW_LIB/delivered.sh"
+      printf '%s' "$record" | jq -r --argjson cb "$VBW_CHECK_BUDGET" "$UNITTIME_DEFS$DELIVERED_DEFS"'
         (.settings.check_budget // $cb) as $budget
         | if .evidence == null then "no proof run yet (vbw prove)" else .evidence
         | "proof run \(.at): \(if .passed then "passed" else "FAILED" end) (contract \(.contract[0:12]))",
@@ -153,7 +158,8 @@ cmd_show() {
             | "  \(.key) \(.value.status)\(if .value.exit != null then " exit \(.value.exit)" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif (.value.why // "") != "" then " ran: \(.value.why)" else " not recorded" end)",
               (.value.tail | select(length > 0) | split("\n")[] | "    | " + .)),
           (.scope[] | "  scope: " + .),
-          ((.undone // [])[] | "  scope: \(.commit[0:12]) (\(.plan)) undone by \(.by[0:12]), not judged")
+          ((.undone // [])[] | "  scope: \(.commit[0:12]) (\(.plan)) undone by \(.by[0:12]), not judged"),
+          ((.deviations // [])[] | "  delivered: \(deviation_line): QA judges it")
         end'
       ;;
   esac

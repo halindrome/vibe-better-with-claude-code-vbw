@@ -26,4 +26,7 @@ Start the Workflow `vbw:investigating` with args `{"problem": "<the problem>",
 its evidence, rejected hypotheses, confidence and the proposed fix, then ask whether to fix it now. If yes, start the Workflow again
 with args `{"problem": "<the problem>", "fix": <the diagnosis it returned>,
 "models": ..., "effort": ..., "profile": ...}`: one Debugger fixes the root cause, adds a regression test,
-commits and verifies (`vbw prove` in a VBW project). Report what changed.
+commits and verifies (`vbw prove` in a VBW project). In a VBW project, then record that the user asked
+for the fix, naming each file it returned by its path: `vbw decide "Debug fix: <root cause>, in <file>, <file>"
+"the user asked for the fix (/vbw:debug)"`, so QA takes the change as the user's, not as a deviation
+from a plan. Report what changed.

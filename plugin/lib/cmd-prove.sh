@@ -18,6 +18,8 @@
 . "$VBW_LIB/cmd-next.sh"
 # shellcheck source=unittime.sh
 . "$VBW_LIB/unittime.sh"
+# shellcheck source=delivered.sh
+. "$VBW_LIB/delivered.sh"
 
 VBW_FIX_CAP=3
 
@@ -30,7 +32,7 @@ cmd_prove() {
   esac
   vbw_require_project
   cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
-  local causes record checks commands scope undone tree head ev at evf curf noreads mark="" n files='{}' tfs='{}' tfsum alln=0 fp own
+  local causes record checks commands scope undone deviations tree head ev at evf curf noreads mark="" n files='{}' tfs='{}' tfsum alln=0 fp own
   # This session's Stop hook waits while the mark names a live process (R98).
   if [ -n "$(vbw_session)" ]; then
     mark="$VBW_RUNTIME/proving.$(vbw_session)"
@@ -120,8 +122,10 @@ cmd_prove() {
   scope=$(prove_scope "$record")
   undone=$(printf '%s' "$scope" | jq -c '.undone')
   scope=$(printf '%s' "$scope" | jq -c '.scope')
+  # The files the plans delivered that HEAD no longer holds as VBW left them: QA's to judge.
+  deviations=$(delivered_deviations "$record")
   tree=$(vbw_code_tree) || vbw_die "cannot fingerprint the project files"
-  # The scope check and the working folder's tree are planning, as the committed code's is.
+  # The scope check, the delivered files and the working folder's tree are planning, as the committed code's is.
   prooftime_step planning
   # tree: the working folder (QA freshness, R12); head: the committed code the
   # checks ran on, so committing unproved edits later makes the proof stale.
@@ -129,8 +133,8 @@ cmd_prove() {
   # The causes grow with a commit (one per unseen file): through a file, never as an argument.
   ev=$(jq -n --arg at "$at" --arg h "$CHECK_HASH" --argjson standin "$QUICK_STANDIN" --arg tree "$tree" --arg head "$head" \
     --slurpfile cf <(printf '%s' "$checks") --slurpfile mf <(printf '%s' "$commands") --slurpfile sf <(printf '%s' "$scope") --slurpfile uf <(printf '%s' "$undone") --slurpfile tf <(printf '%s' "$tfs") \
-    --rawfile causes <(printf '%s' "$causes") \
-    '$cf[0] as $c | $mf[0] as $m | $sf[0] as $s | $uf[0] as $u | $tf[0] as $t | {at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, test_files: $t, scope: $s, undone: $u,
+    --slurpfile df <(printf '%s' "$deviations") --rawfile causes <(printf '%s' "$causes") \
+    '$cf[0] as $c | $mf[0] as $m | $sf[0] as $s | $uf[0] as $u | $tf[0] as $t | {at: $at, contract: $h, tree: $tree, head: $head, checks: $c, commands: $m, test_files: $t, scope: $s, undone: $u, deviations: $df[0],
       causes: ($causes | split("\n") | map(select(length > 0))),
       full: (($standin | not) and all($c[]; (.reused // false) | not) and all($m[]; (.reused // false) | not) and all($t[]; (.reused // false) | not)
              and all($m | to_entries[] | select(.key != "quick"); .value.status != "skipped")),
@@ -343,7 +347,7 @@ prove_scope() {
 # The slowest units that ran come just before the two lines of VBW's own work (unittime.sh).
 prove_summary() {
   jq -r --rawfile causes <(printf '%s' "$1") --arg own "$(jq -c '.evidence' "$VBW_RECORD" | prooftime_lines)" --argjson d "$VBW_COMMAND_TIMEOUT" --argjson cb "$VBW_CHECK_BUDGET" \
-    "$UNITTIME_DEFS"'(.settings.command_timeout // $d) as $limit | (.settings.check_budget // $cb) as $budget | .evidence as $e
+    "$UNITTIME_DEFS$DELIVERED_DEFS"'(.settings.command_timeout // $d) as $limit | (.settings.check_budget // $cb) as $budget | .evidence as $e
     | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
       ($e.commands | to_entries[] | select(.value.of_files | not) | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)" end)"),
@@ -366,6 +370,7 @@ prove_summary() {
           ($e.commands | to_entries[] | select(.key != "quick" and .value.status == "skipped") | "\(.key) not approved") ] | join(", ")) + "]" end),
       (if ($e.scope | length) == 0 then "  scope ok" else ($e.scope[] | "  scope: " + .) end),
       (($e.undone // [])[] | "  scope: \(.commit[0:12]) (\(.plan)) undone by \(.by[0:12]), not judged"),
+      (($e.deviations // [])[] | "  delivered: \(deviation_line): QA judges it"),
       (.requirements[] | select(.proof == "auto") | "\(.id) \(.status)"),
       (.fixes[] | select(.status == "open" or .status == "escalated") | "\(.id) \(.status) (\(.req // .command), attempts \(.attempts)): \(.note)"),
       ($e | ran_line($budget)),

@@ -17,8 +17,10 @@ Write to the user's level, explanation depth and involvement (above; "-": plain 
    never to type a command, and stop.
 2. Explain the result in plain words, requirement by requirement: proven,
    failing (with the reason from `vbw show evidence`), or still being built.
-   Name any failed project command and any commit that changed files outside
-   its plan (`vbw show evidence`).
+   Name any failed project command, any commit that changed files outside
+   its plan, and any file a plan delivered that was changed or deleted outside
+   any plan (`delivered:` lines of `vbw show evidence`; QA cannot pass its phase
+   until a fix brings it back or the user decides to keep the change).
 3. The `[human]` requirements no check can prove: list the ones whose work is
    built (`built` above) and offer `/vbw:verify` to check them now.
 4. From `vbw show qa` (above), tell the user which phases are checked again and

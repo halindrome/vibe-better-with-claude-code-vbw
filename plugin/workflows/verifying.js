@@ -6,7 +6,7 @@ export const meta = {
 }
 
 // args: {phases: ["P1", ...], tier: "quick"|"standard"|"deep", models?: {qa?}, rigor?: {P1: {qa, models}},
-// round?: {tiers, suite, focus?: {P1: {since, round, fixes}}}} (docs/workflows.md).
+// round?: {tiers, suite, focus?: {P1: {since, round, fixes}}, deviations?: {P1: [{file, plan, change, commit, by, decision}]}}} (docs/workflows.md).
 const phases = (args && args.phases) || []
 const tier = (args && args.tier) || 'standard'
 const models = (args && args.models) || {}
@@ -110,8 +110,21 @@ const focusNote = id => {
   const fixes = (r.fixes || []).map(f => `${f.id} (${f.req}): ${f.note}`).join('; ') || 'none recorded'
   return `\n\nThis is re-check round ${r.round || 2} for ${id}: the whole-phase sweep ran at round 1 and the goal, criteria and plans have not changed since. Verify only: the fixes since the last verdict (${fixes}); the files changed since that verdict (git diff --name-only ${r.since} HEAD, leaving out .vbw/) and what those files reach (callers, tests, documents stating their behaviour); and that the phase goal still holds. Do not sweep the rest of the phase again; a problem outside that scope is a note, unless it breaks the goal.`
 }
+// The files a phase's plans delivered that the last proof found changed outside any plan
+// (args.round.deviations, docs/proof.md, Delivered files), in the words of vbw show phase:
+// each one no decision of the user covers is a deviation, and vbw qa record refuses a pass while one stands.
+const deviations = (args && args.round && args.round.deviations && typeof args.round.deviations === 'object') ? args.round.deviations : {}
+const short = c => String(c || '').slice(0, 12)
+const deviationLine = d => `${d.file} (${d.plan}) ${d.change} outside any plan`
+  + (Array.isArray(d.by) && d.by.length > 0 ? `, by ${d.by.map(short).join(', ')}` : `, since ${short(d.commit)}`)
+  + (d.decision ? `, covered by ${d.decision}` : '')
+const deviationNote = id => {
+  const list = Array.isArray(deviations[id]) ? deviations[id] : []
+  if (list.length === 0) return ''
+  return `\n\nVBW found files the plans of ${id} delivered that HEAD no longer holds as VBW left them: ${list.map(deviationLine).join('; ')}. Each one no decision covers is a deviation: record a finding for it (vbw qa finding ${id} REQ "<the file, what is missing or different, the commit>"); vbw qa record ${id} pass refuses while one stands. For one covered by a decision, check that the decision is the user's and covers that change: then it is not a deviation.`
+}
 const results = await pipeline(phases, id =>
-  agent(`Verify VBW phase ${id} at the ${tierOf(id)} tier, then record your findings and verdict with vbw qa (if qa record refuses a stale proof, run vbw prove --full, then retry the record once). Start with: vbw show phase ${id}${focusNote(id)}${suiteNote}${voice}`,
+  agent(`Verify VBW phase ${id} at the ${tierOf(id)} tier, then record your findings and verdict with vbw qa (if qa record refuses a stale proof, run vbw prove --full, then retry the record once). Start with: vbw show phase ${id}${focusNote(id)}${deviationNote(id)}${suiteNote}${voice}`,
     Object.assign({ agentType: 'vbw:qa', label: `qa ${id}`, phase: 'Verify', schema: VERDICT },
       modelOf(id) ? { model: modelOf(id) } : {}, effortOf('qa', 'verify'))))
 

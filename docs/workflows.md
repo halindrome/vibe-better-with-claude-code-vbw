@@ -492,7 +492,12 @@ needed.
   DEVN-01 to DEVN-05; database safety.
 - **QA**: goal-backward verification of a built phase at the profile's tier
   (quick, standard, deep): the goal and criteria met, test gaps, and every
-  deviation from the plan as a failure. It changes nothing but its record.
+  deviation from the plan as a failure. One deviation is found for it at every
+  tier: a file its plans delivered that `HEAD` no longer holds as VBW left it (a
+  hand edit or deletion after the build). The proof lists such files, the QA
+  prompt names them, and `vbw qa record PHASE pass` refuses while one stands that
+  no decision of the user covers (docs/proof.md, Delivered files). It changes
+  nothing but its record.
 - **Scout**: research from one angle (codebase, web, documentation), verified
   and sourced, read-only.
 - **Debugger**: the scientific method: reproduce, hypothesize, evidence,
@@ -563,6 +568,16 @@ the failed verdict's commit, the round number and its QA fixes. The workflow
 tells that phase's QA agent to verify only those fixes, the files changed since
 that commit and what they reach, and the goal; anything else it notices is a
 note (docs/proof.md, Re-check rounds). Every other phase gets the whole sweep.
+
+`round.deviations` holds, per phase, the files its plans delivered that the
+last proof found changed outside any plan: `{file, plan, change, commit, by,
+decision}`. The workflow tells that phase's QA agent each one, in the words
+of `vbw show phase` (`NOTES.md (P1.1) deleted outside any plan, by
+abc123456789`). It also says that each one no decision covers is a deviation
+to record as a finding, and that `vbw qa record PHASE pass` refuses while one
+stands. A deviation that a decision covers carries its id (`covered by D3`).
+QA checks that the decision is the user's and covers that change. A phase with
+no deviation gets no such sentence.
 
 ## One test run per fix round
 
