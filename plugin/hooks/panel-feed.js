@@ -136,8 +136,11 @@ export function parseTranscript(text) {
     if (out.tokens === null) out.tokens = context(r.message.usage)
     if (out.tokens !== null && out.lastAt !== null) break
   }
-  const first = lines.slice(0, 20).map((l) => (l.trim() ? json(l) : undefined)).find((r) => isObj(r) && time(r.timestamp) !== null)
-  out.firstAt = first ? time(first.timestamp) : null
+  // The first time among the first 20 lines, parsed only up to the line that has one.
+  for (let k = 0; k < Math.min(20, lines.length) && out.firstAt === null; k++) {
+    const r = lines[k].trim() ? json(lines[k]) : undefined
+    if (isObj(r)) out.firstAt = time(r.timestamp)
+  }
   return out
 }
 

@@ -100,6 +100,22 @@ test('tokens are the context of the last usage: input plus cache read plus cache
   assert.deepEqual(feed.parseTranscript(jsonl(rows)), { activity: { kind: 'tool', text: 'reporting' }, tokens: 66897, firstAt: T0, lastAt: T0 + 3 })
 })
 
+test('the start is the first timed line of the first 20, and the lines after it are not parsed for it', () => {
+  const rows = [{ type: 'summary' }, line.user(T0), ...Array.from({ length: 30 }, (_, i) => line.result(T0 + 1000 + i)), line.tool(T0 + 9000, 'Read', { file_path: '/p/a' }, usage(1, 2, 3))]
+  const parse = JSON.parse
+  let parsed = 0
+  JSON.parse = (...a) => (parsed++, parse(...a))
+  let out
+  try {
+    out = feed.parseTranscript(jsonl(rows))
+  } finally {
+    JSON.parse = parse
+  }
+  assert.equal(out.firstAt, T0)
+  assert.equal(parsed, 3, 'the last line for the activity, the tokens and the end; the first two for the start')
+  assert.equal(feed.parseTranscript(jsonl(rows.slice(2))).firstAt, T0 + 1000)
+})
+
 test('a half-written last line is ignored; an empty or broken transcript gives nothing', () => {
   const text = jsonl([line.user(T0), line.tool(T0 + 10, 'Read', { file_path: '/p/spec.md' }, usage(1, 2, 3))]) + '{"type":"assistant","timest'
   assert.deepEqual(feed.parseTranscript(text), { activity: { kind: 'tool', text: 'reading spec.md' }, tokens: 6, firstAt: T0, lastAt: T0 + 10 })
