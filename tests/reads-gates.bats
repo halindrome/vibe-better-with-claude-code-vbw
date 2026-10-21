@@ -8,8 +8,9 @@
 # Checks log their runs to $RANLOG. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+shop_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -37,7 +38,12 @@ setup() {
   : > "$RANLOG"
 }
 
+setup_file() { fixture_build shop shop_project; }
+setup() {
+  fixture_copy shop
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 edit_record() {
   jq "$1" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
