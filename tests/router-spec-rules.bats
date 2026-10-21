@@ -15,3 +15,12 @@ spec_step() { sed -n '/^\*\*spec\*\*/,/^\*\*plan\*\*/p' "$ROUTER"; }
   spec_step | grep -qi 'sub-project'
   spec_step | grep -qi 'interpreter'
 }
+
+qa_step() { sed -n '/^\*\*qa\*\*/,/^\*\*run\*\*/p' "$ROUTER"; }
+
+@test "deviations: the router never repairs a deviating delivered file: QA judges it, a fix round restores it, the user decision covers it" {
+  qa_step | grep -qi 'never repaired by you'
+  qa_step | grep -qi 'QA judges it'
+  qa_step | grep -qi 'fix round restores'
+  qa_step | grep -q 'vbw decide'
+}

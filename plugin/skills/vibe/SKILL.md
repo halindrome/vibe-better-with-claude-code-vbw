@@ -121,6 +121,7 @@ args `{"plans": <detail.plans>, "docs": <detail.docs>, "models": ..., "rigor": .
 
 **qa**: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start qa`, Workflow `vbw:verifying` with args
 `{"phases": <detail.phases>, "tier": <detail.tier>, "round": <the whole `round` object of vbw next --json (tiers, suite, focus), never a number>, "models": ..., "rigor": ...}`. `vbw next --json` carries `round` before and after `vbw run start qa`. Report verdicts, failed checks, anything not recorded.
+A delivered file that changed or went missing outside VBW (the proof's deviations) is never repaired by you: say it in one line, then continue with `vbw next --json`. QA judges it and a fix round restores it. If the user says the change is theirs, record it with `vbw decide` naming the file; QA then passes it.
 
 **run**: a run is open. This session's workflow still running: wait. Else
 interrupted: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run end`, continue.
