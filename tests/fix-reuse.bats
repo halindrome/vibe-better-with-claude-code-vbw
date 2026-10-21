@@ -10,20 +10,31 @@
 # vbw fix done share the store and the rule. Checks count their runs in $RUNS.
 
 load helper
+load fixture-helper
 
-setup() {
+setup_file() { fixture_build shop spec_project; }
+teardown_file() { fixture_teardown; }
+
+# spec_project: the synced spec and the two check scripts, built once per file.
+# The plan names a script by its absolute path ($TEST_ROOT/bin/count.sh), so
+# the plan, the commit holding it and its approval are made in setup().
+spec_project() {
   vbw_setup
   vbw_git_project
-  export RUNS="$TEST_ROOT/runs"
-  mkdir -p "$RUNS" "$TEST_ROOT/bin"
-  # C3 declares no files; it reads src/ui.txt from the project it runs in.
-  printf 'echo run >> "$RUNS/$1"\ncat src/ui.txt > /dev/null\n' > "$TEST_ROOT/bin/count.sh"
   "$VBW" init > /dev/null
   printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n- R2 [auto] A customer gets a receipt\n- R3 [human] It feels trustworthy\n' > .vbw/spec.md
   "$VBW" spec sync > /dev/null
   mkdir -p tests src
   printf 'echo run >> "$RUNS/C1"\ngrep -qx paid src/pay.txt\n' > tests/pay.sh
   printf 'echo run >> "$RUNS/C2"\ngrep -qx sent src/receipt.txt\n' > tests/receipt.sh
+}
+
+setup() {
+  fixture_copy shop
+  export RUNS="$TEST_ROOT/runs"
+  mkdir -p "$RUNS" "$TEST_ROOT/bin"
+  # C3 declares no files; it reads src/ui.txt from the project it runs in.
+  printf 'echo run >> "$RUNS/$1"\ncat src/ui.txt > /dev/null\n' > "$TEST_ROOT/bin/count.sh"
   PLAN=$(jq -n --arg c "$TEST_ROOT/bin/count.sh" '{phases: [{id: "P1", title: "Checkout", reqs: ["R1", "R2", "R3"], tier: "standard"}],
     plans: [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1"], files: ["src/pay.txt"]},
             {id: "P1.2", phase: "P1", title: "Receipt", reqs: ["R2"], files: ["src/receipt.txt", "src/pay.txt"]},
