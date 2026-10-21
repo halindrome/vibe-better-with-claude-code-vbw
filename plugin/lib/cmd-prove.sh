@@ -16,6 +16,8 @@
 . "$VBW_LIB/proofsteps.sh"
 # shellcheck source=cmd-next.sh
 . "$VBW_LIB/cmd-next.sh"
+# shellcheck source=unittime.sh
+. "$VBW_LIB/unittime.sh"
 
 VBW_FIX_CAP=3
 
@@ -96,7 +98,8 @@ cmd_prove() {
   prooftime_step saving
   slots_hold vbw:save || true
   prooftime_mark
-  proofreuse_save "$record" "$checks" "$commands" "$head" "$at"
+  # The save drops the runs of units that no longer exist (a deleted test file, a removed check).
+  proofreuse_save "$record" "$checks" "$commands" "$head" "$at" "$(proofreuse_stale "$record" "$(testfiles_keys)")"
   [ "$files" = '{}' ] || testfiles_save "$record" "$files" "$head" "$at"
   prooftime_step saving
   slots_release vbw:save
@@ -337,8 +340,10 @@ prove_scope() {
 }
 
 # One screen: what ran, what it means, what is next. $1: the causes that ran everything, one per line.
+# The slowest units that ran come just before the two lines of VBW's own work (unittime.sh).
 prove_summary() {
-  jq -r --rawfile causes <(printf '%s' "$1") --arg own "$(jq -c '.evidence' "$VBW_RECORD" | prooftime_lines)" --argjson d "$VBW_COMMAND_TIMEOUT" '(.settings.command_timeout // $d) as $limit | .evidence as $e
+  jq -r --rawfile causes <(printf '%s' "$1") --arg own "$(jq -c '.evidence' "$VBW_RECORD" | prooftime_lines)" --argjson d "$VBW_COMMAND_TIMEOUT" --argjson cb "$VBW_CHECK_BUDGET" \
+    "$UNITTIME_DEFS"'(.settings.command_timeout // $d) as $limit | (.settings.check_budget // $cb) as $budget | .evidence as $e
     | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
       ($e.commands | to_entries[] | select(.value.of_files | not) | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)" end)"),
@@ -363,6 +368,7 @@ prove_summary() {
       (($e.undone // [])[] | "  scope: \(.commit[0:12]) (\(.plan)) undone by \(.by[0:12]), not judged"),
       (.requirements[] | select(.proof == "auto") | "\(.id) \(.status)"),
       (.fixes[] | select(.status == "open" or .status == "escalated") | "\(.id) \(.status) (\(.req // .command), attempts \(.attempts)): \(.note)"),
+      ($e | ran_line($budget)),
       $own,
       (if $e.passed then "proved" else "not proved" end)' "$VBW_RECORD"
   jq -e '.evidence.passed' "$VBW_RECORD" > /dev/null
