@@ -388,6 +388,66 @@ A command that reaches the limit is stopped and recorded with the status
 A check's own `timeout` (1 to 3600 seconds, see [Checks](#checks)) is separate:
 it limits that check only, and `command_timeout` does not change it.
 
+### Unit time and the budget per unit
+
+Every check, project command and test file of a proof is a unit, and the
+evidence keeps the seconds each one took when it last ran. VBW reports that
+time so a slow or growing test suite is seen early. It never fails or stops a
+proof for it: a busy machine never fails a proof.
+
+`vbw prove` prints one line just before its `VBW's own work` line, and
+`vbw fix done` just after its `ran again` line. It names the three slowest
+units that ran (a reused result did not run) and their share of the time the
+units that ran took:
+
+```text
+slowest units: tests/import.bats 140 s, C3 30 s, test 12 s (78% of 233 s unit time); over budget (more than 120 s): tests/import.bats
+```
+
+When nothing ran, the line is left out. A unit over the budget is named after
+`over budget` (five at most; the rest are counted). The budget is 120 seconds
+a unit. A project sets its own, from 1 to 86400 seconds, and returns to the
+default:
+
+```
+vbw config set check_budget 60
+vbw config set check_budget default
+```
+
+The budget only names units; the time limits of project commands and checks
+are what stop one.
+
+`vbw show evidence` prints the whole picture after its `own work` line: the
+total unit time of every current unit, each as it last ran (a reused result
+keeps the seconds of the run it reuses), the ten slowest, and every unit over
+the budget:
+
+```text
+  unit time: 915 s in 14 units, each as it last ran; the slowest:
+    C12 120 s
+    ...
+  over budget (more than 50 s a unit): 9
+    C12 120 s
+    ...
+```
+
+`vbw ship` ends with the total and how the milestone changed it:
+
+```text
+unit time: 925 s in 120 units, +140 s since M3 started (785 s in 104 units)
+```
+
+`vbw milestone start` keeps the unit time a milestone starts with in this
+clone (`vbw/unit-time.json` in the git directory), never in the record. A clone
+that did not start the milestone has no figure to compare with, and the line
+says so: `this clone kept no figure from the start of M1`. The first milestone
+has none either.
+
+Every report counts current units only: the record's checks, the project
+commands the proof covers and the test files the form matches now. A test
+command whose test files ran in its stead adds nothing of its own (its time is
+theirs), and a check waiting for approval or a skipped command took none.
+
 ### The quick command
 
 A project whose test command is slow can name a faster variant for build and
@@ -712,7 +772,13 @@ A check removed from the contract is left out of the new proof.
 **Where read lists are kept.** In `vbw/runs.json` in the clone's git directory
 (`git rev-parse --git-common-dir`), never in the record. A lost or damaged
 file only makes the checks run again. The store is protected
-(docs/guards.md).
+(docs/guards.md). It holds current units only: when `vbw prove` saves, the
+runs of units that no longer exist leave it (a deleted test file, a test file
+an approved check now runs, a check taken out of the record). The clone's
+worktrees share the store, so a unit another worktree still has keeps its run:
+a check or command its record names, a test file in its folder. A branch
+checked out in no worktree is not consulted: switching back to it re-runs the
+units only it has, once.
 
 **Files a unit writes.** A file a unit writes carries that unit's read list. A
 later unit that reads the file inherits the list, so it runs again when
@@ -734,7 +800,10 @@ clean copy of the committed code.
 
 `vbw prove` prints two lines just before its verdict (`proved` or `not proved`).
 `vbw fix done` prints the same two lines right after its `test files: N ran, M
-reused` line; its closing lines and exit code are unchanged.
+reused` line; its closing lines and exit code are unchanged. The line naming
+the slowest units that ran comes just before the two lines in `vbw prove` and
+just after them in `vbw fix done`
+([Unit time and the budget per unit](#unit-time-and-the-budget-per-unit)).
 
 ```text
 VBW's own work: 0.4 of 6.2 min

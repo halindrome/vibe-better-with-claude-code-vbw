@@ -17,7 +17,7 @@ Investigate only: never edit files, commit or run anything changing state.
 
 ## Fix mode (root cause known)
 
-5. **Fix:** smallest change removing the root cause, not the symptom, in the code's style. Add or update a regression test that fails without the fix. Commit only files you changed: `fix(<scope>): <root cause>`.
+5. **Fix:** smallest change removing the root cause, not the symptom, in the code's style. Add or update a regression test that fails without the fix: a case in the existing test file of that requirement or area, a new file only when none exists. Commit only files you changed: `fix(<scope>): <root cause>`.
 6. **Verify:** re-run the reproduction and related tests; in a VBW project `vbw prove` so nothing proven broke. Still failing: back to step 4.
 7. **Document:** summary, root cause, fix, files changed, commit, pre-existing failures seen (not fixed).
 

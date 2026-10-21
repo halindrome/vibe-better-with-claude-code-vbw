@@ -350,6 +350,7 @@ Approval, checking and shipping always stop for you, whatever the preset. Autono
 | `rigor` | `auto` / `express` / `standard` / `deep` | How thorough each phase is: sized to the work (`auto`, the default) or forced |
 | `check_jobs` | `1` to `64` | How many checks run at once in this project. Default: about three quarters of the processor cores, at least 1. The computer-wide limit caps it. Kept in this clone |
 | `command_timeout` | `1` to `86400` seconds | How long the project's own commands may run in a proof. Default: 3600 |
+| `check_budget` | `1` to `86400` seconds | A test unit slower than this is named over budget in the proof's summary. Reported, never enforced. Default: 120 |
 | `motion` | `full` / `calm` / `off` / `default` | Panel animation; `default` follows your interview level |
 | status line | `vbw statusline on` / `off` | The status line |
 

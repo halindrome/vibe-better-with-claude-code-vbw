@@ -37,5 +37,9 @@ cmd_milestone() {
     | (.requirements[] | select(.later == true)) |= (.milestone = $n | .status = "open" | del(.skipped, .later))' \
     --arg t "$2" --argjson base "$base"
   record_commit "chore(vbw): start $(jq -r .milestone.id "$VBW_RECORD")"
+  # The unit time the milestone starts with stays in this clone, never in the record: vbw ship compares.
+  # shellcheck source=unittime.sh
+  . "$VBW_LIB/unittime.sh"
+  unittime_start "$(jq -r .milestone.id "$VBW_RECORD")"
   jq -r '"started \(.milestone.id) \(.milestone.title): add its requirements to .vbw/spec.md (vbw spec add)"' "$VBW_RECORD"
 }

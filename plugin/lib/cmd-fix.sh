@@ -115,6 +115,8 @@ cmd_fix() {
   . "$VBW_LIB/testfiles.sh"
   # shellcheck source=proofsteps.sh
   . "$VBW_LIB/proofsteps.sh"
+  # shellcheck source=unittime.sh
+  . "$VBW_LIB/unittime.sh"
   # VBW's own steps tile the command up to its record step (R202): the reading
   # and the judging of the named fixes are planning; a wait for a slot is not.
   prooftime_begin
@@ -334,16 +336,19 @@ cmd_fix() {
   fix_unit_lines "$tfres" "$order" "$TF_WHY" "$(printf '%s' "$TF_REUSE" | jq -c 'map_values(.at)')"
   printf 'checks: %s ran, %s reused\n' "${#todo[@]}" "$(printf '%s' "$rmap" | jq 'length')"
   printf 'test files: %s ran, %s reused\n' "${#TF_TODO[@]}" "$(printf '%s' "$TF_REUSE" | jq 'length')"
-  # The two report lines, from this round's results, reuse map and causes. All but the
-  # split grow with the project (the reused results carry their read lists): by file.
-  jq -n -c --argjson own "$own_json" --rawfile causes <(printf '%s' "$causes") --slurpfile o <(printf '%s' "$cands_json") --slurpfile t <(printf '%s' "$tf_json") \
+  # The two report lines, from this round's results, reuse map and causes, then the
+  # slowest units that ran (unittime.sh). All but the split grow with the project
+  # (the reused results carry their read lists): by file.
+  local units_json
+  units_json=$(jq -n -c --argjson own "$own_json" --rawfile causes <(printf '%s' "$causes") --slurpfile o <(printf '%s' "$cands_json") --slurpfile t <(printf '%s' "$tf_json") \
     --slurpfile w <(printf '%s' "$wmap") --slurpfile r <(printf '%s' "$rmap") --slurpfile tw <(printf '%s' "$TF_WHY") --slurpfile tr <(printf '%s' "$TF_REUSE" | jq -c 'map_values(true)') \
-    --slurpfile st <(printf '%s' "$results" | jq -c 'map_values(.status)') --slurpfile tfst <(printf '%s' "$tfres" | jq -c 'map_values(.status)') \
+    --slurpfile st <(printf '%s' "$results" | jq -c 'map_values({status, seconds})') --slurpfile tfst <(printf '%s' "$tfres" | jq -c 'map_values({status, seconds})') \
     '$o[0] as $order | $t[0] as $tfo | $w[0] as $why | $r[0] as $re | $tw[0] as $tfwhy | $tr[0] as $tfre
     | {own: $own, causes: ($causes | split("\n") | map(select(length > 0))),
-      checks: ($order | map({key: ., value: (if $re[.] then {status: "pass", reused: true} else {status: ($st[0][.] // "pass")} + (if $why[.] then {why: $why[.]} else {} end) end)}) | from_entries),
-      test_files: ($tfo | map({key: ., value: (if $tfre[.] then {status: "pass", reused: true} else {status: ($tfst[0][.] // "pass")} + (if $tfwhy[.] then {why: $tfwhy[.]} else {} end) end)}) | from_entries)}' \
-    | prooftime_lines
+      checks: ($order | map({key: ., value: (if $re[.] then {status: "pass", reused: true} else {status: ($st[0][.].status // "pass"), seconds: ($st[0][.].seconds // 0)} + (if $why[.] then {why: $why[.]} else {} end) end)}) | from_entries),
+      test_files: ($tfo | map({key: ., value: (if $tfre[.] then {status: "pass", reused: true} else {status: ($tfst[0][.].status // "pass"), seconds: ($tfst[0][.].seconds // 0)} + (if $tfwhy[.] then {why: $tfwhy[.]} else {} end) end)}) | from_entries)}')
+  printf '%s' "$units_json" | prooftime_lines
+  printf '%s' "$units_json" | unittime_ran_line "$(printf '%s' "$record" | unittime_budget)"
   printf '%s' "$ebuf" >&2
   printf '%s' "$obuf"
 

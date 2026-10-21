@@ -91,7 +91,7 @@ const NO_SUITE = ' Read the full output and the failing test names with vbw show
 // T123: a decision recorded after the approval may correct the plan the fix serves; the brief names them.
 const SINCE = 'vbw show decisions --since-approval (decisions recorded after the contract was approved: where one differs from the plan, the decision wins).'
 // A fix a QA finding opened is a gap in the tests too: the Dev adds the regression test (R160).
-const QA_TEST = ' If a fix came from a QA finding (its source says qa), first write a test that fails while the problem exists (it may create new test files), register it with vbw fix check FIX (a check document on stdin), and commit it with the fix. Edits to an approved check file of the finding\'s requirement wait for one approval by the user before the proof: say so in notes, never approve.'
+const QA_TEST = ' If a fix came from a QA finding (its source says qa), first write a test that fails while the problem exists: a case in the existing check file of the finding\'s requirement, or, only when it has none, a new test file registered with vbw fix check FIX (a check document on stdin); commit it with the fix. Edits to an approved check file of the finding\'s requirement wait for one approval by the user before the proof: say so in notes, never approve.'
 const results = await pipeline(groups, ids =>
   agent(ids.length === 1
     ? `Fix VBW fix item ${ids[0]}. Start with: vbw show fix ${ids[0]}; then ${SINCE}${NO_SUITE}${QA_TEST}${voice}`
