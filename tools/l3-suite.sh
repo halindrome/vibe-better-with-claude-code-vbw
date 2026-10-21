@@ -8,7 +8,8 @@
 #   tools/l3-suite.sh [SCENARIO...]     (default: all)
 #
 # Scenarios are independent (own project, own Claude Code session), so they run
-# L3_JOBS at a time (default 4); each one's lines print together when it ends.
+# L3_JOBS at a time (default 4), started L3_STAGGER seconds apart (default 10);
+# each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
 # decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir. A user
@@ -2243,6 +2244,11 @@ if [ $# -gt 1 ] && [ "${L3_JOBS:-4}" -gt 1 ] && [ -z "${L3_CHILD:-}" ]; then
     while [ "$running" -ge "${L3_JOBS:-4}" ]; do reap; [ "$running" -lt "${L3_JOBS:-4}" ] || sleep 1; done
     l3_child "$scenario" > "$logs/$scenario.log" 2>&1 &
     pids+=("$!") names+=("$scenario") running=$((running + 1))
+    # Start the sessions apart: on 2026-10-21 three of four Claude Code 2.1.306
+    # sessions started within two seconds of each other quit by themselves about
+    # a second after launch, before any VBW hook loaded (folder trust not yet
+    # given), and the scenario failed with "the Claude Code session is gone".
+    sleep "${L3_STAGGER:-10}"
   done
   while [ "$running" -gt 0 ]; do reap; [ "$running" -eq 0 ] || sleep 1; done
   for scenario in "${names[@]}"; do grep -v '^L3 suite:' "$logs/$scenario.log"; done

@@ -39,7 +39,7 @@ SH
 }
 teardown() { vbw_teardown; }
 
-suite() { run env TMPDIR="$TEST_ROOT" L3_JOBS=2 bash "$TEST_ROOT/copy/tools/l3-suite.sh" "$@" < /dev/null; }
+suite() { run env TMPDIR="$TEST_ROOT" L3_JOBS=2 L3_STAGGER=0 bash "$TEST_ROOT/copy/tools/l3-suite.sh" "$@" < /dev/null; }
 
 @test "T27: a slow scenario does not hold its slot's successors: the others run through the free slot" {
   suite greenfield reject resume change convert
