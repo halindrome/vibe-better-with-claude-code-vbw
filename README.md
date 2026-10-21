@@ -155,7 +155,7 @@ VBW 2 is built around a **kernel**: `vbw`, a bash + `jq` + `git` program that th
 | **Running repo commands** | Whatever the model types | Argv only, no `eval`, after you consent to the content hash |
 | **Several sessions, one folder** | Last write wins | A run's files are leased to its session; everything else stays open |
 
-<p align="center"><img src="assets/kernel-diagram.jpg" alt="VBW architecture: /vbw:vibe goes to the skills surface, which hands state to the engine where Devs build in parallel under hook guards; agents write only through the vbw kernel (record, contract, prove); a failed proof goes back to the Devs as a fix, three tries then you; a pass is done, proven, not claimed." width="640"/></p>
+<p align="center"><img src="assets/architecture.svg" alt="VBW architecture: you type /vbw:vibe; the skills surface asks the kernel for the next step and hands it to the engine, where one Dev for every ready plan builds at the same time, as many as the work allows, while hooks guard every write and command. Agents write only through the vbw kernel: the record, the contract fingerprint, the proof on a clean copy of HEAD, and the delivered-files check. A failed proof goes to a fix, back to the Devs, three tries then you. A pass goes to review, a QA for every phase at once, and you judge the human requirements. Findings become fixes; a clean review is done, proven, not claimed." width="640"/></p>
 
 Three design choices worth knowing:
 
@@ -244,6 +244,10 @@ The loop above is the core. Around it:
 | **Picks up where you left off** | Everything lives in `.vbw/` in your project, not in a chat window. `/vbw:vibe` continues exactly where things stand. |
 | **What it cost** | Each run and each milestone is priced from the figures Claude Code gives the status line. `vbw show costs`. [docs/costs.md](docs/costs.md) |
 | **Status line and panel** | Progress, what's proven and what VBW needs from you, always visible. On Claude Code 2.1.287+, the panel has Mission Control (the side pane: where the project stands, in plain words) and, from 2.1.290, Comms (the strip above the prompt: the helpers at work, or one line when VBW needs you). Each shows the running step's end time ("about 12 min, until around 14:20"); Mission Control also shows when the milestone should end, and a sound plays when a question needs you (on by default, `/vbw-sound` switches it). [docs/panel.md](docs/panel.md) |
+
+**Rigor that fits**, at a glance: how much checking a phase gets, and what raises it.
+
+<p align="center"><img src="assets/rigor.svg" alt="How much checking each phase gets: VBW sizes up your request before any planning. A small, safe change is planned by VBW itself: one plan, one check, one approval, one Dev, and a quick QA or none when everything is proven. Anything bigger goes through planning, where each phase gets a floor from its size, its risk and the proven work it could break. Standard: a Dev for every plan, each breaking its own code once per rule, then QA. Deep: a Scout first, more breaks, a deep QA. Trouble raises a phase one tier with the reason recorded, a risk path goes straight to deep, and a tier is never lowered." width="640"/></p>
 
 The status line, under the prompt:
 
