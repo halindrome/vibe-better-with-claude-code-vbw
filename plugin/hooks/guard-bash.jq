@@ -4,6 +4,7 @@
 # strings are data (ledger D281), except where the shell runs them: $(...) and
 # `...` inside double quotes, and sh -c / eval strings.
 
+include "holder" {search: "../lib"};
 include "common" {search: "./"};
 
 # --- reading a shell command -------------------------------------------------
@@ -240,9 +241,10 @@ def in_run($g):
 
 # Another session's open run (D11): shell writes of the files it writes.
 def foreign_run($g):
-  (.out[], (select(.cmd | test("^(cp|mv|tee|rm)$")) | .args[]), (select(.cmd == "sed" and any(.args[]; test("^-[A-Za-z]*i"))) | .args[]))
+  holder_name($g.foreign; foreign_stored_name($g.foreign); null) as $holder
+  | (.out[], (select(.cmd | test("^(cp|mv|tee|rm)$")) | .args[]), (select(.cmd == "sed" and any(.args[]; test("^-[A-Za-z]*i"))) | .args[]))
   | select(startswith("-") | not)
-  | project_path($g.hook.cwd // $root; $root) | foreign_denial($g.foreign);
+  | project_path($g.hook.cwd // $root; $root) | foreign_denial($g.foreign; $holder);
 
 # Outside a run, every rule needs one of these words in the raw command,
 # wherever it appears (strings and heredocs included), so a command without any

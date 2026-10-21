@@ -184,9 +184,9 @@ checks_gate_enter() {
   [ -n "$limit" ] || limit=$(vbw_check_jobs) || limit=1
   mkdir -p "$g" || vbw_die "cannot create $g"
   while :; do
-    if mkdir "$g/mutex" 2> /dev/null; then
-      # The lock can vanish before its owner is written (taken as stale): retry.
-      { printf '%s\n' "$$" > "$g/mutex/pid"; } 2> /dev/null || { sleep 0.1; continue; }
+    # The owner file decides (vbw_lock_dir): a racing mkdir that also succeeded,
+    # or a lock that vanished before its owner was written, waits and retries.
+    if vbw_lock_dir "$g/mutex"; then
       vbw_guard_add dir "$g/mutex"
       idle=0
       if checks_gate_blocker "$kind" "$limit" > /dev/null; then

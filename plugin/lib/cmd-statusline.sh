@@ -10,11 +10,14 @@
 # cache, except for a session that loaded a working tree (claude --plugin-dir):
 # that copy's SessionStart hook recorded its folder under the session id in
 # VBW's folder of the Claude config dir (R185), and a folder that still holds
-# a VBW plugin renders the session instead. It is the same command VBW 1 used, so updating needs no settings
-# change. This is the one place VBW looks into the plugin cache (standards
+# a VBW plugin renders the session instead. It runs on every render, so it
+# spends processes only where needed: jq reads the session id only where that
+# folder of records exists, and the installed versions are sorted only when
+# there are more than one. A session that starts updates an older setting (R184).
+# This is the one place VBW looks into the plugin cache (standards
 # test exception, build plan K4).
 
-VBW_STATUSLINE_CMD='sid=$(printf %s "$i" | jq -r '"'"'.session_id // empty'"'"' 2>/dev/null); case "$sid" in *[!A-Za-z0-9_-]*) sid= ;; esac; for _d in "${CLAUDE_CONFIG_DIR:-}" "$HOME/.config/claude-code" "$HOME/.claude"; do [ -z "$_d" ] && continue; f=; p=; [ -z "$sid" ] || { read -r p < "$_d/vbw/sessions/$sid"; } 2>/dev/null || p=; if [ -n "$p" ] && [ -f "$p/.claude-plugin/plugin.json" ] && [ -f "$p/scripts/vbw-statusline.sh" ]; then f=$p/scripts/vbw-statusline.sh; else f=$(ls -1 "$_d"/plugins/cache/vbw-marketplace/vbw/*/scripts/vbw-statusline.sh 2>/dev/null | sort -V | tail -1 || true); fi; if [ -f "$f" ]; then printf %s "$i" | bash "$f"; rc=$?; [ "$rc" -eq 3 ] && break; exit "$rc"; fi; done'
+VBW_STATUSLINE_CMD='sid=; _s=; for _d in "${CLAUDE_CONFIG_DIR:-}" "$HOME/.config/claude-code" "$HOME/.claude"; do [ -z "$_d" ] && continue; f=; p=; if [ -z "$_s" ] && [ -d "$_d/vbw/sessions" ]; then _s=1; sid=$(printf %s "$i" | jq -r '"'"'.session_id // empty'"'"' 2>/dev/null); case "$sid" in *[!A-Za-z0-9_-]*) sid= ;; esac; fi; [ -z "$sid" ] || { read -r p < "$_d/vbw/sessions/$sid"; } 2>/dev/null || p=; if [ -n "$p" ] && [ -f "$p/.claude-plugin/plugin.json" ] && [ -f "$p/scripts/vbw-statusline.sh" ]; then f=$p/scripts/vbw-statusline.sh; else set -- "$_d"/plugins/cache/vbw-marketplace/vbw/*/scripts/vbw-statusline.sh; if [ $# -eq 1 ]; then f=$1; else f=$(ls -1 "$@" 2>/dev/null | sort -V | tail -1 || true); fi; fi; if [ -f "$f" ]; then printf %s "$i" | bash "$f"; rc=$?; [ "$rc" -eq 3 ] && break; exit "$rc"; fi; done'
 
 # statusline_quote TEXT: TEXT as one single-quoted shell word.
 statusline_quote() {
