@@ -67,8 +67,10 @@ def fix_files($r): if .command then ["*"]
    | from_entries) as $rigor
 # Built phases QA must check again (VBW 1's QA mandate; lib/qa.jq): failed,
 # never passed, their inputs changed, or building on a phase that was. A built phase needs QA
-# unless it is express with only [auto] requirements and no escalations.
-| ([.phases[] | select(.milestone == $m and $qa.recheck[.id] != null and needs_qa($rigor[.id].tier; $current)) | .id]) as $to_verify
+# unless it is express with only [auto] requirements and no escalations, and no file
+# its plans delivered changed outside any plan without a decision of the user (lib/qa.jq deviations).
+| ([.phases[] | select(.milestone == $m and $qa.recheck[.id] != null
+    and (needs_qa($rigor[.id].tier; $current) or any((($qa.deviations // {})[.id] // [])[]; .decision == null))) | .id]) as $to_verify
 # The QA tier is the highest among the phases to verify.
 | ([$to_verify[] | $rigor[.].qa] | max_by(qa_rank) // "standard") as $tier
 # A phase in a re-check round (lib/qa.jq focus, T131) goes to QA with the fixes since its
@@ -137,8 +139,10 @@ def fix_files($r): if .command then ["*"]
   else
     result("ship"; true; "Everything is proven and accepted: ship milestone \(.milestone.id)"; {})
   end) as $n
-# The round (QA depth, the proof's test run, re-check focus) is the qa answer's. The router
+# The round (QA depth, the proof's test run, re-check focus, the deviations of the phases to
+# verify, lib/qa.jq: those a decision covers too, with it) is the qa answer's. The router
 # opens the QA run first, which turns the answer into run, so the round stays on it while the
 # caller's own QA run is open: the router may read it on either side of vbw run start qa (T178).
 | ($n.action == "qa" or ($n.action == "run" and .lease.kind == "qa" and (.lease.session == null or .lease.session == $session))) as $with_round
-| $n + (if $with_round then {round: {tiers: $tiers_qa, focus: ([$to_verify[] | select(($qa.focus // {})[.] != null) | {key: ., value: $qa.focus[.]}] | from_entries), suite: (if (.commands.test // null) == null then null else (.commands.test) as $cmd | (if .evidence.commands.test == null then {command: "test", status: "not run"} else .evidence.commands.test | (if (.command // "") == "" then .command = ($cmd | join(" ")) else . end) end) end)}} else {} end) + {next_phase: $next_phase, effort: $effort, requirements: [$current[] | {id, text, proof}], rigor: $rigor, qa: ($qa | {recheck, standing, problems}), declined: [(.project.declined // [])[].text], profile: ({level: "small scripts or no-code", depth: "plain with technical terms explained", involvement: "options with a recommendation"} + ($profile | with_entries(select(.value != null or .key == "kept" or .key == "pending"))) + {ask: ([$n.action] | inside(["spec","convert"]) and ($profile.interviewed | not))})}
+| $n + (if $with_round then {round: {tiers: $tiers_qa, focus: ([$to_verify[] | select(($qa.focus // {})[.] != null) | {key: ., value: $qa.focus[.]}] | from_entries),
+    deviations: ([$to_verify[] | select(($qa.deviations // {})[.] != null) | {key: ., value: $qa.deviations[.]}] | from_entries), suite: (if (.commands.test // null) == null then null else (.commands.test) as $cmd | (if .evidence.commands.test == null then {command: "test", status: "not run"} else .evidence.commands.test | (if (.command // "") == "" then .command = ($cmd | join(" ")) else . end) end) end)}} else {} end) + {next_phase: $next_phase, effort: $effort, requirements: [$current[] | {id, text, proof}], rigor: $rigor, qa: ($qa | {recheck, standing, problems}), declined: [(.project.declined // [])[].text], profile: ({level: "small scripts or no-code", depth: "plain with technical terms explained", involvement: "options with a recommendation"} + ($profile | with_entries(select(.value != null or .key == "kept" or .key == "pending"))) + {ask: ([$n.action] | inside(["spec","convert"]) and ($profile.interviewed | not))})}

@@ -32,6 +32,12 @@ qa_state() {
   printf '%s' "$1" | jq -c --slurpfile in <(printf '%s' "$d") --slurpfile ch <(qa_cache_read) --argjson fpv "$QA_FP_VERSION" '$in[0] as $inputs | $ch[0] as $cache | '"$(cat "$VBW_LIB/qa.jq")"
 }
 
+# qa_deviations RECORD: lib/qa.jq's deviations alone ({Pn: [{file, plan, change, commit, by,
+# decision}]}): the proof's evidence and the decisions decide them, so no digest is computed.
+qa_deviations() {
+  printf '%s' "$1" | jq -c --argjson inputs null --argjson cache null -f "$VBW_LIB/qa.jq" | jq -c '.deviations'
+}
+
 # qa_combined RECORD [DIGESTS]: {Pn: the phase's current fingerprint}: what a
 # standing pass holds in qa.tree (D91). A pass that stands across a fingerprint
 # version is held by the qa.tree it has.

@@ -47,7 +47,7 @@ qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.
 @test "qa.jq: untouched phases keep their pass; the record's passes stand" {
   run qa "$(rec 2)" "$(dig 2)" "$(cache 2)"
   [ "$status" -eq 0 ]
-  [ "$output" = '{"closure":{"P1":[],"P2":[]},"recheck":{},"standing":["P1","P2"],"focus":{},"problems":[]}' ]
+  [ "$output" = '{"closure":{"P1":[],"P2":[]},"recheck":{},"standing":["P1","P2"],"focus":{},"deviations":{},"problems":[]}' ]
 }
 
 @test "qa.jq: never checked, failed last time" {

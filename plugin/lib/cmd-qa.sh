@@ -8,6 +8,8 @@
 # findings, so phases sharing a requirement never close each other's. The verdict is
 # recorded against the digest of the phase's inputs and those of the phases it
 # builds on (lib/qa-inputs.sh): a change to them needs QA again, others do not. Three failed rounds in a row escalate.
+# A pass is refused while a file the phase's plans delivered is not at HEAD as VBW left
+# it and no decision of the user covers it (lib/delivered.sh, the proof's deviations).
 
 VBW_QA_ROUNDS=3
 
@@ -37,7 +39,7 @@ cmd_qa() {
     jq -r '.fixes[-1] | "\(.id) opened for \(.req)\(if .phase then " in \(.phase)" else "" end) (qa): \(.note)"' "$VBW_RECORD"
     return 0
   fi
-  local phase="$2" result="$3" tier="$4" note="${5:-}" tree digests curf
+  local phase="$2" result="$3" tier="$4" note="${5:-}" tree digests curf why
   printf '%s' "$record" | jq -e --arg p "$phase" 'any(.phases[]; .id == $p)' > /dev/null || vbw_die "unknown phase $phase"
   printf '%s' "$record" | jq -e '.evidence.tree' > /dev/null || vbw_die "no proof yet: QA verifies proven work (vbw prove first)"
   # shellcheck source=cmd-next.sh
@@ -52,6 +54,18 @@ cmd_qa() {
     printf '%s' "$record" | jq -e --arg p "$phase" '. as $r | ([.phases[] | select(.id == $p)][0].reqs) as $q
       | any(.fixes[]; .source == "qa" and .status == "open" and (.req as $x | any($q[]; . == $x)) and ((has("phase") | not) or .phase == $p))' > /dev/null \
       || vbw_die "a failed verdict needs its findings first (vbw qa finding $phase REQ TEXT for each)"
+  else
+    # A pass needs every file the phase's plans delivered as VBW left it at HEAD, or the
+    # user's decision for each that is not (docs/proof.md, Delivered files).
+    # shellcheck source=delivered.sh
+    . "$VBW_LIB/delivered.sh"
+    why=$(printf '%s' "$record" | jq -r --arg p "$phase" --slurpfile dv <(qa_deviations "$record") "$DELIVERED_DEFS"'
+      [($dv[0][$p] // [])[] | select(.decision == null)] as $d | select(($d | length) > 0)
+      | "\($p) cannot pass while a file its plans delivered is not as they left it: \([$d[] | deviation_line] | join("; ")). "
+        + "Record a finding for each (vbw qa finding \($p) REQ TEXT, REQ one of \([.phases[] | select(.id == $p) | .reqs[]] | join(", "))) and a failed verdict, "
+        + "so a fix brings the file back through its plan; or, if the user chose the change, record the user'"'"'s decision naming the file (vbw decide TEXT WHY). "
+        + "Then record the verdict again"')
+    [ -z "$why" ] || vbw_die "$why"
   fi
   vbw_scratch_json curf "$(qa_combined "$record" "$digests" | jq -c --arg p "$phase" --arg t "$tree" '. + {($p): $t}')"
   record_update "$VBW_JQ_DEFS"'$cf[0] as $cur | ([.phases[] | select(.id == $p)][0]) as $ph

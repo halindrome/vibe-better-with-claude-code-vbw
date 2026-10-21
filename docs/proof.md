@@ -569,8 +569,74 @@ form in `.vbw/spec.md`.
    commit's file changes back to it, and each pair found costs one ancestry
    check (does the undo descend from its original?). Each revert a park
    recorded adds one more, to read which commit it undid.
-5. Writes the evidence and updates requirements and fixes in one atomic record
+5. Delivered files: every file a plan of the current milestone delivered must
+   still be at `HEAD` as VBW's last commit of it left it
+   ([Delivered files](#delivered-files)). Each one that is not is listed in the
+   evidence's `deviations`, and the summary names it after the scope lines:
+   `delivered: NOTES.md (P1.1) deleted outside any plan, by abc123456789: QA judges it`.
+   A deviation does not fail the proof, because the checks still pass. It is QA's
+   to judge.
+6. Writes the evidence and updates requirements and fixes in one atomic record
    update, then prints a one-screen summary. Exit 0 only when everything passed.
+
+### Delivered files
+
+A plan delivers the files its own commits added or changed (the commits whose
+`VBW-Plan:` trailer names it). A check can pass while such a file is gone: no
+check reads `NOTES.md`, so deleting it by hand after the build breaks nothing a
+check sees. So the proof checks each plan of the current milestone with git:
+
+- The file must still be at `HEAD` with the content (and mode) that VBW's last
+  commit of it left. VBW's commits are those whose `VBW-Plan:` trailer names a
+  plan of the record, or whose `VBW-Fix:` trailer names a fix of the record.
+- A later plan's or fix's commit moves the file on. A later plan that changes
+  the file delivers the new content, and one that removes it delivers nothing
+  for it. The newest plan commit that touched the file owns it. A plan whose task
+  deletes a file delivers nothing for that file either. A commit a park undid
+  (its `git revert` is in the loop's `reverts`) delivered nothing, because its
+  change is gone, even when a later plan took its plan's id.
+- Any other difference at `HEAD` is a deviation of the plan that owns the file: a
+  hand edit, a hand deletion, a revert by hand, a merge. A hand commit that puts
+  back the content VBW left is no deviation, because `HEAD` is what counts. So is a
+  fix that brings the file back through its plan (`vbw commit PLAN`).
+- These files are not deliverables: files under `.vbw/`, the check files (their
+  approval guards them, see "Test files edited while building") and files in the
+  approved results folders (`## Test results`).
+
+Each deviation in the evidence is `{file, plan, commit, at, change, by}`: `commit` is
+VBW's last commit of the file and `at` its time, `change` is `deleted` or `changed`,
+and `by` lists the commits after it that changed the file outside any plan. A
+change made by a merge alone lists none.
+
+The check costs a fixed few processes, however long the history and however
+many files. git lists the history once to find the oldest commit that names a
+plan of the current milestone, walks the file changes back to it once, reads the
+park's reverts once (only when there are any), and lists `HEAD` once for the
+files found. A proof recorded before this check existed lists no deviations.
+The next proof checks.
+
+**The user's decision.** A deviation the user chose is not one. A decision covers
+a deviation when it was recorded (`vbw decide TEXT [WHY]`) at or after VBW's last
+commit of the file, and its text or reason names the file's path as a word of
+its own. A sentence's closing dot or a leading `./` does not hide the name.
+`NOTES.md` names neither `NOTES.md.bak` nor `docs/NOTES.md`. A decision recorded
+before the file was delivered does not cover it. `/vbw:fix` and `/vbw:debug`
+record such a decision for the files they change. They are changes the user asked
+for.
+
+**What QA gets.** A deviation that no decision covers sends its phase to QA. This
+holds even for a phase whose pass stood, even when only a document changed, and
+even for an `express` phase that otherwise needs no QA. The reason is
+`NOTES.md, delivered by P1.1, was deleted outside any plan`. `vbw next --json` hands
+the QA round each such phase's deviations (`round.deviations`, docs/next.md),
+with `decision` (the id of the decision that covers it, or `null`). The QA agent's
+prompt names them, and so does `vbw show phase`
+(`deviation: NOTES.md (P1.1) deleted outside any plan, by abc123456789`).
+`vbw qa record PHASE pass` refuses, at every QA depth, while one that no decision
+covers stands. The refusal names each file and the way on: record a finding (`vbw qa
+finding PHASE REQ TEXT`) and a failed verdict, so a fix brings the file back
+through its plan, or, if the user chose the change, record the user's decision
+naming the file, then record the verdict again.
 
 ### Timed speed checks are not part of the proof
 
@@ -704,7 +770,8 @@ Evidence (`record.evidence`):
   "commands": { "test": { "status": "pass", "exit": 0, "seconds": 9, "tail": "" },
                 "lint": { "status": "skipped", "exit": null, "seconds": 0, "tail": "not approved" } },
   "scope": [],
-  "undone": [] }
+  "undone": [],
+  "deviations": [] }
 ```
 
 Statuses: `pass`, `fail`, `timeout`, `skipped`.
@@ -1176,6 +1243,13 @@ parallel (D332); three failed rounds in a row escalate. A round after a fail
 verifies that round's fixes, not the whole phase again
 ([Re-check rounds](#re-check-rounds)).
 
+One part of the comparison with the plan is mechanical, at every QA depth: a file
+the phase's plans delivered that `HEAD` no longer holds as VBW left it is a
+deviation the proof found ([Delivered files](#delivered-files)). QA is told each
+one. A pass is refused while one stands that no decision of the user covers, so
+even a `quick` QA that only runs the checks cannot pass over a missing
+deliverable.
+
 Only behaviour blocks (D400). A finding is code that does something wrong or
 misses a promised behaviour, a test gap, a deviation, or a document stating a
 false or missing fact the user relies on (a command, setting, number, file or
@@ -1210,7 +1284,10 @@ phase keeps its pass. A built phase is checked again when:
   other phases. A change to that phase's code, documents, saved results, goal
   or plan does not list it: that phase is checked again itself, and what the
   phases built on it rely on is what its checks promise;
-- one of its `[auto]` requirements was added, reworded or removed.
+- one of its `[auto]` requirements was added, reworded or removed;
+- a file its plans delivered changed outside any plan and no decision of the
+  user covers it ([Delivered files](#delivered-files)). This holds whatever else
+  changed, even when the file is a document.
 
 Files and tests count as committed (`HEAD`), so commit work before QA.
 
@@ -1242,7 +1319,9 @@ These exceptions have limits. The phase is still listed when:
   phase): its documents are its code;
 - the same change also touches code, tests, the goal or the plans;
 - a results folder was added or removed but the new list is not approved yet.
-  Until approval, a file in the new folder counts like any other file.
+  Until approval, a file in the new folder counts like any other file;
+- the document is one its plans delivered and it changed outside any plan, with
+  no decision of the user that covers it ([Delivered files](#delivered-files)).
 
 Changing the approved folder list checks once more each phase whose plans list
 files inside the folders added or removed; the new pass stores the new list.
@@ -1281,6 +1360,7 @@ The reasons, in plain words:
 | `an [auto] requirement changed` | an `[auto]` requirement of the phase was added, reworded or removed |
 | `builds on P1, whose tests changed` | a check of a phase it builds on, or a file of that check, changed |
 | `its files, tests or plan changed` | something changed, but the cache that says what is missing |
+| `NOTES.md, delivered by P1.1, was deleted outside any plan` | a file its plans delivered was deleted (or `changed`) by a commit outside any plan, and no decision of the user covers it ([Delivered files](#delivered-files)) |
 
 `vbw next` sends only these phases to QA, gives the reasons in its `qa` key
 (docs/next.md) and states them in its instruction line. The QA skill tells the

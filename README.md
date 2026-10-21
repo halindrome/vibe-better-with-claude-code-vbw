@@ -115,8 +115,9 @@ You type `/vbw:vibe` and what you want. VBW runs the loop below and stops only w
   │ 5. PROVE                             │    │ FIX                     │
   │ The kernel runs every approved check │─ ─▶│ Agents fix the code;    │
   │ and the test command on a clean      │fail│ a QA fix adds a test.   │
-  │ copy of HEAD, and checks each commit │ ◀──│ 3 failed tries: it      │
-  │ stayed in its plan's files.          │    │ comes to you.           │
+  │ copy of HEAD, checks each commit     │ ◀──│ 3 failed tries: it      │
+  │ stayed in its plan's files, and that │    │ comes to you.           │
+  │ what each plan built is still there. │    │                         │
   └──────────────────────────────────────┘    └─────────────────────────┘
                      │                        Executable definition of done.
                      │                        Proof in a detached worktree,

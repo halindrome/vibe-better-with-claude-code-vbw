@@ -44,8 +44,9 @@ JARGON='fingerprint|hash|sha|digest|checksum|tree|blob|inputs'
   fixture_copy p5
   qa_pass P1 P2 P3 P4 P5
   printf 'extra\n' >> src/p1.txt
+  "$VBW" commit P1.1 "fix(p1): extra" src/p1.txt > /dev/null
   printf '# stricter\n' >> tests/p2.sh
-  git add src/p1.txt tests/p2.sh && git commit -q -m "change"
+  git add tests/p2.sh && git commit -q -m "change"
   edit_record '(.plans[] | select(.id == "P4.1")).tasks += ["also write a receipt"]'
   "$VBW" approve > /dev/null
   edit_record '(.phases[] | select(.id == "P3")).goal = "Part 3 works for everyone"'

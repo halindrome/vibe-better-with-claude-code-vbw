@@ -24,6 +24,9 @@ quick fix only if they still want that.
    the approved contract.
 3. Run the project's own tests if they are quick. Commit the change yourself
    with a conventional message (`fix(scope): ...`), only the files you changed.
+   In a VBW project, record that the user asked for it, naming each file by its
+   path: `vbw decide "Quick fix: <what>, in <file>, <file>" "the user asked for it (/vbw:fix)"`.
+   QA then takes the change as the user's, not as a deviation from a plan.
 4. In a VBW project with an approved contract, run `vbw prove` and report: all
    proofs still pass, or which one this change broke (then fix it or revert).
 5. Tell the user what changed, in plain words.

@@ -61,10 +61,12 @@ qa_pass() {
   for p in "$@"; do "$VBW" qa record "$p" pass standard > /dev/null || return 1; done
 }
 
-# qa_touch N: a user commit that changes phase N's file but keeps its check passing; then prove.
+# qa_touch N: a commit through phase N's plan, the way a fix makes one, that changes its
+# file but keeps its check passing; then prove. (A hand commit of a file a plan delivered
+# is a deviation QA must judge as well: tests/qa-delivered.bats.)
 qa_touch() {
   printf 'extra\n' >> "src/p$1.txt"
-  git add "src/p$1.txt" && git commit -q -m "fix(p$1): touch"
+  "$VBW" commit "P$1.1" "fix(p$1): touch" "src/p$1.txt" > /dev/null
   "$VBW" prove --full > /dev/null
 }
 
