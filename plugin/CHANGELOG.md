@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.0.43] - 2026-10-21
+
+### Fixed
+
+- **Two proofs at once are no slower than one.** A freed slot of the
+  computer-wide limit now goes straight to the next waiting unit, and waiting
+  units no longer hold the slot store's lock while they wait. On a 200-unit
+  project two proofs together took 77 s against 79 s for one (they took four to
+  six times one before).
+- **No lost output on macOS.** macOS `/bin/bash` 3.2 does not retry a write
+  that a finished child interrupts, so `vbw check` and other commands could stop
+  mid-output with "Interrupted system call" when their output went to a pipe.
+  Every such write now runs where no child can interrupt it, and a check keeps
+  the pattern out.
+
 ## [2.0.42] - 2026-10-21
 
 ### Added
