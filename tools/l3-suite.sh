@@ -398,18 +398,25 @@ scenario_docs() {
     # Only approved checks ever run: a passing result in the evidence means approved.
     cst=$(jq -r --arg r "$req" '. as $x | first($x.checks[] | select(.req == $r)) | .id as $c | $x.evidence.checks[$c].status // "none"' "$dir/.vbw/record.json" 2> /dev/null)
     [ "$cst" = pass ] && appr=true
+    # R71 (owner, 2026-10-06, kept 2026-10-21): a requirement whose plans change only
+    # documentation needs no check. Then the plan's files must all be documentation.
+    nock=false
+    if [ "$cst" = none ] && jq -e --arg r "$req" '([.checks[] | select(.req == $r)] | length == 0)
+        and ([.plans[] | select(any(.reqs[]; . == $r)) | .files[]] | length > 0 and all(test("\\.(md|rst)$")))' "$dir/.vbw/record.json" > /dev/null 2>&1; then
+      nock=true
+    fi
     rst=$(jq -r --arg r "$req" 'first(.requirements[] | select(.id == $r)) | .status // "none"' "$dir/.vbw/record.json" 2> /dev/null)
     [ -n "$plan" ] && [ "$(cd "$dir" && git log --format=%B | grep -c "^VBW-Plan: $plan\$")" -gt 0 ] && prov=true
     # Each condition prints its own line, so a failed one is never silent.
     expect "docs/USAGE.md was written" [ -f "$dir/docs/USAGE.md" ]
     expect "the Docs agent built it (agents: $agents)" [ "$by" = docs ]
-    expect "an approved check proves the documentation requirement (check status: $cst)" [ "$cst" = pass ]
+    expect "an approved check proves the documentation requirement, or its plans change documentation only (R71) (check status: $cst)" [ "$cst" = pass -o "$nock" = true ]
     expect "the documentation requirement is proven, not only accepted ($rst)" [ "$rst" = proven ]
     expect "the docs plan's commits carry provenance" [ "$prov" = true ]
-    [ "$failed" -eq 0 ] && [ "$by" = docs ] && [ "$appr" = true ] && [ "$cst" = pass ] && [ "$prov" = true ] && [ "$rst" = proven ] || passed=false
+    [ "$failed" -eq 0 ] && [ "$by" = docs ] && { [ "$appr" = true ] && [ "$cst" = pass ] || [ "$nock" = true ]; } && [ "$prov" = true ] && [ "$rst" = proven ] || passed=false
     result_write docs "$fixture" "${cost_usd:-0}" "$passed" \
-      "$(jq -n --arg b "$by" --argjson a "$appr" --arg c "$cst" --argjson p "$prov" --arg r "$rst" --arg pl "$plan" --arg ag "$agents" \
-        '{built_by_agent_type: $b, check_approved: $a, check_status: $c, commit_has_provenance: $p, requirement_status: $r, docs_plan: $pl, build_agents: $ag}')" \
+      "$(jq -n --arg b "$by" --argjson a "$appr" --arg c "$cst" --argjson p "$prov" --arg r "$rst" --arg pl "$plan" --arg ag "$agents" --argjson n "$nock" \
+        '{built_by_agent_type: $b, check_approved: $a, check_status: $c, documentation_only_no_check: $n, commit_has_provenance: $p, requirement_status: $r, docs_plan: $pl, build_agents: $ag}')" \
       '["acceptance by a person of the documentation quality","a documentation plan mixed with code plans in one wave","a project larger than the greet.sh fixture"]'
   }
 }

@@ -34,9 +34,10 @@ facts() { jq -e "$2" "$RESULTS/$1.json" > /dev/null; }
 
 @test "R4: the Docs agent built a documentation requirement and it is proved" {
   result_ok docs
-  facts docs '.facts.built_by_agent_type == "docs" and .facts.check_approved == true
-    and .facts.check_status == "pass" and .facts.commit_has_provenance == true
-    and .facts.requirement_status == "proven"'
+  # A passing approved check, or (R71) plans that change documentation only and need none.
+  facts docs '.facts.built_by_agent_type == "docs"
+    and ((.facts.check_approved == true and .facts.check_status == "pass") or .facts.documentation_only_no_check == true)
+    and .facts.commit_has_provenance == true and .facts.requirement_status == "proven"'
 }
 
 @test "R5: QA failed a deviating build, naming the deviation; the fix loop closed it" {
