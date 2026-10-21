@@ -170,6 +170,10 @@ isolated_writes() {
 # prove_story: three proofs as session s1, the first on the project as given, then after a
 # commit no check reads, then after a commit to a file C1 reads; for each its verdict, its
 # output (times left out), its evidence and the run store's decisions, without times and commit ids.
+# Times left out of the output: dates, each unit's seconds, and the two lines that are only
+# times (VBW's own work; the slowest units, ordered by their seconds). A unit's seconds are
+# whole wall-clock seconds, so the same sub-second run reads 0 s or 1 s depending on whether
+# it crossed a second (one flake, 2026-10-21, under load).
 prove_story() {
   local i=1
   while [ "$i" -le 3 ]; do
@@ -179,7 +183,8 @@ prove_story() {
     esac
     run env VBW_SESSION_ID=s1 "$VBW" prove < /dev/null
     printf 'proof %s: status %s\n' "$i" "$status"
-    printf '%s\n' "$output" | grep -v "^VBW's own work" | sed -E 's/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z/TIME/g; s/ [0-9]+(\.[0-9]+)?s / Ns /g'
+    printf '%s\n' "$output" | grep -vE "^(VBW's own work|slowest units):" \
+      | sed -E 's/[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]{8}Z/TIME/g; s/ [0-9]+(\.[0-9]+)?s( |$)/ Ns\2/g'
     jq -S '.evidence | {passed, full, causes, scope, undone, test_files, contract,
       checks: (.checks | map_values({status, exit, reused})), commands: (.commands | map_values({status, exit, reused}))}' .vbw/record.json
     jq -S '.runs | map_values({status, reads, dirs, git})' "$(git rev-parse --git-dir)/vbw/runs.json"
