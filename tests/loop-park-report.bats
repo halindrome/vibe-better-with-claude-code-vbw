@@ -6,13 +6,14 @@
 
 load helper
 load loop-helper
-
-setup() { loop_project; }
-teardown() { vbw_teardown; }
+load fixture-helper
 
 step() { loop_next s1 > "$TEST_ROOT/step.json"; jq -r .action "$TEST_ROOT/step.json"; }
 
-@test "R179: the parked section names the item, the reason, the revert commits and the way back; the total includes the parked item's cost" {
+# parked_t1: the loop over T1 (ceiling $50) up to the second escalated fix of its break, before the figures reach
+# $4: the opening steps the cases that park T1 share, built once.
+parked_t1() {
+  loop_project
   VBW_SESSION_ID=s1 "$VBW" loop start T1 --ceiling 50 > /dev/null
   [ "$(step)" = plan ]
   loop_plan "$(item_req "Visitors can read a greeting")" P2
@@ -25,6 +26,18 @@ step() { loop_next s1 > "$TEST_ROOT/step.json"; jq -r .action "$TEST_ROOT/step.j
   edit_record '(.fixes[] | select(.id == "F1")).status = "escalated"'
   [ "$(step)" = fix ]
   edit_record '(.fixes[] | select(.id == "F1")).status = "escalated"'
+}
+
+setup_file() {
+  fixture_build loop loop_project
+  fixture_build parked parked_t1
+}
+setup() { fixture_copy loop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+@test "R179: the parked section names the item, the reason, the revert commits and the way back; the total includes the parked item's cost" {
+  fixture_copy parked
   figures s1 4 2000 200
   [ "$(step)" = done ] || { cat "$TEST_ROOT/step.json"; false; }
   [ -f .vbw/loop-report.md ]
@@ -70,18 +83,7 @@ corrupt() {
 }
 
 @test "R179 (F182): a parked milestone keeps its name, and vbw status --json lists the parked ids" {
-  VBW_SESSION_ID=s1 "$VBW" loop start T1 --ceiling 50 > /dev/null
-  [ "$(step)" = plan ]
-  loop_plan "$(item_req "Visitors can read a greeting")" P2
-  [ "$(step)" = build ]
-  loop_build P2
-  loop_break P2
-  [ "$(step)" = prove ]
-  loop_prove
-  [ "$(step)" = fix ]
-  edit_record '(.fixes[] | select(.id == "F1")).status = "escalated"'
-  [ "$(step)" = fix ]
-  edit_record '(.fixes[] | select(.id == "F1")).status = "escalated"'
+  fixture_copy parked
   figures s1 4 2000 200
   step > /dev/null
   jq -e '.parked | length == 1' .vbw/record.json || { jq '{parked, milestone}' .vbw/record.json; false; }
@@ -92,18 +94,7 @@ corrupt() {
 }
 
 @test "R179 (F186): a parked milestone keeps its name: vbw milestone rename refuses and says to start the next one" {
-  VBW_SESSION_ID=s1 "$VBW" loop start T1 --ceiling 50 > /dev/null
-  [ "$(step)" = plan ]
-  loop_plan "$(item_req "Visitors can read a greeting")" P2
-  [ "$(step)" = build ]
-  loop_build P2
-  loop_break P2
-  [ "$(step)" = prove ]
-  loop_prove
-  [ "$(step)" = fix ]
-  edit_record '(.fixes[] | select(.id == "F1")).status = "escalated"'
-  [ "$(step)" = fix ]
-  edit_record '(.fixes[] | select(.id == "F1")).status = "escalated"'
+  fixture_copy parked
   figures s1 4 2000 200
   step > /dev/null
   jq -e '.milestone.status == "parked"' .vbw/record.json || { jq .milestone .vbw/record.json; false; }
