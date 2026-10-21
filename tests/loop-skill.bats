@@ -28,7 +28,7 @@ lacks() { ! grep -qE -- "$1" "$SKILL" || { echo "the loop skill must not say: $1
   grep -qE '^argument-hint: .*ITEM.*--ceiling USD.*--finish-item.*--no-ceiling.*stop' "$SKILL"
   grep -qE '^"\$\{CLAUDE_PLUGIN_ROOT\}/bin/vbw" loop start .*\$ARGUMENTS' "$SKILL"
   grep -qE '^"\$\{CLAUDE_PLUGIN_ROOT\}/bin/vbw" loop status' "$SKILL"
-  ! grep -q '^hooks:' "$SKILL"
+  ! grep -q '^hooks:' "$SKILL" || false
   grep -qE '^allowed-tools: .*Workflow\(vbw:planning\).*Workflow\(vbw:building\).*Workflow\(vbw:fixing\).*Workflow\(vbw:verifying\)' "$SKILL"
 }
 

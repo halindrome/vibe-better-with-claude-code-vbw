@@ -69,7 +69,7 @@ Next: end your turn; the loop'"'"'s Stop hook gives the next step'
   # The preamble runs the kernel by its plugin path with $ARGUMENTS, as the approve skill runs vbw approve.
   awk '/^```!$/ { on = 1; next } on && /^```$/ { on = 0 } on' "$f" | grep -qE '^"\$\{CLAUDE_PLUGIN_ROOT\}/bin/vbw" loop start .*\$ARGUMENTS.* \|\| true$'
   # The Stop hook is the kernel's gate, the plugin's own (T150): the skill declares none.
-  ! printf '%s\n' "$front" | grep -q '^hooks:'
+  ! printf '%s\n' "$front" | grep -q '^hooks:' || false
   grep -q 'auto gate' "$PLUGIN_ROOT/hooks/stop.sh"
 }
 

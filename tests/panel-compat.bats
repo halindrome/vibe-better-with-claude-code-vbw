@@ -72,6 +72,6 @@ without_panel() {
 }
 
 @test "R53: the status line and the kernel know nothing of the panel, so an older Claude Code prints nothing extra" {
-  ! grep -rqiE 'panel|mods?\b' "$PLUGIN_ROOT/scripts"
+  ! grep -rqiE 'panel|mods?\b' "$PLUGIN_ROOT/scripts" || false
   ! grep -qiE 'panel' "$PLUGIN_ROOT/hooks/session-start.sh"
 }

@@ -14,7 +14,7 @@ setup() {
   # The seam: the one line that starts a scenario's own process.
   grep -qx 'l3_child() { L3_CHILD=1 bash "$0" "$1"; }' "$SUITE"
   sed 's|^l3_child() { L3_CHILD=1 bash "$0" "$1"; }$|l3_child() { bash "$STUB" "$1"; }|' "$SUITE" > "$TEST_ROOT/copy/tools/l3-suite.sh"
-  ! grep -q 'L3_CHILD=1 bash' "$TEST_ROOT/copy/tools/l3-suite.sh"
+  ! grep -q 'L3_CHILD=1 bash' "$TEST_ROOT/copy/tools/l3-suite.sh" || false
   STUB="$TEST_ROOT/stub.sh"
   MARK="$TEST_ROOT/marks"
   mkdir -p "$MARK"

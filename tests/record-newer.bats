@@ -36,7 +36,7 @@ use_record() { cp "$FIXTURES/$1" .vbw/record.json; }
     # shellcheck disable=SC2086
     vbw_run $cmd
     [ "$status" -ne 0 ]
-    ! printf '%s' "$output" | grep -qi corrupt
+    ! printf '%s' "$output" | grep -qi corrupt || false
   done
 }
 

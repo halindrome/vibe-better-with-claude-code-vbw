@@ -394,7 +394,7 @@ prove_all_green() {
   [ "$(cat .gitignore)" = "node_modules/" ]
   printf 'my-own-edit/\n' >> .gitignore
   "$VBW" run start plan > /dev/null && "$VBW" run end > /dev/null
-  ! git show --name-only --format= HEAD | grep -qx .gitignore
+  ! git show --name-only --format= HEAD | grep -qx .gitignore || false
   git diff --name-only | grep -qx .gitignore
 }
 

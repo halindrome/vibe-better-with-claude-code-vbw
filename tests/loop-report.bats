@@ -62,8 +62,8 @@ one_item() {
   loop_prove
   [ "$(step)" = done ]
   grep -qi 'unknown' .vbw/loop-report.md
-  ! grep -q '\$0\.00' .vbw/loop-report.md
-  ! grep -qiE 'estimat|approx' .vbw/loop-report.md
+  ! grep -q '\$0\.00' .vbw/loop-report.md || false
+  ! grep -qiE 'estimat|approx' .vbw/loop-report.md || false
   jq -e '.loop.items[0].cost == null' .vbw/record.json
 }
 

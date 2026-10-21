@@ -31,8 +31,8 @@ row() { grep -E "^\| \`$1\` \|" "$DOCS/rigor.md" | grep -iE 'rule|nothing'; }
 
 @test "R188: docs/rigor.md's table gives each level what it breaks: nothing at express, each rule at standard, each task too at deep" {
   row express | grep -qi 'nothing' || { echo "express: $(row express)"; false; }
-  ! row express | grep -qi 'each rule'
+  ! row express | grep -qi 'each rule' || false
   row standard | grep -qi 'each rule' || { echo "standard: $(row standard)"; false; }
-  ! row standard | grep -qi 'each task'
+  ! row standard | grep -qi 'each task' || false
   row deep | grep -qi 'each task' || { echo "deep: $(row deep)"; false; }
 }

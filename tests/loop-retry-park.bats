@@ -43,7 +43,7 @@ parked_clean() {
     and ([.phases[] | select(.id == "P2")] | length) == 0 and ([.plans[] | select(.id == "P2.1")] | length) == 0
     and ([.checks[] | select(.id == "C2")] | length) == 0 and ([.fixes[] | select(.id == "F1")] | length) == 0
     and (.protected | index("tests/greet.sh") | not)' .vbw/record.json || { jq '{requirements, phases, plans, checks, fixes}' .vbw/record.json; return 1; }
-  ! grep -q 'Visitors can read a greeting' .vbw/spec.md
+  ! grep -q 'Visitors can read a greeting' .vbw/spec.md || false
   jq -e '.parked[0] | .id == "M2" and .title == "Visitors can read a greeting" and (.at | type == "string") and (.reason | length > 0)' .vbw/record.json || { jq .parked .vbw/record.json; return 1; }
   jq -e '.loop.items[0] | .status == "parked" and (.reason | length > 0)' .vbw/record.json
   jq -e '.todos[] | select(.id == "T1") | .status == "open"' .vbw/record.json
@@ -164,7 +164,7 @@ parked_clean() {
   [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; false; }
   # The item's own commits are reverted; the mixed one stays, its code in place, and the decision names it.
   git log --format=%s | grep -q '^Revert "feat(greet): bye"'
-  ! git log --format=%s | grep -q 'Revert "chore: code and record together"'
+  ! git log --format=%s | grep -q 'Revert "chore: code and record together"' || false
   [ -f src/other.txt ] && grep -q other src/other.txt
   jq -e '[.decisions[] | select(.text | test("park"))] | last | .text | test("changes the record too")' .vbw/record.json \
     || { jq '.decisions[-2:]' .vbw/record.json; false; }
@@ -180,7 +180,7 @@ parked_clean() {
   printf 'mine\n' >> src/greet.txt
   [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; false; }
   grep -q mine src/greet.txt
-  ! git log --format=%s | grep -q '^Revert "feat(greet): bye"'
+  ! git log --format=%s | grep -q '^Revert "feat(greet): bye"' || false
   jq -e '[.decisions[] | select(.text | test("park"))] | last | .text | test("you changed src/greet.txt")' .vbw/record.json \
     || { jq '.decisions[-2:]' .vbw/record.json; false; }
 }
@@ -198,7 +198,7 @@ parked_clean() {
   git diff --cached --name-only | grep -qx src/greet.txt
   grep -q staged src/greet.txt
   [ -f tests/greet.sh ] && grep -q '# mine' tests/greet.sh
-  ! git log --format=%s | grep -q '^Revert "feat(greet): bye"'
+  ! git log --format=%s | grep -q '^Revert "feat(greet): bye"' || false
   jq -e '[.decisions[] | select(.text | test("park"))] | last | .text | test("you changed src/greet.txt")' .vbw/record.json \
     || { jq '.decisions[-2:]' .vbw/record.json; false; }
 }
@@ -216,14 +216,14 @@ parked_clean() {
   figures s1 4 2000 200
   [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; false; }
   # The mixed commit is left; the two older ones conflict with it (git treats a change next to another as a conflict) and are left too, each named.
-  ! git log --format=%s | grep -q '^Revert '
+  ! git log --format=%s | grep -q '^Revert ' || false
   grep -q extra src/greet.txt
   jq -e '[.decisions[] | select(.text | test("park"))] | last | .text | test("does not revert cleanly") and test("changes the record too")' .vbw/record.json \
     || { jq '.decisions[-2:]' .vbw/record.json; false; }
   grep -q 'does not revert cleanly' .vbw/loop-report.md
   # No half-done revert (F193): no revert in progress, no conflict markers, the tree as committed, and the park committed.
   [ ! -e "$(git rev-parse --git-path REVERT_HEAD)" ]
-  ! grep -q '<<<<<<<' src/greet.txt
+  ! grep -q '<<<<<<<' src/greet.txt || false
   [ -z "$(git status --porcelain --untracked-files=no)" ] || { git status --porcelain; false; }
   git log --format=%s | grep -q '^chore(vbw): park T1$'
 }
@@ -244,10 +244,10 @@ parked_clean() {
   [ "$(step)" = plan ] || { cat "$TEST_ROOT/step.json"; false; }
   git log --format=%s | grep -q '^Revert "feat(greet): other file"'
   [ ! -f src/other.txt ]
-  ! git log --format=%s | grep -q '^Revert "feat(greet): bye"'
+  ! git log --format=%s | grep -q '^Revert "feat(greet): bye"' || false
   grep -q extra src/greet.txt
   [ ! -e "$(git rev-parse --git-path REVERT_HEAD)" ]
-  ! grep -q '<<<<<<<' src/greet.txt
+  ! grep -q '<<<<<<<' src/greet.txt || false
   [ -z "$(git status --porcelain --untracked-files=no)" ] || { git status --porcelain; false; }
   jq -e '.loop.items[0] | (.reverts | length == 1) and (.left | test("does not revert cleanly"))' .vbw/record.json || { jq .loop .vbw/record.json; false; }
 }

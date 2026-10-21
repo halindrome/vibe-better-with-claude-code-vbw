@@ -314,14 +314,15 @@ add_refused() {
 
 @test "R116: the router takes the small path with vbw apply --add numbered from next_phase and no planning workflow; anything else plans as before" {
   local r="$PLUGIN_ROOT/skills/vibe/SKILL.md" small
-  small=$(sed -n '/^\*\*plan\*\* with `detail.tier` express or `detail.small`/,/^\*\*plan\*\*: /p' "$r")
+  # The small path's paragraph, up to (not including) the plain plan line that follows it.
+  small=$(sed -n '/^\*\*plan\*\* with `detail.tier` express or `detail.small`/,/^\*\*plan\*\*: /p' "$r" | sed '$d')
   [ -n "$small" ]
   printf '%s' "$small" | grep -q 'vbw apply --add'
   printf '%s' "$small" | grep -q 'next_phase'
   # The phase takes the tier vbw next names: small can come with a standard floor.
   printf '%s' "$small" | grep -qF '`detail.tier`'
-  ! printf '%s' "$small" | grep -q 'one express phase'
-  ! printf '%s' "$small" | grep -qF 'Workflow `vbw:planning`'
+  ! printf '%s' "$small" | grep -q 'one express phase' || false
+  ! printf '%s' "$small" | grep -qF 'Workflow `vbw:planning`' || false
   grep -q 'Workflow `vbw:planning`' "$r"
   grep -q 'apply --add' "$REPO_ROOT/docs/workflows.md"
   grep -qF '`detail.tier`' "$REPO_ROOT/docs/rigor.md"

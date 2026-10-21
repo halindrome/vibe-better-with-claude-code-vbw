@@ -35,7 +35,7 @@ status_of() { jq -r --arg p "$1" '.plans[] | select(.id == $p) | .status' .vbw/r
 
 @test "R74: files committed with no VBW-Plan trailer and checks that pass: the plan can be marked done" {
   approve_with paid
-  ! git log --format='%(trailers:key=VBW-Plan,valueonly)' | grep -q 'P1.1'
+  ! git log --format='%(trailers:key=VBW-Plan,valueonly)' | grep -q 'P1.1' || false
   vbw_run plan done P1.1
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(status_of P1.1)" = done ]

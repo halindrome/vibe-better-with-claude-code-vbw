@@ -178,7 +178,7 @@ until_note() {
   "$VBW" status --json | jq -e '.step.kind == "proof"' > /dev/null || { "$VBW" status --json; false; }
   kill -9 "$pid"
   sleep 0.2
-  ! kill -0 "$pid" 2> /dev/null
+  ! kill -0 "$pid" 2> /dev/null || false
   [ -e "$NOTE" ]
   "$VBW" status --json | jq -e 'has("step") and .step == null' > /dev/null || { "$VBW" status --json; false; }
   touch "$CONC/go"

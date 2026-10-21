@@ -11,6 +11,6 @@ load helper
 
 @test "docs/proof.md names runs.json as the store of passes, and the passes cache is gone from proof.md and record.md" {
   grep -q 'runs.json' "$REPO_ROOT/docs/proof.md"
-  ! grep -q 'passes.json' "$REPO_ROOT/docs/proof.md"
+  ! grep -q 'passes.json' "$REPO_ROOT/docs/proof.md" || false
   ! grep -E '^\| `passes`' "$REPO_ROOT/docs/record.md"
 }

@@ -73,7 +73,7 @@ form() { printf '"test_files": {"run": %s, "files": %s}' "$1" "$2"; }
   printf '{"plans": [], %s}' "$(form '["bats", "{file}"]' '["tests/*.bats"]')" | "$VBW" apply --patch > /dev/null
   [ "$(grep -c '^## Test files' .vbw/spec.md)" -eq 1 ]
   grep -qxF -- '- run: bats {file}' .vbw/spec.md
-  ! grep -qF 'sh {file}' .vbw/spec.md
+  ! grep -qF 'sh {file}' .vbw/spec.md || false
   grep -qx 'keep me' .vbw/spec.md
   grep -q 'R1 \[auto\]' .vbw/spec.md
 }

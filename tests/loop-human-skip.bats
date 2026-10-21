@@ -129,6 +129,6 @@ carried_to_m3() {
   "$VBW" req accept R2 > /dev/null
   VBW_SESSION_ID=s2 "$VBW" loop stop > /dev/null
   [ "$(step)" = stopped ] || { cat "$TEST_ROOT/step.json"; false; }
-  ! awk '/^## Waiting for you/,/^## Cost/' .vbw/loop-report.md | grep -q 'R2 '
+  ! awk '/^## Waiting for you/,/^## Cost/' .vbw/loop-report.md | grep -q 'R2 ' || false
   grep -q 'no skipped \[human\] requirement' .vbw/loop-report.md || { cat .vbw/loop-report.md; false; }
 }

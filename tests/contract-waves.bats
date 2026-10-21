@@ -60,7 +60,7 @@ waves_line() { "$VBW" show contract < /dev/null | grep '^build waves:'; }
 }
 
 @test "R102: the waves line and vbw next share one wave rule (D166): no copy of it in cmd-show.sh or next.jq" {
-  ! grep -qE 'def (overlaps|wave)\(' "$PLUGIN_ROOT/lib/cmd-show.sh" "$PLUGIN_ROOT/lib/next.jq"
+  ! grep -qE 'def (overlaps|wave)\(' "$PLUGIN_ROOT/lib/cmd-show.sh" "$PLUGIN_ROOT/lib/next.jq" || false
   grep -qE 'def wave\(' "$PLUGIN_ROOT/lib/record.sh"
   plans '[{"id":"P1.1","files":["a.js"]},{"id":"P1.2","files":["a.js"]},{"id":"P1.3","files":["b.js"]}]'
   git add -A > /dev/null && git commit -q -m "chore(vbw): plan" && "$VBW" approve > /dev/null
