@@ -52731,7 +52731,7 @@
       "text": "Redraw assets/kernel-diagram.jpg (README): add the QA review step and the delivered-files check, and show the Devs as 'as many as the work allows' rather than exactly three",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "done"
     }
   ],
   "decisions": [
