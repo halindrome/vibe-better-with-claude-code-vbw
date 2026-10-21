@@ -6,20 +6,27 @@
 # Run through the kernel on hermetic projects (L1).
 
 load helper
+load fixture-helper
 
-setup() {
+interview_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
   git add -A && git commit -q -m "chore: init"
   COMMON=$(git rev-parse --path-format=absolute --git-common-dir)
   PRIVATE="$COMMON/vbw/profile.json"
+}
+
+setup_file() { fixture_build interview interview_project; }
+setup() {
+  fixture_copy interview
   LEVELS=("never" "small scripts or no-code" "professionally" "senior engineer")
   DEPTHS=("plain words" "plain with technical terms explained" "technical and brief")
   INVOLVEMENTS=("decide and tell me" "options with a recommendation" "I make the calls")
 }
 
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # answer LEVEL DEPTH INVOLVEMENT: record the three answers.
 answer() {
