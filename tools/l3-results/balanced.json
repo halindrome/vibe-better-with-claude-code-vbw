@@ -1,9 +1,9 @@
 {
   "scenario": "balanced",
   "fixture": "greet.sh, one auto requirement and one human requirement",
-  "cost_usd": 1.35,
+  "cost_usd": 0,
   "evidence_level": "L3",
-  "at": "2026-10-20T07:09:36Z",
+  "at": "2026-10-20T23:24:14Z",
   "passed": true,
   "facts": {
     "autonomy": "balanced",

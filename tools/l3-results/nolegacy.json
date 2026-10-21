@@ -1,9 +1,9 @@
 {
   "scenario": "nolegacy",
   "fixture": "greet.sh from scratch; a project without a VBW 1 folder; the interview is answered with VBW's first options",
-  "cost_usd": 0.2967,
+  "cost_usd": 0.2259,
   "evidence_level": "L3",
-  "at": "2026-10-06T23:02:48Z",
+  "at": "2026-10-20T23:53:49Z",
   "passed": true,
   "facts": {
     "asked_legacy": false,
