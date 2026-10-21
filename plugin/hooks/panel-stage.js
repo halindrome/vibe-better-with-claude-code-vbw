@@ -22,7 +22,9 @@ import { roleColor as colorOfRole, stateColor, STATE_MARKS, NEED, ACCENT } from 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const num = (x) => typeof x === 'number' && Number.isFinite(x)
 const str = (x) => (typeof x === 'string' ? x : '')
-const len = (s) => [...s].length
+// The cells a text takes, one per code point: its length unless it holds a surrogate pair.
+const PAIRS = /[\uD800-\uDFFF]/
+const len = (s) => (typeof s === 'string' && !PAIRS.test(s) ? s.length : [...s].length)
 
 // Cut a line to `n` cells, marking the cut with an ellipsis.
 const cut = (s, n) => (len(s) <= n ? s : n <= 0 ? '' : [...s].slice(0, n - 1).join('') + '…')

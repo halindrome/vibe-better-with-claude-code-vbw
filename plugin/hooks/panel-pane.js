@@ -60,6 +60,18 @@ export function layout(width, portraitWanted) {
   return found.sort((a, b) => a.rank[0] - b.rank[0] || a.rank[1] - b.rank[1] || a.rank[2] - b.rank[2])[0]
 }
 
+// The head as drawn: the layout with each row's tabs as [id, label], worked out again only
+// when the width or the portrait's wish changes (a pane redraws at one width for long).
+let laidOut = null
+function headAt(width, portraitWanted) {
+  if (!laidOut || laidOut.width !== width || laidOut.portraitWanted !== portraitWanted) {
+    const lay = layout(width, portraitWanted)
+    const idOf = (label) => TABS.find(([i, name]) => (lay.short ? SHORT[i] : name) === label)[0]
+    laidOut = { width, portraitWanted, portrait: lay.portrait, rows: lay.rows.map((names) => names.map((label) => [idOf(label), label])) }
+  }
+  return laidOut
+}
+
 // --- how many rows a drawing takes ----------------------------------------------
 // A model of Ink's layout (a Box stacks or sets side by side, a Text wraps or is cut),
 // enough to know whether Mission Control fits the fixed height. { w, h }: the widest
@@ -188,9 +200,9 @@ function summary(ui, v, st, on) {
   return rows
 }
 
-function body(ui, { st, now, width, motion, registry, stored }, act) {
+function body(ui, { st, now, width, motion, registry, stored }, tab, act) {
   const rec = st.record
-  switch (st.tab) {
+  switch (tab) {
     case 'plan': return renderPlan({ ...ui, Input: undefined }, planModel({ record: rec, phase: st.phase }), act) // Ask is not wired yet
     case 'proof': return renderProof(ui, proofModel({ record: rec, selected: st.check }), act)
     case 'timeline': return renderTimeline(ui, timelineModel({ run: st.run, now, steps: st.steps, step: st.step, width: Math.max(10, width - 24) }))
@@ -215,21 +227,18 @@ export function renderPane(ui, input, on) {
   // The portrait goes when the room is short or costs the tabs a row or a full name.
   const width = Number.isFinite(input.width) ? input.width : 50
   const wanted = Boolean(Image) && typeof input.portrait === 'string' && (rows < 1 || rows >= PORTRAIT_ROWS)
-  const lay = layout(width, wanted)
+  const lay = headAt(width, wanted)
   const withPortrait = lay.portrait
   const tabs = h(Box, { key: 'tabs', flexDirection: 'column' },
-    ...lay.rows.map((names, r) => h(Box, { key: 'tab-row-' + r, flexDirection: 'row', columnGap: TAB_GAP, flexShrink: 0 },
-      ...names.map((label) => {
-        const id = TABS.find(([i, name]) => (lay.short ? SHORT[i] : name) === label)[0]
-        return h(Button, { key: 'tab-' + id, label, ...(id === tab ? { variant: 'primary' } : { dimColor: true }), onPress: () => act({ show: id }) })
-      }))))
+    ...lay.rows.map((row, r) => h(Box, { key: 'tab-row-' + r, flexDirection: 'row', columnGap: TAB_GAP, flexShrink: 0 },
+      ...row.map(([id, label]) => h(Button, { key: 'tab-' + id, label, ...(id === tab ? { variant: 'primary' } : { dimColor: true }), onPress: () => act({ show: id }) })))))
   const portrait = withPortrait
     ? [h(Image, { key: 'vbw-portrait', source: { file: input.portrait, format: 'png' }, columns: PORTRAIT_COLS, rows: PORTRAIT_DRAWN_ROWS, alt: 'VBW' })] : []
   const gap = rows < 1 || withPortrait || rows >= GAP_ROWS
   const headRows = Math.max(withPortrait ? PORTRAIT_DRAWN_ROWS : 0, lay.rows.length) + (gap ? 1 : 0)
   const head = h(Box, { key: 'head', flexDirection: 'row', ...(gap ? { marginBottom: 1 } : {}) }, ...portrait, tabs)
   const sweep = tab === 'proof' && Raster && input.sweep ? [h(Raster, { key: 'vbw-sweep', columns: input.sweep.cols, rows: 1, cells: input.sweep.cells })] : []
-  const view = wrapped ? renderWrapped(ui, wrapped) : body(ui, { ...input, st: { ...st, tab } }, act)
+  const view = wrapped ? renderWrapped(ui, wrapped) : body(ui, input, tab, act)
   const upNext = tab === 'now' ? [renderNext(ui, { recommendation: input.recommendation, width: input.width, motion: input.motion, arrivedAt: input.arrivedAt, now: input.now, unseen: input.unseen }, act)] : []
   const content = [...(tab === 'now' ? summary(ui, v, st, on) : []), ...upNext, ...sweep, view]
   if (rows < 1) {
