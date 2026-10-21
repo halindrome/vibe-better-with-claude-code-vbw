@@ -33,15 +33,16 @@ const FIXDONE_PROPS = {
   fixdone: { type: 'string', enum: ['ran', 'failed'] },
   closed: { type: 'array', items: { type: 'string' } },
   open: { type: 'array', items: { type: 'object', required: ['fix', 'reason'], properties: { fix: { type: 'string' }, reason: { type: 'string' } } } },
+  approval: { type: 'array', items: { type: 'string' } },
 }
 const CLOSE_RESULT = {
   type: 'object',
-  required: ['fixdone', 'closed', 'open', 'ended', 'recorded', 'report'],
+  required: ['fixdone', 'closed', 'open', 'approval', 'ended', 'recorded', 'report'],
   properties: Object.assign({ ended: { type: 'boolean' }, recorded: { type: 'boolean' }, report: { type: 'string' } }, FIXDONE_PROPS),
 }
 const ALONE_RESULT = {
   type: 'object',
-  required: ['fixdone', 'closed', 'open', 'report'],
+  required: ['fixdone', 'closed', 'open', 'approval', 'report'],
   properties: Object.assign({ report: { type: 'string' } }, FIXDONE_PROPS),
 }
 
@@ -60,7 +61,7 @@ const FIX_RESULT = {
 const session = (args && args.session) || ''
 const sh = c => (session ? `VBW_SESSION_ID=${session} ${c}` : c)
 const WAIT = 'It may run past one shell command\'s 10-minute limit: if Claude Code moves it to the background, wait for it to finish and read its whole output (it ends with the two count lines) before anything else.'
-const FIXDONE_ANSWER = 'Answer fixdone ("ran" when it ran, "failed" when it stopped with an error), closed (the fix ids it closed) and open (each fix it left open: {fix, reason})'
+const FIXDONE_ANSWER = 'Answer fixdone ("ran" when it ran, "failed" when it stopped with an error), closed (the fix ids it closed), open (each fix it left open: {fix, reason}) and approval (the check files it said are waiting for approval, so that no check ran: the user approves them before the proof; [] when it said none)'
 // The run's own last step (R78, R81): the round's vbw fix done, then confirm what the agents
 // recorded, say plainly what was not, and end the run. Only when the router passed args.session.
 const closeRun = async (ids, fixCmd) => {
@@ -116,6 +117,10 @@ if (failed) log(`vbw fix done did not finish: run by hand: ${fixCmd}`)
 const closed = fd && fixCmd && Array.isArray(fd.closed) ? fd.closed : []
 const open = fd && fixCmd && Array.isArray(fd.open) ? fd.open : []
 open.forEach(o => log(`${o.fix} stays open: ${o.reason}`))
-const fixdone = { command: fixCmd || null, closed, open, left_out: leftOut }
+// T174: check files waiting for the user's approval stop the round's re-check at once; the
+// approval is the next step (vbw next asks), and the proof after it runs every check.
+const approval = fd && fixCmd && Array.isArray(fd.approval) ? fd.approval.filter(f => typeof f === 'string') : []
+if (approval.length) log(`the user's approval comes next: check files wait for it (${approval.join(', ')}), so vbw fix done ran no check; vbw next asks, then vbw prove runs every check`)
+const fixdone = { command: fixCmd || null, closed, open, left_out: leftOut, approval }
 const complete = interrupted === 0 && !failed && (!session || Boolean(confirmation && confirmation.recorded && confirmation.ended))
 return confirmation ? { results: out, complete, fixdone, confirmation } : { results: out, complete, fixdone }

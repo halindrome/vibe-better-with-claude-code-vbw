@@ -371,7 +371,7 @@ show_work() {
       "requirements:", (.requirements[] | "  \(.id) [\(.proof)] \(.text)"),
       (if (.rules | length) > 0 then "rules:", (.rules[] | "  \(.n) \(.text) -> \(.check)") else empty end),
       (if .tier == "standard" then "tier: standard (the mutation check asks one break per rule)"
-       elif .tier == "deep" then "tier: deep (the mutation check asks one break per rule and per task)"
+       elif .tier == "deep" then "tier: deep (the mutation check asks one break per rule, plus one per task no rule covers)"
        elif .tier then "tier: \(.tier)" else empty end),
       "checks:", check_lines,
       (def tname: if .rule then (.rule.req as $q | .rule.text as $t | ($rules | map(select(.text == $t and (.n | startswith($q + "."))))[0].n // $q)) else "task\(.task)" end;

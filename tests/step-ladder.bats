@@ -1,13 +1,14 @@
 #!/usr/bin/env bats
 # R191, phase P149 (L1): a step's expected seconds come from how long one unit of
-# its work took before at its rigor tier, times this step's size. A plan: the median
-# seconds per task over the latest 10 finished plans of its tier that recorded
-# tasks, times its tasks; fewer than 3 such plans: the median seconds per plan at
-# that tier; fewer than 3 of those: the median per plan of any tier; fewer than 3
-# plan units in all: today's rule on the builds that recorded only parts (median
-# seconds per plan times the wave's plans); fewer than 3 plans in all: no end time,
-# never a guess. A build wave takes as long as its longest plan (they build side by
-# side), never their sum. A fix round: the median wall time of the latest 10 fix
+# its work took before at its rigor tier, times this step's size. A plan (T174,
+# tests/build-pace.bats: at the wave's quantile 0.75^(1/n), not the median; per
+# task plus break when the history recorded breaks): the seconds per task over the
+# latest 10 finished plans of its tier that recorded tasks, times its tasks; fewer
+# than 3 such plans: the seconds per plan at that tier; fewer than 3 of those: per
+# plan of any tier; fewer than 3 plan units in all: today's rule on the builds that
+# recorded only parts (median seconds per plan times the wave's plans); fewer than 3
+# plans in all: no end time, never a guess. A build wave takes as long as its
+# longest plan (they build side by side), never their sum. A fix round: the median wall time of the latest 10 fix
 # rounds at its tier (else of any tier; fewer than 3 in all: none), whatever the
 # fix count. Planning: the median seconds per open requirement over the latest 10
 # planning steps that recorded a count, times the requirements to plan now (fewer
@@ -55,21 +56,23 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
   [ "$(step_secs first_end)" -eq 200 ] || { cat "$NOTE"; false; }
 }
 
-@test "R191: rung 2: with fewer than 3 plans of the tier that recorded tasks, the median seconds per plan at that tier" {
-  # Another tier's quick plans must not pull the median (any-tier would give 300).
+@test "R191: rung 2: with fewer than 3 plans of the tier that recorded tasks, the seconds per plan at that tier" {
+  # Another tier's quick plans must not pull it down (any tier would give 572).
   hist_build deep - 10 3
   hist_build standard - 300 1
   hist_build standard - 500 1
   hist_build standard - 700 1
   hist_build standard 2 500 2
-  step_of | jq -e '.seconds == 500' || { step_of; false; }
+  # Three plans side by side (T174): the quantile 0.909 of 300, 500, 500, 500 and 700 s is 627 s.
+  step_of | jq -e '.seconds == 627' || { step_of; false; }
 }
 
-@test "R191: rung 3: with fewer than 3 plans of the tier, the median seconds per plan of any tier" {
+@test "R191: rung 3: with fewer than 3 plans of the tier, the seconds per plan of any tier" {
   hist_build deep - 100 1
   hist_build deep - 200 1
   hist_build express - 900 1
-  step_of | jq -e '.seconds == 200' || { step_of; false; }
+  # The quantile 0.909 of 100, 200 and 900 s (T174).
+  step_of | jq -e '.seconds == 772' || { step_of; false; }
 }
 
 @test "R191: the coarse rung: builds that recorded only parts still count, by today's rule (median per plan times the wave's plans)" {

@@ -84,10 +84,11 @@ line() { show | grep -Eq -- "$1" || { echo "no line matches $1:"; show; return 1
 @test "R203: at deep, a rule's --none entry covers the rule, and a task --none keeps its meaning" {
   tier deep
   none_ok R1.1 "only the record"
-  red R1.2
-  refuses_naming task1 task2
-  red task1
+  # T174: deep asks one break per rule, as standard does; a task's reason is still recorded.
   "$VBW" mutate P1.1 task2 --none "only writes a log line nothing reads" < /dev/null > /dev/null
+  jq -e '[.plans[0].mutations[] | select(.task == 2 and .none == "only writes a log line nothing reads")] | length == 1' .vbw/record.json
+  refuses_naming R1.2
+  red R1.2
   done_ok
 }
 

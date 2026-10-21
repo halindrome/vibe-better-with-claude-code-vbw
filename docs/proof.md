@@ -887,6 +887,26 @@ A requirement fix commits the check files of its own requirement with
 `vbw next` asks for it. A check file of another requirement is refused, and code
 goes through its plan with `vbw commit PLAN`.
 
+While any check file waits for the user's approval (a fix changed or added it),
+nothing can be proven before the user approves, so `vbw fix done` runs no
+check: a re-check then could take long and still wait for that approval, which
+no agent can give. It still refuses an unknown, not open or uncommitted fix, and
+the others end as usual (`fixed`, awaiting the proof):
+
+```text
+vbw: waiting for approval (new or changed since approved): tests/c1.sh
+check files are waiting for approval, so no check runs before it: tests/c1.sh
+the user approves them first (vbw next asks); then vbw prove runs every check
+checks: 0 ran, 0 reused
+test files: 0 ran, 0 reused
+VBW's own work: 0.0 of 0.0 min
+ran again: 0 of 0 units; top reasons: none
+F1 fixed: vbw prove decides
+```
+
+`vbw next` then asks for the approval, and the proof after it runs every check
+the round would have re-checked.
+
 ### Closing several fixes
 
 ```text
@@ -983,7 +1003,9 @@ requirement or skip it. `vbw ship` refuses while such a fix is open.
 ### The mutation check
 
 At standard and deep, the builder breaks the plan's code on purpose (one
-statement per rule) with `vbw mutate` and runs the rule's own check. See
+statement per rule) with `vbw mutate` and runs the rule's own check. Breaks of
+several rules can run side by side: each is queued (`--queue`), then `vbw mutate
+PLAN --run` runs them at once, each in its own clean copy. See
 docs/workflows.md for the command and docs/rigor.md for the levels.
 
 A task break (`taskK`) without `--check` runs the checks of the plan's own
@@ -994,7 +1016,7 @@ can still break its tasks. A plan that owns no rule runs the checks of its
 requirements, and a refusal then says it owns no rule and that the Lead names a
 plan on each rule.
 
-A break with several checks (a task at deep) runs them one at a time, fastest
+A break with several checks (a task break) runs them one at a time, fastest
 first by their last recorded time, and stops at the first that goes red; a
 survivor runs them all. Each check first runs once on the unbroken code at that
 commit, unless an earlier break at the same commit already ran it. A slow test
@@ -1010,9 +1032,9 @@ suite therefore pays for the checks a break needs, not for every check.
   lists the rules missing one. A rule that names its plan (`plan` in the
   Lead's rules: the plan that builds its code) is asked of that plan when it
   finishes, even while another plan of the requirement is open, so each plan
-  breaks its own rules. At deep each task also needs a red break or a
-  written reason. At express it asks for nothing. A survivor alone covers
-  nothing.
+  breaks its own rules. Deep asks the same, one break per rule; a task break
+  there is the builder's, for a task whose behaviour no rule's check covers.
+  At express it asks for nothing. A survivor alone covers nothing.
 
 - A rule whose check judges only the record (a measurement kept as a decision,
   for example) has no code to break. It is recorded with `vbw mutate PLAN Rn.k

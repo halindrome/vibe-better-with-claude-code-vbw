@@ -67,6 +67,14 @@ names() {
   names "$DEV" "vbw mutate" standard deep express "vbw plan block"
 }
 
+@test "T174: the Dev breaks once per rule at standard and deep, a task only when no rule's check covers it, never per edge case" {
+  local m
+  m=$(grep -i '^ *- Standard' "$DEV")
+  printf '%s' "$m" | grep -qi 'standard and deep' && printf '%s' "$m" | grep -qi 'once for each rule' || { echo "$m"; false; }
+  printf '%s' "$m" | grep -qi "no rule's check covers" || { echo "$m"; false; }
+  ! grep -qiE 'once per task|edge case its rules' "$DEV" || { grep -niE 'once per task|edge case its rules' "$DEV"; false; }
+}
+
 @test "R188: the Dev's prohibitions hold: a strengthened check is never weakened, and a fix never runs the mutation step" {
   has_line "$DEV" "never weaken"
   has_line "$DEV" mutation fix never

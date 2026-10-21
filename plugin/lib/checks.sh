@@ -309,9 +309,11 @@ checks_unit_run() {
 
 # checks_run_units UNITS: {name: result} for the units (a JSON array), at most
 # check_jobs at a time and never more than there are slot copies; a unit that
-# is alone still runs by itself (the gate). Results are in the units' order.
+# is alone still runs by itself (the gate). A unit that names its slot copy
+# (.slot, an index into PROOF_COPIES) runs only in it, when that copy is free
+# (vbw mutate --run: each break is in its own copy). Results are in the units' order.
 checks_run_units() {
-  local units="$1" count jobs slots cap n=0 i k pid pids=() unit name res all='{}' slot running found
+  local units="$1" count jobs slots cap n=0 i k pid pids=() unit name res all='{}' slot running found pin
   local slot_pid=() names=() j
   count=$(printf '%s' "$units" | jq 'length')
   [ "$count" -gt 0 ] || { printf '{}\n'; return 0; }
@@ -330,7 +332,8 @@ checks_run_units() {
     for ((i = 0; i < count; i++)); do
       unit=$(printf '%s' "$units" | jq -c --argjson i "$i" '.[$i]')
       name=$(printf '%s' "$unit" | jq -r '.name')
-      res=$(checks_unit_run "$unit" "$slot") || res=
+      pin=$(printf '%s' "$unit" | jq -r '.slot // empty')
+      res=$(checks_unit_run "$unit" "${pin:-$slot}") || res=
       [ -n "$res" ] || { res=$(checks_lost "$name"); checks_gate_forget "$name"; }
       all=$(printf '%s' "$all" | jq -c --arg id "$name" --argjson r "$res" '. + {($id): $r}')
     done
@@ -343,6 +346,7 @@ checks_run_units() {
   for ((i = 0; i < count; i++)); do
     unit=$(printf '%s' "$units" | jq -c --argjson i "$i" '.[$i]')
     name=$(printf '%s' "$unit" | jq -r '.name')
+    pin=$(printf '%s' "$unit" | jq -r '.slot // empty')
     slot=""
     while :; do
       running=$(jobs -r | wc -l)
@@ -350,6 +354,7 @@ checks_run_units() {
         [ "$slots" -gt 0 ] || break
         found=""
         for ((k = 0; k < slots; k++)); do
+          [ -z "$pin" ] || [ "$k" -eq "$pin" ] || continue
           if [ -z "${slot_pid[$k]:-}" ] || ! kill -0 "${slot_pid[$k]}" 2> /dev/null; then found=$k; break; fi
         done
         if [ -n "$found" ]; then slot=$found; break; fi

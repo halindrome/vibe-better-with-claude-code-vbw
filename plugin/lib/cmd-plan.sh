@@ -7,6 +7,8 @@
 
 # shellcheck source=steps.sh
 . "$VBW_LIB/steps.sh"
+# shellcheck source=mutate-queue.sh
+. "$VBW_LIB/mutate-queue.sh"
 
 cmd_plan() {
   local sub="${1:-}" id="${2:-}"
@@ -55,10 +57,15 @@ cmd_plan() {
       checks_must_pass "$record" "$id completes requirements whose checks do not pass" ${completes[@]+"${completes[@]}"}
       # A plan built in an open build run, at standard or deep, also waits for the
       # mutation check (R188): every rule it completes shown to be caught.
-      local missing
+      local missing queued e
       missing=$(printf '%s' "$record" | plan_missing_breaks "$id")
+      queued=$(mutate_queue_entries "$id" | while IFS= read -r e; do jq -r .target "$e/meta.json"; done | paste -sd ' ' -)
+      [ -z "$missing" ] || [ -z "$queued" ] || missing="$missing
+Queued, not run yet: $queued: run them with vbw mutate $id --run"
       [ -z "$missing" ] || vbw_die "$id has behaviour no recorded break has shown to be caught:
 $missing"
+      # Breaks still queued are not needed any more.
+      rm -rf "$(mutate_queue_dir "$id")"
       record_update '(.plans[] | select(.id == $p)) |= (.status = "done" | del(.note))' --arg p "$id"
       step_plan_done
       printf '%s done\n' "$id"
@@ -82,32 +89,21 @@ $missing"
 
 # plan_missing_breaks ID (record on stdin): the refusal lines for what the
 # mutation check still lacks, empty when nothing is asked (a plan not building in
-# a build run, an express or untiered phase, requirements without checks). A rule
-# counts once any plan of its requirement has a red break of it or a --none entry for it; at deep every
-# task needs a red break or a reason in this plan's own entries.
+# a build run, an express or untiered phase, requirements without checks). It asks
+# one red break per rule the plan owes (owed_rules, VBW_JQ_DEFS), at standard and
+# deep alike (T174): a rule counts once any plan of its requirement has a red break
+# of it or a --none entry for it. A task break is the Dev's own call, for a task
+# whose behaviour no rule's check covers; plan done asks none.
 plan_missing_breaks() {
-  jq -r --arg p "$1" '
+  jq -r --arg p "$1" "$VBW_JQ_DEFS"'
     . as $r | (.plans[] | select(.id == $p)) as $pl
-    | ([$r.phases[] | select(.id == $pl.phase)][0].tier // "") as $tier
-    | if ($r.lease.kind // "") != "build" or $pl.status != "building" or ($tier | IN("standard", "deep") | not)
-        or ([$pl.reqs[] as $q | $r.checks[] | select(.req == $q)] | length == 0) then empty else
-        # The rules a plan owes: every rule of a requirement it completes, and (T152) every rule
-        # that names it as the plan building its code, even while another plan of the requirement is open.
-        [$pl.reqs[] as $q
-          | (all($r.plans[]; .id == $p or .status == "done" or (any(.reqs[]; . == $q) | not))) as $completes
-          | select(any($r.checks[]; .req == $q))
-          | ($r.requirements[] | select(.id == $q and .proof == "auto")) as $rq
-          | ($rq.rules // []) | to_entries[] | select($completes or .value.plan == $p) | select(.value.text as $t
-              | [$r.plans[].mutations[]? | select((.result == "red" or has("none")) and .rule.req == $q and .rule.text == $t)] | length == 0)
-          | "  \($q).\(.key + 1) \(.value.text)"] as $rules
-        | [if $tier == "deep" then range(1; ($pl.tasks // [] | length) + 1) as $k
-            | select([$pl.mutations[]? | select(.task == $k and (.result == "red" or has("none")))] | length == 0)
-            | "  task\($k) \($pl.tasks[$k - 1])" else empty end] as $tasks
-        | if ($rules | length) + ($tasks | length) == 0 then empty else
-            ($rules | if length > 0 then ["Rules no recorded break has made a check fail:"] + . else [] end)
-            + ($tasks | if length > 0 then ["Tasks with no red break and no reason:"] + . else [] end)
-            + (if ($rules | length) > 0 then ["Next: break what each rule promises in this plan'"'"'s code and run vbw mutate \($p) Rn.k \"what you broke\" FILE..., or vbw mutate \($p) Rn.k --none REASON when its check reads nothing the plans build"] else [] end)
-            + (if ($tasks | length) > 0 then ["For a task: vbw mutate \($p) taskK \"what you broke\" FILE..., or vbw mutate \($p) taskK --none REASON when it has no testable behaviour"] else [] end)
+    | if ($r.lease.kind // "") != "build" or $pl.status != "building" then empty else
+        [owed_rules($p)[] | . as $o
+          | select([$r.plans[].mutations[]? | select((.result == "red" or has("none")) and .rule.req == $o.req and .rule.text == $o.text)] | length == 0)
+          | "  \(.req).\(.n) \(.text)"] as $rules
+        | if ($rules | length) == 0 then empty else
+            (["Rules no recorded break has made a check fail:"] + $rules
+              + ["Next: break what each rule promises in this plan'"'"'s code and run vbw mutate \($p) Rn.k \"what you broke\" FILE..., or vbw mutate \($p) Rn.k --none REASON when its check reads nothing the plans build"])
             | join("\n") end
       end'
 }

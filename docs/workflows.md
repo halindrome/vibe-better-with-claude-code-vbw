@@ -59,7 +59,10 @@ nothing and the router ends the run as before. With it:
   reported done, and waits for it to end, before `vbw run confirm`. Without
   `args.session`, `vbw:fixing` still runs it, with an agent of its own. A fix
   whose Dev was blocked or stopped is left out and named with its status. The
-  result's `fixdone` field says which fixes closed and which stayed open. It answers
+  result's `fixdone` field says which fixes closed and which stayed open, and
+  `fixdone.approval` names the check files that `vbw fix done` said wait for
+  the user's approval: then no check ran, the workflow logs that the approval
+  comes next, and `vbw next` asks for it before the proof. It answers
   `{ended, recorded, report}`. The workflow returns that answer as
   `confirmation` and sets `complete` to true only when no agent stopped early
   and `recorded` and `ended` are both true.
@@ -212,11 +215,11 @@ merely contains `--help` (for example a todo) is still text. The test is
 | `vbw show plan P1.2 [--json]` | Dev | the plan, its requirements, its checks, its files |
 | `vbw show fix F1 [--json]` | Dev | the fix, its requirement, failing checks and output (with the path of each kept full output, under `.vbw/runtime/output/`), the files it may touch |
 | `vbw check [--expect-red] [C1 ...]` | Dev | run approved checks and report; a failing check's full output is kept in `.vbw/runtime/output/<check>.log` and named under its line, nothing else is written. `--expect-red`: every check must fail (red-first) |
-| `vbw mutate P1.2 R3.1 "what you broke" FILE...` | Dev, Docs | break one rule (or `taskK`) of the plan on purpose and record whether a check noticed; VBW undoes the break. Standard and deep only (below) |
+| `vbw mutate P1.2 R3.1 "what you broke" FILE...` | Dev, Docs | break one rule (or `taskK`) of the plan on purpose and record whether a check noticed; VBW undoes the break. `--queue` sets a rule break aside to run later; `vbw mutate P1.2 --run` runs the queued breaks side by side. Standard and deep only (below) |
 | `vbw commit P1.2 "feat(x): ..."` | Dev | commit the plan's changed files with provenance trailers |
 | `vbw commit --fix F1 "fix(x): ..." FILE...` | Dev | commit the named changed files of an open fix. For a requirement fix of any source (QA finding or failing test), the files are check files of its own requirement; the commit carries `VBW-Fix: F1` and `VBW-Req` trailers, and the files wait for one approval before the proof. Code goes through its plan with `vbw commit PLAN`. A check file of another requirement, a code file and `.vbw/` files are refused. For a failing project command, the named changed files commit even when no plan lists them, with the `VBW-Fix` trailer |
 | `vbw plan done P1.2` / `vbw plan block P1.2 "reason"` | Dev | the plan's outcome. `done` is verified: none of the plan's files has uncommitted changes, and the checks of the requirements it completes pass. The plan also needs a commit with its `VBW-Plan` trailer (`vbw commit`); without one, every file must be committed in `HEAD` (for example by the approval commit) and a check of its requirements must pass, or `done` is refused and names the failing check. A blocked plan stops only the plans that depend on it (docs/next.md). `block` refuses a plan that is already done, says so, and changes nothing; reset the plan first if it must be built again |
-| `vbw fix done F1` or `vbw fix done F8 F9` | Lead (the fix round's closing step, run by the workflow) | verified (several fixes in one command run the checks they serve once; one that cannot close is named, the others still close, and the exit code is non-zero): no uncommitted changes in the files it may touch, and the checks of every finished requirement those files serve pass; then awaiting proof |
+| `vbw fix done F1` or `vbw fix done F8 F9` | Lead (the fix round's closing step, run by the workflow) | verified (several fixes in one command run the checks they serve once; one that cannot close is named, the others still close, and the exit code is non-zero): no uncommitted changes in the files it may touch, and the checks of every finished requirement those files serve pass; then awaiting proof. While check files wait for the user's approval it runs no check: it names them, and the fixes await the proof after the approval |
 | `vbw fix check F1 < check.json` | Dev | in a fix that QA opened: register the regression test as a check of the finding's requirement. The JSON has `run` and `files`, and optionally `exit`, `output`, `timeout`, `alone`. It waits for the user's approval before the proof (docs/proof.md) |
 | `vbw apply < plan.json` | Lead | replace phases, plans and checks, and set each `auto` requirement's rules, in one validated write (refused while a build or fix run is open; a plan that has started must come back unchanged; a requirement that another milestone owns or that a phase of another milestone already covers is refused with the `vbw apply --add` message, and nothing is written) |
 | `vbw apply --patch < patch.json` | Lead | change only the plans, checks and rules in the document; everything else stays byte for byte as it was |
@@ -229,6 +232,8 @@ vbw mutate P1.2 R3.1 "return true always" src/pay.sh
 vbw mutate P1.2 task2 --check C7 "drop the retry" src/pay.sh
 vbw mutate P1.2 task2 --none "documentation only"
 vbw mutate P1.2 R3.1 --none "the figures are a decision in the record"
+vbw mutate P1.2 R3.2 --queue "skip the rounding" src/pay.sh
+vbw mutate P1.2 --run
 ```
 
 After its checks are green, the Dev of a plan breaks its own code on purpose
@@ -260,6 +265,19 @@ cannot fail, and QA would otherwise find it one round at a time.
   and ends "break the rule in that code instead". It also refuses a run that
   reads the project through git ("reads the project through git, so its files
   are unknown") and a run with no read list (the file system recorded none).
+- **Side by side** (`--queue`, then `--run`): a rule break can wait instead of
+  running. `--queue` sets its broken bytes aside and puts the files back at
+  once, running nothing, so the Dev makes the next break straight away. `vbw
+  mutate PLAN --run` then runs every queued break of the plan: each rule's
+  check once on the unbroken code (as a single break does, never once per
+  break), then each break in its own clean copy, as many at a time as
+  `check_jobs` allows under the computer-wide limit. It prints how many breaks
+  run and how many at a time, then each result as a single break would, records
+  them, and exits non-zero on a survivor. A break queued before a later commit
+  is dropped and named (its bytes belong to older files): make it again. Check
+  files that differ from their last commit stop the run, and `vbw plan done`
+  names breaks still queued. Only a rule break queues; a task break and
+  `--none` run at once.
 - **VBW undoes the break.** The named files go back to their last commit,
   whether a check noticed (red) or not (a survivor). The command refuses, and
   writes nothing, if none of the named files differs from their last commit (the

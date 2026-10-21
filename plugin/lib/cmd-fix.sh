@@ -156,6 +156,13 @@ cmd_fix() {
     held=$(contract_held "$record")
     # Check files new or changed since the approval wait for it, whatever opened the fix.
     wait_files=$(contract_waiting "$record") || wait_files=
+    # T174: nothing is proven before the user approves them, and no agent can ask for that,
+    # so no check runs now (a long re-check would only wait for the approval): the fixes
+    # await the proof that follows it, which runs every check.
+    if [ -n "$wait_files" ]; then
+      printf 'check files are waiting for approval, so no check runs before it: %s\n' "$(printf '%s' "$wait_files" | jq -R . | jq -rs 'map(select(length > 0)) | join(", ")')"
+      printf 'the user approves them first (vbw next asks); then vbw prove runs every check\n'
+    fi
     cd "$VBW_ROOT" || vbw_die "cannot enter $VBW_ROOT"
     mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
     proofsteps_clean
@@ -163,7 +170,8 @@ cmd_fix() {
     head=$(vbw_head_tree 2> /dev/null) || head=
     # Any cause (R168) runs every candidate check, as it does in vbw prove, except
     # "nothing committed since the last passing proof": that proof is what fix done wants.
-    causes=$(proofcauses_find "$record" 0 "$head" fix)
+    causes=
+    [ -n "$wait_files" ] || causes=$(proofcauses_find "$record" 0 "$head" fix)
     while IFS= read -r c; do
       [ -z "$c" ] || printf 'every candidate check runs: %s\n' "$c"
     done <<< "$causes"
@@ -188,7 +196,7 @@ cmd_fix() {
         continue
       fi
       cands+=("$c")
-    done < <(cmd_fix_finished_checks "$record")
+    done < <([ -n "$wait_files" ] || cmd_fix_finished_checks "$record")
     # The candidates' reuse, decided together: one pass for the fingerprints, one for the rule.
     if [ ${#cands[@]} -gt 0 ] && [ -n "$causes" ]; then
       todo=("${cands[@]}")
@@ -210,7 +218,7 @@ cmd_fix() {
   # shellcheck disable=SC2034 # read by testfiles_plan
   PROVE_NAMES='[]' TODO_COMMANDS='[]' REUSE_COMMANDS='{}' WHY_COMMANDS='{}'
   t0=$(prooftime_clock)
-  if [ ${#ids[@]} -gt 0 ] && testfiles_on "$record"; then
+  if [ ${#ids[@]} -gt 0 ] && [ -z "$wait_files" ] && testfiles_on "$record"; then
     for id in "${ids[@]}"; do
       printf '%s' "$record" | jq -e --arg f "$id" 'any(.fixes[]; .id == $f and .command == "test")' > /dev/null && tfwant=1
     done

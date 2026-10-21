@@ -351,4 +351,19 @@ def waves($m): . as $r
       | (.left | wave($d)) as $ids
       | if ($ids | length) == 0 then .left = [] else .w += [$ids] | .done += $ids | .left |= map(select(.id as $i | any($ids[]; . == $i) | not)) end)
   | .w;
+# owed_rules($p): on the record, the rules plan $p owes the mutation check, one break
+# each (R188, T152, T174), as [{req, n, text}] (n: the rule'"'"'s number in its requirement).
+# At a standard or deep phase: every rule of an [auto] requirement with a check that $p
+# completes (no other open plan serves it), and every rule that names $p. None at
+# express or in a phase without a tier. vbw plan done (plan_missing_breaks) and the
+# expected time of a build (steps.sh, road.jq) both count these.
+def owed_rules($p): . as $r | ([.plans[] | select(.id == $p)][0]) as $pl
+  | ([$r.phases[] | select(.id == $pl.phase)][0].tier // "") as $tier
+  | if $pl == null or ($tier | IN("standard", "deep") | not) then [] else
+      [$pl.reqs[] as $q
+        | (all($r.plans[]; .id == $p or .status == "done" or (any(.reqs[]; . == $q) | not))) as $completes
+        | select(any($r.checks[]; .req == $q))
+        | ($r.requirements[] | select(.id == $q and .proof == "auto")) as $rq
+        | ($rq.rules // []) | to_entries[] | select($completes or .value.plan == $p)
+        | {req: $q, n: (.key + 1), text: .value.text}] end;
 '"$(cat "$VBW_LIB/rigor-defs.jq")"

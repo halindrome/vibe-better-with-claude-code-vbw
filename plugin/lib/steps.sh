@@ -90,8 +90,8 @@ step_kind_has_parts() {
 }
 
 # step_expect KIND SIZE: the expected seconds of a step of KIND and SIZE, empty
-# when the history gives no basis. SIZE is JSON: build [{id, tier, tasks}] (the
-# wave's plans), fix {tier}, plan {reqs}, qa [{id, tier}], proof {units: [names]}
+# when the history gives no basis. SIZE is JSON: build [{id, tier, tasks, breaks}]
+# (the wave's plans), fix {tier}, plan {reqs}, qa [{id, tier}], proof {units: [names]}
 # (a bare number for a proof counts that many unknown units). The ladders are
 # lib/steps-expect.jq's (R191); a missing, damaged or unreadable history or runs
 # store only means no time.
@@ -191,8 +191,9 @@ step_qa_phases() {
 }
 
 # step_size RECORD KIND IDS_JSON: the size of a step for step_expect, from the
-# record: build [{id, tier, tasks}] (a plan's tier is its phase's, standard when
-# the phase has none), fix {tier} (the highest tier among the phases of the
+# record: build [{id, tier, tasks, breaks}] (a plan's tier is its phase's, standard
+# when the phase has none; breaks: the rules it owes the mutation check,
+# owed_rules), fix {tier} (the highest tier among the phases of the
 # fixes' requirements, null when no phase serves them), plan {reqs} (the active
 # milestone's requirements not proven or accepted), qa [{id, tier}].
 step_size() {
@@ -200,7 +201,7 @@ step_size() {
     def tier_of($pid): ([.phases[]? | select(.id == $pid)][0].tier) // "standard";
     if $k == "build" then
       [$ids[] as $i | ([.plans[]? | select(.id == $i)][0]) as $p
-        | {id: $i, tier: tier_of($p.phase // ""), tasks: (($p.tasks // []) | length)}]
+        | {id: $i, tier: tier_of($p.phase // ""), tasks: (($p.tasks // []) | length), breaks: (owed_rules($i) | length)}]
     elif $k == "fix" then
       ([.fixes[]? | select(.id as $i | any($ids[]; . == $i)) | .req | select(. != null)]) as $rq
       | [.phases[]? | select(any(.reqs[]?; . as $r | any($rq[]; . == $r))) | (.tier // "standard")]

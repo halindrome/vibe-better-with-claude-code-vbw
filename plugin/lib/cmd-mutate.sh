@@ -2,6 +2,8 @@
 # vbw mutate (docs/proof.md): the mutation check of one rule or one task. A Dev
 # breaks the plan's own code on purpose, then:
 #   vbw mutate PLAN Rn.k WHAT FILE...                 rule k of requirement Rn
+#   vbw mutate PLAN Rn.k --queue WHAT FILE...         the same, queued to run side by side (mutate-queue.sh)
+#   vbw mutate PLAN --run                             every queued break of PLAN, side by side
 #   vbw mutate PLAN taskK [--check ID]... WHAT FILE...   task K of the plan
 #   vbw mutate PLAN taskK --none REASON               nothing to break in task K
 # The broken bytes are set aside and the files go back to HEAD at once; the
@@ -17,11 +19,13 @@
 . "$VBW_LIB/proofcopy.sh"
 # shellcheck source=proofreuse.sh
 . "$VBW_LIB/proofreuse.sh"
+# shellcheck source=mutate-queue.sh
+. "$VBW_LIB/mutate-queue.sh"
 
 # mutate_usage: the forms, as the message of a refusal that names the next step.
 mutate_usage() {
   vbw_die "$1
-usage: vbw mutate PLAN Rn.k WHAT FILE... | PLAN taskK [--check ID]... WHAT FILE... | PLAN taskK --none REASON"
+usage: vbw mutate PLAN Rn.k [--queue] WHAT FILE... | PLAN --run | PLAN taskK [--check ID]... WHAT FILE... | PLAN taskK --none REASON"
 }
 
 # mutate_put DIR DEST FILE...: DEST (a copy of HEAD) gets the broken bytes of each
@@ -119,8 +123,13 @@ mutate_rule_none() {
 }
 
 cmd_mutate() {
+  if [ "${2:-}" = --run ]; then
+    [ $# -eq 2 ] || mutate_usage "vbw mutate PLAN --run takes nothing else"
+    mutate_queue_run "$1"
+    return
+  fi
   [ $# -ge 3 ] || mutate_usage "vbw mutate needs a plan, a rule or task, and what to break"
-  local plan="$1" target="$2" kind req="" rk="" tk="" none="" nonef=0 what="" f ids i owed owns=1 ways
+  local plan="$1" target="$2" kind req="" rk="" tk="" none="" nonef=0 what="" f ids i owed owns=1 ways queue=0
   shift 2
   if [[ "$target" =~ ^R([0-9]+)\.([0-9]+)$ ]]; then
     kind=rule req="R${BASH_REMATCH[1]}" rk=$((10#${BASH_REMATCH[2]}))
@@ -134,9 +143,12 @@ cmd_mutate() {
     case "$1" in
       --check) [ $# -ge 2 ] || mutate_usage "--check needs a check id"; want+=("$2"); shift 2 ;;
       --none) [ $# -ge 2 ] || mutate_usage "--none needs a reason"; nonef=1 none="$2"; shift 2 ;;
+      --queue) queue=1; shift ;;
       *) break ;;
     esac
   done
+  { [ "$queue" = 0 ] || { [ "$kind" = rule ] && [ "$nonef" = 0 ]; }; } \
+    || vbw_die "--queue is for a rule break (vbw mutate $plan Rn.k --queue WHAT FILE...): a task break and --none run at once"
   if [ "$nonef" = 1 ]; then
     if [ "$kind" = task ]; then
       [ -n "$none" ] || vbw_die "--none needs a reason: say why task $tk has no behaviour a test could notice"
@@ -241,6 +253,14 @@ cmd_mutate() {
       rm -f "$f"
     fi
   done
+  # Queued (T174): the break waits, set aside, for vbw mutate PLAN --run.
+  if [ "$queue" = 1 ]; then
+    checks_end
+    mutate_queue_add "$plan" "$dir" "$(jq -nc --arg t "$target" --arg q "$req" --argjson k "$rk" --arg c "$check" --arg w "$what" --arg h "$head" \
+      --argjson files "$(printf '%s\n' "${files[@]}" | jq -R . | jq -sc .)" --argjson broke "$(printf '%s\n' "${broke[@]}" | jq -R . | jq -sc .)" \
+      '{target: $t, req: $q, rk: $k, check: $c, what: $w, files: $files, broke: $broke, head: $h}')"
+    return 0
+  fi
   # One red check is the proof (T157): the checks run one at a time, fastest first by their last
   # recorded time (a check never run counts as slowest), until one goes red; a survivor runs them all.
   # A check runs unbroken first, unless a recorded break at this HEAD already ran it (it passed then).
@@ -277,6 +297,19 @@ $ways"
   done
   proofcopy_remove
   checks_end
+  mutate_record "$plan" "$target" "$what" "$head" "$results" "$record" "${ruledoc:-}" "${tk:-}" \
+    "$(printf '%s\n' "${files[@]}" | jq -R . | jq -sc .)" ${cfiles[@]+"${cfiles[@]}"}
+}
+
+# mutate_record PLAN TARGET WHAT HEAD RESULTS RECORD RULEDOC TASK FILES_JSON [CHECK_FILE...]:
+# record one break's results (the checks it ran broken) under the plan and say
+# what they show; exit 1 for a survivor. RULEDOC is the rule's {req, text, check}
+# (empty for a task), TASK the task's number (empty for a rule); CHECK_WAITING is
+# the files checks_begin found waiting for approval.
+mutate_record() {
+  local plan="$1" target="$2" what="$3" head="$4" results="$5" record="$6" ruledoc="$7" tk="$8" filesj="$9"
+  shift 9
+  local cfiles=("$@") f
   # What was recorded for this target before: a survivor, if the last one was.
   local prior='' strong='[]' marks result entry pending='[]' survived=0
   marks=$(printf '%s' "$results" | jq -c 'map_values(if .status == "pass" then "green" else "red" end)')
@@ -302,7 +335,7 @@ $ways"
             and ((($marks | keys) - (.checks | keys)) | length == 0))' > /dev/null && survived=1
     fi
   fi
-  entry=$(jq -nc --argjson rule "${ruledoc:-null}" --argjson k "${tk:-0}" --arg what "$what" --argjson files "$(printf '%s\n' "${files[@]}" | jq -R . | jq -sc .)" \
+  entry=$(jq -nc --argjson rule "${ruledoc:-null}" --argjson k "${tk:-0}" --arg what "$what" --argjson files "$filesj" \
     --argjson marks "$marks" --arg result "$result" --arg at "$(vbw_now)" --arg head "$head" --argjson strong "$strong" --argjson pending "$pending" '
     (if $rule != null then {rule: {req: $rule.req, text: $rule.text}} else {task: $k} end)
     + {what: $what, files: $files, checks: $marks, result: $result, at: $at, head: $head}
