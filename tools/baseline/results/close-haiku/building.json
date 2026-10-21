@@ -1,0 +1,36 @@
+{
+  "scenario": "building",
+  "evidence_level": "L2",
+  "fixture": "one requirement (R1), one plan (P1.1) that creates src/f1.txt, one check that src/f1.txt holds the word feature",
+  "at": "2026-10-14T09:56:25Z",
+  "claude_version": "2.1.299",
+  "cost_usd": 0.13406747,
+  "profile": "balanced",
+  "lead_model": "opus",
+  "close": {
+    "label": "close run",
+    "model": "claude-haiku-5-5",
+    "effort_sent": "low",
+    "answer": {
+      "ended": true,
+      "recorded": true,
+      "report": "All recorded; run ended. Plan P1.1 is recorded as done, and the run is closed. No other changes were made."
+    }
+  },
+  "commands": [
+    "VBW_SESSION_ID=21b988d7-d529-4255-a454-a273e812ad5a vbw run confirm P1.1; echo \"EXIT=$?\"",
+    "VBW_SESSION_ID=21b988d7-d529-4255-a454-a273e812ad5a vbw run end; echo \"EXIT=$?\""
+  ],
+  "run_open_after": false,
+  "fixes": [],
+  "fixdone": {
+    "seconds": null,
+    "backgrounded": false
+  },
+  "not_tested": [
+    "a person using /vbw:vibe (L3)",
+    "the closing step on Haiku in a project of real size",
+    "the other workflows (planning, mapping, verifying)",
+    "Fable as the session model"
+  ]
+}

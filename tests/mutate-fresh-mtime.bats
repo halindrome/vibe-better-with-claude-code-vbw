@@ -1,0 +1,121 @@
+#!/usr/bin/env bats
+# R197 (T167; docs/proof.md): the file vbw mutate breaks in the proof copy gets a
+# modification time strictly newer than every file in the copy, build output
+# included, and so does the file when it is restored to its committed bytes. A
+# build that decides by file times (make, cargo) then rebuilds the broken file
+# and, after the restore, the clean one; a break is never reported as surviving
+# because the old build was tested, and the next unbroken run never judges the
+# broken build. The time is set later than the newest file in the copy, never
+# taken from the clock, so it holds on a file system with one-second time stamps
+# and when build output is stamped ahead of the clock. A break that deletes a
+# file is judged on its absence: nothing is stamped and no file is created. The
+# build stand-in (tests/build.sh) rebuilds build/out from src/x.sh only when the
+# source is newer than the output, as make and cargo decide. L1: the kernel on a
+# fixture project.
+
+load helper
+
+setup() {
+  vbw_setup
+  vbw_git_project
+  "$VBW" init > /dev/null
+  printf '# Tool\n\n## Requirements\n\n- R1 [auto] The tool answers ok\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  mkdir -p src tests
+  printf 'build/\n' > .gitignore
+  printf 'echo ok\n' > src/x.sh
+  printf 'extra\n' > src/extra.txt
+  # The build: build/out is remade only when src/x.sh is newer than it.
+  cat > tests/build.sh << 'SH'
+mkdir -p build
+if [ ! -e build/out ] || [ src/x.sh -nt build/out ]; then
+  cp src/x.sh build/out
+  [ -z "${FUTURE_STAMP:-}" ] || touch -t "$FUTURE_STAMP" build/out
+fi
+SH
+  # C1 cannot fail on what the build prints; C2 wants ok; C3 wants the extra file.
+  printf 'sh tests/build.sh && sh build/out > /dev/null\n' > tests/weak.sh
+  printf 'sh tests/build.sh && [ "$(sh build/out)" = ok ]\n' > tests/strong.sh
+  printf '[ -e src/extra.txt ]\n' > tests/extra.sh
+  jq -nc '{phases: [{id: "P1", title: "Tool", reqs: ["R1"], goal: "g", criteria: ["c"], tier: "standard"}],
+    plans: [{id: "P1.1", phase: "P1", title: "Tool", reqs: ["R1"], files: ["src/x.sh", "src/extra.txt"], after: [], role: "dev", tasks: ["answer", "extra"]}],
+    checks: [{id: "C1", req: "R1", run: ["sh", "tests/weak.sh"], files: ["tests/weak.sh"]},
+             {id: "C2", req: "R1", run: ["sh", "tests/strong.sh"], files: ["tests/strong.sh"]},
+             {id: "C3", req: "R1", run: ["sh", "tests/extra.sh"], files: ["tests/extra.sh"]}],
+    rules: [{req: "R1", text: "the build runs", check: "C1", plan: "P1.1"},
+            {req: "R1", text: "the tool answers ok", check: "C2", plan: "P1.1"},
+            {req: "R1", text: "the extra file is shipped", check: "C3", plan: "P1.1"}]}' | "$VBW" apply > /dev/null
+  git add -A && git commit -q -m "feat(tool): start"
+  "$VBW" approve > /dev/null
+}
+
+teardown() { vbw_teardown; }
+
+breaks() { jq -c '[.plans[] | select(.id == "P1.1") | .mutations // [] | .[]]' .vbw/record.json; }
+# same_as_head FILE: the working file is byte-identical to its last commit.
+same_as_head() {
+  [ -z "$(git status --porcelain -- "$1")" ] || { echo "$1 differs from HEAD: $(git status --porcelain -- "$1")"; return 1; }
+  cmp -s "$1" <(git show "HEAD:$1") || { echo "$1 is not its last commit"; return 1; }
+}
+# break_x: src/x.sh answers ko, edited before any build output the check will make
+# (a Dev's edit always predates the proof copy's build).
+break_x() {
+  printf 'echo ko\n' > src/x.sh
+  touch -t 200001010000 src/x.sh
+}
+# future_stamp: a touch -t stamp one hour ahead of the clock, in local time.
+future_stamp() {
+  perl -e '@t = localtime(time + 3600); printf "%04d%02d%02d%02d%02d.%02d\n", $t[5] + 1900, $t[4] + 1, $t[3], $t[2], $t[1], $t[0]'
+}
+
+@test "R197: a break the stale build would hide is red: the broken file is newer than the build output, so the build remakes it" {
+  break_x
+  run "$VBW" mutate P1.1 R1.2 "answers ko" src/x.sh < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" == *"R1.2 red"* ]] || { echo "$output"; false; }
+  breaks | jq -e 'length == 1 and .[0].checks == {C2: "red"} and .[0].result == "red"' || { breaks; false; }
+  same_as_head src/x.sh
+}
+
+@test "R197: the restored file is newer than the build output too, so the next unbroken run rebuilds the clean code instead of judging the broken build" {
+  # C1 runs first and cannot notice the break; its broken run builds ko. C2's unbroken run
+  # must then rebuild from the restored source, or it is refused as red on the unbroken code.
+  break_x
+  run "$VBW" mutate P1.1 task1 "answers ko" src/x.sh < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  breaks | jq -e 'length == 1 and .[0].checks == {C1: "green", C2: "red"} and .[0].result == "red"' || { breaks; false; }
+  same_as_head src/x.sh
+}
+
+@test "R197: the time is later than the newest file in the copy, even one stamped ahead of the clock: the kernel never relies on now" {
+  export FUTURE_STAMP
+  FUTURE_STAMP=$(future_stamp)
+  break_x
+  run "$VBW" mutate P1.1 R1.2 "answers ko" src/x.sh < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  breaks | jq -e 'length == 1 and .[0].checks == {C2: "red"} and .[0].result == "red"' || { breaks; false; }
+  # The restore after a build stamped ahead of the clock is newer still: the task break's C2 run rebuilds clean.
+  break_x
+  run "$VBW" mutate P1.1 task1 "answers ko" src/x.sh < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  breaks | jq -e 'length == 2 and .[1].checks == {C1: "green", C2: "red"} and .[1].result == "red"' || { breaks; false; }
+  same_as_head src/x.sh
+}
+
+@test "R197: a break that deletes a file is judged on its absence: nothing is stamped, no file is created, and the file comes back" {
+  rm src/extra.txt
+  run "$VBW" mutate P1.1 R1.3 "drops the extra file" src/extra.txt < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  breaks | jq -e 'length == 1 and .[0].checks == {C3: "red"} and .[0].result == "red"' || { breaks; false; }
+  same_as_head src/extra.txt
+  [ -z "$(find .vbw/runtime -maxdepth 1 -name 'proof.*' -print)" ]
+}
+
+@test "R197: the kernel code is bash 3.2 code that passes JSON only through jq" {
+  local f
+  for f in "$PLUGIN_ROOT"/lib/cmd-mutate.sh "$PLUGIN_ROOT"/lib/core.sh "$PLUGIN_ROOT"/lib/proofcopy.sh; do
+    /bin/bash -n "$f"
+    ! grep -nE '^[^#]*(\b(mapfile|readarray|eval)\b|(declare|local|typeset) -[a-zA-Z]*A|\$\{[A-Za-z_][A-Za-z_0-9]*(,,|\^\^|,|\^)\})' "$f" || false
+    ! grep -nE '^[^#]*\b(grep|sed|awk|cut)\b[^|;]*(record\.json|\.json\b)' "$f" || false
+  done
+}

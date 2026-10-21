@@ -1,0 +1,33 @@
+{
+  "scenario": "recheck",
+  "fixture": "greet.sh and farewell.sh, one phase each, plan approved by the user before the session; rigor standard; after QA passes, one commit changes greet.sh and QA runs again",
+  "cost_usd": 0.55,
+  "evidence_level": "L3",
+  "at": "2026-10-21T13:33:20Z",
+  "passed": true,
+  "facts": {
+    "changed_file": "greet.sh",
+    "rechecked": [
+      "P1"
+    ],
+    "kept": [
+      "P2"
+    ],
+    "reason": "its files changed; greet.sh, delivered by P1.1, was changed outside any plan",
+    "kernel_named_recheck": [
+      "P1"
+    ],
+    "kernel_named_standing": [
+      "P2"
+    ],
+    "new_verdict": {
+      "P1": "pass"
+    }
+  },
+  "not_tested": [
+    "a fix round of the fix loop (the change is a commit played by the scenario)",
+    "a project of more than two phases or phases that build on each other",
+    "the wording of what VBW tells the user (read by a person)",
+    "a change to a phase's tests or plan"
+  ]
+}

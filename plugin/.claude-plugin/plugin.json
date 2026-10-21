@@ -1,0 +1,11 @@
+{
+  "name": "vbw",
+  "version": "2.1.0",
+  "description": "Vibe Better With Claude Code: an executable definition of done for Claude Code. Spec, contract checks, parallel build, mechanical proof, human acceptance.",
+  "author": {
+    "name": "Tiago Serôdio",
+    "url": "https://github.com/yidakee"
+  },
+  "license": "MIT",
+  "repository": "https://github.com/yidakee/vibe-better-with-claude-code-vbw"
+}

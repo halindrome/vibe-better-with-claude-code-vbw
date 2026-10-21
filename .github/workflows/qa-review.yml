@@ -11,7 +11,7 @@ on:
 # .github/workflows/ and config/ are QA-relevant.
 # Maintainer-authored PRs by @dpearson2699 also skip this evidence gate.
 env:
-  QA_PATHS: .github/workflows/ agents/ commands/ config/ hooks/ references/ scripts/ templates/ testing/ tests/
+  QA_PATHS: .github/workflows/ plugin/ tests/ tools/
 
 permissions:
   pull-requests: read
@@ -21,7 +21,7 @@ jobs:
     name: QA Review Evidence
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Detect QA review skip conditions
         id: qa-review-skip

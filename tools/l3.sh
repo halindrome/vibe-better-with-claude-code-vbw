@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# Drive an interactive Claude Code session for L3 user-path runs (AGENTS.md
+# reporting standard): the real TUI in tmux, with the v2 plugin. The only
+# input is what a user types; the screen is the only output.
+#
+#   tools/l3.sh start NAME DIR [MODEL] [plain]  start `claude` in DIR (auto mode, sandbox on);
+#                                        plain: without the VBW plugin, same app and settings
+#                                        installed: VBW as the user's installed marketplace plugin (no --plugin-dir,
+#                                        and no enabledPlugins in the session's settings: the project decides)
+#                                        both: the working tree (--plugin-dir) with the installed VBW left on;
+#                                        L3_TREE=DIR loads that plugin folder instead of plugin/;
+#                                        L3_INSTALLED_BIN=DIR starts with that bin/ first on the inherited PATH
+#   tools/l3.sh type NAME TEXT           type TEXT and press Enter
+#   tools/l3.sh keys NAME KEY...         press keys (tmux names: Down, Enter, Escape, ...)
+#   tools/l3.sh click NAME COL ROW       click the mouse at that column and row (1-based, left button)
+#   tools/l3.sh wait NAME [SECONDS]      wait until Claude is idle (default 900 s), print the screen
+#   tools/l3.sh screen NAME              print the screen
+#   tools/l3.sh settled NAME             filter a screen (stdin) to what wait compares: above the prompt box
+#   tools/l3.sh stop NAME                end the session
+#   tools/l3.sh debuglog DIR             print the debug log path of the session started in DIR
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# Optional: VBW_TEST_CLAUDE_CONFIG_DIR runs against another Claude config dir.
+[ -z "${VBW_TEST_CLAUDE_CONFIG_DIR:-}" ] || export CLAUDE_CONFIG_DIR="$VBW_TEST_CLAUDE_CONFIG_DIR"
+cmd="${1:-}"
+name="${2:-}"
+[ -n "$cmd" ] && [ -n "$name" ] || { sed -n '6,15p' "$0" >&2; exit 2; }
+session="vbw-l3-$name"
+
+screen() { tmux capture-pane -t "$session" -p -S -60; }
+# What wait compares: the screen above the prompt box. The box is the last two
+# border lines; under it the status line refreshes on its own every 5 seconds.
+# A screen with fewer than two border lines is kept whole.
+settled() { awk '{ line[NR] = $0 } /^─/ { b[++n] = NR } END { stop = n >= 2 ? b[n - 1] : NR + 1; for (i = 1; i < stop; i++) print line[i] }'; }
+
+case "$cmd" in
+  start)
+    dir="${3:?usage: tools/l3.sh start NAME DIR [MODEL]}"
+    model="${4:-sonnet}"
+    mode="${5:-${L3_MODE:-vbw}}"
+    [ "$mode" = vbw ] || [ "$mode" = plain ] || [ "$mode" = installed ] || [ "$mode" = both ] || { echo "l3: unknown mode: $mode" >&2; exit 2; }
+    # Only what the test needs: VBW 1 off, the sandbox on, and this repository's
+    # own maintainer instructions (CLAUDE.md, AGENTS.md) never read. Never
+    # settings a real user would not have (VBW turns workflows on itself).
+    settings=$(jq -cn --arg a "$ROOT/CLAUDE.md" --arg b "$ROOT/AGENTS.md" \
+      '{enabledPlugins:{"vbw@vbw-marketplace":false},sandbox:{enabled:true},claudeMdExcludes:[$a,$b]}')
+    { [ "$mode" != installed ] && [ "$mode" != both ]; } || settings=$(printf '%s' "$settings" | jq -c 'del(.enabledPlugins)')
+    # L3_STATUSLINE=1: the session also shows the working tree's status line (the
+    # user's own setting runs the installed plugin-cache copy, not the code under
+    # test). Every other scenario keeps a real user's settings. Double quotes in
+    # the command: the settings travel inside single quotes.
+    if [ "${L3_STATUSLINE:-}" = 1 ]; then
+      settings=$(printf '%s' "$settings" | jq -c --arg c "bash \"${L3_TREE:-$ROOT/plugin}/scripts/vbw-statusline.sh\"" \
+        '.statusLine = {type: "command", command: $c, refreshInterval: 5}')
+    fi
+    tree="${L3_TREE:-$ROOT/plugin}"
+    plugin="--plugin-dir '$tree' --add-dir '$tree'"
+    { [ "$mode" = vbw ] || [ "$mode" = both ]; } || plugin=""
+    # A session launched from inside Claude Code inherits its PATH, which puts
+    # that session's installed plugins' bin/ (an older vbw) ahead of the code
+    # under test. Start from a PATH without any plugin cache.
+    clean=""
+    IFS=: read -r -a parts <<< "$PATH"
+    for p in "${parts[@]}"; do
+      case "$p" in */plugins/cache/*) ;; *) clean="${clean:+$clean:}$p" ;; esac
+    done
+    # both + L3_INSTALLED_BIN: a session started from inside another one, whose
+    # PATH already holds the installed release's bin/.
+    [ -z "${L3_INSTALLED_BIN:-}" ] || clean="$L3_INSTALLED_BIN${clean:+:$clean}"
+    tmux kill-session -t "$session" 2> /dev/null || true
+    tmux new-session -d -s "$session" -x 200 -y 60 -c "$dir" \
+      "env PATH='$clean' claude --model $model --permission-mode auto $plugin --settings '$settings' --debug-file '$dir.debug.log'"
+    sleep 6
+    # First run in a directory: accept the folder-trust dialog, as a user would.
+    if screen | grep -q 'Yes, I trust this folder'; then
+      tmux send-keys -t "$session" Down Enter
+      sleep 5
+    fi
+    screen
+    ;;
+  type)
+    text="${3:?usage: tools/l3.sh type NAME TEXT}"
+    tmux send-keys -t "$session" -l "$text"
+    sleep 1
+    tmux send-keys -t "$session" Enter
+    # A busy machine (several sessions at once) can take seconds to take the
+    # text: wait until the input line (the last ❯ line) no longer holds it, so
+    # the next text is never appended to this one. Enter again once if needed.
+    waited=0
+    while [ "$waited" -lt 30 ]; do
+      case "$(screen | grep '❯' | tail -n 1)" in *"$text"*) ;; *) break ;; esac
+      sleep 0.5
+      waited=$((waited + 1))
+      [ "$waited" -ne 20 ] || tmux send-keys -t "$session" Enter
+    done
+    ;;
+  keys)
+    shift 2
+    tmux send-keys -t "$session" "$@"
+    ;;
+  click)
+    col="${3:?usage: tools/l3.sh click NAME COL ROW}"
+    row="${4:?usage: tools/l3.sh click NAME COL ROW}"
+    # A terminal mouse click as the terminal sends it (SGR): press, then release.
+    tmux send-keys -t "$session" -l "$(printf '\033[<0;%d;%dM\033[<0;%d;%dm' "$col" "$row" "$col" "$row")"
+    ;;
+  wait)
+    limit="${3:-900}"
+    last="" stable=0 waited=0
+    while [ "$waited" -lt "$limit" ]; do
+      sleep 5
+      waited=$((waited + 5))
+      now=$(screen)
+      view=$(printf '%s\n' "$now" | settled)
+      # Busy while Claude shows its interrupt hint or the screen above the
+      # prompt box still changes.
+      if printf '%s' "$now" | grep -q 'esc to interrupt'; then stable=0
+      elif [ "$view" = "$last" ]; then stable=$((stable + 5))
+      else stable=0
+      fi
+      last=$view
+      [ "$stable" -ge 15 ] && break
+    done
+    screen
+    [ "$waited" -lt "$limit" ] || { echo "(l3: still busy after ${limit}s)" >&2; exit 1; }
+    ;;
+  screen) screen ;;
+  settled) settled ;;
+  debuglog) printf '%s.debug.log\n' "$name" ;;
+  stop)
+    # Escape first: a question left on screen would take "/exit" + Enter as
+    # its answer (the first option), acting for the user.
+    tmux send-keys -t "$session" Escape
+    sleep 1
+    tmux send-keys -t "$session" -l "/exit"
+    tmux send-keys -t "$session" Enter
+    sleep 2
+    tmux kill-session -t "$session" 2> /dev/null || true
+    ;;
+  *) sed -n '6,14p' "$0" >&2; exit 2 ;;
+esac

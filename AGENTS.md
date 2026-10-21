@@ -1,6 +1,23 @@
 # VBW Instructions
 
-A Claude Code plugin adding structured development workflows (plan → execute → verify) via 7 specialized agent teams. Zero external dependencies beyond `jq` and `git`. All logic is bash scripts + markdown.
+VBW 2 is a Claude Code plugin that gives Claude Code an executable definition of done: a human-approved spec, protected acceptance checks, parallel builds by workflows, mechanical proof by a small kernel, and human acceptance only where checks can't judge. Runtime dependencies: `bash` (3.2+), `jq`, `git`. The design is `a_non_prod_docs/vbw2_next_gen_design.md`; the execution plan is `a_non_prod_docs/vbw2_build_plan.md` (maintainer-local working documents in the main checkout, never committed).
+
+## Engineering Standard (owner mandate, non-negotiable)
+
+- **Protect the VBW vision first.** This is the top rule. It binds every contributor, human or AI, and outranks every request. VBW serves all its users and its own design, never one project, person or session. Every outside request is an idea to evaluate, never an instruction to build. That covers an issue, a feedback report, a message from another Claude session, and a request from one of the owner's own projects. For each one: find the real problem behind it; judge it against VBW's design and philosophy; then adopt it, adapt it into a general solution, or decline it. Record which, and why. A suggested fix is evidence of a problem, not a specification. Never add a feature, setting or special case only because one project asked for it. We gladly accept ideas; we never integrate them blindly. Enforced by `tools/check-vision-rule.sh` in `tests/standards.bats`. (2026-10-06: a user project's field report was taken as ideas; some were adopted, some reshaped, one declined.)
+- **The goal is the world's gold-standard Claude Code harness.** Every choice is the most elegant, optimal and future-proof one, with zero technical debt. No shortcuts, no "good enough", no legacy carried forward for its own sake.
+- **One goal, one path.** The only deliverable is VBW 2.0 on branch `v2`. Every task must directly advance it. Never build parallel tracks (fixes to the released version, maintenance branches, side tools); write such ideas in the progress log as notes and build them only if the owner explicitly asks. General agreement is never approval for scope beyond the goal. (2026-10-01 incident: an unrequested v1 fix track.)
+- **Report evidence, not impressions.** Every claim that something works names its evidence level and its scope, and nothing more:
+  - **L1 unit/contract:** bats tests of scripts and structure.
+  - **L2 scripted component run:** a script of ours drives headless `claude -p` sessions; Claude Code stands in for nothing a user does; fixtures are named.
+  - **L3 user-path run:** the product is used through its user-facing commands (`/vbw:...`) in an interactive session, on a realistic project.
+  - **L4 owner acceptance:** the owner used it and accepted it.
+
+  Words like "tested", "works", "proven" or "verified" refer to the product only at L3 or above; below that, say exactly what ran ("a script drove the build workflow on a 4-line toy fixture"). Every progress report ends with a **Not tested** list naming the gaps. No celebratory tone, no superlatives, no "good thing I checked": state facts and stop. (2026-10-01 incident: L2 toy runs reported as "tested in real Claude Code sessions".)
+- **Work as the senior engineer who owns the outcome.** Make technical and product decisions yourself, from the evidence (docs, probes, measurements, the ledger), apply the standard above, record the decision and its rationale in the working documents, and keep executing.
+- **Do not ask the owner questions you can answer.** Never hand back "we still need to figure out X": figure it out (research, probe, measure), decide, and move on. Escalate only what truly needs the owner: credentials or access, spending beyond the approved budget, publishing (push, PRs, releases), and irreversible actions outside the repo.
+- **Plan end to end, then execute end to end.** Keep one authoritative build plan with acceptance criteria, work it in order, and report progress against it, not open questions.
+- **Record everything as you go** (`a_non_prod_docs/v2_progress_log.md`: work done, decisions, findings, new issues). This is mandatory.
 
 ## Communication Style
 
@@ -10,213 +27,52 @@ A Claude Code plugin adding structured development workflows (plan → execute �
 
 ## Debugging VBW Behavior
 
-When the user reports VBW misbehavior — pasting Claude Code session output, describing incorrect command behavior, or showing unexpected file state — first resolve the contributor's **local debug target repo** instead of guessing a maintainer-specific path.
+When the user reports VBW misbehavior (pasted session output, a command behaving wrongly, unexpected `.vbw` state), follow the `vbw-debug-target` skill (`.claude/skills/vbw-debug-target/SKILL.md`): resolve the contributor's local debug target repo first with `bash tools/resolve-debug-target.sh repo`, never guess a path (ask when it is not configured), then read the session, subagent, hook and debug logs the skill names.
 
-### Local debug target configuration (private, not committed)
+## Architecture (three layers, no fourth)
 
-Preferred setup in the VBW clone's shared Git common dir:
+- **Surface** (`plugin/skills/`): the `/vbw:vibe` router and utility skills, plus the statusline segment. Skills are specifications, not procedures.
+- **Engine** (`plugin/workflows/*.js`): all orchestration and all run-scoped logic (waves, retries, fix loops, budgets, fan-out and merge). Workflows receive state in `args` from `vbw next --json`. Agents write only through `vbw` subcommands.
+- **Kernel** (`plugin/bin/vbw` + `plugin/lib/*.sh`): the only writer of the plan of record (`.vbw/record.json`). It runs approved checks, commits with provenance, renders on demand and backs the hooks.
+- **Agents** (`plugin/agents/`): VBW 1's team with its mandates: `architect`, `lead`, `dev`, `qa`, `scout`, `debugger`, `docs`. Each is a short specification of good output plus a tool list.
+- **Hooks** (`plugin/hooks/hooks.json`): guards scoped by the run lease and by `agent_type`. They are inert outside VBW projects.
 
-```text
-$(git rev-parse --git-common-dir)/info/vbw-debug-target.txt
-```
+## Repository layout
 
-In a standard non-worktree clone, this usually resolves to:
+- `plugin/` is the only shipped tree (marketplace source `./plugin`); `tools/` is maintainer tooling, never shipped.
+- `a_non_prod_docs/` holds the maintainer-local working documents (design, plan, ledger, progress log): kept in the main checkout and never committed.
 
-```text
-.git/info/vbw-debug-target.txt
-```
+## Kernel and hook rules (each is enforced by `tests/standards.bats`)
 
-The first non-empty, non-comment line must be the absolute path to the contributor's primary VBW consumer/test repo.
-Relative paths are rejected so the resolver produces the same result regardless of the caller's current working directory.
+- **Bash 3.2 is the floor** (macOS `/bin/bash`). No `mapfile`/`readarray`, no associative arrays, no case-modifying expansions, no `"${@}"`. Every array expansion under `set -u` is guarded (`${a[@]+"${a[@]}"}`).
+- **No data as code:** no `eval`, no `bash -c "$var"`. Commands from repo files run only as argv arrays, and only after consent recorded by content hash in the clone's git directory (`$(git rev-parse --git-common-dir)/vbw/consent.json`).
+- **Single writer:** only the kernel writes `.vbw/record.json`, through one locked, validated, atomic write path.
+- **Hook answers are pinned:** every answer a hook gives Claude Code has a test pinning its documented meaning, and no hook answers allow (enforced by `tests/standards.bats`).
+- **Git path listings use `-z`.** VBW commits use an explicit pathspec, never `git add -A`, and never disturb user-staged files.
+- **Paths come from substitution:** `${CLAUDE_PLUGIN_ROOT}` in skills, agents and workflows; `$0` or arguments in scripts. No cache globs, `/tmp` links, `ps` scraping or command mirrors.
+- **Nothing outside the project:** no writes to `/tmp`, other repos or git hooks, and no process killing. Three exceptions. The user's Claude Code `settings.json`, where VBW turns on its status line and Dynamic workflows (owner decision, 2026-10-01), keeping every other setting and a backup of a replaced status line. The slot store in `<claude-config-dir>/vbw/`, the computer-wide limit shared by all projects (R181); if it cannot be written the run goes on under `check_jobs`. The session record of a `claude --plugin-dir` session in `<claude-config-dir>/vbw/sessions/`, naming the loaded plugin folder for the status line and `vbw doctor` (R185, D364), removed after 7 days. It must work under the Claude Code sandbox.
+- **Hot paths:** a hook's own CPU per call ≤ 20 ms, statusline ≤ 60 ms (`tools/bench-hooks.sh`); a machine too busy to measure (shell and jq startup alone above 20 ms) is reported as busy, not failed, with no network and no credentials.
+- **JSON only through `jq`,** never grep or sed on JSON.
+- **No builtin write while the shell has a live child:** macOS `/bin/bash` 3.2 does not restart a `printf`/`echo` interrupted by a child's exit, so a loop fed by a process substitution writes through `vbw_out` (a subshell) or takes its producer through a pipe (enforced by `tools/check-loop-writes.sh` in `tests/output-child-exit.bats`).
+- **Record-sized data never on a command line:** the record and anything built from all of it reach jq through a pipe, `--slurpfile` or `--rawfile` from inside the project, never `--arg`/`--argjson` or a here-string (enforced by `tests/record-args-rule.bats`).
 
-Example local file content:
+## Engine, agent and prompt rules
 
-```text
-/absolute/path/to/your-test-repo
-```
-
-This file lives under the clone's shared Git metadata, so it stays private and all worktrees created from that clone can read it automatically.
-
-Legacy fallback for a single checkout only:
-
-```text
-.claude/vbw-debug-target.txt
-```
-
-That legacy file remains supported and gitignored, but it is scoped to one checkout/worktree and will not be copied into new worktrees.
-
-Resolution order:
-1. `VBW_DEBUG_TARGET_REPO` env var (one-off override, absolute path only)
-2. `$(git rev-parse --git-common-dir)/info/vbw-debug-target.txt` in the current clone (preferred persistent local config, shared across worktrees)
-3. `./.claude/vbw-debug-target.txt` in the current checkout/worktree (legacy fallback, absolute path only)
-4. `<claude-config-dir>/vbw/debug-target.txt` (user-global fallback, absolute path only; `<claude-config-dir>` is resolved by `scripts/resolve-claude-dir.sh`: `CLAUDE_CONFIG_DIR` if set, else `$HOME/.config/claude-code` when that directory exists, else `$HOME/.claude`)
-5. If none are configured, **ask the user for the target repo path** — do not guess.
-
-Use the shared resolver when debugging:
-
-```bash
-TARGET_REPO=$(bash scripts/resolve-debug-target.sh repo)
-TARGET_PLANNING=$(bash scripts/resolve-debug-target.sh planning-dir)
-ENCODED_PATH=$(bash scripts/resolve-debug-target.sh encoded-path)
-CLAUDE_PROJECT_DIR=$(bash scripts/resolve-debug-target.sh claude-project-dir)
-```
-
-If the resolver exits non-zero, stop guessing and ask the user to configure a debug target.
-
-### Claude Code Log Locations (canonical Claude config root)
-
-In the paths below, `<claude-config-dir>` means the same Claude config root resolved by `scripts/resolve-claude-dir.sh`: `CLAUDE_CONFIG_DIR` if set, else `$HOME/.config/claude-code` when that directory exists, else `$HOME/.claude`.
-
-After resolving the target repo, derive the encoded Claude project path by replacing `/` with `-` in the absolute target-repo path. For an absolute path, the result begins with `-`.
-
-Example rule:
-
-```text
-/absolute/path/to/project  ->  -absolute-path-to-project
-```
-
-When debugging, search these directories for evidence of what actually happened:
-
-| Path | Contents | Use When |
-| ------ | ---------- | ---------- |
-| `<target-repo>/.vbw-planning/` | Project state (phases, milestones, config, `STATE.md`) | Ground the investigation in actual workflow state |
-| `<claude-config-dir>/projects/{encoded-path}/*.jsonl` | Session transcripts | Replaying what the LLM said/did in a session |
-| `<claude-config-dir>/projects/{encoded-path}/{session-id}/subagents/agent-*.jsonl` | Subagent transcripts | Checking what VBW agent team members did |
-| `<claude-config-dir>/projects/{encoded-path}/{session-id}/tool-results/` | Tool output snapshots | Seeing exact tool outputs from a session |
-| `<claude-config-dir>/debug/{session-id}.txt` | Debug logs (`[DEBUG]`/`[WARN]`) | Startup issues, plugin loading, hook execution failures |
-| `<claude-config-dir>/sessions/{pid}.json` | Active session metadata | Mapping a PID to a session ID |
-| `<claude-config-dir>/session-env/{session-id}/` | Hook-exported env vars | Verifying `CLAUDE_SESSION_ID` and other env vars |
-| `<claude-config-dir>/tasks/{session-id}/` | Task/subagent lock files | Checking for stuck or concurrent task issues |
-| `<claude-config-dir>/settings.json` | User-level Claude Code settings and hooks | Verifying hook definitions, permissions, MCP config |
-
-### Common search patterns
-
-```bash
-TARGET_REPO=$(bash scripts/resolve-debug-target.sh repo)
-CLAUDE_PROJECT_DIR=$(bash scripts/resolve-debug-target.sh claude-project-dir)
-CLAUDE_CONFIG_ROOT="$(dirname "$(dirname "$CLAUDE_PROJECT_DIR")")"
-
-# Find sessions for the configured target repo
-ls "$CLAUDE_PROJECT_DIR"/*.jsonl
-
-# Search session transcripts for a VBW hook or command
-grep -l 'vbw' "$CLAUDE_PROJECT_DIR"/*.jsonl
-
-# Find hook errors in debug logs
-grep -El 'hook.*error|hook.*fail' "$CLAUDE_CONFIG_ROOT"/debug/*.txt
-
-# Search for a specific tool invocation across sessions
-grep -Erl 'bootstrap-state|state-updater' "$CLAUDE_PROJECT_DIR"/*.jsonl
-
-# Check what a subagent did in a specific session
-cat "$CLAUDE_PROJECT_DIR"/<session-id>/subagents/agent-*.jsonl
-```
-
-## Conventions
-
-- **Naming**: Commands are kebab-case `.md`, agents are `vbw-{role}.md`, scripts are kebab-case `.sh`, phase dirs are `{NN}-{slug}/`
-- **Commits**: `{type}({scope}): {description}` — one atomic commit per task, stage files explicitly (never `git add .`)
-- **JSON parsing**: Always use `jq`, never grep/sed on JSON
-- **No dependencies**: No package.json, npm, or build step. Everything is bash + markdown
-- **YAML frontmatter**: `description` field must be single-line. Use `.prettierignore` for formatting exclusions (no `prettier-ignore` comments)
-- **Plugin isolation**: VBW files live in `.vbw-planning/`, GSD files in `.planning/` — never cross-reference between them
-- **Token reduction**: When the LLM needs context to make decisions, prefer pre-extracting data via bash scripts (injected in command template expansions) over instructing the LLM to read files at runtime. Scripts produce compact, deterministic output and avoid burning tokens on file reads the agent doesn't need to reason about. Apply this principle whenever adding context to commands.
-- **Claude Code template expansion semantics**: Standalone one-line `` !`command` `` directives and fenced `` !`command` `` blocks execute. Embedded `` !`command` `` spans inside prose, paths, or larger strings do **not** execute — Claude passes them through literally. Never build runtime paths or sentence fragments with embedded `!` spans; precompute the value in a fenced block or helper script and reference the resolved output instead.
-- **Root-cause fixes only (non-negotiable)**: Every fix must address the underlying root cause. Masking/symptom-only fixes are not allowed. If a temporary mitigation is added, it must be accompanied by a root-cause fix in the same work item (or the task is incomplete).
-- **No Python in terminal**: Never run `python3` or `python` via the terminal. Use the available Python execution tool instead. **Exception**: the `.github/scripts/wait-github.py` helper is invoked as `python3 .github/scripts/wait-github.py ...` from fix-issue workflow steps. It is a long-running polling helper that must survive outside a short-lived in-process execution and must preserve its own exit code, so it is explicitly allowed to run in the terminal.
-- **LSP-first code navigation**: Any agent with LSP in its `tools` list must prefer LSP for semantic code navigation (definitions, references, symbols, call hierarchy) and reserve Search/Grep/Glob for literal strings, filenames, non-code assets, or LSP failure cases. See `references/lsp-first-policy.md` for the canonical policy.
-
-## Architecture
-
-- **Commands** (`commands/*.md`): Slash commands with YAML frontmatter. Command `name` values are explicitly prefixed (e.g. `name: vbw:init`) so slash commands appear as `/vbw:*`. The frontmatter `description` must be single-line (multi-line breaks plugin discovery).
-- **Agents** (`agents/vbw-{role}.md`): 7 agents (Scout, Architect, Lead, Dev, QA, Debugger, Docs) with platform-enforced tool permissions via YAML `tools`/`disallowedTools`. Scout and QA are read-only (`permissionMode: plan`).
-- **Hooks** (`hooks/hooks.json`): 24 handlers across 11 event types (SessionStart, Stop, PreToolUse, PostToolUse, SubagentStart, SubagentStop, Notification, PreCompact, TaskCompleted, TeammateIdle, UserPromptSubmit). All route through `scripts/hook-wrapper.sh` which resolves from plugin cache via `ls | sort -V | tail -1` with a `CLAUDE_PLUGIN_ROOT` fallback for `--plugin-dir` installs, logs failures, and always exits 0 — no hook can break a session.
-- **Scripts** (`scripts/*.sh`): bash scripts for hook handlers, context compilation, state management, bootstrap, metrics, diagnostics, and codebase mapping. Target bash (not POSIX sh). Use `set -euo pipefail` for critical scripts, `set -u` minimum otherwise.
-- **References** (`references/*.md`): protocol docs loaded on-demand by commands (for example `execute-protocol.md` and `verification-protocol.md`).
-- **Templates** (`templates/*.md`): artifact templates (CONTEXT, PLAN, PROJECT, REQUIREMENTS, ROADMAP, SUMMARY, UAT, VERIFICATION, etc.).
-- **Config** (`config/`): `defaults.json` (settings), `model-profiles.json` (3 presets: quality/balanced/budget), `stack-mappings.json` (tech detection → skill suggestions), `token-budgets.json` (context budgets), `rollout-stages.json` (feature rollout), `destructive-commands.txt` (guarded commands list), `schemas/` (message schemas).
-
-## Key Patterns
-
-### Plugin root resolution
-
-Two resolution cascades exist — one for hooks (DXP-01) and one for commands. They share the same steps but differ in priority order by design.
-
-**Hook cascade (DXP-01)** — cache-first because hooks fire automatically in production (marketplace) deployments. Always exits 0 (no hook can break a session):
-1. Versioned cache glob (`ls … sort -V … tail -1`)
-2. `CLAUDE_PLUGIN_ROOT` env var
-3. `/tmp/.vbw-plugin-root-link-*` symlink glob
-4. `ps axww` + `grep -oE -- "--plugin-dir [^ ]+"` extraction
-5. Graceful no-op (`exit 0`)
-
-**Command cascade** — `CLAUDE_PLUGIN_ROOT` first because an explicit env var should take priority when the user invokes a command. Exits 1 on failure so the user knows the plugin is misconfigured:
-1. `CLAUDE_PLUGIN_ROOT` env var
-2. `cache/local` symlink
-3. Versioned cache dir (`find … sort … tail -1`)
-4. Generic cache dir fallback
-5. `/tmp/.vbw-plugin-root-link-*` symlink glob
-6. `ps axww` + `grep -oE -- "--plugin-dir [^ ]+"` extraction
-7. Fail guard (`exit 1`)
-
-After resolution, commands create a session symlink at `/tmp/.vbw-plugin-root-link-${CLAUDE_SESSION_ID:-default}` pointing to the resolved root, so subsequent template expansions and hooks can find it.
-
-Inside scripts, `CLAUDE_PLUGIN_ROOT` is available and used normally.
-
-### Context compilation
-`scripts/compile-context.sh` produces role-specific `.context-{role}.md` files so each agent loads only relevant context (Lead gets requirements, Dev gets phase goal + conventions, QA gets verification targets).
-
-### State management
-Runtime state lives in `.vbw-planning/` (created per-project by `/vbw:init`): `STATE.md`, `ROADMAP.md`, `PROJECT.md`, `REQUIREMENTS.md`, `config.json`, `phases/{NN}-{slug}/` with PLAN.md and SUMMARY.md per plan.
-
-### Model routing
-`scripts/resolve-agent-model.sh` reads `config.json` profile + overrides against `config/model-profiles.json`. The resolved model string is passed as an explicit `model:` parameter to Task tool invocations (session `/model` doesn't propagate to subagents).
+- Workflows hold procedure; prompts hold only the definition of good output and its schema. Every agent call passes a `schema`.
+- Model and effort are chosen per stage from the profile. The session model must be auto-capable (Sonnet/Opus/Fable); workflow agents may use Haiku.
+- No `permissionMode`, `hooks`, `mcpServers` or `initialPrompt` in agent files (ignored for plugin agents). Agents search with Bash, because Glob and Grep may be absent.
+- No size caps (owner decision D408, 2026-10-15): code and prompts have no line or word limit. Each release's notes report the sizes of the kernel, mods, workflows and prompts as information, so growth stays visible. Speed limits stay (hot paths, below).
 
 ## Testing
 
-Run all checks (tests + lint): `bash testing/run-all.sh`
+Run everything with `bash tools/test.sh`: the proof's run, without the timed speed checks. `vbw prove` does not run the timed speed checks, so a busy machine never fails a proof. They run once per release: `PATH="/bin:$PATH" bash tools/test.sh --release` is the run before every push, and it adds the hook, status line and panel benchmarks and the timed test files, run alone after the rest. When the last proof passed (results it reused count: the read lists still vouch for them), left no command skipped and no quick command standing in, and only the version files and `plugin/CHANGELOG.md` changed since, the release run reuses it and runs only the benchmarks and the timed test files; otherwise it runs everything and says why. Run these directly, never through `| tail` or `| tee`. VBW's own spec declares a single-file test form (`## Test files`), so `vbw prove` runs each test file as its own unit and reuses the ones a change cannot reach; `bash tools/test.sh --lint` is the shell lint of `tools/` as its own project command.
 
-Run `testing/run-all.sh` directly — do not pipe it through `| tail`, `| tail -20`, `| tail -40`, `| tee`, or similar wrappers, especially from concurrent worktrees. `tail` pipelines buffer until EOF, hide live progress, and can make a healthy long-running suite look hung while also obscuring the real exit status.
-
-### Zero-tolerance test failure policy (non-negotiable)
-
-Every test and lint failure must be investigated and resolved before committing — **no exceptions**. Never dismiss a failure as "not from my changes" or "pre-existing." If a test fails after your change, one of two things is true:
-1. **The test is correct** and your change (or a recent change) broke real behavior — fix the code.
-2. **The test is outdated** and no longer matches the intended behavior — update the test to match the new behavior.
-
-Either way, you own the fix. Do not leave failures for the user to resolve manually. Do not push code with known test or lint failures.
-
-### Three-tier testing model
-
-This project is markdown consumed by LLMs plus bash scripts. No single testing methodology fits both. Use the right tier for each artifact type:
-
-#### Tier 1 — Behavior tests (BATS) → bash scripts
-
-For scripts that produce observable outputs. Write tests that assert what a script *does* (outputs, exit codes, side effects, file state) rather than *how* it does it internally.
-
-#### Tier 2 — Contract tests (`verify-*.sh`) → markdown, JSON, YAML structure
-
-For structural invariants that can be validated mechanically. These confirm required structure exists but cannot validate that LLM-consumed prose is *correct*.
-
-#### Tier 3 — Smoke tests → integrated system
-
-The real test of a markdown instruction file is whether the LLM does the right thing when it reads it. Smoke-test slash commands in a separate sandbox repo, not the plugin repo itself.
-
-### Lint checks
-
-`run-all.sh` includes lint checks that mirror CI:
-- **Shell syntax** (`bash -n`) on all `.sh` files in `scripts/` and `testing/`
-- **ShellCheck** (`shellcheck -S warning`) on all `.sh` files in `scripts/` and `hooks/`
-
-### Individual checks
-
-- `bash testing/verify-bash-scripts-contract.sh` — validates script conventions
-- `bash testing/verify-commands-contract.sh` — validates command frontmatter
-- `bash testing/verify-hook-event-name.sh` — validates hook event names match platform spec
-- `bash testing/verify-plugin-root-resolution.sh` — validates the plugin-root resolution cascade in commands and references
-- `bash testing/verify-lsp-first-policy.sh` — validates the repo-wide LSP-first rule
-- `bash scripts/verify-init-todo.sh` — verifies init workflow
-- `bash scripts/verify-claude-bootstrap.sh` — verifies bootstrap script
-- `bash scripts/bump-version.sh --verify` — verifies version consistency
+- **Test first.** Every behavior gets a failing test before the code. Every fix gets a regression test that is shown to fail without the fix.
+- **Zero tolerance:** every failure is investigated and resolved before committing, with no "pre-existing" exemptions.
+- **Both shells:** CI runs the suite on macOS `/bin/bash` 3.2 and on bash 5, from a checkout path containing a space. Locally, run it at least once under `/bin/bash` before committing kernel or hook code.
+- **Hermetic tests:** use `tests/helper.bash` (`vbw_setup`/`vbw_teardown`). Never rely on the host `HOME`, Claude session variables or open stdin.
+- **Lean tests:** one test file per requirement area (a new requirement adds its cases there; a changed rule edits or deletes the cases it supersedes, never stacks new ones), an expensive fixture built once per file in `setup_file` and copied or reset per case, each detail tested at the smallest function or command that decides it. No sleeps (wait on a condition or inject the clock) and no timing assertions outside the timed test files.
+- **Real-user scenarios** (`tools/l3-suite.sh`: the real Claude Code TUI driven as a user, outcomes checked in the record and git, 4 at a time) run where they find bugs (owner decision, 2026-10-05): a milestone adds and runs the scenarios for what it changes while it is built; every release runs `greenfield` plus every scenario that exercises the changed area; the full suite runs before the 2.1 launch. Until 2.1, while the owner is the only user, a release that changes the core `/vbw:vibe` loop (the router or `vbw next`) also runs only `greenfield` and the scenarios of the changed area (owner decision D140, 2026-10-06). Before every push the full suite runs once locally under macOS `/bin/bash` 3.2; Linux and bash 5 run in CI as information: the owner updates once the local release run passed, and Linux failures that cannot affect macOS are fixed in one batch before 2.1.0 (owner decision D402, 2026-10-15; replaces the 2026-10-08 rule). The progress log names the scenarios run and those not run. Baselines for v1 and plain Claude Code live in `tools/baseline/`.
 
 ## Git Workflow
 
@@ -247,86 +103,18 @@ The issue-fix workflow uses git worktrees for parallel-safe issue work.
 - Do not commit directly to `main`.
 - After creating a feature branch from `origin/main`, set its upstream to `origin/<branch>` on first push.
 
+
 ## Version Management
 
-Version is synchronized across 4 files (`VERSION`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `marketplace.json`). The author bumps versions manually via `bash scripts/bump-version.sh`. Contributors should not bump versions themselves.
+The version is synchronized across 5 files (`bash tools/bump-version.sh --files` lists them): `VERSION`, `plugin/VERSION`, `plugin/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` and `marketplace.json`. The author bumps versions with `bash tools/bump-version.sh`. Contributors don't bump versions or edit `CHANGELOG.md`. Verify consistency with `bash tools/bump-version.sh --verify`; the contributor pre-push hook (`bash tools/install-hooks.sh`, run in your own clone) runs that check.
 
-### Push workflow
+## Local development
 
-- The pre-push hook only checks that version files are **consistent** (all 4 match).
-- Contributors should not modify version files or `CHANGELOG.md` in their branches.
-- Verify consistency locally with `bash scripts/bump-version.sh --verify`.
-- Avoid `git push --no-verify` except for emergencies.
-
-## Local Dev Toggle (`claude-code-router`)
-
-This repo can be run locally via `claude-code-router` (CCR) with a toggle between local dev and prod marketplace modes:
-
-- **Local Dev mode**: CCR config sets `CLAUDE_PATH` to `~/.claude-code-router/bin/claude-with-vbw`, a wrapper that injects `--plugin-dir /absolute/path/to/vibe-better-with-claude-code-vbw` into every `claude` invocation. Commands, agents, and hook definitions load from the local repo.
-- **Prod mode**: CCR config sets `CLAUDE_PATH` to `claude` (bare). Plugins resolve from the marketplace cache at `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plugins/cache/vbw-marketplace/vbw/*/`.
-- **Toggle**: Edit `~/.claude-code-router/config.json` and set `CLAUDE_PATH` to one of the above. Optionally `rm -rf "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/commands/vbw"` before relaunching to clear stale command cache.
+Load the plugin from the working tree with `claude --plugin-dir ./plugin`. Nothing else is needed: no cache links, no command mirrors, no setup script.
 
 ## Contributing
 
-See `CONTRIBUTING.md` for full guidelines. Key points:
-- Push branches to `origin`. PRs target `main`.
-- Load locally with `claude --plugin-dir .` or `claude --plugin-dir /absolute/path/to/vibe-better-with-claude-code-vbw`.
-- Run `bash scripts/install-hooks.sh` for the pre-push hook.
-- Version bumps are done by the author — the pre-push hook only checks version file consistency.
-- Good candidates: bug fixes in hooks/scripts, new commands fitting the lifecycle model, stack-to-skill mappings, template improvements.
-- Not welcome without discussion: core lifecycle rewrites, features requiring dependencies.
-- Update consumer-facing docs (`docs/`, `README.md`) whenever a change alters behavior, adds a feature, or modifies a workflow.
-
-### Required Fix Workflow (Issue → Branch → Draft PR → Automated QA)
-
-When asked to fix a bug or implement an issue-driven change, use the tracked issue as the contract, create a worktree branch, implement the root-cause fix with tests, run `bash testing/run-all.sh`, and iterate through QA review rounds before opening or finalizing the PR.
-
-### PR and Issue Templates
-
-- **PR template** (`.github/PULL_REQUEST_TEMPLATE.md`): requires What/Why/How sections plus a testing checklist.
-- **Bug reports** (`.github/ISSUE_TEMPLATE/bug_report.md`): must include the `/vbw:*` command that triggered it, reproduction steps, and environment.
-- **Feature requests** (`.github/ISSUE_TEMPLATE/feature_request.md`): must describe the problem, proposed solution, and alternatives considered.
-
-<!-- gitnexus:start -->
-# GitNexus — Code Intelligence
-
-This project is indexed by GitNexus as **vibe-better-with-claude-code-vbw** (1666 symbols, 1659 relationships, 0 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
-
-> If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
-
-## Always Do
-
-- **MUST run impact analysis before editing any symbol.** Before modifying a function, class, or method, run `gitnexus_impact({target: "symbolName", direction: "upstream"})` and report the blast radius (direct callers, affected processes, risk level) to the user.
-- **MUST run `gitnexus_detect_changes()` before committing** to verify your changes only affect expected symbols and execution flows.
-- **MUST warn the user** if impact analysis returns HIGH or CRITICAL risk before proceeding with edits.
-- When exploring unfamiliar code, use `gitnexus_query({query: "concept"})` to find execution flows instead of grepping. It returns process-grouped results ranked by relevance.
-- When you need full context on a specific symbol — callers, callees, which execution flows it participates in — use `gitnexus_context({name: "symbolName"})`.
-
-## Never Do
-
-- NEVER edit a function, class, or method without first running `gitnexus_impact` on it.
-- NEVER ignore HIGH or CRITICAL risk warnings from impact analysis.
-- NEVER rename symbols with find-and-replace — use `gitnexus_rename` which understands the call graph.
-- NEVER commit changes without running `gitnexus_detect_changes()` to check affected scope.
-
-## Resources
-
-| Resource | Use for |
-|----------|---------|
-| `gitnexus://repo/vibe-better-with-claude-code-vbw/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/vibe-better-with-claude-code-vbw/clusters` | All functional areas |
-| `gitnexus://repo/vibe-better-with-claude-code-vbw/processes` | All execution flows |
-| `gitnexus://repo/vibe-better-with-claude-code-vbw/process/{name}` | Step-by-step execution trace |
-
-## CLI
-
-| Task | Read this skill file |
-|------|---------------------|
-| Understand architecture / "How does X work?" | `.claude/skills/gitnexus/gitnexus-exploring/SKILL.md` |
-| Blast radius / "What breaks if I change X?" | `.claude/skills/gitnexus/gitnexus-impact-analysis/SKILL.md` |
-| Trace bugs / "Why is X failing?" | `.claude/skills/gitnexus/gitnexus-debugging/SKILL.md` |
-| Rename / extract / split / refactor | `.claude/skills/gitnexus/gitnexus-refactoring/SKILL.md` |
-| Tools, resources, schema reference | `.claude/skills/gitnexus/gitnexus-guide/SKILL.md` |
-| Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
-
-<!-- gitnexus:end -->
+- Branch from `origin/main`, push to `origin`, and open the PR against `main`. Commits follow `{type}({scope}): {description}`, one atomic commit per change, with files staged explicitly.
+- Root-cause fixes only. A mitigation without its root-cause fix in the same work item is incomplete.
+- Update user docs (`docs/`, `README.md`) whenever behavior changes.
+- Discuss first before any change that adds a runtime dependency.

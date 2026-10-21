@@ -1,0 +1,114 @@
+#!/usr/bin/env bats
+# R47 (docs/proof.md): after a round of fixes QA checks again only the phases
+# that did not pass and the phases whose own inputs changed since they passed
+# (their files, their tests, or their goal and plan); an untouched phase keeps
+# its pass. Each QA pass records what it covered; vbw next hands the narrowed
+# list to the verify workflow.
+
+load helper
+load qa-recheck-helper
+load fixture-helper
+
+setup_file() { fixture_build p2 qa_project 2; }
+setup() { fixture_copy p2; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+@test "R47: a QA pass keeps one digest of the phase's own inputs in qa.tree; no new record field, the schema unchanged" {
+  qa_pass P1 P2
+  jq -e 'all(.phases[].qa; (keys - ["result","tier","tree","at","note","rounds"]) == [] and (.tree | test("^[0-9a-f]{64}$")))' .vbw/record.json
+  jq -e '.phases[0].qa.tree != .phases[1].qa.tree and (.schema == 1 or .schema == 4)' .vbw/record.json
+  # The per-input digests that name a reason are this clone's cache, outside the record.
+  jq -e '[.P1, .P2] | all(.[]; (.files, .tests, .plan) | type == "string")' "$(git rev-parse --git-common-dir)/vbw/qa.json"
+  vbw_run status
+  [ "$status" -eq 0 ]
+}
+
+@test "R47: a phase that has never passed QA is checked" {
+  [ "$(listed)" = '["P1","P2"]' ]
+}
+
+@test "R47: after one phase passes and the other does not, only the other is checked" {
+  qa_pass P1
+  [ "$(listed)" = '["P2"]' ]
+}
+
+@test "R47: a phase whose last verdict was fail is checked again, and a passing phase keeps its pass" {
+  qa_pass P2
+  "$VBW" qa finding R1 "part 1 deviates from its plan" > /dev/null
+  "$VBW" qa record P1 fail standard "1 deviation" > /dev/null
+  "$VBW" fix done F1 > /dev/null
+  "$VBW" prove --full > /dev/null
+  [ "$(listed)" = '["P1"]' ]
+}
+
+@test "R47: two phases passed and a fix touches one: only that one is in the next QA list" {
+  qa_pass P1 P2
+  [ "$(listed)" = '[]' ]
+  qa_touch 1
+  [ "$(listed)" = '["P1"]' ]
+  next_json | jq -e '.action == "qa"'
+}
+
+@test "R47: a pass that stands is still a pass on the proven code: it counts for finishing the phase" {
+  qa_pass P1 P2
+  qa_touch 1
+  jq -e '.phases[1].qa.result == "pass"' .vbw/record.json
+  [ "$(listed)" = '["P1"]' ]
+  vbw_run show phase P2
+  [[ "$output" != *"[on older code]"* ]]
+  qa_pass P1
+  next_json | jq -e '.action == "ship"'
+}
+
+@test "R47: a change to a file that belongs to no phase checks no phase" {
+  qa_pass P1 P2
+  printf 'loose\n' > src/loose.txt
+  git add src/loose.txt && git commit -q -m "chore: loose file"
+  "$VBW" prove --full > /dev/null
+  [ "$(listed)" = '[]' ]
+  next_json | jq -e '.action == "ship"'
+}
+
+@test "R47: fixes that close without touching any phase file leave every pass standing" {
+  qa_pass P1 P2
+  printf '# notes\n' > NOTES.md
+  git add NOTES.md && git commit -q -m "docs: notes"
+  "$VBW" prove --full > /dev/null
+  jq -e 'all(.phases[]; .qa.result == "pass")' .vbw/record.json
+  next_json | jq -e '.action == "ship" and .qa.recheck == {}'
+}
+
+@test "R47: a record written before this change (qa.tree held the whole-folder fingerprint) is read without error and its phases are checked again once" {
+  qa_pass P1 P2
+  edit_record '.evidence.tree as $t | .phases |= map(.qa.tree = $t)'
+  rm -f "$(git rev-parse --git-common-dir)/vbw/qa.json"
+  vbw_run next --json
+  [ "$status" -eq 0 ]
+  [ "$(listed)" = '["P1","P2"]' ]
+  vbw_run status
+  [ "$status" -eq 0 ]
+  if printf '%s' "$output" | grep -qi corrupt; then false; fi
+  qa_pass P1 P2
+  [ "$(listed)" = '[]' ]
+}
+
+@test "R47: QA still refuses a verdict on a proof older than the current code (R12)" {
+  printf 'extra\n' >> src/p1.txt
+  vbw_run qa record P1 pass standard
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"vbw prove"* ]]
+}
+
+@test "R47: the verify workflow checks exactly the phases it is given and holds no selection of its own" {
+  command -v node > /dev/null 2>&1 || skip "node not installed"
+  qa_pass P1 P2
+  qa_touch 1
+  local phases out
+  phases=$(next_json | jq -c '.detail.phases')
+  [ "$phases" = '["P1"]' ]
+  out=$(node "$REPO_ROOT/tests/helpers/run-workflow.js" "$PLUGIN_ROOT/workflows/verifying.js" \
+    "$(jq -nc --argjson p "$phases" '{phases: $p, tier: "standard"}')" '{}')
+  [ "$(printf '%s' "$out" | jq -c '[.calls[].opts.label]')" = '["qa P1"]' ]
+  if grep -qE 'inputs|standing|recheck' "$PLUGIN_ROOT/workflows/verifying.js"; then false; fi
+}

@@ -1,6 +1,8 @@
 <div align="center">
 
-# Vibe Better With Claude Code (Opus 4.6+) - VBW
+# Vibe Better With Claude Code - VBW
+
+**Requires Claude Code 2.1.286 or newer, running Sonnet, Opus or Fable.**
 
 *You're not an engineer anymore.*
 
@@ -11,19 +13,440 @@
 <img src="assets/abraham.jpeg" alt="Abraham Lincoln portrait" width="300"/>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Claude Code](https://img.shields.io/badge/Claude_Code-v1.0.33+-blue.svg)](https://code.claude.com)
-[![Opus 4.6+](https://img.shields.io/badge/Model-Opus_4.6+-purple.svg)](https://anthropic.com)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-v2.1.286+-blue.svg)](https://code.claude.com)
+[![Models](https://img.shields.io/badge/Model-Sonnet_%7C_Opus_%7C_Fable-purple.svg)](https://anthropic.com)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Us-5865F2.svg?logo=discord&logoColor=white)](https://discord.gg/zh6pV53SaP)
 
 </div>
 
-## VBW Token Efficiency vs Stock Opus 4.6 Agent Teams
+<p align="center">
+<a href="#what-is-this">What is this</a> ·
+<a href="#install">Install</a> ·
+<a href="#start">Start</a> ·
+<a href="#features">Features</a> ·
+<a href="#commands">Commands</a> ·
+<a href="#how-it-stays-safe">Safety</a> ·
+<a href="#configuration">Configuration</a> ·
+<a href="#requirements">Requirements</a> ·
+<a href="#documentation">Docs</a>
+</p>
 
-Every new capability is shell-only — 85 scripts run as bash subprocesses at zero model token cost. The codebase grew 42% since v1.21.30 while per-request overhead grew just 12% (still 7% below v1.20.0). The Worktree Isolation milestone (41 commits, 6 phases) shipped at near-zero model cost — only +16 reference lines loaded lazily. Dead code removal actually shrank the codebase by 1,665 lines vs the CC Alignment snapshot. 845 bats tests validate the stack.
+## What Is This?
 
-**Analysis reports:** [v1.30.0](docs/vbw-1-30-0-full-spec-token-analysis.md) | [v1.21.30](docs/vbw-1-21-30-full-spec-token-analysis.md) | [v1.20.0](docs/vbw-1-20-0-full-spec-token-analysis.md) | [v1.10.7](docs/vbw-1-10-7-context-compiler-token-analysis.md) | [v1.10.2](docs/vbw-1-10-2-vs-stock-agent-teams-token-analysis.md) | [v1.0.99](docs/vbw-1-0-99-vs-stock-teams-token-analysis.md)
+> **Platform:** macOS and Linux. Windows is not supported natively: VBW runs on bash. On Windows, run Claude Code inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
 
-| Category | Stock Agent Teams | VBW | Saving |
+VBW 2 is a rewrite of VBW 1, in philosophy and execution. It is built so you pay once for work that is right: every requirement is proven by a check before it ships, so you spend less over time finding, fixing and redoing what broke. [How VBW thinks about cost](#cost).
+
+### For people who don't read code, and people who do
+
+You do not need to read code to use VBW. You describe what you want, answer questions in plain words and judge what only a person can judge. If you do read code, you get the contract, the checks and a git history to review.
+
+VBW is a Claude Code plugin that works as a harness around the model: it builds what you asked for, then proves it works before anyone is allowed to say "done". A requirement counts as done only when an approved check passes on a clean copy of the code, or when you accept it.
+
+### The problem
+
+***Vibe coders***: You've shipped an app you can't read, written by an AI you can't question, tested by no one. You know it works because the AI told you so.
+
+***Seasoned devs***: You've spent years writing tests nobody ran for specs nobody approved, and now you have to trust 4,000 lines a model wrote in minutes.
+
+### What VBW does about it
+
+You type `/vbw:vibe` and what you want. VBW runs the loop below and stops only when it needs you. And ulinke VBW 1, you type this only once, then chat with Claude Code as you'd usually do. Advanced users have granular controls.
+
+**Meet the team.** Each is an AI agent with one job, and VBW runs as many of them at once as the work allows: a milestone with ten independent plans gets ten Devs building side by side, then a QA reviewer for every finished phase at the same time.
+
+| Agent | Job | How many |
+| :--- | :--- | :--- |
+| **Architect** | Works out the decisions only you should make (cost, data, security, anything hard to undo), then splits the work into **phases** (a goal each). Writes nothing. | 1, thinking the whole milestone through |
+| **Lead** | Turns each phase into small **plans**: a few tasks, their own files. Writes the tests first and makes sure they fail today (*red*). | 1, planning every phase of the milestone |
+| **Dev** | Writes the code for one plan, one commit per task, until its tests pass (*green*). At standard and deep rigor it also breaks its own code on purpose, to confirm a test notices. Also fixes what fails later. | One for every plan, multiple plans in tandem, all at the same time: VBW sets no limit (only plans that touch the same files wait for each other) |
+| **QA** | Reads a finished phase against its goal and reports what's wrong. Never touches the code. | One for every finished phase, all at the same time |
+| **Scout** | Looks things up, one angle each: your code, the web, the docs. Reports with sources; changes nothing. | Up to 4 at the same time, one per angle |
+| **Debugger** | Reproduces a bug, finds the root cause, then makes the smallest fix plus a test that proves it. | 3 at the same time to investigate, then 1 to fix |
+| **Docs** | Writes the README, guides and changelog. Documentation files only. | One for every documentation plan, working alongside the Devs |
+
+**Who's the boss?** No agent. The Lead's plans decide what gets built; the kernel decides how it runs: how many Devs work at once (as many as there are ready plans that share no files) and how much checking each phase gets (one Dev for a typo, the full team for payments code). Management by a program.
+
+```text
+  STEP                                        PRACTICE
+  ┌──────────────────────────────────────┐
+  │ /vbw:vibe                            │
+  │ First run: sets up .vbw/, asks you   │
+  │ 3 questions. Existing code: maps it. │
+  └──────────────────────────────────────┘
+                     │
+                     ▼
+  ┌──────────────────────────────────────┐
+  │ 1. AGREE                             │    ATDD / Specification by Example
+  │ Spec: requirements, each marked      │    Acceptance criteria written
+  │ [auto] (a check decides) or [human]  │    before design. Decisions
+  │ (you decide). Decisions asked one    │    recorded with their rationale.
+  │ at a time.                           │
+  └──────────────────────────────────────┘
+                     │
+                     ▼
+  ┌──────────────────────────────────────┐
+  │ 2. PLAN                              │    TDD: red
+  │ Lead splits each phase into small    │    Every [auto] requirement gets
+  │ plans with disjoint files. Writes a  │    an acceptance check (argv, exit
+  │ check per [auto] requirement and     │    code), confirmed failing today
+  │ runs it: it must fail.               │    for the right reason.
+  └──────────────────────────────────────┘
+                     │
+                     ▼
+  ┌──────────────────────────────────────┐    ┌─────────────────────────┐
+  │ 3. APPROVE                           │    │ "Not yet": the plan     │
+  │ You approve one contract: spec,      │ ◀──│ changes, you're asked   │
+  │ plans, checks, test files, commands. │    │ again                   │
+  │ Any change to it un-approves it.     │    └─────────────────────────┘
+  └──────────────────────────────────────┘    Frozen contract (SHA-256).
+                     │                        Check files write-protected
+                     │                        by hooks while building.
+                     ▼
+  ┌──────────────────────────────────────┐
+  │ 4. BUILD                             │    TDD: green
+  │ Devs build plans in parallel waves,  │    Red verified before the first
+  │ each only in its own files. One      │    change. Atomic commits with a
+  │ commit per task.                     │    VBW-Plan: provenance trailer.
+  └──────────────────────────────────────┘
+                     │
+                     ▼
+  ┌──────────────────────────────────────┐    ┌─────────────────────────┐
+  │ 5. PROVE                             │    │ FIX                     │
+  │ The kernel runs every approved check │─ ─▶│ Agents fix the code;    │
+  │ and the test command on a clean      │fail│ a QA fix adds a test.   │
+  │ copy of HEAD, checks each commit     │ ◀──│ 3 failed tries: it      │
+  │ stayed in its plan's files, and that │    │ comes to you.           │
+  │ what each plan built is still there. │    │                         │
+  └──────────────────────────────────────┘    └─────────────────────────┘
+                     │                        Executable definition of done.
+                     │                        Proof in a detached worktree,
+                     │                        evidence in .vbw/record.json.
+                     ▼
+  ┌──────────────────────────────────────┐    ┌─────────────────────────┐
+  │ 6. REVIEW                            │    │ Findings become fixes   │
+  │ QA reviews against the goal and      │─ ─▶│ (back to FIX)           │
+  │ changes nothing. You judge each      │    └─────────────────────────┘
+  │ [human] one, or Skip for now.        │    Goal-backward review.
+  └──────────────────────────────────────┘    Manual acceptance testing.
+                     │
+                     ▼
+  ┌──────────────────────────────────────┐
+  │ 7. SHIP                              │    Regression suite
+  │ More to build: /vbw:vibe again.      │    Every later proof covers every
+  │                                      │    check: re-run if a file it
+  │                                      │    read changed, reused if not.
+  └──────────────────────────────────────┘    Nothing proven breaks quietly.
+```
+
+Every stop ends with one line, **What I need from you:**, and the one thing you must do now, or "nothing". You never have to guess whether VBW is waiting for you.
+
+### For engineers: the model proposes, the kernel disposes
+
+VBW 2 is built around a **kernel**: `vbw`, a bash + `jq` + `git` program that the model cannot argue with. Agents do the work; the kernel decides what counts. It's acceptance test-driven development, enforced by code instead of good intentions.
+
+| | Claude Code on its own | Claude Code + the VBW kernel |
+| :--- | :--- | :--- |
+| **Who says it's done** | The model | The exit code of an approved check, run on a clean copy of `HEAD` |
+| **Who can edit the tests** | Anyone, including the agent being tested | Not the building agents: check files are in a SHA-256 contract and write-protected by hooks. A change waits for your approval |
+| **Where the state lives** | The chat context, until compaction eats it | `.vbw/record.json`: one writer, locked, validated, atomic |
+| **Who runs the process** | The model, improvising | Dynamic workflows: deterministic JavaScript |
+| **Parallel agents** | Up to the model | Waves with no shared files; guards deny writes outside each plan |
+| **Running repo commands** | Whatever the model types | Argv only, no `eval`, after you consent to the content hash |
+| **Several sessions, one folder** | Last write wins | A run's files are leased to its session; everything else stays open |
+
+<p align="center"><img src="assets/kernel-diagram.jpg" alt="VBW architecture: /vbw:vibe goes to the skills surface, which hands state to the engine where Devs build in parallel under hook guards; agents write only through the vbw kernel (record, contract, prove); a failed proof goes back to the Devs as a fix, three tries then you; a pass is done, proven, not claimed." width="640"/></p>
+
+Three design choices worth knowing:
+
+- **No per-agent worktrees, on purpose.** A worktree has no `node_modules` or virtualenv, so an agent either reinstalls everything or proves the main checkout's code instead of its own. A false proof is the one failure VBW refuses to have. File-disjoint waves plus guards give the same isolation without it.
+- **Proof reuses what didn't change.** VBW records what each check reads while it runs; a check whose definition, last result and every file it read are unchanged keeps its pass. If your test runner can run one test file at a time, say so in the spec's `## Test files` section (`- run: bats {file}` and `- files: tests/*.bats`) and your tests are reused per file too; you approve the form with the contract. `vbw prove --full` re-runs everything.
+- **One limit per computer.** Every VBW run on a computer, in any project or session, shares one limit on how many checks and test files run at once (about three quarters of the processor cores), so parallel sessions take turns instead of overloading the machine.
+
+How many agents? One Dev for every plan in a wave, all at the same time, and VBW keeps the wave as wide as the file boundaries allow: ten plans that touch different files means ten Devs at once.
+
+Inspired by **[Ralph](https://github.com/frankbria/ralph-claude-code)** and **[Get Shit Done](https://github.com/glittercowboy/get-shit-done)**; the architecture is new.
+
+---
+
+## Install
+
+Open Claude Code and run these two commands inside the session, **one at a time**:
+
+**Step 1:** Add the marketplace
+
+```text
+/plugin marketplace add swt-labs/vibe-better-with-claude-code-vbw
+```
+
+**Step 2:** Install the plugin
+
+```text
+/plugin install vbw@vbw-marketplace
+```
+
+Two commands, two separate inputs. Pasted together, Claude Code reads them as one command and the URL breaks.
+
+Restart Claude Code. VBW turns on what it needs (Dynamic workflows and its status line) the first time you use it. `/vbw:doctor` checks the rest.
+
+### Updating
+
+Run `/vbw:update`. It runs `claude plugin marketplace update vbw-marketplace` and `claude plugin update vbw@vbw-marketplace`, then asks you to run `/reload-plugins` (or restart Claude Code). `/vbw:whats-new` then says what changed; the full history is in [plugin/CHANGELOG.md](plugin/CHANGELOG.md). VBW makes no network call, so nothing tells you a new version is out unless you turn on Claude Code's auto-update for `vbw-marketplace` (`/plugin`, Marketplaces tab, Enable auto-update); `/vbw:doctor` shows whether it is on, and after an update VBW offers `/vbw:whats-new` once. See [docs/update.md](docs/update.md).
+
+### Running VBW
+
+| | **Supervised** (for the cautious) | **Auto** (for the brave) |
+| :--- | :--- | :--- |
+| **Start with** | `claude` | Sonnet, Opus or Fable, then Shift+Tab for auto mode |
+| **Claude Code asks you** | Before file writes and commands, once per tool per project | Only when it must |
+| **VBW stops for** | Decisions, approval, checking, shipping | Decisions, approval, checking, shipping |
+| **Feels like** | Some clicking in the first session, then smooth | Agents keep building until a step needs you |
+
+Auto mode keeps the flow unbroken: the agents work longer between stops.
+
+> **Disclaimer:** `--dangerously-skip-permissions` turns off Claude Code's permission prompts, and VBW does not make that safe. VBW's guards are guard rails, not a sandbox; the Claude Code sandbox and permission rules remain the security boundary. Read what you approve.
+
+---
+
+## Start
+
+You only need to remember one command. In any git repository, new or existing:
+
+```text
+/vbw:vibe I want a command-line expense tracker in Node.js
+```
+
+1. **Setup.** The first run sets up the project and the VBW status line.
+2. **Questions.** Three about you, once. Then what you are building and for whom, then the decisions that matter, one at a time, each with a recommendation.
+3. **Approve.** VBW shows the plan and its checks and asks. Enter approves; **Not yet** or your own words change the plan. Seniors will skim, and both are short enough for that. You can change your mind any time: VBW re-plans without touching finished work.
+4. **Build and prove.** Agents build in parallel, then VBW runs the checks and QA reviews each phase against its goal. Failures become fixes; after three failed attempts at one, it comes to you.
+5. **Judge what only you can.** For each `[human]` requirement (look, feel, wording) VBW shows the thing to judge and asks: **Works**, **Something's wrong** (VBW fixes it and asks again) or **Skip for now**. A requirement you are not ready to judge can wait: when skipped ones are all that holds up shipping, you choose to ship and judge them in the next milestone, where they keep their id, checks and history.
+6. **Ship.** VBW asks whether to ship, then recommends what to do next.
+
+Come back any time and type `/vbw:vibe`: it continues where things stand. Used an earlier VBW in this project? VBW reviews the old folder and recommends converting or starting fresh; you choose ([docs/convert.md](docs/convert.md)).
+
+---
+
+## Features
+
+The loop above is the core. Around it:
+
+| Feature | What you get |
+| :--- | :--- |
+| **Triage** | Every new idea is sorted into now, next or later, with a size. You confirm or overrule in one menu. [docs/triage.md](docs/triage.md) |
+| **What's next** | After each ship, and whenever you ask, the Architect recommends a top pick and up to two runners-up, each with a reason and a size. [docs/whats-next.md](docs/whats-next.md) |
+| **Decisions, recorded** | Cost, where data lives, security, anything hard to undo: asked one at a time with a recommendation, recorded with your reason (`vbw show decisions`). When someone asks "who decided this?", the record and git say it was you. |
+| **Rigor that fits** | A typo gets one Dev and one approval. Payments or sign-in code gets the full team and deep review. VBW sizes the process from what the work touches, raises the bar when a build goes badly, and tells you why. [docs/rigor.md](docs/rigor.md) |
+| **Tests that can fail** | At standard and deep rigor each Dev breaks its own code on purpose (`vbw mutate`), and VBW records whether a check noticed. A test that stays green on broken code is strengthened before the plan can finish. [docs/workflows.md](docs/workflows.md) |
+| **Fixes that leave a test behind** | When QA finds a problem, the fix can add a regression test that would have caught it: the Dev writes the test file and registers it with `vbw fix check FIX`. It waits for one approval from you, then runs in every later proof. [docs/proof.md](docs/proof.md) |
+| **Failures you can read** | A failing check or project command keeps its full output under `.vbw/runtime/output/`; `vbw show fix` names the file and the failing tests. |
+| **Talks at your level** | Three questions, once per project. Beginners get plain words. Seniors get terse output and the trade-offs. [docs/interview.md](docs/interview.md) |
+| **Picks up where you left off** | Everything lives in `.vbw/` in your project, not in a chat window. `/vbw:vibe` continues exactly where things stand. |
+| **What it cost** | Each run and each milestone is priced from the figures Claude Code gives the status line. `vbw show costs`. [docs/costs.md](docs/costs.md) |
+| **Status line and panel** | Progress, what's proven and what VBW needs from you, always visible. On Claude Code 2.1.287+, the panel has Mission Control (the side pane: where the project stands, in plain words) and, from 2.1.290, Comms (the strip above the prompt: the helpers at work, or one line when VBW needs you). Each shows the running step's end time ("about 12 min, until around 14:20"); Mission Control also shows when the milestone should end, and a sound plays when a question needs you (on by default, `/vbw-sound` switches it). [docs/panel.md](docs/panel.md) |
+
+The status line, under the prompt:
+
+```text
+[VBW] expenses │ M1 First milestone │ ▓▓▓▓▓▓▓░░░ 4/6 done │ ▶ build P1.2, P2.1 · 1 of 2 · until 14:20
+Context ▓▓▓░░░░░░░ 31% 62K/200K │ Tokens 2 in 195 out │ Cache 93% hit 3.8K write 55.5K read │ Cost $1.42 │ +303 −12
+Limits 5h ▓▓░░░░░░░░ 23% (resets 2h13m) │ 7d ▓▓▓▓░░░░░░ 41% (resets 3d)
+```
+
+---
+
+## Commands
+
+You need one: `/vbw:vibe`. The rest exist for people who want more control.
+
+| When | Command | What it does |
+| :--- | :--- | :--- |
+| **Always** | `/vbw:vibe [what you want]` | The next step, every time. This is the whole product |
+| **Deciding** | `/vbw:approve` | Approve the plan and its checks. Only you can; VBW also asks as a choice where Enter approves |
+| | `/vbw:discuss`, `/vbw:research` | Think a decision through; get a sourced answer to a question |
+| | `/vbw:loop ITEM... --ceiling USD` | Work through named todo items while you are away, within a spend ceiling; leaves `.vbw/loop-report.md` ([docs/loop.md](docs/loop.md)) |
+| | `/vbw:todo [idea]`, `/vbw:list-todos` | Park an idea; see the list |
+| **Checking** | `/vbw:status` | Where the project stands |
+| | `/vbw:qa`, `/vbw:verify` | Run every check now; judge, one at a time, what only you can |
+| | `/vbw:debug [problem]`, `/vbw:fix [what]` | Root cause from three angles at once; a quick fix with every proof re-run afterwards, for when you don't need seven agents to add a comma |
+| **Existing code** | `/vbw:map`, `/vbw:teach [convention]` | Map the codebase; teach VBW your conventions |
+| | `/vbw:init`, `/vbw:convert` | Set up VBW (vibe does it too); bring in a project from an earlier VBW |
+| **Session** | `/vbw:pause`, `/vbw:resume` | Stop safely; pick up where you left off |
+| | `/vbw-status`, `/vbw-why`, `/vbw-todo [idea]` | Instant, even mid-run, no model turn (Claude Code 2.1.287+): where things stand; who holds the run and why; park an idea |
+| | `/vbw:panel`, `/vbw-panel`, `/vbw-sound` | Does the panel work here; open Mission Control; sound on or off ([docs/panel.md](docs/panel.md)) |
+| **Setup** | `/vbw:profile`, `/vbw:config` | How VBW works in one go; one setting at a time |
+| | `/vbw:skills`, `/vbw:rtk`, `/vbw:compress` | Find tools for your project ([docs/tools.md](docs/tools.md)); set up RTK to compress command output; shrink an instruction file |
+| | `/vbw:help`, `/vbw:doctor`, `/vbw:report` | List the commands; check the setup; prepare a bug report (you read it before anything is sent) |
+| | `/vbw:update`, `/vbw:whats-new`, `/vbw:uninstall` | Update; see what changed; remove VBW (your `.vbw/` folders stay) |
+
+### The kernel, `vbw`
+
+The `/vbw:` commands call the kernel, `vbw`. Wherever `vbw` is on your PATH (`/vbw:doctor` says whether it is), `vbw help` lists its commands and `vbw CMD --help` (or `-h`) prints that command's usage. Help works right after a subcommand too (`vbw fix --help` lists `fix done`, `fix retry` and `fix check`), needs no project, works while a run is open and changes nothing. Views worth knowing: `vbw status`, `vbw next`, `vbw show contract`, `vbw show evidence`, `vbw show costs`.
+
+---
+
+## Who Works When
+
+The team is in [What VBW does about it](#what-vbw-does-about-it); their specifications are in [`plugin/agents/`](plugin/agents/).
+
+| Workflow | Started by | Who runs |
+| :--- | :--- | :--- |
+| Planning | `/vbw:vibe` at the plan step | Architect (decisions) → Architect (scope) → Lead |
+| Building | `/vbw:vibe` at the build step | one Dev for every ready plan (Docs for documentation), all at the same time |
+| Fixing | `/vbw:vibe` when a check fails or QA finds a problem | one Dev for every group of related fixes, all at the same time |
+| Verifying | `/vbw:vibe` after the checks pass | one QA agent for every built phase, all at the same time |
+| Mapping | `/vbw:map`, or planning on existing code | a Scout per angle, then one merged map |
+| Researching | `/vbw:research` | four Scouts, then one sourced answer |
+| Investigating | `/vbw:debug` | three Debuggers (reproduce, trace, history), one diagnosis, then one fix |
+| Recommending | `/vbw:vibe` after a ship, or when you ask what's next | the Architect, once |
+| Tool search | `/vbw:skills`, or the interview once you agree | a Scout per angle (safety, quality, tests, skills) |
+
+Full reference: [docs/workflows.md](docs/workflows.md).
+
+---
+
+## Night shift
+
+`/vbw:loop` works through todo items you name while you are away: for each it plans, builds, proves and ships on its own, approving only a contract that is exactly the item you named. You set a spend ceiling, or choose none on purpose; a ceiling needs the cost figures of the VBW status line. An item that fails twice is reverted with `git revert` and parked, and the loop moves on; a `[human]` requirement waits for you. An item that runs past its time budget (twice the usual time of items of its size) stops the loop before the item's next step, with its work kept. The loop stops at the ceiling, at the end of the list, or on `vbw loop stop`, and leaves `.vbw/loop-report.md`: what shipped, what was parked and why, what it cost. Details: [docs/loop.md](docs/loop.md).
+
+The promise: nothing is approved without a record of who approved it, and nothing the loop does leaves the project. The loop never pushes, releases, publishes or deploys; every ship is a local commit for you to review.
+
+---
+
+## How It Stays Safe
+
+| What could go wrong | What stops it |
+| :--- | :--- |
+| An agent runs `rm -rf`, force-pushes or `git reset --hard` | Guards check every command before it runs, and read what the shell would actually execute: `git commit -m "never rm -rf /"` passes, `sh -c 'rm -rf .'` doesn't |
+| An agent opens your `.env` or your keys | Guards block secret files. VBW never handles secrets |
+| An agent writes outside its part of the plan, or outside the project | Guards deny it during a run. Scratch work goes in `.vbw/runtime/scratch/` |
+| The AI approves its own plan | It can't, however creatively it spells the command. Approval is your answer in Claude Code's own menu, or `/vbw:approve`. It is stored in your clone's `.git` folder, so a repository you download can't approve itself |
+| An agent edits a test until it passes | Approved check files are write-protected while agents build. If the code doesn't pass, the code changes. A test an agent strengthens or adds for a fix waits for one approval from you before the proof |
+| A guard itself breaks: it crashes, cannot start or times out | During a VBW run, the action it guards is blocked, not let through. Outside VBW projects and outside runs nothing changes |
+| An unattended loop pushes or publishes | While `/vbw:loop` is on, `git push`, releases, publishes and deploys are denied for every caller, you through Claude included |
+| Nobody knows who changed what | Every VBW commit names its plan and requirement in trailers (`VBW-Plan`, `VBW-Req`), so `git log` is an audit trail |
+
+How it's enforced: [For engineers](#for-engineers-the-model-proposes-the-kernel-disposes). Every rule and why it exists: [docs/guards.md](docs/guards.md).
+
+---
+
+## Configuration
+
+Three presets cover most people. `/vbw:profile` switches them; `/vbw:config` changes one setting at a time.
+
+| Preset | Models | Autonomy | Good for |
+| :--- | :--- | :--- | :--- |
+| **Careful** | `quality`: Opus for Architect, Lead, Dev and Debugger | `guided`: explains each step and waits for "go" | Learning, a first project, risky changes |
+| **Standard** | `balanced`: Opus for the Architect and the Lead, Sonnet for the rest | `balanced`: keeps going, stops for decisions, approval, checking and shipping | Most work (the default) |
+| **Fast** | `budget`: Haiku for Scout, Sonnet for the rest | `hands-off`: takes its own recommendations and lists them for you | Small changes, once you trust it |
+
+Approval, checking and shipping always stop for you, whatever the preset. Autonomy controls friction, not safety.
+
+| Setting | Values | What it does |
+| :--- | :--- | :--- |
+| `profile` | `quality` / `balanced` / `budget` | Which models the agents run on |
+| `model.<role>` | `opus` / `sonnet` / `haiku` / a model id / `default` | Override one agent. QA never runs on Haiku: whatever judges your work doesn't get the cheap seat |
+| `autonomy` | `guided` / `balanced` / `hands-off` | How much `/vbw:vibe` does on its own. You can also say it to `/vbw:vibe` in words ("use guided autonomy", "ask me before each step", "do not ask, just go") and it is recorded before the first step |
+| `autonomy_cap` | a number | Steps one autonomous run takes before stopping. `/vbw:loop` steps are not counted: its ceiling is its cap |
+| `rigor` | `auto` / `express` / `standard` / `deep` | How thorough each phase is: sized to the work (`auto`, the default) or forced |
+| `check_jobs` | `1` to `64` | How many checks run at once in this project. Default: about three quarters of the processor cores, at least 1. The computer-wide limit caps it. Kept in this clone |
+| `command_timeout` | `1` to `86400` seconds | How long the project's own commands may run in a proof. Default: 3600 |
+| `check_budget` | `1` to `86400` seconds | A test unit slower than this is named over budget in the proof's summary. Reported, never enforced. Default: 120 |
+| `motion` | `full` / `calm` / `off` / `default` | Panel animation; `default` follows your interview level |
+| status line | `vbw statusline on` / `off` | The status line |
+
+Your own session keeps the model you chose with `/model`; it must be Sonnet, Opus or Fable for auto mode.
+
+---
+
+## Project Structure
+
+In your project:
+
+```text
+your-project/.vbw/
+  spec.md        What you want, in plain words. You own this file
+  record.json    The plan of record: phases, plans, checks, results. Only the kernel writes it
+  map.md         The map of your codebase, when there is existing code
+  runtime/       Scratch space, kept failing output and proof copies. Ignored by git
+```
+
+Your consent to the contract and its commands, the read lists that proofs reuse, and your private interview answers live in your clone's `.git/vbw/`, never in the repository.
+
+`spec.md` is free prose, except for four sections the kernel reads:
+
+```markdown
+## Requirements
+
+- R1 [auto] A visitor can sign up with an email address
+- R2 [human] The landing page feels trustworthy
+
+## Commands
+
+- test: bats tests
+
+## Test files
+
+- run: bats {file}
+- files: tests/*.bats
+
+## Test results
+
+- results/
+```
+
+- `## Requirements`: one requirement per bullet, `[auto]` when a check can prove it, `[human]` when only a person can judge it. `vbw spec add auto|human TEXT` appends one.
+- `## Commands`: the project's own test, lint and build commands. Every proof runs them once you approve them.
+- `## Test files`: how to run one test file, so a change re-runs only the files it reaches. The Lead proposes it, you approve it with the contract; without it the test command runs whole.
+- `## Test results`: folders where your project commits saved test output.
+
+After editing the spec, `vbw spec sync` brings the record in line; the change needs approval like any other change to the contract. Details: [docs/proof.md](docs/proof.md).
+
+In this repository:
+
+```text
+plugin/
+  bin/vbw        The kernel: decides the next step, runs the checks, keeps the record
+  lib/           Kernel libraries (bash, jq, git)
+  workflows/     Planning, building, fixing, verifying, mapping, researching, investigating, recommending, tool search
+  agents/        Architect, Lead, Dev, QA, Scout, Debugger, Docs
+  skills/        /vbw:vibe and every other command
+  hooks/         The guards and the panel
+  scripts/       The status line
+```
+
+---
+
+## Requirements
+
+| You need | Why |
+| :--- | :--- |
+| **Claude Code** 2.1.286+ (2.1.287+ for Mission Control and the instant commands, 2.1.290+ for Comms) | Dynamic workflows and the hooks VBW runs on |
+| A **Sonnet, Opus or Fable** session | Auto mode; workflow agents may also use Haiku |
+| **`bash`** (3.2 or newer), **`jq`** and **`git`** | The kernel. `brew install jq` (macOS) or `apt install jq` (Linux) |
+| A git repository, new or existing | Everything VBW does is committed |
+| The willingness to let an AI build your software and a program check its homework | This is the real barrier to entry |
+
+`/vbw:doctor` checks all of it.
+
+---
+
+## Cost
+
+VBW records what each run and each milestone cost ([docs/costs.md](docs/costs.md)).
+
+**Why VBW pays off over time.** A quick prompt is cheap per answer, but its mistakes show up later, in review, in production or as rework you pay for again. VBW puts the effort up front: a plan you approve, checks written before the code, a proof before anything ships, and a review where checks cannot judge. On a tiny one-off task that up-front work costs more than a quick prompt; on a real project it saves the tokens, time and trust that redoing broken work costs.
+
+**What we have measured so far.** [docs/benchmark.md](docs/benchmark.md) compares VBW 2 with plain Claude Code on seven small practice cases (October 2026, an earlier 2.0 release). Both solved almost every case. On tasks this small VBW 2 used several times more tokens per run, as expected: its planning and proof are a fixed cost that a tiny task cannot spread. These cases are too small to show the long-term saving VBW is built for; a benchmark on realistic projects is on the [roadmap](docs/known-issues.md), and you are welcome to help run it.
+
+<details>
+<summary>Legacy measurements: VBW 1.x against stock Opus 4.6 Agent Teams</summary>
+
+These describe VBW 1.x, not VBW 2. VBW 1 ran every capability as a shell script at zero model token cost (85 scripts, 845 bats tests).
+
+**Analysis reports:** [v1.30.0](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/blob/v1.37.1/docs/vbw-1-30-0-full-spec-token-analysis.md) | [v1.21.30](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/blob/v1.37.1/docs/vbw-1-21-30-full-spec-token-analysis.md) | [v1.20.0](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/blob/v1.37.1/docs/vbw-1-20-0-full-spec-token-analysis.md) | [v1.10.7](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/blob/v1.37.1/docs/vbw-1-10-7-context-compiler-token-analysis.md) | [v1.10.2](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/blob/v1.37.1/docs/vbw-1-10-2-vs-stock-agent-teams-token-analysis.md) | [v1.0.99](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/blob/v1.37.1/docs/vbw-1-0-99-vs-stock-teams-token-analysis.md)
+
+| Category | Stock Agent Teams | VBW 1.x | Saving |
 | :--- | ---: | ---: | ---: |
 | Base context overhead | 10,800 tokens | 1,500 tokens | **86%** |
 | State computation per command | 1,300 tokens | 200 tokens | **85%** |
@@ -33,9 +456,7 @@ Every new capability is shell-only — 85 scripts run as bash subprocesses at ze
 | Agent model cost per phase | $2.78 | $1.40 | **50%** |
 | **Total coordination overhead** | **87,100 tokens** | **12,100 tokens** | **86%** |
 
-**What this means for your bill:** Each phase eliminates ~86% of coordination tokens. For API users, per-phase cost drops from $2.78 to $1.40 (Balanced) or $0.70 (Budget). For subscription plans, ~3x more phases per rate limit cycle — **200% more development capacity for the same price**.
-
-| Scenario | Without VBW | With VBW (Balanced) | Impact |
+| Scenario | Without VBW | With VBW 1.x (Balanced) | Impact |
 | :--- | ---: | ---: | ---: |
 | API: single project (10 phases) | ~$28 | ~$14 | **~$14 saved** |
 | API: active dev (20 phases/mo) | ~$56/mo | ~$28/mo | **~$28/mo saved (~$336/yr)** |
@@ -43,1106 +464,48 @@ Every new capability is shell-only — 85 scripts run as bash subprocesses at ze
 | API: team (100 phases/mo) | ~$278/mo | ~$139/mo | **~$139/mo saved (~$1,668/yr)** |
 | Pro / Max subscription | baseline capacity | ~3x phases per cycle | **200% more work done** |
 
-*Budget profile ($0.70/phase) doubles API savings. Quality profile ($2.80/phase) matches stock cost but adds V2/V3 enforcement at zero premium. Based on [current API pricing](https://claude.com/pricing).*
+*Based on [API pricing](https://claude.com/pricing) at the time of each report.*
 
-## Manifesto
-
-VBW is open source because the best tools are built by the people who use them.
-
-This project exists to make AI coding better for everyone, and "everyone" means exactly that.
-
-**For absolute beginners:** VBW may look intimidating, especially if you've never used Claude Code, but it is, in fact, incredibly easy to use. And your results will be significantly better than using an IDE with a chatbot.
-
-**For seasoned developers:** Everything is configurable — effort profiles, autonomy levels, model routing, verification depth, work presets — all exposed as a control surface, not hidden behind prompts. The beginners get guardrails; you get the switches behind the guardrails.
-
-**For contributors:** VBW is a living project. The plugin system, the agents, the verification pipeline - all of it is open to improvement. If you've found a better way to plan, build, or verify code with Claude, bring it. File an issue, open a PR, or just show up and share what you've learned. Every contribution makes the next person's experience better.
-
-**[Join the Discord](https://discord.gg/zh6pV53SaP)** -- whether you want to help build VBW or just want VBW to help you build.
-
-## What Is This
-
-> **Platform:** macOS and Linux only. Windows is not supported natively — all hooks, scripts, and context blocks require bash. If you're on Windows, run Claude Code inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
-
-Inspired by **[Ralph](https://github.com/frankbria/ralph-claude-code)** and **[Get Shit Done](https://github.com/glittercowboy/get-shit-done)**, however, an entirely new architecture.
-
-VBW is a Claude Code plugin that bolts an actual development lifecycle onto your vibe coding sessions.
-
-You describe what you want. VBW breaks it into phases. Agents plan, write, and verify the code. Commits are atomic. Verification is goal-backward. State persists across sessions. It's the entire software development lifecycle, except you replaced the engineering team with a plugin and a prayer.
-
-Think of it as project management for the post-dignity era of software development.
-
-## Table of Contents
-
-- [VBW Token Efficiency vs Stock Opus 4.6 Agent Teams](#vbw-token-efficiency-vs-stock-opus-46-agent-teams)
-- [Manifesto](#manifesto)
-- [Features](#features)
-- [Installation](#installation)
-- [How It Works](#how-it-works)
-- [Execution Model](#execution-model)
-- [Quick Tutorial](#quick-tutorial)
-- [Commands](#commands)
-- [The Agents](#the-agents)
-- [Configuration](#configuration)
-- [Project Structure](#project-structure)
-- [Requirements](#requirements)
-- [Contributing](#contributing)
-- [Contributors](#contributors)
-- [License](#license)
+</details>
 
 ---
 
-## Features
+## Documentation
 
-### Built for Opus 4.6+, not bolted onto it
-
-Most Claude Code plugins were built for the subagent era, one main session spawning helper agents that report back and die. Much like the codebases they produce. VBW is designed from the ground up for the platform features that changed the game:
-
-- **Agent Teams for real parallelism.** `/vbw:vibe` uses dependency-aware routing: true Dev teams are created when plans have real parallel delegate work, while linear dependency chains use serialized Dev subagents to avoid fake coordination overhead. `/vbw:map` runs 4 Scout teammates in parallel to analyze your codebase. When teams are used, this isn't "spawn a subagent and wait" -- it's coordinated teamwork with a shared task list and direct inter-agent communication. Agent health monitoring tracks lifecycle events, detects orphaned teammates, and recovers stuck agents via circuit breakers.
-
-- **Native hooks for continuous verification.** 30 hooks across 11 event types run automatically -- validating SUMMARY.md structure, checking commit format, validating frontmatter descriptions, gating task completion, blocking sensitive file access, enforcing plan file boundaries, managing session lifecycle, tracking agent health and cost attribution, tracking session metrics, pre-flight prompt validation, and post-compaction context verification. No more spawning a QA agent after every task. The platform enforces it, not the prompt.
-
-- **Platform-enforced tool permissions.** Each agent has `tools`/`disallowedTools` in YAML frontmatter. Dev uses a `disallowedTools` denylist that explicitly bans recursive subagent, team, and user-question tools (`Task`, `TaskCreate`, `Agent`, `TeamCreate`, `TeamDelete`, `AskUserQuestion`) while leaving every other built-in and MCP tool available; Scout can write research files to `.vbw-planning/` and run read-only Bash for live validation, but cannot edit existing code or spawn subagents/teams (Edit, NotebookEdit, Task, TaskCreate, Agent, TeamCreate, TeamDelete are platform-denied); QA is read-only via `permissionMode: plan` and can only persist VERIFICATION.md through the deterministic `write-verification.sh` script via Bash. Sensitive file access (`.env`, credentials) is intercepted by the `security-filter` hook. Claude Code enforces these frontmatter permissions directly, not through instructions an agent might ignore during compaction.
-
-- **Database safety guard.** A PreToolUse hook (`bash-guard.sh`) intercepts every Bash command before it reaches the shell and blocks known destructive patterns -- `migrate:fresh`, `db:drop`, `TRUNCATE TABLE`, `FLUSHALL`, and 40+ patterns across Laravel, Rails, Django, Prisma, Knex, Sequelize, TypeORM, Drizzle, Diesel, SQLx, Ecto, raw SQL clients, Redis, MongoDB, and Docker volumes. All Bash-capable agents (Dev, QA, Lead, Debugger, Docs, and Scout) are filtered. Scout also gets read-only command-shape blocks for obvious shell writes, shell evaluation containers (`eval`, static shell `-c` forms including quoted/absolute interpreters and simple control/grouping wrappers, command/process substitution), git/API mutations, and sensitive-file reads when its role is detectable; if per-call identity is missing but VBW knows Scout is active, ambiguous calls use the same Scout-safe fallback. Impossible lifecycle role totals are degraded by discarding unreliable role markers instead of preserving stale Scout claims. `VBW_ALLOW_DESTRUCTIVE=1` and `bash_guard=false` override only the generic destructive-command classifier, not Scout-specific read-only blocks. Extend with `.vbw-planning/destructive-commands.local.txt` for project-specific patterns. See **[Database Safety Guard](docs/database-safety-guard.md)** for the full design, flowchart, and pattern list.
-
-- **Structured handoff schemas.** Agents communicate via JSON-structured SendMessage with typed schemas (`scout_findings`, `dev_progress`, `dev_blocker`, `qa_result`, `debugger_report`). No more hoping the receiving agent can parse free-form markdown. Schema definitions live in a single reference document with backward-compatible fallback to plain text.
-
-### Solves Agent Teams limitations out of the box
-
-Agent Teams are [experimental with known limitations](https://code.claude.com/docs/en/agent-teams#limitations). VBW handles them so you don't have to:
-
-- **Session resumption.** Agent Teams teammates don't survive `/resume`. VBW's `/vbw:resume` reads ground truth directly from `.vbw-planning/` -- STATE.md, ROADMAP.md, PLAN.md and SUMMARY.md files -- without requiring a prior `/vbw:pause`. It detects interrupted builds via `.execution-state.json`, reconciles stale execution state by detecting tasks completed between sessions via SUMMARY.md files, and suggests the right next action.
-
-- **Task status lag.** Teammates sometimes forget to mark tasks complete. VBW's `TaskCompleted` hook treats commit matching as an advisory signal for execute-protocol tasks instead of a universal blocking gate, so manual or non-code tasks do not get stranded at `in_progress` when no commit exists or the wording diverges. The `TeammateIdle` hook runs a tiered SUMMARY.md gate — all summaries present passes immediately, conventional commit format only grants a 1-plan grace period, and 2+ missing summaries block regardless.
-
-- **Shutdown coordination.** VBW defines `shutdown_request`/`shutdown_response` schemas in the typed communication protocol. After a true team run completes, the orchestrator sends `shutdown_request` to every teammate, waits for acknowledgment, then calls `TeamDelete`. Serialized subagent, turbo, and internal direct runs skip team shutdown because no team was created. All 6 team-participating agents (Dev, QA, Scout, Lead, Debugger, Docs) have explicit shutdown handlers with mechanical SendMessage tool-call instructions. Architect is planning-only and excluded from the shutdown protocol. If shutdown stalls or agents linger, `/vbw:doctor --cleanup` detects and cleans stale teams, orphan processes, and dangling PIDs.
-
-- **File conflicts.** Plans decompose work into tasks with explicit file ownership. Dev teammates operate on disjoint file sets by design, enforced at runtime by the `file-guard.sh` hook that blocks writes to files not declared in the active plan.
-
-- **Worktree isolation.** Each Dev plan can get its own git worktree — physical filesystem isolation, not just file-list enforcement — whether execution is true-team parallel or serialized by dependencies. Six scripts handle the full lifecycle: create, merge, cleanup, status, targeting, and agent mapping. Off by default; set `worktree_isolation` to `"on"` in config to enable. VBW uses its own `.vbw-worktrees` git worktrees through task prompt/state metadata and blocks teammate spawns that try to force Claude-side `isolation:"worktree"`, unmanaged `.claude/worktrees/agent-*` sidechain CWDs, or `.vbw-worktrees/...` spawn CWD aliases. See [Execution Model](#execution-model) for how this interacts with dependency routing and lease locks.
-
-Agent Teams ship with seven known limitations. VBW addresses all of them. The eighth... that you're using AI to write software doesn't need a fix. It needs an intervention.
-
-### Skills.sh integration
-
-VBW integrates with [Skills.sh](https://skills.sh), the open-source skill registry for AI agents with 20+ supported platforms and thousands of community-contributed skills:
-
-- **Automatic stack detection.** `/vbw:init` scans your project during setup, identifies your tech stack (Next.js, Django, Prisma, Tailwind, etc.), and recommends relevant skills from a curated mapping.
-
-- **On-demand skill discovery.** Run `/vbw:skills` anytime to detect your stack, browse curated suggestions, search the Skills.sh registry, and install skills in one step. Use `--search <query>` for direct registry lookups.
-
-- **Additive runtime activation.** VBW preselects skills and shows them in the visible `Skills:` line, but spawned agents can still add missing adjacent skills surfaced by the prompt or context before they start work. When activated skills reference additional material (follow-up docs, sibling references), spawned prompts can carry resolved follow-up file paths so agents read those exact files before acting instead of rediscovering whole skill folders.
-
-### Real-time statusline that knows more about your project than you do
-
-![VBW statusline example](assets/statusline.png)
-
-Five or six lines of pure situational awareness, rendered after every response. Phase progress, plan completion, effort profile, QA status... everything a senior engineer would track on a whiteboard, except the whiteboard has been replaced by a terminal and the senior engineer has been replaced by you.
-
-Four config switches let you trim what the statusline shows — hide the Limits line entirely, suppress it only for API-key sessions, hide agent progress in tmux, or collapse the full statusline to a single line in tmux worktree panes. See [Display](#display) for details.
-
----
-
-## Installation
-
-Open Claude Code and run these two commands inside the Claude Code session, **one at a time**:
-
-**Step 1:** Add the marketplace
-```text
-/plugin marketplace add yidakee/vibe-better-with-claude-code-vbw
-```
-
-**Step 2:** Install the plugin
-```text
-/plugin install vbw@vbw-marketplace
-```
-
-That's it. Two commands, two separate inputs. Do not paste them together — Claude Code will treat both lines as a single command and the URL will break.
-
-To update later, inside Claude Code:
-
-```text
-/vbw:update
-```
-
-### Running VBW
-
-**Option A: Supervised mode** (recommended for the cautious)
-
-```bash
-claude
-```
-
-Claude Code will ask permission before file writes, bash commands, etc. You approve once per tool, per project -- it remembers after that. VBW has its own security layer (agent tool permissions, file access hooks), so the permission prompts are a second safety net. First session has some clicking. After that, smooth sailing.
-
-**Option B: Full auto mode** (recommended for the brave)
-
-```bash
-claude --dangerously-skip-permissions
-```
-
-No permission prompts. No interruptions. Agents run uninterrupted until the work is done or your API budget isn't. VBW's built-in security controls (Scout writes only to `.vbw-planning/`, can run only read-only validation Bash, and cannot edit code; QA can only persist via a deterministic writer script, `security-filter.sh` blocks `.env` and credentials, QA gates on every task) still apply. The platform just stops asking "are you sure?" every time an agent wants to create a file.
-
-This is how most vibe coders run it. The agents work longer, the flow stays unbroken, and you get to pretend you're supervising while scrolling Twitter.
-
-> **Disclaimer:** The `--dangerously-skip-permissions` flag is called that for a reason. It is not called `--everything-will-be-fine` or `--trust-the-AI-it-knows-what-its-doing`. By using it, you are giving an AI unsupervised write access to your filesystem. VBW does its best to keep agents on a leash, but at the end of the day you are trusting software written by an AI, managed by an AI, and verified by a different AI. If this arrangement doesn't concern you, you are exactly the target audience for this plugin.
-
----
-
-## How It Works
-
-VBW operates on a simple loop that will feel familiar to anyone who's ever shipped software. Or read about it on Reddit.
-
-```text
-                        ┌─────────────────────────────┐
-                        │  YOU HAVE AN IDEA           │
-                        │  (dangerous, but continue)  │
-                        └──────────────┬──────────────┘
-                                       │
-                        ┌──────────────┴──────────────┐
-                        │ Greenfield?   │  Brownfield? │
-                        └──────┬───────┴──────┬───────┘
-                               │              │
-                  ┌────────────┘              └────────────┐
-                  │                                        │
-                  ▼                                        ▼
-     ┌───────────────────────┐               ┌───────────────────────┐
-     │  /vbw:init            │               │  /vbw:init            │
-     │  Environment setup    │               │  Environment setup    │
-     │  Scaffold             │               │  Scaffold             │
-     │  Skills               │               │                       │
-     │                       │               │  ⚠ Codebase detected  │
-     │  Auto-chains:         │               │  Auto-chains:         │
-     │    → /vbw:vibe        │               │    → /vbw:map         │
-     └──────────┬────────────┘               │    → Skills (informed │
-                │                            │      by map data)     │
-                │                            │    → /vbw:vibe        │
-                │                            └──────────┬────────────┘
-                │                                       │
-                └───────────────────┬───────────────────┘
-                                    │
-                                    ▼
-                 ┌──────────────────────────────────────┐
-                 │  /vbw:vibe                           │
-                 │  The one command — auto-detects:     │
-                 │                                      │
-                 │  No project?  → Bootstrap setup      │
-                 │  No phases?   → Scope & plan work    │
-                 │  UAT issues?  → Remediate findings   │
-                 │  Unplanned?   → Plan next phase      │
-                 │  Planned?     → Execute next phase   │
-                 │  All done?    → Suggest archive      │
-                 └──────────────────┬───────────────────┘
-                                    │
-                                    │  Or use flags:
-                                    │  /vbw:vibe --discuss
-                                    │  /vbw:vibe --plan --execute
-                                    │
-                                    ▼
-                     ┌──────────────────────────────┐
-                     │  /vbw:vibe (auto-detects)    │
-                     │  Three-tier verification     │
-                     │  Goal-backward methodology   │
-                     │  Outputs: VERIFICATION.md    │
-                     └──────────────┬───────────────┘
-                                    │
-                           ┌────────┴────────┐
-                           │  More phases?   │
-                           └────────┬────────┘
-                          yes │          │ no
-                              │          │
-                     ┌────────┘          └────────┐
-                     │                            │
-                     ▼                            ▼
-          ┌──────────────────┐        ┌──────────────────┐
-          │ Loop back to     │        │ /vbw:vibe        │
-          │ /vbw:vibe        │        │ --archive        │
-          │ for next phase   │        │ Audits, archives │
-          └──────────────────┘        │ Tags the release │
-                                      │ Work archived    │
-                                      └──────────────────┘
-```
-
----
-
-## Execution Model
-
-Understanding how VBW executes work — phases, plans, tasks, agents, and the concurrency controls that keep them from stepping on each other.
-
-### Phases, Plans, and Tasks
-
-VBW breaks your project into a hierarchy:
-
-```text
-Milestone (your project goal)
- └── Phase 1 (a logical chunk of work, e.g. "Authentication")
-     ├── Plan 01 (a group of related tasks, e.g. "User model & migration")
-     │   ├── Task 1: Create user model
-     │   ├── Task 2: Add validation
-     │   ├── Task 3: Write tests
-     │   └── Task 4: Update API routes
-     ├── Plan 02 (another group, e.g. "Login flow")
-     │   ├── Task 1: Build login endpoint
-     │   ├── Task 2: Add JWT handling
-     │   └── Task 3: Write integration tests
-     └── Plan 03 (e.g. "Password reset")
-         ├── Task 1: Reset token generation
-         └── Task 2: Email template
- └── Phase 2 ...
- └── Phase 3 ...
-```
-
-- **Phases** execute one at a time, sequentially. Phase 2 doesn't start until Phase 1 is done.
-- **Plans** within a phase can potentially run in parallel (see below).
-- **Tasks** within a plan always execute sequentially — one task, one commit, in order.
-
-### How Agents Execute Work
-
-When you run `/vbw:vibe` and it enters Execute mode, the **Lead** agent orchestrates everything. It never writes code itself — it routes runnable plans to **Dev** agents. Dependency-aware routing chooses true Agent Teams only for real parallel delegate work; otherwise it uses serialized Dev subagents.
-
-```text
- Lead (orchestrator)
-  ├── spawns Dev-01 → assigned Plan 01 (tasks 1-4, sequential)
-  ├── spawns Dev-02 → assigned Plan 02 (tasks 1-3, sequential)
-  └── spawns Dev-03 → assigned Plan 03 (tasks 1-2, sequential)
-```
-
-Each Dev agent reads its assigned PLAN.md and works through the tasks in order: implement → verify → commit → next task. One atomic commit per task. When all tasks are done, the Dev writes a SUMMARY.md and reports completion.
-
-**Whether plans actually run in parallel depends on their dependencies.** Each plan can declare `depends_on` in its YAML frontmatter — if Plan 02 depends on Plan 01, Dev-02 waits until Dev-01 finishes. Plans with no dependencies start immediately. In practice, the Architect often chains plans sequentially (Plan 01 → 02 → 03), which means they execute one at a time even though the mechanism supports parallelism.
-
-After all Devs finish, the Lead runs QA (if not skipped). It shuts down a team only if the run actually used true team mode; serialized subagent, turbo, and internal direct runs clear delegation state without SendMessage/TeamDelete.
-
-### Concurrency and File Conflicts
-
-File conflicts can only happen when two Dev agents work simultaneously on overlapping files — which requires two or more plans in the same phase with no `depends_on` between them that happen to modify the same files. If your plans are chained via `depends_on` (the common case), there's no concurrency and no conflict risk.
-
-VBW provides three mechanisms to handle this: team creation (`prefer_teams`), filesystem isolation (`worktree_isolation`), and file-level locking (`lease_locks`). See [Concurrency controls](#concurrency-controls) in Configuration for full details on each mechanism and when to use them.
-
----
-
-## Quick Tutorial
-
-You only need to remember two commands. Seriously. VBW auto-detects where your project is and does the right thing. No decision trees, no memorizing workflows. Just init, then vibe until it's done.
-
-### Starting a brand new project
-
-```text
-/vbw:init
-```
-
-Run this once. VBW sets up your environment — Agent Teams, statusline, git hooks — and scaffolds a `.vbw-planning/` directory. It detects your tech stack and suggests relevant Claude Code skills. You answer a few questions, and you're ready to build.
-
-```text
-/vbw:vibe
-```
-
-This is the one command. Run it, and VBW figures out what to do next:
-
-- **No project defined?** It asks about your project, gathers requirements, and creates a phased roadmap.
-- **Phases ready but not planned?** The Lead agent researches, decomposes, and produces plans.
-- **Plans ready but not built?** Dev agents execute with atomic commits and continuous verification. True teams are used for real parallel plan fan-out; linear dependency chains run as serialized subagents.
-- **Everything built?** It tells you and suggests wrapping up.
-
-You don't need to know which state your project is in. VBW knows. Just keep running `/vbw:vibe` and it handles the rest — planning, building, verifying — one phase at a time. Or if you're feeling brave, set your autonomy to `pure-vibe` and it'll loop through every remaining phase without stopping.
-
-```text
-/vbw:vibe
-```
-
-Yes, the same command again. When Phase 1 finishes, run it again for Phase 2. And again for Phase 3. Each invocation picks up where the last one left off. State persists in `.vbw-planning/` across sessions, so you can close your terminal, come back tomorrow, and `/vbw:vibe` still knows exactly where you are.
-
-```text
-/vbw:vibe --archive
-```
-
-When all phases are built, archive the work. VBW runs a completion audit, archives state to `.vbw-planning/milestones/`, tags the git release, and updates project docs. In hook-enabled/archive-flow execution, active/non-terminal UAT and unresolved UAT issues are script-blocked (active phase or milestone) and are not bypassed by `--skip-audit`/`--force`. If `hooks.post_archive` is configured, VBW runs it after successful archive completion; missing or failing user hooks warn but do not block shipping. You shipped. With actual verification. Your future self won't want to set the codebase on fire. Probably.
-
-That's it. `init` → `vibe` (repeat) → `vibe --archive`. Two commands for an entire development lifecycle.
-
-### Picking up an existing codebase
-
-Same flow, one difference:
-
-```text
-/vbw:init
-```
-
-VBW detects the existing codebase and auto-chains everything: `/vbw:map` launches 4 Scout teammates to analyze your code across tech stack, architecture, quality, and concerns. Skill suggestions are based on what's actually in your codebase, not just which manifest files exist. Then `/vbw:vibe` runs automatically with full codebase awareness. One command, four workflows, zero manual sequencing.
-
-From there, it's the same loop: `/vbw:vibe` until done, `/vbw:vibe --archive`.
-
-### Coming back to a project
-
-```text
-/vbw:resume
-```
-
-Closed your terminal? Switched branches? Came back after a weekend of pretending you have hobbies? `/vbw:resume` reads ground truth directly from `.vbw-planning/` -- STATE.md, ROADMAP.md, plans, summaries -- and rebuilds your full project context. No prior `/vbw:pause` needed. It detects interrupted builds, reconciles stale execution state, and tells you exactly what to do next. One command, full situational awareness, zero guessing.
-
-> **⚠️ Do not use `/clear`.**
->
-> Opus 4.6 auto-compacts your context window when it fills up. It intelligently summarizes older conversation turns while preserving critical state — active plan tasks, file paths, commit history, deviation decisions, error context — so the session continues seamlessly with full project awareness. VBW enhances this further with `PreCompact` hooks and post-compaction verification that inject agent-specific preservation priorities and verify nothing critical was lost.
->
-> `/clear` bypasses all of this. It destroys your entire context — every file read, every decision made, every task in progress — and drops you into a blank session with no memory of what just happened. Auto-compaction is surgical; `/clear` is a sledgehammer.
->
-> **If you accidentally `/clear`**, run `/vbw:resume` immediately. It restores project context from ground truth files in `.vbw-planning/` — state, roadmap, plans, summaries — and tells you exactly where to pick up.
->
-> **For advanced users:** The [full command reference](#commands) below has granular controls — `/vbw:vibe` with flags for explicit mode selection (`--plan`, `--execute`, `--discuss`, `--assumptions`), `/vbw:discuss` for standalone phase discussions, `/vbw:debug` for systematic bug investigation, and more. But you never *need* the flags. `/vbw:vibe` with no arguments handles the entire lifecycle on its own.
-
----
-
-## Commands
-
-### Lifecycle -- The Main Loop
-
-These are the commands you'll use every day. This is the job now.
-
-| Command | Description |
+| Read | To understand |
 | :--- | :--- |
-| `/vbw:init` | Set up environment and scaffold `.vbw-planning/` directory with templates and config. Configures Agent Teams and statusline. Automatically installs git hooks (pre-push version enforcement). For existing codebases, maps the codebase first, then uses the map data to inform stack detection and skill suggestions before auto-chaining to `/vbw:vibe`. |
-| `/vbw:vibe [intent or flags]` | The one command. Auto-detects project state, parses natural language intent, or accepts explicit flags. 13 modes: bootstrap, scope, discuss, assumptions, **UAT remediation**, **milestone UAT recovery**, plan, execute, add/insert/remove phase, archive. Discussion mode uses the unified discussion engine (auto-calibrates Builder/Architect, generates phase-specific gray areas). If a phase has unresolved UAT issues (`status: issues_found`), plain `/vbw:vibe` automatically loads `{phase}-UAT.md` and continues remediation without requiring `--discuss` or `--plan`—major/critical issues auto-chain **discuss → plan → execute**; minor-only issues use quick-fix remediation. Active/non-terminal UAT (`status: in_progress`, `pending`, or another non-terminal value) keeps the phase in Verify/resume mode instead of allowing archive or preparing a new re-verification round. Milestone recovery scans archived milestones deterministically (including legacy milestones missing `SHIPPED.md`) and surfaces unresolved UAT for recovery. Archive mode includes a 7-point audit plus a script-level UAT guard in the archive flow/hook path — active/non-terminal UAT and unresolved UAT issues block archiving and are not bypassed by `--skip-audit`/`--force`. Flags: `--plan`, `--execute`, `--discuss`, `--assumptions`, `--scope`, `--add`, `--insert`, `--remove`, `--archive`, `--yolo`, `--effort`, `--skip-qa`, `--skip-audit`. Phase numbers optional -- auto-detected when omitted. |
-
-### Monitoring -- Trust But Verify
-
-| Command | Description |
-| :--- | :--- |
-| `/vbw:status` | Progress dashboard showing all phases, completion bars, velocity metrics, and suggested next action. Add `--metrics` for token consumption breakdown per agent. |
-| `/vbw:qa [phase]` | Run read-only QA verification for the active or specified phase and persist findings to VERIFICATION.md through the deterministic verification writer. |
-| `/vbw:verify [phase]` | Run human UAT verification for the active or specified phase, including remediation-round resume, self-contained checkpoint prompts, and accepted-deviation tracking. |
-
-### Supporting -- The Safety Net
-
-| Command | Description |
-| :--- | :--- |
-| `/vbw:discuss [phase]` | Standalone discussion engine for exploring phase decisions before planning. Auto-calibrates between Builder and Architect modes based on conversation signals. Generates phase-specific gray areas, explores selected ones conversationally, and captures decisions to `{phase}-CONTEXT.md`. Same engine as `/vbw:vibe --discuss`. |
-| `/vbw:fix` | Quick task in Turbo mode. One commit, no ceremony. For when the fix is obvious and you don't need seven agents to add a missing comma. |
-| `/vbw:debug` | Systematic bug investigation via the Debugger agent. Persists findings to a debug session file so investigations survive across sessions — resume with `--resume` or target a specific session with `--session <id>`. From an unfiltered `/vbw:list-todos` view, `/vbw:debug N` deterministically claims the selected todo, removes it from the pending list, and avoids duplicate sessions when a completed debug session already records the same source todo. At thorough effort with ambiguous bugs, can spawn 3 parallel debugger teammates for report-only competing-hypothesis investigation, wait for all reports, tear that cohort down, and only then (if needed) spawn one fresh debugger as the sole implementation owner. `--competing` and `--parallel` force the bug to be treated as ambiguous for routing; under `prefer_teams=auto`, team mode still also requires thorough effort. `--serial` forces non-ambiguous routing under `auto`. `prefer_teams=always` or `prefer_teams=never` still wins over the flags. Investigations that create a new fix commit auto-chain QA and UAT verification inline; investigations that confirm the fix was already present can complete immediately without re-running QA/UAT. The final `Mode:` line reports agent topology, not how many hypotheses appeared in the diagnosis. |
-| `/vbw:todo` | Add an item to a persistent backlog that survives across sessions. For all those "we should really..." thoughts that usually die in a terminal tab. |
-| `/vbw:list-todos` | Browse pending todos, filter by priority, and pick one to act on. Computes ages, formats a numbered list, persists the last displayed view for deterministic follow-up actions, offers `/vbw:fix`, `/vbw:debug`, `/vbw:research`, and `/vbw:vibe` routing only from unfiltered views, and keeps `remove N` / `delete N` working against the exact displayed snapshot. |
-| `/vbw:pause` | Save session notes for next time. State auto-persists in `.vbw-planning/` -- pause just lets you leave a sticky note for future you. |
-| `/vbw:resume` | Restore project context from `.vbw-planning/` ground truth. Reads state, roadmap, plans, and summaries directly -- no prior `/vbw:pause` needed. |
-| `/vbw:skills` | Browse and install community skills from skills.sh based on your project's tech stack. Detects your stack, suggests relevant skills, and installs them with one command. |
-| `/vbw:rtk [status\|install\|init\|verify\|update\|uninstall]` | Optional RTK tool-output compression management. `install` performs complete setup: binary install, config bootstrap, Claude Code hook activation, and verification/fallback. |
-| `/vbw:config` | View and toggle VBW settings: effort profiles, autonomy levels (cautious/standard/confident/pure-vibe), plain-language summaries (`plain_summary`), skill suggestions, auto-install behavior, and skill-hook wiring. Detects profile drift and offers to save as new profile. |
-| `/vbw:compress` | Compress a natural language file (`.md`, `.txt`) into caveman format. Creates an `.original` backup preserving the original extension. Uses caveman language rules for token-efficient compression. |
-| `/vbw:profile` | Switch between work profiles or create custom ones. 4 built-in presets (default, prototype, production, yolo) change effort, autonomy, and verification in one command. Interactive profile creation for custom workflows. |
-| `/vbw:report` | Collect diagnostic context and file a GitHub issue. Captures VBW version, environment, hook errors, session logs, config, and project state. |
-| `/vbw:teach` | View, add, or manage project conventions. Auto-detected from codebase during init, manually teachable anytime. Shows what VBW already knows and warns about conflicts before adding. Conventions are injected into agent context via CLAUDE.md and verified by QA. |
-| `/vbw:doctor` | Run VBW installation and project health checks: jq, version sync, plugin cache, hook validity, agent files, config, script permissions, gh CLI, runtime cleanup state, CLAUDE.md staleness, state consistency, and optional RTK integration. Diagnoses issues before they become mysteries. |
-| `/vbw:help` | Command reference with usage examples. You are reading its output's spiritual ancestor right now. |
-
-**Debug routing note:** `Mode: Standard (single debugger)` means VBW used one Debugger agent, not that the report contained only one hypothesis. A single Debugger can still test and summarize multiple plausible causes in one report. The 3-agent path is **Competing Hypotheses** team mode: three report-only debuggers investigate in parallel, VBW synthesizes the results, and only then may hand implementation to one fresh debugger. With `prefer_teams=auto`, `/vbw:debug` uses that team path only when the bug is **both** `thorough` effort and ambiguous; a clear exact-repro issue stays Standard unless those routing conditions are met. Example: `/vbw:debug 12` on a clear lint repro may still end with `Mode: Standard (single debugger)` while listing multiple hypotheses. `/vbw:debug 12 --competing` or `/vbw:debug 12 --parallel` forces the bug to count as ambiguous, which means a `thorough`-effort debug run can take the 3-investigator path under `auto`; `/vbw:debug 12 --serial` forces non-ambiguous routing under `auto`. To guarantee team mode regardless of ambiguity, set `prefer_teams=always`; to guarantee non-team mode, set `prefer_teams=never`.
-
-### Optional RTK tool-output compression
-
-VBW can optionally manage [RTK](https://github.com/rtk-ai/rtk) setup through `/vbw:rtk install` and keep VBW-managed RTK current through `/vbw:rtk update`. You can also follow RTK's upstream install docs yourself and use `/vbw:rtk status`, `/vbw:rtk init`, or `/vbw:rtk verify` for diagnostics and repair.
-
-`/vbw:rtk install` is complete setup. On macOS, VBW prefers `brew install rtk` when Homebrew is available. Otherwise it uses the checked `rtk-ai/rtk` GitHub release asset path and verifies `checksums.txt` when available. Setup verifies the selected binary with `rtk --version` and `rtk gain`, creates RTK's user `config.toml` when missing (`~/Library/Application Support/rtk/config.toml` on macOS, `~/.config/rtk/config.toml` on Linux), and runs `rtk init -g --auto-patch`. If a GitHub fallback binary is not on `PATH`, VBW still completes setup through that absolute binary path and writes or verifies a usable absolute hook command; the PATH note is only for future manual shell use. If RTK cannot persist the Claude settings hook non-interactively, VBW uses a jq-based settings fallback only when `settings.json` is valid and preserves unrelated settings. RTK/VBW hook coexistence remains WARN/unverified until a runtime smoke test proves `updatedInput` behavior works with both tools active. `/vbw:rtk verify` can run a scoped Claude Code Bash-tool smoke (`ls -la .`, `git status --short`, `git log -n 2 --oneline`) and record a strict local runtime proof when RTK history shows those commands were rewritten, or when the current Claude session transcript proves the RTK hook returned exact post-smoke `updatedInput` rewrites and `ls` produced RTK-style output. VBW's Bash guard must still block a synthetic destructive command before proof is written. Once that proof is valid for the current RTK hook command and version, normal status and doctor warnings quiet for this local setup; explicit diagnostics still mention the upstream anthropics/claude-code#15897 caveat. RTK savings are shown as external RTK metrics, not VBW savings.
-
-### Advanced -- For When You're Feeling Ambitious
-
-| Command | Description |
-| :--- | :--- |
-| `/vbw:map` | Analyze a codebase with 4 parallel Scout teammates (Tech, Architecture, Quality, Concerns). Produces synthesis documents (INDEX.md, PATTERNS.md). Supports monorepo per-package mapping. Security-enforced via hooks: never reads `.env` or credentials. |
-| `/vbw:research` | Standalone research task, decoupled from planning. Accepts `/vbw:research N` from an unfiltered `/vbw:list-todos` snapshot for context-only Scout research without removing the todo. |
-| `/vbw:whats-new` | View changelog entries since your installed version. |
-| `/vbw:update` | Update VBW to the latest version with automatic cache refresh. |
-| `/vbw:uninstall` | Clean removal of VBW -- statusline, settings, and project data. For when you want to go back to prompting manually like it's 2024. |
-
----
-
-## The Agents
-
-VBW uses 7 specialized agents, each with native tool permissions enforced via YAML frontmatter. Three layers of control -- `tools` (what they can use), `disallowedTools` (what's platform-denied), and `permissionMode` (how they interact with the session) -- mean they can't do what they shouldn't, which is more than can be said for most interns.
-
-| Agent | Role | Tools | Denied / Omitted | Mode |
-| :--- | :--- | :--- | :--- | :--- |
-| **Scout** | Research and information gathering. The responsible one. | Inherited (all except denied) + MCP; Bash is read-only live-validation only | Edit, NotebookEdit, Task, TaskCreate, Agent, TeamCreate, TeamDelete | `plan` |
-| **Architect** | Creates roadmaps and phase structure. Writes plans, not code. | Read, Glob, Grep, Write | Edit, WebFetch, Bash | `acceptEdits` |
-| **Lead** | Merges research + planning + self-review. The one who actually makes decisions. | Read, Glob, Grep, Write, Bash, WebFetch | Edit | `acceptEdits` |
-| **Dev** | Writes code, makes commits, builds things. Handle with care. | Inherited (all except denied) + MCP | Task, TaskCreate, Agent, TeamCreate, TeamDelete, AskUserQuestion | `acceptEdits` |
-| **QA** | Goal-backward verification. Trusts nothing. Persists VERIFICATION.md via write-verification.sh; Write/Edit tools disallowed. | Read, Grep, Glob, Bash | Write, Edit, NotebookEdit | `plan` |
-| **Debugger** | Scientific method bug investigation. One issue, one session. | Full access | -- | `acceptEdits` |
-| **Docs** | Documentation specialist. READMEs, changelogs, API docs, guides. | Read, Grep, Glob, Bash, Write, Edit | -- | `acceptEdits` |
-
-**Denied / Omitted** = `disallowedTools` for denylist agents; for explicit allowlist agents, tools intentionally absent from `tools`. These restrictions are blocked by Claude Code itself, not by instructions an agent might ignore during compaction. **Mode** = `permissionMode` -- `plan` means no interactive edits — Scout writes research files to `.vbw-planning/` and can run read-only validation Bash, but cannot edit code or spawn subagents/teams; QA can only persist VERIFICATION.md via `write-verification.sh`, `acceptEdits` means the agent can propose and apply changes.
-
-Here's when each one shows up to work:
-
-```text
-  /vbw:map                        /vbw:vibe --plan       /vbw:vibe --execute (or /vbw:vibe)
-  ┌─────────┐                     ┌─────────┐                     ┌─────────┐
-  │         │                     │         │                     │         │
-  │  SCOUT  │ ──reads codebase──▶ │  LEAD   │ ──produces plan──▶  │   DEV   │
-  │ (team)  │    INDEX.md         │(subagt) │    PLAN.md          │ (team)  │
-  │         │    PATTERNS.md      │         │                     │         │
-  └─────────┘                     └────┬────┘                     └────┬────┘
-                                       │                               │
-  /vbw:init                            │ reads context from            │ atomic
-  ┌───────────┐                        │                               │ commits
-  │           │                        ▼                               │
-  │ ARCHITECT │ ──────────▶ ROADMAP.md, REQUIREMENTS.md                │
-  │           │             SUCCESS CRITERIA                           ▼
-  └───────────┘                                                   ┌─────────┐
-                                                                  │         │
-                                                                  │   QA    │
-  /vbw:debug                                                      │(subagt) │
-  ┌──────────┐                                                    └────┬────┘
-  │          │                                                         │
-  │ DEBUGGER │ ──one bug, one session, one fix──▶ commit               │ deep
-  │(subagt)  │   (scope creep is for amateurs)                         │ verify
-  └──────────┘                                                         │
-                                                                       ▼
-  HOOKS (11 event types, 30 handlers)                              VERIFICATION.md
-  ┌───────────────────────────────────────────────────────────────────────────────┐
-  │  Verification                                                                 │
-  │    PostToolUse ──── Validates SUMMARY.md on write, checks commit format,      │
-  │                     validates frontmatter descriptions, dispatches skill      │
-  │                     hooks, updates execution state                            │
-  │    SubagentStart ── Writes agent marker (role normalization, concurrency-safe)│
-  │    SubagentStop ─── Validates SUMMARY.md, cleans markers, corruption recovery│
-  │    TeammateIdle ─── Tiered SUMMARY.md gate (1-plan grace, 2+ gap blocks)     │
-  │    TaskCompleted ── Advisory execute-task commit verification                  │
-  │                                                                               │
-  │  Security                                                                     │
-  │    PreToolUse ──── Blocks destructive Bash commands (migrate:fresh, db:drop,  │
-  │                    TRUNCATE, FLUSHALL, 40+ patterns across all frameworks),   │
-  │                    blocks sensitive file access (.env, keys), enforces plan   │
-  │                    file boundaries, dispatches skill hooks                    │
-  │                                                                               │
-  │  Lifecycle                                                                    │
-  │    SessionStart ──── Detects project state, checks map staleness              │
-  │    PreCompact ────── Injects agent-specific compaction priorities             │
-  │    SessionStart(compact) Verifies critical context survived compaction        │
-  │    Stop ──────────── Logs session metrics, persists cost ledger               │
-  │    UserPromptSubmit  Pre-flight prompt validation                             │
-  │    Notification ──── Logs teammate communication                              │
-  └───────────────────────────────────────────────────────────────────────────────┘
-
-  ┌───────────────────────────────────────────────────────────────────────────────┐
-  │  PERMISSION MODEL                                                             │
-  │                                                                               │
-  │  Scout ─────────── Plan mode. Writes .vbw-planning/ research; read-only Bash. │
-  │  QA ───────────── Read + Bash. Persists only via write-verification.sh.        │
-  │  Architect ─────── Edit/Bash blocked by platform. Write limited to plans      │
-  │                    by instruction. Writes roadmaps, not code. Mostly.         │
-  │  Lead ─────────── Read, Write, Bash, WebFetch. The middle manager.            │
-  │  Docs ─────────── Read, Write, Edit, Bash. Doc files only by instruction.     │
-  │  Dev ──────────── Denylist (no Task/Agent/Team/AskUserQuestion); inherited tools.   │
-  │  Debugger ─────── Full access. The one you still worry about.                 │
-  │                                                                               │
-  │  Platform-enforced: tools / disallowedTools (cannot be overridden)            │
-  │  Instruction-enforced: behavioral constraints in agent prompts                │
-  └───────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## Configuration
-
-Every setting lives in `.vbw-planning/config.json` and can be changed with `/vbw:config <key> <value>`. Settings are created during `/vbw:init` and backfilled automatically when new ones are added in plugin updates.
-
-### All defaults
-
-Quick reference for every key in `config/defaults.json`, in order. Click the section link for full details.
-
-| Key | Default | Section |
-| :--- | :--- | :--- |
-| `effort` | `"balanced"` | [Effort profiles](#effort-profiles) |
-| `autonomy` | `"standard"` | [Autonomy levels](#autonomy-levels) |
-| `auto_commit` | `true` | [Commits, push, and planning artifacts](#commits-push-and-planning-artifacts) |
-| `planning_tracking` | `"manual"` | [Commits, push, and planning artifacts](#commits-push-and-planning-artifacts) |
-| `auto_push` | `"never"` | [Commits, push, and planning artifacts](#commits-push-and-planning-artifacts) |
-| `verification_tier` | `"standard"` | [Effort profiles](#effort-profiles) |
-| `skill_suggestions` | `true` | [Skills and discovery](#skills-and-discovery) |
-| `auto_install_skills` | `false` | [Skills and discovery](#skills-and-discovery) |
-| `discovery_questions` | `true` | [Skills and discovery](#skills-and-discovery) |
-| `discussion_mode` | `"questions"` | [Skills and discovery](#skills-and-discovery) |
-| `context_compiler` | `true` | [Agent behavior](#agent-behavior) |
-| `visual_format` | `"unicode"` | [Display](#display) |
-| `max_tasks_per_plan` | `5` | [Agent behavior](#agent-behavior) |
-| `prefer_teams` | `"auto"` | [Concurrency controls](#concurrency-controls) |
-| `branch_per_milestone` | `false` | [Display](#display) |
-| `plain_summary` | `true` | [Agent behavior](#agent-behavior) |
-| `active_profile` | `"default"` | [Model routing and cost](#model-routing-and-cost) |
-| `custom_profiles` | `{}` | [Model routing and cost](#model-routing-and-cost) |
-| `model_profile` | `"quality"` | [Model routing and cost](#model-routing-and-cost) |
-| `model_overrides` | `{}` | [Model routing and cost](#model-routing-and-cost) |
-| `agent_max_turns` | `{...}` | [Agent turn limits](#agent-turn-limits) |
-| `qa_skip_agents` | `["docs"]` | [Agent behavior](#agent-behavior) |
-| `worktree_isolation` | `"off"` | [Concurrency controls](#concurrency-controls) |
-| `token_budgets` | `true` | [Runtime features](#runtime-features) |
-| `two_phase_completion` | `true` | [Runtime features](#runtime-features) |
-| `metrics` | `true` | [Runtime features](#runtime-features) |
-| `smart_routing` | `true` | [Runtime features](#runtime-features) |
-| `validation_gates` | `true` | [Runtime features](#runtime-features) |
-| `snapshot_resume` | `true` | [Runtime features](#runtime-features) |
-| `lease_locks` | `true` | [Concurrency controls](#concurrency-controls) |
-| `event_recovery` | `true` | [Cross-phase context](#cross-phase-context) |
-| `monorepo_routing` | `true` | [Runtime features](#runtime-features) |
-| `rolling_summary` | `false` | [Cross-phase context](#cross-phase-context) |
-| `require_phase_discussion` | `false` | [Agent behavior](#agent-behavior) |
-| `auto_uat` | `false` | [Autonomy levels](#autonomy-levels) |
-| `max_uat_remediation_rounds` | `false` | [Autonomy levels](#autonomy-levels) |
-| `statusline_hide_limits` | `false` | [Display](#display) |
-| `statusline_hide_limits_for_api_key` | `false` | [Display](#display) |
-| `statusline_hide_agent_in_tmux` | `false` | [Display](#display) |
-| `statusline_collapse_agent_in_tmux` | `false` | [Display](#display) |
-| `debug_logging` | `false` | [Runtime features](#runtime-features) |
-| `caveman_style` | `"none"` | [Caveman language mode](#caveman-language-mode) |
-| `caveman_commit` | `false` | [Caveman language mode](#caveman-language-mode) |
-| `caveman_review` | `false` | [Caveman language mode](#caveman-language-mode) |
-| `bash_guard` | `true`* | [Safety](#safety) |
-
-*`bash_guard` is not in `defaults.json` — it's read directly from project config with a default of `true` when absent.
-
-### Optional extension hooks
-
-Not every opt-in extension point lives in `config/defaults.json` or appears in `/vbw:config`. Sparse extension keys may be absent in brownfield repos and are treated as valid no-ops until you opt in.
-
-`hooks.post_archive` is one of these sparse config keys. Add it manually to `.vbw-planning/config.json` when you want a script to run after `/vbw:vibe --archive` completes successfully:
-
-```json
-{
-  "hooks": {
-    "post_archive": "scripts/hooks/post-archive.sh"
-  }
-}
-```
-
-Paths may be absolute or project-relative. VBW invokes the hook via `bash` with three positional arguments: milestone slug, archive path, and tag (empty when `--no-tag` was used). If `hooks.post_archive` is absent, archive no-ops through the dispatcher. If the configured hook is missing or fails, VBW warns and continues the archive flow.
-
-### Effort profiles
-
-Not every task deserves the same level of scrutiny. Most of yours don't. Four effort profiles control how much your agents think before they act.
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `effort` | string | `balanced` | `thorough` / `balanced` / `fast` / `turbo` |
-| `verification_tier` | string | `standard` | `quick` / `standard` / `deep` |
-
-- **`effort`** — Controls how deeply agents plan, execute, and verify.
-- **`verification_tier`** — Controls QA depth. `quick` runs 5–10 checks (artifact existence, frontmatter validity). `standard` runs 15–25 (structure, imports, cross-consistency). `deep` runs 30+ (anti-patterns, requirement mapping, completeness audit). Effort profiles map to tiers automatically (`turbo`→skip, `fast`→quick, `balanced`→standard, `thorough`→deep), but this setting overrides that default. Forced to `deep` when >15 requirements or on the final phase.
-
-| Profile | What It Does | When To Use It |
-| :--- | :--- | :--- |
-| **Thorough** | Maximum agent depth. Full Lead planning, deep QA, comprehensive research. Dev teammates require plan approval before writing code. Competing hypothesis debugging for ambiguous bugs. | Architecture decisions. Things that would be embarrassing to get wrong. |
-| **Balanced** | Standard depth. Good planning, solid QA. The default. | Most work. The sweet spot between quality and not burning your API budget. |
-| **Fast** | Lighter planning, quicker verification. | Straightforward phases where the path is obvious. |
-| **Turbo** | Single Dev agent, no Lead or QA. Just builds. | Trivial changes. Adding a config value. Fixing a typo. Things that don't need a committee. |
-
-```text
-/vbw:vibe --plan 3 --effort=turbo
-/vbw:vibe --effort=thorough
-```
-
-Or switch effort, autonomy, and verification together with `/vbw:profile`:
-
-```text
-/vbw:profile prototype    → fast + confident + quick
-/vbw:profile production   → thorough + cautious + deep
-/vbw:profile yolo         → turbo + pure-vibe + skip
-```
-
-### Autonomy levels
-
-Effort controls how hard your agents think. Autonomy controls how often they stop to ask you about it.
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `autonomy` | string | `standard` | `cautious` / `standard` / `confident` / `pure-vibe` |
-
-Four levels, from "review everything" to "just build the whole thing while I get coffee":
-
-| Level | What It Does | When To Use It |
-| :--- | :--- | :--- |
-| **Cautious** | Stops between plan and execute. Plan approval at Thorough AND Balanced effort. All confirmations enforced. | First time on a codebase. Production-critical work. When you want to review every step before it happens. |
-| **Standard** | Auto-chains plan into execute within a phase. Plan approval at Thorough only. Stops between phases. The default. | Most work. You trust the plan but want to see results before continuing. |
-| **Confident** | Skips "already complete" confirmations. Plan approval OFF even at Thorough. QA warnings non-blocking. | Experienced with VBW, rebuilding known-good phases, iteration speed matters more than gate checks. |
-| **Pure Vibe** | Loops ALL remaining phases in a single `/vbw:vibe`. No confirmations. No plan approval. Only error guards (missing roadmap, uninitialized project) stop execution. | When you want to walk away and come back to a finished project. Full autonomy with VBW's safety nets still active. |
-
-```text
-/vbw:config autonomy confident
-/vbw:config autonomy pure-vibe
-```
-
-Autonomy interacts with effort profiles. At `cautious`, plan approval expands to cover Balanced effort (not just Thorough). At `confident` and `pure-vibe`, plan approval is disabled regardless of effort level. Error guards — missing roadmap, uninitialized project, missing plans — always halt at every level. Autonomy controls friction, not safety.
-
-| Gate | Cautious | Standard | Confident | Pure Vibe |
-| :--- | :--- | :--- | :--- | :--- |
-| Plan to execute | Stop and ask | Auto-chain | Auto-chain | Auto-chain |
-| Between phases | Stop | Stop | Stop | Auto-loop |
-| "Already complete" warning | Confirm | Confirm | Skip | Skip |
-| Plan approval (Thorough) | Required | Required | Off | Off |
-| Plan approval (Balanced) | Required | Off | Off | Off |
-| UAT after QA | Run | Run | Skip | Skip |
-
-**`auto_uat`** — When `true`, VBW automatically runs UAT verification after QA passes during the `/vbw:vibe` execution flow, regardless of autonomy level. Normally, UAT only runs at `cautious` and `standard` autonomy. With `auto_uat` enabled, UAT runs inline at every level, including `confident` and `pure-vibe`. Product UAT checkpoint modals include both the scenario and expected result so the prompt is answerable even if the modal covers surrounding terminal text. If completed summaries document implementation deviations, UAT preloads them as review checkpoints so you can accept them as process exceptions, accept them while adding a VBW todo for follow-up, skip them, or reject them as real issues.
-
-```text
-/vbw:config auto_uat true
-```
-
-**`max_uat_remediation_rounds`** — Controls only the UAT remediation auto-continuation loop after re-verification finds issues. It does **not** apply to QA remediation. The injected default is `false`, which means unlimited rounds. If the key is missing or the persisted value is malformed, VBW also fails open to unlimited.
-
-Finite cap example:
-
-```json
-{
-  "max_uat_remediation_rounds": 3
-}
-```
-
-Unlimited example:
-
-```json
-{
-  "max_uat_remediation_rounds": false
-}
-```
-
-`0` is also treated as unlimited.
-
-### Commits, push, and planning artifacts
-
-VBW generates 15+ files in `.vbw-planning/` during bootstrap, planning, execution, and QA — but by default none of them are committed. The Dev agent only commits source code files listed in each task's `Files:` section.
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `auto_commit` | boolean | `true` | `true` / `false` |
-| `planning_tracking` | string | `manual` | `manual` / `ignore` / `commit` |
-| `auto_push` | string | `never` | `never` / `after_phase` / `always` |
-
-- **`auto_commit`** — When `true`, the Dev agent auto-commits after each task with format `{type}({phase}-{plan}): {task-name}`, staging files individually. When `false`, changes accumulate uncommitted. **This only controls source-code commits during execution** — planning artifact commits are controlled by `planning_tracking`.
-
-#### `planning_tracking`
-
-Controls whether `.vbw-planning/` artifacts are committed, gitignored, or left for you to manage.
-VBW writes `.vbw-planning/.gitignore` in all three modes so transient runtime files stay excluded; the selected mode only changes whether the whole planning directory is root-ignored and/or auto-committed.
-
-```text
-/vbw:config planning_tracking commit
-```
-
-| Value | What It Does | When To Use It |
-| :--- | :--- | :--- |
-| **`manual`** | Default. No auto-commits and no root ignore for the whole `.vbw-planning/` directory. Durable planning files accumulate as untracked in `git status`, while transient runtime files stay excluded via `.vbw-planning/.gitignore`. | When you want full control, or aren't sure yet. |
-| **`ignore`** | Adds `.vbw-planning/` to `.gitignore` during `/vbw:init` or `/vbw:config planning_tracking ignore`. Planning files exist locally but never enter version control. Clean `git status`. | Solo projects, prototyping, or when planning history doesn't matter. |
-| **`commit`** | Auto-commits `.vbw-planning/` artifacts (and `CLAUDE.md` when present) at helper-backed planning boundaries — for example after bootstrap, planning/discussion checkpoints, todo additions, and archive. Commit format: `chore(vbw): {action}`. Transient files (`.execution-state.json`, `.contracts/`, `.locks/`, `.token-state/`, compiled context) are excluded via `.vbw-planning/.gitignore`. | Teams that want an audit trail of planning decisions in version control. |
-
-#### `auto_push`
-
-Controls whether VBW pushes commits automatically, and when.
-
-```text
-/vbw:config auto_push after_phase
-```
-
-| Value | What It Does | When To Use It |
-| :--- | :--- | :--- |
-| **`never`** | Default. Never pushes. Commits stay local until you explicitly run `git push`. Follows the "do not push until asked" rule. | When you review commits before sharing, or work on protected branches. |
-| **`after_phase`** | Pushes once after phase execution completes, batching all task commits from that phase into a single push. | Power users who want remote backup after each phase without per-commit noise. |
-| **`always`** | Pushes after every commit — both source-task commits and planning commits (if `planning_tracking=commit`). | CI/CD pipelines, pair programming setups, or when you want real-time remote visibility. |
-
-### Agent behavior
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `max_tasks_per_plan` | number | `5` | `1`–`7` |
-| `context_compiler` | boolean | `true` | `true` / `false` |
-| `plain_summary` | boolean | `true` | `true` / `false` |
-| `qa_skip_agents` | array | `["docs"]` | Array of agent role names |
-| `require_phase_discussion` | boolean | `false` | `true` / `false` |
-
-- **`max_tasks_per_plan`** — Maximum number of tasks the Lead agent should include in a single plan. Communicated to agents via session context. Lower values (2–3) produce more focused, easier-to-verify plans. Higher values (5–7) reduce planning overhead but increase blast radius per plan. Not enforced by a hard gate — it's an advisory constraint.
-- **`context_compiler`** — When `true`, runs `compile-context.sh` to produce role-specific `.context-{role}.md` files so each agent gets curated context (Lead gets requirements, Dev gets phase goal + conventions, QA gets verification targets). When `false`, agents read project files directly without curation. Leave this on unless you're debugging context issues.
-- **`plain_summary`** — When `true`, appends 2–4 plain-English sentences after QA completes in Execute mode, summarizing what happened in the phase without jargon. When `false`, output shows only the structured QA result.
-- **`qa_skip_agents`** — Array of agent role names that are exempt from QA verification gates. Valid names: `scout`, `architect`, `lead`, `dev`, `qa`, `debugger`, `docs`. By default, `["docs"]` — the Docs agent can complete tasks without triggering QA checks.
-- **`require_phase_discussion`** — When `true`, phases without a `CONTEXT.md` are routed through the discussion engine before planning. Prevents planning until phase context is explicitly discussed and decisions are captured. When `false`, phases proceed directly to planning. Useful for teams that want to ensure design decisions are explored before implementation.
-
-### Concurrency controls
-
-These three settings control how VBW handles parallel plan execution — whether agents run in parallel at all, and how file conflicts are prevented when they do. See [Execution Model](#execution-model) for context on when concurrency occurs.
-
-#### `prefer_teams` — Team Creation
-
-Controls when VBW creates an Agent Team (multiple color-coded Dev agents) vs using a single agent:
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `prefer_teams` | string | `auto` | `always` / `auto` / `never` |
-
-| Value | Behavior |
-| :--- | :--- |
-| `always` | Forces team mode for delegate-eligible work, including linear delegate graphs. Does not override phase-level turbo, smart-routed turbo, or internal direct segments. |
-| `auto` | Creates a true team only when dependency-aware routing finds real parallel delegate work (`max_parallel_width > 1`). Linear graphs and single delegate plans use serialized subagents. Smart routing may further downgrade simple plans to turbo (no team). Default. |
-| `never` | Never creates teams. All agents run as sequential subagents. Disables parallel execution entirely. |
-
-If `prefer_teams` requests team mode but the live tool set cannot express real team semantics, VBW now emits `⚠ Agent Teams not enabled — using non-team mode` and falls back to explicit non-team execution. It does **not** substitute plain background agents without `team_name` and pretend a team was created.
-
-This setting determines whether true team execution is allowed for delegate-eligible Execute work. With a single delegate plan or a real dependency chain, `auto` chooses serialized subagents because there is no useful parallelism. For `/vbw:debug`, `auto` is stricter: it uses **Competing Hypotheses** team mode only when the bug is both on the `thorough-effort` profile and ambiguous — think intermittent/flaky/random behavior, generic or missing error text, multiple plausible root-cause areas, or `--competing` / `--parallel`, which force the bug to count as ambiguous for routing. A clear exact-repro issue stays `Standard (single debugger)` unless those `auto` conditions are met. `--serial` forces non-ambiguous routing under `auto`. `prefer_teams=always` still uses team mode for all debug runs, and `prefer_teams=never` still disables team mode regardless of the flags. Note: Planning always uses sequential subagents (Scout → Lead), not teams — `prefer_teams` only affects Execute and debug/map modes.
-
-#### `worktree_isolation` — Filesystem Isolation
-
-When enabled, each Dev agent gets its own **git worktree** — a physically separate copy of your repo on a dedicated branch. Agents literally work in different directories, so they can't overwrite each other's files.
-
-When `worktree_isolation` is `on`, VBW creates `.vbw-worktrees/...` git worktrees, records the assigned path in execution state, and tells Dev agents their working directory through task prompt metadata. VBW does not use Claude Code's `isolation:"worktree"` sidechain for this flow.
-
-VBW teammate spawns always block Claude-side `isolation:"worktree"`, unmanaged `.claude/worktrees/agent-*` sidechain working directories, and `.vbw-worktrees/...` spawn cwd aliases. This keeps remediation and serialized subagent paths out of unprepared sidechain roots while allowing VBW-prepared git worktree targeting through `.execution-state.json`, `scripts/worktree-target.sh`, and task prompt metadata.
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `worktree_isolation` | string | `off` | `off` / `on` |
-
-**How it works:**
-
-1. **Before execution:** For each plan, VBW creates a worktree at `.vbw-worktrees/{phase}-{plan}` on branch `vbw/{phase}-{plan}`:
-   ```text
-   .vbw-worktrees/
-     01-01/  →  branch vbw/01-01  (Dev-01 works here)
-     01-02/  →  branch vbw/01-02  (Dev-02 works here)
-     01-03/  →  branch vbw/01-03  (Dev-03 works here)
-   ```
-
-2. **During execution:** Each Dev agent is instructed to work exclusively in its assigned worktree directory. All file edits and commits happen on the worktree's branch, completely isolated.
-
-3. **After execution (merging):** Once all Devs finish and the team shuts down, the Lead merges each worktree branch back into the main branch using `git merge --no-ff`:
-   - **Clean merge:** The worktree is removed and the branch is deleted. Done.
-   - **Merge conflict:** The merge is aborted, the worktree is left in place, and VBW tells you to resolve it manually: `⚠ Worktree merge conflict for plan 02. Resolve conflicts in .vbw-worktrees/01-02/`.
-
-**When do merge conflicts occur?** Only when two parallel Dev agents edited the same file on different branches. The first merge succeeds; the second hits a conflict because the file was changed on both branches. The Architect is designed to minimize this by assigning disjoint file sets to each plan, but it's not guaranteed.
-
-Six scripts handle the full lifecycle: create, merge, cleanup, status, targeting, and agent mapping. Default `off` for backward compatibility.
-
-#### `lease_locks` — File-Level Locking
-
-A lighter-weight alternative to worktrees. Instead of filesystem isolation, lease locks track which files each task has claimed. If two tasks try to claim the same file, the second one is blocked.
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `lease_locks` | boolean | `true` | `true` / `false` |
-
-**How it works:**
-
-1. **Before each task:** `control-plane.sh` calls `lease-lock.sh acquire` with the task's file list. A lock file is written to `.vbw-planning/.locks/{task-id}.lock` containing the claimed files and a TTL (default 300 seconds).
-
-2. **Conflict detection:** If another task already holds a lock on an overlapping file, the acquisition fails and the task is blocked. Expired locks (past TTL) are cleaned up automatically.
-
-3. **After each task:** The lock is released. The next task can claim those files.
-
-Lease locks operate within a single shared working directory — there are no separate branches or merge steps. They prevent concurrent file access but don't provide the branch-level isolation that worktrees offer.
-
-#### Which should you use?
-
-Worktree isolation and lease locks solve the same problem — preventing file conflicts during parallel plan execution — through different mechanisms. They're alternatives, not layers.
-
-| Scenario | Recommendation |
-| :--- | :--- |
-| Plans always chained via `depends_on` (sequential) | Neither needed — no concurrency, no conflicts. Lease locks are on by default but add negligible overhead. |
-| Parallel plans, want strongest isolation | `worktree_isolation: "on"` — separate directories and branches |
-| Parallel plans, want lightweight protection | `lease_locks: true` (default) — file-level claims, no branch overhead |
-| Both enabled | Works (no conflict), but redundant — worktrees already prevent the problem lease locks detect |
-
-Lease locks are enabled by default because they add negligible overhead (one small JSON file per task) while providing a safety net for the cases where plans run in parallel. Worktree isolation is off by default because it adds git worktree complexity — enable it if you're running `effort: "thorough"` with complex phases where the Architect creates genuinely independent plans.
-
-### Skills and discovery
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `skill_suggestions` | boolean | `true` | `true` / `false` |
-| `auto_install_skills` | boolean | `false` | `true` / `false` |
-| `discovery_questions` | boolean | `true` | `true` / `false` |
-| `discussion_mode` | string | `questions` | `questions` / `assumptions` / `auto` |
-
-- **`skill_suggestions`** — When `true`, `/vbw:init` detects your tech stack and suggests relevant skills to install. When `false`, the entire skill suggestion flow is skipped during init.
-- **`auto_install_skills`** — When `true`, suggested skills are installed automatically without asking. When `false`, VBW shows the install commands but lets you run them yourself. Has no effect if `skill_suggestions` is `false`.
-- **`discovery_questions`** — When `true`, the discussion engine runs during bootstrap and `/vbw:discuss`, with depth controlled by your active profile (`default`→3–5 gray areas, `production`→4–6, `prototype`→2–3, `yolo`→skip). When `false`, skips the discussion engine entirely. Set this to `false` if you're bootstrapping projects where you already know what you want.
-- **`discussion_mode`** — Controls how the discussion engine starts. `questions` asks clarifying questions from scratch. `assumptions` uses existing codebase map data to propose evidence-backed assumptions first, then falls back to questions if no map exists. `auto` picks `assumptions` when `.vbw-planning/codebase/META.md` exists and otherwise uses `questions`.
-
-### Model routing and cost
-
-VBW spawns specialized agents for planning, development, and verification. Model profiles let you control which Claude model each agent uses, trading cost for quality based on your needs.
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `model_profile` | string | `quality` | `quality` / `balanced` / `budget` |
-| `model_overrides` | object | `{}` | `{"dev": "opus", "qa": "haiku", ...}` |
-| `active_profile` | string | `default` | `default` / `prototype` / `production` / `yolo` / `custom` |
-| `custom_profiles` | object | `{}` | User-defined profile presets |
-
-- **`model_profile`** — Which Claude models agents use. See preset details below.
-- **`model_overrides`** — Per-agent model overrides that take precedence over the profile. See [Per-Agent Overrides](#per-agent-overrides).
-- **`active_profile`** — Bundles effort, autonomy, and verification tier into a switchable preset. `default` (balanced/standard/standard), `prototype` (fast/confident/quick), `production` (thorough/cautious/deep), `yolo` (turbo/pure-vibe/skip). Set automatically to `custom` when individual settings drift from their profile. Manage with `/vbw:profile`.
-- **`custom_profiles`** — Stores user-created profile presets (name → effort/autonomy/verification_tier). Create, list, switch, and delete via `/vbw:profile`.
-
-### Safety
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `bash_guard` | boolean | `true` | `true` / `false` |
-
-- **`bash_guard`** — When `true`, a PreToolUse hook blocks known destructive Bash commands (database drops, migration resets, volume wipes) before they execute. Covers 40+ patterns across all major frameworks and databases. Override the generic destructive-command classifier per-command with `VBW_ALLOW_DESTRUCTIVE=1`, or disable that generic classifier with `false`. Scout-specific read-only blocks still apply when Scout identity is detected. Project-specific patterns can be added to `.vbw-planning/destructive-commands.local.txt`.
-
-### Cross-phase context
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `rolling_summary` | boolean | `false` | `true` / `false` |
-| `event_recovery` | boolean | `true` | `true` / `false` |
-
-- **`rolling_summary`** — When `true` and the project is past Phase 1, VBW compiles a condensed digest of all completed prior phases (what was built, files modified, deviations, commit hashes) into `ROLLING-CONTEXT.md`. This digest is injected into agent context via the context compiler, so Phase 3's Dev and Lead agents have awareness of what Phases 1–2 decided, built, and deviated from — without re-reading every prior SUMMARY.md. Adds ~50KB to agent context per phase. Useful for multi-phase projects where cross-phase continuity matters; unnecessary for single-phase work.
-- **`event_recovery`** — When `true`, enables automatic event-sourced state recovery on session start. If `.execution-state.json` is stale (older than `event-log.jsonl`) or missing after a crash, VBW automatically calls `recover-state.sh` to reconstruct phase/plan status from the event log and SUMMARY.md files.
-
-### Caveman language mode
-
-Token-compressed communication. Strips articles, filler, hedging, and pleasantries from agent responses to reduce token usage without losing technical substance. Code blocks, URLs, paths, and structure are preserved exactly.
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `caveman_style` | string | `none` | `none` / `lite` / `full` / `ultra` / `auto` |
-| `caveman_commit` | boolean | `false` | `true` / `false` |
-| `caveman_review` | boolean | `false` | `true` / `false` |
-
-**Levels:**
-
-| Level | Effect |
-| :--- | :--- |
-| **none** | Normal prose. No compression. |
-| **lite** | Drop filler and hedging. Keep articles and sentence structure. |
-| **full** | Fragments OK. Drop hedging, connectives, redundant phrasing. Merge duplicate bullets. |
-| **ultra** | Telegraphic. Max compression. One word where three worked. |
-| **auto** | Escalates based on context usage: <50% → none, 50-69% → lite, 70-84% → full, ≥85% → ultra. |
-
-```text
-/vbw:config caveman_style full
-/vbw:config caveman_commit true
-/vbw:config caveman_review true
-```
-
-- **`caveman_commit`** — When `true`, commit message descriptions use caveman language. Conventional Commits format (`type(scope): description`) still applies.
-- **`caveman_review`** — When `true`, QA findings use terse `L<line>: severity problem. fix.` format with severity prefixes.
-- **`/vbw:compress <file>`** — Compress a natural language file (`.md`, `.txt`) into caveman format. Creates an `.original` backup preserving the original extension. Useful for compressing `CLAUDE.md`, planning artifacts, or any prose-heavy file.
-
-Language rules adapted from [caveman](https://github.com/JuliusBrussee/caveman) by Julius Brussee (MIT license).
-
-### Runtime features
-
-These flags control optional runtime subsystems — execution integrity, observability, and crash recovery. All default to `true`. Disable any flag to skip that subsystem entirely (scripts exit 0 immediately when their flag is `false`).
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `token_budgets` | boolean | `true` | `true` / `false` |
-| `two_phase_completion` | boolean | `true` | `true` / `false` |
-| `metrics` | boolean | `true` | `true` / `false` |
-| `smart_routing` | boolean | `true` | `true` / `false` |
-| `validation_gates` | boolean | `true` | `true` / `false` |
-| `snapshot_resume` | boolean | `true` | `true` / `false` |
-| `monorepo_routing` | boolean | `true` | `true` / `false` |
-| `debug_logging` | boolean | `false` | `true` / `false` |
-
-- **`token_budgets`** — When `true`, enforces per-role character budgets on context passed to agents (defined in `config/token-budgets.json`). The control plane truncates compiled context to the role's `max_chars` limit before injection, preventing context window overflows. When `false`, context passes through untruncated.
-- **`two_phase_completion`** — When `true`, after each task commit the Dev agent runs a two-phase verification: the artifact registry tracks all files written during the task, then `two-phase-complete.sh` confirms the task's contract was fulfilled before marking it complete. Rejected tasks trigger auto-repair. When `false`, tasks complete immediately after commit.
-- **`metrics`** — When `true`, VBW appends JSON events to `.vbw-planning/.metrics/run-metrics.jsonl` for cache hits/misses, context compilation, task/plan/phase execution timing, and gate policy decisions. Viewable with `/vbw:status --metrics`. When `false`, no metrics are collected.
-- **`smart_routing`** — When `true`, the execute protocol skips unnecessary agents based on effort level: Scout is skipped for turbo/fast (no research needed), Architect is skipped for non-thorough effort (architecture review only at thorough). Reduces token spend on simpler phases. When `false`, all agents are always included.
-- **`validation_gates`** — When `true`, the execute protocol runs per-plan risk assessment (`assess-plan-risk.sh`) and resolves a dynamic gate policy (`resolve-gate-policy.sh`) that overrides static effort-based tables for QA tier, plan approval, and teammate communication level. When `false`, static effort-based tables are used (see [Execution Model](#execution-model)).
-- **`snapshot_resume`** — When `true`, VBW saves execution state snapshots to `.vbw-planning/.snapshots/` at key lifecycle points (phase start, compaction, agent completion). On crash recovery, `/vbw:resume` can restore from the latest snapshot. Max 10 snapshots per phase, oldest pruned automatically. When `false`, no snapshots are saved.
-- **`debug_logging`** — When `true`, hook-wrapper writes verbose diagnostic logs to `.vbw-planning/.debug/` for every hook invocation. Also activatable via the `VBW_DEBUG=1` environment variable. When `false`, no debug logs are written. Useful for troubleshooting hook or agent misbehavior.
-- **`monorepo_routing`** — When `true`, VBW detects monorepo structure (sub-packages with `package.json`, `Cargo.toml`, `go.mod`, `pyproject.toml`) and maps plan file paths to relevant package roots. This scoping is used by `/vbw:map` for per-package analysis and by the context compiler to limit agent context to relevant packages. When `false`, the entire repo is treated as a single project.
-
-### Display
-
-| Setting | Type | Default | Values |
-| :--- | :--- | :--- | :--- |
-| `visual_format` | string | `unicode` | `unicode` / `ascii` |
-| `branch_per_milestone` | boolean | `false` | `true` / `false` |
-| `statusline_hide_limits` | boolean | `false` | `true` / `false` |
-| `statusline_hide_limits_for_api_key` | boolean | `false` | `true` / `false` |
-| `statusline_hide_agent_in_tmux` | boolean | `false` | `true` / `false` |
-| `statusline_collapse_agent_in_tmux` | boolean | `false` | `true` / `false` |
-
-- **`visual_format`** — Intended to switch between Unicode symbols (✓ ✗ ◆ ○ ⚡ ➜, box-drawing characters) and ASCII equivalents. Currently declared but not yet wired into agent output — agents always use Unicode.
-- **`branch_per_milestone`** — Intended to auto-create a git branch per milestone during Bootstrap. Currently declared but not yet implemented — has no runtime effect.
-- **`statusline_hide_limits`** — Suppress the Limits line unconditionally. Use when you never want to see token-limit information in the statusline.
-- **`statusline_hide_limits_for_api_key`** — Suppress the Limits line only when authenticated via an API key (not via Claude.ai OAuth). No effect when `statusline_hide_limits` is also `true`.
-- **`statusline_hide_agent_in_tmux`** — Suppress the Build/agent progress line while inside a tmux session. No effect outside tmux or when no build is running.
-- **`statusline_collapse_agent_in_tmux`** — Collapse the full multi-line statusline into a single summary line in agent/worktree tmux panes. Only applies inside tmux in a git worktree; no effect in the main repo pane.
-
-### Staged rollout
-
-Runtime feature flags are organized into 3 rollout stages based on project maturity (completed phase count). New projects start with Stage 1 flags enabled; higher stages unlock automatically as you complete phases, or manually via `rollout-stage.sh advance`.
-
-| Stage | Label | Threshold | Flags |
-| :--- | :--- | :--- | :--- |
-| 1 | Observability | 0 phases | `metrics`, `token_budgets`, `two_phase_completion`, `rolling_summary` |
-| 2 | Optimization | 2 phases | *(no rollout-managed flags — graduated)* |
-| 3 | Full | 5 phases | `validation_gates`, `smart_routing`, `snapshot_resume`, `event_recovery`, `monorepo_routing`, `lease_locks` |
-
-All flags default to `true` in `config/defaults.json` regardless of stage. The rollout system is opt-in (`auto_advance: false` by default) — it tracks eligibility but doesn't auto-enable flags unless you run `advance`. Brownfield configs with legacy `v2_`/`v3_` prefixed flag names are migrated automatically by `migrate-config.sh`.
-
-## Cost Optimization
-
-VBW spawns specialized agents for planning, development, and verification. Model profiles let you control which Claude model each agent uses, trading cost for quality based on your needs.
-
-### Three Preset Profiles
-
-| Profile | Use Case | Lead | Dev | QA | Scout | Est. Cost/Phase |
-| :--- | :--- | :--- | :--- | :--- | :--- | ---: |
-| **Quality** | Production work, architecture decisions (default) | opus | opus | sonnet | sonnet | ~$3.00 |
-| **Balanced** | Standard development | sonnet | sonnet | sonnet | sonnet | ~$1.50 |
-| **Budget** | Prototyping, tight budgets | sonnet | sonnet | haiku | haiku | ~$0.70 |
-
-*Debugger and Architect follow the same model as Lead. Estimates based on typical 3-plan phase.*
-
-**Quality is the default.** It gives you maximum reasoning depth for architecture decisions and production-critical work. Switch to Balanced (`/vbw:config model_profile balanced`) for 50% cost savings on standard development.
-
-**Quality** uses Opus for Lead, Dev, Debugger, and Architect -- maximum reasoning depth for critical work. QA and Scout stay on Sonnet (verification and research don't need Opus overhead).
-
-**Budget** keeps Dev and core agents on Sonnet (quality baseline) but drops QA to Haiku. Good for exploratory work where you're iterating fast and verification can be lighter.
-
-#### Switching profiles
-
-```bash
-/vbw:config model_profile quality
-/vbw:config model_profile balanced
-/vbw:config model_profile budget
-```
-
-Each switch shows before/after cost impact. Changes apply to the next phase.
-
-#### Per-agent overrides
-
-Need Opus for one agent without switching the whole profile?
-
-```bash
-/vbw:config model_override dev opus
-/vbw:config model_override qa sonnet
-```
-
-Common patterns:
-- Budget profile + Dev override to Opus for complex implementation tasks
-- Balanced profile + Lead override to Opus for strategic planning phases
-- Quality profile + QA override to Haiku when verification is straightforward
-
-#### Agent turn limits
-
-Each agent has a default turn budget that scales with your effort level (thorough = 1.5×, balanced = 1×, fast = 0.8×, turbo = 0.6×). Defaults:
-
-| Agent | Base Turns |
-| :--- | ---: |
-| Scout | 15 |
-| QA | 25 |
-| Architect | 30 |
-| Lead | 50 |
-| Dev | 75 |
-| Debugger | 80 |
-
-Override per-agent in `.vbw-planning/config.json`:
-
-```json
-{
-  "agent_max_turns": {
-    "dev": 100,
-    "debugger": 120
-  }
-}
-```
-
-Set a value to `false` or `0` to give an agent unlimited turns (no turn cap is enforced):
-
-```json
-{
-  "agent_max_turns": {
-    "dev": false
-  }
-}
-```
-
-#### Effort vs model
-
-**Model profile** controls which Claude model agents use (cost).
-**Effort** controls how deeply agents think (workflow depth).
-
-They're independent. You can run Thorough effort on Budget profile (deep workflow, cheap models) or Fast effort on Quality profile (quick workflow, expensive models). Most users match them:
-- `thorough` effort + `quality` profile
-- `balanced` effort + `balanced` profile
-- `fast` effort + `budget` profile
-
-Switch both at once with work profiles:
-
-```bash
-/vbw:profile production   → thorough + quality
-/vbw:profile prototype    → fast + budget
-```
-
-See **[Model Profiles Reference](references/model-profiles.md)** for preset definitions, cost breakdown, and implementation details.
-
----
-
-## Project Structure
-
-```text
-.claude-plugin/    Plugin manifest (plugin.json)
-agents/            7 agent definitions with native tool permissions
-commands/          Slash-command definitions
-config/            Default settings and stack-to-skill mappings
-hooks/             Plugin hooks for continuous verification
-scripts/           Hook handler scripts (security, validation, QA gates)
-references/        Brand vocabulary, verification protocol, effort profiles, handoff schemas
-templates/         Artifact templates (PLAN.md, SUMMARY.md, etc.)
-assets/            Images and static files
-```
-
-When you run `/vbw:init` in your project, it creates:
-
-```text
-.vbw-planning/
-  PROJECT.md       Project definition, core value, requirements, decisions
-  REQUIREMENTS.md  Versioned requirements with traceability
-  ROADMAP.md       Phases, plans, success criteria, progress tracking
-  STATE.md         Current position, velocity metrics, session continuity
-  config.json      Local VBW configuration
-  phases/          Execution artifacts (PLAN.md, SUMMARY.md per phase)
-  milestones/      Archived milestone records
-```
-
-Your AI-managed project now has more structure than most startups that raised a Series A.
-
----
-
-## Requirements
-
-- **Claude Code** with **Opus 4.6+** model
-- **jq** -- the only external dependency. Install via `brew install jq` (macOS) or `apt install jq` (Linux). VBW checks for jq during `/vbw:init` and session start, and warns clearly if it's missing.
-- **Agent Teams** enabled (`/vbw:init` will offer to set this up for you)
-- A project directory (new or existing)
-- The willingness to let an AI manage your development lifecycle
-
-That last one is the real barrier to entry.
-
-### Version Requirements
-
-| Feature | Minimum Claude Code Version | Reason |
-| ------- | ---------------------------- | ------ |
-| Baseline VBW | 2.1.32+ | Core plugin system, hooks, agent teams |
-| Agent Teams Model Routing | 2.1.47+ | Fixed silently broken model routing for team teammates |
-| Plan Mode Native Support | 2.1.47+ | Compaction workarounds removed, native plan mode context |
-| Stricter Bash Permissions | 2.1.47+ | Enhanced permission classifier for piped commands |
-
-**Recommended:** Claude Code 2.1.47 or later for full VBW feature compatibility.
+| [docs/proof.md](docs/proof.md) | Requirements, checks, approval, proof, fixes and test files |
+| [docs/next.md](docs/next.md) | How VBW decides the next step |
+| [docs/rigor.md](docs/rigor.md) | How VBW sizes the process to the work |
+| [docs/workflows.md](docs/workflows.md) | The team, the workflows and `--help` on every command |
+| [docs/guards.md](docs/guards.md) | The safety guards |
+| [docs/loop.md](docs/loop.md) | The night shift: `/vbw:loop` |
+| [docs/triage.md](docs/triage.md), [docs/whats-next.md](docs/whats-next.md) | Sorting new ideas; the recommendation after a ship |
+| [docs/interview.md](docs/interview.md) | The questions about you, and how they shape every message |
+| [docs/record.md](docs/record.md) | The plan of record (`.vbw/record.json`) |
+| [docs/costs.md](docs/costs.md) | What each run and each milestone cost (`vbw show costs`) |
+| [docs/statusline.md](docs/statusline.md), [docs/panel.md](docs/panel.md) | The status line and the panel |
+| [docs/diagnostics.md](docs/diagnostics.md) | `vbw report` for bug reports, and `vbw rtk` |
+| [docs/update.md](docs/update.md) | Updating VBW, auto-update, and the "what changed" offer |
+| [docs/tools.md](docs/tools.md) | Finding the best tools for your project (nothing installed without your approval) |
+| [docs/convert.md](docs/convert.md) | Coming from an earlier VBW |
+| [docs/benchmark.md](docs/benchmark.md) | VBW 2 against plain Claude Code, with the evidence level of each result |
+| [docs/known-issues.md](docs/known-issues.md) | The public roadmap and known issues |
+| [docs/ideas.md](docs/ideas.md) | Ideas open for community contributions |
+| [plugin/CHANGELOG.md](plugin/CHANGELOG.md) | What changed |
 
 ---
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on local development, project structure, and pull requests.
+VBW is open source because the best tools are built by the people who use them. The kernel, the workflows, the agents, the guards: all of it is open to improvement. Found a better way to plan, build or prove code with Claude? Look at [docs/ideas.md](docs/ideas.md) for ideas open to contributors and [docs/known-issues.md](docs/known-issues.md) for the roadmap and known problems, then file an issue, open a PR, or **[join the Discord](https://discord.gg/zh6pV53SaP)**. Every request is weighed against VBW's design before it is built; [CONTRIBUTING.md](CONTRIBUTING.md) explains how.
 
-## Contributors
+Tests: `bash tools/test.sh` is the run a proof uses; `bash tools/test.sh --release` is the full run with the timed speed checks (macOS bash 3.2 and bash 5). Local development and pull requests: [CONTRIBUTING.md](CONTRIBUTING.md).
 
-[![Contributors](https://contrib.rocks/image?repo=yidakee/vibe-better-with-claude-code-vbw)](https://github.com/yidakee/vibe-better-with-claude-code-vbw/graphs/contributors)
+[![Contributors](https://contrib.rocks/image?repo=swt-labs/vibe-better-with-claude-code-vbw)](https://github.com/swt-labs/vibe-better-with-claude-code-vbw/graphs/contributors)
 
 ## License
 
-MIT -- see [LICENSE](LICENSE) for details.
+MIT, see [LICENSE](LICENSE).
 
-Built by [Tiago Serôdio](https://github.com/yidakee).
+Built by people who stopped trusting AI the day it first said "done".

@@ -1,0 +1,33 @@
+{
+  "scenario": "road",
+  "fixture": "greet.sh and farewell.sh (two plans in two standard phases of one milestone, the second after the first), six real checks that wait 5 s each (check_jobs 2), approved; the working tree's status line on, the panel in a wide window; no history first (a build run started by the scenario with vbw run start build, then ended), then a seeded history (three builds of one plan of one task at 5 min, three proofs of the six checks, three QA checks of one phase at 2 min, three fix rounds at 200 s, the runs store with the six checks at 5 s) and three finished phases of a shipped milestone with 1, 1 and 2 fix rounds, and the user types /vbw:vibe for the real build",
+  "cost_usd": 0.70,
+  "evidence_level": "L3",
+  "at": "2026-10-21T13:45:21Z",
+  "passed": true,
+  "facts": {
+    "chat_step_end": "14:44",
+    "chat_road_end": "15:04",
+    "panel_road_end": "15:04",
+    "note_road_end": "15:04",
+    "same_road_end": true,
+    "statusline_end": "14:44",
+    "statusline_has_road": false,
+    "no_history_no_end_time": true,
+    "no_history_next_says_no_end_time": true,
+    "no_history_note_says_no_end_time": true,
+    "no_history_screen_says_no_end_time": true,
+    "screen_samples": 176
+  },
+  "not_tested": [
+    "a build that ran late: the milestone end moving with each late plan was not seen in the window (held by tests/road-note.bats, L1)",
+    "fix rounds, QA, planning and mapping steps in the window: the road was read at the build's start and during the proof",
+    "a milestone end on another day, and a duration over an hour",
+    "the times are read from the visible screen text at 2 s steps, by the first time each place showed one, not by a reader",
+    "the project with no history had a build run started by the scenario with vbw run start, not by the router, so the router saying both sentences in chat without history was not seen (vbw next --json and the note gave them)",
+    "the earlier phases, the history and the runs store are seeded by the scenario in the clone and the record, not made by earlier real runs",
+    "the chat, Mission Control and the status line were read in one 200-column window only",
+    "the milestone time being right to the minute against real elapsed time",
+    "Claude Code's own Teach auto mode dialog and the VBW Wrapped card the seeded ship opens were dismissed by the scenario (Esc, a click on Now), as a user would"
+  ]
+}

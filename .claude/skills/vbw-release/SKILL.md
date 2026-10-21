@@ -1,0 +1,44 @@
+---
+name: vbw-release
+description: Release a new VBW version - tests on both shells, the real-user scenarios, the version bump and changelog, CI, and publishing only on the owner's word.
+---
+
+# Releasing VBW
+
+Every step runs; a failure stops the release until its root cause is fixed.
+
+1. **Tests:** `PATH="/bin:$PATH" /bin/bash tools/test.sh --release` once,
+   under macOS `/bin/bash` 3.2 (the floor); it uses half the cores. This is the
+   release run: the proof's run plus the timed speed checks (both benchmarks and
+   the timed files), which are judged here and nowhere else, so they must be
+   within budget. Linux bash 5 and macOS bash 3.2 run again in CI after the
+   push, as information: the owner updates once this run passed; a Linux
+   failure that cannot affect macOS waits for the batch before 2.1.0 (D402). `tools/test-linux.sh` stays for chasing a Linux-only failure.
+   When the last proof passed (results it reused count: the read lists still
+   vouch for them), left no command skipped and no quick command standing in,
+   and only the version files and `plugin/CHANGELOG.md` changed since, the run reuses
+   it: it runs only the benchmarks and the timed files, and prints the proof's
+   time. Any other change, or no such proof, runs everything and says why.
+2. **Real-user scenarios:** `bash tools/l3-suite.sh SCENARIO...` (the real
+   Claude Code TUI, driven as a user; each scenario costs API credits). Run only
+   the scenarios of the area the release changed, plus `greenfield` when the
+   release touches the core loop (the router, `vbw next`, a workflow, the proof
+   or QA). The full suite runs before the 2.1 launch. The release record names
+   the scenarios run and those not run. Every check must pass.
+3. **Version:** `bash tools/bump-version.sh --set X.Y.Z` (all five version files),
+   then a `plugin/CHANGELOG.md` entry written for users: what they can do now,
+   what was fixed, anything they must do. Every build a user is meant to receive
+   gets a new version: Claude Code updates a plugin only when its version changes.
+4. **Claude Code changes:** read the Claude Code changelog for every version
+   since the last release and check what touches plugins, hooks, mods, skills,
+   the status line or settings (a maintainer step, never part of VBW).
+5. **Docs:** `README.md` and `docs/` match what was built (commands, settings,
+   requirements).
+6. **Publish, only on the owner's word:** push the branch. CI (macOS bash 3.2,
+   Linux bash 5, manifest validation) reports afterwards: a macOS or manifest
+   failure is fixed at once; a Linux-only one goes to the batch before 2.1.0.
+7. **Verify the update path:** in a throwaway `CLAUDE_CONFIG_DIR`, install the
+   previous release, then update with `claude plugin marketplace update` and
+   `claude plugin update`; the new version must be installed and load.
+8. **Record** the release in the progress log with its evidence levels and a
+   Not tested list.

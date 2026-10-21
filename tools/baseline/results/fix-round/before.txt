@@ -1,0 +1,7 @@
+fixture: 3 finished requirements with 2 checks each, 4 test files, 10 seconds per check and per test file
+mode: per-group
+groups: 3
+minutes: 0.72
+checks run: 18
+test files run: 4
+ran more than once: 6

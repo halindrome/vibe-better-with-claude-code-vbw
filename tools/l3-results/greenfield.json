@@ -1,0 +1,19 @@
+{
+  "scenario": "greenfield",
+  "fixture": "greet.sh from scratch; one small milestone; the user types /vbw:vibe and the build runs to the end",
+  "cost_usd": 0.63,
+  "evidence_level": "L3",
+  "at": "2026-10-21T13:04:15Z",
+  "passed": true,
+  "facts": {
+    "report_own_work_line": true,
+    "report_ran_again_line": true
+  },
+  "not_tested": [
+    "acceptance by a human (greet.sh has only auto requirements)",
+    "a project larger than the greet.sh fixture, so the figures in the lines are small",
+    "the lines on screen: they are read from the tool results in the transcripts, not from what the window showed",
+    "a proof that reused units, so the top reasons are mostly never-passed",
+    "vbw fix done output (no fix round in this run)"
+  ]
+}

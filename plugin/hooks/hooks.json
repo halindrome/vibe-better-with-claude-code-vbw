@@ -1,0 +1,65 @@
+{
+  "modules": ["./panel.js"],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/stop.sh\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ulimit -t 5 2>/dev/null; r=\"${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/record.json\"; g=/dev/null; d=\"${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/runtime/glance.json\"; [ -f \"$r\" ] && [ -f \"$d\" ] && [ -r \"$d\" ] && [ \"$d\" -nt \"$r\" ] && g=\"$d\"; o=0; [ -e \"${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/runtime/run-open\" ] && o=1; jq -nc --rawfile glance \"$g\" --arg root \"${CLAUDE_PROJECT_DIR:-$PWD}\" --arg open \"$o\" -f \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-bash.jq\" - \"$r\" \"${CLAUDE_PLUGIN_ROOT}/hooks/end.json\" 2>/dev/null || { [ \"$o\" = 1 ] && { echo \"VBW guard: the guard failed while a run is open, so this call is blocked. Next: run vbw doctor to see why, then retry\" >&2; exit 2; }; true; }"
+          }
+        ]
+      },
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -c -f \"${CLAUDE_PLUGIN_ROOT}/hooks/approve-ask.jq\" 2>/dev/null | { IFS= read -r in && bash \"${CLAUDE_PLUGIN_ROOT}/hooks/approve-ask.sh\" \"$in\"; } 2>/dev/null || true"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Write|Edit|MultiEdit|NotebookEdit|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "ulimit -t 5 2>/dev/null; r=\"${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/record.json\"; g=/dev/null; d=\"${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/runtime/glance.json\"; [ -f \"$r\" ] && [ -f \"$d\" ] && [ -r \"$d\" ] && [ \"$d\" -nt \"$r\" ] && g=\"$d\"; o=0; [ -e \"${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/runtime/run-open\" ] && o=1; jq -nc --rawfile glance \"$g\" --arg root \"${CLAUDE_PROJECT_DIR:-$PWD}\" --arg open \"$o\" -f \"${CLAUDE_PLUGIN_ROOT}/hooks/guard-file.jq\" - \"$r\" \"${CLAUDE_PLUGIN_ROOT}/hooks/end.json\" 2>/dev/null || { [ \"$o\" = 1 ] && { echo \"VBW guard: the guard failed while a run is open, so this call is blocked. Next: run vbw doctor to see why, then retry\" >&2; exit 2; }; true; }"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "AskUserQuestion",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "out=$(jq -c -f \"${CLAUDE_PLUGIN_ROOT}/hooks/approve-answer.jq\" 2>/dev/null); [ -z \"$out\" ] || bash \"${CLAUDE_PLUGIN_ROOT}/hooks/approve-answer.sh\" \"$out\" 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

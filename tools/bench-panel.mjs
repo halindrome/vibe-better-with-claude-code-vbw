@@ -1,0 +1,111 @@
+// Panel cost driver (tools/bench-panel.sh runs it). Mounts plugin/hooks/panel.js
+// on the test stand-in for Claude Code and measures the CPU time (user + system,
+// not waiting time) of two refreshes, averaged over VBW_BENCH_RUNS:
+//   tick: the timer fires and finds nothing new (files unchanged, only checked);
+//   refresh: the timer fires, a file changed, the panel reads it, redraws and
+//   the draw is rendered.
+//   sound: the question menu opens, so the sound is played and a notification raised; then it is answered.
+//   whats-next: the record carries a recommendation that changes, so each refresh draws the section.
+//   render: a crew of helpers is at work; each refresh draws Comms (the strip above the prompt) and Mission Control's Now tab.
+//   step: a step is running and its note changes: the note is read, kept while live, and Mission Control draws the step.
+//   glance: the cost changed and a step history changed: both are read, both estimates worked out, drawn.
+// Prints "tick <ms>", "refresh <ms>" and "sound <ms>", and "render <ms>". The stand-in's own work is included,
+// so the numbers are an upper bound on the panel's cost.
+import { mount, record, next, lease } from '../tests/panel/helpers/fake-mod.mjs'
+import { building, writeCrew, working, TICK } from '../tests/panel/r189/helpers/crew.mjs'
+
+const RUNS = Number(process.env.VBW_BENCH_RUNS || 200)
+const TICK_MS = 2000
+const ROOT = '/proj'
+
+const cpu = () => {
+  const u = process.cpuUsage()
+  return (u.user + u.system) / 1000
+}
+
+async function measure(step, begin) {
+  const h = begin ? await begin() : await mount()
+  if (!begin) {
+    h.project(record(), next())
+    h.git()
+    await h.start()
+    await h.advance(5000)
+    await h.render()
+  }
+  for (let i = 0; i < 20; i++) await step(h, i) // warm up
+  const t0 = cpu()
+  for (let i = 0; i < RUNS; i++) await step(h, i)
+  return (cpu() - t0) / RUNS
+}
+
+const tick = await measure(async (h) => {
+  await h.advance(TICK_MS)
+})
+const refresh = await measure(async (h, i) => {
+  h.write(ROOT + '/.vbw/runtime/next.json', next({ action: i % 2 ? 'build' : 'ship', gate: i % 2 === 0 }))
+  await h.advance(TICK_MS)
+  await h.render()
+})
+// sound: the question menu opens (the sound and the notification are asked for), then it is answered
+const sound = await measure(async (h, i) => {
+  let answer
+  const done = h.fire('tool.call', { tool: 'AskUserQuestion', tool_use_id: 'q' + i, questions: [{ question: 'Which plan?', options: [{ label: 'A' }, { label: 'B' }] }] },
+    () => new Promise((r) => (answer = r)))
+  await h.advance(TICK_MS)
+  answer({ result: 'A' })
+  await done
+})
+// glance: a refresh that also reads the session cost and works out both estimates
+const STEPS = ROOT + '/.git/vbw/steps.json'
+const steps = (kind, secs) => secs.map((s, i) => ({ kind, run: kind + '-' + i, seconds: s }))
+const glance = await measure(async (h, i) => {
+  h.write(STEPS, { steps: [...steps('build', [600, 900, 1200 + i]), ...steps('qa', [100, 200, 300])] })
+  h.setUsage({ cost: { usd: 1 + i / 100 } })
+  await h.advance(TICK_MS)
+  await h.render()
+})
+// whats-next: a refresh whose record carries a stored recommendation (the Now tab draws the section)
+const REC = (i) => ({ at: '2026-10-09T10:00:' + String(i % 60).padStart(2, '0') + 'Z', top: { text: 'Refunds for paid orders', reason: 'Customers ask for it most this month.', size: 'small' }, runners: [{ text: 'Gift cards', size: 'large' }, { text: 'Dark mode', size: 'medium' }] })
+const whatsNext = await measure(async (h, i) => {
+  h.project(record({ recommendation: REC(i) }), next())
+  await h.advance(TICK_MS)
+  await h.render()
+})
+// render: five helpers at work (a run is live); every refresh the crew moves on, and Comms and Mission Control's Now tab are drawn
+const render = await measure(async (h, i) => {
+  writeCrew(h, h.now() + TICK, working(5))
+  await h.advance(TICK)
+  await h.draw('AbovePrompt', { hasSurvey: false, isWorking: true, maxRows: 12, bodyColumns: 100 })
+  await h.render()
+}, async () => {
+  const { h } = await building(working(5))
+  h.git()
+  return h
+})
+// step: a build runs and the kernel's note moves its end; the panel reads the note, keeps it while live and draws it
+const NOTE = ROOT + '/.vbw/runtime/step.json'
+const iso = (ms) => new Date(ms).toISOString().replace(/\.\d+Z$/, 'Z')
+const stepped = await measure(async (h, i) => {
+  const end = h.now() + (12 + (i % 5)) * 60000
+  h.write(NOTE, {
+    kind: 'build', run: 'build-1', session: 'sess-1', pid: null, started_at: iso(h.now() - 300000), ids: ['P44.1'], doing: 'building P44.1',
+    parts: { done: 1, total: 2 }, proof: null, first_end: iso(end), end: iso(end), late: false,
+  })
+  await h.advance(TICK_MS)
+  await h.render()
+}, async () => {
+  const h = await mount()
+  h.project(record({ lease: lease('build', Date.now()) }), next())
+  h.git()
+  await h.start()
+  await h.advance(5000)
+  await h.render()
+  return h
+})
+console.log('tick ' + tick.toFixed(3))
+console.log('refresh ' + refresh.toFixed(3))
+console.log('render ' + render.toFixed(3))
+console.log('sound ' + sound.toFixed(3))
+console.log('step ' + stepped.toFixed(3))
+console.log('glance ' + glance.toFixed(3))
+console.log('whats-next ' + whatsNext.toFixed(3))

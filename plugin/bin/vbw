@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+# vbw: the VBW kernel. The only writer of .vbw/record.json.
+# It is on PATH for Claude Code sessions and workflow agents (plugin bin/).
+set -euo pipefail
+
+VBW_LIB="$(cd "$(dirname "$0")/../lib" && pwd)"
+VBW_PLUGIN="$(cd "$VBW_LIB/.." && pwd)"
+export VBW_LIB VBW_PLUGIN
+
+# shellcheck source=../lib/core.sh
+. "$VBW_LIB/core.sh"
+# shellcheck source=../lib/record.sh
+. "$VBW_LIB/record.sh"
+# shellcheck source=../lib/consent.sh
+. "$VBW_LIB/consent.sh"
+# shellcheck source=../lib/contract.sh
+. "$VBW_LIB/contract.sh"
+
+vbw_help() {
+  cat <<'EOF'
+usage: vbw <command> [args]
+
+  init              create .vbw/ (spec and record) in this git repository
+  spec check|sync   validate .vbw/spec.md; sync its requirements into the record
+  spec add auto|human TEXT   append a requirement to the spec and sync
+  status [--json]   where the project stands
+  next [--json]     the next lifecycle step and whether it needs you
+  show VIEW [ID]    roadmap | phase ID | req ID | plan ID | fix ID | contract [--changes] | evidence | decisions | requirements | costs [--json | --ceiling USD]
+  approve [--hash FINGERPRINT]   approve the contract and project commands (the user, via /vbw:approve; --hash only if it is still that contract)
+  check [--expect-red] [CHECK...]   run approved checks and report (writes nothing)
+  prove [--full]    run the approved checks and commands, record the evidence
+  apply < PLAN      the planner's write: phases, plans and checks in one update
+  apply --patch < P change only the plans, checks and rules given, the rest untouched
+  apply --add < P   add new phases with their plans, checks and rules, the rest untouched
+  run start KIND [IDS] | run confirm ID... | run end [--owner-closed]   open the run lease, check what its agents recorded, close it
+  plan done|block|reset ID   a plan's outcome (done is verified)
+  fix done ID [ID...] | retry ID   fixes committed (checks they serve run once); retry an escalated fix
+  req accept ID | req reject ID NOTE | req skip ID   the user's verdict on a [human] requirement, or Skip for now
+  qa finding [PHASE] REQ TEXT | qa record PHASE pass|fail TIER [NOTE]   the QA agent's findings and verdict on a built phase
+  ship              mark the milestone shipped (when vbw next says ship)
+  milestone start TITLE   open the next milestone after shipping
+  milestone rename TITLE  name the current milestone
+  config [set KEY VALUE | models | autonomy | rigor [MODE]]   settings: profile, autonomy, autonomy_cap, command_timeout (1-86400 seconds a project command may run in vbw prove, default 3600), check_budget (1-86400 seconds a unit may take before the reports name it over budget, default 120; never enforced), check_jobs (1-64, this clone; without a setting three quarters of the processor cores), rigor (auto express standard deep), model.ROLE (architect lead dev qa scout debugger docs)
+  auto on SESSION_ID|off [SESSION_ID]|status [SESSION_ID]|gate   autonomous runs, kept per session (gate: the Stop hook)
+  statusline [status | on | off]   the VBW status line in your Claude settings
+  workflows [status | on]   Claude Code's Dynamic workflows, which VBW plans and builds with
+  triage [--json]   the facts for sorting a new idea: milestone, open requirements, run, sorted backlog
+  todo [list] | add [--sort next|later --size small|medium|large] TEXT | sort ID next|later small|medium|large | done ID | drop ID   the backlog
+  loop start [--session ID] ITEM... --ceiling USD [--finish-item] | --no-ceiling | loop stop | loop status [--json]   work through backlog items on its own (the user starts it)
+  decide TEXT [WHY]   record a decision the user made, and why
+  tier raise PHASE TIER REASON   raise a phase's rigor tier and record why (never lowered during a run)
+  legacy [facts] | review | choose | done | remove   a VBW 1 project (.vbw-planning/): facts, review and recommendation, record convert or fresh, mark converted, remove
+  interview [--json] | set level|depth|involvement VALUE | keep private|project   the interview's answers and where they are kept
+  suggest decline TEXT | list   suggestions the user declined (never offered again)
+  recommend < JSON  store the what's-next recommendation (top pick, up to two runners-up) the Architect wrote
+  doctor            check everything VBW needs, with the fix for anything wrong
+  tools [--json] | answer yes|no   whether you allowed VBW to look for the best tools for this project
+  rtk [status]      the state of RTK (command-output compression)
+  report            diagnostic facts for a bug report about VBW (no spec text or code)
+  commit PLAN MSG [FILE...]  commit a plan's declared files (or only FILEs) with trailers
+  mutate PLAN Rn.k [--queue] WHAT FILE... | PLAN --run | PLAN taskK [--check ID]... WHAT FILE... | PLAN taskK --none REASON | PLAN Rn.k --none REASON   break the plan's code on purpose and record whether its tests noticed
+  version | --version   print the plugin version
+  help              this list
+EOF
+}
+
+# vbw_cmd_usage CMD: the usage of one command, for vbw CMD --help (and -h), also
+# right after a subcommand. One entry per command in the dispatch list below: a
+# new command gets its entry here, or tests/help-every-command.bats fails.
+vbw_cmd_usage() {
+  case "$1" in
+    init) echo "usage: vbw init   create .vbw/ (spec and record) in this git repository" ;;
+    status) echo "usage: vbw status [--json]   where the project stands" ;;
+    triage) echo "usage: vbw triage [--json]   the facts for sorting a new idea: milestone, open requirements, run, sorted backlog" ;;
+    todo)
+      echo "usage: vbw todo [list]"
+      echo "       vbw todo add [--sort next|later --size small|medium|large] TEXT"
+      echo "       vbw todo sort ID next|later small|medium|large"
+      echo "       vbw todo done ID | vbw todo drop ID   the backlog" ;;
+    commit) echo "usage: vbw commit PLAN MSG [FILE...]   commit a plan's declared files (or only FILEs) with trailers" ;;
+    mutate)
+      echo "usage: vbw mutate PLAN Rn.k WHAT FILE...   break rule k of requirement Rn (as vbw show plan numbers them) in FILE...; its check must notice"
+      echo "       vbw mutate PLAN Rn.k --queue WHAT FILE...   set the break aside to run later; the files go back at once"
+      echo "       vbw mutate PLAN --run   run every queued break of PLAN side by side and record each"
+      echo "       vbw mutate PLAN taskK [--check ID]... WHAT FILE...   break task K; the checks of the plan's requirements (or the --check ones) must notice"
+      echo "       vbw mutate PLAN taskK --none REASON   record that task K has no behaviour a test could notice"
+      echo "       vbw mutate PLAN Rn.k --none REASON   record that no code the requirement's plans build can change what the rule's check judges (verified from its read list)" ;;
+    next) echo "usage: vbw next [--json]   the next lifecycle step and whether it needs you" ;;
+    show) echo "usage: vbw show VIEW [ID]   VIEW: roadmap | phase ID | req ID | plan ID | fix ID | contract [--changes] | evidence | decisions | requirements | costs [--json | --ceiling USD]" ;;
+    spec)
+      echo "usage: vbw spec check|sync   validate .vbw/spec.md; sync its requirements into the record"
+      echo "       vbw spec add auto|human TEXT   append a requirement to the spec and sync" ;;
+    approve) echo "usage: vbw approve [--hash FINGERPRINT]   approve the contract and project commands (the user, via /vbw:approve)" ;;
+    check) echo "usage: vbw check [--expect-red] [CHECK...]   run approved checks and report (writes nothing)" ;;
+    prove) echo "usage: vbw prove [--full]   run the approved checks and commands, record the evidence" ;;
+    apply)
+      echo "usage: vbw apply < PLAN   the planner's write: phases, plans and checks in one update"
+      echo "       vbw apply --patch < P   change only the plans, checks and rules given"
+      echo "       vbw apply --add < P   add new phases with their plans, checks and rules" ;;
+    run) echo "usage: vbw run start KIND [IDS] | run confirm ID... | run end [--owner-closed]   open the run lease, check what its agents recorded, close it" ;;
+    plan) echo "usage: vbw plan done|block|reset ID   a plan's outcome (done is verified; block takes a reason)" ;;
+    fix)
+      echo "usage: vbw fix done ID [ID...]   fixes committed; the checks they serve run once"
+      echo "       vbw fix retry ID   retry an escalated fix"
+      echo "       vbw fix check FIX < CHECK   add a check (a JSON object: run, files, optionally exit, output, timeout, alone)" ;;
+    req)
+      echo "usage: vbw req accept ID | req reject ID NOTE | req skip ID   the user's verdict on a [human] requirement"
+      echo "       vbw req skip ID   record Skip for now on a [human] requirement: it waits, and when skipped ones are all that holds up shipping, vbw next offers to move them to the next milestone" ;;
+    qa)
+      echo "usage: vbw qa finding [PHASE] REQ TEXT   the QA agent's finding on a requirement"
+      echo "       vbw qa record PHASE pass|fail TIER [NOTE]   its verdict on a built phase" ;;
+    ship) echo "usage: vbw ship   mark the milestone shipped (when vbw next says ship)" ;;
+    config) echo "usage: vbw config [set KEY VALUE | models | autonomy | rigor [MODE]]   settings (vbw help lists the keys)" ;;
+    auto) echo "usage: vbw auto on SESSION_ID | off [SESSION_ID] | status [SESSION_ID] | gate   autonomous runs, kept per session (gate: the Stop hook)" ;;
+    statusline) echo "usage: vbw statusline [status | on | off]   the VBW status line in your Claude settings" ;;
+    workflows) echo "usage: vbw workflows [status | on]   Claude Code's Dynamic workflows, which VBW plans and builds with" ;;
+    doctor) echo "usage: vbw doctor   check everything VBW needs, with the fix for anything wrong" ;;
+    rtk) echo "usage: vbw rtk [status]   the state of RTK (command-output compression)" ;;
+    report) echo "usage: vbw report   diagnostic facts for a bug report about VBW (no spec text or code)" ;;
+    milestone)
+      echo "usage: vbw milestone start TITLE   open the next milestone after shipping"
+      echo "       vbw milestone rename TITLE   name the current milestone" ;;
+    loop)
+      echo "usage: vbw loop start [--session ID] ITEM... --ceiling USD [--finish-item] | --no-ceiling"
+      echo "       vbw loop stop   stop before the next step, from any session"
+      echo "       vbw loop status [--json]   the items, the ceiling, the spend; the ceiling is your choice: --ceiling USD (stop at the next step), --ceiling USD --finish-item, or --no-ceiling" ;;
+    decide) echo "usage: vbw decide TEXT [WHY]   record a decision the user made, and why" ;;
+    legacy) echo "usage: vbw legacy [facts] | review | choose | done | remove   a VBW 1 project (.vbw-planning/): facts, review, record convert or fresh, mark converted, remove" ;;
+    tier) echo "usage: vbw tier raise PHASE TIER REASON   raise a phase's rigor tier and record why (never lowered during a run)" ;;
+    interview) echo "usage: vbw interview [--json] | set level|depth|involvement VALUE | keep private|project   the interview's answers and where they are kept" ;;
+    suggest) echo "usage: vbw suggest decline TEXT | list   suggestions the user declined (never offered again)" ;;
+    recommend) echo "usage: vbw recommend < JSON   store the what's-next recommendation the Architect wrote" ;;
+    tools) echo "usage: vbw tools [--json] | answer yes|no   whether you allowed VBW to look for the best tools for this project" ;;
+    version) echo "usage: vbw version   print the plugin version (also vbw --version)" ;;
+    help) echo "usage: vbw help   the list of commands" ;;
+  esac
+}
+
+cmd="${1:-}"
+[ $# -gt 0 ] && shift
+# --help or -h as the first argument, or right after a subcommand, is help: it
+# runs before anything else, needs no project and changes nothing.
+for help_arg in "${1:-}" "${2:-}"; do
+  case "$cmd:$help_arg" in
+    :*|-h:*|--help:*|--version:*) ;;
+    *:-h|*:--help)
+      help_text=$(vbw_cmd_usage "$cmd")
+      if [ -n "$help_text" ]; then printf '%s\n' "$help_text"; exit 0; fi ;;
+  esac
+done
+case "$cmd" in
+  version|--version) jq -r .version "$VBW_PLUGIN/.claude-plugin/plugin.json" ;;
+  help|-h|--help) vbw_help ;;
+  init|status|triage|todo|commit|mutate|next|show|spec|approve|check|prove|apply|run|plan|fix|req|qa|ship|config|auto|statusline|workflows|doctor|rtk|report|milestone|loop|decide|legacy|tier|interview|suggest|recommend|tools)
+    # shellcheck source=/dev/null
+    . "$VBW_LIB/cmd-$cmd.sh"
+    "cmd_$cmd" "$@"
+    ;;
+  "") vbw_usage_error "no command given" ;;
+  *) vbw_usage_error "unknown command: $cmd" ;;
+esac

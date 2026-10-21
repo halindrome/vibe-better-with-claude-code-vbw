@@ -1,0 +1,118 @@
+#!/usr/bin/env bats
+# R191, phase P149 (L1): a proof (vbw prove, and the proof inside vbw fix done)
+# records every unit it ran (a check, a test file, a project command) with that
+# unit's own seconds, as units [{name, seconds}] beside its parts in the step
+# history. A proof's expected time is the sum of its units' last recorded seconds
+# (runs.json, the per-check store in the clone's git folder; a unit never run
+# before counts as the median of the known ones), times the median ratio of wall
+# time to summed unit time over the latest 10 proofs that recorded units, rounded:
+# parallel lanes and this machine's load are learned, not assumed. Without that
+# basis the proofs that recorded only parts still give today's time per unit; with
+# fewer than 3 finished proofs there is no time.
+
+load helper
+load step-helper
+load road-helper
+load fixture-helper
+
+built_project() {
+  vbw_setup
+  step_project
+  step_edit '.plans[].status = "done" | .checks = [{id: "C1", req: "R1", run: ["true"]}, {id: "C2", req: "R1", run: ["true"]},
+    {id: "C3", req: "R1", run: ["true"]}, {id: "C4", req: "R1", run: ["true"]}]'
+  git add -A && git commit -q -m "chore(vbw): checks"
+  "$VBW" approve > /dev/null
+}
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+last() { jq -c --arg k "$1" '[.steps[] | select(.kind == $k)] | last' "$STEPS"; }
+step_of() { "$VBW" next --json | jq -c '.step'; }
+
+@test "R191: a proof records every unit it ran with its own seconds" {
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  last proof | jq -e '.parts == 4 and (.units | length == 4)
+    and ([.units[].name] | sort == ["check:C1", "check:C2", "check:C3", "check:C4"])
+    and all(.units[]; .seconds | type == "number" and . >= 0)' || { cat "$STEPS"; false; }
+}
+
+@test "R191: the proof inside vbw fix done records its units too" {
+  step_edit '.fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "C1 fail"}]'
+  vbw_run fix done F1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  last proof | jq -e '.parts == 4 and (.units | length == 4) and ([.units[].name] | sort == ["check:C1", "check:C2", "check:C3", "check:C4"])' || { cat "$STEPS"; false; }
+}
+
+@test "R191: each unit records its own seconds, not a shared or zero value" {
+  step_edit '.checks = [{id: "C1", req: "R1", run: ["sleep", "2"]}, {id: "C2", req: "R1", run: ["true"]}]'
+  git add -A && git commit -q -m "chore(vbw): a slow check"
+  "$VBW" approve > /dev/null
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  last proof | jq -e '([.units[] | select(.name == "check:C1")][0].seconds) as $slow
+    | ([.units[] | select(.name == "check:C2")][0].seconds) as $fast
+    | $slow >= 2 and $fast < $slow and .seconds >= $slow' || { cat "$STEPS"; false; }
+}
+
+@test "R191: a proof's expected time is the sum of its units' last recorded seconds, times the learned ratio, rounded" {
+  runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
+  hist_proof '[{"name": "check:C1", "seconds": 40}, {"name": "check:C2", "seconds": 60}]' 150 3
+  local s
+  s=$(step_of)
+  printf '%s' "$s" | jq -e '.kind == "proof" and .parts == 4 and .seconds == 150 and (.say | startswith("Proving 4 checks: about 3 min"))' || { echo "$s"; false; }
+}
+
+@test "R191: a proof of its own sizes its note by its units' recorded seconds, the learned ratio and the median for an unknown unit" {
+  # C1..C3 are known (10, 20, 30 s), C4 never ran: it counts as 20, so 80 s times the ratio 1.5.
+  runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30}'
+  hist_proof '[{"name": "check:C1", "seconds": 40}, {"name": "check:C2", "seconds": 60}]' 150 3
+  SNAP="$TEST_ROOT/snap"
+  export SNAP
+  step_edit '.checks[0].run = ["sh", "-c", "cp \"$NOTE\" \"$SNAP\""]'
+  git add -A && git commit -q -m "chore(vbw): a check that reads the note"
+  "$VBW" approve > /dev/null
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  jq -e '.kind == "proof" and .run == null and ((.first_end | fromdateiso8601) - (.started_at | fromdateiso8601)) == 120' "$SNAP" || { cat "$SNAP"; false; }
+}
+
+@test "R191 (D429): the proof inside vbw fix done leaves the fix step's parts to the fixes closed" {
+  step_edit '.fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "C1 fail"}, {id: "F2", req: "R1", attempts: 0, status: "open", note: "C1 fail"}]'
+  git add -A && git commit -q -m "chore(vbw): fixes"
+  "$VBW" approve > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" run start fix F1 F2 > /dev/null
+  jq -e '.kind == "fix" and .parts == {done: 0, total: 2}' "$NOTE" || { cat "$NOTE"; false; }
+  VBW_SESSION_ID=s1 "$VBW" fix done F1 > /dev/null
+  jq -e '.kind == "fix" and .parts == {done: 1, total: 2} and .proof == null and (.doing | startswith("fixing"))' "$NOTE" || { cat "$NOTE"; false; }
+}
+
+@test "R191: the ratio is the median over the latest 10 proofs that recorded units" {
+  runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
+  hist_proof '[{"name": "check:C1", "seconds": 100}]' 100 1
+  hist_proof '[{"name": "check:C1", "seconds": 100}]' 200 1
+  hist_proof '[{"name": "check:C1", "seconds": 100}]' 500 1
+  step_of | jq -e '.kind == "proof" and .seconds == 200' || { step_of; false; }
+  hist_proof '[{"name": "check:C1", "seconds": 100}]' 250 1
+  step_of | jq -e '.kind == "proof" and .seconds == 225' || { step_of; false; }
+}
+
+@test "R191: a unit never run before counts as the median of this proof's known units" {
+  runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30}'
+  hist_proof '[{"name": "check:C1", "seconds": 40}, {"name": "check:C2", "seconds": 60}]' 150 3
+  step_of | jq -e '.kind == "proof" and .parts == 4 and .seconds == 120' || { step_of; false; }
+}
+
+@test "R191: without proofs that recorded units, proofs with only parts give today's time per unit; fewer than 3 proofs in all give none" {
+  step_seed proof 30 3 3
+  step_of | jq -e '.kind == "proof" and .parts == 4 and .seconds == 40' || { step_of; false; }
+  jq 'del(.steps[] | select(.kind == "proof"))' "$STEPS" > "$TEST_ROOT/h.json" && cp "$TEST_ROOT/h.json" "$STEPS"
+  runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
+  hist_proof '[{"name": "check:C1", "seconds": 40}]' 60 2
+  step_of | jq -e '.kind == "proof" and .seconds == null and .end == null
+    and .say == "Proving 4 checks: no end time yet (VBW has timed fewer than 3 steps like this here)"' || { step_of; false; }
+}

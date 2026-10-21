@@ -1,0 +1,52 @@
+{
+  "scenario": "fixing",
+  "evidence_level": "L2",
+  "fixture": "two finished requirements with two checks each and two test files of 5 seconds; two open fixes (one of R1, one of the test command) with their changes committed",
+  "at": "2026-10-14T09:56:57Z",
+  "claude_version": "2.1.299",
+  "cost_usd": 0.19334966999999997,
+  "profile": "balanced",
+  "lead_model": "opus",
+  "close": {
+    "label": "close run",
+    "model": "claude-haiku-5-5",
+    "effort_sent": "low",
+    "answer": {
+      "fixdone": "ran",
+      "closed": [
+        "F1",
+        "F2"
+      ],
+      "open": [],
+      "ended": true,
+      "recorded": true,
+      "report": "all recorded; run ended. Fix round ran: F1 and F2 both fixed by `vbw prove` (checks C1 to C4 and test files tests/t_1.sh and tests/t_2.sh all passed, 4 checks and 2 test files ran, none reused). `vbw run confirm` recorded both as fixed (exit 0). `vbw run end` succeeded."
+    }
+  },
+  "commands": [
+    "VBW_SESSION_ID=bb9d6cb6-426e-46e4-b012-20f18a5466b2 vbw fix done F1 F2",
+    "VBW_SESSION_ID=bb9d6cb6-426e-46e4-b012-20f18a5466b2 vbw run confirm F1 F2; echo \"exit=$?\"",
+    "VBW_SESSION_ID=bb9d6cb6-426e-46e4-b012-20f18a5466b2 vbw run end; echo \"exit=$?\""
+  ],
+  "run_open_after": false,
+  "fixes": [
+    {
+      "id": "F1",
+      "status": "fixed"
+    },
+    {
+      "id": "F2",
+      "status": "fixed"
+    }
+  ],
+  "fixdone": {
+    "seconds": 16,
+    "backgrounded": false
+  },
+  "not_tested": [
+    "a person using /vbw:vibe (L3)",
+    "the closing step on Haiku in a project of real size",
+    "the other workflows (planning, mapping, verifying)",
+    "Fable as the session model"
+  ]
+}

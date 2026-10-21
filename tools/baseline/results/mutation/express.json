@@ -1,0 +1,33 @@
+{
+  "scenario": "express",
+  "tier": "express",
+  "evidence_level": "L2",
+  "fixture": "one plan (P1.1) creating src/hello.sh and src/bye.sh; R1 (hello.sh prints hello) and R2 (bye.sh prints bye), one rule each; the check of R2 only runs bye.sh and cannot fail on what it prints",
+  "at": "2026-10-14T20:40:20Z",
+  "claude_version": "2.1.300",
+  "cost_usd": 0.14860829499999997,
+  "minutes": 0.5,
+  "minutes_added": 0,
+  "decision": "D386",
+  "weak_rule": {
+    "req": "R2",
+    "text": "bye.sh prints bye"
+  },
+  "mutations": [],
+  "next_after_build": {
+    "action": "prove",
+    "files": []
+  },
+  "plan_status": "done",
+  "commands": [
+    "vbw show plan P1.1",
+    "vbw check --expect-red C1 C2; ls tests src; cat tests/hello.sh",
+    "echo 'echo hello' > src/hello.sh && vbw commit P1.1 \"feat(P1.1): add hello.sh\" src/hello.sh && echo 'echo bye' > src/bye.sh && vbw commit P1.1 \"feat(P1.1): add bye.sh\" src/bye.sh && vbw check C1 C2 && vbw plan done P1.1"
+  ],
+  "not_tested": [
+    "a person using /vbw:vibe (L3)",
+    "a project of real size",
+    "the deep tier",
+    "models other than Sonnet for the Dev"
+  ]
+}

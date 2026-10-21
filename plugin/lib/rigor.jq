@@ -1,0 +1,65 @@
+# Adaptive rigor: the tier floor of each phase, from measured signals.
+# Input: the record. Args: $facts (object: planned path -> bytes, for the
+# existing regular files only), $ids (array of phase ids, or null = the
+# current milestone's phases).
+# $tracked: the number of files git tracks.
+# $guarded: [{req, checks}], the [auto] requirements every check of which is
+# approved (see rigor_guarded); they do not raise a tier.
+# Output: [{id, tier, floor, reasons}]. The floor comes from the signals alone;
+# tier is the phase's own tier when it is higher (the Architect may only raise).
+
+# The tier, risk and escalate definitions are in rigor-defs.jq (loaded first).
+
+# A plan file entry and a path overlap: equal, or one is a directory entry
+# (ending in /) holding the other.
+def overlaps($b): . as $a
+  | $a == $b or (($a | endswith("/")) and ($b | startswith($a))) or (($b | endswith("/")) and ($a | startswith($b)));
+
+def rid: ltrimstr("R") | tonumber? // 0;
+
+$f_facts[0] as $facts | $f_guarded[0] as $guarded
+| . as $r
+| ($ids // [$r.phases[] | select(.milestone == $r.milestone.id) | .id]) as $want
+| [ $r.phases[] | select(.id as $i | $want | index($i)) | . as $ph
+    | ([$r.plans[] | select(.phase == $ph.id) | .files[]] | unique) as $files
+    | ($ph.reqs | length) as $nreqs
+    | ([$files[] | $facts[.] // empty] | add // 0) as $bytes
+    | ($files | any(.[]; $facts[.] != null and (is_doc | not))) as $existing
+    | ($r | has_tests) as $has_tests
+    | ([$r.requirements[] | select(.id as $q | $ph.reqs | index($q))] ) as $mine
+    | ([ $files[] | select(is_prose | not) | {src: ., text: .} ]
+       + [{src: "phase title", text: $ph.title}]
+       + [{src: "phase goal", text: ($ph.goal // "")}]
+       + [$mine[] | {src: .id, text: .text}]) as $haystack
+    | [ risks[] | . as $c
+        | ([$haystack[] | select(.text | test($c.re; "i")) | .src] | .[0]) as $hit
+        | select($hit != null) | {name: $c.name, src: $hit} ] as $risk
+    | ($ph.reqs) as $own
+    | ([$r.requirements[] | select((.status == "proven" or .status == "accepted") and (.id as $q | $own | index($q) | not)) | .id as $q
+        | select([$r.plans[] | select(.phase != $ph.id and (.reqs | index($q))) | .files[]
+                  | . as $f | select($files | any(.[]; overlaps($f)))] | length > 0) | $q]
+       | sort_by(rid)) as $could
+    | ([$guarded[] | .req]) as $gids
+    | ($could | map(select(. as $q | $gids | index($q) | not))) as $breaks
+    | ([$guarded[] | select(.req as $q | $could | index($q))] | sort_by(.req | rid)) as $gcould
+    | ( [ ($nreqs | sig_reqs),
+          ($files | length | sig_files),
+          ($bytes | sig_bytes),
+          (if ($risk | length) > 0 then "deep" else "express" end),
+          ($breaks | length | sig_breaks),
+          sig_tests($existing; $has_tests),
+          ($files | length | sig_spread($tracked))
+        ] | reduce .[] as $t ("express"; max_tier($t))) as $floor
+    | (if ($ph.tier // $floor) | tier_rank > ($floor | tier_rank) then $ph.tier else $floor end) as $tier
+    | { id: $ph.id, tier: $tier, floor: $floor,
+        reasons: ([ "requirements: \($nreqs)",
+                    "files: \($files | length) (\($bytes) bytes)",
+                    (if ($files | length | sig_spread($tracked)) == "standard" then "files: more than 2 in a repository tracking \($tracked) files" else empty end),
+                    (if ($risk | length) == 0 then "risk: none"
+                     else "risk: " + ([$risk[] | "\(.name) (\(.src))"] | join(", ")) end),
+                    (if ($breaks | length) == 0 then "breaks: none" else "breaks: " + ($breaks | join(", ")) end),
+                    (if ($gcould | length) == 0 then empty
+                     else "guarded: " + ([$gcould[] | "\(.req) (\(.checks | join(", ")))"] | join(", ")) end),
+                    (if $has_tests then "tests: project test command" else "tests: no project test command" end)
+                  ] + (if $tier != $floor then ["Architect raised the tier to \($tier)"] else [] end)) }
+  ]
