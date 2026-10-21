@@ -2,11 +2,18 @@
 # vbw show: human views rendered from the record and git trailers.
 
 load helper
+load fixture-helper
 
 # Hand edits of the record keep the protected list in step with the checks (R150), as the approved check files do.
 KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end'
 
-setup() {
+# The planned payments project with P1.1 committed, built once per file.
+setup_file() { fixture_build show show_project; }
+setup() { fixture_copy show; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+show_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -23,8 +30,6 @@ setup() {
   mkdir -p src && printf 'pay\n' > src/pay.js
   "$VBW" commit P1.1 "feat(pay): card form" > /dev/null
 }
-
-teardown() { vbw_teardown; }
 
 @test "show roadmap lists phases and plans with status and dependencies" {
   vbw_run show roadmap

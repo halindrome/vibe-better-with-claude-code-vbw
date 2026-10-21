@@ -11,9 +11,30 @@
 # plans a proof without running one).
 
 load helper
+load fixture-helper
 
-setup() {
-  vbw_setup
+# The two projects the tests read, built once per file (fixture_build) and copied
+# for each test: five units and fifty units, each built by `build` in the project
+# folder. A test that reads both has the fifty-unit copy beside the project.
+setup_file() {
+  fixture_build five five_project
+  fixture_build fifty fifty_project
+}
+setup() { fixture_copy five; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+five_project() { vbw_setup; build "$PROJECT" 5; }
+fifty_project() { vbw_setup; build "$PROJECT" 50; }
+
+# fifty_beside: the fifty-unit project, a copy of the fixture, at $TEST_ROOT/fifty.
+fifty_beside() {
+  mkdir -p "$TEST_ROOT/fifty"
+  cp -Rp "$(fixture_root fifty)/project with space/." "$TEST_ROOT/fifty/"
+}
+
+# standins: counting stand-ins for git, jq, sha256sum and shasum, counted in $COUNT_DIR.
+standins() {
   local tool real
   mkdir -p "$TEST_ROOT/standin"
   for tool in git jq sha256sum shasum; do
@@ -30,8 +51,6 @@ SH
   mkdir -p "$COUNT_DIR"
   export COUNT_DIR
 }
-
-teardown() { vbw_teardown; }
 
 # build DIR N: a project at DIR with checks C1..CN of R1, every one running
 # tests/unit.sh with its number: check i lists src/di when 41 <= i <= 45, else
@@ -77,6 +96,7 @@ SH
 
 # counted DIR: run vbw next --json in DIR with the stand-ins first on PATH; the counts are in $COUNT_DIR.
 counted() {
+  standins
   rm -f "$COUNT_DIR"/*
   (cd "$1" && PATH="$TEST_ROOT/standin:$PATH" "$VBW" next --json > "$TEST_ROOT/next.json" < /dev/null)
 }
@@ -92,8 +112,7 @@ store_file() { printf '%s/vbw/runs.json' "$(git rev-parse --path-format=absolute
 edit_store() { jq "$1" "$(store_file)" > "$TEST_ROOT/store.json" && cp "$TEST_ROOT/store.json" "$(store_file)"; }
 
 @test "R202: planning runs one git diff-tree per distinct recorded tree: the same count for 5 units and for 50" {
-  build "$PROJECT" 5
-  build "$TEST_ROOT/fifty" 50
+  fifty_beside
   counted "$PROJECT"
   local d5 d50
   d5=$(count difftree)
@@ -104,8 +123,7 @@ edit_store() { jq "$1" "$(store_file)" > "$TEST_ROOT/store.json" && cp "$TEST_RO
 }
 
 @test "R202: planning parses the store and the record, and fingerprints the units, in a fixed number of processes" {
-  build "$PROJECT" 5
-  build "$TEST_ROOT/fifty" 50
+  fifty_beside
   counted "$PROJECT"
   local j5 s5 j50 s50
   j5=$(count jq)
@@ -119,7 +137,7 @@ edit_store() { jq "$1" "$(store_file)" > "$TEST_ROOT/store.json" && cp "$TEST_RO
 }
 
 @test "R202: a 50-unit fixture with every reason gives each unit exactly the reason the one reuse rule names" {
-  build "$PROJECT" 50
+  fixture_copy fifty
   cd "$PROJECT"
   local i
   # C1-C10: a file they read changed.
@@ -158,7 +176,7 @@ edit_store() { jq "$1" "$(store_file)" > "$TEST_ROOT/store.json" && cp "$TEST_RO
 }
 
 @test "R202: a folder an older store recorded as a plain name (no fingerprint) still re-runs its unit when a file is added to it" {
-  build "$PROJECT" 50
+  fixture_copy fifty
   cd "$PROJECT"
   edit_store '.runs |= map_values(.dirs |= map(if type == "object" then .path else . end))'
   printf 'new\n' > src/d41/new.txt
@@ -172,7 +190,6 @@ edit_store() { jq "$1" "$(store_file)" > "$TEST_ROOT/store.json" && cp "$TEST_RO
 }
 
 @test "R202: a unit whose recorded code is unknown to git runs again and says so, and the others are still judged" {
-  build "$PROJECT" 5
   cd "$PROJECT"
   edit_store '.runs["check:C1"].tree = "0000000000000000000000000000000000000001"'
   vbw_run prove
@@ -181,7 +198,6 @@ edit_store() { jq "$1" "$(store_file)" > "$TEST_ROOT/store.json" && cp "$TEST_RO
 }
 
 @test "R202: a proof cut short stops all reuse: every unit's reason is that one, whatever its run says" {
-  build "$PROJECT" 5
   cd "$PROJECT"
   # shellcheck disable=SC2016 # expanded by vbw_kernel
   run vbw_kernel 'for l in checks proofreuse; do . "$VBW_LIB/$l.sh"; done; VBW_COMMAND_TIMEOUT=3600; mkdir -p "$VBW_RUNTIME"

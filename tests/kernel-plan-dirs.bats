@@ -3,11 +3,18 @@
 # for the guards, the proof's scope check, wave scheduling and the run lease.
 
 load helper
+load fixture-helper
 
 # Hand edits of the record keep the protected list in step with the checks (R150), as the approved check files do.
 KEEP_PROTECTED='if has("protected") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end'
 
-setup() {
+# The planned project with directory plans, built once per file.
+setup_file() { fixture_build plan_dirs plan_dirs_project; }
+setup() { fixture_copy plan_dirs; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+plan_dirs_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -22,8 +29,6 @@ setup() {
                 {id:"P1.2", phase:"P1", title:"More", reqs:["R2"], files:["cases/x/a.sh"], after:[], status:"planned"}]'
   git add -A && git commit -q -m "chore(vbw): plan"
 }
-
-teardown() { vbw_teardown; }
 
 edit_record() {
   jq "$1" .vbw/record.json > "$TEST_ROOT/edit.json" && jq "$KEEP_PROTECTED" "$TEST_ROOT/edit.json" > .vbw/record.json

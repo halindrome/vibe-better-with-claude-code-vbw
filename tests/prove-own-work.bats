@@ -23,8 +23,24 @@
 # written before this change, and the validator refuses a malformed own. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+# The approved shop, and the same shop after its first proof, each built once per
+# file and copied for every test.
+setup_file() {
+  fixture_build shop shop_project
+  fixture_build proved proved_shop
+}
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+proved_shop() {
+  shop_project
+  "$VBW" prove > /dev/null
+}
+
+shop_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -53,8 +69,6 @@ setup() {
   git add -A && git commit -q -m "chore(vbw): plan"
   "$VBW" approve > /dev/null
 }
-
-teardown() { vbw_teardown; }
 
 edit_record() {
   jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
@@ -99,7 +113,7 @@ mixed_change() {
 }
 
 @test "R202: a change that affects no unit prints zeros: ran again 0 of 5, top reasons none; the own-work line still prints" {
-  "$VBW" prove > /dev/null
+  fixture_copy proved
   printf 'changed\n' >> src/other.txt
   git add -A && git commit -q -m "chore: unread file"
   vbw_run prove
@@ -111,7 +125,7 @@ mixed_change() {
 }
 
 @test "R202: mixed reasons: at most three, most frequent first, ties in the units' order" {
-  "$VBW" prove > /dev/null
+  fixture_copy proved
   mixed_change
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
@@ -121,7 +135,7 @@ mixed_change() {
 }
 
 @test "R202: vbw show evidence prints the step breakdown and each unit's reason or reuse" {
-  "$VBW" prove > /dev/null
+  fixture_copy proved
   mixed_change
   "$VBW" prove > /dev/null
   vbw_run show evidence
@@ -133,7 +147,7 @@ mixed_change() {
 }
 
 @test "R202: a record written before this change still reads, and vbw show evidence says not recorded" {
-  "$VBW" prove > /dev/null
+  fixture_copy proved
   edit_record 'del(.evidence.own, .evidence.causes) | .evidence.checks |= map_values(del(.why))'
   vbw_run show evidence
   [ "$status" -eq 0 ] || { echo "$output"; false; }
@@ -142,7 +156,7 @@ mixed_change() {
 }
 
 @test "R202: the validator refuses a malformed own split" {
-  "$VBW" prove > /dev/null
+  fixture_copy proved
   local bad good
   good=$(cat .vbw/record.json)
   edit_record '.evidence.own = {planning: "x"}'

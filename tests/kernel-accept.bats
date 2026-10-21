@@ -3,8 +3,15 @@
 # user's own rejections; a fix QA opened stays open until QA passes the phase.
 
 load helper
+load fixture-helper
 
-setup() {
+# The built and proved shop, built once per file.
+setup_file() { fixture_build proved proved_project; }
+setup() { fixture_copy proved; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+proved_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -20,8 +27,6 @@ setup() {
   "$VBW" plan done P1.1 > /dev/null
   "$VBW" prove > /dev/null
 }
-
-teardown() { vbw_teardown; }
 
 @test "R11: a user rejection opens a fix and a later accept of that requirement closes it" {
   "$VBW" req reject R2 "too plain" > /dev/null

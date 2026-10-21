@@ -3,16 +3,21 @@
 # settings and model profiles, and the autonomy gate.
 
 load helper
+load fixture-helper
 
-setup() {
+# The initialised shop (one auto, one human requirement), built once per file.
+setup_file() { fixture_build shop shop_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+shop_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
   printf '# Shop\n\n## Requirements\n\n- R1 [auto] Pay\n- R2 [human] It feels trustworthy\n' > .vbw/spec.md
   "$VBW" spec sync > /dev/null
 }
-
-teardown() { vbw_teardown; }
 
 edit_record() {
   jq "$1" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json

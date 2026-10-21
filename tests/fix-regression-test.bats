@@ -14,29 +14,21 @@
 # Outside fix runs for QA findings, check files stay protected as before. L1.
 
 load helper
+load fix-helper
+load fixture-helper
 
 # R1 (pay) and R2 (refund) [auto]; plan P1.1 writes src/pay.txt and
 # src/refund.txt; C1 (R1) runs tests/c1.sh, C2 (R2) runs tests/c2.sh.
-setup() {
-  vbw_setup
-  vbw_git_project
-  "$VBW" init > /dev/null
-  printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n- R2 [auto] A customer gets a refund\n' > .vbw/spec.md
-  "$VBW" spec sync > /dev/null
-  mkdir -p src tests
-  printf 'grep -qx paid src/pay.txt\n' > tests/c1.sh
-  printf 'test -f src/refund.txt\n' > tests/c2.sh
-  jq -nc '{phases: [{id: "P1", title: "Pay", reqs: ["R1", "R2"], goal: "Customers pay and get refunds", criteria: ["paid", "refunded"], tier: "standard"}],
-    plans: [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1", "R2"], files: ["src/pay.txt", "src/refund.txt"], after: [], tasks: ["pay", "refund", "note"]}],
-    checks: [{id: "C1", req: "R1", run: ["sh", "tests/c1.sh"], files: ["tests/c1.sh"]},
-             {id: "C2", req: "R2", run: ["sh", "tests/c2.sh"], files: ["tests/c2.sh"]}],
-    rules: [{req: "R1", text: "a customer can pay", check: "C1"}, {req: "R2", text: "a refund is written", check: "C2"}]}' | "$VBW" apply > /dev/null
-  git add -A
-  git commit -q -m "chore(test): planned"
-  "$VBW" approve > /dev/null
+# fix_project built once per file in the two shapes the tests start from: planned and
+# approved (planned), and with P1.1 built with the refund and proved (built).
+setup_file() {
+  fixture_build planned fix_project planned
+  fixture_build built fix_project built
 }
+setup() { fixture_copy built; }
 
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # built [refund]: P1.1 built and proved (with the refund only when asked).
 built() {
@@ -92,7 +84,6 @@ fixed_and_ended() {
 }
 
 @test "R160: a fix run for a QA finding starts when some check lists no files" {
-  built refund
   # A check may declare no files (its run is enough); the lease must still be computed.
   jq '.checks += [{id: "C9", req: "R2", run: ["true"]}] | .protected = ([.checks[].files // [] | .[]] | unique)' .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
   "$VBW" qa finding R1 "a payment of zero is accepted" > /dev/null
@@ -103,7 +94,6 @@ fixed_and_ended() {
 }
 
 @test "R160: during a fix run for a QA finding the Dev may create a new test file" {
-  built refund
   qa_fix_run
   local out
   out=$(file_call Write tests/r1-regression.sh)
@@ -113,7 +103,6 @@ fixed_and_ended() {
 }
 
 @test "R160: during that run the Dev may edit an approved check file of the finding's requirement" {
-  built refund
   qa_fix_run
   local out
   out=$(file_call Edit tests/c1.sh)
@@ -121,7 +110,6 @@ fixed_and_ended() {
 }
 
 @test "R160: a check file of another requirement stays blocked, and the message names it and says what to do instead" {
-  built refund
   qa_fix_run
   local out
   out=$(file_call Edit tests/c2.sh)
@@ -133,7 +121,6 @@ fixed_and_ended() {
 }
 
 @test "R160: the new test is registered as a check of the finding's requirement, and vbw show names the fix it came from" {
-  built refund
   qa_fix_run
   regression
   run register
@@ -147,7 +134,6 @@ fixed_and_ended() {
 }
 
 @test "R160: one approval question names every new or changed check file of the fix, and nothing runs them before it" {
-  built refund
   qa_fix_run
   fixed_and_ended
   [ ! -e "$TEST_ROOT/ran-regression" ] || { echo "the new test ran before the approval"; false; }
@@ -159,7 +145,6 @@ fixed_and_ended() {
 }
 
 @test "R160: without the approval vbw prove runs none of them, names the waiting files and the next step, and the fix stays open" {
-  built refund
   qa_fix_run
   fixed_and_ended
   run "$VBW" prove
@@ -171,7 +156,6 @@ fixed_and_ended() {
 }
 
 @test "R160: once approved, vbw prove runs the new test" {
-  built refund
   qa_fix_run
   fixed_and_ended
   "$VBW" approve > /dev/null
@@ -181,7 +165,6 @@ fixed_and_ended() {
 }
 
 @test "R160: the approval is by content: a later change to the new test waits for a new approval" {
-  built refund
   qa_fix_run
   fixed_and_ended
   "$VBW" approve > /dev/null
@@ -197,6 +180,7 @@ fixed_and_ended() {
 }
 
 @test "R160: outside fix runs for QA findings check files stay protected as before" {
+  fixture_copy planned
   local out
   # A build run: neither a check file nor a new test file outside the plan.
   VBW_SESSION_ID=s1 "$VBW" run start build P1.1 > /dev/null

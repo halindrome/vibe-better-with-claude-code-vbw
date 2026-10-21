@@ -3,8 +3,16 @@
 # plan, fix, check, show plan|fix, and evidence staleness (X9).
 
 load helper
+load fixture-helper
 
-setup() {
+# The shop project every test works on, built once per file (PLAN is a plain
+# variable the builder sets; the copy restores it).
+setup_file() { fixture_build shop shop_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+shop_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -19,8 +27,6 @@ setup() {
          "checks": [{"id": "C1", "req": "R1", "run": ["sh", "tests/pay.sh"], "files": ["tests/pay.sh"]},
                     {"id": "C2", "req": "R2", "run": ["sh", "tests/receipt.sh"], "files": ["tests/receipt.sh"]}]}'
 }
-
-teardown() { vbw_teardown; }
 
 apply_plan() { printf '%s' "$PLAN" | "$VBW" apply > /dev/null; }
 

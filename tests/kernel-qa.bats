@@ -3,8 +3,15 @@
 # QA mandate; docs/proof.md).
 
 load helper
+load fixture-helper
 
-setup() {
+# The built and proved shop, built once per file.
+setup_file() { fixture_build shop shop_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+shop_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -20,8 +27,6 @@ setup() {
   "$VBW" plan done P1.1 > /dev/null
   "$VBW" prove --full > /dev/null
 }
-
-teardown() { vbw_teardown; }
 
 @test "after the proof, QA is next; a pass on the proven code lets the milestone ship" {
   vbw_run next --json

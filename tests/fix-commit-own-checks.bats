@@ -15,48 +15,18 @@
 # say so. L1: the kernel on a fixture project.
 
 load helper
+load fix-helper
+load fixture-helper
 
 # R1 (pay) and R2 (refund) [auto], R3 [human]; P1.1 writes src/pay.txt and
 # src/refund.txt, P1.2 src/ui.txt; C1 (R1) runs tests/c1.sh, C2 (R2) tests/c2.sh.
-# Built and proved, then the user breaks the payment: the proof opens F_PROVE for R1.
-setup() {
-  vbw_setup
-  vbw_git_project
-  "$VBW" init > /dev/null
-  printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n- R2 [auto] A customer gets a refund\n- R3 [human] Paying feels safe\n' > .vbw/spec.md
-  "$VBW" spec sync > /dev/null
-  mkdir -p src tests
-  printf 'grep -qx paid src/pay.txt\n' > tests/c1.sh
-  printf 'test -f src/refund.txt\n' > tests/c2.sh
-  printf 'three\n' > src/staged.txt
-  jq -nc '{phases: [{id: "P1", title: "Pay", reqs: ["R1", "R2", "R3"], goal: "Customers pay and get refunds", criteria: ["paid"], tier: "standard"}],
-    plans: [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1", "R2"], files: ["src/pay.txt", "src/refund.txt"], after: [], tasks: ["pay", "refund"]},
-            {id: "P1.2", phase: "P1", title: "Feel", reqs: ["R3"], files: ["src/ui.txt"], after: [], tasks: ["calm words"]}],
-    checks: [{id: "C1", req: "R1", run: ["sh", "tests/c1.sh"], files: ["tests/c1.sh"]},
-             {id: "C2", req: "R2", run: ["sh", "tests/c2.sh"], files: ["tests/c2.sh"]}],
-    rules: [{req: "R1", text: "a customer can pay", check: "C1"}, {req: "R2", text: "a refund is written", check: "C2"}]}' | "$VBW" apply > /dev/null
-  git add -A
-  git commit -q -m "chore(test): planned"
-  "$VBW" approve > /dev/null
-  printf 'paid\n' > src/pay.txt
-  printf 'refund\n' > src/refund.txt
-  printf 'calm\n' > src/ui.txt
-  "$VBW" commit P1.1 "feat(pay): pay" > /dev/null
-  "$VBW" commit P1.2 "feat(ui): calm" > /dev/null
-  # shellcheck disable=SC1010 # "done" is a vbw subcommand
-  "$VBW" plan done P1.1 > /dev/null
-  # shellcheck disable=SC1010 # "done" is a vbw subcommand
-  "$VBW" plan done P1.2 > /dev/null
-  "$VBW" prove > /dev/null 2>&1 || { echo "the first proof failed"; return 1; }
-  printf 'unpaid\n' > src/pay.txt
-  git commit -q -am "feat(pay): a bug"
-  "$VBW" prove > /dev/null 2>&1 || true
-  F_PROVE=$(jq -r '[.fixes[] | select(.req == "R1" and .status == "open")][0].id // empty' .vbw/record.json)
-  [ -n "$F_PROVE" ] || { echo "the proof opened no fix for R1"; jq .fixes .vbw/record.json; return 1; }
-  export F_PROVE
-}
+# Built and proved, then the user breaks the payment: the proof opens F_PROVE for R1
+# (fix_project shop, built once per file).
+setup_file() { fixture_build shop fix_project shop; }
+setup() { fixture_copy shop; }
 
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 edit_record() {
   jq "$1" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json

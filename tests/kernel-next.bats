@@ -2,8 +2,15 @@
 # vbw next: the lifecycle decision table in docs/next.md, row by row.
 
 load helper
+load fixture-helper
 
-setup() {
+# The initialised project with its base record (BASE), built once per file.
+setup_file() { fixture_build base base_project; }
+setup() { fixture_copy base; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+base_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -23,8 +30,6 @@ setup() {
   # The spec says what the base record says: an unsynced spec is "not ready for approval" (R171), not a gate.
   printf '# Shop\n\n## Requirements\n\n- R1 [auto] Pay\n- R2 [human] Trustworthy\n' > .vbw/spec.md
 }
-
-teardown() { vbw_teardown; }
 
 # next_after FILTER [unapproved]: apply FILTER to the base record, approve its
 # contract (unless asked not to) with evidence of a passing proof of exactly

@@ -5,8 +5,15 @@
 # record stays as it was. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+# The built and proved shop with a QA finding open, built once per file.
+setup_file() { fixture_build refusals refusals_project; }
+setup() { fixture_copy refusals; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+refusals_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -33,8 +40,6 @@ setup() {
   DOC='{"run": ["sh", "tests/r1-regression.sh"], "files": ["tests/r1-regression.sh"]}'
   export DOC
 }
-
-teardown() { vbw_teardown; }
 
 # refused FIX DOC TEXT: vbw fix check fails, says TEXT, and the record is unchanged.
 refused() {
