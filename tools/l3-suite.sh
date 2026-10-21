@@ -360,7 +360,7 @@ scenario_balanced() {
     check "QA recorded on the built phase" 'any(.phases[]; .qa.result == "pass")'
     check "stopped at accept, not shipped" '.milestone.status != "shipped"'
     check "no human requirement accepted for the user" 'all(.requirements[]; .status != "accepted")'
-    local te dl cost passed=true autonomy qa_bg=false stopped=none
+    local te dl passed=true autonomy qa_bg=false stopped=none
     te=$(stop_hook_errors_transcript); dl=$(stop_hook_errors_debug_log)
     autonomy=$(cd "$dir" && "$VBW" config autonomy 2> /dev/null)
     # QA ran as a Workflow call of vbw:verifying in the session transcript.
