@@ -74,6 +74,14 @@ loop_project() {
   "$VBW" todo add "Visitors can read a farewell" > /dev/null
 }
 
+# loop_started ARGS...: a loop_project with the loop started by session s1 as
+# vbw loop start ARGS... (items and a ceiling choice). A later stage of the
+# fixture, built once per file with fixture_build NAME loop_started ARGS...
+loop_started() {
+  loop_project
+  VBW_SESSION_ID=s1 "$VBW" loop start "$@" > /dev/null
+}
+
 # loop_next [SESSION]: the kernel's loop step, as that session (s1 by default).
 loop_next() { VBW_SESSION_ID="${1:-s1}" "$VBW" loop next --json < /dev/null; }
 
