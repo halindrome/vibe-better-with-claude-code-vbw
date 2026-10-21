@@ -12,6 +12,7 @@
 # F1 (R2) is served by C1 and C2, F2 (R3) by C1 and C3.
 
 load helper
+load fixture-helper
 
 RUN="$BATS_TEST_DIRNAME/helpers/run-workflow.js"
 WF="$PLUGIN_ROOT/workflows/fixing.js"
@@ -19,13 +20,28 @@ DONE='{"status":"done","summary":"s","notes":[]}'
 BLOCKED='{"status":"blocked","summary":"needs a decision","notes":[]}'
 OK='{"fixdone":"ran","closed":[],"open":[],"ended":true,"recorded":true,"report":"all recorded; run ended"}'
 
+# The shop (three finished requirements, two open fixes, a fix run open) and a
+# plain git project for the test-command round, each built once per file.
+setup_file() {
+  fixture_build shop shop_project
+  fixture_build plain plain_project
+}
 setup() {
   command -v node > /dev/null 2>&1 || skip "node is not installed"
+  fixture_copy shop
+}
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+plain_project() {
   vbw_setup
   vbw_git_project
 }
 
-teardown() { vbw_teardown; }
+shop_project() {
+  plain_project
+  shop
+}
 
 edit_record() {
   jq "$1" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
@@ -84,7 +100,6 @@ round() {
 two_done() { jq -nc --argjson d "$DONE" --argjson k "$OK" '{"F1": $d, "F2": $d, "close run": $k}'; }
 
 @test "R182: the round's one vbw fix done closes every clean fix, and vbw run confirm counts each as recorded" {
-  shop
   round '[["F1"],["F2"]]' "$(two_done)"
   [ "$status" -eq 0 ] || { echo "$CMD: $output"; false; }
   [ "$(fix_status F1)" = fixed ] && [ "$(fix_status F2)" = fixed ]
@@ -95,7 +110,6 @@ two_done() { jq -nc --argjson d "$DONE" --argjson k "$OK" '{"F1": $d, "F2": $d, 
 }
 
 @test "R182: a fix with uncommitted changes stays open and is named, the other closes, and vbw run confirm names it" {
-  shop
   printf 'dirty\n' >> src/refund.txt
   round '[["F1"],["F2"]]' "$(two_done)"
   [ "$status" -ne 0 ] || { echo "$CMD: $output"; false; }
@@ -107,7 +121,6 @@ two_done() { jq -nc --argjson d "$DONE" --argjson k "$OK" '{"F1": $d, "F2": $d, 
 }
 
 @test "R182: a fix whose files serve a failing check of finished work stays open and is named, the other closes" {
-  shop
   printf 'broken\n' > src/refund.txt && git commit -q -am "fix: break refund"
   round '[["F1"],["F2"]]' "$(two_done)"
   [ "$status" -ne 0 ] || { echo "$CMD: $output"; false; }
@@ -119,7 +132,6 @@ two_done() { jq -nc --argjson d "$DONE" --argjson k "$OK" '{"F1": $d, "F2": $d, 
 }
 
 @test "R182: a fix whose Dev was blocked is left out of the round's vbw fix done and stays open; vbw run confirm names it" {
-  shop
   round '[["F1"],["F2"]]' "$(jq -nc --argjson d "$DONE" --argjson b "$BLOCKED" --argjson k "$OK" '{"F1": $d, "F2": $b, "close run": $k}')"
   [ "$status" -eq 0 ] || { echo "$CMD: $output"; false; }
   [ "$CMD" = "vbw fix done F1" ] || { echo "$CMD"; false; }
@@ -129,7 +141,6 @@ two_done() { jq -nc --argjson d "$DONE" --argjson k "$OK" '{"F1": $d, "F2": $d, 
 }
 
 @test "R182: the round's vbw fix done prints one line per check, then both count lines, as before" {
-  shop
   CMD=$(round_command '[["F1"],["F2"]]' "$(two_done)") || { echo "$CMD"; false; }
   local argv
   read -r -a argv <<< "$CMD"
@@ -150,7 +161,6 @@ two_done() { jq -nc --argjson d "$DONE" --argjson k "$OK" '{"F1": $d, "F2": $d, 
 }
 
 @test "R182: the next vbw prove reuses what the round's vbw fix done ran" {
-  shop
   round '[["F1"],["F2"]]' "$(two_done)"
   [ "$status" -eq 0 ] || { echo "$CMD: $output"; false; }
   VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
@@ -191,6 +201,7 @@ testcmd() {
 }
 
 @test "R182: a test-command fix whose test files still fail stays open and is named; once they pass it closes" {
+  fixture_copy plain
   testcmd
   local responses
   responses=$(jq -nc --arg f "$FIX" --argjson d "$DONE" --argjson k "$OK" '{($f): $d, "close run": $k}')
