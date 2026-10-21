@@ -1,9 +1,10 @@
 #!/usr/bin/env bats
 # R202 (tools/measure-proof-speed.sh --two, maintainers only): two proofs of
 # the stand-in run at once (two copies of the generated project) while the
-# slot store is sampled every second; the tool prints the machine limit and
+# slot store is sampled five times a second; the tool prints the machine limit,
 # the most slots held at any sample, VBW's own bookkeeping entries included,
-# and that maximum never exceeds the limit. L1: a small stand-in.
+# which never exceeds the limit, and the average the units held while units
+# ran. L1: a small stand-in.
 
 load helper
 
@@ -18,9 +19,11 @@ field() { printf '%s\n' "$output" | sed -n "s/^$1: //p" | head -n 1; }
   VBW_MEASURE_DIR="$TEST_ROOT/measure" run bash "$TOOL" --two --files 120 --folders 24 --units 8 < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   local f
-  for f in 'machine limit' 'two proofs max held' 'two proofs wall seconds'; do
+  for f in 'machine limit' 'two proofs max held' 'two proofs average held while units run' 'two proofs wall seconds'; do
     [[ "$(field "$f")" =~ ^[0-9]+(\.[0-9]+)?$ ]] || { echo "field '$f' is not a number: '$(field "$f")'"; echo "$output"; false; }
   done
   [ "$(field 'two proofs max held')" -ge 1 ] || { echo "$output"; false; }
   [ "$(field 'two proofs max held')" -le "$(field 'machine limit')" ] || { echo "$output"; false; }
+  awk -v w="$(field 'two proofs average held while units run')" -v l="$(field 'machine limit')" 'BEGIN { exit !(w > 0 && w <= l) }' \
+    || { echo "$output"; false; }
 }

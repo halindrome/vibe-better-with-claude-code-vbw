@@ -12,8 +12,9 @@
 #   --units N      units: half checks, half test files (default 200)
 #   --two          instead of the usual measurement: a second copy of the stand-in
 #                  (its own folder, same home and slot store), both proved at once
-#                  while the slot store is sampled every second; prints the machine
-#                  limit, the most slots held and the wall seconds
+#                  while the slot store is sampled; prints the machine limit, the
+#                  most slots held, the units' average while units ran and the
+#                  wall seconds
 #   --generate DIR build the stand-in at DIR in the caller's environment, print
 #                  its 'fixture:' line and stop
 # Without --generate it builds the stand-in in an isolated HOME and
@@ -21,7 +22,10 @@
 # .vbw/runtime/scratch/measure-proof-speed in this repository, rebuilt every
 # run), then runs vbw prove, appends one line to one source file some units
 # read, closes an open fix of R1 with vbw fix done, and runs vbw next --json,
-# printing one 'name: value' line per figure.
+# printing one 'name: value' line per figure. During the proof (both proofs
+# with --two) the slot store is sampled five times a second: the slots its units
+# hold (VBW's own vbw:* bookkeeping entries left out), averaged over the whole
+# proof and over the samples from the first that shows a unit to the last.
 set -euo pipefail
 
 usage='usage: tools/measure-proof-speed.sh [--files N] [--folders N] [--units N] [--two] [--generate DIR]'
@@ -160,31 +164,44 @@ out="$dir/out"
 mkdir -p "$out"
 fixture=$(generate "$proj")
 cd "$proj"
+limit=$(bash -c 'source "$1/plugin/lib/core.sh"; vbw_machine_limit' _ "$here")
+slots="$CLAUDE_CONFIG_DIR/vbw/slots.json"
+
+# sample_held FILE STOP [PROJECT...]: five times a second until STOP exists, one
+# line per sample in FILE: the slots held in the store (VBW's own vbw:* entries
+# included), those held by units (left out), and the gate registrations of the
+# PROJECTs (a cross-check of the store).
+sample_held() {
+  local file="$1" stop="$2" h g f p
+  shift 2
+  while [ ! -e "$stop" ]; do
+    h='0 0'
+    [ ! -f "$slots" ] || h=$(jq -r '"\(.held | length) \([.held[] | select(.id | startswith("vbw:") | not)] | length)"' "$slots" 2> /dev/null) || h='0 0'
+    g=0
+    for p in "$@"; do
+      for f in "$p"/.vbw/runtime/gate/reg.*; do
+        [ ! -e "$f" ] || g=$((g + 1))
+      done
+    done
+    printf '%s %s\n' "${h:-0 0}" "$g" >> "$file"
+    sleep 0.2
+  done
+}
+
+# held_figures FILE: "MAX GATES AVERAGE WHILE" of the samples in FILE: the most
+# slots held and the most gate registrations at any sample, the units' average
+# over every sample, and over the samples from the first that shows a unit to the last.
+held_figures() {
+  awk '{ n++; if ($1 > max) max = $1; if ($3 > gmax) gmax = $3; u[n] = $2; s += $2; if ($2 > 0) { if (!first) first = n; last = n } }
+    END { w = 0; if (first) { for (i = first; i <= last; i++) w += u[i]; w /= last - first + 1 }
+          printf "%d %d %.2f %.2f\n", max, gmax, (n ? s / n : 0), w }' "$1"
+}
 
 if [ "$two" -eq 1 ]; then
   now_s() { perl -MTime::HiRes=time -e 'printf "%.3f", time'; }
   proj2="$dir/project2"
   generate "$proj2" > /dev/null
-  limit=$(bash -c 'source "$1/plugin/lib/core.sh"; vbw_machine_limit' _ "$here")
-  slots="$CLAUDE_CONFIG_DIR/vbw/slots.json"
-  # Once a second until told to stop: the held count of the slot store (units and
-  # VBW's own vbw:* entries) and, as a cross-check, the gate registrations of both projects.
-  (
-    max=0 gmax=0
-    while [ ! -e "$out/stop" ]; do
-      h=0
-      [ ! -f "$slots" ] || h=$(jq '.held | length' "$slots" 2> /dev/null) || h=0
-      [ -n "$h" ] || h=0
-      g=0
-      for f in "$proj"/.vbw/runtime/gate/reg.* "$proj2"/.vbw/runtime/gate/reg.*; do
-        [ -e "$f" ] && g=$((g + 1))
-      done
-      [ "$h" -le "$max" ] || max="$h"
-      [ "$g" -le "$gmax" ] || gmax="$g"
-      printf '%s %s\n' "$max" "$gmax" > "$out/twomax"
-      sleep 1
-    done
-  ) &
+  sample_held "$out/held" "$out/stop" "$proj" "$proj2" &
   sampler=$!
   s=$(now_s)
   rc1=0 rc2=0
@@ -200,10 +217,11 @@ if [ "$two" -eq 1 ]; then
     echo "vbw: a proof did not pass" >&2
     exit 1
   fi
-  read -r held gates < "$out/twomax" || { held=0; gates=0; }
+  read -r held gates _ during < <(held_figures "$out/held") || { held=0; gates=0; during=0; }
   printf '%s\n' "$fixture"
   printf 'machine limit: %s\n' "$limit"
   printf 'two proofs max held: %s\n' "$held"
+  printf 'two proofs average held while units run: %s\n' "$during"
   printf 'two proofs gate registrations max: %s\n' "$gates"
   printf 'two proofs wall seconds: %s\n' "$(awk -v a="$s" -v b="$e" 'BEGIN { printf "%.2f", b - a }')"
   exit 0
@@ -251,8 +269,15 @@ timed() {
   return "$rc"
 }
 
-timed prove "$vbw" prove || { cat "$out/prove" >&2; echo "vbw: the proof did not pass" >&2; touch "$out/stop"; wait "$sampler"; exit 1; }
+sample_held "$out/held" "$out/proved" "$proj" &
+held_sampler=$!
+prove_rc=0
+timed prove "$vbw" prove || prove_rc=$?
+touch "$out/proved"
+wait "$held_sampler"
+[ "$prove_rc" -eq 0 ] || { cat "$out/prove" >&2; echo "vbw: the proof did not pass" >&2; touch "$out/stop"; wait "$sampler"; exit 1; }
 prove_wall="$WALL"
+read -r _ _ held_avg held_during < <(held_figures "$out/held") || { held_avg=0; held_during=0; }
 own() { jq -r --arg k "$1" '.evidence.own[$k] // 0' "$proj/.vbw/record.json"; }
 p_plan=$(own planning) p_copies=$(own copies) p_track=$(own tracking) p_save=$(own saving) p_record=$(own record)
 p_own=$(awk -v a="$p_plan" -v b="$p_copies" -v c="$p_track" -v d="$p_save" -v e="$p_record" 'BEGIN { printf "%.2f", a + b + c + d + e }')
@@ -294,6 +319,7 @@ printf 'files: %s\nfolders: %s\nunits: %s\n' "$(git ls-files | wc -l | tr -d ' '
 lines "$out/prove" | sed 's/^/prove: /'
 printf 'prove wall seconds: %s\nprove own seconds: %s\nprove planning seconds: %s\nprove copies seconds: %s\nprove tracking seconds: %s\nprove saving seconds: %s\nprove record seconds: %s\n' \
   "$prove_wall" "$p_own" "$p_plan" "$p_copies" "$p_track" "$p_save" "$p_record"
+printf 'machine limit: %s\nprove slots held average: %s\nprove slots held while units run: %s\n' "$limit" "$held_avg" "$held_during"
 lines "$out/fix" | sed 's/^/fix done: /'
 printf 'fix done wall seconds: %s\nfix done own minutes: %s\n' "$fix_wall" "${fix_own:-0}"
 printf 'reused: %s\nreused expected: %s\njq cpu seconds: %s\njq processes: %s\nstore bytes: %s\nwritten lists bytes: %s\nnext seconds: %s\n' \

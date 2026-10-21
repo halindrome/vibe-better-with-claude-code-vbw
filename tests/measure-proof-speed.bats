@@ -11,7 +11,10 @@
 # each command, wall-clock seconds, VBW's own work, the CPU seconds and count
 # of jq processes, the size of the run store and of the written-file lists, how
 # many units were reused and how many should have been (those whose read lists
-# do not contain the changed file), and the time vbw next --json took.
+# do not contain the changed file), the time vbw next --json took, and the
+# slots the proof's units held in the slot store, sampled five times a second:
+# the average over the whole proof and the average while units ran, beside
+# the machine limit.
 # --generate DIR builds the stand-in at DIR in the caller's environment and
 # stops. The fixture is generated: nothing of any real user project is in the
 # tool or its output. L1: a small stand-in.
@@ -70,9 +73,14 @@ units() {
   local f
   for f in files folders units 'prove wall seconds' 'prove own seconds' 'prove planning seconds' 'prove copies seconds' 'prove tracking seconds' \
     'prove saving seconds' 'prove record seconds' 'fix done wall seconds' 'fix done own minutes' reused 'reused expected' \
-    'jq cpu seconds' 'jq processes' 'store bytes' 'written lists bytes' 'next seconds'; do
+    'jq cpu seconds' 'jq processes' 'store bytes' 'written lists bytes' 'next seconds' \
+    'machine limit' 'prove slots held average' 'prove slots held while units run'; do
     numeric "$f"
   done
+  # The units held slots during the proof, never more than the limit; the average while
+  # units ran leaves out the samples before the first unit and after the last.
+  awk -v a="$(field 'prove slots held average')" -v w="$(field 'prove slots held while units run')" -v l="$(field 'machine limit')" \
+    'BEGIN { exit !(a > 0 && w >= a && w <= l) }' || { echo "$output"; false; }
   [ "$(field files)" -ge 120 ] && [ "$(field folders)" -ge 24 ] && [ "$(field units)" -eq 8 ] || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -Eq "^prove: VBW's own work: [0-9]+\.[0-9] of [0-9]+\.[0-9] min$" || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -Eq '^prove: ran again: [0-9]+ of [0-9]+ units; top reasons: ' || { echo "$output"; false; }
