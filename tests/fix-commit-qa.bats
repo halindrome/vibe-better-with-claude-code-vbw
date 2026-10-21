@@ -5,10 +5,18 @@
 # file (code goes through its plan). L1.
 
 load helper
+load fixture-helper
 
 # R1 (pay) and R2 (refund) [auto]; plan P1.1 writes src/pay.txt and
 # src/refund.txt; C1 (R1) runs tests/c1.sh, C2 (R2) runs tests/c2.sh.
-setup() {
+# The built and proved shop with a QA fix run open and its regression test registered,
+# built once per file.
+setup_file() { fixture_build qa_fix qa_fix_project; }
+setup() { fixture_copy qa_fix; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+qa_fix_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -40,8 +48,6 @@ setup() {
   printf '%s' '{"run": ["sh", "tests/r1-regression.sh"], "files": ["tests/r1-regression.sh"]}' | VBW_SESSION_ID=s1 "$VBW" fix check "$F_QA" > /dev/null
   printf 'grep -qx paid src/pay.txt\ntest -s src/pay.txt\n' > tests/c1.sh
 }
-
-teardown() { vbw_teardown; }
 
 @test "R160: vbw commit --fix commits the fix's new test file and its requirement's check file, with a VBW-Fix trailer" {
   run "$VBW" commit --fix "$F_QA" "test(pay): regression for the zero payment" tests/r1-regression.sh tests/c1.sh
