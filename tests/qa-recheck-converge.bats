@@ -7,20 +7,22 @@
 # [auto] requirements unchanged since, gets a re-check round: vbw next names the
 # fixes since that verdict and the commit it was taken at, and the verify
 # workflow tells QA to check those fixes, what their changed files reach and
-# the goal, not to sweep the whole phase again. L1.
+# the goal, not to sweep the whole phase again. (That a change to the tests of a
+# phase another builds on lists the dependent too is pinned in
+# qa-recheck-deps.bats.) L1.
 
 load helper
 load qa-recheck-helper
+load fixture-helper
 
-teardown() { vbw_teardown; }
-
-# retest N: a stricter check file for phase N, still passing; approve and prove.
-retest() {
-  printf '# stricter\n' >> "tests/p$1.sh"
-  git add "tests/p$1.sh" && git commit -q -m "test(p$1): stricter"
-  "$VBW" approve > /dev/null
-  "$VBW" prove --full > /dev/null
+# The projects the tests start from, each built once per file.
+setup_file() {
+  fixture_build p1 qa_project 1
+  fixture_build p2 qa_project 2
+  fixture_build p2chain qa_project 2 chain
 }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # fail_round PHASE: QA fails PHASE with one finding; the fix touches its file
 # and is marked fixed (as vbw fix done would); then prove.
@@ -36,23 +38,15 @@ fail_round() {
 cache_commit() { jq -r --arg p "$1" '.[$p].commit' "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/qa.json"; }
 
 @test "T118: a code change in a phase another builds on checks only that phase again" {
-  qa_project 2 chain
+  fixture_copy p2chain
   qa_pass P1 P2
   qa_touch 1
   [ "$(listed)" = '["P1"]' ] || { next_json | jq -c .qa; false; }
   next_json | jq -e '.qa.standing == ["P2"]'
 }
 
-@test "T118: a change to the tests of a phase another builds on checks both again, naming the dependency" {
-  qa_project 2 chain
-  qa_pass P1 P2
-  retest 1
-  [ "$(listed)" = '["P1","P2"]' ] || { next_json | jq -c .qa; false; }
-  next_json | jq -e '.qa.recheck.P2 | any(.[]; test("P1"))'
-}
-
 @test "T118: on a clone without the QA cache, a code change in a dependency still leaves the dependent standing" {
-  qa_project 2 chain
+  fixture_copy p2chain
   qa_pass P1 P2
   rm -f "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/qa.json"
   qa_touch 1
@@ -60,14 +54,14 @@ cache_commit() { jq -r --arg p "$1" '.[$p].commit' "$(git rev-parse --path-forma
 }
 
 @test "T45: a dependency's goal or plan change alone does not check the dependent again" {
-  qa_project 2 chain
+  fixture_copy p2chain
   qa_pass P1 P2
   edit_record '(.phases[] | select(.id == "P1")).goal = "Part 1 works well"'
   [ "$(listed)" = '["P1"]' ] || { next_json | jq -c .qa; false; }
 }
 
 @test "T131: a failed phase whose goal and plans did not change gets a re-check round: the fixes since the verdict and its commit" {
-  qa_project 1
+  fixture_copy p1
   fail_round P1
   local since
   since=$(cache_commit P1)
@@ -77,21 +71,21 @@ cache_commit() { jq -r --arg p "$1" '.[$p].commit' "$(git rev-parse --path-forma
 }
 
 @test "T131: the first round, a never-checked phase and a passed phase that changed get the whole-phase sweep" {
-  qa_project 2
+  fixture_copy p2
   qa_pass P2
   qa_touch 2
   next_json | jq -e '.action == "qa" and (.round.focus | has("P1") or has("P2") | not)' || { next_json | jq -c '.round'; false; }
 }
 
 @test "T131: a goal, criteria or plan change since the failed verdict brings back the whole-phase sweep" {
-  qa_project 1
+  fixture_copy p1
   fail_round P1
   edit_record '(.phases[] | select(.id == "P1")).criteria += ["src/p1.txt is not empty"]'
   next_json | jq -e '.action == "qa" and (.round.focus | has("P1") | not)' || { next_json | jq -c '.round'; false; }
 }
 
 @test "T131: without the QA cache a failed phase gets the whole-phase sweep" {
-  qa_project 1
+  fixture_copy p1
   fail_round P1
   rm -f "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/qa.json"
   next_json | jq -e '.action == "qa" and (.round.focus | has("P1") | not)' || { next_json | jq -c '.round'; false; }
