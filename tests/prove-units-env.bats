@@ -5,8 +5,9 @@
 # records under a session id are its own, never the prover's (R173). L1.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -25,7 +26,12 @@ setup() {
   git add -A && git commit -q -m "chore(vbw): plan" || true
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "R173: a check and a project command run without the VBW_SESSION_ID of the session that proves" {
   VBW_SESSION_ID=s1 "$VBW" prove > /dev/null || { echo "the proof failed"; false; }
