@@ -54,9 +54,11 @@ snapshot() {
   local before
   before=$(jq -c '.evidence | {passed, checks: (.checks | map_values(.status))}' .vbw/record.json)
   printf 'buy milk\n' > todos.txt
-  vbw_run prove
+  # --full: a plain prove may reuse C1 by its read list, and the copy would go untested.
+  vbw_run prove --full
   [ "$status" -eq 0 ]
   [[ "$output" == *"C1 pass"* ]]
+  [[ "$output" == *"checks: 1 ran, 0 reused"* ]] || { echo "$output"; false; }
   [ "$(jq -c '.evidence | {passed, checks: (.checks | map_values(.status))}' .vbw/record.json)" = "$before" ]
 }
 
