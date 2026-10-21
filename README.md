@@ -59,7 +59,7 @@ You type `/vbw:vibe` and what you want. VBW runs the loop below and stops only w
 | :--- | :--- | :--- |
 | **Architect** | Works out the decisions only you should make (cost, data, security, anything hard to undo), then splits the work into **phases** (a goal each). Writes nothing. | 1, thinking the whole milestone through |
 | **Lead** | Turns each phase into small **plans**: a few tasks, their own files. Writes the tests first and makes sure they fail today (*red*). | 1, planning every phase of the milestone |
-| **Dev** | Writes the code for one plan, one commit per task, until its tests pass (*green*). At standard and deep rigor it also breaks its own code on purpose, to confirm a test notices. Also fixes what fails later. | One for every plan, all at the same time: VBW sets no limit (only plans that touch the same files wait for each other) |
+| **Dev** | Writes the code for one plan, one commit per task, until its tests pass (*green*). At standard and deep rigor it also breaks its own code on purpose, to confirm a test notices. Also fixes what fails later. | One for every plan, multiple plans in tandem, all at the same time: VBW sets no limit (only plans that touch the same files wait for each other) |
 | **QA** | Reads a finished phase against its goal and reports what's wrong. Never touches the code. | One for every finished phase, all at the same time |
 | **Scout** | Looks things up, one angle each: your code, the web, the docs. Reports with sources; changes nothing. | Up to 4 at the same time, one per angle |
 | **Debugger** | Reproduces a bug, finds the root cause, then makes the smallest fix plus a test that proves it. | 3 at the same time to investigate, then 1 to fix |
