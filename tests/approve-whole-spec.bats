@@ -8,8 +8,9 @@
 # sync the same vbw approve proceeds. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -26,7 +27,12 @@ setup() {
   git add -A && git commit -q -m "chore(vbw): plan"
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # spec RESULTS [REQ] [TEST_CMD] [FORM_RUN]: write .vbw/spec.md with every section; RESULTS is the
 # Test results list (lines) or "none" for no such section.
