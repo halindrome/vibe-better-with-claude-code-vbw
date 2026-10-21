@@ -16,7 +16,10 @@
 # user's earlier status line (plan P134.2). This script itself never runs that
 # saved status line or any other command read from a file (D356).
 
-here="$(cd "$(dirname "$0")" && pwd)"
+# Folders are cut with parameter expansion, never a dirname process: the status
+# line runs every few seconds, and each process costs CPU (budget: 60 ms a call).
+case "$0" in */*) here=${0%/*} ;; *) here=. ;; esac
+here="$(cd "$here" && pwd)"
 plugin="$here/.."
 
 # Claude Code may not send data on the first render: read with a timeout so
@@ -26,46 +29,59 @@ while IFS= read -t 1 -r line; do input="$input$line"; done 2> /dev/null
 input="$input${line:-}"
 exec 0< /dev/null
 
-# One jq call for all: the project folder, the session's transcript and its id
-# (a safe token only: it names a file).
-paths=$(printf '%s' "$input" | jq -r '(.workspace.project_dir // .cwd // ""), (.transcript_path // ""), (.session_id // "" | if test("^[A-Za-z0-9_-]+$") then . else "" end)' 2> /dev/null)
-root=${paths%%$'\n'*}
-rest=${paths#*$'\n'}
-transcript=${rest%%$'\n'*}
-sid=${rest#*$'\n'}
-[ "$rest" != "$paths" ] || { transcript=""; sid=""; }
-[ "$sid" != "$rest" ] || sid=""
+cdir=${CLAUDE_CONFIG_DIR:-}
+if [ -z "$cdir" ]; then
+  if [ -d "$HOME/.config/claude-code" ]; then cdir="$HOME/.config/claude-code"; else cdir="$HOME/.claude"; fi
+fi
+
+# One jq call for all, one value a line: what the user's settings.json says of
+# enabledPlugins["vbw@vbw-marketplace"] ("true", "false", or "" when it says
+# nothing or is not valid JSON; first, so input it cannot read never loses it),
+# the project folder, the session's transcript and its id (a safe token only:
+# it names a file).
+ucfg=(--arg ucfg "")
+[ ! -f "$cdir/settings.json" ] || ucfg=(--rawfile ucfg "$cdir/settings.json")
+paths=$(printf '%s' "$input" | jq -nr "${ucfg[@]}" '(($ucfg | try (fromjson | .enabledPlugins["vbw@vbw-marketplace"] | select(type == "boolean") | tostring) catch empty) // ""),
+  ((try input catch {}) | (.workspace.project_dir // .cwd // ""), (.transcript_path // ""), (.session_id // "" | if test("^[A-Za-z0-9_-]+$") then . else "" end))' 2> /dev/null)
+take() { case "$rest" in *$'\n'*) val=${rest%%$'\n'*}; rest=${rest#*$'\n'} ;; *) val=$rest; rest= ;; esac; }
+rest=$paths
+take; uverdict=$val
+take; root=$val
+take; transcript=$val
+take; sid=$val
 root=${root:-$PWD}
 
 # Started in a subfolder: the project is the nearest folder up that holds .git
 # (walked without a git process).
 d=$root
-while [ "$d" != / ] && [ -n "$d" ] && [ ! -e "$d/.git" ]; do d=$(dirname "$d"); done
+while [ "$d" != / ] && [ -n "$d" ] && [ ! -e "$d/.git" ]; do
+  case "$d" in */*) d=${d%/*}; d=${d:-/} ;; *) d=/ ;; esac
+done
 [ ! -e "$d/.git" ] || root=$d
 
-# On or off, before any other work. The files that exist are read by one jq
-# (raw lines grouped by file, so a file that is not valid JSON decides nothing
-# and the next one still counts); no file, no jq.
-cdir=${CLAUDE_CONFIG_DIR:-}
-if [ -z "$cdir" ]; then
-  if [ -d "$HOME/.config/claude-code" ]; then cdir="$HOME/.config/claude-code"; else cdir="$HOME/.claude"; fi
-fi
+# On or off, before any other work: the project's .claude/settings.local.json,
+# then its .claude/settings.json, then the user's (read above); the first that
+# sets it decides. The project's files that exist are read by one jq (raw lines
+# grouped by file, so a file that is not valid JSON decides nothing and the next
+# one still counts); no project file, no jq.
 cfgs=()
-for f in "$root/.claude/settings.local.json" "$root/.claude/settings.json" "$cdir/settings.json"; do
+for f in "$root/.claude/settings.local.json" "$root/.claude/settings.json"; do
   [ -f "$f" ] && cfgs+=("$f")
 done
+verdict=$uverdict
 if [ ${#cfgs[@]} -gt 0 ]; then
-  verdict=$(jq -nRr 'reduce inputs as $l ([]; if length > 0 and .[-1][0] == input_filename then .[-1][1] += $l + "\n" else . + [[input_filename, $l + "\n"]] end)
+  v=$(jq -nRr 'reduce inputs as $l ([]; if length > 0 and .[-1][0] == input_filename then .[-1][1] += $l + "\n" else . + [[input_filename, $l + "\n"]] end)
     | [.[] | (.[1] | try (fromjson | .enabledPlugins["vbw@vbw-marketplace"] | select(type == "boolean")) catch empty)] | .[0] | if . == null then "" else tostring end' "${cfgs[@]}" 2> /dev/null)
-  if [ "$verdict" = false ]; then
-    # Off for the installed VBW, but not for a copy loaded with --plugin-dir:
-    # when the session's record (R185) names this very plugin, VBW is on.
-    own=$(cd "$plugin" 2> /dev/null && pwd -P) || own=""
-    p=""
-    [ -z "$sid" ] || { read -r p < "$cdir/vbw/sessions/$sid"; } 2> /dev/null || p=""
-    p=$(cd "$p" 2> /dev/null && pwd -P) || p=""
-    if [ -z "$own" ] || [ "$p" != "$own" ]; then exit 3; fi
-  fi
+  [ -z "$v" ] || verdict=$v
+fi
+if [ "$verdict" = false ]; then
+  # Off for the installed VBW, but not for a copy loaded with --plugin-dir:
+  # when the session's record (R185) names this very plugin, VBW is on.
+  own=$(cd "$plugin" 2> /dev/null && pwd -P) || own=""
+  p=""
+  [ -z "$sid" ] || { read -r p < "$cdir/vbw/sessions/$sid"; } 2> /dev/null || p=""
+  p=$(cd "$p" 2> /dev/null && pwd -P) || p=""
+  if [ -z "$own" ] || [ "$p" != "$own" ]; then exit 3; fi
 fi
 
 legacy=""
@@ -169,7 +185,7 @@ case "$last" in
     if [ "$out" = "$last" ]; then out=""; else out=${out%$'\n'*}; fi
     if [ -n "$sid" ] && [ -f "$root/.vbw/record.json" ]; then
       side="$root/.vbw/runtime/cost.$sid.json"
-      { mkdir -p "$root/.vbw/runtime" && printf '%s\n' "$last" > "$side.$$" && mv -f "$side.$$" "$side"; } 2> /dev/null || rm -f "$side.$$" 2> /dev/null
+      { { [ -d "$root/.vbw/runtime" ] || mkdir -p "$root/.vbw/runtime"; } && printf '%s\n' "$last" > "$side.$$" && mv -f "$side.$$" "$side"; } 2> /dev/null || rm -f "$side.$$" 2> /dev/null
     fi ;;
 esac
 if [ -n "$out" ]; then printf '%s\n' "$out"; else printf '[VBW] status line unavailable\n'; fi
