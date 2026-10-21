@@ -13,7 +13,9 @@
 # clone's own settings file in the git directory, not in the record; the line
 # after check_jobs, "machine limit: L (...)", names the computer-wide limit
 # shared by every VBW project, not a setting, and says when it overrides check_jobs),
-# command_timeout (1 to 86400 seconds a project command may run under vbw prove; 3600 when unset, "default" removes it).
+# command_timeout (1 to 86400 seconds a project command may run under vbw prove; 3600 when unset, "default" removes it),
+# check_budget (1 to 86400 seconds a unit of a proof may take before the reports name it over
+# budget; 120 when unset, "default" removes it; a report, never a limit: lib/unittime.sh).
 
 # Profiles name a model per workflow role (lib/profiles.json, shared with the
 # status line). The session itself always runs the user's model, which must be
@@ -101,6 +103,7 @@ cmd_config() {
       config_machine_limit_line
       record_read | jq -r --argjson p "$VBW_PROFILES" '.settings as $s
         | "profile: \($s.profile)", "autonomy: \($s.autonomy // "balanced")", "autonomy_cap: \($s.autonomy_cap)", "rigor: \($s.rigor // "auto")", "motion: \($s.motion // "default")", "command_timeout: \($s.command_timeout // 3600) seconds",
+          "check_budget: \($s.check_budget // 120) seconds a unit (reported, never enforced)",
           ($p[$s.profile] + ($s.models // {}) | (if ((.qa // "") | ascii_downcase | contains("haiku")) then .qa = "sonnet" else . end) | to_entries[] | "model.\(.key): \(.value)")'
       ;;
     models)
@@ -147,6 +150,14 @@ cmd_config() {
               [ "${#value}" -le 5 ] && [ "$value" -le 86400 ] || vbw_usage_error "command_timeout must be a whole number of seconds from 1 to 86400 (or default): how long vbw prove lets a project command run"
               record_update '.settings.command_timeout = ($v | tonumber)' --arg v "$value" ;;
           esac ;;
+        check_budget)
+          case "$value" in
+            default) record_update '.settings |= del(.check_budget)' ;;
+            0* | *[!0-9]* | "") vbw_usage_error "check_budget must be a whole number of seconds from 1 to 86400 (or default): how long a unit of a proof may take before the reports name it over budget" ;;
+            *)
+              [ "${#value}" -le 5 ] && [ "$value" -le 86400 ] || vbw_usage_error "check_budget must be a whole number of seconds from 1 to 86400 (or default): how long a unit of a proof may take before the reports name it over budget"
+              record_update '.settings.check_budget = ($v | tonumber)' --arg v "$value" ;;
+          esac ;;
         model.qa)
           case $(printf '%s' "$value" | tr '[:upper:]' '[:lower:]') in
             *haiku*) vbw_usage_error "model.qa cannot be Haiku: QA needs Sonnet or stronger. Allowed: sonnet, opus or a stronger model id, or default" ;;
@@ -162,7 +173,7 @@ cmd_config() {
           else
             record_update '.settings.models = ((.settings.models // {}) + {($r): $v})' --arg r "${key#model.}" --arg v "$value"
           fi ;;
-        *) vbw_usage_error "unknown setting $key (profile, autonomy, autonomy_cap, motion, check_jobs, command_timeout, model.ROLE for $VBW_ROLES)" ;;
+        *) vbw_usage_error "unknown setting $key (profile, autonomy, autonomy_cap, motion, check_jobs, command_timeout, check_budget, model.ROLE for $VBW_ROLES)" ;;
       esac
       printf '%s = %s\n' "$key" "$value"
       ;;

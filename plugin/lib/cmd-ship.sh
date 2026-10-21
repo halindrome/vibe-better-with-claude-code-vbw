@@ -34,4 +34,8 @@ cmd_ship() {
     --arg at "$(vbw_now)" --argjson total "$total"
   record_commit "chore(vbw): ship $(jq -r .milestone.id "$VBW_RECORD")"
   jq -r '"shipped \(.milestone.id) \(.milestone.title)"' "$VBW_RECORD"
+  # The test suite's cost, and how the milestone changed it (unittime.sh): a report, never a gate.
+  # shellcheck source=unittime.sh
+  . "$VBW_LIB/unittime.sh"
+  unittime_ship_line "$(jq -r .milestone.id "$VBW_RECORD")"
 }

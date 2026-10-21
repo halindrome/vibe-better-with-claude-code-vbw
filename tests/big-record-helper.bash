@@ -114,7 +114,9 @@ twin_norm() {
     | gsub("[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z"; "<time>")
     | gsub("[0-9]{8}T[0-9]{6}Z"; "<time>")
     | gsub("own work: .*"; "own work: <dur>")
-    | gsub("\\b[0-9]+(\\.[0-9]+)? ?(ms|s|sec|seconds?|min|minutes?)\\b"; "<dur>")'
+    | gsub("\\b[0-9]+(\\.[0-9]+)? ?(ms|s|sec|seconds?|min|minutes?)\\b"; "<dur>")
+    | gsub("^slowest units: .*"; "slowest units: <units>")
+    | gsub("^    [^ |][^ ]* <dur>$"; "    <unit> <dur>")'
 }
 
 # twin_step CMD...: run one vbw command in each twin (stdin from $TWIN_IN when
