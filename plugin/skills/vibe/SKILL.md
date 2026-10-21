@@ -93,7 +93,7 @@ agreed requirement: `vbw spec add auto|human "statement"` (goals and constraints
 **plan** with `detail.tier` express or `detail.small`: no mapping, no planning workflow. Read the
 files the request names, then `vbw apply --add` one phase at `detail.tier` with one
 plan (one or two files, tasks), one check that fails today, and the `rules` (each condition, edge and error case the requirement states, each with its check); go to **approve**.
-New ids start at P<next_phase>; `"tier"` is `detail.tier`.
+New ids start at P<next_phase>; `"tier"` is `detail.tier`. A plan only writing documentation (README, CHANGELOG, `docs/`, guides) gets `"role":"docs"` (the Docs agent builds it); else no `role`.
 Example: `vbw apply --add` with `{"phases":[{"id":"P1","title":"Fix add","reqs":["R1"],"tier":"express"}],"plans":[{"id":"P1.1","phase":"P1","title":"Fix add","reqs":["R1"],"files":["calc.sh"],"after":[],"tasks":["add returns the sum"]}],"checks":[{"id":"C1","req":"R1","run":["sh","test.sh"],"files":["test.sh"]}],"rules":[{"req":"R1","text":"add returns the sum","check":"C1"}]}`
 Over two files, a risk path or a tier: apply refuses; use the planning workflow.
 
