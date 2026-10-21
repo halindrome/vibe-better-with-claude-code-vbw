@@ -724,7 +724,7 @@ by run id, and each written name once, so a unit that writes 1,000 files adds
 
 **What `vbw next` caches.** To size the proof, `vbw next` plans the units the
 next proof would run. It keeps that list in `.vbw/runtime/proof-units.json` and
-plans again only when the committed tree, the record or the run store changes
+plans again only when the committed tree, the git index, the record or the run store changes
 ([`docs/next.md`](next.md#the-step)).
 
 **Speed.** Checks still run several at a time (`check_jobs`), each in its own

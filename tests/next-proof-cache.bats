@@ -1,9 +1,10 @@
 #!/usr/bin/env bats
 # R202 (docs/next.md, plugin/lib/steps.sh): vbw next does not redo the proof's
 # reuse planning when nothing it depends on changed. The planned unit list is
-# cached in .vbw/runtime/proof-units.json, keyed on the committed tree, the
-# record's fingerprint and the run store's digest, and reused only while all
-# three match; any change recomputes it. L1: a counting stand-in git on PATH
+# cached in .vbw/runtime/proof-units.json, keyed on the committed tree, the git
+# index's digest (the test files are listed from the index), the record's
+# fingerprint and the run store's digest, and reused only while all four match;
+# any change recomputes it. L1: a counting stand-in git on PATH
 # shows whether the planning ran (it is the only caller of git diff-tree in
 # vbw next); the answer's step is compared without its clock fields.
 
@@ -96,5 +97,28 @@ store_file() { printf '%s/vbw/runs.json' "$(git rev-parse --path-format=absolute
   git add -A && git commit -q -m "feat: c"
   next
   [ "$DIFF" -gt 0 ] || { echo "the committed tree changed and the cache was still used"; false; }
+  jq -e '.step.parts == 2' "$TEST_ROOT/next.json" || { cat "$TEST_ROOT/next.json"; false; }
+}
+
+@test "R202: a staged new test file recomputes the list: the test files are listed from the git index" {
+  # A single-file form, proved; then a committed change makes C1 the one unit to run.
+  printf 'grep -q . src/b.txt\n' > tests/t_a.sh
+  printf 'true\n' > tests/all.sh
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n\n## Commands\n\n- test: sh tests/all.sh\n\n## Test files\n\n- run: sh {file}\n- files: tests/t_*.sh\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  git add -A && git commit -q -m "test: a single-file form"
+  "$VBW" approve > /dev/null
+  "$VBW" prove > /dev/null || { echo "the proof with the form failed"; false; }
+  printf 'again\n' >> src/a.txt
+  git add -A && git commit -q -m "feat: a again"
+  next
+  jq -e '.step.parts == 1' "$TEST_ROOT/next.json" || { cat "$TEST_ROOT/next.json"; false; }
+  next
+  [ "$DIFF" -eq 0 ]
+  # Staged, not committed: no commit, no record or store change; only the index moved.
+  printf 'true\n' > tests/t_b.sh
+  git add tests/t_b.sh
+  next
+  [ "$DIFF" -gt 0 ] || { echo "a test file was staged and the cache was still used"; false; }
   jq -e '.step.parts == 2' "$TEST_ROOT/next.json" || { cat "$TEST_ROOT/next.json"; false; }
 }
