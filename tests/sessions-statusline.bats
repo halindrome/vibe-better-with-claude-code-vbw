@@ -9,8 +9,9 @@
 
 load helper
 load sessions-helper
+load fixture-helper
 
-setup() {
+sstat_project() {
   vbw_setup
   vbw_git_project
   SL="$PLUGIN_ROOT/scripts/vbw-statusline.sh"
@@ -22,7 +23,11 @@ setup() {
     .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
 }
 
+setup_file() { fixture_build sstat sstat_project; }
+setup() { fixture_copy sstat; }
+
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 cc_json() {
   jq -nc --arg d "$PROJECT" --arg sid "$1" '{session_id: $sid, workspace: {project_dir: $d, current_dir: $d}, model: {display_name: "Sonnet 5.5"},
