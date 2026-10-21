@@ -28,6 +28,6 @@ flat() { tr '\n' ' ' | tr -s ' '; }
 }
 
 @test "R182: the docs no longer say a Dev runs vbw fix done" {
-  ! flat < "$DOC" | grep -qE 'Dev or Docs agent runs `vbw plan done`, `vbw fix done`'
+  ! flat < "$DOC" | grep -qE 'Dev or Docs agent runs `vbw plan done`, `vbw fix done`' || false
   ! flat < "$PROOF" | grep -qE 'Devs each running `vbw check`, `vbw fix done`'
 }

@@ -181,6 +181,6 @@ lib() {
 }
 
 @test "R166: the library is bash 3.2 clean and writes nothing outside the slot" {
-  ! grep -nE 'mapfile|readarray|declare -A|eval |bash -c' "$PLUGIN_ROOT/lib/reads.sh"
+  ! grep -nE 'mapfile|readarray|declare -A|eval |bash -c' "$PLUGIN_ROOT/lib/reads.sh" || false
   ! grep -n '/tmp' "$PLUGIN_ROOT/lib/reads.sh"
 }

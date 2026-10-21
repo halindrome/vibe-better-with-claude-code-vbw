@@ -31,7 +31,7 @@ teardown() { vbw_teardown; }
   run env VBW_SESSION_ID=s1 "$VBW" loop park "a test park"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   # The kernel is back as before the item, and it reads the record.
-  ! grep -q '"probe"' kplug/lib/record.jq
+  ! grep -q '"probe"' kplug/lib/record.jq || false
   run "$VBW" status
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   jq -e '.loop.items[0].status == "parked" and (.loop.items[0].reverts | length) >= 1

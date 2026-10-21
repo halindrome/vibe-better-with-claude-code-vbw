@@ -76,7 +76,7 @@ teardown() { vbw_teardown; }
   [[ "$output" == *"stay in git history"* ]]
   [ ! -e .vbw-planning ]
   [[ "$(git log -1 --format=%s)" == "chore(vbw): remove the VBW 1 plan (converted to .vbw/)" ]]
-  ! git show --name-only --format= HEAD | grep -qv '^\.vbw-planning/'
+  ! git show --name-only --format= HEAD | grep -qv '^\.vbw-planning/' || false
   git diff --cached --name-only | grep -qx staged.txt
   git show HEAD~1:.vbw-planning/PROJECT.md > /dev/null
 }

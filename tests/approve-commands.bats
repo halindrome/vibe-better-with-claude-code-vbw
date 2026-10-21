@@ -74,7 +74,7 @@ with_commands() {
   [[ "$output" == *"lint failed"* && "$output" == *"the commands are not approved"* ]] || { echo "$output"; false; }
   [ "$(jq '.decisions | length' .vbw/record.json)" -eq "$d" ]
   [ "$(command_decisions)" -eq 0 ]
-  ! consent | jq -e 'any(.granted[]; .kind == "command")' > /dev/null
+  ! consent | jq -e 'any(.granted[]; .kind == "command")' > /dev/null || false
   vbw_run next --json
   echo "$output" | jq -e '.action == "approve"' > /dev/null || { echo "$output"; false; }
   rm -f "$HOOK"

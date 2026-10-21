@@ -17,7 +17,7 @@ SCRATCH='.vbw/runtime/scratch/'
 }
 
 @test "R177: no brief and no refusal sends an agent to /tmp or to .vbw/runtime/ itself" {
-  ! grep -En 'go in `\.vbw/runtime/`|scratch work in \.vbw/runtime/"' "$PLUGIN_ROOT/agents/dev.md" "$PLUGIN_ROOT/agents/lead.md" "$PLUGIN_ROOT/hooks/common.jq"
+  ! grep -En 'go in `\.vbw/runtime/`|scratch work in \.vbw/runtime/"' "$PLUGIN_ROOT/agents/dev.md" "$PLUGIN_ROOT/agents/lead.md" "$PLUGIN_ROOT/hooks/common.jq" || false
   grep -qF 'never `/tmp`' "$PLUGIN_ROOT/agents/dev.md"
   grep -qF 'never `/tmp`' "$PLUGIN_ROOT/agents/lead.md"
 }

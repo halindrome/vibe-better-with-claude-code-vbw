@@ -146,7 +146,7 @@ end() { VBW_SESSION_ID="$1" "$VBW" run end > /dev/null; }
   as "$SESSION_A" doctor
   [ "$(printf '%s\n' "$output" | grep -c 'session names')" -eq 1 ]
   printf '%s\n' "$output" | grep 'session names' | grep -q 'readable'
-  ! printf '%s\n' "$output" | grep 'session names' | grep -q 'not found'
+  ! printf '%s\n' "$output" | grep 'session names' | grep -q 'not found' || false
   printf '%s\n' "$output" | grep 'session names' | grep -q 'readable, 1 entries'
   registry_entry 102 "$SESSION_B" "Other work"
   as "$SESSION_A" doctor

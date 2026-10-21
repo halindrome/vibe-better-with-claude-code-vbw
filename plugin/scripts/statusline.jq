@@ -61,7 +61,7 @@ def progress($done; $total): (if $total > 0 then $done * 100 / $total else 0 end
      elif $rec.lease != null and $stepnote.run == $rec.lease.run then $stepnote
      else null end
    else null end) as $step
-# A clock time, local 24-hour; another day names the day as the kernel and the panel do
+# A clock time, local 24-hour; another day names the day as the kernel does
 # (step_clock in plugin/lib/steps.sh): tomorrow, yesterday, or the weekday.
 | def day($e): $e | localtime | mktime / 86400 | floor;
   def clock($t): ($t | fromdateiso8601) as $e

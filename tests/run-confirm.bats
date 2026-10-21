@@ -35,7 +35,7 @@ edit() { jq "$1" .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json
   [ "$status" -eq 1 ]
   said P1.2 "not recorded"
   said P1.1 "recorded"
-  ! said P1.1 "not recorded"
+  ! said P1.1 "not recorded" || false
   edit '(.plans[] | select(.id == "P1.2")).status = "blocked" | (.plans[] | select(.id == "P1.2")).note = "needs a key"'
   vbw_run run confirm P1.1 P1.2
   [ "$status" -eq 0 ] || { echo "$output"; false; }

@@ -58,7 +58,7 @@ usage: vbw <command> [args]
   rtk [status]      the state of RTK (command-output compression)
   report            diagnostic facts for a bug report about VBW (no spec text or code)
   commit PLAN MSG [FILE...]  commit a plan's declared files (or only FILEs) with trailers
-  mutate PLAN Rn.k [--queue] WHAT FILE... | PLAN --run | PLAN taskK [--check ID]... WHAT FILE... | PLAN taskK --none REASON   break the plan's code on purpose and record whether its tests noticed
+  mutate PLAN Rn.k [--queue] WHAT FILE... | PLAN --run | PLAN taskK [--check ID]... WHAT FILE... | PLAN taskK --none REASON | PLAN Rn.k --none REASON   break the plan's code on purpose and record whether its tests noticed
   version | --version   print the plugin version
   help              this list
 EOF
@@ -83,7 +83,8 @@ vbw_cmd_usage() {
       echo "       vbw mutate PLAN Rn.k --queue WHAT FILE...   set the break aside to run later; the files go back at once"
       echo "       vbw mutate PLAN --run   run every queued break of PLAN side by side and record each"
       echo "       vbw mutate PLAN taskK [--check ID]... WHAT FILE...   break task K; the checks of the plan's requirements (or the --check ones) must notice"
-      echo "       vbw mutate PLAN taskK --none REASON   record that task K has no behaviour a test could notice" ;;
+      echo "       vbw mutate PLAN taskK --none REASON   record that task K has no behaviour a test could notice"
+      echo "       vbw mutate PLAN Rn.k --none REASON   record that no code the requirement's plans build can change what the rule's check judges (verified from its read list)" ;;
     next) echo "usage: vbw next [--json]   the next lifecycle step and whether it needs you" ;;
     show) echo "usage: vbw show VIEW [ID]   VIEW: roadmap | phase ID | req ID | plan ID | fix ID | contract [--changes] | evidence | decisions | requirements | costs [--json | --ceiling USD]" ;;
     spec)

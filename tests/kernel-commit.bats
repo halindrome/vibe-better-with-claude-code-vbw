@@ -45,7 +45,7 @@ teardown() { vbw_teardown; }
   printf 'pay\n' > "src/pay form.js"
   vbw_run commit P1.1 "feat(pay): card form"
   [ "$status" -eq 0 ]
-  ! git show --name-only --format= HEAD | grep -q notes.txt
+  ! git show --name-only --format= HEAD | grep -q notes.txt || false
   git diff --cached --name-only | grep -qx notes.txt
 }
 

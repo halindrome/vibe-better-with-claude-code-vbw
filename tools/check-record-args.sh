@@ -11,7 +11,8 @@
 # that the function's header comment ("# name ARG...: ...") names RECORD,
 # RECORD_JSON, DIGESTS or RESULTS. Data written into a pipe first
 # (printf '%s' "$record" | jq ...), --slurpfile, --rawfile, small values and
-# comments pass. A <(...) handed to --slurpfile or --rawfile is a file and passes too.
+# comments pass. A <(...) handed to --slurpfile or --rawfile is a file and passes
+# too, unless a jq --arg... or a here-string inside it takes the data.
 set -euo pipefail
 [ $# -ge 1 ] || { printf 'usage: check-record-args.sh DIR...\n' >&2; exit 2; }
 for d in "$@"; do
@@ -49,8 +50,16 @@ while IFS= read -r -d '' path; do
       tail = substr(line, RSTART)
       # data written into a pipe is how it must be done
       gsub(/(printf[ \t]+(\047%s\047|"%s"|%s)|echo)[ \t]+"?\$\{?(record|record_json|digests|results)\}?"?[ \t]*\|/, "", tail)
-      # a process substitution handed to --slurpfile or --rawfile is a file, not an argument
-      gsub(/--(slurpfile|rawfile)[ \t]+[A-Za-z_][A-Za-z_0-9]*[ \t]+<\([^)]*\)/, "", tail)
+      # a process substitution handed to --slurpfile or --rawfile is a file, not an argument, unless
+      # a command inside it takes the data as one (jq --arg ... or a here-string): that part is judged
+      rest = tail; tail = ""
+      while (match(rest, /--(slurpfile|rawfile)[ \t]+[A-Za-z_][A-Za-z_0-9]*[ \t]+<\([^)]*\)/)) {
+        ps = substr(rest, RSTART, RLENGTH)
+        tail = tail substr(rest, 1, RSTART - 1)
+        if (ps ~ /(--arg|--argjson|--args|--jsonargs)([ \t]|$)|<<</) tail = tail ps
+        rest = substr(rest, RSTART + RLENGTH)
+      }
+      tail = tail rest
       bad = 0
       if (tail ~ /record_read|qa_combined|qa_digests|qa_state|qa_cache_read/) bad = 1
       if (tail ~ /(cat|git show)[^|]*(record\.json|VBW_RECORD)/) bad = 1

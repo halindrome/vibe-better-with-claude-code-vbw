@@ -144,7 +144,7 @@ cmd_fix() {
   # shellcheck source=proofsteps.sh
   . "$VBW_LIB/proofsteps.sh"
   prooftime_begin
-  local t0 own_json causes_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes keys served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0 began=0
+  local t0 own_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes keys served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0 began=0
   # The store opens before the planning, which holds vbw:plan (R202).
   [ ${#ids[@]} -eq 0 ] || { mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"; checks_begin "$record"; began=1; }
   slots_hold vbw:plan || true
@@ -319,13 +319,14 @@ cmd_fix() {
   fix_unit_lines "$tfres" "$order" "$TF_WHY" "$(printf '%s' "$TF_REUSE" | jq -c 'map_values(.at)')"
   printf 'checks: %s ran, %s reused\n' "${#todo[@]}" "$(printf '%s' "$rmap" | jq 'length')"
   printf 'test files: %s ran, %s reused\n' "${#TF_TODO[@]}" "$(printf '%s' "$TF_REUSE" | jq 'length')"
-  # The two report lines, from this round's results, reuse map and causes.
+  # The two report lines, from this round's results, reuse map and causes. All but the
+  # split grow with the project (the reused results carry their read lists): by file.
   own_json=$(prooftime_total)
-  causes_json=$(printf '%s' "$causes" | jq -R -s -c 'split("\n") | map(select(length > 0))')
-  jq -n -c --argjson own "$own_json" --argjson causes "$causes_json" --argjson order "$cands_json" --argjson tfo "$tf_json" \
-    --argjson why "$wmap" --argjson re "$rmap" --argjson tfwhy "$TF_WHY" --argjson tfre "$TF_REUSE" \
+  jq -n -c --argjson own "$own_json" --rawfile causes <(printf '%s' "$causes") --slurpfile o <(printf '%s' "$cands_json") --slurpfile t <(printf '%s' "$tf_json") \
+    --slurpfile w <(printf '%s' "$wmap") --slurpfile r <(printf '%s' "$rmap") --slurpfile tw <(printf '%s' "$TF_WHY") --slurpfile tr <(printf '%s' "$TF_REUSE" | jq -c 'map_values(true)') \
     --slurpfile st <(printf '%s' "$results" | jq -c 'map_values(.status)') --slurpfile tfst <(printf '%s' "$tfres" | jq -c 'map_values(.status)') \
-    '{own: $own, causes: $causes,
+    '$o[0] as $order | $t[0] as $tfo | $w[0] as $why | $r[0] as $re | $tw[0] as $tfwhy | $tr[0] as $tfre
+    | {own: $own, causes: ($causes | split("\n") | map(select(length > 0))),
       checks: ($order | map({key: ., value: (if $re[.] then {status: "pass", reused: true} else {status: ($st[0][.] // "pass")} + (if $why[.] then {why: $why[.]} else {} end) end)}) | from_entries),
       test_files: ($tfo | map({key: ., value: (if $tfre[.] then {status: "pass", reused: true} else {status: ($tfst[0][.] // "pass")} + (if $tfwhy[.] then {why: $tfwhy[.]} else {} end) end)}) | from_entries)}' \
     | prooftime_lines

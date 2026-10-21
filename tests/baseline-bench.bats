@@ -141,7 +141,7 @@ vbw2_transcript() {
   vbw2_transcript
   BENCH_STUB_FIX=1 run bash "$BENCH" vbw2 sonnet-5.5 fix-oneshot 1
   [ "$status" -eq 0 ]
-  ! grep -q '^keys bench-sonnet-5-5-fix-oneshot-1 Enter' "$STUB/calls"
+  ! grep -q '^keys bench-sonnet-5-5-fix-oneshot-1 Enter' "$STUB/calls" || false
   run jq -r '.user_inputs' "$PROJECT/runs/vbw2-sonnet-5.5-fix-oneshot-1.json"
   [ "$output" = 0 ]
 }
@@ -154,7 +154,7 @@ vbw2_transcript() {
   BENCH_STUB_FIX=1 run bash "$BENCH" vbw2 sonnet-5.5 fix-oneshot 1
   [ "$status" -eq 0 ]
   grep -q '^keys bench-sonnet-5-5-fix-oneshot-1 Escape' "$STUB/calls"
-  ! grep -q '^keys bench-sonnet-5-5-fix-oneshot-1 Enter' "$STUB/calls"
+  ! grep -q '^keys bench-sonnet-5-5-fix-oneshot-1 Enter' "$STUB/calls" || false
   run jq -r '.user_inputs' "$PROJECT/runs/vbw2-sonnet-5.5-fix-oneshot-1.json"
   [ "$output" = 0 ]
 }
@@ -303,7 +303,7 @@ l3_start() {
   grep 'new-session' "$STUB/tmux" | grep -q -- '--plugin-dir'
   rm "$STUB/tmux"
   l3_start plain
-  ! grep 'new-session' "$STUB/tmux" | grep -q -- '--plugin-dir'
+  ! grep 'new-session' "$STUB/tmux" | grep -q -- '--plugin-dir' || false
   grep 'new-session' "$STUB/tmux" | grep -q 'claudeMdExcludes'
 }
 
@@ -330,7 +330,7 @@ l3_start() {
   run jq -c '[.arm,.pass,.tokens,.cost_usd,.user_inputs,.level]' "$PROJECT/runs/plain-sonnet-5.5-fix-oneshot-1.json"
   [ "$output" = '["plain",true,10,1.50,1,"L3"]' ]
   grep -q '^start bench-plain-sonnet-5-5-fix-oneshot-1 .* claude-sonnet-5-5 plain' "$STUB/calls"
-  ! grep -q '/vbw:' "$STUB/calls"
+  ! grep -q '/vbw:' "$STUB/calls" || false
   grep -q '^type bench-plain-sonnet-5-5-fix-oneshot-1 ' "$STUB/calls"
 }
 

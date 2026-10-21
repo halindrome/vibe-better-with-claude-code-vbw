@@ -10,7 +10,7 @@ load helper
   grep -qF '<claude-config-dir>/vbw/sessions/<session id>' "$g"
   grep -q '7' "$g"
   grep -q 'D364' "$g"
-  ! grep -q 'It never writes and never injects' "$g"
+  ! grep -q 'It never writes and never injects' "$g" || false
   grep -qF 'CLAUDE_ENV_FILE' "$g"
 }
 
