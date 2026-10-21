@@ -42,7 +42,7 @@ one_item() {
   grep -q 'R2' .vbw/loop-report.md
   grep -q 'feat(greet): hello' .vbw/loop-report.md
   grep -q '\$1\.50' .vbw/loop-report.md
-  ! grep -qE 'tokens|[0-9] in,' .vbw/loop-report.md
+  ! grep -qE 'tokens|[0-9] in,' .vbw/loop-report.md || false
   grep -qi 'end of' .vbw/loop-report.md
   jq -e '.loop.items[0] | .status == "shipped" and .milestone == "M2" and .cost == {usd: 1.5}' .vbw/record.json || { jq .loop .vbw/record.json; false; }
   jq -e '.loop.report == ".vbw/loop-report.md" and (.loop.ended.reason | test("end of"))' .vbw/record.json
