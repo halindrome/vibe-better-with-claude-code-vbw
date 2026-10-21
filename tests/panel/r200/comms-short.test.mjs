@@ -124,7 +124,7 @@ test('a needs-you line with one row shows the needs-you line alone; with two row
   const two = await lines(h, 2)
   assert.equal(two.length, 2, JSON.stringify(two))
   assert.match(two[0], /⚑ VBW needs you/)
-  assert.match(two[1], /^proving 3 of 9 checks · /)
+  assert.match(two[1], /^\[\d\d:\d\d\] proving 3 of 9 checks · /)
 })
 
 test('the order in little room is the needs-you line, then the helper line while helpers work, then the step line', () => {
@@ -154,7 +154,8 @@ test('the step line alone (no helper line) shows only when no helper works: a pr
   const proving = await idle(record(), next({ action: 'prove' }), proofNote())
   const alone = await lines(proving, 1)
   assert.equal(alone.length, 1, JSON.stringify(alone))
-  assert.ok(alone[0].startsWith('proving 3 of 9 checks · about 12 min, until around ' + AT), alone[0])
+  assert.match(alone[0], /^\[\d\d:\d\d\] proving 3 of 9 checks · about 12 min, until around /)
+  assert.ok(alone[0].endsWith('until around ' + AT), alone[0])
   const { h, at } = await crewed(timed())
   writeCrew(h, at, [{ n: 'P142.1', state: 'done' }])
   endRun(h, at)
@@ -162,7 +163,7 @@ test('the step line alone (no helper line) shows only when no helper works: a pr
   const done = await lines(h, 1)
   assert.equal(done.length, 1, JSON.stringify(done))
   assert.ok(!helperLine(done[0]), 'no helper works, yet the helper line shows: ' + done[0])
-  assert.match(done[0], /^building P1\.1 · /)
+  assert.match(done[0], /^\[\d\d:\d\d\] building P1\.1 · /)
 })
 
 test('Comms never draws more rows than Claude Code gives it: with a live step note at 1, 2, 3, 4 and 8 rows at 80 and 40 columns the row count is held and no line is wider', async () => {
@@ -177,4 +178,61 @@ test('Comms never draws more rows than Claude Code gives it: with a live step no
     }
   }
   assert.deepEqual(h.errors, [])
+})
+
+// T94: Comms' short messages (the step line, the weekly-limit line) start with the
+// time they began saying what they say, '[HH:MM] ', held by the caller (stamp), not the clock.
+const agent = { id: 'a1', role: 'dev', label: 'P1.1', state: 'working', activity: { kind: 'tool', text: 'editing greet.sh' }, startedAt: NOW - 20 * S, endedAt: null, lastSeenAt: NOW - S, tokens: 1000, result: null }
+const crewRun = { runId: 'wf_1', kind: 'build', phase: 'Build', startedAt: NOW - 30 * S, endedAt: null, status: 'running', agents: [agent] }
+const BEGAN = NOW - 7 * MIN
+const drawn = (input, columns = 100) => screen(stage.renderStage(UI, stage.stageModel({ now: NOW, columns, ...input }), undefined), columns)
+
+test('the step line starts with the time its message began, not the time now', () => {
+  const seen = []
+  const stamp = (id, text) => { seen.push([id, text]); return BEGAN }
+  const out = drawn({ step: timed(), maxRows: 1, stamp })
+  assert.equal(out.length, 1)
+  assert.ok(out[0].startsWith('[' + hhmm(BEGAN) + '] building P1.1 · about 12 min, until around ' + AT), out[0])
+  assert.notEqual(hhmm(BEGAN), hhmm(NOW))
+  assert.deepEqual(seen.map((x) => x[0]), ['step'])
+  assert.ok(!seen[0][1].startsWith('['), 'the stamped text is the bare message')
+})
+
+test('without a stamp from the caller the step line has no time', () => {
+  assert.ok(drawn({ step: timed(), maxRows: 1 })[0].startsWith('building P1.1 · '))
+})
+
+test('the weekly-limit line carries the time it began; the needs-you line, the title and the helper line carry no second time', () => {
+  const stamp = (id) => (id === 'limit' ? BEGAN : null)
+  const hl = { weekPct: 85, weekPerRun: 10 }
+  const out = drawn({ health: hl, next: { action: 'build' }, maxRows: 3, stamp })
+  assert.equal(out[0], 'VBW · before the build run')
+  assert.equal(out[1], '[' + hhmm(BEGAN) + '] Weekly limit 85%: a run like this used about 10% last time.')
+  const need = drawn({ need: { key: 'k', what: 'approve the plan', at: NOW }, run: crewRun, step: timed(), maxRows: 2, stamp: () => BEGAN })
+  assert.equal(need[0], hhmm(NOW) + ' ⚑ VBW needs you · approve the plan')
+  const one = drawn({ run: crewRun, step: timed(), maxRows: 1, stamp: () => BEGAN })
+  assert.ok(one[0].startsWith('VBW ▸ build · 1 working · 0m30s · about 12 min, until around ' + AT), one[0])
+  assert.doesNotMatch(one[0], /\[\d\d:\d\d\]/)
+  const full = drawn({ run: crewRun, step: timed(), maxRows: 4, stamp: () => BEGAN })
+  assert.ok(full[0].startsWith('VBW ▸ build'), full[0])
+  assert.doesNotMatch(full[0], /\[\d\d:\d\d\]/)
+})
+
+test('in a narrow window the message text is cut, never the time', () => {
+  for (const columns of [40, 24, 16]) {
+    const out = drawn({ step: timed(), maxRows: 1, stamp: () => BEGAN }, columns)
+    assert.ok(out[0].startsWith('[' + hhmm(BEGAN) + '] build'), columns + ': ' + out[0])
+    assert.ok(out[0].length <= columns, columns + ': ' + out[0])
+    assert.ok(out[0].endsWith('…'), columns + ': ' + out[0])
+  }
+})
+
+test('the time of a message does not move while its text stays the same', async () => {
+  const { h } = await crewed(note(), working(1))
+  const first = await lines(h, 8)
+  const step = (l) => l.find((x) => x.includes('building P1.1'))
+  const t0 = step(first).slice(0, 7)
+  assert.match(t0, /^\[\d\d:\d\d\]$/)
+  await h.advance(3 * MIN)
+  assert.equal(step(await lines(h, 8)).slice(0, 7), t0, 'the clock alone did not change the time')
 })

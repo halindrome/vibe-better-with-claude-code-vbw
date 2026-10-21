@@ -212,6 +212,13 @@ the helper line (`VBW ▸ ...`) while helpers work, then the step line.
 - Three or more rows: the header, the helper rows and the step line.
 - A needs-you line with one row shows alone.
 - The step line shows alone only when no helper works, for example during a proof.
+- The step line and the weekly-limit line start with the time they began saying
+  what they say, `[14:32] proving 12 of 40 checks · about 8 min, until around
+  14:40`. The time does not move while the message stays the same, so the clock
+  alone redraws nothing; in a narrow window the text is cut, never the time.
+  The needs-you line, the all-checks-pass line and the helper rows already
+  start with a time, and the `VBW ▸` line is a live count, so they carry no
+  second one.
 
 Comms never draws more rows than Claude Code gives it, so the prompt box stays
 whole.

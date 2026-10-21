@@ -78,7 +78,7 @@ function health(hl, action) {
   if (num(hl.weekPct) && hl.weekPct >= 80) {
     const w = Math.round(hl.weekPct)
     const per = num(hl.weekPerRun) && hl.weekPerRun > 0 ? 'a run like this used about ' + Math.round(hl.weekPerRun) + '% last time' : 'a long run may reach it'
-    out.push({ text: 'Weekly limit ' + w + '%: ' + per + '.', color: NEED })
+    out.push({ text: 'Weekly limit ' + w + '%: ' + per + '.', color: NEED, stamp: 'limit' })
   }
   return out
 }
@@ -88,10 +88,18 @@ function health(hl, action) {
 // The running step, one line: what it is doing and its end time in the panel's
 // wording ('proving 12 of 40 checks · about 8 min, until around 14:26'). '' with no
 // step (the note went, or was never live), so the line goes at the next refresh.
-function stepOf(step, words, columns) {
+// A message that reports something that happened or a time left starts with the
+// moment it began saying what it says, '[HH:MM] ': the text is cut, never the time.
+// `at(id, text)` is that moment (the caller keeps it, so the clock alone redraws nothing).
+function dated(at, id, text, columns) {
+  const t = hhmm(at(id, text))
+  return t ? '[' + t + '] ' + cut(text, Math.max(0, columns - 8)) : cut(text, columns)
+}
+
+function stepOf(step, words, columns, at) {
   if (!isObj(step) || !words) return ''
   const doing = str(step.doing) || str(step.kind)
-  return cut((doing ? doing + ' · ' : '') + words.text, columns)
+  return dated(at, 'step', (doing ? doing + ' · ' : '') + words.text, columns)
 }
 
 // --- the crew ----------------------------------------------------------------
@@ -205,7 +213,9 @@ export function stageModel(input) {
     // The needs-you line comes first; the step line takes the next row when there is one.
     const left = maxRows - (need ? 1 : 0)
     const words = left >= 1 && isObj(input.step) ? stepWords(input.step, now) : null
-    const stepText = stepOf(input.step, words, columns)
+    // `stamp(id, text)`: when the caller first saw `text` as message `id`; without it, no time.
+    const at = typeof input.stamp === 'function' ? input.stamp : () => null
+    const stepText = stepOf(input.step, words, columns, at)
     const seen = new Set(Array.isArray(input.seen) ? input.seen.filter((x) => typeof x === 'string') : [])
     if (left >= 1 && isObj(rn) && Array.isArray(rn.agents) && rn.agents.some((a) => isObj(a) && typeof a.id === 'string' && a.id)) {
       // One row left: the helper line carries the step's time words, the step line gives way.
@@ -216,7 +226,7 @@ export function stageModel(input) {
     }
     if (stepText) return { kind: 'step', step: stepText, ...(need ? { need } : {}), lines: [] }
     const action = isObj(nx) && typeof nx.action === 'string' ? nx.action : ''
-    const lines = health(hl, action).slice(0, Math.max(0, need ? left : maxRows - 1)).map((l) => ({ ...l, text: cut(l.text, columns) }))
+    const lines = health(hl, action).slice(0, Math.max(0, need ? left : maxRows - 1)).map((l) => ({ ...l, text: dated(at, l.stamp, l.text, columns) }))
     if (need) return { kind: 'need', need, lines }
     if (RUNS.has(action) && lines.length) return { kind: 'nudge', title: cut('VBW · before the ' + action + ' run', columns), lines }
     return null

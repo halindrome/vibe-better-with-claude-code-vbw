@@ -151,9 +151,20 @@ const unseenNext = (st) => {
   const rec = recOf(st)
   return isObj(rec) && typeof rec.at === 'string' && rec.at !== '' && rec.at !== st.seenNext
 }
+// A short message keeps the time it began saying what it says (st.stamps.comms): the
+// same text keeps its time; new text, or text gone for longer than a few redraws, starts afresh.
+const COMMS_GAP_MS = 10000
+const commsStamp = (st, now) => (id, text) => {
+  const c = isObj(st.stamps.comms) ? st.stamps.comms : (st.stamps.comms = {})
+  const m = c[id]
+  if (!isObj(m) || m.text !== text || now - m.seen > COMMS_GAP_MS) c[id] = { text, at: now, seen: now }
+  else m.seen = now
+  return c[id].at
+}
 const stage = (st, now, props) => {
   const need = needNow(st)
   return stageModel({
+    stamp: commsStamp(st, now),
     run: st.run, next: st.next, step: st.step, now, health: st.health, cost: runCost(st), motion: motion(st),
     need, fresh: need !== null && needId(need) !== st.needSeen,
     seen: Object.keys(st.helpersSeen), born: st.born, columns: isObj(props) ? props.bodyColumns : undefined, maxRows: isObj(props) ? props.maxRows : undefined,
