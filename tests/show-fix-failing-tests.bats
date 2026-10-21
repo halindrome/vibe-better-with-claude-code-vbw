@@ -14,8 +14,10 @@
 # output. L1: the kernel on a fixture project with planted kept output.
 
 load helper
+load fixture-helper
 
-setup() {
+# shop_project: the project with its proof run and its fixes opened (built once per file).
+shop_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -39,10 +41,15 @@ setup() {
   TA_LOG=$(find "$OUT" -maxdepth 1 -name 'file-*.log' -print | sed "s|^$OUT/||")
   [ "$(printf '%s\n' "$TA_LOG" | grep -c .)" -eq 1 ] || { echo "no single kept file for tests/t_a.sh: $TA_LOG"; return 1; }
   export F_REQ F_TEST TA_LOG
-  plant
 }
 
+setup_file() { fixture_build shop shop_project; }
+setup() {
+  fixture_copy shop
+  plant
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 OUT=.vbw/runtime/output
 
