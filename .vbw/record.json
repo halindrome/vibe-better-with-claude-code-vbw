@@ -52704,6 +52704,13 @@
       "sort": "next",
       "size": "small",
       "status": "done"
+    },
+    {
+      "id": "T179",
+      "text": "A single proof uses about 1.9 of its 7 slots on average (T175 trace, 2026-10-21, 200-unit stand-in): units are launched one after another in checks_run_units (several jq runs and a 0.05 s poll per unit), so a proof could finish much sooner if units started as fast as slots free; measure, then fix",
+      "sort": "next",
+      "size": "medium",
+      "status": "open"
     }
   ],
   "decisions": [
