@@ -371,7 +371,7 @@ scenario_balanced() {
     expect "QA ran in the background (a vbw:verifying workflow)" [ "$qa_bg" = true ]
     expect "VBW's next step is accept ($stopped)" [ "$stopped" = accept ]
     [ "$failed" -eq 0 ] && [ "$te" -eq 0 ] && [ "$dl" -eq 0 ] && [ "$stopped" = accept ] && [ "$qa_bg" = true ] || passed=false
-    result_write balanced "$fixture" "${cost:-0}" "$passed" \
+    result_write balanced "$fixture" "${cost_usd:-0}" "$passed" \
       "$(jq -n --arg a "$autonomy" --argjson q "$qa_bg" --argjson t "$te" --argjson d "$dl" --arg s "$stopped" \
         '{autonomy: $a, qa_background: $q, stop_hook_errors_transcript: $t, stop_hook_errors_debug_log: $d, stopped_at: $s}')" \
       '["acceptance itself (the run stops at accept)","hands-off and guided autonomy","a project larger than the greet.sh fixture"]'
