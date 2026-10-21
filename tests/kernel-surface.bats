@@ -46,7 +46,6 @@ proven_project() {
   vbw_run req reject R2 "the logo is blurry"
   [ "$status" -eq 0 ]
   jq -e '.requirements[1].status == "rejected" and .fixes == [{id: "F1", req: "R2", attempts: 0, status: "open", note: "the logo is blurry"}]' .vbw/record.json
-  vbw_consent_contract
   vbw_run fix done F1
   [ "$status" -eq 0 ]
   [[ "$output" == *"goes back to the user"* ]]

@@ -122,7 +122,7 @@ slots_apply() {
   return "$rc"
 }
 
-# slots_open: once per command (checks_begin). The store in force: SLOTS_STATE
+# slots_open: once per command (checks_open). The store in force: SLOTS_STATE
 # on; a run inside a unit on this same store: nested (no slots of its own); a
 # store that cannot be used: off, said once on stderr.
 slots_open() {

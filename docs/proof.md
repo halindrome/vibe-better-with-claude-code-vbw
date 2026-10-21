@@ -865,6 +865,8 @@ failing check is work in progress, not a defect, and opens nothing.
 `vbw fix done` is verified, not claimed: none of the files the fix may touch has
 uncommitted changes, and the checks of every finished requirement (all its plans
 `done`) that those files serve pass now. A fix cannot quietly break other work.
+Those checks run only on an approved contract, and otherwise `vbw fix done` is
+refused as `vbw prove` is; a fix with nothing to re-check needs no approval.
 A project command's fix is left to `vbw prove`, which runs the command. A fix of
 the test command with a single-file form is the exception: it judges every test
 file by the reuse rule (the failed file and any changed file run, the rest are
@@ -894,7 +896,6 @@ no agent can give. It still refuses an unknown, not open or uncommitted fix, and
 the others end as usual (`fixed`, awaiting the proof):
 
 ```text
-vbw: waiting for approval (new or changed since approved): tests/c1.sh
 check files are waiting for approval, so no check runs before it: tests/c1.sh
 the user approves them first (vbw next asks); then vbw prove runs every check
 checks: 0 ran, 0 reused

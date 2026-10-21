@@ -145,8 +145,9 @@ cmd_fix() {
   . "$VBW_LIB/proofsteps.sh"
   prooftime_begin
   local t0 own_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes keys served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0 began=0
-  # The store opens before the planning, which holds vbw:plan (R202).
-  [ ${#ids[@]} -eq 0 ] || { mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"; checks_begin "$record"; began=1; }
+  # The run and its slot store open before the planning, which holds vbw:plan
+  # (R202); the contract must be approved only when something will run.
+  [ ${#ids[@]} -eq 0 ] || { mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"; checks_open; began=1; }
   slots_hold vbw:plan || true
   t0=$(prooftime_clock)
   if [ ${#ids[@]} -gt 0 ]; then
@@ -229,6 +230,7 @@ cmd_fix() {
   prooftime_span planning "$t0"
   slots_release vbw:plan
   if [ ${#todo[@]} -gt 0 ] || [ ${#TF_TODO[@]} -gt 0 ]; then
+    checks_approved "$record"
     at=$(vbw_now)
     off=false
     [ -z "$noreads" ] || off=true
