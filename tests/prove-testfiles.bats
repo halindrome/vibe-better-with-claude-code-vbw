@@ -6,8 +6,9 @@
 # testfiles-run.bats. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -27,7 +28,12 @@ setup() {
   "$VBW" approve > /dev/null
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "R167: the evidence holds one entry per test file and the test command's place is one aggregate that fails with them" {
   vbw_run prove
