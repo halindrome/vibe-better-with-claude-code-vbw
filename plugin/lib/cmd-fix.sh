@@ -89,8 +89,8 @@ cmd_fix() {
   shift
   vbw_require_project
   local record id
-  record=$(record_read)
   if [ "$mode" = retry ]; then
+    record=$(record_read)
     id="$1"
     printf '%s' "$record" | jq -e --arg f "$id" 'any(.fixes[]; .id == $f)' > /dev/null || vbw_die "unknown fix $id"
     # The user decides to try again after the cap: one more attempt.
@@ -100,6 +100,25 @@ cmd_fix() {
     printf '%s reopened for one more attempt\n' "$id"
     return 0
   fi
+
+  # The checks of every finished requirement are the candidates; the one reuse
+  # rule of vbw prove picks which run, on clean copies, and their read lists are kept.
+  # shellcheck source=checks.sh
+  . "$VBW_LIB/checks.sh"
+  # shellcheck source=proofcopy.sh
+  . "$VBW_LIB/proofcopy.sh"
+  # shellcheck source=proofreuse.sh
+  . "$VBW_LIB/proofreuse.sh"
+  # shellcheck source=proofcauses.sh
+  . "$VBW_LIB/proofcauses.sh"
+  # shellcheck source=testfiles.sh
+  . "$VBW_LIB/testfiles.sh"
+  # shellcheck source=proofsteps.sh
+  . "$VBW_LIB/proofsteps.sh"
+  # VBW's own steps tile the command up to its record step (R202): the reading
+  # and the judging of the named fixes are planning; a wait for a slot is not.
+  prooftime_begin
+  record=$(record_read)
 
   # Each named fix is judged alone: unknown, not open and dirty fixes are named
   # and left out; the rest are candidates.
@@ -129,27 +148,13 @@ cmd_fix() {
     ids+=("$id")
   done
 
-  # The checks of every finished requirement are the candidates; the one reuse
-  # rule of vbw prove picks which run, on clean copies, and their read lists are kept.
-  # shellcheck source=checks.sh
-  . "$VBW_LIB/checks.sh"
-  # shellcheck source=proofcopy.sh
-  . "$VBW_LIB/proofcopy.sh"
-  # shellcheck source=proofreuse.sh
-  . "$VBW_LIB/proofreuse.sh"
-  # shellcheck source=proofcauses.sh
-  . "$VBW_LIB/proofcauses.sh"
-  # shellcheck source=testfiles.sh
-  . "$VBW_LIB/testfiles.sh"
-  # shellcheck source=proofsteps.sh
-  . "$VBW_LIB/proofsteps.sh"
-  prooftime_begin
-  local t0 own_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes keys served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0 began=0
+  local own_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes keys served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0 began=0
   # The run and its slot store open before the planning, which holds vbw:plan
   # (R202); the contract must be approved only when something will run.
   [ ${#ids[@]} -eq 0 ] || { mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"; checks_open; began=1; }
+  prooftime_step planning
   slots_hold vbw:plan || true
-  t0=$(prooftime_clock)
+  prooftime_mark
   if [ ${#ids[@]} -gt 0 ]; then
     for id in "${ids[@]}"; do
       served=$(printf '%s' "$served" | jq -c --slurpfile s <(cmd_fix_checks "$record" "$id" | jq -R . | jq -sc 'map(select(length > 0))') '. + $s[0] | unique')
@@ -210,7 +215,6 @@ cmd_fix() {
       rmap=$(printf '%s' "$PU_REUSE" | jq -c 'map_values(.at)')
     fi
   fi
-  prooftime_span planning "$t0"
   # A test command that failed as test files is re-run on its own, file by file,
   # through the approved single-file form, never as the whole test command. The
   # files are planned as a proof plans them (a file that did not pass runs, the
@@ -218,7 +222,6 @@ cmd_fix() {
   TF_PATHS=() TF_TODO=() TF_REUSE='{}' TF_WHY='{}'
   # shellcheck disable=SC2034 # read by testfiles_plan
   PROVE_NAMES='[]' TODO_COMMANDS='[]' REUSE_COMMANDS='{}' WHY_COMMANDS='{}'
-  t0=$(prooftime_clock)
   if [ ${#ids[@]} -gt 0 ] && [ -z "$wait_files" ] && testfiles_on "$record"; then
     for id in "${ids[@]}"; do
       printf '%s' "$record" | jq -e --arg f "$id" 'any(.fixes[]; .id == $f and .command == "test")' > /dev/null && tfwant=1
@@ -227,7 +230,6 @@ cmd_fix() {
       if [ -n "$causes" ]; then testfiles_plan "$record" 1 fix; else testfiles_plan "$record" 0 fix; fi
     fi
   fi
-  prooftime_span planning "$t0"
   slots_release vbw:plan
   if [ ${#todo[@]} -gt 0 ] || [ ${#TF_TODO[@]} -gt 0 ]; then
     checks_approved "$record"
@@ -236,33 +238,42 @@ cmd_fix() {
     [ -z "$noreads" ] || off=true
     c=${#todo[@]}
     [ "$c" -ge ${#TF_TODO[@]} ] || c=${#TF_TODO[@]}
+    prooftime_step planning
     slots_hold vbw:copies || true
-    t0=$(prooftime_clock)
+    prooftime_mark
     proofcopy_create_slots "$(proofcopy_slots "$c")"
-    prooftime_span copies "$t0"
+    prooftime_step copies
     slots_release vbw:copies
     proofsteps_begin "$((${#todo[@]} + ${#TF_TODO[@]}))" "$({
       for c in ${todo[@]+"${todo[@]}"}; do printf 'check:%s\n' "$c"; done
       for c in ${TF_TODO[@]+"${TF_TODO[@]}"}; do printf 'file:%s\n' "$c"; done
     } | proofsteps_names)"
+    prooftime_step copies
+    # Each unit counts its own read tracking; the units' commands are no step.
     [ ${#todo[@]} -eq 0 ] || results=$(checks_run_all "$record" "${todo[@]}")
     [ ${#TF_TODO[@]} -eq 0 ] || tfres=$(testfiles_run "$record")
+    prooftime_mark
     # A failure's complete output stays readable under vbw prove's names (R195).
     checks_keep "$results" '{}' "$tfres"
+    prooftime_step saving
     proofcopy_remove
+    prooftime_step copies
     checks_end
     began=0
     proofsteps_units "$results" '{}' "$tfres"
     proofsteps_end
     results=$(printf '%s' "$results" | jq -c --argjson off "$off" "$PROVE_FLAT")
     tfres=$(printf '%s' "$tfres" | jq -c --argjson off "$off" "$PROVE_FLAT")
+    prooftime_step saving
     slots_hold vbw:save || true
-    t0=$(prooftime_clock)
+    prooftime_mark
     proofreuse_save "$record" "$results" '{}' "$head" "$at"
     [ "$tfres" = '{}' ] || testfiles_save "$record" "$tfres" "$head" "$at"
-    prooftime_span saving "$t0"
+    prooftime_step saving
     slots_release vbw:save
     tfbad=$(printf '%s' "$tfres" | jq -r '[to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join(", ")')
+  else
+    prooftime_step planning
   fi
   [ "$began" -eq 0 ] || checks_end
 
@@ -293,13 +304,15 @@ cmd_fix() {
     fi
     closed+=("$id")
   done
-  if [ ${#closed[@]} -gt 0 ]; then
-    t0=$(prooftime_clock)
-    record_update '. as $r | (.fixes[] | select(.id as $i | $fixed | index($i))).status = "fixed"
+  [ ${#closed[@]} -eq 0 ] || record_update '. as $r | (.fixes[] | select(.id as $i | $fixed | index($i))).status = "fixed"
       | (.fixes[] | select(.id as $i | $humans | index($i))).status = "closed"
       | (.requirements[] | select(.id as $q | any($r.fixes[]; (.id as $i | $humans | index($i)) and .req == $q))).status = "open"' \
       --argjson fixed "$fixed" --argjson humans "$humans"
-    prooftime_span record "$t0"
+  # Judging the fixes and writing the record are the record step; the split is read
+  # after it, so the wall covers every step but the units' own tracking (R202).
+  prooftime_step record
+  own_json=$(prooftime_total)
+  if [ ${#closed[@]} -gt 0 ]; then
     proofsteps_fix_done "${#closed[@]}"
     for id in "${closed[@]}"; do
       if printf '%s' "$humans" | jq -e --arg f "$id" 'index($f)' > /dev/null; then
@@ -323,7 +336,6 @@ cmd_fix() {
   printf 'test files: %s ran, %s reused\n' "${#TF_TODO[@]}" "$(printf '%s' "$TF_REUSE" | jq 'length')"
   # The two report lines, from this round's results, reuse map and causes. All but the
   # split grow with the project (the reused results carry their read lists): by file.
-  own_json=$(prooftime_total)
   jq -n -c --argjson own "$own_json" --rawfile causes <(printf '%s' "$causes") --slurpfile o <(printf '%s' "$cands_json") --slurpfile t <(printf '%s' "$tf_json") \
     --slurpfile w <(printf '%s' "$wmap") --slurpfile r <(printf '%s' "$rmap") --slurpfile tw <(printf '%s' "$TF_WHY") --slurpfile tr <(printf '%s' "$TF_REUSE" | jq -c 'map_values(true)') \
     --slurpfile st <(printf '%s' "$results" | jq -c 'map_values(.status)') --slurpfile tfst <(printf '%s' "$tfres" | jq -c 'map_values(.status)') \

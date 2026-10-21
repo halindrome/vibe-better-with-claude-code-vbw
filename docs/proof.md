@@ -733,12 +733,26 @@ VBW's own work: 0.4 of 6.2 min
 ran again: 3 of 52 units; top reasons: src/a.txt changed (2), definition changed (1)
 ```
 
-**`VBW's own work: X of Y min`.** Y is the command's wall-clock time; X is the
-part VBW spent on its own bookkeeping instead of running a unit's command (both
-in minutes, one decimal). Own work is: planning the reuse, making the clean
-copies, read tracking (resetting access times before a unit and collecting its
-read list after it), saving the run store, and writing the record. The clock
-inside the proof measures each step; nothing is estimated.
+**`VBW's own work: X of Y min`.** Y is the command's wall-clock time, up to the
+end of its record step; X is the part VBW spent on its own bookkeeping instead
+of running a unit's command (both in minutes, one decimal). Own work is five
+steps:
+
+- planning: reading the record and the contract, judging the named fixes
+  (`vbw fix done`), planning the reuse, the scope check, and the trees of the
+  committed code and of the working folder;
+- copies: making, checking and removing the clean copies;
+- read tracking: resetting access times before a unit and collecting its read
+  list after it;
+- saving: the run store and the kept output of failures;
+- record: building the evidence and writing the record.
+
+The clock inside the proof measures each step; nothing is estimated. Up to the
+end of the record step, every second is one of these steps, a unit's command
+running, or a wait for a slot ([The computer-wide limit](#the-computer-wide-limit)).
+Writing the split itself, the record's commit and the printed summary come after
+it. Read tracking is summed over the units, and units run side by side, so with
+several running at once own work can exceed the wall time.
 
 **`ran again: N of M units; top reasons: ...`.** M counts every unit the proof
 covers (checks, approved commands, test files); N counts those that really ran.

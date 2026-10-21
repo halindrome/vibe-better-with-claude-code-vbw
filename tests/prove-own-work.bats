@@ -5,10 +5,12 @@
 # "test files: N ran, M reused" line, two lines:
 #   VBW's own work: X of Y min
 #   ran again: N of M units; top reasons: <reason> (count), ...
-# Own work is everything that is not a unit's command running: planning the
-# reuse, making the clean copies, read tracking (reset before and collection
-# after each unit), saving the run store and writing the record, each measured
-# by the clock inside the proof; Y is the command's wall-clock time. Minutes
+# Own work is everything that is not a unit's command running: planning (the
+# reuse plan, the scope check and the other bookkeeping before the units),
+# making the clean copies, read tracking (reset before and collection after each
+# unit, summed over the units that run side by side), saving the run store and
+# writing the record, each measured by the clock inside the proof; Y is the
+# command's wall-clock time up to the end of the record step. Minutes
 # carry one decimal. M counts every unit the proof covers (checks, approved
 # commands, test files), N those that really ran. The reasons are the units'
 # own (never passed, <file> changed, definition changed, ...) and, for a unit
@@ -188,6 +190,19 @@ mixed_change() {
   [ "$(jq '.evidence.own.wall >= 13' .vbw/record.json)" = true ] || { jq .evidence.own .vbw/record.json; false; }
   [[ "$(nth 3)" != *" of 0.0 min" ]] || { echo "$output"; false; }
   [ "$(jq '.evidence.own.record > 0 and .evidence.own.planning > 0 and .evidence.own.copies > 0 and .evidence.own.saving > 0 and .evidence.own.tracking > 0' .vbw/record.json)" = true ] || { jq .evidence.own .vbw/record.json; false; }
+}
+
+@test "R202: the scope check counts as planning, and the wall time is read after the record step it covers" {
+  # A scope listing that takes 3 s and a record write that takes 3 s: both land in their steps, and the
+  # wall covers every step but the units' own tracking (the serial steps tile it up to the record step).
+  mkdir -p "$TEST_ROOT/slowbin"
+  printf '#!/bin/sh\ncase " $* " in *"trailers:key=VBW-Plan"*) sleep 3 ;; esac\nexec %s "$@"\n' "$(command -v git)" > "$TEST_ROOT/slowbin/git"
+  printf '#!/bin/sh\n%s "$@" || exit $?\ncase " $* " in *" -A -01 "*|*" -1 second "*) sleep 3 ;; esac\n' "$(command -v touch)" > "$TEST_ROOT/slowbin/touch"
+  chmod +x "$TEST_ROOT/slowbin/git" "$TEST_ROOT/slowbin/touch"
+  PATH="$TEST_ROOT/slowbin:$PATH" vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  jq -e '.evidence.own | .planning >= 3 and .record >= 3 and .wall + 0.01 >= (.planning + .copies + .saving + .record)' .vbw/record.json \
+    || { jq .evidence.own .vbw/record.json; false; }
 }
 
 @test "R202: the read tracking step counts the collection after a unit as well as the reset before it" {
