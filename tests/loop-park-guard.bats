@@ -5,12 +5,12 @@
 
 load helper
 load loop-helper
+load fixture-helper
 
-setup() {
-  loop_project
-  VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
-}
+setup_file() { fixture_build started loop_started T1 --no-ceiling; }
+setup() { fixture_copy started; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 bash_call() {
   jq -nc --arg c "$1" --arg d "$PROJECT" --argjson x "${2:-null}" '{hook_event_name: "PreToolUse", session_id: "s1", tool_name: "Bash", cwd: $d, tool_input: {command: $c}} + $x' \
