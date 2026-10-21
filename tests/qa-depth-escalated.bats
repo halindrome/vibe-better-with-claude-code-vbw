@@ -9,8 +9,12 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
+# The tiny flow's project, planned and not yet approved: built once per file.
+setup_file() { fixture_build flow rigor_flow_setup; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # to_qa: from the record as the real flow left it, make the phase built,
 # proven and due for QA again (its pass is on other code), with a fresh full
@@ -62,14 +66,14 @@ TO_STANDARD='[{"at":"2026-10-01T08:00:00Z","from":"express","to":"standard","rea
 depth() { printf '%s' "$output" | jq -r '.round.tiers.P1'; }
 
 @test "R145: the flow's phase is small and low-risk (one file, no risk path), so only an escalation can keep it from the quick check" {
-  rigor_flow_setup
+  fixture_copy flow
   rigor_flow_approve
   phase_json '.phases[0].tier == "express" and (.phases[0].reasons | index("risk: none")) != null
     and ([.plans[] | select(.phase == "P1") | .files[]] | length) == 1'
 }
 
 @test "R145: a phase raised by a blocked plan is verified at its raised tier's depth, not quick" {
-  rigor_flow_setup
+  fixture_copy flow
   rigor_flow_approve
   "$VBW" plan block P1.1 "needs the API key" > /dev/null
   phase_json '.phases[0].tier == "standard" and (.phases[0].escalations | length) == 1'
@@ -80,7 +84,7 @@ depth() { printf '%s' "$output" | jq -r '.round.tiers.P1'; }
 }
 
 @test "R145: a phase raised by a fix needing a second round is verified at its raised tier's depth, not quick" {
-  rigor_flow_setup
+  fixture_copy flow
   rigor_flow_approve
   printf 'wrong\n' > src/greet.txt
   "$VBW" commit P1.1 "feat(greet): wrong" > /dev/null
@@ -94,7 +98,7 @@ depth() { printf '%s' "$output" | jq -r '.round.tiers.P1'; }
 }
 
 @test "R145: a phase raised by a failed QA is verified at its raised tier's depth, not quick" {
-  rigor_flow_setup
+  fixture_copy flow
   rigor_flow_build
   "$VBW" qa finding R1 "the greeting is missing" > /dev/null
   phase_json '.phases[0].tier == "standard" and (.phases[0].escalations[-1].reason | contains("QA"))'
@@ -133,7 +137,7 @@ depth() { printf '%s' "$output" | jq -r '.round.tiers.P1'; }
 }
 
 @test "R145: a tier forced with vbw config rigor, never escalated, keeps the small-change discount" {
-  rigor_flow_setup
+  fixture_copy flow
   "$VBW" config rigor deep > /dev/null
   rigor_flow_approve
   phase_json '.phases[0].tier == "deep" and ((.phases[0].escalations // []) | length) == 0'
