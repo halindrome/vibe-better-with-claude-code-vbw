@@ -12,8 +12,9 @@
 # from a copy of the plugin whose guard is broken on purpose.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -30,6 +31,12 @@ setup() {
   cp -R "$PLUGIN_ROOT" "$COPY"
   export COPY
 }
+
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
+teardown_file() { fixture_teardown; }
 
 teardown() {
   [ -z "${COPY:-}" ] || chmod -R u+rw "$COPY" 2> /dev/null || true
