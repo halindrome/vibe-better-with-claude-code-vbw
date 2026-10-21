@@ -1,5 +1,65 @@
 # Changelog
 
+## [2.1.0] - 2026-10-21
+
+The first release for the community. What VBW is and how it works is in the
+[README](../README.md); what is known to be missing or planned is in
+[docs/known-issues.md](../docs/known-issues.md), and ideas open for
+contributions are in [docs/ideas.md](../docs/ideas.md).
+
+### Added
+
+- **VBW tells you when it was updated.** The first session after an update
+  says so once and offers `/vbw:whats-new`. VBW still makes no network call;
+  `/vbw:doctor` says whether Claude Code's auto-update is on for VBW's
+  marketplace and how to turn it on ([docs/update.md](../docs/update.md)).
+- **Every proof names its slowest tests.** `vbw prove` and `vbw fix done`
+  print the three slowest units and their share of the time; `vbw show
+  evidence` lists the ten slowest and every unit over the new `check_budget`
+  setting (seconds per unit, default 120). It reports and never fails a
+  proof. `vbw ship` says how the milestone changed the total test time.
+- **Rule breaks can run side by side.** `vbw mutate PLAN Rn.k --queue` sets a
+  break aside and `vbw mutate PLAN --run` runs the queued breaks at once, each
+  in its own clean copy, under the computer-wide limit.
+
+### Changed
+
+- **Lean tests by default.** The Lead writes one test file per requirement
+  area, builds expensive fixtures once per file, avoids sleeps and timing
+  assertions, and replaces the cases a new requirement supersedes instead of
+  stacking new ones. A fix's regression test goes into the existing file. QA
+  notes a slow test, never fails a phase for it.
+- **The mutation check asks one break per rule** at standard and deep, plus a
+  task break only where no rule's check covers the task.
+- **Build estimates time a wave by its slowest plan**, counting the breaks,
+  so the "until around" times run late far less often.
+- **`vbw fix done` runs nothing while test files wait for your approval**: it
+  names them and says the approval comes first, instead of starting a long
+  run that could not count. It needs an approved contract only when
+  something will run.
+- **Costs are measured in dollars only.** Claude Code's token fields describe
+  the last request, not a running total, so a run could show an unknown cost
+  and a compaction could over-count spending; both are fixed.
+- **A small change keeps its quick QA check**, and a small documentation plan
+  is built by the Docs agent, when VBW plans the request itself.
+- **Faster status line** on the paths that go through Claude Code's setting
+  (about 10–15 ms less per refresh). The status line setting is rewritten once
+  at the next session start.
+- **Proof bookkeeping**: VBW's own work in the report counts every step; the
+  causes of a re-run are bounded (a 3,000-file drop is one line); the run store
+  forgets units that no longer exist; the cached unit list follows the git index;
+  the scope check reads long histories in seconds.
+
+### Fixed
+
+- **macOS with jq 1.8.2 (Homebrew):** every VBW guard crashed, which blocked
+  every tool call during a run.
+- **jq 1.8:** the hint to name a chat never showed.
+- **Linux with non-atomic `mkdir` (Ubuntu 26.04):** two processes could take the
+  same lock, and a run could wait for itself.
+- **Very large projects:** `vbw prove` and `vbw fix done` could stop with
+  "Argument list too long".
+
 ## [2.0.41] - 2026-10-20
 
 ### Added
