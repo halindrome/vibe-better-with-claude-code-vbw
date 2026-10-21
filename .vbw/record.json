@@ -52696,7 +52696,7 @@
       "text": "M42 shipped without VBW's QA review (owner D490, 2026-10-20): run the review on P161-P165 after the push and record its verdict",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T178",
