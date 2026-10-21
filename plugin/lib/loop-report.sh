@@ -15,7 +15,7 @@ loop_report_write() {
   vbw_guard_add file "$log"
   git -C "$VBW_ROOT" log --format='%h%x1f%s%x1f%(trailers:key=VBW-Plan,valueonly,separator=%x20)' > "$log" 2> /dev/null || : > "$log"
   jq -r --argjson spend "$spend" --argjson cur "$cur" --rawfile log "$log" "$LOOP_USD_JQ$LOOP_TIME_JQ"'
-    def cost: if . == null then "unknown" else "\(.usd | usd) (\(.in) in, \(.out) out)" end;
+    def cost: if . == null then "unknown" else (.usd | usd) end;
     . as $r | .loop as $l
     | ([$log | split("\n")[] | select(length > 0) | split("\u001f") | {hash: .[0], subject: .[1], plans: ((.[2] // "") | split(" "))}]) as $commits
     | def plans_of($m): [$r.plans[] | select(.phase as $p | any($r.phases[]; .id == $p and .milestone == $m)) | .id];

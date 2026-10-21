@@ -1,9 +1,10 @@
 #!/usr/bin/env bats
 # R173 (docs/statusline.md): while the VBW status line is on, each render in a
 # VBW project writes the session's latest figures Claude Code sent it (session
-# id, total cost in dollars, total input tokens, total output tokens, the time)
-# to .vbw/runtime/cost.SESSION.json, written to a temporary name and renamed,
-# and never to .vbw/record.json. A render with no cost field leaves the file as
+# id, total cost in dollars, the time) to .vbw/runtime/cost.SESSION.json,
+# written to a temporary name and renamed, and never to .vbw/record.json. The
+# token fields of the status line's JSON are the last request's, not running
+# totals, so they are not stored. A render with no cost field leaves the file as
 # it was; a folder that cannot be written still renders. L1.
 
 load helper
@@ -36,9 +37,9 @@ side() { printf '%s/.vbw/runtime/cost.%s.json' "$PROJECT" "${1:-s1}"; }
   run render
   [ "$status" -eq 0 ]
   [ -f "$(side)" ] || { ls -la .vbw/runtime; false; }
-  jq -e '.session == "s1" and .usd == 1.4234 and .in == 62000 and .out == 1200
+  jq -e '.session == "s1" and .usd == 1.4234
     and (.at | test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"))
-    and (keys == ["at", "in", "out", "session", "usd"])' "$(side)" || { cat "$(side)"; false; }
+    and (keys == ["at", "session", "usd"])' "$(side)" || { cat "$(side)"; false; }
 }
 
 @test "R173: a render with no cost field leaves the side file unchanged" {

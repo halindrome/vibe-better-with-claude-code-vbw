@@ -1,7 +1,7 @@
 # Costs
 
-VBW records what each run and each milestone cost, in dollars and tokens, from
-the figures Claude Code gives the status line.
+VBW records what each run and each milestone cost, in dollars, from the figures
+Claude Code gives the status line.
 
 ```
 vbw show costs
@@ -23,16 +23,23 @@ vbw show costs --ceiling 20
 The data lives in the record (`costs`, docs/record.md). The figures come from
 the status line's side file (docs/statusline.md), so the status line must be on.
 
+Only dollars are measured. Claude Code gives the status line the session's
+running cost, but no running token total: its token fields describe the last
+request (the size of the context now, the last response's output), so they fall
+when the context is compacted and are no spend. VBW does not store or show
+them. Records written by a VBW that did store tokens stay valid, and are read by
+their dollars.
+
 ## `vbw show costs`
 
-Prints each milestone's total (dollars, tokens, sessions) and each run's share.
+Prints each milestone's total (dollars, sessions) and each run's share.
 
 `--json` returns one object:
 
 | Field | Meaning |
 |---|---|
-| `milestones[]` | `id`, `title`, `status` (`active` or `shipped`), `usd`, `in`, `out`, `sessions`; `usd` is null when no figure was seen, and stays null for a milestone shipped without figures |
-| `runs[]` | `id` (the run's kind and start second, `qa-20260101T120000Z`; a second run started in that same second gets `-2`, a third `-3`, so no two runs share an id), `kind`, `milestone`, `session`, `started`, `ended`, `cost` (`{ usd, in, out }` or null) |
+| `milestones[]` | `id`, `title`, `status` (`active` or `shipped`), `usd`, `sessions`; `usd` is null when no figure was seen, and stays null for a milestone shipped without figures |
+| `runs[]` | `id` (the run's kind and start second, `qa-20260101T120000Z`; a second run started in that same second gets `-2`, a third `-3`, so no two runs share an id), `kind`, `milestone`, `session`, `started`, `ended`, `cost` (`{ usd }` or null) |
 | `unknown` | `{ runs, milestones }`: the ids whose cost VBW did not see |
 | `remedy` | what to do about unknown costs |
 
@@ -60,8 +67,8 @@ has a figure, and VBW then shows `cannot tell`, never 0.
 ## Unknown costs
 
 `unknown` means VBW did not see the figures: the status line was off, the
-run had no session, or a figure went down during the run (a session restarted
-or its file was replaced), so VBW cannot tell what was spent. VBW never shows 0 or an estimate in that case. Turn the
+run had no session, or the dollar figure went down during the run (a session
+restarted or its file was replaced), so VBW cannot tell what was spent. VBW never shows 0 or an estimate in that case. Turn the
 status line on and later runs are measured:
 
 ```

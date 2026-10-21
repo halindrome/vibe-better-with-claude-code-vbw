@@ -2,7 +2,8 @@
 # R178 (P127; docs/loop.md): vbw loop status shows the loop's spend so far (the
 # sum over known sessions of the current figures minus the loop's baseline,
 # computed the way a milestone's total is: a session first seen later counts
-# from its first figure, a figure that fell below its baseline counts whole),
+# from its first figure, a dollar figure that fell below its baseline counts whole;
+# the context size falling, as in a compaction, is not a fall: tokens are not measured),
 # the ceiling, and one word: under, reached, or cannot tell (no figure seen).
 # cannot tell counts as reached for the stop rule unless the loop runs with
 # --no-ceiling. L1.
@@ -18,15 +19,24 @@ loop_json() { "$VBW" loop status --json < /dev/null; }
 @test "R178: the spend is the sum over known sessions of the current figures minus the baseline, like a milestone's total" {
   VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 --ceiling 5 > /dev/null
   figures s1 2.5 1200 130
-  loop_json | jq -e '.spend == {usd: 0.5, in: 200, out: 30, sessions: 1} and .word == "under"' || { loop_json; false; }
+  loop_json | jq -e '.spend == {usd: 0.5, sessions: 1} and .word == "under"' || { loop_json; false; }
   run "$VBW" loop status
   [[ "$output" == *'$0.50'* ]] && [[ "$output" == *"under"* ]] && [[ "$output" == *'$5'* ]] || { echo "$output"; false; }
   # A session first seen after the start counts from its first figure, whole.
   figures s2 1 500 50
-  loop_json | jq -e '.spend == {usd: 1.5, in: 700, out: 80, sessions: 2} and .word == "under"' || { loop_json; false; }
-  # A figure that fell below its baseline (a restarted session) counts whole.
+  loop_json | jq -e '.spend == {usd: 1.5, sessions: 2} and .word == "under"' || { loop_json; false; }
+  # A dollar figure that fell below its baseline (a restarted session) counts whole.
   figures s1 1.5 600 60
-  loop_json | jq -e '.spend.usd == 2.5 and .spend.in == 1100 and .word == "under"' || { loop_json; false; }
+  loop_json | jq -e '.spend.usd == 2.5 and .word == "under"' || { loop_json; false; }
+}
+
+@test "R178: a compaction (the context size falls, the dollars rise) is not a restart: only the dollars since the baseline count" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 --ceiling 5 > /dev/null
+  # Claude Code's token fields are the last request's: the context was 1000, it is 300 now.
+  figures s1 2.5 300 40
+  loop_json | jq -e '.spend == {usd: 0.5, sessions: 1} and .word == "under"' || { loop_json; false; }
+  run "$VBW" loop status
+  [[ "$output" == *'$0.50'* ]] && [[ "$output" != *" in,"* ]] && [[ "$output" != *"tokens"* ]] || { echo "$output"; false; }
 }
 
 @test "R178: at or above the ceiling the word is reached" {

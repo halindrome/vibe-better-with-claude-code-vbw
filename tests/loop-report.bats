@@ -16,7 +16,7 @@ teardown() { vbw_teardown; }
 
 step() { loop_next s1 > "$TEST_ROOT/step.json"; jq -r .action "$TEST_ROOT/step.json"; }
 
-# one_item: the loop runs T1 through to its ship, spending $1.50 (1500 in, 150 out) in session s1.
+# one_item: the loop runs T1 through to its ship, spending $1.50 in session s1.
 one_item() {
   [ "$(step)" = plan ]
   loop_plan "$(item_req "Visitors can read a greeting")" P2
@@ -27,7 +27,7 @@ one_item() {
   loop_prove
 }
 
-@test "R179: at the loop's end the report names what shipped, with its commits, and what it cost in dollars and tokens" {
+@test "R179: at the loop's end the report names what shipped, with its commits, and what it cost in dollars" {
   VBW_SESSION_ID=s1 "$VBW" loop start T1 --ceiling 20 > /dev/null
   one_item
   [ "$(step)" = done ]
@@ -42,10 +42,9 @@ one_item() {
   grep -q 'R2' .vbw/loop-report.md
   grep -q 'feat(greet): hello' .vbw/loop-report.md
   grep -q '\$1\.50' .vbw/loop-report.md
-  grep -q '1500' .vbw/loop-report.md
-  grep -q '150' .vbw/loop-report.md
+  ! grep -qE 'tokens|[0-9] in,' .vbw/loop-report.md
   grep -qi 'end of' .vbw/loop-report.md
-  jq -e '.loop.items[0] | .status == "shipped" and .milestone == "M2" and .cost.usd == 1.5 and .cost.in == 1500 and .cost.out == 150' .vbw/record.json || { jq .loop .vbw/record.json; false; }
+  jq -e '.loop.items[0] | .status == "shipped" and .milestone == "M2" and .cost == {usd: 1.5}' .vbw/record.json || { jq .loop .vbw/record.json; false; }
   jq -e '.loop.report == ".vbw/loop-report.md" and (.loop.ended.reason | test("end of"))' .vbw/record.json
   run "$VBW" loop status
   [[ "$output" == *"ended"* ]] && [[ "$output" == *"end of"* ]] && [[ "$output" == *".vbw/loop-report.md"* ]] || { echo "$output"; false; }

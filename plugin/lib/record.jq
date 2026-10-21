@@ -22,10 +22,13 @@ def has_id($x): any(.[]?; .id == $x);
 def tier: one_of(["express","standard","deep"]);
 def count: type == "number" and . == floor and . >= 0;
 def nonneg: type == "number" and . >= 0;
-def figures: type == "object" and (keys | sort) == ["in","out","usd"] and all(.[]; nonneg);
+# The costs figures (R173) are dollars: {usd}. Records written while tokens were stored (Claude Code gives
+# the status line no running token total, so they were dropped) also hold "in" and "out", both together:
+# read, never written, never shown.
+def figures: type == "object" and (keys | sort | . == ["usd"] or . == ["in","out","usd"]) and all(.[]; nonneg);
 def session_figures: type == "object"
-  and all(.[]; type == "object" and (keys | sort) == ["at","in","out","usd"]
-               and (.at | iso) and (.usd | nonneg) and (.in | nonneg) and (.out | nonneg));
+  and all(.[]; type == "object" and (keys | sort | . == ["at","usd"] or . == ["at","in","out","usd"])
+               and (.at | iso) and (del(.at) | figures));
 def strings_array: type == "array" and all(.[]; type == "string");
 def loop_item: type == "object"
   and (keys - ["id","text","proof","status","milestone","req","head","baseline","retried","reverts","left","cost","reason","at","opened_at","budget"] == [])
@@ -359,18 +362,16 @@ if type != "object" then ["record must be a JSON object"] else
                 and (.milestone | type == "string" and one_of($milestones))
                 and (.started | iso) and (.ended | iso)
                 and (.cost == null or (.cost | figures))) | not)
-            | "costs.runs entries need exactly id, kind (plan, build, fix, qa or map), session (string or null), milestone (an existing id), started, ended (ISO-8601 UTC) and cost (null or {usd, in, out} non-negative numbers)" ),
+            | "costs.runs entries need exactly id, kind (plan, build, fix, qa or map), session (string or null), milestone (an existing id), started, ended (ISO-8601 UTC) and cost (null or {usd}, a non-negative number)" ),
           ( ((.milestones // {}) | if type == "object" then . else {} end) | to_entries[]
             | select((.key | one_of($milestones)) | not) | "costs.milestones.\(.key) is not an existing milestone" ),
           ( ((.milestones // {}) | if type == "object" then . else {} end) | to_entries[] | .key as $k | .value
             | select((type == "object" and (keys - ["baseline","total"] == []) and has("baseline")
-                and (.baseline | type == "object"
-                     and all(.[]; type == "object" and (keys | sort) == ["at","in","out","usd"]
-                                  and (.at | iso) and (.usd | nonneg) and (.in | nonneg) and (.out | nonneg)))
+                and (.baseline | session_figures)
                 and ((has("total") | not)
-                     or (.total | type == "object" and (keys | sort) == ["in","out","sessions","usd"]
+                     or (.total | type == "object" and (keys | sort | . == ["sessions","usd"] or . == ["in","out","sessions","usd"])
                          and all(.[]; nonneg)))) | not)
-            | "costs.milestones.\($k) needs a baseline of {usd, in, out, at} per session and, optionally, a total of {usd, in, out, sessions}, all non-negative numbers" )
+            | "costs.milestones.\($k) needs a baseline of {usd, at} per session and, optionally, a total of {usd, sessions}, all non-negative numbers" )
         end ),
     ( $r.loop
       | select(. != null)
@@ -391,7 +392,7 @@ if type != "object" then ["record must be a JSON object"] else
           ( select(has("session") and (.session != null) and (.session | type != "string")) | "loop.session must be a string or null" ),
           ( select(has("started_at") and ((.started_at | iso) | not)) | "loop.started_at must be an ISO-8601 UTC time" ),
           ( select(has("baseline") and ((.baseline | session_figures) | not))
-            | "loop.baseline needs, per session, {usd, in, out, at} with non-negative numbers" ),
+            | "loop.baseline needs, per session, {usd, at} with a non-negative number" ),
           ( select(has("stopping") and ((.stopping | type == "object" and (keys | sort) == ["at","session"] and (.at | iso)
                 and (.session == null or (.session | type == "string"))) | not))
             | "loop.stopping must be {at: an ISO-8601 UTC time, session: a string or null}" ),
@@ -408,7 +409,7 @@ if type != "object" then ["record must be a JSON object"] else
                     and ((has("editable") | not) or (.editable | type == "array" and all(.[]; safe_path)))
                     and ((has("new_tests") | not) or (.new_tests | type == "boolean"))
                     and ((has("cost") | not) or .cost == null or (.cost | figures))) | not)
-            | "lease needs run, kind (plan, build, fix, qa or map), started_at (ISO-8601 UTC) and files (null or relative paths) and optionally a session (string), cost (null or the costs figures {usd, in, out}), editable (relative paths) and new_tests (true or false)" ),
+            | "lease needs run, kind (plan, build, fix, qa or map), started_at (ISO-8601 UTC) and files (null or relative paths) and optionally a session (string), cost (null or the costs figures {usd}), editable (relative paths) and new_tests (true or false)" ),
           ( select(has("new_tests") and .kind != "fix") | "only a fix run carries new_tests" ),
           ( select(has("editable") and (.kind | one_of(["fix","build"]) | not)) | "only a fix or build run carries editable" ),
           ( . as $l | keys[] | select(one_of(["run","kind","started_at","files","session","editable","new_tests","cost"]) | not) | "lease has an unknown field: \(.)" )

@@ -31,7 +31,7 @@ loop_item_text() {
 # shellcheck disable=SC2034 # used by the loop commands that source this file
 LOOP_USD_JQ='def usd: "$" + (. * 100 | round | tostring | if length < 3 then ("000" + .)[-3:] else . end | .[:-2] + "." + .[-2:]);'
 
-# loop_figures_now: every known session's current figures as {SID: {usd, in, out, at}}, the baseline
+# loop_figures_now: every known session's current figures as {SID: {usd, at}}, the baseline
 # of a loop, an item or a milestone.
 loop_figures_now() {
   local base="{}" sid figs
@@ -46,7 +46,7 @@ loop_figures_now() {
 }
 
 # loop_spend FILE [ITEM]: FILE is the record's path (never its data: jq reads it). The spend as
-# {usd, in, out, sessions}: the sum over the sessions with a
+# {usd, sessions}: the sum over the sessions with a
 # side file of the current figures minus the baseline (the loop's, or the item's own), exactly as a
 # milestone's total is (costs_milestone_total reads a baseline from the record it is given, so it is
 # given the baseline as a one-milestone record). null when no session has a figure.
