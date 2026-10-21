@@ -7,10 +7,16 @@
 # projects never block each other. A vbw run started inside a unit's command,
 # on the same store, takes no slot of its own (the unit's slot covers it, D340)
 # and never waits for its parent. Waiting changes no result: a unit's timeout
-# counts from its command's start. L1: unit commands log their start and end
-# to $LOG (tests/machine-helper.bash). Project B of one quick check, which
-# three tests share, is built once per file (setup_file) and copied; the core
-# count is read when a run starts, so each test sets it after the copy.
+# counts from its command's start. A unit that waits takes the store's lock
+# once, to join the wait, and then only looks at the store: the step that frees
+# a slot hands it to the waiter whose turn it is, and a waiter that finds the
+# holder's run gone takes over its slot (T175: waiters polling under the lock
+# kept it held and starved the releases). L1: unit commands log their start
+# and end to $LOG (tests/machine-helper.bash); the lock and hand-over cases
+# drive the store's functions in bash processes of their own (in_store).
+# Project B of one quick check, which three tests share, is built once per
+# file (setup_file) and copied; the core count is read when a run starts, so
+# each test sets it after the copy.
 
 load helper
 load machine-helper
@@ -29,6 +35,70 @@ setup_file() {
 setup() { fixture_copy base; }
 teardown() { machine_teardown; }
 teardown_file() { fixture_teardown; }
+
+# in_store BODY [ARG...]: BODY run (stopped after 60 s) by a bash process of
+# its own, so a run of its own ($$), with the slot store in $TEST_ROOT/store
+# open at limit 1 as slots_open leaves it; the ARGs are its $1, $2...
+in_store() {
+  local body="$1"
+  shift
+  mkdir -p "$TEST_ROOT/store"
+  # shellcheck disable=SC2016 # expanded by the inner bash
+  within 60 bash -c 'VBW_LIB="$PLUGIN_ROOT/lib"; . "$VBW_LIB/core.sh"; . "$VBW_LIB/record.sh"; . "$VBW_LIB/slots.sh"
+    SLOTS_DIR="$TEST_ROOT/store" SLOTS_FILE="$TEST_ROOT/store/slots.json" SLOTS_LIMIT=1 SLOTS_STATE=on CHECK_OUT="$TEST_ROOT/store"
+    body=$1; shift; eval "$body"' _ "$body" "$@"
+}
+
+# wait_file PATH: wait (up to 30 s) until PATH exists.
+wait_file() {
+  local i
+  for ((i = 0; i < 300; i++)); do [ ! -e "$1" ] || return 0; sleep 0.1; done
+  echo "$1 never appeared"
+  return 1
+}
+
+@test "R181: a unit that waits takes the store's lock once, to join the wait, and the step that frees the slot hands it over" {
+  local holder
+  # The holder, a run of its own, holds the only slot until it is told to give it back.
+  # shellcheck disable=SC2016 # expanded by in_store
+  in_store 'slots_hold B || exit 1; : > "$SLOTS_DIR/holding"
+    until [ -e "$SLOTS_DIR/release" ]; do sleep 0.05; done
+    slots_release B' &
+  holder=$!
+  wait_file "$TEST_ROOT/store/holding"
+  # The waiter counts the times it takes the lock (a mkdir of the lock folder
+  # that succeeds) and the pauses of its wait, which take no time; at the 20th
+  # pause it tells the holder to give the slot back.
+  # shellcheck disable=SC2016 # expanded by in_store
+  run in_store 'locks=0 pauses=0
+    mkdir() { command mkdir "$@" && locks=$((locks + 1)); }
+    sleep() { pauses=$((pauses + 1)); [ "$pauses" -ne 20 ] || : > "$SLOTS_DIR/release"; }
+    slots_hold A || { echo "no slot"; exit 1; }
+    jq -c "[.held[].id]" "$SLOTS_FILE"
+    echo "locks $locks pauses $pauses"'
+  wait "$holder" || { echo "the holder failed"; false; }
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "${lines[0]}" = '["A"]' ] || { echo "$output"; false; }
+  [[ "${lines[1]}" =~ ^locks\ 1\ pauses\ ([0-9]+)$ ]] || { echo "want the lock taken once while waiting: $output"; false; }
+  [ "${BASH_REMATCH[1]}" -ge 20 ] || { echo "the slot came before the holder gave it back: $output"; false; }
+}
+
+@test "R181: a unit waiting without the lock takes over the slot of a holder whose run died while it waited" {
+  # The holder holds the only slot until it is killed; an orphan, so its end is reaped at once.
+  # shellcheck disable=SC2016 # expanded by in_store
+  ( in_store 'slots_hold B || exit 1; printf "%s\n" "$$" > "$SLOTS_DIR/holder.tmp"; mv "$SLOTS_DIR/holder.tmp" "$SLOTS_DIR/holder"; exec sleep 60' > /dev/null 2>&1 < /dev/null & )
+  wait_file "$TEST_ROOT/store/holder"
+  # The waiter kills the holder at the 5th pause of its wait, which takes no time.
+  # shellcheck disable=SC2016 # expanded by in_store
+  run in_store 'pauses=0
+    sleep() { pauses=$((pauses + 1)); [ "$pauses" -ne 5 ] || kill -KILL "$(cat "$SLOTS_DIR/holder")"; }
+    slots_hold A || { echo "no slot"; exit 1; }
+    jq -c "[.held[].id]" "$SLOTS_FILE"
+    echo "pauses $pauses"'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "${lines[0]}" = '["A"]' ] || { echo "$output"; false; }
+  [[ "${lines[1]}" =~ ^pauses\ ([0-9]+)$ ]] && [ "${BASH_REMATCH[1]}" -ge 5 ] || { echo "the slot came before the holder died: $output"; false; }
+}
 
 @test "R181: a freed slot goes to the waiting run holding the fewest: B's one unit starts before A's fourth" {
   fixture_copy b

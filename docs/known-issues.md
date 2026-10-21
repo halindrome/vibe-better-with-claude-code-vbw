@@ -26,7 +26,6 @@ Status words:
 | [Approved rules cannot be reworded or retired](#approved-rules-cannot-be-reworded-or-retired) | Known issue | Re-planning | None clean |
 | [Time estimates absorb idle time](#time-estimates-absorb-idle-time) | Known issue | Estimates | Delete `steps.json` |
 | [Heavy checks each use every core](#heavy-checks-each-use-every-core) | Known issue | Cargo, make, similar | Lower `check_jobs` |
-| [Two proofs at once are much slower than one](#two-proofs-at-once-are-much-slower-than-one) | Known issue | Parallel sessions | Prove one at a time |
 | [Slot store edge cases](#slot-store-edge-cases) | Known issue | Sandboxes, many runs | None needed |
 | [Unit times are whole seconds](#unit-times-are-whole-seconds) | Known issue | Proof time reports | None needed |
 | [Status line speed where VBW is off](#status-line-speed-where-vbw-is-off) | Planned | Slower Macs | None needed |
@@ -97,27 +96,13 @@ Status words:
 
 **Where.** `plugin/lib/checks.sh`; the limit logic in `plugin/lib/slots.sh`.
 
-### Two proofs at once are much slower than one
-
-**What.** In one measurement, two proofs started together on one computer took 335 seconds together; one proof alone took 57.6. The shared limit was 7 slots and all 7 were held at the peak. Run one after the other, the two would take about 115 seconds, so the shared run took about three times as long.
-
-**Who and when.** People who run two sessions, or two projects, that prove at the same time.
-
-**Workaround.** Prove one project at a time on a machine when you can.
-
-**Status.** Cause not found. The leads, none tested: contention on the slot store's lock; waiting units polling the store every 0.1 s with several `jq` runs per poll; the heavy-check overload above.
-
-**Plan.** Find the cause and fix it. `tools/measure-proof-speed.sh` is the starting point for a measurement.
-
-**Where.** `plugin/lib/slots.sh`, `plugin/lib/checks.sh`.
-
 ### Slot store edge cases
 
 **What.** The computer-wide limit is kept in a small shared store (`slots.json` in the Claude config folder, [proof.md](proof.md#the-computer-wide-limit)). Three weaknesses remain, none breaking a requirement:
 
 1. Two runs that find the same dead lock owner can both delete the lock and briefly allow one slot too many. The fix is to take the lock over with an atomic rename.
 2. When the lock cannot be created but the folder looks writable (a sandbox, a full disk), the first step retries for about 30 seconds before saying it cannot write. It should detect this at once.
-3. Smaller: `vbw plan done` may print the "limit was not in force" line twice on an unwritable store and never prints the end-of-run waited line; a waiting entry left by a unit that lost the store stays until its run exits.
+3. Smaller: `vbw plan done` may print the "limit was not in force" line twice on an unwritable store and never prints the end-of-run waited line; a waiting entry left by a unit that lost the store can be handed a slot it never uses, which stays held until its run exits.
 
 **Who and when.** Sandboxed sessions, full disks, and many runs at once. The effect is a pause or one extra check at a time, never a wrong result.
 

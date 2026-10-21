@@ -150,7 +150,10 @@ slot each, listed in the store as `vbw:plan` (reuse planning), `vbw:copies`
 nested run (a proof started from inside a proof) takes no slot of its own.
 
 Runs take equal turns: when slots free up, the waiting run holding the fewest
-goes first; between equals, the one that waited longest. A run that waits
+goes first; between equals, the one that waited longest. The step that frees a
+slot hands it to that run at once. A waiting unit only reads the store until
+its turn has come, without taking the store's lock, so waiting runs never slow
+down the runs giving slots back. A run that waits
 prints `waited ... for other VBW runs on this computer`. Waiting changes
 nothing else: the same result as without it, and a timeout counts from when its command really starts.
 
