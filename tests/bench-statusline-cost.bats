@@ -14,8 +14,11 @@ setup() {
 
 teardown() { vbw_teardown; }
 
+# The bench's status line cases, the ones that write the side file (VBW_BENCH_ONLY joins selectors with '|').
+STATUSLINES='status line:|status line (large record):|status line (step running):'
+
 bench() {
-  run env VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=1 VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 "$@" bash "$BENCH"
+  run env VBW_BENCH_ONLY="$STATUSLINES" VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=1 VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 "$@" bash "$BENCH"
 }
 
 @test "R173: the bench's status line cases write the cost side file, and pass" {
@@ -26,7 +29,7 @@ bench() {
 
 @test "R173: a status line that never writes the side file fails the bench, on both records" {
   sed -i.bak 's/mv -f "\$side.\$\$" "\$side"/true/' "$TEST_ROOT/plugin/scripts/vbw-statusline.sh"
-  bench
+  bench VBW_BENCH_ONLY='status line:|status line (large record):'
   [ "$status" -eq 1 ] || { echo "$output"; false; }
   [[ "$output" == *"status line: the cost side file was not written"* ]] || { echo "$output"; false; }
   [[ "$output" == *"status line (large record): the cost side file was not written"* ]] || { echo "$output"; false; }

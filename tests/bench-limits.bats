@@ -52,6 +52,12 @@ slow_jq() {
   SLOW_PATH="$TEST_ROOT/slow:$PATH"
 }
 
+# The cases each test asserts on, for VBW_BENCH_ONLY (the start of a printed label, several joined
+# with '|'): the bench builds and measures only these, with the verdicts it gives in the full run.
+GUARDS='guard (git)|guard (npm)|guard (big)|guard (interp)|guard (read)|guard (answer)'
+LARGE_GUARDS='guard (git, large record)|guard (npm, large record)|guard (big, large record)|guard (interp, large record)|guard (read, large record)|guard (answer, large record)'
+STATUSLINES='status line:|status line (large record):'
+
 # bench [ENV=VALUE...]: the benchmark on the copied plugin, two calls per input.
 bench() {
   run env VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=2 "$@" bash "$BENCH"
@@ -78,7 +84,7 @@ line() {
 
 @test "R151: a guard whose own cost is above 20 ms per call fails the bench, and the line names the input, the cost and the 20 ms limit" {
   hooks_with '^Bash$' "$(burn 100)"
-  bench
+  bench VBW_BENCH_ONLY="guard (git)|guard (npm)|guard (big)|guard (interp)|guard (git, large record)|guard (big, 2000 checks)"
   quiet_or_skip
   [ "$status" -eq 1 ] || {
     printf '%s\n' "$output"
@@ -103,7 +109,7 @@ line() {
   # cost is above 8 ms and above the platform's startup on a quiet machine,
   # which the old limits (8 ms or 1x the startup) failed.
   hooks_with 'Read' 'perl -e 1'
-  bench
+  bench VBW_BENCH_ONLY="guard (read)|guard (read, large record)|guard (read, 51 checks)|guard (read, 2000 checks)"
   quiet_or_skip
   local l
   for l in "read" "read, large record" "read, 51 checks" "read, 2000 checks"; do
@@ -120,7 +126,7 @@ line() {
 
 @test "R151: the status line above 60 ms per call fails the bench on the small and the large record, naming the cost and the 60 ms limit" {
   statusline_burns 100
-  bench
+  bench VBW_BENCH_ONLY="$STATUSLINES"
   quiet_or_skip
   [ "$status" -eq 1 ] || {
     printf '%s\n' "$output"
@@ -141,7 +147,7 @@ line() {
 }
 
 @test "R151: without settings the limits are 20 ms per guard call and 60 ms for the status line, also in the bench's defaults" {
-  bench
+  bench VBW_BENCH_ONLY="$GUARDS|$STATUSLINES"
   quiet_or_skip
   local input
   for input in git npm big interp read answer; do
@@ -155,7 +161,7 @@ line() {
 
 @test "R151: a machine too busy to measure is reported with its startup and the run passes without judging any guard" {
   slow_jq 40
-  bench PATH="$SLOW_PATH"
+  bench VBW_BENCH_ONLY="guard (git)|status line:" PATH="$SLOW_PATH"
   [ "$status" -eq 0 ] || {
     printf '%s\n' "$output"
     false
@@ -185,7 +191,7 @@ line() {
 @test "R151: the same run with a startup below the limit judges the guards and the status line as usual" {
   # The same slowed jq, with limits above its startup: nothing is busy.
   slow_jq 40
-  bench PATH="$SLOW_PATH" VBW_HOOK_BUDGET_MS=1000 VBW_STATUSLINE_BUDGET_MS=1000
+  bench VBW_BENCH_ONLY="$GUARDS|$LARGE_GUARDS|$STATUSLINES" PATH="$SLOW_PATH" VBW_HOOK_BUDGET_MS=1000 VBW_STATUSLINE_BUDGET_MS=1000
   [ "$status" -eq 0 ] || {
     printf '%s\n' "$output"
     false
@@ -206,14 +212,14 @@ line() {
 @test "R151: VBW_HOOK_BUDGET_MS and VBW_STATUSLINE_BUDGET_MS override the two limits, the busy threshold following the hook limit" {
   hooks_with '^Bash$' "$(burn 100)"
   statusline_burns 100
-  bench VBW_HOOK_BUDGET_MS=50 VBW_STATUSLINE_BUDGET_MS=1000
+  bench VBW_BENCH_ONLY="guard (git)|status line:" VBW_HOOK_BUDGET_MS=50 VBW_STATUSLINE_BUDGET_MS=1000
   [ "$status" -eq 1 ] || {
     printf '%s\n' "$output"
     false
   }
   line '^guard \(git\): [0-9.]+ ms own CPU per call.*; budget 50 ms: OVER$' > /dev/null
   line '^status line: [0-9.]+ ms CPU per call; budget 1000 ms$' > /dev/null
-  bench VBW_HOOK_BUDGET_MS=1000 VBW_STATUSLINE_BUDGET_MS=50
+  bench VBW_BENCH_ONLY="guard (git)|status line:" VBW_HOOK_BUDGET_MS=1000 VBW_STATUSLINE_BUDGET_MS=50
   [ "$status" -eq 1 ] || {
     printf '%s\n' "$output"
     false
@@ -221,7 +227,7 @@ line() {
   line '^guard \(git\): [0-9.]+ ms own CPU per call.*; budget 1000 ms$' > /dev/null
   line '^status line: [0-9.]+ ms CPU per call; budget 50 ms: OVER$' > /dev/null
   slow_jq 40
-  bench PATH="$SLOW_PATH" VBW_HOOK_BUDGET_MS=30
+  bench VBW_BENCH_ONLY="guard (git)|status line:" PATH="$SLOW_PATH" VBW_HOOK_BUDGET_MS=30
   [ "$status" -eq 0 ] || {
     printf '%s\n' "$output"
     false

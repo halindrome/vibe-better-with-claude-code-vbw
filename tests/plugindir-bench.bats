@@ -24,8 +24,13 @@ teardown() { vbw_teardown; }
 
 burn() { printf "perl -e '1 while (times)[0] + (times)[1] < %s / 1000'" "$1"; }
 
+# The cases asserted on: the loaded copy's status line, and the six guard inputs (the hooks keep their limit on the same run).
+# VBW_BENCH_ONLY joins selectors with '|'.
+CASES='status line (loaded copy)|guard (git)|guard (npm)|guard (big)|guard (interp)|guard (read)|guard (answer)'
+LOADED='status line (loaded copy)'
+
 bench() {
-  run env VBW_HOOK_BUDGET_MS=20 VBW_STATUSLINE_BUDGET_MS=60 VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=2 "$@" bash "$BENCH"
+  run env VBW_BENCH_ONLY="$CASES" VBW_HOOK_BUDGET_MS=20 VBW_STATUSLINE_BUDGET_MS=60 VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=2 "$@" bash "$BENCH"
 }
 
 quiet_or_skip() {
@@ -49,7 +54,7 @@ line() {
   quiet_or_skip
   line '^status line \(loaded copy\): [0-9.]+ ms CPU per call; budget 60 ms(: OVER)?$' > /dev/null
   line '^guard \(.*\): [0-9.]+ ms own CPU per call .*; budget 20 ms(: OVER)?$' > /dev/null
-  bench VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000
+  bench VBW_BENCH_ONLY="$LOADED" VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000
   [ "$status" -eq 0 ] || {
     printf '%s\n' "$output"
     false
@@ -66,7 +71,7 @@ line() {
     echo
     sed -n '2,$p' "$PLUGIN_ROOT/scripts/vbw-statusline.sh"
   } > "$sl"
-  bench
+  bench VBW_BENCH_ONLY="$LOADED"
   quiet_or_skip
   [ "$status" -eq 1 ] || {
     printf '%s\n' "$output"
@@ -83,7 +88,7 @@ line() {
 
 @test "R185: when the session start does not record the loaded copy, the bench fails instead of measuring the installed one" {
   printf '#!/usr/bin/env bash\nexit 0\n' > "$TEST_ROOT/plugin/hooks/session-start.sh"
-  bench VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000
+  bench VBW_BENCH_ONLY="$LOADED" VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000
   [ "$status" -eq 1 ] || {
     printf '%s\n' "$output"
     false

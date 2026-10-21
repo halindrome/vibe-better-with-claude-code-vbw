@@ -9,7 +9,7 @@
 load helper
 
 @test "R76: the hook benchmark measures a program command during a run" {
-  run env VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 VBW_BENCH_RUNS=1 bash "$BATS_TEST_DIRNAME/../tools/bench-hooks.sh"
+  run env VBW_BENCH_ONLY='guard (interp)|guard (interp, large record)' VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 VBW_BENCH_RUNS=1 bash "$BATS_TEST_DIRNAME/../tools/bench-hooks.sh"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -qE '^guard \(interp\): -?[0-9.]+ ms own CPU per call' || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -qE '^guard \(interp, large record\): -?[0-9.]+ ms own CPU per call' || { echo "$output"; false; }

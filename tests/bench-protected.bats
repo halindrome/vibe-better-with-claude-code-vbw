@@ -9,8 +9,12 @@
 load helper
 
 @test "R150: the hook benchmark measures every guard input on records of 51, 500 and 2,000 checks, all against one budget" {
-  run env VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 VBW_BENCH_RUNS=1 bash "$REPO_ROOT/tools/bench-hooks.sh"
-  local n line size budget first input
+  # The cases asserted below: the six guard inputs on each of the three sized records.
+  local n line size budget first input only=""
+  for n in 51 500 2000; do
+    for input in git npm big interp read answer; do only="$only|guard ($input, $n checks)"; done
+  done
+  run env VBW_BENCH_ONLY="${only#|}" VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 VBW_BENCH_RUNS=1 bash "$REPO_ROOT/tools/bench-hooks.sh"
   for n in 51 500 2000; do
     line=$(printf '%s\n' "$output" | grep -E "^record \($n checks\): [0-9]+ bytes, schema [0-9]+$") \
       || { echo "no 'record ($n checks): N bytes, schema S' line"; echo "$output"; false; }
