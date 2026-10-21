@@ -39,7 +39,10 @@ $size[0] as $size
   def withparts: map(select((.parts | type) == "number" and .parts > 0));
 
   # A plan unit: one finished plan of a build, with its tier, tasks, breaks and seconds.
-  def plan_units: [of("build")[] | (.units // [])[] | select(type == "object" and (.seconds | num))];
+  # A list VBW never wrote (units or phases that are not arrays, an entry that is not an
+  # object) is skipped, never an error: every shape the history has had stays readable.
+  def items: if type == "array" then .[] | select(type == "object") else empty end;
+  def plan_units: [of("build")[] | .units | items | select(.seconds | num)];
   def counted($f): ($f | type) == "number" and $f >= 0;
   # Per unit of size: the wave's quantile of seconds / size over the latest 10 that recorded it, times this size.
   def per($us; size; $n): $us | latest | if length >= 3 then (map(.seconds / size) | quantile($q)) * $n else empty end;
@@ -78,7 +81,7 @@ $size[0] as $size
 
   def qa:
     [ of("qa")[] | select((.phases | type) == "array" and (.phases | length) > 0)
-      | .seconds as $s | .phases as $ph | $ph[] | {tier: .tier, seconds: ($s / ($ph | length))} ] as $samples
+      | .seconds as $s | .phases as $ph | $ph | items | {tier: .tier, seconds: ($s / ($ph | length))} ] as $samples
     | if ($samples | length) >= 3 and ($size | length) > 0 then
         [ $size[] | .tier as $t
           | ( ( if ($t | type) == "string" then [$samples[] | select(.tier == $t)] | latest | map(.seconds) | basis else empty end )

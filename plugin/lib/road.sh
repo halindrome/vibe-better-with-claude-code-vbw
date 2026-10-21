@@ -8,8 +8,9 @@
 # step is live. One jq run (lib/road.jq): every piece's expected seconds comes
 # from lib/steps-expect.jq's ladders, wrapped as `expect($kind; $size)` in front
 # of the program, and the record, the history, the runs store, vbw next's answer
-# and the note reach it by --slurpfile only. A missing, damaged or unreadable
-# history only means no end time yet.
+# and the note reach it by --slurpfile only. steps-expect.jq reads its size as
+# step_expect slurps it, $size[0], so the wrapper hands it [$size]. A missing,
+# damaged or unreadable history only means no end time yet.
 road_compute() {
   local record="$1" next="$2" note="${3:-}" file runs expect out
   [ -f "$VBW_LIB/road.jq" ] && [ -f "$VBW_LIB/steps-expect.jq" ] || { echo null; return 0; }
@@ -17,7 +18,7 @@ road_compute() {
   file=$(step_history_file)
   runs=""
   [ -z "$file" ] || runs="$(dirname "$file")/runs.json"
-  expect="def expect(\$kind; \$size):
+  expect="def expect(\$kind; \$s): [\$s] as \$size |
 $(cat "$VBW_LIB/steps-expect.jq");
 "
   out=$(jq -n -c --slurpfile rec <(printf '%s' "$record") \

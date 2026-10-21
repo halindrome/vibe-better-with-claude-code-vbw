@@ -91,7 +91,9 @@ $rec[0] as $r
     | (if $note == null then null else
         {kind: ($note.kind), ids: ($note.ids // []),
          seconds: (if $note.end == null then null else ((($note.end | fromdateiso8601) - $t) | if . < 0 then 0 else . end) end)} end) as $live
-    | ($pieces | map(. as $p | . + {seconds: (first_of(expect($p.kind; $p.size)) | if . == null then null else . * $p.mult end)})) as $timed
+    # A piece whose time cannot be worked out (T174) has no time and says so; the road stays.
+    | ($pieces | map(. as $p | (try {v: first_of(expect($p.kind; $p.size))} catch {v: null, unread: true}) as $x
+        | . + {seconds: ($x.v | if . == null then null else . * $p.mult end)} + (if $x.unread then {unread: true} else {} end))) as $timed
     | (if $live == null then $timed else
         ( [ $timed | to_entries[] | select(.value.kind == $live.kind)
             | select($live.kind == "plan" or $live.kind == "proof" and (.value.label == "proofs") and (.value.fixr | not)
@@ -111,7 +113,8 @@ $rec[0] as $r
       | ($ru | map(select(.n == null) | .t)) as $lack
       | ([ (if ($known | length) > 0 then "\($known) (the usual here)" else empty end),
            (if ($lack | length) > 0 then "no fix rounds: fewer than 3 finished \($lack | step_and) phases here" else empty end) ] | join("; ")) as $counting
-      | (if $miss != null then "VBW has timed fewer than 3 \($miss.label) here"
+      | (if $miss != null and $miss.unread == true then "VBW could not time the \($miss.label) here from its step history"
+         elif $miss != null then "VBW has timed fewer than 3 \($miss.label) here"
          else
            ([$all[] | select(.kind == "plan")] | length) as $np
            | if $np > 0 then "the planning step, sized by the open requirements"
