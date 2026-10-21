@@ -21,16 +21,22 @@
 
 load helper
 load approve-choice-helper
+load fixture-helper
 
 CHECK="$REPO_ROOT/tools/check-hook-answers.sh"
 
-setup() {
+built_project() {
   vbw_setup
   approve_choice_project
   FP=$(fingerprint)
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # shape JSON: the path of every value in JSON (inside updatedInput only the key itself), sorted: the exact shape.
 shape() { printf '%s' "$1" | jq -c '[paths(scalars) | map(tostring) | join(".")] | map(select(test("^hookSpecificOutput.updatedInput.") | not)) | sort'; }
