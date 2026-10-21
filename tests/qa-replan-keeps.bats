@@ -6,8 +6,12 @@
 
 load helper
 load qa-recheck-helper
+load fixture-helper
 
+setup_file() { fixture_build p2 qa_project 2; }
+setup() { fixture_copy p2; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # replan_add: R3 joins the spec and the milestone is re-applied with P3 added.
 replan_add() {
@@ -18,14 +22,12 @@ replan_add() {
 }
 
 @test "R66: adding a phase mid-milestone keeps the QA verdicts of the phases already checked" {
-  qa_project 2
   qa_pass P1 P2
   replan_add
   jq -e '[.phases[] | select(.id == "P1" or .id == "P2") | .qa.result] == ["pass", "pass"]' .vbw/record.json
 }
 
 @test "R66: after the new phase is built, QA checks only the new phase" {
-  qa_project 2
   qa_pass P1 P2
   replan_add
   "$VBW" approve > /dev/null

@@ -7,20 +7,35 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
-teardown() { vbw_teardown; }
-
-@test "a proven express phase is finished with its predicted tier and outcome" {
+flow_built() {
   rigor_flow_setup
   rigor_flow_build
+}
+std_built() {
+  rigor_flow_setup
+  "$VBW" config rigor standard > /dev/null
+  rigor_flow_build
+}
+
+# The built flow (built) and the built flow under a forced standard rigor
+# (std_built): each built once per file.
+setup_file() {
+  fixture_build built flow_built
+  fixture_build std_built std_built
+}
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+@test "a proven express phase is finished with its predicted tier and outcome" {
+  fixture_copy built
   phase_json '.phases[0].outcome | .tier == "express" and .predicted == "express" and .held == true
     and .fix_rounds == 0 and .qa_findings == 0 and .escalations == 0'
 }
 
 @test "a standard phase is finished only once QA has passed it" {
-  rigor_flow_setup
-  "$VBW" config rigor standard > /dev/null
-  rigor_flow_build
+  fixture_copy std_built
   phase_json '.phases[0] | has("outcome") | not'
   "$VBW" qa record P1 pass standard > /dev/null
   phase_json '.phases[0].outcome | .tier == "standard" and .predicted == "standard" and .held == true'
@@ -45,9 +60,7 @@ teardown() { vbw_teardown; }
 }
 
 @test "QA findings and fix rounds are counted" {
-  rigor_flow_setup
-  "$VBW" config rigor standard > /dev/null
-  rigor_flow_build
+  fixture_copy std_built
   "$VBW" qa finding R1 "the greeting is missing" > /dev/null
   "$VBW" qa record P1 fail standard > /dev/null
   "$VBW" qa record P1 pass standard > /dev/null
@@ -55,8 +68,7 @@ teardown() { vbw_teardown; }
 }
 
 @test "the outcome of a finished phase is not rewritten by a later proof" {
-  rigor_flow_setup
-  rigor_flow_build
+  fixture_copy built
   phase_json '.phases[0].outcome.tier == "express"'
   cp .vbw/record.json "$TEST_ROOT/finished.json"
   "$VBW" prove > /dev/null

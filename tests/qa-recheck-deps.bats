@@ -6,8 +6,16 @@
 
 load helper
 load qa-recheck-helper
+load fixture-helper
 
+# The projects the tests start from, each built once per file.
+setup_file() {
+  fixture_build p2chain qa_project 2 chain
+  fixture_build p3chain qa_project 3 chain
+  fixture_build base2 qa_base 2
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # retest N: a stricter check file for phase N, still passing; approve and prove.
 retest() {
@@ -18,15 +26,16 @@ retest() {
 }
 
 @test "R49: a phase whose dependency's tests changed is checked again though its own inputs did not change" {
-  qa_project 2 chain
+  fixture_copy p2chain
   qa_pass P1 P2
   retest 1
   [ "$(listed)" = '["P1","P2"]' ]
   next_json | jq -e '.qa.recheck.P2 | any(.[]; contains("P1"))'
+  next_json | jq -e '.qa.recheck.P2 | any(.[]; test("builds on P1"))'
 }
 
 @test "R49: it is transitive: A changes, B builds on A, C builds on B, and all three are checked again" {
-  qa_project 3 chain
+  fixture_copy p3chain
   qa_pass P1 P2 P3
   retest 1
   [ "$(listed)" = '["P1","P2","P3"]' ]
@@ -34,7 +43,7 @@ retest() {
 }
 
 @test "R49: a change in the middle checks it and what builds on it, not what it builds on" {
-  qa_project 3 chain
+  fixture_copy p3chain
   qa_pass P1 P2 P3
   retest 2
   [ "$(listed)" = '["P2","P3"]' ]
@@ -42,7 +51,7 @@ retest() {
 }
 
 @test "R49: a dependency on a phase that is not re-checked adds nothing" {
-  qa_project 3 chain
+  fixture_copy p3chain
   qa_pass P1 P2 P3
   qa_touch 3
   [ "$(listed)" = '["P3"]' ]
@@ -50,7 +59,7 @@ retest() {
 }
 
 @test "R49: a dependent that has itself never passed is already included and listed once" {
-  qa_project 3 chain
+  fixture_copy p3chain
   qa_pass P1 P3
   retest 1
   [ "$(listed)" = '["P1","P2","P3"]' ]
@@ -58,7 +67,7 @@ retest() {
 }
 
 @test "R49: when the changed phase passes again but its dependent was not recorded, the dependent is still checked" {
-  qa_project 2 chain
+  fixture_copy p2chain
   qa_pass P1 P2
   retest 1
   qa_pass P1
@@ -67,7 +76,7 @@ retest() {
 }
 
 @test "R49: when both are checked again, every pass stands and the milestone can ship" {
-  qa_project 2 chain
+  fixture_copy p2chain
   qa_pass P1 P2
   retest 1
   qa_pass P1 P2
@@ -76,7 +85,7 @@ retest() {
 }
 
 @test "R49: phases that build on each other in a cycle do not hang or crash, and the kernel names them" {
-  qa_base 2
+  fixture_copy base2
   jq -nc '{phases: [{id: "P1", title: "One", reqs: ["R1"], tier: "standard"}, {id: "P2", title: "Two", reqs: ["R2"], tier: "standard"}],
     plans: [{id: "P1.1", phase: "P1", title: "a", reqs: ["R1"], files: ["src/p1.txt"], after: ["P2.1"]},
             {id: "P1.2", phase: "P1", title: "b", reqs: ["R1"], files: ["src/p1b.txt"], after: []},
@@ -104,7 +113,7 @@ retest() {
 }
 
 @test "R49: a plan that comes after a plan or a phase that does not exist is reported by name, not silently dropped" {
-  qa_project 2 chain
+  fixture_copy p2chain
   edit_record '(.plans[] | select(.id == "P2.1")).after = ["P9.9"]'
   vbw_run next --json
   [ "$status" -ne 0 ]

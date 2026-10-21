@@ -10,8 +10,10 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # big_repo: a git project tracking more than 30 files, with existing code and a
 # project test command; no requirements yet.
@@ -54,6 +56,22 @@ prior() {
   edit_record '(.plans[] | select(.id == "P1.1")).status = "done" | (.requirements[] | select(.id == "R1")).status = "proven"'
 }
 
+# The repositories the tests start from, each built once per file: big_repo (big),
+# and big_repo with R3 planned (planned3), or planned and R1 done (prior3).
+prior3_repo() {
+  big_repo
+  prior 'R3 [auto] greet.sh prints HELLO, ANA! for --shout Ana'
+}
+planned3_repo() {
+  big_repo
+  planned 'R3 [auto] greet.sh prints HELLO, ANA! for --shout Ana'
+}
+setup_file() {
+  fixture_build big big_repo
+  fixture_build prior3 prior3_repo
+  fixture_build planned3 planned3_repo
+}
+
 # small: vbw next --json is the plan step; prints detail.small.
 small() {
   run "$VBW" next --json < /dev/null
@@ -66,20 +84,18 @@ small() {
 part() { jq -cS "$1" .vbw/record.json; }
 
 @test "R116: one new [auto] requirement naming one file, added to a milestone with planned and proven requirements, is small" {
-  big_repo
-  prior 'R3 [auto] greet.sh prints HELLO, ANA! for --shout Ana'
+  fixture_copy prior3
   [ "$(small)" = true ] || { small; false; }
 }
 
 @test "R116: a [human] requirement already planned in the milestone does not make a new small request big" {
-  big_repo
-  prior 'R3 [auto] greet.sh prints HELLO, ANA! for --shout Ana'
+  fixture_copy prior3
   edit_record '(.requirements[] | select(.id == "R2")) |= (.proof = "human" | del(.rules)) | .checks |= map(select(.req != "R2"))'
   [ "$(small)" = true ] || { small; false; }
 }
 
 @test "R116: one or two new [auto] requirements naming one or two files and no risk are small" {
-  big_repo
+  fixture_copy big
   spec 'R1 [auto] greet.sh prints HELLO, ANA! for --shout Ana'
   [ "$(small)" = true ]
   spec 'R1 [auto] src/total.js adds the tax' 'R2 [auto] src/total.js rounds to cents and README.md says how'
@@ -87,7 +103,7 @@ part() { jq -cS "$1" .vbw/record.json; }
 }
 
 @test "R116: a request naming three or more files is not small" {
-  big_repo
+  fixture_copy big
   spec 'R1 [auto] src/a.js, src/b.js and src/c.js show the total'
   [ "$(small)" = false ] || { small; false; }
   # Counted over the whole request: two requirements naming three files together.
@@ -99,7 +115,7 @@ part() { jq -cS "$1" .vbw/record.json; }
 }
 
 @test "R116: a request naming a risk-path file or a risk category is not small" {
-  big_repo
+  fixture_copy big
   local text
   for text in 'R1 [auto] .github/workflows/ci.yml runs on pull requests' 'R1 [auto] the app reads its port from .env' \
     'R1 [auto] Visitors can log in with a password' 'R1 [auto] app.js takes the payment' 'R1 [auto] Old notes are deleted after a year'; do
@@ -109,18 +125,18 @@ part() { jq -cS "$1" .vbw/record.json; }
 }
 
 @test "R116: three or more new requirements, or a new [human] one, are not small" {
-  big_repo
+  fixture_copy big
   spec 'R1 [auto] a.js shows one' 'R2 [auto] a.js shows two' 'R3 [auto] a.js shows three'
   [ "$(small)" = false ] || { small; false; }
   spec 'R1 [auto] a.js shows one' 'R2 [human] a.js looks friendly'
   [ "$(small)" = false ] || { small; false; }
-  big_repo
+  fixture_copy big
   prior 'R3 [auto] a.js shows one' 'R4 [auto] a.js shows two' 'R5 [auto] a.js shows three'
   [ "$(small)" = false ] || { small; false; }
 }
 
 @test "R116: rigor forced to standard or deep is never small; auto and express keep the rules" {
-  big_repo
+  fixture_copy big
   spec 'R1 [auto] greet.sh prints HELLO, ANA! for --shout Ana'
   local mode
   for mode in standard deep; do
@@ -136,8 +152,7 @@ part() { jq -cS "$1" .vbw/record.json; }
 }
 
 @test "R116: vbw apply --add adds one express phase to a milestone with started work; every other phase, plan, check and rule stays as it was" {
-  big_repo
-  prior 'R3 [auto] greet.sh prints HELLO, ANA! for --shout Ana'
+  fixture_copy prior3
   local phases plans checks rules
   phases=$(part '[.phases[] | select(.id != "P2")]'); plans=$(part '[.plans[] | select(.phase != "P2")]')
   checks=$(part '[.checks[] | select(.req != "R3")]'); rules=$(part '[.requirements[] | select(.id != "R3") | .rules]')
@@ -155,8 +170,7 @@ part() { jq -cS "$1" .vbw/record.json; }
 }
 
 @test "R116: vbw apply --add refuses a phase that exists and changes nothing; a requirement a started phase covers may get a new phase beside it (R157)" {
-  big_repo
-  prior 'R3 [auto] greet.sh prints HELLO, ANA! for --shout Ana'
+  fixture_copy prior3
   local before
   before=$(cksum < .vbw/record.json)
   run bash -c 'printf "%s" "{\"phases\": [{\"id\": \"P1\", \"title\": \"Shout\", \"reqs\": [\"R3\"]}], \"plans\": [{\"id\": \"P1.9\", \"phase\": \"P1\", \"title\": \"x\", \"reqs\": [\"R3\"], \"files\": [\"greet.sh\"], \"after\": []}], \"checks\": [], \"rules\": []}" | "$1" apply --add' _ "$VBW"
@@ -180,8 +194,7 @@ add_refused() {
 }
 
 @test "R116: in a milestone where no work has started, vbw apply --add refuses each conflict with its own reason and changes nothing" {
-  big_repo
-  planned 'R3 [auto] greet.sh prints HELLO, ANA! for --shout Ana'
+  fixture_copy planned3
   jq -e '[.plans[] | select(.status != "planned")] == []' .vbw/record.json
   # add_doc PHASE REQ PLAN PLAN_PHASE CHECK: one phase, one plan and one check.
   add_doc() {
@@ -203,8 +216,7 @@ add_refused() {
 }
 
 @test "R116: vbw apply --add refuses a requirement of an earlier milestone, covered there or not, and changes nothing" {
-  big_repo
-  planned 'R3 [auto] greet.sh prints HELLO, ANA! for --shout Ana'
+  fixture_copy planned3
   # M1 shipped: P1 covers R1; R2 stayed in M1 without a phase. R3 is the current milestone's.
   edit_record '.shipped = [{id: "M1", title: "First", at: "2026-10-01T09:00:00Z"}]
     | .milestone = {id: "M2", title: "Second", status: "active"}
@@ -224,8 +236,7 @@ add_refused() {
 }
 
 @test "R116: in a repository tracking more than 30 files, an express phase over more than two files is refused, through --add as through a full apply" {
-  big_repo
-  prior 'R3 [auto] greet.sh prints HELLO, ANA! for --shout Ana'
+  fixture_copy prior3
   local before
   before=$(cksum < .vbw/record.json)
   printf 'true\n' > tests/shout.sh
@@ -269,7 +280,7 @@ add_refused() {
 }
 
 @test "R116: a small request added mid-milestone goes from plan to done with one approval" {
-  big_repo
+  fixture_copy big
   spec "$PRIOR1"
   printf 'grep -qx one src/n1.txt\n' > tests/n1.sh
   printf 'start\n' > src/n1.txt

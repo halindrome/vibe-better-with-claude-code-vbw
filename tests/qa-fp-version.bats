@@ -13,14 +13,22 @@
 
 load helper
 load qa-recheck-helper
+load fixture-helper
 
-setup() {
+# One phase, built, proven and passed by QA: built once per file.
+passed_project() {
   qa_project 1
   qa_pass P1
+}
+
+setup_file() { fixture_build passed passed_project; }
+setup() {
+  fixture_copy passed
   NEWER="$TEST_ROOT/newer/bin/vbw"
 }
 
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 cache_file() { printf '%s/vbw/qa.json\n' "$(git rev-parse --path-format=absolute --git-common-dir)"; }
 

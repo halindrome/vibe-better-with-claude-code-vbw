@@ -8,9 +8,12 @@
 load helper
 load qa-recheck-helper
 load qa-skip-helper
+load fixture-helper
 
-setup() { qa_skip_project; }
+setup_file() { fixture_build skip qa_skip_project; }
+setup() { fixture_copy skip; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "R104: right after its pass, the phase stands" {
   [ "$(rechecked)" = '[]' ]

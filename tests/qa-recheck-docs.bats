@@ -10,8 +10,15 @@
 
 load helper
 load qa-recheck-helper
+load fixture-helper
 
+# The two projects every test starts from are built once per file.
+setup_file() {
+  fixture_build docs docs_project
+  fixture_build docsresults docs_project results
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # docs_project [results]: R1..R3 synced; with "results", the spec names the
 # folder results/ as saved test results before the contract is approved.
@@ -79,7 +86,7 @@ change() {
 rechecked() { next_json | jq -c '.qa.recheck | keys'; }
 
 @test "R115: a commit of only .md, .markdown and .rst files the phase lists leaves it off the list, in vbw next and vbw show qa" {
-  docs_project
+  fixture_copy docs
   change "docs: reword" docs/p1.md docs/p1.markdown docs/p1.rst
   [ "$(rechecked)" = '[]' ] || { rechecked; false; }
   vbw_run show qa
@@ -88,13 +95,13 @@ rechecked() { next_json | jq -c '.qa.recheck | keys'; }
 }
 
 @test "R115: a plain .txt file the phase lists is data: changing it lists the phase again" {
-  docs_project
+  fixture_copy docs
   change "chore: words" data/words.txt
   next_json | jq -e '.qa.recheck.P1 | index("its files changed")' || { next_json | jq -c .qa; false; }
 }
 
 @test "R115: naming a results folder in the spec makes the contract wait for approval, and vbw show contract shows it" {
-  docs_project
+  fixture_copy docs
   printf '\n## Test results\n\n- results/\n' >> .vbw/spec.md
   "$VBW" spec sync > /dev/null
   next_json | jq -e '.action == "approve"' || { next_json | jq -c '{action, instruction}'; false; }
@@ -110,19 +117,19 @@ rechecked() { next_json | jq -c '.qa.recheck | keys'; }
 }
 
 @test "R115: with the results folder approved, a commit of only files inside it leaves the phase off the list" {
-  docs_project results
+  fixture_copy docsresults
   change "test: save results" results/run.json
   [ "$(rechecked)" = '[]' ] || { next_json | jq -c .qa; false; }
 }
 
 @test "R115: a spec that names no results folder gives no exemption: a saved result is a file like any other" {
-  docs_project
+  fixture_copy docs
   change "test: save results" results/run.json
   next_json | jq -e '.qa.recheck.P1 | index("its files changed")' || { next_json | jq -c .qa; false; }
 }
 
 @test "R115: until a changed results-folder list is approved, a change inside the new folder still lists the phase" {
-  docs_project
+  fixture_copy docs
   printf '\n## Test results\n\n- results/\n' >> .vbw/spec.md
   "$VBW" spec sync > /dev/null
   # Unapproved, the new folder exempts nothing: before any file changes, no phase is listed.
@@ -134,7 +141,7 @@ rechecked() { next_json | jq -c '.qa.recheck | keys'; }
 }
 
 @test "R115: a file the phase's check runs or lists is a test, even as Markdown or inside a results folder" {
-  docs_project results
+  fixture_copy docsresults
   change "test: cases" tests/p1-cases.md
   next_json | jq -e '.qa.recheck | has("P1")' || { next_json | jq -c .qa; false; }
   # A check file changed: the contract waits for approval; then QA passes P1 and P3 (which builds on it) again.
@@ -147,13 +154,13 @@ rechecked() { next_json | jq -c '.qa.recheck | keys'; }
 }
 
 @test "R115: a commit of documentation and one code file lists the phase again" {
-  docs_project
+  fixture_copy docs
   change "feat(p1): more" docs/p1.md src/p1.txt
   next_json | jq -e '.qa.recheck.P1 | index("its files changed")' || { next_json | jq -c .qa; false; }
 }
 
 @test "R115: a change to the phase's goal, success criteria or plans still lists it again" {
-  docs_project
+  fixture_copy docs
   # A re-plan can no longer change a started phase's criteria (R158); the record
   # is edited by hand, as a restored or older project could hold it.
   edit_record '(.phases[] | select(.id == "P1")).criteria += ["src/p1.txt ends with a newline"]'
@@ -161,7 +168,7 @@ rechecked() { next_json | jq -c '.qa.recheck | keys'; }
 }
 
 @test "R115: a phase built on another stays off the list when that phase changed only documentation, results or code, and is listed when its tests changed" {
-  docs_project results
+  fixture_copy docsresults
   change "docs: reword" docs/p1.md
   change "test: save results" results/run.json
   [ "$(rechecked)" = '[]' ] || { next_json | jq -c .qa; false; }
@@ -174,7 +181,7 @@ rechecked() { next_json | jq -c '.qa.recheck | keys'; }
 }
 
 @test "R115: a phase whose every plan changes only documents is listed again when those documents change" {
-  docs_project
+  fixture_copy docs
   change "docs: guide" docs/guide.md
   next_json | jq -e '.qa.recheck.P2 | index("its files changed")' || { next_json | jq -c .qa; false; }
   vbw_run show qa

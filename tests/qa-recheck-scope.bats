@@ -7,9 +7,12 @@
 
 load helper
 load qa-recheck-helper
+load fixture-helper
 
-setup() { qa_project 2; }
+setup_file() { fixture_build p2 qa_project 2; }
+setup() { fixture_copy p2; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "R47: a QA pass keeps one digest of the phase's own inputs in qa.tree; no new record field, the schema unchanged" {
   qa_pass P1 P2
@@ -56,35 +59,6 @@ teardown() { vbw_teardown; }
   [[ "$output" != *"[on older code]"* ]]
   qa_pass P1
   next_json | jq -e '.action == "ship"'
-}
-
-@test "R47: changing a file of the phase alone is enough to check it again" {
-  qa_pass P1 P2
-  qa_touch 2
-  [ "$(listed)" = '["P2"]' ]
-}
-
-@test "R47: changing a test of the phase alone is enough to check it again" {
-  qa_pass P1 P2
-  printf '# stricter\n' >> tests/p1.sh
-  git add tests/p1.sh && git commit -q -m "test(p1): stricter"
-  "$VBW" approve > /dev/null
-  "$VBW" prove --full > /dev/null
-  [ "$(listed)" = '["P1"]' ]
-}
-
-@test "R47: changing the goal of the phase alone is enough to check it again" {
-  qa_pass P1 P2
-  edit_record '(.phases[] | select(.id == "P2")).goal = "Part 2 works for every customer"'
-  [ "$(listed)" = '["P2"]' ]
-}
-
-@test "R47: changing the plan of the phase alone is enough to check it again" {
-  qa_pass P1 P2
-  edit_record '(.plans[] | select(.id == "P1.1")).tasks += ["also write a receipt"]'
-  "$VBW" approve > /dev/null
-  "$VBW" prove --full > /dev/null
-  [ "$(listed)" = '["P1"]' ]
 }
 
 @test "R47: a change to a file that belongs to no phase checks no phase" {

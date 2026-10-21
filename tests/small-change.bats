@@ -11,8 +11,10 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # big_repo: one requirement, existing code, a project test command, 40 more files.
 big_repo() {
@@ -25,6 +27,9 @@ big_repo() {
   edit_record '.commands.test = ["true"]'
 }
 
+# The repository with one requirement, built once per file.
+setup_file() { fixture_build b1 big_repo 1; }
+
 plan_step() {
   run "$VBW" next --json < /dev/null
   [ "$status" -eq 0 ]
@@ -32,7 +37,7 @@ plan_step() {
 }
 
 @test "R72: in a large repository a one-requirement, low-risk request is marked small, and its early tier is unchanged" {
-  big_repo 1
+  fixture_copy b1
   plan_step
   printf '%s' "$output" | jq -e '.detail.small == true and .detail.tier == "standard"' || { echo "$output"; false; }
 }
@@ -50,14 +55,14 @@ plan_step() {
 }
 
 @test "R72: a [human] requirement is not small" {
-  big_repo 1
+  fixture_copy b1
   edit_record '(.requirements[0]).proof = "human"'
   plan_step
   printf '%s' "$output" | jq -e '.detail.small == false' || { echo "$output"; false; }
 }
 
 @test "R72: a request that names a risk path (sign-in, payments, migrations, secrets, deletion, CI) is not small" {
-  big_repo 1
+  fixture_copy b1
   printf '%s\n' '# Notes' '' '## Requirements' '' '- R1 [auto] Visitors can log in with a password' > .vbw/spec.md
   "$VBW" spec sync > /dev/null
   plan_step
@@ -65,20 +70,20 @@ plan_step() {
 }
 
 @test "R72: a forced standard or deep rigor is never small" {
-  big_repo 1
+  fixture_copy b1
   edit_record '.settings.rigor = "deep"'
   plan_step
   printf '%s' "$output" | jq -e '.detail.small == false' || { echo "$output"; false; }
 }
 
 @test "R72: in a large repository an express phase of two files is accepted" {
-  big_repo 1
+  fixture_copy b1
   rigor_apply "$(rigor_doc 1 "" src/a.js src/b.js)" > /dev/null
   phase_json '.phases[0].tier == "express"'
 }
 
 @test "R72: in a large repository a change over more than two files is not small: express is refused, the tier is standard when left to the kernel" {
-  big_repo 1
+  fixture_copy b1
   run rigor_apply "$(rigor_doc 1 express src/a.js src/b.js src/c.js)"
   [ "$status" -ne 0 ]
   [[ "$output" == *"floor at standard"* ]] || { echo "$output"; false; }
@@ -87,7 +92,7 @@ plan_step() {
 }
 
 @test "R72: a small change goes from plan to done with one approval: build, check, close, ship" {
-  big_repo 1
+  fixture_copy b1
   printf 'grep -qx done src/note.txt\n' > tests/note.sh
   printf 'start\n' > src/note.txt
   git add tests src && git commit -q -m "chore(test): note"

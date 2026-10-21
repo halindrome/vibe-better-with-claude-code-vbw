@@ -5,13 +5,29 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
+# Second milestone with an old proven requirement (src/old.js), and a test command.
+milestone_project() {
+  rigor_project 2
+  rigor_second_milestone
+  edit_record '.commands.test = ["bash", "tools/test.sh"]'
+}
+
+# The projects the tests start from, each built once per file.
+setup_file() {
+  fixture_build p1 rigor_project 1
+  fixture_build p3 rigor_project 3
+  fixture_build p6 rigor_project 6
+  fixture_build milestone milestone_project
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 tier_of() { jq -r '.phases[0].tier' .vbw/record.json; }
 
 @test "control: a phase with no risk signals is express" {
-  rigor_project 1
+  fixture_copy p1
   rigor_apply "$(rigor_doc 1 "" src/note.txt)" > /dev/null
   [ "$(tier_of)" = express ]
 }
@@ -19,7 +35,7 @@ tier_of() { jq -r '.phases[0].tier' .vbw/record.json; }
 @test "a risk path (sign-in, payments, data migration, secrets, deletion, CI) puts a phase at deep" {
   local f
   for f in src/auth/login.js src/payments/charge.js db/migrations/001_users.sql config/secrets.yml src/delete_account.js .github/workflows/ci.yml; do
-    rigor_project 1
+    fixture_copy p1
     rigor_apply "$(rigor_doc 1 "" "$f")" > /dev/null
     [ "$(tier_of)" = deep ] || { echo "$f is $(tier_of)"; false; }
     vbw_teardown
@@ -27,14 +43,14 @@ tier_of() { jq -r '.phases[0].tier' .vbw/record.json; }
 }
 
 @test "a risk named by a requirement counts, not only a path" {
-  rigor_project 1
+  fixture_copy p1
   edit_record '.requirements[0].text = "A visitor can sign in with a password"'
   rigor_apply "$(rigor_doc 1 "" src/note.txt)" > /dev/null
   [ "$(tier_of)" = deep ]
 }
 
 @test "many requirements raise the floor: 2 express, 3 standard, 6 deep" {
-  rigor_project 6
+  fixture_copy p6
   rigor_apply "$(rigor_doc 2 "" src/note.txt)" > /dev/null
   [ "$(tier_of)" = express ]
   rigor_apply "$(rigor_doc 3 "" src/note.txt)" > /dev/null
@@ -44,7 +60,7 @@ tier_of() { jq -r '.phases[0].tier' .vbw/record.json; }
 }
 
 @test "many planned files and a large size raise the floor" {
-  rigor_project 1
+  fixture_copy p1
   edit_record '.commands.test = ["bash", "tools/test.sh"]'
   rigor_apply "$(rigor_doc 1 "" src/a.txt src/b.txt src/c.txt src/d.txt)" > /dev/null
   [ "$(tier_of)" = express ]
@@ -61,9 +77,7 @@ tier_of() { jq -r '.phases[0].tier' .vbw/record.json; }
 }
 
 @test "touching files that proven requirements depend on is at least standard" {
-  rigor_project 2
-  rigor_second_milestone
-  edit_record '.commands.test = ["bash", "tools/test.sh"]'
+  fixture_copy milestone
   rigor_apply "$(PH=P2 R0=2 rigor_doc 1 "" src/new.js)" > /dev/null
   [ "$(jq -r '.phases[] | select(.id == "P2") | .tier' .vbw/record.json)" = express ]
   rigor_apply "$(PH=P2 R0=2 rigor_doc 1 "" src/old.js)" > /dev/null
@@ -72,7 +86,7 @@ tier_of() { jq -r '.phases[0].tier' .vbw/record.json; }
 }
 
 @test "changing existing files with no project test command is at least standard" {
-  rigor_project 1
+  fixture_copy p1
   printf 'x' > src/exists.txt
   rigor_apply "$(rigor_doc 1 "" src/exists.txt)" > /dev/null
   [ "$(tier_of)" = standard ]
@@ -83,7 +97,7 @@ tier_of() { jq -r '.phases[0].tier' .vbw/record.json; }
 }
 
 @test "the kernel refuses an Architect tier below the risk floor, and changes nothing" {
-  rigor_project 1
+  fixture_copy p1
   rigor_apply "$(rigor_doc 1 "" src/note.txt)" > /dev/null
   cp .vbw/record.json "$TEST_ROOT/before.json"
   run rigor_apply "$(rigor_doc 1 express src/payments/charge.js)"
@@ -96,7 +110,7 @@ tier_of() { jq -r '.phases[0].tier' .vbw/record.json; }
 }
 
 @test "the kernel accepts an Architect tier above the floor, and says so in the reasons" {
-  rigor_project 3
+  fixture_copy p3
   run rigor_apply "$(rigor_doc 3 deep src/note.txt)"
   [ "$status" -eq 0 ]
   [ "$(tier_of)" = deep ]
@@ -110,7 +124,7 @@ tier_of() { jq -r '.phases[0].tier' .vbw/record.json; }
 }
 
 @test "an Architect tier that is not a tier is refused with the allowed list" {
-  rigor_project 1
+  fixture_copy p1
   run rigor_apply "$(rigor_doc 1 huge src/note.txt)"
   [ "$status" -ne 0 ]
   [[ "$output" == *"express, standard or deep"* ]]

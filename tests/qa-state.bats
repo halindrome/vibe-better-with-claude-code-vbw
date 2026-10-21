@@ -4,8 +4,16 @@
 
 load helper
 load qa-recheck-helper
+load fixture-helper
 
+# The built projects the digest tests start from, each built once per file.
+setup_file() {
+  fixture_build p2 qa_project 2
+  fixture_build p2chain qa_project 2 chain
+  fixture_build p3chain qa_project 3 chain
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # rec N [CHAIN]: a record with built phases P1..PN of milestone M1, each with
 # plan Pn.1 (done), every phase passed at digest "cN"; with CHAIN, Pn.1 comes after P(n-1).1.
@@ -114,7 +122,7 @@ qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.
 }
 
 @test "qa_digests: files, tests, plan and combined digests per phase, from the committed content" {
-  qa_project 2 chain
+  fixture_copy p2chain
   run vbw_kernel '. "$VBW_LIB/qa-inputs.sh"; qa_digests "$(cat "$VBW_RECORD")"'
   [ "$status" -eq 0 ]
   echo "$output" | jq -e 'all(.[]; (.files, .tests, .plan, .combined) | test("^[0-9a-f]{64}$")) and .P2.deps == ["P1"] and .P1.deps == []'
@@ -122,7 +130,7 @@ qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.
 }
 
 @test "qa_digests: an uncommitted edit changes nothing; a code commit changes that phase only, a test commit what builds on it too" {
-  qa_project 3 chain
+  fixture_copy p3chain
   local a b c
   a=$(vbw_kernel '. "$VBW_LIB/qa-inputs.sh"; qa_digests "$(cat "$VBW_RECORD")"')
   printf 'dirty\n' >> src/p2.txt
@@ -139,7 +147,7 @@ qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.
 }
 
 @test "qa_digests: a changed check file changes tests, a changed goal changes plan, other phases are untouched" {
-  qa_project 2
+  fixture_copy p2
   local a b c
   a=$(vbw_kernel '. "$VBW_LIB/qa-inputs.sh"; qa_digests "$(cat "$VBW_RECORD")"')
   printf '# stricter\n' >> tests/p1.sh
@@ -153,7 +161,7 @@ qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.
 }
 
 @test "qa cache: written for a phase, read back, and a damaged or missing file reads as no cache" {
-  qa_project 2
+  fixture_copy p2
   vbw_kernel '. "$VBW_LIB/qa-inputs.sh"; d=$(qa_digests "$(cat "$VBW_RECORD")"); qa_cache_put P1 "$d"; qa_cache_put P2 "$d"'
   local f
   f="$(git rev-parse --git-common-dir)/vbw/qa.json"
@@ -173,7 +181,7 @@ qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.
 }
 
 @test "the digests, the cache and the record give the reasons; a pass recorded in the cache stands" {
-  qa_project 2 chain
+  fixture_copy p2chain
   run vbw_kernel '. "$VBW_LIB/qa-inputs.sh"; d=$(qa_digests "$(cat "$VBW_RECORD")"); qa_cache_put P2 "$d"
     jq -c --argjson inputs "$d" --argjson cache "$(qa_cache_read)" -f "$VBW_LIB/qa.jq" "$VBW_RECORD"'
   echo "$output" | jq -e '.recheck == {"P1": ["not checked yet"], "P2": ["not checked yet"]}'

@@ -16,10 +16,11 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
 # R1 [auto] proven, R2 [human] built and QA passed: next asks to accept R2. R2
 # has a history: a rejection whose fix was done, and a decision naming it.
-setup() {
+later_project() {
   rigor_flow_setup human
   rigor_flow_build
   "$VBW" qa record P1 pass quick > /dev/null
@@ -29,7 +30,10 @@ setup() {
   "$VBW" decide "R2 is judged by eye" "a person reads the greeting" > /dev/null
 }
 
+setup_file() { fixture_build later later_project; }
+setup() { fixture_copy later; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 next_json() { "$VBW" next --json < /dev/null; }
 

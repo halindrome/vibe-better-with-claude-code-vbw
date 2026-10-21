@@ -14,14 +14,19 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
-setup() {
+# The tiny flow, built, proved and passed by QA: built once per file.
+passed_flow() {
   rigor_flow_setup
   rigor_flow_build
   "$VBW" qa record P1 pass quick > /dev/null
 }
 
+setup_file() { fixture_build passed passed_flow; }
+setup() { fixture_copy passed; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # figures SID USD: the session's side file, as the status line writes it.
 figures() {

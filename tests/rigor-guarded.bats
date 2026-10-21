@@ -8,11 +8,12 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
 # M1 is shipped: R1 [auto] proven by P1.1 (src/old.js), guarded by the approved
 # check C1; R3 [human] accepted, built by P1.2 (src/old3.js). M2 is current
 # with R2 [auto]. The contract (with C1) is approved.
-setup() {
+guarded_project() {
   rigor_project 3 human
   printf '# Notes\n\n## Requirements\n\n- R1 [auto] Old behaviour\n- R2 [auto] New behaviour\n- R3 [human] Old behaviour feels right\n' > .vbw/spec.md
   "$VBW" spec sync > /dev/null
@@ -31,7 +32,10 @@ setup() {
   "$VBW" approve > /dev/null
 }
 
+setup_file() { fixture_build guarded guarded_project; }
+setup() { fixture_copy guarded; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 tier_of() { jq -r '.phases[] | select(.id == "P2") | .tier' .vbw/record.json; }
 plan_p2() { rigor_apply "$(PH=P2 R0=2 rigor_doc 1 "" "$@")" > /dev/null; }

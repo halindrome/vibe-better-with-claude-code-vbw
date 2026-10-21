@@ -6,11 +6,24 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
+flow_built() {
+  rigor_flow_setup
+  rigor_flow_build
+}
+
+# The tiny flow, planned (flow) and planned, approved, built and proved (built):
+# each built once per file.
+setup_file() {
+  fixture_build flow rigor_flow_setup
+  fixture_build built flow_built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "an express phase shows its requirement, check and plan together on one line" {
-  rigor_flow_setup
+  fixture_copy flow
   jq -e '.phases[0].tier == "express"' .vbw/record.json
   vbw_run show contract
   [ "$status" -eq 0 ]
@@ -19,7 +32,7 @@ teardown() { vbw_teardown; }
 }
 
 @test "a standard phase keeps the separate requirement, check and plan listing" {
-  rigor_flow_setup
+  fixture_copy flow
   "$VBW" config rigor standard > /dev/null
   vbw_run show contract
   [ "$status" -eq 0 ]
@@ -28,7 +41,7 @@ teardown() { vbw_teardown; }
 }
 
 @test "one approval records the requirement, check and plan of an express phase" {
-  rigor_flow_setup
+  fixture_copy flow
   vbw_run approve
   [ "$status" -eq 0 ]
   [ "$(jq '[.decisions[] | select(.text | startswith("Contract approved"))] | length' .vbw/record.json)" -eq 1 ]
@@ -56,14 +69,13 @@ teardown() { vbw_teardown; }
 }
 
 @test "an express phase is built by one Dev" {
-  rigor_flow_setup
+  fixture_copy flow
   vbw_run next --json
   echo "$output" | jq -e '.rigor.P1.tier == "express" and .rigor.P1.agents.dev == 1'
 }
 
 @test "an express phase with only [auto] requirements is not sent to QA once proven" {
-  rigor_flow_setup
-  rigor_flow_build
+  fixture_copy built
   vbw_run next --json
   echo "$output" | jq -e '.action == "ship"'
 }
@@ -76,8 +88,7 @@ teardown() { vbw_teardown; }
 }
 
 @test "an express phase that has escalated runs QA" {
-  rigor_flow_setup
-  rigor_flow_build
+  fixture_copy built
   edit_record '.phases[0].escalations = [{at: "2026-10-03T10:00:00Z", from: "express", to: "standard", reason: "Dev blocked P1.1: stuck"}]'
   vbw_run next --json
   echo "$output" | jq -e '.action == "qa" and .detail.phases == ["P1"]'
