@@ -14,8 +14,10 @@
 
 load helper
 load loop-helper
+load fixture-helper
 
-setup() {
+# planned_loop: a loop over T1 and T2 whose milestone holds T1's requirement, planned with a check and committed.
+planned_loop() {
   loop_project
   VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 --no-ceiling > /dev/null
   "$VBW" spec add auto "Visitors can read a greeting" > /dev/null
@@ -23,7 +25,14 @@ setup() {
   loop_plan "$Q" P2
   git add -A && git commit -q -m "chore(test): planned"
 }
+
+setup_file() {
+  fixture_build planned planned_loop
+  fixture_build human loop_project human
+}
+setup() { fixture_copy planned; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 contract_state() { "$VBW" show contract < /dev/null | sed -n '1s/^contract [0-9a-f]* (\(.*\))$/\1/p'; }
 fingerprint() { local h; h=$(vbw_contract_hash); printf '%s' "${h:0:12}"; }
@@ -67,8 +76,7 @@ consent() { cat "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/co
 }
 
 @test "R178: a [human] requirement an earlier ship carried over does not stop the delegation" {
-  vbw_teardown
-  loop_project human
+  fixture_copy human
   VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
   "$VBW" spec add auto "Visitors can read a greeting" > /dev/null
   Q=$(item_req "Visitors can read a greeting")

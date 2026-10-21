@@ -9,15 +9,15 @@
 
 load helper
 load loop-helper
+load fixture-helper
 
-setup() {
-  loop_project
-  VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
-}
+setup_file() { fixture_build started loop_started T1 --no-ceiling; }
+setup() { fixture_copy started; }
 teardown() {
   [ -z "${BG_PID:-}" ] || kill "$BG_PID" 2> /dev/null || true
   vbw_teardown
 }
+teardown_file() { fixture_teardown; }
 
 # gate SESSION: what the Stop hook prints for that session.
 gate() { jq -nc --arg s "$1" '{hook_event_name: "Stop", session_id: $s, stop_hook_active: false}' | "$VBW" auto gate; }

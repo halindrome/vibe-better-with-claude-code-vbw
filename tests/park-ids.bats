@@ -9,9 +9,15 @@
 
 load helper
 load loop-helper
+load fixture-helper
 
-setup() { loop_project; }
+setup_file() {
+  fixture_build loop loop_project
+  fixture_build parked parked_project
+}
+setup() { fixture_copy loop; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 step() { loop_next s1 > "$TEST_ROOT/step.json"; jq -r .action "$TEST_ROOT/step.json"; }
 
@@ -35,13 +41,19 @@ park_t1() {
   "$VBW" milestone start "Again" > /dev/null
 }
 
-@test "T163: the parked milestone keeps the phase, requirement and fix ids it freed" {
+# parked_project: the loop project after park_t1, the opening steps five of the cases share, built once.
+parked_project() {
+  loop_project
   park_t1
+}
+
+@test "T163: the parked milestone keeps the phase, requirement and fix ids it freed" {
+  fixture_copy parked
   jq -e '.parked[0].ids == ["P2", "R2", "F1"]' .vbw/record.json || { jq .parked .vbw/record.json; false; }
 }
 
 @test "T163: after a park the next phase, requirement and fix take new numbers" {
-  park_t1
+  fixture_copy parked
   [ "$("$VBW" next --json < /dev/null | jq -r .next_phase)" = 3 ]
   "$VBW" spec add auto "Visitors can read a greeting" > /dev/null
   jq -e '[.requirements[].id] | index("R3") != null and index("R2") == null' .vbw/record.json \
@@ -59,7 +71,7 @@ park_t1() {
 }
 
 @test "T163: commits a park undid are not judged by a later plan that reuses their plan id" {
-  park_t1
+  fixture_copy parked
   "$VBW" spec add auto "Visitors can read a farewell" > /dev/null
   local q
   q=$(item_req "Visitors can read a farewell")
@@ -91,7 +103,7 @@ farewell_p3() {
 }
 
 @test "T163: a commit undone by hand with an edit is still judged" {
-  park_t1
+  fixture_copy parked
   farewell_p3
   printf 'x\n' > src/stray.txt
   git add src/stray.txt
@@ -109,7 +121,7 @@ farewell_p3() {
 }
 
 @test "R204: a commit undone by hand exactly, with git revert and no park, is no longer judged" {
-  park_t1
+  fixture_copy parked
   farewell_p3
   printf 'x\n' > src/stray.txt
   git add src/stray.txt

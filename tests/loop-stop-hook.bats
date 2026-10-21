@@ -12,9 +12,12 @@
 
 load helper
 load loop-helper
+load fixture-helper
 
-setup() { loop_project; }
+setup_file() { fixture_build loop loop_project; }
+setup() { fixture_copy loop; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 stop() { jq -nc --arg s "$1" '{hook_event_name: "Stop", session_id: $s, stop_hook_active: false}' | vbw_hook Stop; }
 

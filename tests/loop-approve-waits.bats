@@ -9,9 +9,12 @@
 
 load helper
 load loop-helper
+load fixture-helper
 
-setup() { loop_project; }
+setup_file() { fixture_build loop loop_project; }
+setup() { fixture_copy loop; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 contract_state() { "$VBW" show contract < /dev/null | sed -n '1s/^contract [0-9a-f]* (\(.*\))$/\1/p'; }
 consent_count() { jq '.granted | length' "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/consent.json"; }

@@ -15,9 +15,12 @@
 
 load helper
 load loop-helper
+load fixture-helper
 
-setup() { loop_project; }
+setup_file() { fixture_build loop loop_project; }
+setup() { fixture_copy loop; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # same_as_next: the loop step's last answer is what vbw next answers, and vbw next changes nothing.
 same_as_next() {

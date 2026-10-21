@@ -7,8 +7,10 @@
 
 load helper
 load loop-helper
+load fixture-helper
 
-setup() {
+# loop_build_run: the loop over T1 at its build step, with a build run open.
+loop_build_run() {
   loop_project
   VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
   loop_next s1 > /dev/null
@@ -17,7 +19,11 @@ setup() {
   VBW_SESSION_ID=s1 "$VBW" run start build P2.1 > /dev/null
   jq -e '.lease.kind == "build" and .loop != null' .vbw/record.json
 }
+
+setup_file() { fixture_build running loop_build_run; }
+setup() { fixture_copy running; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 bash_call() {
   jq -nc --arg c "$1" --arg d "$PROJECT" '{hook_event_name: "PreToolUse", session_id: "s1", agent_type: "dev", tool_name: "Bash", cwd: $d, tool_input: {command: $c}}' \

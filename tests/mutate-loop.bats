@@ -11,8 +11,10 @@
 
 load helper
 load loop-helper
+load fixture-helper
 
-setup() {
+# loop_ready: the loop over T1 planned with a check that cannot fail on the greeting, at its build step.
+loop_ready() {
   loop_project
   VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
   "$VBW" spec add auto "Visitors can read a greeting" > /dev/null
@@ -29,7 +31,10 @@ setup() {
   export Q
 }
 
+setup_file() { fixture_build ready loop_ready; }
+setup() { fixture_copy ready; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 contract_state() { "$VBW" show contract < /dev/null | sed -n '1s/^contract [0-9a-f]* (\(.*\))$/\1/p'; }
 decisions() { jq '.decisions | length' .vbw/record.json; }
