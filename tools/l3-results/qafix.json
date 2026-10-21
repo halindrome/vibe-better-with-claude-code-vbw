@@ -1,14 +1,14 @@
 {
   "scenario": "qafix",
   "fixture": "greet.sh plus NOTES.md (no check names it); guided autonomy stated in words; the built NOTES.md is deleted after the build, so only QA can see the deviation",
-  "cost_usd": 1.47,
+  "cost_usd": 1.79,
   "evidence_level": "L3",
-  "at": "2026-10-21T11:07:00Z",
+  "at": "2026-10-21T14:21:13Z",
   "passed": true,
   "facts": {
     "deviation": "NOTES.md",
     "first_qa_verdict": "fail",
-    "first_qa_note": "9/10 checks NOTES.md (delivered by plan P1.2) is gone from the project: commit 3ba1594dd69e 'chore: drop NOTES.md' deleted it. No plan covers this and the only recorded decision (D1, contract approved) does not mention it, so it is a deviation. The phase goal and the criterion 'NOTES.md exists in the top folder with one sentence' are not met, and R3 cannot be judged by a person. A regression test should check that NOTES.md exists in the top folder and holds exactly one sentence about greet.sh.",
+    "first_qa_note": "0/4 checks NOTES.md does not exist at HEAD. Plan P2.1 delivered it (commit b44d748, one sentence naming greet.sh), but commit 128fcd3 'chore: drop NOTES.md' deleted it outside any plan. The only recorded decision (D1) is the contract approval and does not cover removing it. Goal and all four criteria fail without the file. Regression test: a check that NOTES.md exists at the project root, has exactly one sentence, and names greet.sh. Fix: restore NOTES.md as in b44d748.",
     "fix_rounds": 1,
     "final_qa_verdict": "pass",
     "phase_proved": true,
