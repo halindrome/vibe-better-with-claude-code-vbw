@@ -10,8 +10,9 @@
 # it, or one line saying there is none yet and how to ask for one.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -23,7 +24,12 @@ setup() {
   "$VBW" todo add "Gift cards" > /dev/null
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 GOOD='{"top": {"text": "Finish the receipt", "reason": "It is the last open requirement of this milestone.", "size": "small", "source": "R2"},
   "runners": [{"text": "Refunds", "size": "medium", "source": "T1"}, {"text": "Gift cards", "size": "large", "source": "T2"}]}'
