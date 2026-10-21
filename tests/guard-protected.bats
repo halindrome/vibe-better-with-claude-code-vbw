@@ -11,8 +11,9 @@
 
 load helper
 load protected-helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   FOUR="$TEST_ROOT/four/project with space"
   OLD="$TEST_ROOT/old/project with space"
@@ -29,7 +30,12 @@ setup() {
   export FOUR OLD
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # answer DIR INPUT_JSON: the hook's answer in the project at DIR (its cwd set to
 # DIR); stderr goes to $TEST_ROOT/err.
