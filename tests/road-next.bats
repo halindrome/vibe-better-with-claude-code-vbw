@@ -24,15 +24,21 @@
 load helper
 load step-helper
 load road-helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   export TZ=Europe/Zurich
   road_project
   road_hist
   outcomes_seed deep 1 2 2 5
 }
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # hm ISO: the local HH:MM of a UTC time, after "tomorrow " when it falls on another local day.
 hm() {

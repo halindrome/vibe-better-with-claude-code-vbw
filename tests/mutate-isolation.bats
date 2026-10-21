@@ -10,8 +10,9 @@
 # that report the count in $TEST_ROOT/cores. L1: the kernel on a fixture project.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -70,6 +71,12 @@ SH
   "$VBW" approve > /dev/null
   "$VBW" config set check_jobs 4 > /dev/null
 }
+
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
+teardown_file() { fixture_teardown; }
 
 teardown() {
   # Release anything still waiting, so no runner outlives the test.

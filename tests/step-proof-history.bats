@@ -8,12 +8,18 @@
 
 load helper
 load step-helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   step_project
 }
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # last KIND: the newest step of KIND in the history.
 last() { jq -c --arg k "$1" '[.steps[] | select(.kind == $k)] | last' "$STEPS"; }

@@ -4,8 +4,9 @@
 # and the approval screen carry it.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -22,7 +23,12 @@ setup() {
   ALONE=$(printf '%s' "$PLAN" | jq '.checks[0].alone = true')
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 apply_doc() { printf '%s' "$1" | "$VBW" apply; }
 

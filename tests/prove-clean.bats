@@ -5,8 +5,9 @@
 # keeps running on the working folder.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -32,7 +33,12 @@ SH
   "$VBW" approve > /dev/null
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # The record as the Lead's apply leaves it: requirements without the rules
 # marker are exempt, so the approval does not depend on a rules listing.

@@ -11,13 +11,19 @@
 
 load helper
 load replan-helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   replan_project
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # tiers PHASE: the phase's tier, reasons and predicted tier.
 tiers() { replan_part ".phases[] | select(.id == \"$1\") | {tier, reasons, predicted}"; }

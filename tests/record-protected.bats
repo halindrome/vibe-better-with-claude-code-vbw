@@ -10,13 +10,19 @@
 
 load helper
 load protected-helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   protected_base
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # corrupt_everywhere: every command tried calls the record corrupt (exit 3)
 # and names the protected field.

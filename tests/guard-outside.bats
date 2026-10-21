@@ -9,8 +9,9 @@
 # hooks.json the way Claude Code runs them (vbw_hook).
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -26,7 +27,12 @@ setup() {
   "$VBW" approve > /dev/null
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 open_run() { VBW_SESSION_ID=s1 "$VBW" run start build P1.1 > /dev/null; }
 

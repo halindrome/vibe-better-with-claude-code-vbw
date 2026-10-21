@@ -16,8 +16,9 @@
 # L1: the kernel on a fixture project.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -39,7 +40,12 @@ setup() {
   VBW_SESSION_ID=s1 "$VBW" run start build P1.1 P1.3 > /dev/null
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # edit_record JQ: a hand edit of the record (the glance is dropped so readers take the record).
 edit_record() {

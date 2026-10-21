@@ -7,10 +7,11 @@
 # byte-for-byte unchanged. The usage text, vbw help and the user docs name it.
 
 load helper
+load fixture-helper
 
 RUN="$BATS_TEST_DIRNAME/helpers/run-workflow.js"
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -19,7 +20,12 @@ setup() {
   "$VBW" todo add "CSV export" > /dev/null
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # refused ARGS...: vbw todo ARGS exits non-zero and leaves the record's bytes as they were.
 refused() {

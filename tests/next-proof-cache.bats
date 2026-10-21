@@ -9,8 +9,9 @@
 # vbw next); the answer's step is compared without its clock fields.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -47,7 +48,12 @@ SH
   export DIFFTREE="$TEST_ROOT/difftree"
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # next: vbw next --json with the counting git; DIFF is how many diff-tree calls it made, STEP its step without clock fields.
 next() {

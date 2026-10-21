@@ -22,8 +22,9 @@
 # changes. A task --none keeps its shape. L1: the kernel on a fixture project.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -62,7 +63,12 @@ setup() {
   STORE="$(git rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json"
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 record_sum() { cksum < .vbw/record.json; }
 breaks() { jq -c --arg p "$1" '[.plans[] | select(.id == $p) | .mutations // [] | .[]]' .vbw/record.json; }

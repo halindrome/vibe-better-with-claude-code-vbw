@@ -8,8 +8,9 @@
 # on PATH that report the count in $TEST_ROOT/cores ("none": they fail). L1.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -41,7 +42,12 @@ rm -f "$CONC/run.$$"
 SH
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # cores N: the machine reports N processor cores ("none": it cannot be read).
 cores() { printf '%s\n' "$1" > "$TEST_ROOT/cores"; }

@@ -7,8 +7,9 @@
 # count in $TEST_ROOT/cores. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -37,7 +38,12 @@ rm -f "$CONC/run.$$"
 SH
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # cores VALUE: every core-count tool on PATH reports VALUE.
 cores() { printf '%s\n' "$1" > "$TEST_ROOT/cores"; }

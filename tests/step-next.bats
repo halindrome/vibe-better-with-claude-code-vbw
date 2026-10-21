@@ -11,13 +11,19 @@
 
 load helper
 load step-helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   step_project
   export TZ=Europe/Zurich
 }
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # hm FIELD: the local HH:MM of the note's FIELD., after "tomorrow " or
 # "yesterday " when it falls on another local day than now, as VBW words it:

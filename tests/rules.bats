@@ -6,8 +6,9 @@
 # requirements approved before rules existed keep their approval (D53).
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -19,7 +20,12 @@ setup() {
   git add -A && git commit -q -m "chore: seed"
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # plan_doc RULES_JSON: the Lead's apply document with the given rules key
 # (empty string: no rules key at all).

@@ -7,8 +7,9 @@
 # The record refuses a finding whose phase is unknown. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -29,7 +30,12 @@ setup() {
   "$VBW" prove --full > /dev/null
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "R179 (F204): a finding names its phase; the pass of another phase sharing the requirement leaves it open; its own phase's pass closes it" {
   "$VBW" qa finding P1 R1 "the plan said a receipt is printed; none is" > /dev/null
