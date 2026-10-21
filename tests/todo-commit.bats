@@ -8,8 +8,9 @@
 # hook) keeps the change, succeeds, and warns with git's own reason. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+todo_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -17,7 +18,11 @@ setup() {
   git add .vbw && git commit -q -m "chore(vbw): init"
 }
 
+setup_file() { fixture_build todo todo_project; }
+setup() { fixture_copy todo; }
+
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # clean: the record has no change git has not committed.
 clean() { [ -z "$(git status --porcelain -- .vbw/record.json)" ] || { git status --porcelain; return 1; }; }
