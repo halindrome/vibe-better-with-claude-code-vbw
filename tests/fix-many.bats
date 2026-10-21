@@ -7,8 +7,14 @@
 # [human] requirement's fix. One test adds C4, which runs alone, and C5.
 
 load helper
+load fixture-helper
 
-setup() {
+# The approved shop with four open fixes and the timing script, built once per file.
+setup_file() { fixture_build shop shop_project; }
+setup() { fixture_copy shop; }
+teardown_file() { fixture_teardown; }
+
+shop_project() {
   vbw_setup
   vbw_git_project
   export RUNS="$TEST_ROOT/runs" TIMES="$TEST_ROOT/times"
