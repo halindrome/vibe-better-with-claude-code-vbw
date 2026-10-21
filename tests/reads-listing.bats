@@ -9,8 +9,15 @@
 # on a small project; each check logs its runs to $RANLOG.
 
 load helper
+load fixture-helper
 
-setup() {
+setup_file() { fixture_build shop listing_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+# listing_project: the project every test starts from, built once per file.
+listing_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -33,8 +40,6 @@ setup() {
   "$VBW" prove > /dev/null || { echo "the first proof failed"; return 1; }
   : > "$RANLOG"
 }
-
-teardown() { vbw_teardown; }
 
 edit_record() {
   jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
