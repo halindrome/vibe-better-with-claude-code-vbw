@@ -8,8 +8,9 @@
 # as before. L1: the kernel on a fixture project.
 
 load helper
+load fixture-helper
 
-setup() {
+fastest_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -18,7 +19,9 @@ setup() {
   mkdir -p src tests
   printf 'echo paid\n' > src/pay.sh
   # Both checks catch a wrong price; the slow one marks that it ran.
-  printf 'touch "%s/slow.ran"; [ "$(sh src/pay.sh)" = paid ]\n' "$TEST_ROOT" > tests/slow.sh
+  # The marker's place is read from TEST_ROOT when the check runs (a check keeps the environment), so the committed file holds no path.
+  # shellcheck disable=SC2016 # expanded by the check, not here
+  printf 'touch "$TEST_ROOT/slow.ran"; [ "$(sh src/pay.sh)" = paid ]\n' > tests/slow.sh
   printf '[ "$(sh src/pay.sh)" = paid ]\n' > tests/fast.sh
   jq -nc '{phases: [{id: "P1", title: "Shop", reqs: ["R1"], goal: "g", criteria: ["c"], tier: "deep"}],
     plans: [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1"], files: ["src/pay.sh"], after: [], role: "dev", tasks: ["pay"]}],
@@ -35,7 +38,11 @@ setup() {
   jq -nc '{runs: {"check:C1": {status: "pass", seconds: 300}, "check:C2": {status: "pass", seconds: 1}}}' > "$store"
 }
 
+setup_file() { fixture_build fastest fastest_project; }
+setup() { fixture_copy fastest; }
+
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 marks() { jq -cS '.plans[0].mutations[-1].checks' .vbw/record.json; }
 
@@ -56,4 +63,5 @@ marks() { jq -cS '.plans[0].mutations[-1].checks' .vbw/record.json; }
   run "$VBW" mutate P1.1 task1 "adds a comment" src/pay.sh < /dev/null
   [ "$status" -ne 0 ] || { echo "$output"; false; }
   [ "$(marks)" = '{"C1":"green","C2":"green"}' ] || { marks; false; }
+  [ -e "$TEST_ROOT/slow.ran" ] || { echo "the slow check did not run, or cannot mark that it ran"; false; }
 }
