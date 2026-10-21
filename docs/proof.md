@@ -887,6 +887,26 @@ A requirement fix commits the check files of its own requirement with
 `vbw next` asks for it. A check file of another requirement is refused, and code
 goes through its plan with `vbw commit PLAN`.
 
+While any check file waits for the user's approval (a fix changed or added it),
+nothing can be proven before the user approves, so `vbw fix done` runs no
+check: a re-check then could take long and still wait for that approval, which
+no agent can give. It still refuses an unknown, not open or uncommitted fix, and
+the others end as usual (`fixed`, awaiting the proof):
+
+```text
+vbw: waiting for approval (new or changed since approved): tests/c1.sh
+check files are waiting for approval, so no check runs before it: tests/c1.sh
+the user approves them first (vbw next asks); then vbw prove runs every check
+checks: 0 ran, 0 reused
+test files: 0 ran, 0 reused
+VBW's own work: 0.0 of 0.0 min
+ran again: 0 of 0 units; top reasons: none
+F1 fixed: vbw prove decides
+```
+
+`vbw next` then asks for the approval, and the proof after it runs every check
+the round would have re-checked.
+
 ### Closing several fixes
 
 ```text
