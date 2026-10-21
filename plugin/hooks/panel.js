@@ -10,7 +10,7 @@
 // one-line sites and rows), panel-pane.js (Mission Control), panel-view.js, and
 // panel-candy.js (motion, sprites, celebrations), whose frames this file blits.
 import { holderName, readRegistry, configDir } from './panel-sessions.js'
-import { panelView, liveNeed, supports, clock, COMMS_MIN_VERSION } from './panel-view.js'
+import { panelView, datedRows, liveNeed, supports, clock, COMMS_MIN_VERSION } from './panel-view.js'
 import { SOUNDS } from './panel-sounds.js'
 import { gatherRun, findRun } from './panel-feed.js'
 import { stageModel, renderStage } from './panel-stage.js'
@@ -103,7 +103,7 @@ function fresh() {
 // What is true now, for every place that asks: next.json comes with the time it was
 // written, so a gate is dated by the file and answered by the record that followed it.
 // A message keeps the time it began saying what it says (st.stamps): the first pass
-// reads the sentences bare, the second puts each one's [HH:MM] before it.
+// reads the dated sentences bare, the second draws them all, each with its [HH:MM].
 const STAMPED = ['estimate-step', 'estimate-milestone']
 const bare = (t) => String(t).replace(/^\[\d\d:\d\d\] /, '')
 function view(st, now) {
@@ -112,7 +112,7 @@ function view(st, now) {
     health: st.health, now, cost: st.cost, steps: st.steps, step: st.step, proving: st.proving !== null, holder: st.holder,
   }
   const proving = st.proving && num(st.proving.at) ? st.proving.at : undefined
-  const first = panelView({ ...input, stamps: { proving } })
+  const first = datedRows({ ...input, stamps: { proving } })
   const stamps = { proving }
   for (const id of STAMPED) {
     const row = first.rows.find((r) => r.id === id)
@@ -497,7 +497,7 @@ async function noteRecommendation($, st, now) {
   st.nextAnim = $.clock.every(FRAME_MS, async () => {
     try {
       const t = await $.clock.now()
-      await redrawIfChanged($, st)
+      await redrawIfChanged($, st, false, t)
       if (t - st.nextAt >= NEXT_SETTLE_MS && st.nextAnim) {
         st.nextAnim.cancel()
         st.nextAnim = null
@@ -508,8 +508,10 @@ async function noteRecommendation($, st, now) {
   })
 }
 
-async function redrawIfChanged($, st, force) {
-  const now = await $.clock.now()
+// Ask for a redraw when what is shown changed (`force`: in any case). `at`: the moment, when
+// the caller has just read the clock for it.
+async function redrawIfChanged($, st, force, at) {
+  const now = num(at) ? at : await $.clock.now()
   await noteBorn($, st, now)
   const v = view(st, now)
   await suggest($, st)
@@ -528,7 +530,7 @@ async function tick($, st) {
     await celebrate($, st, now)
     await noteRecommendation($, st, now)
     for (const k of ['burst', 'sweep']) if (st[k] && !st[k].site && now - st[k].at > AFTER_MS) st[k] = null
-    await redrawIfChanged($, st)
+    await redrawIfChanged($, st, false, now)
   } catch {
     // keep the last good state
   } finally {

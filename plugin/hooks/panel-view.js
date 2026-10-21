@@ -202,6 +202,16 @@ function estimateRows(now, stamps, step, nx) {
   return rows
 }
 
+// What panel.js dates before the view is drawn: the need and the rows of panelView that
+// can carry a start time (the estimates), said as panelView says them with these stamps.
+export function datedRows(input) {
+  const { record: rec, next: nx, nextAt, question, questionAt, health, now } = isObj(input) ? input : {}
+  if (!isObj(rec) || !isObj(rec.milestone) || !rec.milestone.id) return { rows: [], need: null }
+  const step = isObj(input.step) ? input.step : null
+  const stamps = isObj(input.stamps) ? input.stamps : {}
+  return { need: liveNeed({ record: rec, next: nx, nextAt, question, questionAt, health }), rows: estimateRows(Number.isFinite(now) ? now : Date.now(), stamps, step, nx) }
+}
+
 export function panelView(input) {
   const { record: rec, next: nx, nextAt, question, questionAt, health, now, cost, proving } = isObj(input) ? input : {}
   const step = isObj(input) && isObj(input.step) ? input.step : null

@@ -164,6 +164,26 @@ test('a record without a next step still shows the milestone and progress', () =
   assert.equal(v.need, null)
 })
 
+test('the dated rows (panel.js dates them before drawing) are the need and the estimates exactly as the view says them', () => {
+  const note = (over) => ({ kind: 'build', run: 'build-1', doing: 'building P44.1', end: iso(NOW + 12 * 60000), ...over })
+  const road = { end: iso(NOW + 3 * 3600000), say: 'the milestone ends around 18:00' }
+  const inputs = [
+    {}, { record: null }, { record: record({ milestone: { id: '' } }) },
+    { record: record(), next: next() },
+    { record: record(), next: next({ action: 'approve', gate: true }), nextAt: NOW - 60000 },
+    { record: record(), next: next(), question: { id: 'q' }, questionAt: NOW - 5000 },
+    { record: record({ lease: lease('build', NOW - 300000) }), next: next({ road }), step: note({ parts: { done: 1, total: 2 } }) },
+    { record: record({ lease: lease('build', NOW - 300000) }), next: next({ road: { basis: 'fewer than 3 milestones.' } }), step: note({ end: null }) },
+    { record: record(), next: next({ road }), stamps: { 'estimate-milestone': NOW - 120000 } },
+    { record: record({ lease: lease('build', NOW - 300000) }), step: note({ parts: {}, late: true }), stamps: { 'estimate-step': NOW - 60000, proving: NOW - 1000 } },
+  ]
+  for (const input of inputs) {
+    const v = show(input)
+    assert.deepEqual(view.datedRows({ now: NOW, ...input }), { need: v.need, rows: v.rows.filter((r) => r.id.startsWith('estimate-')) }, JSON.stringify(input))
+  }
+  assert.ok(inputs.some((input) => show(input).rows.filter((r) => r.id.startsWith('estimate-')).length === 2), 'a case with both estimates')
+})
+
 test('building the view changes nothing in its input', () => {
   const input = deepFreeze({ record: record({ lease: lease('build', NOW - 5000) }), next: next({ action: 'accept', gate: true, detail: { requirements: ['R1'] } }), question: { id: 'q' }, now: NOW })
   assert.doesNotThrow(() => view.panelView(input))
