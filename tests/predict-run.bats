@@ -206,6 +206,23 @@ EOF
   [[ "$output" == *"leak check: plain false, VBW 2 true"* ]]
 }
 
+@test "the committed prediction: every field the report reads, points within ranges and adding up, the doc's totals" {
+  p="$REPO_ROOT/tools/baseline/predictions/non-ui-pipeline.json"
+  jq -e '
+    def r: (.low | type) == "number" and .low <= .point and .point <= .high;
+    (.followups.max == 3) and ([.ratio, .ratio_per_correct] | all(r))
+    and ([.sides.vbw2, .sides.plain][] | (.stages | length > 0) and ([.stages[]] | all(r))
+         and ([.total_usd, .tokens, .wall_minutes, .user_inputs, .followups, .usd_per_correct] | all(r))
+         and (([.stages[].point] | add) - .total_usd.point | fabs < 0.005)
+         and (.first_fail_probability | type) == "number" and (.correct_probability | type) == "number")' "$p" > /dev/null
+  # The follow-up the prediction names is bench.sh's own default.
+  [ "$(jq -r '.followups.text' "$p")" = "$TEXT" ]
+  grep -qF "BENCH_FOLLOWUP_TEXT:-$TEXT}" "$BENCH"
+  for side in vbw2 plain; do
+    grep -qF "| **total** | **\$$(jq -r ".sides.$side.total_usd.point" "$p")** |" "$REPO_ROOT/docs/benchmark.md"
+  done
+}
+
 # stub_l3: an l3 driver that logs every call, prints the next screen on wait
 # (the last repeats), writes this run's transcript on start, prints a /cost
 # screen once /cost was typed, and applies the solution when the follow-up is
