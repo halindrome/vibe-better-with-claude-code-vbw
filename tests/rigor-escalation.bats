@@ -5,14 +5,45 @@
 
 load helper
 load rigor-helper
+load fixture-helper
 
+flow_approved() {
+  rigor_flow_setup
+  rigor_flow_approve
+}
+flow_built() {
+  rigor_flow_setup
+  rigor_flow_build
+}
+std_built() {
+  rigor_flow_setup
+  "$VBW" config rigor standard > /dev/null
+  rigor_flow_build
+}
+# A project whose one plan lists the folder src/, planned and not yet approved.
+src_plan() {
+  rigor_project 1
+  printf '%s' '{"phases":[{"id":"P1","title":"Notes","reqs":["R1"],"goal":"Notes","criteria":["x"]}],
+    "plans":[{"id":"P1.1","phase":"P1","title":"Notes","reqs":["R1"],"files":["src/"],"after":[]}],"checks":[]}' | "$VBW" apply > /dev/null
+}
+
+# The stages the tests start from, each built once per file: the tiny flow
+# planned (flow), then approved (approved), built and proved (built), built under
+# a forced standard rigor (std_built), and the src/ plan (srcplan).
+setup_file() {
+  fixture_build flow rigor_flow_setup
+  fixture_build approved flow_approved
+  fixture_build built flow_built
+  fixture_build std_built std_built
+  fixture_build srcplan src_plan
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 last_escalation() { jq -r '.phases[0].escalations[-1] | "\(.from)>\(.to): \(.reason)"' .vbw/record.json; }
 
 @test "a Dev block raises the tier and records the reason" {
-  rigor_flow_setup
-  rigor_flow_approve
+  fixture_copy approved
   "$VBW" plan block P1.1 "needs the API key" > /dev/null
   phase_json '.phases[0] | .tier == "standard" and .predicted == "express" and (.escalations | length) == 1
     and (.escalations[0] | .from == "express" and .to == "standard" and (.reason | contains("P1.1") and contains("needs the API key")))'
@@ -30,8 +61,7 @@ last_escalation() { jq -r '.phases[0].escalations[-1] | "\(.from)>\(.to): \(.rea
 }
 
 @test "a fix that needs a second round raises the tier, a first failure does not" {
-  rigor_flow_setup
-  rigor_flow_approve
+  fixture_copy approved
   printf 'wrong\n' > src/greet.txt
   "$VBW" commit P1.1 "feat(greet): wrong" > /dev/null
   edit_record '.plans[0].status = "done"'
@@ -43,22 +73,17 @@ last_escalation() { jq -r '.phases[0].escalations[-1] | "\(.from)>\(.to): \(.rea
 }
 
 @test "QA finding a problem in an express phase raises it; in a standard phase it does not" {
-  rigor_flow_setup
-  rigor_flow_build
+  fixture_copy built
   "$VBW" qa finding R1 "the greeting is missing" > /dev/null
   phase_json '.phases[0].tier == "standard" and (.phases[0].escalations[-1].reason | contains("QA") and contains("R1"))'
   vbw_teardown
-  rigor_flow_setup
-  "$VBW" config rigor standard > /dev/null
-  rigor_flow_build
+  fixture_copy std_built
   "$VBW" qa finding R1 "the greeting is missing" > /dev/null
   phase_json '.phases[0].tier == "standard" and ((.phases[0].escalations // []) | length) == 0'
 }
 
 @test "QA failing a phase a second time raises the tier" {
-  rigor_flow_setup
-  "$VBW" config rigor standard > /dev/null
-  rigor_flow_build
+  fixture_copy std_built
   "$VBW" qa finding R1 "a" > /dev/null
   "$VBW" qa record P1 fail standard > /dev/null
   phase_json '.phases[0].tier == "standard"'
@@ -68,9 +93,7 @@ last_escalation() { jq -r '.phases[0].escalations[-1] | "\(.from)>\(.to): \(.rea
 }
 
 @test "a commit that touches a risk path raises the phase to deep" {
-  rigor_project 1
-  printf '%s' '{"phases":[{"id":"P1","title":"Notes","reqs":["R1"],"goal":"Notes","criteria":["x"]}],
-    "plans":[{"id":"P1.1","phase":"P1","title":"Notes","reqs":["R1"],"files":["src/"],"after":[]}],"checks":[]}' | "$VBW" apply > /dev/null
+  fixture_copy srcplan
   jq -e '.phases[0].tier == "express"' .vbw/record.json
   "$VBW" approve > /dev/null || true
   mkdir -p src/auth
@@ -80,9 +103,7 @@ last_escalation() { jq -r '.phases[0].escalations[-1] | "\(.from)>\(.to): \(.rea
 }
 
 @test "a commit that grows well beyond its plan raises the tier one step; a small commit does not" {
-  rigor_project 1
-  printf '%s' '{"phases":[{"id":"P1","title":"Notes","reqs":["R1"],"goal":"Notes","criteria":["x"]}],
-    "plans":[{"id":"P1.1","phase":"P1","title":"Notes","reqs":["R1"],"files":["src/"],"after":[]}],"checks":[]}' | "$VBW" apply > /dev/null
+  fixture_copy srcplan
   "$VBW" approve > /dev/null || true
   printf 'x\n' > src/a1.txt
   "$VBW" commit P1.1 "feat(notes): one" > /dev/null
@@ -93,8 +114,7 @@ last_escalation() { jq -r '.phases[0].escalations[-1] | "\(.from)>\(.to): \(.rea
 }
 
 @test "a proven requirement that fails raises the tier" {
-  rigor_flow_setup
-  rigor_flow_build
+  fixture_copy built
   jq -e '.requirements[0].status == "proven"' .vbw/record.json
   printf 'broken\n' > src/greet.txt
   git add src/greet.txt && git commit -q -m "feat(greet): break it"
@@ -103,7 +123,7 @@ last_escalation() { jq -r '.phases[0].escalations[-1] | "\(.from)>\(.to): \(.rea
 }
 
 @test "vbw tier raise raises, records the reason, and refuses to lower or repeat" {
-  rigor_flow_setup
+  fixture_copy flow
   vbw_run tier raise P1 standard "the user asked for more care"
   [ "$status" -eq 0 ]
   [ "$(last_escalation)" = "express>standard: the user asked for more care" ]
@@ -120,7 +140,7 @@ last_escalation() { jq -r '.phases[0].escalations[-1] | "\(.from)>\(.to): \(.rea
 }
 
 @test "nothing lowers a raised tier: planning again and changing the mode keep it" {
-  rigor_flow_setup
+  fixture_copy flow
   "$VBW" tier raise P1 deep "the user asked for more care" > /dev/null
   rigor_flow_doc | "$VBW" apply > /dev/null
   phase_json '.phases[0].tier == "deep" and .phases[0].predicted == "express" and (.phases[0].escalations | length) == 1'
@@ -131,8 +151,7 @@ last_escalation() { jq -r '.phases[0].escalations[-1] | "\(.from)>\(.to): \(.rea
 }
 
 @test "after a raise, the later steps use the raised tier's agents, QA tier and models" {
-  rigor_flow_setup
-  rigor_flow_approve
+  fixture_copy approved
   "$VBW" tier raise P1 standard "Dev blocked a sibling" > /dev/null
   rigor_flow_work
   vbw_run next --json
@@ -141,8 +160,7 @@ last_escalation() { jq -r '.phases[0].escalations[-1] | "\(.from)>\(.to): \(.rea
 }
 
 @test "vbw show phase shows the tier, the reason it was raised and the tier it started at" {
-  rigor_flow_setup
-  rigor_flow_approve
+  fixture_copy approved
   "$VBW" plan block P1.1 "needs the API key" > /dev/null
   vbw_run show phase P1
   [ "$status" -eq 0 ]
