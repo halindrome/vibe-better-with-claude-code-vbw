@@ -36,6 +36,14 @@
 # sits in the same config folder, and the setting runs as above. It is judged against
 # the same limit, and the bench fails if the loaded copy did not render.
 # VBW_BENCH_RUNS and VBW_BENCH_PLUGIN_ROOT override the runs and the plugin (tests).
+# VBW_BENCH_ONLY (tests) runs only the cases asked for, and builds only the records
+# they need, so a test that asserts on one line does not pay for the whole bench.
+# A selector is the start of a printed label, matched against the label and its
+# colon: 'guard (git' names every git case, 'status line:' only the plain status
+# line. Several selectors are joined with '|' (the labels hold commas). Unset or
+# empty, every case runs: the release run is the full bench. A selector that names
+# no case exits 2 and lists the cases, so a typo never passes as an empty run. Each
+# case that runs is judged exactly as in the full bench.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -43,6 +51,71 @@ BUDGET_MS="${VBW_HOOK_BUDGET_MS:-20}"
 STATUS_MS="${VBW_STATUSLINE_BUDGET_MS:-60}"
 RUNS="${VBW_BENCH_RUNS:-100}"
 PLUGIN="${VBW_BENCH_PLUGIN_ROOT:-$ROOT/plugin}"
+GUARD_INPUTS="git npm big interp read answer"
+SIZES="51 500 2000"
+
+# case_labels: the label of every case, in the order the bench runs them.
+case_labels() {
+  local input n
+  for input in $GUARD_INPUTS; do printf 'guard (%s)\n' "$input"; done
+  for input in $GUARD_INPUTS; do printf 'guard (%s, large record)\n' "$input"; done
+  printf '%s\n' 'guard (loop)' 'guard (loop, large record)'
+  for n in $SIZES; do
+    for input in $GUARD_INPUTS; do printf 'guard (%s, %s checks)\n' "$input" "$n"; done
+  done
+  printf '%s\n' 'status line' 'status line (large record)' 'status line (step running)' 'status line (VBW off)' 'status line (loaded copy)'
+}
+
+# ONLY is the selector; SELECTED is "|" and every asked-for label followed by "|".
+ONLY="${VBW_BENCH_ONLY:-}"
+SELECTED="|"
+if [ -n "$ONLY" ]; then
+  refused=0 chosen=0 rest="$ONLY|"
+  while [ -n "$rest" ]; do
+    sel="${rest%%|*}"
+    rest="${rest#*|}"
+    hit=0
+    if [ -n "$sel" ]; then
+      while IFS= read -r label; do
+        if [[ "$label:" == "$sel"* ]]; then
+          hit=1
+          case "$SELECTED" in
+            *"|$label|"*) ;;
+            *)
+              SELECTED="$SELECTED$label|"
+              chosen=$((chosen + 1)) ;;
+          esac
+        fi
+      done < <(case_labels)
+    fi
+    if [ "$hit" -eq 0 ]; then
+      printf "bench-hooks: VBW_BENCH_ONLY names no case: '%s'\n" "$sel" >&2
+      refused=1
+    fi
+  done
+  if [ "$refused" -eq 1 ]; then
+    printf "the cases (a selector is the start of one of these labels; end it with ':' to name only that case; join several with '|'):\n" >&2
+    case_labels | sed -e 's/^/  /' -e 's/$/:/' >&2
+    exit 2
+  fi
+  printf 'bench-hooks: VBW_BENCH_ONLY runs %s of %s cases\n' "$chosen" "$(case_labels | wc -l | tr -d ' ')"
+fi
+
+# selected LABEL: whether the case was asked for (every case, without a selector).
+selected() {
+  if [ -z "$ONLY" ]; then return 0; fi
+  case "$SELECTED" in *"|$1|"*) return 0 ;; esac
+  return 1
+}
+
+# wanted TEXT: whether an asked-for label holds TEXT (every case, without a
+# selector); the records a case needs are built only when one is asked for.
+wanted() {
+  if [ -z "$ONLY" ]; then return 0; fi
+  case "$SELECTED" in *"$1"*) return 0 ;; esac
+  return 1
+}
+
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
 # A step that fails under set -e says where, instead of ending the bench silently.
@@ -111,10 +184,11 @@ jq -nc --arg d "$work" '{hook_event_name: "PostToolUse", tool_name: "AskUserQues
 # (vbw decide, a record write), so the file holds the format the kernel writes:
 # schema 4 with the protected field, which the guards read without walking the checks.
 large="$work/large"
-mkdir -p "$large"
-git -C "$large" init -q
-(cd "$large" && "$PLUGIN/bin/vbw" init > /dev/null)
-jq --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
+build_large() {
+  mkdir -p "$large"
+  git -C "$large" init -q
+  (cd "$large" && "$PLUGIN/bin/vbw" init > /dev/null)
+  jq --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
   ("~" * 5000) as $f
   | "2026-01-01T00:00:00Z" as $at
   | [range(1; 51)] as $n
@@ -135,11 +209,14 @@ jq --arg t "$(date -u +%Y-%m-%dT%H:%M:%SZ)" '
                  + [{id: "D121", text: ("Old long decision" + ("~" * 140000)), at: $at}]
   | .protected = ["tests/old.sh"]
   | {schema, lease, protected, checks} + .' \
-  "$large/.vbw/record.json" > "$large/.vbw/edited.json"
-cat "$large/.vbw/edited.json" > "$large/.vbw/record.json"
-rm -f "$large/.vbw/edited.json"
-(cd "$large" && "$PLUGIN/bin/vbw" decide "Benchmark record written by the kernel" > /dev/null)
-printf 'large record: %s bytes\n' "$(wc -c < "$large/.vbw/record.json" | tr -d ' ')"
+    "$large/.vbw/record.json" > "$large/.vbw/edited.json"
+  cat "$large/.vbw/edited.json" > "$large/.vbw/record.json"
+  rm -f "$large/.vbw/edited.json"
+  (cd "$large" && "$PLUGIN/bin/vbw" decide "Benchmark record written by the kernel" > /dev/null)
+  printf 'large record: %s bytes\n' "$(wc -c < "$large/.vbw/record.json" | tr -d ' ')"
+}
+# The large record serves the guards and the status line on it, and the loop case on it.
+if wanted ', large record)|' || wanted '|status line (large record)|'; then build_large; fi
 
 # sized N: a project of N checks (one per requirement) in $work/checks-N, its
 # history padded in proportion, written once by the kernel (vbw decide).
@@ -165,16 +242,19 @@ sized() {
   (cd "$d" && "$PLUGIN/bin/vbw" decide "Benchmark record written by the kernel" > /dev/null)
   printf 'record (%s checks): %s bytes, schema %s\n' "$n" "$(wc -c < "$d/.vbw/record.json" | tr -d ' ')" "$(jq -r .schema "$d/.vbw/record.json")"
 }
-for n in 51 500 2000; do sized "$n"; done
+for n in $SIZES; do
+  if wanted ", $n checks)|"; then sized "$n"; fi
+done
 
 # guards DIR LABEL [INPUTS]: measure every input (default: all but loop) against
 # the project at DIR; LABEL is the empty string, or ", large record".
 status=0
 guards() {
-  local dir="$1" label="$2" inputs="${3:-git npm big interp read answer}" input tool event hook shell total own line baseline file
+  local dir="$1" label="$2" inputs="${3:-$GUARD_INPUTS}" input tool event hook shell total own line baseline file
   export CLAUDE_PROJECT_DIR="$dir"
   baseline="jq -nc 'input | empty' - \"$dir/.vbw/record.json\" \"$CLAUDE_PLUGIN_ROOT/hooks/end.json\" 2>/dev/null || true"
   for input in $inputs; do
+    selected "guard ($input$label)" || continue
     tool=$(jq -r .tool_name "$work/$input.json")
     event=PreToolUse
     [ "$input" != answer ] || event=PostToolUse
@@ -204,6 +284,7 @@ guards() {
 # fails when the step's end time did not show in the first line.
 statusline() {
   local dir="$1" label="$2" cmd total line first
+  selected "status line$label" || return 0
   # With the cost fields Claude Code sends, so the side file write (R173) is inside the measure.
   jq -nc --arg d "$dir" '{session_id: "bench", workspace: {project_dir: $d}, cwd: $d, model: {display_name: "Opus"},
     cost: {total_cost_usd: 1.25}, context_window: {total_input_tokens: 12000, total_output_tokens: 3400, context_window_size: 200000}}' > "$work/statusline.json"
@@ -251,6 +332,7 @@ statusline() {
 # handback: the setting of `vbw statusline on` in a project that turns VBW off.
 handback() {
   local proj="$work/off-project" cfg="$work/off-config" cmd total line out
+  selected 'status line (VBW off)' || return 0
   mkdir -p "$proj/.claude" "$cfg/plugins/cache/vbw-marketplace/vbw"
   git -C "$proj" init -q
   printf '{"enabledPlugins": {"vbw@vbw-marketplace": false}}\n' > "$proj/.claude/settings.json"
@@ -281,6 +363,7 @@ handback() {
 # loaded: the setting in a session that loaded the bench's plugin, next to a stand-in release.
 loaded() {
   local cfg="$work/loaded-config" cmd total line out ver inst
+  selected 'status line (loaded copy)' || return 0
   inst="$cfg/plugins/cache/vbw-marketplace/vbw/0.0.0/scripts"
   mkdir -p "$inst" "$work/loaded-env"
   printf '#!/bin/sh\necho "installed stand-in (bench)"\n' > "$inst/vbw-statusline.sh"
@@ -322,11 +405,11 @@ loopproj() {
   # The large record is rewritten by the kernel (its glance); the small one stands as written, like the other small cases.
   [ "$src" = "$work" ] || (cd "$d" && "$PLUGIN/bin/vbw" decide "Benchmark record written by the kernel" > /dev/null)
 }
-loopproj "$work/loop-small" "$work"
-loopproj "$work/loop-large" "$large"
+if selected 'guard (loop)'; then loopproj "$work/loop-small" "$work"; fi
+if selected 'guard (loop, large record)'; then loopproj "$work/loop-large" "$large"; fi
 guards "$work/loop-small" "" loop
 guards "$work/loop-large" ", large record" loop
-for n in 51 500 2000; do guards "$work/checks-$n" ", $n checks"; done
+for n in $SIZES; do guards "$work/checks-$n" ", $n checks"; done
 statusline "$work" ""
 statusline "$large" " (large record)"
 statusline "$work" " (step running)" step
