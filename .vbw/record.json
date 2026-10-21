@@ -52718,6 +52718,13 @@
       "sort": "next",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T181",
+      "text": "Now box (R189) shows what VBW is doing and when the step started, but not its end ('until around HH:MM' sits lower in 'This step: ...'); when VBW needs the user it shows the short description, not the need sentence or the command (e.g. /vbw:approve); sentences below repeat it. A redesign must change the approved tests/panel/r189/now-box.test.mjs and r192/holder.test.mjs, and move the gate-command list from panel-lines.js to panel-view.js",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
