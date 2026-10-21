@@ -8,12 +8,12 @@
 
 load helper
 load loop-helper
+load fixture-helper
 
-setup() {
-  loop_project
-  VBW_SESSION_ID=s1 "$VBW" loop start T1 T2 --no-ceiling > /dev/null
-}
+setup_file() { fixture_build started loop_started T1 T2 --no-ceiling; }
+setup() { fixture_copy started; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 @test "R178: stop from the session that started the loop marks it stopping with the time and the session" {
   run env VBW_SESSION_ID=s1 "$VBW" loop stop
