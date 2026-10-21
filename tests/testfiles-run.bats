@@ -10,8 +10,16 @@
 # for an approved form. Scripts log their runs to $RANLOG. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+setup_file() { fixture_build shop testfiles_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+# testfiles_project: the project every test starts from, with the outcome of
+# its first proof (FIRST_STATUS, FIRST_OUTPUT, FIRST_RAN), built once per file.
+testfiles_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -47,8 +55,6 @@ setup() {
   rm -f "$SYNC"/*
   : > "$RANLOG"
 }
-
-teardown() { vbw_teardown; }
 
 edit_record() {
   jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json

@@ -9,11 +9,21 @@
 # check read runs nothing. Read lists are kept in the clone's store of
 # recorded runs, never in the record. Every check and command logs its own
 # name to $RANLOG when it really runs, so a reused result shows as a missing
-# line. L1.
+# line. Pinned once elsewhere: a changed read file runs only its check and a
+# check with no files is judged by its reads (reads-reuse.bats), an
+# interrupted proof (proof-causes.bats), a second proof with nothing
+# committed (proof-cause-tree.bats). L1.
 
 load helper
+load fixture-helper
 
-setup() {
+setup_file() { fixture_build shop selective_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+# selective_project: the project every test starts from, built once per file.
+selective_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -66,15 +76,12 @@ SH
   : > "$RANLOG"
 }
 
-teardown() { vbw_teardown; }
-
 edit_record() {
   jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
 }
 
 # ran: what really ran since the log was last emptied, sorted, one line.
 ran() { sort "$RANLOG" | tr '\n' ' '; }
-ALL='C1 C2 C2b C5 cmd-lint cmd-test '
 
 # change FILE: commit a change to one project file.
 change() {
@@ -120,13 +127,6 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 (pass|fail|timeout|skipped|wai
   # A reused result keeps the time it really ran.
   [ "$(jq -r '.evidence.checks.C1.at' .vbw/record.json)" = "$FIRST" ]
   jq -e '.evidence.checks.C1.reused == true and (.evidence.checks.C2.reused // false) == false' .vbw/record.json
-}
-
-@test "R110: a commit that changes a file a check read runs that check only" {
-  change src/pay.txt
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 " ] || { echo "ran: $(ran)"; false; }
 }
 
 @test "R110: a commit that changes a file of a plan serving the requirement, which no check read, runs nothing" {
@@ -185,30 +185,6 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 (pass|fail|timeout|skipped|wai
   [ "$(ran)" = "C5 " ] || { echo "ran: $(ran)"; false; }
 }
 
-@test "R110: a check that declares no files is judged by what it read: reused while that is unchanged, run again when it changes" {
-  edit_record '.checks += [{id:"C6", req:"R3", run:["sh","tests/c6.sh"]}]'
-  "$VBW" approve > /dev/null
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C6 " ] || { echo "ran: $(ran)"; false; }
-  : > "$RANLOG"
-  decide
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
-  [[ "$(line C6)" == *reused* ]] || { echo "$output"; false; }
-  [[ "$(line C1)" == *reused* ]] || { echo "$output"; false; }
-  : > "$RANLOG"
-  change README.md
-  vbw_run prove
-  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
-  : > "$RANLOG"
-  change tests/c6.sh
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C6 " ] || { echo "ran: $(ran)"; false; }
-}
-
 @test "R110: deleting a file a check read runs that check once, and the next proof reuses its new pass" {
   git rm -q src/invoice.txt
   git commit -q -m "chore: drop the invoice file"
@@ -247,25 +223,6 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 (pass|fail|timeout|skipped|wai
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(ran)" = "C1 " ] || { echo "ran: $(ran)"; false; }
-}
-
-@test "R110: an interrupted proof (its unfinished marker is left behind) reuses nothing" {
-  decide
-  : > .vbw/runtime/prove.unfinished
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "$ALL" ] || { echo "ran: $(ran)"; false; }
-  : > "$RANLOG"
-  decide
-  vbw_run prove
-  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
-}
-
-@test "R110: a second proof with no commit since the passing proof still runs everything fresh" {
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "$ALL" ] || { echo "ran: $(ran)"; false; }
-  printf '%s\n' "$output" | grep -qE '^ +checks: 4 ran, 0 reused$' || { echo "$output"; false; }
 }
 
 @test "R110: project commands follow the same rule: reused while nothing they read changed, run when a file they read changed" {

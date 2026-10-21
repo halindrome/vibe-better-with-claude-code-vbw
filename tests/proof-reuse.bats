@@ -8,11 +8,21 @@
 # the committed code. A proof that reused results is current: vbw qa record
 # accepts it without vbw prove --full. Every check and command logs its own
 # name to $RANLOG when it really runs, so a reused result shows as a missing
-# line. L1.
+# line. Pinned once elsewhere: a reused line names its proof
+# (proof-selective.bats), a changed check or command definition
+# (reads-reuse.bats, proof-causes.bats), uncommitted changes
+# (proof-selective.bats). L1.
 
 load helper
+load fixture-helper
 
-setup() {
+setup_file() { fixture_build shop reuse_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+# reuse_project: the project every test starts from, built once per file.
+reuse_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -49,8 +59,6 @@ SH
   : > "$RANLOG"
 }
 
-teardown() { vbw_teardown; }
-
 edit_record() {
   jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
 }
@@ -70,18 +78,6 @@ decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
   [[ "$output" == *proved* ]]
 }
 
-@test "R103: the output names each reused check and command and the time of the proof it came from" {
-  decide
-  vbw_run prove
-  [ "$status" -eq 0 ]
-  local id line
-  for id in C1 C2 C4 lint test; do
-    line=$(printf '%s\n' "$output" | grep -E "^ +$id " || true)
-    [[ "$line" == *reused* ]] || { echo "$id: '$line'"; echo "$output"; false; }
-    [[ "$line" == *"$FIRST"* ]] || { echo "$id does not name the proof time $FIRST: '$line'"; false; }
-  done
-}
-
 @test "R103: a change to spec.md alone (a new human requirement, approved again) reuses every result" {
   printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n- R2 [auto] A customer can refund\n- R3 [human] It feels trustworthy\n' > .vbw/spec.md
   "$VBW" spec sync > /dev/null
@@ -99,27 +95,6 @@ decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(ran)" = "C1n " ] || { echo "ran: $(ran)"; false; }
   jq -e '.evidence.checks | keys == ["C1","C2","C3","C4"]' .vbw/record.json
-}
-
-@test "R103: changing one check's approved definition while the code is unchanged runs that check and reuses the rest" {
-  edit_record '(.checks[] | select(.id == "C2")).run = ["sh","tests/c2.sh","x"]'
-  "$VBW" approve > /dev/null
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C2x " ] || { echo "ran: $(ran)"; false; }
-  local line
-  line=$(printf '%s\n' "$output" | grep -E '^ +C1 ')
-  [[ "$line" == *reused* ]]
-  line=$(printf '%s\n' "$output" | grep -E '^ +C2 ')
-  [[ "$line" != *reused* ]]
-}
-
-@test "R103: a project command whose approved argv changed runs, and the unchanged command is reused" {
-  edit_record '.commands.lint = ["sh","tests/cmd.sh","lint2"]'
-  "$VBW" approve > /dev/null
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "cmd-lint2 " ] || { echo "ran: $(ran)"; false; }
 }
 
 @test "R103: a check removed from the contract does not appear in the new proof, and the others are reused" {
@@ -144,24 +119,6 @@ decide() { "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(ran)" = "C1 " ] || { echo "ran: $(ran)"; false; }
-  : > "$RANLOG"
-  decide
-  vbw_run prove
-  [ "$status" -eq 0 ]
-  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
-}
-
-@test "R103: uncommitted changes to a tracked project file run nothing, since checks and commands run on the committed code; with the folder clean again, reuse goes on" {
-  printf 'broken\n' > src/pay.txt
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
-  git checkout -q src/pay.txt
-  printf 'more\n' >> README.md
-  vbw_run prove
-  [ "$status" -eq 0 ]
-  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
-  git checkout -q README.md
   : > "$RANLOG"
   decide
   vbw_run prove

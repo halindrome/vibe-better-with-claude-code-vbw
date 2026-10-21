@@ -7,8 +7,15 @@
 # test command's own result, never the quick command's. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+setup_file() { fixture_build shop gate_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+# gate_project: the project every test starts from, built once per file.
+gate_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -27,8 +34,6 @@ setup() {
   "$VBW" plan "done" P1.1 > /dev/null
   "$VBW" prove > /dev/null
 }
-
-teardown() { vbw_teardown; }
 
 edit_record() {
   jq "$1" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json

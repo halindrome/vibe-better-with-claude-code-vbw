@@ -13,8 +13,15 @@
 # their runs to $RANLOG. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+setup_file() { fixture_build shop causes_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+# causes_project: the project every test starts from, built once per file.
+causes_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -39,8 +46,6 @@ setup() {
   "$VBW" prove > /dev/null || { echo "the first proof failed"; return 1; }
   : > "$RANLOG"
 }
-
-teardown() { vbw_teardown; }
 
 # spec LINT RUN FILES: the spec with the lint command, the test command and the
 # single-file form RUN over FILES; then sync it.
@@ -157,12 +162,17 @@ nothing_global() { ! printf '%s\n' "$output" | grep -q 'ran everything' || { ech
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   everything
   cause 'does not record which files are read'
+  printf '%s\n' "$output" | grep -qxF '  ran everything: this file system does not record which files are read' || { echo "$output"; false; }
+  jq -e 'all(.runs[]; .reads == null)' "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json"
+  jq -e '.evidence.full == true' .vbw/record.json
 }
 
 @test "R168: a clone with no earlier recorded run runs everything and says so" {
   git clone -q "$PROJECT" "$TEST_ROOT/clone"
   cd "$TEST_ROOT/clone"
   "$VBW" approve > /dev/null
+  vbw_run status
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   everything
@@ -189,6 +199,13 @@ nothing_global() { ! printf '%s\n' "$output" | grep -q 'ran everything' || { ech
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   everything
   cause 'last proof was cut short'
+  # The project commands ran too, and the proof that follows reuses again.
+  [[ " $(ran)" == *" lint "* ]] || { echo "ran: $(ran)"; false; }
+  : > "$RANLOG"
+  "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; echo "$output"; false; }
 }
 
 @test "R168: every summary, full or not, counts the checks and the test files that ran and were reused, and each reused result names its proof" {

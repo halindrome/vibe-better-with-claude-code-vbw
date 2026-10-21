@@ -10,11 +10,20 @@
 # --full reuses nothing. Checks and commands run on the committed code, so
 # uncommitted changes make nothing run. Each check and command logs its own
 # name to $RANLOG when it really runs, so a reused result shows as a missing
-# line. L1.
+# line. Pinned once elsewhere, for every unit alike: nothing committed since
+# the proof (proof-cause-tree.bats), an unfinished proof (proof-causes.bats),
+# --full (proof-quick.bats), uncommitted changes (proof-selective.bats). L1.
 
 load helper
+load fixture-helper
 
-setup() {
+setup_file() { fixture_build shop doc_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+# doc_project: the project every test starts from, built once per file.
+doc_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -62,8 +71,6 @@ SH
   : > "$RANLOG"
 }
 
-teardown() { vbw_teardown; }
-
 edit_record() {
   jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
 }
@@ -94,6 +101,10 @@ test_reused() { [ -z "$(grep -x 'cmd-test' "$RANLOG")" ]; }
   jq -e '.evidence.commands.test.status == "pass" and .evidence.commands.test.reused == true' .vbw/record.json \
     || { jq '.evidence.commands' .vbw/record.json; false; }
   [[ "$(line test)" == *pass* && "$(line test)" == *reused* ]] || { echo "$output"; false; }
+  # Every proof prints both counts, the reused line names its proof, and a proof that reused is not full.
+  [[ "$output" == *"checks: 0 ran, 2 reused"* ]] || { echo "$output"; false; }
+  line test | grep -q 'reused (proof of ' || { echo "$output"; false; }
+  jq -e '.evidence.full == false' .vbw/record.json
 }
 
 @test "R144: a proof that reused the test result passes, and is not counted as a full proof" {
@@ -170,14 +181,6 @@ test_reused() { [ -z "$(grep -x 'cmd-test' "$RANLOG")" ]; }
   [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
 }
 
-@test "R144: uncommitted changes to code in the working folder make nothing run: the proof runs on the committed code" {
-  commit_change docs/guide.md
-  printf 'paid\n# not committed\n' > src/pay.txt
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
-}
-
 @test "R144: a change to the test command's words makes it run again" {
   edit_record '.commands.test = ["sh","tests/cmd.sh","test","--all"]'
   "$VBW" approve > /dev/null
@@ -216,29 +219,6 @@ test_reused() { [ -z "$(grep -x 'cmd-test' "$RANLOG")" ]; }
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   test_ran || { echo "ran: $(ran)"; false; }
   [ -z "$(grep -x 'cmd-quick' "$RANLOG")" ]
-}
-
-@test "R144: a second vbw prove with nothing committed since the passing proof runs everything fresh (D173)" {
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 C2 cmd-lint cmd-test " ] || { echo "ran: $(ran)"; false; }
-  [[ "$output" != *"reused (proof of"* ]] || { echo "$output"; false; }
-}
-
-@test "R144: an unfinished earlier proof (its marker is left behind) is never reused" {
-  commit_change docs/guide.md
-  : > .vbw/runtime/prove.unfinished
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  test_ran || { echo "ran: $(ran)"; false; }
-}
-
-@test "R144: vbw prove --full reuses nothing: after a documentation-only commit it runs every check and every command" {
-  commit_change docs/guide.md
-  vbw_run prove --full
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 C2 cmd-lint cmd-test " ] || { echo "ran: $(ran)"; false; }
-  jq -e '.evidence.full == true and all(.evidence.commands[], .evidence.checks[]; (.reused // false) | not)' .vbw/record.json
 }
 
 @test "R144: vbw qa record and vbw ship accept a proof whose test result was reused" {

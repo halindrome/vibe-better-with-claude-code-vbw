@@ -8,11 +8,27 @@
 # check whose last result failed, that never passed or that has no read list
 # always runs. When the file system cannot record reads, nothing is reused.
 # vbw prove --full reuses nothing and is a full proof; a proof that reused is
-# not. Each check logs its name to $RANLOG when it really runs. L1.
+# not. Each check logs its name to $RANLOG when it really runs. The wiring
+# cases at the end (fixture_copy wiring, from the former prove-reads.bats) pin
+# how vbw prove and vbw fix done use the rule: read lists in the store, clean
+# copies, the record's fingerprint (R175), and which fixes a failing check
+# fails. Pinned once elsewhere: a file added to a listed folder
+# (reads-listing.bats), no reads recorded and a clone with no recorded run
+# (proof-causes.bats). L1.
 
 load helper
+load fixture-helper
 
-setup() {
+setup_file() {
+  fixture_build shop reads_project
+  fixture_build wiring wiring_project
+}
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+# reads_project: the project most tests start from, built once per file.
+reads_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -56,7 +72,39 @@ SH
   : > "$RANLOG"
 }
 
-teardown() { vbw_teardown; }
+# wiring_project: the project of the wiring cases (fixture_copy wiring), where
+# vbw prove and vbw fix done meet the rule: two requirements, two checks, the
+# test command, and C1 noting the folder it ran in.
+wiring_project() {
+  vbw_setup
+  vbw_git_project
+  "$VBW" init > /dev/null
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n- R2 [auto] A customer gets a receipt\n\n## Commands\n\n- test: sh tests/all.sh\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  mkdir -p src tests
+  export RANLOG="$TEST_ROOT/ran.log"
+  printf 'paid\n' > src/pay.txt
+  printf 'sent\n' > src/receipt.txt
+  printf 'unread\n' > src/other.txt
+  # C1 notes the name of the folder it runs in (the name only: a fixture holds no path of its own).
+  printf 'echo C1 >> "$RANLOG"\nbasename "$(pwd)" > "$TEST_ROOT/c1.pwd"\ngrep -qx paid src/pay.txt\n' > tests/pay.sh
+  printf 'echo C2 >> "$RANLOG"\ngrep -qx sent src/receipt.txt\n' > tests/receipt.sh
+  printf 'echo all >> "$RANLOG"\ngrep -qx paid src/pay.txt\n' > tests/all.sh
+  git add -A && git commit -q -m "chore: files"
+  printf '%s' '{"phases": [{"id": "P1", "title": "Checkout", "reqs": ["R1", "R2"], "tier": "standard"}],
+    "plans": [{"id": "P1.1", "phase": "P1", "title": "Pay", "reqs": ["R1"], "files": ["src/pay.txt"]},
+              {"id": "P1.2", "phase": "P1", "title": "Receipt", "reqs": ["R2"], "files": ["src/receipt.txt"]}],
+    "checks": [{"id": "C1", "req": "R1", "run": ["sh", "tests/pay.sh"], "files": ["tests/pay.sh"]},
+               {"id": "C2", "req": "R2", "run": ["sh", "tests/receipt.sh"], "files": ["tests/receipt.sh"]}]}' | "$VBW" apply > /dev/null
+  "$VBW" approve > /dev/null
+  "$VBW" plan "done" P1.1 > /dev/null 2>&1 || true
+  "$VBW" plan "done" P1.2 > /dev/null 2>&1 || true
+  git add -A && git commit -q -m "chore(vbw): plan" || true
+  STORE="$(git rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json"
+  export STORE
+  "$VBW" prove > /dev/null || { echo "the first proof failed"; return 1; }
+  : > "$RANLOG"
+}
 
 edit_record() {
   jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
@@ -127,14 +175,6 @@ no_reads() {
   [[ " $(ran)" == *" C1 "* ]] || { echo "ran: $(ran)"; echo "$output"; false; }
 }
 
-@test "R166: adding a file to a folder a check listed runs that check again, and only it" {
-  printf '2\n' > src/prices/b.txt
-  git add src/prices/b.txt && git commit -q -m "feat: a price"
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C2 " ] || { echo "ran: $(ran)"; echo "$output"; false; }
-}
-
 @test "R166: removing a file from a folder a check listed runs that check again, and only it" {
   git rm -q src/prices/a.txt && git commit -q -m "feat: drop a price"
   vbw_run prove
@@ -155,6 +195,8 @@ no_reads() {
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(ran)" = "C3x " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  [[ "$(line C1)" == *reused* ]] || { echo "$output"; false; }
+  [[ "$(line C3)" != *reused* ]] || { echo "$output"; false; }
 }
 
 @test "R166: a change to a check's own test file, approved again, runs that check again" {
@@ -190,15 +232,6 @@ no_reads() {
   line C4 | grep -q 'ran: never passed' || { echo "$output"; false; }
 }
 
-@test "R166: when the file system cannot record reads, the proof reuses nothing, runs every check and says so" {
-  no_reads
-  change src/other.txt
-  PATH="$TEST_ROOT/noreads:$PATH" vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 C2 C3 C5 " ] || { echo "ran: $(ran)"; echo "$output"; false; }
-  [[ "$output" == *"does not record which files are read"* ]] || { echo "$output"; false; }
-}
-
 @test "R166: results saved without a read list always run again, and the summary says why" {
   no_reads
   PATH="$TEST_ROOT/noreads:$PATH" "$VBW" prove --full > /dev/null
@@ -213,17 +246,6 @@ no_reads() {
   done
 }
 
-@test "R166: a clone with no recorded runs, as after an older VBW, opens the record and runs every check" {
-  git clone -q "$PROJECT" "$TEST_ROOT/clone"
-  cd "$TEST_ROOT/clone"
-  "$VBW" approve > /dev/null
-  vbw_run status
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 C2 C3 C5 " ] || { echo "ran: $(ran)"; echo "$output"; false; }
-}
-
 @test "R166: vbw prove --full runs every check, reuses nothing and is recorded as full; a proof that reused results is not full" {
   change src/other.txt
   vbw_run prove --full
@@ -236,4 +258,100 @@ no_reads() {
   [ "$status" -eq 0 ]
   [ "$(ran)" = "" ] || { echo "ran: $(ran)"; false; }
   jq -e '.evidence.full == false' .vbw/record.json
+}
+
+# The wiring of vbw prove and vbw fix done to the rule (moved from prove-reads.bats).
+
+# open_fix: open fix F1 for R2 (its files: src/receipt.txt), committed.
+open_fix() {
+  jq '.fixes = [{id: "F1", req: "R2", attempts: 0, status: "open", note: "receipt"}]' .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
+  git commit -q -am "chore(vbw): fix F1"
+}
+
+@test "R166: a proof saves the read list of every check and project command in the store, and none in the record" {
+  fixture_copy wiring
+  jq -e '.runs["check:C1"].reads | index("src/pay.txt") != null' "$STORE"
+  jq -e '.runs["check:C2"].reads | index("src/receipt.txt") != null' "$STORE"
+  jq -e '.runs["command:test"].reads | index("src/pay.txt") != null' "$STORE"
+  [ "$(jq '[.evidence.checks[], .evidence.commands[] | select(has("reads") or has("dirs") or has("git"))] | length' .vbw/record.json)" -eq 0 ]
+}
+
+@test "R166: a check runs in a clean copy of the committed code, not in the working folder" {
+  fixture_copy wiring
+  [ "$(basename "$(cat "$TEST_ROOT/c1.pwd")")" = tree ]
+}
+
+@test "R175: a passing proof records the fingerprint of the record without its evidence, so a later record change is no 'nothing committed'" {
+  fixture_copy wiring
+  [ "$(jq -r '.evidence.record' .vbw/record.json)" = "$(jq -c 'del(.evidence)' .vbw/record.json | vbw_kernel 'vbw_sha256')" ]
+  "$VBW" decide "Pay by card" "the owner's choice" > /dev/null
+  change src/other.txt
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  [[ "$output" != *"nothing was committed"* ]] || { echo "$output"; false; }
+}
+
+@test "R166: a change to a file a check and the test command read runs both and nobody else, each saying why" {
+  fixture_copy wiring
+  change src/pay.txt
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "C1 all " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  line C1 | grep -qE 'ran: src/pay\.txt changed' || { echo "$output"; false; }
+  line test | grep -qE 'ran: src/pay\.txt changed' || { echo "$output"; false; }
+  line C2 | grep -q 'reused (proof of ' || { echo "$output"; false; }
+  [[ "$output" == *"checks: 1 ran, 1 reused"* ]] || { echo "$output"; false; }
+}
+
+@test "R166: a reused line keeps the time of the proof that really ran it, across proofs" {
+  fixture_copy wiring
+  local first
+  first=$(jq -r '.evidence.at' .vbw/record.json)
+  change src/other.txt
+  "$VBW" prove > /dev/null
+  change src/other.txt
+  vbw_run prove
+  line C2 | grep -qF "reused (proof of $first)" || { echo "$first"; echo "$output"; false; }
+}
+
+@test "R166: vbw fix done takes the checks of every finished requirement as candidates, reuses the unchanged ones and saves read lists" {
+  fixture_copy wiring
+  open_fix
+  change src/pay.txt
+  vbw_run fix "done" F1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "C1 " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^C2 unchanged since its pass \(' || { echo "$output"; false; }
+  jq -e '.runs["check:C1"].tree != null' "$STORE"
+}
+
+@test "R166: vbw fix done runs its checks in clean copies" {
+  fixture_copy wiring
+  open_fix
+  change src/pay.txt
+  "$VBW" fix "done" F1 > /dev/null
+  [ "$(basename "$(cat "$TEST_ROOT/c1.pwd")")" = tree ]
+}
+
+@test "R166: a failing check that no named fix's files serve fails every named fix" {
+  fixture_copy wiring
+  open_fix
+  printf 'wrong\n' > src/pay.txt
+  git commit -q -am "fix: break pay"
+  vbw_run fix "done" F1
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"F1 broke finished work"* && "$output" == *"C1 fail"* ]] || { echo "$output"; false; }
+  jq -e '[.fixes[] | select(.id == "F1")][0].status == "open"' .vbw/record.json
+}
+
+@test "R166: a failing check that a named fix's files serve fails that fix and not another" {
+  fixture_copy wiring
+  jq '.fixes = [{id: "F1", req: "R1", attempts: 0, status: "open", note: "pay"}, {id: "F2", req: "R2", attempts: 0, status: "open", note: "receipt"}]' .vbw/record.json > "$TEST_ROOT/e.json" && cp "$TEST_ROOT/e.json" .vbw/record.json
+  git commit -q -am "chore(vbw): fixes"
+  printf 'wrong\n' > src/pay.txt
+  git commit -q -am "fix: break pay"
+  vbw_run fix "done" F1 F2
+  [ "$status" -ne 0 ]
+  jq -e '([.fixes[] | select(.id == "F1")][0].status == "open") and ([.fixes[] | select(.id == "F2")][0].status == "fixed")' .vbw/record.json || { echo "$output"; false; }
 }

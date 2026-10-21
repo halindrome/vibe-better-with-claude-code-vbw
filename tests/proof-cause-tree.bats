@@ -10,8 +10,15 @@
 # Scripts log their runs to $RANLOG. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+setup_file() { fixture_build shop tree_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+# tree_project: the project every test starts from, built once per file.
+tree_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -34,8 +41,6 @@ setup() {
   "$VBW" prove > /dev/null || { echo "the first proof failed"; return 1; }
   : > "$RANLOG"
 }
-
-teardown() { vbw_teardown; }
 
 # edit_record FILTER: a hand edit of the record, protected list in step, glance dropped (R155).
 edit_record() {
@@ -63,6 +68,9 @@ commit_record() { git add -A .vbw && git commit -q -m "$1"; }
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -qF 'ran everything: nothing was committed since the last passing proof' || { echo "$output"; false; }
   [ "$(ran)" = "C1 lint t_a t_b " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  # Fresh: nothing is reused, and the counts say so.
+  printf '%s\n' "$output" | grep -qE '^ +checks: 1 ran, 0 reused$' || { echo "$output"; false; }
+  [[ "$output" != *"reused (proof of"* ]] || { echo "$output"; false; }
 }
 
 @test "R175: T116: code commits land, then a record commit that reads like a proof commit lands last: no such cause, only the units that read the change run" {
@@ -101,6 +109,8 @@ commit_record() { git add -A .vbw && git commit -q -m "$1"; }
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -qF 'nothing was committed' && { echo "$output"; false; }
   [ "$(ran)" = "" ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^C1 unchanged since its pass \(' || { echo "$output"; false; }
+  [[ "$output" != *"every candidate check runs"* ]] || { echo "$output"; false; }
   run causes fix
   [ -z "$output" ] || { echo "$output"; false; }
 }

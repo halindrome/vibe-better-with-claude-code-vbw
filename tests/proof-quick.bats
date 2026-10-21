@@ -10,8 +10,15 @@
 # really runs. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+setup_file() { fixture_build shop quick_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+# quick_project: the project every test starts from, built once per file.
+quick_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -49,8 +56,6 @@ SH
   "$VBW" prove > /dev/null
   : > "$RANLOG"
 }
-
-teardown() { vbw_teardown; }
 
 edit_record() {
   jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
@@ -127,6 +132,7 @@ line() { printf '%s\n' "$output" | grep -E "^ +$1 (pass|fail|timeout|skipped|wai
   [ -z "$(line quick)" ] || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -qE '^ +proof: full$' || { echo "$output"; false; }
   jq -e '.evidence.full == true and (.evidence.commands | has("quick") | not)' .vbw/record.json
+  jq -e 'all(.evidence.commands[], .evidence.checks[]; (.reused // false) | not)' .vbw/record.json
 }
 
 @test "R111: vbw prove with any other argument is refused with the usage line and runs nothing" {
