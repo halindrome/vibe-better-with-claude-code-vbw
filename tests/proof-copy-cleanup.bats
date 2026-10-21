@@ -7,8 +7,17 @@
 # cleanup change a proof's result. L1: a fixture whose check can be held.
 
 load helper
+load fixture-helper
 
+# The approved project with its holdable check, built once per file. LIVE is an
+# array, which a builder may not set, so setup makes it after the copy.
+setup_file() { fixture_build hold hold_project; }
 setup() {
+  fixture_copy hold
+  LIVE=()
+}
+
+hold_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -19,7 +28,6 @@ setup() {
   mkdir -p "$MARK" "$OUTSIDE"
   printf 'keep\n' > "$OUTSIDE/keep.txt"
   export MARK
-  LIVE=()
   # HOLD=1 keeps the check running until $MARK/release exists; FAIL=1 fails it.
   cat > tests/hold.sh << 'SH'
 touch "$MARK/start.$$"
