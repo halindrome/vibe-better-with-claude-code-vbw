@@ -70,7 +70,7 @@ while IFS= read -r -d '' path; do
       if (bad) printf "%s:%d:%s\n", F, NR, line
     }' "$path")
   if [ -n "$out" ]; then
-    printf '%s\n' "$out"
+    ( printf '%s\n' "$out" ) # a subshell: no child of this loop can interrupt the write (bash 3.2)
     status=1
   fi
 done < <(for d in "$@"; do find "$d" -type f \( -name '*.sh' -o -name vbw \) -print0; done)
