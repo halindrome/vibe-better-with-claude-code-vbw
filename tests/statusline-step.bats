@@ -12,15 +12,22 @@
 
 load helper
 load step-helper
+load fixture-helper
 
-setup() {
+step_line_project() {
   vbw_setup
   step_project
   SL="$PLUGIN_ROOT/scripts/vbw-statusline.sh"
   export TZ=Europe/Zurich
+}
+
+setup_file() { fixture_build step-line step_line_project; }
+setup() {
+  fixture_copy step-line
   sleep 30 &
   LIVE=$!
 }
+teardown_file() { fixture_teardown; }
 
 teardown() {
   kill "$LIVE" 2> /dev/null || true
