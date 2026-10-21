@@ -5,13 +5,36 @@
 # command the user has not approved sends vbw next back to approval.
 
 load helper
+load fixture-helper
 
-setup() {
+# A git project (what setup() made for every test before).
+plain_project() {
   vbw_setup
   vbw_git_project
 }
 
+# plain_project, a pytest.ini, and vbw init.
+pytest_project() {
+  plain_project
+  printf '[pytest]\n' > pytest.ini
+  "$VBW" init > /dev/null
+}
+
+# plain_project, vbw init, and a spec with one requirement, synced.
+shop_project() {
+  plain_project
+  "$VBW" init > /dev/null
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] Pay\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+}
+
+# The projects the tests start from, each built once per file.
+setup_file() {
+  fixture_build pytest pytest_project
+  fixture_build shop shop_project
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # commands_section BODY: replace (or add) the ## Commands section of spec.md.
 commands_section() {
@@ -21,6 +44,7 @@ commands_section() {
 }
 
 @test "init writes the detected commands into spec.md and the record" {
+  plain_project
   printf '[pytest]\n' > pytest.ini
   "$VBW" init > /dev/null
   grep -qx '## Commands' .vbw/spec.md
@@ -32,8 +56,7 @@ commands_section() {
 }
 
 @test "sync makes the record's commands exactly the spec's: changed, added and removed" {
-  printf '[pytest]\n' > pytest.ini
-  "$VBW" init > /dev/null
+  fixture_copy pytest
   commands_section '- test: cargo test --locked --workspace --manifest-path engine/Cargo.toml
 - pytest: conda run -n analysis python -m pytest -q engine/'
   vbw_run spec sync
@@ -49,16 +72,14 @@ commands_section() {
 }
 
 @test "an empty Commands section removes every command" {
-  printf '[pytest]\n' > pytest.ini
-  "$VBW" init > /dev/null
+  fixture_copy pytest
   commands_section ''
   "$VBW" spec sync > /dev/null
   jq -e '.commands == {}' .vbw/record.json
 }
 
 @test "a spec without a Commands section leaves the record's commands as they are" {
-  printf '[pytest]\n' > pytest.ini
-  "$VBW" init > /dev/null
+  fixture_copy pytest
   awk 'BEGIN { skip = 0 } /^## / { skip = ($0 ~ /^## Commands/) } !skip' .vbw/spec.md > "$TEST_ROOT/s.md"
   cp "$TEST_ROOT/s.md" .vbw/spec.md
   "$VBW" spec sync > /dev/null
@@ -66,6 +87,7 @@ commands_section() {
 }
 
 @test "a JSON array keeps an argument that contains spaces" {
+  plain_project
   "$VBW" init > /dev/null
   commands_section '- test: ["sh", "run tests.sh", "--fast"]'
   "$VBW" spec sync > /dev/null
@@ -73,8 +95,7 @@ commands_section() {
 }
 
 @test "malformed command lines and duplicate names are errors with line numbers; nothing changes" {
-  printf '[pytest]\n' > pytest.ini
-  "$VBW" init > /dev/null
+  fixture_copy pytest
   commands_section '- test
 - lint: ["unclosed"
 - build: make
@@ -87,9 +108,7 @@ commands_section() {
 }
 
 @test "after the commands change, next asks for approval until the user approves them" {
-  "$VBW" init > /dev/null
-  printf '# Shop\n\n## Requirements\n\n- R1 [auto] Pay\n' > .vbw/spec.md
-  "$VBW" spec sync > /dev/null
+  fixture_copy shop
   jq '.checks = [{id: "C1", req: "R1", run: ["true"]}]
     | .phases = [{id: "P1", title: "Pay", reqs: ["R1"], milestone: "M1"}]
     | .plans = [{id: "P1.1", phase: "P1", title: "Pay", reqs: ["R1"], files: ["pay.txt"], after: [], status: "planned"}]' \
@@ -109,9 +128,7 @@ commands_section() {
 }
 
 @test "approval is refused while the spec's commands and the record's differ" {
-  "$VBW" init > /dev/null
-  printf '# Shop\n\n## Requirements\n\n- R1 [auto] Pay\n' > .vbw/spec.md
-  "$VBW" spec sync > /dev/null
+  fixture_copy shop
   jq '.checks = [{id: "C1", req: "R1", run: ["true"]}]' .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
   commands_section '- test: make test'
   vbw_run approve
