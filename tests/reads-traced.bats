@@ -10,8 +10,9 @@
 # its name to $RANLOG when it really runs. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -69,7 +70,12 @@ SH
   "$VBW" approve > /dev/null
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 edit_record() {
   jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
