@@ -103,12 +103,14 @@ step_expect() {
   runs="$(dirname "$file")/runs.json"
   size=$2
   case "$size" in
-    '' | *[!0-9]*) ;;
+    '') return 0 ;;
+    *[!0-9]*) ;;
     *) size=$(jq -nc --argjson n "$size" '{units: [range(0; $n) | "unit:\(.)"]}') ;;
   esac
+  # A proof's size names every unit (Linux caps one argument at 128 KB): through a file.
   out=$(jq -n -r --slurpfile h <(jq -c 'select(type == "object" and (.steps | type) == "array")' "$file" 2> /dev/null) \
     --slurpfile runs <(jq -c 'select(type == "object" and (.runs | type) == "object")' "$runs" 2> /dev/null) \
-    --arg kind "$1" --argjson size "$size" -f "$VBW_LIB/steps-expect.jq" 2> /dev/null) || return 0
+    --arg kind "$1" --slurpfile size <(printf '%s' "$size") -f "$VBW_LIB/steps-expect.jq" 2> /dev/null) || return 0
   printf '%s\n' "$out"
 }
 
@@ -374,8 +376,9 @@ step_proof_units() {
   units=$(step_proof_units_plan "$1" "$2")
   if [ -n "$head" ] && [ -n "$rec" ] && [ -n "$store" ] && printf '%s' "$units" | jq -e 'type == "array"' > /dev/null 2>&1; then
     tmp="$cache.$$"
-    { mkdir -p "$VBW_RUNTIME" && jq -nc --arg h "$head" --arg r "$rec" --arg s "$store" --argjson m "$marker" --argjson f "${2:-0}" --argjson u "$units" \
-        '{head: $h, record: $r, store: $s, marker: $m, full: $f, units: $u}' > "$tmp" && mv -f "$tmp" "$cache"; } 2> /dev/null || rm -f "$tmp" 2> /dev/null || true
+    # The unit list grows with the project (Linux caps one argument at 128 KB): through a pipe.
+    { mkdir -p "$VBW_RUNTIME" && printf '%s' "$units" | jq -c --arg h "$head" --arg r "$rec" --arg s "$store" --argjson m "$marker" --argjson f "${2:-0}" \
+        '{head: $h, record: $r, store: $s, marker: $m, full: $f, units: .}' > "$tmp" && mv -f "$tmp" "$cache"; } 2> /dev/null || rm -f "$tmp" 2> /dev/null || true
   fi
   printf '%s\n' "$units"
 }
@@ -415,7 +418,7 @@ step_next() {
       units=$(step_proof_units "$1" "$full")
       parts=$(printf '%s' "$units" | jq 'length' 2> /dev/null) || parts=0
       [ "${parts:-0}" -gt 0 ] 2> /dev/null || { echo null; return 0; }
-      size=$(jq -nc --argjson u "$units" '{units: $u}') ;;
+      size=$(printf '%s' "$units" | jq -c '{units: .}') ;;
     *) echo null; return 0 ;;
   esac
   step_kind_has_parts "$kind" && [ "$parts" = null ] && parts=$(printf '%s' "$ids" | jq 'length')

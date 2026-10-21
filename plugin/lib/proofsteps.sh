@@ -97,7 +97,7 @@ proofsteps_clean() {
   proofsteps_unlock
 }
 
-# proofsteps_begin TOTAL [NAMES]: a proof of TOTAL units starts; NAMES (a JSON
+# proofsteps_begin TOTAL [UNITS]: a proof of TOTAL units starts; UNITS (a JSON
 # array of the units' names, proofsteps_names) sizes a proof of its own by those
 # units. Sets PROOFSTEPS_ON, PS_MODE (own, inside or none) and what the later
 # calls need.
@@ -106,7 +106,8 @@ proofsteps_begin() {
   PROOFSTEPS_ON=1
   PS_TOTAL=$1
   PS_UNITS=
-  size=$(jq -nc --argjson n "${2:-null}" --argjson t "$1" '{units: ($n // [range(0; $t) | "unit:\(.)"])}') || size=$1
+  # The names grow with the project (Linux caps one argument at 128 KB): through a pipe.
+  size=$(printf '%s' "${2:-null}" | jq -c --argjson t "$1" '{units: (. // [range(0; $t) | "unit:\(.)"])}') || size=$1
   PS_MODE=none
   PS_ROAD_NEXT=
   PS_RUN=

@@ -180,7 +180,7 @@ cmd_fix() {
     [ -n "$wait_files" ] || causes=$(proofcauses_find "$record" 0 "$head" fix)
     while IFS= read -r c; do
       [ -z "$c" ] || printf 'every candidate check runs: %s\n' "$c"
-    done <<< "$causes"
+    done < <(printf '%s\n' "$causes")
     # shellcheck disable=SC2034 # read by proofreuse_judge
     PROOFREUSE_STORE=$(proofreuse_store_read)
     while IFS= read -r c; do

@@ -7,9 +7,11 @@
 # --jsonargs or here-string (<<<) and refuses, printing FILE:LINE:text and
 # exiting 1: record_read, qa_combined, qa_digests, qa_state, qa_cache_read, a
 # cat or git show of record.json (or VBW_RECORD), a variable named record,
-# record_json, digests or results, and a positional parameter ($1, ${2}, ...)
-# that the function's header comment ("# name ARG...: ...") names RECORD,
-# RECORD_JSON, DIGESTS or RESULTS. Data written into a pipe first
+# record_json, digests or results, a list that grows with the project (the
+# variables units, causes and TF_REUSE: Linux caps one argument at 128 KB, about
+# 3,000 test files), and a positional parameter ($1, ${2}, ...) that the
+# function's header comment ("# name ARG...: ...") names RECORD, RECORD_JSON,
+# DIGESTS, RESULTS or UNITS. Data written into a pipe first
 # (printf '%s' "$record" | jq ...), --slurpfile, --rawfile, small values and
 # comments pass. A <(...) handed to --slurpfile or --rawfile is a file and passes
 # too, unless a jq --arg... or a here-string inside it takes the data.
@@ -33,7 +35,7 @@ while IFS= read -r -d '' path; do
           for (i = 2; i in w; i++) {
             t = w[i]; stop = (t ~ /:/)
             gsub(/[\[\]:.]/, "", t)
-            if (t == "RECORD" || t == "RECORD_JSON" || t == "DIGESTS" || t == "RESULTS") pending[i - 1] = 1
+            if (t == "RECORD" || t == "RECORD_JSON" || t == "DIGESTS" || t == "RESULTS" || t == "UNITS") pending[i - 1] = 1
             if (stop) break
           }
         }
@@ -49,7 +51,7 @@ while IFS= read -r -d '' path; do
       if (!match(line, /(--arg|--argjson|--args|--jsonargs)([ \t]|$)|<<</)) next
       tail = substr(line, RSTART)
       # data written into a pipe is how it must be done
-      gsub(/(printf[ \t]+(\047%s\047|"%s"|%s)|echo)[ \t]+"?\$\{?(record|record_json|digests|results)\}?"?[ \t]*\|/, "", tail)
+      gsub(/(printf[ \t]+(\047%s\047|"%s"|%s)|echo)[ \t]+"?\$\{?(record|record_json|digests|results|units|causes|TF_REUSE)\}?"?[ \t]*\|/, "", tail)
       # a process substitution handed to --slurpfile or --rawfile is a file, not an argument, unless
       # a command inside it takes the data as one (jq --arg ... or a here-string): that part is judged
       rest = tail; tail = ""
@@ -63,7 +65,7 @@ while IFS= read -r -d '' path; do
       bad = 0
       if (tail ~ /record_read|qa_combined|qa_digests|qa_state|qa_cache_read/) bad = 1
       if (tail ~ /(cat|git show)[^|]*(record\.json|VBW_RECORD)/) bad = 1
-      if (tail ~ /\$\{?(record|record_json|digests|results)\}?([^A-Za-z0-9_]|$)/) bad = 1
+      if (tail ~ /\$\{?(record|record_json|digests|results|units|causes|TF_REUSE)\}?([^A-Za-z0-9_]|$)/) bad = 1
       for (k in posn) if (tail ~ ("\\$\\{?" k "([^0-9A-Za-z_]|$)")) bad = 1
       if (bad) printf "%s:%d:%s\n", F, NR, line
     }' "$path")

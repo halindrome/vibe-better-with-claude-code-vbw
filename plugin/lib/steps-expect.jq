@@ -2,11 +2,11 @@
 # history, the per-unit runs store and a step's units into its expected seconds.
 #
 # Interface: jq -n --slurpfile h HISTORY --slurpfile runs RUNS --arg kind K
-#   --argjson size SIZE -f steps-expect.jq
+#   --slurpfile size SIZE -f steps-expect.jq (a file: a proof's size names every unit)
 #   $h[0]    the history {steps: [...]} or null (a missing or damaged file)
 #   $runs[0] the runs store {runs: {name: {seconds, ...}}} or null
 #   $kind    build | fix | plan | qa | proof
-#   $size    build: [{id, tier, tasks, breaks}] (the wave's plans); fix: {tier};
+#   $size[0] build: [{id, tier, tasks, breaks}] (the wave's plans); fix: {tier};
 #            plan: {reqs}; qa: [{id, tier}]; proof: {units: [name]}
 # Output: one integer (seconds), or nothing when the history gives no basis.
 # Every list is the latest 10 by the history's order; an even count takes the
@@ -32,7 +32,8 @@ def latest: .[-10:];
 def num: type == "number" and . >= 0;
 def basis: if length >= 3 then median else empty end;
 
-($h[0] | if type == "object" and (.steps | type) == "array" then [.steps[] | select(type == "object")] else [] end) as $steps
+$size[0] as $size
+| ($h[0] | if type == "object" and (.steps | type) == "array" then [.steps[] | select(type == "object")] else [] end) as $steps
 | (if $kind == "build" and ($size | type) == "array" and ($size | length) > 0 then pow(0.75; 1 / ($size | length)) else 0.75 end) as $q
 | def of($k): [$steps[] | select(.kind == $k and (.seconds | num))];
   def withparts: map(select((.parts | type) == "number" and .parts > 0));
