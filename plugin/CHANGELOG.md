@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.0.44] - 2026-10-21
+
+### Added
+
+- **QA checks that delivered files are still there.** Every proof now notes
+  any file a plan of the current milestone delivered that changed or went
+  missing outside VBW (a hand edit, a delete, a revert, a merge). Its phase goes
+  to QA at every rigor tier, QA is told which file, and `vbw qa record` will not
+  record a pass while it stands. A change you want kept is recorded once as
+  your decision; `/vbw:fix` and `/vbw:debug` record it for the files they
+  change.
+
+### Changed
+
+- **Faster proofs.** A proof prepares all its units in one pass, collects their
+  results in one pass, and starts the next unit as soon as a slot frees. On a
+  200-unit project a proof took 40 s instead of 48 s, with about half the
+  helper processes.
+
+### Fixed
+
+- **A killed test run could take an earlier check's result** and keep its slot
+  in the computer-wide limit. Each run now keeps its results apart.
+- **Step history order:** steps that end in the same second keep their order,
+  so the time estimates read them correctly.
+
 ## [2.0.43] - 2026-10-21
 
 ### Changed
