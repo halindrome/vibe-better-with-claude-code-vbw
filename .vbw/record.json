@@ -52703,7 +52703,7 @@
       "text": "smallchange L3 (2.0.41, 2026-10-20) failed one fact: a one-flag change to greet.sh got QA tier standard, not quick, because the session proposed standard for its phase (P2 proposed: standard; P1 express). Passed with quick on 2.0.32. Find why the router proposes standard for a tiny change; a small change must stay small",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     }
   ],
   "decisions": [
