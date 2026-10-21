@@ -10,9 +10,15 @@
 
 load helper
 load loop-helper
+load fixture-helper
 
-setup() { loop_project; }
+setup_file() {
+  fixture_build loop loop_project
+  fixture_build human loop_project human
+}
+setup() { fixture_copy loop; }
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 loop_json() { "$VBW" loop status --json < /dev/null; }
 
@@ -147,8 +153,7 @@ refused() {
 }
 
 @test "R178 (F169): a [human] requirement an earlier ship carried over does not make the current milestone unfinished: the loop starts" {
-  vbw_teardown
-  loop_project human
+  fixture_copy human
   # R2 is [human], carried into the current milestone by the earlier ship, and built in a phase of the milestone before.
   jq -e '. as $r | .milestone.id as $m | .requirements[] | select(.id == "R2") | .proof == "human" and .milestone == $m
     and any($r.phases[]; .milestone != $m and any(.reqs[]; . == "R2"))' .vbw/record.json > /dev/null || { jq '{milestone, requirements, phases}' .vbw/record.json; false; }
