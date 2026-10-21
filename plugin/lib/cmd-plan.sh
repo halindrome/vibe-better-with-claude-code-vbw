@@ -7,6 +7,8 @@
 
 # shellcheck source=steps.sh
 . "$VBW_LIB/steps.sh"
+# shellcheck source=mutate-queue.sh
+. "$VBW_LIB/mutate-queue.sh"
 
 cmd_plan() {
   local sub="${1:-}" id="${2:-}"
@@ -55,10 +57,15 @@ cmd_plan() {
       checks_must_pass "$record" "$id completes requirements whose checks do not pass" ${completes[@]+"${completes[@]}"}
       # A plan built in an open build run, at standard or deep, also waits for the
       # mutation check (R188): every rule it completes shown to be caught.
-      local missing
+      local missing queued e
       missing=$(printf '%s' "$record" | plan_missing_breaks "$id")
+      queued=$(mutate_queue_entries "$id" | while IFS= read -r e; do jq -r .target "$e/meta.json"; done | paste -sd ' ' -)
+      [ -z "$missing" ] || [ -z "$queued" ] || missing="$missing
+Queued, not run yet: $queued: run them with vbw mutate $id --run"
       [ -z "$missing" ] || vbw_die "$id has behaviour no recorded break has shown to be caught:
 $missing"
+      # Breaks still queued are not needed any more.
+      rm -rf "$(mutate_queue_dir "$id")"
       record_update '(.plans[] | select(.id == $p)) |= (.status = "done" | del(.note))' --arg p "$id"
       step_plan_done
       printf '%s done\n' "$id"

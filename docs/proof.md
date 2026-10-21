@@ -983,7 +983,9 @@ requirement or skip it. `vbw ship` refuses while such a fix is open.
 ### The mutation check
 
 At standard and deep, the builder breaks the plan's code on purpose (one
-statement per rule) with `vbw mutate` and runs the rule's own check. See
+statement per rule) with `vbw mutate` and runs the rule's own check. Breaks of
+several rules can run side by side: each is queued (`--queue`), then `vbw mutate
+PLAN --run` runs them at once, each in its own clean copy. See
 docs/workflows.md for the command and docs/rigor.md for the levels.
 
 A task break (`taskK`) without `--check` runs the checks of the plan's own
