@@ -525,7 +525,9 @@ requirements of this milestone ... and got none".
 A QA round does not run the project's test command once per agent. The proof
 already ran it (the project command named `test`), and `vbw next --json` returns
 that result as `round.suite` at the `qa` step: `{command, status, exit, seconds,
-tail}`. The router passes `round` to `vbw:verifying` as `args.round`, and the
+tail}`. The router passes `round` to `vbw:verifying` as `args.round` (the whole
+object; the workflow returns an error without starting an agent for anything
+else, a number say, and treats a missing or `null` round as none), and the
 workflow adds the result to every QA agent's prompt with an instruction not to
 run the suite. When the command did not run (`skipped` or `not run`), the
 prompt says so and tells the agents not to retry it; the workflow logs it, and

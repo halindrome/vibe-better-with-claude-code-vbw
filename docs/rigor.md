@@ -220,6 +220,13 @@ Files are counted once across the phase's plans. A risky change gets the full
 depth however few files it touches. A small, low-risk change that never
 escalated never gets a deep check.
 
+This is why a small change in a repository without a project test command
+stays small even though its phase is `standard` (see "The small change"): its
+`round.tiers` entry is `quick`. The router passes the whole `round` object to
+the QA workflow, which refuses `round` as anything but an object, and `vbw
+next --json` keeps `round` on its answer while the router's own QA run is open
+(docs/next.md).
+
 ## Documentation changes
 
 Example: a plan that only edits `README.md` goes from `vbw approve` to `ship`
