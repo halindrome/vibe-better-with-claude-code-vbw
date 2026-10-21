@@ -190,7 +190,8 @@ read_session_cost() {
 build_agent_types() {
   local f
   while IFS= read -r f; do
-    jq -r 'select(.workflowPhase == "Build") | .agentType' "${f%.jsonl}.meta.json" 2> /dev/null
+    # The run-closing agent (a Lead labelled "close run") confirms the record; it builds nothing.
+    jq -r 'select(.workflowPhase == "Build" and (.description // "") != "close run") | .agentType' "${f%.jsonl}.meta.json" 2> /dev/null
   done < <(transcripts | grep '/subagents/') | sort -u
 }
 

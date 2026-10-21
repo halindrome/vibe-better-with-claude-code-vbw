@@ -1,17 +1,17 @@
 {
   "scenario": "costs",
   "fixture": "greet.sh from an empty project (the greenfield request); the working tree's status line on; the user answers with VBW's recommendations",
-  "cost_usd": 0.4819,
+  "cost_usd": 0.4116,
   "evidence_level": "L3",
-  "at": "2026-10-20T23:59:18Z",
-  "passed": false,
+  "at": "2026-10-21T00:40:11Z",
+  "passed": true,
   "facts": {
     "statusline_on": true,
-    "run_id": "",
-    "run_cost_usd": 0,
-    "milestone_cost_usd": 0.431936,
-    "session_cost_usd": 0.4819,
-    "unknown_runs": 1
+    "run_id": "build-20261021T003837Z",
+    "run_cost_usd": 0.07329,
+    "milestone_cost_usd": 0.41163,
+    "session_cost_usd": 0.4116,
+    "unknown_runs": 0
   },
   "not_tested": [
     "a session without the status line (cost unknown by design)",
