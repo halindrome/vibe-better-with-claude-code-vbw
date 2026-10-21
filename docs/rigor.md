@@ -138,7 +138,9 @@ itself: it adds one phase at `detail.tier`, numbered from `next_phase`, with
 `vbw apply --add` (docs/workflows.md), holding one plan of one or two files,
 its check and its rules. That tier is `express` when its signals allow, and
 `standard` otherwise, for example in a repository without a project test
-command or tracking more than 30 files. P1 and its plans, checks and rules stay as they were. You approve once. Then VBW builds, proves, checks (see
+command or tracking more than 30 files. P1 and its plans, checks and rules stay as they were. A plan that only writes
+documentation (README, CHANGELOG, `docs/`, guides) carries `"role": "docs"`, as
+the Lead's would, so the Docs agent builds it. You approve once. Then VBW builds, proves, checks (see
 "QA depth") and closes it.
 
 One rule keeps this honest in a large repository. When git tracks more than 30
