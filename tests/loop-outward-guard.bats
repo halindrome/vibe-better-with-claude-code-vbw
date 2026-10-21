@@ -98,7 +98,7 @@ denied_as() {
 }
 
 @test "R180: the hook bench measures the guard with a loop on" {
-  run env VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 VBW_BENCH_RUNS=1 bash "$REPO_ROOT/tools/bench-hooks.sh"
+  run env VBW_BENCH_ONLY='guard (loop)' VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 VBW_BENCH_RUNS=1 bash "$REPO_ROOT/tools/bench-hooks.sh"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -qE '^guard \(loop\): -?[0-9.]+ ms own CPU per call' || { echo "$output"; false; }
 }

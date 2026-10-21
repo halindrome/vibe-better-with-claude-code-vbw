@@ -24,8 +24,12 @@ burn() { printf "perl -e '1 while (times)[0] + (times)[1] < %s / 1000'" "$1"; }
 
 # The limit is set on the bench's own line (60 ms, the status line's, unless a test gives another), as
 # tests/bench-limits.bats does: these tests check the limit logic with wide margins, not this machine's speed.
+# The cases asserted on: the hand-back, and the plain and large-record status lines (VBW_BENCH_ONLY joins selectors with '|').
+CASES='status line (VBW off)|status line:|status line (large record):'
+OFF='status line (VBW off)'
+
 bench() {
-  run env VBW_STATUSLINE_BUDGET_MS=60 VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=2 "$@" bash "$BENCH"
+  run env VBW_BENCH_ONLY="$CASES" VBW_STATUSLINE_BUDGET_MS=60 VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=2 "$@" bash "$BENCH"
 }
 
 quiet_or_skip() {
@@ -69,7 +73,7 @@ line() {
     sed -n '2,$p' "$SCRIPT"
   } > "$TEST_ROOT/sl.sh"
   cat "$TEST_ROOT/sl.sh" > "$SCRIPT"
-  bench
+  bench VBW_BENCH_ONLY="$OFF"
   quiet_or_skip
   [ "$status" -eq 1 ] || {
     printf '%s\n' "$output"
@@ -87,7 +91,7 @@ line() {
 @test "R184: a hand-back that never shows the earlier status line fails the bench" {
   # A script that never says VBW is off: the setting never hands over.
   printf '#!/usr/bin/env bash\nwhile IFS= read -t 1 -r l; do :; done\necho "[VBW] always"\n' > "$SCRIPT"
-  bench VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000
+  bench VBW_BENCH_ONLY="$OFF" VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000
   [ "$status" -eq 1 ] || {
     printf '%s\n' "$output"
     false
@@ -104,7 +108,7 @@ line() {
   mkdir -p "$TEST_ROOT/slow"
   printf '#!/bin/sh\n%s\n"%s" "$@"\n' "$(burn 40)" "$real" > "$TEST_ROOT/slow/jq"
   chmod +x "$TEST_ROOT/slow/jq"
-  bench PATH="$TEST_ROOT/slow:$PATH"
+  bench VBW_BENCH_ONLY="$OFF" PATH="$TEST_ROOT/slow:$PATH"
   [ "$status" -eq 0 ] || {
     printf '%s\n' "$output"
     false

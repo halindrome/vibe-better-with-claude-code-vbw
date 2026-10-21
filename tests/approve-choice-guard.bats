@@ -68,7 +68,7 @@ teardown() { vbw_teardown; }
 @test "R61: the answer hook's own cost on an unrelated answer is measured by the hook bench" {
   # Whether it is within the hook limit is the bench's own verdict in the
   # release run (R152), never in vbw prove: here the limits are out of reach.
-  run env VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 VBW_BENCH_RUNS=1 bash "$REPO_ROOT/tools/bench-hooks.sh"
+  run env VBW_BENCH_ONLY='guard (answer)' VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 VBW_BENCH_RUNS=1 bash "$REPO_ROOT/tools/bench-hooks.sh"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   echo "$output" | grep -qE '^guard \(answer\): -?[0-9.]+ ms own CPU per call'
 }

@@ -134,9 +134,11 @@ statusline() {
 }
 
 @test "R149: tools/bench-hooks.sh measures the guards and the status line on a record over 2 MB" {
-  run env VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 VBW_BENCH_RUNS=1 bash "$REPO_ROOT/tools/bench-hooks.sh"
+  # The cases asserted below: the six guard inputs on the small and on the large record, the two status lines.
+  local only='status line:|status line (large record):' size input
+  for input in git npm big interp read answer; do only="$only|guard ($input)|guard ($input, large record)"; done
+  run env VBW_BENCH_ONLY="$only" VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 VBW_BENCH_RUNS=1 bash "$REPO_ROOT/tools/bench-hooks.sh"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  local size input
   size=$(printf '%s\n' "$output" | sed -n 's/^large record: \([0-9]*\) bytes$/\1/p')
   [ -n "$size" ] && [ "$size" -gt 2097152 ] || { echo "no 'large record: N bytes' line over 2 MB"; echo "$output"; false; }
   for input in git npm big interp read answer; do

@@ -17,7 +17,7 @@ setup() {
 teardown() { vbw_teardown; }
 
 @test "R190: the hook bench measures the status line with a step running, against the status line budget" {
-  run env VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=1 VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 bash "$REPO_ROOT/tools/bench-hooks.sh"
+  run env VBW_BENCH_ONLY='status line (step running)' VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=1 VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 bash "$REPO_ROOT/tools/bench-hooks.sh"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [[ "$output" =~ (^|$'\n')"status line (step running): "[0-9.]+" ms CPU per call; budget 100000 ms" ]] || { echo "$output"; false; }
   [[ "$output" != *"the step was not shown"* ]] || { echo "$output"; false; }
@@ -26,7 +26,7 @@ teardown() { vbw_teardown; }
 @test "R190: a status line that does not show the step fails the hook bench" {
   # A status line whose step shows no end time.
   sed -i.bak 's/until /untl /g' "$TEST_ROOT/plugin/scripts/statusline.jq"
-  run env VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=1 VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 bash "$REPO_ROOT/tools/bench-hooks.sh"
+  run env VBW_BENCH_ONLY='status line (step running)' VBW_BENCH_PLUGIN_ROOT="$TEST_ROOT/plugin" VBW_BENCH_RUNS=1 VBW_HOOK_BUDGET_MS=100000 VBW_STATUSLINE_BUDGET_MS=100000 bash "$REPO_ROOT/tools/bench-hooks.sh"
   [ "$status" -eq 1 ] || { echo "$output"; false; }
   [[ "$output" == *"status line (step running): the step was not shown, so the measure left it out"* ]] || { echo "$output"; false; }
 }
