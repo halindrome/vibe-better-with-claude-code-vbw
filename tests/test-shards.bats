@@ -7,7 +7,8 @@
 # same inputs; together the shards run every file exactly once, the timed
 # files (tests/timed-*.bats, R152) alone after each shard's batch. Shard 1 alone
 # runs the tool lint and the hook and panel benchmarks. The unsharded runs are
-# tests/release-run.bats's (R152). Runs below use a copy of the
+# tests/release-run.bats's (R152). The real repository's lists are made once
+# for the file (setup_file); runs below use a copy of the
 # script in a scratch repository whose bats, shellcheck, parallel, node and
 # getconf are stand-ins that only log their arguments.
 
@@ -15,16 +16,48 @@ load helper
 
 TIMED='tests/timed-speed.bats tests/timed-cost.bats'
 
-setup() {
-  vbw_setup
-  # The script runs the whole suite when it does not know its arguments: never call it before it has shards.
+# The script runs the whole suite when it does not know its arguments: never call it before it has shards.
+has_shards() {
   grep -q -- '--shard' "$REPO_ROOT/tools/test.sh" || {
     echo "tools/test.sh has no --shard mode yet"
     return 1
   }
 }
 
+# setup_file: what tools/test.sh --shard K/N --list prints in the real
+# repository, for N from 1 to 5, in $LISTS/K-N, and each share of 4 once more,
+# from a run of its own, in $LISTS/K-4.again. The runs are independent and run
+# side by side; any that fails fails the file.
+setup_file() {
+  has_shards
+  LISTS="$BATS_FILE_TMPDIR/lists"
+  export LISTS
+  mkdir -p "$LISTS"
+  local n k p pids=()
+  for n in 1 2 3 4 5; do
+    for k in $(seq 1 "$n"); do
+      (cd "$REPO_ROOT" && bash tools/test.sh --shard "$k/$n" --list < /dev/null) > "$LISTS/$k-$n" &
+      pids+=("$!")
+    done
+  done
+  for k in 1 2 3 4; do
+    (cd "$REPO_ROOT" && bash tools/test.sh --shard "$k/4" --list < /dev/null) > "$LISTS/$k-4.again" &
+    pids+=("$!")
+  done
+  for p in "${pids[@]}"; do wait "$p"; done
+}
+
+setup() {
+  vbw_setup
+  has_shards
+}
+
 teardown() { vbw_teardown; }
+
+# real_files K N: the test files share K of N lists in the real repository.
+real_files() {
+  grep -E '^tests/[^/]+\.bats$' "$LISTS/$1-$2"
+}
 
 # shard_files DIR K N: the test files shard K of N lists, run from DIR.
 shard_files() {
@@ -68,7 +101,7 @@ fake_run() {
   for n in 1 2 3 4 5; do
     all=""
     for k in $(seq 1 "$n"); do
-      all="$all$(shard_files "$REPO_ROOT" "$k" "$n")"$'\n'
+      all="$all$(real_files "$k" "$n")"$'\n'
     done
     dups=$(printf '%s' "$all" | grep . | LC_ALL=C sort | uniq -d)
     [ -z "$dups" ] || {
@@ -85,8 +118,8 @@ fake_run() {
 @test "R142: the same inputs give the same shares" {
   local k first second
   for k in 1 2 3 4; do
-    first=$(cd "$REPO_ROOT" && bash tools/test.sh --shard "$k/4" --list < /dev/null)
-    second=$(cd "$REPO_ROOT" && bash tools/test.sh --shard "$k/4" --list < /dev/null)
+    first=$(cat "$LISTS/$k-4")
+    second=$(cat "$LISTS/$k-4.again")
     [ -n "$first" ] && [ "$first" = "$second" ] || {
       echo "shard $k/4 differs between two runs"
       false
@@ -95,18 +128,15 @@ fake_run() {
 }
 
 @test "R142: shares are balanced by test count: no shard of 4 holds much more than a quarter of the tests" {
-  local k f n count total=0 max=0 big=0
-  for f in "$REPO_ROOT"/tests/*.bats; do
-    n=$(grep -c '^@test' "$f" || true)
+  local k f n count total=0 max=0 big=0 counts
+  # Each file's test count, "tests/NAME.bats:N", from one grep over them all.
+  counts=$(cd "$REPO_ROOT" && grep -cH '^@test' tests/*.bats || true)
+  while IFS=: read -r f n; do
     total=$((total + n))
     [ "$n" -le "$big" ] || big=$n
-  done
+  done <<< "$counts"
   for k in 1 2 3 4; do
-    count=0
-    while IFS= read -r f; do
-      n=$(grep -c '^@test' "$REPO_ROOT/$f" || true)
-      count=$((count + n))
-    done < <(shard_files "$REPO_ROOT" "$k" 4)
+    count=$(real_files "$k" 4 | awk -F: 'NR == FNR { c[$1] = $2; next } { s += c[$0] } END { print s + 0 }' <(printf '%s\n' "$counts") -)
     [ "$count" -le "$max" ] || max=$count
   done
   [ "$max" -le $(((total + 3) / 4 + big)) ] || {
@@ -131,7 +161,7 @@ fake_run() {
 @test "R142: the tool lint and the hook and panel benchmarks are listed by shard 1 only" {
   local k out
   for k in 1 2 3 4; do
-    out=$(cd "$REPO_ROOT" && bash tools/test.sh --shard "$k/4" --list < /dev/null)
+    out=$(cat "$LISTS/$k-4")
     if [ "$k" -eq 1 ]; then
       printf '%s\n' "$out" | grep -qi 'shellcheck'
       printf '%s\n' "$out" | grep -q 'bench-hooks.sh'
