@@ -401,7 +401,7 @@ scenario_docs() {
     # R71 (owner, 2026-10-06, kept 2026-10-21): a requirement whose plans change only
     # documentation needs no check. Then the plan's files must all be documentation.
     nock=false
-    if [ "$cst" = none ] && jq -e --arg r "$req" '([.checks[] | select(.req == $r)] | length == 0)
+    if { [ -z "$cst" ] || [ "$cst" = none ]; } && jq -e --arg r "$req" '([.checks[] | select(.req == $r)] | length == 0)
         and ([.plans[] | select(any(.reqs[]; . == $r)) | .files[]] | length > 0 and all(test("\\.(md|rst)$")))' "$dir/.vbw/record.json" > /dev/null 2>&1; then
       nock=true
     fi
