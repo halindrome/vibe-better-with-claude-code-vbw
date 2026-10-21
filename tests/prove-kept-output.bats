@@ -8,8 +8,15 @@
 # committed and never written outside .vbw/runtime. L1.
 
 load helper
+load fixture-helper
 
-setup() {
+# The shop project every test plans its own checks on, built once per file.
+setup_file() { fixture_build shop shop_project; }
+setup() { fixture_copy shop; }
+teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
+
+shop_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -34,8 +41,6 @@ setup() {
   printf 'sh tests/lines.sh TEST 40; exit 1\n' > tests/cmd.sh
   git add -A && git commit -q -m "chore(test): shop"
 }
-
-teardown() { vbw_teardown; }
 
 edit_record() {
   jq "$1 | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
