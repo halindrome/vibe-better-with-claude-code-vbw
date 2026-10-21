@@ -12,8 +12,9 @@
 # outside .vbw/runtime. L1: the kernel on a fixture project.
 
 load helper
+load fixture-helper
 
-setup() {
+shop_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -56,7 +57,12 @@ setup() {
   rm -rf "$OUT"
 }
 
+setup_file() { fixture_build shop shop_project; }
+setup() {
+  fixture_copy shop
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 OUT=.vbw/runtime/output
 
