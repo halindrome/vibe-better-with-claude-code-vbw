@@ -7,8 +7,9 @@
 # served-files fingerprint are gone. L1: units are small shell scripts.
 
 load helper
+load fixture-helper
 
-setup() {
+built_project() {
   vbw_setup
   vbw_git_project
   "$VBW" init > /dev/null
@@ -45,7 +46,12 @@ SH
   git commit -q -m "chore(test): units"
 }
 
+setup_file() { fixture_build built built_project; }
+setup() {
+  fixture_copy built
+}
 teardown() { vbw_teardown; }
+teardown_file() { fixture_teardown; }
 
 # jobs N: set check_jobs.
 jobs_set() { "$VBW" config set check_jobs "$1" > /dev/null; }
