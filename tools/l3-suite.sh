@@ -1614,8 +1614,26 @@ scenario_decision() {
     done < <(transcripts | grep '/subagents/')
     [ -n "$dropped" ] || { say "FAIL the deviation was never seeded"; failed=1; }
     check "the user's decision is recorded" 'any(.decisions[]; .text | test("NOTES"; "i"))'
-    expect "QA loaded the recorded decisions" [ "$qa_read" = true ]
-    expect "after the decision, QA passed the phase first time and opened no fix ($after)" [ "$after" = "pass 0" ]
+    # The promise: VBW never undoes the user's decision. Since 2.0.44 a hand-deleted
+    # delivered file is a deviation the session sees, so it may honour the decision in
+    # either of two ways, each with its own checks: keep the requirement under the
+    # decision (QA reads the decisions and passes first time), or withdraw the
+    # requirement that asked for NOTES.md, with the contract approved again after the
+    # decision. Both: NOTES.md stays deleted and no fix is opened after the decision.
+    local restored=false withdrawn reapproved
+    git -C "$dir" cat-file -e HEAD:NOTES.md 2> /dev/null && restored=true
+    expect "NOTES.md stayed deleted: VBW did not undo the user's decision" [ "$restored" = false ]
+    expect "no fix was opened after the decision ($after)" [ "${after##* }" = 0 ]
+    withdrawn=$(jq -r '[.requirements[] | select(.text | test("NOTES"; "i"))] | length == 0' "$dir/.vbw/record.json" 2> /dev/null)
+    if [ "$withdrawn" = true ]; then
+      say "the session withdrew the NOTES.md requirement instead of keeping it under the decision"
+      reapproved=$(jq -r '([.decisions[] | select(.text | test("NOTES"; "i")) | .at] | first) as $d
+        | $d != null and any(.decisions[]; (.text | startswith("Contract approved")) and .at > $d)' "$dir/.vbw/record.json" 2> /dev/null)
+      expect "the contract was approved again after the decision" [ "$reapproved" = true ]
+    else
+      expect "QA loaded the recorded decisions" [ "$qa_read" = true ]
+      expect "after the decision, QA passed the phase first time and opened no fix ($after)" [ "$after" = "pass 0" ]
+    fi
   }
 }
 
