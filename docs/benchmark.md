@@ -374,6 +374,49 @@ cost per correct result = C / P(correct after at most 3 follow-ups)
 
 data-migration names a risk category (data migration), so its floor is `deep` from the start. protected-feature went `deep` in both phases on Sonnet in October.
 
+### The prediction
+
+An estimate, made on 2026-10-21 before any run, for non-ui-pipeline with a Sonnet 5.5 session, Claude Code's default effort, VBW 2's `balanced` profile and automatic rigor, a Claude subscription, and the protocol below. Dollars are `/cost` at list price; a stage's dollars are its share as `predict-run.sh` measures it. A point is the expected value; the range is where one run should land if the model holds. The same numbers are in `tools/baseline/predictions/non-ui-pipeline.json`, which `predict-run.sh report` compares with the runs.
+
+**VBW 2, per stage:**
+
+| Stage | Point | Range | Basis |
+|---|---|---|---|
+| main | $0.65 | $0.45 to $0.95 | $0.47 to $0.80 with the planning workflow on greet.sh, plus about a quarter for four requirements and the mapping hand-off |
+| map | $0.08 | $0.05 to $0.22 | $0.08 now; $0.21 in October on protected-feature |
+| plan | $0.75 | $0.50 to $1.20 | $0.60 to $0.65 on greet.sh, plus about a fifth for a check and rules per requirement; the upper part covers `deep` |
+| build | $0.10 | $0.05 to $0.20 | two or three plans at $0.02 to $0.05, a larger script than greet.sh |
+| mutation | $0.03 | $0.01 to $0.08 | one break per rule at `standard`, six to ten rules |
+| qa | $0.08 | $0.04 to $0.16 | two phases at quick; deep QA at the top |
+| fix | $0.04 | $0 to $0.25 | expected value: a fix round with probability 0.3 at about $0.12; most likely none |
+| close | $0.01 | $0.005 to $0.02 | four to six Haiku close steps |
+| follow-up | $0.20 | $0 to $1.20 | expected value: 0.45 follow-ups at about $0.45; most likely none |
+| unattributed | $0 | -$0.05 to $0.05 | `/cost` not matched to a model in the transcripts |
+| **total** | **$1.94** | **$1.20 to $3.50** | |
+
+**Plain Claude Code, per stage:**
+
+| Stage | Point | Range | Basis |
+|---|---|---|---|
+| main | $0.16 | $0.10 to $0.30 | $0.13 priced in October at today's prices, plus its unrecorded output |
+| follow-up | $0.01 | $0 to $0.30 | expected value: 0.18 follow-ups at about $0.08; most likely none |
+| unattributed | $0 | -$0.02 to $0.02 | |
+| **total** | **$0.17** | **$0.10 to $0.45** | |
+
+**Both sides:**
+
+| Measure | VBW 2 | Plain |
+|---|---|---|
+| tokens, cache reads included | 3.5M (2.5M to 6M) | 0.2M (0.12M to 0.5M) |
+| wall time | 15 min (8 to 35) | 2 min (0.5 to 8) |
+| user inputs | 8 (4 to 15): interview, decisions, approval | 0 (0 to 2) |
+| hidden check fails at the first finish | probability 0.35 | probability 0.15 (assumption 1) |
+| follow-ups | expected 0.45; most likely 0, at most 1 in range | expected 0.18; most likely 0, at most 1 in range |
+| correct after at most three follow-ups | probability 0.93 | probability 0.98 |
+| cost per correct result | $2.09 ($1.25 to $3.80) | $0.17 ($0.10 to $0.46) |
+
+**Ratios:** VBW 2 costs about 11 times plain (range 6 to 20) and about 12 times plain per correct result (range 6 to 22). The ranges are judged directly, not divided from the sides' extremes: both sides run on one machine and one Claude Code version, so their costs move together. In words: both sides most likely pass the hidden check at their first finish and need no follow-up, and the difference, about $1.8, is VBW 2's own work: the router session, the Opus planning, the checks with their mutation step, and QA. One run of the protocol, both sides, should cost about $2.10 at list price.
+
 ### Protocol
 
 1. **One machine, one Claude Code version for both sides** (`DISABLE_AUTOUPDATER=1` while they run), the model `claude-sonnet-5-5`, Claude Code's default effort (no `effortLevel` setting), VBW 2 from this repository's `plugin/` at a named commit, loaded with `--plugin-dir` as `tools/l3.sh` does, with its defaults (`balanced` profile, rigor `auto`). The same login for both sides; the measures record the main conversation's cache lifetime (one hour on a subscription, five minutes with an API key).
