@@ -286,7 +286,7 @@ show_commits_for_req() {
     subject=${line%%$'\x1f'*}
     reqs=${line#*$'\x1f'}
     for r in $(printf '%s' "$reqs" | tr ',' ' '); do
-      [ "$r" = "$req" ] && { printf '  %s\n' "$subject"; break; }
+      [ "$r" = "$req" ] && { vbw_out '  %s\n' "$subject"; break; }
     done
   done < <(git -C "$VBW_ROOT" log --format='%h %s%x1f%(trailers:key=VBW-Req,valueonly,separator=%x2C)' 2>/dev/null)
 }

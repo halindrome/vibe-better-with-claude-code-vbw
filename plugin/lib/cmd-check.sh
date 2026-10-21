@@ -25,9 +25,9 @@ cmd_check() {
   [ "$results" != "{}" ] || vbw_die "no checks to run"
   local key line status
   while IFS=$'\x1f' read -r key status line; do
-    printf '%s\n' "$line"
+    vbw_out '%s\n' "$line"
     if [ $red -eq 0 ] && { [ "$status" = fail ] || [ "$status" = timeout ]; } && [ -f "$VBW_ROOT/$(checks_kept check "$key")" ]; then
-      printf '  full output: %s\n' "$(checks_kept check "$key")"
+      vbw_out '  full output: %s\n' "$(checks_kept check "$key")"
     fi
   done < <(printf '%s' "$results" | jq -r --argjson red "$red" 'to_entries[]
     | "\(.key)\u001f\(.value.status)\u001f" + (if $red == 1 then

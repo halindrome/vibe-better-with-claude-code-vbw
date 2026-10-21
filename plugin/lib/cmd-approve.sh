@@ -115,7 +115,7 @@ approve_problems() {
     (. as $r | .requirements[] | select(.proof == "auto" and (.rules // null) == [] and (doc_only($r) | not))
       | "\(.id) has no rules listed (vbw apply with rules)")'
   while IFS= read -r -d '' f; do
-    [ -f "$VBW_ROOT/$f" ] || printf 'check file missing: %s\n' "$f"
+    [ -f "$VBW_ROOT/$f" ] || vbw_out 'check file missing: %s\n' "$f"
   done < <(printf '%s' "$1" | jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"')
 }
 
@@ -133,6 +133,6 @@ approve_commands() {
       < <(printf '%s' "$1" | jq -j --arg n "$name" '.commands[$n][] + "\u0000"')
     consent_grant command "$(vbw_sha256_argv "${argv[@]}")" \
       "$(printf '%s' "$1" | jq -c --arg n "$name" '{name: $n, argv: .commands[$n]}')"
-    printf 'approved command %s: %s\n' "$name" "${argv[*]}"
+    vbw_out 'approved command %s: %s\n' "$name" "${argv[*]}"
   done < <(printf '%s' "$1" | jq -j '.commands | keys[] | . + "\u0000"')
 }

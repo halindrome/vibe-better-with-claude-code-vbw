@@ -115,7 +115,7 @@ qa_pass_commit() {
   [ -n "$tree" ] || return 0
   while IFS= read -r c; do
     if git -C "$VBW_ROOT" show "$c:.vbw/record.json" 2> /dev/null | jq -e --arg p "$1" --slurpfile q <(printf '%s' "$2") 'any(.phases[]; .id == $p and .qa == $q[0])' > /dev/null 2>&1; then
-      printf '%s\n' "$c"
+      vbw_out '%s\n' "$c"
       return 0
     fi
   done < <(git -C "$VBW_ROOT" log --reverse --format=%H -S"$tree" -- .vbw/record.json 2> /dev/null)

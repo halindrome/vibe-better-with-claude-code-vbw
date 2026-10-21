@@ -103,7 +103,7 @@ proofcopy_make() {
       case "$t" in /*) t=$(cd -P "$(dirname "$t")" 2> /dev/null && printf '%s/%s' "$(pwd -P)" "$(basename "$t")") || t=$(readlink "$copy/$l") ;; esac
       # A link into .vbw (an old proof copy) is the stale-link scan's to report.
       case "$t" in "$real"/.vbw | "$real"/.vbw/*) ;; "$real" | "$real"/*)
-        printf 'vbw: %s links into the working folder (%s); it is copied as a link\n' "$l" "$(readlink "$copy/$l")" >&2 ;;
+        vbw_out 'vbw: %s links into the working folder (%s); it is copied as a link\n' "$l" "$(readlink "$copy/$l")" >&2 ;;
       esac
     done < <(cd "$copy" && find "$p" -type l -print0)
   done < <(git -C "$VBW_ROOT" ls-files -z --others --ignored --exclude-standard --directory)
@@ -125,7 +125,7 @@ proofcopy_warn_stale() {
     d=$n; while [ ! -d "$d" ] && [ "$d" != / ]; do d=$(dirname "$d"); done
     r=$(cd -P "$d" 2> /dev/null && pwd -P)${n#"$d"}
     case "$n:$r" in "$VBW_ROOT/.vbw/runtime/proof."* | "$real/.vbw/runtime/proof."* | *":$real/.vbw/runtime/proof."*)
-      printf 'vbw: %s -> %s points into a proof copy of an earlier run; %s\n' "${l#./}" "$t" "$fix" >&2 ;;
+      vbw_out 'vbw: %s -> %s points into a proof copy of an earlier run; %s\n' "${l#./}" "$t" "$fix" >&2 ;;
     esac
   done < <(cd "$VBW_ROOT" && find . \( -name .git -o -path ./.vbw \) -prune -o -type l -print0 2> /dev/null)
 }

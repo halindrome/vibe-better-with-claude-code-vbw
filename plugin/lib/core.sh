@@ -2,8 +2,22 @@
 # Shared helpers for the vbw kernel. Sourced by bin/vbw; never executed alone.
 # Exit codes: 0 ok, 1 error, 2 usage, 3 corrupt record, 4 record written by a newer VBW.
 
+# vbw_out FORMAT [ARG...]: printf, run in a child of its own. A shell with a
+# live child (the producer of a loop fed by a process substitution) never writes
+# with a builtin itself: macOS /bin/bash 3.2 catches SIGCHLD without SA_RESTART,
+# so a write waiting for a slow reader (a full pipe) fails with EINTR when that
+# child exits, and its text is lost. The subshell has no child and no trap of
+# its own, so nothing interrupts its write. tools/check-loop-writes.sh keeps
+# every such loop to it (tests/output-child-exit.bats).
+vbw_out() {
+  # shellcheck disable=SC2059 # the caller's format, as printf's own
+  (printf "$@")
+}
+
+# vbw_die MESSAGE [CODE]: say why, clean up, exit CODE (default 1). It can run
+# anywhere, a loop's body included, so it says it through vbw_out.
 vbw_die() {
-  printf 'vbw: %s\n' "$1" >&2
+  vbw_out 'vbw: %s\n' "$1" >&2
   vbw_guard_run
   if [ -n "${VBW_DIE_HOOK:-}" ]; then local h=$VBW_DIE_HOOK; VBW_DIE_HOOK=; "$h" || true; fi
   exit "${2:-1}"
@@ -78,8 +92,7 @@ vbw_guard_drop() {
 }
 
 vbw_usage_error() {
-  printf 'vbw: %s\n' "$1" >&2
-  printf 'usage: vbw <command> [args]   (vbw help for the list)\n' >&2
+  vbw_out 'vbw: %s\nusage: vbw <command> [args]   (vbw help for the list)\n' "$1" >&2
   exit 2
 }
 

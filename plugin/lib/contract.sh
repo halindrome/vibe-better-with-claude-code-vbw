@@ -7,14 +7,17 @@
 
 # contract_hash RECORD_JSON: SHA-256 over a canonical rendering of the contract.
 # Each file contributes its path and its content digest ("missing" if absent).
+# The paths are piped into the loop, which writes every byte the hash reads (its
+# own and vbw_sha256's): run in a child, the loop has no live child of its own
+# whose exit could interrupt a write (vbw_out, core.sh), and costs nothing per file.
 contract_hash() {
   local f
   {
     contract_core "$1"
-    while IFS= read -r -d '' f; do
+    printf '%s' "$1" | jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"' | while IFS= read -r -d '' f; do
       printf '\0%s\0' "$f"
       if [ -f "$VBW_ROOT/$f" ]; then vbw_sha256 < "$VBW_ROOT/$f"; else printf 'missing\n'; fi
-    done < <(printf '%s' "$1" | jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"')
+    done
   } | vbw_sha256
 }
 

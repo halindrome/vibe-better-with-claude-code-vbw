@@ -181,7 +181,7 @@ cmd_fix() {
     causes=
     [ -n "$wait_files" ] || causes=$(proofcauses_find "$record" 0 "$head" fix)
     while IFS= read -r c; do
-      [ -z "$c" ] || printf 'every candidate check runs: %s\n' "$c"
+      [ -z "$c" ] || vbw_out 'every candidate check runs: %s\n' "$c"
     done < <(printf '%s\n' "$causes")
     # shellcheck disable=SC2034 # read by proofreuse_judge
     PROOFREUSE_STORE=$(proofreuse_store_read)
@@ -189,7 +189,7 @@ cmd_fix() {
       [ -n "$c" ] || continue
       if printf '%s\n' "$held" | grep -qx -- "$c"; then
         # A check a fix added waits for the user's approval: the fix closes with the approved checks.
-        printf '%s waits for the user'"'"'s approval (a check %s added: %s); vbw next asks, then vbw prove runs it\n' "$c" \
+        vbw_out '%s waits for the user'"'"'s approval (a check %s added: %s); vbw next asks, then vbw prove runs it\n' "$c" \
           "$(printf '%s' "$record" | jq -r --arg c "$c" '.checks[] | select(.id == $c) | .fix')" \
           "$(printf '%s' "$record" | jq -r --arg c "$c" '.checks[] | select(.id == $c) | .files | join(", ")')"
         continue
@@ -200,7 +200,7 @@ cmd_fix() {
         printf '%s' "$record" | jq -e --arg c "$c" --arg f "$wf" 'any(.checks[]; .id == $c and ((.files // []) | index($f)))' > /dev/null && mine="$mine${mine:+, }$wf"
       done <<< "$wait_files"
       if [ -n "$mine" ]; then
-        printf '%s waiting for approval (check files new or changed since the approval: %s); vbw next asks, then vbw prove runs it\n' "$c" "$mine"
+        vbw_out '%s waiting for approval (check files new or changed since the approval: %s); vbw next asks, then vbw prove runs it\n' "$c" "$mine"
         continue
       fi
       cands+=("$c")

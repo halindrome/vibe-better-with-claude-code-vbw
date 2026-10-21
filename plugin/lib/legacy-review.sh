@@ -13,10 +13,10 @@
 legacy_review_rows() {
   local root=$1 plan pdir base p f ct=
   while IFS= read -r -d '' plan; do
-    if [ ! -s "$plan" ] || [ ! -r "$plan" ]; then printf 'U\t%s\n' "${plan#"$root"/}"; continue; fi
+    if [ ! -s "$plan" ] || [ ! -r "$plan" ]; then vbw_out 'U\t%s\n' "${plan#"$root"/}"; continue; fi
     pdir=${plan%/*}; base=${plan##*/}
     if [ -s "$pdir/${base%-PLAN.md}-SUMMARY.md" ]; then p=1; else p=0; fi
-    printf 'P\t%s\t%s\n' "${pdir#"$root/$VBW_LEGACY/"}" "$p"
+    vbw_out 'P\t%s\t%s\n' "${pdir#"$root/$VBW_LEGACY/"}" "$p"
     awk 'NR == 1 { if ($0 != "---") exit; next } $0 == "---" { exit }
       /^[[:space:]]*files_modified:/ { on = 1; next }
       on && /^[[:space:]]*-[[:space:]]+/ { sub(/^[[:space:]]*-[[:space:]]+/, ""); gsub(/["'"'"']/, ""); sub(/\/$/, ""); print; next }
@@ -33,7 +33,7 @@ legacy_review_rows() {
   fi
   if [ -z "$ct" ]; then
     while IFS= read -r -d '' f; do
-      printf 'T\t%s\n' "$(vbw_mtime "$f")"
+      vbw_out 'T\t%s\n' "$(vbw_mtime "$f")"
     done < <(find "$root/$VBW_LEGACY" -type f -print0 2> /dev/null)
   else
     printf 'T\t%s\n' "$ct"

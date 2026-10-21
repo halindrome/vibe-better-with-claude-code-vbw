@@ -59,7 +59,7 @@ proofsteps_command_names() {
     argv=()
     while IFS= read -r -d '' a; do argv+=("$a"); done \
       < <(printf '%s' "$1" | jq -j --arg n "$name" '.commands[$n][] + "\u0000"')
-    if consent_has command "$(vbw_sha256_argv "${argv[@]}")"; then printf '%s\n' "$name"; fi
+    if consent_has command "$(vbw_sha256_argv "${argv[@]}")"; then vbw_out '%s\n' "$name"; fi
   done < <(printf '%s' "$1" | jq -j --argjson t "$2" '.commands | keys[] | select(. as $k | $t | index($k)) | . + "\u0000"')
 }
 
