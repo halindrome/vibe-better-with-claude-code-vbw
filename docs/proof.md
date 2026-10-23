@@ -942,6 +942,18 @@ When nothing ran, both lines still print:
 ran again: 0 of 52 units; top reasons: none
 ```
 
+**Before the first unit runs.** `vbw prove` prints the same count in the future
+tense as its first line, from the plan (the reuse rule and the whole-proof
+causes), so a long proof says why before anyone waits for it:
+
+```text
+run again: 52 of 52 units; top reasons: plugin/lib/core.sh changed (41), definition changed (7), never passed (4)
+```
+
+It counts and ranks the reasons exactly as the closing line does. `vbw next
+--json` carries the top reason as `step.why` and ends the proof's `step.say`
+with it ([the step](next.md#the-step)).
+
 The steps stay in the evidence as `evidence.own` and the whole-proof causes as
 `evidence.causes` (docs/record.md). `vbw show evidence` prints them.
 

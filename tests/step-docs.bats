@@ -68,4 +68,7 @@ section() { sed -n '/^## Time left/,/^## /p' "$PANEL" | sed '$d'; }
 @test "R190: docs/next.md describes the step vbw next --json carries" {
   grep -qF 'step.say' "$NEXT" || grep -qF '"say"' "$NEXT" || { echo "docs/next.md does not describe step.say"; false; }
   grep -qiE 'no end time yet' "$NEXT" || { echo "docs/next.md does not show the no-basis sentence"; false; }
+  # A proof's step carries the reason most units run again (R202), and its sentence ends with it.
+  grep -qF '"reason": "plugin/lib/core.sh changed"' "$NEXT" || { echo "docs/next.md does not show step.why"; false; }
+  grep -qF '; top reason: ' "$NEXT" || { echo "docs/next.md does not show the sentence's top reason"; false; }
 }
