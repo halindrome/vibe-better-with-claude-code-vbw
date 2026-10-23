@@ -2,7 +2,11 @@
 # The one reuse rule of vbw prove and vbw fix done (docs/proof.md, R166) and
 # the clone's store of recorded runs. A unit (a check, a project command or a
 # test file) is run again only when something it depends on changed; its read
-# list, written down by the run itself, says what it depends on.
+# list, written down by the run itself, says what it depends on. A check
+# depends as well on what the contract ties it to: the files of its
+# requirement's plans. One of them added or deleted runs the check again whether
+# or not it read the file, since a check may test whether a path exists without
+# opening it (R168); the read list cannot see such a test.
 #
 # Planning and saving work on all the units of a proof at once (R202): the
 # fingerprints of the units' definitions come from one pass, the rule is one jq
@@ -27,6 +31,10 @@ PROVE_FLAT='map_values(if $off or (.reads | type) != "object" then . + {reads: n
 #   file:    the same, with the form's argv for that test file.
 PROOFREUSE_FPS=${PROOFREUSE_FPS:-'{}'}
 PROOFREUSE_FPS_RECORD=${PROOFREUSE_FPS_RECORD-}
+# What the contract ties each check to: "check:ID" -> the files of the plans of
+# the check's requirement (each entry a path, a folder ending in "/", or "*"),
+# from the same pass over the record as the fingerprints (empty until one ran).
+PROOFREUSE_TIES=${PROOFREUSE_TIES:-'{}'}
 # The reuse planning's per-process caches: the diffs between every recorded tree and the
 # committed code (valid for one store and one head), and the store itself.
 PROOFREUSE_DIFFS=${PROOFREUSE_DIFFS-}
@@ -72,16 +80,28 @@ proofreuse_scratch() {
   mktemp -d "$VBW_RUNTIME/reuse.XXXXXX" || vbw_die "cannot create a temporary folder in $VBW_RUNTIME"
 }
 
+# proofreuse_ties RECORD: what the contract ties each check to, as a JSON object
+# "check:ID" -> the files of the plans of the check's requirement (the entries as
+# the plans list them: a path, a folder ending in "/", or "*"). A check judges
+# what its requirement's plans deliver, so one of those files added or deleted
+# runs it again whether or not its run read the file (the rule's tie clause).
+proofreuse_ties() {
+  printf '%s' "$1" | jq -c '. as $r | [(.checks // [])[] | {key: ("check:" + .id),
+    value: (.req as $q | [$r.plans[]? | select(any(.reqs[]?; . == $q)) | .files[]? | strings] | unique)}] | from_entries'
+}
+
 # proofreuse_fps_need RECORD KEYS: makes sure PROOFREUSE_FPS has the fingerprint
 # of each unit key in KEYS (a JSON array); call it in the current shell, not in a
 # pipe, so the map stays. The missing ones are computed
 # in one pass (one jq, one sha256 process, one jq) whatever their number. A
-# record that differs from the one the map came from starts the map again.
+# record that differs from the one the map came from starts the map again, and
+# sets PROOFREUSE_TIES from that record.
 proofreuse_fps_need() {
   local dir n=0 key mode cnt i f fields=()
   if [ "$PROOFREUSE_FPS_RECORD" != "$1" ]; then
     PROOFREUSE_FPS='{}'
     PROOFREUSE_FPS_RECORD=$1
+    PROOFREUSE_TIES=$(proofreuse_ties "$1")
   fi
   dir=$(proofreuse_scratch)
   vbw_guard_add dir "$dir"
@@ -305,7 +325,9 @@ proofreuse_diffs() {
 
 # The one reuse rule over every unit at once. Input (all through --slurpfile):
 # $keys (array of unit keys), $st (the store), $fps (key -> fingerprint), $df
-# (the diffs of proofreuse_diffs) and $off (a reason that stops all reuse, or "").
+# (the diffs of proofreuse_diffs), $tied (what the contract ties each check to,
+# proofreuse_ties) and $off (a reason that stops all reuse, or ""). It runs
+# after VBW_JQ_DEFS (covers: a plan's file entry against a path).
 # Per unit, in order: the reason it must run ({key, why}) or its reused result
 # ({key, result}); a unit that passed its other tests but whose diff adds or
 # removes a file carries {pending: the listed folders with a fingerprint}, which
@@ -332,8 +354,11 @@ PROOFREUSE_RULE_JQ='def parent: if test("/") then sub("/[^/]*$"; "") else "." en
                 else
                   ($e.reads | map({key: ., value: true}) | from_entries) as $reads
                   | [($e.dirs // [])[] | strings] as $plain
+                  | ($tied[0][$k] // []) as $tie
                   | (([$ch[] | select($reads[.p]) | if .s == "D" then "\(.p) deleted" else "\(.p) changed" end]
-                      + [$ch[] | select(.s == "A" or .s == "D") | (.p | parent) as $d | select($plain | index($d)) | "\($d) listing changed"])
+                      + [$ch[] | select(.s == "A" or .s == "D") | (.p | parent) as $d | select($plain | index($d)) | "\($d) listing changed"]
+                      + [$ch[] | select(.s == "A" or .s == "D") | select(.p as $p | any($tie[]; . == "*" or covers($p)))
+                          | if .s == "D" then "\(.p) deleted" else "\(.p) added" end])
                      | first // null) as $r2
                   | if $r2 != null then {key: $k, why: $r2}
                     elif any($ch[]; .s == "A" or .s == "D") then
@@ -364,13 +389,14 @@ PROOFREUSE_SETTLE_JQ='$s[0].units | map(. as $u
     | if $w != null then {key: $u.key, why: $w} else del(.pending) end)'
 
 # proofreuse_judge KEYS HEAD OFF [ANY]: the one reuse rule applied to the units KEYS
-# (a JSON array of unit keys) against PROOFREUSE_STORE and PROOFREUSE_FPS, on the
-# committed code HEAD; OFF is a reason that stops all reuse (then neither git nor
-# the store's diffs are consulted). Prints [{key, why} | {key, result}] in KEYS'
-# order: why is what proofreuse_reason prints, result the stored run as a reused
-# result (it keeps the time it really ran, and its read list for the next proof).
-# ANY 1: a failed run is judged like a passing one (the rule's other clauses apply
-# whatever the status), for a caller that wants the read list of a run, not its pass.
+# (a JSON array of unit keys) against PROOFREUSE_STORE, PROOFREUSE_FPS and
+# PROOFREUSE_TIES, on the committed code HEAD; OFF is a reason that stops all reuse
+# (then neither git nor the store's diffs are consulted). Prints [{key, why} |
+# {key, result}] in KEYS' order: why is what proofreuse_reason prints, result the
+# stored run as a reused result (it keeps the time it really ran, and its read
+# list for the next proof). ANY 1: a failed run is judged like a passing one (the
+# rule's other clauses apply whatever the status), for a caller that wants the
+# read list of a run, not its pass.
 proofreuse_judge() {
   local dir diffs='{}' n=0 path bytes need
   if [ -z "$3" ] && [ -n "$2" ]; then
@@ -380,7 +406,8 @@ proofreuse_judge() {
   dir=$(proofreuse_scratch)
   vbw_guard_add dir "$dir"
   jq -nc --slurpfile keys <(printf '%s' "$1") --slurpfile st <(printf '%s' "${PROOFREUSE_STORE-}") --slurpfile fps <(printf '%s' "$PROOFREUSE_FPS") \
-    --slurpfile df <(printf '%s' "$diffs") --arg off "$3" --argjson any "${4:-0}" "$PROOFREUSE_RULE_JQ" > "$dir/stage1" || { vbw_guard_drop "$dir"; vbw_die "internal error: the reuse rule failed"; }
+    --slurpfile df <(printf '%s' "$diffs") --slurpfile tied <(printf '%s' "$PROOFREUSE_TIES") --arg off "$3" --argjson any "${4:-0}" \
+    "$VBW_JQ_DEFS$PROOFREUSE_RULE_JQ" > "$dir/stage1" || { vbw_guard_drop "$dir"; vbw_die "internal error: the reuse rule failed"; }
   printf '{}' > "$dir/folders"
   need=$(jq -c '.need' "$dir/stage1")
   if [ "$need" != '[]' ]; then
@@ -402,29 +429,32 @@ proofreuse_judge() {
   vbw_guard_drop "$dir"
 }
 
-# proofreuse_reason KEY FP HEAD: the one reuse rule for one unit (a front over
-# proofreuse_judge). Succeeds, printing nothing, when the unit's pass may be
+# proofreuse_reason KEY FP HEAD [RECORD]: the one reuse rule for one unit (a front
+# over proofreuse_judge). Succeeds, printing nothing, when the unit's pass may be
 # reused: its last result passed, its definition fingerprint FP is unchanged, it
 # has a read list and did not read through git, and one git diff-tree between
 # the tree it ran on and the committed code HEAD shows no file of its read list
-# changed or deleted and no listed folder whose listing changed (a file or
+# changed or deleted, no listed folder whose listing changed (a file or
 # sub-folder added or removed directly inside it; a folder recorded without a
-# fingerprint is judged by the changed files' parents). Otherwise fails and
+# fingerprint is judged by the changed files' parents) and, for a check given its
+# RECORD, no file of its requirement's plans added or deleted. Otherwise fails and
 # prints the reason. Reads the store from PROOFREUSE_STORE (a JSON text).
 proofreuse_reason() {
-  local PROOFREUSE_FPS verdict why
+  local PROOFREUSE_FPS PROOFREUSE_TIES="$PROOFREUSE_TIES" verdict why
   PROOFREUSE_FPS=$(jq -nc --arg k "$1" --arg fp "$2" '{($k): $fp}')
+  [ $# -lt 4 ] || PROOFREUSE_TIES=$(proofreuse_ties "$4")
   verdict=$(proofreuse_judge "$(jq -nc --arg k "$1" '[$k]')" "$3" "") || return 1
   why=$(printf '%s' "$verdict" | jq -r '.[0].why // empty')
   [ -z "$why" ] || { printf '%s\n' "$why"; return 1; }
 }
 
-# proofreuse_current KEY FP HEAD: like proofreuse_reason, but a run that failed is
-# current too (the one reuse rule, whatever the status). Succeeds printing nothing
-# when the stored run is current; else prints the reason and fails.
+# proofreuse_current KEY FP HEAD [RECORD]: like proofreuse_reason, but a run that
+# failed is current too (the one reuse rule, whatever the status). Succeeds printing
+# nothing when the stored run is current; else prints the reason and fails.
 proofreuse_current() {
-  local PROOFREUSE_FPS verdict why
+  local PROOFREUSE_FPS PROOFREUSE_TIES="$PROOFREUSE_TIES" verdict why
   PROOFREUSE_FPS=$(jq -nc --arg k "$1" --arg fp "$2" '{($k): $fp}')
+  [ $# -lt 4 ] || PROOFREUSE_TIES=$(proofreuse_ties "$4")
   verdict=$(proofreuse_judge "$(jq -nc --arg k "$1" '[$k]')" "$3" "" 1) || return 1
   why=$(printf '%s' "$verdict" | jq -r '.[0].why // empty')
   [ -z "$why" ] || { printf '%s\n' "$why"; return 1; }

@@ -25,7 +25,9 @@ DOC="$REPO_ROOT/docs/proof.md"
 @test "R168: docs/proof.md lists no added or deleted file as a cause: such a file re-runs only the units that listed its folder or read it" {
   ! grep -qF 'and no recorded run read it or listed its folder' "$DOC" || { grep -n 'no recorded run read it' "$DOC"; false; }
   ! grep -qF 'no recorded run read them or listed their folders' "$DOC" || { grep -n 'listed their folders' "$DOC"; false; }
-  grep -qF 're-runs only the units that listed its folder or read it' "$DOC"
+  grep -qF 're-runs the units that listed its folder or read it' "$DOC"
+  grep -qF 'checks of the requirement whose plans list it, nothing else' "$DOC"
+  grep -qF 'unless a plan of the check'"'"'s requirement lists it' "$DOC"
 }
 
 @test "R168: docs/proof.md lists a file system that cannot record reads and no earlier run in the clone, with their messages, and a proof cut short as no cause" {

@@ -144,10 +144,14 @@ tf_run() {
   line 'tests/t_b\.sh' | grep -q 'ran: last result failed' || { echo "$output"; false; }
 }
 
-@test "R167: deleting a file a test file read runs that test file" {
+@test "R167: deleting a file a test file read runs that test file, and the check of the requirement whose plan delivers it (R168)" {
   git rm -q src/a.txt && git commit -q -m "feat: drop a"
   vbw_run prove
-  [ "$(ran)" = "t_a " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  # t_a read src/a.txt. C1 (tests/t_k.sh) never did, but P1.1 (R1) delivers it, so the contract ties C1 to it.
+  [ "$(ran)" = "t_a t_k " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +tests/t_a\.sh fail .*ran: src/a\.txt deleted' || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +C1 pass .*ran: src/a\.txt deleted' || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +tests/t_b\.sh pass .*reused' || { echo "$output"; false; }
 }
 
 @test "R167: adding a file to a folder a test file listed runs that test file" {

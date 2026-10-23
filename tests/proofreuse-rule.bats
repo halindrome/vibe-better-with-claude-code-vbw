@@ -3,8 +3,10 @@
 # runs ($(git common dir)/vbw/runs.json). A unit's pass is reused only when its
 # last result passed, its definition is unchanged, it has a read list and did
 # not read through git, and the diff between the code it ran on and the
-# committed code touches no file it read and adds or removes no file in a
-# folder it listed. Every other case returns its reason. L1.
+# committed code touches no file it read, adds or removes no file in a folder
+# it listed and, for a check, adds or removes no file of its requirement's plans
+# (R168: a check may test whether a path exists without opening it, so the
+# contract's ties count, read or not). Every other case returns its reason. L1.
 
 load helper
 load fixture-helper
@@ -236,6 +238,52 @@ reason() {
   run pr 'proofreuse_plan '"'$rec'"' 1; jq -nc --argjson r "$REUSE_CHECKS" --argjson w "$WHY_CHECKS" --argjson c "$WHY_COMMANDS" "{reused: (\$r | keys), why: \$w, commands: \$c, todo: \"${TODO_CHECKS[*]}\"}"'
   [ "$status" -eq 0 ]
   [ "$output" = '{"reused":["C1"],"why":{"C2":"src/b.txt changed","C3":"never passed"},"commands":{"test":"no read list"},"todo":"C2 C3"}' ]
+}
+
+# plan_verdict REC: proofreuse_plan under the record REC: the reused checks and why the others run.
+plan_verdict() {
+  pr 'proofreuse_plan '"'$1'"'; jq -nc --argjson r "$REUSE_CHECKS" --argjson w "$WHY_CHECKS" "{reused: (\$r | keys), why: \$w}"'
+}
+
+# tied REC: C1 ran on the current commit and read src/a.txt only; REC's plans say what its requirement delivers.
+tied() {
+  pr 'proofreuse_save '"'$1'"' "{\"C1\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[\"src/a.txt\"],\"dirs\":[]}}" "{}" "$(vbw_head_tree)" N'
+}
+
+@test "R168: a deleted file of its requirement's plans runs a check again though it never read it: a check may test whether a path exists" {
+  rec='{"checks":[{"id":"C1","req":"R1","run":["true"]}],"plans":[{"id":"P1.1","reqs":["R1"],"files":["src/b.txt"]}],"commands":{}}'
+  tied "$rec"
+  git rm -q src/b.txt && git commit -q -m "chore(test): drop b"
+  run plan_verdict "$rec"
+  [ "$output" = '{"reused":[],"why":{"C1":"src/b.txt deleted"}}' ] || { echo "$output"; false; }
+  # The one-unit front gives the same answer when it is given the record.
+  run pr 'PROOFREUSE_STORE=$(proofreuse_store_read); proofreuse_current check:C1 "$(proofreuse_check_fp '"'$rec'"' C1)" "$(vbw_head_tree)" '"'$rec'"
+  [ "$status" -eq 1 ] && [ "$output" = "src/b.txt deleted" ] || { echo "$status: $output"; false; }
+}
+
+@test "R168: an added file of its requirement's plans runs the check again, through a folder entry or *; an exact entry elsewhere ties nothing" {
+  rec='{"checks":[{"id":"C1","req":"R1","run":["true"]}],"plans":[{"id":"P1.1","reqs":["R1"],"files":["src/lib/"]}],"commands":{}}'
+  tied "$rec"
+  printf 'n\n' > src/lib/new.txt
+  git add src/lib/new.txt && git commit -q -m "chore(test): add"
+  run plan_verdict "$rec"
+  [ "$output" = '{"reused":[],"why":{"C1":"src/lib/new.txt added"}}' ] || { echo "$output"; false; }
+  run plan_verdict "$(printf '%s' "$rec" | jq -c '.plans[0].files = ["*"]')"
+  [ "$output" = '{"reused":[],"why":{"C1":"src/lib/new.txt added"}}' ] || { echo "$output"; false; }
+  run plan_verdict "$(printf '%s' "$rec" | jq -c '.plans[0].files = ["src/lib/l.txt"]')"
+  [ "$output" = '{"reused":["C1"],"why":{}}' ] || { echo "$output"; false; }
+}
+
+@test "R168: a content change to a file of its requirement's plans the check did not read, or a file deleted from another requirement's plans, keeps the reuse" {
+  rec='{"checks":[{"id":"C1","req":"R1","run":["true"]}],"plans":[{"id":"P1.1","reqs":["R1"],"files":["src/b.txt"]},{"id":"P2.1","reqs":["R2"],"files":["docs/d.txt"]}],"commands":{}}'
+  tied "$rec"
+  printf 'b2\n' > src/b.txt
+  git commit -q -am "chore(test): edit b"
+  run plan_verdict "$rec"
+  [ "$output" = '{"reused":["C1"],"why":{}}' ] || { echo "$output"; false; }
+  git rm -q docs/d.txt && git commit -q -m "chore(test): drop d"
+  run plan_verdict "$rec"
+  [ "$output" = '{"reused":["C1"],"why":{}}' ] || { echo "$output"; false; }
 }
 
 @test "proving again with nothing committed reuses nothing" {

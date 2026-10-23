@@ -10,9 +10,11 @@
   of files". No check could: a check sees a file by listing its folder (VBW
   records the listing), by reading it, or through git (always re-run). Two
   images added to a README cost a full check run of every unit. Such a file
-  now re-runs only the units that could see it, as every other change does; a
-  check that only tests whether a path exists, without opening it or listing
-  its folder, is the documented limit it always was.
+  now re-runs only the units that could see it, as every other change does,
+  and the checks of the requirement whose plans list it: a check may test
+  whether a path exists without opening it, and the contract knows what each
+  requirement's plans deliver. A path outside those plans that a check only
+  tests for is the documented limit it always was.
 - **A proof cut short no longer re-runs every check next time.** An
   interrupted proof saves nothing, or complete per-unit results, so the next
   proof reuses what the read lists allow, as if the interrupted one had not

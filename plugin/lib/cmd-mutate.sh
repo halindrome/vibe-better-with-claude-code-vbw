@@ -72,7 +72,7 @@ mutate_rule_none() {
   PROOFREUSE_STORE=$(proofreuse_store_read)
   tree=$(vbw_head_tree) || vbw_die "cannot fingerprint the committed code"
   fp=$(proofreuse_check_fp "$record" "$check")
-  if proofreuse_current "check:$check" "$fp" "$tree" > /dev/null; then
+  if proofreuse_current "check:$check" "$fp" "$tree" "$record" > /dev/null; then
     :
   else
     noreads=$(reads_probe "$VBW_RUNTIME" 2>&1) || true

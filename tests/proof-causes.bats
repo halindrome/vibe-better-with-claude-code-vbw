@@ -6,8 +6,10 @@
 # what runs through it (each unit by its own definition), and a file every test
 # file reads re-runs those files and nothing else. A content change to a file no
 # recorded run read makes nothing run, and so does a file added or deleted that
-# no recorded run read or listed the folder of: no run could see it. A proof cut
-# short saved nothing, so the next proof reuses as if it had not run. Every
+# no recorded run read or listed the folder of: no run could see it, unless a
+# plan of the check's requirement lists the file (a check may test whether a
+# path exists without opening it): then that check runs again, and only it. A
+# proof cut short saved nothing, so the next proof reuses as if it had not run. Every
 # summary, full or not, prints "checks: N ran, M reused" and "test files: N ran,
 # M reused"; one cause is one "ran everything:" line, several are listed one per
 # line. Scripts log their runs to $RANLOG. L1.
@@ -145,6 +147,20 @@ nothing_global() { ! printf '%s\n' "$output" | grep -q 'ran everything' || { ech
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(ran)" = "" ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  nothing_global
+}
+
+@test "R168: a deleted file of the check's requirement's plans runs that check again though no run read it: a check may test whether a path exists" {
+  # P1.1 (R1) delivers src/unread.txt as well; C1 never read it, and no other run did.
+  edit_record '.plans[0].files += ["src/unread.txt"]'
+  git add -A && git commit -q -m "chore(vbw): plan files"
+  "$VBW" approve > /dev/null
+  git rm -q src/unread.txt && git commit -q -m "feat: drop unread"
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(ran)" = "C1 " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +C1 pass .*ran: src/unread\.txt deleted' || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +tests/t_a\.sh pass .*reused' || { echo "$output"; false; }
   nothing_global
 }
 
