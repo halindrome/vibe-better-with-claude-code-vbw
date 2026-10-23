@@ -55410,6 +55410,11 @@
       "text": "2.1.0 scope: T174, T177, T178, T136, T120, docs/known-issues.md and docs/ideas.md, the macOS CI failures and the Linux batch, every real-user scenario once, then the release; after 2.1.0 on the public roadmap: T141, T168, T172, T173, T175, T176, T10, T94",
       "why": "owner confirmed 2026-10-20 23:58 (moved T173 and T10 after 2.1.0); fast mode as for 2.0.41: proof, release run and real-user runs kept, deep ceremony dropped",
       "at": "2026-10-20T22:54:46Z"
+    },
+    {
+      "id": "D492",
+      "at": "2026-10-23T16:56:39Z",
+      "text": "Contract approved: 193 requirements, 449 checks, 506 plans (a7e81bdca456)"
     }
   ],
   "commands": {
