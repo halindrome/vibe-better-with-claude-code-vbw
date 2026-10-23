@@ -35,7 +35,8 @@ and never a suggestion you declined (see [triage](triage.md)).
 The kernel stores the recommendation in the project record
 (`.vbw/record.json`, field `recommendation`) with the time it was written, and
 commits the record (`chore(vbw): what's next`), so a ship leaves the project
-clean; your own staged files stay staged. One is kept: a new one replaces the old one. The kernel refuses a malformed one,
+clean; your own staged files stay staged. One is kept: a new one replaces the old one,
+and `vbw ship` removes it, because it was written for the work before the ship. The kernel refuses a malformed one,
 or a pick whose todo or requirement is not open, and says what is wrong. A
 stored recommendation raises the record schema to 3 (see
 [record.md](record.md)).
@@ -62,5 +63,6 @@ It costs one Architect run. When nothing is open (no open requirement, empty
 backlog), no Architect runs and the recommendation says the backlog is empty.
 
 If the Architect fails, or the kernel refuses the result, VBW says so in one
-line. The earlier recommendation stays, and a ship that came first stays
-shipped.
+line. A ship that came first stays shipped, and What's next shows no pick until
+you ask (`/vbw:vibe what's next`); when you asked, the earlier recommendation
+stays.
