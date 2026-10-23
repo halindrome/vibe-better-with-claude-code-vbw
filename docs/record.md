@@ -3,7 +3,10 @@
 The single machine-readable answer to "what are we building, what is proven,
 what is next". Only the kernel (`vbw`) writes it. Humans edit `.vbw/spec.md`;
 agents act through `vbw` subcommands. Git holds the history: every VBW commit
-carries `VBW-Plan:`/`VBW-Req:` trailers, so the record stays small.
+carries `VBW-Plan:`/`VBW-Req:` trailers, so the record stays small. Only the
+commits made since the record was first committed count as its own
+([docs/proof.md](proof.md#whose-commits-vbw-judges)): ids start again in a new
+record, so an older roadmap's trailers name nothing of it.
 
 ## Guarantees
 
