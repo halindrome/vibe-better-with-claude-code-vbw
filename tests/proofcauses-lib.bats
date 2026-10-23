@@ -1,7 +1,12 @@
 #!/usr/bin/env bats
 # R168 (docs/proof.md): the library that names why a proof runs everything
-# (plugin/lib/proofcauses.sh). The store of recorded runs is written by hand
-# here, on the committed code, the way a proof leaves it. L1.
+# (plugin/lib/proofcauses.sh). A cause is something VBW cannot judge unit by
+# unit: vbw prove --full, no recorded run in this clone, a file system that
+# records no reads, nothing committed since the last passing proof. An added or
+# deleted file is no cause: the one reuse rule re-runs the units that listed its
+# folder or read it (reads-listing.bats). A proof cut short is no cause either:
+# it saved nothing, or runs as complete as any. The store of recorded runs is
+# written by hand here, on the committed code, the way a proof leaves it. L1.
 
 load helper
 load fixture-helper
@@ -55,7 +60,6 @@ edit_record() {
   jq "$1 | del(.requirements[]?.rules) | if has(\"protected\") then .protected = ([.checks[]?.files // [] | .[]] | unique) | .schema = 4 else . end" .vbw/record.json > "$TEST_ROOT/edit.json" && cp "$TEST_ROOT/edit.json" .vbw/record.json
 }
 
-# causes [FULL]: the causes for the committed code, one per line.
 # causes [FULL] [KIND]: the causes proofcauses_find prints for this project (KIND: prove or fix).
 causes() {
   vbw_kernel '. "$VBW_LIB/proofcauses.sh"; VBW_COMMAND_TIMEOUT=3600; mkdir -p "$VBW_RUNTIME"; proofcauses_find "$(record_read)" "'"${1:-0}"'" "$(vbw_head_tree)" "'"${2:-prove}"'"'
@@ -83,12 +87,6 @@ noreads() {
 @test "R168: vbw prove --full is a cause" {
   run causes 1
   [ "$output" = "vbw prove --full" ]
-}
-
-@test "R168: a proof cut short is a cause" {
-  mkdir -p .vbw/runtime && : > .vbw/runtime/prove.unfinished
-  run causes
-  [ "$output" = "the last proof was cut short" ] || { echo "$output"; false; }
 }
 
 @test "R168: a clone with no recorded run is a cause" {
@@ -199,106 +197,29 @@ prove_passed() {
   [ -z "$output" ] || { echo "$output"; false; }
 }
 
-@test "R168: an added file that no run read and no run listed the folder of is a cause, and names it" {
+@test "R168: an added or deleted file is no cause, in a listed folder or not: the one reuse rule decides unit by unit" {
   mkdir -p other
   printf 'n\n' > other/new.txt
-  git add other/new.txt && git commit -q -m "feat: new"
+  printf 'o\n' > other/old.txt
+  git add other && git commit -q -m "feat: other"
   run causes
-  [ "$output" = "other/new.txt was added, and no recorded run read it or listed its folder" ] || { echo "$output"; false; }
-}
-
-@test "R168: a deleted file that no run read and no run listed the folder of is a cause, and names it" {
-  mkdir -p other
-  printf 'n\n' > other/old.txt
-  git add other/old.txt && git commit -q -m "feat: old"
+  [ -z "$output" ] || { echo "$output"; false; }
   store
-  git rm -q other/old.txt && git commit -q -m "feat: drop old"
-  run causes
-  [ "$output" = "other/old.txt was deleted, and no recorded run read it or listed its folder" ] || { echo "$output"; false; }
-}
-
-@test "R202: up to three unseen files are one cause each; more are one cause with the count and the first three paths" {
-  mkdir -p other
-  printf 'n\n' > other/c.txt
-  printf 'n\n' > other/a.txt
-  printf 'n\n' > other/b.txt
-  git add other && git commit -q -m "feat: three"
-  run causes
-  [ "${#lines[@]}" -eq 3 ] || { echo "$output"; false; }
-  [ "${lines[0]}" = "other/a.txt was added, and no recorded run read it or listed its folder" ] || { echo "$output"; false; }
-  [ "${lines[2]}" = "other/c.txt was added, and no recorded run read it or listed its folder" ] || { echo "$output"; false; }
-  # A store recorded on these three; then three more and one less: four, one line.
-  store
-  printf 'n\n' > other/d.txt
-  printf 'n\n' > other/e.txt
-  printf 'n\n' > other/f.txt
-  git rm -q other/a.txt
-  git add other && git commit -q -m "feat: three more, one less"
-  run causes
-  [ "$output" = "4 files were added or deleted (3 added, 1 deleted), and no recorded run read them or listed their folders: other/a.txt, other/d.txt, other/e.txt and 1 more" ] || { echo "$output"; false; }
-}
-
-@test "R168: a deletion that a later recorded run already ran without is no cause" {
-  local common tree
-  mkdir -p other
-  printf 'n\n' > other/old.txt
-  git add other/old.txt && git commit -q -m "feat: old"
-  store
-  git rm -q other/old.txt && git commit -q -m "feat: drop old"
-  # One run re-ran on the code without the file, as a proof that judged the deletion leaves it.
-  common=$(git rev-parse --path-format=absolute --git-common-dir)
-  tree=$(vbw_kernel 'vbw_head_tree')
-  jq --arg t "$tree" '.runs["check:C1"].tree = $t' "$common/vbw/runs.json" > "$TEST_ROOT/s.json" && cp "$TEST_ROOT/s.json" "$common/vbw/runs.json"
+  git rm -q other/old.txt src/unread.txt && git commit -q -m "feat: drop old and unread"
   run causes
   [ -z "$output" ] || { echo "$output"; false; }
 }
 
-@test "R168: an added file in a folder a recorded run listed is no cause" {
-  printf 'n\n' > src/new.txt
-  git add src/new.txt && git commit -q -m "feat: new"
-  run causes
-  [ -z "$output" ] || { echo "$output"; false; }
-}
-
-@test "R168: an added file that a recorded run read is no cause" {
-  common=$(git rev-parse --path-format=absolute --git-common-dir)
-  jq '.runs["file:tests/t_a.sh"].reads += ["other/new.txt"]' "$common/vbw/runs.json" > "$TEST_ROOT/s.json" && cp "$TEST_ROOT/s.json" "$common/vbw/runs.json"
-  mkdir -p other
-  printf 'n\n' > other/new.txt
-  git add other/new.txt && git commit -q -m "feat: new"
-  run causes
-  [ -z "$output" ] || { echo "$output"; false; }
-}
-
-@test "R168: a new test file is a run of its own, not an unknown file" {
-  printf 'x\n' > tests/t_c.sh
-  git add tests/t_c.sh && git commit -q -m "feat: test c"
-  run causes
-  [ -z "$output" ] || { echo "$output"; false; }
-}
-
-@test "R168: a new check file is a run of its own, not an unknown file" {
-  mkdir -p checks
-  printf 'x\n' > checks/c2.sh
-  edit_record '.checks += [{id:"C2", req:"R1", run:["sh","checks/c2.sh"], files:["checks/c2.sh"]}]'
-  git add checks/c2.sh && git commit -q -m "feat: check 2"
-  run causes
-  [ -z "$output" ] || { echo "$output"; false; }
-}
-
-@test "R168: a deleted test file is no unknown file" {
-  git rm -q tests/t_b.sh && git commit -q -m "feat: drop test b"
+@test "R168: a proof cut short is no cause: an unfinished marker left by an older VBW changes nothing" {
+  mkdir -p .vbw/runtime && : > .vbw/runtime/prove.unfinished
   run causes
   [ -z "$output" ] || { echo "$output"; false; }
 }
 
 @test "R168: several causes are all named, one per line" {
-  mkdir -p .vbw/runtime && : > .vbw/runtime/prove.unfinished
-  mkdir -p other
-  printf 'n\n' > other/new.txt
-  git add other/new.txt && git commit -q -m "feat: new"
+  rm "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json"
   run causes 1
-  [ "${#lines[@]}" -eq 3 ] || { echo "$output"; false; }
+  [ "${#lines[@]}" -eq 2 ] || { echo "$output"; false; }
   [ "${lines[0]}" = "vbw prove --full" ]
-  [ "${lines[1]}" = "the last proof was cut short" ]
+  [ "${lines[1]}" = "this clone has no earlier recorded run" ]
 }

@@ -3,10 +3,11 @@
 # folder's listing changed, including a sub-folder that appeared (its first
 # file was added) or vanished (its last file was deleted), and is reused when
 # only the content of a file it never read changed. The listing's fingerprint
-# recorded by the run is compared with the committed code, and a file whose own
-# folder appeared or vanished is seen through that listing, so it is no cause
-# to run everything (R168): the other check is reused. L1: real vbw prove runs
-# on a small project; each check logs its runs to $RANLOG.
+# recorded by the run is compared with the committed code; a file whose own
+# folder appeared or vanished is seen through that listing, and a file added to
+# or deleted from a folder no run listed runs nothing (R168): no run could see
+# it. L1: real vbw prove runs on a small project; each check logs its runs to
+# $RANLOG.
 
 load helper
 load fixture-helper
@@ -121,7 +122,15 @@ listing_ran() {
   listing_ran
 }
 
-@test "R168: a file added to a sub-folder that already existed, which no run listed, is unseen: everything runs and the cause names it" {
+# unseen_ran_nothing: no run listed the folder or read the file, so both checks are reused and no cause ran everything.
+unseen_ran_nothing() {
+  [ "$status" -eq 0 ] || { echo "$output"; return 1; }
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; echo "$output"; return 1; }
+  [[ "$(line C1)" == *"reused"* && "$(line C2)" == *"reused"* ]] || { echo "$output"; return 1; }
+  [[ "$output" != *"ran everything"* ]] || { echo "$output"; return 1; }
+}
+
+@test "R168: a file added to a sub-folder that already existed, which no run listed, runs nothing: no run could see it" {
   mkdir -p a/sub
   printf 'g\n' > a/sub/g.txt
   commit "feat: sub"
@@ -130,23 +139,18 @@ listing_ran() {
   printf 'h\n' > a/sub/h.txt
   commit "feat: h"
   vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 C2 " ] || { echo "ran: $(ran)"; echo "$output"; false; }
-  [[ "$output" == *"ran everything"*"a/sub/h.txt was added, and no recorded run read it or listed its folder"* ]] || { echo "$output"; false; }
+  unseen_ran_nothing
 }
 
-@test "R168: a file deleted from a sub-folder that keeps other files, which no run listed, is unseen: everything runs" {
+@test "R168: a file deleted from a sub-folder that keeps other files, which no run listed, runs nothing" {
   mkdir -p a/sub
   printf 'g\n' > a/sub/g.txt
   printf 'h\n' > a/sub/h.txt
   commit "feat: sub"
-  # Both checks ran with the file present (a plain proof would reuse C2 from before it existed,
-  # and a deletion a recorded run already ran without is no cause).
+  # Both checks ran with the file present (a plain proof would reuse C2 from before it existed).
   "$VBW" prove --full > /dev/null
   : > "$RANLOG"
   git rm -q a/sub/h.txt && git commit -q -m "feat: drop h"
   vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "C1 C2 " ] || { echo "ran: $(ran)"; echo "$output"; false; }
-  [[ "$output" == *"a/sub/h.txt was deleted, and no recorded run read it or listed its folder"* ]] || { echo "$output"; false; }
+  unseen_ran_nothing
 }

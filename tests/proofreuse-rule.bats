@@ -238,14 +238,10 @@ reason() {
   [ "$output" = '{"reused":["C1"],"why":{"C2":"src/b.txt changed","C3":"never passed"},"commands":{"test":"no read list"},"todo":"C2 C3"}' ]
 }
 
-@test "an unfinished proof and proving again with nothing committed reuse nothing" {
+@test "proving again with nothing committed reuses nothing" {
   rec='{"checks":[{"id":"C1","run":["true"]}],"commands":{}}'
   tree=$(pr 'vbw_head_tree')
   pr 'proofreuse_save '"'$rec'"' "{\"C1\":{\"status\":\"pass\",\"seconds\":1,\"reads\":[],\"dirs\":[]}}" "{}" '"$tree"' N'
-  pr ': > "$(proofreuse_marker)"'
-  run pr 'proofreuse_plan '"'$rec'"'; printf "%s\n" "$WHY_CHECKS"'
-  [ "$output" = '{"C1":"the last proof was cut short"}' ]
-  pr 'rm -f "$(proofreuse_marker)"'
   run pr 'proofreuse_plan '"'$rec'"'; printf "%s\n" "$REUSE_CHECKS"'
   [[ "$output" == *'"reused":true'* ]]
   git add -A .vbw && git commit -q -m "chore(vbw): state"

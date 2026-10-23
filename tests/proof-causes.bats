@@ -1,16 +1,16 @@
 #!/usr/bin/env bats
 # R168 (docs/proof.md): when VBW cannot know what a change affects, vbw prove
-# runs every check and every test file and names the cause in plain words: a
-# file was added or deleted that no recorded run read and no recorded run
-# listed the folder of; the file system cannot record reads; this clone has no
-# earlier recorded run; the last proof was cut short. A changed approved
-# command, single-file form or list of test files re-runs only what runs
-# through it (each unit by its own definition), and a file every test file
-# reads re-runs those files and nothing else. A content change to a file no
-# recorded run read makes nothing run. Every summary, full or not, prints
-# "checks: N ran, M reused" and "test files: N ran, M reused"; one cause is
-# one "ran everything:" line, several are listed one per line. Scripts log
-# their runs to $RANLOG. L1.
+# runs every check and every test file and names the cause in plain words: the
+# file system cannot record reads; this clone has no earlier recorded run. A
+# changed approved command, single-file form or list of test files re-runs only
+# what runs through it (each unit by its own definition), and a file every test
+# file reads re-runs those files and nothing else. A content change to a file no
+# recorded run read makes nothing run, and so does a file added or deleted that
+# no recorded run read or listed the folder of: no run could see it. A proof cut
+# short saved nothing, so the next proof reuses as if it had not run. Every
+# summary, full or not, prints "checks: N ran, M reused" and "test files: N ran,
+# M reused"; one cause is one "ran everything:" line, several are listed one per
+# line. Scripts log their runs to $RANLOG. L1.
 
 load helper
 load fixture-helper
@@ -130,21 +130,22 @@ nothing_global() { ! printf '%s\n' "$output" | grep -q 'ran everything' || { ech
   nothing_global
 }
 
-@test "R168: an added file that no recorded run read and no recorded run listed the folder of runs everything, and names it" {
+@test "R168: an added file that no recorded run read or listed the folder of runs nothing: no run could see it" {
   printf 'new\n' > src/new.txt
   git add src/new.txt && git commit -q -m "feat: new"
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  everything
-  cause 'src/new\.txt was added'
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +checks: 0 ran, 1 reused$' || { echo "$output"; false; }
+  nothing_global
 }
 
-@test "R168: a deleted file that no recorded run read and no recorded run listed the folder of runs everything, and names it" {
+@test "R168: a deleted file that no recorded run read or listed the folder of runs nothing" {
   git rm -q src/unread.txt && git commit -q -m "feat: drop unread"
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  everything
-  cause 'src/unread\.txt was deleted'
+  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  nothing_global
 }
 
 @test "R168: a content change to a file no recorded run read runs nothing" {
@@ -192,20 +193,24 @@ nothing_global() { ! printf '%s\n' "$output" | grep -q 'ran everything' || { ech
   printf '%s\n' "$output" | grep -qE '^ +- .*does not record which files are read' || { echo "$output"; false; }
 }
 
-@test "R168: a proof that was cut short reuses nothing the next time, and the summary says so" {
-  : > .vbw/runtime/prove.unfinished
-  change src/unread.txt
-  vbw_run prove
-  [ "$status" -eq 0 ] || { echo "$output"; false; }
-  everything
-  cause 'last proof was cut short'
-  # The project commands ran too, and the proof that follows reuses again.
-  [[ " $(ran)" == *" lint "* ]] || { echo "ran: $(ran)"; false; }
+@test "R168: a proof cut short saved nothing: the next proof reuses as if it had not run, and names no cause" {
+  # tests/c1.sh ends the proof while it runs, once (the session's proving mark names
+  # the process): a proof cut short before it saved anything.
+  export FLAG="$TEST_ROOT/cut" MARK="$PROJECT/.vbw/runtime/proving.s1"
+  : > "$FLAG"
+  printf 'echo C1 >> "$RANLOG"\ngrep -q . src/c.txt\nif [ -e "$FLAG" ]; then rm -f "$FLAG"; kill -TERM "$(cat "$MARK")"; fi\n' > tests/c1.sh
+  git add tests/c1.sh && git commit -q -m "fix: c1 ends the proof once"
+  "$VBW" approve > /dev/null
+  VBW_SESSION_ID=s1 vbw_run prove
+  [ "$status" -ne 0 ] || { echo "$output"; false; }
+  [ ! -e "$FLAG" ] || { echo "the check did not run"; echo "$output"; false; }
   : > "$RANLOG"
-  "$VBW" decide "Use blue buttons" "the owner prefers them" > /dev/null
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(ran)" = "" ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  [ "$(ran)" = "C1 " ] || { echo "ran: $(ran)"; echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +C1 pass .*ran: tests/c1\.sh changed' || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -qE '^ +tests/t_a\.sh pass .*reused' || { echo "$output"; false; }
+  nothing_global
 }
 
 @test "R168: every summary, full or not, counts the checks and the test files that ran and were reused, and each reused result names its proof" {

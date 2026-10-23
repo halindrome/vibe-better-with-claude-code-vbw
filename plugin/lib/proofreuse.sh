@@ -119,10 +119,6 @@ proofreuse_check_fp() { proofreuse_fp_of "$1" "check:$2"; }
 # and the time limit it runs under (settings.command_timeout, else the default).
 proofreuse_command_fp() { proofreuse_fp_of "$1" "command:$2"; }
 
-# proofreuse_marker: the unfinished marker (present while a proof runs, and
-# left behind by one that was interrupted or failed to record).
-proofreuse_marker() { printf '%s/prove.unfinished\n' "$VBW_RUNTIME"; }
-
 # proofreuse_proved RECORD HEAD: succeed when nothing changed since the
 # record's last passing proof (evidence.passed): the record is as that proof
 # left it (its fingerprint without the evidence equals evidence.record, so the
@@ -145,17 +141,13 @@ proofreuse_proved() {
 }
 
 # proofreuse_allowed RECORD [KIND]: succeed when this proof may reuse anything;
-# print why not otherwise. Not while an earlier proof is unfinished, and (D173)
-# not when the code is the code the last passing proof proved
-# (proofreuse_proved): a second prove is a deliberate re-run, as when something
-# outside the committed code (installed dependencies, ignored files) changed.
-# KIND fix: that reason never applies (D270), a passing proof of the same code
-# is exactly what vbw fix done needs.
+# print why not otherwise (D173): not when the code is the code the last
+# passing proof proved (proofreuse_proved): a second prove is a deliberate
+# re-run, as when something outside the committed code (installed dependencies,
+# ignored files) changed. KIND fix: that reason never applies (D270), a passing
+# proof of the same code is exactly what vbw fix done needs. A proof cut short
+# stops nothing: it saved no run, or runs as complete as any proof's.
 proofreuse_allowed() {
-  if [ -e "$(proofreuse_marker)" ]; then
-    printf 'the last proof was cut short\n'
-    return 1
-  fi
   if [ "${2:-prove}" != fix ] && proofreuse_proved "$1" "$(vbw_head_tree 2> /dev/null)"; then
     printf 'proving again with nothing committed\n'
     return 1
