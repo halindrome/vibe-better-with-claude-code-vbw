@@ -22,7 +22,7 @@ Status words:
 | Item | Status | Affects | Workaround |
 |---|---|---|---|
 | [Mission Control may not open at session start](#mission-control-may-not-open-at-session-start) | Known issue | Wide windows | `/vbw-panel` |
-| [The loop's time budget follows the size label](#the-loops-time-budget-follows-the-size-label) | Known issue | Loops | Re-run the item |
+| [The loop's time budget counts waiting](#the-loops-time-budget-counts-waiting) | Known issue | Loops | Re-run the item |
 | [Approved rules cannot be reworded or retired](#approved-rules-cannot-be-reworded-or-retired) | Known issue | Re-planning | None clean |
 | [Heavy checks each use every core](#heavy-checks-each-use-every-core) | Known issue | Cargo, make, similar | Lower `check_jobs` |
 | [Slot store edge cases](#slot-store-edge-cases) | Known issue | Sandboxes, many runs | None needed |
@@ -47,17 +47,17 @@ Status words:
 
 **Where.** `plugin/hooks/panel.js` (the `session.start` handler and the open request); `tools/l3-suite.sh` (the `panel` scenario).
 
-### The loop's time budget follows the size label
+### The loop's time budget counts waiting
 
-**What.** When the loop opens an item, its time budget is twice the median time of shipped items with the same size label, or 2, 4 or 8 hours for small, medium and large when there is no history ([loop.md](loop.md#the-time-budget)). The label is a guess made before planning. An item labelled small that turned out to be eleven plans in three phases was stopped at the small-item budget. Time lost to dropped network connections or to waiting for you counts as time, so it can also stop a healthy item.
+**What.** The loop gives each item a time budget ([loop.md](loop.md#the-time-budget)). Before the item is planned it is the label's guess or twice the median of shipped items of the same size; once the item is planned and the step history times its road, it is twice the time so far plus that road, at least 30 minutes. The time is wall-clock: time lost to dropped network connections or to waiting for you counts as time, so it can still stop a healthy item.
 
-**Who and when.** Anyone running `/vbw:loop` over a backlog with items whose size was guessed wrong.
+**Who and when.** Anyone running `/vbw:loop` over a backlog while the machine or the connection is unreliable.
 
-**Workaround.** The stop keeps all the work and parks nothing. Run `/vbw:loop THE_ITEM` again, or finish the item with `/vbw:vibe`. Give items an honest size (`vbw todo add --size`, `vbw todo sort`).
+**Workaround.** The stop keeps all the work and parks nothing. Run `/vbw:loop THE_ITEM` again, or finish the item with `/vbw:vibe`.
 
-**Plan.** Once an item is planned, its budget becomes twice the kernel's estimate of its road ([panel.md](panel.md#time-left)). The stuck test counts progress (plans done, fixes closed), so waiting is not grinding. Before planning, the size default stays.
+**Plan.** The stuck test counts progress (plans done, fixes closed) instead of elapsed time, so waiting is not grinding.
 
-**Where.** `plugin/lib/loop-step.sh` (`loop_item_budget`); the estimate comes from `plugin/lib/road.jq`.
+**Where.** `plugin/lib/loop-step.sh` (`loop_item_budget`, `loop_item_rebudget`).
 
 ### Approved rules cannot be reworded or retired
 

@@ -39,3 +39,10 @@ load helper
   grep -q 'code and a `.vbw/` file together' "$REPO_ROOT/docs/loop.md"
   grep -q 'does not revert cleanly' "$REPO_ROOT/docs/loop.md"
 }
+
+@test "T156: docs/loop.md says the budget is set from the plan's road, once, with a floor, and the basis names which was used" {
+  local f="$REPO_ROOT/docs/loop.md"
+  tr '\n' ' ' < "$f" | grep -Eq 'From the plan\..*twice the time so far plus +that road, at least 30 minutes.*set once' || { echo "docs/loop.md lacks the plan rule"; false; }
+  tr '\n' ' ' < "$f" | grep -Eq 'The basis says which of the three below was used' || { echo "docs/loop.md lacks the basis"; false; }
+  grep -qF 'planned: true' "$REPO_ROOT/docs/record.md" || grep -qF '`planned: true`' "$REPO_ROOT/docs/record.md" || { echo "docs/record.md lacks planned"; false; }
+}

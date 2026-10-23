@@ -151,6 +151,28 @@ loop_item_budget() {
       else {seconds: {small: 7200, medium: 14400, large: 28800}[$z], basis: "the default for a \($z) item, fewer than 3 shipped \($z) items timed"} end' "$VBW_RECORD"
 }
 
+# loop_item_rebudget ITEM NEXT: once, when the item has been planned and the step history times every
+# piece of its road (the road with seconds, and rounds once the work is planned), the item's budget
+# becomes twice the time so far plus that road, at least 30 minutes: the label is a guess made before
+# planning, the road is the kernel's own estimate of this plan from this project's history. Marked
+# planned, so it is set once; the road shrinks as the work is done, and a budget that followed it would
+# never be spent. Without a timed road the budget the item was opened with stays. The road is computed
+# here (a caller inside the kernel gets none in vbw next's answer, cmd_next).
+loop_item_rebudget() {
+  local road b
+  jq -e --arg i "$1" '[.loop.items[] | select(.id == $i)][0] | . != null and .opened_at != null and (.budget.planned | not)' "$VBW_RECORD" > /dev/null || return 0
+  road=$(step_road "$(record_read)" "$2" "") || return 0
+  [ -n "$road" ] || return 0
+  b=$(jq -nc --slurpfile road <(printf '%s' "$road") --slurpfile r "$VBW_RECORD" --arg i "$1" "$LOOP_TIME_JQ"'
+    ([$r[0].loop.items[] | select(.id == $i)][0]) as $it
+    | $road[0] as $road
+    | select($road != null and ($road.seconds | type) == "number" and $road.seconds > 0 and (($road.rounds // {}) | length) > 0)
+    | (now - ($it.opened_at | fromdateiso8601) | floor) as $el
+    | {seconds: ([1800, (2 * ($el + $road.seconds) | floor)] | max), planned: true,
+       basis: "twice the time so far (\($el | hm)) and the road ahead (\($road.seconds | hm)), from this project'"'"'s step history"}') || return 0
+  [ -z "$b" ] || record_update '(.loop.items[] | select(.id == $i)).budget = $b' --arg i "$1" --argjson b "$b"
+}
+
 # loop_over_budget ITEM STEP: the reason to stop (printed, status 0) when the item has run past its time
 # budget, or status 1. The reason says where the item stands: the step, its time, its budget, its spend.
 loop_over_budget() {
@@ -297,6 +319,7 @@ loop_step() {
     fi
     # The item's time budget (T156): past it, the loop ends before this step (after a delegated approval) and the work stays. Accept
     # (a skip) and ship, the kernel's own last steps of an item, are never stopped.
+    loop_item_rebudget "$cur" "$next"
     case "$action" in accept | ship) ;; *) if why=$(loop_over_budget "$cur" "$action"); then loop_end "$why"; return 0; fi ;; esac
     case "$action" in
       accept)
