@@ -62751,6 +62751,17 @@
           "in": 27554,
           "out": 56
         }
+      },
+      {
+        "id": "fix-20261023T165732Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-23T16:57:32Z",
+        "ended": "2026-10-23T18:11:04Z",
+        "cost": {
+          "usd": 8.613138
+        }
       }
     ],
     "milestones": {
