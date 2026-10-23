@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.1.1] - 2026-10-23
+
+### Changed
+
+- **The plan tells you why a plan waits.** When you approve, VBW already said
+  how many rounds the build takes and the most plans built at the same time.
+  It now also says, for each plan that has to wait, what holds it back: it is
+  planned after another plan, or both would change the same file, for example
+  `P1.4 waits for P1.2 (both change src/x.js)`. If you would like more built
+  at once, answer "Not yet" and ask for the split. Thanks to a community
+  developer for the idea.
+
+### Fixed
+
+- **Large projects no longer lose an hour per plan in break testing.** Before
+  and after each deliberate break, VBW finds the newest file in its clean copy
+  of the project, so build tools notice the change. It used to check every
+  file one at a time, dependencies included: about 10 minutes per pass on a
+  project with 111,529 files. It now reads them all in one pass, about a
+  second for 100,000 files. Thanks to the community developer who measured
+  it and found the cause.
+
 ## [2.1.0] - 2026-10-21
 
 The first VBW 2 release for the community. VBW gives Claude Code an executable
