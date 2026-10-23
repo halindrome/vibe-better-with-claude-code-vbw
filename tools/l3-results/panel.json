@@ -1,9 +1,9 @@
 {
   "scenario": "panel",
-  "fixture": "greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan waits for the user's approval; no finished steps in the clone (so no estimate basis); window 200 columns wide, resized to 200x24 and to 60x40 with the needs-you line up and again while the build's helpers work; the user then approves and the build runs",
-  "cost_usd": 0.3499,
+  "fixture": "greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan was reworded after approval and waits for it again; no finished steps in the clone (so no estimate basis); window 200 columns wide, resized to 200x24 and to 60x40 with the needs-you line up and again while the build's helpers work; the user then approves and the build runs",
+  "cost_usd": 0.3487,
   "evidence_level": "L3",
-  "at": "2026-10-21T14:10:50Z",
+  "at": "2026-10-23T17:24:45Z",
   "passed": true,
   "facts": {
     "milestone_shown": true,
@@ -12,7 +12,7 @@
     "need_shown": true,
     "tabs_shown": true,
     "next_row_shown": true,
-    "need_text": "Please approve the plan before VBW builds it.",
+    "need_text": "Your plan changed since you approved it: please review the changes and approve it again.",
     "cost_shown": true,
     "estimate_shown": "no basis yet",
     "sound_shown_off": true,
