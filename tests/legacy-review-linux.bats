@@ -17,7 +17,7 @@ setup() {
   cat > "$TEST_ROOT/gnu/stat" <<'EOS'
 #!/bin/sh
 case "$1" in
-  -c) shift 2; exec /usr/bin/env perl -e 'print((stat($ARGV[0]))[9], "\n")' "$1" ;;
+  -c) shift 2; exec /usr/bin/env perl -e 'print((lstat($_))[9], "\n") for @ARGV' "$@" ;;
   -f) printf '  File: "%s"\n    ID: 0 Namelen: 255 Type: ext2/ext3\n' "$3"; exit 0 ;;
 esac
 exit 1
@@ -42,8 +42,18 @@ untracked_folder() {
     || { echo "$output"; false; }
 }
 
-@test "R68: file times in the kernel come only from vbw_mtime" {
-  run grep -rnE 'stat -[fc] ' "$PLUGIN_ROOT/lib" "$PLUGIN_ROOT/bin" "$PLUGIN_ROOT/hooks" "$PLUGIN_ROOT/scripts"
-  # The one reader, vbw_mtime in core.sh, is the only line allowed.
-  [ -z "$(printf '%s\n' "$output" | grep -v 'core.sh:[0-9]*:  t=\$(stat -c %Y')" ] || { echo "$output"; false; }
+@test "R68: with GNU stat, the newest time under a folder is read in one pass, folders and links not counted" {
+  mkdir -p "$TEST_ROOT/tree/a"
+  printf x > "$TEST_ROOT/tree/a/old" && touch -t 200001010000 "$TEST_ROOT/tree/a/old"
+  printf x > "$TEST_ROOT/tree/new" && touch -t 200101010000 "$TEST_ROOT/tree/new"
+  ln -s /nonexistent "$TEST_ROOT/tree/gone" && touch -h -t 199901010000 "$TEST_ROOT/tree/gone"
+  want=$(perl -e 'print((lstat($ARGV[0]))[9])' "$TEST_ROOT/tree/new")
+  PATH="$TEST_ROOT/gnu:$PATH" run bash -c '. "$1/lib/core.sh"; vbw_mtime_newest "$2"' _ "$PLUGIN_ROOT" "$TEST_ROOT/tree"
+  [ "$status" -eq 0 ] && [ "$output" = "$want" ] || { echo "$output (want $want)"; false; }
+}
+
+@test "R68: file times in the kernel come only from core.sh, whose readers try GNU stat first" {
+  run grep -rnE '(^|[[:space:];|&({$])stat ' "$PLUGIN_ROOT/lib" "$PLUGIN_ROOT/bin" "$PLUGIN_ROOT/hooks" "$PLUGIN_ROOT/scripts"
+  # vbw_mtime and vbw_mtime_newest in core.sh are the only readers; comments aside.
+  [ -z "$(printf '%s\n' "$output" | grep -vE ':[0-9]+:[[:space:]]*#' | grep -v '/lib/core.sh:')" ] || { echo "$output"; false; }
 }

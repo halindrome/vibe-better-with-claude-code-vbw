@@ -293,6 +293,18 @@ vbw_mtime() {
   printf '%s\n' "$t"
 }
 
+# vbw_mtime_newest DIR: the newest modification time (epoch seconds) of the files
+# under DIR, links not followed (0 when none can be read). One pass: find hands
+# stat many paths per call, in the flavour vbw_mtime uses (GNU first), so a tree of
+# 100,000 files (node_modules) takes seconds, not a process per file. An unreadable
+# folder is skipped, as before.
+vbw_mtime_newest() {
+  local fmt=-c spec=%Y
+  stat -c %Y "$1" > /dev/null 2>&1 || { fmt=-f; spec=%m; }
+  { find "$1" ! -type d -exec stat "$fmt" "$spec" {} + 2> /dev/null || true; } \
+    | awk '/^[0-9]+$/ && $1 + 0 > m { m = $1 + 0 } END { printf "%.0f\n", m }'
+}
+
 # vbw_stamp_newer DIR FILE...: gives each FILE (a path under DIR) a modification
 # time one second later than the newest file under DIR, build output included. The
 # time comes from the files' times, never from the clock, so it holds when a file is
@@ -300,11 +312,8 @@ vbw_mtime() {
 vbw_stamp_newer() {
   local dir="$1" newest t f stamp
   shift
-  newest=0
-  while IFS= read -r -d '' f; do
-    t=$(vbw_mtime "$f")
-    if [ "$t" -gt "$newest" ]; then newest=$t; fi
-  done < <(find "$dir" ! -type d -print0 2> /dev/null)
+  newest=$(vbw_mtime_newest "$dir")
+  case "$newest" in "" | *[!0-9]*) newest=0 ;; esac
   t=$((newest + 1))
   stamp=$(date -d "@$t" +%Y%m%d%H%M.%S 2> /dev/null) || stamp=$(date -r "$t" +%Y%m%d%H%M.%S 2> /dev/null) || return 0
   for f in "$@"; do

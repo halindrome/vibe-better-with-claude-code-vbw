@@ -1216,7 +1216,9 @@ The broken file, and its restore, get a fresh modification time, newer than
 every file in the proof copy (even one stamped ahead of the clock). Builds that
 decide by file times (make, cargo) rebuild the broken code, so a break is never
 called a survivor because the old build was tested, and rebuild the clean code
-after the restore. A break that deletes a file stamps nothing.
+after the restore. A break that deletes a file stamps nothing. The newest time
+is read in one pass over the copy, dependencies included: about a second for
+100,000 files, so a large `node_modules` does not slow the break down.
 
 When a break stays green on the approved check but a strengthened check file
 that waits for approval catches it, `vbw mutate` prints `TARGET survives the
