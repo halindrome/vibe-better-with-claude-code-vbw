@@ -111,6 +111,24 @@ future_stamp() {
   [ -z "$(find .vbw/runtime -maxdepth 1 -name 'proof.*' -print)" ]
 }
 
+@test "R197: the copy's newest time is read in one pass, not one stat per file, and an unreadable folder does not stop it" {
+  # A stat that counts its calls. Today's big trees (node_modules) hold 100,000
+  # files: one stat process per file took about 10 minutes per sweep.
+  local real
+  real=$(command -v stat)
+  mkdir -p "$TEST_ROOT/tree/many" "$TEST_ROOT/tree/locked" "$TEST_ROOT/counting"
+  for i in $(seq 1 300); do : > "$TEST_ROOT/tree/many/f$i"; done
+  touch -t 203001010000 "$TEST_ROOT/tree/many/f7"
+  printf '#!/bin/sh\necho call >> "%s/stat.log"\nexec "%s" "$@"\n' "$TEST_ROOT" "$real" > "$TEST_ROOT/counting/stat"
+  chmod +x "$TEST_ROOT/counting/stat"
+  chmod 000 "$TEST_ROOT/tree/locked"
+  PATH="$TEST_ROOT/counting:$PATH" run bash -c 'set -euo pipefail; . "$1/lib/core.sh"; vbw_stamp_newer "$2" many/f1; echo stamped' _ "$PLUGIN_ROOT" "$TEST_ROOT/tree"
+  chmod 755 "$TEST_ROOT/tree/locked"
+  [ "$status" -eq 0 ] && [ "$output" = stamped ] || { echo "$output"; false; }
+  [ "$TEST_ROOT/tree/many/f1" -nt "$TEST_ROOT/tree/many/f7" ]
+  [ "$(wc -l < "$TEST_ROOT/stat.log")" -le 4 ] || { echo "stat calls: $(wc -l < "$TEST_ROOT/stat.log")"; false; }
+}
+
 @test "R197: the kernel code is bash 3.2 code that passes JSON only through jq" {
   local f
   for f in "$PLUGIN_ROOT"/lib/cmd-mutate.sh "$PLUGIN_ROOT"/lib/core.sh "$PLUGIN_ROOT"/lib/proofcopy.sh; do

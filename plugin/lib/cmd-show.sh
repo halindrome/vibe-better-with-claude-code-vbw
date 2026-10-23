@@ -87,6 +87,19 @@ cmd_show() {
       printf '%s' "$record" | jq -r "$VBW_JQ_DEFS$SHOW_JQ_DEFS"'
         def express_line($r): $r.phases[] | select(.milestone == $r.milestone.id and .tier == "express") | .id as $p | .reqs as $q
           | "express: \($p) (\(([$q[], ($r.checks[] | select(.req as $c | any($q[]; . == $c)) | .id), ($r.plans[] | select(.phase == $p) | .id)]) | join(", ")))";
+        # shared_file($a; $b): the file two plans would both change, the more specific
+        # entry where a directory covers a file; "*" when either may change any file.
+        def shared_file($a; $b): first(($a[], $b[] | select(. == "*")),
+          ($a[] as $x | $b[] as $y | if ($x | covers($y)) then $y elif ($y | covers($x)) then $x else empty end));
+        # wait_lines($r; $w): one line per plan after the first wave, naming the plans of
+        # the wave before it that hold it back and why (the wave rule in record.sh).
+        def wait_lines($r; $w): range(1; $w | length) as $k | $w[$k][] as $id
+          | ([$r.plans[] | select(.id == $id)][0]) as $p
+          | [$w[$k - 1][] as $q | ([$r.plans[] | select(.id == $q)][0]) as $o
+              | [if any(($p.after // [])[]; . == $q) then "planned after it" else empty end,
+                 (shared_file($p.files; $o.files) | if . == "*" then "either may change any file" else "both change \(.)" end)]
+              | select(length > 0) | "\($q) (\(join(", ")))"]
+          | select(length > 0) | "  \($id) waits for \(join(", "))";
         . as $r
         | "requirements:",
           (.requirements[] | . as $q | "  \(.id) [\(.proof)] \(.text)",
@@ -97,8 +110,10 @@ cmd_show() {
           (express_line($r) | "  " + .),
           "plans:",
           (.plans[] | "  \(.id) \(.title): \(.files | join(", "))\(if (.after | length) > 0 then " (after \(.after | join(", ")))" else "" end)"),
-          (waves($r.milestone.id) | map(length) | select(length > 0)
-            | "build waves: \(length) (the widest runs \(max) plan\(if max == 1 then "" else "s" end) at once)"),
+          (waves($r.milestone.id) as $w
+            | ($w | map(length) | select(length > 0)
+                | "build waves: \(length) (the widest runs \(max) plan\(if max == 1 then "" else "s" end) at once)"),
+              wait_lines($r; $w)),
           "project commands:",
           (.commands | to_entries[] | "  \(.key): \(.value | argv_line)"),
           (.test_files // empty | "  test file form: \(.run | join(" ")) (one test file per run; test files: \(.files | join(" ")))"),

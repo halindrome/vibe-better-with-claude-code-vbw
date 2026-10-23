@@ -108,7 +108,7 @@ each: `vbw decide "<what was decided>" "<their reason, or the trade-off they acc
 **contract**: not ready for approval: do what `instruction` says (write the named check files, `vbw spec sync`), then `vbw next --json`.
 
 **approve** (needs user): `vbw show contract --changes` (after an earlier approval: explain just those). Else
-`vbw show contract`: explain each requirement, how checked, plans, files, commands that will run. Follow `vbw:suggest`, then AskUserQuestion with the approval question `vbw show contract` prints: "Approve" (first), "Not yet". Only this menu; never ask the user to type /vbw:approve (typing it still works). Approve: hook recorded it; continue. Not yet: ask what to change. User's own words (own-answer slot): what to change, or a question. You cannot approve.
+`vbw show contract`: explain each requirement, how checked, plans, files, the build's shape (`build waves`: rounds, most plans at once, and each `waits for` line in plain words), commands that will run. Follow `vbw:suggest`, then AskUserQuestion with the approval question `vbw show contract` prints: "Approve" (first), "Not yet". Only this menu; never ask the user to type /vbw:approve (typing it still works). Approve: hook recorded it; continue. Not yet: ask what to change. User's own words (own-answer slot): what to change, or a question. You cannot approve.
 Test files edited during the build wait for one approval just before proof (`detail.files`): say which and why, then ask the same way.
 
 **build**: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start build <detail.plans>`, Workflow `vbw:building` with
