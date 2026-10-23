@@ -299,17 +299,21 @@ def check_line: (.run | argv_line)
   + (if .alone then " [alone]" else "" end);
 '
 
-# Commits whose VBW-Req trailer lists REQ as an exact token (not a substring:
-# R1 must not match R12).
+# Commits of the record's own history (lib/history.sh) whose VBW-Req trailer
+# lists REQ as an exact token (not a substring: R1 must not match R12). An older
+# commit naming the same id is an old roadmap's, not this requirement's.
 show_commits_for_req() {
-  local req="$1" line subject reqs r
+  local req="$1" line subject reqs r HISTORY_ARGS=()
+  # shellcheck source=history.sh
+  . "$VBW_LIB/history.sh"
+  history_args
   while IFS= read -r line; do
     subject=${line%%$'\x1f'*}
     reqs=${line#*$'\x1f'}
     for r in $(printf '%s' "$reqs" | tr ',' ' '); do
       [ "$r" = "$req" ] && { vbw_out '  %s\n' "$subject"; break; }
     done
-  done < <(git -C "$VBW_ROOT" log --format='%h %s%x1f%(trailers:key=VBW-Req,valueonly,separator=%x2C)' 2>/dev/null)
+  done < <(git -C "$VBW_ROOT" log --format='%h %s%x1f%(trailers:key=VBW-Req,valueonly,separator=%x2C)' "${HISTORY_ARGS[@]}" 2>/dev/null)
 }
 
 # show_work RECORD plan|fix ID [--json]: what a Dev needs, and nothing else.
