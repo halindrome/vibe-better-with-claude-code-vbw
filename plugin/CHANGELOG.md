@@ -1,5 +1,30 @@
 # Changelog
 
+## [2.1.3] - 2026-10-23
+
+### Fixed
+
+- **A new or deleted file no longer re-runs every check.** When a file was
+  added or deleted that no recorded check run had read or listed the folder
+  of, the proof ran everything, "because a check could now see a different set
+  of files". No check could: a check sees a file by listing its folder (VBW
+  records the listing), by reading it, or through git (always re-run). Two
+  images added to a README cost a full check run of every unit. Such a file
+  now re-runs only the units that could see it, as every other change does; a
+  check that only tests whether a path exists, without opening it or listing
+  its folder, is the documented limit it always was.
+- **A proof cut short no longer re-runs every check next time.** An
+  interrupted proof saves nothing, or complete per-unit results, so the next
+  proof reuses what the read lists allow, as if the interrupted one had not
+  run. The unfinished-proof marker file is gone.
+- **Proof time estimates no longer inherit a busy day.** The estimate summed
+  each unit's last recorded seconds, taken under whatever load the machine had,
+  and multiplied by the median wall-to-unit ratio, which one 3-unit proof could
+  pull to 22. It promised 200 minutes for a proof that takes about 45. Each
+  unit now counts the fastest it ran in the latest 10 proofs or in its last
+  run, and the ratio is those proofs' total wall time over their total unit
+  time; a proof that runs late still moves its end as it goes.
+
 ## [2.1.2] - 2026-10-23
 
 ### Fixed
