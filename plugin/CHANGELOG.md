@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.1.2] - 2026-10-23
+
+### Fixed
+
+- **What's next is never out of date.** A recommendation stayed until a new
+  one replaced it, so after milestones shipped without one, Mission Control
+  could show a pick from weeks ago. Shipping now retires it: What's next offers
+  Suggest next until VBW recommends again.
+- **"Waiting since" shows when VBW really stopped for you.** It restarted from
+  every Claude Code restart, so a wait of days could read as minutes. VBW now
+  keeps the time it first reached the stop, in every session.
+- **A changed plan is called a changed plan.** When a plan you had approved
+  changed (a requirement reworded, a test file edited), VBW said "the plan is
+  ready: review it, then approve it to build", even with the work already
+  built. It now says the plan changed since you approved it and shows just the
+  changes.
+
 ## [2.1.1] - 2026-10-23
 
 ### Changed

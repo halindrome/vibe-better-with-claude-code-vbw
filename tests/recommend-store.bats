@@ -7,10 +7,12 @@
 # it was written, replacing any earlier one; it refuses a malformed one, naming
 # what is wrong, and then keeps the earlier one. A stored recommendation is a
 # field VBW 2.0.27 does not read, so it raises the schema to 3. vbw status shows
-# it, or one line saying there is none yet and how to ask for one.
+# it, or one line saying there is none yet and how to ask for one. A ship
+# retires it: it was written for the work before the ship.
 
 load helper
 load fixture-helper
+load rigor-helper
 
 built_project() {
   vbw_setup
@@ -24,7 +26,14 @@ built_project() {
   "$VBW" todo add "Gift cards" > /dev/null
 }
 
-setup_file() { fixture_build built built_project; }
+# The tiny flow, built, proved and passed by QA: ready to ship.
+passed_flow() {
+  rigor_flow_setup
+  rigor_flow_build
+  "$VBW" qa record P1 pass quick > /dev/null
+}
+
+setup_file() { fixture_build built built_project; fixture_build passed passed_flow; }
 setup() {
   fixture_copy built
 }
@@ -201,4 +210,15 @@ EOF
 @test "R123: the kernel help lists vbw recommend" {
   vbw_run help
   printf '%s\n' "$output" | grep -qE '^  recommend ' || { echo "$output"; false; }
+}
+
+@test "R123: vbw ship retires the stored recommendation, written for the work before the ship" {
+  fixture_copy passed
+  "$VBW" todo add "Refunds" > /dev/null
+  recommend '{"top": {"text": "Refunds", "reason": "It is the only open item.", "size": "small", "source": "T1"}, "runners": []}' > /dev/null
+  jq -e '.recommendation.top.source == "T1"' .vbw/record.json > /dev/null
+  run "$VBW" ship
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  jq -e 'has("recommendation") | not' .vbw/record.json > /dev/null || { jq .recommendation .vbw/record.json; false; }
+  "$VBW" status | grep -qF "what's next: none yet"
 }

@@ -88,6 +88,23 @@ test('when VBW needs the user it says what for', () => {
   assert.equal(row(v, 'need').text, v.need.text)
 })
 
+test('a gate is dated by the kernel\'s since, the time VBW reached it, not by when the panel first saw it', () => {
+  const since = iso(NOW - 3 * 86400e3)
+  const v = show({ record: record(), next: next({ action: 'approve', gate: true, since }) })
+  assert.equal(v.need.at, Date.parse(since))
+  // Rewriting next.json (a restart's vbw next) does not move it; without a since, the time next.json was written dates it.
+  assert.equal(show({ record: record(), next: next({ action: 'approve', gate: true, since }), nextAt: NOW - 60e3 }).need.at, Date.parse(since))
+  assert.equal(show({ record: record(), next: next({ action: 'approve', gate: true }), nextAt: NOW - 60e3 }).need.at, NOW - 60e3)
+})
+
+test('a plan changed after its approval is offered as changed, never as a new plan', () => {
+  const v = show({ record: record(), next: next({ action: 'approve', gate: true, detail: { changed: true } }) })
+  assert.match(v.need.what, /changed since you approved it/)
+  assert.doesNotMatch(v.need.what, /plan is ready/)
+  assert.match(v.need.text, /changed/)
+  assert.notEqual(v.need.key, show({ record: record(), next: next({ action: 'approve', gate: true }) }).need.key)
+})
+
 test('every human gate is a need, so the panel never says nothing is needed while VBW waits', () => {
   const STANDING = {
     unblock: { plans: [{ id: 'P44.1', status: 'blocked' }, { id: 'P44.2', status: 'blocked' }] },

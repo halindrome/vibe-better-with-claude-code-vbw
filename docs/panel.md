@@ -231,7 +231,8 @@ the run goes on. These files are Claude Code's own and undocumented: if they
 change, Comms shows less, never an error.
 
 **When VBW needs you**, Comms shows one line, timed from when VBW reached the
-point where it needs you:
+point where it needs you (the `since` of `vbw next`, docs/next.md, so a restart
+or another session never moves it):
 
 ```
 14:20 ⚑ VBW needs you · approve the plan

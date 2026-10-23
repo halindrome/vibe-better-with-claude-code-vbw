@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # vbw ship: the user ships the milestone once vbw next says so (everything
 # proven on the current files and accepted). Marks it shipped and logs the
-# decision; it publishes nothing (no tag, no push). A [human] requirement the
+# decision; it publishes nothing (no tag, no push). The what's-next recommendation was
+# written for the work before the ship, so the ship retires it (R123). A [human] requirement the
 # user skipped (vbw req skip) is marked later: vbw milestone start moves it on.
 
 cmd_ship() {
@@ -28,6 +29,7 @@ cmd_ship() {
     | (.requirements[] | select(.milestone == $m and .skipped == true and .status != "accepted")).later = true
     | [.requirements[] | select(.milestone == $m and .later == true) | .id] as $moved
     | .shipped += [{id: .milestone.id, title: .milestone.title, at: $at}]
+    | del(.recommendation)
     | .decisions += [{id: (.decisions | next_id("D")), at: $at,
         text: ("Shipped \(.milestone.id) \(.milestone.title): \([.requirements[] | select(.milestone == $m and (.status | IN("proven", "accepted")))] | length) requirement\(if ([.requirements[] | select(.milestone == $m and (.status | IN("proven", "accepted")))] | length) == 1 then "" else "s" end) proven or accepted"
           + (if ($moved | length) > 0 then "; moved to the next milestone to judge: \($moved | join(", "))" else "" end))}]' \

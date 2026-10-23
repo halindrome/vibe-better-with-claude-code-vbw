@@ -62,12 +62,16 @@ const COMPACT_PCT = 85 // the context is this full: /compact before a run
 // says, and the short phrase Comms puts after 'VBW needs you ·'.
 function gateNeed(nx) {
   const d = isObj(nx.detail) ? nx.detail : {}
-  const need = (key, text, what) => ({ key, kind: nx.action, text, what })
+  // The kernel's since (R189): when VBW reached the gate, whichever session or restart reads it.
+  const since = typeof nx.since === 'string' ? Date.parse(nx.since) : NaN
+  const need = (key, text, what) => ({ key, kind: nx.action, text, what, ...(Number.isFinite(since) ? { at: since } : {}) })
   switch (nx.action) {
     case 'approve': {
       const f = list(d.files)
-      return need('approve' + (f ? ':' + f : ''), 'Please approve the plan before VBW builds it.',
-        f ? 'test files changed since your approval: ' + f : 'the plan is ready: review it, then approve it to build')
+      if (f) return need('approve:' + f, 'Please approve the plan before VBW builds it.', 'test files changed since your approval: ' + f)
+      if (d.changed === true) return need('approve:changed', 'Your plan changed since you approved it: please review the changes and approve it again.',
+        'the plan changed since you approved it: review the changes, then approve it')
+      return need('approve', 'Please approve the plan before VBW builds it.', 'the plan is ready: review it, then approve it to build')
     }
     case 'accept': { const r = list(d.requirements); return need('accept:' + r, 'Please check the result by hand: ' + r + '.', 'check by hand what only you can judge' + (r ? ': ' + r : '')) }
     case 'ship': return need('ship', 'The milestone is ready: your go-ahead to ship it is needed.', 'the milestone is proven and accepted: ready to ship')
@@ -120,7 +124,12 @@ export function liveNeed(input) {
     return { key: 'question:' + (question.id ?? ''), kind: 'question', text: 'VBW has a question for you and is waiting for your answer.', what: 'a question is waiting for your answer', at: at(questionAt) }
   }
   if (!isObj(nx)) return null
-  if (nx.gate === true) return answered(rec, nx, nextAt) ? null : { ...gateNeed(nx), at: at(nextAt) }
+  if (nx.gate === true) {
+    if (answered(rec, nx, nextAt)) return null
+    const g = gateNeed(nx)
+    // Dated by the kernel's since; by when next.json was written only when there is none (an older kernel).
+    return { ...g, at: Number.isFinite(g.at) ? g.at : at(nextAt) }
+  }
   if (RUN_ACTIONS.has(nx.action) && isObj(health) && Number.isFinite(health.contextPct) && health.contextPct >= COMPACT_PCT) {
     return { key: 'compact', kind: 'compact', text: 'The context is nearly full: run /compact first, then VBW can start.', what: 'the context is nearly full: run /compact first', at: at(nextAt) }
   }

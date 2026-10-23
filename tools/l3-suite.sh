@@ -598,7 +598,7 @@ scenario_approval() {
   (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor standard > /dev/null && plan_seed) \
     || { say "setup failed: could not seed the agreed spec and plan"; return 1; }
   fixture="greet.sh and farewell.sh, one phase each; spec and plan agreed with the user before the session, contract not yet approved; rigor standard"
-  asked_fp="" options_shown=false pressed=false
+  asked_fp="" asked_all="" options_shown=false pressed=false
   start="/vbw:vibe"
   # The contract's fingerprint (12 characters), from vbw show contract.
   contract_fp() { (cd "$dir" && "$VBW" show contract 2> /dev/null | sed -n '1s/^contract \([0-9a-f]*\) .*$/\1/p' | cut -c1-12); }
@@ -608,7 +608,9 @@ scenario_approval() {
     s=$(screen)
     fp=$(printf '%s' "$s" | grep -oE 'Approve contract [0-9a-f]{12}' | head -1 | grep -oE '[0-9a-f]{12}$')
     [ -n "$fp" ] || return 1
-    asked_fp=$fp
+    # A fix that edits a test asks again, for another fingerprint, before its proof.
+    [ -n "$asked_fp" ] || asked_fp=$fp
+    case " $asked_all " in *" $fp "*) ;; *) asked_all="${asked_all:+$asked_all }$fp" ;; esac
     if printf '%s' "$s" | grep -q 'Approve' && printf '%s' "$s" | grep -q 'Not yet'; then options_shown=true; fi
     # The user presses Enter on the first option, Approve.
     l3 keys "$scenario" Enter
@@ -628,11 +630,18 @@ scenario_approval() {
     named=$(jq -r '[.decisions[] | select(.text | startswith("Contract approved")) | .text] | join(" ")' "$dir/.vbw/record.json" 2> /dev/null)
     expect "the approval question named a fingerprint (${asked_fp:-none})" [ -n "$asked_fp" ]
     expect "the question showed Approve and Not yet" [ "$options_shown" = true ]
-    expect "the question named the contract's fingerprint ($now)" [ "$asked_fp" = "$now" ]
+    expect "the last question named the contract's fingerprint ($now)" [ "${asked_all##* }" = "$now" ]
     expect "the contract is approved" approved_now
-    expect "exactly one 'Contract approved' decision ($n)" [ "$n" -eq 1 ]
+    # One approval per question asked, each naming its own question's fingerprint, never twice.
+    local fp each=true asked_n=0
+    for fp in $asked_all; do
+      asked_n=$((asked_n + 1))
+      [ "$(printf '%s' "$named" | grep -o "($fp)" | wc -l | tr -d ' ')" -eq 1 ] || each=false
+    done
+    expect "one 'Contract approved' decision per question asked ($n for $asked_n: $asked_all)" [ "$n" -eq "$asked_n" ]
     case "$named" in *"($asked_fp)"*) named=true ;; *) named=false ;; esac
-    expect "that decision names the fingerprint the question named" [ "$named" = true ]
+    expect "the first decision names the fingerprint the first question named" [ "$named" = true ]
+    expect "each question's fingerprint is named by exactly one approval" [ "$each" = true ]
     [ "$failed" -eq 0 ] || passed=false
     result_write approval "$fixture" "${cost_usd:-0}" "$passed" \
       "$(jq -n --arg fp "${asked_fp:-}" --argjson shown "$options_shown" --argjson e "$pressed" --argjson ok "$named" --argjson n "$n" \
@@ -892,7 +901,7 @@ scenario_panel() {
   new_project
   (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor standard > /dev/null && panel_seed) \
     || { say "setup failed: could not seed the two-phase project"; return 1; }
-  fixture="greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan waits for the user's approval; no finished steps in the clone (so no estimate basis); window 200 columns wide, resized to 200x24 and to 60x40 with the needs-you line up and again while the build's helpers work; the user then approves and the build runs"
+  fixture="greet.sh and farewell.sh, two phases: the first passed QA and its requirement R1 is proven, the second plan was reworded after approval and waits for it again; no finished steps in the clone (so no estimate basis); window 200 columns wide, resized to 200x24 and to 60x40 with the needs-you line up and again while the build's helpers work; the user then approves and the build runs"
   start="/vbw:panel"
   facts="{}"
   panel_text() { screen | sed 's/[[:space:]][[:space:]]*/ /g'; }
@@ -916,16 +925,17 @@ scenario_panel() {
     # The panel opens by itself in a wide window; if not, the user opens it with /vbw-panel.
     if [ "$(has "$(panel_wait "Working on")" "Working on")" = false ]; then l3 type "$scenario" "/vbw-panel"; fi
     mid=$(jq -r '.milestone.id' "$dir/.vbw/record.json")
-    s=$(panel_wait "Working on $mid:" "1 of 2 requirements done" "Please approve the plan" "Refunds for paid orders")
+    # The plan was approved, then reworded: Mission Control says it changed (detail.changed).
+    s=$(panel_wait "Working on $mid:" "1 of 2 requirements done" "Your plan changed since you approved it" "Refunds for paid orders")
     printf '%s\n' "$s" > "$dir.panel.screen.txt"
     facts=$(jq -n --arg m "$(has "$s" "Working on $mid:")" --arg p "$(has "$s" "1 of 2 requirements done")" \
-      --arg d "$(has "$s" "VBW is idle")" --arg n "$(has "$s" "Please approve the plan")" \
+      --arg d "$(has "$s" "VBW is idle")" --arg n "$(has "$s" "Your plan changed since you approved it")" \
       --arg t "$(has "$s" "Now")$(has "$s" "Plan")$(has "$s" "Proof")$(has "$s" "Timeline")" --arg r "$(has "$s" "Refunds for paid orders")" \
       --arg c "$(case "$s" in *"has cost \$"*|*"cost so far is not available"*) echo true ;; *) echo false ;; esac)" \
       --arg e "$(case "$s" in *"No estimate yet"*) echo "no basis yet" ;; *"min left"*) echo "approximate time" ;; *) echo "" ;; esac)" \
       '{milestone_shown: ($m == "true"), progress_shown: ($p == "true"), doing_shown: ($d == "true"), need_shown: ($n == "true"),
         tabs_shown: ($t == "truetruetruetrue"), next_row_shown: ($r == "true"),
-        need_text: (if $n == "true" then "Please approve the plan before VBW builds it." else "" end), cost_shown: ($c == "true"), estimate_shown: $e}')
+        need_text: (if $n == "true" then "Your plan changed since you approved it: please review the changes and approve it again." else "" end), cost_shown: ($c == "true"), estimate_shown: $e}')
     # The sound switch, as the user types it; the panel's own line follows within seconds.
     l3 type "$scenario" "/vbw-sound off"
     snd=$(panel_wait "Sound is off.")
