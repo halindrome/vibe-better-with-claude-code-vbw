@@ -8,8 +8,14 @@
 # (a hand edit, a hand deletion, a revert by hand, a merge) is a deviation. Only
 # the current milestone's plans are checked. Files under .vbw/, the check files
 # (their approval guards them) and the files in the project's results folders
-# are not deliverables. vbw prove keeps the deviations in its evidence; lib/qa.jq
-# gives each to QA with the decision that covers it, if any.
+# are not deliverables. Only the record's own history is read (lib/history.sh):
+# plan ids restart with a new record, so a commit older than the record (a
+# retired roadmap's VBW-Plan: P1.1) delivered nothing for today's P1.1. vbw
+# prove keeps the deviations in its evidence; lib/qa.jq gives each to QA with
+# the decision that covers it, if any.
+
+# shellcheck source=history.sh
+. "$VBW_LIB/history.sh"
 
 # DELIVERED_JQ, over git's stream (git log -z --topo-order --no-renames --raw:
 # per commit a header "hash, unit separator, commit time, unit separator,
@@ -83,24 +89,25 @@ DELIVERED_DEFS='def deviation_line: "\(.file) (\(.plan)) \(.change) outside any 
 '
 
 # delivered_deviations RECORD: the deviations of the current milestone's plans
-# (above), as a JSON array. git lists the history once to find how far back the
-# oldest commit naming one of those plans lies, walks it once to there, reads the
-# park's reverts once (only when there are any) and lists HEAD once for the files
-# found; jq does the rest, so the shell runs the same commands whatever the
-# length of the history or the number of files.
+# (above), as a JSON array. git lists the record's own history once to find how
+# far back the oldest commit naming one of those plans lies, walks it once to
+# there, reads the park's reverts once (only when there are any) and lists HEAD
+# once for the files found; jq does the rest, so the shell runs the same
+# commands whatever the length of the history or the number of files.
 delivered_deviations() {
-  local dir n out
+  local dir n out HISTORY_ARGS
   mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
   dir=$(mktemp -d "$VBW_RUNTIME/delivered.XXXXXX") || vbw_die "cannot create a temporary folder in $VBW_RUNTIME"
   vbw_guard_add dir "$dir"
   printf '%s' "$1" > "$dir/rec.json" || vbw_die "cannot write $dir/rec.json"
-  n=$(git -C "$VBW_ROOT" log -z --topo-order --format='%(trailers:key=VBW-Plan,valueonly,separator=%x2C)' 2> /dev/null \
+  history_args
+  n=$(git -C "$VBW_ROOT" log -z --topo-order --format='%(trailers:key=VBW-Plan,valueonly,separator=%x2C)' "${HISTORY_ARGS[@]}" 2> /dev/null \
     | jq -R -s --slurpfile rec "$dir/rec.json" '$rec[0] as $r | ([$r.phases[] | select(.milestone == $r.milestone.id) | .id]) as $now
         | ([$r.plans[] | select(.phase | IN($now[])) | .id]) as $mine
         | split("\u0000") | map(ltrimstr("\n") | split(",") | any(.[]; IN($mine[]))) | (rindex(true) // -1) + 1') || n=0
   if [ "${n:-0}" -gt 0 ]; then
     git -C "$VBW_ROOT" log -z --topo-order --no-renames --raw --no-abbrev --max-count="$n" \
-      --format='%H%x1f%ct%x1f%(trailers:key=VBW-Plan,valueonly,separator=%x2C)%x1f%(trailers:key=VBW-Fix,valueonly,separator=%x2C)' > "$dir/log" 2> /dev/null \
+      --format='%H%x1f%ct%x1f%(trailers:key=VBW-Plan,valueonly,separator=%x2C)%x1f%(trailers:key=VBW-Fix,valueonly,separator=%x2C)' "${HISTORY_ARGS[@]}" > "$dir/log" 2> /dev/null \
       || { vbw_guard_drop "$dir"; vbw_die "internal error: the check of delivered files could not read the history"; }
   else
     : > "$dir/log"
