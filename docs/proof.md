@@ -1251,7 +1251,9 @@ suite therefore pays for the checks a break needs, not for every check.
   --none REASON` after the kernel verifies the check's read list against the
   files of the requirement's plans: the list must name none of them. The command
   may run the check once in a clean copy of the committed code, with read
-  tracking on, and records that run in the store as a proof would. `vbw plan
+  tracking on, and records that run in the store as a proof would. A check that
+  only tests whether a plan file exists, without opening it, never reads that
+  file: such a check is not detected, and the accepting line says so. `vbw plan
   done` counts such a rule covered.
 
 The broken file, and its restore, get a fresh modification time, newer than
