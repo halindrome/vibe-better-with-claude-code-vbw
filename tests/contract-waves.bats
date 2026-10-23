@@ -3,7 +3,8 @@
 # waves and how many plans the widest wave runs at once, counted as vbw next
 # schedules them: a plan waits for its "after" plans, and plans that share a
 # file never run in the same wave. A phase that cannot be split shows one plan
-# per wave honestly. Format: "build waves: N (the widest runs M plan(s) at once)".
+# per wave honestly. Format: "build waves: N (the widest runs M plan(s) at once)",
+# then one line per plan that waits: the plans of the wave before it it waits for, and why.
 
 load helper
 load fixture-helper
@@ -71,4 +72,16 @@ waves_line() { "$VBW" show contract < /dev/null | grep '^build waves:'; }
   git add -A > /dev/null && git commit -q -m "chore(vbw): plan" && "$VBW" approve > /dev/null
   [ "$("$VBW" next --json < /dev/null | jq -r '.detail.plans | length')" = 2 ]
   [ "$(waves_line)" = "build waves: 2 (the widest runs 2 plans at once)" ]
+}
+
+@test "R102: each plan that waits names the plan of the wave before it and why: planned after it, or a file they share" {
+  plans '[{"id":"P1.1","files":["a.js"]},{"id":"P1.2","files":["src/"]},{"id":"P1.3","files":["c.js"],"after":["P1.1"]},{"id":"P1.4","files":["src/x.js"]},{"id":"P1.5","files":["c.js"],"after":["P1.3"]}]'
+  run "$VBW" show contract < /dev/null
+  [ "$(printf '%s\n' "$output" | grep -A3 '^build waves:')" = "build waves: 3 (the widest runs 2 plans at once)
+  P1.3 waits for P1.1 (planned after it)
+  P1.4 waits for P1.2 (both change src/x.js)
+  P1.5 waits for P1.3 (planned after it, both change c.js)" ] || { echo "$output"; false; }
+  plans '[{"id":"P1.1","files":["a.js"]},{"id":"P1.2","files":["b.js"]}]'
+  run "$VBW" show contract < /dev/null
+  ! printf '%s\n' "$output" | grep -q ' waits for ' || { echo "$output"; false; }
 }

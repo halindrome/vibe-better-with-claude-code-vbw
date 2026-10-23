@@ -200,12 +200,23 @@ gate or the loop.
 
 ## Build waves
 
-`vbw show contract` prints one line under `plans:`, before the approval
-question:
+`vbw show contract` prints the build's shape under `plans:`, before the
+approval question: one line for the waves, then one line for each plan that
+waits, naming the plans of the wave before it that hold it back and why:
 
 ```text
 build waves: 3 (the widest runs 2 plans at once)
+  P1.3 waits for P1.1 (planned after it)
+  P1.4 waits for P1.2 (both change src/x.js)
+  P1.5 waits for P1.3 (planned after it, both change c.js)
 ```
+
+A plan waits because it is planned after another (`after`), or because the two
+would change the same file. The file named is the more specific entry: a plan
+on `src/` and a plan on `src/x.js` both change `src/x.js`. A plan that may
+change any file (`*`) reads `either may change any file`. Only the wave just
+before a plan is named, because that wave is what holds it back; a plan of the
+first wave has no line.
 
 The count follows row 5: the same rule that picks each wave when `vbw next`
 schedules the build. A plan waits until every plan in its `after` is built.
@@ -220,7 +231,8 @@ the one before it, or all of them write the same file, the line reads
 `build waves: 3 (the widest runs 1 plan at once)`. It never counts plans that
 run one after another as parallel. Read it as the approval check on the
 Lead's plan: a wide wave means plans build at the same time; a width of 1
-means the work builds one plan at a time.
+means the work builds one plan at a time, and the wait lines say what you
+could change ("Not yet") to let more plans build together.
 
 The Lead (`plugin/agents/lead.md`) aims for that line to be as wide as the
 work allows. It splits each phase into plans that touch separate files, lists
