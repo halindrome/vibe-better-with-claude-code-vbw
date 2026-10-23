@@ -590,6 +590,13 @@ Milestone end: about 36 min, until around 14:56, counting 2 fix rounds per stand
     to plan now.
 
   With an even count, the median is the mean of the two middle values.
+- **Idle time is not work.** The history keeps when a step started and ended,
+  not what it waited for, so a run left open overnight or waiting for you is
+  recorded at its whole length. Before any estimate, VBW leaves out a step that
+  took more than 8 times the median seconds per part (per plan, requirement or
+  phase) of its kind, while at least 3 steps remain. A wait shorter than that
+  still counts, and a kind whose recent steps all waited has nothing to compare
+  with; deleting `.git/vbw/steps.json` starts the estimates again.
 - **The fallback ladder.** A unit with fewer than 3 finished ones at its tier
   falls back one rung at a time: first the median time per plan (or per phase)
   at that tier, then the median of any tier, then the plain median time of the

@@ -85,6 +85,14 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
   [ "$(step_of | jq -c '[.say, .why]')" = "$(printf '%s' "$s" | jq -c '[.say, .why]')" ] || { step_of; false; }
 }
 
+@test "T173: a proof that stayed open for hours is left out of the learned ratio: 8 times the median of its kind and size" {
+  runs_seed '{"check:C1": 10, "check:C2": 20, "check:C3": 30, "check:C4": 40}'
+  hist_proof '[{"name": "check:C1", "seconds": 40}, {"name": "check:C2", "seconds": 60}]' 150 3
+  # One proof left open overnight (11 h for the same two units): pooled in, the ratio would be 101.
+  hist_proof '[{"name": "check:C1", "seconds": 40}, {"name": "check:C2", "seconds": 60}]' 40000 1
+  step_of | jq -e '.kind == "proof" and .seconds == 150' || { step_of; false; }
+}
+
 @test "R191: a unit's cost is the fastest it ran in the latest 10 proofs or in its last recorded run, never a slower one" {
   # C1's last run took 100 s on a busy machine, its proofs 10 s; C2 ran 20 s last, 50 s in its proofs:
   # costs 10 + 20 + 30 + 40 = 100 s, ratio 180 / 180 = 1. Summing the last runs would promise 190 s.

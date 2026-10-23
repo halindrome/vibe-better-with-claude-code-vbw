@@ -24,7 +24,6 @@ Status words:
 | [Mission Control may not open at session start](#mission-control-may-not-open-at-session-start) | Known issue | Wide windows | `/vbw-panel` |
 | [The loop's time budget follows the size label](#the-loops-time-budget-follows-the-size-label) | Known issue | Loops | Re-run the item |
 | [Approved rules cannot be reworded or retired](#approved-rules-cannot-be-reworded-or-retired) | Known issue | Re-planning | None clean |
-| [Time estimates absorb idle time](#time-estimates-absorb-idle-time) | Known issue | Estimates | Delete `steps.json` |
 | [Heavy checks each use every core](#heavy-checks-each-use-every-core) | Known issue | Cargo, make, similar | Lower `check_jobs` |
 | [Slot store edge cases](#slot-store-edge-cases) | Known issue | Sandboxes, many runs | None needed |
 | [Unit times are whole seconds](#unit-times-are-whole-seconds) | Known issue | Proof time reports | None needed |
@@ -71,18 +70,6 @@ Status words:
 **Plan.** Give rules a stable address that a patch can reword or retire, with a new approval. A kernel step is needed to supersede a rule of a shipped requirement.
 
 **Where.** `plugin/lib/cmd-apply.sh`; the record's `rules` ([record.md](record.md)).
-
-### Time estimates absorb idle time
-
-**What.** A build or fix step whose run stayed open overnight, or while waiting for you, is recorded at its whole length (13, 18 and 40 hours have been seen). The estimate for later steps is the median of recorded times, so it comes out hours too long: a proof was announced as "about 12 hours".
-
-**Who and when.** Anyone who leaves a run open while away. The wrong figure shows in the status line, Comms, Mission Control and VBW's messages.
-
-**Workaround.** Delete `.git/vbw/steps.json` in the clone. Estimates then start again from none ([panel.md](panel.md#time-left)).
-
-**Plan.** Time only active work, excluding waits for you, approvals and other runs, or drop steps far beyond their size.
-
-**Where.** `plugin/lib/steps.sh` (what a step records); `plugin/lib/steps-expect.jq` (the estimate).
 
 ### Heavy checks each use every core
 

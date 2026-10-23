@@ -72,3 +72,10 @@ section() { sed -n '/^## Time left/,/^## /p' "$PANEL" | sed '$d'; }
   grep -qF '"reason": "plugin/lib/core.sh changed"' "$NEXT" || { echo "docs/next.md does not show step.why"; false; }
   grep -qF '; top reason: ' "$NEXT" || { echo "docs/next.md does not show the sentence's top reason"; false; }
 }
+
+@test "T173: docs/panel.md says a step far longer than its kind and size is left out of the estimates, and what that cannot catch" {
+  local doc="$REPO_ROOT/docs/panel.md"
+  tr '\n' ' ' < "$doc" | grep -Eq 'Idle time is not work.*more than 8 times the median seconds per part' || { echo "docs/panel.md does not state the idle rule"; false; }
+  tr '\n' ' ' < "$doc" | grep -Eq 'A wait shorter than that +still counts' || { echo "docs/panel.md does not state what the rule cannot catch"; false; }
+  ! grep -qF 'Time estimates absorb idle time' "$REPO_ROOT/docs/known-issues.md" || { echo "the fixed entry is still listed"; false; }
+}
