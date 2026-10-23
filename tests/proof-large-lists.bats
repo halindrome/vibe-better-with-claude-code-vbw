@@ -2,10 +2,10 @@
 # R149 and R202 (docs/proof.md): what grows with the project never travels on a
 # command line, which the system caps (about 1 MB on macOS, 128 KB per argument
 # on Linux). vbw fix done prints its two report lines when the reused test
-# files' read lists are large, and vbw prove records and prints a bounded
-# summary of its causes (one line: the count and the first three paths) when a
-# commit adds thousands of files no run has seen. L1: the kernel on fixture
-# projects; the read lists are made large in the clone's run store.
+# files' read lists are large, and a commit that adds thousands of files no run
+# has seen and no plan lists runs nothing and records no cause: nothing of it
+# reaches the record or a command line. L1: the kernel on fixture projects; the
+# read lists are made large in the clone's run store.
 
 load helper
 
@@ -55,9 +55,10 @@ teardown() { vbw_teardown; }
   [[ "$output" == *"$fix fixed: vbw prove decides"* ]] || { echo "$output" | tail -20; false; }
 }
 
-@test "R202: vbw prove records and prints a bounded summary of its causes when a commit adds thousands of files no run has seen" {
-  local dir i name want
-  # 3,000 new files deep in a folder no run listed: one cause each would be over 1 MB of text.
+@test "R202: a commit that adds thousands of files no run has seen and no plan lists runs nothing, and the record keeps no cause" {
+  local dir i name
+  # 3,000 new files deep in a folder no run listed and no plan lists (P1.1 delivers src/): one cause
+  # each would be over 1 MB of text; no run could see them, so nothing runs and nothing is recorded.
   name="a-generated-source-file-of-the-vendored-library-with-a-long-and-descriptive-name-that-tools-like-to-produce-for-every-module-and-every-target-platform-they-build"
   dir="vendor/a-vendored-library-with-a-rather-long-name/and-a-deep-folder-below-it/of-generated-sources/that-nobody-reads-or-lists"
   mkdir -p "$dir"
@@ -65,10 +66,8 @@ teardown() { vbw_teardown; }
   git add vendor && git commit -q -m "chore: vendor a library"
   "$VBW" prove > "$TEST_ROOT/prove.out" 2>&1 < /dev/null || { tail -20 "$TEST_ROOT/prove.out"; false; }
   [ "$(tail -n 1 "$TEST_ROOT/prove.out")" = proved ] || { tail -20 "$TEST_ROOT/prove.out"; false; }
-  # One cause: the count and the first three paths, in path order.
-  want="3000 files were added, and no recorded run read them or listed their folders: $dir/$name-0.txt, $dir/$name-1.txt, $dir/$name-10.txt and 2997 more"
-  jq -e --arg w "$want" '.evidence.causes == [$w]' .vbw/record.json > /dev/null || { jq '.evidence.causes' .vbw/record.json | head -c 2000; false; }
-  [ "$(jq -c '.evidence.causes' .vbw/record.json | wc -c)" -lt 2048 ] || { echo "the causes are not bounded"; false; }
-  [ "$(grep -c 'no recorded run read it or listed its folder' "$TEST_ROOT/prove.out")" -eq 0 ] || { tail -20 "$TEST_ROOT/prove.out"; false; }
-  grep -qxF "  ran everything: $want" "$TEST_ROOT/prove.out" || { tail -20 "$TEST_ROOT/prove.out"; false; }
+  grep -qE '^ +checks: 0 ran, 1 reused$' "$TEST_ROOT/prove.out" || { tail -20 "$TEST_ROOT/prove.out"; false; }
+  grep -qE '^ +test files: 0 ran, 3 reused$' "$TEST_ROOT/prove.out" || { tail -20 "$TEST_ROOT/prove.out"; false; }
+  ! grep -q 'ran everything' "$TEST_ROOT/prove.out" || { tail -20 "$TEST_ROOT/prove.out"; false; }
+  jq -e '.evidence.causes == []' .vbw/record.json > /dev/null || { jq '.evidence.causes' .vbw/record.json | head -c 2000; false; }
 }

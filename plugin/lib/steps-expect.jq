@@ -18,6 +18,13 @@
 # lone plan, 0.87 for two, 0.91 for three. A plan's unit of work is a task or a
 # break (a rule it owes the mutation check), so its work is its tasks plus its
 # breaks; the history from before breaks were recorded counts per task.
+#
+# A proof takes its units' costs times the learned ratio. The latest 10 proofs
+# that recorded units give the ratio, their total wall time over their total
+# unit time (one proof of two units cannot skew it), and each unit's fastest
+# seconds among them; the store's last run joins that minimum, so a busy day's
+# slow run never sets the promise (a proof that runs late moves its end, D424).
+# A unit never run counts as the median of the known costs.
 
 def median: sort | length as $n
   | if $n == 0 then empty
@@ -90,15 +97,19 @@ $size[0] as $size
       else of("qa") | latest | map(.seconds) | basis end;
 
   def proof:
-    ( [ of("proof")[] | select((.units | type) == "array" and (.units | length) > 0) ] | latest
-      | map(([.units[] | select(type == "object" and (.seconds | num)) | .seconds] | add) as $sum
-            | if $sum != null and $sum > 0 then .seconds / $sum else empty end) ) as $ratios
-    | ( if ($ratios | length) >= 3 then
+    ( [ of("proof")[] | select((.units | type) == "array" and (.units | length) > 0)
+        | {seconds, units: [.units[] | select(type == "object" and (.name | type) == "string" and (.seconds | num))]}
+        | select(([.units[].seconds] | add // 0) > 0) ] | latest ) as $hist
+    | ( if ($hist | length) >= 3 then
           ($runs[0] | if type == "object" and (.runs | type) == "object" then .runs else {} end) as $store
-          | [ $size.units[]? | $store[.] | select(type == "object" and (.seconds | num)) | .seconds ] as $known
+          | (($hist | map(.seconds) | add) / ($hist | map([.units[].seconds] | add) | add)) as $ratio
+          | (reduce ($hist[].units[]) as $u ({}; .[$u.name] = ([.[$u.name], $u.seconds] | map(select(. != null)) | min))) as $fast
+          | def cost: . as $n | [$fast[$n], ($store[$n] | if type == "object" and (.seconds | num) then .seconds else null end)]
+              | map(select(. != null)) | if length > 0 then min else null end;
+          [ $size.units[]? | cost | select(. != null) ] as $known
           | if ($known | length) == 0 then empty
             else ($known | median) as $m
-              | ([ $size.units[]? | ($store[.] | if type == "object" and (.seconds | num) then .seconds else $m end) ] | add) * ($ratios | median)
+              | ([ $size.units[]? | cost // $m ] | add) * $ratio
             end
         else empty end )
       // ( of("proof") | withparts | latest

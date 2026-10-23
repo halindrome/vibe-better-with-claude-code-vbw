@@ -62,8 +62,6 @@ cmd_prove() {
   if printf '%s' "$PROOFREUSE_STORE" | jq -e '(.runs | length) == 0' > /dev/null; then WHY_CHECKS='{}' WHY_COMMANDS='{}'; fi
   slots_release vbw:plan
   at=$(vbw_now)
-  # The marker stays until the evidence is recorded: a proof cut short reuses nothing next time.
-  : > "$(proofreuse_marker)" || vbw_die "cannot write $(proofreuse_marker)"
   head=$(vbw_head_tree) || vbw_die "cannot fingerprint the committed code"
   prooftime_step planning
   checks='{}' commands='{}'
@@ -152,7 +150,6 @@ cmd_prove() {
   record_update '.evidence.record = $fp | .evidence.own = $own' --arg fp "$fp" --argjson own "$own"
   vbw_guard_drop "$evf"
   vbw_guard_drop "$curf"
-  rm -f "$(proofreuse_marker)"
   # The evidence is part of the plan of record: commit it, so a proof never
   # leaves VBW's own file modified in the user's working tree.
   record_commit "chore(vbw): proof $(jq -r 'if .evidence.passed then "passed" else "not passed" end' "$VBW_RECORD")"

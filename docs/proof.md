@@ -838,6 +838,10 @@ read list and nothing on it has changed since that pass.
 - A file on its read list was changed, deleted or renamed.
 - A file or a sub-folder was added to or removed from a folder on its read list
   (a sub-folder appears with its first file and vanishes with its last).
+- A file of its requirement's plans was added or deleted, whether or not the
+  check read it: a check may test whether a path exists without opening it,
+  and the contract says what each requirement's plans deliver (a plan's file
+  entry is a path, a folder ending in `/`, or `*`).
 - Its last result failed (fail, timeout or lost).
 - It never passed: it is new, or no earlier proof ran it.
 - It has no read list (for example, the earlier run recorded none).
@@ -928,7 +932,9 @@ Other things to know:
 - An uncommitted change in the working folder does not make a check run again,
   and is never counted as proven: the proof reads only the committed code.
   Commit the work, then run `vbw prove`.
-- An interrupted proof recorded no evidence, so the next proof runs every check.
+- A proof cut short (interrupted, or unable to write the record) recorded no
+  evidence and saved nothing, or runs as complete as any proof's: the next proof
+  reuses what the read lists allow, as if the cut-short one had not run.
 - Project commands and test files follow the same rule. `vbw prove` reuses the test command's
   passing result when nothing it read changed; a command runs again only when its
   approved argv or time limit changed, a file it read changed, or its last result
@@ -961,26 +967,30 @@ The causes, with the text the summary shows:
 
 | What happened | Message |
 |---|---|
-| A file was added that no recorded run read and no recorded run listed its folder | `src/new.txt was added, and no recorded run read it or listed its folder` |
-| A file was deleted under the same condition | `src/old.txt was deleted, and no recorded run read it or listed its folder` |
-| More than three such files (a vendored library, for example): one cause, with their count and the first three paths in path order | `3000 files were added, and no recorded run read them or listed their folders: vendor/a.c, vendor/b.c, vendor/c.c and 2997 more` (`were deleted`, or `were added or deleted (N added, M deleted)`) |
 | The file system cannot record which files are read | `this file system does not record which files are read` |
 | The clone has no earlier recorded run | `this clone has no earlier recorded run` |
-| The last proof was cut short | `the last proof was cut short` |
 | `vbw prove --full` | `vbw prove --full` |
 | Nothing was committed since the last passing proof (`vbw prove` only; `vbw fix done` reuses that proof): the project's files are the tree the last passing proof recorded (`evidence.tree`), the committed code is the tree it ran on (`evidence.head`), the record is as that proof left it (its fingerprint without the evidence is `evidence.record`: a decision, a verdict or a backlog item recorded since is a change, and the proof reuses by read lists), and the record's last proof passed | `nothing was committed since the last passing proof` |
 
-A content change to a file no recorded run read runs nothing: it affects
-nothing that was run. An added or deleted file no recorded run saw (none read
-it or listed its folder, and every recorded run predates it) runs everything,
-because a check could now see a different set of files. An addition or deletion
-that some recorded run already ran with is not unseen: the proof that ran it
-judged it. A file whose own folder appeared or vanished with it (the first file
-of a new sub-folder, the last file of one) is seen through the nearest folder
-above it that a recorded run listed: that listing gained or lost an entry, so
-the run that listed it runs again and nothing else does. A changed approved command, single-file form or list of test files
-is no cause either: each unit re-runs by its own definition
-([Reusing results](#reusing-results-in-vbw-prove)).
+A change to the project's files is never a cause: each unit's own read list
+decides, with the contract's ties for a check. A content change to a file no
+recorded run read runs nothing: it affects nothing that was run. An added or
+deleted file re-runs the units that listed its folder or read it, and the
+checks of the requirement whose plans list it, nothing else: a run that listed
+the folder recorded the names inside it, so the changed listing re-runs that
+run; a file whose own folder appeared or vanished with it (the first file of a
+new sub-folder, the last file of one) is seen through the nearest folder above
+it that a run listed; a check may test whether a path exists without opening
+it, so the files its requirement's plans deliver re-run it when they appear or
+vanish, read or not; a unit that reads the project through git always runs
+again. A file added to or deleted from a folder no run listed, that no run read
+and no plan of a check's requirement lists, runs nothing: no run could have
+seen it, and the contract ties nothing to it. A changed approved
+command, single-file form or list of test files is no cause either: each unit
+re-runs by its own definition ([Reusing results](#reusing-results-in-vbw-prove)).
+A proof cut short (interrupted, or unable to write the record) is no cause: it
+saved nothing, or runs as complete as any proof's, so the next proof reuses
+what the read lists allow, as if the cut-short one had not run.
 
 Every summary, full or not, prints both counts:
 
@@ -998,7 +1008,9 @@ They read `checks: N ran, M reused` and `test files: N ran, M reused`. After
   and the clock. A check that depends on them can pass from reuse after they
   changed.
 - A check that only looks whether a file exists, or at its size, without
-  opening it, does not put that file on its read list.
+  opening it or listing its folder, does not put that file on its read list: a
+  change to that file does not run the check again, and neither does its
+  addition or deletion unless a plan of the check's requirement lists it.
 - Reads through git always run again. Any git command whose working directory
   is inside the project counts, even one that reads nothing of the project
   (`git config --global` run from the project folder): git opens the

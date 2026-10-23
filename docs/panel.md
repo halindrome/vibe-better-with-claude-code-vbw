@@ -609,13 +609,17 @@ Milestone end: about 36 min, until around 14:56, counting 2 fix rounds per stand
   vary on their own. A wave that runs past it moves its end (later than usual,
   below).
 - **A proof's time comes from its units.** Every proof records each unit it ran
-  (a check, or a test file) and that unit's own seconds in `runs.json`, next to
-  `steps.json`. A proof is expected to take the sum of its units' last recorded
-  seconds, times the **learned ratio**: the median ratio of the proof's wall
-  time to its summed unit time over the latest 10 proofs that recorded units. A
-  unit never run before counts as the median of the proof's known units. Without
-  such proofs, the time per unit of older proofs is used; with fewer than 3
-  finished proofs, there is no time.
+  (a check, a test file, a project command) and that unit's own seconds in
+  `steps.json`; `runs.json`, next to it, keeps each unit's last run. A unit's
+  cost is the fastest it ran in the latest 10 proofs that recorded units or in
+  its last run: a busy day's slow run never sets the promise, and a proof that
+  runs late moves its end as it goes (later than usual, below). A proof is
+  expected to take the sum of its units' costs, times the **learned ratio**:
+  those proofs' total wall time over their total unit time, so one proof of two
+  units cannot skew it (parallel lanes and this machine's load are learned, not
+  assumed). A unit never run before counts as the median of the proof's known
+  costs. Without such proofs, the time per unit of older proofs is used; with
+  fewer than 3 finished proofs, there is no time.
 - **The road's pieces.** The milestone end adds up: the build waves still to
   build (a wave already built leaves the road), one proof per wave over the
   phase's checks not yet passed (a built phase whose checks are not passed still

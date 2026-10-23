@@ -167,8 +167,8 @@ it reads the run store and runs git, so `vbw next` caches the list in
 git index's digest (SHA-256 of `git ls-files -s`: the test files are listed
 from the index, so a staged new test file counts), the record's fingerprint
 (SHA-256 of the record file) and the run store's digest (SHA-256 of its file;
-an absent store counts as empty). It also records whether the unfinished-proof
-marker exists and whether the proof is full. When any of these changes (a new
+an absent store counts as empty). It also records whether the proof is full.
+When any of these changes (a new
 commit, a staged file, a changed record, a changed run store), the list is
 recomputed and the file rewritten. A damaged cache file is recomputed too.
 
