@@ -547,8 +547,10 @@ form in `.vbw/spec.md`.
    A check whose last pass is still valid for the files it read is reused, not
    run again ([Reusing results in `vbw prove`](#reusing-results-in-vbw-prove)).
    Then it removes the copy, also when interrupted.
-4. Scope: every commit with a `VBW-Plan:` trailer naming a plan of the current
-   milestone must change only that plan's files. A shipped milestone's commits
+4. Scope: every commit of the record's own history
+   ([Whose commits VBW judges](#whose-commits-vbw-judges)) with a `VBW-Plan:`
+   trailer naming a plan of the current milestone must change only that plan's
+   files. A shipped milestone's commits
    were judged by its own proofs and are not judged again, nor are the commits
    a park undid (their `git revert` is in the loop's `reverts`): their changes
    are gone, even when git had to merge the revert over a later change.
@@ -570,7 +572,7 @@ form in `.vbw/spec.md`.
    `scope: abc123456789 (P163.2) undone by def123456789, not judged`.
    The check reads the history as a plain listing plus a bounded raw walk: a
    fixed 2 git processes plus one per undone pair, however long the history.
-   The listing finds the oldest commit with a trailer, the walk reads each
+   The listing finds the record's oldest commit with a trailer, the walk reads each
    commit's file changes back to it, and each pair found costs one ancestry
    check (does the undo descend from its original?). Each revert a park
    recorded adds one more, to read which commit it undid.
@@ -584,10 +586,26 @@ form in `.vbw/spec.md`.
 6. Writes the evidence and updates requirements and fixes in one atomic record
    update, then prints a one-screen summary. Exit 0 only when everything passed.
 
+### Whose commits VBW judges
+
+VBW's trailers (`VBW-Plan:`, `VBW-Fix:`, `VBW-Req:`) carry bare ids, and ids
+start again when a project starts a new record: a roadmap retired with VBW 1,
+or a record removed and made again, left commits whose trailers name ids the new
+record uses again. Such a commit is not one of today's plans' commits. So every
+reader of the trailers (the scope check, delivered files, `vbw plan done`'s
+"the plan has a commit", the commits `vbw show` lists for a requirement, the
+loop's report) reads only the record's own history: the commits after the
+newest commit that added `.vbw/record.json`. The record is in git before any
+plan can commit, because `vbw approve` commits it and a build needs an approved
+contract. A project whose record was never committed keeps its whole history.
+One limit: an older branch merged in after the record was born is part of its
+history, because git has it after the record's first commit.
+
 ### Delivered files
 
-A plan delivers the files its own commits added or changed (the commits whose
-`VBW-Plan:` trailer names it). A check can pass while such a file is gone: no
+A plan delivers the files its own commits added or changed (the commits of the
+record's own history whose `VBW-Plan:` trailer names it,
+[Whose commits VBW judges](#whose-commits-vbw-judges)). A check can pass while such a file is gone: no
 check reads `NOTES.md`, so deleting it by hand after the build breaks nothing a
 check sees. So the proof checks each plan of the current milestone with git:
 
@@ -614,7 +632,7 @@ and `by` lists the commits after it that changed the file outside any plan. A
 change made by a merge alone lists none.
 
 The check costs a fixed few processes, however long the history and however
-many files. git lists the history once to find the oldest commit that names a
+many files. git lists the record's own history once to find the oldest commit that names a
 plan of the current milestone, walks the file changes back to it once, reads the
 park's reverts once (only when there are any), and lists `HEAD` once for the
 files found. A proof recorded before this check existed lists no deviations.

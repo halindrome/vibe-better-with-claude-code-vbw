@@ -20,6 +20,8 @@
 . "$VBW_LIB/unittime.sh"
 # shellcheck source=delivered.sh
 . "$VBW_LIB/delivered.sh"
+# shellcheck source=history.sh
+. "$VBW_LIB/history.sh"
 
 VBW_FIX_CAP=3
 
@@ -292,10 +294,12 @@ PROVE_SCOPE_JQ='$c[0] as $c | $no[0] as $no | $park[0] as $park | $rec[0] as $r
      undone: ([.cleared[], ($judge[] | select($park[.h] != null) | {commit: .h, plan: .p, by: $park[.h]})] | map(select($files[.plan] != null)))}'
 
 # prove_scope RECORD: {scope: the violations, undone: the cleared commits [{commit, plan, by}]}.
-# The walk stops at the oldest commit with a VBW-Plan trailer: nothing older can be judged or
-# clear one that is, so a long history from before VBW costs one plain listing.
+# It walks only the record's own history (history.sh): plan ids restart with a new record, so a
+# commit older than the record is never judged as today's plan of the same id. The walk stops at
+# the oldest commit with a VBW-Plan trailer: nothing older can be judged or clear one that is, so
+# a long history from before VBW costs one plain listing.
 prove_scope() {
-  local dir r sha n hi hj more known=' '
+  local dir r sha n hi hj more known=' ' HISTORY_ARGS
   # shellcheck source=cmd-commit.sh
   . "$VBW_LIB/cmd-commit.sh"
   mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"
@@ -311,10 +315,11 @@ prove_scope() {
   done < <(printf '%s' "$1" | jq -r '(.loop.items // [])[].reverts[]?')
   jq -R -s -c 'reduce (split("\n")[] | select(length > 0) | split(" ")) as $p ({}; if has($p[0]) then . else .[$p[0]] = $p[1] end)' "$dir/park" > "$dir/park.json"
   # How far back the first commit with a trailer lies, in the same order as the walk below.
-  n=$(git log -z --topo-order --format='%x1f%(trailers:key=VBW-Plan,valueonly)' 2> /dev/null \
+  history_args
+  n=$(git log -z --topo-order --format='%x1f%(trailers:key=VBW-Plan,valueonly)' "${HISTORY_ARGS[@]}" 2> /dev/null \
     | jq -R -s 'split("\u0000") | map(ltrimstr("\n") | ltrimstr("\u001f") != "") | (rindex(true) // -1) + 1') || n=0
   if [ "${n:-0}" -gt 0 ]; then
-    git log -z --topo-order --no-renames --raw --no-abbrev --max-count="$n" --format='%H%x1f%(trailers:key=VBW-Plan,valueonly)' > "$dir/log" 2> /dev/null || : > "$dir/log"
+    git log -z --topo-order --no-renames --raw --no-abbrev --max-count="$n" --format='%H%x1f%(trailers:key=VBW-Plan,valueonly)' "${HISTORY_ARGS[@]}" > "$dir/log" 2> /dev/null || : > "$dir/log"
   else
     : > "$dir/log"
   fi

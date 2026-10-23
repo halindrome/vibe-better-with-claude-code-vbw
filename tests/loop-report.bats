@@ -6,7 +6,10 @@
 # (skipped [human] requirements, the stop reason), and what it cost: the loop's
 # total and each item's cost in dollars and tokens, unknown where VBW saw no
 # figure, never 0 or an estimate. The record stores the same facts; vbw loop
-# status after the end says the loop ended, why, and names the report. L1.
+# status after the end says the loop ended, why, and names the report. An
+# item's commits are those of the record's own history (docs/proof.md, "Whose
+# commits VBW judges"): an older commit whose VBW-Plan trailer names an id the
+# record uses again is an old roadmap's, not the item's. L1.
 
 load helper
 load loop-helper
@@ -30,6 +33,16 @@ one_item() {
   loop_prove
 }
 
+# old_roadmap_commit TRAILER: an old roadmap's commit, older than the record: a
+# new root commit, changing no file, grafted under the first one (git replace),
+# so every commit the record names keeps its hash.
+old_roadmap_commit() {
+  local root old
+  root=$(git rev-list --max-parents=0 HEAD)
+  old=$(git commit-tree "$(git mktree < /dev/null)" -m "feat(greet): an old roadmap's greeting" -m "$1")
+  git replace --graft "$root" "$old"
+}
+
 @test "R179: at the loop's end the report names what shipped, with its commits, and what it cost in dollars" {
   VBW_SESSION_ID=s1 "$VBW" loop start T1 --ceiling 20 > /dev/null
   one_item
@@ -51,6 +64,16 @@ one_item() {
   jq -e '.loop.report == ".vbw/loop-report.md" and (.loop.ended.reason | test("end of"))' .vbw/record.json
   run "$VBW" loop status
   [[ "$output" == *"ended"* ]] && [[ "$output" == *"end of"* ]] && [[ "$output" == *".vbw/loop-report.md"* ]] || { echo "$output"; false; }
+}
+
+@test "R179: an old roadmap's commit naming the item's plan id, older than the record, is not among its commits" {
+  old_roadmap_commit "VBW-Plan: P2.1"
+  git log --format='%(trailers:key=VBW-Plan,valueonly)' | grep -qx 'P2.1'
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 --ceiling 20 > /dev/null
+  one_item
+  [ "$(step)" = done ]
+  grep -q 'feat(greet): hello' .vbw/loop-report.md || { cat .vbw/loop-report.md; false; }
+  ! grep -q "an old roadmap's greeting" .vbw/loop-report.md || { cat .vbw/loop-report.md; false; }
 }
 
 @test "R179: a cost VBW did not see is unknown, never 0 or an estimate" {

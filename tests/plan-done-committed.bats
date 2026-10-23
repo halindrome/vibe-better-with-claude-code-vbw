@@ -3,6 +3,9 @@
 # example by the approval commit, with no VBW-Plan trailer) and whose checks
 # pass can be marked done; if its checks fail it cannot, and the failing check
 # is named. A plan with no commit and no passing check still cannot be closed.
+# Only the record's own history counts (docs/proof.md, "Whose commits VBW
+# judges"): a commit older than the record whose VBW-Plan trailer names the
+# same id (an old roadmap's) is not this plan's commit.
 # L1: the kernel on a fixture project.
 
 load helper
@@ -85,6 +88,27 @@ status_of() { jq -r --arg p "$1" '.plans[] | select(.id == $p) | .status' .vbw/r
   printf 'paid\n' > src/pay.txt
   git add tests && git commit -q -m "test(pay): the check"
   "$VBW" approve > /dev/null
+  "$VBW" commit P1.1 "feat(pay): pay" > /dev/null
+  vbw_run plan done P1.1
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(status_of P1.1)" = done ]
+}
+
+@test "R74: an old roadmap's commit with the same VBW-Plan id, older than the record, is not the plan's commit" {
+  git commit -q --allow-empty -m "feat: old" -m "VBW-Plan: P1.1"
+  git add tests && git commit -q -m "test(pay): the check"
+  "$VBW" approve > /dev/null
+  vbw_run plan done P1.1
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"no commit"* ]] || { echo "$output"; false; }
+  [ "$(status_of P1.1)" != done ]
+}
+
+@test "R74: with an old roadmap's commit in the history, a commit after the record still counts" {
+  git commit -q --allow-empty -m "feat: old" -m "VBW-Plan: P1.1"
+  git add tests && git commit -q -m "test(pay): the check"
+  "$VBW" approve > /dev/null
+  printf 'paid\n' > src/pay.txt
   "$VBW" commit P1.1 "feat(pay): pay" > /dev/null
   vbw_run plan done P1.1
   [ "$status" -eq 0 ] || { echo "$output"; false; }

@@ -1,5 +1,20 @@
 # Changelog
 
+## [2.1.4] - 2026-10-23
+
+### Fixed
+
+- **Commits from an earlier roadmap no longer block the proof.** A project that
+  started a new VBW record (after VBW 1, or after removing `.vbw/`) has older
+  commits whose trailers name plan ids the new record uses again. The proof
+  judged them against today's plans, reported them as out of scope and listed
+  their files as delivered work changed by hand, and nothing short of rewriting
+  history cleared it. VBW now reads only the record's own history: the commits
+  made since `.vbw/record.json` was first committed. The same rule applies to
+  `vbw plan done` (an old commit no longer counts as a plan's commit), to the
+  commits `vbw show` lists for a requirement and to the loop's report. Nothing
+  to do: the next proof judges only your record's commits.
+
 ## [2.1.3] - 2026-10-23
 
 ### Fixed

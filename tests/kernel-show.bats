@@ -1,5 +1,8 @@
 #!/usr/bin/env bats
-# vbw show: human views rendered from the record and git trailers.
+# vbw show: human views rendered from the record and git trailers. A
+# requirement's commits are those of the record's own history (docs/proof.md,
+# "Whose commits VBW judges"): an older commit whose VBW-Req trailer names an
+# id the record uses again is an old roadmap's, not the requirement's.
 
 load helper
 load fixture-helper
@@ -84,6 +87,19 @@ show_project() {
   [[ "$output" != *"refunds"* ]]
   vbw_run show req R12
   [[ "$output" == *"refunds"* ]]
+}
+
+@test "show req leaves out an old roadmap's commit naming the same id, older than the record" {
+  # A new root commit grafted under the first one (git replace), so every
+  # commit the record names keeps its hash.
+  local root old
+  root=$(git rev-list --max-parents=0 HEAD)
+  old=$(git commit-tree "$(git mktree < /dev/null)" -m "feat(pay): an old roadmap's card form" -m "VBW-Req: R1")
+  git replace --graft "$root" "$old"
+  git log --format='%(trailers:key=VBW-Req,valueonly)' | grep -qx 'R1'
+  vbw_run show req R1
+  [[ "$output" == *"feat(pay): card form"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"an old roadmap's card form"* ]] || { echo "$output"; false; }
 }
 
 @test "a phase's status is derived from its plans" {

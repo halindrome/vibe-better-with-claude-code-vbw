@@ -9,13 +9,19 @@
 # the deviations in its evidence. vbw next sends their phase to QA, even an
 # express phase, and hands QA the list (round.deviations), and the QA brief names
 # each file. vbw qa record PHASE pass refuses while one stands that no later
-# decision of the user names. L1: kernel commands on a two-phase fixture; the
-# QA brief under node with stubbed agents.
+# decision of the user names. Only the record's own history counts (lib/history.sh):
+# plan ids restart with a new record, so a commit older than the newest commit
+# that added .vbw/record.json (a retired roadmap's VBW-Plan: P1.1) delivered
+# nothing for today's P1.1. L1: kernel commands on a two-phase fixture and on a
+# project with a retired roadmap; the QA brief under node with stubbed agents.
 
 load helper
 load fixture-helper
 
-setup_file() { fixture_build built built_project; }
+setup_file() {
+  fixture_build built built_project
+  fixture_build retired retired_project
+}
 setup() { fixture_copy built; }
 teardown() { vbw_teardown; }
 teardown_file() { fixture_teardown; }
@@ -61,6 +67,33 @@ built_project() {
   "$VBW" commit P2.1 "feat(farewell): bye" > /dev/null
   "$VBW" plan done P2.1 > /dev/null
   "$VBW" prove --full > /dev/null
+}
+
+# retired_project: a retired roadmap's commits, older than the record, name
+# VBW-Plan: P1.1: they add legacy.txt (changed by hand later, still before the
+# record) and roadmap.md. Then a new record: its P1.1 delivers greet.sh
+# (checked by C1) and NOTES.md, and is built.
+retired_project() {
+  vbw_setup
+  vbw_git_project
+  printf 'old\n' > legacy.txt
+  printf '# Old roadmap\n' > roadmap.md
+  git add legacy.txt roadmap.md && git commit -q -m "feat: old" -m "VBW-Plan: P1.1"
+  printf 'old, by hand\n' > legacy.txt
+  git commit -q -m "chore: legacy by hand" -- legacy.txt
+  "$VBW" init > /dev/null
+  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] greet.sh says hello\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  mkdir -p tests
+  printf '[ "$(sh greet.sh)" = hello ]\n' > tests/greet.sh
+  printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"], "tier": "standard"}],
+    "plans": [{"id": "P1.1", "phase": "P1", "title": "Greet", "reqs": ["R1"], "files": ["greet.sh", "NOTES.md"], "tasks": ["greet.sh says hello"]}],
+    "checks": [{"id": "C1", "req": "R1", "run": ["sh", "tests/greet.sh"], "files": ["tests/greet.sh"]}]}' | "$VBW" apply > /dev/null
+  "$VBW" approve > /dev/null
+  printf 'echo hello\n' > greet.sh
+  printf 'greet.sh says hello.\n' > NOTES.md
+  "$VBW" commit P1.1 "feat(greet): hello" > /dev/null
+  "$VBW" plan done P1.1 > /dev/null
 }
 
 # plan_commit: the commit of P1.1 (the last one that touched greet.sh).
@@ -244,6 +277,22 @@ deviations() { jq -c '.evidence.deviations' .vbw/record.json; }
   # shellcheck disable=SC2016 # expanded by vbw_kernel
   vbw_kernel '. "$VBW_LIB/delivered.sh"; delivered_deviations "$(cat "$VBW_RECORD")"' > "$TEST_ROOT/park.json"
   [ "$(cat "$TEST_ROOT/park.json")" = '[]' ] || { cat "$TEST_ROOT/park.json"; false; }
+}
+
+@test "commits older than the record are not its plans' commits: a retired roadmap's P1.1 delivered nothing for today's P1.1, and a hand change to what today's P1.1 delivered is still a deviation" {
+  fixture_copy retired
+  printf '# Old roadmap, by hand\n' > roadmap.md
+  git commit -q -m "docs: roadmap by hand" -- roadmap.md
+  vbw_run prove --full
+  # With the scope check on the record's own history too, the old roadmap fails nothing.
+  [ "$status" -eq 0 ] && [[ "$output" == *"scope ok"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"delivered: legacy.txt"* && "$output" != *"delivered: roadmap.md"* ]] || { echo "$output"; false; }
+  [ "$(deviations)" = '[]' ] || { deviations; false; }
+  printf 'greet.sh says hello, by hand.\n' > NOTES.md
+  git commit -q -m "docs: notes by hand" -- NOTES.md
+  vbw_run prove --full
+  [[ "$output" == *"delivered: NOTES.md (P1.1) changed outside any plan, by"* ]] || { echo "$output"; false; }
+  deviations | jq -e '[.[].file] == ["NOTES.md"] and .[0].plan == "P1.1" and .[0].change == "changed"' || { deviations; false; }
 }
 
 @test "a malformed deviation in the evidence makes the record corrupt" {
