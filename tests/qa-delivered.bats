@@ -284,6 +284,8 @@ deviations() { jq -c '.evidence.deviations' .vbw/record.json; }
   printf '# Old roadmap, by hand\n' > roadmap.md
   git commit -q -m "docs: roadmap by hand" -- roadmap.md
   vbw_run prove --full
+  # With the scope check on the record's own history too, the old roadmap fails nothing.
+  [ "$status" -eq 0 ] && [[ "$output" == *"scope ok"* ]] || { echo "$output"; false; }
   [[ "$output" != *"delivered: legacy.txt"* && "$output" != *"delivered: roadmap.md"* ]] || { echo "$output"; false; }
   [ "$(deviations)" = '[]' ] || { deviations; false; }
   printf 'greet.sh says hello, by hand.\n' > NOTES.md
