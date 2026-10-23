@@ -3,6 +3,8 @@
 # the contract's short fingerprint, and `vbw approve --hash FINGERPRINT`
 # approves exactly that contract: the same record entry as plain `vbw approve`,
 # nothing when the contract is no longer the one named, and once per approval.
+# A plan changed after this milestone's plan was approved is offered again with
+# detail.changed, so VBW says it changed instead of calling it a new plan.
 
 load helper
 load approve-choice-helper
@@ -77,4 +79,14 @@ teardown_file() { fixture_teardown; }
   [ "$status" -ne 0 ]
   echo "$output" | grep -q 'not ready for approval'
   [ "$(approved_count)" = "0" ]
+}
+
+@test "R61: a plan changed after its approval is offered again as changed (detail.changed); a first approval is not" {
+  "$VBW" next --json | jq -e '.action == "approve" and (.detail | has("changed") | not)' > /dev/null || { "$VBW" next --json; false; }
+  "$VBW" approve > /dev/null
+  jq '.plans[0].title = "Pay by card"' .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
+  "$VBW" next --json | jq -e '.action == "approve" and .detail.changed == true' > /dev/null || { "$VBW" next --json; false; }
+  # An approval that held none of this milestone's requirements (the last milestone's) is not this plan's.
+  jq '.requirements = {}' .vbw/runtime/approved-contract.json > "$TEST_ROOT/a.json" && cp "$TEST_ROOT/a.json" .vbw/runtime/approved-contract.json
+  "$VBW" next --json | jq -e '.action == "approve" and (.detail | has("changed") | not)' > /dev/null || { "$VBW" next --json; false; }
 }

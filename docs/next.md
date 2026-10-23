@@ -85,6 +85,22 @@ docs/workflows.md). The router passes it to every workflow as `args.effort`.
 (Shortened here; the real table has every role and step.) A table with a wrong
 value stops `vbw next` with an error that names the role and step.
 
+An answer that stops for you (`gate` true) also carries `since`: the time VBW
+first reached that stop. It stays the same while the same stop stands (the same
+`action` and `detail`), whichever session asks and however often Claude Code
+restarts, so the status line and the panel date the wait from the stop itself.
+A new stop starts its own time; a step that needs nobody carries no `since`.
+
+```json
+"since": "2026-10-21T15:41:07Z"
+```
+
+At the `approve` stop, `detail.changed` is `true` when you approved this
+milestone's plan before and it changed since (the last approval in this clone
+already held this milestone's requirements). VBW then says the plan changed and
+shows only the changes (`vbw show contract --changes`), instead of presenting it
+as a new plan. The first approval of a milestone carries no `changed`.
+
 At the `plan` step, `detail.tier` is the early tier (docs/rigor.md): `express`
 for one small, risk-free `auto` requirement in a repository of at most 30
 tracked files, else `standard` (`deep` when forced). On `express` the router
@@ -105,7 +121,7 @@ adding the one phase with `vbw apply --add` (docs/rigor.md).
 | 2 | no requirements in the current milestone | `spec` (write its requirements in `.vbw/spec.md`) | yes |
 | 3 | the current milestone has no phases, an `auto` requirement has no check (a documentation-only requirement needs none: docs/rigor.md), or a current `auto` requirement is in no plan | `plan` (`detail.tier`: the early tier; plan workflow: phases, plans, contract checks, or direct `vbw apply` when express) | no |
 | 3a | the contract is not approved and approval would refuse it (a check file is missing, the spec and the record differ) | `contract` (`detail.problems` names each problem; write the missing check files, `vbw spec sync`, then `vbw next` again; there is no approval question until the contract can be approved) | no |
-| 4 | contract not approved (never approved, or its structure changed since: requirements, checks, plans) | `approve` (review and approve the contract) | yes |
+| 4 | contract not approved (never approved, or its structure changed since: requirements, checks, plans) | `approve` (review and approve the contract; `detail.changed` when this milestone's plan was approved before) | yes |
 | 4a | the contract is approved except for edits to the bytes of test files (a check's `files`), and a phase is built but not proved | `approve` with `detail.files`: the one approval of those test files, before they are proved (docs/proof.md) | yes |
 | 5 | plans ready to build: not `done`, not `blocked`, every `after` plan `done` | `build` (one wave: the ready plans in order, skipping any that shares a file with one already in the wave). When a plan is `blocked`, the instruction names it with its reason and `detail.blocked` lists `{id, note}`; plans that depend on it wait, unrelated plans still run | no |
 | 6 | no plan is ready and a plan is `blocked` | `unblock` (a Dev reported a blocker; `detail.plans` and `detail.blocked` name every blocked plan and its reason) | yes |

@@ -53,7 +53,7 @@ qa_combined() {
 # vbw status and the road (lib/road.sh) read the same one.
 next_answer() {
   vbw_require_project
-  local effort record hash counts approved=false changed=false legacy=false next qa waiting profile problems="" holder
+  local effort record hash counts approved=false changed=false legacy=false next qa waiting profile problems="" holder prev=/dev/null adoc=/dev/null
   record=$(record_read) || return $?
   hash=$(contract_hash "$record")
   # Check files edited since the approval wait: the build goes on, the one approval comes before proof.
@@ -73,7 +73,10 @@ next_answer() {
   effort=$(effort_table "$(printf '%s' "$record" | jq -r '.settings.profile')") || exit 1
   profile=$(interview_effective "$record")
   holder=$(next_holder "$record")
-  next=$(printf '%s' "$record" | jq -c --argjson effort "$effort" --argjson tracked "$counts" --argjson approved "$approved" --arg waiting "$waiting" --arg problems "$problems" --arg contract "$hash" \
+  # The last answer (a gate's since) and, while not approved, the last approved contract (a re-approval).
+  [ -f "$VBW_RUNTIME/next.json" ] && prev="$VBW_RUNTIME/next.json"
+  [ "$approved" = true ] || [ ! -f "$VBW_RUNTIME/approved-contract.json" ] || adoc="$VBW_RUNTIME/approved-contract.json"
+  next=$(printf '%s' "$record" | jq -c --rawfile prev "$prev" --slurpfile approved_doc "$adoc" --argjson effort "$effort" --argjson tracked "$counts" --argjson approved "$approved" --arg waiting "$waiting" --arg problems "$problems" --arg contract "$hash" \
     --argjson code_changed "$changed" --argjson legacy "$legacy" --slurpfile qa <(printf '%s' "$qa") --argjson profile "$profile" --arg session "$(vbw_session)" --arg holder "$holder" --slurpfile tiers "$VBW_LIB/tiers.json" "$VBW_JQ_DEFS$(cat "$VBW_LIB/next.jq")")
   printf '%s\n' "$next"
 }

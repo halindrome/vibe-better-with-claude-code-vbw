@@ -9,7 +9,10 @@
 # $qa (slurped: [state]; lib/qa.jq's answer, handed over a file so the command line stays short).
 # $tiers (slurped: [table]; lib/tiers.json: profile -> tier -> cell).
 # $effort: the current profile's effort table (lib/effort.sh), passed through as `effort`.
-# Output: {action, gate, instruction, detail, requirements (the active milestone's: id, text, proof), rigor, profile}; profile.ask is true only
+# $approved_doc (slurped: [] or [doc]): the last approved contract of this clone, read only while the
+# current one is not approved (lib/cmd-approve.sh writes it). $prev: the last answer's text (runtime/next.json, "" when none).
+# Output: {action, gate, instruction, detail, requirements (the active milestone's: id, text, proof), rigor, profile}, and on a gate
+# since (R189): when VBW first reached it, kept from $prev while the same action and detail stand. profile.ask is true only
 # at the spec or convert step with no completed interview (once per project). Every answer also carries
 # next_phase (one after the highest phase number the record knows: phase and plan ids, plan phases and the
 # P-numbers decisions name; P65.1 counts as 65; letters before the P do not) and effort.
@@ -110,7 +113,9 @@ def fix_files($r): if .command then ["*"]
     ([$problems | split("\n")[] | select(length > 0)]) as $pl
     | result("contract"; false; "The contract is not ready for approval, so there is no approval question yet: \($pl | join("; ")). Fix each (write a missing check file and see it fail first with vbw check --expect-red; vbw spec sync when the spec and the record differ; add missing rules with vbw apply --patch), then run vbw next again"; {problems: $pl})
   elif $approved | not then
-    result("approve"; true; "Review and approve the contract (requirements, plans and checks)"; {})
+    # A re-approval (R61): the last approved contract already held this milestone's requirements.
+    ((($approved_doc[0] // {}).requirements // {}) as $old | any(.requirements[]; .milestone == $m and $old[.id] != null)) as $changed
+    | result("approve"; true; "Review and approve the contract (requirements, plans and checks)"; (if $changed then {changed: true} else {} end))
   elif ($ready | length) > 0 then
     result("build"; false; "Run the build workflow for \($ready | join(", "))\(if ($blocked | length) > 0 then ". Blocked meanwhile, with their dependents waiting: \($blocked_text)" else "" end)"; {plans: $ready,
       docs: [.plans[] | select(.role == "docs" and (.id as $i | any($ready[]; . == $i))) | .id]}
@@ -146,3 +151,8 @@ def fix_files($r): if .command then ["*"]
 | ($n.action == "qa" or ($n.action == "run" and .lease.kind == "qa" and (.lease.session == null or .lease.session == $session))) as $with_round
 | $n + (if $with_round then {round: {tiers: $tiers_qa, focus: ([$to_verify[] | select(($qa.focus // {})[.] != null) | {key: ., value: $qa.focus[.]}] | from_entries),
     deviations: ([$to_verify[] | select(($qa.deviations // {})[.] != null) | {key: ., value: $qa.deviations[.]}] | from_entries), suite: (if (.commands.test // null) == null then null else (.commands.test) as $cmd | (if .evidence.commands.test == null then {command: "test", status: "not run"} else .evidence.commands.test | (if (.command // "") == "" then .command = ($cmd | join(" ")) else . end) end) end)}} else {} end) + {next_phase: $next_phase, effort: $effort, requirements: [$current[] | {id, text, proof}], rigor: $rigor, qa: ($qa | {recheck, standing, problems}), declined: [(.project.declined // [])[].text], profile: ({level: "small scripts or no-code", depth: "plain with technical terms explained", involvement: "options with a recommendation"} + ($profile | with_entries(select(.value != null or .key == "kept" or .key == "pending"))) + {ask: ([$n.action] | inside(["spec","convert"]) and ($profile.interviewed | not))})}
+# When VBW first reached this gate (R189): the last answer's since while the same action and
+# detail stand, so a restart or another session never moves it; a new gate starts now.
+| if .gate then . + {since: (($prev | try fromjson catch null) as $p
+    | if ($p | type) == "object" and $p.gate == true and $p.action == .action and $p.detail == .detail and ($p.since | type) == "string"
+      then $p.since else (now | todate) end)} else . end
