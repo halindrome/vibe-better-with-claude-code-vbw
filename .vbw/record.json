@@ -51543,42 +51543,42 @@
       "id": "F284",
       "req": "R61",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C75 fail (exit 1)"
     },
     {
       "id": "F285",
       "req": "R72",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C118 fail (exit 1)"
     },
     {
       "id": "F286",
       "req": "R76",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C103 fail (exit 1)"
     },
     {
       "id": "F287",
       "req": "R116",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C183 fail (exit 1)"
     },
     {
       "id": "F288",
       "req": "R149",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C219 fail (exit 1)"
     },
     {
       "id": "F289",
       "req": "R150",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "C226 fail (exit 1)"
     }
   ],
@@ -62761,6 +62761,17 @@
         "ended": "2026-10-23T18:11:04Z",
         "cost": {
           "usd": 8.613138
+        }
+      },
+      {
+        "id": "fix-20261023T181205Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-23T18:12:05Z",
+        "ended": "2026-10-23T18:13:07Z",
+        "cost": {
+          "usd": 0.096986
         }
       }
     ],
