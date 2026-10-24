@@ -680,7 +680,7 @@ naming the file, then record the verdict again.
 `vbw prove` does not run VBW's own timed speed checks (the hook, status line
 and panel benchmarks, and the test files named `tests/timed-*.bats`), so a busy
 machine never fails or delays a proof. They run once per release, in
-`bash tools/test.sh --release`: in CI and before a push. `bash tools/test.sh`
+`bash tools/test.sh --release`, which CI runs on every pull request. `bash tools/test.sh`
 without `--release` runs the same lint and tests the proof runs, without them.
 
 ### Full and partial proofs: `vbw prove --full`

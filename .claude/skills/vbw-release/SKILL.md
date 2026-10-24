@@ -7,18 +7,15 @@ description: Release a new VBW version - tests on both shells, the real-user sce
 
 Every step runs; a failure stops the release until its root cause is fixed.
 
-1. **Tests:** `PATH="/bin:$PATH" /bin/bash tools/test.sh --release` once,
-   under macOS `/bin/bash` 3.2 (the floor); it uses half the cores. This is the
-   release run: the proof's run plus the timed speed checks (both benchmarks and
-   the timed files), which are judged here and nowhere else, so they must be
-   within budget. Linux bash 5 and macOS bash 3.2 run again in CI after the
-   push, as information: the owner updates once this run passed; a Linux
-   failure that cannot affect macOS waits for the batch before 2.1.0 (D402). `tools/test-linux.sh` stays for chasing a Linux-only failure.
-   When the last proof passed (results it reused count: the read lists still
-   vouch for them), left no command skipped and no quick command standing in,
-   and only the version files and `plugin/CHANGELOG.md` changed since, the run reuses
-   it: it runs only the benchmarks and the timed files, and prints the proof's
-   time. Any other change, or no such proof, runs everything and says why.
+1. **Tests:** CI is the gate (owner decision, 2026-10-24). Locally, run the
+   test files of the changed area under macOS `/bin/bash` 3.2
+   (`PATH="/bin:$PATH" bats tests/...`) before pushing; a full local run is not
+   required. CI runs the release run (`tools/test.sh --release`, in shards: the
+   proof's run plus both benchmarks and the timed files) under macOS bash 3.2,
+   bash 5 and Linux on the pull request. The macOS shards and the manifest
+   validation must pass before the merge; a Linux-only failure that cannot affect
+   macOS goes to the next batch. `tools/test-linux.sh` stays for chasing a
+   Linux-only failure.
 2. **Real-user scenarios:** `bash tools/l3-suite.sh SCENARIO...` (the real
    Claude Code TUI, driven as a user; each scenario costs API credits). Run only
    the scenarios of the area the release changed, plus `greenfield` when the
@@ -34,9 +31,11 @@ Every step runs; a failure stops the release until its root cause is fixed.
    the status line or settings (a maintainer step, never part of VBW).
 5. **Docs:** `README.md` and `docs/` match what was built (commands, settings,
    requirements).
-6. **Publish, only on the owner's word:** push the branch. CI (macOS bash 3.2,
-   Linux bash 5, manifest validation) reports afterwards: a macOS or manifest
-   failure is fixed at once; a Linux-only one goes to the batch before 2.1.0.
+6. **Publish, only on the owner's word:** push the branch and open the pull
+   request. Wait for CI: merge only when the macOS shards and the manifest
+   validation pass (the two VBW 1-era checks "Linked Issue Check" and "QA Review
+   Evidence" fail on every maintainer PR until they are retired). Then tag the
+   merged commit and publish the release.
 7. **Verify the update path:** in a throwaway `CLAUDE_CONFIG_DIR`, install the
    previous release, then update with `claude plugin marketplace update` and
    `claude plugin update`; the new version must be installed and load.
