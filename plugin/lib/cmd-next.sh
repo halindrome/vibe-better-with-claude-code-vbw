@@ -97,9 +97,7 @@ cmd_next() {
     next=$(printf '%s' "$next" | jq -c --argjson step "$step" --argjson road "${road:-null}" '. + {step: $step, road: $road}')
     # The /rename hint (D444): once per clone, only for the command.
     hint=$(sessions_rename_hint "$(vbw_session)" "$VBW_ROOT" "$(basename "$VBW_ROOT")")
-    # The project folder (vbw root), for the workflows' args: agents of a session started in a
-    # subfolder work there.
-    next=$(printf '%s' "$next" | jq -c --arg hint "$hint" --arg root "$VBW_ROOT" '. + {rename_hint: (if $hint == "" then null else $hint end), root: $root}')
+    next=$(printf '%s' "$next" | jq -c --arg hint "$hint" '. + {rename_hint: (if $hint == "" then null else $hint end)}')
   else
     road=$(jq -c '.road // empty' "$VBW_RUNTIME/next.json" 2> /dev/null) || road=
     [ -z "$road" ] || next=$(printf '%s' "$next" | jq -c --argjson road "$road" '. + {road: $road}')
@@ -107,7 +105,10 @@ cmd_next() {
   # The status line shows the last answer (docs/statusline.md).
   printf '%s\n' "$next" > "$VBW_RUNTIME/next.json.$$" && mv "$VBW_RUNTIME/next.json.$$" "$VBW_RUNTIME/next.json"
   if [ "${1:-}" = "--json" ]; then
-    printf '%s\n' "$next"
+    # The project folder (vbw root), for the workflows' args: agents of a session started in a
+    # subfolder work there. Only in the answer: the kept one holds no path, so a copy of the
+    # project never points back at it.
+    printf '%s\n' "$next" | jq -c --arg root "$VBW_ROOT" '. + {root: $root}'
   else
     printf '%s\n' "$next" | jq -r '"\(.action)\(if .gate then " (needs you)" else "" end): \(.instruction)"'
   fi

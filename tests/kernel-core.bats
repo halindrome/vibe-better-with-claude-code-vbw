@@ -150,7 +150,9 @@ teardown() { vbw_teardown; }
   vbw_run root
   [ "$status" -eq 0 ] && [ "$output" = "$top" ] || { echo "$output"; false; }
   [ "$("$VBW" next --json < /dev/null | jq -r .root)" = "$top" ]
+  # The answer kept for the status line holds no path: a copy of the project never points back.
   cd "$PROJECT"
+  jq -e 'has("root") | not' .vbw/runtime/next.json
   [ "$(jq -r '.todos[0].text' .vbw/record.json)" = "from below" ]
 }
 
