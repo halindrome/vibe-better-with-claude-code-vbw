@@ -107,7 +107,8 @@ export async function mount(options = {}) {
   let now = T0
   let clockSeq = 0
 
-  const h = { calls, errors, plays, notifies, opens, store, files, handlers }
+  // fails: names of `$` calls that reject, for a test of what the panel does when Claude Code fails it.
+  const h = { calls, errors, plays, notifies, opens, store, files, handlers, fails: new Set() }
   h.now = () => now
 
   // The folders the files imply, worked out again only when a path is added or removed.
@@ -243,6 +244,7 @@ export async function mount(options = {}) {
       get: (_, method) => (methods[method] ??= (...args) => {
         const key = name + '.' + String(method)
         calls.push({ name: key, args })
+        if (h.fails.has(key)) return Promise.reject(new Error('injected failure: ' + key))
         if (!impl[key]) return Promise.reject(new Error('no implementation for ' + key))
         if (SYNC.has(key)) return impl[key](...args)
         return (async () => impl[key](...args))()
@@ -269,8 +271,11 @@ export async function mount(options = {}) {
     if (event === 'command.run' && !(matcher && matcher.command)) {
       throw new Error('a command.run hook must match { command }: without it, it runs for every command')
     }
-    handlers.push({ event, matcher, fn })
-    return { catch() {} }
+    const entry = { event, matcher, fn }
+    handlers.push(entry)
+    // `.catch(handler)`: asked, as in Claude Code, when the hook throws (see h.fire).
+    const registration = { catch(handler) { entry.catcher = handler; return registration } }
+    return registration
   }
 
   const entry = path.join(o.modulePath || path.join(PLUGIN, 'hooks/panel.js'))
@@ -288,7 +293,12 @@ export async function mount(options = {}) {
     const chain = handlers.filter((x) => x.event === event && matches(x.matcher, e))
     const run = async (i, ev) => {
       if (i >= chain.length) return terminal ? terminal(ev) : ev
-      const nextFn = (e2) => run(i + 1, e2)
+      let called = false
+      let last
+      const nextFn = (e2) => {
+        called = true
+        return (last = run(i + 1, e2))
+      }
       // The signal is made when a hook asks for it: most never do.
       let signal
       Object.defineProperty(nextFn, 'signal', { get: () => (signal ??= new AbortController().signal) })
@@ -296,6 +306,19 @@ export async function mount(options = {}) {
         return await chain[i].fn($, ev, nextFn)
       } catch (err) {
         errors.push({ event, error: String(err?.stack || err) })
+        const catcher = chain[i].catcher
+        if (catcher) {
+          // The handler's next is replay-safe: after the hook called next it gives that call's result.
+          const caught = (e2) => (called ? last : ((called = true), (last = run(i + 1, e2))))
+          Object.defineProperties(caught, { error: { value: err }, called: { value: called } })
+          let answer
+          try {
+            answer = await catcher($, ev, caught)
+          } catch (again) {
+            errors.push({ event: event + ' (catch)', error: String(again?.stack || again) })
+          }
+          if (answer !== undefined) return answer
+        }
         return run(i + 1, ev)
       }
     }

@@ -857,7 +857,12 @@ The panel needs **Claude Code 2.1.287 or newer** (check with
   error. When `/vbw:vibe` sets a project up during the session, the panel comes
   on at its first question (or your next prompt), with no restart.
 - **Anything unexpected inside the panel:** it stays out of the way. An error
-  in the panel never reaches your session.
+  in the panel never reaches your session. The hooks that sit in the way of
+  something you do (closing the pane, a command, a question, a prompt, a
+  workflow) each have a fallback: when one fails, the event goes on as if the
+  panel were not there, a command says in a sentence that it did not work, and
+  a question that was being shown is no longer counted as open. Claude Code
+  reports the failed hook by name; VBW adds no message of its own.
 
 ## What it reads and what it costs
 

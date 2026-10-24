@@ -866,6 +866,13 @@ async function wake($, st) {
   }
 }
 
+// A gating hook that fails is skipped by Claude Code and its `.catch` is asked. Ours let the
+// event go on as if the panel were not there, which is also what Claude Code does without one;
+// a command that fails says so in plain words instead of "unknown command". Claude Code names
+// the failed hook itself, so nothing is logged here. None of them throws.
+const passOn = ($, e, next) => next(e)
+const failedText = (name) => '/' + name + ' did not work just now. The rest of VBW is not affected.'
+
 export function register(on) {
   const st = fresh()
 
@@ -880,29 +887,29 @@ export function register(on) {
     const w = isObj(e) && isObj(e.presentation) ? e.presentation.columns : null
     await openByPerson($, st, cols(w) ? { columns: quarter(w), focus: true } : { focus: true })
     return { text: 'Mission Control is open.' }
-  })
+  }).catch(() => ({ text: failedText('vbw-panel') }))
 
   on('command.run', { command: 'vbw-sound' }, async ($, e, next) => {
     if (!st.live) return next(e)
     const word = String(e.args ?? '').trim().toLowerCase()
     if (word === '' || word === 'on' || word === 'off') await setSound($, st, word === '' ? !st.sound : word === 'on')
     return { text: "The 'needs you' sound is " + (st.sound ? 'on' : 'off') + '.' }
-  })
+  }).catch(() => ({ text: failedText('vbw-sound') }))
 
   on('command.run', { command: 'vbw-status' }, async ($, e, next) => {
     if (!st.live) return next(e)
     return { text: statusText(await facts($, st)) }
-  })
+  }).catch(() => ({ text: failedText('vbw-status') }))
 
   on('command.run', { command: 'vbw-why' }, async ($, e, next) => {
     if (!st.live) return next(e)
     return { text: whyText(await facts($, st)) }
-  })
+  }).catch(() => ({ text: failedText('vbw-why') }))
 
   on('command.run', { command: 'vbw-todo' }, async ($, e, next) => {
     if (!st.live) return next(e)
     return { text: await todo($, st, e.args) }
-  })
+  }).catch(() => ({ text: failedText('vbw-todo') }))
 
   // Remember a close made by the user only; every close is passed on.
   on('ui.close', async ($, e, next) => {
@@ -914,7 +921,7 @@ export function register(on) {
       }
     }
     return next(e)
-  })
+  }).catch(passOn)
 
   // A question to the user is a need while it is open.
   on('tool.call', { tool: 'AskUserQuestion' }, async ($, e, next) => {
@@ -939,6 +946,16 @@ export function register(on) {
         // nothing to redraw
       }
     }
+  }).catch(async ($, e, next) => {
+    // The question went on without the panel noticing its end: it is no longer open as far as the panel knows.
+    st.question = null
+    st.questionAt = null
+    try {
+      await redrawIfChanged($, st)
+    } catch {
+      // the next tick draws it
+    }
+    return next(e)
   })
 
   // A VBW workflow launched by this session (main loop): its run id and folder
@@ -959,14 +976,14 @@ export function register(on) {
       // the run is found by its lease instead
     }
     return out
-  })
+  }).catch(passOn)
 
   // The record as a turn found it: the turn receipt says what moved.
   on('prompt.submit', async ($, e, next) => {
     if (!st.live) await wake($, st)
     if (st.live) st.before = st.record
     return next(e)
-  })
+  }).catch(passOn)
 
   // Mission Control: drawn as Claude Code's own pane example does, from $.ui.resolve(e)
   // and h(). Only this pane's drawings reach here.
