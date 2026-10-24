@@ -52717,7 +52717,7 @@
       "text": "A proof still holds about 5.2 of 7 slots while units run (T179 after-trace, 2026-10-21): each unit's two locked slot-store steps (take p50 96 ms, give p50 52 ms under load, ~5 processes each, 0.05 s retries) and the gate mutex (p50 31 ms, 0.1 s retries) keep slots idle between units; make those steps cheaper (slots.sh, core.sh) to get close to the limit",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T181",
