@@ -277,3 +277,38 @@ gone_pid() {
   [ "$status" -eq 0 ] && [ "$output" = "held after 40 looks" ] || { echo "$output"; false; }
   [ "$(sort -u "$TEST_ROOT/waits" | wc -l | tr -d ' ')" = 1 ] || { echo "the pauses differ:"; sort "$TEST_ROOT/waits" | uniq -c; false; }
 }
+
+@test "R181: the entry of a unit that lost the store is dropped by the run's next step once the store can be written again" {
+  [ "$(id -u)" != 0 ] || skip "root writes into a read-only folder"
+  sleep 120 &
+  local x=$!
+  # Another run holds the only slot, so this run's units wait.
+  mkdir -p "$TEST_ROOT/store"
+  jq -nc --argjson x "$x" '{held: [{run: $x, id: "X1"}], waiting: [], next: 1}' > "$TEST_ROOT/store/slots.json"
+  # A runner (a subshell of the run) waits for a slot and loses the store on the way;
+  # the store then works again, a second slot frees up, and another runner of the
+  # run takes a step: the slot is U2's, never the lost U1's. The command's own
+  # shell then loses the store after the run's folder has ended (the save of a
+  # proof): its next step, the give, drops its entry.
+  # shellcheck disable=SC2016 # expanded by in_store
+  in_store '( sleep() { chmod 555 "$SLOTS_DIR"; }; slots_hold U1 && echo "U1 held" || echo "U1 lost" )
+    chmod 755 "$SLOTS_DIR"
+    SLOTS_LIMIT=2
+    slots_apply "$SLOTS_TAKE" U2 || exit 1
+    echo "U2 holds: $SLOTS_RESULT"
+    jq -c "[.held[].id], [.waiting[].id]" "$SLOTS_FILE"
+    slots_apply "$SLOTS_DROP" U2 || exit 1
+    rm -rf "$CHECK_OUT"
+    SLOTS_LIMIT=1
+    sleep() { chmod 555 "$SLOTS_DIR"; }
+    slots_hold vbw:save && echo "save held" || echo "save lost"
+    unset -f sleep
+    chmod 755 "$SLOTS_DIR"
+    slots_release vbw:save
+    jq -c "[.held[].id], [.waiting[].id]" "$SLOTS_FILE"'
+  chmod -R u+rwx "$TEST_ROOT/store"
+  kill "$x"
+  wait "$x" 2> /dev/null || true
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = "$(printf '%s\n' 'U1 lost' 'U2 holds: true' '["X1","U2"]' '[]' 'save lost' '["X1"]' '[]')" ] || { echo "$output"; false; }
+}

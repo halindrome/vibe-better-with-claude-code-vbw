@@ -22,7 +22,6 @@ Status words:
 | Item | Status | Affects | Workaround |
 |---|---|---|---|
 | [The loop's time budget counts an interrupted turn or a sleeping computer](#the-loops-time-budget-counts-an-interrupted-turn-or-a-sleeping-computer) | Known issue | Loops | Stop the loop before you leave |
-| [A unit that lost the slot store may leave a slot held](#a-unit-that-lost-the-slot-store-may-leave-a-slot-held) | Known issue | Many runs at once | None needed |
 | [Cost per correct outcome](#cost-per-correct-outcome) | Idea | Everyone | Not applicable |
 
 ## Known issues
@@ -38,18 +37,6 @@ Status words:
 **Plan.** Leave these pauses out too once Claude Code reports an interrupted turn or a resume from sleep to hooks.
 
 **Where.** `plugin/lib/loop-step.sh` (`loop_item_seen`), `plugin/hooks/stop.sh`, `plugin/hooks/session-start.sh`.
-
-### A unit that lost the slot store may leave a slot held
-
-**What.** The computer-wide limit is kept in a small shared store (`slots.json` in the Claude config folder, [proof.md](proof.md#the-computer-wide-limit)). When a unit that was waiting for a slot loses the store (it fails or is damaged), the unit goes on without the limit, but its waiting entry stays in the store. If the store works again before that run ends, another run's step can hand that entry a slot nobody uses, and the slot stays held until the run exits.
-
-**Who and when.** Rare: a store that fails and recovers within one proof, with other runs waiting. The effect is one slot fewer for other runs until the proof ends, never a wrong result.
-
-**Workaround.** None needed. The slot comes back when the run ends.
-
-**Plan.** Drop the entry of a unit that lost the store as soon as the store can be written again.
-
-**Where.** `plugin/lib/slots.sh` (`slots_hold`, `slots_lose`).
 
 ## Under consideration
 

@@ -190,7 +190,10 @@ If the store cannot be written (a read-only folder, a full disk, the Claude
 Code sandbox) or is damaged, the run goes on under `check_jobs` alone and
 prints `the computer-wide limit was not in force` with the reason (at the
 start, or once at the end when the store failed in the middle of the run, also
-when it failed in the last step that saves the proof). A folder that reports
+when it failed in the last step that saves the proof). A unit that loses the
+store while it waits or holds a slot leaves no slot behind: as soon as the
+store can be written again, the run's next change of it removes that unit's
+place, so no other run is handed a slot nobody uses. A folder that reports
 itself writable but refuses a new file is recognised at once, not after a long
 wait. A store lock held by a live process is waited for, however long.
 
