@@ -109,13 +109,24 @@ checks_timer() {
 }
 
 # checks_exec TIMEOUT OUTFILE ARGV...: run ARGV from the project root, output to
-# OUTFILE, stopped at TIMEOUT seconds. Sets CHECK_CODE and CHECK_SECONDS.
+# OUTFILE, stopped at TIMEOUT seconds. Sets CHECK_CODE and CHECK_SECONDS, the
+# unit's time in tenths of a second as a decimal ("0.4", "12.0"). The shell's own
+# timer reads it (the time keyword with TIMEFORMAT %R: milliseconds, bash 3.2, no
+# process of its own); a failed read falls back to whole seconds.
 checks_exec() {
-  local t="$1" out="$2"
+  local t="$1" out="$2" TIMEFORMAT=%R tf ms cenv=()
   shift 2
+  # The unit's share of the cores (CHECKS_UNIT_SHARE, set by checks_unit_run), told to
+  # the build tools that read it, unless the user's environment already sets them.
+  if [ -n "${CHECKS_UNIT_SHARE:-}" ]; then
+    [ -n "${CARGO_BUILD_JOBS+x}" ] || cenv+=("CARGO_BUILD_JOBS=$CHECKS_UNIT_SHARE")
+    [ -n "${GOMAXPROCS+x}" ] || cenv+=("GOMAXPROCS=$CHECKS_UNIT_SHARE")
+    [ -n "${MAKEFLAGS+x}" ] || cenv+=("MAKEFLAGS=-j$CHECKS_UNIT_SHARE")
+  fi
   checks_timer
   SECONDS=0
   CHECK_CODE=0
+  tf="$out.time"
   # A signal ignored by the environment stays ignored in its children (some CI
   # runners start everything with SIGALRM/SIGTERM ignored). So timeout escalates
   # to SIGKILL, which cannot be ignored, and perl resets SIGALRM before the alarm.
@@ -125,12 +136,18 @@ checks_exec() {
   # it does under perl; without it GNU timeout starts a group of its own and an
   # interrupted run waited for its units to end (T148, Linux).
   if [ "$CHECKS_TIMER" = timeout ]; then
-    env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} timeout --foreground -k 5 "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
+    { time env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} ${cenv[@]+"${cenv[@]}"} timeout --foreground -k 5 "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?; } 2> "$tf"
   else
-    env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} perl -e '$SIG{ALRM} = "DEFAULT"; alarm shift @ARGV; exec { $ARGV[0] } @ARGV or do { print STDERR "cannot run $ARGV[0]: $!\n"; exit 127 }' \
-      "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
+    { time env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} ${cenv[@]+"${cenv[@]}"} perl -e '$SIG{ALRM} = "DEFAULT"; alarm shift @ARGV; exec { $ARGV[0] } @ARGV or do { print STDERR "cannot run $ARGV[0]: $!\n"; exit 127 }' \
+      "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?; } 2> "$tf"
   fi
   CHECK_SECONDS=$SECONDS
+  # The reading is "S.mmm"; anything else (an empty file) keeps the whole seconds.
+  ms=$(tail -n 1 "$tf" 2> /dev/null)
+  rm -f "$tf"
+  case "$ms" in
+    [0-9]*.[0-9][0-9][0-9]) ms=$((10#${ms%.*} * 1000 + 10#${ms#*.})); ms=$(((ms + 50) / 100)); CHECK_SECONDS="$((ms / 10)).$((ms % 10))" ;;
+  esac
 }
 
 # checks_result OUTFILE TIMEOUT EXPECT_EXIT [OUTPUT_REGEX]: the result object.
@@ -211,7 +228,7 @@ checks_gate_foreign() {
 
 # checks_gate_enter ID ALONE: wait for the gate, then register this check.
 checks_gate_enter() {
-  local id="$1" kind=shared g="$VBW_RUNTIME/gate" idle=0 want='' owner limit since=''
+  local id="$1" kind=shared g="$VBW_RUNTIME/gate" idle=0 want='' owner limit since='' took=0 lost=''
   [ "$2" != true ] || kind=alone
   limit="${CHECKS_LIMIT:-}"
   [ -n "$limit" ] || limit=$(vbw_check_jobs) || limit=1
@@ -219,9 +236,11 @@ checks_gate_enter() {
   while :; do
     # The owner file decides (vbw_lock_dir): a racing mkdir that also succeeded,
     # or a lock that vanished before its owner was written, waits and retries.
-    if vbw_lock_dir "$g/mutex"; then
+    if [ "$took" = 1 ] || vbw_lock_dir "$g/mutex"; then
+      took=0
       vbw_guard_add dir "$g/mutex"
-      idle=0
+      idle=0 lost=''
+
       if checks_gate_blocker "$kind" "$limit" > /dev/null; then
         # Only a wait for another VBW command counts; this run's own units queue at the gate silently (R94).
         [ -n "$since" ] || ! checks_gate_foreign "$g" || since=$(date +%s)
@@ -245,17 +264,22 @@ checks_gate_enter() {
       fi
       vbw_guard_drop "$g/mutex"
     else
-      # A mutex whose owner is gone (or never wrote its pid) is taken over.
+      # A mutex whose owner is gone (or never wrote its pid) is taken over by renaming
+      # its owner file (vbw_lock_takeover): of two waiters that find the same dead
+      # owner only one wins, and neither removes a lock a third took in between.
       idle=$((idle + 1))
       # The owner is read once: empty means a handover in progress, never a dead owner.
-      owner=$(cat "$g/mutex/pid" 2> /dev/null)
+      owner=$(vbw_lock_holder "$g/mutex/pid")
       if [ -n "$owner" ]; then
-        checks_gate_live "x.$owner" || rm -rf "$g/mutex"
-      elif [ "$idle" -gt 50 ]; then
-        rm -rf "$g/mutex"
+        lost=''
+        checks_gate_live "x.$owner" || { vbw_lock_takeover "$g/mutex/pid" "$owner" && took=1; }
+      else
+        # No owner for about 5 s: one that died before it wrote its id.
+        [ -n "$lost" ] || lost=$SECONDS
+        if [ $((SECONDS - lost)) -ge 5 ] && vbw_lock_takeover "$g/mutex/pid" ""; then took=1; fi
       fi
     fi
-    sleep 0.1
+    [ "$took" = 1 ] || slots_nap "$idle"
   done
 }
 
@@ -347,6 +371,9 @@ checks_unit_run() {
     cd "$copy" || return 1
   fi
   checks_gate_enter "$name" "$alone"
+  # Its share of the cores (T172): every core alone, else the run's share.
+  local CHECKS_UNIT_SHARE=${CHECKS_SHARE:-}
+  [ "$alone" != true ] || CHECKS_UNIT_SHARE=${CHECKS_CORES:-}
   # The slot is taken after the gate and before the reset and the command, and kept
   # until the read list is collected: the tracking is the unit's own work, inside
   # its slot. The timeout counts from the command's start, never from the wait.
@@ -505,6 +532,15 @@ checks_run_units() {
   [ -z "${PROOF_COPIES+x}" ] || slots=${#PROOF_COPIES[@]}
   cap=$jobs
   [ "$slots" -eq 0 ] || [ "$slots" -ge "$cap" ] || cap=$slots
+  # Each unit's share of the cores: the cores over the units side by side, at least 1
+  # (T172); an unreadable core count tells the tools nothing.
+  local CHECKS_CORES='' CHECKS_SHARE=''
+  if CHECKS_CORES=$(vbw_cores); then
+    CHECKS_SHARE=$((CHECKS_CORES / cap))
+    [ "$CHECKS_SHARE" -ge 1 ] || CHECKS_SHARE=1
+  else
+    CHECKS_CORES=''
+  fi
   CU_DIR=$(mktemp -d "$CHECK_OUT/units.XXXXXX") || vbw_die "cannot create a directory in $CHECK_OUT"
   if [ "$cap" -le 1 ] || [ "$CU_COUNT" -le 1 ]; then
     slot=""

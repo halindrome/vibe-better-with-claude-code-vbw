@@ -17,5 +17,5 @@ recoverable() {
   done
 }
 work=$(recoverable)
-printf '%s\n' "$work" | grep -q 'user idea: rewrite the parser'
-printf '%s\n' "$work" | grep -q 'half-written release announcement'
+printf '%s\n' "$work" | grep 'user idea: rewrite the parser' > /dev/null
+printf '%s\n' "$work" | grep 'half-written release announcement' > /dev/null

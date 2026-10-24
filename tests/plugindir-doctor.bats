@@ -129,3 +129,25 @@ doctor_lines() {
   }
   printf '%s\n' "$warn" | grep -E '^    fix: ' | grep -qF "$PLUGIN_ROOT/bin/vbw"
 }
+
+@test "R185: a session id that is not a plain name finds no record: doctor ignores a file the id points at" {
+  # The id "../rec" would name $CLAUDE_CONFIG_DIR/vbw/rec, a file that holds the installed release's folder.
+  mkdir -p "$CLAUDE_CONFIG_DIR/vbw/sessions"
+  printf '%s\n' "$INST" > "$CLAUDE_CONFIG_DIR/vbw/rec"
+  PATH="$INST/bin:$PATH" CLAUDE_CODE_SESSION_ID="../rec" run "$VBW" doctor < /dev/null
+  doctor_lines "!" | grep -E '^! ' | grep -F "$INST/bin/vbw" | grep -qF "$PLUGIN_ROOT" || {
+    echo "doctor followed the id out of the sessions folder:"
+    printf '%s\n' "$output"
+    false
+  }
+}
+
+@test "R185: the plain-name rule for a session id reads the same in the hook, the status line and the shared function" {
+  local f
+  for f in "$PLUGIN_ROOT/hooks/session-start.sh" "$PLUGIN_ROOT/scripts/vbw-statusline.sh" "$PLUGIN_ROOT/lib/sessions.sh"; do
+    grep -qF '^[A-Za-z0-9_-]+$' "$f" || {
+      echo "$f does not carry the rule ^[A-Za-z0-9_-]+\$"
+      false
+    }
+  done
+}

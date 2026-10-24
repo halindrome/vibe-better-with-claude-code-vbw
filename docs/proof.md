@@ -128,6 +128,18 @@ their results take VBW one step each, however many checks there are. Checks
 that share a resource and are not marked `alone` (a database, a fixed port) can
 disturb each other: mark them `alone`, or set `check_jobs` to 1.
 
+#### Cores per unit
+
+Build-and-test commands such as `cargo test`, `make` and `go test` each use
+every core unless told otherwise, so several of them side by side overload the
+machine. VBW tells each unit its share: the processor cores divided by the
+units this run puts side by side (`check_jobs`, under the computer-wide limit
+below), at least 1; a check marked `alone` gets every core. The share reaches
+the unit's command through `CARGO_BUILD_JOBS`, `GOMAXPROCS` and `MAKEFLAGS`
+(`-jN`). A variable your environment already sets is passed on unchanged, so
+`MAKEFLAGS=-j2 claude` keeps your own choice. When the core count cannot be
+read, nothing is set.
+
 ### The computer-wide limit
 
 VBW as a whole never runs more than the machine limit at once: three quarters
@@ -162,14 +174,25 @@ down the runs giving slots back. A run that waits
 prints `waited ... for other VBW runs on this computer`. Waiting changes
 nothing else: the same result as without it, and a timeout counts from when its command really starts.
 
-If a run is killed, the next run takes over its slots. Ctrl-C gives them back
-at once. A lock left by a dead process is taken over too.
+Every change of the store is one short step under a lock file next to it
+(`slots.lock`), and a step spends little: one `jq` run, one rename and the
+lock's removal, with no pause unless another run holds the lock. A run that
+finds the lock held retries after 10 ms and waits a little longer each time,
+up to a tenth of a second, so slots do not sit idle between one unit and the
+next.
 
-If the store cannot be written (a read-only folder, the Claude Code sandbox)
-or is damaged, the run goes on under `check_jobs` alone and prints
-`the computer-wide limit was not in force` with the reason (at the start, or
-once at the end when the store failed in the middle of the run). A store lock
-held by a live process is waited for, however long.
+If a run is killed, the next run takes over its slots. Ctrl-C gives them back
+at once. A lock left by a dead process is taken over too, by renaming its owner
+file: when two runs find the same dead owner, one of them gets the lock and the
+other waits for it, and neither ever removes a lock another run has just taken.
+
+If the store cannot be written (a read-only folder, a full disk, the Claude
+Code sandbox) or is damaged, the run goes on under `check_jobs` alone and
+prints `the computer-wide limit was not in force` with the reason (at the
+start, or once at the end when the store failed in the middle of the run, also
+when it failed in the last step that saves the proof). A folder that reports
+itself writable but refuses a new file is recognised at once, not after a long
+wait. A store lock held by a live process is waited for, however long.
 
 ### Checks that run alone
 
@@ -411,7 +434,10 @@ it limits that check only, and `command_timeout` does not change it.
 ### Unit time and the budget per unit
 
 Every check, project command and test file of a proof is a unit, and the
-evidence keeps the seconds each one took when it last ran. VBW reports that
+evidence keeps the seconds each one took when it last ran, to a tenth of a
+second (the shell's own timer reads the unit's wall time; a record written with
+whole seconds reads as before). Reports print tenths under 10 s (`C1 pass 0.4s`)
+and whole seconds from 10 s (`tests/import.bats 140 s`). VBW reports that
 time so a slow or growing test suite is seen early. It never fails or stops a
 proof for it: a busy machine never fails a proof.
 
@@ -678,7 +704,7 @@ naming the file, then record the verdict again.
 `vbw prove` does not run VBW's own timed speed checks (the hook, status line
 and panel benchmarks, and the test files named `tests/timed-*.bats`), so a busy
 machine never fails or delays a proof. They run once per release, in
-`bash tools/test.sh --release`: in CI and before a push. `bash tools/test.sh`
+`bash tools/test.sh --release`, which CI runs on every pull request. `bash tools/test.sh`
 without `--release` runs the same lint and tests the proof runs, without them.
 
 ### Full and partial proofs: `vbw prove --full`
@@ -953,6 +979,18 @@ When nothing ran, both lines still print:
 ```text
 ran again: 0 of 52 units; top reasons: none
 ```
+
+**Before the first unit runs.** `vbw prove` prints the same count in the future
+tense as its first line, from the plan (the reuse rule and the whole-proof
+causes), so a long proof says why before anyone waits for it:
+
+```text
+run again: 52 of 52 units; top reasons: plugin/lib/core.sh changed (41), definition changed (7), never passed (4)
+```
+
+It counts and ranks the reasons exactly as the closing line does. `vbw next
+--json` carries the top reason as `step.why` and ends the proof's `step.say`
+with it ([the step](next.md#the-step)).
 
 The steps stay in the evidence as `evidence.own` and the whole-proof causes as
 `evidence.causes` (docs/record.md). `vbw show evidence` prints them.
@@ -1251,7 +1289,9 @@ suite therefore pays for the checks a break needs, not for every check.
   --none REASON` after the kernel verifies the check's read list against the
   files of the requirement's plans: the list must name none of them. The command
   may run the check once in a clean copy of the committed code, with read
-  tracking on, and records that run in the store as a proof would. `vbw plan
+  tracking on, and records that run in the store as a proof would. A check that
+  only tests whether a plan file exists, without opening it, never reads that
+  file: such a check is not detected, and the accepting line says so. `vbw plan
   done` counts such a rule covered.
 
 The broken file, and its restore, get a fresh modification time, newer than

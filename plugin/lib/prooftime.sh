@@ -122,27 +122,43 @@ prooftime_end() {
   PROOFTIME_FILE=''
 }
 
+# PROOFTIME_RANK_JQ: the one counting and ranking of "ran again", over an
+# evidence-shaped object ({causes, checks, commands, test_files}): ranked is
+# {ran, total, top: [{r, c}]}. Units are the checks that did not wait, the
+# commands that were not skipped and are not of_files, and the test files; those
+# without reused ran again. A unit's reason is its why, or each cause of the
+# whole proof when it has none; at most three, most frequent first, ties in the
+# units' order.
+# shellcheck disable=SC2016 # a jq program
+PROOFTIME_RANK_JQ='def ranked:
+  ((.causes // []) ) as $c
+  | ([(.checks // {}) | to_entries[] | select(.value.status != "waiting")]
+     + [(.commands // {}) | to_entries[] | select(.value.status != "skipped" and (.value.of_files | not))]
+     + [(.test_files // {}) | to_entries[]]) as $u
+  | [$u[] | select(.value.reused | not)] as $ran
+  | [$ran[] | if .value.why then [.value.why] else $c end | .[]] as $rs
+  | {ran: ($ran | length), total: ($u | length),
+     top: (reduce $rs[] as $r ([]; if any(.[]; .r == $r) then map(if .r == $r then .c += 1 else . end) else . + [{r: $r, c: 1}] end)
+           | sort_by(-.c) | .[:3])};
+'
+
 # prooftime_lines: from an evidence-shaped object on stdin ({own, causes, checks,
-# commands, test_files}) print the two report lines. Units are the checks that
-# did not wait, the commands that were not skipped and are not of_files, and
-# the test files; those without reused ran again. A unit's reason is its why, or
-# each cause of the whole proof when it has none; at most three, most frequent
-# first, ties in the units' order.
+# commands, test_files}) print the two report lines (the ranking is
+# PROOFTIME_RANK_JQ's).
 prooftime_lines() {
-  jq -r '
+  jq -r "$PROOFTIME_RANK_JQ"'
     def min: (. / 6 | round) as $t | "\($t / 10 | floor).\($t % 10)";
     (.own // {}) as $o
     | ([($o.planning // 0), ($o.copies // 0), ($o.tracking // 0), ($o.saving // 0), ($o.record // 0)] | add) as $x
-    | ((.causes // []) ) as $c
-    | ([(.checks // {}) | to_entries[] | select(.value.status != "waiting")]
-       + [(.commands // {}) | to_entries[] | select(.value.status != "skipped" and (.value.of_files | not))]
-       + [(.test_files // {}) | to_entries[]]) as $u
-    | [$u[] | select(.value.reused | not)] as $ran
-    | [$ran[] | if .value.why then [.value.why] else $c end | .[]] as $rs
-    | (reduce $rs[] as $r ([]; if any(.[]; .r == $r) then map(if .r == $r then .c += 1 else . end) else . + [{r: $r, c: 1}] end)
-       | sort_by(-.c) | .[:3]) as $top
+    | ranked as $k
     | "VBW'"'"'s own work: \($x | min) of \(($o.wall // 0) | min) min",
-      "ran again: \($ran | length) of \($u | length) units; top reasons: "
-        + (if ($ran | length) == 0 then "none" elif ($top | length) == 0 then "not recorded"
-           else ($top | map("\(.r) (\(.c))") | join(", ")) end)'
+      "ran again: \($k.ran) of \($k.total) units; top reasons: "
+        + (if $k.ran == 0 then "none" elif ($k.top | length) == 0 then "not recorded"
+           else ($k.top | map("\(.r) (\(.c))") | join(", ")) end)'
+}
+
+# prooftime_top: from an evidence-shaped object on stdin, the reason most units
+# run again as {reason, count}, or null when none runs or none is recorded.
+prooftime_top() {
+  jq -c "$PROOFTIME_RANK_JQ"'ranked.top[0] // null | if . == null then null else {reason: .r, count: .c} end'
 }

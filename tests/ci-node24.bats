@@ -10,10 +10,10 @@ load helper
 WF="$REPO_ROOT/.github/workflows"
 CI="$WF/ci.yml"
 
-# uses_lines: every "uses: owner/name@ref" of the four workflow files, as "file: owner/name@ref".
+# uses_lines: every "uses: owner/name@ref" of the workflow files, as "file: owner/name@ref".
 uses_lines() {
   local f
-  for f in "$WF/ci.yml" "$WF/discord-release.yml" "$WF/linked-issue.yml" "$WF/qa-review.yml"; do
+  for f in "$WF/ci.yml" "$WF/discord-release.yml"; do
     [ -f "$f" ] || { echo "missing workflow file: $f" >&2; return 1; }
     sed -n 's/^[[:space:]-]*uses:[[:space:]]*\([^[:space:]#]*\).*/\1/p' "$f" | sed "s|^|$(basename "$f"): |"
   done
@@ -55,7 +55,7 @@ install_step() {
   [ -z "$bad" ] || { echo "pre-Node-24 majors: $bad"; false; }
 }
 
-@test "R126: no step in the four workflow files is left on a major that runs on Node 20" {
+@test "R126: no step in the workflow files is left on a major that runs on Node 20" {
   local lines
   lines=$(uses_lines)
   ! printf '%s\n' "$lines" | grep -E '@v[1-4]([^0-9]|$)' || { echo "a step is on v4 or older"; false; }

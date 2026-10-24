@@ -8,7 +8,9 @@
 # own work; the wave takes its longest plan. History from before breaks were
 # recorded times a plan per task at the same quantile. The note and the history
 # carry each plan's breaks; the road's waves count them the same way. Seen in vbw
-# next --json's step and road, and in the note vbw run start writes.
+# next --json's step and road, and in the note vbw run start writes. A step that
+# stayed open far longer than its kind and size (8 times their median, idle time
+# nobody can tell from work) is left out of every estimate (T173).
 
 load helper
 load step-helper
@@ -100,6 +102,15 @@ alone() {
   hist_build standard 1 400 1
   # 100, 200, 300 and 400 s per task: the upper quartile 325, times P1.1's two tasks.
   step_of | jq -e '.ids == ["P1.1"] and .seconds == 650' || { step_of; false; }
+}
+
+@test "T173: a build that stayed open for hours is left out of the quantile: 8 times the median of its kind and size" {
+  tiered_project
+  alone
+  hist_build standard 1 100 3
+  # A run left open overnight: 90,000 s for one task. The upper quartile would be 22,575 s a task.
+  hist_build standard 1 90000 1
+  step_of | jq -e '.ids == ["P1.1"] and .seconds == 200' || { step_of; false; }
 }
 
 @test "T174: the road's build waves count each plan's breaks the same way" {

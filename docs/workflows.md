@@ -265,6 +265,10 @@ cannot fail, and QA would otherwise find it one round at a time.
   and ends "break the rule in that code instead". It also refuses a run that
   reads the project through git ("reads the project through git, so its files
   are unknown") and a run with no read list (the file system recorded none).
+  The verdict has one limit, and the accepting line says it: a check that only
+  tests whether a plan file exists, without opening it, never reads that file,
+  so such a check is not detected and the rule is accepted though deleting the
+  file would fail the check.
 - **Side by side** (`--queue`, then `--run`): a rule break can wait instead of
   running. `--queue` sets its broken bytes aside and puts the files back at
   once, running nothing, so the Dev makes the next break straight away. `vbw

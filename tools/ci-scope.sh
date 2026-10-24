@@ -44,7 +44,7 @@ after=$(folders_at "$head")
 folders=""
 while IFS= read -r f; do
   [ -n "$f" ] || continue
-  if printf '%s\n' "$after" | grep -qxF -- "$f"; then
+  if printf '%s\n' "$after" | grep -xF -- "$f" > /dev/null; then
     folders="$folders
 $f"
   fi

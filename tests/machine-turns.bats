@@ -66,12 +66,13 @@ wait_file() {
     slots_release B' &
   holder=$!
   wait_file "$TEST_ROOT/store/holding"
-  # The waiter counts the times it takes the lock (a mkdir of the lock folder
-  # that succeeds) and the pauses of its wait, which take no time; at the 20th
-  # pause it tells the holder to give the slot back.
+  # The waiter counts the times it takes the lock (each locked step of the store)
+  # and the pauses of its wait, which take no time; at the 20th pause it tells
+  # the holder to give the slot back.
   # shellcheck disable=SC2016 # expanded by in_store
   run in_store 'locks=0 pauses=0
-    mkdir() { command mkdir "$@" && locks=$((locks + 1)); }
+    eval "orig_$(declare -f slots_apply)"
+    slots_apply() { locks=$((locks + 1)); orig_slots_apply "$@"; }
     sleep() { pauses=$((pauses + 1)); [ "$pauses" -ne 20 ] || : > "$SLOTS_DIR/release"; }
     slots_hold A || { echo "no slot"; exit 1; }
     jq -c "[.held[].id]" "$SLOTS_FILE"
@@ -100,10 +101,15 @@ wait_file() {
   [[ "${lines[1]}" =~ ^pauses\ ([0-9]+)$ ]] && [ "${BASH_REMATCH[1]}" -ge 5 ] || { echo "the slot came before the holder died: $output"; false; }
 }
 
-@test "R181: a freed slot goes to the waiting run holding the fewest: B's one unit starts before A's fourth" {
-  fixture_copy b
+@test "R181: a freed slot goes to the waiting run holding the fewest: B holds one before A's fourth unit gets its slot" {
+  # The store decides the turn; when each run then notices and starts its command is the
+  # runs' own timing (a run that takes a slot in its own step starts at once, a waiter at
+  # its next look). So the turn is judged where it is decided: A's fourth unit copies the
+  # store as it starts, and B (waiting since A's first three started, 3 s of work) holds a
+  # slot in it.
   cores 4
-  machine_project "$PROJECT" A 6 6
+  machine_project "$PROJECT" A 3 6 "$(peek_check C4 "$CLAUDE_CONFIG_DIR/vbw/slots.json")"
+  machine_project "$OTHER" B 1 3
   (cd "$PROJECT" && "$VBW" config set check_jobs 6 > /dev/null)
   local pa pb
   bg "$PROJECT" "$TEST_ROOT/a.out" check
@@ -114,8 +120,10 @@ wait_file() {
   wait_in_store "$pb" || { show; false; }
   [ -z "$(end_line A-C1)$(end_line A-C2)$(end_line A-C3)" ] || { echo "A's units ended before B was waiting: the machine is too slow for this test"; show; false; }
   wait_ok "$pa" "$pb" || { show; false; }
-  [ "$(starts A-)" = 6 ] && [ "$(starts B-)" = 1 ] || { show; false; }
-  [ "$(start_line B-C1)" -lt "$(nth_start 4 A-)" ] || { echo "A's fourth unit started before B's only unit"; show; false; }
+  seen_store || { show; false; }
+  jq -e '[.held[].run] | unique | length == 2' "$TEST_ROOT/seen.json" > /dev/null \
+    || { echo "when A's fourth unit started, B held no slot:"; cat "$TEST_ROOT/seen.json"; show; false; }
+  [ "$(starts B-)" = 1 ] || { show; false; }
   [ "$(peak)" -le 3 ] || { echo "peak $(peak) with 4 cores (limit 3)"; show; false; }
 }
 
@@ -192,4 +200,18 @@ JSON
   # It did wait (longer than C1's timeout) for B's unit to end.
   [ "$(end_line B-C1)" -lt "$(start_line A-ok)" ] || { echo "A's units did not wait for the only slot"; show; false; }
   wait_ok "$pb" || { show; false; }
+}
+
+@test "R181: the store hands a free slot to the waiting run holding the fewest, ahead of an earlier waiter of a run that holds more" {
+  sleep 120 & local ra=$!
+  sleep 120 & local rb=$!
+  # Run A holds two of three slots and has a unit waiting since before run B, which holds none.
+  mkdir -p "$TEST_ROOT/store"
+  jq -nc --argjson a "$ra" --argjson b "$rb" '{held: [{run: $a, id: "A1"}, {run: $a, id: "A2"}],
+    waiting: [{run: $a, id: "A3", order: 1}, {run: $b, id: "B1", order: 2}], next: 3}' > "$TEST_ROOT/store/slots.json"
+  # A step of a third party that changes nothing lets the store fill its free slot.
+  # shellcheck disable=SC2016 # expanded by in_store
+  run in_store 'SLOTS_LIMIT=3; slots_apply "$SLOTS_DROP" Z || exit 1; jq -c "[.held[].id]" "$SLOTS_FILE"'
+  kill "$ra" "$rb"; wait "$ra" "$rb" 2> /dev/null || true
+  [ "$status" -eq 0 ] && [ "$output" = '["A1","A2","B1"]' ] || { echo "$output"; cat "$TEST_ROOT/store/slots.json"; false; }
 }

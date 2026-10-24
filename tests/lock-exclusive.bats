@@ -96,7 +96,54 @@ one_at_a_time() {
 @test "R1: every lock folder of the kernel is taken by its owner file (vbw_lock_dir), never by mkdir's answer" {
   run grep -nE '(^|[^-[:alnum:]_])mkdir "[^"]*(lock|mutex)[^"]*"' "$PLUGIN_ROOT"/lib/*.sh "$PLUGIN_ROOT"/hooks/*.sh "$PLUGIN_ROOT/bin/vbw"
   [ "$status" -eq 1 ] || { echo "$output"; false; }
-  grep -q 'vbw_lock_dir "\$lock"' "$PLUGIN_ROOT/lib/slots.sh"
+  # The slot store's lock is a file, made by the exclusive create alone (no mkdir).
+  grep -q 'vbw_lock_create "\$lock"' "$PLUGIN_ROOT/lib/slots.sh"
   grep -q 'vbw_lock_dir "\$g/mutex"' "$PLUGIN_ROOT/lib/checks.sh"
   grep -q 'vbw_lock_dir "\$l"' "$PLUGIN_ROOT/lib/proofsteps.sh"
+}
+
+# in_runtime BODY ARGS...: BODY with the kernel's locks loaded and VBW_RUNTIME at $TEST_ROOT/runtime.
+in_runtime() {
+  mkdir -p "$TEST_ROOT/runtime"
+  # shellcheck disable=SC2016 # expanded by the inner bash
+  bash -c 'VBW_LIB="$1/lib"; . "$VBW_LIB/core.sh"; . "$VBW_LIB/record.sh"; . "$VBW_LIB/proofsteps.sh"
+    VBW_RUNTIME="$2/runtime"; l="$VBW_RUNTIME/step.lock"; body=$3; shift 3; eval "$body"' _ "$PLUGIN_ROOT" "$TEST_ROOT" "$@"
+}
+
+@test "R190: the proof note's lock is never taken from a live owner: a waiter gives up and its caller skips the update" {
+  sleep 120 & local live=$!
+  mkdir -p "$TEST_ROOT/runtime/step.lock"
+  printf '%s\n' "$live" > "$TEST_ROOT/runtime/step.lock/pid"
+  # shellcheck disable=SC2016 # expanded by in_runtime
+  run in_runtime 'sleep() { :; }; if proofsteps_lock; then echo "taken"; else echo "gave up"; fi; cat "$l/pid"'
+  kill "$live"; wait "$live" 2> /dev/null || true
+  [ "${lines[0]}" = "gave up" ] && [ "${lines[1]}" = "$live" ] || { echo "$output"; false; }
+}
+
+@test "R190: a note lock whose dead owner two waiters find is never taken from the waiter that took it over first" {
+  sleep 0 & local dead=$!
+  wait "$dead"
+  sleep 120 & local live=$!
+  mkdir -p "$TEST_ROOT/runtime/step.lock"
+  printf '%s\n' "$dead" > "$TEST_ROOT/runtime/step.lock/pid"
+  # The other waiter takes the lock over while this one judges the owner gone, and holds it.
+  # shellcheck disable=SC2016 # expanded by in_runtime
+  run in_runtime 'dead=$1 live=$2 tries=0 fired=
+    kill() {
+      if [ "$1" = -0 ] && [ "$2" = "$dead" ] && [ -z "$fired" ]; then
+        fired=1; rm -rf "$l"; mkdir "$l"; printf "%s\n" "$live" > "$l/pid"; return 1
+      fi
+      command kill "$@"
+    }
+    sleep() {
+      local p=
+      tries=$((tries + 1))
+      { IFS= read -r p < "$l/pid"; } 2> /dev/null || true
+      [ "$p" = "$live" ] || { echo "the waiter that held the lock lost it at try $tries"; exit 1; }
+      [ "$tries" -lt 3 ] || rm -rf "$l"
+    }
+    proofsteps_lock || { echo "no lock"; exit 1; }
+    echo "locked after $tries tries"' "$dead" "$live"
+  kill "$live"; wait "$live" 2> /dev/null || true
+  [ "$status" -eq 0 ] && [ "$output" = "locked after 3 tries" ] || { echo "$output"; false; }
 }

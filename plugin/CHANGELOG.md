@@ -1,5 +1,51 @@
 # Changelog
 
+## [2.1.6] - 2026-10-24
+
+### Changed
+
+- **Heavy test commands share the computer's cores.** When several checks run
+  side by side, each check's command now gets its share of the cores through
+  the settings build tools read (`CARGO_BUILD_JOBS`, `GOMAXPROCS`,
+  `MAKEFLAGS=-jN`); a check that runs alone gets every core. A project whose
+  checks each started a full parallel build no longer runs many such builds
+  at once. Values you already set are kept.
+
+### Fixed
+
+- **Two runs no longer write the proof's step times at the same moment.** The
+  lock around that note could be taken from a run still writing it, after a
+  few seconds' wait; it is now taken over only from a run that has died.
+
+## [2.1.5] - 2026-10-24
+
+### Changed
+
+- **A long proof says why before you wait for it.** The proof's first line
+  counts the checks that run again and names the main reasons, and VBW's
+  sentence for the proof step ends with the top one, so you know at once
+  whether a proof will take a minute or an hour.
+- **A loop item's time budget follows its planned work.** The budget was set
+  from the size label guessed before planning. Once the road is planned, the
+  budget is twice the time spent so far plus the planned road, at least 30
+  minutes, and the loop's report names what it was based on.
+- **Unit times are measured to a tenth of a second**, so quick checks no
+  longer all read "0 s" or "1 s".
+- **`vbw mutate --none` names what it cannot see**: a check that only tests
+  whether a plan's file exists is not caught by it.
+
+### Fixed
+
+- **Time estimates no longer absorb a run left open overnight.** A step that
+  sat idle for hours counted as work and could ruin the build and proof
+  estimates for days. A step far longer than its kind usually takes is now left
+  out of the estimates.
+- **Runs that share the computer hand slots and locks over faster and more
+  safely.** A lock left by a run that died is taken over by exactly one run, a
+  folder that refuses new files is reported at once instead of after 30
+  seconds, and a freed slot still goes to the waiting run that holds the
+  fewest.
+
 ## [2.1.4] - 2026-10-23
 
 ### Fixed
