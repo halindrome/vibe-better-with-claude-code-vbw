@@ -401,8 +401,15 @@ scroll it) to read the rest.
   as `D22 · 15:39` (`yesterday 15:39` or the weekday on another day), the
   sentence, and `because ...` in italics (the record ties a decision to its
   milestone, not to a phase).
-- **Proof:** one square per approved check (green passed, red failing, grey not
-  run). Press a check for its last output.
+- **Proof:** a strip of the milestone's approved checks in four colours
+  (passed green, failing red, running amber, not run a dim `░`) with the counts
+  beside it (`✓ 12 passed  ✗ 2 failing  ● 1 running  … 3 not run`); under it
+  every check as its mark and id in its state's colour (`✗ C11 ✗ C12 ● C3
+  ✓ C1`), failing first, then running, passed and not run. A long list stops
+  after about five rows with `… and N more`; press it for the rest. Press a
+  check for its requirement, its last run (passed or failed, exit, seconds,
+  when), its command, the first line of its output that says what failed, and
+  a button for the last 20 lines.
 - **Timeline:** one lane per agent of the live run against the run's clock, the
   three slowest marked, and past steps of the same kind against their usual
   time. Under it, **Runs this session**: each VBW run of this session on one

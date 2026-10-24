@@ -116,14 +116,18 @@ export function planModel(input) {
 const TAIL_LINES = 20
 // A check cell is a palette state: its colour, and its mark and word for colour off.
 const CELL_STATE = { passed: 'done', failing: 'failed', running: 'running', none: 'quiet' }
-const CELL_WORD = { passed: 'passed', failing: 'failing', running: 'running', none: 'not run' }
+export const CELL_WORD = { passed: 'passed', failing: 'failing', running: 'running', none: 'not run' }
+// The line of a failing output that says what failed: the first that names a failure, else the first.
+const FAILED = /\b(not ok|fail(ed|ure)?|error|assert)/i
 
-export function checkDetail(record, id) {
+export function checkDetail(record, id, now) {
   const rec = isObj(record) ? record : {}
   const c = arr(rec.checks).find((x) => x.id === id && str(x.id))
   if (!c) return null
   const ev = isObj(rec.evidence) && isObj(rec.evidence.checks) && isObj(rec.evidence.checks[id]) ? rec.evidence.checks[id] : {}
   const tail = typeof ev.tail === 'string' ? ev.tail.replace(/\n+$/, '').split('\n').slice(-TAIL_LINES).join('\n') : ''
+  const lines = tail.split('\n').map((l) => l.trim()).filter(Boolean)
+  const at = isObj(rec.evidence) ? str(rec.evidence.at) : null
   return {
     id,
     command: argvText(c.run),
@@ -131,10 +135,14 @@ export function checkDetail(record, id) {
     status: str(ev.status),
     exit: Number.isInteger(ev.exit) ? ev.exit : null,
     seconds: Number.isFinite(ev.seconds) ? ev.seconds : null,
-    at: isObj(rec.evidence) ? str(rec.evidence.at) : null,
+    at,
+    when: at ? dayTime(Date.parse(at), Number.isFinite(now) ? now : Date.now()) : null,
+    first: lines.find((l) => FAILED.test(l)) || lines[0] || null,
     output: tail,
   }
 }
+
+const FIRST = { failing: 0, running: 1, passed: 2, none: 3 }
 
 export function proofModel(input) {
   const rec = recOf(input)
@@ -146,7 +154,7 @@ export function proofModel(input) {
   const evc = isObj(rec.evidence) && isObj(rec.evidence.checks) ? rec.evidence.checks : null
   if (evc) proven.clear()
   const counts = { passed: 0, failing: 0, running: 0, none: 0 }
-  const cells = checks.map((c) => {
+  const cells = checks.map((c, i) => {
     const st = evc && isObj(evc[c.id]) ? evc[c.id].status : null
     const state = running.has(c.id) ? 'running'
       : st === 'pass' ? 'passed'
@@ -154,10 +162,12 @@ export function proofModel(input) {
       : !st && proven.has(c.req) ? 'passed' : 'none'
     counts[state]++
     const ps = CELL_STATE[state]
-    return { id: c.id, state, color: stateColor(ps), mark: STATE_MARKS[ps], hover: c.id + ' · ' + CELL_WORD[state] + ' · ' + reqText(rec, c.req), press: { check: c.id } }
-  })
+    return { id: c.id, state, color: stateColor(ps), mark: STATE_MARKS[ps], word: CELL_WORD[state], press: { check: c.id }, n: i }
+  }).sort((a, b) => FIRST[a.state] - FIRST[b.state] || a.n - b.n).map(({ n, ...c }) => c)
   const sel = isObj(input) ? input.selected : null
-  return { cells, counts, detail: sel ? checkDetail(rec, sel) : null }
+  const open = isObj(input) && isObj(input.open) ? input.open : {}
+  const now = isObj(input) && Number.isFinite(input.now) ? input.now : Date.now()
+  return { cells, counts, detail: sel ? checkDetail(rec, sel, now) : null, all: open['proof:all'] === true, outputOpen: sel ? open['output:' + sel] === true : false }
 }
 
 // ---- Decisions ----------------------------------------------------------------
@@ -274,33 +284,48 @@ export function renderPlan(ui, model, act, width) {
   return col(ui, null, ...kids)
 }
 
-export const PER_ROW = 20
+// The ids shown before '… and N more': about five rows of them at the pane's width.
+const ID_ROWS = 5
+const PROOF_ORDER = ['passed', 'failing', 'running', 'none']
 
-export function renderProof(ui, model, act) {
+// renderProof(ui, model, act, width): a segmented strip of passed, failing, running and not run
+// in their colours with the counts beside it; the checks as spaced ids, each its mark and id in
+// its state's colour, failing first, a press for its detail; a long list cut with '… and N more'.
+export function renderProof(ui, model, act, width) {
   const m = isObj(model) ? model : {}
+  const w = Number.isFinite(width) ? Math.max(20, Math.floor(width)) : 60
   const cells = Array.isArray(m.cells) ? m.cells : []
   if (!cells.length) return empty(ui, 'No checks are approved for this milestone yet.')
-  const cell = (c) => h(els(ui).Box, { key: 'cell-' + c.id },
-    T(ui, { color: c.color }, c.mark || STATE_MARKS.quiet),
-    h(els(ui).Box, { position: 'absolute', top: 1, left: 0, display: 'none', hover: { display: 'flex' }, borderStyle: 'round' },
-      T(ui, null, c.hover)))
-  const rows = []
-  for (let i = 0; i < cells.length; i += PER_ROW) {
-    rows.push(row(ui, { key: 'proof-row-' + i / PER_ROW }, ...cells.slice(i, i + PER_ROW).map(cell)))
-  }
   const k = isObj(m.counts) ? m.counts : {}
-  const kids = [...rows, T(ui, { dimColor: true },
-    (k.passed || 0) + ' passed · ' + (k.failing || 0) + ' failing · ' + (k.running || 0) + ' running · ' + (k.none || 0) + ' not run')]
-  // Every check is a press away: the failing ones first, as the ones worth reading.
-  const order = [...cells.filter((c) => c.state === 'failing'), ...cells.filter((c) => c.state !== 'failing')]
-  kids.push(row(ui, { key: 'proof-press', flexWrap: 'wrap' }, ...order.map((c) =>
-    btn(ui, 'check-' + c.id, c.id, act, c.press, { plain: true, dimColor: c.state !== 'failing' }))))
+  const total = cells.length
+  const barW = Math.max(10, Math.min(40, w))
+  let seg = PROOF_ORDER.map((s) => (k[s] ? Math.max(1, Math.round((k[s] / total) * barW)) : 0))
+  while (seg.reduce((a, b) => a + b, 0) > barW) seg[seg.indexOf(Math.max(...seg))]--
+  const look = (s) => ({ passed: 'done', failing: 'failed', running: 'running', none: 'quiet' })[s]
+  const strip = row(ui, { key: 'proof-strip' }, ...PROOF_ORDER.map((s, i) => (seg[i]
+    ? T(ui, { key: 'seg-' + s, ...(s === 'none' ? { dimColor: true } : { color: stateColor(look(s)) }) }, (s === 'none' ? '░' : '█').repeat(seg[i])) : null)).filter(Boolean))
+  const counts = row(ui, { key: 'proof-counts', flexWrap: 'wrap', columnGap: 2 }, ...PROOF_ORDER.map((s) =>
+    T(ui, { key: 'count-' + s, ...(s === 'none' ? { dimColor: true } : { color: stateColor(look(s)) }) }, STATE_MARKS[look(s)] + ' ' + (k[s] || 0) + ' ' + CELL_WORD[s])))
+  // An id button is '[ ✗ C12 ]': its label and 4 cells of chrome, one cell apart.
+  const per = Math.max(1, Math.floor((w + 1) / (Math.max(...cells.map((c) => [...c.id].length)) + 2 + 4 + 1)))
+  const limit = m.all ? cells.length : Math.min(cells.length, per * ID_ROWS)
+  const ids = cells.slice(0, limit).map((c) => h(els(ui).Button, { key: 'check-' + c.id, plain: true, onPress: call(act, c.press) },
+    T(ui, { color: c.color }, c.mark + ' ' + c.id)))
+  if (limit < cells.length) ids.push(btn(ui, 'proof-more', '… and ' + (cells.length - limit) + ' more', act, { toggle: 'proof:all' }, { dimColor: true }))
+  const kids = [strip, counts, row(ui, { key: 'proof-ids', flexWrap: 'wrap', columnGap: 1, marginTop: 1 }, ...ids)]
   const d = m.detail
   if (isObj(d)) {
-    kids.push(T(ui, { bold: true }, d.id + ' · ' + d.requirement),
-      T(ui, { dimColor: true }, d.status ? 'last run: ' + d.status + (d.exit !== null ? ' (exit ' + d.exit + ')' : '') : 'not run yet'),
-      code(ui, d.command, 'bash'))
-    if (d.output) kids.push(code(ui, d.output))
+    const failed = d.status === 'fail' || d.status === 'timeout'
+    const ran = d.status ? [(d.status === 'pass' ? STATE_MARKS.done + ' passed' : STATE_MARKS.failed + ' ' + (d.status === 'timeout' ? 'timed out' : 'failed')),
+      d.exit !== null ? 'exit ' + d.exit : null, d.seconds !== null ? d.seconds + ' s' : null, d.when].filter(Boolean).join(' · ') : STATE_MARKS.quiet + ' not run yet'
+    const lines = d.output ? d.output.split('\n').length : 0
+    kids.push(col(ui, { key: 'proof-detail', marginTop: 1 },
+      T(ui, { bold: true }, d.id + ' · ' + d.requirement),
+      T(ui, { color: d.status === 'pass' ? stateColor('done') : failed ? stateColor('failed') : undefined, dimColor: !d.status }, ran),
+      code(ui, d.command, 'bash'),
+      failed && d.first ? T(ui, { color: stateColor('failed'), wrap: 'truncate-end' }, d.first) : null,
+      lines ? btn(ui, 'output-' + d.id, lines + (lines === 1 ? ' line' : ' lines'), act, { toggle: 'output:' + d.id }, { dimColor: !m.outputOpen }) : null,
+      m.outputOpen && d.output ? code(ui, d.output) : null))
   }
   return col(ui, null, ...kids)
 }

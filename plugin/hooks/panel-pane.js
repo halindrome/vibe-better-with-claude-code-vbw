@@ -221,7 +221,7 @@ function body(ui, { st, now, width, motion, registry, stored }, tab, act) {
   switch (tab) {
     // Plan: the phases, the chosen one's work, then the milestone's decisions (the record ties a decision to no phase).
     case 'plan': return renderPlan({ ...ui, Input: undefined }, planModel({ record: rec, phase: st.phase, open: st.open, now }), act, width - 4) // Ask is not wired yet
-    case 'proof': return renderProof(ui, proofModel({ record: rec, selected: st.check }), act)
+    case 'proof': return renderProof(ui, proofModel({ record: rec, selected: st.check, open: st.open, now }), act, width - 4)
     // Timeline: the live run's agents on its clock, then every run of the session with its time and cost.
     case 'timeline': return h(ui.Box, { key: 'timeline-tab', flexDirection: 'column' },
       renderTimeline(ui, timelineModel({ run: st.run, now, steps: st.steps, step: st.step, width: Math.max(10, width - 24) })),

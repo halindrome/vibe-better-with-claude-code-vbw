@@ -177,64 +177,96 @@ test('plan render: each phase is one whole row (its title cut, never wrapped), t
   assert.match(plain, /bats tests\/est\.bats/)
 })
 
-test('proof: one cell per check of the current milestone, coloured by its last result', () => {
+test('proof: one cell per check of the current milestone, coloured by its last result, failing first, then running', () => {
   const m = mr.proofModel({ record: rec(), running: ['C5'] })
-  assert.deepEqual(m.cells.map((c) => [c.id, c.state, c.color]), [
-    ['C2', 'passed', 'green'],
-    ['C3', 'failing', 'red'],
-    ['C4', 'failing', 'red'],
-    ['C5', 'running', '#ffaf00'],
+  assert.deepEqual(m.cells.map((c) => [c.id, c.state, c.color, c.mark + ' ' + c.word]), [
+    ['C3', 'failing', 'red', '✗ failing'],
+    ['C4', 'failing', 'red', '✗ failing'],
+    ['C5', 'running', '#ffaf00', '● running'],
+    ['C2', 'passed', 'green', '✓ passed'],
   ])
-  assert.equal(m.cells[1].hover, 'C3 · failing · R3: The panel shows an estimate')
-  assert.deepEqual(m.cells[1].press, { check: 'C3' })
+  assert.deepEqual(m.cells[0].press, { check: 'C3' })
   assert.deepEqual(m.counts, { passed: 1, failing: 2, running: 1, none: 0 })
   const idle = mr.proofModel({ record: rec() })
-  assert.equal(idle.cells[3].state, 'none')
-  assert.equal(idle.cells[3].color, 'gray')
+  const c5 = idle.cells.find((c) => c.id === 'C5')
+  assert.equal(c5.state, 'none')
+  assert.equal(c5.color, 'gray')
+  assert.equal(c5.mark + ' ' + c5.word, '… not run')
   // A proven requirement counts as passed even without evidence for the check.
   const noEv = mr.proofModel({ record: { ...rec(), evidence: null } })
-  assert.deepEqual(noEv.cells.map((c) => c.state), ['passed', 'none', 'none', 'passed'])
+  assert.deepEqual(noEv.cells.map((c) => c.id + ' ' + c.state), ['C2 passed', 'C5 passed', 'C3 none', 'C4 none'])
 })
 
-test('proof: checkDetail is the command and the last lines of output', () => {
-  const d = mr.checkDetail(rec(), 'C3')
+test('proof: checkDetail is the command, when it last ran, its seconds, the first failing line and the last lines of output', () => {
+  const now = Date.parse('2026-10-03T12:00:00Z')
+  const d = mr.checkDetail(rec(), 'C3', now)
   assert.equal(d.id, 'C3')
   assert.equal(d.command, "node --test 'tests/my est.mjs'")
   assert.equal(d.requirement, 'R3: The panel shows an estimate')
   assert.equal(d.status, 'fail')
   assert.equal(d.exit, 1)
+  assert.equal(d.seconds, 3)
+  assert.match(d.when, /^\d\d:\d\d$/, 'the proof ran today: the time alone')
+  assert.equal(d.first, 'line 11')
   assert.equal(d.output.split('\n').length, 20)
   assert.match(d.output, /^line 11\nline 12/)
   assert.match(d.output, /line 30$/)
-  assert.equal(mr.checkDetail(rec(), 'C5').output, '')
-  assert.equal(mr.checkDetail(rec(), 'C5').status, null)
-  assert.equal(mr.checkDetail(rec(), 'C99'), null)
-  assert.deepEqual(mr.proofModel({ record: rec(), selected: 'C3' }).detail, d)
+  // The first line that says it failed wins over the first line.
+  const said = mr.checkDetail({ ...rec(), evidence: { ...rec().evidence, checks: { C3: { status: 'fail', exit: 1, seconds: 1, tail: '1..2\nok 1 a\nnot ok 2 b\n# x' } } } }, 'C3', now)
+  assert.equal(said.first, 'not ok 2 b')
+  assert.equal(mr.checkDetail(rec(), 'C5', now).output, '')
+  assert.equal(mr.checkDetail(rec(), 'C5', now).first, null)
+  assert.equal(mr.checkDetail(rec(), 'C5', now).status, null)
+  assert.equal(mr.checkDetail(rec(), 'C99', now), null)
+  assert.deepEqual(mr.proofModel({ record: rec(), selected: 'C3', now }).detail, d)
 })
 
-test('proof render: rows of coloured ■ cells with hover cards; presses ask for the detail', () => {
+test('proof render: a segmented strip of the four states with their counts, the checks as spaced ids by state, failing first, a press for the detail', () => {
   const pressed = []
-  const tree = mr.renderProof(UI, mr.proofModel({ record: rec(), running: ['C5'], selected: 'C3' }), (a) => pressed.push(a))
-  const cells = all(tree, (n) => n.type === 'Text' && /^[✓✗●…]$/.test(n.children.join('')))
-  assert.deepEqual(cells.map((c) => c.props.color), ['green', 'red', 'red', '#ffaf00'])
-  // Colour off: the mark alone tells the states apart, and the hover card says the word.
-  assert.deepEqual(cells.map((c) => c.children.join('')), ['✓', '✗', '✗', '●'])
-  assert.match(collect(find(tree, (n) => n.type === 'Box' && n.props.display === 'none')).join(' '), /C\d · (passed|failing|running|not run) · /)
-  const card = find(tree, (n) => n.type === 'Box' && n.props.display === 'none' && n.props.hover && n.props.hover.display === 'flex')
-  assert.ok(card, 'a hover card revealed on hover')
-  assert.match(collect(card).join(' '), /C2 · passed · R2: The panel shows the cost/)
-  const press = buttons(tree).find((b) => b.props.label === 'C3')
-  press.props.onPress({ surface: 'terminal' })
+  const now = Date.parse('2026-10-03T12:00:00Z')
+  const tree = mr.renderProof(UI, mr.proofModel({ record: rec(), running: ['C5'], selected: 'C3', now }), (a) => pressed.push(a), 60)
+  const strip = find(tree, (n) => n.props && n.props.key === 'proof-strip')
+  assert.ok(strip, 'no strip')
+  const segs = all(strip, (n) => n.type === 'Text' && /^[█░]+$/.test(collect(n).join('')))
+  assert.deepEqual(segs.map((s) => s.props.color), ['green', 'red', '#ffaf00'])
+  const counts = collect(find(tree, (n) => n.props && n.props.key === 'proof-counts')).join(' ')
+  assert.match(counts, /✓ 1 passed/)
+  assert.match(counts, /✗ 2 failing/)
+  assert.match(counts, /● 1 running/)
+  assert.match(counts, /… 0 not run/)
+  const ids = buttons(tree).filter((b) => /^check-/.test(b.props.key))
+  assert.deepEqual(ids.map((b) => collect(b).join('')), ['✗ C3', '✗ C4', '● C5', '✓ C2'])
+  assert.deepEqual(ids.map((b) => find(b, (n) => n.type === 'Text').props.color), ['red', 'red', '#ffaf00', 'green'])
+  assert.ok(!all(tree, (n) => n.type === 'Text' && /^[✓✗●…]$/.test(collect(n).join(''))).length, 'no unlabelled mark rows')
+  ids[0].props.onPress({ surface: 'terminal' })
   assert.deepEqual(pressed, [{ check: 'C3' }])
-  assert.equal(all(tree, (n) => n.type === 'Code').map((c) => c.props.source).join('\n').split('\n').length, 21)
-  // Wide grids wrap into rows of at most `perRow` cells.
+  const detail = collect(find(tree, (n) => n.props && n.props.key === 'proof-detail')).join('\n')
+  assert.match(detail, /C3 · R3: The panel shows an estimate/)
+  assert.match(detail, /✗ failed · exit 1 · 3 s · \d\d:\d\d/)
+  assert.match(detail, /line 11/)
+  assert.ok(all(tree, (n) => n.type === 'Code').some((c) => c.props.source === "node --test 'tests/my est.mjs'"))
+  // The full output is a press away.
+  const more = buttons(tree).find((b) => b.props.key === 'output-C3')
+  assert.equal(more.props.label, '20 lines')
+  more.props.onPress({ surface: 'terminal' })
+  assert.deepEqual(pressed[1], { toggle: 'output:C3' })
+  const opened = mr.renderProof(UI, mr.proofModel({ record: rec(), selected: 'C3', now, open: { 'output:C3': true } }), null, 60)
+  assert.ok(all(opened, (n) => n.type === 'Code').some((c) => /^line 11\n/.test(c.props.source)))
+  assert.ok(widest(screen(tree, 60)) <= 60)
+  // A long list is cut with '… and N more', and a press shows the rest.
   const many = deepFreeze(record({
     requirements: [{ id: 'R1', text: 'x', proof: 'auto', status: 'open', milestone: 'M9' }],
-    checks: Array.from({ length: 25 }, (_, i) => ({ id: 'C' + (i + 1), req: 'R1', run: ['true'] })),
+    checks: Array.from({ length: 70 }, (_, i) => ({ id: 'C' + (i + 1), req: 'R1', run: ['true'] })),
   }))
-  const grid = mr.renderProof(BASIC, mr.proofModel({ record: many }))
-  const rows = all(grid, (n) => n.type === 'Box' && n.props.key && n.props.key.startsWith('proof-row-'))
-  assert.deepEqual(rows.map((r) => all(r, (n) => n.type === 'Text' && n.children.join('') === '…').length), [20, 5])
+  const cut = mr.renderProof(BASIC, mr.proofModel({ record: many }), null, 60)
+  const shown = buttons(cut).filter((b) => /^check-/.test(b.props.key)).length
+  assert.ok(shown < 70, shown + ' ids shown')
+  const rest = buttons(cut).find((b) => b.props.key === 'proof-more')
+  assert.equal(rest.props.label, '… and ' + (70 - shown) + ' more')
+  const all70 = mr.renderProof(BASIC, mr.proofModel({ record: many, open: { 'proof:all': true } }), null, 60)
+  assert.equal(buttons(all70).filter((b) => /^check-/.test(b.props.key)).length, 70)
+  const ids70 = screen(all70, 60).join('\n')
+  assert.doesNotMatch(ids70, /C\d+C\d+/, 'ids are spaced')
 })
 
 test('decisions: the current milestone, newest first, with question, answer and why', () => {
