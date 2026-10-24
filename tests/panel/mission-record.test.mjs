@@ -1,10 +1,9 @@
-// Mission Control's record tabs (mods_4_vbw.md §3.3): Plan, Proof, Decisions
-// and Team. plugin/hooks/panel-mission-record.js turns the project record into
+// Mission Control's record views (mods_4_vbw.md §3.3): Plan, Proof and the
+// decisions under Plan. plugin/hooks/panel-mission-record.js turns the project record into
 // plain models (tested by value) and draws them with h() (tested by tree
-// shape). Pure: no Claude Code, no disk beyond reading lib/profiles.json (L1).
+// shape). Pure: no Claude Code, no disk (L1).
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import fs from 'node:fs'
 import { pathToFileURL } from 'node:url'
 import { PLUGIN, record, deepFreeze, walk, find, collect } from './helpers/fake-mod.mjs'
 
@@ -64,7 +63,7 @@ const ODD = [undefined, null, 7, 'x', [], {}, { record: null }, { record: { mile
 
 test('every model and render survives missing or odd input without throwing', () => {
   for (const x of ODD) {
-    for (const f of ['planModel', 'proofModel', 'decisionsModel', 'teamModel']) {
+    for (const f of ['planModel', 'proofModel', 'decisionsModel']) {
       const m = mr[f](x)
       assert.ok(m && typeof m === 'object', f + ' returns an object')
       for (const ui of [UI, BASIC]) {
@@ -74,7 +73,7 @@ test('every model and render survives missing or odd input without throwing', ()
     }
     assert.doesNotThrow(() => mr.checkDetail(x && x.record, 'C1'))
   }
-  for (const f of ['renderPlan', 'renderProof', 'renderDecisions', 'renderTeam']) {
+  for (const f of ['renderPlan', 'renderProof', 'renderDecisions']) {
     assert.doesNotThrow(() => mr[f](UI, null))
     assert.doesNotThrow(() => mr[f](UI, undefined))
   }
@@ -212,47 +211,4 @@ test('decisions: the current milestone, newest first, with question, answer and 
   assert.match(text, /Which currency\?/)
   assert.match(text, /because the ledger is in dollars/)
   assert.match(collect(mr.renderDecisions(UI, mr.decisionsModel({ record: record() }))).join(' '), /No decisions/)
-})
-
-test('team: role to model from the profile, overrides applied, QA never on Haiku', () => {
-  const m = mr.teamModel({ record: rec() })
-  assert.equal(m.profile, 'quality')
-  assert.equal(m.autonomy, 'hands-off')
-  assert.equal(m.rigor, 'auto')
-  assert.deepEqual(m.rows.map((r) => [r.role, r.model, r.override]), [
-    ['architect', 'opus', false], ['lead', 'sonnet', true], ['dev', 'haiku', true], ['qa', 'sonnet', false],
-    ['scout', 'sonnet', false], ['debugger', 'opus', false], ['docs', 'sonnet', false],
-  ])
-  assert.deepEqual(m.buttons.map((b) => b.fill), ['/vbw:config', '/vbw:profile'])
-  // config (a fresher reading of the settings) wins over the record's.
-  const c = mr.teamModel({ record: rec(), config: { profile: 'budget', rigor: 'deep', models: { qa: 'haiku' } } })
-  assert.equal(c.profile, 'budget')
-  assert.equal(c.rigor, 'deep')
-  assert.equal(c.rows.find((r) => r.role === 'scout').model, 'haiku')
-  assert.equal(c.rows.find((r) => r.role === 'qa').model, 'sonnet')
-  const d = mr.teamModel({ record: record() })
-  assert.equal(d.profile, 'balanced')
-  assert.equal(d.autonomy, 'balanced')
-  assert.deepEqual(d.rows.map((r) => r.model), ['opus', 'opus', 'sonnet', 'sonnet', 'sonnet', 'sonnet', 'sonnet'])
-})
-
-test('team: the built-in profile table matches plugin/lib/profiles.json', () => {
-  const lib = JSON.parse(fs.readFileSync(PLUGIN + '/lib/profiles.json', 'utf8'))
-  for (const p of Object.keys(lib)) {
-    const m = mr.teamModel({ record: record({ settings: { profile: p } }) })
-    assert.deepEqual(Object.fromEntries(m.rows.map((r) => [r.role, r.model])), lib[p], p)
-  }
-})
-
-test('team render: a role table in role colours and buttons that fill commands', () => {
-  const pressed = []
-  const tree = mr.renderTeam(UI, mr.teamModel({ record: rec() }), (a) => pressed.push(a))
-  const role = (r) => find(tree, (n) => n.type === 'Text' && n.children.join('').trim() === r)
-  assert.equal(role('architect').props.color, '#e060e0')
-  assert.equal(role('docs').props.color, '#c27aff')
-  const text = collect(tree).join('\n')
-  assert.match(text, /quality/)
-  assert.match(text, /hands-off/)
-  for (const b of buttons(tree)) b.props.onPress({ surface: 'terminal' })
-  assert.deepEqual(pressed, [{ fill: '/vbw:config' }, { fill: '/vbw:profile' }])
 })

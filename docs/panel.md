@@ -403,7 +403,44 @@ scroll it) to read the rest.
   a new session starts again from zero.
 - **Sessions:** the chats open on this project, and which one holds the run (see
   [Sessions](#sessions)).
-- **Settings:** which model each role uses, the profile, autonomy and rigor.
+- **Settings:** every VBW setting with its current value, changed by a press
+  (see [Settings](#settings)).
+
+### Settings
+
+The **Settings** tab shows every setting `vbw config set` accepts, and rigor,
+the sound and the status line, one row each: the name, the value in the accent
+colour, a dim note, then its controls.
+
+```
+profile          balanced
+  [ quality ] [ balanced ] [ budget ]
+model.dev        opus  (set by you)
+  [ opus ] [ sonnet ] [ haiku ] [ default ]
+check_jobs       6  machine limit 6 · this clone
+  [ − ] [ + ] [ default ]
+```
+
+- A choice among fixed values is a dropdown where the surface draws one, else
+  a row of buttons with the current value pressed in: `profile`,
+  `model.<role>` for the seven roles (QA is never offered Haiku), `autonomy`,
+  `rigor`, `motion`, `sound` (`off`, each sound folder, `default`) and the
+  status line (`on`, `off`).
+- A number has `−` and `+` (and `default`, which removes it):
+  `autonomy_cap`, `check_jobs` (with the computer-wide limit beside it),
+  `command_timeout` and `check_budget`.
+- A role's row is named in the role's colour, and says `(set by you)` when you
+  chose its model; otherwise the profile picks it.
+- `check_jobs` is this clone's own; `sound` and the status line are this
+  computer's. Everything else is the project's, shared through git.
+
+A press runs VBW's own command (`vbw config set KEY VALUE`, `vbw config rigor
+MODE` or `vbw statusline on|off`), then the tab reads `vbw config` and
+`vbw statusline status` again, so what it shows is what the kernel now holds.
+The new value shows with `✓ saved` in green for about 2 seconds. When VBW
+refuses a value, its own words show in amber under the row and the value stays
+as it was. When the settings cannot be read, the tab says so in amber. The tab
+never reads or writes the project's record itself.
 
 ### Sessions
 

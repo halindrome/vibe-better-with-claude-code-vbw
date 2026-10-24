@@ -17,6 +17,10 @@ const stage = await import(pathToFileURL(PLUGIN + '/hooks/panel-stage.js').href)
 const live = await import(pathToFileURL(PLUGIN + '/hooks/panel-mission-live.js').href)
 const mr = await import(pathToFileURL(PLUGIN + '/hooks/panel-mission-record.js').href)
 const candy = await import(pathToFileURL(PLUGIN + '/hooks/panel-candy.js').href)
+const settings = await import(pathToFileURL(PLUGIN + '/hooks/panel-settings.js').href)
+// The Settings tab as read from a kernel that prints a profile and a model per role.
+const SETTINGS = () => settings.settingsModel({ now: 0, settings: settings.settingsState({ now: 0,
+  reads: [{ exitCode: 0, stdout: ['profile: balanced', ...['architect', 'lead', 'dev', 'qa', 'scout', 'debugger', 'docs'].map((r) => 'model.' + r + ': sonnet')].join('\n') }, null] }) })
 
 const EL = (name) => Object.freeze({ element: name })
 const UI = { Box: EL('Box'), Text: EL('Text'), Button: EL('Button') }
@@ -124,9 +128,13 @@ test('Mission Control, Timeline: a lane carries the role colour', () => {
   for (const role of ROLES) assert.equal(m.lanes.find((l) => l.id === role).color, P.roleColor(role), role)
 })
 
-test('Mission Control, Team: a role row carries the role colour', () => {
-  const m = mr.teamModel({ record: deepFreeze(record()) })
-  for (const role of ROLES) assert.equal(m.rows.find((r) => r.role === role).color, P.roleColor(role), role)
+test('Mission Control, Settings: a role\'s model row is named in the role colour', () => {
+  const tree = settings.renderSettings(UI, SETTINGS())
+  for (const role of ROLES) {
+    const name = find(tree, (n) => n.type === 'Text' && n.props.key === 'name' && n.children.join('').trim() === 'model.' + role)
+    assert.ok(name, role)
+    assert.equal(name.props.color, P.roleColor(role), role)
+  }
 })
 
 test('Mission Control, Proof: passed is the done colour, failing the failed colour, running the running colour, not run grey', () => {
@@ -200,7 +208,7 @@ test('a rendered tree has no colour outside the palette: every colour prop is on
     stage.renderStage(UI, stage.stageModel({ now: NOW, maxRows: 30, columns: 100, motion: 'calm', run: run(agents) })),
     live.renderNow(UI, live.nowModel({ run: run(agents), now: NOW })),
     live.renderTimeline(UI, live.timelineModel({ run: run(agents), now: NOW, steps: [], width: 40 })),
-    mr.renderTeam(UI, mr.teamModel({ record: record() })),
+    settings.renderSettings(UI, SETTINGS()),
   ]
   let seen = 0
   for (const t of trees) {

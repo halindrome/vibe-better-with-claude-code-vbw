@@ -229,7 +229,7 @@ test('the tabs sit in whole rows: at 80 columns the six full names on one row be
 test('each tab draws its view, and the choice holds across redraws; the folded tabs keep their facts in their new homes', async () => {
   const h = await started({}, record({ settings: { profile: 'quality' }, decisions: [{ id: 'D1', text: 'Which db? sqlite', at: '2026-10-01T00:00:00Z' }] }))
   // Decisions under Plan, the cost per run and the session total (Costs) in Timeline.
-  const want = { Plan: [/P44 Cost/, /sqlite/], Proof: [/No checks are approved/], Timeline: [/No VBW workflow runs/, /This session: \$1\.42/], Sessions: [/No other chats are open on this project/], Settings: [/architect/] }
+  const want = { Plan: [/P44 Cost/, /sqlite/], Proof: [/No checks are approved/], Timeline: [/No VBW workflow runs/, /This session: \$1\.42/], Sessions: [/No other chats are open on this project/], Settings: [/Reading the settings/] }
   for (const [tab, res] of Object.entries(want)) {
     await press(h, await h.render(), tab)
     for (const re of res) assert.match(text(await h.render()), re, tab)

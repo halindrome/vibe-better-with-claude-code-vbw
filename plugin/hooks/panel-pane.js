@@ -4,13 +4,14 @@
 // where the terminal draws images and it costs the tabs nothing (§3.7). Now opens
 // with the panel's own sentences and its sound switch above the live workflow (the
 // crew); Plan holds the milestone's decisions, Timeline each run's time and cost, and
-// Settings the team's models; the views are those of panel-mission-live.js,
+// Settings every setting, changed by a press (panel-settings.js); the views are those of panel-mission-live.js,
 // panel-mission-record.js, panel-runs.js and panel-sessions.js.
 // At ship the pane shows VBW Wrapped (panel-candy.js) until a tab is chosen; the
 // all-green sweep crosses the top of Proof. Pure over the state panel.js gathered:
 // no `$` here; presses go to `on.act(action)` and the sound switch to `on.sound()`.
 import { nowModel, timelineModel, renderNow, renderTimeline } from './panel-mission-live.js'
-import { planModel, proofModel, decisionsModel, teamModel, renderPlan, renderProof, renderDecisions, renderTeam } from './panel-mission-record.js'
+import { planModel, proofModel, decisionsModel, renderPlan, renderProof, renderDecisions } from './panel-mission-record.js'
+import { settingsModel, renderSettings } from './panel-settings.js'
 import { runsModel, renderRuns } from './panel-runs.js'
 import { sessionsModel, renderSessions } from './panel-sessions.js'
 import { renderNext } from './panel-next.js'
@@ -207,6 +208,7 @@ function summary(ui, v, st, on, crewRows) {
     h(Box, { key: r.id, flexDirection: 'column', marginBottom: 1 },
       h(Text, { color: tint(r, v.need) }, String(r.text)),
       SHOW_TERMS ? h(Text, { dimColor: true }, String(r.term)) : null))]
+  // panel.js keeps st.sound from the kernel's `sound` setting and on.sound() sets it (off or default).
   rows.push(
     h(Box, { key: 'sound', flexDirection: 'row', marginBottom: 1 },
       h(Text, null, 'Sound is ' + (st.sound ? 'on' : 'off') + '. '),
@@ -227,7 +229,7 @@ function body(ui, { st, now, width, motion, registry, stored }, tab, act) {
       renderTimeline(ui, timelineModel({ run: st.run, now, steps: st.steps, step: st.step, width: Math.max(10, width - 24) })),
       renderRuns(ui, runsModel({ runs: st.leases, steps: st.steps, sessionCost: st.cost, now, width: Math.max(20, width - 4) })))
     case 'sessions': return renderSessions(ui, sessionsModel({ registry, root: st.root, sessionId: st.sessionId, lease: isObj(rec) ? rec.lease : null, stored, now, width: Math.max(10, width - 4), plans: isObj(rec) ? rec.plans : null }))
-    case 'settings': return renderTeam(ui, teamModel({ record: rec }), act)
+    case 'settings': return renderSettings(ui, settingsModel({ settings: st.settings, record: rec, now }), act)
     default: return null
   }
 }

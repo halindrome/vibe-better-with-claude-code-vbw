@@ -1,10 +1,10 @@
-// Mission Control's record tabs (mods_4_vbw.md §3.3): Plan, Proof, Decisions
-// and Team. Each tab is a pure `xxxModel(input)` over the project record and a
+// Mission Control's record views (mods_4_vbw.md §3.3): Plan, Proof, and the
+// decisions under Plan. Each is a pure `xxxModel(input)` over the project record and a
 // `renderXxx(ui, model, act)` drawn with the global h(); `act(action)` receives
-// what a press asks for ({tab, phase}, {check}, {ask}, {fill}). Never throws:
+// what a press asks for ({tab, phase}, {check}, {ask}). Never throws:
 // odd input gives an empty model. No `$` here.
 
-import { roleColor, stateColor, STATE_MARKS } from './panel-palette.js'
+import { stateColor, STATE_MARKS } from './panel-palette.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const arr = (x) => (Array.isArray(x) ? x.filter(isObj) : [])
@@ -143,44 +143,6 @@ export function decisionsModel(input) {
   return { milestone: id, items }
 }
 
-// ---- Team -------------------------------------------------------------------
-
-export const ROLES = ['architect', 'lead', 'dev', 'qa', 'scout', 'debugger', 'docs']
-// plugin/lib/profiles.json (a test holds the two equal).
-const S = 'sonnet'
-const PROFILES = {
-  quality: { architect: 'opus', lead: 'opus', dev: 'opus', qa: S, scout: S, debugger: 'opus', docs: S },
-  balanced: { architect: 'opus', lead: 'opus', dev: S, qa: S, scout: S, debugger: S, docs: S },
-  budget: { architect: S, lead: S, dev: S, qa: S, scout: 'haiku', debugger: S, docs: S },
-}
-const RENAMED = { planner: 'lead', critic: 'qa', builder: 'dev' }
-const pickOf = (v, ok, dflt) => (ok.includes(v) ? v : dflt)
-
-export function teamModel(input) {
-  const rec = recOf(input)
-  const cfg = isObj(input) && isObj(input.config) ? input.config : {}
-  const set = { ...(isObj(rec.settings) ? rec.settings : {}), ...cfg }
-  const profile = pickOf(set.profile, Object.keys(PROFILES), 'balanced')
-  const over = {}
-  for (const [k, v] of Object.entries(isObj(set.models) ? set.models : {})) {
-    const role = RENAMED[k] || k
-    if (ROLES.includes(role) && str(v) && (!(k in RENAMED) || !over[role])) over[role] = v
-  }
-  const rows = ROLES.map((role) => {
-    let model = over[role] || PROFILES[profile][role]
-    if (role === 'qa' && /haiku/i.test(model)) model = S
-    return { role, model, override: !!over[role] && model === over[role], color: roleColor(role) }
-  })
-  return {
-    profile,
-    autonomy: pickOf(set.autonomy, ['guided', 'balanced', 'hands-off'], 'balanced'),
-    rigor: pickOf(set.rigor, ['auto', 'express', 'standard', 'deep'], 'auto'),
-    cap: Number.isInteger(set.autonomy_cap) ? set.autonomy_cap : 25,
-    rows,
-    buttons: [{ label: 'Models', fill: '/vbw:config' }, { label: 'Autonomy', fill: '/vbw:profile' }],
-  }
-}
-
 // ---- Rendering ----------------------------------------------------------------
 
 const call = (act, a) => () => { if (typeof act === 'function') act(a) }
@@ -254,19 +216,4 @@ export function renderDecisions(ui, model) {
     T(ui, { dimColor: true }, d.id + (d.question ? ' · ' + d.question : '')),
     T(ui, null, d.answer),
     d.why ? T(ui, { dimColor: true }, 'because ' + d.why) : null)))
-}
-
-export function renderTeam(ui, model, act) {
-  const m = isObj(model) ? model : {}
-  const rows = Array.isArray(m.rows) ? m.rows : []
-  if (!rows.length) return empty(ui, 'No team settings to show.')
-  const width = Math.max(...rows.map((r) => r.role.length)) + 2
-  return col(ui, null,
-    ...rows.map((r) => row(ui, { key: 'team-' + r.role },
-      T(ui, { color: r.color }, r.role.padEnd(width)),
-      T(ui, null, r.model),
-      r.override ? T(ui, { dimColor: true }, ' (set by you)') : null)),
-    T(ui, null, 'Profile: ' + m.profile + ' · autonomy: ' + m.autonomy + ' (' + m.cap + ' steps) · rigor: ' + m.rigor),
-    row(ui, { key: 'team-buttons' }, ...(Array.isArray(m.buttons) ? m.buttons : []).map((b) =>
-      btn(ui, 'team-' + b.fill, b.label, act, { fill: b.fill }))))
 }

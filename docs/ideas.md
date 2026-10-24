@@ -22,7 +22,6 @@ Every idea here is an idea to evaluate, not an instruction to build. The problem
 | [Choose the sound](#choose-the-sound) | Small |
 | [A screenshot kept with a visual acceptance](#a-screenshot-kept-with-a-visual-acceptance) | Small to medium |
 | [A status line note for long work outside a run](#a-status-line-note-for-long-work-outside-a-run) | Medium |
-| [Fewer tabs in Mission Control](#fewer-tabs-in-mission-control) | Medium |
 | [Are plans split as finely as they safely can be](#are-plans-split-as-finely-as-they-safely-can-be) | Medium |
 | [Guards and Claude Code's hook failure setting](#guards-and-claude-codes-hook-failure-setting) | Small |
 | [May a read-only run write scratch files](#may-a-read-only-run-write-scratch-files) | Small |
@@ -120,18 +119,6 @@ Every idea here is an idea to evaluate, not an instruction to build. The problem
 **Size.** Medium.
 
 **Where.** `plugin/scripts/statusline.jq` and `plugin/scripts/vbw-statusline.sh`; a runtime note in `.vbw/runtime/`, like `next.json`, written through a `vbw` command in `plugin/lib/`.
-
-### Fewer tabs in Mission Control
-
-**Problem.** Mission Control has eight tabs: Now, Plan, Proof, Timeline, Decisions, Team, Sessions and Costs. In a narrow pane they take two rows ([panel.md](panel.md#mission-control)), and some hold little.
-
-**Idea.** Five tabs: Now, Plan, Proof, Timeline and Settings. Models and the sound switch move to Settings, decisions move inside each phase in Plan, run costs move to Timeline. Settings changes go through the kernel and are read back, not written by the panel.
-
-**Open questions.** Where Sessions and the session cost go. Settings would be the first tab that changes project settings: Sessions and Costs are read-only, and Team only fills commands for the person to run. How do the writes go through the kernel and get confirmed on screen?
-
-**Size.** Medium.
-
-**Where.** `plugin/hooks/panel-pane.js` (the tab list and layout), `plugin/hooks/panel-mission-live.js`, `plugin/hooks/panel-mission-record.js`; [panel.md](panel.md).
 
 ### Are plans split as finely as they safely can be
 
