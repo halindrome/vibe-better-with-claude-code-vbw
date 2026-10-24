@@ -839,6 +839,23 @@ opens, you still hear one clip. A second question plays once more. Each time
 VBW picks one clip at random from the sounds shipped with it, in
 `plugin/assets/audio/<character>/` (mp3 files).
 
+### Choosing the voice
+
+Each folder under `plugin/assets/audio/` is a voice (`arnold`, `charlize`,
+`darth`). The `sound` setting picks one, or none:
+
+```bash
+vbw config set sound darth     # only clips of that folder
+vbw config set sound off       # no sound and no notification
+vbw config set sound default   # a random clip of any voice (the default)
+```
+
+`vbw config` prints the current value as `sound: default`, `sound: off` or
+`sound: darth`. A name that is not a folder is refused with the list of the
+folders. The setting is stored in the record's settings like `motion`, so it is
+shared with the project through git. If a chosen folder is later removed, the
+panel plays a clip of any voice.
+
 ### The notification
 
 When the menu opens, VBW also raises one native notification, titled `VBW`,
@@ -857,11 +874,10 @@ turn both off or on:
 - click the **Turn off** / **Turn on** button in the panel, or
 - run `/vbw-sound` (it switches; `/vbw-sound off` and `/vbw-sound on` set it).
 
-With the switch off, nothing plays and no notification is raised. The choice is
-remembered. It is yours alone: it is kept in Claude Code's per-user store on
-your own machine, never committed, never in the project and never in
-`.vbw/record.json`. A test session plays and raises nothing, and uses only
-`test.*` keys in that store, never yours.
+With the switch off, nothing plays and no notification is raised. The switch is
+the `sound` setting: **Turn off** is `vbw config set sound off` and **Turn on**
+is `vbw config set sound default`, and the choice is remembered in the record's
+settings. A test session plays and raises nothing.
 
 ### When they are missing
 

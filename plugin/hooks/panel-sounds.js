@@ -21,3 +21,12 @@ export const SOUNDS = [
   'assets/audio/darth/d2.mp3',
   'assets/audio/darth/d3.mp3',
 ]
+
+// The sound to play for record.settings.sound: 'off' is none; a folder name is a random
+// sound of that folder; unset, 'default' or a folder that is gone is a random sound of all.
+export function soundFor(choice, random = Math.random) {
+  if (choice === 'off') return null
+  const own = SOUNDS.filter((s) => s.startsWith('assets/audio/' + choice + '/'))
+  const from = own.length ? own : SOUNDS
+  return from.length ? { asset: from[Math.floor(random() * from.length)] } : null
+}

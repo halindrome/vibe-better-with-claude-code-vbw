@@ -9,6 +9,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mount, record, next, ROOT, PANE } from './helpers/fake-mod.mjs'
+import { SOUNDS, soundFor } from '../../plugin/hooks/panel-sounds.js'
 
 // One of the shipped sounds, plugin/assets/audio/<character>/<file>.mp3 (D109).
 const SHIPPED = /^assets\/audio\/[^/]+\/[^/]+\.mp3$/
@@ -171,4 +172,25 @@ test('on a version without mods the sound command does not exist and the panel s
   await h.advance(10000)
   assert.equal(h.plays.length, 0)
   assert.equal(h.count('command.register'), 0)
+})
+
+// The sound setting (T18, record.settings.sound): soundFor(choice) is what the panel plays.
+test('soundFor: a chosen folder plays only its own assets', () => {
+  for (const folder of ['arnold', 'charlize', 'darth']) {
+    const seen = new Set()
+    for (let i = 0; i < 50; i++) seen.add(soundFor(folder, () => i / 50).asset)
+    assert.ok(seen.size >= 1)
+    for (const a of seen) assert.ok(a.startsWith('assets/audio/' + folder + '/'), a)
+  }
+})
+
+test('soundFor: off plays nothing; unset or a folder that is gone plays any shipped sound', () => {
+  assert.equal(soundFor('off'), null)
+  for (const c of [undefined, null, 'default', 'nosuch']) assert.ok(SOUNDS.includes(soundFor(c, () => 0.5).asset), String(c))
+})
+
+test('soundFor: the random number picks within the folder, the whole range reaches both ends', () => {
+  const darth = SOUNDS.filter((s) => s.includes('/darth/'))
+  assert.equal(soundFor('darth', () => 0).asset, darth[0])
+  assert.equal(soundFor('darth', () => 0.999999).asset, darth[darth.length - 1])
 })
