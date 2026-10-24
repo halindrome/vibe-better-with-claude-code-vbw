@@ -6,6 +6,8 @@
 
 # shellcheck source=checks.sh
 . "$VBW_LIB/checks.sh"
+# shellcheck source=unittime.sh
+. "$VBW_LIB/unittime.sh"
 
 cmd_check() {
   local red=0
@@ -29,12 +31,12 @@ cmd_check() {
     if [ $red -eq 0 ] && { [ "$status" = fail ] || [ "$status" = timeout ]; } && [ -f "$VBW_ROOT/$(checks_kept check "$key")" ]; then
       vbw_out '  full output: %s\n' "$(checks_kept check "$key")"
     fi
-  done < <(printf '%s' "$results" | jq -r --argjson red "$red" 'to_entries[]
+  done < <(printf '%s' "$results" | jq -r --argjson red "$red" "$UNITTIME_DEFS"'to_entries[]
     | "\(.key)\u001f\(.value.status)\u001f" + (if $red == 1 then
         (if .value.status == "pass" then "\(.key) passed before building: it proves nothing"
          else "\(.key) red (\(.value.status)), as expected" end)
       else
-        "\(.key) \(.value.status) \(.value.seconds)s" + (if .value.status == "pass" then ""
+        "\(.key) \(.value.status) \(.value.seconds | sec)s" + (if .value.status == "pass" then ""
           else ": " + (.value.tail | split("\n") | last // "") end)
       end)')
   slots_say

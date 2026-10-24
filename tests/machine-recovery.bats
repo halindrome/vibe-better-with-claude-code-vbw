@@ -2,8 +2,9 @@
 # R181 (docs/proof.md): slots of a run that is gone come back. A run killed
 # outright (its process no longer exists) leaves slots the next run to look at
 # the store takes over; a run interrupted with Ctrl-C gives them back at once;
-# the store's short lock (slots.lock, holding its owner's pid in slots.lock/pid)
-# is taken over when its owner process is gone. When the store cannot be
+# the store's short lock (the file slots.lock holding its owner's pid, or the
+# folder an older VBW made, with slots.lock/pid) is taken over when its owner
+# process is gone. When the store cannot be
 # written (a read-only folder, or the Claude Code sandbox refusing writes
 # outside the project) or is damaged, vbw prove, vbw fix done and vbw check
 # still run to the end with only check_jobs as their cap, their results

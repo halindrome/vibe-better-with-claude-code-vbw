@@ -107,7 +107,7 @@ user_commit() {
 @test "R195: vbw check keeps a failing check's complete output and says where it is under the check's own line; a pass removes nothing; --expect-red keeps nothing" {
   run "$VBW" check C1 < /dev/null
   [ "$status" -ne 0 ]
-  printf '%s\n' "$output" | grep -q '^C1 fail [0-9]*s: ' || { echo "$output"; false; }
+  printf '%s\n' "$output" | grep -q '^C1 fail [0-9.]*s: ' || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -q "full output: $OUT/C1.log" || { echo "$output"; false; }
   cmp "$OUT/C1.log" <(expected C1 50)
   printf 'the proof'"'"'s failure\n' > "$OUT/C2.log"

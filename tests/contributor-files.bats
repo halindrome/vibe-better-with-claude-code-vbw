@@ -69,3 +69,10 @@ mini() {
   run bash "$CHECK" "$PROJECT"
   [ "$status" -ne 0 ]
 }
+
+@test "no VBW 1 contributor ritual is left: no linked-issue or QA-evidence workflow, and the PR template asks for neither" {
+  cd "$REPO_ROOT"
+  [ ! -e .github/workflows/linked-issue.yml ] && [ ! -e .github/workflows/qa-review.yml ] || { ls .github/workflows; false; }
+  ! grep -rqE 'name: (Linked Issue|QA Review)' .github/workflows || { grep -rnE 'name: (Linked Issue|QA Review)' .github/workflows; false; }
+  ! grep -qE 'CI will fail without one|address QA round N|QA evidence commits' .github/PULL_REQUEST_TEMPLATE.md || { cat .github/PULL_REQUEST_TEMPLATE.md; false; }
+}

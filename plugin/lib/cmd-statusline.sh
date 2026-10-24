@@ -64,7 +64,7 @@ cmd_statusline() {
   case "$sub" in
     status)
       if [ -z "$current" ]; then printf 'off: no status line is set (vbw statusline on)\n'
-      elif printf '%s' "$current" | grep -q 'vbw-statusline\.sh'; then
+      elif printf '%s' "$current" | grep 'vbw-statusline\.sh' > /dev/null; then
         if [ "$current" != "$want" ]; then printf 'on: an older VBW status line (vbw statusline on updates it)\n'
         elif statusline_refreshes "$settings"; then printf 'on: the VBW status line\n'
         else printf 'on: the VBW status line, refreshed on events only (vbw statusline on adds the 5-second refresh)\n'
@@ -73,7 +73,7 @@ cmd_statusline() {
       fi
       ;;
     on)
-      if printf '%s' "$current" | grep -q 'vbw-statusline\.sh'; then
+      if printf '%s' "$current" | grep 'vbw-statusline\.sh' > /dev/null; then
         # Set by an older VBW: rewrite only its command, keep the interval
         # (5 when missing) and every other field, and give it the padding of the
         # saved earlier status line when it has none; the current one stays as is.
@@ -106,7 +106,7 @@ cmd_statusline() {
       fi
       ;;
     off)
-      if printf '%s' "$current" | grep -q 'vbw-statusline\.sh'; then
+      if printf '%s' "$current" | grep 'vbw-statusline\.sh' > /dev/null; then
         local backup
         backup=$(statusline_backup)
         if [ -f "$backup" ]; then

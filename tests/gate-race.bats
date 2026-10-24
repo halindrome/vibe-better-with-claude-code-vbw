@@ -5,6 +5,9 @@
 # yet written it) retries; it does not treat the owner as dead and remove the
 # lock, which deleted a fresh lock under a running proof ("mutex/pid: No such
 # file or directory"). A lock with no owner is taken over only after a wait.
+# A lock whose owner is gone is taken over by renaming its owner file, never by
+# removing the folder, so of two runs that find the same dead owner only one
+# wins, and neither removes a lock a third run took in between (T141).
 # L1: the gate on a fixture.
 
 load helper
@@ -50,4 +53,35 @@ teardown() { vbw_teardown; }
 
 @test "R69: the owner write never prints an error when the lock vanished under it" {
   ! grep -nE 'printf .*> "\$g/mutex/pid"$' "$PLUGIN_ROOT/lib/checks.sh"
+}
+
+@test "T141: a gate lock whose dead owner two runs find is never taken from the run that took it over first" {
+  sleep 0 & local dead=$!
+  wait "$dead"
+  sleep 120 & local live=$!
+  mkdir -p .vbw/runtime/gate/mutex
+  printf '%s\n' "$dead" > .vbw/runtime/gate/mutex/pid
+  # The other run takes the lock over while this one is still judging its owner gone, and holds it:
+  # this run must wait for it, never remove it, and enter once the other run lets go.
+  # shellcheck disable=SC2016 # expanded by vbw_kernel
+  run vbw_kernel '. "$VBW_LIB/slots.sh"; . "$VBW_LIB/checks.sh"
+    dead='"$dead"' live='"$live"' tries=0 fired=
+    m="$VBW_RUNTIME/gate/mutex"
+    checks_gate_live() {
+      if [ "$1" = "x.$dead" ] && [ -z "$fired" ]; then
+        fired=1; rm -rf "$m"; mkdir "$m"; printf "%s\n" "$live" > "$m/pid"
+      fi
+      [ "$1" != "x.$dead" ] && kill -0 "${1#x.}" 2> /dev/null
+    }
+    sleep() {
+      local p=
+      tries=$((tries + 1))
+      { IFS= read -r p < "$m/pid"; } 2> /dev/null || true
+      [ "$p" = "$live" ] || { echo "the run that held the gate lost it at try $tries"; exit 1; }
+      [ "$tries" -lt 3 ] || rm -rf "$m"
+    }
+    CHECKS_LIMIT=4 checks_gate_enter C1 false || { echo "entering failed"; exit 1; }
+    echo "entered after $tries tries"'
+  kill "$live"; wait "$live" 2> /dev/null || true
+  [ "$status" -eq 0 ] && [ "$output" = "entered after 3 tries" ] || { echo "$output"; false; }
 }

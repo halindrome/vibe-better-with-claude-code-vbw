@@ -91,7 +91,7 @@ loop_start() {
   if [ "$none" = 0 ] && [ -z "$ceiling" ]; then vbw_usage_error "a loop needs a ceiling choice: $LOOP_FORMS"; fi
   if [ "$none" = 1 ] && [ "$finish" = 1 ]; then vbw_usage_error "--finish-item goes with --ceiling USD: $LOOP_FORMS"; fi
   if [ -n "$ceiling" ]; then
-    printf '%s' "$ceiling" | grep -Eq '^[0-9]+(\.[0-9]+)?$' && jq -ne --argjson c "$ceiling" '$c > 0' > /dev/null \
+    printf '%s' "$ceiling" | grep -E '^[0-9]+(\.[0-9]+)?$' > /dev/null && jq -ne --argjson c "$ceiling" '$c > 0' > /dev/null \
       || vbw_usage_error "--ceiling needs a positive number of dollars, not '$ceiling': $LOOP_FORMS"
   fi
   vbw_require_project
