@@ -507,7 +507,7 @@ own list of chats, read-only. See the paragraph on it in
 ### What's happening now
 
 The **Now** tab opens on a framed box, drawn once, above everything else. It
-holds three things:
+holds four things:
 
 - **The state,** one sentence: planning, building (with its phase), proving,
   checking, fixing, mapping, or nothing running. When another chat holds the
@@ -519,7 +519,14 @@ holds three things:
   [Time left](#time-left)). The name comes from the step VBW is timing
   (`building P1.2`); without it the line only gives the start
   (`Started at 14:08.`), since the state sentence has said what VBW is doing.
-- **The session cost** (see [Cost](#cost)).
+  When the step has parts (plans to build, checks to prove), a thin strip under
+  the step line draws them, done in green and the rest dim, with the figure
+  beside it (`▰▰▰▱▱▱▱▱ 3 of 8 done`); in a narrow pane the strip shrinks, the
+  figure stays.
+- **The milestone's end,** when VBW has one (see [Time left](#time-left)), in
+  amber, with what it is based on under it, dimmed (`basis: 2 waves, 2 proofs`);
+  without a basis it says `No estimate yet: ...` and why.
+- **The session cost** (see [Cost](#cost)), in purple.
 
 When VBW needs you, the state is replaced by the one sentence that says what
 for, in amber and bold, and the step by since when it waits:

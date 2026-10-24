@@ -270,3 +270,77 @@ test('without the kernel\'s note the step line says when it started, and does no
   const noted = await session(record({ lease: lease('build', T0 - 300 * S), plans: PLANS }), next({ action: 'run' }), { [NOTE]: note(T0 + 600 * S) })
   assert.ok((await nowBox(noted)).includes('Current step: building P44.1, started at ' + hhmm(T0 - 300 * S) + '.'))
 })
+
+// B5 (2.1.11): the box as Lane B's pure model and drawing (nowBoxModel, renderNowBox in
+// panel-mission-live.js): 2.1.8's contents, plus a thin done/total strip under the step
+// line when the step has parts, the session cost line in its colour, and the milestone's
+// end with its basis. Every time names its day when it is not today (design rule 5).
+const P = await import(pathToFileURL(PLUGIN + '/hooks/panel-palette.js').href)
+const B_NOW = T0 + 3600 * S
+const ROAD = { seconds: 7800, end: iso(B_NOW + 7800 * S), rounds: { deep: 2 }, basis: '2 waves, 2 proofs', say: 'milestone end: about 2 h 10 min, until around 16:40' }
+const building = (over = {}) => ({
+  record: record({ lease: lease('build', B_NOW - 300 * S), plans: PLANS }), cost: 1.42, now: B_NOW, stamps: { 'estimate-milestone': B_NOW - 60 * S },
+  step: { kind: 'build', run: 'build-1', doing: 'building P44.1', started_at: iso(B_NOW - 300 * S), parts: { done: 3, total: 8 }, end: iso(B_NOW + 720 * S), late: false, road: ROAD },
+  ...over,
+})
+
+test('B5: the box model while building: the state, the step with start and end, its parts, the milestone end with its basis, the cost', () => {
+  const b = live.nowBoxModel(building())
+  assert.deepEqual(b.state, { text: 'VBW is building phase P44 (Show the cost).', need: false })
+  assert.equal(b.command, null)
+  assert.equal(b.step.text, 'Current step: building P44.1, started at ' + hhmm(B_NOW - 300 * S) + '.')
+  assert.equal(b.step.end, 'This step: about 12 min, until around ' + hhmm(B_NOW + 720 * S) + '.')
+  assert.equal(b.step.timed, true)
+  assert.deepEqual(b.parts, { done: 3, total: 8 })
+  assert.deepEqual(b.milestone, { text: '[' + hhmm(B_NOW - 60 * S) + '] Milestone end: about 2 h 10 min, until around 16:40.', basis: 'basis: 2 waves, 2 proofs', known: true, term: 'estimate, approximate' })
+  assert.deepEqual(b.cost, { text: 'This session has cost $1.42 so far.', known: true, term: 'session cost' })
+})
+
+test('B5: when VBW needs you the box says the need, the command and since when, with the day when not today; no step, no strip', () => {
+  const since = B_NOW - 18 * 3600 * S
+  const b = live.nowBoxModel({ record: record(), need: { key: 'approve', kind: 'approve', text: 'Please approve the plan before VBW builds it.', at: since }, cost: null, now: B_NOW, next: next({ action: 'approve', gate: true }) })
+  assert.deepEqual(b.state, { text: 'Please approve the plan before VBW builds it.', need: true })
+  assert.equal(b.command, '/vbw:approve')
+  const day = new Date(since).getDate() === new Date(B_NOW).getDate() ? '' : 'yesterday '
+  assert.equal(b.step.text, 'Waiting since ' + day + hhmm(since) + '.')
+  assert.equal(b.parts, null)
+  assert.deepEqual(b.cost, { text: 'The cost so far is not available.', known: false, term: 'cost, not available' })
+  const idle = live.nowBoxModel({ record: record(), cost: 0.42, now: B_NOW })
+  assert.deepEqual([idle.state.text, idle.step, idle.milestone], ['Nothing is running.', null, null])
+  const noBasis = live.nowBoxModel(building({ step: null, next: next({ road: { end: null, basis: 'no finished build steps yet' } }) }))
+  assert.deepEqual(noBasis.milestone, { text: 'No estimate yet: no finished build steps yet.', basis: null, known: false, term: 'estimate, no basis' })
+  assert.equal(live.nowBoxModel({ record: null }), null)
+})
+
+test('B5: the box draws the strip in the progress colour beside the figure, the end and milestone in the estimate colour, the cost in the accent, at 80, 100 and 140 columns', () => {
+  for (const width of [80, 100, 140]) {
+    const tree = live.renderNowBox(UI, live.nowBoxModel(building()), { width })
+    const lines = screen(tree, width)
+    for (const l of lines) assert.ok([...l].length <= width, width + ': ' + l)
+    const strip = find(tree, (n) => n.type === 'Box' && n.props.key === 'parts')
+    assert.ok(strip, 'a parts strip')
+    const cells = []
+    walk(strip, (n) => { if (n.type === 'Text') cells.push(n) })
+    assert.equal(cells[0].props.color, P.PROGRESS)
+    assert.equal(textOf(cells[0]), '▰'.repeat(3))
+    assert.equal(textOf(cells[1]), '▱'.repeat(5))
+    assert.equal(cells[1].props.dimColor, true)
+    assert.equal(textOf(cells[2]), ' 3 of 8 done')
+    const colour = (re) => find(tree, (n) => n.type === 'Text' && re.test(textOf(n))).props
+    assert.equal(colour(/^This step:/).color, P.ESTIMATE)
+    assert.equal(colour(/Milestone end/).color, P.ESTIMATE)
+    assert.equal(colour(/^basis:/).dimColor, true)
+    assert.equal(colour(/^This session has cost/).color, P.ACCENT)
+  }
+  const many = live.renderNowBox(UI, live.nowBoxModel(building({ step: { ...building().step, parts: { done: 40, total: 120 } } })), { width: 80 })
+  for (const l of screen(many, 80)) assert.ok([...l].length <= 80, l)
+  assert.ok(screen(many, 80).some((l) => / 40 of 120 done/.test(l)))
+})
+
+test('B5: the dim labels under sentences go with one switch; nothing in the box is said twice', () => {
+  const tree = live.renderNowBox(UI, live.nowBoxModel(building()), { width: 100, labels: false })
+  const lines = screen(tree, 100).join('\n')
+  assert.doesNotMatch(lines, /session cost|estimate, approximate/)
+  const all = screen(live.renderNowBox(UI, live.nowBoxModel(building()), { width: 100 }), 100).map((l) => l.replace(/[│╭╮╰╯─|+]/g, '').trim()).filter(Boolean)
+  assert.equal(new Set(all).size, all.length, 'a line said twice: ' + all.join(' / '))
+})

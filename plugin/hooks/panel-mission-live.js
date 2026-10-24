@@ -6,7 +6,8 @@
 import { estimate, MIN_STEPS } from './panel-estimate.js'
 import { stepWords, dayClock } from './panel-step.js'
 import { newMark } from './panel-next.js'
-import { roleColor, stateColor, ACCENT, NEED, STATE_MARKS, STATE_WORDS } from './panel-palette.js'
+import { roleColor, stateColor, ACCENT, NEED, PROGRESS, ESTIMATE, STATE_MARKS, STATE_WORDS } from './panel-palette.js'
+import { heldBy, GATE_COMMANDS } from './panel-view.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const num = (x) => typeof x === 'number' && Number.isFinite(x)
@@ -107,6 +108,112 @@ export const nowModel = safe(({ run, now, selected, seen, motion, width }) => {
   const header = { kind: str(run.kind) || 'run', status: str(run.status) || 'running', elapsed: num(run.startedAt) ? duration(end - run.startedAt) : null, done: agents.filter((a) => a.state === 'done').length }
   return { header, rows, started: agents.length > 0, width: num(width) && width > 0 ? Math.floor(width) : null, detail }
 })
+
+// ---- The 'what's happening now' box (docs/panel.md, What's happening now) ----------------
+// VBW's state as one sentence; the current step with when it started and (from the kernel's
+// note, worded by panel-step.js) when it should end, and a done/total strip when the step has
+// parts; when VBW needs you, the need's sentence, the command that answers it and since when
+// it waits; the milestone's end with its basis (the kernel's road: the live note's, else the
+// last `vbw next`'s); the session cost. Every time names its day when not today (dayClock).
+// input: { record, need (panel-view.js liveNeed), proving, stamps ({ proving, need,
+// 'estimate-milestone' }: ms), cost, step (the live note), holder, next, now }.
+const sentenceOf = (t) => {
+  const s = String(t).trim()
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) + (/[.!?]$/.test(s) ? '' : '.') : ''
+}
+const needCommand = (need) => (need.kind === 'question' || need.kind === 'compact' ? null : GATE_COMMANDS[need.kind] || '/vbw:vibe')
+
+function stepLine(name, at, step, now) {
+  const words = step ? stepWords(step, now) : null
+  const when = dayClock(at, now)
+  const text = name ? 'Current step: ' + name + (when ? ', started at ' + when : '') + '.' : when ? 'Started at ' + when + '.' : null
+  if (!text && !words) return null
+  return { text, end: words ? (words.timed ? 'This step: ' + words.text : words.text) + '.' : null, at: num(at) ? at : null, timed: Boolean(words && words.timed) }
+}
+
+function milestoneOf(step, nx, stamp, now) {
+  const road = isObj(step) && isObj(step.road) ? step.road : isObj(step) && step.road === null ? null : isObj(nx) && isObj(nx.road) ? nx.road : null
+  if (!road) return null
+  const basis = str(road.basis).trim().replace(/\.$/, '')
+  if (typeof road.end !== 'string' || !Number.isFinite(Date.parse(road.end))) {
+    return { text: 'No estimate yet' + (basis ? ': ' + basis : '') + '.', basis: null, known: false, term: 'estimate, no basis' }
+  }
+  const say = sentenceOf(str(road.say))
+  if (!say) return null
+  const at = dayClock(stamp, now)
+  return { text: (at ? '[' + at + '] ' : '') + say, basis: basis ? 'basis: ' + basis : null, known: true, term: 'estimate, approximate' }
+}
+
+const costOf = (cost) => (num(cost) && cost >= 0
+  ? { text: 'This session has cost $' + cost.toFixed(2) + ' so far.', known: true, term: 'session cost' }
+  : { text: 'The cost so far is not available.', known: false, term: 'cost, not available' })
+
+const partsOf = (step) => (isObj(step) && isObj(step.parts) && Number.isInteger(step.parts.total) && step.parts.total > 0 && Number.isInteger(step.parts.done)
+  ? { done: Math.max(0, Math.min(step.parts.done, step.parts.total)), total: step.parts.total } : null)
+
+export const nowBoxModel = safe(({ record: rec, need, proving, stamps, cost, step, holder, next: nx, now }) => {
+  if (!isObj(rec) || !isObj(rec.milestone)) return null
+  const t = num(now) ? now : Date.now()
+  const st = isObj(stamps) ? stamps : {}
+  const note = isObj(step) ? step : null
+  const base = { command: null, parts: null, milestone: milestoneOf(note, nx, st['estimate-milestone'], t), cost: costOf(cost) }
+  const l = isObj(rec.lease) ? rec.lease : null
+  if (l) {
+    const plans = (Array.isArray(rec.plans) ? rec.plans : []).filter((p) => isObj(p) && p.status === 'building')
+    const phases = [...new Set(plans.map((p) => p.phase).filter((x) => typeof x === 'string' && x))]
+    const titles = plans.map((p) => p.title).filter(Boolean)
+    const what = {
+      plan: 'planning the work',
+      build: 'building ' + (phases.length ? 'phase ' + phases.join(', ') : 'the plan') + (titles.length ? ' (' + titles.join(', ') + ')' : ''),
+      qa: 'checking the results',
+      fix: 'fixing what the checks found',
+      map: 'reading the project to map it',
+    }[l.kind] || 'working'
+    return { ...base, state: { text: 'VBW is ' + what + heldBy(holder) + '.', need: false }, step: stepLine(note && str(note.doing), Date.parse(l.started_at), note, t), parts: partsOf(note) }
+  }
+  if (proving === true || (note && note.kind === 'proof')) {
+    const at = num(st.proving) ? st.proving : note ? Date.parse(note.started_at) : NaN
+    return { ...base, state: { text: 'VBW is proving the work: running its checks.', need: false }, step: stepLine(note && str(note.doing), at, note, t), parts: partsOf(note) }
+  }
+  if (isObj(need) && str(need.text)) {
+    const since = num(st.need) ? st.need : need.at
+    const when = dayClock(since, t)
+    return { ...base, state: { text: need.text, need: true }, command: needCommand(need), step: when ? { text: 'Waiting since ' + when + '.', end: null, at: since, timed: false } : null }
+  }
+  return { ...base, state: { text: 'Nothing is running.', need: false }, step: null }
+})
+
+// The parts strip: one cell a part (scaled to `room` cells when there are more), done in the
+// progress colour, the rest dim, then 'N of M done'.
+function partsStrip(ui, parts, room) {
+  const cellsWide = Math.max(1, Math.min(parts.total, room))
+  const done = Math.round((parts.done / parts.total) * cellsWide)
+  return h(ui.Box, { key: 'parts', flexDirection: 'row' },
+    h(ui.Text, { key: 'done', color: PROGRESS }, '▰'.repeat(done)),
+    h(ui.Text, { key: 'left', dimColor: true }, '▱'.repeat(cellsWide - done)),
+    h(ui.Text, { key: 'figure' }, ' ' + parts.done + ' of ' + parts.total + ' done'))
+}
+
+// options: { width (the pane's columns), labels (the dim one-word terms; true unless false) }.
+export function renderNowBox(ui, box, options) {
+  if (!isObj(box) || !isObj(box.state)) return null
+  const o = isObj(options) ? options : {}
+  const labels = o.labels !== false
+  const inner = Math.max(10, (num(o.width) ? Math.floor(o.width) : 50) - 4)
+  const figure = box.parts ? (' ' + box.parts.done + ' of ' + box.parts.total + ' done').length : 0
+  const term = (t, key) => (labels && t ? h(ui.Text, { key, dimColor: true }, t) : null)
+  return h(ui.Box, { key: 'now-box', flexDirection: 'column', borderStyle: 'round', paddingX: 1, marginBottom: 1 },
+    h(ui.Text, { key: 'state', bold: true, color: box.state.need ? NEED : undefined }, String(box.state.text)),
+    box.command ? h(ui.Text, { key: 'command' }, 'Type ' + box.command + '.') : null,
+    box.step && box.step.text ? h(ui.Text, { key: 'step' }, String(box.step.text)) : null,
+    box.parts ? partsStrip(ui, box.parts, Math.min(40, inner - figure)) : null,
+    box.step && box.step.end ? h(ui.Text, { key: 'end', color: box.step.timed ? ESTIMATE : undefined }, String(box.step.end)) : null,
+    box.milestone ? h(ui.Text, { key: 'milestone', color: box.milestone.known ? ESTIMATE : undefined }, box.milestone.text) : null,
+    box.milestone && box.milestone.basis ? h(ui.Text, { key: 'basis', dimColor: true }, box.milestone.basis) : null,
+    box.milestone ? term(box.milestone.term, 'milestone-term') : null,
+    h(ui.Text, { key: 'cost', color: box.cost.known ? ACCENT : undefined }, box.cost.text),
+    term(box.cost.term, 'cost-term'))
+}
 
 // Past steps of this run's kind as bars, the median (R58, via estimate) and the bar nearest it.
 function sparkOf(steps, kind, now) {
