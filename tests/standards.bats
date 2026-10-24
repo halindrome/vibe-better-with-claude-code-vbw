@@ -157,12 +157,12 @@ code_grep() {
   [ "$status" -eq 0 ] || { echo "files that name a private project:"; echo "$output"; false; }
 }
 
-@test "no shell code pipes printf or echo into a quiet grep: grep -q stops early, and under pipefail the producer's SIGPIPE fails the pipeline (tools/check-pipefail-grep.sh)" {
+@test "no shell code pipes into a quiet grep: grep -q stops early, and under pipefail the producer's SIGPIPE fails the pipeline (tools/check-pipefail-grep.sh)" {
   run bash "$REPO_ROOT/tools/check-pipefail-grep.sh" "$PLUGIN_ROOT" "$REPO_ROOT/tools"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
 }
 
-@test "self-test: the pipefail rule refuses each quiet grep after printf or echo, naming its line, and passes every form that reads to the end" {
+@test "self-test: the pipefail rule refuses each quiet grep after a pipe, whatever the producer, naming its line, and passes every form that reads to the end" {
   local d line n=0
   d=$(mktemp -d "${BATS_TEST_TMPDIR:?}/plant.XXXXXX")
   # Each line is refused, whatever the quiet option looks like.
@@ -173,7 +173,11 @@ code_grep() {
     "printf '%s' \"\$s\" | grep -E -q x" \
     "printf '%s' \"\$s\" | grep --quiet x" \
     "ok && ! printf '%s' \"\$s\" | grep -qxF -- \"\$f\"" \
-    "printf '%s' \"\$s\" | command grep -q x"; do
+    "printf '%s' \"\$s\" | command grep -q x" \
+    "jq . f | grep -q x" \
+    "if screen | grep -q 'Ready'; then :; fi" \
+    "screen | cut -c1-120 | grep -qE 'a b' || return 1" \
+    "./test.sh | grep -qx 'TESTS PASS'"; do
     n=$((n + 1))
     printf '#!/usr/bin/env bash\n# planted\n\n%s\n' "$line" > "$d/p$n.sh"
     run bash "$REPO_ROOT/tools/check-pipefail-grep.sh" "$d"
@@ -181,12 +185,12 @@ code_grep() {
     [[ "$output" == *"p$n.sh:4:"* ]] || { echo "no line named for: $line: $output"; false; }
     rm "$d/p$n.sh"
   done
-  # Each of these passes: grep reads to the end, another producer, or no code at all.
+  # Each of these passes: grep reads to the end, reads no pipe, or no code at all.
   for line in \
     "printf '%s' \"\$s\" | grep 'x' > /dev/null" \
     "printf '%s' \"\$s\" | grep -c x" \
     "grep -q x <<< \"\$s\"" \
-    "jq . f | grep -q x" \
+    "grep -q x file" \
     "# printf '%s' \"\$s\" | grep -q x" \
     "printf '%s' \"\$s\" | grep -e q"; do
     printf '#!/usr/bin/env bash\n# planted\n\n%s\n' "$line" > "$d/ok.sh"

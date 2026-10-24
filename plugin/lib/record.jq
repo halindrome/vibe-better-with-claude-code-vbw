@@ -31,7 +31,7 @@ def session_figures: type == "object"
                and (.at | iso) and (del(.at) | figures));
 def strings_array: type == "array" and all(.[]; type == "string");
 def loop_item: type == "object"
-  and (keys - ["id","text","proof","status","milestone","req","head","baseline","retried","reverts","left","cost","reason","at","opened_at","budget"] == [])
+  and (keys - ["id","text","proof","status","milestone","req","head","baseline","retried","reverts","left","cost","reason","at","opened_at","stepped_at","away","budget"] == [])
   and (.id | type == "string" and test("^T[0-9]+$")) and (.text | nonempty)
   and (.proof | one_of(["auto","human"])) and (.status | one_of(["waiting","in_progress","shipped","parked"]))
   and ((has("milestone") | not) or (.milestone | type == "string" and test("^M[0-9]+$")))
@@ -46,6 +46,8 @@ def loop_item: type == "object"
   and ((has("reason") | not) or (.reason | nonempty))
   and ((has("at") | not) or (.at | iso))
   and ((has("opened_at") | not) or (.opened_at | iso))
+  and ((has("stepped_at") | not) or (.stepped_at | iso))
+  and ((has("away") | not) or (.away | type == "number" and . == floor and . >= 0))
   and ((has("budget") | not) or (.budget | type == "object" and (keys - ["planned"] | sort) == ["basis","seconds"]
                                  and ((has("planned") | not) or .planned == true)
                                  and (.seconds | type == "number" and . > 0) and (.basis | nonempty)));
@@ -393,7 +395,7 @@ if type != "object" then ["record must be a JSON object"] else
           ( select((has("items") and has("ceiling") and has("session") and has("started_at") and has("baseline")) | not)
             | "loop needs items, ceiling, session, started_at and baseline" ),
           ( select(has("items") and ((.items | type == "array" and length > 0 and all(.[]; loop_item)) | not))
-            | "loop.items must be a non-empty array of {id: T<n>, text, proof: auto|human, status: waiting|in_progress|shipped|parked, and optionally milestone, head, baseline, retried, reverts, cost, reason, at, opened_at, budget: {seconds, basis, planned?}}" ),
+            | "loop.items must be a non-empty array of {id: T<n>, text, proof: auto|human, status: waiting|in_progress|shipped|parked, and optionally milestone, head, baseline, retried, reverts, cost, reason, at, opened_at, stepped_at, away (whole seconds), budget: {seconds, basis, planned?}}" ),
           ( select(has("items") and (.items | type == "array") and ((.items | map(.id? // null) | length) != (.items | map(.id? // null) | unique | length)))
             | "loop.items names an item twice" ),
           ( select(has("ceiling") and (.ceiling != null) and ((.ceiling | type == "object" and (keys | sort) == ["finish_item","usd"]

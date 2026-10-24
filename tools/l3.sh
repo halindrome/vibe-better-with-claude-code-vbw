@@ -73,7 +73,7 @@ case "$cmd" in
       "env PATH='$clean' claude --model $model --permission-mode auto $plugin --settings '$settings' --debug-file '$dir.debug.log'"
     sleep 6
     # First run in a directory: accept the folder-trust dialog, as a user would.
-    if screen | grep -q 'Yes, I trust this folder'; then
+    if screen | grep 'Yes, I trust this folder' > /dev/null; then
       tmux send-keys -t "$session" Down Enter
       sleep 5
     fi

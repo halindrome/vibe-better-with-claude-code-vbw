@@ -81,8 +81,10 @@ step_of() { "$VBW" next --json | jq -c '.step'; }
   s=$(step_of)
   printf '%s' "$s" | jq -e '.why.count == 4 and (.why.reason | type == "string" and length > 0)
     and (.why.reason as $r | .say | endswith("; top reason: \($r) (4 units)"))' || { echo "$s"; false; }
-  # Cached or not, the same answer.
-  [ "$(step_of | jq -c '[.say, .why]')" = "$(printf '%s' "$s" | jq -c '[.say, .why]')" ] || { step_of; false; }
+  # Cached or not, the same answer. The sentence's clock time is the moment's own ("until around
+  # 12:58"): two calls a second apart can straddle a minute, so it is left out of the comparison.
+  local same='[(.say | sub("until around [0-9]{2}:[0-9]{2}"; "until around HH:MM")), .why]'
+  [ "$(step_of | jq -c "$same")" = "$(printf '%s' "$s" | jq -c "$same")" ] || { step_of; false; }
 }
 
 @test "T173: a proof that stayed open for hours is left out of the learned ratio: 8 times the median of its kind and size" {
