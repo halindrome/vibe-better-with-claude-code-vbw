@@ -237,3 +237,58 @@ test('celebration ignores what was already true, a failing QA and broken input',
   assert.equal(celebration({ before: green, after: null }), null)
   assert.equal(celebration(undefined), null)
 })
+
+// ---- fresh(key): the one "new" highlight (T87) ----------------------------------
+
+test('fresh: a mark is set on arrival, kept across redraws for as long as it is not seen, and cleared when seen', () => {
+  const { freshArrive, freshSee, freshKeys, fresh, FRESH_CYCLE_MS } = candy
+  const T = 1_800_000_000_000
+  let marks = freshArrive({}, 'now:next:2026-10-09T10:00:00Z', T)
+  marks = freshArrive(marks, 'settings:profile', T + 5)
+  // Arriving again keeps the first arrival.
+  assert.equal(freshArrive(marks, 'settings:profile', T + 999)['settings:profile'], T + 5)
+  assert.deepEqual(freshKeys(marks), ['now:next:2026-10-09T10:00:00Z', 'settings:profile'])
+  for (const later of [0, 4000, 10000, 60000, 3600000]) {
+    for (const motion of ['full', 'calm', 'off']) assert.equal(fresh({ marks, key: 'now:next:2026-10-09T10:00:00Z', motion, now: T + later }).on, true, motion + ' at +' + later)
+  }
+  // At full motion the shimmer and the pulse come back each cycle until it is seen; calm and off are still.
+  const at = (ms, motion = 'full') => fresh({ marks, key: 'now:next:2026-10-09T10:00:00Z', motion, now: T + ms })
+  assert.notEqual(at(1000).title, null)
+  assert.notEqual(at(FRESH_CYCLE_MS * 20 + 1000).title, null, 'the shimmer still runs long after the arrival')
+  assert.equal(at(1000, 'calm').title, null)
+  assert.equal(at(1000, 'off').pulse, 0)
+  // Seen by its tab (a prefix) or by itself (its key).
+  const seenTab = freshSee(marks, 'now:')
+  assert.deepEqual(freshKeys(seenTab), ['settings:profile'])
+  assert.equal(fresh({ marks: seenTab, key: 'now:next:2026-10-09T10:00:00Z', motion: 'full', now: T + 1000 }).on, false)
+  assert.deepEqual(freshKeys(freshSee(marks, 'settings:profile')), ['now:next:2026-10-09T10:00:00Z'])
+  assert.deepEqual(freshKeys(freshSee(marks, ['settings:', 'now:'])), [])
+  // Odd input never throws.
+  assert.deepEqual(freshKeys(freshArrive(null, 'x', T)), ['x'])
+  assert.equal(fresh(null).on, false)
+})
+
+test('fresh in the drawing: a new recommendation keeps its "new" mark on every redraw until seen, then settles', async () => {
+  const next = await import(PLUGIN + '/hooks/panel-next.js')
+  const T = 1_800_000_000_000
+  const rec = { at: '2026-10-09T10:00:00Z', top: { text: 'Refunds', reason: 'Asked.', size: 'small', source: 'T4' }, runners: [] }
+  const marks = candy.freshArrive({}, 'now:next:' + rec.at, T)
+  const hasNew = (tree) => collect(tree).some((t) => t.trim() === 'new')
+  for (const later of [0, 4000, 60000]) {
+    assert.ok(hasNew(next.renderNext(ui, { recommendation: rec, width: 80, motion: 'calm', fresh: marks, now: T + later })), 'marked at +' + later)
+  }
+  assert.ok(!hasNew(next.renderNext(ui, { recommendation: rec, width: 80, motion: 'calm', fresh: candy.freshSee(marks, 'now:'), now: T + 70000 })), 'seen: no mark')
+})
+
+test('fresh in the drawing: a changed setting and a finished run carry the mark until their tab is seen', async () => {
+  const S = await import(PLUGIN + '/hooks/panel-settings.js')
+  const R = await import(PLUGIN + '/hooks/panel-runs.js')
+  const marks = candy.freshArrive(candy.freshArrive({}, 'settings:profile', 1), 'timeline:run:plan-1@x', 1)
+  const settings = S.settingsState({ reads: [{ exitCode: 0, stdout: 'profile: quality\nmotion: calm\n' }, null], now: 1 })
+  const drawn = (m) => collect(S.renderSettings(ui, S.settingsModel({ settings, now: 1, fresh: m, motion: 'calm' }))).join('|')
+  assert.match(drawn(marks), /profile *\|quality\|[^|]* new/)
+  assert.doesNotMatch(drawn(candy.freshSee(marks, 'settings:')), / new/)
+  const runs = (m) => collect(R.renderRuns(ui, R.runsModel({ runs: [{ key: 'plan-1@x', kind: 'plan', startedAt: 0, costStart: 0, costEnd: 1 }], steps: [], now: 1, fresh: m, motion: 'calm' })))
+  assert.ok(runs(marks).some((t) => t.trim() === 'new'))
+  assert.ok(!runs(candy.freshSee(marks, 'timeline:')).some((t) => t.trim() === 'new'))
+})

@@ -6,6 +6,7 @@
 
 import { duration } from './panel-mission-live.js'
 import { ACCENT } from './panel-palette.js'
+import { newMark } from './panel-next.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const num = (x) => typeof x === 'number' && Number.isFinite(x)
@@ -21,7 +22,8 @@ const runIdOf = (l) => str(l.run) || (str(l.key) ? l.key.split('@')[0] : null)
 // costBar }], kinds, session, width }.
 export function runsModel(input) {
   try {
-    const { runs, steps, sessionCost, now, width } = isObj(input) ? input : {}
+    const { runs, steps, sessionCost, now, width, fresh, motion } = isObj(input) ? input : {}
+    const marks = isObj(fresh) ? fresh : {}
     const list = (Array.isArray(runs) ? runs : []).filter((l) => isObj(l) && str(l.kind))
     const session = num(sessionCost) ? sessionCost : null
     const history = (Array.isArray(steps) ? steps : []).filter((s) => isObj(s) && num(s.seconds) && s.seconds >= 0)
@@ -36,7 +38,7 @@ export function runsModel(input) {
       const cost = num(l.costStart) && num(end) && end >= l.costStart ? cents(end - l.costStart) : null
       seen[l.kind] = (seen[l.kind] || 0) + 1
       return {
-        name: l.kind + ' ' + seen[l.kind], kind: l.kind, open, seconds, cost,
+        name: l.kind + ' ' + seen[l.kind], kind: l.kind, open, seconds, cost, fresh: str(l.key) ? Object.prototype.hasOwnProperty.call(marks, 'timeline:run:' + l.key) : false,
         time: seconds === null ? 'time unknown' : duration(seconds * 1000),
         money: cost === null ? 'cost unknown' : 'about ' + usd(cost),
       }
@@ -63,7 +65,7 @@ export function runsModel(input) {
     }
     kinds.sort((x, y) => y.cost - x.cost)
     return {
-      rows, kinds, bar, widths: { name: nameW, time: timeW, money: moneyW },
+      rows, kinds, bar, widths: { name: nameW, time: timeW, money: moneyW }, motion,
       session: session === null ? 'The session cost is not available.' : 'This session: ' + usd(session),
     }
   } catch {
@@ -86,7 +88,8 @@ export function renderRuns(ui, model) {
     h(Text, { key: 'time-bar', ...(r.open ? { color: ACCENT } : { dimColor: true }) }, pad('█'.repeat(r.timeBar), m.bar)),
     h(Text, { key: 'time', dimColor: true }, ' ' + pad(r.time, w.time + 1)),
     h(Text, { key: 'cost-bar', color: ACCENT }, pad('█'.repeat(r.costBar), m.bar)),
-    h(Text, { key: 'cost', dimColor: true }, ' ' + r.money))))
+    h(Text, { key: 'cost', dimColor: true }, ' ' + r.money),
+    r.fresh ? newMark(Text, m.motion) : null)))
   if (m.kinds.length > 1) {
     kids.push(h(Text, { key: 'runs-kinds', dimColor: true, wrap: 'truncate-end' },
       'by kind: ' + m.kinds.map((k) => k.kind + ' about ' + usd(k.cost) + ' (' + k.runs + (k.runs === 1 ? ' run' : ' runs') + ')').join(' · ')))

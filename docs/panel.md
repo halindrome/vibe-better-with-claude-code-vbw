@@ -597,23 +597,25 @@ The section has two touches of colour, both from the palette above and both
 only with full motion (see [Motion](#motion)):
 
 - The title **shimmers** slowly.
-- The top pick gives a soft **pulse** when a new recommendation arrives.
+- The top pick gives a soft **pulse**.
 
-Both settle within a few seconds. Neither moves for a recommendation you have
-already seen, so opening the panel again does not replay them. With `motion`
-set to `calm` or `off`, or left unset with an interview level whose default is
-not `full`, the section is still. Whether the effect is subtle and elegant
-(R125) is yours to judge: watch a new recommendation arrive, then
-`vbw req accept R125` or `vbw req reject R125 "<what is off>"`.
+They come back every few seconds for as long as you have not seen the new
+recommendation, and stop once you have: opening the Now tab or pressing the
+row counts as seen. Neither moves for a recommendation you have already seen,
+so opening the panel again does not replay them. With `motion` set to `calm`
+or `off`, or left unset with an interview level whose default is not `full`,
+the section is still. Whether the effect is subtle and elegant (R125) is yours
+to judge: watch a new recommendation arrive, then `vbw req accept R125` or
+`vbw req reject R125 "<what is off>"`.
 
-A new recommendation is also **marked** as new. The mark appears 10 seconds
-after it arrives, when the shimmer has settled, and stays until you have seen
-it; opening the Now tab counts as seen. At full motion it is a mark after the
-shimmer; at `calm` the mark does not move; with motion `off` only the word
-`new` shows. The same mark stays on a newly failed helper's card in Mission
-Control until you open it, and on a new needs-you line in Comms until you open
-its tab. Seen stays seen after a restart, and unseen stays new: the panel
-keeps this under `vbw-panel.*` in your own store, never in the project.
+The same **new** mark is the panel's one highlight for anything newly arrived:
+a new recommendation, a run that finished (its row on the Timeline), a setting
+you changed (its row on Settings), a newly failed helper's card, a new refusal
+and a new needs-you line in Comms. It stays until you have seen it (opened its
+tab, opened it, or pressed it), not for a fixed time. At full and calm motion
+it is the word `new` in the accent colour; with motion `off` only the word.
+Seen stays seen after a restart, and unseen stays new: the panel keeps this
+under `vbw-panel.*` in your own store, never in the project.
 
 When a milestone ships, Mission Control opens on **VBW Wrapped**: the
 requirements proven, the checks passing, the agents and fix rounds, the time
@@ -883,7 +885,7 @@ What each level shows:
 
 | | `full` | `calm` | `off` |
 |---|---|---|---|
-| The What's next title and a new top pick | shimmer and pulse, then settle | still | still |
+| The What's next title and a new top pick | shimmer and pulse every few seconds until you have seen it | still | still |
 | Each working agent in Comms (the first 3 only) | a small figure in its role's colour, posed by what it does (reading, editing, running a command, writing), moving about 10 times a second while the run works | a dot in its role's colour and a spinner that steps once a second | a dot and a still `·` |
 | A new agent starts | its row in Comms flashes in its role's colour for about a second | no flash | no flash |
 | A phase passes QA | about 1.5 s of confetti in Comms | nothing | nothing |

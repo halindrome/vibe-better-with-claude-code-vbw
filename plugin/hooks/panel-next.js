@@ -3,6 +3,7 @@
 // new recommendation. Pure: values in, trees out; no `$`, never throws.
 
 import { ACCENT, ROLE_COLORS } from './panel-palette.js'
+import { fresh } from './panel-candy.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const str = (x) => typeof x === 'string' && x.trim() !== ''
@@ -101,11 +102,16 @@ export function newMark(Text, motion) {
   return h(Text, props, ' new')
 }
 
-// renderNext(ui, { recommendation, width, motion, arrivedAt, now, unseen }, act) -> Box
+// The fresh key of a recommendation: 'now:next:' and when it was written.
+export const freshKey = (rec) => (isObj(rec) && str(rec.at) ? 'now:next:' + rec.at : null)
+
+// renderNext(ui, { recommendation, width, motion, fresh (the marks, panel-candy.js), now }, act) -> Box.
+// A recommendation not yet seen shimmers and pulses at full motion, and is marked new, until seen.
 export function renderNext(ui, input, act) {
   const { Box, Text, Button } = isObj(ui) ? ui : {}
-  const { recommendation, width, motion, arrivedAt, now, unseen } = isObj(input) ? input : {}
-  const c = candy({ motion, arrivedAt, now })
+  const { recommendation, width, motion, now } = isObj(input) ? input : {}
+  const c = fresh({ marks: isObj(input) ? input.fresh : null, key: freshKey(recommendation), motion, now })
+  const unseen = c.on
   const model = nextModel(recommendation)
   // A row pressed has been seen; Suggest next only fills the prompt.
   const press = (fill, seen) => () => { if (typeof act === 'function') act(seen ? { fill, seen: 'next' } : { fill }) }

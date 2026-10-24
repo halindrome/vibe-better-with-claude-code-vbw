@@ -233,3 +233,49 @@ export function celebration(input) {
   if (a.passed === true && !(b.passed === true && b.at === a.at)) return 'all-green'
   return null
 }
+
+// ---- fresh(key): the one "new" highlight (T87) ---------------------------------
+// Anything newly arrived (a recommendation, a refusal, a finished run, a settings change)
+// carries a mark under its key until the person looks at it: its tab is opened (the key's
+// prefix, 'now:', 'timeline:', 'settings:') or it is pressed (the key itself). The marks are
+// { key: arrived at (ms) }; panel.js keeps them in the user's store. At full motion the
+// shimmer and the soft pulse come back every FRESH_CYCLE_MS until it is seen; at calm the
+// mark is steady; with motion off it is the word alone.
+export const FRESH_CYCLE_MS = 4000
+const STEP_MS = 250
+const marksOf = (m) => (isObj(m) ? m : {})
+
+export function freshArrive(marks, key, now) {
+  const m = marksOf(marks)
+  if (typeof key !== 'string' || !key || Object.prototype.hasOwnProperty.call(m, key)) return m
+  return { ...m, [key]: Number.isFinite(now) ? now : 0 }
+}
+
+// keys: a key, a prefix ending in ':' (everything under a tab), or a list of them.
+export function freshSee(marks, keys) {
+  const m = marksOf(marks)
+  const ks = (Array.isArray(keys) ? keys : [keys]).filter((k) => typeof k === 'string' && k)
+  const seen = (k) => ks.some((x) => (x.endsWith(':') ? k.startsWith(x) : k === x))
+  const out = {}
+  for (const [k, v] of Object.entries(m)) if (!seen(k)) out[k] = v
+  return out
+}
+
+export const freshKeys = (marks) => Object.keys(marksOf(marks)).sort()
+
+// fresh({ marks, key, motion, now }) -> { on, title (the sweep's centre letter, or null), pulse
+// (0 still | 1 rising | 2 peak | 3 falling) }.
+export function fresh(input) {
+  const still = { on: false, title: null, pulse: 0 }
+  try {
+    const { marks, key, motion, now } = isObj(input) ? input : {}
+    const m = marksOf(marks)
+    if (typeof key !== 'string' || !Object.prototype.hasOwnProperty.call(m, key)) return still
+    if (motion !== 'full' || !Number.isFinite(now) || !Number.isFinite(m[key])) return { ...still, on: true }
+    const dt = (((now - m[key]) % FRESH_CYCLE_MS) + FRESH_CYCLE_MS) % FRESH_CYCLE_MS
+    const pulse = dt < 300 ? 0 : dt < 700 ? 1 : dt < 1300 ? 2 : dt < 1700 ? 3 : 0
+    return { on: true, title: Math.floor(dt / STEP_MS) - 1, pulse }
+  } catch {
+    return still
+  }
+}

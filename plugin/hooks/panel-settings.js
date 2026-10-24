@@ -8,6 +8,7 @@
 // everything here is pure: values in, values or trees out, never throws.
 
 import { SOUNDS } from './panel-sounds.js'
+import { newMark } from './panel-next.js'
 import { ACCENT, NEED, roleColor, stateColor, STATE_MARKS } from './panel-palette.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
@@ -127,7 +128,8 @@ export const settingsSig = (s, now) => [isObj(s) ? s.values : null, isObj(s) ? s
 // read-only); every value is the kernel's.
 export function settingsModel(input) {
   try {
-    const { settings, record, now } = isObj(input) ? input : {}
+    const { settings, record, now, fresh, motion } = isObj(input) ? input : {}
+    const marks = isObj(fresh) ? fresh : {}
     const s = isObj(settings) ? settings : null
     if (!s || !isObj(s.values)) return { rows: [], error: s && s.error ? s.error : null, reading: !s || !s.error }
     const mine = isObj(record) && isObj(record.settings) && isObj(record.settings.models) ? record.settings.models : {}
@@ -146,9 +148,10 @@ export function settingsModel(input) {
         unit: r.unit || '',
         saved: flashing(s, now) && s.saved.key === r.key,
         refused: isObj(s.refused) && s.refused.key === r.key ? s.refused.text : null,
+        fresh: Object.prototype.hasOwnProperty.call(marks, 'settings:' + r.key),
       })
     }
-    return { rows, error: s.error || null, reading: false }
+    return { rows, error: s.error || null, reading: false, motion }
   } catch {
     return { rows: [], error: 'VBW could not read the settings here.', reading: false }
   }
@@ -189,7 +192,8 @@ export function renderSettings(ui, model, act) {
         h(Text, { key: 'value', bold: true, color: ACCENT }, value),
         r.mine ? h(Text, { key: 'mine', dimColor: true }, '(set by you)') : null,
         r.note ? h(Text, { key: 'note', dimColor: true }, r.note) : null,
-        r.saved ? h(Text, { key: 'saved', color: done }, STATE_MARKS.done + ' saved') : null),
+        r.saved ? h(Text, { key: 'saved', color: done }, STATE_MARKS.done + ' saved') : null,
+        r.fresh ? newMark(Text, m.motion) : null),
       h(Box, { key: 'controls', flexDirection: 'row', flexWrap: 'wrap', columnGap: 1, marginLeft: 2 }, ...controls),
       r.refused ? h(Text, { key: 'refused', color: NEED }, r.refused) : null)
   })

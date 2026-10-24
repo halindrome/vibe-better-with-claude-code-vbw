@@ -14,7 +14,7 @@ import { planModel, proofModel, renderPlan, renderProof } from './panel-mission-
 import { settingsModel, renderSettings } from './panel-settings.js'
 import { runsModel, renderRuns } from './panel-runs.js'
 import { sessionsModel, renderSessions } from './panel-sessions.js'
-import { renderNext } from './panel-next.js'
+import { renderNext, freshKey } from './panel-next.js'
 import { renderWrapped } from './panel-candy.js'
 import { NEED, PROGRESS, ESTIMATE, ACCENT } from './panel-palette.js'
 import { SHOW_TERMS } from './panel-view.js'
@@ -216,8 +216,18 @@ function summary(ui, v, st, on, crewRows) {
   return rows
 }
 
-function body(ui, { st, now, width, motion, registry, stored }, tab, act) {
+// The fresh marks (panel-candy.js) panel.js keeps; before it passes them, the What's next
+// mark from its unseen flag and arrival time.
+function freshMarks(input) {
+  if (isObj(input.fresh)) return input.fresh
+  const key = freshKey(input.recommendation)
+  return key && input.unseen === true ? { [key]: Number.isFinite(input.arrivedAt) ? input.arrivedAt : 0 } : {}
+}
+
+function body(ui, input, tab, act) {
+  const { st, now, width, registry, stored } = input
   const rec = st.record
+  const marks = freshMarks(input)
   switch (tab) {
     // Plan: the phases, the chosen one's work, then the milestone's decisions (the record ties a decision to no phase).
     case 'plan': return renderPlan({ ...ui, Input: undefined }, planModel({ record: rec, phase: st.phase, open: st.open, now }), act, width - 4) // Ask is not wired yet
@@ -225,9 +235,9 @@ function body(ui, { st, now, width, motion, registry, stored }, tab, act) {
     // Timeline: the live run's agents on its clock, then every run of the session with its time and cost.
     case 'timeline': return h(ui.Box, { key: 'timeline-tab', flexDirection: 'column' },
       renderTimeline(ui, timelineModel({ run: st.run, now, steps: st.steps, step: st.step, width: Math.max(10, width - 24) })),
-      renderRuns(ui, runsModel({ runs: st.leases, steps: st.steps, sessionCost: st.cost, now, width: Math.max(20, width - 4) })))
+      renderRuns(ui, runsModel({ runs: st.leases, steps: st.steps, sessionCost: st.cost, now, width: Math.max(20, width - 4), fresh: marks, motion: input.motion })))
     case 'sessions': return renderSessions(ui, sessionsModel({ registry, root: st.root, sessionId: st.sessionId, lease: isObj(rec) ? rec.lease : null, stored, now, width: Math.max(10, width - 4), plans: isObj(rec) ? rec.plans : null }))
-    case 'settings': return renderSettings(ui, settingsModel({ settings: st.settings, record: rec, now }), act)
+    case 'settings': return renderSettings(ui, settingsModel({ settings: st.settings, record: rec, now, fresh: marks, motion: input.motion }), act)
     default: return null
   }
 }
@@ -266,7 +276,7 @@ export function renderPane(ui, input, on) {
   const head = h(Box, { key: 'head', flexDirection: 'row', ...(gap ? { marginBottom: 1 } : {}) }, ...portrait, tabs)
   const sweep = tab === 'proof' && Raster && input.sweep ? [h(Raster, { key: 'vbw-sweep', columns: input.sweep.cols, rows: 1, cells: input.sweep.cells })] : []
   const view = wrapped ? renderWrapped(ui, wrapped) : body(ui, input, tab, act)
-  const upNext = tab === 'now' ? [renderNext(ui, { recommendation: input.recommendation, width: input.width, motion: input.motion, arrivedAt: input.arrivedAt, now: input.now, unseen: input.unseen }, act)] : []
+  const upNext = tab === 'now' ? [renderNext(ui, { recommendation: input.recommendation, width: input.width, motion: input.motion, fresh: freshMarks(input), now: input.now }, act)] : []
   const content = [...(tab === 'now' ? summary(ui, v, st, on, crew(ui, input, act)) : []), ...upNext, ...sweep, view]
   if (rows < 1) {
     // No height reported: one fixed height at most, ending with how much is left out.
