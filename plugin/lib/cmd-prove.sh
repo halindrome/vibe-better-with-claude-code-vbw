@@ -226,7 +226,7 @@ prove_unit_names() {
   local c
   {
     for c in ${TODO_CHECKS[@]+"${TODO_CHECKS[@]}"}; do
-      printf '%s\n' "${CHECK_HELD:-}" | grep -qx -- "$c" || printf 'check:%s\n' "$c"
+      printf '%s\n' "${CHECK_HELD:-}" | grep -x -- "$c" > /dev/null || printf 'check:%s\n' "$c"
     done
     for c in ${TF_TODO[@]+"${TF_TODO[@]}"}; do printf 'file:%s\n' "$c"; done
     proofsteps_command_names "$1" "$TODO_COMMANDS" | sed 's/^/command:/'
@@ -238,7 +238,7 @@ prove_unit_names() {
 prove_units() {
   local c n=0
   for c in ${TODO_CHECKS[@]+"${TODO_CHECKS[@]}"}; do
-    printf '%s\n' "${CHECK_HELD:-}" | grep -qx -- "$c" || n=$((n + 1))
+    printf '%s\n' "${CHECK_HELD:-}" | grep -x -- "$c" > /dev/null || n=$((n + 1))
   done
   printf '%s\n' "$((n + $(proofsteps_commands "$1" "$TODO_COMMANDS") + ${#TF_TODO[@]}))"
 }

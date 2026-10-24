@@ -189,7 +189,7 @@ show_costs() {
     --json) [ $# -eq 1 ] || vbw_usage_error "usage: vbw show costs [--json | --ceiling USD]"; mode=json ;;
     --ceiling)
       [ $# -eq 2 ] || vbw_usage_error "usage: vbw show costs --ceiling USD"
-      printf '%s' "$2" | grep -Eq '^([0-9]+[.]?[0-9]*|[.][0-9]+)$' \
+      printf '%s' "$2" | grep -E '^([0-9]+[.]?[0-9]*|[.][0-9]+)$' > /dev/null \
         && jq -ne --argjson c "$2" '$c > 0' > /dev/null 2>&1 \
         || vbw_usage_error "the ceiling must be a positive number of dollars (vbw show costs --ceiling USD)"
       mode=ceiling; ceiling=$2 ;;

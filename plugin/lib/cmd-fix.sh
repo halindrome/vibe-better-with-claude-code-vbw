@@ -187,7 +187,7 @@ cmd_fix() {
     PROOFREUSE_STORE=$(proofreuse_store_read)
     while IFS= read -r c; do
       [ -n "$c" ] || continue
-      if printf '%s\n' "$held" | grep -qx -- "$c"; then
+      if printf '%s\n' "$held" | grep -x -- "$c" > /dev/null; then
         # A check a fix added waits for the user's approval: the fix closes with the approved checks.
         vbw_out '%s waits for the user'"'"'s approval (a check %s added: %s); vbw next asks, then vbw prove runs it\n' "$c" \
           "$(printf '%s' "$record" | jq -r --arg c "$c" '.checks[] | select(.id == $c) | .fix')" \
