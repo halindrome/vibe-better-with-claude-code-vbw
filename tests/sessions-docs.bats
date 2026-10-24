@@ -91,3 +91,32 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
   has "$PANEL" 'read-only: no button'
   has "$PANEL" 're-read on the panel.s tick only while the tab is shown or a run holds a lease'
 }
+
+# T105 (docs/parallel-sessions.md): the guide to several sessions on one project
+# exists, is linked from the README table and the panel's Sessions section, and
+# lists the code it describes in a closing sources comment.
+GUIDE="$REPO_ROOT/docs/parallel-sessions.md"
+README="$REPO_ROOT/README.md"
+
+@test "T105: docs/parallel-sessions.md exists and README's docs table has a row naming it" {
+  [ -f "$GUIDE" ]
+  grep -qE '^\| \[docs/parallel-sessions\.md\]\(docs/parallel-sessions\.md\) \|' "$README"
+}
+
+@test "T105: docs/panel.md's Sessions section links the guide" {
+  sed -n '/^### Sessions/,/^### What/p' "$PANEL" | grep -qF '(parallel-sessions.md)'
+}
+
+@test "T105: the guide says what a reader needs and lists its sources, each an existing file" {
+  has "$GUIDE" 'project root'
+  has "$GUIDE" 'belongs to another session'
+  has "$GUIDE" 'vbw run end --owner-closed'
+  has "$GUIDE" 'held by'
+  has "$GUIDE" 'record\.json'
+  has "$GUIDE" '/vbw:loop'
+  local src n=0
+  src=$(sed -n '/<!-- sources:/,/-->/p' "$GUIDE" | grep -oE '(plugin|docs|tools)/[A-Za-z0-9_./-]+' | sort -u)
+  [ -n "$src" ]
+  while IFS= read -r f; do [ -e "$REPO_ROOT/$f" ] || { echo "missing source: $f"; return 1; }; n=$((n+1)); done <<< "$src"
+  [ "$n" -ge 8 ]
+}

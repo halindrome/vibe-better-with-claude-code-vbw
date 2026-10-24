@@ -491,6 +491,7 @@ These describe VBW 1.x, not VBW 2. VBW 1 ran every capability as a shell script 
 | [docs/costs.md](docs/costs.md) | What each run and each milestone cost (`vbw show costs`) |
 | [docs/statusline.md](docs/statusline.md), [docs/panel.md](docs/panel.md) | The status line and the panel |
 | [docs/diagnostics.md](docs/diagnostics.md) | `vbw report` for bug reports, and `vbw rtk` |
+| [docs/parallel-sessions.md](docs/parallel-sessions.md) | Several Claude Code sessions on one project: who holds the run, what to do, what is shared |
 | [docs/update.md](docs/update.md) | Updating VBW, auto-update, and the "what changed" offer |
 | [docs/tools.md](docs/tools.md) | Finding the best tools for your project (nothing installed without your approval) |
 | [docs/convert.md](docs/convert.md) | Coming from an earlier VBW |

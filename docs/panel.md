@@ -498,6 +498,9 @@ from the run's lease, as `closed or not seen`.
 When there is nothing else to show (no list, or no other chat on the project),
 the tab says `No other chats are open on this project`.
 
+How to work with several chats on one project, and what to do when another chat
+holds the run, is in [Several sessions on one project](parallel-sessions.md).
+
 The tab is read-only: no button, nothing is sent to a chat, nothing is written.
 The list is re-read on the panel's tick only while the tab is shown or a run
 holds a lease. A malformed entry skips its own row and never breaks the panel.
