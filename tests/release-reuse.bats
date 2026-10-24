@@ -91,3 +91,35 @@ teardown() { vbw_teardown; }
   [ "$CODE" -eq 0 ] || { echo "$OUT"; false; }
   everything
 }
+
+# bump_copy: a scratch copy of the bump tool and the files it writes, in $BUMP.
+bump_copy() {
+  BUMP="$TEST_ROOT/bump copy"
+  mkdir -p "$BUMP/tools" "$BUMP/plugin/.claude-plugin" "$BUMP/.claude-plugin"
+  cp "$REPO_ROOT/tools/bump-version.sh" "$BUMP/tools/"
+  cp "$REPO_ROOT/VERSION" "$BUMP/VERSION"
+  cp "$REPO_ROOT/plugin/VERSION" "$BUMP/plugin/VERSION"
+  cp "$REPO_ROOT/plugin/.claude-plugin/plugin.json" "$BUMP/plugin/.claude-plugin/"
+  cp "$REPO_ROOT/.claude-plugin/marketplace.json" "$BUMP/.claude-plugin/"
+  cp "$REPO_ROOT/marketplace.json" "$BUMP/"
+}
+
+@test "R164: bump-version.sh --help prints its usage and changes nothing; an unknown flag is refused with the usage and changes nothing" {
+  bump_copy
+  local before arg
+  before=$(cat "$BUMP/VERSION" "$BUMP/plugin/VERSION" "$BUMP/plugin/.claude-plugin/plugin.json" "$BUMP/.claude-plugin/marketplace.json" "$BUMP/marketplace.json")
+  for arg in --help -h; do
+    run bash "$BUMP/tools/bump-version.sh" "$arg"
+    [ "$status" -eq 0 ] || { echo "$arg: exit $status: $output"; false; }
+    [[ "$output" == *"usage: tools/bump-version.sh"* && "$output" == *"--offline"* && "$output" == *"--set X.Y.Z"* ]] || { echo "$arg: $output"; false; }
+  done
+  for arg in --bogus -x frobnicate; do
+    run bash "$BUMP/tools/bump-version.sh" "$arg"
+    [ "$status" -eq 2 ] || { echo "$arg: exit $status: $output"; false; }
+    [[ "$output" == *"usage: tools/bump-version.sh"* ]] || { echo "$arg: $output"; false; }
+  done
+  [ "$before" = "$(cat "$BUMP/VERSION" "$BUMP/plugin/VERSION" "$BUMP/plugin/.claude-plugin/plugin.json" "$BUMP/.claude-plugin/marketplace.json" "$BUMP/marketplace.json")" ] || {
+    echo "a version file changed"
+    false
+  }
+}
