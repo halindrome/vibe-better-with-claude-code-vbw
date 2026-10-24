@@ -2600,13 +2600,13 @@ scenario_fixchecks() {
       case "$msg" in
         *"VBW-Fix: "*)
           n_fix=$((n_fix + 1))
-          printf '%s\n' "$msg" | grep -q '^VBW-Req: R1$' || trailers=false
+          printf '%s\n' "$msg" | grep '^VBW-Req: R1$' > /dev/null || trailers=false
           # Only check files of R1 (the checks map is read from the record).
           printf '%s\n' "$files" | jq -R . | jq -es --argjson c "$chk" 'all(.[]; . as $f | $c | index($f) != null)' > /dev/null 2>&1 || only=false
           ;;
         *)
           # Code reaches git through its plan.
-          case "$files" in *greet.sh*) printf '%s\n' "$msg" | grep -q '^VBW-Plan: ' || plan_code=false ;; esac
+          case "$files" in *greet.sh*) printf '%s\n' "$msg" | grep '^VBW-Plan: ' > /dev/null || plan_code=false ;; esac
           ;;
       esac
     done
