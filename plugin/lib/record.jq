@@ -316,9 +316,10 @@ if type != "object" then ["record must be a JSON object"] else
           ( select(has("autonomy") and (.autonomy | one_of(["guided","balanced","hands-off"]) | not)) | "settings.autonomy must be guided, balanced or hands-off" ),
           ( select(has("rigor") and (.rigor | one_of(["auto","express","standard","deep"]) | not)) | "settings.rigor must be auto, express, standard or deep" ),
           ( select(has("motion") and (.motion | one_of(["full","calm","off"]) | not)) | "settings.motion must be full, calm or off" ),
+          ( select(has("sound") and ((.sound | type == "string" and test("^[a-z0-9][a-z0-9_-]*$")) | not)) | "settings.sound must be off or the name of a folder under assets/audio" ),
           ( select(has("command_timeout") and ((.command_timeout | int_in(1; 86400)) | not)) | "settings.command_timeout must be a whole number from 1 to 86400" ),
           ( select(has("check_budget") and ((.check_budget | int_in(1; 86400)) | not)) | "settings.check_budget must be a whole number from 1 to 86400" ),
-          ( keys[] | select(one_of(["profile","autonomy","autonomy_cap","models","rigor","motion","command_timeout","check_budget"]) | not) | "settings has an unknown key: \(.)" ),
+          ( keys[] | select(one_of(["profile","autonomy","autonomy_cap","models","rigor","motion","sound","command_timeout","check_budget"]) | not) | "settings has an unknown key: \(.)" ),
           ( select(has("models")) | .models
             | if type != "object" then "settings.models must be an object" else
                 to_entries[] | select((.key | one_of(["architect","lead","dev","qa","scout","debugger","docs","planner","critic","builder"])) and (.value | nonempty) | not)
