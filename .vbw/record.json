@@ -52127,7 +52127,7 @@
       "text": "Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92",
       "sort": "later",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T95",
