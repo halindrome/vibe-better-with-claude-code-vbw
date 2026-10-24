@@ -87,6 +87,17 @@ teardown() { vbw_teardown; }
   [[ "$output" == *"record is corrupt"* ]]
 }
 
+@test "a record that parses but has a field of the wrong type is named so, never as unparseable JSON" {
+  vbw_git_project
+  vbw_run init
+  jq '.milestone = 5' .vbw/record.json > "$TEST_ROOT/typed.json" && cp "$TEST_ROOT/typed.json" .vbw/record.json
+  vbw_run status
+  [ "$status" -eq 3 ]
+  [[ "$output" == *"record is corrupt"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"unparseable JSON"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"wrong type"* ]] || { echo "$output"; false; }
+}
+
 @test "commands outside a VBW project say so" {
   vbw_git_project
   vbw_run status

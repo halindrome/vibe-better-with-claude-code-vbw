@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -215,6 +215,20 @@ report_line_in_proof_output() {
   transcripts | xargs cat 2> /dev/null | jq -se --arg re "$1" '
     [.[] | select(.type == "assistant") | .message.content[]?
       | select(.type == "tool_use" and ((.input.command // "") | test("vbw[^|;&]* (prove|fix done)|bin/vbw[^|;&]* (prove|fix done)"))) | .id] as $ids
+    | any(.[] | select(.type == "user") | .message.content[]?
+        | select(.type == "tool_result" and ([.tool_use_id] | inside($ids)))
+        | (if (.content | type) == "string" then .content else ([.content[]? | .text? // ""] | join("\n")) end)
+        | split("\n")[]; test($re))' > /dev/null 2>&1
+}
+
+# transcript_tool_output COMMAND_REGEX RESULT_REGEX: reads transcript file names on
+# stdin and succeeds when the result of a Bash call whose command matches
+# COMMAND_REGEX has a line matching RESULT_REGEX. Read from the tool results in the
+# transcripts, never from screen text.
+transcript_tool_output() {
+  xargs cat 2> /dev/null | jq -se --arg cmd "$1" --arg re "$2" '
+    [.[] | select(.type == "assistant") | .message.content[]?
+      | select(.type == "tool_use" and ((.input.command // "") | test($cmd))) | .id] as $ids
     | any(.[] | select(.type == "user") | .message.content[]?
         | select(.type == "tool_result" and ([.tool_use_id] | inside($ids)))
         | (if (.content | type) == "string" then .content else ([.content[]? | .text? // ""] | join("\n")) end)
@@ -2052,6 +2066,23 @@ scenario_senior() {
   }
 }
 
+# greet_plan_seed [TEST_TEXT]: the agreed greet.sh spec and its approved plan (one requirement,
+# one plan, one check running test_greet.sh, whose text is TEST_TEXT or the two-case test),
+# nothing built yet.
+greet_plan_seed() {
+  local test=${1:-'[ "$(sh greet.sh Ana)" = "Hello, Ana!" ] && [ "$(sh greet.sh)" = "Hello, world!" ]'}
+  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"; without a name it prints "Hello, world!"\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null || return 1
+  printf '%s\n' "$test" > test_greet.sh
+  printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"]}],
+    "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME! or Hello, world! without a name"]}],
+    "checks": [{"id": "C1", "req": "R1", "run": ["sh", "test_greet.sh"], "files": ["test_greet.sh"]}],
+    "rules": [{"req": "R1", "text": "a name is greeted", "check": "C1"}, {"req": "R1", "text": "no name greets the world", "check": "C1"}]}' \
+    | "$VBW" apply > /dev/null || return 1
+  git add -A && git commit -qm "chore: plan" || return 1
+  "$VBW" approve > /dev/null || return 1
+}
+
 # A small change (R72, R116): the project's active milestone already holds
 # earlier work (greet.sh: its requirement planned and proven, its phase and plan
 # done, not shipped), and the user asks for one small change in plain words.
@@ -2061,16 +2092,7 @@ scenario_senior() {
 # phases and plans stay as they were, and the milestone waits to ship. Facts
 # come from the record, git and the session transcript, never screen text.
 milestone_seed() {
-  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"; without a name it prints "Hello, world!"\n' > .vbw/spec.md
-  "$VBW" spec sync > /dev/null || return 1
-  printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ] && [ "$(sh greet.sh)" = "Hello, world!" ]\n' > test_greet.sh
-  printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"]}],
-    "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME! or Hello, world! without a name"]}],
-    "checks": [{"id": "C1", "req": "R1", "run": ["sh", "test_greet.sh"], "files": ["test_greet.sh"]}],
-    "rules": [{"req": "R1", "text": "a name is greeted", "check": "C1"}, {"req": "R1", "text": "no name greets the world", "check": "C1"}]}' \
-    | "$VBW" apply > /dev/null || return 1
-  git add -A && git commit -qm "chore: plan" || return 1
-  "$VBW" approve > /dev/null || return 1
+  greet_plan_seed || return 1
   printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh && chmod +x greet.sh
   "$VBW" commit P1.1 "feat(P1.1): greet.sh" > /dev/null || return 1
   # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
@@ -2253,6 +2275,366 @@ scenario_loop() {
         --arg s "$(jq -r '[.loop.items[] | "\(.id)=\(.status)"] | join(",")' "$r" 2> /dev/null)" --arg e "$(jq -r '.loop.ended.reason // ""' "$r" 2> /dev/null)" \
         '{items: $s, ended: $e, delegated_approvals: $d, user_approvals: $o, question_asked: $q, report_names_items_and_reverts: $r, revert_commits: $n, remotes: ($rm | split("\n") | map(select(length > 0)) | length), tags: ($tg | split("\n") | map(select(length > 0)) | length)}')" \
       "$(if [ "$n_rev" -eq 0 ]; then printf '%s' '["a park that reverts commits: the Dev blocked the contradictory plan before any commit, so nothing was there to revert (the revert path is proved at L1 by tests/loop-retry-park.bats)",'; else printf '['; fi)\"a real remote configured\",\"a ceiling reached mid-item\",\"a [human] item\",\"a loop of more than two items\",\"Claude Code versions other than the one that ran\"]"
+  }
+}
+
+# chat_entries: the entries of Claude Code's list of chats (<claude-config-dir>/sessions/,
+# one file per running chat) whose folder is the project in $dir, as given or with
+# symbolic links resolved, as one JSON array.
+chat_entries() {
+  local f real
+  real=$(cd "$dir" && pwd -P)
+  for f in "$(claude_dir)"/sessions/*.json; do
+    [ -f "$f" ] && jq -c . "$f" 2> /dev/null
+  done | jq -sc --arg a "$dir" --arg b "$real" '[.[] | select(type == "object" and (.sessionId | type) == "string" and (.cwd == $a or .cwd == $b))]'
+}
+
+# sessions_panel_rows REGISTRY ROOT SELF LEASE: the Sessions tab's rows as the panel's own
+# function (plugin/hooks/panel-sessions.js, sessionsModel) builds them, as JSON.
+sessions_panel_rows() {
+  local mod
+  mod=$(jq -nr --arg m "$ROOT/plugin/hooks/panel-sessions.js" '$m | @json')
+  printf 'import { sessionsModel } from %s;\nconst r = sessionsModel({ registry: JSON.parse(process.env.L3_REG), root: process.env.L3_ROOT, sessionId: process.env.L3_SELF, lease: JSON.parse(process.env.L3_LEASE), now: Date.now(), width: 80 });\nconsole.log(JSON.stringify(r));\n' "$mod" \
+    | L3_REG="$1" L3_ROOT="$2" L3_SELF="$3" L3_LEASE="$4" node --input-type=module - 2> /dev/null
+}
+
+# sessions (R192): two chats on one project, through the real TUI. Chat A is named with
+# /rename and starts the build of an approved plan; while the run is open, chat B (a second
+# Claude Code session on the same folder) asks /vbw:vibe. The holder's name is judged where
+# VBW keeps it: Claude Code's list of chats, .vbw/runtime/holder.json, chat B's transcript,
+# the status line script run for chat B, and the record and git, which never carry it. The
+# list has one file per running chat, so the scenario reads it while the chats run. The
+# Sessions tab's rows come from the panel's own function over that list; the tab as drawn
+# on screen is not judged.
+scenario_sessions() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor standard > /dev/null && greet_plan_seed) \
+    || { say "setup failed: could not seed the approved greet.sh plan"; return 1; }
+  fixture="greet.sh, one phase and plan approved by the user before the session; rigor standard; chat A is named with /rename and starts the build; chat B, a second Claude Code session on the same folder, asks /vbw:vibe while the run is open"
+  want="l3-holder-chat" second="$scenario-b"
+  A_id="" B_id="" held="" sl_line="" panel_rows="" b_asked=false begun=false
+  start="/rename $want"
+  # observe: the facts that exist only while the chats and the run are open.
+  observe() {
+    local ents
+    ents=$(chat_entries)
+    [ -n "$A_id" ] || A_id=$(printf '%s' "$ents" | jq -r --arg n "$want" '[.[] | select(.name == $n)] | sort_by(.updatedAt // 0) | last | .sessionId // empty')
+    [ -z "$A_id" ] || [ -n "$B_id" ] || B_id=$(printf '%s' "$ents" | jq -r --arg a "$A_id" '[.[] | select(.sessionId != $a)] | sort_by(.updatedAt // 0) | last | .sessionId // empty')
+    [ -f "$dir/.vbw/runtime/holder.json" ] || return 0
+    [ -n "$held" ] || held=$(jq -c . "$dir/.vbw/runtime/holder.json" 2> /dev/null)
+    [ -n "$B_id" ] || return 0
+    [ "$b_asked" = false ] || return 0
+    b_asked=true
+    l3 type "$second" "/vbw:vibe"
+    say "chat B asked VBW while a run was open"
+    sl_line=$(cd "$dir" && jq -nc --arg s "$B_id" --arg d "$dir" '{session_id: $s, cwd: $d, workspace: {project_dir: $d}}' \
+      | bash "$ROOT/plugin/scripts/vbw-statusline.sh" 2> /dev/null | head -n 1 | sed "s/$(printf '\033')\[[0-9;]*m//g")
+    panel_rows=$(sessions_panel_rows "$ents" "$(printf '%s' "$ents" | jq -r --arg a "$A_id" '[.[] | select(.sessionId == $a)][0].cwd')" "$B_id" \
+      "$(jq -c '.lease // null' "$dir/.vbw/record.json" 2> /dev/null || echo null)")
+  }
+  # Wait for chat A to settle, looking at the chats and the run every few seconds meanwhile.
+  idle() {
+    local w
+    l3 wait "$scenario" 1500 > /dev/null 2>&1 &
+    w=$!
+    while kill -0 "$w" 2> /dev/null; do observe; sleep 3; done
+    wait "$w" || true
+  }
+  # The first time chat A is idle it has been renamed: open chat B, then ask for the build.
+  on_idle() {
+    local i
+    observe
+    [ "$begun" = false ] || return 1
+    begun=true
+    for ((i = 0; i < 20; i++)); do observe; [ -z "$A_id" ] || break; sleep 1; done
+    if l3 start "$second" "$dir" > /dev/null; then
+      if l3 screen "$second" | grep -q "Type \/reload-skills"; then l3 type "$second" "/reload-skills"; sleep 5; fi
+    else
+      say "could not start chat B"
+    fi
+    l3 type "$scenario" "/vbw:vibe"
+    return 0
+  }
+  done_yet() { observe; shipped; }
+  checks() {
+    local passed=true r="$dir/.vbw/record.json" told=false sl_ok=false panel_ok=false held_ok=false cleared=false clean=false hits
+    # Chat B's last turn is long over; stop it, then read its transcript.
+    l3 wait "$second" 120 > /dev/null 2>&1 || true
+    l3 stop "$second" > /dev/null 2>&1 || true
+    # VBW's answer reaches chat B as a tool result or through the router's own loaded answer
+    # (the skill's vbw next at load time): either way it is in B's transcript.
+    transcripts | grep -F "/$B_id.jsonl" | xargs grep -lF -- "another session, $want" > /dev/null 2>&1 && told=true
+    case "$sl_line" in *"held by $want"*) sl_ok=true ;; esac
+    printf '%s' "$held" | jq -e --arg a "$A_id" --arg n "$want" '.session == $a and .session_name == $n and (.run | type) == "string"' > /dev/null 2>&1 && held_ok=true
+    printf '%s' "$panel_rows" | jq -e --arg a "$A_id" --arg n "$want" '(.rows | map(select(.id == $a)) | first) as $x
+      | $x != null and $x.name == $n and $x.resume == ("claude --resume " + $a) and $x.holder != null and ([.rows[] | select(.self)] | length) == 1' > /dev/null 2>&1 && panel_ok=true
+    [ ! -e "$dir/.vbw/runtime/holder.json" ] && jq -e '.holder == null' "$dir/.vbw/runtime/glance.json" > /dev/null 2>&1 && cleared=true
+    # The name is on this computer only: not in the record, not in any commit.
+    hits=$(git -C "$dir" log --all -p | grep -cF -- "$want")
+    if ! grep -qF -- "$want" "$r" && [ "$hits" -eq 0 ]; then clean=true; fi
+    say "chat A $A_id, chat B $B_id; status line for B: ${sl_line:-none}"
+    common_checks
+    expect "the chat was named in Claude Code's list ($want)" [ -n "$A_id" ]
+    expect "a second chat is in the list under another id" [ "${B_id:-$A_id}" != "$A_id" ]
+    expect "the second chat asked VBW while a run was open" [ "$b_asked" = true ]
+    expect "holder.json named chat A and its name while the run was open" [ "$held_ok" = true ]
+    expect "chat B's transcript carries VBW's answer naming the holder ($want)" [ "$told" = true ]
+    expect "the status line script for chat B says: held by $want" [ "$sl_ok" = true ]
+    expect "the panel's Sessions rows name chat A, its resume line and the run it holds" [ "$panel_ok" = true ]
+    expect "neither the record nor git history carries the name" [ "$clean" = true ]
+    expect "holder.json is gone and the glance holds no holder once the run ended" [ "$cleared" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write sessions "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --arg n "$want" --argjson reg "$([ -n "$A_id" ] && echo true || echo false)" --argjson h "$held_ok" --argjson t "$told" --argjson s "$sl_ok" --argjson p "$panel_ok" --argjson c "$clean" --argjson cl "$cleared" \
+        '{chat_name: $n, registry_name_matches: $reg, holder_file_names_chat: $h, other_chat_told_name: $t, statusline_held_by: $s, panel_resume_line: $p, name_not_in_record_or_git: $c, holder_cleared_at_end: $cl}')" \
+      '["the Sessions tab and Comms as drawn on screen (the tab'"'"'s rows are the panel'"'"'s own function run on the real list, the status line is its script run for chat B, not the second chat'"'"'s window)","a chat renamed while the run is open (the name is set before the build)","a chat that was closed while it held the run","more than two chats on the project","Claude Code versions other than the one that ran"]'
+  }
+}
+
+# taskbreak_seed: one requirement, two plans in order. P1.1 builds greet.sh (its rule names it),
+# P1.2 adds shout.sh, a file only it owns (its rule names it): C2 stays red until P1.2 is built. P1.1's second task,
+# --help, has no rule, so at deep the Dev breaks that task. Approved, nothing built.
+taskbreak_seed() {
+  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!" and ./shout.sh Ana prints "HELLO, ANA!"\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null || return 1
+  printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ]\n' > test_greet.sh
+  printf '[ "$(sh shout.sh Ana)" = "HELLO, ANA!" ]\n' > test_shout.sh
+  printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"]}],
+    "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME!", "greet.sh --help prints a usage line and exits 0"]},
+              {"id": "P1.2", "phase": "P1", "title": "shout", "reqs": ["R1"], "files": ["shout.sh"], "after": ["P1.1"], "tasks": ["shout.sh NAME prints the greet.sh greeting in capitals: HELLO, NAME!"]}],
+    "checks": [{"id": "C1", "req": "R1", "run": ["sh", "test_greet.sh"], "files": ["test_greet.sh"]},
+               {"id": "C2", "req": "R1", "run": ["sh", "test_shout.sh"], "files": ["test_shout.sh"]}],
+    "rules": [{"req": "R1", "text": "a name is greeted", "check": "C1", "plan": "P1.1"},
+              {"req": "R1", "text": "shout.sh prints the greeting in capitals", "check": "C2", "plan": "P1.2"}]}' \
+    | "$VBW" apply > /dev/null || return 1
+  git add -A && git commit -qm "chore: plan" || return 1
+  "$VBW" approve > /dev/null || return 1
+}
+
+# taskbreak (R193): a task break judged by the plan's own rules. At deep, the Dev of P1.1,
+# the early plan of R1, breaks a task no rule covers; the check of P1.2's rule is red then,
+# because P1.2 is not built (its behaviour lives in shout.sh, a file only P1.2 owns, so
+# P1.1's Dev cannot build it early: with one shared file it legitimately did, 2026-10-24). The break must run only the checks of the rules P1.1 owes (C1),
+# so the red C2 of a rule it does not owe refuses nothing. Judged in the record (the break's
+# checks map) and in git (the break's commit and the order of the plans), never on screen.
+scenario_taskbreak() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor deep > /dev/null && taskbreak_seed) \
+    || { say "setup failed: could not seed the approved two-plan requirement"; return 1; }
+  fixture="greet.sh in two plans of one requirement, approved by the user before the session: P1.1 greets and has a --help task no rule covers, P1.2 adds shout.sh, a file only it owns (its rule's check is red until P1.2 is built); rigor deep; the user types /vbw:vibe and the build runs to the end"
+  start="/vbw:vibe"
+  checks() {
+    local passed=true r="$dir/.vbw/record.json" breaks first_head="" tmp later=false first=false red=false recorded=false ran="[]" only=false p12
+    # Every break of P1.1 that ran checks (a task: a number; --none records no checks).
+    breaks=$(jq -c '[.plans[] | select(.id == "P1.1") | (.mutations // [])[] | select(has("task") and has("result"))]' "$r" 2> /dev/null || echo '[]')
+    [ "$(printf '%s' "$breaks" | jq 'length')" -ge 1 ] && recorded=true
+    ran=$(printf '%s' "$breaks" | jq -c '[.[] | .checks | keys] | unique')
+    [ "$ran" = '[["C1"]]' ] && only=true
+    first_head=$(printf '%s' "$breaks" | jq -r 'first.head // empty')
+    # The check of the rule P1.1 does not owe was red on the code the break was made against.
+    if [ -n "$first_head" ] && tmp=$(mktemp -d "${TMPDIR:-/tmp}/vbw-l3-taskbreak.XXXXXX"); then
+      git -C "$dir" archive "$first_head" | tar -x -C "$tmp" 2> /dev/null
+      (cd "$tmp" && ! sh test_shout.sh > /dev/null 2>&1) && red=true
+      rm -rf "$tmp"
+    fi
+    # P1.1 was built first: the break's commit came before the first commit of P1.2.
+    p12=$(git -C "$dir" log --reverse --format=%H --grep='^VBW-Plan: P1.2$' | head -n 1)
+    if [ -n "$first_head" ] && [ -n "$p12" ] && git -C "$dir" merge-base --is-ancestor "$first_head" "$p12" 2> /dev/null; then first=true; fi
+    jq -e '(.plans[] | select(.id == "P1.2") | .status) == "done" and (.requirements[] | select(.id == "R1") | .status) == "proven" and .evidence.checks.C2.status == "pass"' "$r" > /dev/null 2>&1 && later=true
+    say "task breaks of P1.1: $(printf '%s' "$breaks" | jq -c '[.[] | {task, result, checks}]')"
+    common_checks
+    expect "the Dev recorded a task break on P1.1 ($recorded)" [ "$recorded" = true ]
+    expect "every task break of P1.1 ran the checks of the rules it owes and no other ($ran)" [ "$only" = true ]
+    expect "the check of the rule P1.1 does not owe was red on the code the break was made against" [ "$red" = true ]
+    expect "the break was made on P1.1's code before P1.2 was built" [ "$first" = true ]
+    expect "P1.2 was built after it and completed the requirement, its check passing" [ "$later" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write taskbreak "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson rec "$recorded" --argjson ran "$ran" --argjson red "$red" --argjson first "$first" --argjson later "$later" --argjson b "$breaks" \
+        '{task_break_recorded: $rec, checks_run: $ran, other_rule_check_red_at_break: $red, early_plan_built_first: $first, later_plan_completed: $later,
+          task_breaks: ($b | map({task, result, checks}))}')" \
+      '["a task break the Dev answers with --none (it runs no check, so it proves nothing here)","a plan that owns no rule (its refusal is covered by tests/mutate-own-rules.bats)","a rule shared by several plans","a project larger than the greet.sh fixture","the Dev'"'"'s choice of the task to break (the plan lists one no rule covers)"]'
+  }
+}
+
+# fixchecks_seed: the requirement states three behaviours and its one approved check covers
+# two (a name, no name); the third (several names, a greeting line per name) is unbuilt and
+# unchecked. Built, broken once per rule as standard asks, proven, no QA verdict yet.
+fixchecks_seed() {
+  local k
+  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"; without a name it prints "Hello, world!"; with several names, ./greet.sh Ana Bo prints one line for each: "Hello, Ana!" then "Hello, Bo!"\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null || return 1
+  printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ] && [ "$(sh greet.sh)" = "Hello, world!" ]\n' > test_greet.sh
+  printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"], "tier": "standard"}],
+    "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME! or Hello, world! without a name"]}],
+    "checks": [{"id": "C1", "req": "R1", "run": ["sh", "test_greet.sh"], "files": ["test_greet.sh"]}],
+    "rules": [{"req": "R1", "text": "a name is greeted", "check": "C1"}, {"req": "R1", "text": "no name greets the world", "check": "C1"}]}' \
+    | "$VBW" apply > /dev/null || return 1
+  git add -A && git commit -qm "chore: plan" || return 1
+  "$VBW" approve > /dev/null || return 1
+  printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh && chmod +x greet.sh
+  "$VBW" commit P1.1 "feat(P1.1): greet.sh" > /dev/null || return 1
+  for k in 1 2; do
+    printf '#!/bin/sh\necho "Hello"\n' > greet.sh
+    "$VBW" mutate P1.1 "R1.$k" "greets nobody by name" greet.sh > /dev/null || return 1
+  done
+  # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
+  "$VBW" plan done P1.1 > /dev/null || return 1
+  "$VBW" prove --full > /dev/null || return 1
+}
+
+# failoutput_seed: greet.sh built and proven with a check that prints one TAP line per case; then
+# a later commit by the user makes the no-name case fail, and the proof opens a fix and keeps the
+# check's whole output.
+failoutput_seed() {
+  greet_plan_seed 'fail=0
+if [ "$(sh greet.sh Ana)" = "Hello, Ana!" ]; then echo "ok 1 a name is greeted"; else echo "not ok 1 a name is greeted"; fail=1; fi
+if [ "$(sh greet.sh)" = "Hello, world!" ]; then echo "ok 2 no name greets the world"; else echo "not ok 2 no name greets the world"; fail=1; fi
+exit "$fail"' || return 1
+  printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh && chmod +x greet.sh
+  "$VBW" commit P1.1 "feat(P1.1): greet.sh" > /dev/null || return 1
+  # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
+  "$VBW" plan done P1.1 > /dev/null || return 1
+  "$VBW" prove --full > /dev/null || return 1
+  printf '#!/bin/sh\necho "Hello, $1!"\n' > greet.sh
+  git commit -qm "chore: greet.sh greets the name it is given" -- greet.sh || return 1
+  # The proof fails, opens the fix and keeps the output: its exit status is the failure.
+  "$VBW" prove > /dev/null 2>&1 || true
+}
+
+# failoutput (R195): a later commit breaks a proven requirement; the proof keeps the failing
+# check's whole output in .vbw/runtime/output/ and opens a fix. The user types /vbw:vibe, and the
+# agents read the kept file and the failing test's name through `vbw show fix`. Judged in the kept
+# file, in the tool results in the transcripts and in the record (the fix closed, the file removed
+# once the check passes), never on screen.
+scenario_failoutput() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor auto > /dev/null && failoutput_seed) \
+    || { say "setup failed: could not seed the broken requirement"; return 1; }
+  fixture="greet.sh built and proven, its check printing one TAP line per case; a later commit by the user makes the no-name case fail, and the proof opened a fix and kept the check's output before the session; rigor auto; the user types /vbw:vibe"
+  kept="$dir/.vbw/runtime/output/C1.log"
+  kept_file=false kept_names=false
+  [ -s "$kept" ] && kept_file=true
+  grep -q '^not ok 2 no name greets the world$' "$kept" 2> /dev/null && kept_names=true
+  fix_id=$(jq -r '[.fixes[] | select(.status == "open")][0].id // empty' "$dir/.vbw/record.json" 2> /dev/null)
+  start="/vbw:vibe"
+  checks() {
+    local passed=true named_file=false named_test=false removed=false
+    transcripts | transcript_tool_output 'vbw[^|;&]* show fix' 'full output: \.vbw/runtime/output/C1\.log' && named_file=true
+    transcripts | transcript_tool_output 'vbw[^|;&]* show fix' '^ *no name greets the world *$' && named_test=true
+    [ ! -e "$kept" ] && removed=true
+    common_checks
+    expect "the proof kept the failing check's whole output before the session ($kept_file)" [ "$kept_file" = true ]
+    expect "the kept file names the failing test (not ok 2 no name greets the world)" [ "$kept_names" = true ]
+    expect "a fix was open before the session ($fix_id)" [ -n "$fix_id" ]
+    expect "that fix is closed" jq -e --arg f "$fix_id" 'any(.fixes[]; .id == $f and .status == "closed")' .vbw/record.json
+    expect "an agent ran vbw show fix and its result named the kept file" [ "$named_file" = true ]
+    expect "an agent ran vbw show fix and its result listed the failing test by name under failing tests:" [ "$named_test" = true ]
+    expect "the kept file was removed once the check passed" [ "$removed" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write failoutput "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --arg f "$fix_id" --argjson kf "$kept_file" --argjson kn "$kept_names" --argjson nf "$named_file" --argjson nt "$named_test" --argjson rm "$removed" \
+        '{fix: $f, kept_file: $kf, kept_names_failing_test: $kn, show_fix_named_file: $nf, show_fix_named_test: $nt, file_removed_after_pass: $rm}')" \
+      '["failing-test names of runners other than the TAP form (tests/show-fix-failing-tests.bats holds those forms)","a failing test file of the single-file form or a failing project command","the wording of what vbw show fix prints (read by a person)","an output longer than the tail the record keeps","a project larger than the greet.sh fixture"]'
+  }
+}
+
+# checks_fail_on_old_code REQ COMMIT: succeeds when some check of REQ, as the project has it now,
+# fails on the project's greet.sh as it was at COMMIT (a regression case fails without the fix).
+checks_fail_on_old_code() {
+  local tmp f c a argv n=0 rec="$dir/.vbw/record.json"
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/vbw-l3-oldcode.XXXXXX") || return 1
+  git -C "$dir" archive "$2" greet.sh | tar -x -C "$tmp" 2> /dev/null
+  for f in $(jq -r --arg q "$1" '.checks[] | select(.req == $q) | .files[]' "$rec"); do
+    mkdir -p "$tmp/$(dirname "$f")" && cp "$dir/$f" "$tmp/$f"
+  done
+  while IFS= read -r c; do
+    argv=()
+    while IFS= read -r a; do argv+=("$a"); done < <(printf '%s' "$c" | jq -r '.[]')
+    (cd "$tmp" && "${argv[@]+"${argv[@]}"}" > /dev/null 2>&1) || n=$((n + 1))
+  done < <(jq -c --arg q "$1" '.checks[] | select(.req == $q) | .run' "$rec")
+  rm -rf "$tmp"
+  [ "$n" -ge 1 ]
+}
+
+# fixchecks (R194): a fix commits its own requirement's check file, and the user approves once.
+# QA fails the requirement (several names are not greeted, and no check says so); the Dev of the
+# fix adds the missing case to the requirement's own check file and commits it with
+# `vbw commit --fix`, the code through its plan; the check file waits for one approval, which
+# the user gives by the choice VBW asks (Enter on Approve). Judged in git (the commit's
+# trailers and files, the new case failing on the old code) and in the record (QA's verdict,
+# the fix's source, the approval decisions), never on screen.
+scenario_fixchecks() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor standard > /dev/null && fixchecks_seed) \
+    || { say "setup failed: could not seed the built and proven requirement"; return 1; }
+  fixture="greet.sh built and proven, its phase standard and QA not yet run; the requirement also states several names, one greeting line each, which greet.sh does not do and the approved check does not test; the user types /vbw:vibe and approves by the choice"
+  seed_head=$(git -C "$dir" rev-parse HEAD)
+  seed_approvals=$(jq '[.decisions[] | select(.text | startswith("Contract approved"))] | length' "$dir/.vbw/record.json")
+  start="/vbw:vibe"
+  asked_all=""
+  # The user presses Enter on the first option, Approve, and never types /vbw:approve.
+  on_question() {
+    local s fp
+    s=$(screen)
+    fp=$(printf '%s' "$s" | grep -oE 'Approve contract [0-9a-f]{12}' | head -1 | grep -oE '[0-9a-f]{12}$')
+    [ -n "$fp" ] || return 1
+    case " $asked_all " in *" $fp "*) ;; *) asked_all="${asked_all:+$asked_all }$fp" ;; esac
+    l3 keys "$scenario" Enter
+    return 0
+  }
+  on_idle() {
+    [ "$(next_action)" = approve ] || return 1
+    l3 type "$scenario" "/vbw:vibe"
+  }
+  checks() {
+    local passed=true r="$dir/.vbw/record.json" hist fv src h msg files n_fix=0 only=true trailers=true plan_code=true
+    local chk n q rounds regression=false old_fails=false new_passes=false one_each=false
+    hist=$(record_history)
+    fv=$(printf '%s\n' "$hist" | jq -sr '[.[] | .phases[]? | select(.qa != null) | .qa] | first // {} | .result // "none"')
+    src=$(printf '%s\n' "$hist" | jq -sr '[.[] | .fixes[]? | select(.req == "R1")] | first // {} | .source // "none"')
+    chk=$(jq -c '[.checks[] | select(.req == "R1") | .files[]]' "$r" 2> /dev/null || echo '[]')
+    for h in $(git -C "$dir" log --format=%H "$seed_head..HEAD"); do
+      msg=$(git -C "$dir" show -s --format=%B "$h")
+      files=$(git -C "$dir" diff-tree --no-commit-id --name-only -r "$h")
+      case "$msg" in
+        *"VBW-Fix: "*)
+          n_fix=$((n_fix + 1))
+          printf '%s\n' "$msg" | grep '^VBW-Req: R1$' > /dev/null || trailers=false
+          # Only check files of R1 (the checks map is read from the record).
+          printf '%s\n' "$files" | jq -R . | jq -es --argjson c "$chk" 'all(.[]; . as $f | $c | index($f) != null)' > /dev/null 2>&1 || only=false
+          ;;
+        *)
+          # Code reaches git through its plan.
+          case "$files" in *greet.sh*) printf '%s\n' "$msg" | grep '^VBW-Plan: ' > /dev/null || plan_code=false ;; esac
+          ;;
+      esac
+    done
+    n=$(jq --argjson s "$seed_approvals" '[.decisions[] | select(.text | startswith("Contract approved"))] | length - $s' "$r" 2> /dev/null || echo 0)
+    q=$(printf '%s\n' "$asked_all" | wc -w | tr -d ' ')
+    rounds=$(git -C "$dir" log --format=%s | grep -c '^chore(vbw): record after fix-' || true)
+    # R1's checks as they are now: some fails on the seed's greet.sh (the regression case),
+    # all of them pass on the fixed project.
+    checks_fail_on_old_code R1 "$seed_head" && old_fails=true
+    jq -e '.evidence.checks as $e | all(.checks[] | select(.req == "R1"); $e[.id].status == "pass")' "$r" > /dev/null 2>&1 && new_passes=true
+    [ "$old_fails" = true ] && [ "$new_passes" = true ] && regression=true
+    [ "$n" -ge 1 ] && [ "$n" -eq "$q" ] && one_each=true
+    say "QA first verdict $fv, fix source $src, fix commits $n_fix, approvals $n for $q question(s), fix rounds $rounds"
+    common_checks
+    expect "QA's first verdict was fail ($fv)" [ "$fv" = fail ]
+    expect "the fix came from QA ($src)" [ "$src" = qa ]
+    expect "the Dev committed the check file with vbw commit --fix ($n_fix commit(s) with VBW-Fix)" [ "$n_fix" -ge 1 ]
+    expect "each of those commits carries VBW-Req: R1" [ "$trailers" = true ]
+    expect "each of those commits touches only check files of R1" [ "$only" = true ]
+    expect "the code reached git through its plan" [ "$plan_code" = true ]
+    expect "the new case fails on the old code and passes on the fixed one" [ "$regression" = true ]
+    expect "one approval per question asked, at least one ($n for $q)" [ "$one_each" = true ]
+    expect "never more approvals than fix rounds ($n for $rounds)" [ "$n" -le "$rounds" ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write fixchecks "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --arg fv "$fv" --arg src "$src" --argjson n "$n_fix" --argjson only "$only" --argjson tr "$trailers" --argjson a "$n" --argjson q "$q" --argjson rd "$rounds" --argjson reg "$regression" --argjson pc "$plan_code" \
+        '{first_qa_verdict: $fv, fix_source: $src, fix_check_commits: $n, fix_commits_carry_req_trailer: $tr, check_commit_only_check_files: $only, code_through_plan: $pc, approvals: $a, questions: $q, fix_rounds: $rd, regression_case_in_check: $reg}')" \
+      '["a fix of a failing check (proof source) that edits a check file","a project-command fix","the answer Not yet or the user'"'"'s own words at the approval","more than one fix round","a project larger than the greet.sh fixture","the wording of what VBW tells the user (read by a person)"]'
   }
 }
 

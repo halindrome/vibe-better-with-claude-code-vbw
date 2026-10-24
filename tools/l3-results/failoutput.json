@@ -1,0 +1,23 @@
+{
+  "scenario": "failoutput",
+  "fixture": "greet.sh built and proven, its check printing one TAP line per case; a later commit by the user makes the no-name case fail, and the proof opened a fix and kept the check's output before the session; rigor auto; the user types /vbw:vibe",
+  "cost_usd": 0.4023,
+  "evidence_level": "L3",
+  "at": "2026-10-24T04:50:33Z",
+  "passed": true,
+  "facts": {
+    "fix": "F1",
+    "kept_file": true,
+    "kept_names_failing_test": true,
+    "show_fix_named_file": true,
+    "show_fix_named_test": true,
+    "file_removed_after_pass": true
+  },
+  "not_tested": [
+    "failing-test names of runners other than the TAP form (tests/show-fix-failing-tests.bats holds those forms)",
+    "a failing test file of the single-file form or a failing project command",
+    "the wording of what vbw show fix prints (read by a person)",
+    "an output longer than the tail the record keeps",
+    "a project larger than the greet.sh fixture"
+  ]
+}
