@@ -293,14 +293,18 @@ you, in amber, with the time the agent reported it:
 
 - **Comms** shows the newest refusal you have not seen as one line, under the
   needs-you line and above the helpers: the agent, then the refusal's first
-  line (what was refused and why). It stays after the run ends, until you open
+  clause (what was refused). It stays after the run ends, until you open
   the **Now** tab of Mission Control; a later refusal shows again.
 - **Mission Control's Now tab** keeps the last run's refusals, the newest five,
-  as amber sentences before the needs-you sentence, each whole on one line with
-  its next step, under the term `refused`:
+  as short amber lines before the needs-you sentence, under the term `refused`.
+  Each is the refusal's first line; when that line lists the run's files, the
+  list is left out and counted instead. **show** opens the whole text, with its
+  next step, in place; **hide** closes it:
 
 ```
-[14:02] ⊘ VBW refused, dev P1.1: vbw: apply refused: plan P1.1 is started Next: put it back as the record has it (vbw show plan P1.1)
+[14:02] ⊘ VBW refused, dev P5.2: src/x.js is outside this run's files · 9 files in this run [ show ]
+refused
+[14:05] ⊘ VBW refused, dev P1.1: vbw: apply refused: plan P1.1 is started [ show ]
 refused
 ```
 

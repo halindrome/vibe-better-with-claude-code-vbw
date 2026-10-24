@@ -121,7 +121,7 @@ function fresh() {
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
     lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {}, refusalsSeen: {},
     sprites: null, burst: null, sweep: null, cheer: null, wrapped: null, nextSeen: null, nextAt: null, nextAnim: null,
-    seenNext: null, needSeen: null, proving: null, stamps: {}, stepNote: null, step: null,
+    seenNext: null, needSeen: null, proving: null, stamps: {}, stepNote: null, step: null, open: {},
   }
 }
 
@@ -534,7 +534,7 @@ async function suggest($, st) {
 
 const cheering = (st, now) => (st.cheer && st.cheer.until > now ? st.cheer.text : null)
 const recOf = (st) => (isObj(st.record) ? st.record.recommendation : undefined)
-const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st), unseenNext(st), st.needSeen,  nextCandy({ motion: motion(st), arrivedAt: st.nextAt, now }), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent, st.tab === 'sessions' ? st.registry : null,
+const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st), unseenNext(st), st.needSeen,  nextCandy({ motion: motion(st), arrivedAt: st.nextAt, now }), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent, st.open, st.tab === 'sessions' ? st.registry : null,
   cheering(st, now), !!st.burst, !!st.sweep])
 
 // Remember when each agent first showed; at full motion a new row flashes for a
@@ -737,6 +737,8 @@ async function act($, st, a) {
     }
     else if (a.tab === 'plan' && typeof a.phase === 'string') st.phase = a.phase
     else if (typeof a.check === 'string') st.check = st.check === a.check ? null : a.check
+    // Show or hide one thing a press opens in place (a refusal's whole text, a plan's files).
+    else if (typeof a.toggle === 'string') st.open = { ...st.open, [a.toggle]: !st.open[a.toggle] }
     else if (typeof a.show === 'string') {
       st.tab = a.show
       if (a.show === 'now') await seen($, st, ['next', 'need', 'refusals'])

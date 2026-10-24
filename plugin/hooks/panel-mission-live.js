@@ -6,7 +6,7 @@
 import { estimate, MIN_STEPS } from './panel-estimate.js'
 import { stepWords, dayClock } from './panel-step.js'
 import { newMark } from './panel-next.js'
-import { roleColor, stateColor, ACCENT, STATE_MARKS, STATE_WORDS } from './panel-palette.js'
+import { roleColor, stateColor, ACCENT, NEED, STATE_MARKS, STATE_WORDS } from './panel-palette.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const num = (x) => typeof x === 'number' && Number.isFinite(x)
@@ -242,6 +242,22 @@ export function renderNow(ui, model, act) {
     h(ui.Text, { bold: true }, header),
     ...(model.rows.length ? model.rows.map(row) : [h(ui.Text, { dimColor: true }, none)]),
     detail)
+}
+
+// A refusal row of the Now tab (panel-lines.js refusalRow): the short amber line, then
+// dimmed `· N files in this run`, then [ show ] when there is more to read; `open`, the
+// whole text under it and [ hide ]. A press asks act({ toggle: id }) (panel.js keeps st.open[id]); the term under it.
+export function renderRefusal(ui, row, open, act) {
+  if (!isObj(row) || !str(row.text)) return null
+  const press = () => { if (typeof act === 'function') act({ toggle: row.id }) }
+  return h(ui.Box, { key: row.id, flexDirection: 'column', marginBottom: 1 },
+    h(ui.Box, { key: 'line', flexDirection: 'row' },
+      h(ui.Text, { key: 'text', color: NEED }, row.text),
+      row.more ? h(ui.Text, { key: 'more', dimColor: true }, ' ' + row.more) : null,
+      row.full ? h(ui.Text, { key: 'gap' }, ' ') : null,
+      row.full ? h(ui.Button, { key: 'show:' + row.id, label: open ? 'hide' : 'show', onPress: press }) : null),
+    open && row.full ? h(ui.Text, { key: 'full', color: NEED }, row.full) : null,
+    h(ui.Text, { key: 'term', dimColor: true }, str(row.term) || 'refused'))
 }
 
 export function renderTimeline(ui, model) {

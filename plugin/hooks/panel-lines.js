@@ -221,13 +221,42 @@ export function vbwRowIntent(input) {
   return 'VBW · ' + text
 }
 
-// A refusal of the run model (panel-feed.js) as Comms says it, without its time:
-// '⊘ VBW refused · <by>: <its first line>' (what was refused and why); null for none.
-export function refusalLine(r) {
-  if (!isObj(r) || typeof r.text !== 'string') return null
-  const first = (r.text.split('\n').find((l) => l.trim()) || '').trim()
+// A refusal's text, short (design rule 4): its first line, and when that line names the
+// run's files as a list ("... this run's files (a.js, b.js, ...): why"), the clause before
+// the list, with the number of files kept apart. { clause, files } or null for no text.
+const FILE_LIST = /^(.*?files) \(([^()]*)\)(?::|$)/
+function shortRefusal(text) {
+  if (typeof text !== 'string') return null
+  const first = (text.split('\n').find((l) => l.trim()) || '').trim()
   if (!first) return null
-  return REFUSED_MARK + ' VBW refused · ' + (typeof r.by === 'string' && r.by ? r.by + ': ' : '') + first
+  const m = FILE_LIST.exec(first)
+  const list = m ? m[2].split(',').map((f) => f.trim()).filter(Boolean) : []
+  return list.length ? { clause: m[1], files: list.length } : { clause: first, files: 0 }
+}
+const byOf = (r) => (typeof r.by === 'string' && r.by ? r.by + ': ' : '')
+
+// A refusal of the run model (panel-feed.js) as Comms says it, without its time:
+// '⊘ VBW refused · <by>: <its first clause>' (what was refused); null for none.
+export function refusalLine(r) {
+  const s = isObj(r) ? shortRefusal(r.text) : null
+  return s ? REFUSED_MARK + ' VBW refused · ' + byOf(r) + s.clause : null
+}
+
+// A refusal as the Now tab says it: one short amber row, '[15:41] ⊘ VBW refused, dev P5.2:
+// <first clause>', with `more` ('· 9 files in this run') when the clause left the run's
+// file list out, and `full`, the whole text on one line, when there is more than the row
+// says (shown on a press). Null for none.
+export function refusalRow(r, now) {
+  const s = isObj(r) ? shortRefusal(r.text) : null
+  if (!s) return null
+  const at = dayClock(r.at, now)
+  const whole = r.text.split('\n').map((l) => l.trim()).filter(Boolean).join(' ')
+  const text = (at ? '[' + at + '] ' : '') + REFUSED_MARK + ' VBW refused, ' + byOf(r) + s.clause
+  return {
+    id: 'refused:' + String(r.id), term: 'refused', files: s.files,
+    more: s.files ? '· ' + s.files + (s.files === 1 ? ' file' : ' files') + ' in this run' : null,
+    text, full: whole === s.clause ? null : whole,
+  }
 }
 
 // A diff shown on .vbw/record.json, as what changed.
