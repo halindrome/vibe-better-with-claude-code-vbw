@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -2449,6 +2449,131 @@ scenario_taskbreak() {
         '{task_break_recorded: $rec, checks_run: $ran, other_rule_check_red_at_break: $red, early_plan_built_first: $first, later_plan_completed: $later,
           task_breaks: ($b | map({task, result, checks}))}')" \
       '["a task break the Dev answers with --none (it runs no check, so it proves nothing here)","a plan that owns no rule (its refusal is covered by tests/mutate-own-rules.bats)","a rule shared by several plans","a project larger than the greet.sh fixture","the Dev'"'"'s choice of the task to break (the plan lists one no rule covers)"]'
+  }
+}
+
+# fixchecks_seed: the requirement states three behaviours and its one approved check covers
+# two (a name, no name); the third (several names, a greeting line per name) is unbuilt and
+# unchecked. Built, broken once per rule as standard asks, proven, no QA verdict yet.
+fixchecks_seed() {
+  local k
+  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"; without a name it prints "Hello, world!"; with several names, ./greet.sh Ana Bo prints one line for each: "Hello, Ana!" then "Hello, Bo!"\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null || return 1
+  printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ] && [ "$(sh greet.sh)" = "Hello, world!" ]\n' > test_greet.sh
+  printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"], "tier": "standard"}],
+    "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME! or Hello, world! without a name"]}],
+    "checks": [{"id": "C1", "req": "R1", "run": ["sh", "test_greet.sh"], "files": ["test_greet.sh"]}],
+    "rules": [{"req": "R1", "text": "a name is greeted", "check": "C1"}, {"req": "R1", "text": "no name greets the world", "check": "C1"}]}' \
+    | "$VBW" apply > /dev/null || return 1
+  git add -A && git commit -qm "chore: plan" || return 1
+  "$VBW" approve > /dev/null || return 1
+  printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh && chmod +x greet.sh
+  "$VBW" commit P1.1 "feat(P1.1): greet.sh" > /dev/null || return 1
+  for k in 1 2; do
+    printf '#!/bin/sh\necho "Hello"\n' > greet.sh
+    "$VBW" mutate P1.1 "R1.$k" "greets nobody by name" greet.sh > /dev/null || return 1
+  done
+  # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
+  "$VBW" plan done P1.1 > /dev/null || return 1
+  "$VBW" prove --full > /dev/null || return 1
+}
+
+# checks_fail_on_old_code REQ COMMIT: succeeds when some check of REQ, as the project has it now,
+# fails on the project's greet.sh as it was at COMMIT (a regression case fails without the fix).
+checks_fail_on_old_code() {
+  local tmp f c a argv n=0 rec="$dir/.vbw/record.json"
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/vbw-l3-oldcode.XXXXXX") || return 1
+  git -C "$dir" archive "$2" greet.sh | tar -x -C "$tmp" 2> /dev/null
+  for f in $(jq -r --arg q "$1" '.checks[] | select(.req == $q) | .files[]' "$rec"); do
+    mkdir -p "$tmp/$(dirname "$f")" && cp "$dir/$f" "$tmp/$f"
+  done
+  while IFS= read -r c; do
+    argv=()
+    while IFS= read -r a; do argv+=("$a"); done < <(printf '%s' "$c" | jq -r '.[]')
+    (cd "$tmp" && "${argv[@]+"${argv[@]}"}" > /dev/null 2>&1) || n=$((n + 1))
+  done < <(jq -c --arg q "$1" '.checks[] | select(.req == $q) | .run' "$rec")
+  rm -rf "$tmp"
+  [ "$n" -ge 1 ]
+}
+
+# fixchecks (R194): a fix commits its own requirement's check file, and the user approves once.
+# QA fails the requirement (several names are not greeted, and no check says so); the Dev of the
+# fix adds the missing case to the requirement's own check file and commits it with
+# `vbw commit --fix`, the code through its plan; the check file waits for one approval, which
+# the user gives by the choice VBW asks (Enter on Approve). Judged in git (the commit's
+# trailers and files, the new case failing on the old code) and in the record (QA's verdict,
+# the fix's source, the approval decisions), never on screen.
+scenario_fixchecks() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor standard > /dev/null && fixchecks_seed) \
+    || { say "setup failed: could not seed the built and proven requirement"; return 1; }
+  fixture="greet.sh built and proven, its phase standard and QA not yet run; the requirement also states several names, one greeting line each, which greet.sh does not do and the approved check does not test; the user types /vbw:vibe and approves by the choice"
+  seed_head=$(git -C "$dir" rev-parse HEAD)
+  seed_approvals=$(jq '[.decisions[] | select(.text | startswith("Contract approved"))] | length' "$dir/.vbw/record.json")
+  start="/vbw:vibe"
+  asked_all=""
+  # The user presses Enter on the first option, Approve, and never types /vbw:approve.
+  on_question() {
+    local s fp
+    s=$(screen)
+    fp=$(printf '%s' "$s" | grep -oE 'Approve contract [0-9a-f]{12}' | head -1 | grep -oE '[0-9a-f]{12}$')
+    [ -n "$fp" ] || return 1
+    case " $asked_all " in *" $fp "*) ;; *) asked_all="${asked_all:+$asked_all }$fp" ;; esac
+    l3 keys "$scenario" Enter
+    return 0
+  }
+  on_idle() {
+    [ "$(next_action)" = approve ] || return 1
+    l3 type "$scenario" "/vbw:vibe"
+  }
+  checks() {
+    local passed=true r="$dir/.vbw/record.json" hist fv src h msg files n_fix=0 only=true trailers=true plan_code=true
+    local chk n q rounds regression=false old_fails=false new_passes=false one_each=false
+    hist=$(record_history)
+    fv=$(printf '%s\n' "$hist" | jq -sr '[.[] | .phases[]? | select(.qa != null) | .qa] | first // {} | .result // "none"')
+    src=$(printf '%s\n' "$hist" | jq -sr '[.[] | .fixes[]? | select(.req == "R1")] | first // {} | .source // "none"')
+    chk=$(jq -c '[.checks[] | select(.req == "R1") | .files[]]' "$r" 2> /dev/null || echo '[]')
+    for h in $(git -C "$dir" log --format=%H "$seed_head..HEAD"); do
+      msg=$(git -C "$dir" show -s --format=%B "$h")
+      files=$(git -C "$dir" diff-tree --no-commit-id --name-only -r "$h")
+      case "$msg" in
+        *"VBW-Fix: "*)
+          n_fix=$((n_fix + 1))
+          printf '%s\n' "$msg" | grep -q '^VBW-Req: R1$' || trailers=false
+          # Only check files of R1 (the checks map is read from the record).
+          printf '%s\n' "$files" | jq -R . | jq -es --argjson c "$chk" 'all(.[]; . as $f | $c | index($f) != null)' > /dev/null 2>&1 || only=false
+          ;;
+        *)
+          # Code reaches git through its plan.
+          case "$files" in *greet.sh*) printf '%s\n' "$msg" | grep -q '^VBW-Plan: ' || plan_code=false ;; esac
+          ;;
+      esac
+    done
+    n=$(jq --argjson s "$seed_approvals" '[.decisions[] | select(.text | startswith("Contract approved"))] | length - $s' "$r" 2> /dev/null || echo 0)
+    q=$(printf '%s\n' "$asked_all" | wc -w | tr -d ' ')
+    rounds=$(git -C "$dir" log --format=%s | grep -c '^chore(vbw): record after fix-' || true)
+    # R1's checks as they are now: some fails on the seed's greet.sh (the regression case),
+    # all of them pass on the fixed project.
+    checks_fail_on_old_code R1 "$seed_head" && old_fails=true
+    jq -e '.evidence.checks as $e | all(.checks[] | select(.req == "R1"); $e[.id].status == "pass")' "$r" > /dev/null 2>&1 && new_passes=true
+    [ "$old_fails" = true ] && [ "$new_passes" = true ] && regression=true
+    [ "$n" -ge 1 ] && [ "$n" -eq "$q" ] && one_each=true
+    say "QA first verdict $fv, fix source $src, fix commits $n_fix, approvals $n for $q question(s), fix rounds $rounds"
+    common_checks
+    expect "QA's first verdict was fail ($fv)" [ "$fv" = fail ]
+    expect "the fix came from QA ($src)" [ "$src" = qa ]
+    expect "the Dev committed the check file with vbw commit --fix ($n_fix commit(s) with VBW-Fix)" [ "$n_fix" -ge 1 ]
+    expect "each of those commits carries VBW-Req: R1" [ "$trailers" = true ]
+    expect "each of those commits touches only check files of R1" [ "$only" = true ]
+    expect "the code reached git through its plan" [ "$plan_code" = true ]
+    expect "the new case fails on the old code and passes on the fixed one" [ "$regression" = true ]
+    expect "one approval per question asked, at least one ($n for $q)" [ "$one_each" = true ]
+    expect "never more approvals than fix rounds ($n for $rounds)" [ "$n" -le "$rounds" ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write fixchecks "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --arg fv "$fv" --arg src "$src" --argjson n "$n_fix" --argjson only "$only" --argjson tr "$trailers" --argjson a "$n" --argjson q "$q" --argjson rd "$rounds" --argjson reg "$regression" --argjson pc "$plan_code" \
+        '{first_qa_verdict: $fv, fix_source: $src, fix_check_commits: $n, fix_commits_carry_req_trailer: $tr, check_commit_only_check_files: $only, code_through_plan: $pc, approvals: $a, questions: $q, fix_rounds: $rd, regression_case_in_check: $reg}')" \
+      '["a fix of a failing check (proof source) that edits a check file","a project-command fix","the answer Not yet or the user'"'"'s own words at the approval","more than one fix round","a project larger than the greet.sh fixture","the wording of what VBW tells the user (read by a person)"]'
   }
 }
 
