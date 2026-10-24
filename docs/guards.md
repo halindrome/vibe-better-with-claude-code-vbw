@@ -276,6 +276,8 @@ Started in a subdirectory of a VBW project, it says the guards are off and
 where to start instead. It never injects resume directives (ledger D289). It
 writes only for a copy loaded with `claude --plugin-dir`: a PATH line in the
 file Claude Code provides for it (`CLAUDE_ENV_FILE`), and the session record
-below.
+below; and, in the project, when the session that runs a loop is resumed, the
+loop's away mark (`.vbw/runtime/loop-away.SESSION`, docs/loop.md), so the time
+its session was gone is not counted against the item's time budget.
 
 VBW's one read outside the project is Claude Code's list of chats in `<claude-config-dir>/sessions/`, read for the name of the chat that holds a run and never written (docs/workflows.md). VBW itself writes nothing outside the project except three things: the slot store (`<claude-config-dir>/vbw/slots.json`, the computer-wide limit in docs/proof.md); the session record of a `--plugin-dir` session (`<claude-config-dir>/vbw/sessions/<session id>`, one line naming the loaded plugin folder, read by the status line and `vbw doctor`; records older than 7 days are removed, and an installed copy removes its own session's record; D364); and the user's `settings.json`.

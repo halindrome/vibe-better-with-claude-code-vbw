@@ -73,6 +73,14 @@ input=""
 IFS= read -r -t 1 input || true
 sid=$(printf '%s' "$input" | jq -r '.session_id // "" | if test("^[A-Za-z0-9_-]+$") then . else "" end' 2> /dev/null || true)
 
+# The loop's own session resumed (T156; source resume): its earlier process was gone and nothing drove
+# the loop. An away mark, unless one is there, tells the loop's next step to leave the time since the
+# item's last step out of the item's time (docs/loop.md, The time budget).
+if [ -n "$sid" ] && [ -f "$root/.vbw/runtime/loop.$sid" ] && [ ! -e "$root/.vbw/runtime/loop-away.$sid" ] \
+  && [ "$(printf '%s' "$input" | jq -r '.source // empty' 2> /dev/null || true)" = resume ]; then
+  { : > "$root/.vbw/runtime/loop-away.$sid"; } 2> /dev/null || true
+fi
+
 # A loaded copy puts its own bin/ first on PATH for the session (the env file
 # is read before each Bash tool command; one line, quoted for sh, bash and zsh)
 # and records its folder for the session id (the status line and doctor read

@@ -63,6 +63,48 @@ stop() { jq -nc --arg s "$1" '{hook_event_name: "Stop", session_id: $s, stop_hoo
   [ "$status" -eq 0 ] && [ -z "$output" ]
 }
 
+# T156: the loop's time counts only while it works. A turn of the loop's session that ends on an API
+# error (StopFailure, the same hook script) leaves an away mark with the time it failed; the loop's
+# session resumed (SessionStart, source resume) leaves an empty one (since the item's last step); an
+# earlier mark is kept. The next loop step reads it (tests/loop-budget-stop.bats).
+stop_failure() { jq -nc --arg s "$1" '{hook_event_name: "StopFailure", session_id: $s, error: "server_error"}' | vbw_hook StopFailure; }
+session_start() { jq -nc --arg s "$1" --arg src "$2" '{hook_event_name: "SessionStart", session_id: $s, source: $src}' | vbw_hook SessionStart > /dev/null; }
+
+@test "T156: a failed turn of the loop's session leaves the away mark with its time and says nothing; another session leaves none" {
+  jq -e '(.hooks.StopFailure | length) == 1 and (.hooks.StopFailure[0].hooks[0].command | test("hooks/stop.sh"))' "$PLUGIN_ROOT/hooks/hooks.json"
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
+  run stop_failure s2
+  [ "$status" -eq 0 ] && [ -z "$output" ] && [ ! -e .vbw/runtime/loop-away.s2 ] || { echo "$output"; false; }
+  local sum
+  sum=$(record_sum)
+  run stop_failure s1
+  [ "$status" -eq 0 ] && [ -z "$output" ] || { echo "$output"; false; }
+  [ "$(record_sum)" = "$sum" ]
+  jq -nRe --rawfile t .vbw/runtime/loop-away.s1 '$t | rtrimstr("\n") | fromdateiso8601 | . <= now and . > now - 120'
+  # A later failure keeps the earlier time.
+  printf '2026-10-24T08:00:00Z\n' > .vbw/runtime/loop-away.s1
+  stop_failure s1 > /dev/null
+  [ "$(cat .vbw/runtime/loop-away.s1)" = 2026-10-24T08:00:00Z ]
+}
+
+@test "T156: the loop's session resumed leaves an empty away mark, keeping an earlier one; a compact or another session leaves none; the loop's end removes it" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
+  session_start s1 compact
+  session_start s2 resume
+  [ ! -e .vbw/runtime/loop-away.s1 ]
+  [ ! -e .vbw/runtime/loop-away.s2 ]
+  session_start s1 resume
+  [ -f .vbw/runtime/loop-away.s1 ]
+  [ ! -s .vbw/runtime/loop-away.s1 ]
+  printf '2026-10-24T08:00:00Z\n' > .vbw/runtime/loop-away.s1
+  session_start s1 resume
+  [ "$(cat .vbw/runtime/loop-away.s1)" = 2026-10-24T08:00:00Z ]
+  VBW_SESSION_ID=s1 "$VBW" loop stop > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" loop stop > /dev/null
+  jq -e '.loop.ended != null' .vbw/record.json
+  [ ! -e .vbw/runtime/loop-away.s1 ]
+}
+
 @test "T150: outside a VBW project and with no loop or armed run the hook says nothing" {
   run stop s1
   [ "$status" -eq 0 ] && [ -z "$output" ]
