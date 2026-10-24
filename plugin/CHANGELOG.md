@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.1.10] - 2026-10-24
+
+### Fixed
+
+- **A loop item's time counts only while the loop works on it.** The time
+  budget used the clock since the item opened, so a night with the loop
+  stopped, a session that dropped or a turn that ended on an API error could
+  stop a healthy item. That time is now left out. Two pauses Claude Code does
+  not report still count: a turn you interrupt with Esc, and a computer asleep
+  during a step; stop the loop with `/vbw:loop stop` before you leave.
+- **`/vbw:loop THE_ITEM` resumes a stopped item.** It was refused because the
+  item's milestone was not shipped. It now picks the item up where the loop
+  left it, with its budget and its time so far. An item stopped because it
+  spent its whole budget is not resumed: finish it with `/vbw:vibe`.
+- **A run that lost the shared slot store no longer leaves a slot held** for
+  other runs once the store works again.
+- **Checks start a little sooner after each other.** Handing over the proof's
+  gate costs two processes instead of seven.
+
 ## [2.1.9] - 2026-10-24
 
 ### Fixed
