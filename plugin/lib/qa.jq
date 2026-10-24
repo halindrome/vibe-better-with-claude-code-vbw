@@ -3,9 +3,10 @@
 # milestone: {Pn: {files, tests, plan, reqs, combined}}, from lib/qa-inputs.sh) and
 # $cache (null, or what each phase's last pass covered: {Pn: {files, tests,
 # plan, reqs, combined, version, tree, deps: {Pm: {files, tests, plan, reqs}}}}; this clone's
-# file, so anything may be wrong with it). Output: {closure, recheck, standing, focus, deviations, problems}. closure
+# file, so anything may be wrong with it). Output: {closure, recheck, standing, focus, deviations, interleaved, problems}. closure
 # maps a phase to every phase it builds on, directly or not (a phase builds on
-# another when one of its plans comes after a plan of the other).
+# another when one of its plans comes after a plan of the other). interleaved lists
+# the phases that build on each other that way (a note: the plans stay acyclic).
 # recheck maps each built phase that needs checking again to its reasons, in
 # plain words; standing lists the built phases whose pass stands; focus maps each
 # re-checked phase in a re-check round to {since: the commit of its failed verdict,
@@ -27,9 +28,19 @@
 | ([$ids[] | . as $i | {key: $i, value: ([$edges[] | select(.from == $i) | .to] | unique)}] | from_entries) as $direct
 # Transitive closure by repeated expansion: terminates on cycles.
 | (reduce range(0; $ids | length) as $_ ($direct; . as $c | with_entries(.value |= (. + [.[] | $c[.][]] | unique)))) as $full
-| ([$ids[] | select(. as $i | $full[$i] | index($i))]) as $cyclic
+# Phases on such a loop interleave: a plan of each comes after a plan of the other. That
+# is a note, not a problem, and the closure still lets each be checked again for the
+# other's tests. Only a loop among the plans themselves is a problem (the record refuses
+# one; this program still names it): looked for among the interleaved phases' plans only.
+| ([$ids[] | select(. as $i | $full[$i] | index($i))]) as $interleaved
 | ($full | with_entries(.key as $k | .value -= [$k])) as $closure
-| ($missing + (if ($cyclic | length) > 0 then ["phases \($cyclic | join(", ")) build on each other (a cycle)"] else [] end)) as $problems
+| (if ($interleaved | length) == 0 then [] else
+    ([$r.plans[] | select(.phase | IN($interleaved[])) | .id]) as $pids
+    | ([$r.plans[] | select(.id | IN($pids[])) | {key: .id, value: ([(.after // [])[] | select(IN($pids[]))] | unique)}] | from_entries) as $pd
+    | (reduce range(0; $pids | length) as $_ ($pd; . as $c | with_entries(.value |= (. + [.[] | $c[.][]] | unique)))) as $pf
+    | [$pids[] | select(. as $i | $pf[$i] | index($i))]
+  end) as $loop
+| ($missing + (if ($loop | length) > 0 then ["plans \($loop | join(", ")) come after each other (a cycle)"] else [] end)) as $problems
 | ([$r.phases[] | select(.id | IN($ids[]))
     | select(.id as $i | [$r.plans[] | select(.phase == $i)] | length > 0 and all(.[]; .status == "done"))]) as $built
 | ($ARGS.named.fpv) as $fpv
@@ -73,4 +84,5 @@
    standing: (if $inputs == null then [] else [$judged[] | select(.why | length == 0) | .id] end),
    focus: (if $inputs == null then {} else [$judged[] | select((.why | length > 0) and .focus != null) | {key: .id, value: .focus}] | from_entries end),
    deviations: $deviations,
+   interleaved: $interleaved,
    problems: $problems}

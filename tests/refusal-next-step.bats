@@ -68,6 +68,38 @@ add_with() { printf '%s' "$ADD" | jq -c "$1"; }
   grep -q 'Next: ' <(grep -n '^apply_internal()' "$PLUGIN_ROOT/lib/cmd-apply.sh")
 }
 
+# 6.3: a refusal says what was refused, why, and the next step.
+@test "R162: every kernel line that writes 'refused:' carries its next step" {
+  local bad
+  bad=$(grep -nE 'refused: ' "$PLUGIN_ROOT"/lib/*.sh | grep -vE '^[^:]+:[0-9]+:[[:space:]]*#' | grep -v 'Next: ' || true)
+  [ -z "$bad" ] || { printf "'refused:' without a next step:\n%s\n" "$bad"; false; }
+}
+
+@test "R162: a record write the kernel refuses as invalid ends with its next step, and writes nothing" {
+  local before
+  before=$(cksum < .vbw/record.json)
+  # shellcheck disable=SC2016 # expanded by vbw_kernel
+  run vbw_kernel 'record_update ".milestone = 5"'
+  [ "$status" -ne 0 ] || { echo "accepted: $output"; false; }
+  [[ "$output" == *"vbw: refused: "* ]] || { echo "$output"; false; }
+  next_step "an invalid record write" "$output"
+  [ "$(cksum < .vbw/record.json)" = "$before" ]
+}
+
+@test "R162: every refusal of vbw run confirm ends with its next step" {
+  confirm_refusal() {
+    run env VBW_SESSION_ID=s1 "$VBW" run confirm "$@"
+    [ "$status" -ne 0 ] || { echo "run confirm $*: accepted: $output"; return 1; }
+    next_step "run confirm $*" "$output"
+  }
+  confirm_refusal P1.1
+  VBW_SESSION_ID=s1 "$VBW" run start build P1.1 > /dev/null
+  confirm_refusal P9.9
+  VBW_SESSION_ID=s1 "$VBW" run end > /dev/null
+  VBW_SESSION_ID=s1 "$VBW" run start plan > /dev/null
+  confirm_refusal P1.1
+}
+
 @test "R162: every refusal of a full apply ends with its next step" {
   replan_start P1.1
   apply_refusal full "not JSON" 'not json {'

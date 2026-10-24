@@ -5,6 +5,26 @@ export const meta = {
   phases: [{ title: 'Verify', detail: 'one QA agent per phase, in parallel' }],
 }
 
+// Kernel refusals reach the user as written (docs/workflows.md, "Refusals reach the user"):
+// every agent schema requires refused, and the result carries them all, each named by
+// the agent that saw it, so the router shows them word for word.
+const REFUSED = {
+  type: 'array',
+  description: 'Each refusal VBW gave you: a vbw command that refused (it exited non-zero with a message starting "vbw:") or a tool call a guard blocked (a reason starting "VBW guard:"), each copied verbatim and whole, through its Next: line; [] when none',
+  items: { type: 'string' },
+}
+const refused = []
+const ask = async (prompt, o) => {
+  const r = await agent(prompt, o)
+  for (const text of r && Array.isArray(r.refused) ? r.refused : []) {
+    if (typeof text !== 'string' || !text.trim()) continue
+    refused.push({ by: o.label, text })
+    log(`${o.label} was refused: ${text}`)
+  }
+  return r
+}
+const reply = o => Object.assign(o, { refused })
+
 // args: {phases: ["P1", ...], tier: "quick"|"standard"|"deep", models?: {qa?}, rigor?: {P1: {qa, models}},
 // round?: {tiers, suite, focus?: {P1: {since, round, fixes}}, deviations?: {P1: [{file, plan, change, commit, by, decision}]}}} (docs/workflows.md).
 const phases = (args && args.phases) || []
@@ -24,16 +44,17 @@ const effortOf = (role, step) => {
   const e = table[role] && typeof table[role] === 'object' ? table[role][step] : null
   return e ? { effort: e } : {}
 }
-if (phases.length === 0) return { results: [], error: 'no phases given: pass args.phases from vbw next --json' }
+if (phases.length === 0) return reply({ results: [], error: 'no phases given: pass args.phases from vbw next --json' })
 // args.round is the round object of vbw next --json (tiers, suite, focus), absent or null when there is none.
 // Anything else (a round number) would drop the depth and the test run without a word and tell every QA agent the project has no test command.
 const given = args && args.round
-if (given !== undefined && given !== null && (typeof given !== 'object' || Array.isArray(given))) return { results: [], error: `args.round must be the round object of vbw next --json (tiers, suite, focus), not ${JSON.stringify(given)}: read it from vbw next --json` }
+if (given !== undefined && given !== null && (typeof given !== 'object' || Array.isArray(given))) return reply({ results: [], error: `args.round must be the round object of vbw next --json (tiers, suite, focus), not ${JSON.stringify(given)}: read it from vbw next --json` })
 
 const CLOSE_RESULT = {
   type: 'object',
-  required: ['ended', 'recorded', 'report'],
+  required: ['ended', 'recorded', 'report', 'refused'],
   properties: {
+    refused: REFUSED,
     ended: { type: 'boolean' },
     recorded: { type: 'boolean' },
     report: { type: 'string' },
@@ -42,8 +63,9 @@ const CLOSE_RESULT = {
 
 const VERDICT = {
   type: 'object',
-  required: ['verdict', 'checks'],
+  required: ['verdict', 'checks', 'refused'],
   properties: {
+    refused: REFUSED,
     verdict: { type: 'string', enum: ['pass', 'fail'] },
     checks: {
       type: 'array',
@@ -70,7 +92,7 @@ const closeRun = async ids => {
   const sh = c => `VBW_SESSION_ID=${session} ${c}`
   const confirm = sh(`vbw run confirm ${ids.join(' ')}`)
   const end = sh('vbw run end')
-  const done = await agent(`Close this VBW run (your own instructions, Close a run, allow it). Run ${confirm} (it exits 1 when some verdicts were not recorded), then, whatever it said, run ${end}. Answer ended (run end succeeded), recorded (confirm exited 0) and report (the lines for what was not recorded, else "all recorded; run ended"). Change nothing else.${voice}`,
+  const done = await ask(`Close this VBW run (your own instructions, Close a run, allow it). Run ${confirm} (it exits 1 when some verdicts were not recorded), then, whatever it said, run ${end}. Answer ended (run end succeeded), recorded (confirm exited 0) and report (the lines for what was not recorded, else "all recorded; run ended"). Change nothing else.${voice}`,
     Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, { model: CLOSE_MODEL }, effortOf('lead', 'close')))
   if (!done) log(`the closing agent stopped: run by hand: ${confirm} ; then ${end}`)
   else {
@@ -124,7 +146,7 @@ const deviationNote = id => {
   return `\n\nVBW found files the plans of ${id} delivered that HEAD no longer holds as VBW left them: ${list.map(deviationLine).join('; ')}. Each one no decision covers is a deviation: record a finding for it (vbw qa finding ${id} REQ "<the file, what is missing or different, the commit>"); vbw qa record ${id} pass refuses while one stands. For one covered by a decision, check that the decision is the user's and covers that change: then it is not a deviation.`
 }
 const results = await pipeline(phases, id =>
-  agent(`Verify VBW phase ${id} at the ${tierOf(id)} tier, then record your findings and verdict with vbw qa (if qa record refuses a stale proof, run vbw prove --full, then retry the record once). Start with: vbw show phase ${id}${focusNote(id)}${deviationNote(id)}${suiteNote}${voice}`,
+  ask(`Verify VBW phase ${id} at the ${tierOf(id)} tier, then record your findings and verdict with vbw qa (if qa record refuses a stale proof, run vbw prove --full, then retry the record once). Start with: vbw show phase ${id}${focusNote(id)}${deviationNote(id)}${suiteNote}${voice}`,
     Object.assign({ agentType: 'vbw:qa', label: `qa ${id}`, phase: 'Verify', schema: VERDICT },
       modelOf(id) ? { model: modelOf(id) } : {}, effortOf('qa', 'verify'))))
 
@@ -136,4 +158,4 @@ if (failed > 0) log(`${failed} phase(s) did not pass QA`)
 const confirmation = await closeRun(phases)
 const stopped = out.filter(r => r.verdict === 'interrupted').length
 const complete = stopped === 0 && (!session || Boolean(confirmation && confirmation.recorded && confirmation.ended))
-return confirmation ? { tier, results: out, complete, confirmation } : { tier, results: out, complete }
+return reply(confirmation ? { tier, results: out, complete, confirmation } : { tier, results: out, complete })

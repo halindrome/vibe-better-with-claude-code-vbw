@@ -168,6 +168,10 @@ def secret_reason: "\(basename) may hold secrets; VBW never reads or writes secr
 def record_reason: ".vbw/record.json is written only by vbw (vbw help lists the commands)\nNext: run the vbw command that makes this change (vbw help lists them); read the record with vbw show or vbw status";
 def consent_reason: "the consent file is written only by /vbw:approve, and the store of recorded runs (vbw/runs.json) only by vbw\nNext: the user approves through the approval menu (vbw next asks); leave the run store alone, vbw rewrites it by itself";
 
-# A reason string becomes the hook's deny decision.
+# A reason string becomes the hook's deny decision. The whole reason goes to
+# Claude; beside it, systemMessage shows the user its first line (what was
+# refused and why), so a refusal never reaches only the model. The Next: step is
+# addressed to Claude and stays in the reason.
 def deny: {hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "deny",
-  permissionDecisionReason: ("VBW guard: " + .)}};
+  permissionDecisionReason: ("VBW guard: " + .)},
+  systemMessage: ("VBW guard blocked this call: " + (split("\n")[0]))};

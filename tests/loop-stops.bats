@@ -159,7 +159,7 @@ untouched() { jq -e '.milestone.title == "Next" and ([.requirements[] | select(.
   [ "$(step)" = prove ] || { cat "$TEST_ROOT/step.json"; false; }
   loop_prove
   [ "$(step)" = stopped ] || { cat "$TEST_ROOT/step.json"; false; }
-  jq -e '.loop.ended != null and (.loop.ended.reason | test("the ship was refused") and test("T1") and test("step ship"))' .vbw/record.json \
+  jq -e '.loop.ended != null and (.loop.ended.reason | test("the ship was refused") and test("T1") and test("step ship") and test("Next: run /vbw:vibe"))' .vbw/record.json \
     || { jq .loop.ended .vbw/record.json; false; }
   [ -f .vbw/loop-report.md ]
   grep -q 'ship was refused' .vbw/loop-report.md

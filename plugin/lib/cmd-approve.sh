@@ -112,7 +112,7 @@ approve_problems() {
     (select((.requirements | length) == 0) | "no requirements"),
     (. as $r | .requirements[] | select(.proof == "auto")
       | select(.id as $id | any($r.checks[]; .req == $id) | not) | select(doc_only($r) | not) | "\(.id) has no check"),
-    (. as $r | .requirements[] | select(.proof == "auto" and (.rules // null) == [] and (doc_only($r) | not))
+    (. as $r | .requirements[] | select(.proof == "auto" and (.rules | type) == "array" and all(.rules[]; type == "object" and has("retired")) and (doc_only($r) | not))
       | "\(.id) has no rules listed (vbw apply with rules)")'
   while IFS= read -r -d '' f; do
     [ -f "$VBW_ROOT/$f" ] || vbw_out 'check file missing: %s\n' "$f"

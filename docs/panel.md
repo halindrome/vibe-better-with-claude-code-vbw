@@ -97,12 +97,13 @@ Roles and states use different colours, so one colour never says two things.
 | State | Colour | Mark and word |
 |---|---|---|
 | running, or VBW needs you | amber | `● running` |
+| refused | amber | `⊘ VBW refused` |
 | done | green | `✓ done` |
 | failed | red | `✗ failed` |
 | quiet, cut off, idle | grey | `… quiet`, `■ cut off` |
 
-Amber is the one colour for "look at this": a helper at work and a request for
-you. A helper running past its usual time is amber on the Timeline, never red.
+Amber is the one colour for "look at this": a helper at work, a request for
+you and a refusal ([Refusals](#refusals)). A helper running past its usual time is amber on the Timeline, never red.
 Red is only for a failure. VBW Wrapped is a look back, so it draws no amber or
 red.
 
@@ -203,8 +204,8 @@ VBW ▸ planning · Plan · 10m04s · ≈$3.20 this run · 1 done        [p] Mis
   not shown. With little room the rows shrink, down to one summary line.
 - The cost is the session cost added since the run started, so it is "about".
 
-**In little room**, Comms shows lines in this order: the needs-you line, then
-the helper line (`VBW ▸ ...`) while helpers work, then the step line.
+**In little room**, Comms shows lines in this order: the needs-you line, the
+refusal line ([Refusals](#refusals)), then the helper line (`VBW ▸ ...`) while helpers work, then the step line.
 
 - One row: the helper line carries the step's end time after its own parts,
   for example `VBW ▸ build · 1 working · 0m30s · until around 14:20`.
@@ -265,12 +266,42 @@ at the next redraw (within 2 seconds), with no other event needed:
 | Scope | the changes outside the plan are cleared |
 | Any request | a run starts (VBW holds the lease), or the request leaves VBW's next step |
 | A question | you answer it |
+| A refusal | you open the **Now** tab of Mission Control |
 
 An approval older than the request, or a change to the record that has
 nothing to do with it (for example a parked idea), leaves the line standing.
 While a run is working, VBW shows no request at all, on Comms or in Mission
 Control, and Mission Control says nothing is needed. After a ship, no "ready to
 ship" text stays on Comms or in Mission Control.
+
+### Refusals
+
+When VBW refuses something inside a workflow (a `vbw` command an agent ran,
+or a call a guard blocked), the agent reports it word for word in its result
+([workflows.md](workflows.md#refusals-reach-the-user)). The panel shows it to
+you, in amber, with the time the agent reported it:
+
+```
+14:02 ⊘ VBW refused · dev P1.1: vbw: apply refused: plan P1.1 is started
+```
+
+- **Comms** shows the newest refusal you have not seen as one line, under the
+  needs-you line and above the helpers: the agent, then the refusal's first
+  line (what was refused and why). It stays after the run ends, until you open
+  the **Now** tab of Mission Control; a later refusal shows again.
+- **Mission Control's Now tab** keeps the last run's refusals, the newest five,
+  as amber sentences before the needs-you sentence, each whole on one line with
+  its next step, under the term `refused`:
+
+```
+[14:02] ⊘ VBW refused, dev P1.1: vbw: apply refused: plan P1.1 is started Next: put it back as the record has it (vbw show plan P1.1)
+refused
+```
+
+Amber says "look at this", not a failure: the agent usually takes the next
+step the refusal names on its own. Red stays for failures. A guard's refusal
+also reaches you as a message from Claude Code itself
+([guards.md](guards.md#what-is-denied)).
 
 ## How activity reads
 

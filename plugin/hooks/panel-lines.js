@@ -1,10 +1,11 @@
 // VBW's one-line surfaces and transcript rows (mods_4_vbw.md §2, §3.4, §3.5):
 // the spinner suffix, the hint tail, the footer modes, the startup notice, the
-// question header, the turn receipt, the Workflow run card, the run receipt and
-// the `vbw` row intentions. Pure: data in, one string out, or null to leave the
+// question header, the turn receipt, the Workflow run card, the run receipt, the
+// refusal line and the `vbw` row intentions. Pure: data in, one string out, or null to leave the
 // engine's own line. Never throws, never changes its input, no `$` here.
 
 import { liveNeed } from './panel-view.js'
+import { REFUSED_MARK } from './panel-palette.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const arr = (x) => (Array.isArray(x) ? x.filter(isObj) : [])
@@ -218,6 +219,15 @@ export function vbwRowIntent(input) {
   const one = INTENTS[a[0]]
   const text = two ? two(a.slice(2)) : one ? one(a.slice(1)) : a.slice(0, 2).join(' ')
   return 'VBW · ' + text
+}
+
+// A refusal of the run model (panel-feed.js) as Comms says it, without its time:
+// '⊘ VBW refused · <by>: <its first line>' (what was refused and why); null for none.
+export function refusalLine(r) {
+  if (!isObj(r) || typeof r.text !== 'string') return null
+  const first = (r.text.split('\n').find((l) => l.trim()) || '').trim()
+  if (!first) return null
+  return REFUSED_MARK + ' VBW refused · ' + (typeof r.by === 'string' && r.by ? r.by + ': ' : '') + first
 }
 
 // A diff shown on .vbw/record.json, as what changed.

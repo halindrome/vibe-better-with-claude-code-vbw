@@ -301,7 +301,7 @@ record_update() {
     | {schema: 4, lease: (.lease // null),
        protected: ([(.checks // [])[]? | objects | .files? | arrays | .[] | strings] | unique)}
       + (if has(\"checks\") then {checks} else {checks: []} end) + del(.schema, .lease, .protected, .checks)" "$VBW_RECORD" > "$tmp" 2>/dev/null || vbw_die "internal error: record update failed"
-  v=$(record_violation "$tmp") || vbw_die "refused: $v"
+  v=$(record_violation "$tmp") || vbw_die "refused: $v"$'\n'"Next: nothing was written; give the command a valid value (the line above names what would break), or run vbw doctor if the record itself is damaged"
   # The new record's time goes one second back, the old glance goes, and the
   # new glance is written after the record: it is strictly newer than the record
   # (even in whole seconds), a failed glance write leaves no glance that looks
@@ -393,8 +393,9 @@ def waves($m): . as $r
 # each (R188, T152, T174), as [{req, n, text}] (n: the rule'"'"'s number in its requirement).
 # At a standard or deep phase: every rule of an [auto] requirement with a check that $p
 # completes (no other open plan serves it), and every rule that names $p. None at
-# express or in a phase without a tier. vbw plan done (plan_missing_breaks) and the
-# expected time of a build (steps.sh, road.jq) both count these.
+# express or in a phase without a tier, and never a retired rule (T168), whose place
+# still counts in n. vbw plan done (plan_missing_breaks) and the expected time of a
+# build (steps.sh, road.jq) both count these.
 def owed_rules($p): . as $r | ([.plans[] | select(.id == $p)][0]) as $pl
   | ([$r.phases[] | select(.id == $pl.phase)][0].tier // "") as $tier
   | if $pl == null or ($tier | IN("standard", "deep") | not) then [] else
@@ -402,6 +403,6 @@ def owed_rules($p): . as $r | ([.plans[] | select(.id == $p)][0]) as $pl
         | (all($r.plans[]; .id == $p or .status == "done" or (any(.reqs[]; . == $q) | not))) as $completes
         | select(any($r.checks[]; .req == $q))
         | ($r.requirements[] | select(.id == $q and .proof == "auto")) as $rq
-        | ($rq.rules // []) | to_entries[] | select($completes or .value.plan == $p)
+        | ($rq.rules // []) | to_entries[] | select((.value | has("retired") | not) and ($completes or .value.plan == $p))
         | {req: $q, n: (.key + 1), text: .value.text}] end;
 '"$(cat "$VBW_LIB/rigor-defs.jq")"

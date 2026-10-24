@@ -8,6 +8,26 @@ export const meta = {
   ],
 }
 
+// Kernel refusals reach the user as written (docs/workflows.md, "Refusals reach the user"):
+// every agent schema requires refused, and the result carries them all, each named by
+// the agent that saw it, so the router shows them word for word.
+const REFUSED = {
+  type: 'array',
+  description: 'Each refusal VBW gave you: a vbw command that refused (it exited non-zero with a message starting "vbw:") or a tool call a guard blocked (a reason starting "VBW guard:"), each copied verbatim and whole, through its Next: line; [] when none',
+  items: { type: 'string' },
+}
+const refused = []
+const ask = async (prompt, o) => {
+  const r = await agent(prompt, o)
+  for (const text of r && Array.isArray(r.refused) ? r.refused : []) {
+    if (typeof text !== 'string' || !text.trim()) continue
+    refused.push({ by: o.label, text })
+    log(`${o.label} was refused: ${text}`)
+  }
+  return r
+}
+const reply = o => Object.assign(o, { refused })
+
 // args: {models?: {scout?}}
 const models = (args && args.models) || {}
 // R186, D369: the closing step is a few fixed commands and the record stays the source of truth.
@@ -32,7 +52,7 @@ const closeRun = async (phaseIds = []) => {
   if (!session) return null
   const end = `VBW_SESSION_ID=${session} vbw run end`
   const check = phaseIds.length === 0 ? '' : `First check that each planned phase has plans: ${phaseIds.map(id => `vbw show phase ${id}`).join('; ')}. `
-  const done = await agent(`Close this VBW run (your own instructions, Close a run, allow it). ${check}Then, whatever you found, run ${end}. Answer ended (run end succeeded), recorded (${phaseIds.length === 0 ? 'true' : 'every phase has plans'}) and report (${phaseIds.length === 0 ? 'what it printed' : 'name each phase without plans, else "all recorded; run ended"'}). Change nothing else.${voice}`,
+  const done = await ask(`Close this VBW run (your own instructions, Close a run, allow it). ${check}Then, whatever you found, run ${end}. Answer ended (run end succeeded), recorded (${phaseIds.length === 0 ? 'true' : 'every phase has plans'}) and report (${phaseIds.length === 0 ? 'what it printed' : 'name each phase without plans, else "all recorded; run ended"'}). Change nothing else.${voice}`,
     Object.assign({ agentType: 'vbw:lead', label: 'close run', schema: CLOSE_RESULT }, { model: CLOSE_MODEL }, effortOf('lead', 'close')))
   if (!done) log(`the closing agent stopped: run by hand: ${end}`)
   else {
@@ -52,8 +72,9 @@ const ANGLES = [
 
 const CLOSE_RESULT = {
   type: 'object',
-  required: ['ended', 'recorded', 'report'],
+  required: ['ended', 'recorded', 'report', 'refused'],
   properties: {
+    refused: REFUSED,
     ended: { type: 'boolean' },
     recorded: { type: 'boolean' },
     report: { type: 'string' },
@@ -62,27 +83,27 @@ const CLOSE_RESULT = {
 
 const FINDINGS = {
   type: 'object',
-  required: ['findings'],
-  properties: { findings: { type: 'array', items: { type: 'string' } } },
+  required: ['findings', 'refused'],
+  properties: { refused: REFUSED, findings: { type: 'array', items: { type: 'string' } } },
 }
 
 const MAP = {
   type: 'object',
-  required: ['map'],
-  properties: { map: { type: 'string' } },
+  required: ['map', 'refused'],
+  properties: { refused: REFUSED, map: { type: 'string' } },
 }
 
 phase('Scout')
 const found = await parallel(ANGLES.map(a => () =>
-  agent(`Map this codebase from one angle. ${a.ask}${voice}`, Object.assign({ agentType: 'vbw:scout', label: `scout ${a.key}`, phase: 'Scout', schema: FINDINGS }, model, effortOf('scout', 'survey')))))
+  ask(`Map this codebase from one angle. ${a.ask}${voice}`, Object.assign({ agentType: 'vbw:scout', label: `scout ${a.key}`, phase: 'Scout', schema: FINDINGS }, model, effortOf('scout', 'survey')))))
 
 const sections = ANGLES.map((a, i) => ({ angle: a.key, findings: found[i] ? found[i].findings : [] }))
 const missing = sections.filter(s => s.findings.length === 0).map(s => s.angle)
 if (missing.length > 0) log(`no findings for: ${missing.join(', ')}`)
 
 phase('Merge')
-const map = await agent(`Merge these verified findings about this codebase into one concise markdown map, with the sections Stack and commands, Structure, Conventions, Tests, Risks. Keep every command and path exactly. Drop duplicates. No preamble.\n\n${JSON.stringify(sections)}${voice}`,
+const map = await ask(`Merge these verified findings about this codebase into one concise markdown map, with the sections Stack and commands, Structure, Conventions, Tests, Risks. Keep every command and path exactly. Drop duplicates. No preamble.\n\n${JSON.stringify(sections)}${voice}`,
   Object.assign({ agentType: 'vbw:scout', label: 'scout merge', phase: 'Merge', schema: MAP }, model, effortOf('scout', 'merge')))
 
 await closeRun()
-return { map: (map && map.map) || sections.map(s => `## ${s.angle}\n${s.findings.map(f => `- ${f}`).join('\n')}`).join('\n\n'), missing }
+return reply({ map: (map && map.map) || sections.map(s => `## ${s.angle}\n${s.findings.map(f => `- ${f}`).join('\n')}`).join('\n\n'), missing })

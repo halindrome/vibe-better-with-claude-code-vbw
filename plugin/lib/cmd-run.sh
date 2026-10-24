@@ -58,7 +58,15 @@ cmd_run() {
               else "\($i): not recorded (no verdict from this run)" end
           else "error: a \($l.kind) run has nothing to confirm" end
       end')
-    case "$report" in *"error: "*) vbw_die "$(printf '%s\n' "$report" | grep -m1 'error: ' | sed 's/^error: //')" ;; esac
+    case "$report" in *"error: "*)
+      local why
+      why=$(printf '%s\n' "$report" | grep -m1 'error: ' | sed 's/^error: //')
+      case "$why" in
+        "no run is open"*) vbw_die "$why"$'\n'"Next: nothing to do; vbw status shows what each plan and fix recorded" ;;
+        unknown*) vbw_die "$why"$'\n'"Next: confirm the ids this run was started with (vbw status names them)" ;;
+        *) vbw_die "$why"$'\n'"Next: only build, fix and qa runs are confirmed; end this run with vbw run end" ;;
+      esac ;;
+    esac
     printf '%s\n' "$report"
     case "$report" in *"not recorded"*) return 1 ;; esac
     return 0

@@ -23,7 +23,6 @@ Status words:
 |---|---|---|---|
 | [Mission Control may not open at session start](#mission-control-may-not-open-at-session-start) | Known issue | Wide windows | `/vbw-panel` |
 | [The loop's time budget counts waiting](#the-loops-time-budget-counts-waiting) | Known issue | Loops | Re-run the item |
-| [Approved rules cannot be reworded or retired](#approved-rules-cannot-be-reworded-or-retired) | Known issue | Re-planning | None clean |
 | [A unit that lost the slot store may leave a slot held](#a-unit-that-lost-the-slot-store-may-leave-a-slot-held) | Known issue | Many runs at once | None needed |
 | [Status line speed where VBW is off](#status-line-speed-where-vbw-is-off) | Planned | Slower Macs | None needed |
 | [Panel drawing headroom](#panel-drawing-headroom) | Planned | Slower Macs | None needed |
@@ -56,18 +55,6 @@ Status words:
 **Plan.** The stuck test counts progress (plans done, fixes closed) instead of elapsed time, so waiting is not grinding.
 
 **Where.** `plugin/lib/loop-step.sh` (`loop_item_budget`, `loop_item_rebudget`).
-
-### Approved rules cannot be reworded or retired
-
-**What.** A rule is one approved condition of a requirement, tied to a check. `vbw apply --patch` matches a rule by requirement and text ([workflows.md](workflows.md#changing-one-thing-vbw-apply---patch)), so new wording adds a second rule and the stale one stays. A rule of a shipped milestone cannot be reached at all. When a later requirement changes behaviour, the earlier rule is left standing and can contradict the new one.
-
-**Who and when.** Projects that change the behaviour a shipped requirement described. It shows up when the Lead re-plans.
-
-**Workaround.** None that retires the stale rule. Adding the new rule beside it keeps both checks running.
-
-**Plan.** Give rules a stable address that a patch can reword or retire, with a new approval. A kernel step is needed to supersede a rule of a shipped requirement.
-
-**Where.** `plugin/lib/cmd-apply.sh`; the record's `rules` ([record.md](record.md)).
 
 ### A unit that lost the slot store may leave a slot held
 

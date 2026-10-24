@@ -101,3 +101,10 @@ line_of() { grep -n -m1 -F -- "$2" "$1" | cut -d: -f1; }
   printf '%s' "$s" | grep -qE 'autonomy[^|]*in words' || { echo "docs/interview.md's autonomy bullet does not say the setting can be stated in words"; false; }
   printf '%s' "$s" | grep -qF '/vbw:vibe' || { echo "docs/interview.md's autonomy bullet does not name /vbw:vibe"; false; }
 }
+
+@test "R201: on a project not set up yet, the setting is recorded right after vbw init, never before (the kernel refuses it outside a VBW project)" {
+  # The 2.1.7 qafix L3 run (2026-10-24) chained 'vbw config set autonomy guided; vbw init; ...':
+  # the set was refused ('not a VBW project') and the session ran balanced.
+  says 'after .?vbw init'
+  says 'never before'
+}

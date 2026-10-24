@@ -1,7 +1,8 @@
 // Comms (mods_4_vbw.md §3.1, §3.2, §3.8; R189): what the strip above the prompt
 // shows. When VBW needs the person, one amber line, 'HH:MM ⚑ VBW needs you ·
 // <what>', with no button: the `need` comes from panel-view.js (liveNeed) and
-// leaves with the gate. While a VBW workflow runs, the helpers still at work: one
+// leaves with the gate. Under it, a refusal an agent reported, one amber line
+// 'HH:MM ⊘ VBW refused · <agent>: <first line>', until it is seen. While a VBW workflow runs, the helpers still at work: one
 // row each (a finished one leaves at once and is counted in the top line's
 // 'N done'; a failed one stays as a red ✗ row until it is seen). With full
 // motion and room, a pixel figure for at most 3 working helpers
@@ -17,6 +18,7 @@
 import { poseOf, spriteFrame, encodeCells } from './panel-candy.js'
 import { newMark } from './panel-next.js'
 import { stepWords } from './panel-step.js'
+import { refusalLine } from './panel-lines.js'
 import { roleColor as colorOfRole, stateColor, STATE_MARKS, NEED, ACCENT } from './panel-palette.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
@@ -69,6 +71,17 @@ function needOf(need, columns, fresh, motion) {
   const time = hhmm(need.at)
   const mark = fresh === true
   return { key: str(need.key), text: cut((time ? time + ' ' : '') + '⚑ VBW needs you · ' + need.what, mark ? columns - 4 : columns), fresh: mark, motion }
+}
+
+// --- the refusal line --------------------------------------------------------------
+
+// `refusal` is the newest refusal not yet seen ({ id, by, at, text }, panel-feed.js; panel.js
+// picks it): one amber line, 'HH:MM ⊘ VBW refused · <by>: <first line>'.
+function refusalOf(r, columns) {
+  const words = refusalLine(r)
+  if (!words) return null
+  const time = hhmm(r.at)
+  return { key: str(r.id), text: cut((time ? time + ' ' : '') + words, columns) }
 }
 
 // The weekly-limit line, only when a workflow is next.
@@ -199,7 +212,8 @@ function crewOf(rn, now, columns, maxRows, motion, cost, born, seen, stepLine, t
 
 // --- the model ---------------------------------------------------------------
 
-// What Comms shows, top down: the needs-you line (`need`), then the crew while a
+// What Comms shows, top down: the needs-you line (`need`), the refusal line
+// (`refusal`, the newest one not yet seen), then the crew while a
 // workflow runs (and failures not yet seen after it), else a health nudge
 // before a workflow. Null when there is nothing to say.
 export function stageModel(input) {
@@ -210,8 +224,10 @@ export function stageModel(input) {
     const columns = num(input.columns) && input.columns > 0 ? Math.floor(input.columns) : 80
     const maxRows = num(input.maxRows) && input.maxRows > 0 ? Math.floor(input.maxRows) : 8
     const need = needOf(input.need, columns, input.fresh, motion)
-    // The needs-you line comes first; the step line takes the next row when there is one.
-    const left = maxRows - (need ? 1 : 0)
+    // The needs-you line comes first, then the refusal line; the step line takes the next row when there is one.
+    const refusal = maxRows - (need ? 1 : 0) >= 1 ? refusalOf(input.refusal, columns) : null
+    const top = { ...(need ? { need } : {}), ...(refusal ? { refusal } : {}) }
+    const left = maxRows - (need ? 1 : 0) - (refusal ? 1 : 0)
     const words = left >= 1 && isObj(input.step) ? stepWords(input.step, now) : null
     // `stamp(id, text)`: when the caller first saw `text` as message `id`; without it, no time.
     const at = typeof input.stamp === 'function' ? input.stamp : () => null
@@ -222,12 +238,12 @@ export function stageModel(input) {
       const crew = left === 1
         ? crewOf(rn, now, columns, 1, motion, cost, born, seen, '', words && words.timed ? words.text : '')
         : crewOf(rn, now, columns, left - (stepText ? 1 : 0), motion, cost, born, seen, stepText, '')
-      if (crew) return need ? { ...crew, need } : crew
+      if (crew) return { ...crew, ...top }
     }
-    if (stepText) return { kind: 'step', step: stepText, ...(need ? { need } : {}), lines: [] }
+    if (stepText) return { kind: 'step', step: stepText, ...top, lines: [] }
     const action = isObj(nx) && typeof nx.action === 'string' ? nx.action : ''
-    const lines = health(hl, action).slice(0, Math.max(0, need ? left : maxRows - 1)).map((l) => ({ ...l, text: dated(at, l.stamp, l.text, columns) }))
-    if (need) return { kind: 'need', need, lines }
+    const lines = health(hl, action).slice(0, Math.max(0, need || refusal ? left : maxRows - 1)).map((l) => ({ ...l, text: dated(at, l.stamp, l.text, columns) }))
+    if (need || refusal) return { kind: 'need', ...top, lines }
     if (RUNS.has(action) && lines.length) return { kind: 'nudge', title: cut('VBW · before the ' + action + ' run', columns), lines }
     return null
   } catch {
@@ -252,6 +268,7 @@ export function renderStage(ui, model, onAction) {
     const needLine = isObj(model.need)
       ? [model.need.fresh ? h(Box, { key: 'need-row', flexDirection: 'row' }, needText(model.need), newMark(Text, model.need.motion)) : needText(model.need)]
       : []
+    if (isObj(model.refusal)) needLine.push(h(Text, { key: 'refusal', color: NEED, wrap: 'truncate-end' }, String(model.refusal.text)))
     const notes = (model.lines || []).map((l, i) => h(Text, { key: 'line-' + i, color: l.color, wrap: 'truncate-end' }, String(l.text)))
     const stepRow = typeof model.step === 'string' && model.step ? [h(Text, { key: 'step', wrap: 'truncate-end' }, model.step)] : []
     if (model.kind === 'step') return h(Box, { flexDirection: 'column' }, ...needLine, ...stepRow)

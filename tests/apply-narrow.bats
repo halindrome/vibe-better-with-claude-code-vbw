@@ -4,7 +4,12 @@
 # plans, checks and rules, and every untouched item stays byte-identical. Once
 # work has started, a planning round cannot rename phases nobody asked for: an
 # attempt is refused with the reason. (A new phase beside a started one, for
-# the same requirement, is allowed since R157: tests/apply-beside-started.bats.) L1.
+# the same requirement, is allowed since R157: tests/apply-beside-started.bats.)
+# T168: a rule's address is Rn.k, its place among its requirement's rules. A
+# patch rewords a rule ({rule, text?, check?, plan?}) or retires it ({rule,
+# retire}) by address, in any milestone, a shipped one included; a retired rule
+# stays in its place, marked with its reason, so no other rule's address moves;
+# both change the contract, and vbw show contract --changes names them. L1.
 
 load helper
 load fixture-helper
@@ -129,4 +134,99 @@ part() { jq -cS "$1" .vbw/record.json; }
   run bash -c 'printf "%s" "$2" | jq -c ".phases[0].title = \"Checkout flow\"" | "$1" apply' _ "$VBW" "$DOC"
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(part '.phases[0].title')" = '"Checkout flow"' ]
+}
+
+# apply_patch DOC: vbw apply --patch with DOC; status and output (stdout and stderr) as bats' run sets them.
+apply_patch() { status=0; output=$(printf '%s' "$1" | "$VBW" apply --patch 2>&1) || status=$?; }
+# rules_of REQ: the requirement's rules, canonical.
+rules_of() { part "[.requirements[] | select(.id == \"$1\")][0].rules"; }
+three_rules() {
+  apply_patch '{"rules": [{"req": "R1", "text": "paying twice is refused", "check": "C1"}, {"req": "R1", "text": "a refused card is named", "check": "C1"}]}'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+}
+
+@test "T168: a patch rewords a rule by its address; the other rules keep their place and words" {
+  three_rules
+  apply_patch '{"rules": [{"rule": "R1.2", "text": "paying twice is refused with a message"}]}'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(rules_of R1)" = '[{"check":"C1","text":"paying works"},{"check":"C1","text":"paying twice is refused with a message"},{"check":"C1","text":"a refused card is named"}]' ]
+  # The check and the plan are reached by address too.
+  apply_patch '{"checks": [{"id": "C4", "req": "R1", "run": ["sh", "tests/c1.sh"], "files": ["tests/c1.sh"]}], "rules": [{"rule": "R1.3", "check": "C4", "plan": "P1.2"}]}'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(part '[.requirements[] | select(.id == "R1")][0].rules[2]')" = '{"check":"C4","plan":"P1.2","text":"a refused card is named"}' ]
+}
+
+@test "T168: a patch retires a rule by its address: it stays in its place with its reason, no other rule moves, later patches keep it" {
+  three_rules
+  apply_patch '{"rules": [{"rule": "R1.2", "retire": "R1 now allows a second payment"}]}'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(rules_of R1)" = '[{"check":"C1","text":"paying works"},{"check":"C1","retired":"R1 now allows a second payment","text":"paying twice is refused"},{"check":"C1","text":"a refused card is named"}]' ]
+  # A patch by words and a full apply leave the retired rule where it is.
+  apply_patch '{"rules": [{"req": "R1", "text": "a refused card is named", "check": "C1", "plan": "P1.1"}, {"req": "R1", "text": "a receipt follows", "check": "C1"}]}'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(part '[.requirements[] | select(.id == "R1")][0].rules | map([.text, .retired])')" = '[["paying works",null],["paying twice is refused","R1 now allows a second payment"],["a refused card is named",null],["a receipt follows",null]]' ]
+  run bash -c 'printf "%s" "$2" | "$1" apply' _ "$VBW" "$DOC"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(part '[.requirements[] | select(.id == "R1")][0].rules | map([.text, .retired])')" = '[["paying works",null],["paying twice is refused","R1 now allows a second payment"]]' ]
+}
+
+@test "T168: a rule of a shipped milestone is reworded or retired by its address" {
+  edit_record '.shipped = [{id: "M1", title: "First", at: "2026-10-01T09:00:00Z"}]
+    | .milestone = {id: "M2", title: "Second", status: "active"}
+    | .requirements |= map(if .id == "R3" then .milestone = "M2" else .status = "proven" end)
+    | .plans |= map(.status = "done")'
+  apply_patch '{"rules": [{"rule": "R1.1", "retire": "R3 replaces it"}, {"rule": "R2.1", "text": "a receipt is shown at once"}]}'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(rules_of R1)" = '[{"check":"C1","retired":"R3 replaces it","text":"paying works"}]' ]
+  [ "$(rules_of R2)" = '[{"check":"C2","text":"a receipt is shown at once"}]' ]
+}
+
+@test "T168: a rule address is refused when it names no rule, a retired rule or one rule twice, or the entry is malformed, or it comes outside --patch; the record is unchanged" {
+  three_rules
+  apply_patch '{"rules": [{"rule": "R1.2", "retire": "superseded"}]}'
+  local before
+  before=$(cksum < .vbw/record.json)
+  apply_patch '{"rules": [{"rule": "R1.4", "text": "x"}]}'
+  [ "$status" -ne 0 ] && [[ "$output" == *"--patch refused: R1 has no rule R1.4 (it has 3)"* ]] && [[ "$output" == *"Next: "* ]] || { echo "$output"; false; }
+  apply_patch '{"rules": [{"rule": "R9.1", "retire": "x"}]}'
+  [ "$status" -ne 0 ] && [[ "$output" == *"R9 has no rule R9.1"* ]] || { echo "$output"; false; }
+  apply_patch '{"rules": [{"rule": "R1.2", "text": "x"}]}'
+  [ "$status" -ne 0 ] && [[ "$output" == *"R1.2 is retired (superseded)"* ]] || { echo "$output"; false; }
+  # R2 is not proven and its only rule would go.
+  apply_patch '{"rules": [{"rule": "R2.1", "retire": "superseded"}]}'
+  [ "$status" -ne 0 ] && [[ "$output" == *"R2 lists no rules"* ]] || { echo "$output"; false; }
+  apply_patch '{"rules": [{"rule": "R1.1", "text": "x"}, {"rule": "R1.1", "retire": "y"}]}'
+  [ "$status" -ne 0 ] && [[ "$output" == *"R1.1 is named twice"* ]] || { echo "$output"; false; }
+  apply_patch '{"rules": [{"rule": "R1.1", "retire": "y", "text": "x"}]}'
+  [ "$status" -ne 0 ] && [[ "$output" == *"a rule address takes"* ]] || { echo "$output"; false; }
+  apply_patch '{"rules": [{"rule": "R1.1"}]}'
+  [ "$status" -ne 0 ] && [[ "$output" == *"a rule address takes"* ]] || { echo "$output"; false; }
+  apply_patch '{"rules": [{"rule": "R1.1", "retire": ""}]}'
+  [ "$status" -ne 0 ] && [[ "$output" == *"a rule address takes"* ]] || { echo "$output"; false; }
+  apply_patch '{"rules": [{"req": "R1", "text": "x", "check": "C1", "retired": "y"}]}'
+  [ "$status" -ne 0 ] || { echo "$output"; false; }
+  run bash -c 'printf "%s" "$2" | jq -c ".rules += [{rule: \"R1.1\", retire: \"y\"}]" | "$1" apply' _ "$VBW" "$DOC"
+  [ "$status" -ne 0 ] && [[ "$output" == *"full apply refused: a rule address (R1.1) is for vbw apply --patch"* ]] || { echo "$output"; false; }
+  [ "$(cksum < .vbw/record.json)" = "$before" ]
+}
+
+@test "T168: a reworded or a retired rule changes the contract, and vbw show contract --changes names each by its address" {
+  three_rules
+  # R3 is never planned here: without it the contract can be approved.
+  printf '# Shop\n\n## Requirements\n\n- R1 [auto] A customer can pay\n- R2 [auto] A customer gets a receipt\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null
+  git add -A && git commit -q -m "chore: checks"
+  "$VBW" approve > /dev/null
+  run "$VBW" show contract
+  [[ "${lines[0]}" == *"(approved)"* ]] || { echo "$output"; false; }
+  apply_patch '{"rules": [{"rule": "R1.2", "text": "paying twice shows the first receipt"}, {"rule": "R1.3", "retire": "cards are no longer refused"}]}'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  run "$VBW" show contract
+  [[ "${lines[0]}" == *"(NOT APPROVED)"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"rule R1.2: paying twice shows the first receipt -> C1"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"rule R1.3 retired: a refused card is named (cards are no longer refused)"* ]] || { echo "$output"; false; }
+  run "$VBW" show contract --changes
+  [[ "$output" == *"reworded rule R1.2: paying twice is refused -> paying twice shows the first receipt"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"retired rule R1.3: a refused card is named (cards are no longer refused)"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"added rule"* ]] && [[ "$output" != *"removed rule"* ]] || { echo "$output"; false; }
 }

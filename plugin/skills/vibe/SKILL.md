@@ -29,6 +29,7 @@ then `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw next --json` again.
 
 Before any step, read the user's words (now, or later in the session). Words naming guided, balanced or hands-off, or a plain phrase clearly meaning one ("ask me before each step" = guided, "do not ask, just go" = hands-off), run `vbw config set autonomy <value>` first. Say in one line what was set, then follow the Autonomy section with that value, not the line loaded above.
 
+- A project not set up yet: record it right after `vbw init`, never before (outside a VBW project `vbw config` refuses, and the session would run on the default).
 - Same as the current setting: it writes nothing and says nothing about it.
 - Words that do not clearly name one setting change nothing: never guess.
 - Stated later in the session: record it at once; it applies from the next step. A switch to guided while the autonomous run is armed runs `vbw auto off ${CLAUDE_SESSION_ID}`; a switch to balanced or hands-off runs `vbw auto on ${CLAUDE_SESSION_ID}` once.
@@ -50,6 +51,7 @@ true, or a workflow runs in background (its result wakes you).
 At a stop, say what happened.
 Every stop ends with a last line, **What I need from you:** <the one thing user must do now>, or "nothing".
 Claim only what kernel shows.
+A workflow result's `refused` (each `{by, text}`), and any `vbw` refusal you get yourself: show each `text` as written, whole, in a quote block naming `by`, before your summary; never paraphrase it.
 
 Before starting a plan, build, fix, qa or prove step (a background proof too), say `step.say` and then `road.say` from `vbw next --json` as given, unchanged, on the same line or the next.
 
@@ -109,6 +111,7 @@ each: `vbw decide "<what was decided>" "<their reason, or the trade-off they acc
 
 **approve** (needs user): `detail.changed` (this plan was approved before): `vbw show contract --changes`, say the plan changed and explain just those. Else
 `vbw show contract`: explain each requirement, how checked, plans, files, the build's shape (`build waves`: rounds, most plans at once, and each `waits for` line in plain words), commands that will run. Follow `vbw:suggest`, then AskUserQuestion with the approval question `vbw show contract` prints: "Approve" (first), "Not yet". Only this menu; never ask the user to type /vbw:approve (typing it still works). Approve: hook recorded it; continue. Not yet: ask what to change. User's own words (own-answer slot): what to change, or a question. You cannot approve.
+A rule to reword, or one a newer requirement replaced (of any milestone): `vbw apply --patch` with `{"rules":[{"rule":"R1.2","text":"<new words>"}]}` or `{"rules":[{"rule":"R1.2","retire":"<why>"}]}` (`vbw show req R1` numbers its rules; a retired rule keeps its place), then the approval menu again.
 Test files edited during the build wait for one approval just before proof (`detail.files`): say which and why, then ask the same way.
 
 **build**: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start build <detail.plans>`, Workflow `vbw:building` with

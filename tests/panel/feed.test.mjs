@@ -166,7 +166,23 @@ test('a run with one agent working and one done', () => {
       { id: A, role: 'dev', label: 'P53.1', phase: 'Build', model: 'sonnet', state: 'working', activity: { kind: 'tool', text: 'reading spec.md' }, startedAt: T0 + 10, endedAt: null, lastSeenAt: NOW - 1000, tokens: 41000, result: null },
       { id: B, role: 'dev', label: 'P53.2', phase: 'Build', model: 'sonnet', state: 'done', activity: { kind: 'tool', text: 'reporting' }, startedAt: T0 + 20, endedAt: T0 + 300_000, lastSeenAt: T0 + 300_000, tokens: 18000, result: 'P53.2 done.' },
     ],
+    refusals: [],
   })
+})
+
+// 6.3: a refusal an agent got reaches the person (docs/panel.md, Refusals).
+test('the refusals an agent reported in its result are the run\'s refusals, verbatim, named by the agent and timed when it ended', () => {
+  const said = 'vbw: apply refused: plan P1.1 is started\nNext: put it back as the record has it (vbw show plan P1.1)'
+  const run = feed.runModel(deepFreeze({
+    runId: RUN, kind: 'building', now: NOW, final: null,
+    journal: journal(started(A, 'dev P1.1', 'Build'), started(B, 'dev P1.2', 'Build'),
+      result(A, { status: 'done', summary: 's', refused: [said, '  ', 7] }), result(B, { status: 'done', summary: 's', refused: 'not a list' })),
+    metas: { [A]: meta('dev', 'P1.1'), [B]: meta('dev', 'P1.2') },
+    transcripts: { [A]: tx({ firstAt: T0 + 10, lastAt: T0 + 9000 }), [B]: tx({ firstAt: T0 + 20, lastAt: T0 + 8000 }) },
+  }))
+  assert.deepEqual(run.refusals, [{ id: A + '#0', by: 'dev P1.1', at: T0 + 9000, text: said }])
+  const none = feed.runModel({ runId: RUN, kind: 'building', now: NOW, journal: journal(started(A, 'dev P1.1', 'Build'), result(A, 'done')), metas: {}, transcripts: {} })
+  assert.deepEqual(none.refusals, [], 'a result that is not an object, or has no refused, gives none')
 })
 
 test('a working agent with no new line for 45 s is quiet; at 45 s it still works', () => {
@@ -225,7 +241,7 @@ test('the run model never throws: no run id gives null, garbage gives an empty r
   assert.equal(feed.runModel({}), null)
   assert.equal(feed.runModel(null), null)
   const run = feed.runModel({ runId: RUN, journal: 5, metas: 'x', transcripts: [1], final: 'y', now: NOW })
-  assert.deepEqual(run, { runId: RUN, kind: null, phase: null, phases: [], startedAt: null, endedAt: null, status: 'running', agents: [] })
+  assert.deepEqual(run, { runId: RUN, kind: null, phase: null, phases: [], startedAt: null, endedAt: null, status: 'running', agents: [], refusals: [] })
 })
 
 // ---- reading a run from disk ----

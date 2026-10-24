@@ -1,14 +1,14 @@
 {
   "scenario": "qafix",
   "fixture": "greet.sh plus NOTES.md (no check names it); guided autonomy stated in words; the built NOTES.md is deleted after the build, so only QA can see the deviation",
-  "cost_usd": 1.53,
+  "cost_usd": 1.65,
   "evidence_level": "L3",
-  "at": "2026-10-23T20:09:12Z",
+  "at": "2026-10-24T04:25:39Z",
   "passed": true,
   "facts": {
     "deviation": "NOTES.md",
     "first_qa_verdict": "fail",
-    "first_qa_note": "7/8 checks NOTES.md is missing from the project root. Plan P1.1 delivered it (commit e73c6f3, one sentence: 'greet.sh greets a person by name, or the world when no name is given.'), but commit 02a84b27f069 'chore: drop NOTES.md' deleted it outside any plan, and no recorded decision (D1, D2) covers that. The phase goal and criterion require NOTES.md. A regression check should fail when NOTES.md is absent or does not hold exactly one sentence about greet.sh.",
+    "first_qa_note": "8/9 checks NOTES.md (delivered by plan P1.2) was deleted by commit 7054ebd ('chore: drop NOTES.md'), outside any plan, and no recorded decision covers it. The goal and criteria require NOTES.md in the top folder with one sentence. A regression test should check NOTES.md exists and holds exactly one sentence naming both cases (name, and world when none).",
     "fix_rounds": 1,
     "final_qa_verdict": "pass",
     "phase_proved": true,

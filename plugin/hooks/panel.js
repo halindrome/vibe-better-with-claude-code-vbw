@@ -28,7 +28,7 @@ const TICK_MS = 2000
 // A project holding .vbw/runtime/test-mode is a VBW test session (R64): it plays no
 // audio and keeps its choices under test.* keys, never the user's.
 const TEST_MARK = '/.vbw/runtime/test-mode'
-const keys = (test) => ({ closed: (test ? 'test.' : '') + 'vbw-panel.closed', sound: (test ? 'test.' : '') + 'vbw-panel.sound', nextSeen: (test ? 'test.' : '') + 'vbw-panel.next-seen', seen: (test ? 'test.' : '') + 'vbw-panel.seen', needSeen: (test ? 'test.' : '') + 'vbw-panel.need-seen', helpersSeen: (test ? 'test.' : '') + 'vbw-panel.helpers-seen' })
+const keys = (test) => ({ closed: (test ? 'test.' : '') + 'vbw-panel.closed', sound: (test ? 'test.' : '') + 'vbw-panel.sound', nextSeen: (test ? 'test.' : '') + 'vbw-panel.next-seen', seen: (test ? 'test.' : '') + 'vbw-panel.seen', needSeen: (test ? 'test.' : '') + 'vbw-panel.need-seen', helpersSeen: (test ? 'test.' : '') + 'vbw-panel.helpers-seen', refusalsSeen: (test ? 'test.' : '') + 'vbw-panel.refusals-seen' })
 // One of the plugin's shipped sounds (assets/audio/<character>/), picked at random
 // for each request for the user; with none shipped, the panel is silent.
 const pick = () => (SOUNDS.length ? { asset: SOUNDS[Math.floor(Math.random() * SOUNDS.length)] } : null)
@@ -94,7 +94,7 @@ function fresh() {
     record: null, next: null, history: null, cost: null, health: null, auto: null, stepsPath: null, steps: null, shown: '', seen: {}, sized: false,
     root: null, sessionId: null, holder: null, registry: null, stored: null, configDir: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
-    lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {},
+    lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {}, refusalsSeen: {},
     sprites: null, burst: null, sweep: null, cheer: null, wrapped: null, nextSeen: null, nextAt: null, nextAnim: null,
     seenNext: null, needSeen: null, proving: null, stamps: {}, stepNote: null, step: null,
   }
@@ -110,6 +110,7 @@ function view(st, now) {
   const input = {
     record: st.record, next: st.next, nextAt: st.nextFileAt, question: st.question, questionAt: st.questionAt,
     health: st.health, now, cost: st.cost, steps: st.steps, step: st.step, proving: st.proving !== null, holder: st.holder,
+    refusals: isObj(st.run) ? st.run.refusals : null,
   }
   const proving = st.proving && num(st.proving.at) ? st.proving.at : undefined
   const first = datedRows({ ...input, stamps: { proving } })
@@ -161,9 +162,14 @@ const commsStamp = (st, now) => (id, text) => {
   else m.seen = now
   return c[id].at
 }
+// The refusals the agents of the last run reported (panel-feed.js); the newest one
+// not yet seen goes on Comms until the Now tab is shown (seen(), 'refusals').
+const runRefusals = (st) => (isObj(st.run) && Array.isArray(st.run.refusals) ? st.run.refusals.filter((r) => isObj(r) && typeof r.id === 'string') : [])
+const refusalNow = (st) => runRefusals(st).filter((r) => !st.refusalsSeen[r.id]).reduce((a, r) => (!a || (num(r.at) ? r.at : 0) >= (num(a.at) ? a.at : 0) ? r : a), null)
 const stage = (st, now, props) => {
   const need = needNow(st)
   return stageModel({
+    refusal: refusalNow(st),
     stamp: commsStamp(st, now),
     run: st.run, next: st.next, step: st.step, now, health: st.health, cost: runCost(st), motion: motion(st),
     need, fresh: need !== null && needId(need) !== st.needSeen,
@@ -610,6 +616,13 @@ async function seen($, st, what) {
       await keep($, st.keys.needSeen, st.needSeen)
     }
   }
+  if (what.includes('refusals')) {
+    const fresh = runRefusals(st).filter((r) => !st.refusalsSeen[r.id])
+    if (fresh.length) {
+      for (const r of fresh) st.refusalsSeen[r.id] = true
+      await keep($, st.keys.refusalsSeen, Object.keys(st.refusalsSeen).slice(-100))
+    }
+  }
   const rec = recOf(st)
   if (what.includes('next') && isObj(rec) && typeof rec.at === 'string' && rec.at) {
     st.seenNext = rec.at
@@ -652,7 +665,7 @@ async function act($, st, a) {
     }
     if (a.open === 'mission') {
       st.tab = typeof a.tab === 'string' ? a.tab : 'now'
-      if (st.tab === 'now') await seen($, st, ['next', 'need'])
+      if (st.tab === 'now') await seen($, st, ['next', 'need', 'refusals'])
       if (st.tab === 'sessions') await readHolder($, st)
       if (typeof a.agent === 'string') {
         st.agent = a.agent
@@ -667,7 +680,7 @@ async function act($, st, a) {
     else if (typeof a.check === 'string') st.check = st.check === a.check ? null : a.check
     else if (typeof a.show === 'string') {
       st.tab = a.show
-      if (a.show === 'now') await seen($, st, ['next', 'need'])
+      if (a.show === 'now') await seen($, st, ['next', 'need', 'refusals'])
       if (a.show === 'sessions') await readHolder($, st) // shown at once, not at the next tick
     }
     else return
@@ -820,6 +833,8 @@ async function begin($, st) {
   st.needSeen = typeof needKept === 'string' ? needKept : null
   const helpersKept = await $.store.get(st.keys.helpersSeen)
   if (Array.isArray(helpersKept)) for (const id of helpersKept) if (typeof id === 'string') st.helpersSeen[id] = true
+  const refusalsKept = await $.store.get(st.keys.refusalsSeen)
+  if (Array.isArray(refusalsKept)) for (const id of refusalsKept) if (typeof id === 'string') st.refusalsSeen[id] = true
   const now = await $.clock.now()
   await noteRecommendation($, st, now)
   const v0 = view(st, now)

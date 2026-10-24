@@ -163,6 +163,7 @@ function boxOf(node, cols) {
 
 // The colour of a sentence's key value; a sentence with no value in it stays plain.
 function tint(r, need) {
+  if (String(r.id).startsWith('refused:')) return NEED // a refusal: amber, beside its ⊘ mark and word
   switch (r.id) {
     case 'need': return need ? NEED : undefined
     case 'progress': return /^No requirements/.test(String(r.text)) ? undefined : PROGRESS

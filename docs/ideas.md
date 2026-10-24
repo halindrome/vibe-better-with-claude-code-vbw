@@ -15,7 +15,6 @@ Every idea here is an idea to evaluate, not an instruction to build. The problem
 
 | Idea | Size |
 |---|---|
-| [Every refusal reaches the user](#every-refusal-reaches-the-user) | Medium |
 | [A watch for process cost out of proportion](#a-watch-for-process-cost-out-of-proportion) | Medium |
 | [Offer CI for the user's project](#offer-ci-for-the-users-project) | Medium |
 | [Coordination between sessions on one repository](#coordination-between-sessions-on-one-repository) | Large |
@@ -34,27 +33,6 @@ Every idea here is an idea to evaluate, not an instruction to build. The problem
 | [Small fixes for a first contribution](#small-fixes-for-a-first-contribution) | Small each |
 
 ## Behaviour and features
-
-### Every refusal reaches the user
-
-**Problem.** When VBW refuses something, the explanation goes to Claude, and the person may never see it.
-
-- A guard denies a command with a reason that starts `VBW guard:`. The reason is addressed to Claude. Hooks return no `systemMessage` with it, so nothing guarantees a line on the user's screen.
-- The kernel's refusals (`refused: ...`) print to whoever called it. Inside a workflow that is an agent, so the person sees only what the agent chooses to report. An agent has paraphrased a refusal wrongly before.
-- Kernel refusals during planning, `vbw run start` and the guards already end with a `Next:` step ([workflows.md](workflows.md#every-refusal-and-its-next-step)). Some others do not; `vbw run confirm` for an unknown plan or fix id is one.
-
-**Idea.** One route for every refusal to reach the person, never only the model, with three parts: what was refused, the rule behind it, the next step.
-
-- Guards add a `systemMessage` beside the deny reason.
-- Workflows carry kernel refusals verbatim in their result (a `refused` field in the schema) so the router shows them as written.
-- Comms and Mission Control show a refusal as an amber line with a time. Amber already means "look at this"; red stays for failures ([panel.md](panel.md#colours)).
-- Audit every `refused:` site and guard reason against the three parts.
-
-**Open questions.** Does Claude Code show a `systemMessage` that comes with a `deny`? Adding output to a guard must keep the pinned answers: no hook ever answers allow ([guards.md](guards.md#what-each-answer-means)). How loud should a refusal be when the model recovers on its own a second later?
-
-**Size.** Medium.
-
-**Where.** `plugin/hooks/common.jq`, `guard-bash.jq`, `guard-file.jq`; the `refused:` sites in `plugin/lib/*.sh`; schemas in `plugin/workflows/*.js`; `plugin/hooks/panel-lines.js`. Tests: `tests/refusal-next-step.bats`, `tests/hook-answers.bats`. A standards test that every refusal has a next step, and a real-user scenario in which a guard blocks and the screen shows the warning, would complete it.
 
 ### A watch for process cost out of proportion
 
@@ -251,7 +229,6 @@ Every idea here is an idea to evaluate, not an instruction to build. The problem
 
 Each is small and self-contained. Follow the usual rule: the failing test first.
 
-- **QA reports interleaved phases as a cycle.** `plugin/lib/qa.jq` names a phase cycle as a problem whenever phases build on each other, even when the plans themselves are acyclic (a plan of one phase after a plan of another, and the reverse). Interleaved phases are legitimate. It should report a note and keep the recheck closure. Test: `tests/qa-recheck-deps.bats`.
 - **The status line hand-back keeps only the earlier command.** When VBW is off in a project, the setting runs the status line you had before. It keeps that line's command but not its padding or its own refresh interval, and VBW's 5-second refresh applies, so a slow earlier status line re-runs every 5 seconds. Keep them when `vbw statusline on` writes the setting. Where: `plugin/lib/cmd-statusline.sh`; test: `tests/statusline-off-bench.bats`.
 - **The panel's gating hooks have no `.catch`.** The `ui.close` and `AskUserQuestion` hooks in `plugin/hooks/panel.js` should clear the pending question explicitly when they fail. `claude plugin validate` lists gating hooks without a `.catch` as information. A failed hook is skipped and never blocks.
 - **Stale CPU figures for the panel.** The table in [panel.md](panel.md#what-it-reads-and-what-it-costs) and the header of `tools/bench-panel.sh` may be out of date. Re-run `bash tools/bench-panel.sh`, and update both if the figures differ. The budget of 0.5 ms is the limit to keep.

@@ -2,7 +2,11 @@
 # R49 (docs/proof.md): a phase is also checked again when the tests of a phase
 # it builds on changed, even if its own inputs did not. A phase builds on
 # another when one of its plans comes after a plan of the other. The rule is
-# transitive and survives an interrupted QA round.
+# transitive and survives an interrupted QA round. Phases may interleave (a
+# plan of one comes after a plan of the other, and the reverse): the plans stay
+# acyclic (the record refuses a plan cycle), so that is no problem; vbw next
+# lists such phases in qa.interleaved and vbw show qa notes them, and each is
+# still checked again for the other's tests.
 
 load helper
 load qa-recheck-helper
@@ -84,7 +88,7 @@ retest() {
   next_json | jq -e '.action == "ship" and .qa.standing == ["P1","P2"]'
 }
 
-@test "R49: phases that build on each other in a cycle do not hang or crash, and the kernel names them" {
+@test "R49: interleaved phases (each builds on the other through acyclic plans) are no problem: noted, not hung, still checked for each other" {
   fixture_copy base2
   jq -nc '{phases: [{id: "P1", title: "One", reqs: ["R1"], tier: "standard"}, {id: "P2", title: "Two", reqs: ["R2"], tier: "standard"}],
     plans: [{id: "P1.1", phase: "P1", title: "a", reqs: ["R1"], files: ["src/p1.txt"], after: ["P2.1"]},
@@ -106,10 +110,11 @@ retest() {
   "$VBW" prove --full > /dev/null
   vbw_run next --json
   [ "$status" -eq 0 ]
-  printf '%s' "$output" | jq -e '.qa.problems | length > 0 and any(.[]; contains("P1") and contains("P2"))'
+  printf '%s' "$output" | jq -e '.qa.problems == [] and .qa.interleaved == ["P1", "P2"]' || { printf '%s' "$output" | jq .qa; false; }
   vbw_run show qa
   [ "$status" -eq 0 ]
-  [[ "$output" == *"P1"* && "$output" == *"P2"* ]]
+  [[ "$output" == *"note: phases P1 and P2 build on each other through their plans"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"problem:"* ]] || { echo "$output"; false; }
 }
 
 @test "R49: a plan that comes after a plan or a phase that does not exist is reported by name, not silently dropped" {
@@ -122,4 +127,12 @@ retest() {
   vbw_run next --json
   [ "$status" -ne 0 ]
   [[ "$output" == *"P9"* ]]
+}
+
+@test "R49: docs/next.md names qa.interleaved and no longer counts interleaving among the problems" {
+  local t
+  t=$(tr '\n' ' ' < "$REPO_ROOT/docs/next.md" | tr -s ' ')
+  [[ "$t" == *'`{recheck, standing, interleaved, problems}`'* ]] || { echo "docs/next.md lacks the key"; false; }
+  [[ "$t" == *'`problems` lists plan links that point nowhere, and a loop among the plans themselves.'* ]] || { echo "docs/next.md does not say what a problem is"; false; }
+  ! grep -qF 'QA reports interleaved phases as a cycle' "$REPO_ROOT/docs/ideas.md" || { echo "the built idea is still listed"; false; }
 }
