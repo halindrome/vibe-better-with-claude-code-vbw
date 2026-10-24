@@ -52661,7 +52661,7 @@
       "text": "Cores per heavy check (D340, M42 measurement): heavy test commands (cargo, make) each use every core, so several at once overload the Mac (load 23-66 seen). Decide from M42's measured core use: tell each command its share through the standard variables (CARGO_BUILD_JOBS, MAKEFLAGS, GOMAXPROCS) or a per-check cores mark",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T173",
