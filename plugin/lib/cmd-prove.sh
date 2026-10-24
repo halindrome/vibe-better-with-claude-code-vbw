@@ -66,6 +66,8 @@ cmd_prove() {
   at=$(vbw_now)
   head=$(vbw_head_tree) || vbw_die "cannot fingerprint the committed code"
   prooftime_step planning
+  # What is about to run and why, before the first unit starts (R202).
+  prove_plan_line "$record" "$causes"
   checks='{}' commands='{}'
   if [ ${#TODO_CHECKS[@]} -gt 0 ] || [ "$TODO_COMMANDS" != '[]' ] || [ ${#TF_TODO[@]} -gt 0 ]; then
     n=${#TODO_CHECKS[@]}
@@ -188,13 +190,43 @@ prove_commands() {
   printf '%s' "$res" | jq -c --slurpfile s <(printf '%s' "$skipped") 'with_entries(.key |= ltrimstr("cmd-")) + $s[0]'
 }
 
+# prove_plan_object RECORD CAUSES: the plan (TODO_*, REUSE_*, WHY_*, TF_*) and the
+# proof's causes (lines of text) as an evidence-shaped object, {checks, commands,
+# test_files, causes}, for the report's own counting and ranking (prooftime.sh):
+# a unit to run carries its reason, a reused one is marked reused, a held check
+# waits. Plan data reaches jq by file.
+prove_plan_object() {
+  jq -n --slurpfile tc <(printf '%s\0' ${TODO_CHECKS[@]+"${TODO_CHECKS[@]}"} | jq -Rsc 'split("\u0000") | map(select(length > 0))') \
+    --slurpfile held <(printf '%s\n' "${CHECK_HELD:-}" | jq -Rsc 'split("\n") | map(select(length > 0))') \
+    --slurpfile cm <(proofsteps_command_names "$1" "$TODO_COMMANDS" | proofsteps_names) \
+    --slurpfile tf <(printf '%s\0' ${TF_TODO[@]+"${TF_TODO[@]}"} | jq -Rsc 'split("\u0000") | map(select(length > 0))') \
+    --slurpfile wc <(printf '%s' "$WHY_CHECKS") --slurpfile wm <(printf '%s' "$WHY_COMMANDS") --slurpfile wf <(printf '%s' "$TF_WHY") \
+    --slurpfile rc <(printf '%s' "$REUSE_CHECKS") --slurpfile rm <(printf '%s' "$REUSE_COMMANDS") --slurpfile rf <(printf '%s' "$TF_REUSE") \
+    --slurpfile cz <(printf '%s' "$2" | jq -Rsc 'split("\n") | map(select(length > 0))') '
+    def todo($names; $why; $skip): $names | map({key: ., value: (if $skip | index(.) then {status: "waiting"} else {status: "pass"} + (if $why[.] then {why: $why[.]} else {} end) end)}) | from_entries;
+    def reused($m): $m | map_values({status: "pass", reused: true});
+    {checks: (todo($tc[0]; $wc[0]; $held[0]) + reused($rc[0])),
+     commands: (todo($cm[0]; $wm[0]; []) + reused($rm[0])),
+     test_files: (todo($tf[0]; $wf[0]; []) + reused($rf[0])),
+     causes: $cz[0]}'
+}
+
+# prove_plan_line RECORD CAUSES: the opening line, in the form of the closing one
+# in the future tense, "run again: N of M units; top reasons: ...": the report
+# line of prooftime_lines over the plan, so both lines count and rank alike.
+prove_plan_line() {
+  local line
+  line=$(prove_plan_object "$@" | prooftime_lines | tail -n 1) || return 0
+  vbw_out '%s\n' "run${line#ran}"
+}
+
 # prove_unit_names RECORD: the names of the units this proof runs (check:ID,
 # file:PATH, command:NAME), as a JSON array: what prove_units counts.
 prove_unit_names() {
   local c
   {
     for c in ${TODO_CHECKS[@]+"${TODO_CHECKS[@]}"}; do
-      printf '%s\n' "${CHECK_HELD:-}" | grep -qx -- "$c" || printf 'check:%s\n' "$c"
+      printf '%s\n' "${CHECK_HELD:-}" | grep -x -- "$c" > /dev/null || printf 'check:%s\n' "$c"
     done
     for c in ${TF_TODO[@]+"${TF_TODO[@]}"}; do printf 'file:%s\n' "$c"; done
     proofsteps_command_names "$1" "$TODO_COMMANDS" | sed 's/^/command:/'
@@ -206,7 +238,7 @@ prove_unit_names() {
 prove_units() {
   local c n=0
   for c in ${TODO_CHECKS[@]+"${TODO_CHECKS[@]}"}; do
-    printf '%s\n' "${CHECK_HELD:-}" | grep -qx -- "$c" || n=$((n + 1))
+    printf '%s\n' "${CHECK_HELD:-}" | grep -x -- "$c" > /dev/null || n=$((n + 1))
   done
   printf '%s\n' "$((n + $(proofsteps_commands "$1" "$TODO_COMMANDS") + ${#TF_TODO[@]}))"
 }
@@ -350,10 +382,10 @@ prove_scope() {
 prove_summary() {
   jq -r --rawfile causes <(printf '%s' "$1") --arg own "$(jq -c '.evidence' "$VBW_RECORD" | prooftime_lines)" --argjson d "$VBW_COMMAND_TIMEOUT" --argjson cb "$VBW_CHECK_BUDGET" \
     "$UNITTIME_DEFS$DELIVERED_DEFS"'(.settings.command_timeout // $d) as $limit | (.settings.check_budget // $cb) as $budget | .evidence as $e
-    | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
+    | ($e.checks | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds | sec)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
-      ($e.commands | to_entries[] | select(.value.of_files | not) | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)" end)"),
-      (($e.test_files // {}) | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
+      ($e.commands | to_entries[] | select(.value.of_files | not) | "  \(.key) \(.value.status)\(if .value.status == "skipped" then ": not approved" else " \(.value.seconds | sec)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)" end)"),
+      (($e.test_files // {}) | to_entries[] | "  \(.key) \(.value.status)\(if .value.status == "fail" then " (exit \(.value.exit))" else "" end) \(.value.seconds | sec)s\(if .value.reused then " reused (proof of \(.value.at))" elif .value.why then " ran: \(.value.why)" else "" end)"
         + (if .value.status == "pass" then "" else ": " + (.value.tail | split("\n") | last // "") end)),
       ([$causes | split("\n")[] | select(length > 0)] as $c
         | if ($c | length) == 1 then "  ran everything: \($c[0])"

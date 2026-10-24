@@ -14,6 +14,21 @@ FILES=(
   marketplace.json
 )
 
+usage='usage: tools/bump-version.sh [--offline | --set X.Y.Z | --verify | --files | --help]
+  (no option)   bump the patch version from the higher of the local and the GitHub version
+  --offline     the same, without asking GitHub
+  --set X.Y.Z   write that version (a major or minor release)
+  --verify      check that the 5 version files agree; change nothing
+  --files       list the files a bump writes; change nothing
+  --help        print this text'
+
+# Anything else is refused before a file is touched: an unknown flag must never bump.
+case "${1:-}" in
+  "" | --files | --verify | --offline | --set) ;;
+  -h | --help) echo "$usage"; exit 0 ;;
+  *) echo "$usage" >&2; exit 2 ;;
+esac
+
 # --files: print the files a bump writes, one per line
 if [[ "${1:-}" == "--files" ]]; then
   printf '%s\n' "${FILES[@]}"

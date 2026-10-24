@@ -20,7 +20,10 @@
 # stays in the evidence as evidence.own {planning, copies, tracking, saving,
 # record, wall} (seconds) and the causes as evidence.causes; vbw show evidence
 # prints the breakdown and each unit's reason, says "not recorded" on a record
-# written before this change, and the validator refuses a malformed own. L1.
+# written before this change, and the validator refuses a malformed own. Before
+# the first unit runs, vbw prove prints the same count in the future tense as its
+# first line, "run again: N of M units; top reasons: ...", so a long proof says
+# why before anyone waits for it. L1.
 
 load helper
 load fixture-helper
@@ -77,6 +80,9 @@ edit_record() {
 
 OWN_RE="^VBW's own work: [0-9]+\.[0-9] of [0-9]+\.[0-9] min$"
 
+# first: the first line of $output; the opening line is the first line.
+first() { printf '%s\n' "$output" | head -n 1; }
+
 # nth K: line K of $output counted from its end (1 is the last line).
 nth() { printf '%s\n' "$output" | tail -n "$1" | head -n 1; }
 
@@ -107,6 +113,7 @@ mixed_change() {
   [ "$(nth 1)" = proved ] || { echo "$output"; false; }
   [[ "$(nth 3)" =~ $OWN_RE ]] || { echo "line 3 from the end: $(nth 3)"; echo "$output"; false; }
   [ "$(nth 2)" = "ran again: 5 of 5 units; top reasons: this clone has no earlier recorded run (5)" ] || { echo "$output"; false; }
+  [ "$(first)" = "run again: 5 of 5 units; top reasons: this clone has no earlier recorded run (5)" ] || { echo "$output"; false; }
   jq -e '.evidence.own | type == "object" and (keys == ["copies","planning","record","saving","tracking","wall"])
     and all(.[]; type == "number" and . >= 0) and .wall >= .planning' .vbw/record.json || { jq .evidence.own .vbw/record.json; false; }
   jq -e '.evidence.causes == ["this clone has no earlier recorded run"]' .vbw/record.json || { jq .evidence.causes .vbw/record.json; false; }
@@ -121,6 +128,7 @@ mixed_change() {
   [ "$(nth 1)" = proved ] || { echo "$output"; false; }
   [[ "$(nth 3)" =~ $OWN_RE ]] || { echo "$output"; false; }
   [ "$(nth 2)" = "ran again: 0 of 5 units; top reasons: none" ] || { echo "$output"; false; }
+  [ "$(first)" = "run again: 0 of 5 units; top reasons: none" ] || { echo "$output"; false; }
   jq -e '.evidence.causes == [] and (.evidence.own | type == "object")' .vbw/record.json || { jq .evidence .vbw/record.json; false; }
 }
 
@@ -130,6 +138,7 @@ mixed_change() {
   vbw_run prove
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [ "$(nth 2)" = "ran again: 5 of 6 units; top reasons: src/a.txt changed (2), definition changed (1), src/b.txt changed (1)" ] || { echo "$output"; false; }
+  [ "$(first)" = "run again: 5 of 6 units; top reasons: src/a.txt changed (2), definition changed (1), src/b.txt changed (1)" ] || { echo "$output"; false; }
   jq -e '.evidence.checks.C1.why == "src/a.txt changed" and .evidence.checks.C5.why == "never passed" and .evidence.checks.C6.reused == true
     and .evidence.causes == []' .vbw/record.json || { jq .evidence.checks .vbw/record.json; false; }
 }

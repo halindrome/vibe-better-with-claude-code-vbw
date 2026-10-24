@@ -35,12 +35,14 @@ hm() {
 step_of() { "$VBW" next --json | jq -c '.step'; }
 
 @test "R190: next gives a build wave its expected length and end time, and the sentence to say" {
+  # An end after midnight in the local zone reads "tomorrow HH:MM", so the test names both forms.
   step_seed build 300 1 3
   local s
   s=$(step_of)
   printf '%s' "$s" | jq -e '.kind == "build" and .parts == 3 and .seconds == 900
     and (((.end | fromdateiso8601) - now) | . >= 880 and . <= 910)
-    and .say == "Building P1.1, P1.2 and P1.3: about 15 min, until around \(.end | fromdateiso8601 | strflocaltime("%H:%M"))"' \
+    and (.say == "Building P1.1, P1.2 and P1.3: about 15 min, until around \(.end | fromdateiso8601 | strflocaltime("%H:%M"))"
+         or .say == "Building P1.1, P1.2 and P1.3: about 15 min, until around tomorrow \(.end | fromdateiso8601 | strflocaltime("%H:%M"))")' \
     || { echo "$s"; false; }
 }
 

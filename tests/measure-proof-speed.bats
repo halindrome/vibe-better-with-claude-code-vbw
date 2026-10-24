@@ -98,6 +98,19 @@ units() {
   done
 }
 
+@test "R202: the sampler of the written-file lists polls at least five times a second, so a fast proof is still seen" {
+  # A proof of a few seconds holds its written-file lists for about a second; a poll once a second
+  # can miss them (the figure came out 0 on a fast Linux runner). A sleep shim ahead on the PATH
+  # records every wait the tool asks for.
+  mkdir -p "$TEST_ROOT/shim"
+  printf '#!/bin/sh\nprintf "%%s\\n" "$1" >> "%s/sleeps"\nexec "%s" "$@"\n' "$TEST_ROOT" "$(command -v sleep)" > "$TEST_ROOT/shim/sleep"
+  chmod +x "$TEST_ROOT/shim/sleep"
+  PATH="$TEST_ROOT/shim:$PATH" VBW_MEASURE_DIR="$TEST_ROOT/measure" run bash "$TOOL" --files 60 --folders 12 --units 4 < /dev/null
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ -s "$TEST_ROOT/sleeps" ] || { echo "the sampler never waited"; false; }
+  awk '$1 > 0.2 { bad = $1 } END { if (bad) { print "a sampler waits " bad " s between polls"; exit 1 } }' "$TEST_ROOT/sleeps" || false
+}
+
 @test "R202: nothing of a real user project is in the tool or in what it generates" {
   run bash "$TOOL" --generate "$TEST_ROOT/gen" --files 60 --folders 12 --units 4 < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }

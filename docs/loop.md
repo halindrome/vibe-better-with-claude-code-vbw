@@ -297,7 +297,9 @@ it over a later change.
 ## The time budget
 
 Each item gets a time budget when the loop opens it, recorded on the item
-(`opened_at`, `budget`):
+(`opened_at`, `budget`: `seconds`, `basis` and, once set from the plan,
+`planned`). The basis says which of the three below was used; `vbw loop status`
+and the report show it beside the time:
 
 - **From history.** Twice the median time of the shipped items of the same
   size (`vbw todo add --size`, `vbw todo sort`), when the record holds three
@@ -307,9 +309,18 @@ Each item gets a time budget when the loop opens it, recorded on the item
 - **The default.** With fewer than three: small 2h, medium 4h, large 8h. An
   item with no size counts as medium.
 
+- **From the plan.** Once the item is planned and this project's step history
+  times every piece of its road (the build waves, the proofs and the QA checks,
+  [the road](next.md#the-road)), the budget becomes twice the time so far plus
+  that road, at least 30 minutes. It is set once, at that moment: the road
+  shrinks as the work is done, and a budget that followed it would never be
+  spent. The label's guess made before planning stops counting; where the
+  history gives no road, the budget above stays.
+
 Twice the median, because an item taking more than twice the usual time of its
 size is grinding, not progressing; three, because one or two times are not a
-usual time. The defaults are about twice the times of the loop items in VBW's
+usual time. Twice the time so far and the road, because the plan is the best
+estimate of the item's own size. The defaults are about twice the times of the loop items in VBW's
 own record when the rule was added (small 14 to 99 minutes, medium 69 to 287).
 The budget is wall-clock time from the item's open: spend is already bounded by
 the ceiling, and tokens are not measured (docs/costs.md).

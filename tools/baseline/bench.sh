@@ -157,8 +157,8 @@ run_plain() {
 # then Submit. Returns 1 when no question is on screen.
 answer_question() {
   local name=$1 screen=$2 n i
-  printf '%s' "$screen" | grep -q 'Enter to select\|Ready to submit' || return 1
-  if printf '%s' "$screen" | grep -q '^ *Submit *$'; then
+  printf '%s' "$screen" | grep 'Enter to select\|Ready to submit' > /dev/null || return 1
+  if printf '%s' "$screen" | grep '^ *Submit *$' > /dev/null; then
     n=$(printf '%s\n' "$screen" | grep -E '^[^0-9]*[0-9]+\. \[ \] ' | grep -vc 'Type something' || true)
     for ((i = 0; i < n; i++)); do
       bash "$L3" keys "$name" Enter > /dev/null 2>&1 || true
@@ -197,17 +197,17 @@ run_plain_ui() {
     round=$((round + 1))
     settled=1
     screen=$(bash "$L3" wait "$name" 60 2> /dev/null) || settled=0
-    if printf '%s' "$screen" | grep -Eqi "$LIMIT_RE"; then
+    if printf '%s' "$screen" | grep -Ei "$LIMIT_RE" > /dev/null; then
       bash "$L3" stop "$name" > /dev/null 2>&1 || true
       echo "bench: usage limit reached; no record written" >&2
       return "$EXIT_LIMIT"
     fi
-    printf '%s' "$screen" | grep -q 'esc to interrupt' && continue
+    printf '%s' "$screen" | grep 'esc to interrupt' > /dev/null && continue
     if answer_question "$name" "$screen"; then
       inputs=$((inputs + 1))
       continue
     fi
-    if printf '%s' "$screen" | grep -q 'Esc to cancel'; then
+    if printf '%s' "$screen" | grep 'Esc to cancel' > /dev/null; then
       bash "$L3" keys "$name" Escape > /dev/null 2>&1 || true
       continue
     fi
@@ -259,21 +259,21 @@ run_vbw2() {
     round=$((round + 1))
     settled=1
     screen=$(bash "$L3" wait "$name" 60 2> /dev/null) || settled=0
-    if printf '%s' "$screen" | grep -Eqi "$LIMIT_RE"; then
+    if printf '%s' "$screen" | grep -Ei "$LIMIT_RE" > /dev/null; then
       bash "$L3" stop "$name" > /dev/null 2>&1 || true
       echo "bench: usage limit reached; no record written" >&2
       return "$EXIT_LIMIT"
     fi
     action=$(next_action "$ws")
     case "$action" in ship | accept | milestone) done=1; break ;; esac
-    printf '%s' "$screen" | grep -q 'esc to interrupt' && continue
+    printf '%s' "$screen" | grep 'esc to interrupt' > /dev/null && continue
     if answer_question "$name" "$screen"; then
       inputs=$((inputs + 1))
       continue
     fi
     # A Claude Code dialog that is not a VBW question (onboarding, tips):
     # dismissed, never answered, and not a user input.
-    if printf '%s' "$screen" | grep -q 'Esc to cancel'; then
+    if printf '%s' "$screen" | grep 'Esc to cancel' > /dev/null; then
       bash "$L3" keys "$name" Escape > /dev/null 2>&1 || true
       continue
     fi

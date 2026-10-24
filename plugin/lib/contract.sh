@@ -66,7 +66,7 @@ contract_waiting() {
     d=missing
     [ ! -f "$VBW_ROOT/$f" ] || d=$(vbw_sha256 < "$VBW_ROOT/$f")
     if [ "$(jq -r --arg f "$f" '.files[$f] // "new"' "$old" 2> /dev/null)" != "$d" ] \
-      || printf '%s\n' "$held" | grep -qxF -- "$f"; then
+      || printf '%s\n' "$held" | grep -xF -- "$f" > /dev/null; then
       out="$out$f"$'\n'
     fi
   done < <(printf '%s' "$1" | jq -j '[.checks[].files // [] | .[]] | unique[] | . + "\u0000"')

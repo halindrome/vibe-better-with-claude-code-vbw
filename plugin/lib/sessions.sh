@@ -31,6 +31,17 @@ sessions_registry() {
   return 0
 }
 
+# sessions_record_path SID: the file in which a session that loaded a plugin copy with
+# --plugin-dir records that copy's folder (<claude-config-dir>/vbw/sessions/SID, written
+# by hooks/session-start.sh, read by the status line and by doctor). Only a plain name
+# is an id (letters, digits, _ and -, as in the hook and the status line, which apply
+# the same rule to the id Claude Code hands them); anything else prints nothing and
+# returns 1, so an id from the environment never names a file outside that folder.
+sessions_record_path() {
+  [[ "${1:-}" =~ ^[A-Za-z0-9_-]+$ ]] || return 1
+  printf '%s/vbw/sessions/%s\n' "$(vbw_claude_dir)" "$1"
+}
+
 # sessions_name SID: the newest updatedAt entry's name, cleaned, or nothing.
 sessions_name() {
   [ -n "${1:-}" ] || return 0

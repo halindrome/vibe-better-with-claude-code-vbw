@@ -107,6 +107,8 @@ no_reads() {
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   printf '%s\n' "$output" | grep -Eq 'C1 read [0-9]+ files? and [0-9]+ folders?' || { echo "$output"; false; }
   says none "P1.1" "P1.2" "the figures are a decision in the record, which only vbw writes"
+  # The limit, in the accepting line itself: a check that only tests a path is not seen.
+  says "a check that only tests whether a plan file exists is not detected"
   breaks P1.1 | jq -e 'length == 1 and (.[0] | (keys | sort) == ["at", "head", "none", "rule"]
     and .rule == {req: "R1", text: "the measurement is a decision in the record"}
     and .none == "the figures are a decision in the record, which only vbw writes"

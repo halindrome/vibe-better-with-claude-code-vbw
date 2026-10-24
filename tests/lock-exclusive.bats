@@ -96,7 +96,8 @@ one_at_a_time() {
 @test "R1: every lock folder of the kernel is taken by its owner file (vbw_lock_dir), never by mkdir's answer" {
   run grep -nE '(^|[^-[:alnum:]_])mkdir "[^"]*(lock|mutex)[^"]*"' "$PLUGIN_ROOT"/lib/*.sh "$PLUGIN_ROOT"/hooks/*.sh "$PLUGIN_ROOT/bin/vbw"
   [ "$status" -eq 1 ] || { echo "$output"; false; }
-  grep -q 'vbw_lock_dir "\$lock"' "$PLUGIN_ROOT/lib/slots.sh"
+  # The slot store's lock is a file, made by the exclusive create alone (no mkdir).
+  grep -q 'vbw_lock_create "\$lock"' "$PLUGIN_ROOT/lib/slots.sh"
   grep -q 'vbw_lock_dir "\$g/mutex"' "$PLUGIN_ROOT/lib/checks.sh"
   grep -q 'vbw_lock_dir "\$l"' "$PLUGIN_ROOT/lib/proofsteps.sh"
 }

@@ -111,7 +111,7 @@ mutate_rule_none() {
                 + (if ($di | length) > 0 then (if ($fi | length) > 0 then " and lists " else " lists " end) + ($di | join(", ")) else "" end)
                 + (if ($stars | length) > 0 then "; " + ($stars | join(", ")) + (if ($stars | length) == 1 then " covers" else " cover" end) + " every file" else "" end)
                 + ": break the rule in that code instead")}
-          else {ok: "\($k) recorded: \($id) read \(plural($rd | length; "file")) and \(plural($dr | length; "folder")), none of them of \($q)'"'"'s plans (\($pl | map(.id) | join(", ")))"} end
+          else {ok: "\($k) recorded: \($id) read \(plural($rd | length; "file")) and \(plural($dr | length; "folder")), none of them of \($q)'"'"'s plans (\($pl | map(.id) | join(", "))); a check that only tests whether a plan file exists is not detected"} end
       end')
   if [ "$(printf '%s' "$verdict" | jq 'has("refuse")')" = true ]; then
     vbw_die "$(printf '%s' "$verdict" | jq -r .refuse)"
