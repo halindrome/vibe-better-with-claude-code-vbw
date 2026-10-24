@@ -6,7 +6,9 @@
 # (architect|lead|dev|qa|scout|debugger|docs, VBW 1's team: opus, sonnet,
 # haiku or a model id; "default" removes the override; model.qa refuses Haiku,
 # naming the allowed models: sonnet, opus or a stronger model id, or default,
-# since QA needs Sonnet or stronger), rigor (auto|express|
+# since QA needs Sonnet or stronger), effort.<role> (the same roles: low, medium,
+# high, xhigh or max for every step of that role, over the profile's table in
+# lib/efforts.json; "default" removes it; a record holding one is schema 5), rigor (auto|express|
 # standard|deep: auto computes each phase's tier, the others force it),
 # motion (full|calm|off: the panel's animation; "default" removes it and the
 # panel picks by the interview level), check_jobs (1 to 64; without a setting three quarters of the processor cores: checks run at the same time; kept in this
@@ -147,13 +149,14 @@ cmd_config() {
       record_read | jq -r --argjson p "$VBW_PROFILES" '.settings as $s
         | "profile: \($s.profile)", "autonomy: \($s.autonomy // "balanced")", "autonomy_cap: \($s.autonomy_cap)", "rigor: \($s.rigor // "auto")", "motion: \($s.motion // "default")", "command_timeout: \($s.command_timeout // 3600) seconds",
           "check_budget: \($s.check_budget // 120) seconds a unit (reported, never enforced)",
-          ($p[$s.profile] + ($s.models // {}) | (if ((.qa // "") | ascii_downcase | contains("haiku")) then .qa = "sonnet" else . end) | to_entries[] | "model.\(.key): \(.value)")'
+          ($p[$s.profile] + ($s.models // {}) | (if ((.qa // "") | ascii_downcase | contains("haiku")) then .qa = "sonnet" else . end) | to_entries[] | "model.\(.key): \(.value)"),
+          ($p[$s.profile] | keys_unsorted[] as $r | "effort.\($r): \(($s.efforts // {})[$r] // "default")")'
       ;;
     models)
       record_read | jq -c --argjson p "$VBW_PROFILES" '$p[.settings.profile] + (.settings.models // {}) | (if ((.qa // "") | ascii_downcase | contains("haiku")) then .qa = "sonnet" else . end)'
       ;;
     effort)
-      effort_table "$(record_read | jq -r ".settings.profile")"
+      effort_table "$(record_read | jq -r ".settings.profile")" "$(record_read | jq -c ".settings.efforts // null")"
       ;;
     autonomy)
       record_read | jq -r '.settings.autonomy // "balanced"'
@@ -225,7 +228,13 @@ cmd_config() {
           else
             record_update '.settings.models = ((.settings.models // {}) + {($r): $v})' --arg r "${key#model.}" --arg v "$value"
           fi ;;
-        *) vbw_usage_error "unknown setting $key (profile, autonomy, autonomy_cap, motion, sound, check_jobs, command_timeout, check_budget, model.ROLE for $VBW_ROLES)" ;;
+        effort.architect|effort.lead|effort.dev|effort.qa|effort.scout|effort.debugger|effort.docs)
+          case "$value" in
+            default) record_update '.settings.efforts |= del(.[$r]) | if (.settings.efforts // {}) == {} then .settings |= del(.efforts) else . end' --arg r "${key#effort.}" ;;
+            low|medium|high|xhigh|max) record_update '.settings.efforts = ((.settings.efforts // {}) + {($r): $v})' --arg r "${key#effort.}" --arg v "$value" ;;
+            *) vbw_usage_error "$key must be low, medium, high, xhigh or max (or default): how hard that helper thinks at every step, over the profile's choice" ;;
+          esac ;;
+        *) vbw_usage_error "unknown setting $key (profile, autonomy, autonomy_cap, motion, sound, check_jobs, command_timeout, check_budget, model.ROLE or effort.ROLE for $VBW_ROLES)" ;;
       esac
       printf '%s = %s\n' "$key" "$value"
       ;;

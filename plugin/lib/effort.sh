@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
-# Per-agent effort: the table of the profile in use (lib/efforts.json).
+# Per-agent effort: the table of the profile in use (lib/efforts.json), with the
+# efforts the user chose per role (record.settings.efforts) over it.
 
 # The roles and steps the workflows use, as role:step,step.
 VBW_EFFORT_STEPS='architect:decide,scope,recommend lead:plan,close dev:build,fix docs:build qa:verify scout:survey,merge debugger:investigate,diagnose,fix'
 
-# effort_table PROFILE: the profile's table as compact JSON. Refuses, naming the
-# role, the step and the value, a value Claude Code does not accept (not low,
-# medium, high, xhigh or max, or not text) and any missing role or step. Only
-# the given profile is judged.
+# effort_table PROFILE [EFFORTS]: the profile's table as compact JSON, every step of
+# a role in EFFORTS ({role: level}, record.settings.efforts) at that level. Refuses,
+# naming the role, the step and the value, a value Claude Code does not accept (not
+# low, medium, high, xhigh or max, or not text) and any missing role or step. Only
+# the given profile is judged; the record check judges EFFORTS.
 effort_table() {
   local profile=$1 file=$VBW_LIB/efforts.json bad
   [ -f "$file" ] || vbw_die "the effort table $file is missing: reinstall the VBW plugin"
@@ -23,5 +25,6 @@ effort_table() {
       elif ($v | IN("low", "medium", "high", "xhigh", "max")) then empty
       else "\($r) \($s): effort \"\($v)\" is not one of low, medium, high, xhigh, max" end' "$file" | head -n 1)
   [ -z "$bad" ] || vbw_die "the effort table for profile '$profile' is wrong at $bad (fix $file)"
-  jq -c --arg p "$profile" '.[$p]' "$file"
+  jq -c --arg p "$profile" --argjson chosen "${2:-null}" '.[$p] as $t
+    | reduce (($chosen // {}) | to_entries[]) as $c ($t; if has($c.key) then .[$c.key] |= map_values($c.value) else . end)' "$file"
 }

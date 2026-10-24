@@ -157,15 +157,15 @@ corrupt_everywhere() {
   done
 }
 
-@test "R150: this VBW reads schema 4 and asks for a newer VBW on schema 5, naming schema 4 as its highest" {
+@test "R150: this VBW reads up to schema 5 and asks for a newer VBW on schema 6, naming schema 5 as its highest" {
   protected_apply 3
   vbw_run status
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  record_edit '.schema = 5'
+  record_edit '.schema = 6'
   vbw_run status
   [ "$status" -eq 4 ] || { echo "$output"; false; }
   [[ "$output" == *"needs a newer VBW"* ]]
-  [[ "$output" == *"reads up to schema 4"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"reads up to schema 5"* ]] || { echo "$output"; false; }
 }
 
 @test "R150: the writer and the validator hold no 50-check threshold" {

@@ -23,6 +23,8 @@ export const SAVED_MS = 2000
 // step of its − and + and its bounds (the kernel's); `scope`: who shares the value;
 // `group`: the heading it sits under (GROUPS).
 const MODELS = ['fable', 'opus', 'sonnet', 'haiku', 'default']
+// The efforts Claude Code takes for an agent; default leaves the profile's per step.
+const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max', 'default']
 // The interview's answers, as plugin/lib/interview.json lists them (a test holds the two equal).
 export const INTERVIEW = {
   level: ['never', 'small scripts or no-code', 'professionally', 'senior engineer'],
@@ -33,6 +35,7 @@ const TALK = 'How VBW talks to you'
 export const ROWS = [
   { key: 'profile', choices: ['quality', 'balanced', 'budget'], group: 'Models' },
   ...ROLES.map((r) => ({ key: 'model.' + r, choices: r === 'qa' ? MODELS.filter((m) => m !== 'haiku') : MODELS, role: r, group: 'Models' })),
+  ...ROLES.map((r) => ({ key: 'effort.' + r, choices: EFFORTS, role: r, group: 'Effort' })),
   { key: 'interview.level', label: 'your level', choices: INTERVIEW.level, group: TALK },
   { key: 'interview.depth', label: 'wording', choices: INTERVIEW.depth, group: TALK },
   { key: 'interview.involvement', label: 'decisions', choices: INTERVIEW.involvement, group: TALK },
@@ -194,7 +197,7 @@ export function settingsModel(input) {
       rows.push({
         key: r.key, value: value === 'null' && r.number ? 'not set' : value,
         note: [r.key === 'check_jobs' ? got.limit : null, r.scope ? r.scope : null, r.key === 'auto' || r.key === 'interview.kept' ? str(got.note) : null].filter(Boolean).join(' · '),
-        mine: Boolean(r.role && str(mine[r.role])), role: r.role || null, label: r.label || r.role || r.key, status: Boolean(r.status),
+        mine: Boolean(r.role && r.key.startsWith('model.') && str(mine[r.role])), role: r.role || null, label: r.label || r.role || r.key, status: Boolean(r.status),
         ...(r.choices ? { choices: r.choices } : {}),
         ...(r.number ? { number: { ...r.number, at: n } } : {}),
         unit: r.unit || '',
@@ -210,7 +213,7 @@ export function settingsModel(input) {
 }
 
 // The headings the rows sit under, in the order drawn; each row names its own.
-export const GROUPS = ['Models', 'How VBW talks to you', 'How VBW works', 'Checks', 'Look and sound', 'Claude Code']
+export const GROUPS = ['Models', 'Effort', 'How VBW talks to you', 'How VBW works', 'Checks', 'Look and sound', 'Claude Code']
 
 // One line per row: the name in its colour, then its controls, the ✓ saved flash and the new
 // mark; under it its note dim and the kernel's refusal in amber. A choice row is one button per

@@ -443,8 +443,8 @@ scroll it) to read the rest.
 ### Settings
 
 The **Settings** tab shows every setting `vbw config set` accepts, and rigor,
-the sound and the status line, one line each under six headings: Models,
-How VBW talks to you, How VBW works, Checks, Look and sound, and Claude Code.
+the sound and the status line, one line each under seven headings: Models,
+Effort, How VBW talks to you, How VBW works, Checks, Look and sound, and Claude Code.
 Every choice is one click.
 
 ```
@@ -463,6 +463,9 @@ check_jobs       [ − ]  6  [ + ]  default
   covers `profile`, the model of each of the seven roles (Fable, Opus, Sonnet,
   Haiku or default; QA is never offered Haiku), `autonomy`, `rigor`, `motion`, `sound` (`off`, each sound folder,
   `default`) and the status line (`on`, `off`).
+- **Effort** sets how hard each helper thinks at every step: `low` to `max`,
+  or `default` for the profile's choice per step (`vbw config set effort.dev
+  high`). A project with one set needs VBW 2.1.13 or newer for everyone.
 - **How VBW talks to you** holds your interview answers: your level, the
   wording and who makes the decisions, the same answers the first interview
   asks (`vbw interview set`), and where they are kept: `private` (this clone

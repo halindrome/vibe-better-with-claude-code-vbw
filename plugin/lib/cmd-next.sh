@@ -70,7 +70,7 @@ next_answer() {
   # A plan that names a plan or phase that is not there cannot be judged.
   printf '%s' "$qa" | jq -e '.problems | any(.[]; contains("does not exist")) | not' > /dev/null || vbw_die "$(printf '%s' "$qa" | jq -r '.problems | join("; ")')"
   # The profile's effort table; a wrong table stops here, before any answer.
-  effort=$(effort_table "$(printf '%s' "$record" | jq -r '.settings.profile')") || exit 1
+  effort=$(effort_table "$(printf '%s' "$record" | jq -r '.settings.profile')" "$(printf '%s' "$record" | jq -c '.settings.efforts // null')") || exit 1
   profile=$(interview_effective "$record")
   holder=$(next_holder "$record")
   # The last answer (a gate's since) and, while not approved, the last approved contract (a re-approval).
