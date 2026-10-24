@@ -1,7 +1,7 @@
 // R189, phase P144 (evidence level L1, the stand-in for Claude Code's mods API):
 // each What's next row (the top pick and up to two runners-up) is one pressable
-// Button showing the item, a size chip and, where VBW gave one, the reason in dim
-// text; pressing it puts the item's command in the prompt (/vbw:vibe with its T
+// Button on one line: '▸ item  [size]  reason' (the chip and the reason dim, the top pick in the accent, T81);
+// pressing it puts the item's command in the prompt (/vbw:vibe with its T
 // or R id, else with its text) and never sends it; Suggest next stays and only
 // fills (R124). Every new thing (a new recommendation, a newly failed helper, a
 // new needs-you line) is marked until the user has seen it (pressed it, opened
@@ -14,6 +14,10 @@ import assert from 'node:assert/strict'
 import { mount, record, next, find, walk, ROOT } from '../helpers/fake-mod.mjs'
 import { TICK, writeCrew, working, building } from './helpers/crew.mjs'
 import { textOf } from './helpers/screen.mjs'
+import { pathToFileURL } from 'node:url'
+import { PLUGIN } from '../helpers/fake-mod.mjs'
+
+const P = await import(pathToFileURL(PLUGIN + '/hooks/panel-palette.js').href)
 
 const NEXT = ROOT + '/.vbw/runtime/next.json'
 const TEST_MODE = { [ROOT + '/.vbw/runtime/test-mode']: '1' }
@@ -58,25 +62,29 @@ const styled = (node, skip = () => false) => {
 const isNew = (n) => n.type === 'Text' && textOf(n).trim() === 'new'
 const hasNew = (node) => Boolean(find(node, isNew))
 
-test("each row is a Button holding the item, with its size chip beside it and, where VBW gave one, the reason in dim text under it", async () => {
+test("each row is one Button on one line: '▸ item  [size]  reason', the chip and the reason dim, the top pick in the accent (T81)", async () => {
   const h = await session(record({ recommendation: REC(), ...motion('off') }))
-  const s = await section(h)
+  const at = async (bodyColumns) => find(await h.render({ props: { title: 'VBW', isFocused: false, bodyColumns, placement: 'dock', scroll: { offset: 0, bodyRows: 60 }, view: {} } }), (n) => n.type === 'Box' && n.props.key === 'whats-next')
+  const s = await at(100)
   const bs = rows(s)
   assert.equal(bs.length, 3, 'the top pick and two runners-up, one Button each: ' + bs.map(whole).join(' | '))
+  // Where the reason does not fit whole on the line it goes under the row, dim, cut to the width.
+  const narrow = await at(50)
+  const under = narrow.children.find((c) => c.type === 'Box' && rows(c).length && /Refunds/.test(whole(rows(c)[0])))
+  assert.equal(textOf(rows(under)[0]), '▸ Refunds for paid orders  [small]')
+  assert.ok(under.children.some((c) => c.type === 'Text' && c.props.dimColor === true && /Customers ask/.test(textOf(c))), 'the reason sits under the row')
   const [top, gift, dark] = bs
-  assert.match(whole(top), /Refunds for paid orders/)
-  assert.match(whole(gift), /Gift cards/)
-  assert.match(whole(dark), /Dark mode/)
-  // Claude Code lets a Button hold only strings and Text (T160): the chip and the reason sit outside it.
-  const rowBox = (re) => find(s, (n) => n.type === 'Box' && n.children.some((c) => c.type === 'Box' && c.children.includes(bs.find((b) => re.test(whole(b))))))
-  for (const [re, size] of [[/Refunds/, 'small'], [/Gift cards/, 'large'], [/Dark mode/, 'medium']]) {
-    const box = rowBox(re)
-    assert.ok(box, 'a row Box holds the Button: ' + re)
-    assert.ok(find(box, (n) => n.type === 'Text' && n.props.dimColor === true && textOf(n).includes(size)), 'the size chip is beside it: ' + size)
-  }
-  const reason = find(rowBox(/Refunds/), (n) => n.type === 'Text' && /Customers ask for it most/.test(textOf(n)))
-  assert.ok(reason, 'the reason is under the top row')
-  assert.equal(reason.props.dimColor, true, 'the reason is dim')
+  // Claude Code lets a Button hold only strings and Text (T160): every piece of the row is a Text inside it.
+  for (const b of bs) assert.ok(b.children.every((c) => c.type === 'Text'), 'the row Button holds Text only')
+  assert.equal(textOf(top), '▸ Refunds for paid orders  [small]  Customers ask for it most this month.')
+  assert.equal(textOf(gift), '▸ Gift cards  [large]')
+  assert.equal(textOf(dark), '▸ Dark mode  [medium]')
+  const piece = (b, re) => b.children.find((c) => re.test(textOf(c)))
+  assert.equal(piece(top, /Refunds/).props.color, P.ACCENT, 'the top pick is in the accent')
+  assert.equal(piece(gift, /Gift/).props.color, undefined, 'a runner-up is plain')
+  for (const b of bs) assert.equal(piece(b, /^\s*\[/).props.dimColor, true, 'the chip is dim')
+  assert.equal(piece(top, /Customers/).props.dimColor, true, 'the reason is dim')
+  for (const c of top.children) assert.ok(/truncate/.test(String(c.props.wrap)), 'never wraps')
 })
 
 test("pressing a row puts the item's command in the prompt and never sends it", async () => {

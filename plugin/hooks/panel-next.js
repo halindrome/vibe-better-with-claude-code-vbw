@@ -117,21 +117,22 @@ export function renderNext(ui, input, act) {
     }
     const r = l.row
     const w = Number.isFinite(width) ? Math.max(1, Math.floor(width)) : 40
-    const chip = cut('[' + r.size + ']', w)
+    // One Button, one line: '▸ item  [size]  reason'. Claude Code's h() lets a Button hold only
+    // strings and Text (never a Box), so every piece is a Text inside it. The item takes what the
+    // chip leaves; the reason, dim, sits on the line when it fits whole, else under it, cut.
+    const chip = '  [' + r.size + ']'
+    const item = cut(r.text, Math.max(1, w - 2 - [...chip].length))
+    const left = w - 2 - [...item].length - [...chip].length - 2
+    const beside = Boolean(r.reason) && [...r.reason].length <= left
     const itemProps = { key: 'item', wrap: 'truncate' }
-    if (l.pick) {
-      itemProps.bold = true
-      if (c.pulse === 1 || c.pulse === 3) itemProps.color = ACCENT
-      else if (c.pulse === 2) itemProps.color = HIGHLIGHT
-    }
-    // Claude Code's h() lets a Button hold only strings and Text (never a Box), so
-    // the item is the Button, the chip sits beside it and the reason under it.
-    const label = h(Text, itemProps, cut(r.text, Math.max(1, w - [...chip].length - 1)))
-    const head = h(Box, { key: 'head', flexDirection: 'row', columnGap: 1 },
-      h(Button, { key: 'item-button', plain: true, onPress: press(commandOf(r), true) }, label),
-      h(Text, { key: 'chip', dimColor: true, wrap: 'truncate' }, chip))
-    const body = r.reason ? [head, h(Text, { key: 'reason', dimColor: true, wrap: 'truncate' }, cut(r.reason, w))] : [head]
-    return h(Box, { key: l.id, flexDirection: 'column' }, ...body)
+    if (l.pick) Object.assign(itemProps, { bold: true, color: c.pulse === 2 ? HIGHLIGHT : ACCENT })
+    return h(Box, { key: l.id, flexDirection: 'column' },
+      h(Button, { key: 'item-button', plain: true, onPress: press(commandOf(r), true) },
+        h(Text, { key: 'mark', wrap: 'truncate', ...(l.pick ? { color: ACCENT } : { dimColor: true }) }, '▸ '),
+        h(Text, itemProps, item),
+        h(Text, { key: 'chip', dimColor: true, wrap: 'truncate' }, chip),
+        ...(beside ? [h(Text, { key: 'reason', dimColor: true, wrap: 'truncate' }, '  ' + r.reason)] : [])),
+      ...(r.reason && !beside ? [h(Text, { key: 'reason', dimColor: true, wrap: 'truncate' }, cut('  ' + r.reason, w))] : []))
   })
   return h(Box, { key: 'whats-next', flexDirection: 'column', marginBottom: 1 },
     h(Box, { key: 'whats-next-title', flexDirection: 'row' }, ...titlePieces(Text, c.title), ...(unseen === true ? [newMark(Text, motion)] : [])),

@@ -564,22 +564,21 @@ things, in the same order, as `vbw status`:
 
 ```
 What's next
-Refunds for paid orders · small
-  Customers ask for it most this month.
-  Gift cards · large
-  Dark mode · medium
-written 2026-10-09
-[Suggest next]
+▸ Refunds for paid orders  [small]  Customers ask for it most this month.
+▸ Gift cards  [large]
+▸ Dark mode  [medium]
+[10:00] written 2026-10-09
+[ Suggest next ]
 ```
 
-- The **top pick**, with its size (`small`, `medium` or `large`) and the reason
-  VBW gave for it.
+- The **top pick**, in the accent colour, with its size (`small`, `medium` or
+  `large`) and the reason VBW gave for it, dim.
 - Up to two **runners-up**, each with its size, one per line.
-- On each What's next row (the top pick and each runner-up) the item line is a
-  **button**, followed by a size **chip**; only the item line is pressable, the
-  reason under it is plain text. Pressing the item fills `/vbw:vibe` with the item's `T` or `R` id, or
-  with its text when it has no id. It only fills the prompt and never sends:
-  you press Enter.
+- Each row is one **button**: `▸`, the item, its size chip, and the reason
+  when it fits whole on the line (in a narrower pane the reason goes on the
+  line under the row, dim, cut to the width). Pressing a row fills
+  `/vbw:vibe` with the item's `T` or `R` id, or with its text when it has no
+  id. It only fills the prompt and never sends: you press Enter.
 - When the recommendation was **written**, as `[HH:MM]` in the panel.
 - Before any recommendation is stored, one line says there is **none yet**.
 - When the recommendation found nothing to pick, one line says **the backlog
