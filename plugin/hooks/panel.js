@@ -90,7 +90,7 @@ function parse(text) {
 // What the panel knows: the last good state of its files, the live run, what is drawn, what is asked.
 function fresh() {
   return {
-    live: false, born: {}, timer: null, busy: false, question: null, sound: true, keys: keys(false), silent: false, wouldPlay: 0,
+    live: false, registered: false, born: {}, timer: null, busy: false, question: null, sound: true, keys: keys(false), silent: false, wouldPlay: 0,
     record: null, next: null, history: null, cost: null, health: null, auto: null, stepsPath: null, steps: null, shown: '', seen: {}, sized: false,
     root: null, sessionId: null, holder: null, registry: null, stored: null, configDir: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
@@ -800,6 +800,18 @@ async function comms($, st, e) {
 // session's /vbw:vibe sets the project up mid-session). No timer before that.
 async function begin($, st) {
   if (st.live || st.unsupported === true) return
+  try {
+    await start($, st)
+  } catch (err) {
+    // A failure while starting (a store not ready yet) leaves nothing half-started: no
+    // timer, not live, so the next prompt, question or workflow starts it again.
+    st.live = false
+    if (st.timer && st.timer.cancel) st.timer.cancel()
+    st.timer = null
+    throw err
+  }
+}
+async function start($, st) {
   if (st.unsupported !== false) {
     const ver = await $.session.version()
     const v = isObj(ver) ? ver.version : ver
@@ -842,7 +854,8 @@ async function begin($, st) {
   st.shown = signature(st, v0, now)
   if (st.timer && st.timer.cancel) st.timer.cancel()
   st.timer = $.clock.every(TICK_MS, () => tick($, st))
-  for (const [name, description] of COMMANDS) $.command.register({ name, description, immediate: true })
+  if (!st.registered) for (const [name, description] of COMMANDS) $.command.register({ name, description, immediate: true })
+  st.registered = true
   if ((await $.store.get(st.keys.closed)) !== true) await open($)
 }
 async function wake($, st) {

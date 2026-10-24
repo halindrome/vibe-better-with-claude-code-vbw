@@ -699,9 +699,14 @@ Milestone end: about 36 min, until around 14:56, counting 2 fix rounds per stand
 
 ## Open and close it
 
-In a wide window the panel opens by itself when a session starts in a VBW
-project. In a narrow window Claude Code does not open a pane unasked, so run
-`/vbw-panel`: it opens the panel at any width.
+The panel opens by itself when a session starts in a VBW project, as far as
+Claude Code allows: it seats a pane that nobody asked for only in a window at
+least 144 columns wide (110 once you have opened the panel yourself and not
+closed it by hand since). In a narrower window the panel stays open but
+undrawn, and appears when the window is widened to that width. `/vbw-panel`
+opens it at any width. If the panel could not be started while the session
+began (Claude Code's per-user store was not ready), the next prompt, question
+or workflow starts it.
 
 The panel asks for a quarter of the terminal's width (never under 40
 columns). It asks once per session, after its first drawing, and never takes

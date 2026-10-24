@@ -21,7 +21,6 @@ Status words:
 
 | Item | Status | Affects | Workaround |
 |---|---|---|---|
-| [Mission Control may not open at session start](#mission-control-may-not-open-at-session-start) | Known issue | Wide windows | `/vbw-panel` |
 | [The loop's time budget follows the size label](#the-loops-time-budget-follows-the-size-label) | Known issue | Loops | Re-run the item |
 | [Time estimates absorb idle time](#time-estimates-absorb-idle-time) | Known issue | Estimates | Delete `steps.json` |
 | [Heavy checks each use every core](#heavy-checks-each-use-every-core) | Known issue | Cargo, make, similar | Lower `check_jobs` |
@@ -33,18 +32,6 @@ Status words:
 | [Cost per correct outcome](#cost-per-correct-outcome) | Idea | Everyone | Not applicable |
 
 ## Known issues
-
-### Mission Control may not open at session start
-
-**What.** In a wide window, Mission Control (the pane beside the conversation) is meant to open by itself when a session starts in a VBW project ([panel.md](panel.md#open-and-close-it)). It was seen not to: the pane stayed closed until a VBW run started.
-
-**Who and when.** Seen once, on an early 2.0 build loaded with `claude --plugin-dir`, in a wide window. We have not found the cause and have not established whether an installed copy is affected.
-
-**Workaround.** `/vbw-panel` opens the pane at any width.
-
-**Plan.** Find the gap in the launch trigger, fix it, and add the case to the panel's real-user scenario.
-
-**Where.** `plugin/hooks/panel.js` (the `session.start` handler and the open request); `tools/l3-suite.sh` (the `panel` scenario).
 
 ### The loop's time budget follows the size label
 
