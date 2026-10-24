@@ -52633,7 +52633,7 @@
       "text": "The Lead cannot reword an approved rule (F269, 2026-10-19): vbw apply --patch matches a rule by requirement and text, so new wording adds a rule and the stale one stays; a shipped milestone's rule cannot be reached at all. Give rules a stable address (R188.10) that a patch can reword or retire, with re-approval, so a later requirement that changes behaviour can update the earlier rule instead of leaving it stale (R188.10 is superseded by R193 meanwhile)",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T169",
