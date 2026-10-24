@@ -163,7 +163,11 @@ prints `waited ... for other VBW runs on this computer`. Waiting changes
 nothing else: the same result as without it, and a timeout counts from when its command really starts.
 
 Every change of the store is one short step under a lock file next to it
-(`slots.lock`).
+(`slots.lock`), and a step spends little: one `jq` run, one rename and the
+lock's removal, with no pause unless another run holds the lock. A run that
+finds the lock held retries after 10 ms and waits a little longer each time,
+up to a tenth of a second, so slots do not sit idle between one unit and the
+next.
 
 If a run is killed, the next run takes over its slots. Ctrl-C gives them back
 at once. A lock left by a dead process is taken over too, by renaming its owner

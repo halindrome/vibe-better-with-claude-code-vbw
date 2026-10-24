@@ -8,9 +8,10 @@
 # unit commands log their start and end to $LOG (tests/machine-helper.bash).
 # The project two tests share is built once per file (setup_file) and copied;
 # the core count is read when a run starts, so each test sets it after the copy.
-# The store's own steps (R181, T141) are driven in bash processes of their own
-# (in_store): the lock's takeover, a lock that cannot be made, and a store lost
-# or a wait met after the run's folder has ended.
+# The store's own steps (R181, R202, T141, T180) are driven in bash processes of
+# their own (in_store): the lock's takeover, a lock that cannot be made, a store
+# lost after the run's folder has ended, the processes a step spawns and the
+# retries' pauses.
 
 load helper
 load machine-helper
@@ -221,4 +222,43 @@ gone_pid() {
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [[ "$output" == "waited 1 min for other VBW runs on this computer ("* ]] || { echo "$output"; false; }
   [ "$(printf '%s\n' "$output" | grep -c 'waited')" = 1 ] || { echo "$output"; false; }
+}
+
+@test "T180: a take and a give each spawn only jq, a rename and the lock's removal" {
+  local bin="$TEST_ROOT/shim" t
+  mkdir -p "$bin"
+  : > "$TEST_ROOT/procs"
+  for t in jq mv rm mkdir mktemp cat ln date sleep; do
+    printf '#!/bin/sh\necho %s >> "$TEST_ROOT/procs"\nexec %s "$@"\n' "$t" "$(command -v "$t")" > "$bin/$t"
+    chmod +x "$bin/$t"
+  done
+  # shellcheck disable=SC2016 # expanded by in_store
+  # U1 takes the only slot, U2 joins the wait, U1 gives the slot to U2: three steps that leave a store.
+  PATH="$bin:$PATH" in_store ': > "$TEST_ROOT/procs"
+    slots_apply "$SLOTS_TAKE" U1 || exit 1
+    [ "$SLOTS_RESULT" = true ] || { echo "no slot"; exit 1; }
+    echo --- >> "$TEST_ROOT/procs"
+    slots_apply "$SLOTS_TAKE" U2 || exit 1
+    echo --- >> "$TEST_ROOT/procs"
+    slots_apply "$SLOTS_DROP" U1 || exit 1'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(tr '\n' ' ' < "$TEST_ROOT/procs")" = "jq mv rm --- jq mv rm --- jq mv rm " ] || { echo "$(tr '\n' ' ' < "$TEST_ROOT/procs")"; false; }
+}
+
+@test "T180: a lock retry begins at 10 ms and backs off to a tenth of a second" {
+  sleep 120 &
+  local live=$!
+  mkdir -p "$TEST_ROOT/store"
+  printf '%s\n' "$live" > "$TEST_ROOT/store/slots.lock"
+  # shellcheck disable=SC2016 # expanded by in_store
+  in_store 'tries=0
+    sleep() { tries=$((tries + 1)); printf "%s\n" "$1" >> "$TEST_ROOT/naps"; [ "$tries" -lt 60 ] || rm -rf "$SLOTS_DIR/slots.lock"; }
+    slots_lock || exit 1
+    echo "locked after $tries tries"'
+  kill "$live"
+  wait "$live" 2> /dev/null || true
+  [ "$status" -eq 0 ] && [ "$output" = "locked after 60 tries" ] || { echo "$output"; false; }
+  [ "$(head -n 1 "$TEST_ROOT/naps")" = 0.01 ] || { cat "$TEST_ROOT/naps"; false; }
+  [ "$(tail -n 1 "$TEST_ROOT/naps")" = 0.1 ] || { cat "$TEST_ROOT/naps"; false; }
+  [ "$(sort -n "$TEST_ROOT/naps" | tr '\n' ' ')" = "$(tr '\n' ' ' < "$TEST_ROOT/naps")" ] || { echo "a pause got shorter:"; cat "$TEST_ROOT/naps"; false; }
 }

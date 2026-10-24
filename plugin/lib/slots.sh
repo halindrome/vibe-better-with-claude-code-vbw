@@ -11,7 +11,9 @@
 # over by a rename when that process is gone, and when it is empty only after a
 # wait): one jq run over the file (a second one only when a run in it is gone),
 # then the new store written atomically (a temporary file in the same folder,
-# then mv). The file is removed when nothing holds or waits for a slot.
+# then mv). A step spawns three processes (jq, mv, and the lock's removal) and
+# sleeps only while the lock is held (T180: slots sat idle between units while
+# steps ran). The file is removed when nothing holds or waits for a slot.
 #
 # Turns (D339): every step drops the entries of runs whose process is gone,
 # makes its change, then hands each free slot to the waiter whose turn it is:
@@ -66,12 +68,26 @@ slots_live() {
   [ -n "$1" ] && kill -0 "$1" 2> /dev/null
 }
 
+# slots_nap N: the pause before retry number N (from 1) of a lock or a look:
+# 10 ms at first, longer the longer it takes, never over a tenth of a second.
+slots_nap() {
+  if [ "$1" -le 3 ]; then
+    sleep 0.01
+  elif [ "$1" -le 10 ]; then
+    sleep 0.02
+  elif [ "$1" -le 30 ]; then
+    sleep 0.05
+  else
+    sleep 0.1
+  fi
+}
+
 # slots_lock: take the store's lock; 2 when the folder cannot be written. The
 # lock is the file slots.lock holding its owner's pid, made by the exclusive
 # create of vbw_lock_create (no process of its own). A folder of that name, left
 # by an older VBW with its pid in slots.lock/pid, excludes just the same.
 slots_lock() {
-  local lock="$SLOTS_DIR/slots.lock" quiet=$SECONDS owner file probe
+  local lock="$SLOTS_DIR/slots.lock" n=0 quiet=$SECONDS owner file probe
   while :; do
     if vbw_lock_create "$lock"; then
       SLOTS_LOCKED=$lock
@@ -102,7 +118,8 @@ slots_lock() {
         [ $((SECONDS - quiet)) -lt 30 ] || return 2
       fi
     fi
-    sleep 0.05
+    n=$((n + 1))
+    slots_nap "$n"
   done
 }
 
@@ -130,12 +147,12 @@ slots_jq() {
 # slots_write STORE: the new store (a step's last line), atomically; none left
 # when it is null (nothing holds or waits).
 slots_write() {
-  local tmp
+  local tmp="$SLOTS_DIR/slots.json.$$"
   if [ "$1" = null ]; then
     [ ! -e "$SLOTS_FILE" ] || rm -f "$SLOTS_FILE" 2> /dev/null || return 2
     return 0
   fi
-  tmp=$(mktemp "$SLOTS_DIR/slots.XXXXXX") || return 2
+  # The lock is held, so this run's one temporary file is the only one.
   { printf '%s\n' "$1" > "$tmp" && mv -f "$tmp" "$SLOTS_FILE"; } 2> /dev/null || { rm -f "$tmp"; return 2; }
 }
 
@@ -248,11 +265,12 @@ slots_lose() {
 slots_hold() {
   [ "$SLOTS_STATE" = on ] || return 1
   slots_traps
-  local since="" rc=0
+  local since="" rc=0 n=0
   slots_apply "$SLOTS_TAKE" "$1" || rc=$?
   while [ "$rc" -eq 0 ] && [ "$SLOTS_RESULT" != true ]; do
     [ -n "$since" ] || since=$(date +%s)
-    sleep 0.1
+    n=$((n + 1))
+    slots_nap "$n"
     slots_look "$1" || slots_apply "$SLOTS_TAKE" "$1" || rc=$?
   done
   if [ "$rc" -ne 0 ]; then slots_lose "$rc"; return 1; fi
