@@ -68,7 +68,7 @@ slots_live() {
   [ -n "$1" ] && kill -0 "$1" 2> /dev/null
 }
 
-# slots_nap N: the pause before retry number N (from 1) of a lock or a look:
+# slots_nap N: the pause before retry number N (from 1) of a lock:
 # 10 ms at first, longer the longer it takes, never over a tenth of a second.
 slots_nap() {
   if [ "$1" -le 3 ]; then
@@ -265,12 +265,14 @@ slots_lose() {
 slots_hold() {
   [ "$SLOTS_STATE" = on ] || return 1
   slots_traps
-  local since="" rc=0 n=0
+  local since="" rc=0
   slots_apply "$SLOTS_TAKE" "$1" || rc=$?
   while [ "$rc" -eq 0 ] && [ "$SLOTS_RESULT" != true ]; do
     [ -n "$since" ] || since=$(date +%s)
-    n=$((n + 1))
-    slots_nap "$n"
+    # Every waiter looks at the same pace, however long it has waited: the store gives a
+    # freed slot to the waiter whose turn it is, and a newer waiter looking more often
+    # would start first (no backoff here; slots_nap is for lock retries).
+    sleep 0.1
     slots_look "$1" || slots_apply "$SLOTS_TAKE" "$1" || rc=$?
   done
   if [ "$rc" -ne 0 ]; then slots_lose "$rc"; return 1; fi

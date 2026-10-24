@@ -213,10 +213,10 @@ gone_pid() {
 
 @test "T141: waits in the run's folder and after it ended are added up and told once" {
   # shellcheck disable=SC2016 # expanded by in_store
-  in_store 'slots_waited $(($(date +%s) - 30))
+  in_store 'slots_waited $(($(jq -n "now | floor") - 30))
     slots_total
     rm -rf "$CHECK_OUT"
-    slots_waited $(($(date +%s) - 40))
+    slots_waited $(($(jq -n "now | floor") - 40))
     slots_say 2>&1
     slots_say 2>&1'
   [ "$status" -eq 0 ] || { echo "$output"; false; }
@@ -261,4 +261,19 @@ gone_pid() {
   [ "$(head -n 1 "$TEST_ROOT/naps")" = 0.01 ] || { cat "$TEST_ROOT/naps"; false; }
   [ "$(tail -n 1 "$TEST_ROOT/naps")" = 0.1 ] || { cat "$TEST_ROOT/naps"; false; }
   [ "$(sort -n "$TEST_ROOT/naps" | tr '\n' ' ')" = "$(tr '\n' ' ' < "$TEST_ROOT/naps")" ] || { echo "a pause got shorter:"; cat "$TEST_ROOT/naps"; false; }
+}
+
+@test "R181: a run waiting for a slot looks at the store at one interval however long it has waited, so a freed slot's turn is not lost to a newer waiter" {
+  # A backoff here made a long waiter look every 100 ms and a new one every 10 ms: the new
+  # waiter started first though the store had given the long waiter its turn (machine-turns).
+  # shellcheck disable=SC2016 # expanded by in_store
+  in_store 'tries=0
+    slots_apply() { SLOTS_RESULT=false; [ "$tries" -lt 40 ] || SLOTS_RESULT=true; return 0; }
+    slots_look() { return 1; }
+    slots_waited() { :; }
+    sleep() { tries=$((tries + 1)); printf "%s\n" "$1" >> "$TEST_ROOT/waits"; }
+    slots_hold U1 || exit 1
+    echo "held after $tries looks"'
+  [ "$status" -eq 0 ] && [ "$output" = "held after 40 looks" ] || { echo "$output"; false; }
+  [ "$(sort -u "$TEST_ROOT/waits" | wc -l | tr -d ' ')" = 1 ] || { echo "the pauses differ:"; sort "$TEST_ROOT/waits" | uniq -c; false; }
 }
