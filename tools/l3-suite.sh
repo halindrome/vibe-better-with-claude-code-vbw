@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak, fixchecks, failoutput. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak fixchecks failoutput"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -2066,12 +2066,14 @@ scenario_senior() {
   }
 }
 
-# greet_plan_seed: the agreed greet.sh spec and its approved plan (one requirement, one
-# plan, one check), nothing built yet.
+# greet_plan_seed [TEST_TEXT]: the agreed greet.sh spec and its approved plan (one requirement,
+# one plan, one check running test_greet.sh, whose text is TEST_TEXT or the two-case test),
+# nothing built yet.
 greet_plan_seed() {
+  local test=${1:-'[ "$(sh greet.sh Ana)" = "Hello, Ana!" ] && [ "$(sh greet.sh)" = "Hello, world!" ]'}
   printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"; without a name it prints "Hello, world!"\n' > .vbw/spec.md
   "$VBW" spec sync > /dev/null || return 1
-  printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ] && [ "$(sh greet.sh)" = "Hello, world!" ]\n' > test_greet.sh
+  printf '%s\n' "$test" > test_greet.sh
   printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"]}],
     "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME! or Hello, world! without a name"]}],
     "checks": [{"id": "C1", "req": "R1", "run": ["sh", "test_greet.sh"], "files": ["test_greet.sh"]}],
@@ -2476,6 +2478,62 @@ fixchecks_seed() {
   # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
   "$VBW" plan done P1.1 > /dev/null || return 1
   "$VBW" prove --full > /dev/null || return 1
+}
+
+# failoutput_seed: greet.sh built and proven with a check that prints one TAP line per case; then
+# a later commit by the user makes the no-name case fail, and the proof opens a fix and keeps the
+# check's whole output.
+failoutput_seed() {
+  greet_plan_seed 'fail=0
+if [ "$(sh greet.sh Ana)" = "Hello, Ana!" ]; then echo "ok 1 a name is greeted"; else echo "not ok 1 a name is greeted"; fail=1; fi
+if [ "$(sh greet.sh)" = "Hello, world!" ]; then echo "ok 2 no name greets the world"; else echo "not ok 2 no name greets the world"; fail=1; fi
+exit "$fail"' || return 1
+  printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh && chmod +x greet.sh
+  "$VBW" commit P1.1 "feat(P1.1): greet.sh" > /dev/null || return 1
+  # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
+  "$VBW" plan done P1.1 > /dev/null || return 1
+  "$VBW" prove --full > /dev/null || return 1
+  printf '#!/bin/sh\necho "Hello, $1!"\n' > greet.sh
+  git commit -qm "chore: greet.sh greets the name it is given" -- greet.sh || return 1
+  # The proof fails, opens the fix and keeps the output: its exit status is the failure.
+  "$VBW" prove > /dev/null 2>&1 || true
+}
+
+# failoutput (R195): a later commit breaks a proven requirement; the proof keeps the failing
+# check's whole output in .vbw/runtime/output/ and opens a fix. The user types /vbw:vibe, and the
+# agents read the kept file and the failing test's name through `vbw show fix`. Judged in the kept
+# file, in the tool results in the transcripts and in the record (the fix closed, the file removed
+# once the check passes), never on screen.
+scenario_failoutput() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor auto > /dev/null && failoutput_seed) \
+    || { say "setup failed: could not seed the broken requirement"; return 1; }
+  fixture="greet.sh built and proven, its check printing one TAP line per case; a later commit by the user makes the no-name case fail, and the proof opened a fix and kept the check's output before the session; rigor auto; the user types /vbw:vibe"
+  kept="$dir/.vbw/runtime/output/C1.log"
+  kept_file=false kept_names=false
+  [ -s "$kept" ] && kept_file=true
+  grep -q '^not ok 2 no name greets the world$' "$kept" 2> /dev/null && kept_names=true
+  fix_id=$(jq -r '[.fixes[] | select(.status == "open")][0].id // empty' "$dir/.vbw/record.json" 2> /dev/null)
+  start="/vbw:vibe"
+  checks() {
+    local passed=true named_file=false named_test=false removed=false
+    transcripts | transcript_tool_output 'vbw[^|;&]* show fix' 'full output: \.vbw/runtime/output/C1\.log' && named_file=true
+    transcripts | transcript_tool_output 'vbw[^|;&]* show fix' '^ *no name greets the world *$' && named_test=true
+    [ ! -e "$kept" ] && removed=true
+    common_checks
+    expect "the proof kept the failing check's whole output before the session ($kept_file)" [ "$kept_file" = true ]
+    expect "the kept file names the failing test (not ok 2 no name greets the world)" [ "$kept_names" = true ]
+    expect "a fix was open before the session ($fix_id)" [ -n "$fix_id" ]
+    expect "that fix is closed" jq -e --arg f "$fix_id" 'any(.fixes[]; .id == $f and .status == "closed")' .vbw/record.json
+    expect "an agent ran vbw show fix and its result named the kept file" [ "$named_file" = true ]
+    expect "an agent ran vbw show fix and its result listed the failing test by name under failing tests:" [ "$named_test" = true ]
+    expect "the kept file was removed once the check passed" [ "$removed" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write failoutput "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --arg f "$fix_id" --argjson kf "$kept_file" --argjson kn "$kept_names" --argjson nf "$named_file" --argjson nt "$named_test" --argjson rm "$removed" \
+        '{fix: $f, kept_file: $kf, kept_names_failing_test: $kn, show_fix_named_file: $nf, show_fix_named_test: $nt, file_removed_after_pass: $rm}')" \
+      '["failing-test names of runners other than the TAP form (tests/show-fix-failing-tests.bats holds those forms)","a failing test file of the single-file form or a failing project command","the wording of what vbw show fix prints (read by a person)","an output longer than the tail the record keeps","a project larger than the greet.sh fixture"]'
+  }
 }
 
 # checks_fail_on_old_code REQ COMMIT: succeeds when some check of REQ, as the project has it now,
