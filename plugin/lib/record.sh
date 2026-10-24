@@ -8,10 +8,19 @@ VBW_LOCK_STALE_SECONDS=30
 VBW_LOCK_HELD_SECONDS=600
 
 # Print the first violation of FILE (empty output = valid). Status 1 if invalid.
+# A file that is not JSON is "unparseable JSON"; JSON the validator cannot even
+# walk (a field of the wrong type: .milestone a number) is named as such, with
+# jq's own words, never mistaken for a broken file.
 record_violation() {
-  local out
+  local out why
   if ! out=$(jq -c --slurpfile interview "$VBW_LIB/interview.json" -f "$VBW_LIB/record.jq" "$1" 2>/dev/null); then
-    printf 'unparseable JSON\n'
+    if jq empty "$1" > /dev/null 2>&1; then
+      why=$(jq -c --slurpfile interview "$VBW_LIB/interview.json" -f "$VBW_LIB/record.jq" "$1" 2>&1 > /dev/null | head -n 1)
+      why=${why#jq: error*: }
+      printf 'a field has the wrong type (%s)\n' "${why:-the validator stopped}"
+    else
+      printf 'unparseable JSON\n'
+    fi
     return 1
   fi
   [ "$out" = "[]" ] && return 0
