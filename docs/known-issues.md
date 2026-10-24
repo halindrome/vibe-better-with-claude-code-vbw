@@ -24,7 +24,6 @@ Status words:
 | [Mission Control may not open at session start](#mission-control-may-not-open-at-session-start) | Known issue | Wide windows | `/vbw-panel` |
 | [The loop's time budget counts waiting](#the-loops-time-budget-counts-waiting) | Known issue | Loops | Re-run the item |
 | [Approved rules cannot be reworded or retired](#approved-rules-cannot-be-reworded-or-retired) | Known issue | Re-planning | None clean |
-| [Heavy checks each use every core](#heavy-checks-each-use-every-core) | Known issue | Cargo, make, similar | Lower `check_jobs` |
 | [A unit that lost the slot store may leave a slot held](#a-unit-that-lost-the-slot-store-may-leave-a-slot-held) | Known issue | Many runs at once | None needed |
 | [Status line speed where VBW is off](#status-line-speed-where-vbw-is-off) | Planned | Slower Macs | None needed |
 | [Panel drawing headroom](#panel-drawing-headroom) | Planned | Slower Macs | None needed |
@@ -69,18 +68,6 @@ Status words:
 **Plan.** Give rules a stable address that a patch can reword or retire, with a new approval. A kernel step is needed to supersede a rule of a shipped requirement.
 
 **Where.** `plugin/lib/cmd-apply.sh`; the record's `rules` ([record.md](record.md)).
-
-### Heavy checks each use every core
-
-**What.** Test commands such as `cargo test` and `make` each try to use every core. VBW runs several checks at once (up to `check_jobs` and the computer-wide limit, [proof.md](proof.md#checks-run-in-parallel)), so several of them together can overload the machine. Load averages from 23 to 66 have been seen.
-
-**Who and when.** Projects whose checks are heavy build-and-test commands, when a proof runs many of them at once.
-
-**Workaround.** Lower the number of checks at a time: `vbw config set check_jobs 2` (or `1`). A check can also run by itself with the `alone` mark ([proof.md](proof.md#checks-that-run-alone)).
-
-**Plan.** Give each command its share of the cores through the standard variables (`CARGO_BUILD_JOBS`, `MAKEFLAGS`, `GOMAXPROCS`), or let a check declare a cores mark. Not decided: it depends on measuring how much each tool really uses.
-
-**Where.** `plugin/lib/checks.sh`; the limit logic in `plugin/lib/slots.sh`.
 
 ### A unit that lost the slot store may leave a slot held
 

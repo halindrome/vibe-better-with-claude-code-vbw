@@ -128,6 +128,18 @@ their results take VBW one step each, however many checks there are. Checks
 that share a resource and are not marked `alone` (a database, a fixed port) can
 disturb each other: mark them `alone`, or set `check_jobs` to 1.
 
+#### Cores per unit
+
+Build-and-test commands such as `cargo test`, `make` and `go test` each use
+every core unless told otherwise, so several of them side by side overload the
+machine. VBW tells each unit its share: the processor cores divided by the
+units this run puts side by side (`check_jobs`, under the computer-wide limit
+below), at least 1; a check marked `alone` gets every core. The share reaches
+the unit's command through `CARGO_BUILD_JOBS`, `GOMAXPROCS` and `MAKEFLAGS`
+(`-jN`). A variable your environment already sets is passed on unchanged, so
+`MAKEFLAGS=-j2 claude` keeps your own choice. When the core count cannot be
+read, nothing is set.
+
 ### The computer-wide limit
 
 VBW as a whole never runs more than the machine limit at once: three quarters

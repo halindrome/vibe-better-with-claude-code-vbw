@@ -1,5 +1,22 @@
 # Changelog
 
+## [2.1.6] - 2026-10-24
+
+### Changed
+
+- **Heavy test commands share the computer's cores.** When several checks run
+  side by side, each check's command now gets its share of the cores through
+  the settings build tools read (`CARGO_BUILD_JOBS`, `GOMAXPROCS`,
+  `MAKEFLAGS=-jN`); a check that runs alone gets every core. A project whose
+  checks each started a full parallel build no longer runs many such builds
+  at once. Values you already set are kept.
+
+### Fixed
+
+- **Two runs no longer write the proof's step times at the same moment.** The
+  lock around that note could be taken from a run still writing it, after a
+  few seconds' wait; it is now taken over only from a run that has died.
+
 ## [2.1.5] - 2026-10-24
 
 ### Changed
