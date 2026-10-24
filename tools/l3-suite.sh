@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions, taskbreak. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions taskbreak"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -2384,6 +2384,71 @@ scenario_sessions() {
       "$(jq -n --arg n "$want" --argjson reg "$([ -n "$A_id" ] && echo true || echo false)" --argjson h "$held_ok" --argjson t "$told" --argjson s "$sl_ok" --argjson p "$panel_ok" --argjson c "$clean" --argjson cl "$cleared" \
         '{chat_name: $n, registry_name_matches: $reg, holder_file_names_chat: $h, other_chat_told_name: $t, statusline_held_by: $s, panel_resume_line: $p, name_not_in_record_or_git: $c, holder_cleared_at_end: $cl}')" \
       '["the Sessions tab and Comms as drawn on screen (the tab'"'"'s rows are the panel'"'"'s own function run on the real list, the status line is its script run for chat B, not the second chat'"'"'s window)","a chat renamed while the run is open (the name is set before the build)","a chat that was closed while it held the run","more than two chats on the project","Claude Code versions other than the one that ran"]'
+  }
+}
+
+# taskbreak_seed: one requirement, two plans in order. P1.1 builds greet.sh (its rule names it),
+# P1.2 adds --shout (its rule names it): C2 stays red until P1.2 is built. P1.1's second task,
+# --help, has no rule, so at deep the Dev breaks that task. Approved, nothing built.
+taskbreak_seed() {
+  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!" and ./greet.sh --shout Ana prints "HELLO, ANA!"\n' > .vbw/spec.md
+  "$VBW" spec sync > /dev/null || return 1
+  printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ]\n' > test_greet.sh
+  printf '[ "$(sh greet.sh --shout Ana)" = "HELLO, ANA!" ]\n' > test_shout.sh
+  printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"]}],
+    "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME!", "greet.sh --help prints a usage line and exits 0"]},
+              {"id": "P1.2", "phase": "P1", "title": "shout", "reqs": ["R1"], "files": ["greet.sh"], "after": ["P1.1"], "tasks": ["greet.sh --shout NAME prints HELLO, NAME! in capitals"]}],
+    "checks": [{"id": "C1", "req": "R1", "run": ["sh", "test_greet.sh"], "files": ["test_greet.sh"]},
+               {"id": "C2", "req": "R1", "run": ["sh", "test_shout.sh"], "files": ["test_shout.sh"]}],
+    "rules": [{"req": "R1", "text": "a name is greeted", "check": "C1", "plan": "P1.1"},
+              {"req": "R1", "text": "--shout prints the greeting in capitals", "check": "C2", "plan": "P1.2"}]}' \
+    | "$VBW" apply > /dev/null || return 1
+  git add -A && git commit -qm "chore: plan" || return 1
+  "$VBW" approve > /dev/null || return 1
+}
+
+# taskbreak (R193): a task break judged by the plan's own rules. At deep, the Dev of P1.1,
+# the early plan of R1, breaks a task no rule covers; the check of P1.2's rule is red then,
+# because P1.2 is not built. The break must run only the checks of the rules P1.1 owes (C1),
+# so the red C2 of a rule it does not owe refuses nothing. Judged in the record (the break's
+# checks map) and in git (the break's commit and the order of the plans), never on screen.
+scenario_taskbreak() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor deep > /dev/null && taskbreak_seed) \
+    || { say "setup failed: could not seed the approved two-plan requirement"; return 1; }
+  fixture="greet.sh in two plans of one requirement, approved by the user before the session: P1.1 greets and has a --help task no rule covers, P1.2 adds --shout (its rule's check is red until P1.2 is built); rigor deep; the user types /vbw:vibe and the build runs to the end"
+  start="/vbw:vibe"
+  checks() {
+    local passed=true r="$dir/.vbw/record.json" breaks first_head="" tmp later=false first=false red=false recorded=false ran="[]" only=false p12
+    # Every break of P1.1 that ran checks (a task: a number; --none records no checks).
+    breaks=$(jq -c '[.plans[] | select(.id == "P1.1") | (.mutations // [])[] | select(has("task") and has("result"))]' "$r" 2> /dev/null || echo '[]')
+    [ "$(printf '%s' "$breaks" | jq 'length')" -ge 1 ] && recorded=true
+    ran=$(printf '%s' "$breaks" | jq -c '[.[] | .checks | keys] | unique')
+    [ "$ran" = '[["C1"]]' ] && only=true
+    first_head=$(printf '%s' "$breaks" | jq -r 'first.head // empty')
+    # The check of the rule P1.1 does not owe was red on the code the break was made against.
+    if [ -n "$first_head" ] && tmp=$(mktemp -d "${TMPDIR:-/tmp}/vbw-l3-taskbreak.XXXXXX"); then
+      git -C "$dir" archive "$first_head" | tar -x -C "$tmp" 2> /dev/null
+      (cd "$tmp" && ! sh test_shout.sh > /dev/null 2>&1) && red=true
+      rm -rf "$tmp"
+    fi
+    # P1.1 was built first: the break's commit came before the first commit of P1.2.
+    p12=$(git -C "$dir" log --reverse --format=%H --grep='^VBW-Plan: P1.2$' | head -n 1)
+    if [ -n "$first_head" ] && [ -n "$p12" ] && git -C "$dir" merge-base --is-ancestor "$first_head" "$p12" 2> /dev/null; then first=true; fi
+    jq -e '(.plans[] | select(.id == "P1.2") | .status) == "done" and (.requirements[] | select(.id == "R1") | .status) == "proven" and .evidence.checks.C2.status == "pass"' "$r" > /dev/null 2>&1 && later=true
+    say "task breaks of P1.1: $(printf '%s' "$breaks" | jq -c '[.[] | {task, result, checks}]')"
+    common_checks
+    expect "the Dev recorded a task break on P1.1 ($recorded)" [ "$recorded" = true ]
+    expect "every task break of P1.1 ran the checks of the rules it owes and no other ($ran)" [ "$only" = true ]
+    expect "the check of the rule P1.1 does not owe was red on the code the break was made against" [ "$red" = true ]
+    expect "the break was made on P1.1's code before P1.2 was built" [ "$first" = true ]
+    expect "P1.2 was built after it and completed the requirement, its check passing" [ "$later" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write taskbreak "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --argjson rec "$recorded" --argjson ran "$ran" --argjson red "$red" --argjson first "$first" --argjson later "$later" --argjson b "$breaks" \
+        '{task_break_recorded: $rec, checks_run: $ran, other_rule_check_red_at_break: $red, early_plan_built_first: $first, later_plan_completed: $later,
+          task_breaks: ($b | map({task, result, checks}))}')" \
+      '["a task break the Dev answers with --none (it runs no check, so it proves nothing here)","a plan that owns no rule (its refusal is covered by tests/mutate-own-rules.bats)","a rule shared by several plans","a project larger than the greet.sh fixture","the Dev'"'"'s choice of the task to break (the plan lists one no rule covers)"]'
   }
 }
 
