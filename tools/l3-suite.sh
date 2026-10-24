@@ -2361,7 +2361,9 @@ scenario_sessions() {
     # Chat B's last turn is long over; stop it, then read its transcript.
     l3 wait "$second" 120 > /dev/null 2>&1 || true
     l3 stop "$second" > /dev/null 2>&1 || true
-    transcripts | grep -F "/$B_id.jsonl" | transcript_tool_output 'vbw' "another session, $want" && told=true
+    # VBW's answer reaches chat B as a tool result or through the router's own loaded answer
+    # (the skill's vbw next at load time): either way it is in B's transcript.
+    transcripts | grep -F "/$B_id.jsonl" | xargs grep -lF -- "another session, $want" > /dev/null 2>&1 && told=true
     case "$sl_line" in *"held by $want"*) sl_ok=true ;; esac
     printf '%s' "$held" | jq -e --arg a "$A_id" --arg n "$want" '.session == $a and .session_name == $n and (.run | type) == "string"' > /dev/null 2>&1 && held_ok=true
     printf '%s' "$panel_rows" | jq -e --arg a "$A_id" --arg n "$want" '(.rows | map(select(.id == $a)) | first) as $x
@@ -2390,20 +2392,20 @@ scenario_sessions() {
 }
 
 # taskbreak_seed: one requirement, two plans in order. P1.1 builds greet.sh (its rule names it),
-# P1.2 adds --shout (its rule names it): C2 stays red until P1.2 is built. P1.1's second task,
+# P1.2 adds shout.sh, a file only it owns (its rule names it): C2 stays red until P1.2 is built. P1.1's second task,
 # --help, has no rule, so at deep the Dev breaks that task. Approved, nothing built.
 taskbreak_seed() {
-  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!" and ./greet.sh --shout Ana prints "HELLO, ANA!"\n' > .vbw/spec.md
+  printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!" and ./shout.sh Ana prints "HELLO, ANA!"\n' > .vbw/spec.md
   "$VBW" spec sync > /dev/null || return 1
   printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ]\n' > test_greet.sh
-  printf '[ "$(sh greet.sh --shout Ana)" = "HELLO, ANA!" ]\n' > test_shout.sh
+  printf '[ "$(sh shout.sh Ana)" = "HELLO, ANA!" ]\n' > test_shout.sh
   printf '%s' '{"phases": [{"id": "P1", "title": "Greet", "reqs": ["R1"]}],
     "plans": [{"id": "P1.1", "phase": "P1", "title": "greet.sh", "reqs": ["R1"], "files": ["greet.sh"], "after": [], "tasks": ["greet.sh prints Hello, NAME!", "greet.sh --help prints a usage line and exits 0"]},
-              {"id": "P1.2", "phase": "P1", "title": "shout", "reqs": ["R1"], "files": ["greet.sh"], "after": ["P1.1"], "tasks": ["greet.sh --shout NAME prints HELLO, NAME! in capitals"]}],
+              {"id": "P1.2", "phase": "P1", "title": "shout", "reqs": ["R1"], "files": ["shout.sh"], "after": ["P1.1"], "tasks": ["shout.sh NAME prints the greet.sh greeting in capitals: HELLO, NAME!"]}],
     "checks": [{"id": "C1", "req": "R1", "run": ["sh", "test_greet.sh"], "files": ["test_greet.sh"]},
                {"id": "C2", "req": "R1", "run": ["sh", "test_shout.sh"], "files": ["test_shout.sh"]}],
     "rules": [{"req": "R1", "text": "a name is greeted", "check": "C1", "plan": "P1.1"},
-              {"req": "R1", "text": "--shout prints the greeting in capitals", "check": "C2", "plan": "P1.2"}]}' \
+              {"req": "R1", "text": "shout.sh prints the greeting in capitals", "check": "C2", "plan": "P1.2"}]}' \
     | "$VBW" apply > /dev/null || return 1
   git add -A && git commit -qm "chore: plan" || return 1
   "$VBW" approve > /dev/null || return 1
@@ -2411,14 +2413,15 @@ taskbreak_seed() {
 
 # taskbreak (R193): a task break judged by the plan's own rules. At deep, the Dev of P1.1,
 # the early plan of R1, breaks a task no rule covers; the check of P1.2's rule is red then,
-# because P1.2 is not built. The break must run only the checks of the rules P1.1 owes (C1),
+# because P1.2 is not built (its behaviour lives in shout.sh, a file only P1.2 owns, so
+# P1.1's Dev cannot build it early: with one shared file it legitimately did, 2026-10-24). The break must run only the checks of the rules P1.1 owes (C1),
 # so the red C2 of a rule it does not owe refuses nothing. Judged in the record (the break's
 # checks map) and in git (the break's commit and the order of the plans), never on screen.
 scenario_taskbreak() {
   new_project
   (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor deep > /dev/null && taskbreak_seed) \
     || { say "setup failed: could not seed the approved two-plan requirement"; return 1; }
-  fixture="greet.sh in two plans of one requirement, approved by the user before the session: P1.1 greets and has a --help task no rule covers, P1.2 adds --shout (its rule's check is red until P1.2 is built); rigor deep; the user types /vbw:vibe and the build runs to the end"
+  fixture="greet.sh in two plans of one requirement, approved by the user before the session: P1.1 greets and has a --help task no rule covers, P1.2 adds shout.sh, a file only it owns (its rule's check is red until P1.2 is built); rigor deep; the user types /vbw:vibe and the build runs to the end"
   start="/vbw:vibe"
   checks() {
     local passed=true r="$dir/.vbw/record.json" breaks first_head="" tmp later=false first=false red=false recorded=false ran="[]" only=false p12
