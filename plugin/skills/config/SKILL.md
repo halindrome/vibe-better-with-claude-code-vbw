@@ -25,7 +25,7 @@ Change asked: make it with `vbw config set KEY VALUE`, show the result. Else sho
 - `autonomy_cap`: steps one autonomous run takes before stopping.
 - `rigor`: how thorough each phase's checking is. `auto` (default) picks a tier per phase from its risk; `express`, `standard` or `deep` forces it. Set with `vbw config rigor MODE`; phases not yet started are re-tiered.
 - `motion`: panel animation, `full`, `calm` or `off`; `default`: by interview level.
-- `sound`: the panel's "needs you" sound: `off`, or the voice to play, a folder name under the plugin's `assets/audio/` (`arnold`, `charlize`, `darth`; a wrong name is refused with the list); `default`: the panel picks among all voices.
+- `sound`: the panel's "needs you" sound: `off`, or the voice to play, a folder name under the plugin's `assets/audio/` (`arnold`, `charlize`, `darth`; a wrong name is refused with the list); `default`: the panel picks among all voices. This clone's own choice, kept beside `check_jobs` in the clone's settings, not shared through git.
 - `check_jobs`: how many checks run at the same time, shared by every VBW command in this project, 1 to 64; `default`: three quarters of the processor cores (at least 1). Kept in this clone, not in the record. The computer-wide limit (three quarters of the cores, shared by every VBW project, not a setting; docs/proof.md) caps it.
 - `command_timeout`: seconds `vbw prove` lets one project command (the test command above all) run before stopping it, 1 to 86400; `default`: 3600 (60 minutes). A check keeps its own timeout.
 - `check_budget`: seconds one unit of a proof (a check, project command or test file) may take before the summaries name it over budget, 1 to 86400; `default`: 120. Reported only, never a limit.

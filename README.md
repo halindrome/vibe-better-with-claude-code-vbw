@@ -357,7 +357,7 @@ Approval, checking and shipping always stop for you, whatever the preset. Autono
 | `command_timeout` | `1` to `86400` seconds | How long the project's own commands may run in a proof. Default: 3600 |
 | `check_budget` | `1` to `86400` seconds | A test unit slower than this is named over budget in the proof's summary. Reported, never enforced. Default: 120 |
 | `motion` | `full` / `calm` / `off` / `default` | Panel animation; `default` follows your interview level |
-| `sound` | `off` / `arnold` / `charlize` / `darth` / `default` | The panel's "needs you" sound: which voice, or none; `default` picks among all |
+| `sound` | `off` / `arnold` / `charlize` / `darth` / `default` | The panel's "needs you" sound: which voice, or none; `default` picks among all. Your own choice in this clone, not shared through git |
 | status line | `vbw statusline on` / `off` | The status line |
 
 Your own session keeps the model you chose with `/model`; it must be Sonnet, Opus or Fable for auto mode.

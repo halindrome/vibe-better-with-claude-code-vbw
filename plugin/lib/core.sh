@@ -116,7 +116,9 @@ vbw_now() {
 # This clone's own settings: $(git-common-dir)/vbw/settings.json (shared by the
 # clone's worktrees, never in the shared record). Today: check_jobs, how many
 # checks run at the same time (1 to 64; 1 is sequential). Without a setting
-# the machine decides: three quarters of its processor cores.
+# the machine decides: three quarters of its processor cores. And sound, the
+# panel's "needs you" voice: "off" or a folder name under assets/audio/ (the
+# panel reads {"sound": "<value>"} from this file; unset means any voice).
 vbw_clone_settings_file() {
   local common
   common=$(git rev-parse --path-format=absolute --git-common-dir 2> /dev/null) || vbw_die "not a git repository"
@@ -195,8 +197,9 @@ vbw_check_jobs_source() {
   if [ -n "$n" ]; then printf 'set\n'; else printf 'machine default\n'; fi
 }
 
-# vbw_check_jobs_set N|default: atomic, locked change of check_jobs.
-vbw_check_jobs_set() {
+# vbw_clone_setting_set KEY JSON|default: atomic, locked change of one key of
+# this clone's settings file; "default" removes the key, JSON is the new value.
+vbw_clone_setting_set() {
   local file tmp lock
   file=$(vbw_clone_settings_file)
   mkdir -p "${file%/*}"
@@ -205,14 +208,19 @@ vbw_check_jobs_set() {
   [ -f "$file" ] || printf '{}\n' > "$file"
   tmp=$(mktemp "${file%/*}/settings.XXXXXX") || vbw_die "cannot write ${file%/*}"
   vbw_guard_add file "$tmp"
-  if [ "$1" = default ]; then
-    jq 'del(.check_jobs)' "$file" > "$tmp" 2> /dev/null
+  if [ "$2" = default ]; then
+    jq --arg k "$1" 'del(.[$k])' "$file" > "$tmp" 2> /dev/null
   else
-    jq --argjson n "$1" '.check_jobs = $n' "$file" > "$tmp" 2> /dev/null
+    jq --arg k "$1" --argjson n "$2" '.[$k] = $n' "$file" > "$tmp" 2> /dev/null
   fi || vbw_die "this clone's settings file is damaged ($file); delete it and set again"
   mv "$tmp" "$file"
   vbw_guard_drop "$tmp"
   vbw_guard_drop "$lock"
+}
+
+# vbw_check_jobs_set N|default: atomic, locked change of check_jobs.
+vbw_check_jobs_set() {
+  vbw_clone_setting_set check_jobs "$1"
 }
 
 # Absolute path of the enclosing git repository, or die.

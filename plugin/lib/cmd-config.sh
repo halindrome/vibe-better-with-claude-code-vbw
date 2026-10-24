@@ -17,7 +17,8 @@
 # check_budget (1 to 86400 seconds a unit of a proof may take before the reports name it over
 # budget; 120 when unset, "default" removes it; a report, never a limit: lib/unittime.sh),
 # sound (off, or a folder name under assets/audio/ that holds an mp3: the panel's "needs you"
-# sound plays from that folder; "default" removes it and the panel picks among every shipped sound).
+# sound plays from that folder; "default" removes it and the panel picks among every shipped sound;
+# this clone's own choice, kept with check_jobs in the clone's settings file, not in the record).
 
 # Profiles name a model per workflow role (lib/profiles.json, shared with the
 # status line). The session itself always runs the user's model, which must be
@@ -114,6 +115,19 @@ config_sound_usage() {
   vbw_usage_error "sound must be $list (or default): the folder under assets/audio the panel's 'needs you' sound plays from, or off"
 }
 
+# config_sound_value: the sound set in this clone's settings (off or a folder
+# that exists), else "default": a missing, damaged or stale value reads as default.
+config_sound_value() {
+  local file v
+  file=$(vbw_clone_settings_file) || return 1
+  v=$(jq -r '.sound // empty | strings' "$file" 2> /dev/null) || v=""
+  if [ "$v" = off ] || { [ -n "$v" ] && [ -n "$(config_sound_names | awk -v v="$v" '$0 == v')" ]; }; then
+    printf '%s\n' "$v"
+  else
+    printf 'default\n'
+  fi
+}
+
 cmd_config() {
   local sub="${1:-}"
   case "$sub" in
@@ -129,8 +143,9 @@ cmd_config() {
     "")
       printf 'check_jobs: %s (%s)\n' "$(vbw_check_jobs)" "$(vbw_check_jobs_source)"
       config_machine_limit_line
+      printf 'sound: %s\n' "$(config_sound_value)"
       record_read | jq -r --argjson p "$VBW_PROFILES" '.settings as $s
-        | "profile: \($s.profile)", "autonomy: \($s.autonomy // "balanced")", "autonomy_cap: \($s.autonomy_cap)", "rigor: \($s.rigor // "auto")", "motion: \($s.motion // "default")", "sound: \($s.sound // "default")", "command_timeout: \($s.command_timeout // 3600) seconds",
+        | "profile: \($s.profile)", "autonomy: \($s.autonomy // "balanced")", "autonomy_cap: \($s.autonomy_cap)", "rigor: \($s.rigor // "auto")", "motion: \($s.motion // "default")", "command_timeout: \($s.command_timeout // 3600) seconds",
           "check_budget: \($s.check_budget // 120) seconds a unit (reported, never enforced)",
           ($p[$s.profile] + ($s.models // {}) | (if ((.qa // "") | ascii_downcase | contains("haiku")) then .qa = "sonnet" else . end) | to_entries[] | "model.\(.key): \(.value)")'
       ;;
@@ -165,12 +180,12 @@ cmd_config() {
           esac ;;
         sound)
           case "$value" in
-            default) record_update '.settings |= del(.sound)' ;;
-            off) record_update '.settings.sound = "off"' ;;
+            default) vbw_clone_setting_set sound default ;;
+            off) vbw_clone_setting_set sound '"off"' ;;
             "" | *[!a-z0-9_-]*) config_sound_usage ;;
             *)
               [ -n "$(config_sound_names | awk -v v="$value" '$0 == v')" ] || config_sound_usage
-              record_update '.settings.sound = $v' --arg v "$value" ;;
+              vbw_clone_setting_set sound "\"$value\"" ;;
           esac ;;
         check_jobs)
           case "$value" in

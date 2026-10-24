@@ -852,8 +852,10 @@ vbw config set sound default   # a random clip of any voice (the default)
 
 `vbw config` prints the current value as `sound: default`, `sound: off` or
 `sound: darth`. A name that is not a folder is refused with the list of the
-folders. The setting is stored in the record's settings like `motion`, so it is
-shared with the project through git. If a chosen folder is later removed, the
+folders. The setting is your own choice in this clone: it is kept beside
+`check_jobs` in the clone's settings file (`vbw/settings.json` in the git
+directory, shared by the clone's worktrees), never in `.vbw/record.json` and
+never shared through git. If a chosen folder is later removed, the
 panel plays a clip of any voice.
 
 ### The notification
@@ -876,8 +878,8 @@ turn both off or on:
 
 With the switch off, nothing plays and no notification is raised. The switch is
 the `sound` setting: **Turn off** is `vbw config set sound off` and **Turn on**
-is `vbw config set sound default`, and the choice is remembered in the record's
-settings. A test session plays and raises nothing.
+is `vbw config set sound default`, and the choice is remembered in this clone's
+settings, yours alone and never committed. A test session plays and raises nothing.
 
 ### When they are missing
 
