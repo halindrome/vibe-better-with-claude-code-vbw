@@ -114,13 +114,12 @@ test('Comms: a row names its role in the role colour; failed and quiet wear thei
   assert.equal(texts('q').find((t) => /quiet/.test(t.children.join(''))).props.color, P.stateColor('quiet'), 'quiet is grey, not amber')
 })
 
-test('Mission Control, Now: a card carries the role colour; an unknown role and an unknown state are neutral', () => {
+test('Mission Control, Now: a crew row carries the role colour; an unknown role and an unknown state are neutral', () => {
   const m = live.nowModel({ run: deepFreeze(run([...ROLES.map((role) => agent({ id: role, role })), agent({ id: 'x', role: 'mystery', state: 'weird' })])), now: NOW })
-  const cards = m.columns.flatMap((c) => c.cards)
-  for (const role of ROLES) assert.equal(cards.find((c) => c.id === role).roleColor, P.roleColor(role), role)
-  const x = cards.find((c) => c.id === 'x')
+  for (const role of ROLES) assert.equal(m.rows.find((c) => c.id === role).roleColor, P.roleColor(role), role)
+  const x = m.rows.find((c) => c.id === 'x')
   assert.equal(x.roleColor, P.NEUTRAL)
-  assert.equal(x.frame, P.NEUTRAL)
+  assert.equal(x.stateColor, P.stateColor('quiet'))
 })
 
 test('Mission Control, Timeline: a lane carries the role colour', () => {

@@ -1,5 +1,5 @@
-// Mission Control's live tabs (mods_4_vbw.md §3.3): Now (the workflow as phase
-// columns of agent cards), Timeline (agent lanes on the run clock, past steps as
+// Mission Control's live tabs (mods_4_vbw.md §3.3): Now (the crew: one row per
+// helper at work), Timeline (agent lanes on the run clock, past steps as
 // a sparkline against the R58 median) and Costs (cost per run, "about"). Pure:
 // the run model in, plain models out, trees built with h(); never throws.
 
@@ -26,9 +26,7 @@ const paletteState = (state) => (state === 'working' ? 'running' : state)
 // A run kind and the step kind its finished leases are recorded under (steps.json).
 const STEP_KIND = { planning: 'plan', building: 'build', verifying: 'qa', fixing: 'fix', mapping: 'map' }
 const BARS = '▁▂▃▄▅▆▇█'
-const ACTIVITY_MAX = 40
 
-const clip = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s)
 const roleOf = (a) => (ROLES.includes(a.role) ? a.role : 'agent')
 const titleOf = (a) => [str(a.role) || 'agent', str(a.label)].filter(Boolean).join(' ')
 const agentsOf = (run) =>
@@ -60,39 +58,44 @@ function stateOf(a, run) {
   return ended && (s === 'working' || s === 'quiet') ? 'cut' : s
 }
 
-// The column an agent belongs to: its workflow phase, else the phase in its label (P55.1 -> P55).
-function phaseOf(a) {
-  if (str(a.phase)) return a.phase
-  const m = /^(P\d+)/.exec(str(a.label))
-  return m ? m[1] : 'Agents'
+// The crew of the Now tab (2.1.11: Team folds into Now): one row per helper still at
+// work, `role label  ● doing · 2 min 10 s`, the longest-running first. A finished
+// helper leaves at once (Timeline keeps the history); a failed one stays first, in
+// red with its reason, until it is seen (opened or pressed), as on Comms. When the run
+// has ended only those failures stay. `width` (columns) cuts the doing text, never the
+// name, the mark or the time.
+const crewState = (a, running) => {
+  const s = STATES.includes(a.state) ? a.state : 'quiet'
+  if (s === 'failed') return 'failed'
+  return running && s !== 'done' && s !== 'cut' ? s : null
 }
 
-const phaseName = (p) => (typeof p === 'string' ? p : isObj(p) ? str(p.title) || str(p.name) : '')
-
-export const nowModel = safe(({ run, now, selected, seen, motion }) => {
+export const nowModel = safe(({ run, now, selected, seen, motion, width }) => {
   if (!validRun(run)) return null
   const opened = new Set(Array.isArray(seen) ? seen : [])
   const t = num(now) ? now : Date.now()
+  const running = str(run.status) === '' || run.status === 'running'
   const agents = agentsOf(run)
-  const order = (Array.isArray(run.phases) ? run.phases : []).map(phaseName).filter(Boolean)
-  for (const a of agents) if (!order.includes(phaseOf(a))) order.push(phaseOf(a))
-  const card = (a) => {
-    const state = stateOf(a, run)
-    // When it started while it works; when it ended once it is done, failed or cut off.
-    const at = state === 'working' || !num(a.endedAt) ? a.startedAt : a.endedAt
+  const row = (a) => {
+    const state = crewState(a, running)
+    const p = paletteState(state)
+    const act = isObj(a.activity) && str(a.activity.text) ? a.activity.text : ''
+    const doing = state === 'failed' ? str(a.result) || STATE_WORDS.failed : state === 'quiet' ? STATE_WORDS.quiet : act || STATE_WORDS[p]
+    const start = num(a.startedAt) ? a.startedAt : t
+    const end = state === 'failed' && num(a.endedAt) ? a.endedAt : t
     return {
-      at: dayClock(at, t),
-      id: a.id, title: titleOf(a), role: roleOf(a), roleColor: roleColor(roleOf(a)), state, frame: roleColor(roleOf(a)),
-      mark: STATE_MARKS[paletteState(state)], word: STATE_WORDS[paletteState(state)], stateColor: stateColor(paletteState(state)),
-      activity: isObj(a.activity) && str(a.activity.text) ? clip(a.activity.text, ACTIVITY_MAX) : null,
-      tool: isObj(a.activity) && a.activity.kind === 'tool',
-      tokens: tokens(a.tokens), selected: a.id === selected, action: { select: a.id },
-      fresh: state === 'failed' && !opened.has(a.id), motion,
+      id: a.id, title: titleOf(a), role: roleOf(a), roleColor: roleColor(roleOf(a)), state,
+      mark: STATE_MARKS[p], word: STATE_WORDS[p], stateColor: stateColor(p),
+      doing, tool: state === 'working' && Boolean(act) && a.activity.kind === 'tool', elapsed: duration(end - start),
+      selected: a.id === selected, action: { select: a.id }, fresh: state === 'failed', motion,
     }
   }
-  const columns = order
-    .map((title) => ({ title, cards: agents.filter((a) => phaseOf(a) === title).map(card) }))
-    .filter((c) => c.cards.length)
+  const rows = agents.filter((a) => {
+    const s = crewState(a, running)
+    return s !== null && !(s === 'failed' && opened.has(a.id))
+  }).map(row)
+  // Failures first (they wait for you), then the longest-running first (agentsOf orders by start).
+  rows.sort((x, y) => (x.state === 'failed' ? 0 : 1) - (y.state === 'failed' ? 0 : 1))
   const sel = agents.find((a) => a.id === selected)
   const detail = sel ? {
     id: sel.id, label: titleOf(sel), role: roleOf(sel), model: str(sel.model) || null,
@@ -101,8 +104,8 @@ export const nowModel = safe(({ run, now, selected, seen, motion }) => {
     elapsed: num(sel.startedAt) ? duration((num(sel.endedAt) ? sel.endedAt : t) - sel.startedAt) : null,
   } : null
   const end = num(run.endedAt) ? run.endedAt : t
-  const header = { kind: str(run.kind) || 'run', status: str(run.status) || 'running', elapsed: num(run.startedAt) ? duration(end - run.startedAt) : null }
-  return { header, columns, detail }
+  const header = { kind: str(run.kind) || 'run', status: str(run.status) || 'running', elapsed: num(run.startedAt) ? duration(end - run.startedAt) : null, done: agents.filter((a) => a.state === 'done').length }
+  return { header, rows, started: agents.length > 0, width: num(width) && width > 0 ? Math.floor(width) : null, detail }
 })
 
 // Past steps of this run's kind as bars, the median (R58, via estimate) and the bar nearest it.
@@ -193,31 +196,38 @@ export const costsModel = safe(({ runs, sessionCost, width }) => {
 const NO_RUN = 'No VBW workflow runs in this session right now.'
 const empty = (ui, text) => h(ui.Box, { flexDirection: 'column' }, h(ui.Text, { dimColor: true }, text))
 
-// A tool intention is its verb in the role colour and the object dimmed; anything else is dimmed whole.
-function activityLine(ui, c) {
-  const i = c.tool ? c.activity.indexOf(' ') : -1
-  if (!c.tool) return h(ui.Text, { dimColor: true }, c.activity)
-  if (i < 0) return h(ui.Text, { color: c.roleColor }, c.activity)
-  return h(ui.Box, { flexDirection: 'row' },
-    h(ui.Text, { color: c.roleColor }, c.activity.slice(0, i)), h(ui.Text, { dimColor: true }, c.activity.slice(i)))
+const cells = (x) => [...x].length
+const cutTo = (x, n) => (cells(x) <= n ? x : n <= 0 ? '' : [...x].slice(0, n - 1).join('') + '…')
+
+// What a helper does: a tool intention is its verb in the role colour and the object
+// dimmed; a failure is red, anything else dimmed whole. Cut to `room` cells.
+function doingLine(ui, r, room) {
+  const text = cutTo(r.doing, room)
+  if (r.state === 'failed') return [h(ui.Text, { key: 'doing', color: r.stateColor }, text)]
+  const i = r.tool ? text.indexOf(' ') : -1
+  if (!r.tool) return [h(ui.Text, { key: 'doing', dimColor: true }, text)]
+  if (i < 0) return [h(ui.Text, { key: 'doing', color: r.roleColor }, text)]
+  return [h(ui.Text, { key: 'verb', color: r.roleColor }, text.slice(0, i)), h(ui.Text, { key: 'object', dimColor: true }, text.slice(i))]
 }
 
+// The crew: the header line, then one row per helper; a press on a row selects it.
 export function renderNow(ui, model, act) {
-  if (!isObj(model) || !Array.isArray(model.columns)) return empty(ui, NO_RUN)
+  if (!isObj(model) || !Array.isArray(model.rows)) return empty(ui, NO_RUN)
   const hd = model.header || {}
-  const header = [hd.kind, hd.status, hd.elapsed].filter(Boolean).join(' · ')
-  const card = (c) =>
-    h(ui.Box, { key: 'card-box:' + c.id, flexDirection: 'column', borderStyle: 'round', borderColor: c.frame, paddingX: 1 },
-      h(ui.Button, { key: 'card:' + c.id, label: c.title, plain: true, onPress: () => { if (typeof act === 'function') act(c.action) } }),
-      h(ui.Box, { flexDirection: 'row' },
-        c.at ? h(ui.Text, { dimColor: true }, '[' + c.at + '] ') : null,
-        h(ui.Text, { color: c.stateColor }, c.mark + ' ' + c.word),
-        c.fresh ? newMark(ui.Text, c.motion) : null),
-      c.activity ? activityLine(ui, c) : null,
-      c.tokens ? h(ui.Text, { dimColor: true }, c.tokens) : null)
-  const columns = model.columns.map((col) =>
-    h(ui.Box, { key: 'col:' + col.title, flexDirection: 'column', marginRight: 1 },
-      h(ui.Text, { bold: true }, col.title), ...col.cards.map(card)))
+  const header = [hd.kind, hd.status, hd.elapsed, hd.done ? hd.done + ' done' : ''].filter(Boolean).join(' · ')
+  const nameW = Math.min(16, Math.max(0, ...model.rows.map((r) => cells(r.title))))
+  const row = (r) => {
+    const name = cutTo(r.title, nameW).padEnd(nameW) + '  '
+    const tail = ' · ' + r.elapsed
+    const room = model.width ? model.width - cells(name) - 2 - cells(tail) - (r.fresh ? 4 : 0) : Infinity
+    return h(ui.Box, { key: 'crew:' + r.id, flexDirection: 'row' },
+      h(ui.Button, { key: 'crew-name:' + r.id, plain: true, onPress: () => { if (typeof act === 'function') act(r.action) } },
+        h(ui.Text, { color: r.roleColor, bold: r.selected }, name)),
+      h(ui.Text, { key: 'mark', color: r.stateColor }, r.mark + ' '),
+      ...doingLine(ui, r, room),
+      h(ui.Text, { key: 'time', dimColor: true }, tail),
+      r.fresh ? newMark(ui.Text, r.motion) : null)
+  }
   const d = model.detail
   const detail = isObj(d)
     ? h(ui.Box, { flexDirection: 'column', marginTop: 1 },
@@ -227,9 +237,10 @@ export function renderNow(ui, model, act) {
       d.activity ? h(ui.Text, null, 'Doing: ' + d.activity) : null,
       d.result ? h(ui.Text, null, 'Result: ' + d.result) : null)
     : null
+  const none = model.started ? 'No helper is at work right now.' : 'No helper has started yet.'
   return h(ui.Box, { flexDirection: 'column' },
     h(ui.Text, { bold: true }, header),
-    columns.length ? h(ui.Box, { key: 'columns', flexDirection: 'row', flexWrap: 'wrap' }, ...columns) : h(ui.Text, { dimColor: true }, 'No agents have started yet.'),
+    ...(model.rows.length ? model.rows.map(row) : [h(ui.Text, { dimColor: true }, none)]),
     detail)
 }
 

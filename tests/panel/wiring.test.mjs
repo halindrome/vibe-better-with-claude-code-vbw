@@ -26,7 +26,8 @@ const texts = (tree) => collect(tree)
 const text = (tree) => texts(tree).join('\n')
 const buttons = (tree) => { const out = []; walk(tree, (n) => { if (n.type === 'Button') out.push(n) }); return out }
 const press = async (h, tree, label) => {
-  const b = buttons(tree).find((x) => x.props.label === label)
+  // A button is named by its label, or by its words when it holds Text (a crew row's name).
+  const b = buttons(tree).find((x) => (x.props.label ?? collect(x).join('').trim()) === label)
   assert.ok(b, 'no button ' + label + ' in ' + texts(tree).join(' | '))
   await b.props.onPress({ surface: 'terminal' })
   await h.settle()
@@ -238,7 +239,7 @@ test('each tab draws its view, and the choice holds across redraws; the folded t
   }
 })
 
-test('Now: pressing an agent card shows its detail', async () => {
+test('Now: pressing a helper of the crew shows its detail', async () => {
   const h = await started({}, record({ lease: lease('plan', T0) }), next({ action: 'run' }))
   writeRun(h, h.now())
   await launch(h)

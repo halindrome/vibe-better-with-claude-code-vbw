@@ -167,23 +167,23 @@ test('a test session keeps what it has seen under test.* keys only', async () =>
   for (const [k] of h.callsOf('store.get')) assert.match(k, /^test\./, k)
 })
 
-test('a newly failed helper is marked on its Mission Control card until it is opened', async () => {
+test('a newly failed helper is marked on its Mission Control crew row until it is opened', async () => {
   const crew = working(2)
   const { h, at } = await building(crew, { profile: 'balanced', motion: 'off' })
   writeCrew(h, at, [{ n: 'P142.1', state: 'working' }, { n: 'P142.2', state: 'failed' }])
   await h.advance(TICK)
   const cardOf = async () => {
     const tree = await h.render()
-    const b = find(tree, (n) => n.type === 'Button' && String(n.props.label).includes('P142.2'))
-    return { b, box: find(tree, (n) => n.type === 'Box' && n.props.borderStyle && n.children.includes(b)) }
+    const b = find(tree, (n) => n.type === 'Button' && textOf(n).includes('P142.2'))
+    return { b, box: find(tree, (n) => n.type === 'Box' && String(n.props.key).startsWith('crew:') && n.children.includes(b)) }
   }
   const before = await cardOf()
-  assert.ok(before.b, 'no card for the failed helper')
-  assert.ok(hasNew(before.box || before.b), 'the failed card is not marked "new"')
+  assert.ok(before.b, 'no crew row for the failed helper')
+  assert.ok(hasNew(before.box || before.b), 'the failed row is not marked "new"')
   await press(h, before.b)
   await h.advance(TICK)
   const after = await cardOf()
-  assert.ok(!hasNew(after.box || after.b), 'still marked after it was opened')
+  assert.ok(!after.b || !hasNew(after.box || after.b), 'still marked after it was opened')
 })
 
 test('a new needs-you line on Comms is marked until its tab is opened, and then stays unmarked while the gate stands', async () => {
@@ -220,7 +220,7 @@ test('a seen needs-you line stays seen after a restart on the same project state
   for (const [k] of third.callsOf('store.set')) assert.match(k, /^vbw-panel\./, k)
 })
 
-test('an opened failed helper stays opened after a restart on the same project state: no mark on its card', async () => {
+test('an opened failed helper stays opened after a restart on the same project state: its row has left the crew', async () => {
   const store = new Map()
   const crew = [{ n: 'P142.1', state: 'working' }, { n: 'P142.2', state: 'failed' }]
   const start = async () => {
@@ -231,17 +231,15 @@ test('an opened failed helper stays opened after a restart on the same project s
   }
   const card = async (h) => {
     const tree = await h.render()
-    const b = find(tree, (n) => n.type === 'Button' && String(n.props.label).includes('P142.2'))
-    return { b, box: find(tree, (n) => n.type === 'Box' && n.props.borderStyle && n.children.includes(b)) }
+    const b = find(tree, (n) => n.type === 'Button' && textOf(n).includes('P142.2'))
+    return { b, box: find(tree, (n) => n.type === 'Box' && String(n.props.key).startsWith('crew:') && n.children.includes(b)) }
   }
   const first = await start()
   const c1 = await card(first)
   assert.ok(hasNew(c1.box || c1.b), 'the failed card is not marked at first')
   await press(first, c1.b)
   await first.advance(TICK)
-  assert.ok(!hasNew((await card(first)).box || (await card(first)).b), 'still marked after it was opened')
+  assert.equal((await card(first)).b, undefined, 'seen, the failed helper leaves the crew')
   const again = await start()
-  const c2 = await card(again)
-  assert.ok(c2.b, 'no card for the failed helper after the restart')
-  assert.ok(!hasNew(c2.box || c2.b), 'an opened failed helper is marked again after a restart')
+  assert.equal((await card(again)).b, undefined, 'an opened failed helper is back in the crew after a restart')
 })

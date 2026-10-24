@@ -25,7 +25,8 @@ const commsLines = async (h, props = {}) => screen(await commsTree(h, props), pr
 const rowsWith = (lines, step) => lines.filter((l) => l.includes(step))
 // The row Box of a step in a tree: the first Box laid out as a row whose words name it.
 const rowBox = (tree, step) => find(tree, (n) => n.type === 'Box' && n.props.flexDirection !== 'column' && textOf(n).includes(step))
-const card = (tree, step) => find(tree, (n) => n.type === 'Button' && String(n.props.label).includes(step))
+// A helper's crew row in Mission Control's Now tab, by the name its button holds.
+const card = (tree, step) => find(tree, (n) => n.type === 'Button' && textOf(n).includes(step))
 
 test('a helper that turns done leaves the crew rows at the next redraw, with no hold, and is counted in "N done"', async () => {
   const crew = steps(3)
@@ -38,10 +39,8 @@ test('a helper that turns done leaves the crew rows at the next redraw, with no 
   assert.match(lines[0], /\b1 done\b/, "the header counts it: '" + lines[0] + "'")
   assert.equal(rowsWith(lines, 'P142.2').length, 1, 'the others stay')
   const pane = await h.render()
-  const c = card(pane, 'P142.1')
-  assert.ok(c, 'Mission Control still has its card')
-  const box = find(pane, (n) => n.type === 'Box' && n.props.borderStyle && n.children.includes(c))
-  assert.doesNotMatch(textOf(box || c), /running/, "Mission Control's card changed on the same redraw")
+  assert.equal(card(pane, 'P142.1'), undefined, "the finished helper left Mission Control's crew on the same redraw")
+  assert.ok(card(pane, 'P142.2'), 'the others stay in the crew')
 })
 
 test('a failed helper stays as a red ✗ row, never green or amber, until it is opened in Mission Control, then it leaves', async () => {

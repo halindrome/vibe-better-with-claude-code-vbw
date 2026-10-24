@@ -197,8 +197,8 @@ VBW ▸ planning · Plan · 10m04s · ≈$3.20 this run · 1 done        [p] Mis
 - In the top line, the run's cost (`≈$3.20 this run`) is purple, and `N done`
   counts the helpers that have finished.
 - A helper that finishes leaves Comms at the next redraw, with no wait. It
-  stays in the `N done` count, and its card in Mission Control stops saying
-  running at the same moment.
+  stays in the `N done` count, and it leaves the crew in Mission Control at the
+  same moment.
 - A helper that fails stays as one red `✗` row until you open it in Mission
   Control. Then it leaves at the next redraw. If the run ends first, the
   failed helper you have not opened stays alone on Comms.
@@ -383,12 +383,23 @@ A pane with room for everything has no such line. Open the pane itself (or
 scroll it) to read the rest.
 
 - **Now:** a framed [what's happening now](#whats-happening-now) box above
-  everything else; right under it, while a run is on, the crew: the running
-  workflow's agents, each with a frame in its role colour, its state as a
-  coloured mark and word (`● running`, `✓ done`, `✗ failed`, `… quiet`), what
-  it is doing, and its tokens, dimmed. Two agents of different roles never look
-  the same. Press an agent for its model, time, current step and result. Then
-  the sentences above, the sound switch and [What's next](#whats-next).
+  everything else; right under it, while a run is on, the crew of the running
+  workflow: a header (`building · running · 12 min · 2 done`) and one row per
+  helper still at work, the longest-running first:
+
+  ```
+  qa P44      ● reading the spec · 21 min 40 s
+  dev P44.1   ● editing a.js · 15 min
+  ```
+
+  The helper's role and step are in its role colour, its state is a coloured
+  mark (`●` working, `…` quiet), then what it is doing and, dimmed, for how
+  long. A helper that finishes leaves the crew at once (the Timeline keeps the
+  run's history). A failed one stays first, as a red `✗` row with its reason,
+  marked `new`, until you press it. In a narrow pane what the helper is doing is
+  cut, never its name, mark or time. Press a row for that helper's model, time,
+  current step and result. Then the sentences above, the sound switch and
+  [What's next](#whats-next).
 - **Plan:** one row per phase of the milestone: a button with its id and
   title (cut with `…` to the row, never wrapped), a strip of its plans in their
   colours (done green, building amber, blocked red, planned a dim `░`), the

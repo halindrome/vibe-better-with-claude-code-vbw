@@ -15,7 +15,6 @@ process.env.TZ = 'Europe/Zurich'
 const step = await import(pathToFileURL(PLUGIN + '/hooks/panel-step.js').href)
 const stage = await import(pathToFileURL(PLUGIN + '/hooks/panel-stage.js').href)
 const lines = await import(pathToFileURL(PLUGIN + '/hooks/panel-lines.js').href)
-const live = await import(pathToFileURL(PLUGIN + '/hooks/panel-mission-live.js').href)
 const cmd = await import(pathToFileURL(PLUGIN + '/hooks/panel-commands.js').href)
 
 // Saturday 24 October 2026, 15:40 local; the gate was reached Friday at 21:38.
@@ -46,11 +45,9 @@ test('Comms: a refusal of yesterday and a helper started yesterday name the day'
   assert.equal(m.rows[0].time, 'yesterday 21:38')
 })
 
-test('the Workflow run card and the Now cards name the day of a run started yesterday', () => {
+test('the Workflow run card names the day of a run started yesterday', () => {
   const run = { kind: 'planning', status: 'running', startedAt: YESTERDAY }
   assert.equal(lines.workflowCard({ input: { name: 'vbw:planning' }, run, now: NOW }), 'VBW planning · started yesterday 21:38 · [p] watch live')
-  const m = live.nowModel({ now: NOW, run: { kind: 'building', status: 'running', startedAt: YESTERDAY, agents: [{ id: 'a1', role: 'dev', state: 'working', startedAt: YESTERDAY }] } })
-  assert.equal(m.columns[0].cards[0].at, 'yesterday 21:38')
 })
 
 test('/vbw-why says when the run started in local time with its day', () => {

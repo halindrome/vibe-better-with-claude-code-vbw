@@ -81,7 +81,7 @@ test('on Comms a working helper is an amber glyph, its role a word in the role c
   assert.equal(f.find((t) => textOf(t).includes('✗')).props.color, P.stateColor('failed'))
 })
 
-test('every state colour on Comms and on the Mission Control cards sits beside its glyph', async () => {
+test('every state colour on Comms and on the Mission Control crew rows sits beside its glyph', async () => {
   const crew = working(3)
   const { h, at } = await building(crew, { profile: 'balanced', motion: 'calm' })
   writeCrew(h, at, [{ n: 'P142.1', state: 'working' }, { n: 'P142.2', state: 'failed' }, { n: 'P142.3', state: 'done' }])
@@ -97,7 +97,10 @@ test('every state colour on Comms and on the Mission Control cards sits beside i
     return out
   }
   let checked = 0
-  for (const r of [...rowsOf(comms), ...rowsOf(find(pane, (n) => n.type === 'Box' && n.props.key === 'columns') || { children: [] })]) {
+  const crewRows = []
+  walk(pane, (n) => { if (n.type === 'Box' && String(n.props.key).startsWith('crew:')) crewRows.push(n) })
+  assert.ok(crewRows.length >= 2, 'the crew rows are drawn')
+  for (const r of [...rowsOf(comms), ...crewRows]) {
     let coloured = false
     walk(r, (n) => { if (n.type === 'Text' && meaning.has(n.props.color)) coloured = true })
     if (!coloured) continue

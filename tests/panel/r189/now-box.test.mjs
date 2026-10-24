@@ -170,19 +170,20 @@ test('a message keeps the time it began saying what it says: the clock moving al
   assert.equal((await paneLines(h)).find((l) => /Please approve/.test(l)), first)
 })
 
-test("a helper's card starts its state line with the time: when it started, finished or failed", async () => {
+test("a helper's crew row says its role, state and doing and for how long, the longest-running first; finished ones are gone", async () => {
   const NOW = T0 + 3600 * S
   const agent = (over) => ({ id: 'a', role: 'dev', label: 'P44.1', state: 'working', activity: { kind: 'tool', text: 'editing a.js' }, startedAt: NOW - 900 * S, endedAt: null, lastSeenAt: NOW - S, tokens: 1000, result: null, ...over })
-  const run = deepFreeze({ runId: 'wf_1', kind: 'building', phase: 'Build', startedAt: NOW - 1000 * S, endedAt: null, status: 'running', agents: [
+  const run = deepFreeze({ runId: 'wf_1', kind: 'building', phase: 'Build', startedAt: NOW - 3000 * S, endedAt: null, status: 'running', agents: [
     agent({ id: 'w', startedAt: NOW - 900 * S }),
+    agent({ id: 'o', role: 'qa', label: 'P44', startedAt: NOW - 1300 * S, activity: null }),
     agent({ id: 'd', label: 'P44.2', state: 'done', startedAt: NOW - 3000 * S, endedAt: NOW - 1500 * S, result: 'ok' }),
-    agent({ id: 'f', label: 'P44.3', state: 'failed', startedAt: NOW - 3000 * S, endedAt: NOW - 2400 * S, result: 'boom' }),
   ] })
-  const tree = live.renderNow(UI, live.nowModel({ run, now: NOW }))
-  const cardLines = (id) => screen(find(tree, (n) => n.type === 'Box' && n.props.key === 'card-box:' + id), Infinity).join('\n')
-  assert.ok(cardLines('w').includes('[' + hhmm(NOW - 900 * S) + '] ● running'), cardLines('w'))
-  assert.ok(cardLines('d').includes('[' + hhmm(NOW - 1500 * S) + '] ✓ done'), cardLines('d'))
-  assert.ok(cardLines('f').includes('[' + hhmm(NOW - 2400 * S) + '] ✗ failed'), cardLines('f'))
+  const lines = screen(live.renderNow(UI, live.nowModel({ run, now: NOW, width: 80 })), 80)
+  const rows = lines.filter((l) => /●/.test(l))
+  assert.equal(rows.length, 2, lines.join('\n'))
+  assert.match(rows[0], /^qa P44\s+● running · 21 min 40 s$/)
+  assert.match(rows[1], /^dev P44\.1\s+● editing a\.js · 15 min$/)
+  assert.ok(!lines.some((l) => /P44\.2/.test(l)), 'the done helper left')
 })
 
 test('the all-checks-pass line on Comms starts with the time the proof passed', async () => {
