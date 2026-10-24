@@ -2,11 +2,11 @@
 # R190, phase P147 (L1): while a step runs, the status line's first line shows
 # the step, what it is doing and the clock time only (D425), read from the
 # kernel's note (.vbw/runtime/step.json), never worked out by the status line:
-# '▶ build P1.1, P1.2 · 1 of 2 · until 14:20'; a background proof 'proving 12 of
-# 40 checks · until 14:26'; later than usual 'until 14:35, later than usual'; a
-# late step without parts 'until 14:20, 6 min late'; no basis: the step and what
+# '● working: building P1.1, P1.2 · 1 of 2 · 5 min, until around 14:20'; a background proof 'proving 12 of
+# 40 checks · 1 min, until around 14:26'; later than usual 'until around 14:35, later than usual'; a
+# late step without parts 'until around 14:20, 6 min late'; no basis: the step and what
 # it is doing, no time. Clock times are the computer's local time, 24-hour
-# HH:MM; an end on another day names the day ('until tomorrow 00:20'). A note
+# HH:MM; an end on another day names the day ('until around tomorrow 00:20'). A note
 # whose run is not the open run, or whose proof process is gone, shows nothing.
 # The times here are local to Europe/Zurich (UTC+01:00, +02:00 in summer), so a UTC clock shows.
 
@@ -61,7 +61,7 @@ note() {
   note .
   run render
   [ "$status" -eq 0 ]
-  [[ "${lines[0]}" == *"▶ build P1.1, P1.2 · 1 of 2 · until $(hm end)"* ]] || { echo "${lines[0]}"; false; }
+  [[ "${lines[0]}" == *"● working: building P1.1, P1.2 · 1 of 2 · 5 min, until around $(hm end)"* ]] || { echo "${lines[0]}"; false; }
   [[ "${lines[0]}" != *"about"* ]] || { echo "${lines[0]}"; false; }
 }
 
@@ -70,10 +70,10 @@ note() {
     {kind: "proof", run: null, session: "s1", pid: $pid, started_at: s(-60), ids: [], doing: "proving 12 of 40 checks",
      parts: {done: 12, total: 40}, proof: {done: 12, total: 40}, first_end: s(480), end: s(480), late: false}' > "$NOTE"
   run render
-  [[ "${lines[0]}" == *"proving 12 of 40 checks · until $(hm end)"* ]] || { echo "${lines[0]}"; false; }
+  [[ "${lines[0]}" == *"proving 12 of 40 checks · 1 min, until around $(hm end)"* ]] || { echo "${lines[0]}"; false; }
   jq '.parts.done = 13 | .proof.done = 13 | .doing = "proving 13 of 40 checks"' "$NOTE" > "$TEST_ROOT/n.json" && cp "$TEST_ROOT/n.json" "$NOTE"
   run render
-  [[ "${lines[0]}" == *"proving 13 of 40 checks · until $(hm end)"* ]] || { echo "${lines[0]}"; false; }
+  [[ "${lines[0]}" == *"proving 13 of 40 checks · 1 min, until around $(hm end)"* ]] || { echo "${lines[0]}"; false; }
 }
 
 @test "R190: a proof inside a fix shows as what the fix is doing; the time stays the fix's" {
@@ -82,29 +82,29 @@ note() {
   "$VBW" run start fix F1 > /dev/null
   note '.kind = "fix" | .ids = ["F1"] | .parts = {done: 0, total: 1} | .proof = {done: 12, total: 40} | .doing = "proving 12 of 40 checks"'
   run render
-  [[ "${lines[0]}" == *"▶ fix"* ]] || { echo "${lines[0]}"; false; }
-  [[ "${lines[0]}" == *"proving 12 of 40 checks"*"until $(hm end)"* ]] || { echo "${lines[0]}"; false; }
+  [[ "${lines[0]}" == *"● working: fix F1"* ]] || { echo "${lines[0]}"; false; }
+  [[ "${lines[0]}" == *"proving 12 of 40 checks"*"until around $(hm end)"* ]] || { echo "${lines[0]}"; false; }
 }
 
 @test "R190: a late step with parts shows its moved clock time, later than usual" {
   "$VBW" run start build P1.1 P1.2 > /dev/null
   note '.first_end = s(-120) | .end = s(900) | .late = true'
   run render
-  [[ "${lines[0]}" == *"until $(hm end), later than usual"* ]] || { echo "${lines[0]}"; false; }
+  [[ "${lines[0]}" == *"until around $(hm end), later than usual"* ]] || { echo "${lines[0]}"; false; }
 }
 
 @test "R190 (F246): a step with parts past its end that the kernel has not moved says later than usual too" {
   "$VBW" run start build P1.1 P1.2 > /dev/null
   note '.first_end = s(-120) | .end = s(-120) | .late = false | .parts = {done: 0, total: 2}'
   run render
-  [[ "${lines[0]}" == *"until $(hm end), later than usual"* ]] || { echo "${lines[0]}"; false; }
+  [[ "${lines[0]}" == *"until around $(hm end), later than usual"* ]] || { echo "${lines[0]}"; false; }
 }
 
 @test "R190: a late step without parts keeps its clock time and says how many minutes late" {
   "$VBW" run start plan > /dev/null
   note '.kind = "plan" | .ids = [] | .doing = "planning" | .parts = null | .first_end = s(-380) | .end = s(-380)'
   run render
-  [[ "${lines[0]}" == *"until $(hm first_end), 6 min late"* ]] || { echo "${lines[0]}"; false; }
+  [[ "${lines[0]}" == *"until around $(hm first_end), 6 min late"* ]] || { echo "${lines[0]}"; false; }
 }
 
 @test "R190: with no basis the step and what it is doing show, with no time" {
@@ -113,7 +113,7 @@ note() {
   "$VBW" run start qa > /dev/null
   note '.kind = "qa" | .ids = ["P1"] | .doing = "checking P1" | .parts = null | .first_end = null | .end = null'
   run render
-  [[ "${lines[0]}" == *"▶ qa"*"P1"* ]] || { echo "${lines[0]}"; false; }
+  [[ "${lines[0]}" == *"● working: checking P1"* ]] || { echo "${lines[0]}"; false; }
   [[ "${lines[0]}" != *"until"* ]] || { echo "${lines[0]}"; false; }
 }
 
@@ -125,7 +125,7 @@ note() {
     | {kind: "build", run: $r[0].lease.run, session: "s1", pid: null, started_at: ($t - 300 | todateiso8601), ids: ["P1.1", "P1.2"],
        doing: "building P1.1, P1.2", parts: {done: 1, total: 2}, proof: null, first_end: ($e | todateiso8601), end: ($e | todateiso8601), late: false}' > "$NOTE"
   run render
-  [[ "${lines[0]}" == *"until tomorrow 00:20"* ]] || { echo "${lines[0]}"; false; }
+  [[ "${lines[0]}" == *"until around tomorrow 00:20"* ]] || { echo "${lines[0]}"; false; }
 }
 
 @test "R190: a note whose run is not the open run, or whose proof process is gone, shows no step" {
@@ -133,7 +133,7 @@ note() {
   # The open run's own note shows; the same note of another run does not.
   note .
   run render
-  [[ "${lines[0]}" == *"1 of 2 · until"* ]] || { echo "${lines[0]}"; false; }
+  [[ "${lines[0]}" == *"1 of 2 · 5 min, until around"* ]] || { echo "${lines[0]}"; false; }
   note '.run = "build-20200101T000000Z"'
   run render
   [[ "${lines[0]}" != *"until"* && "${lines[0]}" != *"1 of 2"* ]] || { echo "${lines[0]}"; false; }
@@ -160,4 +160,55 @@ note() {
   rm -f "$NOTE"
   run render
   [[ "${lines[0]}" != *"until"* ]] || { echo "${lines[0]}"; false; }
+}
+
+# The state cell (docs/statusline.md): one clear state, colour coded like the panel.
+
+# render_color: line 1 with colour on.
+render_color() {
+  jq -nc --arg d "$PROJECT" '{session_id: "s1", workspace: {project_dir: $d}, version: "2.1.286"}' | bash "$SL" | head -1
+}
+
+# hm_of FILE FIELD: the local clock of FILE's FIELD as the status line words it.
+hm_of() {
+  jq -r --arg f "$2" '(.[$f] | fromdateiso8601) as $t | ([$t, now] | map(strflocaltime("%Y-%m-%d"))) as [$e, $d]
+    | (if $e == $d then "" elif ($t - now) > 0 then "tomorrow " else "yesterday " end) + ($t | strflocaltime("%H:%M"))' "$1"
+}
+
+@test "C1: a running step reads 'working', what it is doing, minutes so far and 'until around' its clock time, in the accent colour" {
+  "$VBW" run start build P1.1 P1.2 > /dev/null
+  note .
+  run render
+  [[ "${lines[0]}" == *"│ ● working: building P1.1, P1.2 · 1 of 2 · 5 min, until around $(hm end)" ]] || { echo "${lines[0]}"; false; }
+  out=$(render_color)
+  [[ "$out" == *$'\033[36m● working: building'* ]] || { echo "$out" | od -c | head; false; }
+}
+
+@test "C1: a gate reads 'needs you', the action and since when, in amber" {
+  jq -nc 'def s($n): (now | floor) + $n | todateiso8601; {action: "approve", gate: true, instruction: "x", detail: {}, since: s(-90000)}' > .vbw/runtime/next.json
+  run render
+  [[ "${lines[0]}" == *"│ ⚑ needs you: approve · since $(hm_of .vbw/runtime/next.json since)" ]] || { echo "${lines[0]}"; false; }
+  out=$(render_color)
+  [[ "$out" == *$'\033[33m⚑ needs you: approve'* ]] || { echo "$out" | od -c | head; false; }
+}
+
+@test "C1: a gate with no 'since' still reads 'needs you' and the action" {
+  printf '%s\n' '{"action":"approve","gate":true,"instruction":"x","detail":{}}' > .vbw/runtime/next.json
+  run render
+  [[ "${lines[0]}" == *"│ ⚑ needs you: approve" ]] || { echo "${lines[0]}"; false; }
+}
+
+@test "C1: a shipped milestone reads 'idle' with when it shipped, in green" {
+  step_edit '.milestone.status = "shipped" | .shipped = [{id: .milestone.id, title: "Pay", at: (((now | floor) - 7200) | todateiso8601)}]'
+  jq '{at: .shipped[0].at}' .vbw/record.json > "$TEST_ROOT/at.json"
+  run render
+  [[ "${lines[0]}" == *"│ ✓ idle: M1 shipped $(hm_of "$TEST_ROOT/at.json" at)" ]] || { echo "${lines[0]}"; false; }
+  out=$(render_color)
+  [[ "$out" == *$'\033[32m✓ idle: M1 shipped'* ]] || { echo "$out" | od -c | head; false; }
+}
+
+@test "C1: nothing running and nothing waiting reads 'idle' with the next step" {
+  printf '%s\n' '{"action":"build","gate":false,"instruction":"x","detail":{}}' > .vbw/runtime/next.json
+  run render
+  [[ "${lines[0]}" == *"│ ✓ idle: build is next" ]] || { echo "${lines[0]}"; false; }
 }

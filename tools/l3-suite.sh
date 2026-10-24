@@ -1199,7 +1199,7 @@ scenario_steptime() {
     for ((i = 0; i < 20; i++)); do
       sleep 2
       st_read
-      if printf '%s\n' "$sw_status" | grep '▶ build' > /dev/null && ! printf '%s\n' "$sw_status" | grep 'until' > /dev/null; then st_nohist_status=true; fi
+      if printf '%s\n' "$sw_status" | grep '● working: building' > /dev/null && ! printf '%s\n' "$sw_status" | grep 'until' > /dev/null; then st_nohist_status=true; fi
       case "$sw_screen" in *"No end time yet"*) st_nohist_text=true ;; esac
       [ "$st_nohist_status" = true ] && [ "$st_nohist_text" = true ] && break
     done

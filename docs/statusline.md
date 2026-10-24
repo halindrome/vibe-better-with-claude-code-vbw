@@ -7,7 +7,7 @@ VBW plans and builds with: `/vbw:vibe` turns them on (`vbw workflows on`) unless
 the user disabled them on purpose.
 
 ```
-[VBW] expenses │ M1 First milestone │ ▓▓▓▓▓▓▓░░░ 4/6 done │ ▶ build P1.2, P2.1 · 1 of 2 · until 14:20 │ ⟳ auto 3/25
+[VBW] expenses │ M1 First milestone │ ▓▓▓▓▓▓▓░░░ 4/6 done │ ● working: building P1.2, P2.1 · 1 of 2 · 8 min, until around 14:20 │ ⟳ auto 3/25
 Agents ● dev P1.2 sonnet  ● dev P2.1 sonnet
 Context ▓▓▓░░░░░░░ 31% 62K/200K │ Tokens 2 in 195 out │ Cache 93% hit 3.8K write 55.5K read │ Cost $1.42 │ +303 −12
 Limits 5h ▓▓░░░░░░░░ 23% (resets 2h13m) │ 7d ▓▓▓▓░░░░░░ 41% (resets 3d)
@@ -15,24 +15,34 @@ Sonnet 5.5 │ 10m22s (API 5m55s) │ main │ VBW 2.0.6 │ CC 2.1.286
 ```
 
 1. **VBW:** the project, the milestone, a progress bar of requirements proven
-   or accepted, and what is happening: a step in progress with what it is doing and when it should end
-   (`▶ build P1.2, P2.1 · 1 of 2 · until 14:20`; a background proof:
-   `▶ proving 12 of 40 checks · until 14:20`, counting up; an end on another day
-   reads `until tomorrow 00:20`). A step with parts past its time reads
-   `until 14:35, later than usual`; one without reads `until 14:20, 6 min late`.
-   With fewer than 3 finished steps of the kind there is no time: `▶ build P1.2,
-   P2.1 · 1 of 2`. The status line reads the time from the running step's note
-   and never works it out itself (see [Time left](panel.md#time-left)). It shows
-   the step's time only; the milestone's end is Mission Control's and the chat
-   message's, never the status line's. While a run is open, the cell ends with who holds it:
-   `▶ build P1.2, P2.1 · 1 of 2 · until 14:20 · leading` in the chat that holds
-   the run, `· held by <name>` in any other chat, the name (from `/rename`) cut to 20
-   characters with `…`. With no name known the cell shows the first 8 characters of the session id, and with a lease that has no session
-   there is nothing after the step. Escape sequences in a name are removed.
-   Other states: a step that needs
-   the user (`needs you: approve`), or the next step (`next: prove`, from the
-   last `vbw next`). `⟳ auto 3/25` while this session's autonomous run is armed (another session's is not shown). Outside a
-   VBW project: `/vbw:vibe to start` (this line, then lines 3 to 5).
+   or accepted, and one state, in the colours of Mission Control's Now tab:
+   - `● working: building P1.2, P2.1 · 1 of 2 · 8 min, until around 14:20`
+     (cyan): a step is running, what it is doing, its parts done, how long it has
+     run (from a minute on) and when it should end. A background proof reads
+     `● working: proving 12 of 40 checks · 3 min, until around 14:20`, counting
+     up; an end on another day reads `until around tomorrow 00:20`. A step with
+     parts past its time reads `until around 14:35, later than usual`; one
+     without reads `until around 14:20, 6 min late`. With fewer than 3 finished
+     steps of the kind there is no end time: `● working: building P1.2, P2.1 ·
+     1 of 2 · 8 min`. The status line reads the time from the running step's note
+     and never works it out itself (see [Time left](panel.md#time-left)). It shows
+     the step's time only; the milestone's end is Mission Control's and the chat
+     message's, never the status line's. While a run is open, the cell ends with
+     who holds it: `· leading` in the chat that holds the run, `· held by <name>`
+     in any other chat, the name (from `/rename`) cut to 20 characters with `…`.
+     With no name known the cell shows the first 8 characters of the session id,
+     and with a lease that has no session there is nothing after the step.
+     Escape sequences in a name are removed. Agents working with no run open read
+     `● working: 2 agents`.
+   - `⚑ needs you: approve · since yesterday 21:38` (amber): a step needs the
+     user, and since when (the day is named when it is not today); without a
+     time on the last `vbw next`, the since is left out.
+   - `✓ idle: M2 shipped 15:04` (green) once the milestone has shipped, and
+     `✓ idle: prove is next` (from the last `vbw next`) otherwise.
+
+   `⟳ auto 3/25` follows while this session's autonomous run is armed (another
+   session's is not shown). Outside a VBW project: `/vbw:vibe to start` (this
+   line, then lines 3 to 5).
 2. **Agents or team** (VBW projects, Claude Code before 2.1.287 only): while agents work, each one in its role's
    colour (architect magenta, lead blue, dev green, qa yellow, scout cyan,
    debugger red, docs pink) with its label and model. Otherwise the team: each role's model from the profile and

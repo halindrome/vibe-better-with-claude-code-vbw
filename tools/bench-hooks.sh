@@ -307,9 +307,9 @@ statusline() {
       {kind: "build", run: "build-1", session: "bench", pid: null, started_at: s(-300), ids: ["P1.1", "P1.2"], doing: "building P1.1, P1.2",
        parts: {done: 1, total: 2}, proof: null, first_end: s(720), end: s(720), late: false}' > "$dir/.vbw/runtime/step.json"
     first=$(CLAUDE_CONFIG_DIR="$cfg" NO_COLOR=1 bash "$PLUGIN/scripts/vbw-statusline.sh" < "$work/statusline.json" 2> /dev/null | head -n 1) || first=""
-    # The end is 12 minutes away, so after 23:48 the line says "until tomorrow HH:MM".
+    # The end is 12 minutes away, so after 23:48 the line says "until around tomorrow HH:MM".
     case "$first" in
-      *"1 of 2 · until "[0-9][0-9]:[0-9][0-9]* | *"1 of 2 · until tomorrow "[0-9][0-9]:[0-9][0-9]*) ;;
+      *"1 of 2 · "*" min, until around "[0-9][0-9]:[0-9][0-9]* | *"1 of 2 · "*" min, until around tomorrow "[0-9][0-9]:[0-9][0-9]*) ;;
       *)
         printf 'status line%s: the step was not shown, so the measure left it out\n' "$label" >&2
         status=1 ;;

@@ -55,7 +55,7 @@ section() { sed -n '/^## Time left/,/^## /p' "$PANEL" | sed '$d'; }
 }
 
 @test "R190: the status line docs show the step with its clock time, the proof count and the late cases" {
-  grep -qE 'until [0-9]{2}:[0-9]{2}' "$STATUSLINE" || { echo "docs/statusline.md has no 'until HH:MM'"; false; }
+  grep -qE 'until around [0-9]{2}:[0-9]{2}' "$STATUSLINE" || { echo "docs/statusline.md has no 'until around HH:MM'"; false; }
   grep -qE 'proving [0-9]+ of [0-9]+ checks' "$STATUSLINE" || { echo "no background proof example"; false; }
   grep -qi 'later than usual' "$STATUSLINE" || { echo "no 'later than usual'"; false; }
   grep -qE '[0-9]+ min late' "$STATUSLINE" || { echo "no 'N min late'"; false; }
