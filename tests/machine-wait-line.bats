@@ -115,7 +115,7 @@ waited_ok() {
   machine_project "$PROJECT" A 2 0 "$(peek_check C3 "$CLAUDE_CONFIG_DIR/vbw/slots.json")"
   run within 60 "$VBW" check < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }
-  [ "$(printf '%s\n' "$output" | sed 's/ [0-9]*s$/ Ns/')" = "$(printf 'C1 pass Ns\nC2 pass Ns\nC3 pass Ns')" ] || { echo "$output"; false; }
+  [ "$(printf '%s\n' "$output" | sed 's/ [0-9.]*s$/ Ns/')" = "$(printf 'C1 pass Ns\nC2 pass Ns\nC3 pass Ns')" ] || { echo "$output"; false; }
   run within 60 "$VBW" fix "done" F1 < /dev/null
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   [[ "$output" != *"for other VBW runs"* ]] || { echo "$output"; false; }
