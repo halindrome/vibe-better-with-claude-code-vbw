@@ -29,6 +29,7 @@ then `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw next --json` again.
 
 Before any step, read the user's words (now, or later in the session). Words naming guided, balanced or hands-off, or a plain phrase clearly meaning one ("ask me before each step" = guided, "do not ask, just go" = hands-off), run `vbw config set autonomy <value>` first. Say in one line what was set, then follow the Autonomy section with that value, not the line loaded above.
 
+- A project not set up yet: record it right after `vbw init`, never before (outside a VBW project `vbw config` refuses, and the session would run on the default).
 - Same as the current setting: it writes nothing and says nothing about it.
 - Words that do not clearly name one setting change nothing: never guess.
 - Stated later in the session: record it at once; it applies from the next step. A switch to guided while the autonomous run is armed runs `vbw auto off ${CLAUDE_SESSION_ID}`; a switch to balanced or hands-off runs `vbw auto on ${CLAUDE_SESSION_ID}` once.
