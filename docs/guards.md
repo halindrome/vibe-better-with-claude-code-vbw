@@ -12,6 +12,13 @@ example `Next: leave src/x.js as it is; report that the plan needs it, so the
 plan can be replanned with vbw apply`. The list of refusal kinds and their next
 steps is in docs/workflows.md ("Every refusal and its next step").
 
+Every block reaches you as well as Claude. The whole reason goes to Claude;
+beside it you see one line, the reason's first line (what was refused and
+why), for example `VBW guard blocked this call: .vbw/record.json is written
+only by vbw (vbw help lists the commands)`. The `Next:` step is addressed to
+Claude and stays in the reason. You see the line even when Claude finds
+another way a moment later, so a refusal never passes unseen.
+
 **Everywhere** (any project, VBW or not):
 
 | Call | Why |
@@ -179,10 +186,10 @@ each one to the exact JSON.
 
 | Answer | Sent by | What Claude Code does |
 |---|---|---|
-| `deny`, reason starting `VBW guard:` | the Bash and file guards | Blocks the tool call and shows Claude the reason, so it can choose another way |
+| `deny`, reason starting `VBW guard:`, with a message for you (`systemMessage`) beside it | the Bash and file guards | Blocks the tool call and shows Claude the reason, so it can choose another way; shows you the reason's first line, starting `VBW guard blocked this call:` |
 | `ask`, with a rewritten question (`updatedInput`) | the approval-menu hook on `AskUserQuestion` | Shows the rewritten question to you; you answer it |
 | Added context (`additionalContext`) | SessionStart; the approval-answer hook | Adds the text for Claude to read |
-| A message for the user (`systemMessage`) | SessionStart (project made by a newer VBW, or VBW 2 just removed old VBW 1 command copies and you must reload); the approval-answer hook | Shows you the message |
+| A message for the user (`systemMessage`) | SessionStart (project made by a newer VBW, or VBW 2 just removed old VBW 1 command copies and you must reload); the approval-answer hook; the Bash and file guards, beside every `deny` | Shows you the message |
 | No answer (no output, exit 0) | every hook, when it has nothing to say | Goes on as it normally would: your permission settings and prompts decide |
 
 ### No hook ever answers allow
