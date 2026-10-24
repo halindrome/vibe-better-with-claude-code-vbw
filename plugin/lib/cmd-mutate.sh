@@ -179,8 +179,12 @@ cmd_mutate() {
   else
     printf '%s' "$record" | jq -e --arg p "$plan" --arg q "$req" '.plans[] | select(.id == $p) | .reqs | index($q) != null' > /dev/null \
       || vbw_die "$plan does not serve $req: choose a rule of a requirement it serves (vbw show plan $plan)"
-    ruledoc=$(printf '%s' "$record" | jq -c --arg q "$req" --argjson k "$rk" '.requirements[] | select(.id == $q) | (.rules // []) | if $k >= 1 then (.[$k - 1] // empty | {req: $q, text, check}) else empty end')
+    ruledoc=$(printf '%s' "$record" | jq -c --arg q "$req" --argjson k "$rk" '.requirements[] | select(.id == $q) | (.rules // []) | if $k >= 1 then (.[$k - 1] // empty | {req: $q, text, check} + (if has("retired") then {retired} else {} end)) else empty end')
     [ -n "$ruledoc" ] || vbw_die "$req has no rule $rk: vbw show plan $plan lists the rules, numbered"
+    # A retired rule (T168) keeps its address but is owed nothing.
+    if printf '%s' "$ruledoc" | jq -e 'has("retired")' > /dev/null; then
+      vbw_die "$target is retired ($(printf '%s' "$ruledoc" | jq -r .retired)): it is owed no break"$'\n'"Next: break the plan's live rules (vbw show plan $plan lists them)"
+    fi
     check=$(printf '%s' "$ruledoc" | jq -r '.check')
   fi
   if [ "$nonef" = 1 ] && [ "$kind" = rule ]; then
@@ -209,7 +213,7 @@ cmd_mutate() {
       (.plans[] | select(.id == $p).reqs) as $q
       | [.plans[] | select(.id != $p and .status != "done") | .reqs[]] as $others
       | [$q[] | select(. as $r | $others | index($r) == null)] as $done
-      | [.requirements[] | .id as $r | (.rules // [])[] | select(.plan == $p or ($done | index($r) != null)) | .check] | unique')
+      | [.requirements[] | .id as $r | (.rules // [])[] | select((has("retired") | not) and (.plan == $p or ($done | index($r) != null))) | .check] | unique')
     if [ "$owed" != '[]' ]; then
       ids=$owed
     else

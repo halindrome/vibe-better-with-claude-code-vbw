@@ -23,7 +23,6 @@ Status words:
 |---|---|---|---|
 | [Mission Control may not open at session start](#mission-control-may-not-open-at-session-start) | Known issue | Wide windows | `/vbw-panel` |
 | [The loop's time budget follows the size label](#the-loops-time-budget-follows-the-size-label) | Known issue | Loops | Re-run the item |
-| [Approved rules cannot be reworded or retired](#approved-rules-cannot-be-reworded-or-retired) | Known issue | Re-planning | None clean |
 | [Time estimates absorb idle time](#time-estimates-absorb-idle-time) | Known issue | Estimates | Delete `steps.json` |
 | [Heavy checks each use every core](#heavy-checks-each-use-every-core) | Known issue | Cargo, make, similar | Lower `check_jobs` |
 | [Slot store edge cases](#slot-store-edge-cases) | Known issue | Sandboxes, many runs | None needed |
@@ -59,18 +58,6 @@ Status words:
 **Plan.** Once an item is planned, its budget becomes twice the kernel's estimate of its road ([panel.md](panel.md#time-left)). The stuck test counts progress (plans done, fixes closed), so waiting is not grinding. Before planning, the size default stays.
 
 **Where.** `plugin/lib/loop-step.sh` (`loop_item_budget`); the estimate comes from `plugin/lib/road.jq`.
-
-### Approved rules cannot be reworded or retired
-
-**What.** A rule is one approved condition of a requirement, tied to a check. `vbw apply --patch` matches a rule by requirement and text ([workflows.md](workflows.md#changing-one-thing-vbw-apply---patch)), so new wording adds a second rule and the stale one stays. A rule of a shipped milestone cannot be reached at all. When a later requirement changes behaviour, the earlier rule is left standing and can contradict the new one.
-
-**Who and when.** Projects that change the behaviour a shipped requirement described. It shows up when the Lead re-plans.
-
-**Workaround.** None that retires the stale rule. Adding the new rule beside it keeps both checks running.
-
-**Plan.** Give rules a stable address that a patch can reword or retire, with a new approval. A kernel step is needed to supersede a rule of a shipped requirement.
-
-**Where.** `plugin/lib/cmd-apply.sh`; the record's `rules` ([record.md](record.md)).
 
 ### Time estimates absorb idle time
 

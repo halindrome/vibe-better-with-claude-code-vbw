@@ -333,19 +333,31 @@ states, paired with the check that tests it. The Lead lists them with
 is meant to cover, not only that checks exist.
 
 `vbw show contract` is the approval screen. Each `auto` requirement shows its
-rules with their checks:
+rules, each by its address `Rn.k` (its place among the requirement's rules),
+with their checks:
 
 ```text
 R1 [auto] A customer can pay once
-  rule: A payment succeeds -> C1
-  rule: Paying twice is refused -> C2
+  rule R1.1: A payment succeeds -> C1
+  rule R1.2 retired: Paying twice is refused (R4 lets a customer pay twice)
+  rule R1.3: A refused card is named -> C2
 ```
 
 - `vbw approve` refuses an `auto` requirement whose rules are pending
-  (`rules: []`): `R1 has no rules listed (vbw apply with rules)`.
-- Rules are part of the contract hash: adding, removing or re-pointing a rule
-  needs re-approval, and `vbw show contract --changes` lists it as
-  `added rule`, `removed rule` or `changed rule`.
+  (`rules: []`, or every rule retired): `R1 has no rules listed (vbw apply with rules)`.
+- A rule is reworded or retired by its address with `vbw apply --patch`
+  (docs/workflows.md), in any milestone, a shipped one included. A retired
+  rule stays in the record, in its place, with its reason: no other rule's
+  address moves, the mutation check owes it no break, `vbw show plan` leaves it
+  out of the plan's rules and `vbw mutate` refuses its address. Retire a rule
+  whose behaviour a newer requirement replaced, so the old rule no longer
+  contradicts the new one.
+- Rules are part of the contract hash, retired ones and their reasons
+  included: adding, removing, rewording, retiring, moving or re-pointing a rule
+  needs re-approval, and `vbw show contract --changes` lists it by its
+  address as `added rule`, `removed rule`, `reworded rule`, `retired rule`,
+  `moved rule` or `changed rule`, for example
+  `retired rule R1.2: Paying twice is refused (R4 lets a customer pay twice)`.
 - When a requirement's text or proof changes, `vbw spec sync` resets its rules
   to pending, so the Lead restates them.
 - A requirement approved before rules existed (no requirement has a `rules`

@@ -150,11 +150,12 @@ show_project() {
 
 @test "show req prints a requirement's rules, and show contract --changes reports rule changes" {
   set_rules() { jq --argjson r "$1" '.requirements[0].rules = $r | .checks |= (if any(.[]; .id == "C2") then . else . + [{id:"C2", req:"R1", run:["true"]}] end)' .vbw/record.json > "$TEST_ROOT/r.json" && jq "$KEEP_PROTECTED" "$TEST_ROOT/r.json" > .vbw/record.json; }
-  set_rules '[{"text": "A payment succeeds", "check": "C1"}]'
+  set_rules '[{"text": "A payment succeeds", "check": "C1"}, {"text": "Cash is refused", "check": "C1", "retired": "cash is taken now"}]'
   vbw_run show req R1
-  [[ "$output" == *"rule: A payment succeeds -> C1"* ]]
+  [[ "$output" == *"rule R1.1: A payment succeeds -> C1"*"rule R1.2 retired: Cash is refused (cash is taken now)"* ]] || { echo "$output"; false; }
   vbw_run show contract
-  [[ "$output" == *"R1 [auto] Pay by card"*"rule: A payment succeeds -> C1"* ]]
+  [[ "$output" == *"R1 [auto] Pay by card"*"rule R1.1: A payment succeeds -> C1"* ]] || { echo "$output"; false; }
+  set_rules '[{"text": "A payment succeeds", "check": "C1"}]'
   # The snapshot an approval would have taken.
   jq -c '{requirements: (.requirements | map({key: .id, value: ({text, proof} + (if has("rules") then {rules} else {} end))}) | from_entries),
           checks: (.checks | map({key: .id, value: .}) | from_entries),
@@ -162,11 +163,22 @@ show_project() {
           commands: .commands, files: {}}' .vbw/record.json > .vbw/runtime/approved-contract.json
   set_rules '[{"text": "A payment succeeds", "check": "C2"}, {"text": "Paying twice is refused", "check": "C1"}]'
   vbw_run show contract --changes
-  [[ "$output" == *"changed rule R1: A payment succeeds -> C2 (was C1)"* ]]
-  [[ "$output" == *"added rule R1: Paying twice is refused -> C1"* ]]
+  [[ "$output" == *"changed rule R1.1: A payment succeeds -> C2 (was C1)"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"added rule R1.2: Paying twice is refused -> C1"* ]] || { echo "$output"; false; }
+  # A rule found by its words in another place has moved, not changed.
+  set_rules '[{"text": "Paying twice is refused", "check": "C1"}, {"text": "A payment succeeds", "check": "C1"}]'
+  vbw_run show contract --changes
+  [[ "$output" == *"moved rule R1.2: A payment succeeds (was R1.1)"* ]] && [[ "$output" == *"added rule R1.1: Paying twice is refused -> C1"* ]] || { echo "$output"; false; }
+  [[ "$output" != *"reworded"* ]] || { echo "$output"; false; }
+  set_rules '[{"text": "A card payment succeeds", "check": "C1"}]'
+  vbw_run show contract --changes
+  [[ "$output" == *"reworded rule R1.1: A payment succeeds -> A card payment succeeds"* ]] && [[ "$output" != *"removed rule"* ]] || { echo "$output"; false; }
+  set_rules '[{"text": "A payment succeeds", "check": "C1", "retired": "cards only"}]'
+  vbw_run show contract --changes
+  [[ "$output" == *"retired rule R1.1: A payment succeeds (cards only)"* ]] || { echo "$output"; false; }
   set_rules '[]'
   vbw_run show contract --changes
-  [[ "$output" == *"removed rule R1: A payment succeeds"* ]]
+  [[ "$output" == *"removed rule R1.1: A payment succeeds"* ]]
 }
 
 @test "show contract lists the saved test results folders, and --changes names a changed list" {

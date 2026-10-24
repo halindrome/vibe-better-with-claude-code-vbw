@@ -200,11 +200,14 @@ if type != "object" then ["record must be a JSON object"] else
         ( . as $q | select(.rules | type == "array") | .rules[]
           | select(type != "object" or ((.text | nonempty) | not)) | "\($q.id) has a rule without text" ),
         ( . as $q | select(.rules | type == "array") | .rules[] | select(type == "object")
-          | ( keys[] | select(one_of(["text","check","plan"]) | not) | "\($q.id) has a rule with an unknown field: \(.)" ),
-            ( . as $x | select(any($checks[]; .id == $x.check and .req == $q.id) | not)
+          | ( keys[] | select(one_of(["text","check","plan","retired"]) | not) | "\($q.id) has a rule with an unknown field: \(.)" ),
+            # A retired rule (T168) keeps its place, words and reason; the check and plan it named may be gone.
+            ( . as $x | select(has("retired") and ((.retired | nonempty) | not))
+              | "\($q.id) rule \"\($x.text)\" is retired without a reason" ),
+            ( . as $x | select((has("retired") | not) and (any($checks[]; .id == $x.check and .req == $q.id) | not))
               | "\($q.id) rule \"\($x.text)\" names \($x.check), which is not a check of \($q.id)" ),
             # The plan that builds the rule's code (T152): one that serves the requirement.
-            ( . as $x | select(has("plan") and (any($plans[]; .id == $x.plan and any(.reqs[]?; . == $q.id)) | not))
+            ( . as $x | select(has("plan") and (has("retired") | not) and (any($plans[]; .id == $x.plan and any(.reqs[]?; . == $q.id)) | not))
               | "\($q.id) rule \"\($x.text)\" names plan \($x.plan), which is not a plan of \($q.id)" ) ),
         ( . as $q | select((.milestone | one_of($milestones)) | not) | "\(.id) belongs to unknown milestone \(.milestone)" ),
         ( select((.text | nonempty) | not) | "\(.id) needs non-empty text" ),

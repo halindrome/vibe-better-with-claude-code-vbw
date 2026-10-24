@@ -3,7 +3,8 @@
 # its text states (conditions, edge and error cases), each with the check that
 # tests it. vbw apply refuses a listed rule no check tests, naming it; the
 # approval screen (vbw show contract) shows the rules with their checks;
-# requirements approved before rules existed keep their approval (D53).
+# requirements approved before rules existed keep their approval (D53). A
+# requirement whose every rule is retired (T168) has none listed.
 
 load helper
 load fixture-helper
@@ -127,13 +128,22 @@ GOOD='[{"req": "R1", "text": "A payment succeeds", "check": "C1"}, {"req": "R1",
   [[ "$output" == *"rules"* ]]
 }
 
+@test "R31, T168: approve refuses an [auto] requirement whose every rule is retired" {
+  apply_rules "$GOOD"
+  [ "$status" -eq 0 ]
+  printf '{"rules": [{"rule": "R1.1", "retire": "superseded"}]}' | "$VBW" apply --patch > /dev/null
+  jq '.requirements[0].rules[1].retired = "superseded too"' .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
+  vbw_run approve
+  [ "$status" -eq 1 ] && [[ "$output" == *"R1 has no rules listed"* ]] || { echo "$output"; false; }
+}
+
 @test "R31: the approval screen shows each requirement's rules with their checks" {
   apply_rules "$GOOD"
   vbw_run show contract
   [ "$status" -eq 0 ]
   [[ "$output" == *"R1 [auto] A customer can pay once"* ]]
-  [[ "$output" == *"rule: A payment succeeds -> C1"* ]]
-  [[ "$output" == *"rule: Paying twice is refused -> C2"* ]]
+  [[ "$output" == *"rule R1.1: A payment succeeds -> C1"* ]] || { echo "$output"; false; }
+  [[ "$output" == *"rule R1.2: Paying twice is refused -> C2"* ]] || { echo "$output"; false; }
   [[ "$output" != *"rules not listed"* ]]
 }
 
