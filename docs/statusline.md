@@ -168,6 +168,8 @@ status line still renders. It never writes `.vbw/record.json`.
   empty list: the stored name from the glance, else the 8 characters of the id.
   `tools/bench-hooks.sh` measures the status line with a lease open and a list
   on disk, within the same 60 ms.
+- Started in a subfolder, it shows the project that folder is in: the nearest
+  folder up that holds `.git`, the same project the kernel and the guards use.
 - No network, no git process (the branch is read from
   `.git/HEAD`, also in linked worktrees). The one thing it writes is the cost side
   file below, never the record.

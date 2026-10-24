@@ -45,6 +45,13 @@ asked() { printf '%s' "$output" | jq -r '.hookSpecificOutput.updatedInput.questi
   [ "$(approved_count)" = "1" ]
 }
 
+@test "R114: in a session started in a subfolder of the project the fingerprint is put in front too" {
+  mkdir -p "Sub Folder With Spaces"
+  HOOK_PROJECT_DIR="$PROJECT/Sub Folder With Spaces" run ask_hook "Shall we go ahead with this plan?"
+  [ "$status" -eq 0 ]
+  [ "$(asked)" = "Approve contract $FP? Shall we go ahead with this plan?" ] || { echo "$output"; false; }
+}
+
 @test "R114: a question that already names a fingerprint, or any other question, is left alone" {
   run ask_hook "Approve contract $FP? It builds the checkout."
   [ -z "$output" ]

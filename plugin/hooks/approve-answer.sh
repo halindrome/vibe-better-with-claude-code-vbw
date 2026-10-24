@@ -8,7 +8,9 @@
 
 fp=$(jq -r .fp <<< "$1")
 answer=$(jq -r .answer <<< "$1")
-root=${CLAUDE_PROJECT_DIR:-$PWD}
+# shellcheck source-path=SCRIPTDIR source=project.sh
+. "${0%/*}/project.sh"
+vbw_project_of "${CLAUDE_PROJECT_DIR:-$PWD}"
 vbw="${0%/*}/../bin/vbw"
 
 # say USER_SENTENCE CLAUDE_CONTEXT

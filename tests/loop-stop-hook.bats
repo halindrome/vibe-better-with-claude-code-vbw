@@ -36,6 +36,14 @@ stop() { jq -nc --arg s "$1" '{hook_event_name: "Stop", session_id: $s, stop_hoo
   [ "$status" -eq 0 ] && [ -z "$output" ]
 }
 
+@test "T150: in a session started in a subfolder of the project the hook drives the loop too" {
+  VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
+  mkdir -p "Sub Folder With Spaces"
+  HOOK_PROJECT_DIR="$PROJECT/Sub Folder With Spaces" run stop s1
+  [ "$status" -eq 0 ]
+  printf '%s' "$output" | jq -e '.decision == "block" and (.reason | test("T1"))' || { echo "$output"; false; }
+}
+
 @test "T147: one Stop event moves the loop one step: the item opens once" {
   VBW_SESSION_ID=s1 "$VBW" loop start T1 --no-ceiling > /dev/null
   stop s1 > /dev/null

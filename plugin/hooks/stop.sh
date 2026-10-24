@@ -11,7 +11,10 @@ in=$(cat)
 v=$(printf '%s' "$in" | jq -r '"\(.session_id | if type == "string" and test("^[A-Za-z0-9_-]+$") then . else "" end) \(.hook_event_name // "")"' 2> /dev/null) || exit 0
 s=${v%% *}
 case "$s" in '' | *[!A-Za-z0-9_-]*) exit 0 ;; esac
-rt="${CLAUDE_PROJECT_DIR:-$PWD}/.vbw/runtime"
+# shellcheck source-path=SCRIPTDIR source=project.sh
+. "${0%/*}/project.sh"
+vbw_project_of "${CLAUDE_PROJECT_DIR:-$PWD}"
+rt="$root/.vbw/runtime"
 if [ "${v#* }" = StopFailure ]; then
   [ ! -f "$rt/loop.$s" ] || [ -e "$rt/loop-away.$s" ] || date -u +%Y-%m-%dT%H:%M:%SZ > "$rt/loop-away.$s"
   exit 0

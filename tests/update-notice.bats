@@ -22,7 +22,7 @@ teardown() { vbw_teardown; }
 # a kernel that hands every call to the real one.
 plugin_version() {
   mkdir -p "$PLUG/hooks" "$PLUG/bin" "$PLUG/.claude-plugin"
-  cp "$PLUGIN_ROOT/hooks/session-start.sh" "$PLUG/hooks/"
+  cp "$PLUGIN_ROOT/hooks/session-start.sh" "$PLUGIN_ROOT/hooks/project.sh" "$PLUG/hooks/"
   printf '{"name": "vbw", "version": "%s"}\n' "$1" > "$PLUG/.claude-plugin/plugin.json"
   printf '#!/usr/bin/env bash\nexec "%s/bin/vbw" "$@"\n' "$PLUGIN_ROOT" > "$PLUG/bin/vbw"
   chmod +x "$PLUG/bin/vbw"
