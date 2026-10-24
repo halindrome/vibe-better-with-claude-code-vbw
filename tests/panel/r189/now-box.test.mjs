@@ -1,12 +1,14 @@
 // R189, phase P144 (evidence level L1, the stand-in for Claude Code's mods API):
 // Mission Control's Now tab opens on a 'what's happening now' box: VBW's state as
-// a plain sentence (planning, building which phase, proving, checking, waiting
-// for you and for what, or nothing running), the current step with the HH:MM it
-// started, and the session cost line (D106). The box follows the state within
-// one refresh (2 s). Every event and message line starts with the local time as
-// HH:MM: Mission Control's need and time-left sentences ('[14:08] This step:
-// about 12 min, until around 14:20.', R190, from the kernel's note
-// .vbw/runtime/step.json), a helper card's state (started, finished, failed), the
+// a plain sentence (planning, building which phase, proving, checking, or
+// nothing running), the current step with the HH:MM it started and the HH:MM it
+// is expected to end (R190, from the kernel's note .vbw/runtime/step.json), and
+// the session cost line (D106). When VBW needs the user the box holds the need
+// sentence, the command that answers it and since when it waits; what the box
+// says is not said again below it. The box follows the state within one refresh
+// (2 s). Every event and message line starts with the local time as HH:MM: the
+// milestone's time-left sentence ('[14:08] Milestone end: about 40 min, until
+// around 14:50.'), a helper card's state (started, finished, failed), the
 // all-checks-pass line on Comms and the What's next recommendation. A message
 // keeps the time it began saying what it says, so the clock alone redraws nothing.
 import test from 'node:test'
@@ -73,7 +75,7 @@ test('each state reads as a plain sentence: planning, building which phase, prov
     [record({ lease: lease('build', T0), plans: PLANS }), next({ action: 'run' }), {}, [/building/i, /P44/]],
     [record(), next({ action: 'prove' }), { [ROOT + '/.vbw/runtime/proving.sess-1']: '4242\n' }, [/proving/i]],
     [record({ lease: lease('qa', T0) }), next({ action: 'run' }), {}, [/checking/i]],
-    [record(), next({ action: 'approve', gate: true }), {}, [/waiting for you/i, /approv/i]],
+    [record(), next({ action: 'approve', gate: true }), {}, [/Please approve the plan/, /\/vbw:approve/]],
     [record(), next(), {}, [/nothing (is )?running/i]],
   ]
   for (const [rec, nx, files, want] of cases) {
@@ -91,25 +93,70 @@ test('the box follows the state within one refresh, with no other event', async 
   assert.match(await nowBox(h), /building/i)
   h.project(record(), next({ action: 'approve', gate: true }))
   await h.advance(TICK)
-  assert.match(await nowBox(h), /waiting for you/i)
+  assert.match(await nowBox(h), /Please approve the plan/)
 })
 
-test("Mission Control's need sentence starts with the time the gate was reached", async () => {
+test('the box says since when VBW waits: the time the gate was reached', async () => {
   const h = await session()
   const at = h.now()
   h.write(NEXT, next({ action: 'approve', gate: true }))
   await h.advance(TICK)
-  const line = (await paneLines(h)).find((l) => /Please approve/.test(l))
-  assert.ok(line, 'no need sentence')
-  assert.ok(line.trim().startsWith('[' + hhmm(at) + '] '), "'" + line + "' does not start with [" + hhmm(at) + ']')
+  const box = await nowBox(h)
+  assert.ok(box.includes('Waiting since ' + hhmm(at) + '.'), box)
 })
 
-test('the time-left sentences start with [HH:MM], as in "[14:08] This step: about 12 min, until around 14:20."', async () => {
+test('when VBW needs the user the box holds the one sentence and the command, and nothing below repeats them', async () => {
+  const cases = [
+    [{ action: 'approve', gate: true }, 'Please approve the plan before VBW builds it.', '/vbw:approve'],
+    [{ action: 'accept', gate: true, detail: { requirements: ['R2'] } }, 'Please check the result by hand: R2.', '/vbw:verify'],
+    [{ action: 'spec', gate: true }, 'VBW needs you to say what to build: the requirements.', '/vbw:vibe'],
+  ]
+  for (const [nx, sentence, command] of cases) {
+    const h = await session(record(), next(nx))
+    const box = await nowBox(h)
+    assert.ok(box.includes(sentence), box)
+    assert.ok(box.includes('Type ' + command + '.'), box)
+    const all = (await paneLines(h)).join('\n')
+    assert.equal(all.split(sentence).length - 1, 1, 'the need sentence is said once:\n' + all)
+    assert.equal(all.split(command).length - 1, 1, 'the command is said once:\n' + all)
+    assert.doesNotMatch(all, /Nothing is needed from you/)
+    assert.doesNotMatch(all, /VBW is waiting for you/)
+  }
+})
+
+test('a question names no command; the compact warning already says its own', async () => {
+  const h = await session()
+  let box = ''
+  await h.fire('tool.call', { tool: 'AskUserQuestion', questions: [{ question: 'Which?' }] }, async () => {
+    box = await nowBox(h)
+    return { result: 'x' }
+  })
+  assert.match(box, /VBW has a question for you/)
+  assert.doesNotMatch(box, /Type \//)
+  const view = await import(pathToFileURL(PLUGIN + '/hooks/panel-view.js').href)
+  const full = view.panelView({ record: record(), next: next({ action: 'build' }), now: T0, health: { contextPct: 90 } })
+  assert.match(full.box.state.text, /run \/compact first/)
+  assert.equal(full.box.command, null)
+})
+
+test('the box carries the step with its start and its end, and the sentences below do not repeat them', async () => {
+  const end = T0 + 600 * S
+  const h = await session(record({ lease: lease('build', T0 - 300 * S), plans: PLANS }), next({ action: 'run' }), { [STEPS]: JSON.stringify(HISTORY), [NOTE]: note(end) })
+  const box = await nowBox(h)
+  assert.ok(box.includes('Current step: building P44.1, started at ' + hhmm(T0 - 300 * S) + '.'), box)
+  assert.ok(box.includes('This step: about 10 min, until around ' + hhmm(end) + '.'), box)
+  const all = (await paneLines(h)).join('\n')
+  assert.equal(all.split('This step:').length - 1, 1, 'the end time is in the box only')
+  assert.equal(all.split('until around ' + hhmm(end)).length - 1, 1, 'the end time is said once:\n' + all)
+  assert.equal(all.split('VBW is building').length - 1, 1, 'what VBW is doing is said once, in the box:\n' + all)
+  assert.equal(all.split('This session has cost').length - 1, 1, 'the cost is said once')
+})
+
+test('the milestone sentence starts with [HH:MM], as in "[14:08] Milestone end: about 2 h 10 min, until around 16:40."', async () => {
   const h = await session(record({ lease: lease('build', T0 - 300 * S), plans: PLANS }), next({ action: 'run' }), { [STEPS]: JSON.stringify(HISTORY), [NOTE]: note(T0 + 600 * S) })
-  const lines = await paneLines(h)
-  const left = lines.filter((l) => /until around \d\d:\d\d|Milestone end: about 2 h/.test(l))
-  assert.ok(left.length >= 2, 'no time-left sentence for the step and the milestone')
-  for (const l of left) assert.match(l.trim(), /^\[\d\d:\d\d\] /)
+  const left = (await paneLines(h)).filter((l) => /Milestone end: about 2 h/.test(l))
+  assert.equal(left.length, 1, 'no milestone time-left sentence')
+  assert.match(left[0].trim(), /^\[\d\d:\d\d\] /)
 })
 
 test('a message keeps the time it began saying what it says: the clock moving alone redraws nothing', async () => {
@@ -178,12 +225,15 @@ test('a time-left sentence keeps the time it began saying what it says while the
   // A step with parts past even its moved end time says "until around HH:MM, later than usual" and goes on saying it.
   const h = await session(record({ lease: lease('build', T0 - 3 * 3600 * S), plans: PLANS }), next({ action: 'run' }),
     { [STEPS]: JSON.stringify(HISTORY), [NOTE]: note(T0 - 3600 * S, { first_end: iso(T0 - 2 * 3600 * S), late: true }) })
-  const sentence = async () => (await paneLines(h)).find((l) => /later than usual/.test(l))
-  const first = await sentence()
-  assert.ok(first, 'no later-than-usual sentence')
+  const milestone = async () => (await paneLines(h)).find((l) => /Milestone end/.test(l))
+  const first = await milestone()
+  assert.ok(first, 'no milestone sentence')
   assert.match(first.trim(), /^\[\d\d:\d\d\] /)
+  const box = await nowBox(h)
+  assert.match(box, /later than usual/)
   await h.advance(10 * 60000)
-  assert.equal(await sentence(), first, 'the time moved with the clock')
+  assert.equal(await milestone(), first, 'the milestone time moved with the clock')
+  assert.equal(await nowBox(h), box, 'the step line moved with the clock')
 })
 
 test('the state sentence itself, the box\'s first line, names each state; the step line below it never stands in for it', async () => {

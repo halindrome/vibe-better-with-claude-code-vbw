@@ -104,7 +104,7 @@ function fresh() {
 // written, so a gate is dated by the file and answered by the record that followed it.
 // A message keeps the time it began saying what it says (st.stamps): the first pass
 // reads the dated sentences bare, the second draws them all, each with its [HH:MM].
-const STAMPED = ['estimate-step', 'estimate-milestone']
+const STAMPED = ['estimate-milestone']
 const bare = (t) => String(t).replace(/^\[\d\d:\d\d\] /, '')
 function view(st, now) {
   const input = {
