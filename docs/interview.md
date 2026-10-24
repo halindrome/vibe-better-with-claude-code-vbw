@@ -41,7 +41,7 @@ with a recommendation`).
 | `vbw interview keep private\|project` | choose where the complete set lives |
 
 `keep` needs all three answers and moves them: the old location is cleared.
-`/vbw:profile` shows the answers and changes one at a time.
+`/vbw:profile` shows the answers and changes one at a time; so does the Settings tab of Mission Control, one click per answer ([panel.md](panel.md#settings)).
 
 ## Private or shared
 

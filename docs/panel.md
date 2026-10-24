@@ -443,8 +443,9 @@ scroll it) to read the rest.
 ### Settings
 
 The **Settings** tab shows every setting `vbw config set` accepts, and rigor,
-the sound and the status line, one line each under four headings: Models,
-How VBW works, Checks, and Look and sound. Every choice is one click.
+the sound and the status line, one line each under six headings: Models,
+How VBW talks to you, How VBW works, Checks, Look and sound, and Claude Code.
+Every choice is one click.
 
 ```
 Models
@@ -462,14 +463,25 @@ check_jobs       [ − ]  6  [ + ]  default
   covers `profile`, the model of each of the seven roles (Fable, Opus, Sonnet,
   Haiku or default; QA is never offered Haiku), `autonomy`, `rigor`, `motion`, `sound` (`off`, each sound folder,
   `default`) and the status line (`on`, `off`).
+- **How VBW talks to you** holds your interview answers: your level, the
+  wording and who makes the decisions, the same answers the first interview
+  asks (`vbw interview set`), and where they are kept: `private` (this clone
+  only) or `project` (shared through git, `vbw interview keep`).
+- **autonomous run** is this chat's: `on` arms it (`vbw auto on`), `off`
+  stops it, and while it runs the line under it says which step of how many.
+- **Dynamic workflows**, which VBW plans and builds with, show `✓ on` in
+  green, or in amber `⚠ Claude Code decides` with a `turn on` button
+  (`vbw workflows on`). When they were turned off on purpose
+  (`disableWorkflows`), the row says so in amber and offers no button: VBW
+  never overrides that choice.
 - A number has `−` and `+` around its value (and `default`, which removes it):
   `autonomy_cap`, `check_jobs` (with the computer-wide limit under it),
   `command_timeout` and `check_budget`.
 - A role's model row is named by the role, in the role's colour (the setting
   is `model.<role>`), and says `(set by you)` when you chose its model;
   otherwise the profile picks it.
-- `check_jobs` and `sound` are this clone's own, and the status line is this
-  computer's, as the dim line under them says. Everything else is the
+- `check_jobs` and `sound` are this clone's own, the autonomous run is this
+  chat's, and the status line and Dynamic workflows are this computer's, as the dim line under them says. Everything else is the
   project's, shared through git.
 
 A press runs VBW's own command (`vbw config set KEY VALUE`, `vbw config rigor

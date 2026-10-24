@@ -19,7 +19,7 @@ import { statusText, whyText, todoArgs } from './panel-commands.js'
 import { renderPane } from './panel-pane.js'
 import { freshKey } from './panel-next.js'
 import { fresh as freshLook, freshArrive, freshSee } from './panel-candy.js'
-import { READ_ARGV, settingArgv, settingsState, settingsSig } from './panel-settings.js'
+import { readArgv, settingArgv, settingsState, settingsSig } from './panel-settings.js'
 import { stateColor } from './panel-palette.js'
 import { SITES, turnPending } from './panel-sites.js'
 import { motionOf, spriteFrame, encodeCells, confettiFrames, sweepFrames, wrappedModel, celebration } from './panel-candy.js'
@@ -801,7 +801,8 @@ async function act($, st, a) {
 }
 
 // The Settings tab (panel-settings.js): `choice` ({ key, value }) runs the kernel's own
-// command for it, then the tab reads `vbw config` and `vbw statusline status` again; a change
+// command for it, then the tab reads `vbw config`, `vbw statusline status`, `vbw interview
+// --json`, `vbw workflows status` and this chat's `vbw auto status` again; a change
 // that took is fresh on the tab, and its ✓ saved flash is redrawn away after about 2 s.
 async function settings($, st, choice) {
   const run = async (argv) => {
@@ -811,11 +812,10 @@ async function settings($, st, choice) {
       return null
     }
   }
-  const argv = choice ? settingArgv(choice) : null
+  const argv = choice ? settingArgv(choice, st.sessionId) : null
   if (choice && !argv) return
   const result = argv ? await run(argv) : null
-  const reads = []
-  for (const r of READ_ARGV) reads.push(await run(r))
+  const reads = await Promise.all(readArgv(st.sessionId).map(run))
   const now = await $.clock.now()
   st.settings = settingsState({ before: st.settings, choice, result, reads, now })
   if (result && result.exitCode === 0) {
