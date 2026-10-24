@@ -25,6 +25,7 @@ usage: vbw <command> [args]
   spec add auto|human TEXT   append a requirement to the spec and sync
   status [--json]   where the project stands
   next [--json]     the next lifecycle step and whether it needs you
+  root              the project folder (the top of the git repository), which VBW's paths are relative to
   show VIEW [ID]    roadmap | phase ID | req ID | plan ID | fix ID | contract [--changes] | evidence | decisions | requirements | costs [--json | --ceiling USD]
   approve [--hash FINGERPRINT]   approve the contract and project commands (the user, via /vbw:approve; --hash only if it is still that contract)
   check [--expect-red] [CHECK...]   run approved checks and report (writes nothing)
@@ -132,6 +133,7 @@ vbw_cmd_usage() {
     recommend) echo "usage: vbw recommend < JSON   store the what's-next recommendation the Architect wrote" ;;
     tools) echo "usage: vbw tools [--json] | answer yes|no   whether you allowed VBW to look for the best tools for this project" ;;
     version) echo "usage: vbw version   print the plugin version (also vbw --version)" ;;
+    root) echo "usage: vbw root   the project folder (the top of the git repository), which VBW's paths are relative to" ;;
     help) echo "usage: vbw help   the list of commands" ;;
   esac
 }
@@ -151,7 +153,7 @@ done
 case "$cmd" in
   version|--version) jq -r .version "$VBW_PLUGIN/.claude-plugin/plugin.json" ;;
   help|-h|--help) vbw_help ;;
-  init|status|triage|todo|commit|mutate|next|show|spec|approve|check|prove|apply|run|plan|fix|req|qa|ship|config|auto|statusline|workflows|doctor|rtk|report|milestone|loop|decide|legacy|tier|interview|suggest|recommend|tools)
+  init|status|triage|todo|commit|mutate|next|show|spec|approve|check|prove|apply|run|plan|fix|req|qa|ship|config|auto|statusline|workflows|doctor|rtk|report|milestone|loop|decide|legacy|tier|interview|suggest|recommend|tools|root)
     # shellcheck source=/dev/null
     . "$VBW_LIB/cmd-$cmd.sh"
     "cmd_$cmd" "$@"

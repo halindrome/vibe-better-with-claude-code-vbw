@@ -144,6 +144,12 @@ teardown() { vbw_teardown; }
   cd src/deep
   vbw_run todo add "from below"
   [ "$status" -eq 0 ]
+  # The project folder, for the skills and workflows of a session started down here.
+  local top
+  top=$(cd "$PROJECT" && pwd -P)
+  vbw_run root
+  [ "$status" -eq 0 ] && [ "$output" = "$top" ] || { echo "$output"; false; }
+  [ "$("$VBW" next --json < /dev/null | jq -r .root)" = "$top" ]
   cd "$PROJECT"
   [ "$(jq -r '.todos[0].text' .vbw/record.json)" = "from below" ]
 }

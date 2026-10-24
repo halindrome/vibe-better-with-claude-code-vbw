@@ -97,7 +97,9 @@ cmd_next() {
     next=$(printf '%s' "$next" | jq -c --argjson step "$step" --argjson road "${road:-null}" '. + {step: $step, road: $road}')
     # The /rename hint (D444): once per clone, only for the command.
     hint=$(sessions_rename_hint "$(vbw_session)" "$VBW_ROOT" "$(basename "$VBW_ROOT")")
-    next=$(printf '%s' "$next" | jq -c --arg hint "$hint" '. + {rename_hint: (if $hint == "" then null else $hint end)}')
+    # The project folder (vbw root), for the workflows' args: agents of a session started in a
+    # subfolder work there.
+    next=$(printf '%s' "$next" | jq -c --arg hint "$hint" --arg root "$VBW_ROOT" '. + {rename_hint: (if $hint == "" then null else $hint end), root: $root}')
   else
     road=$(jq -c '.road // empty' "$VBW_RUNTIME/next.json" 2> /dev/null) || road=
     [ -z "$road" ] || next=$(printf '%s' "$next" | jq -c --argjson road "$road" '. + {road: $road}')

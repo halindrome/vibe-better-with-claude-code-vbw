@@ -223,6 +223,14 @@ The router says it once, as given. VBW never runs or applies the rename itself
 (D444): you rename the chat. Only the command computes it, not the Stop hook's
 gate or the loop.
 
+### The project folder
+
+`root` in `vbw next --json` is the project folder: the top folder of the git
+repository, which every VBW path (`.vbw/`, plan and check files) is relative
+to. `vbw root` prints the same folder, outside a VBW project too. The router
+passes it to every workflow as `args.root` (docs/workflows.md), so the agents of
+a session started in a subfolder of the project work in the project folder.
+
 ## Build waves
 
 `vbw show contract` prints the build's shape under `plans:`, before the
