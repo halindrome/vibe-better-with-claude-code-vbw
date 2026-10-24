@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.1.12] - 2026-10-24
+
+### Added
+
+- **Change how VBW talks to you from Mission Control.** The Settings tab now
+  holds your interview answers, with one click each: your level, the wording
+  and who makes the decisions, plus whether they stay private to you or are
+  shared with your team through git. The first interview still asks them;
+  Settings lets you change your mind later.
+- **Turn the autonomous run on or off for this chat** from Settings. While it
+  runs, the row says which step of how many.
+- **See at a glance whether Dynamic workflows are on.** VBW plans and builds
+  with them. Settings shows them on in green, or in amber with a `turn on`
+  button when Claude Code is left to decide. When they were turned off on
+  purpose, Settings says so and leaves that choice to you.
+
 ## [2.1.11] - 2026-10-24
 
 ### Added
