@@ -114,8 +114,15 @@ checks_timer() {
 # timer reads it (the time keyword with TIMEFORMAT %R: milliseconds, bash 3.2, no
 # process of its own); a failed read falls back to whole seconds.
 checks_exec() {
-  local t="$1" out="$2" TIMEFORMAT=%R tf ms
+  local t="$1" out="$2" TIMEFORMAT=%R tf ms cenv=()
   shift 2
+  # The unit's share of the cores (CHECKS_UNIT_SHARE, set by checks_unit_run), told to
+  # the build tools that read it, unless the user's environment already sets them.
+  if [ -n "${CHECKS_UNIT_SHARE:-}" ]; then
+    [ -n "${CARGO_BUILD_JOBS+x}" ] || cenv+=("CARGO_BUILD_JOBS=$CHECKS_UNIT_SHARE")
+    [ -n "${GOMAXPROCS+x}" ] || cenv+=("GOMAXPROCS=$CHECKS_UNIT_SHARE")
+    [ -n "${MAKEFLAGS+x}" ] || cenv+=("MAKEFLAGS=-j$CHECKS_UNIT_SHARE")
+  fi
   checks_timer
   SECONDS=0
   CHECK_CODE=0
@@ -129,9 +136,9 @@ checks_exec() {
   # it does under perl; without it GNU timeout starts a group of its own and an
   # interrupted run waited for its units to end (T148, Linux).
   if [ "$CHECKS_TIMER" = timeout ]; then
-    { time env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} timeout --foreground -k 5 "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?; } 2> "$tf"
+    { time env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} ${cenv[@]+"${cenv[@]}"} timeout --foreground -k 5 "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?; } 2> "$tf"
   else
-    { time env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} perl -e '$SIG{ALRM} = "DEFAULT"; alarm shift @ARGV; exec { $ARGV[0] } @ARGV or do { print STDERR "cannot run $ARGV[0]: $!\n"; exit 127 }' \
+    { time env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} ${cenv[@]+"${cenv[@]}"} perl -e '$SIG{ALRM} = "DEFAULT"; alarm shift @ARGV; exec { $ARGV[0] } @ARGV or do { print STDERR "cannot run $ARGV[0]: $!\n"; exit 127 }' \
       "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?; } 2> "$tf"
   fi
   CHECK_SECONDS=$SECONDS
@@ -364,6 +371,9 @@ checks_unit_run() {
     cd "$copy" || return 1
   fi
   checks_gate_enter "$name" "$alone"
+  # Its share of the cores (T172): every core alone, else the run's share.
+  local CHECKS_UNIT_SHARE=${CHECKS_SHARE:-}
+  [ "$alone" != true ] || CHECKS_UNIT_SHARE=${CHECKS_CORES:-}
   # The slot is taken after the gate and before the reset and the command, and kept
   # until the read list is collected: the tracking is the unit's own work, inside
   # its slot. The timeout counts from the command's start, never from the wait.
@@ -522,6 +532,15 @@ checks_run_units() {
   [ -z "${PROOF_COPIES+x}" ] || slots=${#PROOF_COPIES[@]}
   cap=$jobs
   [ "$slots" -eq 0 ] || [ "$slots" -ge "$cap" ] || cap=$slots
+  # Each unit's share of the cores: the cores over the units side by side, at least 1
+  # (T172); an unreadable core count tells the tools nothing.
+  local CHECKS_CORES='' CHECKS_SHARE=''
+  if CHECKS_CORES=$(vbw_cores); then
+    CHECKS_SHARE=$((CHECKS_CORES / cap))
+    [ "$CHECKS_SHARE" -ge 1 ] || CHECKS_SHARE=1
+  else
+    CHECKS_CORES=''
+  fi
   CU_DIR=$(mktemp -d "$CHECK_OUT/units.XXXXXX") || vbw_die "cannot create a directory in $CHECK_OUT"
   if [ "$cap" -le 1 ] || [ "$CU_COUNT" -le 1 ]; then
     slot=""
