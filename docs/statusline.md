@@ -17,7 +17,7 @@ Sonnet 5.5 │ 10m22s (API 5m55s) │ main │ VBW 2.0.6 │ CC 2.1.286
 1. **VBW:** the project, the milestone, a progress bar of requirements proven
    or accepted, and one state, in the colours of Mission Control's Now tab:
    - `● working: building P1.2, P2.1 · 1 of 2 · 8 min, until around 14:20`
-     (cyan): a step is running, what it is doing, its parts done, how long it has
+     (the panel accent, violet): a step is running, what it is doing, its parts done, how long it has
      run (from a minute on) and when it should end. A background proof reads
      `● working: proving 12 of 40 checks · 3 min, until around 14:20`, counting
      up; an end on another day reads `until around tomorrow 00:20`. A step with

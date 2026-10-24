@@ -181,7 +181,7 @@ hm_of() {
   run render
   [[ "${lines[0]}" == *"│ ● working: building P1.1, P1.2 · 1 of 2 · 5 min, until around $(hm end)" ]] || { echo "${lines[0]}"; false; }
   out=$(render_color)
-  [[ "$out" == *$'\033[36m● working: building'* ]] || { echo "$out" | od -c | head; false; }
+  [[ "$out" == *$'\033[38;5;141m● working: building'* ]] || { echo "$out" | od -c | head; false; }
 }
 
 @test "C1: a gate reads 'needs you', the action and since when, in amber" {
@@ -189,7 +189,7 @@ hm_of() {
   run render
   [[ "${lines[0]}" == *"│ ⚑ needs you: approve · since $(hm_of .vbw/runtime/next.json since)" ]] || { echo "${lines[0]}"; false; }
   out=$(render_color)
-  [[ "$out" == *$'\033[33m⚑ needs you: approve'* ]] || { echo "$out" | od -c | head; false; }
+  [[ "$out" == *$'\033[38;5;214m⚑ needs you: approve'* ]] || { echo "$out" | od -c | head; false; }
 }
 
 @test "C1: a gate with no 'since' still reads 'needs you' and the action" {
@@ -204,11 +204,25 @@ hm_of() {
   run render
   [[ "${lines[0]}" == *"│ ✓ idle: M1 shipped $(hm_of "$TEST_ROOT/at.json" at)" ]] || { echo "${lines[0]}"; false; }
   out=$(render_color)
-  [[ "$out" == *$'\033[32m✓ idle: M1 shipped'* ]] || { echo "$out" | od -c | head; false; }
+  [[ "$out" == *$'\033[38;5;77m✓ idle: M1 shipped'* ]] || { echo "$out" | od -c | head; false; }
 }
 
 @test "C1: nothing running and nothing waiting reads 'idle' with the next step" {
   printf '%s\n' '{"action":"build","gate":false,"instruction":"x","detail":{}}' > .vbw/runtime/next.json
   run render
   [[ "${lines[0]}" == *"│ ✓ idle: build is next" ]] || { echo "${lines[0]}"; false; }
+}
+
+@test "C1: the three state colours are the panel palette's accent, need and progress colours in 256-colour codes" {
+  command -v node > /dev/null || skip "node is not installed"
+  # The xterm-256 colour-cube index of each palette colour, computed from panel-palette.js.
+  run node --input-type=module -e "
+    const p = await import('$REPO_ROOT/plugin/hooks/panel-palette.js')
+    const lv = [0, 95, 135, 175, 215, 255]
+    const idx = (c) => { const v = p.rgb(c); const [r, g, b] = [v >> 16 & 255, v >> 8 & 255, v & 255].map((x) => lv.indexOf(x)); return 16 + 36 * r + 6 * g + b }
+    console.log([idx(p.ACCENT), idx(p.NEED), idx(p.PROGRESS)].join(' '))"
+  [ "$output" = "141 214 77" ] || { echo "$output"; false; }
+  grep -qF 'c("38;5;141"; "● working' "$PLUGIN_ROOT/scripts/statusline.jq"
+  grep -qF 'c("38;5;214"; "⚑ needs you' "$PLUGIN_ROOT/scripts/statusline.jq"
+  grep -qF 'c("38;5;77"; "✓ idle' "$PLUGIN_ROOT/scripts/statusline.jq"
 }

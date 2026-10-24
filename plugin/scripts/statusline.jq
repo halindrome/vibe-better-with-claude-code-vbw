@@ -103,16 +103,16 @@ def progress($done; $total): (if $total > 0 then $done * 100 / $total else 0 end
          elif $rec.lease.session == $sid then " · leading"
          else " · held by " + (holder_name($rec.lease; $rec.holder.session_name; ($registry[0] // {})[$rec.lease.session]) | cut_name(20)) end) as $lead
       | ($rec.milestone as $m | [$rec.shipped[]? | select(.id == $m.id) | .at][0]) as $shipped_at
-      | (if $step != null then c("36"; "● working: " + step_line($step) + $working + $lead)
+      | (if $step != null then c("38;5;141"; "● working: " + step_line($step) + $working + $lead)
          elif $rec.lease != null then
-           c("36"; "● working: " + (if $rec.lease.kind == "build" then "building " + ([$rec.plans[]? | select(.status == "building") | .id] | join(", ")) else $rec.lease.kind end)
+           c("38;5;141"; "● working: " + (if $rec.lease.kind == "build" then "building " + ([$rec.plans[]? | select(.status == "building") | .id] | join(", ")) else $rec.lease.kind end)
              + (mins($rec.lease.started_at) | if . == null then "" else " · " + . end) + $working + $lead)
-         elif $n_agents > 0 then c("36"; "● working: \($n_agents) agent\(if $n_agents == 1 then "" else "s" end)")
-         elif $next != null and $next.gate then c("33"; "⚑ needs you: \($next.action)"
+         elif $n_agents > 0 then c("38;5;141"; "● working: \($n_agents) agent\(if $n_agents == 1 then "" else "s" end)")
+         elif $next != null and $next.gate then c("38;5;214"; "⚑ needs you: \($next.action)"
            + (if ($next.since | type) == "string" then " · since " + clock($next.since) else "" end))
-         elif $rec.milestone.status == "shipped" then c("32"; "✓ idle: \($rec.milestone.id) shipped" + (if $shipped_at != null then " " + clock($shipped_at) else "" end))
-         elif $next != null then c("32"; "✓ idle: \($next.action) is next")
-         else c("32"; "✓ idle: /vbw:vibe is next") end) as $state
+         elif $rec.milestone.status == "shipped" then c("38;5;77"; "✓ idle: \($rec.milestone.id) shipped" + (if $shipped_at != null then " " + clock($shipped_at) else "" end))
+         elif $next != null then c("38;5;77"; "✓ idle: \($next.action) is next")
+         else c("38;5;77"; "✓ idle: /vbw:vibe is next") end) as $state
       | c("36"; "[VBW]") + " " + c("1"; $rec.project.name) + sep
         + "\($rec.milestone.id) \($rec.milestone.title | if length > 40 then (.[0:39] | sub("\\s+$"; "")) + "…" else . end)" + (if $rec.milestone.status == "shipped" then " ✓" else "" end) + sep
         + progress($done; $total) + " \($done)/\($total) done" + sep + $state
