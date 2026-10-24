@@ -894,10 +894,12 @@ turn both off or on:
 - click the **Turn off** / **Turn on** button in the panel, or
 - run `/vbw-sound` (it switches; `/vbw-sound off` and `/vbw-sound on` set it).
 
-With the switch off, nothing plays and no notification is raised. The switch is
-the `sound` setting: **Turn off** is `vbw config set sound off` and **Turn on**
-is `vbw config set sound default`, and the choice is remembered in this clone's
-settings, yours alone and never committed. A test session plays and raises nothing.
+With the switch off, nothing plays and no notification is raised. The switch
+is the clone setting `sound` (`vbw config set sound off`, and `default` to turn
+it back on): the panel asks the kernel to write it and reads it back, so the
+choice is kept for this clone and its worktrees, never committed and never in
+`.vbw/record.json`. If the kernel refuses, `/vbw-sound` says why and the sound
+stays as it was. A test session plays and raises nothing.
 
 ### When they are missing
 

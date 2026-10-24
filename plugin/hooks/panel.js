@@ -11,7 +11,7 @@
 // panel-candy.js (motion, sprites, celebrations), whose frames this file blits.
 import { holderName, readRegistry, configDir } from './panel-sessions.js'
 import { panelView, datedRows, liveNeed, supports, COMMS_MIN_VERSION } from './panel-view.js'
-import { SOUNDS } from './panel-sounds.js'
+import * as sounds from './panel-sounds.js'
 import { gatherRun, findRun } from './panel-feed.js'
 import { stageModel, renderStage } from './panel-stage.js'
 import { liveStep, dayClock } from './panel-step.js'
@@ -38,11 +38,25 @@ const projectTag = (root) => {
 }
 const keys = (testRoot) => {
   const p = typeof testRoot === 'string' ? 'test.' + projectTag(testRoot) + '.' : ''
-  return { closed: p + 'vbw-panel.closed', sound: p + 'vbw-panel.sound', nextSeen: p + 'vbw-panel.next-seen', seen: p + 'vbw-panel.seen', needSeen: p + 'vbw-panel.need-seen', helpersSeen: p + 'vbw-panel.helpers-seen', refusalsSeen: p + 'vbw-panel.refusals-seen' }
+  return { closed: p + 'vbw-panel.closed', nextSeen: p + 'vbw-panel.next-seen', seen: p + 'vbw-panel.seen', needSeen: p + 'vbw-panel.need-seen', helpersSeen: p + 'vbw-panel.helpers-seen', refusalsSeen: p + 'vbw-panel.refusals-seen' }
 }
-// One of the plugin's shipped sounds (assets/audio/<character>/), picked at random
-// for each request for the user; with none shipped, the panel is silent.
-const pick = () => (SOUNDS.length ? { asset: SOUNDS[Math.floor(Math.random() * SOUNDS.length)] } : null)
+// The sound for a request for the user: the clone setting `sound` (docs/config.md) is
+// `off`, `default` (any shipped voice) or a folder under assets/audio/; panel-sounds.js
+// picks the clip. Until it exports soundFor (batch 2.1.11, Lane D) the folder is filtered
+// here. With none shipped, the panel is silent.
+const anyOf = (list) => (list.length ? list[Math.floor(Math.random() * list.length)] : null)
+const soundFor = typeof sounds.soundFor === 'function' ? sounds.soundFor : (choice) => {
+  if (choice === 'off') return null
+  const mine = sounds.SOUNDS.filter((a) => a.startsWith('assets/audio/' + choice + '/'))
+  return anyOf(mine.length ? mine : sounds.SOUNDS)
+}
+const pick = (st) => {
+  const c = soundFor(st.soundChoice)
+  return typeof c === 'string' ? { asset: c } : isObj(c) ? c : null
+}
+// The clone setting as the kernel defines it: a missing file or key, damaged JSON or a
+// value that is not a string is `default`.
+const soundChoice = (clone) => (isObj(clone) && typeof clone.sound === 'string' && clone.sound ? clone.sound : 'default')
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const num = (x) => typeof x === 'number' && Number.isFinite(x)
 // VBW's workflows, as /vbw:vibe launches them (Workflow name 'vbw:<kind>').
@@ -101,7 +115,7 @@ function parse(text) {
 // What the panel knows: the last good state of its files, the live run, what is drawn, what is asked.
 function fresh() {
   return {
-    live: false, registered: false, born: {}, timer: null, busy: false, question: null, sound: true, keys: keys(false), silent: false, wouldPlay: 0,
+    live: false, registered: false, born: {}, timer: null, busy: false, question: null, sound: true, soundChoice: 'default', soundSig: undefined, settingsPath: null, keys: keys(false), silent: false, wouldPlay: 0,
     record: null, next: null, history: null, cost: null, health: null, auto: null, stepsPath: null, steps: null, shown: '', seen: {}, sized: false,
     root: null, sessionId: null, holder: null, registry: null, stored: null, configDir: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
@@ -444,10 +458,35 @@ async function gather($, st) {
     await refresh($, st, st.stepsPath, 'history')
     st.steps = isObj(st.history) && Array.isArray(st.history.steps) ? st.history.steps : null
   }
+  await readSound($, st)
   await readUsage($, st)
   await readHolder($, st)
   trackLeases(st)
   await feed($, st)
+}
+
+// The sound choice, from the clone's settings file beside steps.json (the kernel writes
+// it: `vbw config set sound`); a damaged or missing file reads as `default`.
+async function readSound($, st) {
+  if (!st.settingsPath) return
+  let sig = null
+  try {
+    const f = await $.fs.stat(st.settingsPath)
+    sig = f.size + ':' + f.mtimeMs
+  } catch {
+    sig = null
+  }
+  if (sig !== st.soundSig) {
+    st.soundSig = sig
+    let v = null
+    try {
+      v = sig === null ? null : JSON.parse(await $.fs.read(st.settingsPath))
+    } catch {
+      v = null
+    }
+    st.soundChoice = soundChoice(v)
+  }
+  st.sound = st.soundChoice !== 'off'
 }
 
 // Call the user, once: the needs-you sound and a native notification, both only while the
@@ -476,7 +515,7 @@ async function call($, st, text, clip) {
 // needs (the need standing besides the question, else just a question).
 async function callForQuestion($, st) {
   const need = liveNeed({ record: st.record, next: st.next, nextAt: st.nextFileAt, health: st.health })
-  await call($, st, need ? need.text : 'VBW has a question for you.', pick())
+  await call($, st, need ? need.text : 'VBW has a question for you.', pick(st))
 }
 
 // An approve gate puts /vbw:approve in the prompt's suggestion, once; the person sends it.
@@ -566,19 +605,28 @@ async function tick($, st) {
   }
 }
 
-// Switch the sound and keep the choice in the user's store; the panel redraws.
+// Switch the sound: the kernel keeps the choice (`vbw config set sound off|default`), the
+// panel reads it back and redraws. Null when it changed, else the kernel's refusal, and the
+// sound stays as it was.
 async function setSound($, st, on) {
-  st.sound = on
+  let refusal = null
   try {
-    await $.store.set(st.keys.sound, on)
+    const r = await $.process.run([$.plugin.root + '/bin/vbw', 'config', 'set', 'sound', on ? 'default' : 'off'], { cwd: st.root })
+    if (isObj(r) && r.exitCode === 0) {
+      st.soundChoice = on ? 'default' : 'off'
+      st.sound = on
+      st.soundSig = undefined
+      await readSound($, st)
+    } else refusal = String((isObj(r) && (r.stderr || r.stdout)) || '').trim().split('\n')[0] || 'vbw config failed'
   } catch {
-    // the choice holds for this session
+    refusal = 'VBW could not run vbw config here'
   }
   try {
     await redrawIfChanged($, st)
   } catch {
     // the next tick draws it
   }
+  return refusal
 }
 
 // A quarter of the terminal, never under 40 columns (R82).
@@ -837,6 +885,7 @@ async function start($, st) {
   st.silent = await $.fs.exists(root + TEST_MARK)
   st.keys = keys(st.silent ? root : null)
   st.stepsPath = await stepsPath($, root)
+  st.settingsPath = st.stepsPath ? st.stepsPath.replace(/steps\.json$/, 'settings.json') : null
   try {
     st.sessionId = await $.session.id()
   } catch {
@@ -847,7 +896,6 @@ async function start($, st) {
   st.sessionDir = sessionDir(st.configDir, root, st.sessionId)
   await gather($, st)
   st.lastRec = st.record
-  st.sound = (await $.store.get(st.keys.sound)) !== false
   const stored = await $.store.get(st.keys.nextSeen)
   st.nextSeen = typeof stored === 'string' ? stored : null
   const kept = await $.store.get(st.keys.seen)
@@ -903,8 +951,8 @@ export function register(on) {
   on('command.run', { command: 'vbw-sound' }, async ($, e, next) => {
     if (!st.live) return next(e)
     const word = String(e.args ?? '').trim().toLowerCase()
-    if (word === '' || word === 'on' || word === 'off') await setSound($, st, word === '' ? !st.sound : word === 'on')
-    return { text: "The 'needs you' sound is " + (st.sound ? 'on' : 'off') + '.' }
+    const refused = word === '' || word === 'on' || word === 'off' ? await setSound($, st, word === '' ? !st.sound : word === 'on') : null
+    return { text: (refused ? 'VBW could not change the sound: ' + refused + '. ' : '') + "The 'needs you' sound is " + (st.sound ? 'on' : 'off') + '.' }
   }).catch(() => ({ text: failedText('vbw-sound') }))
 
   on('command.run', { command: 'vbw-status' }, async ($, e, next) => {

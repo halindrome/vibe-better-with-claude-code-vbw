@@ -8,12 +8,13 @@
 // notification ($.ui.notify, title 'VBW', a plain sentence of what VBW needs)
 // fires once with it, and once when a new What's next recommendation is written
 // (one already seen, by its stored time, never again after a restart). Both
-// follow the sound switch, remembered across sessions (R57); a test session (R64)
+// follow the sound switch, remembered across sessions in the clone setting `sound` (R57); a test session (R64)
 // plays and raises nothing and neither reads nor changes the user's choices.
 // Without $.ui.notify or audio nothing fails and nothing shows in their place.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mount, record, next, ROOT } from '../helpers/fake-mod.mjs'
+import { clonedMount } from '../helpers/clone-settings.mjs'
 
 const SHIPPED = /^assets\/audio\/[^/]+\/[^/]+\.mp3$/
 const NEXT = ROOT + '/.vbw/runtime/next.json'
@@ -99,8 +100,15 @@ test('B1: a gate standing when the question opens gives one clip, not two, and n
 })
 
 test('with the sound off nothing plays and nothing is raised; the choice is remembered across sessions, and the switch in Mission Control turns it on', async () => {
-  const store = new Map()
-  const h = await session({ store })
+  const kept = new Map()
+  const cloned = async () => {
+    const { h } = await clonedMount({ kept })
+    h.project(record(), next())
+    await h.start()
+    await h.advance(4000)
+    return h
+  }
+  const h = await cloned()
   await h.cmd('vbw-sound', 'off')
   const q = ask(h)
   await h.settle()
@@ -108,7 +116,7 @@ test('with the sound off nothing plays and nothing is raised; the choice is reme
   await q.done
   assert.equal(h.plays.length, 0)
   assert.equal(h.notifies.length, 0, 'a notification with the sound off')
-  const again = await session({ store })
+  const again = await cloned()
   const q2 = ask(again)
   await again.settle()
   assert.equal(again.plays.length, 0, 'the choice did not survive a restart')

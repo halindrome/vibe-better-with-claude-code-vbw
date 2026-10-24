@@ -33,25 +33,30 @@ async function busySession(h) {
   await h.advance(10000)
 }
 
-test('it only calls what a read-only panel needs: no network, no credentials, no processes', async () => {
+test('it only calls what a read-only panel needs: no network, no credentials, no process but the kernel', async () => {
   const h = await mount()
   await busySession(h)
   const used = h.names()
-  const extra = used.filter((n) => !ALLOWED.has(n))
+  const extra = used.filter((n) => !ALLOWED.has(n) && n !== 'process.run')
   assert.deepEqual(extra, [], 'calls outside the allowed set')
-  for (const n of used) assert.doesNotMatch(n, /^(http|mcp|model|process|settings|agent|tool|telemetry)\.|^prompt\.submit$/)
+  for (const n of used) assert.doesNotMatch(n, /^(http|mcp|model|settings|agent|tool|telemetry)\.|^process\.(?!run$)|^prompt\.submit$/)
+  // The one process is the plugin's own kernel, which writes what the panel changes (the sound switch).
+  for (const [argv] of h.callsOf('process.run')) assert.equal(argv[0], PLUGIN + '/bin/vbw', argv.join(' '))
+  assert.ok(h.callsOf('process.run').length > 0, 'the sound switch went to the kernel')
   // The environment is read for two names only, to find this session's folder.
   for (const [name] of h.callsOf('env.get')) assert.ok(['HOME', 'CLAUDE_CONFIG_DIR'].includes(name), name)
   assert.deepEqual(h.errors, [])
 })
 
-test('it reads only the project, and the clone cache of finished steps', async () => {
+test('it reads only the project, and the clone cache of finished steps and settings', async () => {
   const h = await mount()
   await busySession(h)
   const paths = [...h.callsOf('fs.read'), ...h.callsOf('fs.stat'), ...h.callsOf('fs.exists')].map((a) => a[0])
   assert.ok(paths.length > 0)
   for (const p of paths) {
     assert.ok(p.startsWith(ROOT + '/') || p === ROOT, 'outside the project: ' + p)
+    // The clone's own settings (the sound choice), never Claude Code's settings.json.
+    if (p === ROOT + '/.git/vbw/settings.json') continue
     assert.doesNotMatch(p, /credentials|settings\.json|\.env|\.ssh|\.claude/i, p)
   }
 })

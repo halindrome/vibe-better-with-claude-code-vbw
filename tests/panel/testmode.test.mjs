@@ -40,13 +40,14 @@ test('in test mode the sound switch and a close never touch the user keys', asyn
   assert.ok([...store.keys()].some((k) => k.startsWith('test.')), 'test choices kept under test keys')
 })
 
-test('outside test mode the sound plays and the switch uses the user keys', async () => {
+test('outside test mode the sound plays and the switch goes to the kernel, never the user keys', async () => {
   const { h, store } = await session({})
   await ask(h)
   await h.advance(30000)
   assert.equal(h.plays.length, 1)
   await h.cmd('vbw-sound', 'off')
-  assert.equal(store.get('vbw-panel.sound'), false)
+  assert.deepEqual(h.callsOf('process.run').map((a) => a[0].slice(1)), [['config', 'set', 'sound', 'off']])
+  assert.equal(store.get('vbw-panel.sound'), true, 'the old user key is not written')
 })
 
 test('a change on disk redraws the panel by itself, with the redraw naming ui.render', async () => {
