@@ -1,6 +1,6 @@
 // R57: a short sound when VBW needs the user: once per request, even with the
 // panel closed, on by default, one click or one command turns it off or on, and
-// the choice is remembered. The sound is the plugin's own file; a missing file
+// the choice is remembered (the clone setting `sound`, written by the kernel). The sound is the plugin's own file; a missing file
 // or player is silent. Since R189 (B1) the request that sounds is Claude Code's
 // own question menu (AskUserQuestion), where the user answers an approval, a
 // check or a question; a gate in next.json alone stays silent (that rule is held
@@ -9,6 +9,8 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mount, record, next, ROOT, PANE } from './helpers/fake-mod.mjs'
+import { SOUNDS, soundFor } from '../../plugin/hooks/panel-sounds.js'
+import { clonedMount, SETTINGS } from './helpers/clone-settings.mjs'
 
 // One of the shipped sounds, plugin/assets/audio/<character>/<file>.mp3 (D109).
 const SHIPPED = /^assets\/audio\/[^/]+\/[^/]+\.mp3$/
@@ -136,21 +138,54 @@ test('the panel shows whether the sound is on, and one click switches it', async
   assert.ok(h.count('ui.invalidate') > 0)
 })
 
-test('the choice survives a restart, and lives in the user store, not in the project', async () => {
+async function cloned(kept, options = {}) {
+  const c = await clonedMount({ ...options, kept })
+  c.h.project(record(), next())
+  await c.h.start()
+  await c.h.advance(4000)
+  return c
+}
+
+test('the choice is the clone setting `sound`, set through the kernel, and survives a restart; nothing in the user store', async () => {
+  const kept = new Map()
   const store = new Map()
-  const h = await session({ store })
-  h.git()
+  const { h, runs } = await cloned(kept, { store })
+  assert.match(await h.text(), /sound.*\bon\b/i, 'no setting: on')
   await h.cmd('vbw-sound', 'off')
-  assert.equal(h.count('fs.write'), 0)
-  const again = await session({ store })
+  assert.deepEqual(runs, [['config', 'set', 'sound', 'off']], 'the kernel writes it')
+  assert.equal(JSON.parse(kept.get(SETTINGS)).sound, 'off')
+  assert.match(await h.text(), /sound.*\boff\b/i, 'the panel re-read it')
+  assert.equal([...store.keys()].filter((k) => /sound/.test(k)).length, 0, 'never the user store')
+  const again = (await cloned(kept)).h
   assert.match(await again.text(), /sound.*\boff\b/i)
-  again.project(undefined, approve())
+  const q = ask(again, 'q1')
   await again.advance(6000)
   assert.equal(again.plays.length, 0)
-  await again.cmd('vbw-sound', 'on')
-  const third = await session({ store })
-  assert.match(await third.text(), /sound.*\bon\b/i)
-  for (const [k, v] of store) assert.doesNotMatch(JSON.stringify([k, v]), new RegExp(ROOT))
+  await q.answer()
+  const back = await cloned(kept)
+  await back.h.cmd('vbw-sound', 'on')
+  assert.deepEqual(back.runs, [['config', 'set', 'sound', 'default']], 'on is the default voice')
+  assert.match(await (await cloned(kept)).h.text(), /sound.*\bon\b/i)
+})
+
+test('a voice chosen in the clone setting plays from its folder; off, a damaged file or a non-string reads as the rule says', async () => {
+  const { h } = await cloned(new Map([[SETTINGS, JSON.stringify({ sound: 'darth', check_jobs: 4 })]]))
+  const q = ask(h, 'q1')
+  await h.advance(6000)
+  assert.equal(h.plays.length, 1)
+  assert.match(h.plays[0].asset, /^assets\/audio\/darth\/[^/]+\.mp3$/)
+  await q.answer()
+  for (const [text, on] of [['{"sound":"off"}', false], ['not json', true], ['{"sound":7}', true]]) {
+    const c = await cloned(new Map([[SETTINGS, text]]))
+    assert.match(await c.h.text(), on ? /sound.*\bon\b/i : /sound.*\boff\b/i, text)
+  }
+})
+
+test('a refused change says the kernel refusal and keeps the sound as it was', async () => {
+  const { h } = await cloned(new Map(), { refuse: 'not a VBW project' })
+  const out = await h.cmd('vbw-sound', 'off')
+  assert.match(out.text, /could not change the sound: vbw: config refused: not a VBW project/)
+  assert.match(await h.text(), /sound.*\bon\b/i)
 })
 
 test('a missing file or no player is silent: nothing plays and nothing is shown', async () => {
@@ -171,4 +206,25 @@ test('on a version without mods the sound command does not exist and the panel s
   await h.advance(10000)
   assert.equal(h.plays.length, 0)
   assert.equal(h.count('command.register'), 0)
+})
+
+// The sound setting (T18, record.settings.sound): soundFor(choice) is what the panel plays.
+test('soundFor: a chosen folder plays only its own assets', () => {
+  for (const folder of ['arnold', 'charlize', 'darth']) {
+    const seen = new Set()
+    for (let i = 0; i < 50; i++) seen.add(soundFor(folder, () => i / 50).asset)
+    assert.ok(seen.size >= 1)
+    for (const a of seen) assert.ok(a.startsWith('assets/audio/' + folder + '/'), a)
+  }
+})
+
+test('soundFor: off plays nothing; unset or a folder that is gone plays any shipped sound', () => {
+  assert.equal(soundFor('off'), null)
+  for (const c of [undefined, null, 'default', 'nosuch']) assert.ok(SOUNDS.includes(soundFor(c, () => 0.5).asset), String(c))
+})
+
+test('soundFor: the random number picks within the folder, the whole range reaches both ends', () => {
+  const darth = SOUNDS.filter((s) => s.includes('/darth/'))
+  assert.equal(soundFor('darth', () => 0).asset, darth[0])
+  assert.equal(soundFor('darth', () => 0.999999).asset, darth[darth.length - 1])
 })

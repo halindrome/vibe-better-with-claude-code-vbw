@@ -2,12 +2,25 @@
 // into plain sentences, each with its technical term beside it. Pure: data in,
 // rows out; it never changes its input and never throws.
 
-import { stepWords } from './panel-step.js'
+import { stepWords, dayClock } from './panel-step.js'
 import { REFUSED_MARK } from './panel-palette.js'
 
 export const MIN_VERSION = '2.1.287'
 
+// The dim one-word term under each of the Now tab's sentences ('milestone', 'session cost'):
+// one switch, so the terms can go in one change.
+export const SHOW_TERMS = true
+
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
+const num = (x) => typeof x === 'number' && Number.isFinite(x)
+const str = (x) => (typeof x === 'string' ? x : '')
+const safe = (fn) => (input) => {
+  try {
+    return fn(isObj(input) ? input : {})
+  } catch {
+    return null
+  }
+}
 const parts = (v) => {
   const m = typeof v === 'string' ? /^(\d+)\.(\d+)\.(\d+)/.exec(v) : null
   return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null
@@ -26,14 +39,9 @@ export function supports(version, min = MIN_VERSION) {
   return true
 }
 
-// A moment as the local clock reads it, 'HH:MM'; '' when there is no moment.
-export function clock(ms) {
-  if (typeof ms !== 'number' || !Number.isFinite(ms)) return ''
-  const d = new Date(ms)
-  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
-}
-// '[14:20] ' before a sentence that has a start time; the sentence alone without one.
-const stamped = (ms, text) => (clock(ms) ? '[' + clock(ms) + '] ' + text : text)
+// '[14:20] ' before a sentence that has a start time ('[yesterday 14:20] ' on another day,
+// dayClock's rule); the sentence alone without one.
+const stamped = (ms, text, now) => (dayClock(ms, now) ? '[' + dayClock(ms, now) + '] ' + text : text)
 
 const NEUTRAL = { id: 'neutral', text: 'No VBW project is open here yet.', term: 'no project' }
 
@@ -150,29 +158,57 @@ function costRow(cost) {
 // ', held by <name>' when another chat holds the run; '' otherwise (R192).
 export const heldBy = (holder) => (isObj(holder) && holder.self === false && typeof holder.name === 'string' && holder.name ? ', held by ' + holder.name : '')
 
-// What to type to answer a need: the gate's command; none for a question (answer it) or for
-// /compact (the sentence already says it).
-const needCommand = (need) => (need.kind === 'question' || need.kind === 'compact' ? null : GATE_COMMANDS[need.kind] || '/vbw:vibe')
-
-// The current step as two short lines: its name (the kernel's note names it; without a
-// note the state sentence has said all there is) with when it started, then (from the
-// note, worded by panel-step.js) when it is expected to end.
-function stepLine(name, at, step, now) {
-  const words = step ? stepWords(step, now) : null
-  const when = Number.isFinite(at) ? clock(at) : ''
-  const text = name ? 'Current step: ' + name + (when ? ', started at ' + when : '') + '.' : when ? 'Started at ' + when + '.' : null
-  if (!text && !words) return null
-  return { text, end: words ? (words.timed ? 'This step: ' + words.text : words.text) + '.' : null, at: Number.isFinite(at) ? at : null, timed: Boolean(words && words.timed) }
+// A sentence as said: its first letter upper case, a full stop at its end.
+const sentence = (t) => {
+  const s = String(t).trim()
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) + (/[.!?]$/.test(s) ? '' : '.') : ''
 }
 
-// The 'what's happening now' box: VBW's state as one plain sentence, the current step
-// with the time it started and its expected end, and the cost line. When VBW needs
-// the user, the state is the need sentence itself, with the command that answers it
-// and since when it waits. `proving` comes from panel.js (a proof is running with no
-// lease); `stamps.proving` is when it began.
-function nowBox(rec, need, proving, stamps, cost, step, holder, now) {
+// ---- The 'what's happening now' box (docs/panel.md, What's happening now) ----------------
+// VBW's state as one sentence; the current step with when it started and (from the kernel's
+// note, worded by panel-step.js) when it should end, and a done/total strip when the step has
+// parts; when VBW needs you, the need's sentence, the command that answers it and since when
+// it waits; the milestone's end with its basis (the kernel's road: the live note's, else the
+// last `vbw next`'s); the session cost. Every time names its day when not today (dayClock).
+// input: { record, need (panel-view.js liveNeed), proving, stamps ({ proving, need,
+// 'estimate-milestone' }: ms), cost, step (the live note), holder, next, now }.
+const needCommand = (need) => (need.kind === 'question' || need.kind === 'compact' ? null : GATE_COMMANDS[need.kind] || '/vbw:vibe')
+
+function stepLine(name, at, step, now) {
+  const words = step ? stepWords(step, now) : null
+  const when = dayClock(at, now)
+  const text = name ? 'Current step: ' + name + (when ? ', started at ' + when : '') + '.' : when ? 'Started at ' + when + '.' : null
+  if (!text && !words) return null
+  return { text, end: words ? (words.timed ? 'This step: ' + words.text : words.text) + '.' : null, at: num(at) ? at : null, timed: Boolean(words && words.timed) }
+}
+
+function milestoneOf(step, nx, stamp, now) {
+  const road = isObj(step) && isObj(step.road) ? step.road : isObj(step) && step.road === null ? null : isObj(nx) && isObj(nx.road) ? nx.road : null
+  if (!road) return null
+  const basis = str(road.basis).trim().replace(/\.$/, '')
+  if (typeof road.end !== 'string' || !Number.isFinite(Date.parse(road.end))) {
+    return { text: 'No estimate yet' + (basis ? ': ' + basis : '') + '.', basis: null, known: false, term: 'estimate, no basis' }
+  }
+  const say = sentence(str(road.say))
+  if (!say) return null
+  const at = dayClock(stamp, now)
+  return { text: (at ? '[' + at + '] ' : '') + say, basis: basis ? 'basis: ' + basis : null, known: true, term: 'estimate, approximate' }
+}
+
+const costOf = (cost) => (num(cost) && cost >= 0
+  ? { text: 'This session has cost $' + cost.toFixed(2) + ' so far.', known: true, term: 'session cost' }
+  : { text: 'The cost so far is not available.', known: false, term: 'cost, not available' })
+
+const partsOf = (step) => (isObj(step) && isObj(step.parts) && Number.isInteger(step.parts.total) && step.parts.total > 0 && Number.isInteger(step.parts.done)
+  ? { done: Math.max(0, Math.min(step.parts.done, step.parts.total)), total: step.parts.total } : null)
+
+export const nowBoxModel = safe(({ record: rec, need, proving, stamps, cost, step, holder, next: nx, now }) => {
+  if (!isObj(rec) || !isObj(rec.milestone)) return null
+  const t = num(now) ? now : Date.now()
+  const st = isObj(stamps) ? stamps : {}
+  const note = isObj(step) ? step : null
+  const base = { command: null, parts: null, milestone: milestoneOf(note, nx, st['estimate-milestone'], t), cost: costOf(cost) }
   const l = isObj(rec.lease) ? rec.lease : null
-  const cl = costRow(cost)
   if (l) {
     const plans = (Array.isArray(rec.plans) ? rec.plans : []).filter((p) => isObj(p) && p.status === 'building')
     const phases = [...new Set(plans.map((p) => p.phase).filter((x) => typeof x === 'string' && x))]
@@ -184,34 +220,26 @@ function nowBox(rec, need, proving, stamps, cost, step, holder, now) {
       fix: 'fixing what the checks found',
       map: 'reading the project to map it',
     }[l.kind] || 'working'
-    const name = step && step.doing ? step.doing : null
-    return { state: { text: 'VBW is ' + what + heldBy(holder) + '.', term: 'state' }, step: stepLine(name, Date.parse(l.started_at), step, now), command: null, cost: cl }
+    return { ...base, state: { text: 'VBW is ' + what + heldBy(holder) + '.', need: false }, step: stepLine(note && str(note.doing), Date.parse(l.started_at), note, t), parts: partsOf(note) }
   }
-  // A live proof's note says a proof runs, whether or not its mark is seen yet.
-  if (proving || (step && step.kind === 'proof')) {
-    const name = step && step.doing ? step.doing : null
-    return { state: { text: 'VBW is proving the work: running its checks.', term: 'state' }, step: stepLine(name, Number.isFinite(stamps.proving) ? stamps.proving : step ? Date.parse(step.started_at) : NaN, step, now), command: null, cost: cl }
+  if (proving === true || (note && note.kind === 'proof')) {
+    const at = num(st.proving) ? st.proving : note ? Date.parse(note.started_at) : NaN
+    return { ...base, state: { text: 'VBW is proving the work: running its checks.', need: false }, step: stepLine(note && str(note.doing), at, note, t), parts: partsOf(note) }
   }
-  if (need) {
-    const since = Number.isFinite(stamps.need) ? stamps.need : need.at
-    return {
-      state: { text: need.text, term: 'state', need: true }, command: needCommand(need), cost: cl,
-      step: Number.isFinite(since) ? { text: 'Waiting since ' + clock(since) + '.', at: since } : null,
-    }
+  if (isObj(need) && str(need.text)) {
+    const since = num(st.need) ? st.need : need.at
+    const when = dayClock(since, t)
+    return { ...base, state: { text: need.text, need: true }, command: needCommand(need), step: when ? { text: 'Waiting since ' + when + '.', end: null, at: since, timed: false } : null }
   }
-  return { state: { text: 'Nothing is running.', term: 'state' }, step: null, command: null, cost: cl }
-}
+  return { ...base, state: { text: 'Nothing is running.', need: false }, step: null }
+})
 
 // The running step's time and the milestone's end are the kernel's, worded here; the
 // panel works none out. The step's end comes from its note (panel-step.js); the road
 // (R191) comes from the live step's note, else from the last `vbw next` (next.json).
 // No road, or none at all, gives no milestone row.
-const sentence = (t) => {
-  const s = String(t).trim()
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) + (/[.!?]$/.test(s) ? '' : '.') : ''
-}
 
-function roadRow(step, nx, stamps) {
+function roadRow(step, nx, stamps, now) {
   const road = isObj(step) && isObj(step.road) ? step.road : isObj(step) && step.road === null ? null : isObj(nx) && isObj(nx.road) ? nx.road : null
   if (!road) return null
   if (typeof road.end !== 'string' || !Number.isFinite(Date.parse(road.end))) {
@@ -219,11 +247,11 @@ function roadRow(step, nx, stamps) {
     return { id: 'estimate-milestone', text: 'No estimate yet' + (why ? ': ' + why : '') + '.', term: 'estimate, no basis' }
   }
   const say = sentence(road.say)
-  return say ? { id: 'estimate-milestone', text: stamped(stamps['estimate-milestone'], say), term: 'estimate, approximate' } : null
+  return say ? { id: 'estimate-milestone', text: stamped(stamps['estimate-milestone'], say, now), term: 'estimate, approximate' } : null
 }
 
-function estimateRows(stamps, step, nx) {
-  const r = roadRow(step, nx, stamps)
+function estimateRows(stamps, step, nx, now) {
+  const r = roadRow(step, nx, stamps, now)
   return r ? [r] : []
 }
 
@@ -234,20 +262,44 @@ export function datedRows(input) {
   if (!isObj(rec) || !isObj(rec.milestone) || !rec.milestone.id) return { rows: [], need: null }
   const step = isObj(input.step) ? input.step : null
   const stamps = isObj(input.stamps) ? input.stamps : {}
-  return { need: liveNeed({ record: rec, next: nx, nextAt, question, questionAt, health }), rows: estimateRows(stamps, step, nx) }
+  return { need: liveNeed({ record: rec, next: nx, nextAt, question, questionAt, health }), rows: estimateRows(stamps, step, nx, Number.isFinite(now) ? now : Date.now()) }
 }
 
-// The last run's refusals (panel-feed.js), newest five: each one sentence with its
-// time, the refusal whole and verbatim, its lines joined on one line.
-const REFUSALS_SHOWN = 5
-function refusalRows(list) {
-  const ok = (Array.isArray(list) ? list : []).filter((r) => isObj(r) && typeof r.text === 'string' && r.text.trim())
-  return ok.slice(-REFUSALS_SHOWN).map((r) => ({
-    id: 'refused:' + String(r.id),
-    text: stamped(r.at, REFUSED_MARK + ' VBW refused, ' + (typeof r.by === 'string' && r.by ? r.by + ': ' : '') + r.text.split('\n').map((l) => l.trim()).filter(Boolean).join(' ')),
-    term: 'refused',
-  }))
+// A refusal's text, short (design rule 4): its first line, and when that line names the
+// run's files as a list ("... this run's files (a.js, b.js, ...): why"), the clause before
+// the list, with the number of files kept apart. { clause, files } or null for no text.
+const FILE_LIST = /^(.*?files) \(([^()]*)\)(?::|$)/
+export function shortRefusal(text) {
+  if (typeof text !== 'string') return null
+  const first = (text.split('\n').find((l) => l.trim()) || '').trim()
+  if (!first) return null
+  const m = FILE_LIST.exec(first)
+  const list = m ? m[2].split(',').map((f) => f.trim()).filter(Boolean) : []
+  return list.length ? { clause: m[1], files: list.length } : { clause: first, files: 0 }
 }
+export const refusedBy = (r) => (typeof r.by === 'string' && r.by ? r.by + ': ' : '')
+
+// A refusal as the Now tab says it: one short amber row, '[15:41] ⊘ VBW refused, dev P5.2:
+// <first clause>', with `more` ('· 9 files in this run') when the clause left the run's
+// file list out, and `full`, the whole text on one line, when there is more than the row
+// says (shown on a press). Null for none.
+export function refusalRow(r, now) {
+  const s = isObj(r) ? shortRefusal(r.text) : null
+  if (!s) return null
+  const at = dayClock(r.at, now)
+  const whole = r.text.split('\n').map((l) => l.trim()).filter(Boolean).join(' ')
+  const text = (at ? '[' + at + '] ' : '') + REFUSED_MARK + ' VBW refused, ' + refusedBy(r) + s.clause
+  return {
+    id: 'refused:' + String(r.id), term: 'refused', files: s.files,
+    more: s.files ? '· ' + s.files + (s.files === 1 ? ' file' : ' files') + ' in this run' : null,
+    text, full: whole === s.clause ? null : whole,
+  }
+}
+
+// The last run's refusals (panel-feed.js), newest five, each as refusalRow says it.
+const REFUSALS_SHOWN = 5
+const refusalRows = (list, now) => (Array.isArray(list) ? list : []).filter((r) => isObj(r) && typeof r.text === 'string' && r.text.trim())
+  .slice(-REFUSALS_SHOWN).map((r) => refusalRow(r, now)).filter(Boolean)
 
 export function panelView(input) {
   const { record: rec, next: nx, nextAt, question, questionAt, health, now, cost, proving } = isObj(input) ? input : {}
@@ -263,15 +315,15 @@ export function panelView(input) {
   const t = Number.isFinite(now) ? now : Date.now()
   return {
     need,
-    box: nowBox(rec, need, proving === true, stamps, cost, step, input.holder, t),
+    box: nowBoxModel({ record: rec, need, proving: proving === true, stamps, cost, step, holder: input.holder, next: nx, now: t }),
     rows: [
       { id: 'milestone', text: 'Working on ' + rec.milestone.id + ': ' + (rec.milestone.title || 'untitled') + '.', term: 'milestone' },
       { id: 'progress', text: progress, term: 'requirements' },
       doing(rec, t),
-      ...estimateRows(stamps, step, nx),
+      ...estimateRows(stamps, step, nx, t),
       costRow(cost),
-      ...refusalRows(input.refusals),
-      { id: 'need', text: need ? stamped(Number.isFinite(stamps.need) ? stamps.need : need.at, need.text) : 'Nothing is needed from you right now.', term: 'your turn' },
+      ...refusalRows(input.refusals, t),
+      { id: 'need', text: need ? stamped(Number.isFinite(stamps.need) ? stamps.need : need.at, need.text, t) : 'Nothing is needed from you right now.', term: 'your turn' },
     ],
   }
 }

@@ -4,8 +4,9 @@
 // refusal line and the `vbw` row intentions. Pure: data in, one string out, or null to leave the
 // engine's own line. Never throws, never changes its input, no `$` here.
 
-import { liveNeed, GATE_COMMANDS } from './panel-view.js'
+import { liveNeed, GATE_COMMANDS, shortRefusal, refusedBy } from './panel-view.js'
 import { REFUSED_MARK } from './panel-palette.js'
+import { dayClock } from './panel-step.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const arr = (x) => (Array.isArray(x) ? x.filter(isObj) : [])
@@ -130,13 +131,13 @@ export function turnReceipt(input) {
 
 // The Workflow tool row of a VBW run, as a run card.
 export function workflowCard(input) {
-  const { input: wi, run } = isObj(input) ? input : {}
+  const { input: wi, run, now } = isObj(input) ? input : {}
   if (!isObj(wi)) return null
   const meta = typeof wi.script === 'string' ? /meta\s*=\s*\{[^}]*?\bname\s*:\s*['"]([^'"]+)['"]/.exec(wi.script) : null
   const kind = vbwKind(wi.name, false) || vbwKind(wi.workflowName, false) || vbwKind(meta && meta[1], false)
   if (!kind) return null
   const mine = isObj(run) && run.kind === kind && Number.isFinite(run.startedAt)
-  const started = mine ? ' · started ' + new Date(run.startedAt).toTimeString().slice(0, 5) : ''
+  const started = mine ? ' · started ' + dayClock(run.startedAt, now) : ''
   return 'VBW ' + kind + started + (mine && run.status !== 'running' ? ' · finished' : ' · [p] watch live')
 }
 
@@ -221,13 +222,12 @@ export function vbwRowIntent(input) {
 }
 
 // A refusal of the run model (panel-feed.js) as Comms says it, without its time:
-// '⊘ VBW refused · <by>: <its first line>' (what was refused and why); null for none.
+// '⊘ VBW refused · <by>: <its first clause>' (what was refused); null for none.
 export function refusalLine(r) {
-  if (!isObj(r) || typeof r.text !== 'string') return null
-  const first = (r.text.split('\n').find((l) => l.trim()) || '').trim()
-  if (!first) return null
-  return REFUSED_MARK + ' VBW refused · ' + (typeof r.by === 'string' && r.by ? r.by + ': ' : '') + first
+  const s = isObj(r) ? shortRefusal(r.text) : null
+  return s ? REFUSED_MARK + ' VBW refused · ' + refusedBy(r) + s.clause : null
 }
+
 
 // A diff shown on .vbw/record.json, as what changed.
 export function recordDiffIntent(diffText, holder) {

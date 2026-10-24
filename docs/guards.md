@@ -127,8 +127,15 @@ It reports what is wrong (for example `jq` missing) with the fix for each item
 (docs/diagnostics.md). Fix it, then ask Claude to retry. If you cannot fix it
 and want the run gone, `vbw run end` closes it (docs/workflows.md).
 
-**In VBW projects** (the session's project directory, `$CLAUDE_PROJECT_DIR`,
-holds `.vbw/record.json`; a corrupt record still counts):
+**In VBW projects** (the session's project holds `.vbw/record.json`; a corrupt
+record still counts). Every part of VBW finds the project the way the kernel
+does: the top folder of the git repository, which is the nearest folder at or
+above the session's folder (`$CLAUDE_PROJECT_DIR`) that holds `.git`, never a
+folder above it. A session started in a subfolder of a VBW project is guarded
+exactly as one started at its top folder; a git repository inside the project
+(a submodule, a nested clone) is a project of its own. A path in a tool call
+that is not absolute is read from the session's working folder, as the tool
+reads it, and "outside the project" means outside that top folder:
 
 | Call | Why |
 |---|---|
@@ -272,8 +279,9 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
 In a VBW project, one line of context: the project state and what comes next.
 The hook runs `vbw next` once, never `vbw status`, and reads the project line
 from the glance that command refreshes.
-Started in a subdirectory of a VBW project, it says the guards are off and
-where to start instead. It never injects resume directives (ledger D289). It
+Started in a subfolder of a VBW project, the line also names the project
+folder, which VBW's paths (`.vbw/`, plan files) are relative to. It never
+injects resume directives (ledger D289). It
 writes only for a copy loaded with `claude --plugin-dir`: a PATH line in the
 file Claude Code provides for it (`CLAUDE_ENV_FILE`), and the session record
 below; and, in the project, when the session that runs a loop is resumed, the

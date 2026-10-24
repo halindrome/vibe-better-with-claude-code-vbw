@@ -203,13 +203,16 @@ test("the dated rows (panel.js dates them before drawing) are the need and the m
 })
 
 // 6.3: the last run's refusals stay readable on the Now tab (docs/panel.md, Refusals).
-test('the run\'s refusals are Now sentences before the need, each with its time, whole on one line; the newest five', () => {
+test('the run\'s refusals are Now rows before the need, each with its time and its first line, the whole text kept for a press; the newest five', () => {
   const said = 'vbw: apply refused: plan P1.1 is started\nNext: put it back as the record has it (vbw show plan P1.1)'
   const refusals = Array.from({ length: 7 }, (_, i) => ({ id: 'a#' + i, by: 'dev P1.' + i, at: NOW - (7 - i) * 60000, text: said }))
   const v = show({ record: record(), next: next(), refusals: deepFreeze(refusals) })
   const rows = v.rows.filter((r) => r.id.startsWith('refused:'))
   assert.deepEqual(rows.map((r) => r.id), ['refused:a#2', 'refused:a#3', 'refused:a#4', 'refused:a#5', 'refused:a#6'])
-  assert.deepEqual(rows[4], { id: 'refused:a#6', text: '[' + view.clock(NOW - 60000) + '] ⊘ VBW refused, dev P1.6: vbw: apply refused: plan P1.1 is started Next: put it back as the record has it (vbw show plan P1.1)', term: 'refused' })
+  const hhmm = (ms) => { const d = new Date(ms); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') }
+  assert.deepEqual(rows[4], { id: 'refused:a#6', term: 'refused', files: 0, more: null,
+    text: '[' + hhmm(NOW - 60000) + '] ⊘ VBW refused, dev P1.6: vbw: apply refused: plan P1.1 is started',
+    full: 'vbw: apply refused: plan P1.1 is started Next: put it back as the record has it (vbw show plan P1.1)' })
   const ids = v.rows.map((r) => r.id)
   assert.equal(ids.indexOf('need'), ids.length - 1, 'the need stays last')
   assert.equal(ids.indexOf('refused:a#6'), ids.length - 2)

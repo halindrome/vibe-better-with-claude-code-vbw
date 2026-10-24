@@ -144,6 +144,31 @@ agents() { find "$PLUGIN_ROOT/agents" -name '*.md' | LC_ALL=C sort; }
   printf '%s' "$out" | jq -e --arg t "$said" '.logs | any(. == "dev P1.1 was refused: " + $t)' > /dev/null || { echo "$out"; false; }
 }
 
+@test "every agent of every workflow is told the project folder (args.root), so a session started in a subfolder works there; without it nothing is added" {
+  command -v node > /dev/null 2>&1 || skip "node not installed"
+  local f out base said='The project folder is /r/My Project.'
+  base='{"requirements": [{"id": "R1", "proof": "auto", "text": "x"}], "plans": ["P1.1"], "groups": [["F1"]], "phases": ["P1"], "question": "q", "stack": "s", "problem": "p", "summary": {"open": [{"id": "R1", "text": "x"}], "todos": [{"id": "T1", "text": "y"}]}, "session": "s"}'
+  local any='{"*": {"findings": ["a"], "map": "m", "picks": [], "hypotheses": [], "answer": "a", "confidence": "high", "root_cause": "r", "evidence": "e", "rejected": [], "fix": "f", "unknowns": [], "status": "done", "summary": "s", "files": [], "commit": "c", "regression_test": "t", "notes": [], "verdict": "pass", "checks": [], "refused": []}}'
+  while IFS= read -r f; do
+    out=$(node "$BATS_TEST_DIRNAME/helpers/run-workflow-all.js" "$f" "$(jq -nc --argjson b "$base" '$b + {root: "/r/My Project"}')" "$any") || { echo "$f did not run: $out"; false; }
+    printf '%s' "$out" | jq -e --arg s "$said" '(.calls | length) > 0 and all(.calls[]; .prompt | contains($s))' > /dev/null \
+      || { echo "$f: $(printf '%s' "$out" | jq -c --arg s "$said" '[.calls[] | {label: .opts.label, told: (.prompt | contains($s))}]')"; false; }
+    out=$(node "$BATS_TEST_DIRNAME/helpers/run-workflow-all.js" "$f" "$base" "$any") || { echo "$f did not run: $out"; false; }
+    printf '%s' "$out" | jq -e 'all(.calls[]; .prompt | contains("The project folder is") | not)' > /dev/null || { echo "$f added a folder without args.root"; false; }
+  done < <(workflows)
+}
+
+@test "every skill that starts a workflow passes the project folder as args.root: the router from vbw next --json, the others from vbw root" {
+  local f n=0
+  for f in "$PLUGIN_ROOT"/skills/*/SKILL.md; do
+    grep -q 'Workflow `vbw:\|`vbw:[a-z]*` workflow' "$f" || continue
+    n=$((n + 1))
+    grep -q '`root`\|"root"' "$f" || { echo "no root in the workflow args of $f"; false; }
+    [ "$(basename "$(dirname "$f")")" = vibe ] || grep -q '"${CLAUDE_PLUGIN_ROOT}/bin/vbw" root 2>&1 || true' "$f" || { echo "$f does not read vbw root"; false; }
+  done
+  [ "$n" -ge 6 ]
+}
+
 @test "no workflow shares its name with a skill (/vbw:NAME would start the workflow)" {
   local f n
   while IFS= read -r f; do

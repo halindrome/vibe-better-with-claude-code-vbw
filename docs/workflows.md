@@ -555,6 +555,25 @@ needed.
 - **Docs**: documentation plans (README, changelog, guides, API and inline
   docs), concise and example-first; documentation files only.
 
+## The project folder
+
+Every skill that starts a workflow passes `args.root`, the project folder: the
+router from `vbw next --json` (`root`), the other skills from `vbw root`. A
+session started in a subfolder of the project starts its agents there too, so
+each workflow appends one sentence to the task of every agent it starts:
+
+```
+The project folder is /path/to/project. Every path VBW names (plan and check
+files, .vbw/...) is relative to it, whatever folder you start in: give file
+tools and shell redirects absolute paths under it, and run other shell commands
+from it (cd "/path/to/project" && ...).
+```
+
+Without `args.root` nothing is added. The guards judge a path in a tool call
+from the agent's working folder, so an absolute path under the project folder,
+`.vbw/runtime/scratch/` included, is judged by the run's rules (docs/guards.md).
+All nine workflows do this.
+
 ## The user's level
 
 The router passes `args.profile` (the `profile` key of `vbw next --json`,

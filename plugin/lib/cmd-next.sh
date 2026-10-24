@@ -105,7 +105,15 @@ cmd_next() {
   # The status line shows the last answer (docs/statusline.md).
   printf '%s\n' "$next" > "$VBW_RUNTIME/next.json.$$" && mv "$VBW_RUNTIME/next.json.$$" "$VBW_RUNTIME/next.json"
   if [ "${1:-}" = "--json" ]; then
-    printf '%s\n' "$next"
+    # The project folder (vbw root), for the workflows' args: agents of a session started in a
+    # subfolder work there. Only in the command's answer: the kept one, and what a caller inside
+    # the kernel builds from it (the loop's step note), hold no path, so a copy of the project
+    # never points back at it.
+    if [ "${FUNCNAME[1]:-main}" = main ]; then
+      printf '%s\n' "$next" | jq -c --arg root "$VBW_ROOT" '. + {root: $root}'
+    else
+      printf '%s\n' "$next"
+    fi
   else
     printf '%s\n' "$next" | jq -r '"\(.action)\(if .gate then " (needs you)" else "" end): \(.instruction)"'
   fi

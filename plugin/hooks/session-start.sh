@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# SessionStart: in a VBW project (the session's project directory holds
-# .vbw/record.json, as for the guard), tell the model where the project stands
-# and what comes next, in one line. Started in a subdirectory of a VBW project:
-# say that the guards are off. Never a resume directive (ledger D289).
+# SessionStart: in a VBW project (the project of the session's folder, found as
+# the guards and the kernel find it, holds .vbw/record.json), tell the model
+# where the project stands and what comes next, in one line. Started in a
+# subfolder of the project: also name the project folder, which VBW's paths are
+# relative to. Never a resume directive (ledger D289).
 #
 # Also, in every session: remove VBW 1's command copies (build plan K15). And in a
 # VBW project, after VBW was updated: offer /vbw:whats-new once (docs/update.md).
@@ -11,7 +12,10 @@
 # reload notice below needs jq too): end quietly, like the per-tool-call hooks.
 command -v jq > /dev/null 2>&1 || exit 0
 
-root=${CLAUDE_PROJECT_DIR:-$PWD}
+dir=${CLAUDE_PROJECT_DIR:-$PWD}
+# shellcheck source-path=SCRIPTDIR source=project.sh
+. "${0%/*}/project.sh"
+vbw_project_of "$dir"
 vbw="${0%/*}/../bin/vbw"
 
 # VBW 1 copied its commands to <claude-dir>/commands/vbw/. User commands take
@@ -125,6 +129,7 @@ if [ -f "$root/.vbw/record.json" ]; then
     esac
     state=$(jq -r '"\(.project.name) · \(.milestone.id) \(.milestone.title) (\(.milestone.status))"' "$root/.vbw/runtime/glance.json" 2> /dev/null || true)
     context="${context}VBW project ($state). Next: $next. Continue with /vbw:vibe. The vbw command is on PATH (vbw help); this session's kernel is ${kernel}${kversion:+ (version $kversion)}."
+    [ "${dir%/}" = "${root%/}" ] || context="${context} This session started in ${dir#"${root%/}"/}, a subfolder of the project at $root: VBW's paths (.vbw/, plan files) are relative to $root."
     # After an update (docs/update.md), offer /vbw:whats-new once. No network
     # call: the plugin's version is compared with the highest version this
     # clone's sessions have seen, kept in the clone's git folder (shared by its
@@ -148,11 +153,6 @@ if [ -f "$root/.vbw/record.json" ]; then
   fi
 elif [ -d "$root/.vbw-planning" ]; then
   context="${context}This project has a VBW 1 plan (.vbw-planning/). Tell the user once: VBW 2 leaves it untouched, and /vbw:vibe or /vbw:convert brings it into VBW 2 through a few questions."
-else
-  top=$(git -C "$root" rev-parse --show-toplevel 2> /dev/null || true)
-  if [ -n "$top" ] && [ -f "$top/.vbw/record.json" ]; then
-    context="${context}This session started inside the VBW project at $top, not at its root, so the VBW guards are off. Tell the user to start Claude Code at $top."
-  fi
 fi
 
 # The copies were loaded before this hook ran, so this session still has them:

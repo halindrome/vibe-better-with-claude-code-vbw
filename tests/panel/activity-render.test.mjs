@@ -1,6 +1,6 @@
 // R87, drawing: an agent's activity is drawn with the verb coloured and the
 // object dimmed, on Comms (formerly the band, D406) and on Mission Control's
-// cards, and a long object is cut to the row's width without breaking colour. A
+// crew rows, and a long object is cut to the row's width without breaking colour. A
 // finished agent leaves Comms at once (R189), so Comms draws no done row.
 // Pure: renderStage and renderNow, no Claude Code needed (evidence level L1).
 import test from 'node:test'
@@ -28,7 +28,7 @@ const band = (a, columns = 100) => {
   const tree = stage.renderStage(UI, stage.stageModel({ now: NOW, maxRows: 12, columns, motion: 'calm', run: deepFreeze(run([a])) }))
   return find(tree, (n) => n.type === 'Box' && n.props.key === 'agent-a1')
 }
-const cardOf = (a) => find(live.renderNow(UI, live.nowModel({ run: deepFreeze(run([a])), now: NOW })), (n) => n.type === 'Box' && n.props.key === 'card-box:a1')
+const cardOf = (a) => find(live.renderNow(UI, live.nowModel({ run: deepFreeze(run([a])), now: NOW, width: 100 })), (n) => n.type === 'Box' && n.props.key === 'crew:a1')
 const texts = (node) => {
   const out = []
   walk(node, (n) => {
@@ -36,7 +36,7 @@ const texts = (node) => {
   })
   return out
 }
-const SURFACES = { comms: (a) => band(a), card: (a) => cardOf(a) }
+const SURFACES = { comms: (a) => band(a), crew: (a) => cardOf(a) }
 
 for (const [name, draw] of Object.entries(SURFACES)) {
   test(name + ': the verb is coloured and the object dimmed', () => {
@@ -87,10 +87,10 @@ test('comms: a long object is cut to the row width, columns counted over the who
   }
 })
 
-test('card: the activity stays within 40 characters', () => {
+test('crew: the activity is cut to what the row leaves of the width', () => {
   const t = texts(cardOf(agent(tool('editing ' + 'x'.repeat(120)))))
-  const parts = t.filter((x) => /editing|x{5}/.test(x.text))
-  assert.ok(parts.reduce((n, x) => n + len(x.text), 0) <= 41)
+  assert.ok(t.reduce((n, x) => n + len(x.text), 0) <= 100)
+  assert.match(t.find((x) => /x{5}/.test(x.text)).text, /…$/)
 })
 
 test('comms: what an agent says (not a tool) stays one quoted line, not split into a verb and an object', () => {

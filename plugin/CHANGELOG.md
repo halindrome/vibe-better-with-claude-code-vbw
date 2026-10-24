@@ -1,5 +1,38 @@
 # Changelog
 
+## [2.1.11] - 2026-10-24
+
+### Added
+
+- **Mission Control has six tabs: Now, Plan, Proof, Timeline, Sessions and
+  Settings.** Everything is colour coded: each helper by its role, each state
+  by its colour. Plan shows the phases with their progress and the decisions
+  made. Proof shows every check, passed, failing or running. Timeline shows
+  each run with its cost. Each What's next item is one button.
+- **Change any VBW setting with a click.** The Settings tab lists every setting
+  under four headings: Models, How VBW works, Checks, and Look and sound. The
+  current choice is lit; click another and it is saved at once, with
+  `✓ saved`. Numbers have `−` and `+`. Each helper's model can be Fable, Opus,
+  Sonnet or Haiku (QA never Haiku).
+- **Choose the "needs you" sound, or turn it off.** Pick a voice or `off` in
+  Settings, or with `vbw config set sound`. The choice is your own copy of the
+  project's, never shared through git.
+- **A notification when VBW starts waiting for you,** so you can work elsewhere.
+- **Something new is marked until you have seen it:** a changed setting, a
+  finished run, a new refusal.
+- **The status line shows one coloured state:** `● working`, `⚑ needs you` with
+  since when, or `✓ idle`.
+- **A guide to running several chats on one project:** `docs/parallel-sessions.md`.
+
+### Fixed
+
+- **VBW works in a chat started in a subfolder of the project.** The panel
+  stayed closed and the guards stayed off when Claude Code was started inside
+  a folder of the project rather than at its top. The panel, the guards, the
+  approval hooks and the helpers now find the project from any of its folders.
+- **Every time the panel shows names its day** when it is not today.
+- **Refusals in the panel are one short line;** a click shows the whole text.
+
 ## [2.1.10] - 2026-10-24
 
 ### Fixed

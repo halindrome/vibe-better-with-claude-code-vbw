@@ -66,7 +66,7 @@ record_glance_write() {
   if jq -c --rawfile h <(cat "$VBW_RUNTIME/holder.json" 2> /dev/null || true) '.milestone.id as $m | {schema, lease}
       + (if has("protected") then {protected} else {} end)
       + {loop: (.loop | if type == "object" then {session, started_at, ended} else null end),
-      project, milestone, settings,
+      project, milestone, settings, shipped: [(.shipped // [])[] | select(.id == $m)],
       requirements: [.requirements[]? | select(.milestone == $m)],
       plans: [.plans[]? | select(.status == "building")],
       holder: (($h | try fromjson catch null) as $f

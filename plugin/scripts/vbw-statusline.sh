@@ -39,24 +39,18 @@ if [ -z "$cdir" ]; then
   if [ -d "$HOME/.config/claude-code" ]; then cdir="$HOME/.config/claude-code"; else cdir="$HOME/.claude"; fi
 fi
 
-# project_root DIR: sets wroot to the project of a session started in DIR, the
+# vbw_project_of DIR: sets root to the project of a session started in DIR, the
 # nearest folder up that holds .git (walked without a git process), or DIR itself
-# when no folder up holds one.
-project_root() {
-  wroot=$1
-  local d=$1
-  while [ "$d" != / ] && [ -n "$d" ] && [ ! -e "$d/.git" ]; do
-    case "$d" in */*) d=${d%/*}; d=${d:-/} ;; *) d=/ ;; esac
-  done
-  [ ! -e "$d/.git" ] || wroot=$d
-}
+# when no folder up holds one: the rule every part of VBW shares.
+# shellcheck source-path=SCRIPTDIR source=../hooks/project.sh
+. "$plugin/hooks/project.sh"
 
 # The project's two settings files are read in the same jq call as the input
 # when the project is the one this process runs in, which is nearly always: one
 # jq decides on or off, and the hand-back path starts nothing else. A session
 # whose project is another folder reads that project's files in a second call.
-project_root "${PWD:-.}"
-guessed=$wroot
+vbw_project_of "${PWD:-.}"
+guessed=$root
 pl=(--arg pl "")
 ps=(--arg ps "")
 [ ! -f "$guessed/.claude/settings.local.json" ] || pl=(--rawfile pl "$guessed/.claude/settings.local.json")
@@ -84,8 +78,7 @@ take; sid=$val
 root=${root:-$PWD}
 
 # Started in a subfolder: the project is the nearest folder up that holds .git.
-project_root "$root"
-root=$wroot
+vbw_project_of "$root"
 
 # On or off, before any other work: the project's .claude/settings.local.json,
 # then its .claude/settings.json, then the user's (read above); the first that

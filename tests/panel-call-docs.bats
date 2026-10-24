@@ -35,6 +35,12 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
   has "$DOC" 'never fires twice for one question'
 }
 
+@test "T78: docs/panel.md says the notification comes when VBW starts waiting, once per request, and none with motion off" {
+  has "$DOC" 'when vbw starts waiting for you[^.]*notification'
+  has "$DOC" 'once per request'
+  has "$DOC" 'with motion `off` vbw raises none'
+}
+
 @test "R189: docs/panel.md says what happens without notifications or sound" {
   has "$DOC" 'does nothing in their place'
   has "$DOC" 'nothing breaks'

@@ -1,7 +1,10 @@
 # Shared by the PreToolUse guards (docs/guards.md). Each guard runs as jq
-# itself (build plan K20), with --arg root "$CLAUDE_PROJECT_DIR" and
-# --rawfile glance F. Its inputs, in order: the hook input (stdin);
-# $CLAUDE_PROJECT_DIR/.vbw/record.json, which jq skips when it does not exist;
+# itself (build plan K20), with --arg root PROJECT, --arg dir SESSION_DIR and
+# --rawfile glance F. SESSION_DIR is the session's folder ($CLAUDE_PROJECT_DIR);
+# PROJECT is the project of a session started there, found as the kernel finds
+# it (vbw_git_root): the nearest folder at or above SESSION_DIR that holds .git,
+# SESSION_DIR itself when none does. Its inputs, in order: the hook input (stdin);
+# PROJECT/.vbw/record.json, which jq skips when it does not exist;
 # hooks/end.json, the sentinel "vbw-guard-end". So after the hook input, the
 # next input is the record (a VBW project), the sentinel (not one), or a parse
 # error (a corrupt record: still a VBW project).
@@ -85,6 +88,10 @@ def project_path($cwd; $root):
   | "/" + join("/")
   | if startswith(($root | rtrimstr("/")) + "/") then .[($root | rtrimstr("/") | length) + 1:] else null end;
 
+# The folder a relative path in a tool call is read from: the session's working
+# folder (the hook input's cwd), which may be a subfolder of the project.
+def session_dir($g): $g.hook.cwd // $ARGS.named.dir // $root;
+
 # A plan file entry covers PATH: the same path, or a directory entry (ending
 # in /) with PATH under it.
 def covers($p): . as $e | $e == $p or (($e | endswith("/")) and ($p | startswith($e)));
@@ -139,7 +146,7 @@ def unresolved_path: test("^~|[$`]");
 # Why a subagent may not write ORIGINAL (the path as given) under LEASE: a
 # path outside the project is denied (R177), one inside goes to the lease rules.
 def run_write_denial($g):
-  . as $o | project_path($g.hook.cwd // $root; $root) as $p
+  . as $o | project_path(session_dir($g); $root) as $p
   | if $p == null then (if $o | test("^/dev/(null|stdout|stderr|tty)$") then empty else $o | outside_denial($g.lease) end) else $p | lease_write_denial($g.lease; $g.record) end;
 
 # The same for a path in shell text (a redirect target, a git checkout path, a

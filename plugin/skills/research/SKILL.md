@@ -7,6 +7,7 @@ allowed-tools: Bash("${CLAUDE_PLUGIN_ROOT}/bin/vbw" *) Bash(vbw *) Workflow(vbw:
 
 ```!
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" config models 2>&1 || true
+"${CLAUDE_PLUGIN_ROOT}/bin/vbw" root 2>&1 || true
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" config effort 2>&1 || true
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" workflows on 2>&1 || true
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" interview 2>&1 || true
@@ -23,7 +24,7 @@ and effort lines show an error; omit both then.)
 
 1. Say in one line what will be looked into, and why it matters here.
 2. Start the Workflow `vbw:researching` with args `{"question": "<the
-   question>", "models": <the JSON above>, "effort": <the effort JSON above>, "profile": ...}`: four Scouts research it in parallel
+   question>", "models": <the JSON above>, "effort": <the effort JSON above>, "profile": ..., "root": <the folder vbw root printed>}`: four Scouts research it in parallel
    (official sources, practice, what is current, project fit); one weighs them.
 3. Give the user its answer in plain words: what is true, options with trade-offs,
    the recommendation, sources with links, and what could not be confirmed

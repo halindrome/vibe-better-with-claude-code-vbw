@@ -15,4 +15,15 @@ OUT="$ROOT/plugin/hooks/panel-sounds.js"
   (cd "$ROOT/plugin" && find assets/audio -mindepth 2 -maxdepth 2 -type f -name '*.mp3' | LC_ALL=C sort) |
     while IFS= read -r f; do echo "  '$f',"; done
   echo "]"
+  cat <<'JS'
+
+// The sound to play for record.settings.sound: 'off' is none; a folder name is a random
+// sound of that folder; unset, 'default' or a folder that is gone is a random sound of all.
+export function soundFor(choice, random = Math.random) {
+  if (choice === 'off') return null
+  const own = SOUNDS.filter((s) => s.startsWith('assets/audio/' + choice + '/'))
+  const from = own.length ? own : SOUNDS
+  return from.length ? { asset: from[Math.floor(random() * from.length)] } : null
+}
+JS
 } > "$OUT"

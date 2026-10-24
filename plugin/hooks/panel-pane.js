@@ -1,18 +1,23 @@
-// Mission Control (mods_4_vbw.md §3.3): the pane, eight tabs as buttons across the
+// Mission Control (mods_4_vbw.md §3.3): the pane, six tabs as buttons across the
 // top in whole rows (a name is never split, no row is wider than the pane; the fewest rows
 // win, then the full names over the short ones, then the portrait), after the VBW portrait
 // where the terminal draws images and it costs the tabs nothing (§3.7). Now opens
-// with the panel's own sentences and its sound switch above the live workflow; the
-// other tabs are the views of panel-mission-live.js and panel-mission-record.js.
+// with the panel's own sentences and its sound switch above the live workflow (the
+// crew); Plan holds the milestone's decisions, Timeline each run's time and cost, and
+// Settings every setting, changed by a press (panel-settings.js); the views are those of panel-mission-live.js,
+// panel-mission-record.js, panel-runs.js and panel-sessions.js.
 // At ship the pane shows VBW Wrapped (panel-candy.js) until a tab is chosen; the
 // all-green sweep crosses the top of Proof. Pure over the state panel.js gathered:
 // no `$` here; presses go to `on.act(action)` and the sound switch to `on.sound()`.
-import { nowModel, timelineModel, costsModel, renderNow, renderTimeline, renderCosts } from './panel-mission-live.js'
-import { planModel, proofModel, decisionsModel, teamModel, renderPlan, renderProof, renderDecisions, renderTeam } from './panel-mission-record.js'
+import { nowModel, timelineModel, renderNow, renderTimeline, renderNowBox, renderRefusal } from './panel-mission-live.js'
+import { planModel, proofModel, renderPlan, renderProof } from './panel-mission-record.js'
+import { settingsModel, renderSettings } from './panel-settings.js'
+import { runsModel, renderRuns } from './panel-runs.js'
 import { sessionsModel, renderSessions } from './panel-sessions.js'
 import { renderNext } from './panel-next.js'
 import { renderWrapped } from './panel-candy.js'
 import { NEED, PROGRESS, ESTIMATE, ACCENT } from './panel-palette.js'
+import { SHOW_TERMS } from './panel-view.js'
 
 // The head: the portrait's PORTRAIT_DRAWN_ROWS rows or the tab rows, whichever are more, and the gap
 // under them. A short pane (fewer than PORTRAIT_ROWS) drops the portrait, and gets a gap
@@ -29,9 +34,10 @@ const BUTTON_CHROME = 4
 const TAB_GAP = 1
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
-export const TABS = [['now', 'Now'], ['plan', 'Plan'], ['proof', 'Proof'], ['timeline', 'Timeline'], ['decisions', 'Decisions'], ['team', 'Team'], ['sessions', 'Sessions'], ['costs', 'Costs']]
-// The tab labels in a narrow pane: with them the eight tabs take two rows at 44 columns beside the portrait.
-export const SHORT = { now: 'Now', plan: 'Plan', proof: 'Proof', timeline: 'Time', decisions: 'Log', team: 'Team', sessions: 'Sess', costs: 'Cost' }
+export const TABS = [['now', 'Now'], ['plan', 'Plan'], ['proof', 'Proof'], ['timeline', 'Timeline'], ['sessions', 'Sessions'], ['settings', 'Settings']]
+// The tab labels where they save a row: one row from 52 columns (the full names need 65), two
+// rows below 38.
+export const SHORT = { now: 'Now', plan: 'Plan', proof: 'Proof', timeline: 'Time', sessions: 'Sess', settings: 'Set' }
 
 // The tabs packed in order into whole rows: each row holds as many whole buttons as fit (first-fit
 // in order gives the fewest rows) and a name is never split; a width narrower than one button still
@@ -173,34 +179,25 @@ function tint(r, need) {
   }
 }
 
-// The 'what's happening now' box (panel-view.js): the state, the step with its start and
-// end time (or, when VBW needs you, the one sentence, the command that answers it and since
-// when), and the session cost line. Everything it says is left out of the sentences below.
-function nowBox(ui, v) {
-  const { Box, Text } = ui
-  const b = v.box
-  if (!b) return []
-  const cost = v.rows.find((r) => r.id === 'cost')
-  return [h(Box, { key: 'now-box', flexDirection: 'column', borderStyle: 'round', paddingX: 1, marginBottom: 1 },
-    h(Text, { bold: true, color: b.state.need ? NEED : undefined }, String(b.state.text)),
-    b.command ? h(Text, null, 'Type ' + b.command + '.') : null,
-    b.step && b.step.text ? h(Text, null, String(b.step.text)) : null,
-    b.step && b.step.end ? h(Text, { color: b.step.timed ? ESTIMATE : undefined }, String(b.step.end)) : null,
-    cost ? h(Text, { color: tint(cost, v.need) }, String(cost.text)) : null,
-    cost ? h(Text, { dimColor: true }, String(cost.term)) : null)]
-}
+// What the box already says: what VBW is doing, the milestone's end, the cost, and a need
+// (its sentence is the box's state).
+const IN_BOX = (v) => new Set(['doing', 'estimate-milestone', 'cost', ...(v.need ? ['need'] : [])])
 
-// What the box already says: what VBW is doing, the cost, and a need (its sentence is the box's state).
-const IN_BOX = (v) => new Set(['doing', 'cost', ...(v.need ? ['need'] : [])])
-
-// The panel's sentences (panel-view.js), each with its term in small text, and the sound switch.
-function summary(ui, v, st, on) {
+// The box (panel-view.js nowBoxModel, drawn by panel-mission-live.js renderNowBox), the crew
+// slot under it, the panel's sentences (panel-view.js), each with its term in small text
+// while SHOW_TERMS holds, a refusal as its short row (open while st.open holds its id), and
+// the sound switch.
+function summary(ui, v, st, on, crewRows, width, act) {
   const { Box, Text, Button } = ui
   const boxed = v.box ? IN_BOX(v) : new Set()
-  const rows = [...nowBox(ui, v), ...v.rows.filter((r) => !boxed.has(r.id)).map((r) =>
-    h(Box, { key: r.id, flexDirection: 'column', marginBottom: 1 },
-      h(Text, { color: tint(r, v.need) }, String(r.text)),
-      h(Text, { dimColor: true }, String(r.term))))]
+  const open = isObj(st.open) ? st.open : {}
+  const box = v.box ? [renderNowBox(ui, v.box, { width, labels: SHOW_TERMS })] : []
+  const rows = [...box, ...crewRows, ...v.rows.filter((r) => !boxed.has(r.id)).map((r) =>
+    String(r.id).startsWith('refused:') ? renderRefusal(ui, r, open[r.id] === true, act)
+      : h(Box, { key: r.id, flexDirection: 'column', marginBottom: 1 },
+        h(Text, { color: tint(r, v.need) }, String(r.text)),
+        SHOW_TERMS ? h(Text, { dimColor: true }, String(r.term)) : null))]
+  // panel.js keeps st.sound from the kernel's `sound` setting and on.sound() sets it (off or default).
   rows.push(
     h(Box, { key: 'sound', flexDirection: 'row', marginBottom: 1 },
       h(Text, null, 'Sound is ' + (st.sound ? 'on' : 'off') + '. '),
@@ -208,22 +205,33 @@ function summary(ui, v, st, on) {
   return rows
 }
 
-function body(ui, { st, now, width, motion, registry, stored }, tab, act) {
+const marksOf = (input) => (isObj(input.fresh) ? input.fresh : {})
+
+function body(ui, input, tab, act) {
+  const { st, now, width, registry, stored } = input
   const rec = st.record
+  const marks = marksOf(input)
   switch (tab) {
-    case 'plan': return renderPlan({ ...ui, Input: undefined }, planModel({ record: rec, phase: st.phase }), act) // Ask is not wired yet
-    case 'proof': return renderProof(ui, proofModel({ record: rec, selected: st.check }), act)
-    case 'timeline': return renderTimeline(ui, timelineModel({ run: st.run, now, steps: st.steps, step: st.step, width: Math.max(10, width - 24) }))
-    case 'decisions': return renderDecisions(ui, decisionsModel({ record: rec }))
-    case 'team': return renderTeam(ui, teamModel({ record: rec }), act)
+    // Plan: the phases, the chosen one's work, then the milestone's decisions (the record ties a decision to no phase).
+    case 'plan': return renderPlan({ ...ui, Input: undefined }, planModel({ record: rec, phase: st.phase, open: st.open, now }), act, width - 4) // Ask is not wired yet
+    case 'proof': return renderProof(ui, proofModel({ record: rec, selected: st.check, open: st.open, now }), act, width - 4)
+    // Timeline: the live run's agents on its clock, then every run of the session with its time and cost.
+    case 'timeline': return h(ui.Box, { key: 'timeline-tab', flexDirection: 'column' },
+      renderTimeline(ui, timelineModel({ run: st.run, now, steps: st.steps, step: st.step, width: Math.max(10, width - 24) })),
+      renderRuns(ui, runsModel({ runs: st.leases, steps: st.steps, sessionCost: st.cost, now, width: Math.max(20, width - 4), fresh: marks, motion: input.motion })))
     case 'sessions': return renderSessions(ui, sessionsModel({ registry, root: st.root, sessionId: st.sessionId, lease: isObj(rec) ? rec.lease : null, stored, now, width: Math.max(10, width - 4), plans: isObj(rec) ? rec.plans : null }))
-    case 'costs': return renderCosts(ui, costsModel({ runs: st.leases, sessionCost: st.cost, width: Math.max(1, Math.floor(width / 3)) }))
-    default: {
-      // The box above already says that nothing runs; "no workflow runs here" is only news while a run is held.
-      const model = nowModel({ run: st.run, now, selected: st.agent, seen: Object.keys(st.helpersSeen || {}), motion })
-      return model || (isObj(rec) && isObj(rec.lease)) ? renderNow(ui, model, act) : null
-    }
+    case 'settings': return renderSettings(ui, settingsModel({ settings: st.settings, record: rec, now, fresh: marks, motion: input.motion }), act)
+    default: return null
   }
+}
+
+// The Now tab's crew slot, right under the box (Lane B draws the rows: panel-mission-live.js
+// renderNow). The box already says that nothing runs; "no workflow runs here" is only news
+// while a run is held.
+function crew(ui, { st, now, motion, width }, act) {
+  const rec = st.record
+  const model = nowModel({ run: st.run, now, selected: st.agent, seen: Object.keys(st.helpersSeen || {}), motion, width: Math.max(10, width - 2) })
+  return model || (isObj(rec) && isObj(rec.lease)) ? [h(ui.Box, { key: 'crew', flexDirection: 'column', marginBottom: 1 }, renderNow(ui, model, act))] : []
 }
 
 // input: { st, v, now, width, portrait (a PNG's path, or null), wrapped (the
@@ -250,9 +258,9 @@ export function renderPane(ui, input, on) {
   const headRows = Math.max(withPortrait ? PORTRAIT_DRAWN_ROWS : 0, lay.rows.length) + (gap ? 1 : 0)
   const head = h(Box, { key: 'head', flexDirection: 'row', ...(gap ? { marginBottom: 1 } : {}) }, ...portrait, tabs)
   const sweep = tab === 'proof' && Raster && input.sweep ? [h(Raster, { key: 'vbw-sweep', columns: input.sweep.cols, rows: 1, cells: input.sweep.cells })] : []
-  const view = wrapped ? renderWrapped(ui, wrapped) : body(ui, input, tab, act)
-  const upNext = tab === 'now' ? [renderNext(ui, { recommendation: input.recommendation, width: input.width, motion: input.motion, arrivedAt: input.arrivedAt, now: input.now, unseen: input.unseen }, act)] : []
-  const content = [...(tab === 'now' ? summary(ui, v, st, on) : []), ...upNext, ...sweep, view]
+  const view = wrapped ? renderWrapped(ui, wrapped) : body(ui, { ...input, width }, tab, act)
+  const upNext = tab === 'now' ? [renderNext(ui, { recommendation: input.recommendation, width: input.width, motion: input.motion, fresh: marksOf(input), now: input.now }, act)] : []
+  const content = [...(tab === 'now' ? summary(ui, v, st, on, crew(ui, { ...input, width }, act), width, act) : []), ...upNext, ...sweep, view]
   if (rows < 1) {
     // No height reported: one fixed height at most, ending with how much is left out.
     const tall = measure(h(Box, { flexDirection: 'column' }, ...content), width).h

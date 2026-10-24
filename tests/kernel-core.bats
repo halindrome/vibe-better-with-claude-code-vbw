@@ -144,7 +144,15 @@ teardown() { vbw_teardown; }
   cd src/deep
   vbw_run todo add "from below"
   [ "$status" -eq 0 ]
+  # The project folder, for the skills and workflows of a session started down here.
+  local top
+  top=$(cd "$PROJECT" && pwd -P)
+  vbw_run root
+  [ "$status" -eq 0 ] && [ "$output" = "$top" ] || { echo "$output"; false; }
+  [ "$("$VBW" next --json < /dev/null | jq -r .root)" = "$top" ]
+  # The answer kept for the status line holds no path: a copy of the project never points back.
   cd "$PROJECT"
+  jq -e 'has("root") | not' .vbw/runtime/next.json
   [ "$(jq -r '.todos[0].text' .vbw/record.json)" = "from below" ]
 }
 

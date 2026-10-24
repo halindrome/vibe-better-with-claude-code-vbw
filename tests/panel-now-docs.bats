@@ -18,6 +18,17 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
   grep -qiE '^[|] +nothing (is )?running' "$DOC" || { echo "docs/panel.md has no idle example in the box"; false; }
 }
 
+@test "B5: docs/panel.md says the box draws the step's parts as a strip with its figure, and the milestone's end with its basis" {
+  has "$DOC" 'strip[^.]*(parts|done)'
+  has "$DOC" '[0-9]+ of [0-9]+ done'
+  has "$DOC" "milestone.s end[^.]*basis|basis: "
+}
+
+@test "2.1.11: docs/panel.md says a time on another day names the day" {
+  has "$DOC" 'another day names the day'
+  has "$DOC" 'waiting since yesterday 21:38'
+}
+
 @test "R189: docs/panel.md shows events and messages starting with their clock time" {
   grep -qE '\[[0-9]{2}:[0-9]{2}\] ' "$DOC" || { echo "docs/panel.md has no [HH:MM] example"; false; }
 }

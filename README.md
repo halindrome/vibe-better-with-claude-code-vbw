@@ -31,6 +31,8 @@
 <a href="#documentation">Docs</a>
 </p>
 
+<p align="center"><img src="assets/mission-control.png" alt="VBW's Mission Control panel beside a Claude Code chat: six tabs (Now, Plan, Proof, Timeline, Sessions, Settings), here Settings, where every VBW setting is one click: the model of each helper in its role's colour, autonomy, rigor, the checks' limits, motion, sound and the status line. Under the prompt, the VBW status line shows the project, its milestone, progress and state." width="900"/></p>
+
 ## What Is This?
 
 > **Platform:** macOS and Linux. Windows is not supported natively: VBW runs on bash. On Windows, run Claude Code inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
@@ -357,6 +359,7 @@ Approval, checking and shipping always stop for you, whatever the preset. Autono
 | `command_timeout` | `1` to `86400` seconds | How long the project's own commands may run in a proof. Default: 3600 |
 | `check_budget` | `1` to `86400` seconds | A test unit slower than this is named over budget in the proof's summary. Reported, never enforced. Default: 120 |
 | `motion` | `full` / `calm` / `off` / `default` | Panel animation; `default` follows your interview level |
+| `sound` | `off` / `arnold` / `charlize` / `darth` / `default` | The panel's "needs you" sound: which voice, or none; `default` picks among all. Your own choice in this clone, not shared through git |
 | status line | `vbw statusline on` / `off` | The status line |
 
 Your own session keeps the model you chose with `/model`; it must be Sonnet, Opus or Fable for auto mode.
@@ -490,6 +493,7 @@ These describe VBW 1.x, not VBW 2. VBW 1 ran every capability as a shell script 
 | [docs/costs.md](docs/costs.md) | What each run and each milestone cost (`vbw show costs`) |
 | [docs/statusline.md](docs/statusline.md), [docs/panel.md](docs/panel.md) | The status line and the panel |
 | [docs/diagnostics.md](docs/diagnostics.md) | `vbw report` for bug reports, and `vbw rtk` |
+| [docs/parallel-sessions.md](docs/parallel-sessions.md) | Several Claude Code sessions on one project: who holds the run, what to do, what is shared |
 | [docs/update.md](docs/update.md) | Updating VBW, auto-update, and the "what changed" offer |
 | [docs/tools.md](docs/tools.md) | Finding the best tools for your project (nothing installed without your approval) |
 | [docs/convert.md](docs/convert.md) | Coming from an earlier VBW |

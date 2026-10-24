@@ -4,7 +4,7 @@
 # tests/panel/wiring.test.mjs and tests/panel/r189/containment.test.mjs assert
 # whole tab rows in place of their one-line assertions; the panel scenario of
 # tools/l3-suite.sh records, in the real Claude Code window (L3), that each of
-# the eight tab names appears whole as '[ Name ]' at the short and the narrow
+# the six tab names appears whole as '[ Name ]' at the short and the narrow
 # size; docs/panel.md states the whole-row rule. As in tests/l3-panel-comms.bats
 # these tests do not run Claude Code (L1): they hold the files' text and the
 # result the scenario wrote under tools/l3-results/. The result is written by
@@ -46,14 +46,14 @@ names() {
   names "$CONTAINMENT" 100 64 60 50 40
 }
 
-@test "R199: the panel scenario records that each of the eight tab names appears whole as '[ Name ]' at the short and the narrow size, in its pass set" {
+@test "R199: the panel scenario records that each of the six tab names appears whole as '[ Name ]' at the short and the narrow size, in its pass set" {
   local fact name
   for fact in tabs_whole_short tabs_whole_narrow; do
     body | grep -q "$fact" || { echo "scenario_panel does not record $fact"; false; }
     body | grep -E '^[[:space:]]*for k in ' | grep -q "$fact" || { echo "$fact is not in the pass set (the 'for k in' list)"; false; }
     body | grep -E 'passed=\$\(jq' | grep -q "$fact" || { echo "$fact is not in the passed expression"; false; }
   done
-  for name in Now Plan Proof Timeline Decisions Team Sessions Costs Time Log Sess Cost; do
+  for name in Now Plan Proof Timeline Sessions Settings Time Sess Set; do
     body | grep -qF "[ $name ]" || { echo "scenario_panel does not read the tab '[ $name ]'"; false; }
   done
 }
@@ -69,7 +69,7 @@ names() {
     and (.not_tested | type == "array" and length > 0)' "$RESULT" || { cat "$RESULT"; false; }
 }
 
-@test "R199: docs/panel.md no longer says the tab row is always one line and states the whole-row rule with the widths 90, 64 and 40" {
+@test "R199: docs/panel.md no longer says the tab row is always one line and states the whole-row rule with the widths 71, 65, 52, 44 and 38" {
   ! flat "$DOC" | grep -q 'the tab row is always one line' || { echo "docs/panel.md still says the tab row is always one line"; false; }
   local s
   s=$(section "$DOC" "Mission Control")
@@ -80,7 +80,7 @@ names() {
   printf '%s' "$s" | grep -q 'short names' || { echo "the Mission Control section does not name the short names"; false; }
   printf '%s' "$s" | grep -q 'portrait' || { echo "the Mission Control section does not say when the portrait is left out"; false; }
   local n
-  for n in 90 64 40; do
+  for n in 71 65 52 44 38; do
     printf '%s' "$s" | grep -qE "(^|[^0-9])$n([^0-9]|\$)" || { echo "the Mission Control section does not name $n columns"; false; }
   done
 }

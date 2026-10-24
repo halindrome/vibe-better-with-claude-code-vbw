@@ -9,6 +9,7 @@ allowed-tools: Bash("${CLAUDE_PLUGIN_ROOT}/bin/vbw" *) Bash(vbw *) Bash(npx skil
 ```!
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" interview 2>&1 || true
 "${CLAUDE_PLUGIN_ROOT}/bin/vbw" legacy review 2>&1 || true
+"${CLAUDE_PLUGIN_ROOT}/bin/vbw" root 2>&1 || true
 ```
 
 Answers so far above. Once kept, write every later message at the user's level, explanation depth and involvement.
@@ -71,7 +72,7 @@ Else one plain yes/no question with AskUserQuestion. Ask it even under "decide a
 
 Record at once:
 
-- yes: `vbw tools answer yes`, then carry on exactly as `/vbw:skills` does (work out stack, run `vbw:tooling` workflow, show short list, install only what user approves).
+- yes: `vbw tools answer yes`, then carry on exactly as `/vbw:skills` does (work out stack, run `vbw:tooling` workflow with the args `/vbw:skills` gives it, `"root": <the folder vbw root printed>` included, show short list, install only what user approves).
 - no: `vbw tools answer no`. No Scout started, nothing searched, install nothing; flow goes on unchanged. `/vbw:skills` runs it later.
 
 End the step with: "I need your yes or no to look for tools".

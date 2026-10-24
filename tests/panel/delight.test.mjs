@@ -215,5 +215,7 @@ test('the all-checks-pass line starts with the time the proof was recorded, not 
   const hm = (ms) => String(new Date(ms).getHours()).padStart(2, '0') + ':' + String(new Date(ms).getMinutes()).padStart(2, '0')
   h.project(green(record({ settings: { motion: 'calm' } })))
   await h.advance(2000)
-  assert.ok(text(await band(h)).includes('[' + hm(at) + '] ✓ All checks pass'), text(await band(h)))
+  // The proof was recorded months before the stand-in's clock: the time names its day (design rule 5).
+  const day = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][new Date(at).getDay()]
+  assert.ok(text(await band(h)).includes('[' + day + ' ' + hm(at) + '] ✓ All checks pass'), text(await band(h)))
 })

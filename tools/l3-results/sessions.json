@@ -1,9 +1,9 @@
 {
   "scenario": "sessions",
   "fixture": "greet.sh, one phase and plan approved by the user before the session; rigor standard; chat A is named with /rename and starts the build; chat B, a second Claude Code session on the same folder, asks /vbw:vibe while the run is open",
-  "cost_usd": 0.4583,
+  "cost_usd": 0.4654,
   "evidence_level": "L3",
-  "at": "2026-10-24T05:02:06Z",
+  "at": "2026-10-24T16:04:32Z",
   "passed": true,
   "facts": {
     "chat_name": "l3-holder-chat",

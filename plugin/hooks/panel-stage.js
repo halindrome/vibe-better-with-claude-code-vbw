@@ -17,7 +17,7 @@
 // never changes its input, never throws.
 import { poseOf, spriteFrame, encodeCells } from './panel-candy.js'
 import { newMark } from './panel-next.js'
-import { stepWords } from './panel-step.js'
+import { stepWords, dayClock } from './panel-step.js'
 import { refusalLine } from './panel-lines.js'
 import { roleColor as colorOfRole, stateColor, STATE_MARKS, NEED, ACCENT } from './panel-palette.js'
 
@@ -49,12 +49,6 @@ function clock(ms) {
   return Math.floor(s / 60) + 'm' + two(s % 60) + 's'
 }
 
-// A moment as the local HH:MM; '' when it is not a moment.
-const hhmm = (ms) => {
-  if (!num(ms)) return ''
-  const d = new Date(ms)
-  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0')
-}
 
 const tokens = (t) => {
   if (!num(t) || t < 0) return ''
@@ -64,11 +58,12 @@ const tokens = (t) => {
 
 // --- the needs-you line --------------------------------------------------------
 
-// `need` is { key, what, at } (panel-view.js liveNeed): the line is 'HH:MM ⚑ VBW needs you · <what>'.
-// A need not yet seen (`fresh`) carries the mark after its text, which keeps its columns.
-function needOf(need, columns, fresh, motion) {
+// `need` is { key, what, at } (panel-view.js liveNeed): the line is 'HH:MM ⚑ VBW needs you · <what>'
+// ('yesterday 21:38 ⚑ ...' on another day, dayClock). A need not yet seen (`fresh`) carries
+// the mark after its text, which keeps its columns.
+function needOf(need, columns, fresh, motion, now) {
   if (!isObj(need) || !str(need.what)) return null
-  const time = hhmm(need.at)
+  const time = dayClock(need.at, now)
   const mark = fresh === true
   return { key: str(need.key), text: cut((time ? time + ' ' : '') + '⚑ VBW needs you · ' + need.what, mark ? columns - 4 : columns), fresh: mark, motion }
 }
@@ -77,10 +72,10 @@ function needOf(need, columns, fresh, motion) {
 
 // `refusal` is the newest refusal not yet seen ({ id, by, at, text }, panel-feed.js; panel.js
 // picks it): one amber line, 'HH:MM ⊘ VBW refused · <by>: <first line>'.
-function refusalOf(r, columns) {
+function refusalOf(r, columns, now) {
   const words = refusalLine(r)
   if (!words) return null
-  const time = hhmm(r.at)
+  const time = dayClock(r.at, now)
   return { key: str(r.id), text: cut((time ? time + ' ' : '') + words, columns) }
 }
 
@@ -104,15 +99,15 @@ function health(hl, action) {
 // A message that reports something that happened or a time left starts with the
 // moment it began saying what it says, '[HH:MM] ': the text is cut, never the time.
 // `at(id, text)` is that moment (the caller keeps it, so the clock alone redraws nothing).
-function dated(at, id, text, columns) {
-  const t = hhmm(at(id, text))
-  return t ? '[' + t + '] ' + cut(text, Math.max(0, columns - 8)) : cut(text, columns)
+function dated(at, id, text, columns, now) {
+  const t = dayClock(at(id, text), now)
+  return t ? '[' + t + '] ' + cut(text, Math.max(0, columns - len(t) - 3)) : cut(text, columns)
 }
 
-function stepOf(step, words, columns, at) {
+function stepOf(step, words, columns, at, now) {
   if (!isObj(step) || !words) return ''
   const doing = str(step.doing) || str(step.kind)
-  return dated(at, 'step', (doing ? doing + ' · ' : '') + words.text, columns)
+  return dated(at, 'step', (doing ? doing + ' · ' : '') + words.text, columns, now)
 }
 
 // --- the crew ----------------------------------------------------------------
@@ -123,7 +118,7 @@ function rowOf(a, now, motion, born) {
   const roleColor = colorOfRole(role)
   const start = num(a.startedAt) ? a.startedAt : now
   const end = num(a.endedAt) ? a.endedAt : null
-  const base = { id: str(a.id), role, roleColor, label: str(a.label), time: hhmm(a.startedAt), elapsed: clock((end ?? now) - start), tokens: tokens(a.tokens), spin: '', button: null }
+  const base = { id: str(a.id), role, roleColor, label: str(a.label), time: dayClock(a.startedAt, now), elapsed: clock((end ?? now) - start), tokens: tokens(a.tokens), spin: '', button: null }
   if (a.state === 'failed') {
     return { ...base, glyph: STATE_MARKS.failed, glyphColor: stateColor('failed'), activity: str(a.result) || 'failed', activityColor: stateColor('failed'),
       button: { label: 'details', action: { open: 'mission', tab: 'now', agent: str(a.id) } } }
@@ -223,15 +218,15 @@ export function stageModel(input) {
     const now = num(input.now) ? input.now : Date.now()
     const columns = num(input.columns) && input.columns > 0 ? Math.floor(input.columns) : 80
     const maxRows = num(input.maxRows) && input.maxRows > 0 ? Math.floor(input.maxRows) : 8
-    const need = needOf(input.need, columns, input.fresh, motion)
+    const need = needOf(input.need, columns, input.fresh, motion, now)
     // The needs-you line comes first, then the refusal line; the step line takes the next row when there is one.
-    const refusal = maxRows - (need ? 1 : 0) >= 1 ? refusalOf(input.refusal, columns) : null
+    const refusal = maxRows - (need ? 1 : 0) >= 1 ? refusalOf(input.refusal, columns, now) : null
     const top = { ...(need ? { need } : {}), ...(refusal ? { refusal } : {}) }
     const left = maxRows - (need ? 1 : 0) - (refusal ? 1 : 0)
     const words = left >= 1 && isObj(input.step) ? stepWords(input.step, now) : null
     // `stamp(id, text)`: when the caller first saw `text` as message `id`; without it, no time.
     const at = typeof input.stamp === 'function' ? input.stamp : () => null
-    const stepText = stepOf(input.step, words, columns, at)
+    const stepText = stepOf(input.step, words, columns, at, now)
     const seen = new Set(Array.isArray(input.seen) ? input.seen.filter((x) => typeof x === 'string') : [])
     if (left >= 1 && isObj(rn) && Array.isArray(rn.agents) && rn.agents.some((a) => isObj(a) && typeof a.id === 'string' && a.id)) {
       // One row left: the helper line carries the step's time words, the step line gives way.
@@ -242,7 +237,7 @@ export function stageModel(input) {
     }
     if (stepText) return { kind: 'step', step: stepText, ...top, lines: [] }
     const action = isObj(nx) && typeof nx.action === 'string' ? nx.action : ''
-    const lines = health(hl, action).slice(0, Math.max(0, need || refusal ? left : maxRows - 1)).map((l) => ({ ...l, text: dated(at, l.stamp, l.text, columns) }))
+    const lines = health(hl, action).slice(0, Math.max(0, need || refusal ? left : maxRows - 1)).map((l) => ({ ...l, text: dated(at, l.stamp, l.text, columns, now) }))
     if (need || refusal) return { kind: 'need', ...top, lines }
     if (RUNS.has(action) && lines.length) return { kind: 'nudge', title: cut('VBW · before the ' + action + ' run', columns), lines }
     return null

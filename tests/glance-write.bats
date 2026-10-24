@@ -102,3 +102,10 @@ after() {
   "$VBW" status > /dev/null
   glance_same
 }
+
+@test "C1: the glance carries the current milestone's shipped entry, which the status line's idle state reads" {
+  jq '.milestone.status = "shipped" | .shipped = [{id: "M0", title: "Old", at: "2026-01-01T00:00:00Z"}, {id: .milestone.id, title: "Now", at: "2026-10-24T14:04:00Z"}]' \
+    .vbw/record.json > "$TEST_ROOT/r.json" && cp "$TEST_ROOT/r.json" .vbw/record.json
+  after decide "Ship it"
+  jq -e '.shipped == [{id: "M1", title: "Now", at: "2026-10-24T14:04:00Z"}]' "$GLANCE" || { cat "$GLANCE"; false; }
+}

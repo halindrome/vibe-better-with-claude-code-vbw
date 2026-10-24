@@ -44,9 +44,9 @@ start() { VBW_SESSION_ID="$1" "$VBW" run start build P1.1 > /dev/null; }
   start "$SESSION_A"
   local l
   l=$(first "$SESSION_A")
-  [[ "$l" == *"▶ build P1.1 · 0 of 1 · leading" ]] || { echo "$l"; false; }
+  [[ "$l" == *"● working: building P1.1 · 0 of 1 · leading" ]] || { echo "$l"; false; }
   l=$(first "$SESSION_B")
-  [[ "$l" == *"▶ build P1.1 · 0 of 1 · held by Payments work" ]] || { echo "$l"; false; }
+  [[ "$l" == *"● working: building P1.1 · 0 of 1 · held by Payments work" ]] || { echo "$l"; false; }
   [[ "$l" != *"leading"* ]]
 }
 
@@ -71,7 +71,7 @@ start() { VBW_SESSION_ID="$1" "$VBW" run start build P1.1 > /dev/null; }
   VBW_SESSION_ID="$SESSION_A" "$VBW" run end > /dev/null
   "$VBW" run start build P1.1 > /dev/null
   l=$(first "$SESSION_B")
-  [[ "$l" == *"▶ build P1.1 · 0 of 1" ]] || { echo "$l"; false; }
+  [[ "$l" == *"● working: building P1.1 · 0 of 1" ]] || { echo "$l"; false; }
   [[ "$l" != *"held by"* && "$l" != *"leading"* ]]
 }
 
