@@ -487,6 +487,26 @@ Each refusal below ends with `Next: ` and the step in the right column
 
 An unknown option prints the usage line for the three modes and exits 2.
 
+### Refusals reach the user
+
+A refusal inside a workflow is printed to an agent, not to you. So every
+agent's result schema requires a `refused` list: each refusal the agent got
+(a `vbw` command that refused, its message starting `vbw:`, or a tool call a
+guard blocked, its reason starting `VBW guard:`), copied verbatim and whole,
+through its `Next:` line, or `[]` when there was none. The workflow collects
+them, logs each one (`dev P1.1 was refused: ...`) and returns them all in its
+result as `refused`, each named by the agent that got it:
+
+```
+"refused": [{"by": "dev P1.1", "text": "vbw: apply refused: ...\nNext: ..."}]
+```
+
+Every workflow result has `refused`, `[]` when nothing was refused, including
+a workflow that stops before starting any agent. The router (`/vbw:vibe`)
+shows each refusal to you as written, in a quote naming the agent, before its
+own summary, and never paraphrases it; it shows a `vbw` refusal it gets itself
+the same way.
+
 ## The loop and `autonomy_cap`
 
 The steps of `/vbw:loop` (docs/loop.md) are not counted against

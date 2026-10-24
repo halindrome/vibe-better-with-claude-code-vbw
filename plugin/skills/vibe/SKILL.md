@@ -50,6 +50,7 @@ true, or a workflow runs in background (its result wakes you).
 At a stop, say what happened.
 Every stop ends with a last line, **What I need from you:** <the one thing user must do now>, or "nothing".
 Claim only what kernel shows.
+A workflow result's `refused` (each `{by, text}`), and any `vbw` refusal you get yourself: show each `text` as written, whole, in a quote block naming `by`, before your summary; never paraphrase it.
 
 Before starting a plan, build, fix, qa or prove step (a background proof too), say `step.say` and then `road.say` from `vbw next --json` as given, unchanged, on the same line or the next.
 

@@ -111,6 +111,39 @@ agents() { find "$PLUGIN_ROOT/agents" -name '*.md' | LC_ALL=C sort; }
   done < <(workflows)
 }
 
+# Kernel refusals reach the user as written (docs/workflows.md, "Refusals reach the user").
+@test "every agent schema requires refused: the kernel refusals the agent saw, a list of strings copied verbatim" {
+  command -v node > /dev/null 2>&1 || skip "node not installed"
+  local f names
+  while IFS= read -r f; do
+    names=$(grep -oE 'schema: [A-Z_]+' "$f" | sed 's/schema: //' | sort -u | tr '\n' ' ')
+    [ -n "$names" ] || { echo "no agent schema in $f"; false; }
+    sed 's/^export const meta/const meta/' "$f" | awk '/^const [A-Z_]+ = \{$/,/^}$/' > "$TEST_ROOT/schemas.js"
+    printf 'for (const k of "%s".trim().split(" ")) {\n' "$names" >> "$TEST_ROOT/schemas.js"
+    printf '%s\n' '  const s = eval(k)' \
+      '  const r = s && s.properties && s.properties.refused' \
+      '  if (!r || r.type !== "array" || !r.items || r.items.type !== "string") throw new Error(k + ": no refused list of strings")' \
+      '  if (!(s.required || []).includes("refused")) throw new Error(k + ": refused is not required")' \
+      '  if (!/verbatim/.test(String(r.description)) || !/Next:/.test(String(r.description))) throw new Error(k + ": refused does not say verbatim, through its Next: line")' \
+      '}' >> "$TEST_ROOT/schemas.js"
+    node "$TEST_ROOT/schemas.js" || { echo "in $f"; false; }
+  done < <(workflows)
+}
+
+@test "every workflow returns refused, even when it stops before any agent, and carries an agent's refusals verbatim, named by the agent's label" {
+  command -v node > /dev/null 2>&1 || skip "node not installed"
+  local f out
+  while IFS= read -r f; do
+    out=$(node "$BATS_TEST_DIRNAME/helpers/run-workflow-all.js" "$f" '{}' '{}') || { echo "$f did not run"; false; }
+    printf '%s' "$out" | jq -e '.result.refused == []' > /dev/null || { echo "$f: $out"; false; }
+  done < <(workflows)
+  local said=$'vbw: apply refused: plan P1.1 is started\nNext: put it back as the record has it (vbw show plan P1.1)'
+  out=$(node "$BATS_TEST_DIRNAME/helpers/run-workflow-all.js" "$PLUGIN_ROOT/workflows/building.js" '{"plans": ["P1.1", "P1.2"]}' \
+    "$(jq -nc --arg t "$said" '{"dev P1.1": {status: "done", summary: "s", notes: [], refused: [$t, "  "]}, "dev P1.2": {status: "done", summary: "s", notes: [], refused: []}}')")
+  printf '%s' "$out" | jq -e --arg t "$said" '.result.refused == [{by: "dev P1.1", text: $t}]' > /dev/null || { echo "$out"; false; }
+  printf '%s' "$out" | jq -e --arg t "$said" '.logs | any(. == "dev P1.1 was refused: " + $t)' > /dev/null || { echo "$out"; false; }
+}
+
 @test "no workflow shares its name with a skill (/vbw:NAME would start the workflow)" {
   local f n
   while IFS= read -r f; do
