@@ -437,36 +437,40 @@ scroll it) to read the rest.
   a new session starts again from zero.
 - **Sessions:** the chats open on this project, and which one holds the run (see
   [Sessions](#sessions)).
-- **Settings:** every VBW setting with its current value, changed by a press
+- **Settings:** every VBW setting with its current value, changed by a click
   (see [Settings](#settings)).
 
 ### Settings
 
 The **Settings** tab shows every setting `vbw config set` accepts, and rigor,
-the sound and the status line, one row each: the name, the value in the accent
-colour, a dim note, then its controls.
+the sound and the status line, one line each under four headings: Models,
+How VBW works, Checks, and Look and sound. Every choice is one click.
 
 ```
-profile          balanced
-  [ quality ] [ balanced ] [ budget ]
-model.dev        opus  (set by you)
-  [ opus ] [ sonnet ] [ haiku ] [ default ]
-check_jobs       6  machine limit 6 · this clone
-  [ − ] [ + ] [ default ]
+Models
+profile    ○ quality  ● balanced  ○ budget
+architect  ● opus  ○ sonnet  ○ haiku  ○ default
+dev        ○ opus  ● sonnet  ○ haiku  ○ default  (set by you)
+
+Checks
+check_jobs       [ − ]  6  [ + ]  default
+                 machine limit 6 · this clone
 ```
 
-- A choice among fixed values is a dropdown where the surface draws one, else
-  a row of buttons with the current value pressed in: `profile`,
-  `model.<role>` for the seven roles (QA is never offered Haiku), `autonomy`,
-  `rigor`, `motion`, `sound` (`off`, each sound folder, `default`) and the
-  status line (`on`, `off`).
-- A number has `−` and `+` (and `default`, which removes it):
-  `autonomy_cap`, `check_jobs` (with the computer-wide limit beside it),
+- A choice among fixed values shows each value as a button: the current one
+  `●` in the accent colour, the others `○` dim. A click on one sets it. This
+  covers `profile`, the model of each of the seven roles (QA is never offered
+  Haiku), `autonomy`, `rigor`, `motion`, `sound` (`off`, each sound folder,
+  `default`) and the status line (`on`, `off`).
+- A number has `−` and `+` around its value (and `default`, which removes it):
+  `autonomy_cap`, `check_jobs` (with the computer-wide limit under it),
   `command_timeout` and `check_budget`.
-- A role's row is named in the role's colour, and says `(set by you)` when you
-  chose its model; otherwise the profile picks it.
+- A role's model row is named by the role, in the role's colour (the setting
+  is `model.<role>`), and says `(set by you)` when you chose its model;
+  otherwise the profile picks it.
 - `check_jobs` is this clone's own; `sound` and the status line are this
-  computer's. Everything else is the project's, shared through git.
+  computer's, as the dim line under them says. Everything else is the
+  project's, shared through git.
 
 A press runs VBW's own command (`vbw config set KEY VALUE`, `vbw config rigor
 MODE` or `vbw statusline on|off`), then the tab reads `vbw config` and

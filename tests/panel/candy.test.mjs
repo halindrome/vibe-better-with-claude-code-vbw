@@ -286,7 +286,7 @@ test('fresh in the drawing: a changed setting and a finished run carry the mark 
   const marks = candy.freshArrive(candy.freshArrive({}, 'settings:profile', 1), 'timeline:run:plan-1@x', 1)
   const settings = S.settingsState({ reads: [{ exitCode: 0, stdout: 'profile: quality\nmotion: calm\n' }, null], now: 1 })
   const drawn = (m) => collect(S.renderSettings(ui, S.settingsModel({ settings, now: 1, fresh: m, motion: 'calm' }))).join('|')
-  assert.match(drawn(marks), /profile *\|quality\|[^|]* new/)
+  assert.match(drawn(marks), /profile *\|quality\|\|● \|quality\|.* new/)
   assert.doesNotMatch(drawn(candy.freshSee(marks, 'settings:')), / new/)
   const runs = (m) => collect(R.renderRuns(ui, R.runsModel({ runs: [{ key: 'plan-1@x', kind: 'plan', startedAt: 0, costStart: 0, costEnd: 1 }], steps: [], now: 1, fresh: m, motion: 'calm' })))
   assert.ok(runs(marks).some((t) => t.trim() === 'new'))

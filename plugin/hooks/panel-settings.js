@@ -1,6 +1,6 @@
 // Mission Control's Settings tab: every setting `vbw config set` accepts (and rigor,
-// the sound and the status line), each as one row `name  value  [controls]`, changed by
-// a press. The kernel is the only reader and writer: the values are `vbw config`'s own
+// the sound and the status line), each as one line `name  ● value  ○ choice …` under its
+// heading, changed by a click. The kernel is the only reader and writer: the values are `vbw config`'s own
 // lines and `vbw statusline status`'s, a press runs `vbw config set KEY VALUE` (or
 // `vbw config rigor MODE`, `vbw statusline on|off`), and the tab is read again after
 // it. A change flashes `✓ saved` for about 2 s; a refusal shows the kernel's own words
@@ -20,20 +20,21 @@ export const SOUND_FOLDERS = [...new Set(SOUNDS.map((p) => p.split('/')[2]).filt
 export const SAVED_MS = 2000
 
 // The rows, in the order drawn. `choices`: the values a press can set; `number`: the
-// step of its − and + and its bounds (the kernel's); `scope`: who shares the value.
+// step of its − and + and its bounds (the kernel's); `scope`: who shares the value;
+// `group`: the heading it sits under (GROUPS).
 const MODELS = ['opus', 'sonnet', 'haiku', 'default']
 export const ROWS = [
-  { key: 'profile', choices: ['quality', 'balanced', 'budget'] },
-  ...ROLES.map((r) => ({ key: 'model.' + r, choices: r === 'qa' ? MODELS.filter((m) => m !== 'haiku') : MODELS, role: r })),
-  { key: 'autonomy', choices: ['guided', 'balanced', 'hands-off'] },
-  { key: 'autonomy_cap', number: { min: 1, max: 9999, step: 5, unset: 25 } },
-  { key: 'rigor', choices: ['auto', 'express', 'standard', 'deep'] },
-  { key: 'motion', choices: ['full', 'calm', 'off', 'default'] },
-  { key: 'check_jobs', number: { min: 1, max: 64, step: 1 }, scope: 'this clone' },
-  { key: 'command_timeout', number: { min: 1, max: 86400, step: 60, unset: 3600 }, unit: 's' },
-  { key: 'check_budget', number: { min: 1, max: 86400, step: 10, unset: 120 }, unit: 's' },
-  { key: 'sound', choices: ['off', ...SOUND_FOLDERS, 'default'], scope: 'this computer' },
-  { key: 'statusline', choices: ['on', 'off'], scope: 'this computer' },
+  { key: 'profile', choices: ['quality', 'balanced', 'budget'], group: 'Models' },
+  ...ROLES.map((r) => ({ key: 'model.' + r, choices: r === 'qa' ? MODELS.filter((m) => m !== 'haiku') : MODELS, role: r, group: 'Models' })),
+  { key: 'autonomy', choices: ['guided', 'balanced', 'hands-off'], group: 'How VBW works' },
+  { key: 'autonomy_cap', number: { min: 1, max: 9999, step: 5, unset: 25 }, group: 'How VBW works' },
+  { key: 'rigor', choices: ['auto', 'express', 'standard', 'deep'], group: 'How VBW works' },
+  { key: 'check_jobs', number: { min: 1, max: 64, step: 1 }, scope: 'this clone', group: 'Checks' },
+  { key: 'command_timeout', number: { min: 1, max: 86400, step: 60, unset: 3600 }, unit: 's', group: 'Checks' },
+  { key: 'check_budget', number: { min: 1, max: 86400, step: 10, unset: 120 }, unit: 's', group: 'Checks' },
+  { key: 'motion', choices: ['full', 'calm', 'off', 'default'], group: 'Look and sound' },
+  { key: 'sound', choices: ['off', ...SOUND_FOLDERS, 'default'], scope: 'this computer', group: 'Look and sound' },
+  { key: 'statusline', choices: ['on', 'off'], scope: 'this computer', group: 'Look and sound' },
 ]
 const rowOf = (key) => ROWS.find((r) => r.key === key) || null
 
@@ -157,46 +158,67 @@ export function settingsModel(input) {
   }
 }
 
-// One row: the name, the value (the current choice in the accent), its note dim, then its
-// controls (a Select where the surface draws one, else a Button per choice; − and + and
-// default for a number), the ✓ saved flash, and under it the kernel's refusal in amber.
+// The headings the rows sit under, in the order drawn; each row names its own.
+export const GROUPS = ['Models', 'How VBW works', 'Checks', 'Look and sound']
+
+// One line per row: the name in its colour, then its controls, the ✓ saved flash and the new
+// mark; under it its note dim and the kernel's refusal in amber. A choice row is one button per
+// choice, `● value` lit in the accent, the others `○ choice` dim: every choice is one click. Never
+// a Select: the terminal opens one from the keyboard only. A number row is `− value +` and
+// default. The controls wrap under themselves, never under the name.
 export function renderSettings(ui, model, act) {
-  const { Box, Text, Button, Select } = isObj(ui) ? ui : {}
+  const { Box, Text, Button } = isObj(ui) ? ui : {}
   const m = isObj(model) ? model : { rows: [] }
   const press = (key, value) => () => { if (typeof act === 'function') act({ setting: { key, value: String(value) } }) }
   if (!Array.isArray(m.rows) || !m.rows.length) {
     return h(Box, { key: 'settings', flexDirection: 'column' },
       m.error ? h(Text, { key: 'settings-error', color: NEED }, m.error) : h(Text, { key: 'settings-reading', dimColor: true }, 'Reading the settings…'))
   }
-  const nameW = Math.max(...m.rows.map((r) => r.key.length)) + 2
+  // A model row is named by its role alone, under the Models heading; each group pads its names to its own longest.
+  const label = (r) => (r.role ? r.role : r.key)
+  const groupOf = (r) => (rowOf(r.key) || {}).group || ''
+  const widthOf = (g) => Math.max(...m.rows.filter((r) => groupOf(r) === g).map((r) => label(r).length)) + 2
   const done = stateColor('done')
-  const kids = m.rows.map((r) => {
+  const chip = (r, c) => c === r.value
+    ? h(Button, { key: 'set-' + r.key + '-' + c, label: c, plain: true, variant: 'primary', onPress: press(r.key, c) },
+      h(Text, { key: 'chip' }, h(Text, { key: 'mark', color: ACCENT }, '● '), h(Text, { key: 'value', bold: true, color: ACCENT }, c)))
+    : h(Button, { key: 'set-' + r.key + '-' + c, label: c, plain: true, dimColor: true, onPress: press(r.key, c) },
+      h(Text, { key: 'chip', dimColor: true }, '○ ' + c))
+  const kids = []
+  let group = null
+  for (const r of m.rows) {
+    const g = groupOf(r)
+    const nameW = widthOf(g)
+    if (g && g !== group) {
+      group = g
+      kids.push(h(Text, { key: 'group:' + g, bold: true, dimColor: true }, (kids.length ? '\n' : '') + g))
+    }
+    const under = (k, text) => h(Box, { key: k + '-line', flexDirection: 'row' }, h(Text, { key: 'indent' }, ' '.repeat(nameW)), text)
     let controls
-    if (r.choices && Select) {
-      controls = [h(Select, { key: 'select-' + r.key, options: r.choices.map((c) => ({ value: c, label: c })), value: r.choices.includes(r.value) ? r.value : undefined, onSelect: (v) => press(r.key, v)() })]
-    } else if (r.choices) {
-      controls = r.choices.map((c) => h(Button, { key: 'set-' + r.key + '-' + c, label: c, ...(c === r.value ? { variant: 'primary' } : { dimColor: true }), onPress: press(r.key, c) }))
+    if (r.choices) {
+      controls = r.choices.map((c) => chip(r, c))
     } else {
       const n = r.number
       const at = Number.isFinite(n.at) ? n.at : n.min
+      const value = r.value + (r.unit && /^\d+$/.test(r.value) ? ' ' + r.unit : '')
       controls = [
         h(Button, { key: 'set-' + r.key + '-down', label: '−', onPress: press(r.key, Math.max(n.min, at - n.step)) }),
+        h(Text, { key: 'value', bold: true, color: ACCENT }, value),
         h(Button, { key: 'set-' + r.key + '-up', label: '+', onPress: press(r.key, Math.min(n.max, at + n.step)) }),
-        ...(r.key === 'autonomy_cap' ? [] : [h(Button, { key: 'set-' + r.key + '-default', label: 'default', dimColor: true, onPress: press(r.key, 'default') })]),
+        ...(r.key === 'autonomy_cap' ? [] : [h(Button, { key: 'set-' + r.key + '-default', label: 'default', plain: true, dimColor: true, onPress: press(r.key, 'default') })]),
       ]
     }
-    const value = r.value + (r.number && r.unit && /^\d+$/.test(r.value) ? ' ' + r.unit : '')
-    return h(Box, { key: 'setting:' + r.key, flexDirection: 'column' },
-      h(Box, { key: 'line', flexDirection: 'row', flexWrap: 'wrap', columnGap: 1 },
-        h(Text, { key: 'name', ...(r.role ? { color: roleColor(r.role) } : {}) }, r.key.padEnd(nameW - 1)),
-        h(Text, { key: 'value', bold: true, color: ACCENT }, value),
-        r.mine ? h(Text, { key: 'mine', dimColor: true }, '(set by you)') : null,
-        r.note ? h(Text, { key: 'note', dimColor: true }, r.note) : null,
-        r.saved ? h(Text, { key: 'saved', color: done }, STATE_MARKS.done + ' saved') : null,
-        r.fresh ? newMark(Text, m.motion) : null),
-      h(Box, { key: 'controls', flexDirection: 'row', flexWrap: 'wrap', columnGap: 1, marginLeft: 2 }, ...controls),
-      r.refused ? h(Text, { key: 'refused', color: NEED }, r.refused) : null)
-  })
+    kids.push(h(Box, { key: 'setting:' + r.key, flexDirection: 'column' },
+      h(Box, { key: 'line', flexDirection: 'row' },
+        h(Text, { key: 'name', ...(r.role ? { color: roleColor(r.role) } : {}) }, label(r).padEnd(nameW)),
+        h(Box, { key: 'controls', flexDirection: 'row', flexWrap: 'wrap', columnGap: 2, flexShrink: 1 },
+          ...controls,
+          r.mine ? h(Text, { key: 'mine', dimColor: true }, '(set by you)') : null,
+          r.saved ? h(Text, { key: 'saved', color: done }, STATE_MARKS.done + ' saved') : null,
+          r.fresh ? newMark(Text, m.motion) : null)),
+      r.note ? under('note', h(Text, { key: 'note', dimColor: true }, r.note)) : null,
+      r.refused ? under('refused', h(Text, { key: 'refused', color: NEED }, r.refused)) : null))
+  }
   if (m.error) kids.push(h(Text, { key: 'settings-error', color: NEED }, m.error))
   return h(Box, { key: 'settings', flexDirection: 'column' }, ...kids)
 }

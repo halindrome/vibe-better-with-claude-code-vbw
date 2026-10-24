@@ -183,6 +183,25 @@ test('the sound row offers off, each sound folder and default, and is this compu
   assert.equal(buttons(row).find((b) => b.props.label === 'default').props.variant, 'primary', 'the current value is the pressed-in button')
 })
 
+test('every choice is a button a click presses, also where the surface has a Select (keyboard only in the terminal); each value is drawn once, on one line with its name', async () => {
+  const kn = kernel()
+  const st = state({ pressed: [] })
+  await settings(st, kn, null)
+  const tree = S.renderSettings({ ...UI, Select: EL('Select') }, S.settingsModel({ settings: st.settings, now: NOW }), (a) => st.pressed.push(a))
+  let selects = 0
+  walk(tree, (n) => { if (n.type === 'Select') selects++ })
+  assert.equal(selects, 0, 'no Select: a terminal Select opens from the keyboard only')
+  for (const r of S.ROWS.filter((x) => x.choices)) {
+    const row = rowOf(tree, r.key)
+    assert.deepEqual(buttons(row).map((b) => b.props.label), r.choices, r.key)
+    assert.equal(texts(row).filter((t) => t.props.key === 'value').length, 1, r.key + ': the value once')
+  }
+  for (const w of [52, 80]) {
+    const lines = screen(S.renderSettings(UI, S.settingsModel({ settings: st.settings, now: NOW })), w)
+    assert.ok(lines.some((l) => /^ *dev +○ opus +● sonnet +○ haiku +○ default$/.test(l)), w + ': name and choices on one line')
+  }
+})
+
 test('the rows fit at 80, 100 and 140 columns: no line wider than the pane', async () => {
   const kn = kernel()
   const st = state({ pressed: [] })

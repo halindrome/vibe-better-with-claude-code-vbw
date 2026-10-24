@@ -233,7 +233,7 @@ test('each tab draws its view, and the choice holds across redraws; the folded t
     : argv[1] === 'statusline' ? { exitCode: 0, stdout: 'off: no status line is set (vbw statusline on)\n', stderr: '' } : { exitCode: 2, stdout: '', stderr: 'vbw: usage\n' })
   const h = await started({ process: kernel }, record({ settings: { profile: 'quality' }, decisions: [{ id: 'D1', text: 'Which db? sqlite', at: '2026-10-01T00:00:00Z' }] }))
   // Decisions under Plan, the cost per run and the session total (Costs) in Timeline, the models (Team) in Settings.
-  const want = { Plan: [/P44 Cost/, /sqlite/], Proof: [/No checks are approved/], Timeline: [/No VBW workflow runs/, /This session: \$1\.42/], Sessions: [/No other chats are open on this project/], Settings: [/quality/, /model\.architect/, /opus/] }
+  const want = { Plan: [/P44 Cost/, /sqlite/], Proof: [/No checks are approved/], Timeline: [/No VBW workflow runs/, /This session: \$1\.42/], Sessions: [/No other chats are open on this project/], Settings: [/quality/, /architect/, /opus/] }
   for (const [tab, res] of Object.entries(want)) {
     await press(h, await h.render(), tab)
     for (const re of res) assert.match(text(await h.render()), re, tab)
@@ -259,14 +259,14 @@ test('Settings: a press runs the kernel command, the tab is read again, the row 
   await press(h, await h.render(), 'quality')
   assert.deepEqual(ran, [['config', 'set', 'profile', 'quality'], ['config'], ['statusline', 'status']])
   let t = text(await h.render())
-  assert.match(t, /profile\s*\nquality\n✓ saved/)
+  assert.match(t, /profile\s*\nquality\n\n● \nquality\n(.*\n)*✓ saved/)
   assert.ok(h.calls.every((c) => c.name !== 'fs.write' || !/record\.json/.test(String(c.args[0]))), 'the tab never writes the record')
   await h.advance(3000)
   assert.doesNotMatch(text(await h.render()), /✓ saved/, 'the flash settles')
   await press(h, await h.render(), '+')
   t = text(await h.render())
   assert.match(t, /autonomy_cap must be a number of steps/)
-  assert.match(t, /autonomy_cap\s*\n25/, 'the value stays')
+  assert.match(t, /autonomy_cap\s*\n−\n25\n/, 'the value stays')
 })
 
 test('Now: pressing a helper of the crew shows its detail', async () => {

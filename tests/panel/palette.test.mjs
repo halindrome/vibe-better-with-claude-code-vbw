@@ -127,10 +127,10 @@ test('Mission Control, Timeline: a lane carries the role colour', () => {
   for (const role of ROLES) assert.equal(m.lanes.find((l) => l.id === role).color, P.roleColor(role), role)
 })
 
-test('Mission Control, Settings: a role\'s model row is named in the role colour', () => {
+test('Mission Control, Settings: a role\'s model row is named by the role, in the role colour', () => {
   const tree = settings.renderSettings(UI, SETTINGS())
   for (const role of ROLES) {
-    const name = find(tree, (n) => n.type === 'Text' && n.props.key === 'name' && n.children.join('').trim() === 'model.' + role)
+    const name = find(tree, (n) => n.type === 'Text' && n.props.key === 'name' && n.children.join('').trim() === role)
     assert.ok(name, role)
     assert.equal(name.props.color, P.roleColor(role), role)
   }
