@@ -1,5 +1,5 @@
 #!/usr/bin/env bats
-# R164 (CLAUDE.md testing, docs/proof.md): before a push, bash tools/test.sh
+# R164 (CLAUDE.md testing, docs/proof.md): bash tools/test.sh
 # --release reuses the last proof (recorded in .vbw/record.json) when it passed
 # on code that differs from the working tree only in the version files (those
 # tools/bump-version.sh writes, listed by its --files) and plugin/CHANGELOG.md
