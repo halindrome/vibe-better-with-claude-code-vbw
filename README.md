@@ -31,6 +31,8 @@
 <a href="#documentation">Docs</a>
 </p>
 
+<p align="center"><img src="assets/mission-control.png" alt="VBW's Mission Control panel beside a Claude Code chat: six tabs (Now, Plan, Proof, Timeline, Sessions, Settings), here Settings, where every VBW setting is one click: the model of each helper in its role's colour, autonomy, rigor, the checks' limits, motion, sound and the status line. Under the prompt, the VBW status line shows the project, its milestone, progress and state." width="900"/></p>
+
 ## What Is This?
 
 > **Platform:** macOS and Linux. Windows is not supported natively: VBW runs on bash. On Windows, run Claude Code inside [WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
