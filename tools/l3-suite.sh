@@ -289,7 +289,7 @@ scenario_resume() {
     while [ "$waited" -lt 1500 ]; do
       [ "$killed" -eq 0 ] && [ "$(next_action)" = run ] && return 0
       now=$(screen)
-      if [ "$now" = "$last" ] && ! printf '%s' "$now" | grep -q 'esc to interrupt'; then
+      if [ "$now" = "$last" ] && ! printf '%s' "$now" | grep 'esc to interrupt' > /dev/null; then
         steady=$((steady + 3))
       else
         steady=0
@@ -625,7 +625,7 @@ scenario_approval() {
     # A fix that edits a test asks again, for another fingerprint, before its proof.
     [ -n "$asked_fp" ] || asked_fp=$fp
     case " $asked_all " in *" $fp "*) ;; *) asked_all="${asked_all:+$asked_all }$fp" ;; esac
-    if printf '%s' "$s" | grep -q 'Approve' && printf '%s' "$s" | grep -q 'Not yet'; then options_shown=true; fi
+    if printf '%s' "$s" | grep 'Approve' > /dev/null && printf '%s' "$s" | grep 'Not yet' > /dev/null; then options_shown=true; fi
     # The user presses Enter on the first option, Approve.
     l3 keys "$scenario" Enter
     pressed=true
@@ -689,7 +689,7 @@ scenario_tools() {
     local s n i
     s=$(screen)
     # Matched on its option, which the screen never wraps.
-    if printf '%s' "$s" | grep -qE '[0-9]+\. Yes, look'; then
+    if printf '%s' "$s" | grep -E '[0-9]+\. Yes, look' > /dev/null; then
       offers=$((offers + 1))
       # "No, skip it" is the first option: the user moves to "Yes, look" and presses Enter.
       n=$(printf '%s' "$s" | grep -E '[0-9]+\. Yes' | grep -oE '[0-9]+' | head -1)
@@ -699,7 +699,7 @@ scenario_tools() {
       sleep 3
       return 0
     fi
-    if [ "$answered" = true ] && printf '%s' "$s" | grep -qE '[0-9]+\. Not yet' && ! printf '%s' "$s" | grep -qE 'Approve contract|Ship'; then
+    if [ "$answered" = true ] && printf '%s' "$s" | grep -E '[0-9]+\. Not yet' > /dev/null && ! printf '%s' "$s" | grep -E 'Approve contract|Ship' > /dev/null; then
       listed=true
       # Nothing may be installed while the list waits for the answer.
       before_clean=$([ "$(install_traces)" -eq 0 ] && [ "$(install_commands)" -eq 0 ] && echo true || echo false)
@@ -762,9 +762,9 @@ legacy_user() {
   on_question() {
     local scr
     scr=$(current_question)
-    if printf '%s' "$scr" | grep -qiE '[0-9]+\. Start fresh'; then
+    if printf '%s' "$scr" | grep -iE '[0-9]+\. Start fresh' > /dev/null; then
       pick_label 'Start fresh'
-    elif printf '%s' "$scr" | grep -qiE 'proficiency|how should I explain|how involved|private on this machine|Ready to submit'; then
+    elif printf '%s' "$scr" | grep -iE 'proficiency|how should I explain|how involved|private on this machine|Ready to submit' > /dev/null; then
       return 1
     elif [ "$(interview_pending)" = none ]; then
       return 1
@@ -974,11 +974,11 @@ scenario_panel() {
     line=$(printf '─%.0s' $(seq 1 "$1"))
     border=$(printf '%s\n' "$s" | grep -cxF "$line")
     [ "$border" -ge 2 ] || { echo "the prompt box is not whole at $1x$2 ($border full-width borders)"; return; }
-    printf '%s\n' "$s" | grep -q '❯' || { echo "no prompt line at $1x$2"; return; }
+    printf '%s\n' "$s" | grep '❯' > /dev/null || { echo "no prompt line at $1x$2"; return; }
     if [ -n "$3" ]; then
       [ "$(printf '%s\n' "$s" | grep -cF "$3")" -eq 1 ] || { echo "'$3' is not drawn exactly once at $1x$2"; return; }
     else
-      printf '%s\n' "$s" | grep -q '^╰.*╯$' || { echo "Mission Control's bottom edge is not on screen at $1x$2"; return; }
+      printf '%s\n' "$s" | grep '^╰.*╯$' > /dev/null || { echo "Mission Control's bottom edge is not on screen at $1x$2"; return; }
     fi
     printf '%s\n' "$s" > "$dir.panel.$1x$2.screen.txt"
     echo ok
@@ -1182,7 +1182,7 @@ scenario_steptime() {
     sl=$(printf '%s\n' "$sw_status" | st_time 'until')
     cm=$(printf '%s\n' "$sw_comms" | st_time 'until around')
     n="" m=""
-    if printf '%s\n' "$sw_status" | grep -qE 'proving [0-9]+ of [0-9]+ checks'; then
+    if printf '%s\n' "$sw_status" | grep -E 'proving [0-9]+ of [0-9]+ checks' > /dev/null; then
       n=$(printf '%s\n' "$sw_status" | grep -oE 'proving [0-9]+ of [0-9]+ checks' | head -1 | grep -oE '[0-9]+' | sed -n 1p)
       m=$(printf '%s\n' "$sw_status" | grep -oE 'proving [0-9]+ of [0-9]+ checks' | head -1 | grep -oE '[0-9]+' | sed -n 2p)
     fi
@@ -1201,7 +1201,7 @@ scenario_steptime() {
     for ((i = 0; i < 20; i++)); do
       sleep 2
       st_read
-      if printf '%s\n' "$sw_status" | grep -q '▶ build' && ! printf '%s\n' "$sw_status" | grep -q 'until'; then st_nohist_status=true; fi
+      if printf '%s\n' "$sw_status" | grep '▶ build' > /dev/null && ! printf '%s\n' "$sw_status" | grep 'until' > /dev/null; then st_nohist_status=true; fi
       case "$sw_screen" in *"No end time yet"*) st_nohist_text=true ;; esac
       [ "$st_nohist_status" = true ] && [ "$st_nohist_text" = true ] && break
     done
@@ -1356,7 +1356,7 @@ scenario_road() {
     cr=$(printf '%s\n' "$rd_chat" | rd_road_time)
     pr=$(printf '%s\n' "$rd_panel" | rd_road_time)
     sh=0
-    printf '%s\n' "$rd_status" | grep -qiE 'milestone end|no milestone end' && sh=1
+    printf '%s\n' "$rd_status" | grep -iE 'milestone end|no milestone end' > /dev/null && sh=1
     sl=$(printf '%s\n' "$rd_status" | grep -oE 'until (tomorrow )?[0-9]{2}:[0-9]{2}' | head -1 | grep -oE '[0-9]{2}:[0-9]{2}$' || true)
     nr=$(jq -r '(.road.end // empty) | fromdateiso8601 | localtime | strftime("%H:%M")' "$dir/.vbw/runtime/step.json" 2> /dev/null || true)
     # The screen while the build runs and the chat has the milestone's time (kept for the reader).
@@ -1461,8 +1461,8 @@ scenario_pluginoff() {
     [ -f "$log" ] || log=/dev/null
     grep -qiE 'vbw[^ ]*.{0,80}(disabled|not enabled|is off)|(disabled|skipping).{0,80}vbw' "$log" && off=true
     grep -q 'hooks/panel\.js' "$log" && module=true
-    printf '%s' "$seen" | grep -qE 'Working on|VBW is idle|VBW next:|VBW needs you|VBW building|No VBW project is open' && panel=true
-    printf '%s' "$seen" | grep -qF '[VBW]' && line=true
+    printf '%s' "$seen" | grep -E 'Working on|VBW is idle|VBW next:|VBW needs you|VBW building|No VBW project is open' > /dev/null && panel=true
+    printf '%s' "$seen" | grep -F '[VBW]' > /dev/null && line=true
     expect "Claude Code reports VBW turned off in the project" [ "$off" = true ]
     expect "no panel on screen" [ "$panel" = false ]
     expect "no VBW status line on screen" [ "$line" = false ]
@@ -1954,11 +1954,11 @@ scenario_interview() {
     scr=$(current_question)
     # The keep question names the other answers ("how involved you are"), so it
     # is told apart first, by its options; the others by their opening words.
-    if printf '%s' "$scr" | grep -qi 'private on this machine'; then pick_label "$a_keep"
-    elif printf '%s' "$scr" | grep -qi 'what is your level of proficiency'; then pick_label "$a_level"
-    elif printf '%s' "$scr" | grep -qi 'how should I explain things'; then pick_label "$a_depth"
-    elif printf '%s' "$scr" | grep -qi 'how involved do you want to be'; then pick_label "$a_inv"
-    elif [ "$p" = none ] || printf '%s' "$scr" | grep -q 'Ready to submit'; then return 1
+    if printf '%s' "$scr" | grep -i 'private on this machine' > /dev/null; then pick_label "$a_keep"
+    elif printf '%s' "$scr" | grep -i 'what is your level of proficiency' > /dev/null; then pick_label "$a_level"
+    elif printf '%s' "$scr" | grep -i 'how should I explain things' > /dev/null; then pick_label "$a_depth"
+    elif printf '%s' "$scr" | grep -i 'how involved do you want to be' > /dev/null; then pick_label "$a_inv"
+    elif [ "$p" = none ] || printf '%s' "$scr" | grep 'Ready to submit' > /dev/null; then return 1
     elif [ "$purpose_done" -eq 0 ]; then
       purpose_done=1; answer_other "$a_purpose"
     else
@@ -1990,7 +1990,7 @@ interview_outcome() {
   rec=$(cd "$dir" && "$VBW" interview --json 2> /dev/null || echo '{}')
   keptw=$(printf '%s' "$rec" | jq -r '.kept // "none"')
   goals=$(sed -n '/^## Goals/,/^## /p' "$dir/.vbw/spec.md" 2> /dev/null || true)
-  printf '%s' "$goals" | grep -qi "$a_word" && in_goals=true
+  printf '%s' "$goals" | grep -i "$a_word" > /dev/null && in_goals=true
   shipped && shipped_ok=true
   [ "$(git -C "$dir" log --format=%s | grep -c '^chore(vbw): ship')" -gt 0 ] && ship_commit=true
   printf '%s' "$rec" | jq -e --arg l "$a_level" --arg d "$a_depth" --arg i "$a_inv" '.level == $l and .depth == $d and .involvement == $i' > /dev/null && match=true

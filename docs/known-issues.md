@@ -21,79 +21,37 @@ Status words:
 
 | Item | Status | Affects | Workaround |
 |---|---|---|---|
-| [The loop's time budget follows the size label](#the-loops-time-budget-follows-the-size-label) | Known issue | Loops | Re-run the item |
-| [Time estimates absorb idle time](#time-estimates-absorb-idle-time) | Known issue | Estimates | Delete `steps.json` |
-| [Heavy checks each use every core](#heavy-checks-each-use-every-core) | Known issue | Cargo, make, similar | Lower `check_jobs` |
-| [Slot store edge cases](#slot-store-edge-cases) | Known issue | Sandboxes, many runs | None needed |
-| [Unit times are whole seconds](#unit-times-are-whole-seconds) | Known issue | Proof time reports | None needed |
+| [The loop's time budget counts waiting](#the-loops-time-budget-counts-waiting) | Known issue | Loops | Re-run the item |
+| [A unit that lost the slot store may leave a slot held](#a-unit-that-lost-the-slot-store-may-leave-a-slot-held) | Known issue | Many runs at once | None needed |
 | [Cost per correct outcome](#cost-per-correct-outcome) | Idea | Everyone | Not applicable |
 
 ## Known issues
 
-### The loop's time budget follows the size label
+### The loop's time budget counts waiting
 
-**What.** When the loop opens an item, its time budget is twice the median time of shipped items with the same size label, or 2, 4 or 8 hours for small, medium and large when there is no history ([loop.md](loop.md#the-time-budget)). The label is a guess made before planning. An item labelled small that turned out to be eleven plans in three phases was stopped at the small-item budget. Time lost to dropped network connections or to waiting for you counts as time, so it can also stop a healthy item.
+**What.** The loop gives each item a time budget ([loop.md](loop.md#the-time-budget)). Before the item is planned it is the label's guess or twice the median of shipped items of the same size; once the item is planned and the step history times its road, it is twice the time so far plus that road, at least 30 minutes. The time is wall-clock: time lost to dropped network connections or to waiting for you counts as time, so it can still stop a healthy item.
 
-**Who and when.** Anyone running `/vbw:loop` over a backlog with items whose size was guessed wrong.
+**Who and when.** Anyone running `/vbw:loop` over a backlog while the machine or the connection is unreliable.
 
-**Workaround.** The stop keeps all the work and parks nothing. Run `/vbw:loop THE_ITEM` again, or finish the item with `/vbw:vibe`. Give items an honest size (`vbw todo add --size`, `vbw todo sort`).
+**Workaround.** The stop keeps all the work and parks nothing. Run `/vbw:loop THE_ITEM` again, or finish the item with `/vbw:vibe`.
 
-**Plan.** Once an item is planned, its budget becomes twice the kernel's estimate of its road ([panel.md](panel.md#time-left)). The stuck test counts progress (plans done, fixes closed), so waiting is not grinding. Before planning, the size default stays.
+**Plan.** The stuck test counts progress (plans done, fixes closed) instead of elapsed time, so waiting is not grinding.
 
-**Where.** `plugin/lib/loop-step.sh` (`loop_item_budget`); the estimate comes from `plugin/lib/road.jq`.
+**Where.** `plugin/lib/loop-step.sh` (`loop_item_budget`, `loop_item_rebudget`).
 
-### Time estimates absorb idle time
+### A unit that lost the slot store may leave a slot held
 
-**What.** A build or fix step whose run stayed open overnight, or while waiting for you, is recorded at its whole length (13, 18 and 40 hours have been seen). The estimate for later steps is the median of recorded times, so it comes out hours too long: a proof was announced as "about 12 hours".
+**What.** The computer-wide limit is kept in a small shared store (`slots.json` in the Claude config folder, [proof.md](proof.md#the-computer-wide-limit)). When a unit that was waiting for a slot loses the store (it fails or is damaged), the unit goes on without the limit, but its waiting entry stays in the store. If the store works again before that run ends, another run's step can hand that entry a slot nobody uses, and the slot stays held until the run exits.
 
-**Who and when.** Anyone who leaves a run open while away. The wrong figure shows in the status line, Comms, Mission Control and VBW's messages.
+**Who and when.** Rare: a store that fails and recovers within one proof, with other runs waiting. The effect is one slot fewer for other runs until the proof ends, never a wrong result.
 
-**Workaround.** Delete `.git/vbw/steps.json` in the clone. Estimates then start again from none ([panel.md](panel.md#time-left)).
+**Workaround.** None needed. The slot comes back when the run ends.
 
-**Plan.** Time only active work, excluding waits for you, approvals and other runs, or drop steps far beyond their size.
+**Plan.** Drop the entry of a unit that lost the store as soon as the store can be written again.
 
-**Where.** `plugin/lib/steps.sh` (what a step records); `plugin/lib/steps-expect.jq` (the estimate).
+**Where.** `plugin/lib/slots.sh` (`slots_hold`, `slots_lose`).
 
-### Heavy checks each use every core
-
-**What.** Test commands such as `cargo test` and `make` each try to use every core. VBW runs several checks at once (up to `check_jobs` and the computer-wide limit, [proof.md](proof.md#checks-run-in-parallel)), so several of them together can overload the machine. Load averages from 23 to 66 have been seen.
-
-**Who and when.** Projects whose checks are heavy build-and-test commands, when a proof runs many of them at once.
-
-**Workaround.** Lower the number of checks at a time: `vbw config set check_jobs 2` (or `1`). A check can also run by itself with the `alone` mark ([proof.md](proof.md#checks-that-run-alone)).
-
-**Plan.** Give each command its share of the cores through the standard variables (`CARGO_BUILD_JOBS`, `MAKEFLAGS`, `GOMAXPROCS`), or let a check declare a cores mark. Not decided: it depends on measuring how much each tool really uses.
-
-**Where.** `plugin/lib/checks.sh`; the limit logic in `plugin/lib/slots.sh`.
-
-### Slot store edge cases
-
-**What.** The computer-wide limit is kept in a small shared store (`slots.json` in the Claude config folder, [proof.md](proof.md#the-computer-wide-limit)). Three weaknesses remain, none breaking a requirement:
-
-1. Two runs that find the same dead lock owner can both delete the lock and briefly allow one slot too many. The fix is to take the lock over with an atomic rename.
-2. When the lock cannot be created but the folder looks writable (a sandbox, a full disk), the first step retries for about 30 seconds before saying it cannot write. It should detect this at once.
-3. Smaller: `vbw plan done` may print the "limit was not in force" line twice on an unwritable store and never prints the end-of-run waited line; a waiting entry left by a unit that lost the store can be handed a slot it never uses, which stays held until its run exits.
-
-**Who and when.** Sandboxed sessions, full disks, and many runs at once. The effect is a pause or one extra check at a time, never a wrong result.
-
-**Workaround.** None needed. `check_jobs` still applies.
-
-**Plan.** A test for each case, then the fixes.
-
-**Where.** `plugin/lib/slots.sh` (`slots_lock`, `slots_open`).
-
-### Unit times are whole seconds
-
-**What.** VBW times each unit of a proof (a check, a test file, a project command) in whole wall-clock seconds. A unit that takes 50 ms can be counted as 0 s or 1 s depending on whether it crosses a second, so the "slowest units" line and `vbw show evidence` can name a different order or total between two runs of the same work, and "each under a second" is not always printed when it is true.
-
-**Who and when.** Everyone reading the time reports. Verdicts, reuse decisions and the budget's effect (a report, never a failure) are not affected.
-
-**Plan.** Time units with a sub-second clock where one is available, as the proof's own steps already are.
-
-**Where.** The unit timing in `plugin/lib/checks.sh` and the report in `plugin/lib/unittime.sh`.
-
-## Planned improvements
-
+## Under consideration
 
 ### Cost per correct outcome
 

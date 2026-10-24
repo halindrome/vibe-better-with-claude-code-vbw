@@ -28,13 +28,13 @@ for path in "$dir"/*.jq "$dir"/*.sh; do
   [ -f "$path" ] || continue
   name=$(basename "$path")
   code=$(grep -vE '^[[:space:]]*#' "$path" || true)
-  if printf '%s\n' "$code" | grep -Eq 'permissionDecision[^:]*:[[:space:]]*\\?["'\'']?allow|decision[^:]*:[[:space:]]*\\?["'\'']?approve'; then
+  if printf '%s\n' "$code" | grep -E 'permissionDecision[^:]*:[[:space:]]*\\?["'\'']?allow|decision[^:]*:[[:space:]]*\\?["'\'']?approve' > /dev/null; then
     printf '%s can answer allow (a hook never answers or allows in the user'\''s place)\n' "$name" >&2
     status=1
   fi
   shapes=$({
     printf '%s\n' "$code" | grep -oE 'permissionDecision"?:[[:space:]]*\\?"[a-z]+' | sed -E 's/.*"//' || true
-    printf '%s\n' "$code" | grep -Eq '(^|[^[:alnum:]_.:])deny([^[:alnum:]_:]|$)' && printf 'deny\n' || true
+    printf '%s\n' "$code" | grep -E '(^|[^[:alnum:]_.:])deny([^[:alnum:]_:]|$)' > /dev/null && printf 'deny\n' || true
     printf '%s\n' "$code" | grep -oE "(^|[^[:alnum:]_.\$])($keys)\"?[[:space:]]*:" | sed -E 's/^[^[:alpha:]]*//; s/[^[:alnum:]].*//' || true
   } | sort -u)
   for shape in $shapes; do

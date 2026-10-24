@@ -115,7 +115,7 @@ case "$cmd" in
       view=$(printf '%s\n' "$now" | settled)
       # Busy while Claude shows its interrupt hint or the screen above the
       # prompt box still changes.
-      if printf '%s' "$now" | grep -q 'esc to interrupt'; then stable=0
+      if printf '%s' "$now" | grep 'esc to interrupt' > /dev/null; then stable=0
       elif [ "$view" = "$last" ]; then stable=$((stable + 5))
       else stable=0
       fi

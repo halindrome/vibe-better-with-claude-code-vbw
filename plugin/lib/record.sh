@@ -227,6 +227,34 @@ vbw_lock_dir() {
   mkdir "$1" 2> /dev/null && vbw_lock_create "$1/pid"
 }
 
+# vbw_lock_takeover OWNERFILE OWNER: take over a lock whose owner file OWNERFILE
+# (the lock file itself, or DIR/pid of a lock folder) names OWNER, a process
+# that is gone (empty: an owner that never wrote its id). Two runs that find the
+# same dead owner must not both win, and neither may remove a lock a third run
+# took over in between, so the file is never deleted where it stands: it is
+# renamed (atomic: one of the runs gets it), the renamed file is checked to name
+# OWNER still, and only then deleted and the lock claimed by the exclusive
+# create. A file that names someone else was a fresh lock taken in between: it
+# is linked back at once and the lock stays with its new owner. Returns 0 holding
+# the lock, 1 when it does not.
+vbw_lock_takeover() {
+  local old="$1.old.$$"
+  if [ ! -e "$1" ]; then
+    # A lock folder whose owner never wrote its id: the exclusive create decides.
+    [ -z "$2" ] && [ -d "${1%/*}" ] && vbw_lock_create "$1"
+    return
+  fi
+  mv "$1" "$old" 2> /dev/null || return 1
+  if [ "$(vbw_lock_holder "$old")" = "$2" ]; then
+    rm -f "$old"
+    vbw_lock_create "$1"
+  else
+    ln "$old" "$1" 2> /dev/null || true
+    rm -f "$old"
+    return 1
+  fi
+}
+
 # vbw_lock_remove LOCK: remove a lock file, or a lock directory an older VBW left.
 vbw_lock_remove() {
   rm -f "$1" 2> /dev/null || rmdir "$1" 2> /dev/null || true

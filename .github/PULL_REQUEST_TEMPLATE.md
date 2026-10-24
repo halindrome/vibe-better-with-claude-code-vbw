@@ -1,9 +1,6 @@
-## Linked Issue
+## Related issue
 
-<!-- REQUIRED: Every PR must reference a tracking issue. CI will fail without one. -->
-<!-- Accepted: Fixes/Closes/Resolves #N, full GitHub issue URL, bare #N, or sidebar link. Use an issue number, not a PR number. -->
-
-Fixes #
+<!-- The issue this change answers, if there is one: Fixes #N. -->
 
 ## What
 
@@ -30,19 +27,7 @@ Summary of the approach. Mention affected commands, agents, hooks, or scripts.
 - [ ] Tested affected commands against a real project (not the VBW repo)
 - [ ] No errors on plugin load
 - [ ] Existing commands still work
-- [ ] Ran QA review (at least 3 separate QA rounds critically reviewing the diff)
-
-## QA Review Evidence
-
-Paste each QA round's report as a separate comment on this PR. QA-relevant changes require 3 QA evidence commits whose first line matches `fix(scope): address QA round N`. Clean rounds still need an evidence commit; use an empty commit when there are no fixes to make. Reviewers will verify the commit history matches the reported rounds.
-
-QA must be run on a top-tier model: **GPT-5.5 Codex xhigh**, **Claude Opus 4.6**, or **Gemini 3.1 Pro**.
-
-- **Rounds completed:** (number)
-- **Model used:** (e.g., Claude Opus 4.6)
-- **Fix commits:** (list commit SHAs or titles)
-- [ ] QA-relevant changes have 3 QA evidence commits using `fix(scope): address QA round N`
-- [ ] Clean rounds still have an evidence commit
+- [ ] Added a test that fails without the change, for each behaviour changed or fixed
 
 ## Notes
 

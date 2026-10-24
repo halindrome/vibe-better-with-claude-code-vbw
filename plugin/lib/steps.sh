@@ -21,7 +21,8 @@
 # 'until around 14:20, 6 min late' (without), or 'no end time yet (...)'.
 # step_label($kind; $ids; $n): what a step is: 'Building P1.1, P1.2 and P1.3'.
 # step_say($s; $t): the sentence VBW says before a step starts; $s has kind,
-# ids, parts (a number or {done, total}), end, late.
+# ids, parts (a number or {done, total}), end, late and, for a proof, why ({reason,
+# count}: the reason most of its units run again).
 # step_sentence($s; $t): what a running step is doing, its progress and its time.
 # shellcheck disable=SC2016,SC2034
 VBW_STEP_DEFS='def step_day($e): $e | localtime | mktime / 86400 | floor;
@@ -62,7 +63,8 @@ def step_move($t):
     | .end = ($end | todateiso8601) | .late = ($end > $fe) end;
 def step_say($s; $t):
   step_label($s.kind; $s.ids // []; if ($s.parts | type) == "object" then $s.parts.total else ($s.parts // 0) end)
-  + ": " + step_words($s; $t);
+  + ": " + step_words($s; $t)
+  + (if $s.kind == "proof" and ($s.why | type) == "object" then "; top reason: \($s.why.reason) (\($s.why.count) \(if $s.why.count == 1 then "unit" else "units" end))" else "" end);
 def step_sentence($s; $t):
   $s.doing
   + (if ($s.parts // null) != null and ($s.proof // null) == null and $s.kind != "proof" then " · \($s.parts.done) of \($s.parts.total)" else "" end)
@@ -346,18 +348,19 @@ step_say_note() {
   jq -r "$VBW_STEP_DEFS"'step_say(.; now | floor), (.road.say? // empty)' "$note" 2> /dev/null || true
 }
 
-# step_proof_units RECORD FULL: the names of the units a proof would run now (a
-# JSON array of check:ID, file:PATH and command:NAME), planned by the proof's own
-# reuse rule (cmd-prove.sh) without running anything. The list is cached in
-# .vbw/runtime/proof-units.json as {head, index, record, store, full, units}:
-# head is the committed tree, index the SHA-256 of the git index's entries (git
-# ls-files -s: the test files are listed from the index, so a staged new test
-# file counts), record and store the SHA-256 of the record file and of the run
-# store file (an absent store counts as empty). It is reused only while every
-# part matches, else planned again and the file rewritten; a damaged file is
-# planned again.
-step_proof_units() {
-  local head idx rec store cache tmp units storef
+# step_proof_plan RECORD FULL: what a proof would run now, as {units, top}: the
+# names of the units (a JSON array of check:ID, file:PATH and command:NAME) and the
+# reason most of them run again ({reason, count}, null when none runs), planned
+# by the proof's own reuse rule (cmd-prove.sh) without running anything. The plan
+# is cached in .vbw/runtime/proof-units.json as {head, index, record, store, full,
+# units, top}: head is the committed tree, index the SHA-256 of the git index's
+# entries (git ls-files -s: the test files are listed from the index, so a staged
+# new test file counts), record and store the SHA-256 of the record file and of the
+# run store file (an absent store counts as empty). It is reused only while every
+# part matches, else planned again and the file rewritten; a damaged file, or one
+# an older VBW wrote without top, is planned again.
+step_proof_plan() {
+  local head idx rec store cache tmp plan storef
   # shellcheck source=proofreuse.sh
   . "$VBW_LIB/proofreuse.sh"
   head=$(vbw_head_tree 2> /dev/null) || head=
@@ -368,24 +371,32 @@ step_proof_units() {
   else store=$(printf '' | vbw_sha256); fi
   cache="$VBW_RUNTIME/proof-units.json"
   if [ -n "$head" ] && [ -n "$idx" ] && [ -n "$rec" ] && [ -n "$store" ] && [ -f "$cache" ] \
-    && units=$(jq -ce --arg h "$head" --arg i "$idx" --arg r "$rec" --arg s "$store" --argjson f "${2:-0}" '
+    && plan=$(jq -ce --arg h "$head" --arg i "$idx" --arg r "$rec" --arg s "$store" --argjson f "${2:-0}" '
         select(type == "object" and .head == $h and .index == $i and .record == $r and .store == $s and .full == $f
-          and (.units | type) == "array" and all(.units[]; type == "string")) | .units' "$cache" 2> /dev/null) \
-    && [ -n "$units" ]; then
-    printf '%s\n' "$units"
+          and has("top") and (.units | type) == "array" and all(.units[]; type == "string")) | {units, top}' "$cache" 2> /dev/null) \
+    && [ -n "$plan" ]; then
+    printf '%s\n' "$plan"
     return 0
   fi
-  units=$(step_proof_units_plan "$1" "$2")
-  if [ -n "$head" ] && [ -n "$idx" ] && [ -n "$rec" ] && [ -n "$store" ] && printf '%s' "$units" | jq -e 'type == "array"' > /dev/null 2>&1; then
+  plan=$(step_proof_units_plan "$1" "$2")
+  if [ -n "$head" ] && [ -n "$idx" ] && [ -n "$rec" ] && [ -n "$store" ] && printf '%s' "$plan" | jq -e '(.units | type) == "array"' > /dev/null 2>&1; then
     tmp="$cache.$$"
     # The unit list grows with the project (Linux caps one argument at 128 KB): through a pipe.
-    { mkdir -p "$VBW_RUNTIME" && printf '%s' "$units" | jq -c --arg h "$head" --arg i "$idx" --arg r "$rec" --arg s "$store" --argjson f "${2:-0}" \
-        '{head: $h, index: $i, record: $r, store: $s, full: $f, units: .}' > "$tmp" && mv -f "$tmp" "$cache"; } 2> /dev/null || rm -f "$tmp" 2> /dev/null || true
+    { mkdir -p "$VBW_RUNTIME" && printf '%s' "$plan" | jq -c --arg h "$head" --arg i "$idx" --arg r "$rec" --arg s "$store" --argjson f "${2:-0}" \
+        '{head: $h, index: $i, record: $r, store: $s, full: $f, units: .units, top: .top}' > "$tmp" && mv -f "$tmp" "$cache"; } 2> /dev/null || rm -f "$tmp" 2> /dev/null || true
   fi
-  printf '%s\n' "$units"
+  printf '%s\n' "$plan"
 }
 
-# step_proof_units_plan RECORD FULL: the uncached planning behind step_proof_units.
+# step_proof_units RECORD FULL: the names of the units a proof would run now, a
+# JSON array (the plan's units).
+step_proof_units() {
+  step_proof_plan "$@" | jq -c '.units'
+}
+
+# step_proof_units_plan RECORD FULL: the uncached planning behind step_proof_units,
+# as {units, top}: the unit names, and the reason most of them run again
+# ({reason, count}, null when none runs).
 step_proof_units_plan() {
   (
     cd "$VBW_ROOT" || exit 1
@@ -399,15 +410,15 @@ step_proof_units_plan() {
     [ -z "$causes" ] || prove_plan_all "$1"
     # The same list the proof itself names (held checks and unapproved commands left out), in one jq.
     CHECK_HELD=$(contract_held "$1")
-    prove_unit_names "$1"
-  ) 2> /dev/null || echo '[]'
+    jq -nc --slurpfile u <(prove_unit_names "$1") --slurpfile t <(prove_plan_object "$1" "$causes" | prooftime_top) '{units: $u[0], top: $t[0]}'
+  ) 2> /dev/null || echo '{"units": [], "top": null}'
 }
 
 # step_next RECORD NEXT: the step vbw next --json carries: {kind, ids, parts,
 # seconds, end, say} for an answer that runs a step (plan, build, fix, qa, a
 # proof with units left to run), else null. A kind without parts has parts null.
 step_next() {
-  local kind ids='[]' parts=null full units n seconds='' size=null
+  local kind ids='[]' parts=null full units n seconds='' size=null plan why=null
   case "$(printf '%s' "$2" | jq -r .action)" in
     plan) kind=plan ;;
     build) kind=build ids=$(printf '%s' "$2" | jq -c .detail.plans) ;;
@@ -417,7 +428,9 @@ step_next() {
       kind=proof
       full=0
       printf '%s' "$2" | jq -e '.detail.full == true' > /dev/null && full=1
-      units=$(step_proof_units "$1" "$full")
+      plan=$(step_proof_plan "$1" "$full")
+      units=$(printf '%s' "$plan" | jq -c '.units' 2> /dev/null) || units='[]'
+      why=$(printf '%s' "$plan" | jq -c '.top' 2> /dev/null) || why=null
       parts=$(printf '%s' "$units" | jq 'length' 2> /dev/null) || parts=0
       [ "${parts:-0}" -gt 0 ] 2> /dev/null || { echo null; return 0; }
       size=$(printf '%s' "$units" | jq -c '{units: .}') ;;
@@ -428,9 +441,10 @@ step_next() {
   [ "$n" = null ] && n=0
   [ "$kind" = proof ] || size=$(step_size "$1" "$kind" "$ids")
   seconds=$(step_expect "$kind" "$size")
-  jq -nc --arg k "$kind" --argjson ids "$ids" --argjson parts "$parts" --arg s "$seconds" "$VBW_STEP_DEFS"'
+  jq -nc --arg k "$kind" --argjson ids "$ids" --argjson parts "$parts" --arg s "$seconds" --argjson why "$why" "$VBW_STEP_DEFS"'
     (now | floor) as $t
     | (if $s == "" then null else ($s | tonumber) end) as $sec
     | {kind: $k, ids: $ids, parts: $parts, seconds: $sec, end: (if $sec == null then null else $t + $sec | todateiso8601 end)}
+    | (if $why != null then . + {why: $why} else . end)
     | . + {say: step_say(.; $t)}'
 }

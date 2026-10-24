@@ -161,15 +161,24 @@ the sentence the router says as given before the step starts. With fewer than 3
 finished steps of the kind, `seconds` and `end` are `null` and `say` reads
 `Building P1.1, P1.2 and P1.3: no end time yet (VBW has timed fewer than 3 steps like this here)`.
 
+A proof's step also carries `why`, the reason most of its units run again as
+`{"reason": "plugin/lib/core.sh changed", "count": 41}` (absent when no unit
+runs), and its `say` ends with it, so the sentence says why the proof is as long
+as it is:
+`Proving 52 checks: about 14 min, until around 14:20; top reason: plugin/lib/core.sh changed (41 units)`.
+The reasons are the ones the proof's first and last report lines name
+([the report lines](proof.md#the-two-report-lines-where-the-time-went)).
+
 The proof's `parts` needs the list of units the next proof would run. Planning
 it reads the run store and runs git, so `vbw next` caches the list in
 `.vbw/runtime/proof-units.json`. The cache is keyed on the committed tree, the
 git index's digest (SHA-256 of `git ls-files -s`: the test files are listed
 from the index, so a staged new test file counts), the record's fingerprint
 (SHA-256 of the record file) and the run store's digest (SHA-256 of its file;
-an absent store counts as empty). It also records whether the proof is full.
+an absent store counts as empty). It also records whether the proof is full
+and the top reason.
 When any of these changes (a new
-commit, a staged file, a changed record, a changed run store), the list is
+commit, a staged file, a changed record, a changed run store), the list and the top reason are
 recomputed and the file rewritten. A damaged cache file is recomputed too.
 
 ### The road

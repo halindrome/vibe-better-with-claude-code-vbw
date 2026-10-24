@@ -24,24 +24,24 @@
 . "$VBW_LIB/qa-inputs.sh"
 
 # proofsteps_lock: one writer of the note at a time (a lock folder whose owner
-# file decides, vbw_lock_dir; one whose owner process is gone, or that is over
-# 5 s old, is taken over). Fails, and the caller skips its update, where the
-# runtime folder is missing.
+# file decides, vbw_lock_dir). A lock whose owner process is gone, or whose owner
+# never wrote its id for 5 s, is taken over by renaming its owner file
+# (vbw_lock_takeover: of two waiters only one wins, and neither removes a lock a
+# third took in between). A live owner's lock is never taken: after about 5 s
+# the waiter gives up and its caller skips the update (the note is best effort).
+# Fails, and the caller skips its update, where the runtime folder is missing.
 proofsteps_lock() {
-  local l="$VBW_RUNTIME/step.lock" i=0 owner
+  local l="$VBW_RUNTIME/step.lock" i=0 owner quiet=$SECONDS
   [ -d "$VBW_RUNTIME" ] || return 1
   while ! vbw_lock_dir "$l"; do
-    owner=$(cat "$l/pid" 2> /dev/null) || owner=
+    owner=$(vbw_lock_holder "$l/pid")
     if [ -n "$owner" ] && ! kill -0 "$owner" 2> /dev/null; then
-      rm -rf "$l"
-      continue
+      vbw_lock_takeover "$l/pid" "$owner" && return 0
+    elif [ -z "$owner" ] && [ $((SECONDS - quiet)) -ge 5 ]; then
+      vbw_lock_takeover "$l/pid" "" && return 0
     fi
     i=$((i + 1))
-    if [ "$i" -gt 500 ]; then
-      rm -rf "$l"
-      vbw_lock_dir "$l" || return 1
-      break
-    fi
+    [ "$i" -le 500 ] || return 1
     sleep 0.01
   done
   return 0

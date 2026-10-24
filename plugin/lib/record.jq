@@ -46,7 +46,8 @@ def loop_item: type == "object"
   and ((has("reason") | not) or (.reason | nonempty))
   and ((has("at") | not) or (.at | iso))
   and ((has("opened_at") | not) or (.opened_at | iso))
-  and ((has("budget") | not) or (.budget | type == "object" and (keys | sort) == ["basis","seconds"]
+  and ((has("budget") | not) or (.budget | type == "object" and (keys - ["planned"] | sort) == ["basis","seconds"]
+                                 and ((has("planned") | not) or .planned == true)
                                  and (.seconds | type == "number" and . > 0) and (.basis | nonempty)));
 
 # One recorded break of a plan (vbw mutate): a rule or a task K with what was broken,
@@ -392,7 +393,7 @@ if type != "object" then ["record must be a JSON object"] else
           ( select((has("items") and has("ceiling") and has("session") and has("started_at") and has("baseline")) | not)
             | "loop needs items, ceiling, session, started_at and baseline" ),
           ( select(has("items") and ((.items | type == "array" and length > 0 and all(.[]; loop_item)) | not))
-            | "loop.items must be a non-empty array of {id: T<n>, text, proof: auto|human, status: waiting|in_progress|shipped|parked, and optionally milestone, head, baseline, retried, reverts, cost, reason, at, opened_at, budget: {seconds, basis}}" ),
+            | "loop.items must be a non-empty array of {id: T<n>, text, proof: auto|human, status: waiting|in_progress|shipped|parked, and optionally milestone, head, baseline, retried, reverts, cost, reason, at, opened_at, budget: {seconds, basis, planned?}}" ),
           ( select(has("items") and (.items | type == "array") and ((.items | map(.id? // null) | length) != (.items | map(.id? // null) | unique | length)))
             | "loop.items names an item twice" ),
           ( select(has("ceiling") and (.ceiling != null) and ((.ceiling | type == "object" and (keys | sort) == ["finish_item","usd"]

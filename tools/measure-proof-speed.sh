@@ -244,7 +244,8 @@ chmod +x "$wrap/jq"
 
 now() { perl -MTime::HiRes=time -e 'printf "%.3f", time'; }
 
-# The sampler keeps the largest written.json seen, once a second, until told to stop.
+# The sampler keeps the largest written.json seen, ten times a second (the lists live only
+# while the proof runs, about a second on a fast machine), until told to stop.
 (
   max=0
   while [ ! -e "$out/stop" ]; do
@@ -253,7 +254,7 @@ now() { perl -MTime::HiRes=time -e 'printf "%.3f", time'; }
       s=$(wc -c < "$f" | tr -d ' ')
       [ "$s" -le "$max" ] || { max="$s"; printf '%s\n' "$max" > "$out/maxwritten"; }
     done
-    sleep 1
+    sleep 0.1
   done
 ) &
 sampler=$!

@@ -10,7 +10,9 @@
 #            plan: {reqs}; qa: [{id, tier}]; proof: {units: [name]}
 # Output: one integer (seconds), or nothing when the history gives no basis.
 # Every list is the latest 10 by the history's order; an even count takes the
-# mean of the two middle values; fewer than 3 samples never make a basis.
+# mean of the two middle values; fewer than 3 samples never make a basis. A step
+# that took more than 8 times the median seconds per part of its kind (idle time:
+# a run left open overnight) is left out first, while 3 steps remain (T173).
 #
 # A build wave waits for its slowest plan (T174): each plan is timed at the
 # quantile 0.75^(1/n) of its unit's seconds (n: the wave's plans), the time 3
@@ -38,11 +40,23 @@ def quantile($q): sort | length as $n
 def latest: .[-10:];
 def num: type == "number" and . >= 0;
 def basis: if length >= 3 then median else empty end;
+# A step's size for the idle test (T173): its parts, else its requirements or phases, else 1.
+def span: if (.parts | type) == "number" and .parts > 0 then .parts
+  elif (.reqs | type) == "number" and .reqs > 0 then .reqs
+  elif (.phases | type) == "array" and (.phases | length) > 0 then (.phases | length)
+  else 1 end;
+# Idle time is not work (T173): the history keeps only when a step started and ended, so a
+# run left open overnight or waiting is recorded at its whole length. A step that took more
+# than 8 times the median seconds per unit of size of its kind is left out, when at least
+# 3 steps remain; the median itself needs no such care.
+def awake: if length < 3 then .
+  else (map(.seconds / span) | median) as $m
+    | if $m > 0 then (map(select(.seconds / span <= 8 * $m)) as $k | if ($k | length) >= 3 then $k else . end) else . end end;
 
 $size[0] as $size
 | ($h[0] | if type == "object" and (.steps | type) == "array" then [.steps[] | select(type == "object")] else [] end) as $steps
 | (if $kind == "build" and ($size | type) == "array" and ($size | length) > 0 then pow(0.75; 1 / ($size | length)) else 0.75 end) as $q
-| def of($k): [$steps[] | select(.kind == $k and (.seconds | num))];
+| def of($k): [$steps[] | select(.kind == $k and (.seconds | num))] | awake;
   def withparts: map(select((.parts | type) == "number" and .parts > 0));
 
   # A plan unit: one finished plan of a build, with its tier, tasks, breaks and seconds.
