@@ -873,18 +873,25 @@ only when that file's size or modification time has changed, and redraws only
 when what it shows changes (while agents work, that is every check).
 
 It checks every 2 seconds. Each check costs CPU time (user plus system,
-not time spent waiting) as follows, measured on a developer Mac with Node 22:
+not time spent waiting) as follows, measured on 2026-10-24 on an Apple M1
+Max with Node 22 while other work kept the machine at a load of 4 to 6 (8
+runs of the script below, each case after 1000 warm-up checks):
 
 | Check | Measured | Budget |
 |---|---|---|
-| Nothing changed | about 0.02 to 0.08 ms | 0.5 ms |
-| A file changed, read and redrawn | about 0.04 to 0.2 ms | 0.5 ms |
-| A need raised and the sound asked to play | measured by the same script | 0.5 ms |
-| Comms and Mission Control both drawn, five helpers at work | about 0.4 ms | 0.5 ms |
+| Nothing changed | about 0.04 to 0.07 ms | 0.5 ms |
+| A file changed, read and redrawn | about 0.11 to 0.14 ms | 0.5 ms |
+| A need raised and the sound asked to play | about 0.10 to 0.17 ms | 0.5 ms |
+| A running step's note changed | about 0.06 to 0.13 ms | 0.5 ms |
+| The session cost and the step history changed | about 0.09 to 0.15 ms | 0.5 ms |
+| A new recommendation drawn under What's next | about 0.07 to 0.16 ms | 0.5 ms |
+| Comms and Mission Control both drawn, five helpers at work | about 0.22 to 0.32 ms | 0.5 ms |
 
-The budget is about 12 times the cost of a plain check, to leave room for a busy
-machine. These numbers come from the test stand-in for Claude Code, whose own
-work is counted too, so they are an upper bound.
+The budget leaves room for a busy machine. These numbers come from the test
+stand-in for Claude Code, whose own work and file writes are counted too (a profile
+put them at about 40 percent of the last row), so they are an upper bound. The first few hundred checks
+of a freshly loaded panel cost up to twice as much while V8 compiles it; the
+figures are for the panel after that, which is where a session spends its time.
 
 Check it yourself from a VBW checkout (needs `node`):
 
@@ -894,4 +901,5 @@ bash tools/bench-panel.sh
 
 It prints each cost and the budget, and fails if a check is over the budget.
 `VBW_PANEL_BUDGET_MS` changes the budget; `VBW_BENCH_RUNS` changes how many
-checks it averages (default 200).
+checks it measures (default 200, in 5 windows, reporting the median window);
+`VBW_BENCH_WARM` changes the warm-up (default 1000 checks).
