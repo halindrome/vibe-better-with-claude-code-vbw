@@ -200,7 +200,7 @@ loop_open_item() {
 # loop_ship_item ITEM: vbw ship, then the item shipped with its own cost and its backlog entry done.
 loop_ship_item() {
   local id=$1 cost why
-  if ! why=$(loop_kernel cmd_ship); then loop_end "the ship was refused: $why (item $id, step ship)"; return 1; fi
+  if ! why=$(loop_kernel cmd_ship); then loop_end "the ship was refused: $why (item $id, step ship). Next: run /vbw:vibe to take $id to its ship, then /vbw:loop for the items left"; return 1; fi
   cost=$(loop_spend "$VBW_RECORD" "$id" | jq -c 'if . == null then null else del(.sessions) end')
   record_update '(.loop.items[] | select(.id == $i)) |= (.status = "shipped" | .cost = $c | .at = $at)
     | (.todos[] | select(.id == $i)).status = "done"' --arg i "$id" --argjson c "$cost" --arg at "$(vbw_now)"

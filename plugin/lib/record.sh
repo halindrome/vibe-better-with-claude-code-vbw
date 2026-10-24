@@ -273,7 +273,7 @@ record_update() {
     | {schema: 4, lease: (.lease // null),
        protected: ([(.checks // [])[]? | objects | .files? | arrays | .[] | strings] | unique)}
       + (if has(\"checks\") then {checks} else {checks: []} end) + del(.schema, .lease, .protected, .checks)" "$VBW_RECORD" > "$tmp" 2>/dev/null || vbw_die "internal error: record update failed"
-  v=$(record_violation "$tmp") || vbw_die "refused: $v"
+  v=$(record_violation "$tmp") || vbw_die "refused: $v"$'\n'"Next: nothing was written; give the command a valid value (the line above names what would break), or run vbw doctor if the record itself is damaged"
   # The new record's time goes one second back, the old glance goes, and the
   # new glance is written after the record: it is strictly newer than the record
   # (even in whole seconds), a failed glance write leaves no glance that looks

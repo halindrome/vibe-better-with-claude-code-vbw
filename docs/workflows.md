@@ -478,6 +478,11 @@ Each refusal below ends with `Next: ` and the step in the right column
 | `vbw run start`: a plan waiting for another | Build those first, or run `vbw next` |
 | `vbw run start`: two plans sharing a file | Start one now and the other after it ends |
 | `vbw run start`: a run already open | In this session, `vbw run end`; in another session, wait for it or check `vbw status` |
+| `vbw run confirm`: no run open | Nothing to do; `vbw status` shows what each plan and fix recorded |
+| `vbw run confirm`: an unknown plan, fix or phase | Confirm the ids the run was started with (`vbw status` names them) |
+| `vbw run confirm` on a run of another kind (plan, map) | End the run with `vbw run end`: only build, fix and qa runs are confirmed |
+| Any command whose change would leave the record invalid (`vbw: refused: ...`, nothing written) | Give the command a valid value, or run `vbw doctor` if the record itself is damaged |
+| `/vbw:loop`: the ship of an item refused (the loop ends) | Run `/vbw:vibe` to take the item to its ship, then `/vbw:loop` for the items left |
 | Guards (docs/guards.md): a secret file, the record, the consent file, `vbw approve` | Use the `vbw` command or `/vbw:approve` instead of writing directly |
 | Guards: a file outside the run's plan, a protected check file, a read-only run, another session's files | Leave the file; report the need, or work on other files until the run ends |
 | Guards: `vbw loop start` by a tool call (arming the loop) | Ask the user to run `/vbw:loop` with the items and the ceiling they choose |
