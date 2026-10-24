@@ -882,13 +882,21 @@ panel plays a clip of any voice.
 
 ### The notification
 
-When the menu opens, VBW also raises one native notification, titled `VBW`,
-with a plain sentence naming what it needs (for example, that it has a question
-for you). It never fires twice for one question.
+When VBW starts waiting for you (the needs-you line appears on Comms), it
+raises one native notification, titled `VBW`, with the plain sentence of what it
+needs (for example, `Please approve the plan before VBW builds it.`). It fires
+once per request: not on a redraw, not after a restart while the same request
+stands, and not again when Claude Code's question menu opens for that same
+request (the menu plays its sound). A question with no request standing raises
+one notification when its menu opens. It never fires twice for one question.
 
 VBW raises the same kind of notification, without a sound, once for each new
 [What's next](#whats-next) recommendation. One you have already seen raises
 none after a restart; a newer one raises one.
+
+Notifications follow the sound switch and [motion](#motion): with motion `off`
+VBW raises none (VBW has no separate notification setting); the sound keeps
+its own switch.
 
 ### Turning them off
 

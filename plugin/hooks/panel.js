@@ -38,7 +38,7 @@ const projectTag = (root) => {
 }
 const keys = (testRoot) => {
   const p = typeof testRoot === 'string' ? 'test.' + projectTag(testRoot) + '.' : ''
-  return { closed: p + 'vbw-panel.closed', nextSeen: p + 'vbw-panel.next-seen', seen: p + 'vbw-panel.seen', needSeen: p + 'vbw-panel.need-seen', helpersSeen: p + 'vbw-panel.helpers-seen', refusalsSeen: p + 'vbw-panel.refusals-seen' }
+  return { closed: p + 'vbw-panel.closed', nextSeen: p + 'vbw-panel.next-seen', seen: p + 'vbw-panel.seen', needSeen: p + 'vbw-panel.need-seen', needNotified: p + 'vbw-panel.need-notified', helpersSeen: p + 'vbw-panel.helpers-seen', refusalsSeen: p + 'vbw-panel.refusals-seen' }
 }
 // The sound for a request for the user: the clone setting `sound` (docs/config.md) is
 // `off`, `default` (any shipped voice) or a folder under assets/audio/; panel-sounds.js
@@ -121,7 +121,7 @@ function fresh() {
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
     lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {}, refusalsSeen: {},
     sprites: null, burst: null, sweep: null, cheer: null, wrapped: null, nextSeen: null, nextAt: null, nextAnim: null,
-    seenNext: null, needSeen: null, proving: null, stamps: {}, stepNote: null, step: null, open: {},
+    seenNext: null, needSeen: null, needNotified: null, proving: null, stamps: {}, stepNote: null, step: null, open: {},
   }
 }
 
@@ -489,8 +489,10 @@ async function readSound($, st) {
   st.sound = st.soundChoice !== 'off'
 }
 
-// Call the user, once: the needs-you sound and a native notification, both only while the
-// sound is on, neither in a test session. A missing player or $.ui.notify is silent.
+// Call the user, once: the needs-you sound (`clip`) and a native notification (`text`), both
+// only while the sound is on, the notification only while motion is not off, neither in a
+// test session. Claude Code has no notification setting of VBW's own: `motion` is the
+// switch (docs/panel.md). A missing player or $.ui.notify is silent.
 async function call($, st, text, clip) {
   if (!st.sound) return
   if (st.silent) {
@@ -504,6 +506,7 @@ async function call($, st, text, clip) {
       // no file or no player: nothing to say
     }
   }
+  if (!text || motion(st) === 'off') return
   try {
     await $.ui.notify(text, { title: 'VBW' })
   } catch {
@@ -511,11 +514,31 @@ async function call($, st, text, clip) {
   }
 }
 
-// Claude Code's question menu just opened: one clip and one notification naming what VBW
-// needs (the need standing besides the question, else just a question).
+// The need now standing, marked as notified (kept in the user's store, so a restart does
+// not raise it again): true when it had not been notified yet.
+async function firstCall($, st, need) {
+  const id = needId(need)
+  if (id === st.needNotified) return false
+  st.needNotified = id
+  await keep($, st.keys.needNotified, id)
+  return true
+}
+
+// VBW starts waiting for the person (the needs-you line appears): one notification, once
+// per need, never on a redraw. A question has its own call, with Claude Code's menu.
+async function noteNeed($, st) {
+  const need = needNow(st)
+  if (!need || need.kind === 'question') return
+  if (await firstCall($, st, need)) await call($, st, need.text, null)
+}
+
+// Claude Code's question menu just opened: one clip, and one notification naming what VBW
+// needs (the need standing besides the question, else just a question) unless that need
+// was already notified when it appeared.
 async function callForQuestion($, st) {
   const need = liveNeed({ record: st.record, next: st.next, nextAt: st.nextFileAt, health: st.health })
-  await call($, st, need ? need.text : 'VBW has a question for you.', pick(st))
+  const text = need ? ((await firstCall($, st, need)) ? need.text : null) : 'VBW has a question for you.'
+  await call($, st, text, pick(st))
 }
 
 // An approve gate puts /vbw:approve in the prompt's suggestion, once; the person sends it.
@@ -596,6 +619,7 @@ async function tick($, st) {
     const now = await $.clock.now()
     await celebrate($, st, now)
     await noteRecommendation($, st, now)
+    await noteNeed($, st)
     for (const k of ['burst', 'sweep']) if (st[k] && !st[k].site && now - st[k].at > AFTER_MS) st[k] = null
     await redrawIfChanged($, st, false, now)
   } catch {
@@ -908,8 +932,11 @@ async function start($, st) {
   if (Array.isArray(helpersKept)) for (const id of helpersKept) if (typeof id === 'string') st.helpersSeen[id] = true
   const refusalsKept = await $.store.get(st.keys.refusalsSeen)
   if (Array.isArray(refusalsKept)) for (const id of refusalsKept) if (typeof id === 'string') st.refusalsSeen[id] = true
+  const notified = await $.store.get(st.keys.needNotified)
+  st.needNotified = typeof notified === 'string' ? notified : null
   const now = await $.clock.now()
   await noteRecommendation($, st, now)
+  await noteNeed($, st)
   const v0 = view(st, now)
   await suggest($, st)
   st.shown = signature(st, v0, now)

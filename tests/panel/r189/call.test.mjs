@@ -6,7 +6,8 @@
 // or the menu closing; a second question plays once more, and one question never
 // plays two clips (B1: two clips together, a clip after answering). The native
 // notification ($.ui.notify, title 'VBW', a plain sentence of what VBW needs)
-// fires once with it, and once when a new What's next recommendation is written
+// fires once when VBW starts waiting for the person (the needs-you line appears;
+// the menu for that need adds none), once for a question with no need standing, and once when a new What's next recommendation is written
 // (one already seen, by its stored time, never again after a restart). Both
 // follow the sound switch, remembered across sessions in the clone setting `sound` (R57); a test session (R64)
 // plays and raises nothing and neither reads nor changes the user's choices.
@@ -153,17 +154,21 @@ test("a test session plays nothing aloud, raises nothing, and neither reads nor 
   for (const [k] of h.callsOf('store.set')) assert.match(k, /^test\./, 'wrote the user key ' + k)
 })
 
-test('the notification fires once when the menu opens, titled VBW, with a plain sentence of what VBW needs, and not again for the same question', async () => {
+test('the notification fires once when VBW starts waiting (the needs-you line appears), titled VBW, and the question menu for that need adds no second one', async () => {
   const h = await session()
   h.write(NEXT, next({ action: 'approve', gate: true }))
   await h.advance(2000)
-  assert.equal(h.notifies.length, 0, 'a gate alone raised a notification')
-  const q = ask(h)
-  await h.settle()
-  assert.equal(h.notifies.length, 1, 'no notification when the menu opened')
+  assert.equal(h.notifies.length, 1, 'no notification when the needs-you line appeared')
   assert.equal(h.notifies[0].title, 'VBW')
   assert.match(String(h.notifies[0].text), SENTENCE)
   assert.match(String(h.notifies[0].text), /approv/i, 'it names what VBW needs')
+  await h.advance(30000)
+  assert.equal(h.notifies.length, 1, 'a redraw notified again')
+  assert.equal(h.plays.length, 0, 'the sound is for the question menu only')
+  const q = ask(h)
+  await h.settle()
+  assert.equal(h.plays.length, 1, 'the menu plays its clip')
+  assert.equal(h.notifies.length, 1, 'the menu for the same need notified twice')
   for (let i = 0; i < 3; i++) {
     await menu(h)
     await h.advance(3000)
@@ -171,15 +176,41 @@ test('the notification fires once when the menu opens, titled VBW, with a plain 
   q.answer()
   await q.done
   await h.advance(6000)
-  assert.equal(h.notifies.length, 1, 'the same question notified again')
+  assert.equal(h.notifies.length, 1, 'the same need notified again')
   h.write(NEXT, next())
   await h.advance(2000)
   const q2 = ask(h, 'q2')
   await h.settle()
-  assert.equal(h.notifies.length, 2, 'a second question notifies once more')
+  assert.equal(h.notifies.length, 2, 'a question with no need standing notifies once')
   assert.match(String(h.notifies[1].text), SENTENCE)
   q2.answer()
   await q2.done
+  h.write(NEXT, next({ action: 'ship', gate: true }))
+  await h.advance(2000)
+  assert.equal(h.notifies.length, 3, 'a new need notifies once more')
+})
+
+test('a need already notified stays quiet after a restart; motion off raises no notification at all', async () => {
+  const store = new Map()
+  const h = await session({ store })
+  h.write(NEXT, next({ action: 'approve', gate: true }))
+  await h.advance(2000)
+  assert.equal(h.notifies.length, 1)
+  const again = await session({ store })
+  again.write(NEXT, h.files.get(NEXT).text)
+  await again.advance(4000)
+  assert.equal(again.notifies.length, 0, 'the standing need notified again after a restart')
+  const still = await session({}, record({ settings: { motion: 'off' } }))
+  still.write(NEXT, next({ action: 'approve', gate: true }))
+  await still.advance(2000)
+  still.project(record({ settings: { motion: 'off' }, recommendation: REC() }))
+  await still.advance(4000)
+  const q = ask(still)
+  await still.settle()
+  assert.equal(still.notifies.length, 0, 'motion off raised a notification')
+  assert.equal(still.plays.length, 1, 'the sound keeps its own switch')
+  q.answer()
+  await q.done
 })
 
 test('a new What\'s next recommendation raises one notification; one already seen does not, even after a restart', async () => {
