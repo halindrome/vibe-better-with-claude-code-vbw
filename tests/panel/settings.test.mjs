@@ -20,6 +20,7 @@ const P = await import(pathToFileURL(PLUGIN + '/hooks/panel-palette.js').href)
 const EL = (name) => Object.freeze({ element: name })
 const UI = { Box: EL('Box'), Text: EL('Text'), Button: EL('Button') }
 const NOW = Date.parse('2026-10-24T15:00:00Z')
+const SID = 'session-1'
 
 // A stand-in kernel: `vbw config` prints its lines as cmd-config.sh does; `config set`,
 // `config rigor` and `statusline on|off` change it and print 'KEY = VALUE'; a value the
@@ -29,6 +30,8 @@ function kernel() {
     profile: 'balanced', autonomy: 'balanced', autonomy_cap: '25', rigor: 'auto', motion: 'default', check_jobs: '6',
     command_timeout: '3600', check_budget: '120', sound: 'default', statusline: 'off',
     models: { architect: 'opus', lead: 'opus', dev: 'sonnet', qa: 'sonnet', scout: 'sonnet', debugger: 'sonnet', docs: 'sonnet' },
+    interview: { kept: 'private', interviewed: true, level: 'professionally', depth: 'technical and brief', involvement: 'options with a recommendation', pending: null },
+    workflows: 'default', auto: null,
   }
   const calls = []
   const out = (stdout) => ({ exitCode: 0, stdout, stderr: '' })
@@ -43,6 +46,17 @@ function kernel() {
         'sound: ' + k.sound, 'command_timeout: ' + k.command_timeout + ' seconds', 'check_budget: ' + k.check_budget + ' seconds a unit (reported, never enforced)',
         ...Object.entries(k.models).map(([r, m]) => 'model.' + r + ': ' + m)].join('\n') + '\n')
     }
+    if (a === 'interview' && b === '--json') return out(JSON.stringify(k.interview) + '\n')
+    if (a === 'interview' && b === 'set') { k.interview[c] = d; return out(c + ' = ' + d + '\n') }
+    if (a === 'interview' && b === 'keep') { k.interview.kept = c; return out('the interview answers are kept ' + c + '\n') }
+    if (a === 'workflows' && b === 'status') {
+      return out({ on: 'on: Dynamic workflows are enabled', default: 'default: Claude Code decides (off on some plans; vbw workflows on turns them on)',
+        disabled: 'off: Dynamic workflows are disabled on purpose (disableWorkflows or CLAUDE_CODE_DISABLE_WORKFLOWS); VBW needs them to plan and build' }[k.workflows] + '\n')
+    }
+    if (a === 'workflows' && b === 'on') { if (k.workflows === 'default') k.workflows = 'on'; return out('on: Dynamic workflows turned on\n') }
+    if (a === 'auto' && b === 'status' && c === SID) return out(k.auto ? 'armed: step ' + k.auto.steps + ' of ' + k.auto.cap + ', since 2026-10-24T15:00:00Z\n' : 'off\n')
+    if (a === 'auto' && b === 'on' && c === SID) { k.auto = { steps: 0, cap: Number(k.autonomy_cap) }; return out('autonomous run armed for this session\n') }
+    if (a === 'auto' && b === 'off' && c === SID) { k.auto = null; return out('autonomous run off\n') }
     if (a === 'statusline' && b === 'status') return out(k.statusline === 'on' ? 'on: the VBW status line\n' : 'off: no status line is set (vbw statusline on)\n')
     if (a === 'statusline') { k.statusline = b; return out(b + ': done\n') }
     if (a === 'config' && b === 'rigor') { k.rigor = c; return out('rigor = ' + c + '\n') }
@@ -59,12 +73,13 @@ function kernel() {
 
 // What panel.js does on a press or when the tab opens (its settings($, st, choice)).
 async function settings(st, kn, choice, now = NOW) {
-  const argv = choice ? S.settingArgv(choice) : null
+  const argv = choice ? S.settingArgv(choice, SID) : null
   const result = argv ? kn.run(argv) : null
-  const reads = S.READ_ARGV.map((r) => kn.run(r))
+  const reads = S.readArgv(SID).map((r) => kn.run(r))
   st.settings = S.settingsState({ before: st.settings, choice, result, reads, now })
 }
 
+const state_ = (over = {}) => state(over)
 const state = (over = {}) => ({ tab: 'settings', record: record(), run: null, steps: [], leases: [], cost: 1, sound: true, agent: null, phase: null, check: null, settings: null, ...over })
 const draw = (st, now = NOW, width = 80) => pane.renderPane(UI, { st, v: view.panelView({ record: st.record, now, cost: 1 }), now, width, scroll: { offset: 0, bodyRows: 200 } },
   { act: (a) => st.pressed.push(a), sound: () => st.pressed.push('sound') })
@@ -89,6 +104,56 @@ test('every key `vbw config set` accepts has a row, with rigor and the status li
   assert.ok(!S.ROWS.find((r) => r.key === 'model.qa').choices.includes('haiku'), 'QA is never offered Haiku')
 })
 
+test('the interview answers, the autonomous run and Dynamic workflows run their own kernel commands', () => {
+  assert.deepEqual(S.settingArgv({ key: 'interview.level', value: 'senior engineer' }, SID), ['interview', 'set', 'level', 'senior engineer'])
+  assert.deepEqual(S.settingArgv({ key: 'interview.involvement', value: 'I make the calls' }, SID), ['interview', 'set', 'involvement', 'I make the calls'])
+  assert.deepEqual(S.settingArgv({ key: 'interview.kept', value: 'project' }, SID), ['interview', 'keep', 'project'])
+  assert.deepEqual(S.settingArgv({ key: 'auto', value: 'on' }, SID), ['auto', 'on', SID])
+  assert.deepEqual(S.settingArgv({ key: 'auto', value: 'off' }, SID), ['auto', 'off', SID])
+  assert.deepEqual(S.settingArgv({ key: 'workflows', value: 'on' }, SID), ['workflows', 'on'])
+  for (const bad of [{ key: 'auto', value: 'on' }, { key: 'auto', value: 'maybe' }, { key: 'interview.level', value: 'wizard' }, { key: 'interview.kept', value: 'cloud' }, { key: 'workflows', value: 'off' }]) {
+    assert.equal(S.settingArgv(bad, bad.key === 'auto' && bad.value === 'on' ? null : SID), null, JSON.stringify(bad))
+  }
+})
+
+test('the interview rows offer exactly the answers the kernel accepts, in its order', () => {
+  const answers = JSON.parse(fs.readFileSync(PLUGIN + '/lib/interview.json', 'utf8'))
+  for (const k of ['level', 'depth', 'involvement']) assert.deepEqual(S.ROWS.find((r) => r.key === 'interview.' + k).choices, answers[k], k)
+  assert.deepEqual(S.ROWS.find((r) => r.key === 'interview.kept').choices, ['private', 'project'])
+})
+
+test('Dynamic workflows: on is a green ✓; Claude Code\'s default is amber with a turn on button; off on purpose is amber with no button', async () => {
+  for (const [state, mark, button] of [['on', '✓', false], ['default', '⚠', true], ['disabled', '⚠', false]]) {
+    const kn = kernel()
+    kn.k.workflows = state
+    const st = state_({ pressed: [] })
+    await settings(st, kn, null)
+    const row = rowOf(draw(st), 'workflows')
+    const v = texts(row).find((t) => t.props.key === 'value')
+    assert.ok(v && v.text.startsWith(mark), state + ': ' + (v && v.text))
+    assert.equal(v.props.color, state === 'on' ? P.stateColor('done') : P.NEED, state)
+    assert.equal(buttons(row).some((b) => b.props.label === 'turn on'), button, state + ': turn on button')
+  }
+  const kn = kernel()
+  const st = state_({ pressed: [] })
+  await settings(st, kn, null)
+  buttons(rowOf(draw(st), 'workflows')).find((b) => b.props.label === 'turn on').props.onPress({ surface: 'terminal' })
+  await settings(st, kn, st.pressed[0].setting)
+  assert.ok(texts(rowOf(draw(st), 'workflows')).find((t) => t.props.key === 'value').text.startsWith('✓'), 'turned on')
+})
+
+test('the autonomous run row is this chat\'s: armed shows on with its steps, and with no session id there is no row', async () => {
+  const kn = kernel()
+  kn.k.auto = { steps: 2, cap: 25 }
+  const st = state_({ pressed: [] })
+  await settings(st, kn, null)
+  const row = rowOf(draw(st), 'auto')
+  assert.equal(texts(row).find((t) => t.props.key === 'value').text, 'on')
+  assert.match(collect(row).join(' '), /this chat · step 2 of 25/)
+  const none = S.settingsState({ reads: S.readArgv(null).map((r) => kernel().run(r)), now: NOW })
+  assert.ok(!rowOf(S.renderSettings(UI, S.settingsModel({ settings: none, now: NOW })), 'auto'), 'no row without a session')
+})
+
 test('a press runs only the kernel command its row offers: config set, config rigor, statusline on|off; anything else runs nothing', () => {
   assert.deepEqual(S.settingArgv({ key: 'profile', value: 'quality' }), ['config', 'set', 'profile', 'quality'])
   assert.deepEqual(S.settingArgv({ key: 'rigor', value: 'deep' }), ['config', 'rigor', 'deep'])
@@ -105,9 +170,10 @@ test('the tab reads the values from vbw config: each row its value, check_jobs w
   const st = state({ pressed: [] })
   assert.match(collect(draw(st)).join('\n'), /Reading the settings/, 'before the first read the tab says so')
   await settings(st, kn, null)
-  assert.deepEqual(kn.calls, [['config'], ['statusline', 'status']])
+  assert.deepEqual(kn.calls, [['config'], ['statusline', 'status'], ['interview', '--json'], ['workflows', 'status'], ['auto', 'status', SID]])
+  assert.deepEqual(S.readArgv(null), [['config'], ['statusline', 'status'], ['interview', '--json'], ['workflows', 'status']], 'no session id: no autonomous run row to read')
   const tree = draw(st)
-  for (const [key, value] of [['profile', 'balanced'], ['model.lead', 'opus'], ['autonomy_cap', '25'], ['rigor', 'auto'], ['motion', 'default'], ['sound', 'default'], ['statusline', 'off'], ['check_jobs', '6']]) {
+  for (const [key, value] of [['interview.level', 'professionally'], ['interview.kept', 'private'], ['auto', 'off'], ['profile', 'balanced'], ['model.lead', 'opus'], ['autonomy_cap', '25'], ['rigor', 'auto'], ['motion', 'default'], ['sound', 'default'], ['statusline', 'off'], ['check_jobs', '6']]) {
     const row = rowOf(tree, key)
     assert.ok(row, 'no row ' + key)
     const v = texts(row).find((t) => t.props.key === 'value')
@@ -125,8 +191,9 @@ test('one change per row: the kernel command runs, the tab is read again and the
   const st = state({ pressed: [] })
   await settings(st, kn, null)
   const picks = { profile: 'quality', autonomy: 'guided', rigor: 'deep', motion: 'calm', sound: 'darth', statusline: 'on' }
+  Object.assign(picks, { 'interview.level': 'senior engineer', 'interview.depth': 'plain words', 'interview.involvement': 'I make the calls', 'interview.kept': 'project', auto: 'on' })
   for (const r of S.ROLES) picks['model.' + r] = 'opus'
-  for (const r of S.ROWS) {
+  for (const r of S.ROWS.filter((x) => !x.status)) {
     st.pressed = []
     const tree = draw(st)
     let b
@@ -138,7 +205,7 @@ test('one change per row: the kernel command runs, the tab is read again and the
     const choice = st.pressed[0].setting
     kn.calls.length = 0
     await settings(st, kn, choice)
-    assert.deepEqual(kn.calls.slice(1), S.READ_ARGV, r.key + ': the tab is read again after the change')
+    assert.deepEqual(kn.calls.slice(1), S.readArgv(SID), r.key + ': the tab is read again after the change')
     const after = draw(st, NOW + 500)
     const want = r.choices ? picks[r.key] : String(Number(choice.value))
     assert.ok(texts(rowOf(after, r.key)).find((t) => t.props.key === 'value').text.startsWith(want), r.key + ' shows ' + want)

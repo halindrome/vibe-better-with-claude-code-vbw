@@ -254,10 +254,11 @@ test('Settings: a press runs the kernel command, the tab is read again, the row 
   }
   const h = await started({ process: kernel })
   await press(h, await h.render(), 'Settings')
-  assert.deepEqual(ran, [['config'], ['statusline', 'status']], 'opening the tab reads it at once')
+  const READS = [['config'], ['statusline', 'status'], ['interview', '--json'], ['workflows', 'status'], ['auto', 'status', 'sess-1']]
+  assert.deepEqual(ran, READS, 'opening the tab reads it at once, this chat\'s autonomous run by its session id')
   ran.length = 0
   await press(h, await h.render(), 'quality')
-  assert.deepEqual(ran, [['config', 'set', 'profile', 'quality'], ['config'], ['statusline', 'status']])
+  assert.deepEqual(ran, [['config', 'set', 'profile', 'quality'], ...READS])
   let t = text(await h.render())
   assert.match(t, /profile\s*\nquality\n\n● \nquality\n(.*\n)*✓ saved/)
   assert.ok(h.calls.every((c) => c.name !== 'fs.write' || !/record\.json/.test(String(c.args[0]))), 'the tab never writes the record')

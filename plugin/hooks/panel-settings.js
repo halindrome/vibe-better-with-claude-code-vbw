@@ -23,33 +23,57 @@ export const SAVED_MS = 2000
 // step of its − and + and its bounds (the kernel's); `scope`: who shares the value;
 // `group`: the heading it sits under (GROUPS).
 const MODELS = ['fable', 'opus', 'sonnet', 'haiku', 'default']
+// The interview's answers, as plugin/lib/interview.json lists them (a test holds the two equal).
+export const INTERVIEW = {
+  level: ['never', 'small scripts or no-code', 'professionally', 'senior engineer'],
+  depth: ['plain words', 'plain with technical terms explained', 'technical and brief'],
+  involvement: ['decide and tell me', 'options with a recommendation', 'I make the calls'],
+}
+const TALK = 'How VBW talks to you'
 export const ROWS = [
   { key: 'profile', choices: ['quality', 'balanced', 'budget'], group: 'Models' },
   ...ROLES.map((r) => ({ key: 'model.' + r, choices: r === 'qa' ? MODELS.filter((m) => m !== 'haiku') : MODELS, role: r, group: 'Models' })),
+  { key: 'interview.level', label: 'your level', choices: INTERVIEW.level, group: TALK },
+  { key: 'interview.depth', label: 'wording', choices: INTERVIEW.depth, group: TALK },
+  { key: 'interview.involvement', label: 'decisions', choices: INTERVIEW.involvement, group: TALK },
+  { key: 'interview.kept', label: 'kept', choices: ['private', 'project'], group: TALK },
   { key: 'autonomy', choices: ['guided', 'balanced', 'hands-off'], group: 'How VBW works' },
   { key: 'autonomy_cap', number: { min: 1, max: 9999, step: 5, unset: 25 }, group: 'How VBW works' },
+  { key: 'auto', label: 'autonomous run', choices: ['on', 'off'], scope: 'this chat', group: 'How VBW works' },
   { key: 'rigor', choices: ['auto', 'express', 'standard', 'deep'], group: 'How VBW works' },
   { key: 'check_jobs', number: { min: 1, max: 64, step: 1 }, scope: 'this clone', group: 'Checks' },
   { key: 'command_timeout', number: { min: 1, max: 86400, step: 60, unset: 3600 }, unit: 's', group: 'Checks' },
   { key: 'check_budget', number: { min: 1, max: 86400, step: 10, unset: 120 }, unit: 's', group: 'Checks' },
   { key: 'motion', choices: ['full', 'calm', 'off', 'default'], group: 'Look and sound' },
   { key: 'sound', choices: ['off', ...SOUND_FOLDERS, 'default'], scope: 'this clone', group: 'Look and sound' },
-  { key: 'statusline', choices: ['on', 'off'], scope: 'this computer', group: 'Look and sound' },
+  { key: 'statusline', choices: ['on', 'off'], scope: 'this computer', group: 'Claude Code' },
+  { key: 'workflows', label: 'Dynamic workflows', status: true, scope: 'this computer', group: 'Claude Code' },
 ]
 const rowOf = (key) => ROWS.find((r) => r.key === key) || null
 
-// What panel.js runs to read the tab: `vbw config`, then `vbw statusline status`.
-export const READ_ARGV = [['config'], ['statusline', 'status']]
+const SESSION = /^[A-Za-z0-9_-]+$/
+const sessionOf = (x) => (typeof x === 'string' && SESSION.test(x) ? x : null)
+
+// What panel.js runs to read the tab, in this order: `vbw config`, `vbw statusline status`,
+// `vbw interview --json`, `vbw workflows status`, and with this chat's session id
+// `vbw auto status SESSION` (no id, no autonomous run row).
+export const readArgv = (session) => [['config'], ['statusline', 'status'], ['interview', '--json'], ['workflows', 'status'],
+  ...(sessionOf(session) ? [['auto', 'status', session]] : [])]
 
 // The argv (after the vbw path) a press asks for, or null when the key or value is not one a
-// row offers: nothing is run that the tab does not draw.
-export function settingArgv(choice) {
+// row offers: nothing is run that the tab does not draw. `session`: this chat's id, which the
+// autonomous run's on and off name.
+export function settingArgv(choice, session) {
   try {
     if (!isObj(choice) || typeof choice.key !== 'string') return null
     const row = rowOf(choice.key)
     const v = typeof choice.value === 'number' ? String(choice.value) : choice.value
     if (!row || typeof v !== 'string') return null
+    if (row.key === 'workflows') return v === 'on' ? ['workflows', 'on'] : null
     if (row.choices && !row.choices.includes(v)) return null
+    if (row.key === 'auto') return sessionOf(session) ? ['auto', v, session] : null
+    if (row.key === 'interview.kept') return ['interview', 'keep', v]
+    if (row.key.startsWith('interview.')) return ['interview', 'set', row.key.slice(10), v]
     if (row.number && !(v === 'default' || (/^\d+$/.test(v) && Number(v) >= row.number.min && Number(v) <= row.number.max))) return null
     if (row.key === 'rigor') return ['config', 'rigor', v]
     if (row.key === 'statusline') return ['statusline', v]
@@ -90,16 +114,43 @@ const firstLine = (r) => {
   return t.split('\n').map((l) => l.trim()).filter(Boolean)[0] || 'VBW refused the change (exit ' + (isObj(r) ? r.exitCode : '?') + ').'
 }
 
+// `vbw interview --json`'s answers as rows' values: unanswered and not kept yet are null, no choice lit.
+function parseInterview(text) {
+  let j
+  try { j = JSON.parse(String(text || '')) } catch { return {} }
+  if (!isObj(j)) return {}
+  const out = {}
+  for (const k of ['level', 'depth', 'involvement']) out['interview.' + k] = { value: str(j[k]) || 'not answered', note: '' }
+  out['interview.kept'] = { value: str(j.kept) || 'not kept yet', note: j.kept === 'project' ? 'shared through git' : j.kept === 'private' ? 'this clone only' : '' }
+  return out
+}
+
+// `vbw workflows status`'s first word: on, default (Claude Code decides) or off (disabled on purpose).
+function parseWorkflows(text) {
+  const m = /^(on|default|off):\s*(.*)$/.exec(String(text || '').split('\n')[0].trim())
+  return m ? { workflows: { value: m[1] === 'off' ? 'disabled' : m[1], note: '' } } : {}
+}
+
+// `vbw auto status SESSION`: off, or 'armed: step N of M, since …'.
+function parseAuto(text) {
+  const line = String(text || '').split('\n')[0].trim()
+  const m = /^armed: step (\d+) of (\d+)/.exec(line)
+  if (m) return { auto: { value: 'on', note: 'step ' + m[1] + ' of ' + m[2] } }
+  return line === 'off' ? { auto: { value: 'off', note: '' } } : {}
+}
+
 // The tab's state after a read (and a press): before, the earlier state or null; choice, the
 // pressed { key, value } or null; result, what running settingArgv(choice) gave ({ exitCode,
-// stdout, stderr }, null when it could not run); reads, the results of READ_ARGV in order.
+// stdout, stderr }, null when it could not run); reads, the results of readArgv in order.
 export function settingsState(input) {
   try {
     const { before, choice, result, reads, now } = isObj(input) ? input : {}
     const prev = isObj(before) ? before : {}
-    const [cfg, line] = Array.isArray(reads) ? reads : []
+    const [cfg, line, interview, workflows, auto] = Array.isArray(reads) ? reads : []
     const ok = (r) => isObj(r) && r.exitCode === 0
-    const values = ok(cfg) ? parseConfig(cfg.stdout) : isObj(prev.values) ? prev.values : null
+    const values = ok(cfg)
+      ? { ...parseConfig(cfg.stdout), ...(ok(interview) ? parseInterview(interview.stdout) : {}), ...(ok(workflows) ? parseWorkflows(workflows.stdout) : {}), ...(ok(auto) ? parseAuto(auto.stdout) : {}) }
+      : isObj(prev.values) ? prev.values : null
     const status = ok(line) || (isObj(line) && str(line.stdout)) ? parseStatusline(line.stdout) : prev.statusline || null
     const state = {
       values, statusline: status, at: Number.isFinite(now) ? now : null,
@@ -142,8 +193,8 @@ export function settingsModel(input) {
       const n = r.number && /^\d+$/.test(value) ? Number(value) : r.number && r.number.unset ? r.number.unset : null
       rows.push({
         key: r.key, value: value === 'null' && r.number ? 'not set' : value,
-        note: [r.key === 'check_jobs' ? got.limit : null, r.scope ? r.scope : null].filter(Boolean).join(' · '),
-        mine: Boolean(r.role && str(mine[r.role])), role: r.role || null,
+        note: [r.key === 'check_jobs' ? got.limit : null, r.scope ? r.scope : null, r.key === 'auto' || r.key === 'interview.kept' ? str(got.note) : null].filter(Boolean).join(' · '),
+        mine: Boolean(r.role && str(mine[r.role])), role: r.role || null, label: r.label || r.role || r.key, status: Boolean(r.status),
         ...(r.choices ? { choices: r.choices } : {}),
         ...(r.number ? { number: { ...r.number, at: n } } : {}),
         unit: r.unit || '',
@@ -159,7 +210,7 @@ export function settingsModel(input) {
 }
 
 // The headings the rows sit under, in the order drawn; each row names its own.
-export const GROUPS = ['Models', 'How VBW works', 'Checks', 'Look and sound']
+export const GROUPS = ['Models', 'How VBW talks to you', 'How VBW works', 'Checks', 'Look and sound', 'Claude Code']
 
 // One line per row: the name in its colour, then its controls, the ✓ saved flash and the new
 // mark; under it its note dim and the kernel's refusal in amber. A choice row is one button per
@@ -174,8 +225,9 @@ export function renderSettings(ui, model, act) {
     return h(Box, { key: 'settings', flexDirection: 'column' },
       m.error ? h(Text, { key: 'settings-error', color: NEED }, m.error) : h(Text, { key: 'settings-reading', dimColor: true }, 'Reading the settings…'))
   }
-  // A model row is named by its role alone, under the Models heading; each group pads its names to its own longest.
-  const label = (r) => (r.role ? r.role : r.key)
+  // A model row is named by its role alone, under the Models heading, and an interview row by
+  // what it asks; each group pads its names to its own longest.
+  const label = (r) => r.label || r.role || r.key
   const groupOf = (r) => (rowOf(r.key) || {}).group || ''
   const widthOf = (g) => Math.max(...m.rows.filter((r) => groupOf(r) === g).map((r) => label(r).length)) + 2
   const done = stateColor('done')
@@ -195,7 +247,14 @@ export function renderSettings(ui, model, act) {
     }
     const under = (k, text) => h(Box, { key: k + '-line', flexDirection: 'row' }, h(Text, { key: 'indent' }, ' '.repeat(nameW)), text)
     let controls
-    if (r.choices) {
+    if (r.status) {
+      // Dynamic workflows: on is done; Claude Code's default may be off on some plans, so it offers
+      // turn on; off on purpose (disableWorkflows) is the user's, said and never overridden.
+      const on = r.value === 'on'
+      const text = on ? STATE_MARKS.done + ' on' : r.value === 'default' ? '⚠ Claude Code decides (off on some plans)' : '⚠ off on purpose: VBW needs them to plan and build'
+      controls = [h(Text, { key: 'value', color: on ? done : NEED }, text),
+        ...(r.value === 'default' ? [h(Button, { key: 'set-' + r.key + '-on', label: 'turn on', variant: 'primary', onPress: press(r.key, 'on') })] : [])]
+    } else if (r.choices) {
       controls = r.choices.map((c) => chip(r, c))
     } else {
       const n = r.number

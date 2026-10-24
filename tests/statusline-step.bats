@@ -169,10 +169,13 @@ render_color() {
   jq -nc --arg d "$PROJECT" '{session_id: "s1", workspace: {project_dir: $d}, version: "2.1.286"}' | bash "$SL" | head -1
 }
 
-# hm_of FILE FIELD: the local clock of FILE's FIELD as the status line words it.
+# hm_of FILE FIELD: the local clock of FILE's FIELD as the status line words it: today
+# bare, tomorrow, yesterday, else the weekday, by calendar day (so 25 hours ago just after
+# midnight is the day before yesterday).
 hm_of() {
-  jq -r --arg f "$2" '(.[$f] | fromdateiso8601) as $t | ([$t, now] | map(strflocaltime("%Y-%m-%d"))) as [$e, $d]
-    | (if $e == $d then "" elif ($t - now) > 0 then "tomorrow " else "yesterday " end) + ($t | strflocaltime("%H:%M"))' "$1"
+  jq -r --arg f "$2" 'def day($e): $e | localtime | mktime / 86400 | floor;
+    (.[$f] | fromdateiso8601) as $t | (day($t) - day(now)) as $d
+    | (if $d == 0 then "" elif $d == 1 then "tomorrow " elif $d == -1 then "yesterday " else ($t | strflocaltime("%A ")) end) + ($t | strflocaltime("%H:%M"))' "$1"
 }
 
 @test "C1: a running step reads 'working', what it is doing, minutes so far and 'until around' its clock time, in the accent colour" {
