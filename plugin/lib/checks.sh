@@ -109,13 +109,17 @@ checks_timer() {
 }
 
 # checks_exec TIMEOUT OUTFILE ARGV...: run ARGV from the project root, output to
-# OUTFILE, stopped at TIMEOUT seconds. Sets CHECK_CODE and CHECK_SECONDS.
+# OUTFILE, stopped at TIMEOUT seconds. Sets CHECK_CODE and CHECK_SECONDS, the
+# unit's time in tenths of a second as a decimal ("0.4", "12.0"). The shell's own
+# timer reads it (the time keyword with TIMEFORMAT %R: milliseconds, bash 3.2, no
+# process of its own); a failed read falls back to whole seconds.
 checks_exec() {
-  local t="$1" out="$2"
+  local t="$1" out="$2" TIMEFORMAT=%R tf ms
   shift 2
   checks_timer
   SECONDS=0
   CHECK_CODE=0
+  tf="$out.time"
   # A signal ignored by the environment stays ignored in its children (some CI
   # runners start everything with SIGALRM/SIGTERM ignored). So timeout escalates
   # to SIGKILL, which cannot be ignored, and perl resets SIGALRM before the alarm.
@@ -125,12 +129,18 @@ checks_exec() {
   # it does under perl; without it GNU timeout starts a group of its own and an
   # interrupted run waited for its units to end (T148, Linux).
   if [ "$CHECKS_TIMER" = timeout ]; then
-    env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} timeout --foreground -k 5 "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
+    { time env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} timeout --foreground -k 5 "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?; } 2> "$tf"
   else
-    env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} perl -e '$SIG{ALRM} = "DEFAULT"; alarm shift @ARGV; exec { $ARGV[0] } @ARGV or do { print STDERR "cannot run $ARGV[0]: $!\n"; exit 127 }' \
-      "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?
+    { time env -u VBW_SESSION_ID ${SLOTS_MARK:+"$SLOTS_MARK"} perl -e '$SIG{ALRM} = "DEFAULT"; alarm shift @ARGV; exec { $ARGV[0] } @ARGV or do { print STDERR "cannot run $ARGV[0]: $!\n"; exit 127 }' \
+      "$t" "$@" > "$out" 2>&1 < /dev/null || CHECK_CODE=$?; } 2> "$tf"
   fi
   CHECK_SECONDS=$SECONDS
+  # The reading is "S.mmm"; anything else (an empty file) keeps the whole seconds.
+  ms=$(tail -n 1 "$tf" 2> /dev/null)
+  rm -f "$tf"
+  case "$ms" in
+    [0-9]*.[0-9][0-9][0-9]) ms=$((10#${ms%.*} * 1000 + 10#${ms#*.})); ms=$(((ms + 50) / 100)); CHECK_SECONDS="$((ms / 10)).$((ms % 10))" ;;
+  esac
 }
 
 # checks_result OUTFILE TIMEOUT EXPECT_EXIT [OUTPUT_REGEX]: the result object.

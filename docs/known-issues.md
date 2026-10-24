@@ -26,7 +26,6 @@ Status words:
 | [Approved rules cannot be reworded or retired](#approved-rules-cannot-be-reworded-or-retired) | Known issue | Re-planning | None clean |
 | [Heavy checks each use every core](#heavy-checks-each-use-every-core) | Known issue | Cargo, make, similar | Lower `check_jobs` |
 | [Slot store edge cases](#slot-store-edge-cases) | Known issue | Sandboxes, many runs | None needed |
-| [Unit times are whole seconds](#unit-times-are-whole-seconds) | Known issue | Proof time reports | None needed |
 | [Status line speed where VBW is off](#status-line-speed-where-vbw-is-off) | Planned | Slower Macs | None needed |
 | [Panel drawing headroom](#panel-drawing-headroom) | Planned | Slower Macs | None needed |
 | [Panel polish](#panel-polish) | Planned | Everyone | None needed |
@@ -98,16 +97,6 @@ Status words:
 **Plan.** A test for each case, then the fixes.
 
 **Where.** `plugin/lib/slots.sh` (`slots_lock`, `slots_open`).
-
-### Unit times are whole seconds
-
-**What.** VBW times each unit of a proof (a check, a test file, a project command) in whole wall-clock seconds. A unit that takes 50 ms can be counted as 0 s or 1 s depending on whether it crosses a second, so the "slowest units" line and `vbw show evidence` can name a different order or total between two runs of the same work, and "each under a second" is not always printed when it is true.
-
-**Who and when.** Everyone reading the time reports. Verdicts, reuse decisions and the budget's effect (a report, never a failure) are not affected.
-
-**Plan.** Time units with a sub-second clock where one is available, as the proof's own steps already are.
-
-**Where.** The unit timing in `plugin/lib/checks.sh` and the report in `plugin/lib/unittime.sh`.
 
 ## Planned improvements
 

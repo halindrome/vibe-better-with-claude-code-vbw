@@ -170,7 +170,7 @@ cmd_show() {
              .own as $o | "  own work: \(($o.planning + $o.copies + $o.tracking + $o.saving + $o.record) | s) of \($o.wall | s) s: planning \($o.planning | s), copies \($o.copies | s), read tracking \($o.tracking | s), saving \($o.saving | s), record \($o.record | s)" end),
           evidence_block($budget),
           ((.checks + (.commands | map_values(select(.of_files | not))) + (.test_files // {})) | to_entries[]
-            | "  \(.key) \(.value.status)\(if .value.exit != null then " exit \(.value.exit)" else "" end) \(.value.seconds)s\(if .value.reused then " reused (proof of \(.value.at))" elif (.value.why // "") != "" then " ran: \(.value.why)" else " not recorded" end)",
+            | "  \(.key) \(.value.status)\(if .value.exit != null then " exit \(.value.exit)" else "" end) \(.value.seconds | sec)s\(if .value.reused then " reused (proof of \(.value.at))" elif (.value.why // "") != "" then " ran: \(.value.why)" else " not recorded" end)",
               (.value.tail | select(length > 0) | split("\n")[] | "    | " + .)),
           (.scope[] | "  scope: " + .),
           ((.undone // [])[] | "  scope: \(.commit[0:12]) (\(.plan)) undone by \(.by[0:12]), not judged"),

@@ -75,9 +75,9 @@ cmd_fix_check() {
   # the proof summary's line (status, exit, seconds, why it ran, the last line of
   # a failing one's output). WHY and REUSED map a name to text.
 fix_unit_lines() {
-  printf '%s' "$1" | jq -r --argjson order "$2" --argjson w "$3" --argjson re "$4" '. as $r | $order[] | . as $k
+  printf '%s' "$1" | jq -r --argjson order "$2" --argjson w "$3" --argjson re "$4" "$UNITTIME_DEFS"'. as $r | $order[] | . as $k
     | if $re[$k] then "\($k) unchanged since its pass (\($re[$k]))"
-      elif $r[$k] then $r[$k] | "\($k) \(.status)\(if .status == "fail" or .status == "timeout" then " (exit \(.exit // "none"))" else "" end) \(.seconds)s\(if $w[$k] then " ran: \($w[$k])" else "" end)\(if .status == "pass" then "" else ": " + ((.tail // "") | split("\n") | last // "") end)"
+      elif $r[$k] then $r[$k] | "\($k) \(.status)\(if .status == "fail" or .status == "timeout" then " (exit \(.exit // "none"))" else "" end) \(.seconds | sec)s\(if $w[$k] then " ran: \($w[$k])" else "" end)\(if .status == "pass" then "" else ": " + ((.tail // "") | split("\n") | last // "") end)"
       else empty end'
 }
 

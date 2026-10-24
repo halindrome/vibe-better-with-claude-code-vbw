@@ -173,7 +173,7 @@ testfiles_command() {
         + {command: ($run + " (one test file per run)"), of_files: true}
       else
         {status: (if ($bad | length) == 0 then "pass" elif all($bad[]; .status == "timeout") then "timeout" else "fail" end),
-         exit: (if ($bad | length) == 0 then 0 else null end), seconds: ([$r[].seconds // 0] | add // 0),
+         exit: (if ($bad | length) == 0 then 0 else null end), seconds: ([$r[].seconds // 0] | add // 0 | . * 10 | round / 10),
          tail: ([to_entries[] | select(.value.status != "pass") | "\(.key) \(.value.status)"] | join("\n")),
          command: ($run + " (one test file per run)"), of_files: true}
         + (if all($r[]; .reused) then {reused: true, at: ([$r[].at] | max)} else {} end)

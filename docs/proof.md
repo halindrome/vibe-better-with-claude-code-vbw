@@ -399,7 +399,10 @@ it limits that check only, and `command_timeout` does not change it.
 ### Unit time and the budget per unit
 
 Every check, project command and test file of a proof is a unit, and the
-evidence keeps the seconds each one took when it last ran. VBW reports that
+evidence keeps the seconds each one took when it last ran, to a tenth of a
+second (the shell's own timer reads the unit's wall time; a record written with
+whole seconds reads as before). Reports print tenths under 10 s (`C1 pass 0.4s`)
+and whole seconds from 10 s (`tests/import.bats 140 s`). VBW reports that
 time so a slow or growing test suite is seen early. It never fails or stops a
 proof for it: a busy machine never fails a proof.
 

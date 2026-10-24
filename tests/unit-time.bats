@@ -10,6 +10,11 @@
 # milestone started: vbw milestone start keeps the figure in the clone's git
 # directory (vbw/unit-time.json), never in the record. L1.
 #
+# A unit's time is measured in tenths of a second: a unit that took 0.4 s is
+# recorded and printed as 0.4 (under 10 s one decimal, from 10 s whole seconds),
+# and every reader takes whole and decimal values alike, so a record written
+# with whole seconds still reads and prints as before.
+#
 # One shippable project (an approved check, proved, QA passed) is built once
 # for the file and copied for each case.
 
@@ -74,6 +79,28 @@ figures() { printf '%s/vbw/unit-time.json' "$(git rev-parse --path-format=absolu
   # Nothing ran: no line.
   run ran_line 120 <<< '{"checks": {"C1": {"status": "pass", "seconds": 9, "reused": true}}, "commands": {}}'
   [ "$status" -eq 0 ] && [ -z "$output" ] || { echo "$output"; false; }
+}
+
+@test "unit time: every reader takes decimal seconds beside whole ones, and sums are rounded to a tenth" {
+  run ran_line 120 <<< '{"checks": {"C1": {"status": "pass", "seconds": 0.4}, "C2": {"status": "pass", "seconds": 1.26}}}'
+  [ "$status" -eq 0 ] && [ "$output" = "slowest units: C2 1.3 s, C1 0.4 s (100% of 1.7 s unit time)" ] || { echo "$output"; false; }
+  # 0.1 + 0.2 is not printed as 0.30000000000000004.
+  run ran_line 120 <<< '{"checks": {"C1": {"status": "pass", "seconds": 0.1}, "C2": {"status": "pass", "seconds": 0.2}}}'
+  [ "$output" = "slowest units: C2 0.2 s, C1 0.1 s (100% of 0.3 s unit time)" ] || { echo "$output"; false; }
+  run vbw_kernel '. "$VBW_LIB/unittime.sh"; printf "%s" "{\"checks\": {\"C1\": {\"status\": \"pass\", \"seconds\": 0.4}, \"C2\": {\"status\": \"pass\", \"seconds\": 3}}}" | unittime_total'
+  [ "$output" = '{"seconds":3.4,"units":2}' ] || { echo "$output"; false; }
+}
+
+@test "unit time: a unit under a second is recorded and printed in tenths, not as 0 s" {
+  edit_record '.checks[0].run = ["sleep", "0.3"]'
+  "$VBW" approve > /dev/null
+  printf 'paid\nmore\n' > src/pay.txt
+  git add src/pay.txt && git commit -q -m "feat: pay more" -- src/pay.txt
+  vbw_run prove
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  jq -e '.evidence.checks.C1.seconds | . >= 0.3 and . < 1.5 and (. * 10 | round) == (. * 10)' .vbw/record.json || { jq .evidence.checks .vbw/record.json; false; }
+  printf '%s\n' "$output" | grep -qE '^  C1 pass [0-9]\.[0-9]s' || { echo "$output"; false; }
+  jq -e '.runs["check:C1"].seconds | . >= 0.3 and . < 1.5' "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json" || { cat "$(git rev-parse --path-format=absolute --git-common-dir)/vbw/runs.json"; false; }
 }
 
 @test "unit time: vbw prove prints the line just before VBW's own work, and the summary reads check_budget" {
@@ -167,4 +194,11 @@ figures() { printf '%s/vbw/unit-time.json' "$(git rev-parse --path-format=absolu
   [ "$status" -eq 0 ] || { echo "$output"; false; }
   jq -e '.milestones | keys == ["M2"] and .M2.seconds == 25 and .M2.units == 1 and (.M2.at | type == "string")' "$(figures)" || { cat "$(figures)"; false; }
   jq -e '[paths | .[-1] | strings | select(test("unit"))] == []' .vbw/record.json
+}
+
+@test "unit time: the docs say units are timed to a tenth of a second and how reports print them, and the fixed entry is gone" {
+  tr '\n' ' ' < "$REPO_ROOT/docs/proof.md" | grep -qF "to a tenth of a second" || { echo "docs/proof.md"; false; }
+  grep -qF 'C1 pass 0.4s' "$REPO_ROOT/docs/proof.md" || { echo "docs/proof.md example"; false; }
+  grep -qF "to a tenth of a second (whole seconds in an older record)" "$REPO_ROOT/docs/record.md" || { echo "docs/record.md"; false; }
+  ! grep -qF 'Unit times are whole seconds' "$REPO_ROOT/docs/known-issues.md" || { echo "the fixed entry is still listed"; false; }
 }
