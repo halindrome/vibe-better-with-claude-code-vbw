@@ -142,3 +142,25 @@ test('a question hook that fails does not leave Mission Control saying VBW has a
   assert.ok(through, 'the question itself went through')
   assert.doesNotMatch(await h.text(), /question for you/)
 })
+
+// A session started in a subfolder of a VBW project: the project is found the way the
+// kernel finds it, the nearest folder up that holds .git (the git top), never a folder above it.
+test('a session started in a subfolder of a VBW project turns the panel on, with the git top as the project', async () => {
+  const h = await mount({ root: '/proj/Sub Folder' })
+  h.write('/proj/.git/HEAD', 'ref: refs/heads/main\n')
+  h.write('/proj/.vbw/record.json', record())
+  h.write('/proj/.vbw/runtime/next.json', next())
+  await h.start()
+  await h.settle()
+  assert.ok(h.count('command.register') >= 1, 'the commands are registered')
+  assert.match(await h.text(), /Live VBW panel/)
+  assert.deepEqual(h.errors, [])
+})
+
+test('a record above the git top is not the project: the panel stays off', async () => {
+  const h = await mount({ root: '/proj/inner/sub' })
+  h.write('/proj/inner/.git', 'gitdir: /proj/.git/modules/inner\n')
+  h.write('/proj/.git/HEAD', 'ref: refs/heads/main\n')
+  h.write('/proj/.vbw/record.json', record())
+  await assertInert(h)
+})

@@ -7,7 +7,8 @@ The panel is VBW inside Claude Code's own screen. It has two parts:
 - **Mission Control**, a pane beside the conversation: where your project
   stands, in plain words, and six tabs for the detail (see
   [Mission Control](#mission-control)). It opens by itself when a session
-  starts in a VBW project.
+  starts in a VBW project, at its top folder or in any folder inside it (the
+  project is the top folder of the git repository, as for the kernel).
 
 VBW also adds a few short lines to places Claude Code already draws (see
 [One-line notes](#one-line-notes)) and three instant commands (see

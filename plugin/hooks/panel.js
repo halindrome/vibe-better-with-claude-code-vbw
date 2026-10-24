@@ -270,6 +270,19 @@ async function stepsPath($, root) {
 // This session's folder, where Claude Code writes its workflow runs: the Claude
 // config folder `dir` (as tools/resolve-claude-dir.sh finds it), the project's folder
 // (its path, every other character a dash) and the session id. Null when unknown.
+// The project of a session started in DIR, found as the kernel finds it (vbw_git_root):
+// the nearest folder at or above DIR that holds .git (a folder, or the file of a linked
+// worktree or a submodule), never above /; DIR itself when none does (hooks/project.sh).
+async function projectOf($, dir) {
+  let d = dir.replace(/\/+$/, '')
+  for (;;) {
+    if (await $.fs.exists(d + '/.git')) return d || '/'
+    const i = d.lastIndexOf('/')
+    if (i < 0) return dir
+    d = d.slice(0, i)
+  }
+}
+
 function sessionDir(dir, root, id) {
   if (typeof id !== 'string' || !/^[A-Za-z0-9_-]+$/.test(id)) return null
   return dir ? dir + '/projects/' + root.replace(/[^A-Za-z0-9]/g, '-') + '/' + id : null
@@ -941,8 +954,10 @@ async function start($, st) {
     if (st.unsupported) return
     st.comms = supports(v, COMMS_MIN_VERSION)
   }
-  const root = await $.session.root()
-  if (typeof root !== 'string' || !(await $.fs.exists(root + '/.vbw/record.json'))) return
+  const dir = await $.session.root()
+  if (typeof dir !== 'string') return
+  const root = await projectOf($, dir)
+  if (!(await $.fs.exists(root + '/.vbw/record.json'))) return
   st.live = true
   st.root = root
   st.silent = await $.fs.exists(root + TEST_MARK)
@@ -956,7 +971,8 @@ async function start($, st) {
   }
   // The config folder holds this session's folder and the list of chats: found once.
   st.configDir = await configDir($)
-  st.sessionDir = sessionDir(st.configDir, root, st.sessionId)
+  // Claude Code names the session's folder after the folder the session started in.
+  st.sessionDir = sessionDir(st.configDir, dir, st.sessionId)
   await gather($, st)
   st.lastRec = st.record
   const stored = await $.store.get(st.keys.nextSeen)

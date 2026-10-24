@@ -337,7 +337,11 @@ test('outside the project it reads only this session\'s own folder and Claude Co
   writeRun(h, h.now())
   await launch(h)
   await h.advance(6000)
+  // Finding the project asks only whether a folder above holds .git (the walk to the git
+  // top, as the kernel finds it); it reads nothing there.
+  const above = (p) => p.endsWith('/.git') && (p === '/.git' || ROOT.startsWith(p.slice(0, -5) + '/'))
   const paths = [...h.callsOf('fs.read'), ...h.callsOf('fs.stat'), ...h.callsOf('fs.exists'), ...h.callsOf('fs.list')].map((a) => a[0])
+    .filter((p) => !(above(p) && h.callsOf('fs.read').every((a) => a[0] !== p)))
   for (const p of paths) {
     // the Claude config folder here is ~/.claude (~/.config/claude-code is only probed)
     const chats = '/home/u/.claude/sessions'
