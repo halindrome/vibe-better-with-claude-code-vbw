@@ -47,9 +47,9 @@ default_idle() { l3 wait "$scenario" 1500 > /dev/null 2>&1 || true; }
 # Answer the question on screen with the first (recommended) option. A
 # multi-select question needs the option ticked, then Submit.
 answer_recommended() {
-  if screen | grep -q 'Ready to submit'; then
+  if screen | grep 'Ready to submit' > /dev/null; then
     l3 keys "$scenario" Enter
-  elif screen | grep -q '\[ \]'; then
+  elif screen | grep '\[ \]' > /dev/null; then
     l3 keys "$scenario" Enter; sleep 1; l3 keys "$scenario" Right; sleep 2; l3 keys "$scenario" Enter
   else
     l3 keys "$scenario" Enter
@@ -81,7 +81,7 @@ drive() {
     idle
     screen > /dev/null 2>&1 || { say "the Claude Code session is gone"; return 1; }
     done_yet && return 0
-    if screen | grep -q 'Enter to select\|Ready to submit'; then
+    if screen | grep 'Enter to select\|Ready to submit' > /dev/null; then
       on_question || answer_recommended
       continue
     fi
@@ -260,7 +260,7 @@ scenario_reject() {
   rejected=0
   on_question() {
     [ "$(next_action)" = accept ] && [ "$rejected" -eq 0 ] || return 1
-    screen | grep -q "Something's wrong" || return 1
+    screen | grep "Something's wrong" > /dev/null || return 1
     rejected=1
     local n
     n=$(screen | grep -E "[0-9]+\. Something's wrong" | grep -oE '[0-9]+' | head -1)
@@ -303,7 +303,7 @@ scenario_resume() {
   # Back in a new session, VBW asks whether the closed session is still open:
   # the user closed it, and says so.
   on_question() {
-    [ "$killed" -eq 1 ] && screen | grep -q 'That session is closed' || return 1
+    [ "$killed" -eq 1 ] && screen | grep 'That session is closed' > /dev/null || return 1
     local n i
     n=$(screen | grep -E '[0-9]+\. That session is closed' | grep -oE '[0-9]+' | head -1)
     for ((i = 1; i < n; i++)); do l3 keys "$scenario" Down; done
@@ -316,7 +316,7 @@ scenario_resume() {
       say "closing Claude Code mid-run, then starting it again"
       l3 stop "$scenario"
       l3 start "$scenario" "$dir" > /dev/null
-      if screen | grep -q "Type \/reload-skills"; then l3 type "$scenario" "/reload-skills"; sleep 5; fi
+      if screen | grep "Type \/reload-skills" > /dev/null; then l3 type "$scenario" "/reload-skills"; sleep 5; fi
       l3 type "$scenario" "/vbw:vibe"
     fi
     shipped
@@ -616,7 +616,7 @@ scenario_approval() {
   start="/vbw:vibe"
   # The contract's fingerprint (12 characters), from vbw show contract.
   contract_fp() { (cd "$dir" && "$VBW" show contract 2> /dev/null | sed -n '1s/^contract \([0-9a-f]*\) .*$/\1/p' | cut -c1-12); }
-  approved_now() { (cd "$dir" && "$VBW" show contract 2> /dev/null | sed -n '1p' | grep -q '(approved)'); }
+  approved_now() { (cd "$dir" && "$VBW" show contract 2> /dev/null | sed -n '1p' | grep '(approved)' > /dev/null); }
   on_question() {
     local s fp
     s=$(screen)
@@ -777,11 +777,11 @@ legacy_user() {
   on_idle() {
     [ "$(interview_pending)" = keep ] || return 1
     if [ "$purpose_done" -eq 0 ]; then
-      last_reply | grep -qiE 'building|for whom|who.*(for|use)' || return 1
+      last_reply | grep -iE 'building|for whom|who.*(for|use)' > /dev/null || return 1
       purpose_done=1
       l3 type "$scenario" "a little greeting tool for my grandmother, who is learning English."
     else
-      last_reply | grep -q '?' || return 1
+      last_reply | grep '?' > /dev/null || return 1
       followups=$((followups + 1))
       l3 type "$scenario" "greet.sh with a name says Hello and the name, like Hello, Ana!; on its own it says Hello, world!. Nothing more."
     fi
@@ -830,7 +830,7 @@ scenario_legacy() {
     # A second session asks neither the old-folder question again nor changes the choice.
     files=$(transcripts | sort)
     l3 start "$scenario" "$dir" > /dev/null
-    if screen | grep -q "Type \/reload-skills"; then l3 type "$scenario" "/reload-skills"; sleep 5; fi
+    if screen | grep "Type \/reload-skills" > /dev/null; then l3 type "$scenario" "/reload-skills"; sleep 5; fi
     l3 type "$scenario" "/vbw:vibe Also let greet.sh take --shout, printing the greeting in capital letters."
     default_idle
     l3 keys "$scenario" Escape; sleep 2; default_idle
@@ -1028,8 +1028,8 @@ scenario_panel() {
     l3 type "$scenario" "/vbw:approve"
     for ((i = 0; i < 40; i++)); do
       sleep 3
-      if screen | grep -q 'Enter to select\|Ready to submit'; then answer_recommended; continue; fi
-      if ! screen | grep -q "VBW needs you" && [ "$(next_action)" != approve ]; then cleared=true; break; fi
+      if screen | grep 'Enter to select\|Ready to submit' > /dev/null; then answer_recommended; continue; fi
+      if ! screen | grep "VBW needs you" > /dev/null && [ "$(next_action)" != approve ]; then cleared=true; break; fi
     done
     # 3. The build: helpers come and go on Comms. A row seen once, then gone while the
     # top line counts "N done", is a finished helper that left. The window is also
@@ -1038,10 +1038,10 @@ scenario_panel() {
     local waiting=0
     for ((i = 0; i < 400; i++)); do
       sleep 3
-      if screen | grep -q 'Enter to select\|Ready to submit'; then answer_recommended; continue; fi
+      if screen | grep 'Enter to select\|Ready to submit' > /dev/null; then answer_recommended; continue; fi
       act=$(next_action)
       # Claude Code goes on to the build by itself after an approval; if it has not within 45 s, the user asks.
-      if [ "$started" = false ] && [ "$act" = build ] && ! screen | grep -q 'esc to interrupt'; then
+      if [ "$started" = false ] && [ "$act" = build ] && ! screen | grep 'esc to interrupt' > /dev/null; then
         waiting=$((waiting + 1))
         if [ "$waiting" -ge 15 ]; then l3 type "$scenario" "/vbw:vibe"; waiting=0; fi
       fi
@@ -1057,7 +1057,7 @@ scenario_panel() {
           continue
         fi
       fi
-      if [ -n "$seen_rows" ] && [ "$done_gone" = false ] && screen | cut -c1-120 | grep -qE 'VBW ▸.* [1-9][0-9]* done'; then
+      if [ -n "$seen_rows" ] && [ "$done_gone" = false ] && screen | cut -c1-120 | grep -E 'VBW ▸.* [1-9][0-9]* done' > /dev/null; then
         while IFS= read -r r; do
           [ -n "$r" ] || continue
           case "$cur" in *"$r"*) ;; *) done_gone=true how="a helper's row left while the top line counted it done" ;; esac
@@ -1065,7 +1065,7 @@ scenario_panel() {
 /g')"
       fi
       if [ "$started" = true ] && [ "$act" != build ] && [ "$act" != run ]; then
-        if [ "$done_gone" = false ] && ! screen | cut -c1-120 | grep -q 'VBW ▸'; then done_gone=true how="the run ended and the crew left Comms"; fi
+        if [ "$done_gone" = false ] && ! screen | cut -c1-120 | grep 'VBW ▸' > /dev/null; then done_gone=true how="the run ended and the crew left Comms"; fi
         break
       fi
     done
@@ -1080,14 +1080,14 @@ scenario_panel() {
     local snd_back before
     # The first session's panel: close it as a person does, then start the app again.
     l3 start "$scenario" "$dir" > /dev/null
-    if screen | grep -q "Type \/reload-skills"; then l3 type "$scenario" "/reload-skills"; sleep 5; fi
+    if screen | grep "Type \/reload-skills" > /dev/null; then l3 type "$scenario" "/reload-skills"; sleep 5; fi
     panel_wait "Working on" > /dev/null
     close_panel
     sleep 5
     before=$(has "$(panel_text)" "Working on")
     l3 stop "$scenario"
     l3 start "$scenario" "$dir" > /dev/null
-    if screen | grep -q "Type \/reload-skills"; then l3 type "$scenario" "/reload-skills"; sleep 5; fi
+    if screen | grep "Type \/reload-skills" > /dev/null; then l3 type "$scenario" "/reload-skills"; sleep 5; fi
     sleep 10
     # Closed by the user: still closed after the restart. The sound was turned off: the switch says it is back on.
     l3 type "$scenario" "/vbw-sound"; sleep 4
@@ -1684,7 +1684,7 @@ scenario_debug() {
   said_yes=0
   # After the diagnosis the session asks whether to fix it now; the user says yes.
   on_idle() {
-    [ "$said_yes" -eq 0 ] && workflow_started investigating && last_reply | grep -qi 'fix' || return 0
+    [ "$said_yes" -eq 0 ] && workflow_started investigating && last_reply | grep -i 'fix' > /dev/null || return 0
     said_yes=1
     l3 type "$scenario" "Yes, fix it now, with the regression test."
     return 0
@@ -1718,7 +1718,7 @@ scenario_research() {
   new_project
   start="/vbw:research Which Git release first added the git switch command? Give the version number and a link to its release notes."
   on_idle() { return 0; }
-  done_yet() { workflow_started researching && last_reply | grep -q '2\.23'; }
+  done_yet() { workflow_started researching && last_reply | grep '2\.23' > /dev/null; }
   checks() {
     local reply
     reply=$(last_reply)
@@ -1970,11 +1970,11 @@ scenario_interview() {
   on_idle() {
     [ "$(interview_pending)" = keep ] || return 1
     if [ "$purpose_done" -eq 0 ]; then
-      last_reply | grep -qiE 'building|for whom|who.*(for|use)' || return 1
+      last_reply | grep -iE 'building|for whom|who.*(for|use)' > /dev/null || return 1
       purpose_done=1
       l3 type "$scenario" "$a_purpose"
     else
-      last_reply | grep -q '?' || return 1
+      last_reply | grep '?' > /dev/null || return 1
       followups=$((followups + 1))
       l3 type "$scenario" "$a_detail"
     fi
@@ -2001,7 +2001,7 @@ interview_outcome() {
   # A second request in a new session.
   files=$(transcripts | sort); before=$rec
   l3 start "$scenario" "$dir" > /dev/null
-  if screen | grep -q "Type \/reload-skills"; then l3 type "$scenario" "/reload-skills"; sleep 5; fi
+  if screen | grep "Type \/reload-skills" > /dev/null; then l3 type "$scenario" "/reload-skills"; sleep 5; fi
   l3 type "$scenario" "/vbw:vibe Also let greet.sh take --shout, printing the greeting in capital letters."
   default_idle
   l3 keys "$scenario" Escape; sleep 2; default_idle
@@ -2122,7 +2122,7 @@ scenario_smallchange() {
   chosen=false
   start='/vbw:vibe Can greet.sh also shout? "./greet.sh --shout Ana" should print "HELLO, ANA!" in capitals. Just that small change.'
   on_question() {
-    screen | grep -qE 'Approve contract [0-9a-f]{12}' || return 1
+    screen | grep -E 'Approve contract [0-9a-f]{12}' > /dev/null || return 1
     l3 keys "$scenario" Enter
     chosen=true
     return 0
@@ -2257,7 +2257,7 @@ scenario_loop() {
       n_rev=$((n_rev + 1))
       grep -q "${h:0:7}" "$rep" 2> /dev/null || report_ok=false
       git -C "$dir" cat-file -e "$h^{commit}" 2> /dev/null || reverts_ok=false
-      git -C "$dir" log -1 --format=%s "$h" 2> /dev/null | grep -q '^Revert' || reverts_ok=false
+      git -C "$dir" log -1 --format=%s "$h" 2> /dev/null | grep '^Revert' > /dev/null || reverts_ok=false
     done
     # An item parked before any commit of its own (a plan blocked twice) has nothing to revert: zero is right then.
     expect ".vbw/loop-report.md names the shipped and the parked item with its revert commits" [ "$report_ok" = true ]
@@ -2348,7 +2348,7 @@ scenario_sessions() {
     begun=true
     for ((i = 0; i < 20; i++)); do observe; [ -z "$A_id" ] || break; sleep 1; done
     if l3 start "$second" "$dir" > /dev/null; then
-      if l3 screen "$second" | grep -q "Type \/reload-skills"; then l3 type "$second" "/reload-skills"; sleep 5; fi
+      if l3 screen "$second" | grep "Type \/reload-skills" > /dev/null; then l3 type "$second" "/reload-skills"; sleep 5; fi
     else
       say "could not start chat B"
     fi
@@ -2691,7 +2691,7 @@ for scenario in "$@"; do
   say "project: $dir"
   if ! l3 start "$scenario" "$dir" > /dev/null; then say "could not start Claude Code"; failed=1; continue; fi
   # As a user would: VBW 2 asks for a reload when it removed VBW 1 command copies.
-  if screen | grep -q "Type \/reload-skills"; then l3 type "$scenario" "/reload-skills"; sleep 5; fi
+  if screen | grep "Type \/reload-skills" > /dev/null; then l3 type "$scenario" "/reload-skills"; sleep 5; fi
   l3 type "$scenario" "$start"
   drive || failed=1
   # Dismiss a pending question with Escape (never answer it), let the session

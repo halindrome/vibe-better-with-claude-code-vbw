@@ -9,7 +9,7 @@ inv() { ./inv.sh "$@"; }
 
 # Earlier requirements: the original test.sh, as seeded.
 git show "$(git rev-list --max-parents=0 HEAD)":test.sh > .check-test.sh
-bash .check-test.sh | grep -qx 'TESTS PASS'
+bash .check-test.sh | grep -x 'TESTS PASS' > /dev/null
 rm -f "$INV_FILE"
 # The project's own tests pass too.
 ./test.sh > /dev/null

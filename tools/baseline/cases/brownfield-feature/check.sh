@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deterministic post-run check: done N works, bad N errors, old behavior and test intact.
 set -euo pipefail
-./test.sh | grep -qx 'TESTS PASS'
+./test.sh | grep -x 'TESTS PASS' > /dev/null
 TODO_FILE="$(mktemp)"; export TODO_FILE; rm -f "$TODO_FILE"
 trap 'rm -f "$TODO_FILE" "$TODO_FILE.new"' EXIT
 ./todo.sh add "one"; ./todo.sh add "two"
