@@ -12,14 +12,14 @@
 # each one's lines print together when it ends.
 #
 # Scenarios: greenfield, reject, resume, change, convert, balanced, docs, qafix,
-# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir. A user
+# decision, debug, research, edgecase, leftover, recheck, approval, newcomer, senior, panel, steptime, road, pluginoff, tools, legacy, nolegacy, smallchange, costs, loop, plugindir, sessions. A user
 # answers every question with VBW's recommendation unless the scenario says otherwise.
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 l3() { bash "$ROOT/tools/l3.sh" "$@"; }
 VBW="$ROOT/plugin/bin/vbw"
-ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir"
+ALL="greenfield reject resume change convert balanced docs qafix decision debug research edgecase leftover recheck approval newcomer senior panel steptime road pluginoff tools legacy nolegacy smallchange costs loop plugindir sessions"
 RESULTS="$ROOT/tools/l3-results"
 STEPS=60
 
@@ -215,6 +215,20 @@ report_line_in_proof_output() {
   transcripts | xargs cat 2> /dev/null | jq -se --arg re "$1" '
     [.[] | select(.type == "assistant") | .message.content[]?
       | select(.type == "tool_use" and ((.input.command // "") | test("vbw[^|;&]* (prove|fix done)|bin/vbw[^|;&]* (prove|fix done)"))) | .id] as $ids
+    | any(.[] | select(.type == "user") | .message.content[]?
+        | select(.type == "tool_result" and ([.tool_use_id] | inside($ids)))
+        | (if (.content | type) == "string" then .content else ([.content[]? | .text? // ""] | join("\n")) end)
+        | split("\n")[]; test($re))' > /dev/null 2>&1
+}
+
+# transcript_tool_output COMMAND_REGEX RESULT_REGEX: reads transcript file names on
+# stdin and succeeds when the result of a Bash call whose command matches
+# COMMAND_REGEX has a line matching RESULT_REGEX. Read from the tool results in the
+# transcripts, never from screen text.
+transcript_tool_output() {
+  xargs cat 2> /dev/null | jq -se --arg cmd "$1" --arg re "$2" '
+    [.[] | select(.type == "assistant") | .message.content[]?
+      | select(.type == "tool_use" and ((.input.command // "") | test($cmd))) | .id] as $ids
     | any(.[] | select(.type == "user") | .message.content[]?
         | select(.type == "tool_result" and ([.tool_use_id] | inside($ids)))
         | (if (.content | type) == "string" then .content else ([.content[]? | .text? // ""] | join("\n")) end)
@@ -2052,15 +2066,9 @@ scenario_senior() {
   }
 }
 
-# A small change (R72, R116): the project's active milestone already holds
-# earlier work (greet.sh: its requirement planned and proven, its phase and plan
-# done, not shipped), and the user asks for one small change in plain words.
-# VBW adds it to that milestone through /vbw:vibe without the planning workflow:
-# it plans one plan with its check itself, the user approves once (the choice,
-# Enter on Approve), it is built and checked, QA is quick at most, the earlier
-# phases and plans stay as they were, and the milestone waits to ship. Facts
-# come from the record, git and the session transcript, never screen text.
-milestone_seed() {
+# greet_plan_seed: the agreed greet.sh spec and its approved plan (one requirement, one
+# plan, one check), nothing built yet.
+greet_plan_seed() {
   printf '# Greetings\n\n## Requirements\n\n- R1 [auto] ./greet.sh Ana prints "Hello, Ana!"; without a name it prints "Hello, world!"\n' > .vbw/spec.md
   "$VBW" spec sync > /dev/null || return 1
   printf '[ "$(sh greet.sh Ana)" = "Hello, Ana!" ] && [ "$(sh greet.sh)" = "Hello, world!" ]\n' > test_greet.sh
@@ -2071,6 +2079,18 @@ milestone_seed() {
     | "$VBW" apply > /dev/null || return 1
   git add -A && git commit -qm "chore: plan" || return 1
   "$VBW" approve > /dev/null || return 1
+}
+
+# A small change (R72, R116): the project's active milestone already holds
+# earlier work (greet.sh: its requirement planned and proven, its phase and plan
+# done, not shipped), and the user asks for one small change in plain words.
+# VBW adds it to that milestone through /vbw:vibe without the planning workflow:
+# it plans one plan with its check itself, the user approves once (the choice,
+# Enter on Approve), it is built and checked, QA is quick at most, the earlier
+# phases and plans stay as they were, and the milestone waits to ship. Facts
+# come from the record, git and the session transcript, never screen text.
+milestone_seed() {
+  greet_plan_seed || return 1
   printf '#!/bin/sh\necho "Hello, ${1:-world}!"\n' > greet.sh && chmod +x greet.sh
   "$VBW" commit P1.1 "feat(P1.1): greet.sh" > /dev/null || return 1
   # shellcheck disable=SC1010 # "plan done" is a vbw subcommand
@@ -2253,6 +2273,117 @@ scenario_loop() {
         --arg s "$(jq -r '[.loop.items[] | "\(.id)=\(.status)"] | join(",")' "$r" 2> /dev/null)" --arg e "$(jq -r '.loop.ended.reason // ""' "$r" 2> /dev/null)" \
         '{items: $s, ended: $e, delegated_approvals: $d, user_approvals: $o, question_asked: $q, report_names_items_and_reverts: $r, revert_commits: $n, remotes: ($rm | split("\n") | map(select(length > 0)) | length), tags: ($tg | split("\n") | map(select(length > 0)) | length)}')" \
       "$(if [ "$n_rev" -eq 0 ]; then printf '%s' '["a park that reverts commits: the Dev blocked the contradictory plan before any commit, so nothing was there to revert (the revert path is proved at L1 by tests/loop-retry-park.bats)",'; else printf '['; fi)\"a real remote configured\",\"a ceiling reached mid-item\",\"a [human] item\",\"a loop of more than two items\",\"Claude Code versions other than the one that ran\"]"
+  }
+}
+
+# chat_entries: the entries of Claude Code's list of chats (<claude-config-dir>/sessions/,
+# one file per running chat) whose folder is the project in $dir, as given or with
+# symbolic links resolved, as one JSON array.
+chat_entries() {
+  local f real
+  real=$(cd "$dir" && pwd -P)
+  for f in "$(claude_dir)"/sessions/*.json; do
+    [ -f "$f" ] && jq -c . "$f" 2> /dev/null
+  done | jq -sc --arg a "$dir" --arg b "$real" '[.[] | select(type == "object" and (.sessionId | type) == "string" and (.cwd == $a or .cwd == $b))]'
+}
+
+# sessions_panel_rows REGISTRY ROOT SELF LEASE: the Sessions tab's rows as the panel's own
+# function (plugin/hooks/panel-sessions.js, sessionsModel) builds them, as JSON.
+sessions_panel_rows() {
+  local mod
+  mod=$(jq -nr --arg m "$ROOT/plugin/hooks/panel-sessions.js" '$m | @json')
+  printf 'import { sessionsModel } from %s;\nconst r = sessionsModel({ registry: JSON.parse(process.env.L3_REG), root: process.env.L3_ROOT, sessionId: process.env.L3_SELF, lease: JSON.parse(process.env.L3_LEASE), now: Date.now(), width: 80 });\nconsole.log(JSON.stringify(r));\n' "$mod" \
+    | L3_REG="$1" L3_ROOT="$2" L3_SELF="$3" L3_LEASE="$4" node --input-type=module - 2> /dev/null
+}
+
+# sessions (R192): two chats on one project, through the real TUI. Chat A is named with
+# /rename and starts the build of an approved plan; while the run is open, chat B (a second
+# Claude Code session on the same folder) asks /vbw:vibe. The holder's name is judged where
+# VBW keeps it: Claude Code's list of chats, .vbw/runtime/holder.json, chat B's transcript,
+# the status line script run for chat B, and the record and git, which never carry it. The
+# list has one file per running chat, so the scenario reads it while the chats run. The
+# Sessions tab's rows come from the panel's own function over that list; the tab as drawn
+# on screen is not judged.
+scenario_sessions() {
+  new_project
+  (cd "$dir" && "$VBW" init > /dev/null && "$VBW" config rigor standard > /dev/null && greet_plan_seed) \
+    || { say "setup failed: could not seed the approved greet.sh plan"; return 1; }
+  fixture="greet.sh, one phase and plan approved by the user before the session; rigor standard; chat A is named with /rename and starts the build; chat B, a second Claude Code session on the same folder, asks /vbw:vibe while the run is open"
+  want="l3-holder-chat" second="$scenario-b"
+  A_id="" B_id="" held="" sl_line="" panel_rows="" b_asked=false begun=false
+  start="/rename $want"
+  # observe: the facts that exist only while the chats and the run are open.
+  observe() {
+    local ents
+    ents=$(chat_entries)
+    [ -n "$A_id" ] || A_id=$(printf '%s' "$ents" | jq -r --arg n "$want" '[.[] | select(.name == $n)] | sort_by(.updatedAt // 0) | last | .sessionId // empty')
+    [ -z "$A_id" ] || [ -n "$B_id" ] || B_id=$(printf '%s' "$ents" | jq -r --arg a "$A_id" '[.[] | select(.sessionId != $a)] | sort_by(.updatedAt // 0) | last | .sessionId // empty')
+    [ -f "$dir/.vbw/runtime/holder.json" ] || return 0
+    [ -n "$held" ] || held=$(jq -c . "$dir/.vbw/runtime/holder.json" 2> /dev/null)
+    [ -n "$B_id" ] || return 0
+    [ "$b_asked" = false ] || return 0
+    b_asked=true
+    l3 type "$second" "/vbw:vibe"
+    say "chat B asked VBW while a run was open"
+    sl_line=$(cd "$dir" && jq -nc --arg s "$B_id" --arg d "$dir" '{session_id: $s, cwd: $d, workspace: {project_dir: $d}}' \
+      | bash "$ROOT/plugin/scripts/vbw-statusline.sh" 2> /dev/null | head -n 1 | sed "s/$(printf '\033')\[[0-9;]*m//g")
+    panel_rows=$(sessions_panel_rows "$ents" "$(printf '%s' "$ents" | jq -r --arg a "$A_id" '[.[] | select(.sessionId == $a)][0].cwd')" "$B_id" \
+      "$(jq -c '.lease // null' "$dir/.vbw/record.json" 2> /dev/null || echo null)")
+  }
+  # Wait for chat A to settle, looking at the chats and the run every few seconds meanwhile.
+  idle() {
+    local w
+    l3 wait "$scenario" 1500 > /dev/null 2>&1 &
+    w=$!
+    while kill -0 "$w" 2> /dev/null; do observe; sleep 3; done
+    wait "$w" || true
+  }
+  # The first time chat A is idle it has been renamed: open chat B, then ask for the build.
+  on_idle() {
+    local i
+    observe
+    [ "$begun" = false ] || return 1
+    begun=true
+    for ((i = 0; i < 20; i++)); do observe; [ -z "$A_id" ] || break; sleep 1; done
+    if l3 start "$second" "$dir" > /dev/null; then
+      if l3 screen "$second" | grep -q "Type \/reload-skills"; then l3 type "$second" "/reload-skills"; sleep 5; fi
+    else
+      say "could not start chat B"
+    fi
+    l3 type "$scenario" "/vbw:vibe"
+    return 0
+  }
+  done_yet() { observe; shipped; }
+  checks() {
+    local passed=true r="$dir/.vbw/record.json" told=false sl_ok=false panel_ok=false held_ok=false cleared=false clean=false hits
+    # Chat B's last turn is long over; stop it, then read its transcript.
+    l3 wait "$second" 120 > /dev/null 2>&1 || true
+    l3 stop "$second" > /dev/null 2>&1 || true
+    transcripts | grep -F "/$B_id.jsonl" | transcript_tool_output 'vbw' "another session, $want" && told=true
+    case "$sl_line" in *"held by $want"*) sl_ok=true ;; esac
+    printf '%s' "$held" | jq -e --arg a "$A_id" --arg n "$want" '.session == $a and .session_name == $n and (.run | type) == "string"' > /dev/null 2>&1 && held_ok=true
+    printf '%s' "$panel_rows" | jq -e --arg a "$A_id" --arg n "$want" '(.rows | map(select(.id == $a)) | first) as $x
+      | $x != null and $x.name == $n and $x.resume == ("claude --resume " + $a) and $x.holder != null and ([.rows[] | select(.self)] | length) == 1' > /dev/null 2>&1 && panel_ok=true
+    [ ! -e "$dir/.vbw/runtime/holder.json" ] && jq -e '.holder == null' "$dir/.vbw/runtime/glance.json" > /dev/null 2>&1 && cleared=true
+    # The name is on this computer only: not in the record, not in any commit.
+    hits=$(git -C "$dir" log --all -p | grep -cF -- "$want")
+    if ! grep -qF -- "$want" "$r" && [ "$hits" -eq 0 ]; then clean=true; fi
+    say "chat A $A_id, chat B $B_id; status line for B: ${sl_line:-none}"
+    common_checks
+    expect "the chat was named in Claude Code's list ($want)" [ -n "$A_id" ]
+    expect "a second chat is in the list under another id" [ "${B_id:-$A_id}" != "$A_id" ]
+    expect "the second chat asked VBW while a run was open" [ "$b_asked" = true ]
+    expect "holder.json named chat A and its name while the run was open" [ "$held_ok" = true ]
+    expect "chat B's transcript carries VBW's answer naming the holder ($want)" [ "$told" = true ]
+    expect "the status line script for chat B says: held by $want" [ "$sl_ok" = true ]
+    expect "the panel's Sessions rows name chat A, its resume line and the run it holds" [ "$panel_ok" = true ]
+    expect "neither the record nor git history carries the name" [ "$clean" = true ]
+    expect "holder.json is gone and the glance holds no holder once the run ended" [ "$cleared" = true ]
+    [ "$failed" -eq 0 ] || passed=false
+    result_write sessions "$fixture" "${cost_usd:-0}" "$passed" \
+      "$(jq -n --arg n "$want" --argjson reg "$([ -n "$A_id" ] && echo true || echo false)" --argjson h "$held_ok" --argjson t "$told" --argjson s "$sl_ok" --argjson p "$panel_ok" --argjson c "$clean" --argjson cl "$cleared" \
+        '{chat_name: $n, registry_name_matches: $reg, holder_file_names_chat: $h, other_chat_told_name: $t, statusline_held_by: $s, panel_resume_line: $p, name_not_in_record_or_git: $c, holder_cleared_at_end: $cl}')" \
+      '["the Sessions tab and Comms as drawn on screen (the tab'"'"'s rows are the panel'"'"'s own function run on the real list, the status line is its script run for chat B, not the second chat'"'"'s window)","a chat renamed while the run is open (the name is set before the build)","a chat that was closed while it held the run","more than two chats on the project","Claude Code versions other than the one that ran"]'
   }
 }
 
