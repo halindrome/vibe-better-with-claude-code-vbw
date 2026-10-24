@@ -505,7 +505,8 @@ Every workflow result has `refused`, `[]` when nothing was refused, including
 a workflow that stops before starting any agent. The router (`/vbw:vibe`)
 shows each refusal to you as written, in a quote naming the agent, before its
 own summary, and never paraphrases it; it shows a `vbw` refusal it gets itself
-the same way.
+the same way. Comms and Mission Control show each refusal too, in amber with
+its time ([panel.md](panel.md#refusals)).
 
 ## The loop and `autonomy_cap`
 

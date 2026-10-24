@@ -234,6 +234,27 @@ test('failed: a red ✗ with its reason and a details button stays until seen; o
   assert.equal(model({ run: run([agent({ state: 'failed', result: null })]) }).rows[0].activity, 'failed')
 })
 
+// 6.3: a refusal is one amber line with a time (docs/panel.md, Refusals).
+const refusal = (over = {}) => ({ id: 'a1#0', by: 'dev P1.1', at: NOW - 30 * S, text: 'vbw: apply refused: plan P1.1 is started\nNext: put it back', ...over })
+
+test('a refusal is one amber line "HH:MM ⊘ VBW refused · <by>: <first line>", under the needs-you line and above the crew', () => {
+  const line = hm(NOW - 30 * S) + ' ⊘ VBW refused · dev P1.1: vbw: apply refused: plan P1.1 is started'
+  const alone = model({ refusal: refusal() })
+  assert.equal(alone.refusal.text, line)
+  const tree = stage.renderStage(UI, alone)
+  assert.deepEqual(collect(tree), [line], 'one line and nothing else')
+  assert.equal(find(tree, (n) => n.type === 'Text' && /refused/.test(words(n))).props.color, P.NEED, 'in amber')
+  const busy = model({ need: need(), refusal: refusal(), run: run([agent()]) })
+  const lines = collect(stage.renderStage(UI, busy))
+  assert.match(lines[0], /needs you/)
+  assert.equal(lines[1], line)
+  assert.match(lines[2], /^VBW ▸ planning/)
+  assert.equal(model({ refusal: refusal(), columns: 30 }).refusal.text.length, 30, 'cut to the columns')
+  assert.equal(model({ refusal: refusal({ at: null }) }).refusal.text, '⊘ VBW refused · dev P1.1: vbw: apply refused: plan P1.1 is started', 'no time, no stamp')
+  for (const bad of [null, 'x', {}, { text: '  ' }]) assert.equal(model({ refusal: bad }), null)
+  assert.equal(model({ need: need(), refusal: refusal(), maxRows: 1 }).refusal, undefined, 'one row: the needs-you line keeps it')
+})
+
 test('seen: a failed helper whose id is in `seen` leaves at the next redraw; the others stay', () => {
   const crew = [agent({ id: 'f1', state: 'failed', result: 'x' }), agent({ id: 'f2', state: 'failed', result: 'y' }), agent({ id: 'w' })]
   assert.deepEqual(model({ run: run(crew), seen: ['f1'] }).rows.map((r) => r.id), ['f2', 'w'])

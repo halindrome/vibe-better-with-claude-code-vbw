@@ -3,6 +3,7 @@
 // rows out; it never changes its input and never throws.
 
 import { stepWords } from './panel-step.js'
+import { REFUSED_MARK } from './panel-palette.js'
 
 export const MIN_VERSION = '2.1.287'
 
@@ -221,6 +222,18 @@ export function datedRows(input) {
   return { need: liveNeed({ record: rec, next: nx, nextAt, question, questionAt, health }), rows: estimateRows(Number.isFinite(now) ? now : Date.now(), stamps, step, nx) }
 }
 
+// The last run's refusals (panel-feed.js), newest five: each one sentence with its
+// time, the refusal whole and verbatim, its lines joined on one line.
+const REFUSALS_SHOWN = 5
+function refusalRows(list) {
+  const ok = (Array.isArray(list) ? list : []).filter((r) => isObj(r) && typeof r.text === 'string' && r.text.trim())
+  return ok.slice(-REFUSALS_SHOWN).map((r) => ({
+    id: 'refused:' + String(r.id),
+    text: stamped(r.at, REFUSED_MARK + ' VBW refused, ' + (typeof r.by === 'string' && r.by ? r.by + ': ' : '') + r.text.split('\n').map((l) => l.trim()).filter(Boolean).join(' ')),
+    term: 'refused',
+  }))
+}
+
 export function panelView(input) {
   const { record: rec, next: nx, nextAt, question, questionAt, health, now, cost, proving } = isObj(input) ? input : {}
   const step = isObj(input) && isObj(input.step) ? input.step : null
@@ -242,6 +255,7 @@ export function panelView(input) {
       doing(rec, t),
       ...estimateRows(t, stamps, step, nx),
       costRow(cost),
+      ...refusalRows(input.refusals),
       { id: 'need', text: need ? stamped(Number.isFinite(stamps.need) ? stamps.need : need.at, need.text) : 'Nothing is needed from you right now.', term: 'your turn' },
     ],
   }
