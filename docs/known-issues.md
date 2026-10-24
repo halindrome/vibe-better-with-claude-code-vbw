@@ -26,7 +26,6 @@ Status words:
 | [Heavy checks each use every core](#heavy-checks-each-use-every-core) | Known issue | Cargo, make, similar | Lower `check_jobs` |
 | [Slot store edge cases](#slot-store-edge-cases) | Known issue | Sandboxes, many runs | None needed |
 | [Unit times are whole seconds](#unit-times-are-whole-seconds) | Known issue | Proof time reports | None needed |
-| [Real-user scenarios for four features](#real-user-scenarios-for-four-features) | Planned | Test coverage | Not applicable |
 | [Cost per correct outcome](#cost-per-correct-outcome) | Idea | Everyone | Not applicable |
 
 ## Known issues
@@ -95,23 +94,6 @@ Status words:
 
 ## Planned improvements
 
-
-### Real-user scenarios for four features
-
-**What.** Four features have unit and contract tests but no real-user scenario, one that drives the real Claude Code interface the way a person does:
-
-1. Session names and the Sessions tab: the holder named in the status line, Comms and `vbw next`, and the resume line.
-2. A task break judged by the plan's own rules, on an early plan whose requirement a later plan completes.
-3. A fix committing its own requirement's check files, with one approval.
-4. Failing output kept and named by `vbw show fix`.
-
-**Who and when.** Until these exist, treat the four as less proven than features that have one.
-
-**Plan.** One scenario per feature, each checking the outcome in the record and in git, not on screen.
-
-**Where.** `tools/l3-suite.sh` (add a `scenario_NAME` function and the name to the list); `tools/l3.sh` is the driver. Scenarios use model usage, so this needs Claude Code access.
-
-## Under consideration
 
 ### Cost per correct outcome
 
