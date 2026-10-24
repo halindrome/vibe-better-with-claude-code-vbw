@@ -72,12 +72,19 @@ vbw_guard_run() {
 }
 
 # vbw_guard_drop PATH: clean up one registered path now (file or lock dir);
-# when nothing is left, the traps are removed again.
+# when nothing is left, the traps are removed again. A file or an empty lock
+# folder costs one process (the gate's lock and place are given back between
+# one unit and the next, T180); a registered tree is opened up, then removed.
 vbw_guard_drop() {
-  local p keep=()
-  for p in ${VBW_GUARD_DIRS[@]+"${VBW_GUARD_DIRS[@]}"}; do [ "$p" != "$1" ] || { chmod -R u+rwx "$1" 2>/dev/null; rm -rf "$1" 2>/dev/null; } || true; done
-  rm -f "$1" 2>/dev/null || true
-  rmdir "$1" 2>/dev/null || true
+  local p keep=() tree=''
+  for p in ${VBW_GUARD_DIRS[@]+"${VBW_GUARD_DIRS[@]}"}; do [ "$p" != "$1" ] || tree=1; done
+  if [ -n "$tree" ]; then
+    { chmod -R u+rwx "$1"; rm -rf "$1"; } 2>/dev/null || true
+  elif [ -d "$1" ] && [ ! -L "$1" ]; then
+    rmdir "$1" 2>/dev/null || true
+  elif [ -e "$1" ] || [ -L "$1" ]; then
+    rm -f "$1" 2>/dev/null || true
+  fi
   for p in ${VBW_GUARD_FILES[@]+"${VBW_GUARD_FILES[@]}"}; do [ "$p" = "$1" ] || keep+=("$p"); done
   VBW_GUARD_FILES=(${keep[@]+"${keep[@]}"})
   keep=()

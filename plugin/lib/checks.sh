@@ -167,8 +167,8 @@ checks_result() {
 # The exclusion gate (R45), under .vbw/runtime/gate: every running check is a
 # registration file "reg.PID.ID" holding "alone" or "shared". An alone check
 # runs when nothing else is registered; a shared check runs when no alone check
-# is registered and none is waiting. A short mutex directory makes the look and
-# the registration one step. Registrations of a dead process are taken over
+# is registered and none is waiting. A short lock file (gate/mutex) makes the
+# look and the registration one step. Registrations of a dead process are taken over
 # (kill -0 is only a liveness probe), and every hold is released on exit,
 # or interrupt through the guard. A shared check also waits while the live
 # registrations already number the limit (the limit checks_run_all reads
@@ -228,17 +228,20 @@ checks_gate_foreign() {
 
 # checks_gate_enter ID ALONE: wait for the gate, then register this check.
 checks_gate_enter() {
-  local id="$1" kind=shared g="$VBW_RUNTIME/gate" idle=0 want='' owner limit since='' took=0 lost=''
+  local id="$1" kind=shared g="$VBW_RUNTIME/gate" idle=0 want='' owner file limit since='' took=0 lost=''
   [ "$2" != true ] || kind=alone
   limit="${CHECKS_LIMIT:-}"
   [ -n "$limit" ] || limit=$(vbw_check_jobs) || limit=1
   [ -d "$g" ] || mkdir -p "$g" || vbw_die "cannot create $g"
   while :; do
-    # The owner file decides (vbw_lock_dir): a racing mkdir that also succeeded,
-    # or a lock that vanished before its owner was written, waits and retries.
-    if [ "$took" = 1 ] || vbw_lock_dir "$g/mutex"; then
+    # The lock is the file mutex holding its owner's pid, made by the exclusive
+    # create (no process of its own, and one removal gives it back: T180, its
+    # take and release lie between a unit giving its slot back and the next
+    # unit taking one). A folder of that name, left by an older VBW with its pid
+    # in mutex/pid, excludes just the same, and one taken over is removed whole.
+    if [ "$took" = 1 ] || vbw_lock_create "$g/mutex"; then
       took=0
-      vbw_guard_add dir "$g/mutex"
+      if [ -d "$g/mutex" ]; then vbw_guard_add dir "$g/mutex"; else vbw_guard_add lock "$g/mutex"; fi
       idle=0 lost=''
 
       if checks_gate_blocker "$kind" "$limit" > /dev/null; then
@@ -268,15 +271,17 @@ checks_gate_enter() {
       # its owner file (vbw_lock_takeover): of two waiters that find the same dead
       # owner only one wins, and neither removes a lock a third took in between.
       idle=$((idle + 1))
+      file=$g/mutex
+      [ ! -d "$file" ] || file=$file/pid
       # The owner is read once: empty means a handover in progress, never a dead owner.
-      owner=$(vbw_lock_holder "$g/mutex/pid")
+      owner=$(vbw_lock_holder "$file")
       if [ -n "$owner" ]; then
         lost=''
-        checks_gate_live "x.$owner" || { vbw_lock_takeover "$g/mutex/pid" "$owner" && took=1; }
+        checks_gate_live "x.$owner" || { vbw_lock_takeover "$file" "$owner" && took=1; }
       else
         # No owner for about 5 s: one that died before it wrote its id.
         [ -n "$lost" ] || lost=$SECONDS
-        if [ $((SECONDS - lost)) -ge 5 ] && vbw_lock_takeover "$g/mutex/pid" ""; then took=1; fi
+        if [ $((SECONDS - lost)) -ge 5 ] && vbw_lock_takeover "$file" ""; then took=1; fi
       fi
     fi
     [ "$took" = 1 ] || slots_nap "$idle"

@@ -85,3 +85,24 @@ teardown() { vbw_teardown; }
   kill "$live"; wait "$live" 2> /dev/null || true
   [ "$status" -eq 0 ] && [ "$output" = "entered after 3 tries" ] || { echo "$output"; false; }
 }
+
+@test "T180: a unit's entry at a free gate and its leave each spawn only one removal" {
+  # Both lie between one unit giving its slot back and the next one taking it: a lock
+  # folder made and removed there (mkdir, chmod, rm, rm, rmdir) kept slots idle.
+  local bin="$TEST_ROOT/shim" t
+  mkdir -p "$bin"
+  for t in rm rmdir mkdir chmod mv ln cat touch; do
+    printf '#!/bin/sh\necho %s >> "$TEST_ROOT/procs"\nexec %s "$@"\n' "$t" "$(command -v "$t")" > "$bin/$t"
+    chmod +x "$bin/$t"
+  done
+  mkdir -p .vbw/runtime/gate
+  # shellcheck disable=SC2016 # expanded by vbw_kernel
+  PATH="$bin:$PATH" run vbw_kernel '. "$VBW_LIB/slots.sh"; . "$VBW_LIB/checks.sh"
+    : > "$TEST_ROOT/procs"
+    CHECKS_LIMIT=4 checks_gate_enter C1 false || exit 1
+    echo --- >> "$TEST_ROOT/procs"
+    checks_gate_leave C1
+    ls -A "$VBW_RUNTIME/gate"'
+  [ "$status" -eq 0 ] && [ -z "$output" ] || { echo "$output"; false; }
+  [ "$(tr '\n' ' ' < "$TEST_ROOT/procs")" = "rm --- rm " ] || { tr '\n' ' ' < "$TEST_ROOT/procs"; false; }
+}
