@@ -17,7 +17,9 @@ import { stageModel, renderStage } from './panel-stage.js'
 import { liveStep, dayClock } from './panel-step.js'
 import { statusText, whyText, todoArgs } from './panel-commands.js'
 import { renderPane } from './panel-pane.js'
-import { candy as nextCandy, SETTLE_MS as NEXT_SETTLE_MS } from './panel-next.js'
+import { freshKey } from './panel-next.js'
+import { fresh as freshLook, freshArrive, freshSee } from './panel-candy.js'
+import { READ_ARGV, settingArgv, settingsState, settingsSig } from './panel-settings.js'
 import { stateColor } from './panel-palette.js'
 import { SITES, turnPending } from './panel-sites.js'
 import { motionOf, spriteFrame, encodeCells, confettiFrames, sweepFrames, wrappedModel, celebration } from './panel-candy.js'
@@ -41,15 +43,9 @@ const keys = (testRoot) => {
   return { closed: p + 'vbw-panel.closed', nextSeen: p + 'vbw-panel.next-seen', seen: p + 'vbw-panel.seen', needSeen: p + 'vbw-panel.need-seen', needNotified: p + 'vbw-panel.need-notified', helpersSeen: p + 'vbw-panel.helpers-seen', refusalsSeen: p + 'vbw-panel.refusals-seen' }
 }
 // The sound for a request for the user: the clone setting `sound` (docs/config.md) is
-// `off`, `default` (any shipped voice) or a folder under assets/audio/; panel-sounds.js
-// picks the clip. Until it exports soundFor (batch 2.1.11, Lane D) the folder is filtered
-// here. With none shipped, the panel is silent.
-const anyOf = (list) => (list.length ? list[Math.floor(Math.random() * list.length)] : null)
-const soundFor = typeof sounds.soundFor === 'function' ? sounds.soundFor : (choice) => {
-  if (choice === 'off') return null
-  const mine = sounds.SOUNDS.filter((a) => a.startsWith('assets/audio/' + choice + '/'))
-  return anyOf(mine.length ? mine : sounds.SOUNDS)
-}
+// `off`, `default` (any shipped voice) or a folder under assets/audio/; panel-sounds.js's
+// soundFor picks the clip. With none shipped, the panel is silent.
+const soundFor = sounds.soundFor
 const pick = (st) => {
   const c = soundFor(st.soundChoice)
   return typeof c === 'string' ? { asset: c } : isObj(c) ? c : null
@@ -122,6 +118,7 @@ function fresh() {
     lastRec: null, crews: {}, anim: null, animBusy: false, frameNo: 0, commsId: null, nextFileAt: null, questionAt: null, helpersSeen: {}, refusalsSeen: {},
     sprites: null, burst: null, sweep: null, cheer: null, wrapped: null, nextSeen: null, nextAt: null, nextAnim: null,
     seenNext: null, needSeen: null, needNotified: null, proving: null, stamps: {}, stepNote: null, step: null, open: {},
+    fresh: {}, settings: null,
   }
 }
 
@@ -173,6 +170,12 @@ const runCost = (st) => {
 // is marked until it is pressed, opened, or its tab is opened.
 const needNow = (st) => liveNeed({ record: st.record, next: st.next, nextAt: st.nextFileAt, question: st.question, questionAt: st.questionAt, health: st.health })
 const needId = (n) => n.key + '@' + String(n.at)
+// The fresh marks drawn (panel-candy.js): the recommendation's while it is unseen, dated by
+// when the panel saw it arrive, and this session's finished runs and changed settings.
+const freshMarks = (st) => {
+  const key = freshKey(recOf(st))
+  return key && unseenNext(st) ? { [key]: num(st.nextAt) ? st.nextAt : 0, ...st.fresh } : st.fresh
+}
 const unseenNext = (st) => {
   const rec = recOf(st)
   return isObj(rec) && typeof rec.at === 'string' && rec.at !== '' && rec.at !== st.seenNext
@@ -324,7 +327,10 @@ function trackLeases(st) {
   const l = isObj(st.record) && isObj(st.record.lease) ? st.record.lease : null
   const key = l ? String(l.run ?? '') + '@' + String(l.started_at ?? '') : null
   const open = openLease(st)
-  if (open && open.key !== key) open.costEnd = st.cost
+  if (open && open.key !== key) {
+    open.costEnd = st.cost
+    st.fresh = freshArrive(st.fresh, 'timeline:run:' + open.key, 0) // drawn as the word alone: no motion, no time
+  }
   if (key && (!open || open.key !== key)) {
     const at = Date.parse(l.started_at)
     st.leases.push({ key, kind: String(l.kind || 'run'), startedAt: Number.isFinite(at) ? at : null, costStart: st.cost })
@@ -465,8 +471,8 @@ async function gather($, st) {
   await feed($, st)
 }
 
-// The sound choice, from the clone's settings file beside steps.json (the kernel writes
-// it: `vbw config set sound`); a damaged or missing file reads as `default`.
+// The sound choice, from the clone's settings.json in the git directory (only the kernel
+// changes it: `vbw config set sound`); a damaged or missing file reads as `default`.
 async function readSound($, st) {
   if (!st.settingsPath) return
   let sig = null
@@ -557,7 +563,7 @@ async function suggest($, st) {
 
 const cheering = (st, now) => (st.cheer && st.cheer.until > now ? st.cheer.text : null)
 const recOf = (st) => (isObj(st.record) ? st.record.recommendation : undefined)
-const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st), unseenNext(st), st.needSeen,  nextCandy({ motion: motion(st), arrivedAt: st.nextAt, now }), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent, st.open, st.tab === 'sessions' ? st.registry : null,
+const signature = (st, v, now) => JSON.stringify([v, st.sound, recOf(st), unseenNext(st), st.needSeen,  freshLook({ marks: freshMarks(st), key: freshKey(recOf(st)), motion: motion(st), now }), settingsSig(st.settings, now), Object.keys(st.fresh), stage(st, now), st.run, st.auto, st.leases.length, st.tab, st.phase, st.check, st.agent, st.open, st.tab === 'sessions' ? st.registry : null,
   cheering(st, now), !!st.burst, !!st.sweep])
 
 // Remember when each agent first showed; at full motion a new row flashes for a
@@ -569,8 +575,8 @@ async function noteBorn($, st, now) {
 }
 
 // A recommendation with a written time not seen before (kept in the user's store, so
-// a restart does not replay it) starts the What's next candy: one redraw per frame
-// until it settles (panel-next.js), only with full motion.
+// a restart does not replay it) starts the What's next motion: one redraw per frame
+// until it is seen (panel-candy.js fresh), only with full motion.
 async function noteRecommendation($, st, now) {
   const rec = recOf(st)
   const at = isObj(rec) && typeof rec.at === 'string' && rec.at ? rec.at : null
@@ -588,7 +594,7 @@ async function noteRecommendation($, st, now) {
     try {
       const t = await $.clock.now()
       await redrawIfChanged($, st, false, t)
-      if (t - st.nextAt >= NEXT_SETTLE_MS && st.nextAnim) {
+      if ((!unseenNext(st) || motion(st) !== 'full') && st.nextAnim) {
         st.nextAnim.cancel()
         st.nextAnim = null
       }
@@ -692,6 +698,7 @@ async function openByPerson($, st, extra) {
 // The user has seen these: the recommendation (kept in the user's store, so a restart
 // keeps it seen) and the needs-you line (until the gate changes).
 async function seen($, st, what) {
+  for (const tab of ['timeline', 'settings']) if (what.includes(tab)) st.fresh = freshSee(st.fresh, tab + ':')
   if (what.includes('need')) {
     const n = needNow(st)
     if (n) {
@@ -750,6 +757,8 @@ async function act($, st, a) {
       st.tab = typeof a.tab === 'string' ? a.tab : 'now'
       if (st.tab === 'now') await seen($, st, ['next', 'need', 'refusals'])
       if (st.tab === 'sessions') await readHolder($, st)
+      if (st.tab === 'timeline' || st.tab === 'settings') await seen($, st, [st.tab])
+      if (st.tab === 'settings') await settings($, st, null)
       if (typeof a.agent === 'string') {
         st.agent = a.agent
         await seeHelper($, st, a.agent) // opened in Mission Control: a failed helper counts as seen
@@ -763,15 +772,43 @@ async function act($, st, a) {
     else if (typeof a.check === 'string') st.check = st.check === a.check ? null : a.check
     // Show or hide one thing a press opens in place (a refusal's whole text, a plan's files).
     else if (typeof a.toggle === 'string') st.open = { ...st.open, [a.toggle]: !st.open[a.toggle] }
+    else if (isObj(a.setting)) await settings($, st, a.setting)
     else if (typeof a.show === 'string') {
       st.tab = a.show
       if (a.show === 'now') await seen($, st, ['next', 'need', 'refusals'])
       if (a.show === 'sessions') await readHolder($, st) // shown at once, not at the next tick
+      if (a.show === 'timeline' || a.show === 'settings') await seen($, st, [a.show])
+      if (a.show === 'settings') await settings($, st, null) // read at once, not at the next tick
     }
     else return
     await redrawIfChanged($, st, true)
   } catch {
     // the press does nothing
+  }
+}
+
+// The Settings tab (panel-settings.js): `choice` ({ key, value }) runs the kernel's own
+// command for it, then the tab reads `vbw config` and `vbw statusline status` again; a change
+// that took is fresh on the tab, and its ✓ saved flash is redrawn away after about 2 s.
+async function settings($, st, choice) {
+  const run = async (argv) => {
+    try {
+      return await $.process.run([$.plugin.root + '/bin/vbw', ...argv], { cwd: st.root })
+    } catch {
+      return null
+    }
+  }
+  const argv = choice ? settingArgv(choice) : null
+  if (choice && !argv) return
+  const result = argv ? await run(argv) : null
+  const reads = []
+  for (const r of READ_ARGV) reads.push(await run(r))
+  const now = await $.clock.now()
+  st.settings = settingsState({ before: st.settings, choice, result, reads, now })
+  if (result && result.exitCode === 0) {
+    st.fresh = freshArrive(st.fresh, 'settings:' + choice.key, now)
+    if (choice.key === 'sound') await readSound($, st)
+    $.clock.after(2100, () => redrawIfChanged($, st).catch(() => {}))
   }
 }
 
@@ -1090,7 +1127,7 @@ export function register(on) {
       const cells = st.sweep && st.tab === 'proof' && ui.Raster ? drawn(st.sweep, width, PANE) : null
       if (cells) animate($, st)
       const sweep = cells ? { cols: st.sweep.cols, cells } : null
-      return renderPane(ui, { st, v, now, width, sweep, registry: st.registry, stored: st.stored, holder: st.holder, recommendation: recOf(st), unseen: unseenNext(st), motion: motion(st), arrivedAt: st.nextAt, wrapped: st.wrapped, scroll: isObj(e.props) ? e.props.scroll : null, portrait: $.plugin.root + '/assets/portrait.png' }, {
+      return renderPane(ui, { st, v, now, width, sweep, registry: st.registry, stored: st.stored, holder: st.holder, recommendation: recOf(st), fresh: freshMarks(st), motion: motion(st), wrapped: st.wrapped, scroll: isObj(e.props) ? e.props.scroll : null, portrait: $.plugin.root + '/assets/portrait.png' }, {
         act: (a) => act($, st, a),
         sound: () => setSound($, st, !st.sound),
       })

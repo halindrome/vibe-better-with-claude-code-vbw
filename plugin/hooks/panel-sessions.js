@@ -5,6 +5,7 @@
 // which reads through `$` and never throws.
 
 import { ACCENT } from './panel-palette.js'
+import { dayClock } from './panel-step.js'
 
 const isObj =(x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const NAME_MAX = 40
@@ -95,19 +96,6 @@ export function holderName({ lease, registry, stored, sessionId } = {}) {
 
 const EMPTY = 'No other chats are open on this project'
 const inside = (cwd, root) => typeof cwd === 'string' && typeof root === 'string' && root !== '' && (cwd === root || cwd.startsWith(root.replace(/\/+$/, '') + '/'))
-const two = (n) => String(n).padStart(2, '0')
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-const midnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
-// 'HH:MM' on the local clock; another day is named as panel-step's times are
-// ('yesterday 14:20', a weekday, 'tomorrow'); '' without a moment.
-export function dayTime(ms, now) {
-  if (!Number.isFinite(ms)) return ''
-  const d = new Date(ms)
-  const days = Number.isFinite(now) ? Math.round((midnight(d) - midnight(new Date(now))) / 86400000) : 0
-  const day = days === 0 ? '' : days === 1 ? 'tomorrow ' : days === -1 ? 'yesterday ' : DAY_NAMES[d.getDay()] + ' '
-  return day + two(d.getHours()) + ':' + two(d.getMinutes())
-}
-
 // The Sessions tab: the chats of this project (cwd is the root or a folder under it),
 // newest first, and the holder of the run, listed from the lease when no entry has it.
 export function sessionsModel({ registry, root, sessionId, lease, stored, now, width, plans } = {}) {
@@ -125,7 +113,7 @@ export function sessionsModel({ registry, root, sessionId, lease, stored, now, w
       id: e.sessionId,
       name: cutName(cleanName(e.name) || e.sessionId.slice(0, 8), room),
       state: typeof e.status === 'string' ? cleanName(e.status) : '',
-      last: dayTime(e.updatedAt, now),
+      last: dayClock(e.updatedAt, now),
       resume: 'claude --resume ' + e.sessionId,
       self: e.sessionId === sessionId,
       holder: e.sessionId === held ? { kind } : null,

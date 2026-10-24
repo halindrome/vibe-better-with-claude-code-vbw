@@ -1,13 +1,12 @@
 // Mission Control's live tabs (mods_4_vbw.md §3.3): Now (the crew: one row per
 // helper at work), Timeline (agent lanes on the run clock, past steps as
-// a sparkline against the R58 median) and Costs (cost per run, "about"). Pure:
+// a sparkline against the R58 median) and the Now box's drawing (its model is panel-view.js's). Pure:
 // the run model in, plain models out, trees built with h(); never throws.
 
 import { estimate, MIN_STEPS } from './panel-estimate.js'
-import { stepWords, dayClock } from './panel-step.js'
+import { stepWords } from './panel-step.js'
 import { newMark } from './panel-next.js'
 import { roleColor, stateColor, ACCENT, NEED, PROGRESS, ESTIMATE, STATE_MARKS, STATE_WORDS } from './panel-palette.js'
-import { heldBy, GATE_COMMANDS } from './panel-view.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const num = (x) => typeof x === 'number' && Number.isFinite(x)
@@ -109,80 +108,6 @@ export const nowModel = safe(({ run, now, selected, seen, motion, width }) => {
   return { header, rows, started: agents.length > 0, width: num(width) && width > 0 ? Math.floor(width) : null, detail }
 })
 
-// ---- The 'what's happening now' box (docs/panel.md, What's happening now) ----------------
-// VBW's state as one sentence; the current step with when it started and (from the kernel's
-// note, worded by panel-step.js) when it should end, and a done/total strip when the step has
-// parts; when VBW needs you, the need's sentence, the command that answers it and since when
-// it waits; the milestone's end with its basis (the kernel's road: the live note's, else the
-// last `vbw next`'s); the session cost. Every time names its day when not today (dayClock).
-// input: { record, need (panel-view.js liveNeed), proving, stamps ({ proving, need,
-// 'estimate-milestone' }: ms), cost, step (the live note), holder, next, now }.
-const sentenceOf = (t) => {
-  const s = String(t).trim()
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) + (/[.!?]$/.test(s) ? '' : '.') : ''
-}
-const needCommand = (need) => (need.kind === 'question' || need.kind === 'compact' ? null : GATE_COMMANDS[need.kind] || '/vbw:vibe')
-
-function stepLine(name, at, step, now) {
-  const words = step ? stepWords(step, now) : null
-  const when = dayClock(at, now)
-  const text = name ? 'Current step: ' + name + (when ? ', started at ' + when : '') + '.' : when ? 'Started at ' + when + '.' : null
-  if (!text && !words) return null
-  return { text, end: words ? (words.timed ? 'This step: ' + words.text : words.text) + '.' : null, at: num(at) ? at : null, timed: Boolean(words && words.timed) }
-}
-
-function milestoneOf(step, nx, stamp, now) {
-  const road = isObj(step) && isObj(step.road) ? step.road : isObj(step) && step.road === null ? null : isObj(nx) && isObj(nx.road) ? nx.road : null
-  if (!road) return null
-  const basis = str(road.basis).trim().replace(/\.$/, '')
-  if (typeof road.end !== 'string' || !Number.isFinite(Date.parse(road.end))) {
-    return { text: 'No estimate yet' + (basis ? ': ' + basis : '') + '.', basis: null, known: false, term: 'estimate, no basis' }
-  }
-  const say = sentenceOf(str(road.say))
-  if (!say) return null
-  const at = dayClock(stamp, now)
-  return { text: (at ? '[' + at + '] ' : '') + say, basis: basis ? 'basis: ' + basis : null, known: true, term: 'estimate, approximate' }
-}
-
-const costOf = (cost) => (num(cost) && cost >= 0
-  ? { text: 'This session has cost $' + cost.toFixed(2) + ' so far.', known: true, term: 'session cost' }
-  : { text: 'The cost so far is not available.', known: false, term: 'cost, not available' })
-
-const partsOf = (step) => (isObj(step) && isObj(step.parts) && Number.isInteger(step.parts.total) && step.parts.total > 0 && Number.isInteger(step.parts.done)
-  ? { done: Math.max(0, Math.min(step.parts.done, step.parts.total)), total: step.parts.total } : null)
-
-export const nowBoxModel = safe(({ record: rec, need, proving, stamps, cost, step, holder, next: nx, now }) => {
-  if (!isObj(rec) || !isObj(rec.milestone)) return null
-  const t = num(now) ? now : Date.now()
-  const st = isObj(stamps) ? stamps : {}
-  const note = isObj(step) ? step : null
-  const base = { command: null, parts: null, milestone: milestoneOf(note, nx, st['estimate-milestone'], t), cost: costOf(cost) }
-  const l = isObj(rec.lease) ? rec.lease : null
-  if (l) {
-    const plans = (Array.isArray(rec.plans) ? rec.plans : []).filter((p) => isObj(p) && p.status === 'building')
-    const phases = [...new Set(plans.map((p) => p.phase).filter((x) => typeof x === 'string' && x))]
-    const titles = plans.map((p) => p.title).filter(Boolean)
-    const what = {
-      plan: 'planning the work',
-      build: 'building ' + (phases.length ? 'phase ' + phases.join(', ') : 'the plan') + (titles.length ? ' (' + titles.join(', ') + ')' : ''),
-      qa: 'checking the results',
-      fix: 'fixing what the checks found',
-      map: 'reading the project to map it',
-    }[l.kind] || 'working'
-    return { ...base, state: { text: 'VBW is ' + what + heldBy(holder) + '.', need: false }, step: stepLine(note && str(note.doing), Date.parse(l.started_at), note, t), parts: partsOf(note) }
-  }
-  if (proving === true || (note && note.kind === 'proof')) {
-    const at = num(st.proving) ? st.proving : note ? Date.parse(note.started_at) : NaN
-    return { ...base, state: { text: 'VBW is proving the work: running its checks.', need: false }, step: stepLine(note && str(note.doing), at, note, t), parts: partsOf(note) }
-  }
-  if (isObj(need) && str(need.text)) {
-    const since = num(st.need) ? st.need : need.at
-    const when = dayClock(since, t)
-    return { ...base, state: { text: need.text, need: true }, command: needCommand(need), step: when ? { text: 'Waiting since ' + when + '.', end: null, at: since, timed: false } : null }
-  }
-  return { ...base, state: { text: 'Nothing is running.', need: false }, step: null }
-})
-
 // The parts strip: one cell a part (scaled to `room` cells when there are more), done in the
 // progress colour, the rest dim, then 'N of M done'.
 function partsStrip(ui, parts, room) {
@@ -266,36 +191,6 @@ export const timelineModel = safe(({ run, now, steps, step, width }) => {
   const history = Array.isArray(steps) ? steps : []
   const kind = STEP_KIND[run.kind] || str(run.kind)
   return { width: w, lanes, spark: sparkOf(history, kind, t), left: leftOf(run, step, t) }
-})
-
-const cents = (x) => Math.round(x * 1e4) / 1e4
-const usd = (x) => '$' + x.toFixed(2)
-
-// runs: [{kind, startedAt, costStart, costEnd}]; a run still open costs up to the session cost now.
-export const costsModel = safe(({ runs, sessionCost, width }) => {
-  const w = num(width) ? Math.max(1, Math.floor(width)) : 30
-  const session = num(sessionCost) ? sessionCost : null
-  const seen = {}
-  const rows = (Array.isArray(runs) ? runs : []).flatMap((r) => {
-    if (!isObj(r) || !str(r.kind) || !num(r.costStart)) return []
-    const endCost = num(r.costEnd) ? r.costEnd : session
-    if (endCost === null || endCost < r.costStart) return []
-    seen[r.kind] = (seen[r.kind] || 0) + 1
-    const cost = cents(endCost - r.costStart)
-    return [{ kind: r.kind, name: r.kind + ' ' + seen[r.kind], startedAt: num(r.startedAt) ? r.startedAt : null, cost, text: 'about ' + usd(cost), bar: 0 }]
-  })
-  const max = Math.max(0, ...rows.map((r) => r.cost))
-  for (const r of rows) r.bar = max > 0 && r.cost > 0 ? Math.max(1, Math.round((r.cost / max) * w)) : 0
-  const kinds = []
-  for (const r of rows) {
-    let k = kinds.find((x) => x.kind === r.kind)
-    if (!k) kinds.push((k = { kind: r.kind, runs: 0, cost: 0, text: '' }))
-    k.runs++
-    k.cost = cents(k.cost + r.cost)
-    k.text = 'about ' + usd(k.cost)
-  }
-  kinds.sort((x, y) => y.cost - x.cost)
-  return { runs: rows, kinds, session: session === null ? 'The session cost is not available.' : 'This session: ' + usd(session), width: w }
 })
 
 // ---- Renders: ui = $.ui.resolve(e); `act` receives a card's action when it is pressed.
@@ -386,16 +281,4 @@ export function renderTimeline(ui, model) {
     ...(model.lanes.length ? model.lanes.map(lane) : [h(ui.Text, { dimColor: true }, 'No agents have started yet.')]),
     spark,
     model.left ? h(ui.Text, null, model.left) : null)
-}
-
-export function renderCosts(ui, model) {
-  if (!isObj(model) || !Array.isArray(model.runs)) return empty(ui, 'No cost to show yet.')
-  const nameW = Math.max(4, ...model.runs.map((r) => r.name.length))
-  return h(ui.Box, { flexDirection: 'column' },
-    ...(model.runs.length
-      ? model.runs.map((r, i) => h(ui.Box, { key: 'cost:' + i },
-        h(ui.Text, null, r.name.padEnd(nameW + 1)), h(ui.Text, { color: ACCENT }, '█'.repeat(r.bar)), h(ui.Text, { dimColor: true }, ' ' + r.text)))
-      : [h(ui.Text, { dimColor: true }, 'No VBW run has finished in this session yet.')]),
-    ...model.kinds.map((k) => h(ui.Text, null, k.kind + ' (' + k.runs + (k.runs === 1 ? ' run' : ' runs') + '): ' + k.text)),
-    h(ui.Text, { bold: true }, model.session))
 }

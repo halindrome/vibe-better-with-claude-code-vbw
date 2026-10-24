@@ -17,22 +17,23 @@ Mission Control's **Now** tab starts with a framed box that says what VBW is
 doing, and then the sentences about the milestone:
 
 ```
-+------------------------------------------------+
-| VBW is building phase P1 (Show the cost).      |
-| Current step: building P1.2, started at 14:08. |
-| This step: about 12 min, until around 14:20.   |
-| This session has cost $1.42 so far.            |
-| session cost                                   |
-+------------------------------------------------+
++----------------------------------------------------------+
+| VBW is building phase P1 (Show the cost).                |
+| Current step: building P1.2, started at 14:08.           |
+| ▰▰▱ 2 of 3 done                                          |
+| This step: about 12 min, until around 14:20.             |
+| [14:08] Milestone end: about 40 min, until around 14:50. |
+| basis: 2 waves, 2 proofs                                 |
+| estimate, approximate                                    |
+| This session has cost $1.42 so far.                      |
+| session cost                                             |
++----------------------------------------------------------+
 
 Working on M1: First milestone.
 milestone
 
 5 of 12 requirements done.
 requirements
-
-[14:08] Milestone end: about 40 min, until around 14:50.
-estimate, approximate
 
 Nothing is needed from you right now.
 your turn
@@ -46,15 +47,16 @@ uses. The panel shows these things, top to bottom:
    parts), proving, checking the results, fixing what the checks found,
    mapping the project, or nothing running. It also holds the **current
    step** with the time it started and, when VBW can estimate it, the time it
-   should end (see [Time left](#time-left)), and **what this session has
-   cost** so far (see [Cost](#cost)). When VBW needs you, the box holds the
-   one sentence that says what for, the command to type, and since when it
-   waits (see [What's happening now](#whats-happening-now)).
+   should end (see [Time left](#time-left)), the **time left for the
+   milestone** when VBW can estimate it, and **what this session has cost** so
+   far (see [Cost](#cost)). When VBW needs you, the box holds the one sentence
+   that says what for, the command to type, and since when it waits (see
+   [What's happening now](#whats-happening-now)). While a run is on, the crew
+   of helpers at work sits right under the box.
 2. **The milestone** you are working on.
 3. **Progress:** how many of the milestone's requirements are done (proven by
    their checks, or accepted by you), counted as the status line counts them.
-4. **Time left for the milestone,** when VBW can estimate it.
-5. **Whether it needs you:** while VBW needs nothing from you, the line
+4. **Whether it needs you:** while VBW needs nothing from you, the line
    "Nothing is needed from you right now" says so. When it does need you (to
    approve the plan, check a result by hand, give the go-ahead to ship, say
    what to build, decide on a stuck fix, or answer a question) that sentence
@@ -139,7 +141,7 @@ and the box's first sentence in amber when VBW needs you. A sentence with no val
 far is not available") stays plain.
 
 Colour never carries a state alone. Every state colour on Comms and on
-Mission Control's cards sits beside its mark and word, so with colour turned
+Mission Control's rows (the crew, Plan, Proof) sits beside its mark and word, so with colour turned
 off (or if you cannot tell two colours apart) the panel reads the same.
 
 ## Judging the colours
@@ -571,9 +573,9 @@ when something began saying what it says:
 ```
 
 The box says since when VBW has been waiting for you, and the time the current
-step started. The milestone's time-left sentence starts with its own time. A helper card's state line
-starts with the time the helper started (while running) or ended (done or
-failed). The all-checks-pass line in Comms starts with the time of the proof,
+step started. The milestone's time-left sentence, in the box, starts with its own
+time. A helper's crew row ends with how long it has been at work. The
+all-checks-pass line in Comms starts with the time of the proof,
 and What's next shows when its recommendation was written. A message keeps the
 time it began saying what it says: three minutes of clock alone redraw
 nothing.
@@ -992,12 +994,14 @@ The panel needs **Claude Code 2.1.287 or newer** (check with
 
 The panel only reads local files: `.vbw/record.json`,
 `.vbw/runtime/next.json` and this session's `.vbw/runtime/auto.<session>.json`
-in your project, `steps.json` in your clone's git directory, and the workflow
-run files in this session's own folder under the Claude config folder (found
-from `CLAUDE_CONFIG_DIR`, else `HOME`; no other environment variable is read).
-It asks Claude Code for the session cost, context fill and weekly limit,
-read-only. It never writes and never uses the network. The one program it runs
-is VBW's own `vbw todo add`, when you type `/vbw-todo`. It reads a file again
+in your project, `steps.json` and `settings.json` in your clone's git directory,
+and the workflow run files in this session's own folder under the Claude config
+folder (found from `CLAUDE_CONFIG_DIR`, else `HOME`; no other environment
+variable is read). It asks Claude Code for the session cost, context fill and
+weekly limit, read-only. It never writes and never uses the network. The one
+program it runs is VBW's own `vbw`: `vbw todo add` when you type `/vbw-todo`,
+`vbw config set sound` from the sound switch, and on the Settings tab
+`vbw config`, `vbw statusline status` and the command a press asks for. It reads a file again
 only when that file's size or modification time has changed, and redraws only
 when what it shows changes (while agents work, that is every check).
 

@@ -61,7 +61,7 @@ test('a refusal an agent reported is one amber Comms line with its time, and sta
   assert.match((await refusalLines(h))[0] || '', /VBW refused · dev P142\.1: vbw: run end refused/, 'a later refusal shows again')
 })
 
-test('the Now tab keeps the run\'s refusals as amber sentences with their time, whole on one line', async () => {
+test('the Now tab keeps the run\'s refusals as short amber rows with their time; the whole text opens in place on a press', async () => {
   const { h, at } = await building([{ n: 'P142.1', state: 'working' }])
   report(h, at, [SAID], true)
   await h.advance(TICK)
@@ -69,14 +69,23 @@ test('the Now tab keeps the run\'s refusals as amber sentences with their time, 
   const texts = []
   walk(pane, (n) => { if (n.type === 'Text' && /VBW refused,/.test(textOf(n))) texts.push(n) })
   assert.equal(texts.length, 1)
-  assert.equal(textOf(texts[0]), '[' + hhmm(at) + '] ⊘ VBW refused, dev P142.1: ' + SAID.replace('\n', ' '))
+  assert.equal(textOf(texts[0]), '[' + hhmm(at) + '] ⊘ VBW refused, dev P142.1: ' + SAID.split('\n')[0])
   assert.equal(texts[0].props.color, P.NEED)
+  let show = null
+  walk(pane, (n) => { if (n.type === 'Button' && /^show:refused:/.test(String(n.props.key))) show = n })
+  assert.ok(show, 'no show button for the whole text')
+  await show.props.onPress({ surface: 'terminal' })
+  await h.settle()
+  const open = []
+  walk(await h.render(), (n) => { if (n.type === 'Text' && textOf(n) === SAID.replace('\n', ' ')) open.push(n) })
+  assert.equal(open.length, 1, 'the whole text, on one line, under the row')
 })
 
 // B3 (2.1.11): a refusal line is short. A guard refusal names the run's whole file
 // list in its sentence; the line keeps the first clause, says how many files the run
 // has, and shows the whole text on a press. Comms shows the first clause only.
 const L = await import(pathToFileURL(PLUGIN + '/hooks/panel-lines.js').href)
+const V = await import(pathToFileURL(PLUGIN + '/hooks/panel-view.js').href)
 const live = await import(pathToFileURL(PLUGIN + '/hooks/panel-mission-live.js').href)
 const NINE = ['a.js', 'b.js', 'c.js', 'd.js', 'e.js', 'f.js', 'g.js', 'h.js', 'i.js']
 const GUARD = "src/x.js is outside this run's files (" + NINE.join(', ') + "): agents write only their plan's files\nNext: leave src/x.js as it is; report that the plan needs it, so the plan can be replanned with vbw apply"
@@ -86,7 +95,7 @@ const EL = (name) => Object.freeze({ element: name })
 const UI = { Box: EL('Box'), Text: EL('Text'), Button: EL('Button') }
 
 test('a guard refusal row is its first clause and the count of the run\'s files; the whole text waits for a press', () => {
-  const r = L.refusalRow({ id: 'a1#0', by: 'dev P5.2', at: AT, text: GUARD }, NOW_B3)
+  const r = V.refusalRow({ id: 'a1#0', by: 'dev P5.2', at: AT, text: GUARD }, NOW_B3)
   assert.deepEqual(r, {
     id: 'refused:a1#0', term: 'refused', files: 9, more: '· 9 files in this run',
     text: '[' + hhmm(AT) + "] ⊘ VBW refused, dev P5.2: src/x.js is outside this run's files",
@@ -97,17 +106,17 @@ test('a guard refusal row is its first clause and the count of the run\'s files;
 })
 
 test('a kernel refusal keeps its first line whole; its Next: line waits for a press; a day not today is named', () => {
-  const r = L.refusalRow({ id: 'a1#1', by: 'dev P142.1', at: AT - 86400000, text: SAID }, NOW_B3)
+  const r = V.refusalRow({ id: 'a1#1', by: 'dev P142.1', at: AT - 86400000, text: SAID }, NOW_B3)
   assert.equal(r.text, '[yesterday ' + hhmm(AT) + '] ⊘ VBW refused, dev P142.1: vbw: apply refused: plan P142.1 is started')
   assert.equal(r.files, 0)
   assert.equal(r.more, null)
   assert.equal(r.full, SAID.split('\n').join(' '))
-  assert.equal(L.refusalRow({ id: 'x', text: 'one line only' }, NOW_B3).full, null, 'nothing more to show')
-  for (const bad of [null, 'x', {}, { text: '  ' }]) assert.equal(L.refusalRow(bad, NOW_B3), null)
+  assert.equal(V.refusalRow({ id: 'x', text: 'one line only' }, NOW_B3).full, null, 'nothing more to show')
+  for (const bad of [null, 'x', {}, { text: '  ' }]) assert.equal(V.refusalRow(bad, NOW_B3), null)
 })
 
 test('the refusal row draws amber with "· N files in this run [ show ]"; a press asks to open it, open it shows the whole text', () => {
-  const row = L.refusalRow({ id: 'a1#0', by: 'dev P5.2', at: AT, text: GUARD }, NOW_B3)
+  const row = V.refusalRow({ id: 'a1#0', by: 'dev P5.2', at: AT, text: GUARD }, NOW_B3)
   const acts = []
   const shut = live.renderRefusal(UI, row, false, (a) => acts.push(a))
   const words = screen(shut, 140).filter((l) => l.trim()) // the row keeps one blank row under it, as every Now sentence does
@@ -120,6 +129,6 @@ test('the refusal row draws amber with "· N files in this run [ show ]"; a pres
   const open = screen(live.renderRefusal(UI, row, true, () => {}), 400)
   assert.ok(open.some((l) => l.includes(GUARD.split('\n').join(' '))), open.join('\n'))
   assert.ok(open.some((l) => /\[ hide \]/.test(l)))
-  const plain = screen(live.renderRefusal(UI, L.refusalRow({ id: 'x', at: AT, text: 'one line only' }, NOW_B3), false, () => {}), 140)
+  const plain = screen(live.renderRefusal(UI, V.refusalRow({ id: 'x', at: AT, text: 'one line only' }, NOW_B3), false, () => {}), 140)
   assert.ok(!plain.some((l) => /show/.test(l)), 'no button when there is nothing more')
 })

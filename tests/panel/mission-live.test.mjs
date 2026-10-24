@@ -1,10 +1,11 @@
-// Mission Control's live tabs (mods_4_vbw.md §3.3): Now, Timeline, Costs.
+// Mission Control's live tabs (mods_4_vbw.md §3.3): Now and Timeline (its lanes, and its runs with their cost).
 // Pure models tested by value, renders by tree shape (evidence level L1).
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { collect, find, walk, deepFreeze } from './helpers/fake-mod.mjs'
 import { ROLE_COLORS as R } from '../../plugin/hooks/panel-palette.js'
-import { nowModel, timelineModel, costsModel, renderNow, renderTimeline, renderCosts } from '../../plugin/hooks/panel-mission-live.js'
+import { nowModel, timelineModel, renderNow, renderTimeline } from '../../plugin/hooks/panel-mission-live.js'
+import { runsModel, renderRuns } from '../../plugin/hooks/panel-runs.js'
 
 const S = 1_800_000_000_000
 const MIN = 60_000
@@ -117,27 +118,27 @@ test('timelineModel: a sparkline of past steps of this kind, the median marked, 
   assert.deepEqual([qa.spark.bars, qa.spark.median, qa.spark.kind], ['▄▄▄', 60, 'qa'])
 })
 
-test('costsModel: cost per run as "about", totals per kind, the session total, bars to width', () => {
+test('runsModel (Timeline, Runs this session): cost per run as "about", its time from its steps or the clock, totals per kind, the session total, both bars to one scale', () => {
   const runs = deepFreeze([
-    { kind: 'building', startedAt: S, costStart: 0.1, costEnd: 1.1 },
-    { kind: 'verifying', startedAt: S + MIN, costStart: 1.1, costEnd: 1.35 },
-    { kind: 'building', startedAt: S + 2 * MIN, costStart: 1.35, costEnd: 1.85 },
-    { kind: 'fixing', startedAt: S + 3 * MIN, costStart: 1.85, costEnd: null },
+    { key: 'build-1@a', kind: 'building', startedAt: S, costStart: 0.1, costEnd: 1.1 },
+    { key: 'qa-1@b', kind: 'verifying', startedAt: S + MIN, costStart: 1.1, costEnd: 1.35 },
+    { key: 'build-2@c', kind: 'building', startedAt: S + 2 * MIN, costStart: 1.35, costEnd: 1.85 },
     { kind: 'broken', costStart: 'x' }, null,
+    { key: 'fix-1@d', kind: 'fixing', startedAt: S + 3 * MIN, costStart: 1.85 },
   ])
-  const m = costsModel({ runs, sessionCost: 2.0, width: 20 })
-  assert.deepEqual(m.runs.map((r) => [r.name, r.text, r.bar]), [
-    ['building 1', 'about $1.00', 20], ['verifying 1', 'about $0.25', 5], ['building 2', 'about $0.50', 10], ['fixing 1', 'about $0.15', 3],
+  const steps = [{ run: 'build-1', seconds: 600 }, { run: 'build-1', seconds: 300 }, { run: 'qa-1', seconds: 90 }]
+  const m = runsModel({ runs, steps, sessionCost: 2.0, now: S + 5 * MIN, width: 80 })
+  assert.deepEqual(m.rows.map((r) => [r.name, r.time, r.money, r.open]), [
+    ['building 1', '15 min', 'about $1.00', false], ['verifying 1', '1 min 30 s', 'about $0.25', false],
+    ['building 2', 'time unknown', 'about $0.50', false], ['broken 1', 'time unknown', 'cost unknown', false], ['fixing 1', '2 min', 'about $0.15', true],
   ])
-  assert.deepEqual(m.kinds, [
-    { kind: 'building', runs: 2, cost: 1.5, text: 'about $1.50' },
-    { kind: 'verifying', runs: 1, cost: 0.25, text: 'about $0.25' },
-    { kind: 'fixing', runs: 1, cost: 0.15, text: 'about $0.15' },
-  ])
+  assert.equal(m.rows[0].timeBar, m.bar, 'the longest run fills its bar')
+  assert.equal(m.rows[0].costBar, m.bar, 'the dearest run fills its bar')
+  assert.deepEqual(m.kinds.map((k) => [k.kind, k.runs, k.cost]), [['building', 2, 1.5], ['verifying', 1, 0.25], ['fixing', 1, 0.15]])
   assert.equal(m.session, 'This session: $2.00')
-  const empty = costsModel({ runs: [], sessionCost: null })
-  assert.deepEqual(empty, { runs: [], kinds: [], session: 'The session cost is not available.', width: 30 })
-  assert.deepEqual(costsModel(null), empty)
+  const empty = runsModel({ runs: [], sessionCost: null })
+  assert.deepEqual([empty.rows, empty.kinds, empty.session], [[], [], 'The session cost is not available.'])
+  assert.deepEqual(runsModel(null).rows, [])
 })
 
 test('renderNow: the header, then one row per helper; pressing a row asks to select it', () => {
@@ -168,7 +169,7 @@ test('renderNow: the row degrades to the width: the doing text is cut, the name,
   }
 })
 
-test('renderTimeline and renderCosts draw lanes, sparkline and bars', () => {
+test('renderTimeline and renderRuns draw lanes, sparkline and bars', () => {
   const r = run([agent({ id: 'a', startedAt: S, endedAt: S + 5 * MIN, state: 'done' }), agent({ id: 'b', role: 'qa', label: 'P55', startedAt: S + 5 * MIN })])
   const tl = renderTimeline(UI, timelineModel({ run: r, now: S + 10 * MIN, steps: [step('build', 600), step('build', 1200), step('build', 300)], width: 10, step: { kind: 'build', run: 'build-1', parts: { done: 1, total: 2 }, end: new Date(S + 7 * MIN).toISOString(), late: true } }))
   const texts = collect(tl)
@@ -177,8 +178,8 @@ test('renderTimeline and renderCosts draw lanes, sparkline and bars', () => {
   let rows = 0
   walk(tl, (n) => { if (n.type === 'Box' && n.props.flexDirection === 'row') rows++ })
   assert.equal(rows, 2)
-  const cs = collect(renderCosts(UI, costsModel({ runs: [{ kind: 'building', startedAt: S, costStart: 0, costEnd: 0.5 }], sessionCost: 0.7, width: 8 })))
-  for (const t of ['building 1', 'about $0.50', '█'.repeat(8), 'This session: $0.70']) assert.ok(cs.some((x) => x.includes(t)), t)
+  const cs = collect(renderRuns(UI, runsModel({ runs: [{ key: 'b@1', kind: 'building', startedAt: S, costStart: 0, costEnd: 0.5 }], steps: [{ run: 'b', seconds: 60 }], sessionCost: 0.7, now: S, width: 40 })))
+  for (const t of ['building 1', 'about $0.50', '1 min', '█', 'This session: $0.70']) assert.ok(cs.some((x) => x.includes(t)), t)
   assert.ok(collect(renderTimeline(UI, null)).length > 0)
-  assert.ok(collect(renderCosts(UI, null)).length > 0)
+  assert.ok(collect(renderRuns(UI, null)).length > 0)
 })

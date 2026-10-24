@@ -182,11 +182,11 @@ const plain = (n) => (n && typeof n === 'object' && !Array.isArray(n) && 'type' 
 // Each case's drawings and its redraw count after each refresh, as one sha256.
 const PINNED = {
   tick: 'db362e790d4eba5e4d7f8b9078cad1aeef6b1bf583216186efdfe5cd9801e109',
-  refresh: '42dd3e4cb455939da929ccac447fed08ec70f8e0d8c2d38d0ff9b3d0b2266ec6',
-  glance: 'd7ad9582d9101cc65925552deea9a8958eb2e3e9ddc715a9b96214bb806f2152',
-  'whats-next': '6fce7f9443707da404f2129c2871e69465ef7c44e368f27d8d1185dbc22cda7b',
-  render: '5e2962e58327e9093cde90a9160b629175c3195687b8d02d7869f72c6366928f',
-  step: '20c0b0313eb376f1943ae1e4ef0e034b4397b3b0251f98fef805351ece47b5d3',
+  refresh: '52fa24b0e357416db49ab2863c1c010e4d45f8df1d18a2858e2a4c0ea7553803',
+  glance: '61b26813c48616dbc701eee6817b9e2e72433d1a1dc18c84607ad10d61988e2b',
+  'whats-next': '4f12c4d08279b2b6776e778850f3c933ca1dda3ba5463afbfdc76cd94638f42d',
+  render: '24b6d82f3552f60e23a7b5d65ae951851ddd753952450487fc0846c7b6aed60e',
+  step: '96972359cdfa933d62496f1605ef1d04161a00b7987b25afac7d46f56c9a333a',
 }
 
 test("the bench's cases draw what they drew: work done for speed changes no drawing and no redraw", async () => {

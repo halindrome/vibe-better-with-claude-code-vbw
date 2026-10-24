@@ -5,7 +5,7 @@
 // odd input gives an empty model. No `$` here.
 
 import { stateColor, STATE_MARKS } from './panel-palette.js'
-import { dayTime } from './panel-sessions.js'
+import { dayClock } from './panel-step.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const arr = (x) => (Array.isArray(x) ? x.filter(isObj) : [])
@@ -107,7 +107,7 @@ export function planModel(input) {
         .map((c) => ({ id: c.id, req: c.req, command: argvText(c.run) })),
     }
   }
-  const decisions = decisionsModel({ record: rec }).items.map((d) => ({ ...d, when: dayTime(Date.parse(d.at), now) }))
+  const decisions = decisionsModel({ record: rec }).items.map((d) => ({ ...d, when: dayClock(Date.parse(d.at), now) }))
   return { milestone: scope(rec).id, phases: rows, selected, decisions, ask: { ask: true, placeholder: 'Ask about this plan' } }
 }
 
@@ -136,7 +136,7 @@ export function checkDetail(record, id, now) {
     exit: Number.isInteger(ev.exit) ? ev.exit : null,
     seconds: Number.isFinite(ev.seconds) ? ev.seconds : null,
     at,
-    when: at ? dayTime(Date.parse(at), Number.isFinite(now) ? now : Date.now()) : null,
+    when: at ? dayClock(Date.parse(at), Number.isFinite(now) ? now : Date.now()) : null,
     first: lines.find((l) => FAILED.test(l)) || lines[0] || null,
     output: tail,
   }

@@ -228,15 +228,45 @@ test('the tabs sit in whole rows: at 80 columns the six full names on one row be
 })
 
 test('each tab draws its view, and the choice holds across redraws; the folded tabs keep their facts in their new homes', async () => {
-  const h = await started({}, record({ settings: { profile: 'quality' }, decisions: [{ id: 'D1', text: 'Which db? sqlite', at: '2026-10-01T00:00:00Z' }] }))
-  // Decisions under Plan, the cost per run and the session total (Costs) in Timeline.
-  const want = { Plan: [/P44 Cost/, /sqlite/], Proof: [/No checks are approved/], Timeline: [/No VBW workflow runs/, /This session: \$1\.42/], Sessions: [/No other chats are open on this project/], Settings: [/Reading the settings/] }
+  // The kernel as the Settings tab reads it: `vbw config` and `vbw statusline status`.
+  const kernel = (argv) => (argv[1] === 'config' && argv.length === 2 ? { exitCode: 0, stdout: 'profile: quality\nmodel.architect: opus\n', stderr: '' }
+    : argv[1] === 'statusline' ? { exitCode: 0, stdout: 'off: no status line is set (vbw statusline on)\n', stderr: '' } : { exitCode: 2, stdout: '', stderr: 'vbw: usage\n' })
+  const h = await started({ process: kernel }, record({ settings: { profile: 'quality' }, decisions: [{ id: 'D1', text: 'Which db? sqlite', at: '2026-10-01T00:00:00Z' }] }))
+  // Decisions under Plan, the cost per run and the session total (Costs) in Timeline, the models (Team) in Settings.
+  const want = { Plan: [/P44 Cost/, /sqlite/], Proof: [/No checks are approved/], Timeline: [/No VBW workflow runs/, /This session: \$1\.42/], Sessions: [/No other chats are open on this project/], Settings: [/quality/, /model\.architect/, /opus/] }
   for (const [tab, res] of Object.entries(want)) {
     await press(h, await h.render(), tab)
     for (const re of res) assert.match(text(await h.render()), re, tab)
     await h.advance(4000)
     for (const re of res) assert.match(text(await h.render()), re, tab + ' after a tick')
   }
+})
+
+test('Settings: a press runs the kernel command, the tab is read again, the row shows the new value and ✓ saved; a refusal shows the kernel\'s words', async () => {
+  let profile = 'balanced'
+  const ran = []
+  const kernel = (argv) => {
+    ran.push(argv.slice(1))
+    if (argv[1] === 'config' && argv.length === 2) return { exitCode: 0, stdout: 'profile: ' + profile + '\nautonomy_cap: 25\n', stderr: '' }
+    if (argv[1] === 'statusline') return { exitCode: 0, stdout: 'off: no status line is set\n', stderr: '' }
+    if (argv[2] === 'set' && argv[3] === 'profile') { profile = argv[4]; return { exitCode: 0, stdout: 'profile = ' + profile + '\n', stderr: '' } }
+    return { exitCode: 2, stdout: '', stderr: 'vbw: autonomy_cap must be a number of steps\n' }
+  }
+  const h = await started({ process: kernel })
+  await press(h, await h.render(), 'Settings')
+  assert.deepEqual(ran, [['config'], ['statusline', 'status']], 'opening the tab reads it at once')
+  ran.length = 0
+  await press(h, await h.render(), 'quality')
+  assert.deepEqual(ran, [['config', 'set', 'profile', 'quality'], ['config'], ['statusline', 'status']])
+  let t = text(await h.render())
+  assert.match(t, /profile\s*\nquality\n✓ saved/)
+  assert.ok(h.calls.every((c) => c.name !== 'fs.write' || !/record\.json/.test(String(c.args[0]))), 'the tab never writes the record')
+  await h.advance(3000)
+  assert.doesNotMatch(text(await h.render()), /✓ saved/, 'the flash settles')
+  await press(h, await h.render(), '+')
+  t = text(await h.render())
+  assert.match(t, /autonomy_cap must be a number of steps/)
+  assert.match(t, /autonomy_cap\s*\n25/, 'the value stays')
 })
 
 test('Now: pressing a helper of the crew shows its detail', async () => {
