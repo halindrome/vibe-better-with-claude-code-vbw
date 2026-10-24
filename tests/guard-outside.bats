@@ -226,6 +226,11 @@ where() { [[ "$1" == *"agents write only inside the project, and there only $2"*
   denied_outside "$out" ../../elsewhere.txt
   out=$(printf '%s' "$(HOOK_DIR="$sub" bash_in 'echo x > /tmp/dbg.log')" | HOOK_PROJECT_DIR="$sub" vbw_hook PreToolUse Bash)
   denied_outside "$out" /tmp/dbg.log
+  # An agent told the project folder (args.root) writes scratch work under it by absolute path.
+  out=$(printf '%s' "$(HOOK_DIR="$sub" write_in "$PROJECT/.vbw/runtime/scratch/x")" | HOOK_PROJECT_DIR="$sub" vbw_hook PreToolUse Write)
+  allowed "$out"
+  out=$(printf '%s' "$(HOOK_DIR="$sub" bash_in "mkdir -p '$PROJECT/.vbw/runtime/scratch' && echo x > '$PROJECT/.vbw/runtime/scratch/x.log'")" | HOOK_PROJECT_DIR="$sub" vbw_hook PreToolUse Bash)
+  allowed "$out"
 }
 
 @test "R177: with no run open a write outside the project gets no answer from VBW" {

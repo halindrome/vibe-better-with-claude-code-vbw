@@ -13,9 +13,13 @@ const REFUSED = {
   description: 'Each refusal VBW gave you: a vbw command that refused (it exited non-zero with a message starting "vbw:") or a tool call a guard blocked (a reason starting "VBW guard:"), each copied verbatim and whole, through its Next: line; [] when none',
   items: { type: 'string' },
 }
+// The project folder (args.root: vbw next --json or vbw root). A session started in a subfolder
+// starts its agents there, so each agent is told where the project's paths are.
+const projectRoot = (args && typeof args === 'object' && typeof args.root === 'string' && args.root) || ''
+const where = projectRoot ? `\n\nThe project folder is ${projectRoot}. Every path VBW names (plan and check files, .vbw/...) is relative to it, whatever folder you start in: give file tools and shell redirects absolute paths under it, and run other shell commands from it (cd "${projectRoot}" && ...).` : ''
 const refused = []
 const ask = async (prompt, o) => {
-  const r = await agent(prompt, o)
+  const r = await agent(prompt + where, o)
   for (const text of r && Array.isArray(r.refused) ? r.refused : []) {
     if (typeof text !== 'string' || !text.trim()) continue
     refused.push({ by: o.label, text })
