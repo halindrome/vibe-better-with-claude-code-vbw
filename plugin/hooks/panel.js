@@ -28,7 +28,18 @@ const TICK_MS = 2000
 // A project holding .vbw/runtime/test-mode is a VBW test session (R64): it plays no
 // audio and keeps its choices under test.* keys, never the user's.
 const TEST_MARK = '/.vbw/runtime/test-mode'
-const keys = (test) => ({ closed: (test ? 'test.' : '') + 'vbw-panel.closed', sound: (test ? 'test.' : '') + 'vbw-panel.sound', nextSeen: (test ? 'test.' : '') + 'vbw-panel.next-seen', seen: (test ? 'test.' : '') + 'vbw-panel.seen', needSeen: (test ? 'test.' : '') + 'vbw-panel.need-seen', helpersSeen: (test ? 'test.' : '') + 'vbw-panel.helpers-seen', refusalsSeen: (test ? 'test.' : '') + 'vbw-panel.refusals-seen' })
+// The store keys of the panel's choices. A real-app test session (TEST_MARK) keeps them
+// under test keys of its own project, so it never touches the user's choices and one
+// scenario's choices (a pane closed on purpose) never reach the next scenario's project.
+const projectTag = (root) => {
+  let h = 5381
+  for (let i = 0; i < root.length; i++) h = ((h * 33) ^ root.charCodeAt(i)) >>> 0
+  return h.toString(36)
+}
+const keys = (testRoot) => {
+  const p = typeof testRoot === 'string' ? 'test.' + projectTag(testRoot) + '.' : ''
+  return { closed: p + 'vbw-panel.closed', sound: p + 'vbw-panel.sound', nextSeen: p + 'vbw-panel.next-seen', seen: p + 'vbw-panel.seen', needSeen: p + 'vbw-panel.need-seen', helpersSeen: p + 'vbw-panel.helpers-seen', refusalsSeen: p + 'vbw-panel.refusals-seen' }
+}
 // One of the plugin's shipped sounds (assets/audio/<character>/), picked at random
 // for each request for the user; with none shipped, the panel is silent.
 const pick = () => (SOUNDS.length ? { asset: SOUNDS[Math.floor(Math.random() * SOUNDS.length)] } : null)
@@ -824,7 +835,7 @@ async function start($, st) {
   st.live = true
   st.root = root
   st.silent = await $.fs.exists(root + TEST_MARK)
-  st.keys = keys(st.silent)
+  st.keys = keys(st.silent ? root : null)
   st.stepsPath = await stepsPath($, root)
   try {
     st.sessionId = await $.session.id()
