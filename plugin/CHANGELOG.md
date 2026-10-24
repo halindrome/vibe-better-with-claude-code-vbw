@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.1.7] - 2026-10-24
+
+### Added
+
+- **Approved rules can be reworded or retired.** When later work changes what
+  an earlier requirement said, the Lead can now name the old rule by its
+  address (`R1.2`, as `vbw show req R1` numbers them) and give it new words or
+  retire it with a reason, in any milestone, a shipped one included. Before,
+  new wording only added a second rule beside the stale one. The change goes
+  through your approval like any other contract change, and a retired rule
+  stays visible with its reason.
+- **You see every refusal, not only Claude.** When a guard blocks a call, you
+  get a one-line message from Claude Code beside the reason Claude reads. When
+  VBW refuses something inside a workflow, the agent reports it word for word,
+  and Comms and Mission Control show it in amber with its time and next step.
+
+### Fixed
+
+- **QA no longer calls interleaved phases a cycle.** Phases whose plans build
+  on each other in both directions are legitimate; QA now notes them, and
+  still reports a real cycle between plans as a problem.
+- **A setting you state in words at the start of a new project is kept.**
+  Saying "work guided" before the project existed could be lost, because the
+  setting was written before `vbw init` and refused. VBW now records it right
+  after the project is set up.
+
 ## [2.1.6] - 2026-10-24
 
 ### Changed
