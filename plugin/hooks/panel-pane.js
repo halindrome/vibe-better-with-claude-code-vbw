@@ -10,7 +10,7 @@
 // all-green sweep crosses the top of Proof. Pure over the state panel.js gathered:
 // no `$` here; presses go to `on.act(action)` and the sound switch to `on.sound()`.
 import { nowModel, timelineModel, renderNow, renderTimeline } from './panel-mission-live.js'
-import { planModel, proofModel, decisionsModel, renderPlan, renderProof, renderDecisions } from './panel-mission-record.js'
+import { planModel, proofModel, renderPlan, renderProof } from './panel-mission-record.js'
 import { settingsModel, renderSettings } from './panel-settings.js'
 import { runsModel, renderRuns } from './panel-runs.js'
 import { sessionsModel, renderSessions } from './panel-sessions.js'
@@ -219,10 +219,8 @@ function summary(ui, v, st, on, crewRows) {
 function body(ui, { st, now, width, motion, registry, stored }, tab, act) {
   const rec = st.record
   switch (tab) {
-    // Plan: the phases, then the milestone's decisions (the record ties a decision to no phase).
-    case 'plan': return h(ui.Box, { key: 'plan-tab', flexDirection: 'column' },
-      renderPlan({ ...ui, Input: undefined }, planModel({ record: rec, phase: st.phase }), act), // Ask is not wired yet
-      h(ui.Box, { key: 'plan-decisions', flexDirection: 'column', marginTop: 1 }, h(ui.Text, { dimColor: true }, 'Decisions'), renderDecisions(ui, decisionsModel({ record: rec }))))
+    // Plan: the phases, the chosen one's work, then the milestone's decisions (the record ties a decision to no phase).
+    case 'plan': return renderPlan({ ...ui, Input: undefined }, planModel({ record: rec, phase: st.phase, open: st.open, now }), act, width - 4) // Ask is not wired yet
     case 'proof': return renderProof(ui, proofModel({ record: rec, selected: st.check }), act)
     // Timeline: the live run's agents on its clock, then every run of the session with its time and cost.
     case 'timeline': return h(ui.Box, { key: 'timeline-tab', flexDirection: 'column' },

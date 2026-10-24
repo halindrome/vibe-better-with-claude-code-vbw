@@ -7,7 +7,10 @@ import assert from 'node:assert/strict'
 import { pathToFileURL } from 'node:url'
 import { PLUGIN, record, deepFreeze, walk, find, collect } from './helpers/fake-mod.mjs'
 
+import { screen, widest } from './r189/helpers/screen.mjs'
+
 const mr = await import(pathToFileURL(PLUGIN + '/hooks/panel-mission-record.js').href)
+const P = await import(pathToFileURL(PLUGIN + '/hooks/panel-palette.js').href)
 const EL = (name) => Object.freeze({ element: name })
 const UI = { Box: EL('Box'), Text: EL('Text'), Button: EL('Button'), Input: EL('Input'), Code: EL('Code'), Markdown: EL('Markdown') }
 const BASIC = { Box: EL('Box'), Text: EL('Text'), Button: EL('Button') }
@@ -63,7 +66,8 @@ const ODD = [undefined, null, 7, 'x', [], {}, { record: null }, { record: { mile
 
 test('every model and render survives missing or odd input without throwing', () => {
   for (const x of ODD) {
-    for (const f of ['planModel', 'proofModel', 'decisionsModel']) {
+    assert.ok(Array.isArray(mr.decisionsModel(x).items), 'decisionsModel returns its items')
+    for (const f of ['planModel', 'proofModel']) {
       const m = mr[f](x)
       assert.ok(m && typeof m === 'object', f + ' returns an object')
       for (const ui of [UI, BASIC]) {
@@ -73,59 +77,100 @@ test('every model and render survives missing or odd input without throwing', ()
     }
     assert.doesNotThrow(() => mr.checkDetail(x && x.record, 'C1'))
   }
-  for (const f of ['renderPlan', 'renderProof', 'renderDecisions']) {
+  for (const f of ['renderPlan', 'renderProof']) {
     assert.doesNotThrow(() => mr[f](UI, null))
     assert.doesNotThrow(() => mr[f](UI, undefined))
   }
 })
 
-test('plan: the current milestone phases are sub-tabs that press to {tab, phase}', () => {
+test('plan: the current milestone\'s phases are rows: a segmented done/total strip of their plans, a state mark and word in its colour, a press to {tab, phase}', () => {
   const m = mr.planModel({ record: rec() })
-  assert.deepEqual(m.tabs.map((t) => t.id), ['P44', 'P45'])
-  assert.deepEqual(m.tabs[1].press, { tab: 'plan', phase: 'P45' })
+  assert.deepEqual(m.phases.map((p) => p.id), ['P44', 'P45'])
+  assert.deepEqual(m.phases[1].press, { tab: 'plan', phase: 'P45' })
   // Default: the first phase not yet passed by QA.
   assert.equal(m.selected.id, 'P45')
-  assert.equal(m.tabs.find((t) => t.active).id, 'P45')
+  assert.equal(m.phases.find((p) => p.active).id, 'P45')
+  const [p44, p45] = m.phases
+  assert.deepEqual([p44.done, p44.total, p44.mark + ' ' + p44.word, p44.color], [1, 1, '✓ done', P.stateColor('done')])
+  assert.deepEqual([p45.done, p45.total, p45.mark + ' ' + p45.word, p45.color], [0, 2, '● building', P.stateColor('running')])
+  assert.deepEqual(p45.strip.map((s) => s.state), ['running', 'open'])
+  // A blocked plan makes its phase blocked, in the failed colour.
+  const blocked = mr.planModel({ record: { ...rec(), plans: [...rec().plans.slice(0, 2), { id: 'P45.2', phase: 'P45', title: 'Explain it', files: ['docs/panel.md'], status: 'blocked', note: 'the API is down: retry later' }] } })
+  assert.equal(blocked.phases[1].mark + ' ' + blocked.phases[1].word, '✗ blocked')
 })
 
-test('plan: the chosen phase shows its goal, plans with files, and checks with their command', () => {
+test('plan: the chosen phase shows its goal, its requirements and plans as rows with their state, files a press away, and its checks', () => {
   const m = mr.planModel({ record: rec(), phase: 'P45' })
   assert.equal(m.selected.goal, 'Show the estimate.')
-  assert.deepEqual(m.selected.plans, [
-    { id: 'P45.1', title: 'Show the estimate', status: 'building', files: ['plugin/hooks/panel-estimate.js', 'docs/panel.md'] },
-    { id: 'P45.2', title: 'Explain it', status: 'planned', files: ['docs/panel.md'] },
+  assert.deepEqual(m.selected.reqs.map((r) => r.id + ' ' + r.mark + ' ' + r.word), ['R3 ✗ failing'])
+  assert.deepEqual(m.selected.plans.map((p) => [p.id, p.title, p.mark + ' ' + p.word, p.files.length, p.toggle]), [
+    ['P45.1', 'Show the estimate', '● building', 2, 'files:P45.1'],
+    ['P45.2', 'Explain it', '○ planned', 1, 'files:P45.2'],
   ])
   assert.deepEqual(m.selected.checks, [
     { id: 'C3', req: 'R3', command: "node --test 'tests/my est.mjs'" },
     { id: 'C4', req: 'R3', command: 'bats tests/est.bats' },
   ])
   assert.deepEqual(m.ask, { ask: true, placeholder: 'Ask about this plan' })
-  assert.equal(mr.planModel({ record: rec(), phase: 'P44' }).selected.id, 'P44')
+  const p44 = mr.planModel({ record: rec(), phase: 'P44' })
+  assert.equal(p44.selected.id, 'P44')
+  assert.deepEqual(p44.selected.reqs.map((r) => r.id + ' ' + r.mark + ' ' + r.word), ['R2 ✓ proven'])
+  // A requirement still open is building while a plan of it builds, else open.
+  const open = mr.planModel({ record: { ...rec(), requirements: rec().requirements.map((r) => (r.id === 'R3' ? { ...r, status: 'open' } : r)) }, phase: 'P45' })
+  assert.equal(open.selected.reqs[0].mark + ' ' + open.selected.reqs[0].word, '● building')
   // A phase of another milestone or an unknown one falls back to the default.
   assert.equal(mr.planModel({ record: rec(), phase: 'P1' }).selected.id, 'P45')
-  assert.deepEqual(mr.planModel({ record: record({ phases: [] }) }).tabs, [])
+  assert.deepEqual(mr.planModel({ record: record({ phases: [] }) }).phases, [])
   assert.equal(mr.planModel({ record: record({ phases: [] }) }).selected, null)
 })
 
-test('plan render: tabs as buttons, goal as Markdown, commands as Code, an Ask Input', () => {
+test('plan: the milestone\'s decisions, newest first, each with its id and time (the day named when it is not today)', () => {
+  const now = Date.parse('2026-10-03T12:00:00Z')
+  const m = mr.planModel({ record: rec(), now })
+  assert.deepEqual(m.decisions.map((d) => d.id), ['D3', 'D2'])
+  const at = (iso) => { const d = new Date(iso); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') }
+  assert.equal(m.decisions[0].when, at('2026-10-03T10:00:00Z'))
+  assert.match(m.decisions[1].when, new RegExp('^(yesterday|tomorrow|[A-Z][a-z]+day) ' + at('2026-10-02T10:00:00Z') + '$'))
+})
+
+test('plan render: each phase is one whole row (its title cut, never wrapped), the plans as rows with a files button, the decisions dim at the bottom', () => {
   const pressed = []
-  const tree = mr.renderPlan(UI, mr.planModel({ record: rec(), phase: 'P45' }), (a) => pressed.push(a))
-  const tabs = buttons(tree)
-  assert.deepEqual(tabs.map((b) => b.props.label), ['P44 Cost', 'P45 Estimates'])
-  tabs[0].props.onPress({ surface: 'terminal' })
+  const long = { ...rec(), phases: rec().phases.map((p) => (p.id === 'P44' ? { ...p, title: 'Cost of the whole thing shown in the pane with a very long title that goes on and on' } : p)) }
+  const tree = mr.renderPlan(UI, mr.planModel({ record: long, phase: 'P45', now: Date.parse('2026-10-03T12:00:00Z') }), (a) => pressed.push(a), 60)
+  const phaseButtons = buttons(tree).filter((b) => /^plan-P/.test(b.props.key))
+  assert.deepEqual(phaseButtons.map((b) => b.props.key), ['plan-P44', 'plan-P45'])
+  for (const b of phaseButtons) assert.ok([...b.props.label].length + 4 <= 60, 'the phase button is cut to the row: ' + b.props.label)
+  assert.match(phaseButtons[0].props.label, /…$/)
+  const lines = screen(tree, 60)
+  assert.ok(widest(lines) <= 60, 'a line is wider than the pane: ' + widest(lines))
+  assert.ok(!lines.some((l) => /^\s*\]\s*$/.test(l)), 'a lone ] on a line: ' + JSON.stringify(lines))
+  const row44 = lines.find((l) => l.includes('[ P44 '))
+  assert.match(row44, /1\/1 ✓ done/)
+  phaseButtons[0].props.onPress({ surface: 'terminal' })
   assert.deepEqual(pressed, [{ tab: 'plan', phase: 'P44' }])
   assert.equal(find(tree, (n) => n.type === 'Markdown').props.text, 'Show the estimate.')
+  const text = collect(tree).join('\n')
+  assert.match(collect(find(tree, (n) => n.props && n.props.key === 'req-R3')).join(' '), /^R3 ✗ failing The panel shows an estimate$/)
+  assert.match(text, /P45\.1 Show the estimate/)
+  assert.doesNotMatch(text, /plugin\/hooks\/panel-estimate\.js/, 'files stay folded until pressed')
+  const files = buttons(tree).find((b) => b.props.key === 'files-P45.1')
+  assert.equal(files.props.label, '2 files')
+  files.props.onPress({ surface: 'terminal' })
+  assert.deepEqual(pressed[1], { toggle: 'files:P45.1' })
+  const opened = collect(mr.renderPlan(UI, mr.planModel({ record: rec(), phase: 'P45', open: { 'files:P45.1': true } }), null, 60)).join('\n')
+  assert.match(opened, /plugin\/hooks\/panel-estimate\.js/)
   const code = all(tree, (n) => n.type === 'Code')
   assert.deepEqual(code.map((c) => c.props.source), ["node --test 'tests/my est.mjs'", 'bats tests/est.bats'])
-  assert.ok(code.every((c) => c.props.language === 'bash'))
   const input = find(tree, (n) => n.type === 'Input')
   assert.equal(input.props.placeholder, 'Ask about this plan')
-  assert.equal(typeof input.props.key, 'string')
   input.props.onSubmit('why is P45.2 last?', {})
-  assert.deepEqual(pressed[1], { ask: 'why is P45.2 last?' })
-  const text = collect(tree).join('\n')
-  assert.match(text, /P45\.1 Show the estimate/)
-  assert.match(text, /plugin\/hooks\/panel-estimate\.js/)
+  assert.deepEqual(pressed[2], { ask: 'why is P45.2 last?' })
+  // Decisions at the bottom, dim; the reason dim and italic.
+  const d2 = find(tree, (n) => n.type === 'Text' && collect(n).join('') === 'Which currency? Dollars')
+  assert.ok(d2 && d2.props.dimColor === true, 'a decision is dim')
+  const why = find(tree, (n) => n.type === 'Text' && collect(n).join('') === 'because the ledger is in dollars')
+  assert.ok(why && why.props.dimColor === true && why.props.italic === true)
+  assert.ok(text.indexOf('D3') < text.indexOf('D2') && text.indexOf('P45.1') < text.indexOf('D3'), 'the decisions come last, newest first')
   // Without Code, Markdown or Input elements it still draws the words as Text.
   const plain = collect(mr.renderPlan(BASIC, mr.planModel({ record: rec(), phase: 'P45' }))).join('\n')
   assert.match(plain, /Show the estimate\./)
@@ -205,10 +250,4 @@ test('decisions: the current milestone, newest first, with question, answer and 
   assert.deepEqual(shipped.items.map((d) => d.id), ['D2'])
   // Nothing shipped yet: every decision belongs to the first milestone.
   assert.equal(mr.decisionsModel({ record: { ...rec(), shipped: [] } }).items.length, 3)
-  const tree = mr.renderDecisions(UI, m)
-  const text = collect(tree).join('\n')
-  assert.ok(text.indexOf('D3') < text.indexOf('D2'))
-  assert.match(text, /Which currency\?/)
-  assert.match(text, /because the ledger is in dollars/)
-  assert.match(collect(mr.renderDecisions(UI, mr.decisionsModel({ record: record() }))).join(' '), /No decisions/)
 })

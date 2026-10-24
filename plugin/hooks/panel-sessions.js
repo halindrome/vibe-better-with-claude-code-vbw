@@ -100,7 +100,7 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 const midnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 // 'HH:MM' on the local clock; another day is named as panel-step's times are
 // ('yesterday 14:20', a weekday, 'tomorrow'); '' without a moment.
-function hhmm(ms, now) {
+export function dayTime(ms, now) {
   if (!Number.isFinite(ms)) return ''
   const d = new Date(ms)
   const days = Number.isFinite(now) ? Math.round((midnight(d) - midnight(new Date(now))) / 86400000) : 0
@@ -125,7 +125,7 @@ export function sessionsModel({ registry, root, sessionId, lease, stored, now, w
       id: e.sessionId,
       name: cutName(cleanName(e.name) || e.sessionId.slice(0, 8), room),
       state: typeof e.status === 'string' ? cleanName(e.status) : '',
-      last: hhmm(e.updatedAt, now),
+      last: dayTime(e.updatedAt, now),
       resume: 'claude --resume ' + e.sessionId,
       self: e.sessionId === sessionId,
       holder: e.sessionId === held ? { kind } : null,

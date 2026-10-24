@@ -106,6 +106,7 @@ Roles and states use different colours, so one colour never says two things.
 | done | green | `✓ done` |
 | failed | red | `✗ failed` |
 | quiet, cut off, idle | grey | `… quiet`, `■ cut off` |
+| open, not started | grey | `○ open`, `○ planned` |
 
 Amber is the one colour for "look at this": a helper at work, a request for
 you and a refusal ([Refusals](#refusals)). A helper running past its usual time is amber on the Timeline, never red.
@@ -388,10 +389,18 @@ scroll it) to read the rest.
   it is doing, and its tokens, dimmed. Two agents of different roles never look
   the same. Press an agent for its model, time, current step and result. Then
   the sentences above, the sound switch and [What's next](#whats-next).
-- **Plan:** one button per phase; each shows its goal, its plans with their
-  files, and its checks with their commands. Under the phases, the milestone's
-  decisions, newest first (the record ties a decision to its milestone, not to
-  a phase).
+- **Plan:** one row per phase of the milestone: a button with its id and
+  title (cut with `…` to the row, never wrapped), a strip of its plans in their
+  colours (done green, building amber, blocked red, planned a dim `░`), the
+  figure `done/total` and its state (`✓ done`, `✓ built`, `● building`,
+  `✗ blocked`, `○ planned`). Press a phase to open it: its goal, its
+  requirements as rows (`R1 ✓ proven`, `R2 ● building`, `R3 ○ open`), its
+  plans as rows (`P5.1 ✓ done`, `P5.2 ✗ blocked: <the plan's note>`) each with
+  a `[ 3 files ]` button that shows or hides its files, and its checks with
+  their commands. Under it, the milestone's decisions, dim, newest first, each
+  as `D22 · 15:39` (`yesterday 15:39` or the weekday on another day), the
+  sentence, and `because ...` in italics (the record ties a decision to its
+  milestone, not to a phase).
 - **Proof:** one square per approved check (green passed, red failing, grey not
   run). Press a check for its last output.
 - **Timeline:** one lane per agent of the live run against the run's clock, the
