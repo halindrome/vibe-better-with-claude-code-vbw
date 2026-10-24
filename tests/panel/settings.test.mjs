@@ -115,7 +115,7 @@ test('the tab reads the values from vbw config: each row its value, check_jobs w
     assert.equal(v.props.color, P.ACCENT, key + ': the value is in the accent')
   }
   assert.match(collect(rowOf(tree, 'check_jobs')).join(' '), /machine limit 6/)
-  assert.match(collect(rowOf(tree, 'sound')).join(' '), /this computer/)
+  assert.match(collect(rowOf(tree, 'sound')).join(' '), /this clone/)
   // A role's model row is named in the role's colour.
   assert.equal(texts(rowOf(tree, 'model.dev')).find((t) => t.props.key === 'name').props.color, P.roleColor('dev'))
 })
@@ -172,7 +172,7 @@ test('when vbw config cannot run, the tab says so in amber, never a silent nothi
   assert.ok(t && t.props.color === P.NEED, JSON.stringify(t))
 })
 
-test('the sound row offers off, each sound folder and default, and is this computer\'s choice', async () => {
+test('the sound row offers off, each sound folder and default, and is this clone\'s own', async () => {
   assert.deepEqual(S.ROWS.find((r) => r.key === 'sound').choices, ['off', ...S.SOUND_FOLDERS, 'default'])
   assert.ok(S.SOUND_FOLDERS.length > 0 && S.SOUND_FOLDERS.every((f) => /^[a-z]+$/.test(f)), JSON.stringify(S.SOUND_FOLDERS))
   const kn = kernel()

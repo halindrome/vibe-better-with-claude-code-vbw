@@ -468,7 +468,7 @@ check_jobs       [ − ]  6  [ + ]  default
 - A role's model row is named by the role, in the role's colour (the setting
   is `model.<role>`), and says `(set by you)` when you chose its model;
   otherwise the profile picks it.
-- `check_jobs` is this clone's own; `sound` and the status line are this
+- `check_jobs` and `sound` are this clone's own, and the status line is this
   computer's, as the dim line under them says. Everything else is the
   project's, shared through git.
 

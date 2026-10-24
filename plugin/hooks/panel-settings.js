@@ -33,7 +33,7 @@ export const ROWS = [
   { key: 'command_timeout', number: { min: 1, max: 86400, step: 60, unset: 3600 }, unit: 's', group: 'Checks' },
   { key: 'check_budget', number: { min: 1, max: 86400, step: 10, unset: 120 }, unit: 's', group: 'Checks' },
   { key: 'motion', choices: ['full', 'calm', 'off', 'default'], group: 'Look and sound' },
-  { key: 'sound', choices: ['off', ...SOUND_FOLDERS, 'default'], scope: 'this computer', group: 'Look and sound' },
+  { key: 'sound', choices: ['off', ...SOUND_FOLDERS, 'default'], scope: 'this clone', group: 'Look and sound' },
   { key: 'statusline', choices: ['on', 'off'], scope: 'this computer', group: 'Look and sound' },
 ]
 const rowOf = (key) => ROWS.find((r) => r.key === key) || null
