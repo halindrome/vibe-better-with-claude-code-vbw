@@ -66,12 +66,13 @@ wait_file() {
     slots_release B' &
   holder=$!
   wait_file "$TEST_ROOT/store/holding"
-  # The waiter counts the times it takes the lock (a mkdir of the lock folder
-  # that succeeds) and the pauses of its wait, which take no time; at the 20th
-  # pause it tells the holder to give the slot back.
+  # The waiter counts the times it takes the lock (each locked step of the store)
+  # and the pauses of its wait, which take no time; at the 20th pause it tells
+  # the holder to give the slot back.
   # shellcheck disable=SC2016 # expanded by in_store
   run in_store 'locks=0 pauses=0
-    mkdir() { command mkdir "$@" && locks=$((locks + 1)); }
+    eval "orig_$(declare -f slots_apply)"
+    slots_apply() { locks=$((locks + 1)); orig_slots_apply "$@"; }
     sleep() { pauses=$((pauses + 1)); [ "$pauses" -ne 20 ] || : > "$SLOTS_DIR/release"; }
     slots_hold A || { echo "no slot"; exit 1; }
     jq -c "[.held[].id]" "$SLOTS_FILE"

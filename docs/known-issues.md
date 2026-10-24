@@ -25,7 +25,7 @@ Status words:
 | [The loop's time budget counts waiting](#the-loops-time-budget-counts-waiting) | Known issue | Loops | Re-run the item |
 | [Approved rules cannot be reworded or retired](#approved-rules-cannot-be-reworded-or-retired) | Known issue | Re-planning | None clean |
 | [Heavy checks each use every core](#heavy-checks-each-use-every-core) | Known issue | Cargo, make, similar | Lower `check_jobs` |
-| [Slot store edge cases](#slot-store-edge-cases) | Known issue | Sandboxes, many runs | None needed |
+| [A unit that lost the slot store may leave a slot held](#a-unit-that-lost-the-slot-store-may-leave-a-slot-held) | Known issue | Many runs at once | None needed |
 | [Status line speed where VBW is off](#status-line-speed-where-vbw-is-off) | Planned | Slower Macs | None needed |
 | [Panel drawing headroom](#panel-drawing-headroom) | Planned | Slower Macs | None needed |
 | [Panel polish](#panel-polish) | Planned | Everyone | None needed |
@@ -82,21 +82,17 @@ Status words:
 
 **Where.** `plugin/lib/checks.sh`; the limit logic in `plugin/lib/slots.sh`.
 
-### Slot store edge cases
+### A unit that lost the slot store may leave a slot held
 
-**What.** The computer-wide limit is kept in a small shared store (`slots.json` in the Claude config folder, [proof.md](proof.md#the-computer-wide-limit)). Three weaknesses remain, none breaking a requirement:
+**What.** The computer-wide limit is kept in a small shared store (`slots.json` in the Claude config folder, [proof.md](proof.md#the-computer-wide-limit)). When a unit that was waiting for a slot loses the store (it fails or is damaged), the unit goes on without the limit, but its waiting entry stays in the store. If the store works again before that run ends, another run's step can hand that entry a slot nobody uses, and the slot stays held until the run exits.
 
-1. Two runs that find the same dead lock owner can both delete the lock and briefly allow one slot too many. The fix is to take the lock over with an atomic rename.
-2. When the lock cannot be created but the folder looks writable (a sandbox, a full disk), the first step retries for about 30 seconds before saying it cannot write. It should detect this at once.
-3. Smaller: `vbw plan done` may print the "limit was not in force" line twice on an unwritable store and never prints the end-of-run waited line; a waiting entry left by a unit that lost the store can be handed a slot it never uses, which stays held until its run exits.
+**Who and when.** Rare: a store that fails and recovers within one proof, with other runs waiting. The effect is one slot fewer for other runs until the proof ends, never a wrong result.
 
-**Who and when.** Sandboxed sessions, full disks, and many runs at once. The effect is a pause or one extra check at a time, never a wrong result.
+**Workaround.** None needed. The slot comes back when the run ends.
 
-**Workaround.** None needed. `check_jobs` still applies.
+**Plan.** Drop the entry of a unit that lost the store as soon as the store can be written again.
 
-**Plan.** A test for each case, then the fixes.
-
-**Where.** `plugin/lib/slots.sh` (`slots_lock`, `slots_open`).
+**Where.** `plugin/lib/slots.sh` (`slots_hold`, `slots_lose`).
 
 ## Planned improvements
 

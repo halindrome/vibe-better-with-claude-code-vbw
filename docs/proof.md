@@ -162,14 +162,21 @@ down the runs giving slots back. A run that waits
 prints `waited ... for other VBW runs on this computer`. Waiting changes
 nothing else: the same result as without it, and a timeout counts from when its command really starts.
 
-If a run is killed, the next run takes over its slots. Ctrl-C gives them back
-at once. A lock left by a dead process is taken over too.
+Every change of the store is one short step under a lock file next to it
+(`slots.lock`).
 
-If the store cannot be written (a read-only folder, the Claude Code sandbox)
-or is damaged, the run goes on under `check_jobs` alone and prints
-`the computer-wide limit was not in force` with the reason (at the start, or
-once at the end when the store failed in the middle of the run). A store lock
-held by a live process is waited for, however long.
+If a run is killed, the next run takes over its slots. Ctrl-C gives them back
+at once. A lock left by a dead process is taken over too, by renaming its owner
+file: when two runs find the same dead owner, one of them gets the lock and the
+other waits for it, and neither ever removes a lock another run has just taken.
+
+If the store cannot be written (a read-only folder, a full disk, the Claude
+Code sandbox) or is damaged, the run goes on under `check_jobs` alone and
+prints `the computer-wide limit was not in force` with the reason (at the
+start, or once at the end when the store failed in the middle of the run, also
+when it failed in the last step that saves the proof). A folder that reports
+itself writable but refuses a new file is recognised at once, not after a long
+wait. A store lock held by a live process is waited for, however long.
 
 ### Checks that run alone
 

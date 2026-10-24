@@ -7,12 +7,11 @@
 # The store is <vbw_claude_dir>/vbw/slots.json, one JSON document
 # {held: [{run, id}], waiting: [{run, id, order}], next}: "run" is the vbw
 # process ($$), "id" the unit, "order" its place in the wait. Every change is
-# one step under the short lock directory slots.lock/ (its owner's pid in
-# slots.lock/pid, taken over when that process is gone, and when the pid file
-# is empty only after a wait): one jq run over the file (a second one only when
-# a run in it is gone), then the new store written atomically (a temporary file
-# in the same folder, then mv). The file is removed when nothing holds or waits
-# for a slot.
+# one step under the short lock file slots.lock (its owner's pid in it, taken
+# over by a rename when that process is gone, and when it is empty only after a
+# wait): one jq run over the file (a second one only when a run in it is gone),
+# then the new store written atomically (a temporary file in the same folder,
+# then mv). The file is removed when nothing holds or waits for a slot.
 #
 # Turns (D339): every step drops the entries of runs whose process is gone,
 # makes its change, then hands each free slot to the waiter whose turn it is:
@@ -67,32 +66,41 @@ slots_live() {
   [ -n "$1" ] && kill -0 "$1" 2> /dev/null
 }
 
-# slots_lock: take the store's lock; 2 when the folder cannot be written.
+# slots_lock: take the store's lock; 2 when the folder cannot be written. The
+# lock is the file slots.lock holding its owner's pid, made by the exclusive
+# create of vbw_lock_create (no process of its own). A folder of that name, left
+# by an older VBW with its pid in slots.lock/pid, excludes just the same.
 slots_lock() {
-  local lock="$SLOTS_DIR/slots.lock" idle=0 owner
+  local lock="$SLOTS_DIR/slots.lock" quiet=$SECONDS owner file probe
   while :; do
-    # The owner file decides (vbw_lock_dir): a racing mkdir that also succeeded,
-    # or a lock that vanished before its owner was written, waits and retries.
-    if vbw_lock_dir "$lock"; then
+    if vbw_lock_create "$lock"; then
       SLOTS_LOCKED=$lock
       return 0
-    elif [ ! -d "$lock" ] && [ ! -w "$SLOTS_DIR" ]; then
-      return 2
     fi
-    # The owner is read once: empty means a handover in progress, never a dead owner.
-    owner=$(cat "$lock/pid" 2> /dev/null)
-    # A live owner is not an error: the wait for it has no end. Only a lock
-    # that cannot be taken over (no live owner) gives up, after 600 tries.
-    if [ -n "$owner" ] && slots_live "$owner"; then
-      idle=0
+    if [ ! -e "$lock" ]; then
+      # Nobody holds it: the create lost a race with a lock that has since gone,
+      # or the folder cannot make a file (a full disk, a sandbox) though it
+      # reports writable. A file under a name nobody else uses tells which.
+      probe="$SLOTS_DIR/slots.probe.$$.$RANDOM"
+      vbw_lock_create "$probe" || return 2
+      rm -f "$probe"
     else
-      idle=$((idle + 1))
-      [ "$idle" -le 600 ] || return 2
-    fi
-    if [ -n "$owner" ]; then
-      slots_live "$owner" || rm -rf "$lock" 2> /dev/null
-    elif [ "$idle" -gt 50 ]; then
-      rm -rf "$lock" 2> /dev/null
+      file=$lock
+      [ ! -d "$lock" ] || file=$lock/pid
+      # The owner is read once: empty means a handover in progress, never a dead owner.
+      owner=$(vbw_lock_holder "$file")
+      if [ -n "$owner" ] && slots_live "$owner"; then
+        # A live owner is not an error: the wait for it has no end.
+        quiet=$SECONDS
+      elif [ -n "$owner" ] || [ $((SECONDS - quiet)) -ge 5 ]; then
+        # An owner that is gone, or none for 5 s: take the lock over (a rename,
+        # never a removal). Only a lock that cannot be taken over for 30 s gives up.
+        if vbw_lock_takeover "$file" "$owner"; then
+          SLOTS_LOCKED=$lock
+          return 0
+        fi
+        [ $((SECONDS - quiet)) -lt 30 ] || return 2
+      fi
     fi
     sleep 0.05
   done
@@ -222,7 +230,13 @@ slots_lose() {
   SLOTS_STATE=off
   SLOTS_MARK=
   [ "$1" -ne 3 ] || why="$SLOTS_FILE is damaged (delete it to restore the limit)"
-  { [ -f "$CHECK_OUT/lost" ] || printf '%s\n' "$why" > "$CHECK_OUT/lost"; } 2> /dev/null || true
+  if [ -d "${CHECK_OUT:-}" ]; then
+    { [ -f "$CHECK_OUT/lost" ] || printf '%s\n' "$why" > "$CHECK_OUT/lost"; } 2> /dev/null || true
+  elif [ -z "$SLOTS_LOST" ]; then
+    # The run's folder has ended (the save at the end of a proof): only the
+    # command's own shell is running, and it keeps the reason itself.
+    SLOTS_LOST=$why
+  fi
 }
 
 # slots_hold NAME: wait for a slot of the store and hold it under NAME, without
@@ -271,25 +285,38 @@ slots_waited() {
   [ -n "$1" ] || return 0
   n=$(($(date +%s) - $1))
   [ "$n" -ge 1 ] || n=1
-  printf '%s\n' "$n" >> "$CHECK_OUT/waits" 2> /dev/null || true
+  if [ -d "${CHECK_OUT:-}" ]; then
+    printf '%s\n' "$n" >> "$CHECK_OUT/waits" 2> /dev/null || true
+  else
+    # The run's folder has ended: only the command's own shell is running.
+    SLOTS_WAITED=$((SLOTS_WAITED + n))
+  fi
 }
 
-# slots_total: the seconds all units of this command waited, taken before
-# checks_end removes the run's folder (SLOTS_WAITED).
+# slots_total: add what the units of the run waited, and the loss one of them
+# told, to the command's totals (SLOTS_WAITED, SLOTS_LOST), taken before
+# checks_end removes the run's folder. What the command's own shell found is
+# already in the totals.
 slots_total() {
-  SLOTS_WAITED=0 SLOTS_LOST=
-  [ ! -f "$CHECK_OUT/lost" ] || SLOTS_LOST=$(head -n 1 "$CHECK_OUT/lost")
-  [ ! -f "$CHECK_OUT/waits" ] || SLOTS_WAITED=$(awk '{ n += $1 } END { print n + 0 }' "$CHECK_OUT/waits")
+  local n
+  if [ -z "$SLOTS_LOST" ] && [ -f "$CHECK_OUT/lost" ]; then SLOTS_LOST=$(head -n 1 "$CHECK_OUT/lost"); fi
+  if [ -f "$CHECK_OUT/waits" ]; then
+    n=$(awk '{ n += $1 } END { print n + 0 }' "$CHECK_OUT/waits")
+    SLOTS_WAITED=$((SLOTS_WAITED + n))
+  fi
 }
 
-# slots_say: the last line of a command whose units waited, nothing otherwise.
+# slots_say: the last line of a command whose units waited, nothing otherwise;
+# each thing is told once.
 slots_say() {
   local cores t
   if [ -n "$SLOTS_LOST" ]; then
     printf "vbw: the computer-wide limit was not in force: %s; this run was limited by check_jobs (%s) alone from then on\n" "$SLOTS_LOST" "$(vbw_check_jobs || printf 1)" >&2
+    SLOTS_LOST=
   fi
   [ "${SLOTS_WAITED:-0}" -gt 0 ] || return 0
   if [ "$SLOTS_WAITED" -ge 60 ]; then t="$((SLOTS_WAITED / 60)) min"; else t="$SLOTS_WAITED s"; fi
+  SLOTS_WAITED=0
   if cores=$(vbw_cores); then
     printf "waited %s for other VBW runs on this computer (limit %s of %s cores)\n" "$t" "$SLOTS_LIMIT" "$cores"
   else

@@ -8,6 +8,9 @@
 # unit commands log their start and end to $LOG (tests/machine-helper.bash).
 # The project two tests share is built once per file (setup_file) and copied;
 # the core count is read when a run starts, so each test sets it after the copy.
+# The store's own steps (R181, T141) are driven in bash processes of their own
+# (in_store): the lock's takeover, a lock that cannot be made, and a store lost
+# or a wait met after the run's folder has ended.
 
 load helper
 load machine-helper
@@ -103,4 +106,119 @@ JSON
   seen_store
   # Every slot came back: no run holds or waits for one, so no store is left.
   [ ! -e "$CLAUDE_CONFIG_DIR/vbw/slots.json" ] || { cat "$CLAUDE_CONFIG_DIR/vbw/slots.json"; false; }
+}
+
+# in_store BODY [ARG...]: BODY run (stopped after 60 s) by a bash process of its
+# own, so a run of its own ($$), with the slot store in $TEST_ROOT/store (limit 1,
+# state on) and a run folder CHECK_OUT in $TEST_ROOT/run (made, unless a test removes it).
+in_store() {
+  local body="$1"
+  shift
+  mkdir -p "$TEST_ROOT/store" "$TEST_ROOT/run"
+  # shellcheck disable=SC2016 # expanded by the inner bash
+  run within 60 bash -c 'VBW_LIB="$PLUGIN_ROOT/lib"; . "$VBW_LIB/core.sh"; . "$VBW_LIB/record.sh"; . "$VBW_LIB/slots.sh"
+    SLOTS_DIR="$TEST_ROOT/store" SLOTS_FILE="$TEST_ROOT/store/slots.json" SLOTS_LIMIT=1 SLOTS_STATE=on CHECK_OUT="$TEST_ROOT/run"
+    body=$1; shift; eval "$body"' _ "$body" "$@"
+}
+
+# gone_pid: GONE is the id of a process that has ended.
+gone_pid() {
+  sh -c 'exit 0' &
+  GONE=$!
+  wait "$GONE"
+}
+
+@test "T141: a lock whose dead owner two runs find is never taken from the run that took it over first" {
+  gone_pid
+  sleep 120 &
+  local live=$!
+  mkdir -p "$TEST_ROOT/store/slots.lock"
+  printf '%s\n' "$GONE" > "$TEST_ROOT/store/slots.lock/pid"
+  # The other run takes the lock over while this one is still judging its owner gone,
+  # and holds it. This run must wait for it, and never hold the lock beside it.
+  # shellcheck disable=SC2016 # expanded by in_store
+  in_store 'dead=$1 live=$2 tries=0 fired=
+    slots_live() {
+      if [ "$1" = "$dead" ] && [ -z "$fired" ]; then
+        fired=1
+        rm -rf "$SLOTS_DIR/slots.lock"; mkdir "$SLOTS_DIR/slots.lock"; printf "%s\n" "$live" > "$SLOTS_DIR/slots.lock/pid"
+      fi
+      [ "$1" != "$dead" ] && kill -0 "$1" 2> /dev/null
+    }
+    sleep() {
+      local p=
+      tries=$((tries + 1))
+      { IFS= read -r p < "$SLOTS_DIR/slots.lock/pid"; } 2> /dev/null || true
+      [ "$p" = "$live" ] || { echo "the run that held the lock lost it at try $tries"; exit 1; }
+      [ "$tries" -lt 3 ] || rm -rf "$SLOTS_DIR/slots.lock"
+    }
+    slots_lock || { echo "slots_lock failed ($?)"; exit 1; }
+    [ "$tries" -gt 0 ] || { echo "the lock was taken beside the run that held it"; exit 1; }
+    echo "locked after $tries tries"' "$GONE" "$live"
+  kill "$live"
+  wait "$live" 2> /dev/null || true
+  [ "$status" -eq 0 ] && [ "$output" = "locked after 3 tries" ] || { echo "$output"; false; }
+}
+
+@test "T141: a lock left by a dead owner, as a file or as the folder an older VBW made, is taken over" {
+  gone_pid
+  local form
+  for form in file folder; do
+    rm -rf "$TEST_ROOT/store"
+    mkdir -p "$TEST_ROOT/store"
+    if [ "$form" = file ]; then
+      printf '%s\n' "$GONE" > "$TEST_ROOT/store/slots.lock"
+    else
+      mkdir "$TEST_ROOT/store/slots.lock"
+      printf '%s\n' "$GONE" > "$TEST_ROOT/store/slots.lock/pid"
+    fi
+    # shellcheck disable=SC2016 # expanded by in_store
+    in_store 'slots_lock || { echo "slots_lock failed ($?)"; exit 1; }
+      slots_unlock
+      [ ! -e "$SLOTS_DIR/slots.lock" ] || { echo "the lock was left behind"; exit 1; }
+      echo taken'
+    [ "$status" -eq 0 ] && [ "$output" = taken ] || { echo "$form: $output"; false; }
+  done
+}
+
+@test "T141: a lock that cannot be made while the folder reports writable is told at once" {
+  # A full disk or a sandbox: the folder answers "writable", every new file fails.
+  # shellcheck disable=SC2016 # expanded by in_store
+  in_store 'tries=0
+    sleep() { tries=$((tries + 1)); [ "$tries" -lt 700 ] || { echo "still trying after $tries tries"; exit 1; }; }
+    vbw_lock_create() { return 1; }
+    [ -w "$SLOTS_DIR" ] || { echo "the folder does not report writable"; exit 1; }
+    slots_lock && rc=0 || rc=$?
+    echo "exit $rc after $tries tries"'
+  [ "$status" -eq 0 ] && [ "$output" = "exit 2 after 0 tries" ] || { echo "$output"; false; }
+}
+
+@test "T141: a store lost after the run's folder has ended is told once, by the command's own shell" {
+  [ "$(id -u)" != 0 ] || skip "root writes into a read-only folder"
+  # The save at the end of a proof comes after the run's folder is removed: the
+  # lost-limit marker has no folder to be written in.
+  # shellcheck disable=SC2016 # expanded by in_store
+  in_store 'rm -rf "$CHECK_OUT"
+    chmod 555 "$SLOTS_DIR"
+    slots_hold vbw:save && echo held || echo "no slot"
+    slots_total
+    slots_say 2>&1
+    slots_say 2>&1'
+  chmod -R u+rwx "$TEST_ROOT/store"
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$(printf '%s\n' "$output" | grep -c 'computer-wide limit was not in force: cannot write')" = 1 ] || { echo "$output"; false; }
+  [[ "$output" == "no slot"* ]] || { echo "$output"; false; }
+}
+
+@test "T141: waits in the run's folder and after it ended are added up and told once" {
+  # shellcheck disable=SC2016 # expanded by in_store
+  in_store 'slots_waited $(($(date +%s) - 30))
+    slots_total
+    rm -rf "$CHECK_OUT"
+    slots_waited $(($(date +%s) - 40))
+    slots_say 2>&1
+    slots_say 2>&1'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [[ "$output" == "waited 1 min for other VBW runs on this computer ("* ]] || { echo "$output"; false; }
+  [ "$(printf '%s\n' "$output" | grep -c 'waited')" = 1 ] || { echo "$output"; false; }
 }
