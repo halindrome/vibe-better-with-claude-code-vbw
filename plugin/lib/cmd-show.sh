@@ -56,7 +56,9 @@ cmd_show() {
     qa)
       qa_state "$record" | jq -r '(if (.recheck | length) == 0 then "Nothing needs checking again" else
           (.recheck | to_entries[] | "\(.key) is checked again: \(.value | join("; "))") end),
-        (.standing[] | "\(.) keeps its pass"), (.problems[] | "problem: " + .)'
+        (.standing[] | "\(.) keeps its pass"),
+        (if (.interleaved | length) > 0 then "note: phases \(.interleaved | if length < 2 then join("") else (.[:-1] | join(", ")) + " and " + .[-1] end) build on each other through their plans; each is checked again when the other'"'"'s tests change" else empty end),
+        (.problems[] | "problem: " + .)'
       ;;
     req)
       [ $# -eq 1 ] || vbw_usage_error "usage: vbw show req ID"

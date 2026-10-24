@@ -260,10 +260,14 @@ While a Dev builds, edits to test files do not stop the build: only a change to
 the contract's structure does (row 4). Row 4a is the one approval for all of
 those edits, asked just before proof.
 
-Every result also carries a `qa` key: `{recheck, standing, problems}`. `recheck`
-maps each built phase QA must check again to its reasons in plain words
+Every result also carries a `qa` key: `{recheck, standing, interleaved, problems}`.
+`recheck` maps each built phase QA must check again to its reasons in plain words
 (`{"P2": ["builds on P1, whose tests changed"]}`); `standing` lists the built phases
-whose pass stands; `problems` lists plan links that point nowhere or loop.
+whose pass stands; `interleaved` lists the phases that build on each other
+through their plans (a plan of each comes after a plan of the other: legitimate,
+since the record refuses a plan cycle; each is checked again when the other's
+tests change, and `vbw show qa` notes them); `problems` lists plan links that
+point nowhere, and a loop among the plans themselves.
 
 At the `qa` step the result also carries `round.suite`: the proof's one run of
 the project's test command, `{command, status, exit, seconds, tail}`, or `null`

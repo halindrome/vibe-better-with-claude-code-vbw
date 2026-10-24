@@ -22,7 +22,7 @@ next_holder() {
   [ -z "$sid" ] || holder_display "$sid"
 }
 
-# qa_state RECORD [DIGESTS]: lib/qa.jq's answer (closure, recheck, standing, problems).
+# qa_state RECORD [DIGESTS]: lib/qa.jq's answer (closure, recheck, standing, interleaved, problems).
 # The one judgment of whether a pass stands; a pass of another fingerprint
 # version is first fingerprinted again at its own commit (qa_settle).
 qa_state() {
