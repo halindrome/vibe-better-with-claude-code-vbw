@@ -2,7 +2,7 @@
 // VBW workflow from its Workflow tool call (or finds it after a reload) and reads it
 // on the panel's timer; Comms, above the prompt, draws the crew, the one needs-you
 // line and the nudges, with buttons that only fill or open; the pane is Mission Control
-// with eight tabs. Driven through the stand-in for Claude Code's mods API (L1).
+// with six tabs. Driven through the stand-in for Claude Code's mods API (L1).
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { mount, record, next, lease, collect, find, walk, ROOT, T0 } from './helpers/fake-mod.mjs'
@@ -12,8 +12,8 @@ import { ENV, SESSION_DIR, RUN, RUN_DIR, ARCH, LEAD, writeRun, finish, launch, b
 const TEST_MODE = ROOT + '/.vbw/runtime/test-mode'
 const approve = () => next({ action: 'approve', gate: true })
 
-// WIDE: eight full tab names take two rows beside the portrait at 60 columns.
-const WIDE = { title: 'VBW', isFocused: false, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} }
+// WIDE: the six full tab names take one row beside the portrait at 80 columns.
+const WIDE = { title: 'VBW', isFocused: false, bodyColumns: 80, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} }
 const wide = (h) => { const render = h.render; h.render = (extra = {}) => render({ props: WIDE, ...extra }); return h }
 async function started(options = {}, rec = record(), nxt = next()) {
   const h = await mount({ env: ENV, ...options })
@@ -183,9 +183,9 @@ test('motion: calm by default (a spinner), off in a test session and when the re
 
 // ---- Mission Control ----
 
-const TABS = ['Now', 'Plan', 'Proof', 'Timeline', 'Decisions', 'Team', 'Sessions', 'Costs']
+const TABS = ['Now', 'Plan', 'Proof', 'Timeline', 'Sessions', 'Settings']
 
-test('the pane is Mission Control: eight tabs, Now first with the panel rows and the sound switch', async () => {
+test('the pane is Mission Control: six tabs, Now first with the panel rows and the sound switch', async () => {
   const h = await started()
   const pane = await h.render()
   assert.deepEqual(buttons(pane).filter((b) => /^tab-/.test(b.props.key)).map((b) => b.props.label), TABS)
@@ -195,10 +195,10 @@ test('the pane is Mission Control: eight tabs, Now first with the panel rows and
   assert.doesNotMatch(t, /No VBW workflow runs/, 'the box says nothing runs; the Now tab does not say it again')
 })
 
-test('the tabs sit in whole rows: at 40 columns the short names on two rows and no portrait, at 50 the full names on two rows and no portrait, at 60 the full names on two rows beside the portrait', async () => {
+test('the tabs sit in whole rows: at 80 columns the six full names on one row beside the portrait, at 60 the short names on one row beside it, at 50 the full names on two rows beside it, at 40 on two rows without it', async () => {
   const h = await started()
   const FULL = TABS
-  const SHORT = ['Now', 'Plan', 'Proof', 'Time', 'Log', 'Team', 'Sess', 'Cost']
+  const SHORT = ['Now', 'Plan', 'Proof', 'Time', 'Sess', 'Set']
   const at = async (columns) => {
     const pane = await h.render({ props: { title: 'VBW', isFocused: false, bodyColumns: columns, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} } })
     const lines = screen(pane, columns)
@@ -208,28 +208,33 @@ test('the tabs sit in whole rows: at 40 columns the short names on two rows and 
     assert.ok(lines.every((l) => !/\[ [A-Za-z]*$|^[A-Za-z]* \]/.test(l.replace(/\[ [A-Za-z]+ \]/g, ''))), columns + ' columns: a cut name in ' + JSON.stringify(lines.slice(0, 4)))
     return { shown, rows, portrait: find(pane, (n) => n.type === 'Image') }
   }
-  const narrow = await at(40)
-  assert.deepEqual(narrow.shown, SHORT)
-  assert.equal(narrow.rows, 2)
-  assert.ok(!narrow.portrait, 'beside the portrait the short names would take three rows')
+  const wide80 = await at(80)
+  assert.deepEqual(wide80.shown, FULL)
+  assert.equal(wide80.rows, 1)
+  assert.ok(wide80.portrait, 'the portrait costs the tabs nothing at 80 columns')
   const mid = await at(50)
   assert.deepEqual(mid.shown, FULL)
   assert.equal(mid.rows, 2)
-  assert.ok(!mid.portrait, 'beside the portrait the full names would not fit two rows')
+  assert.ok(mid.portrait, 'beside the portrait the full names still take two rows at 50 columns')
   const wide60 = await at(60)
-  assert.deepEqual(wide60.shown, FULL)
-  assert.equal(wide60.rows, 2)
-  assert.ok(wide60.portrait, 'the portrait costs the tabs nothing at 60 columns')
+  assert.deepEqual(wide60.shown, SHORT, 'one row of short names beats two rows of full ones')
+  assert.equal(wide60.rows, 1)
+  assert.ok(wide60.portrait, 'the portrait costs the short names nothing at 60 columns')
+  const narrow = await at(40)
+  assert.deepEqual(narrow.shown, FULL)
+  assert.equal(narrow.rows, 2)
+  assert.ok(!narrow.portrait, 'beside the portrait the full names would take three rows')
 })
 
-test('each tab draws its view, and the choice holds across redraws', async () => {
+test('each tab draws its view, and the choice holds across redraws; the folded tabs keep their facts in their new homes', async () => {
   const h = await started({}, record({ settings: { profile: 'quality' }, decisions: [{ id: 'D1', text: 'Which db? sqlite', at: '2026-10-01T00:00:00Z' }] }))
-  const want = { Plan: /P44 Cost/, Proof: /No checks are approved/, Timeline: /No VBW workflow runs/, Decisions: /sqlite/, Team: /Profile: quality/, Sessions: /No other chats are open on this project/, Costs: /This session: \$1\.42/ }
-  for (const [tab, re] of Object.entries(want)) {
+  // Decisions under Plan, the cost per run and the session total (Costs) in Timeline.
+  const want = { Plan: [/P44 Cost/, /sqlite/], Proof: [/No checks are approved/], Timeline: [/No VBW workflow runs/, /This session: \$1\.42/], Sessions: [/No other chats are open on this project/], Settings: [/architect/] }
+  for (const [tab, res] of Object.entries(want)) {
     await press(h, await h.render(), tab)
-    assert.match(text(await h.render()), re, tab)
+    for (const re of res) assert.match(text(await h.render()), re, tab)
     await h.advance(4000)
-    assert.match(text(await h.render()), re, tab + ' after a tick')
+    for (const re of res) assert.match(text(await h.render()), re, tab + ' after a tick')
   }
 })
 
@@ -253,14 +258,14 @@ test('a failed agent\'s details button opens Mission Control on that agent', asy
   assert.doesNotMatch(text(await band(h)), /architect/, 'opened in Mission Control: the failure leaves Comms')
 })
 
-test('Costs: each run costs the session cost moved while its lease was open', async () => {
+test('Timeline: each run costs the session cost moved while its lease was open', async () => {
   const h = await started({ usage: { cost: { usd: 1 } } })
   h.project(record({ lease: lease('plan', h.now()) }), next({ action: 'run' }))
   await h.advance(2000)
   h.setUsage({ cost: { usd: 3.5 } })
   h.project(record(), next())
   await h.advance(2000)
-  await press(h, await h.render(), 'Costs')
+  await press(h, await h.render(), 'Timeline')
   const t = text(await h.render())
   assert.match(t, /plan 1/)
   assert.match(t, /about \$2\.50/)

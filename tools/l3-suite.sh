@@ -983,7 +983,7 @@ scenario_panel() {
     printf '%s\n' "$s" > "$dir.panel.$1x$2.screen.txt"
     echo ok
   }
-  # R199: true when every one of the eight tabs is drawn whole as '[ Name ]' (the full
+  # R199: true when every one of the six tabs is drawn whole as '[ Name ]' (the full
   # name or its short form) in the screen captured at $1 columns by $2 rows.
   tabs_whole() {
     local t
@@ -992,10 +992,8 @@ scenario_panel() {
     case "$t" in *"[ Plan ]"*) ;; *) echo false; return ;; esac
     case "$t" in *"[ Proof ]"*) ;; *) echo false; return ;; esac
     case "$t" in *"[ Timeline ]"* | *"[ Time ]"*) ;; *) echo false; return ;; esac
-    case "$t" in *"[ Decisions ]"* | *"[ Log ]"*) ;; *) echo false; return ;; esac
-    case "$t" in *"[ Team ]"*) ;; *) echo false; return ;; esac
     case "$t" in *"[ Sessions ]"* | *"[ Sess ]"*) ;; *) echo false; return ;; esac
-    case "$t" in *"[ Costs ]"* | *"[ Cost ]"*) ;; *) echo false; return ;; esac
+    case "$t" in *"[ Settings ]"* | *"[ Set ]"*) ;; *) echo false; return ;; esac
     echo true
   }
   # Both windows in turn, then the first size back. Echoes "short narrow tabs_short

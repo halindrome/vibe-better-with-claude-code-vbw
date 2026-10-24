@@ -5,7 +5,7 @@ The panel is VBW inside Claude Code's own screen. It has two parts:
 - **Comms**, the strip above the prompt: the helpers at work while a VBW
   workflow runs, or one line when VBW needs you (see [Comms](#comms)).
 - **Mission Control**, a pane beside the conversation: where your project
-  stands, in plain words, and eight tabs for the detail (see
+  stands, in plain words, and six tabs for the detail (see
   [Mission Control](#mission-control)). It opens by itself when a session
   starts in a VBW project.
 
@@ -343,12 +343,12 @@ reach the screen.
 
 ## Mission Control
 
-Mission Control is the pane. Its tabs run across the top, after the VBW
+Mission Control is the pane. Its six tabs run across the top, after the VBW
 portrait (a picture on terminals that draw images, such as kitty and Ghostty;
 the word `VBW` elsewhere); press one to switch:
 
 ```
-Now │ Plan │ Proof │ Timeline │ Decisions │ Team │ Sessions │ Costs
+Now │ Plan │ Proof │ Timeline │ Sessions │ Settings
 ```
 
 The tabs stay at the top of the pane however long the content is. When the
@@ -356,13 +356,16 @@ content is taller than the pane, only the part under the tabs scrolls.
 
 The tabs follow one rule: a tab name is never split, and a row is never wider
 than the pane. The layout with the fewest rows wins; at an equal number of rows
-the full names win over the short ones (`Now Plan Proof Time Log Team Sess Cost`).
+the full names win over the short ones (`Now Plan Proof Time Sess Set`).
 
-- At 90 or more columns the full names fit on one row (the portrait sits beside
-  them from 91 columns).
-- At about 64 columns (beside a 200-column window) the full names take two rows,
-  beside the portrait.
-- At 40 columns (the minimum) the short names take two rows.
+- At 65 or more columns the full names fit on one row (the portrait sits beside
+  them from 71 columns, so at 80 columns the head is one row).
+- From 52 to 64 columns (about 64 beside a 200-column window) the short names
+  fit on one row, beside the portrait from 58 columns.
+- From 38 to 51 columns (40 is the pane's minimum) the full names take two
+  rows, beside the portrait from 44 columns.
+- Below 38 columns, on a surface narrower than the pane, the short names take
+  two rows.
 
 The portrait is left out when keeping it would cost a tab row or a full name,
 and when the pane is short.
@@ -378,26 +381,29 @@ If the content is taller, the last line says how much is left out:
 A pane with room for everything has no such line. Open the pane itself (or
 scroll it) to read the rest.
 
-- **Now:** a framed [what's happening now](#whats-happening-now) box above everything else, then the sentences above, the sound switch, [What's next](#whats-next), then the running workflow as
-  columns of agent cards by phase. Each card has a frame in its agent's role
-  colour, its state as a coloured mark and word (`● running`, `✓ done`,
-  `✗ failed`, `… quiet`), what the agent is doing, and its tokens, dimmed. Two
-  agents of different roles never look the same. Press a card for that agent's
-  model, time, current step and result.
+- **Now:** a framed [what's happening now](#whats-happening-now) box above
+  everything else; right under it, while a run is on, the crew: the running
+  workflow's agents, each with a frame in its role colour, its state as a
+  coloured mark and word (`● running`, `✓ done`, `✗ failed`, `… quiet`), what
+  it is doing, and its tokens, dimmed. Two agents of different roles never look
+  the same. Press an agent for its model, time, current step and result. Then
+  the sentences above, the sound switch and [What's next](#whats-next).
 - **Plan:** one button per phase; each shows its goal, its plans with their
-  files, and its checks with their commands.
+  files, and its checks with their commands. Under the phases, the milestone's
+  decisions, newest first (the record ties a decision to its milestone, not to
+  a phase).
 - **Proof:** one square per approved check (green passed, red failing, grey not
   run). Press a check for its last output.
-- **Timeline:** one lane per agent against the run's clock, the three slowest
-  marked, and past steps of the same kind against their usual time.
-- **Decisions:** the milestone's decisions, newest first.
-- **Team:** which model each role uses, the profile, autonomy and rigor, with
-  buttons that fill `/vbw:config` and `/vbw:profile`.
+- **Timeline:** one lane per agent of the live run against the run's clock, the
+  three slowest marked, and past steps of the same kind against their usual
+  time. Under it, **Runs this session**: each VBW run of this session on one
+  row, its time bar and time beside its cost bar and cost (the session cost
+  added while the run was open, so "about"), the totals by kind when there is
+  more than one kind, and the session total. The list starts with the session:
+  a new session starts again from zero.
 - **Sessions:** the chats open on this project, and which one holds the run (see
   [Sessions](#sessions)).
-- **Costs:** each VBW run of this session with its cost (the session cost added
-  while the run was open, so "about"), by kind, and the session total. The list
-  starts with the session: a new session starts again from zero.
+- **Settings:** which model each role uses, the profile, autonomy and rigor.
 
 ### Sessions
 

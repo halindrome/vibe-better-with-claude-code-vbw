@@ -7,6 +7,10 @@ import { REFUSED_MARK } from './panel-palette.js'
 
 export const MIN_VERSION = '2.1.287'
 
+// The dim one-word term under each of the Now tab's sentences ('milestone', 'session cost'):
+// one switch, so the terms can go in one change.
+export const SHOW_TERMS = true
+
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const parts = (v) => {
   const m = typeof v === 'string' ? /^(\d+)\.(\d+)\.(\d+)/.exec(v) : null

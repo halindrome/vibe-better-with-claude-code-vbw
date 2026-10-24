@@ -40,14 +40,14 @@ const press = async (h, label) => {
   await b.props.onPress({ surface: 'terminal' })
   await h.settle()
 }
-// Eight full tab names need 53 columns; the stand-in's default pane is 50, which draws the short names.
-const WIDE = { title: 'VBW', isFocused: false, bodyColumns: 60, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} }
+// The six full tab names fit one row from 65 columns; the stand-in's default pane is 50.
+const WIDE = { title: 'VBW', isFocused: false, bodyColumns: 80, placement: 'dock', scroll: { offset: 0, bodyRows: 30 }, view: {} }
 const wide = (h) => { const render = h.render; h.render = (extra = {}) => render({ props: WIDE, ...extra }); return h }
 const lists = (h) => h.calls.filter((c) => c.name === 'fs.list' && c.args[0] === REG).length
 
-test('the tab row has Sessions after Team, Sess in a narrow pane', () => {
+test('the tab row has Sessions after Timeline, Sess in a narrow pane', () => {
   const ids = pane.TABS.map(([id]) => id)
-  assert.equal(ids.indexOf('sessions'), ids.indexOf('team') + 1)
+  assert.equal(ids.indexOf('sessions'), ids.indexOf('timeline') + 1)
   assert.deepEqual(pane.TABS.find(([id]) => id === 'sessions'), ['sessions', 'Sessions'])
   assert.equal(pane.SHORT.sessions, 'Sess')
 })

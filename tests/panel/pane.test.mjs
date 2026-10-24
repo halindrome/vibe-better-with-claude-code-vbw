@@ -19,7 +19,7 @@ const UI = { Box: EL('Box'), Text: EL('Text'), Button: EL('Button') }
 const NOW = Date.parse('2026-10-05T15:00:00Z')
 const S = 1000
 const ROLES = ['architect', 'lead', 'dev', 'qa', 'scout', 'debugger', 'docs']
-const TABS = ['now', 'plan', 'proof', 'timeline', 'decisions', 'team', 'sessions', 'costs']
+const TABS = ['now', 'plan', 'proof', 'timeline', 'sessions', 'settings']
 
 const reqs = (done, total) => Array.from({ length: total }, (_, i) => ({ id: 'R' + (i + 1), text: 'R' + (i + 1) + ' holds', proof: 'auto', status: i < done ? 'proven' : 'open', milestone: 'M9' }))
 const steps = (kind, secs) => secs.map((s, i) => ({ kind, run: kind + '-' + i, seconds: s, started_at: new Date(NOW - 1e7 - i * 1e5).toISOString(), ended_at: new Date(NOW - 1e7 - i * 1e5 + s * 1000).toISOString() }))
@@ -119,7 +119,7 @@ test('the tabs are the first thing in the pane, whatever the tab, however long i
   for (const tab of TABS) {
     for (const offset of [0, 7, 500]) {
       const tree = pane.renderPane(UI, longInput(tab, { offset, bodyRows: 30 }), on)
-      assert.equal(tabsIn(tree.children[0]).length, 8, tab + ' at ' + offset + ': all eight tabs open the pane')
+      assert.equal(tabsIn(tree.children[0]).length, 6, tab + ' at ' + offset + ': all six tabs open the pane')
       assert.equal(tabsIn(find(tree, (n) => n.props && n.props.key === 'body') || { children: [] }).length, 0, tab + ': the tabs are not inside what scrolls')
     }
   }
@@ -143,6 +143,6 @@ test('scrolling still moves the content: the body shows other rows at another of
 
 test('without a scroll hint the pane still draws its tabs and its content', () => {
   const tree = pane.renderPane(UI, longInput('now'), on)
-  assert.equal(tabsIn(tree).length, 8)
+  assert.equal(tabsIn(tree).length, 6)
   assert.ok(texts(tree).length > 20)
 })

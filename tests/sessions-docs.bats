@@ -47,7 +47,7 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
 }
 
 @test "R192: docs/panel.md lists the Sessions tab with its short name and describes its rows" {
-  grep -qE '^Now │ Plan │ Proof │ Timeline │ Decisions │ Team │ Sessions │ Costs' "$PANEL"
+  grep -qE '^Now │ Plan │ Proof │ Timeline │ Sessions │ Settings' "$PANEL"
   has "$PANEL" 'Sess '
   grep -qiE '^#+ .*sessions' "$PANEL"
   has "$PANEL" 'holds the run'
@@ -79,9 +79,9 @@ has() { flat "$1" | grep -qE -- "$2" || { echo "$1 lacks: $2"; return 1; }; }
   echo "$row" | grep -qi 'file count'
 }
 
-@test "R192: docs/panel.md counts eight tabs, names Sess in the narrow row, and links the one read outside the project to guards.md" {
-  has "$PANEL" 'eight tabs'
-  has "$PANEL" 'Team Sess Cost'
+@test "R192: docs/panel.md counts six tabs, names Sess in the narrow row, and links the one read outside the project to guards.md" {
+  has "$PANEL" 'six tabs'
+  has "$PANEL" 'Time Sess Set'
   has "$PANEL" 'one place the panel reads outside the project'
   grep -qF '(guards.md#sessionstart)' "$PANEL"
   grep -qE '^## SessionStart' "$GUARDS"
