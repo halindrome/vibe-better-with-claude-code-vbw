@@ -184,7 +184,7 @@ function nowBox(ui, v) {
   return [h(Box, { key: 'now-box', flexDirection: 'column', borderStyle: 'round', paddingX: 1, marginBottom: 1 },
     h(Text, { bold: true, color: b.state.need ? NEED : undefined }, String(b.state.text)),
     b.command ? h(Text, null, 'Type ' + b.command + '.') : null,
-    b.step ? h(Text, null, String(b.step.text)) : null,
+    b.step && b.step.text ? h(Text, null, String(b.step.text)) : null,
     b.step && b.step.end ? h(Text, { color: b.step.timed ? ESTIMATE : undefined }, String(b.step.end)) : null,
     cost ? h(Text, { color: tint(cost, v.need) }, String(cost.text)) : null,
     cost ? h(Text, { dimColor: true }, String(cost.term)) : null)]
@@ -218,7 +218,11 @@ function body(ui, { st, now, width, motion, registry, stored }, tab, act) {
     case 'team': return renderTeam(ui, teamModel({ record: rec }), act)
     case 'sessions': return renderSessions(ui, sessionsModel({ registry, root: st.root, sessionId: st.sessionId, lease: isObj(rec) ? rec.lease : null, stored, now, width: Math.max(10, width - 4), plans: isObj(rec) ? rec.plans : null }))
     case 'costs': return renderCosts(ui, costsModel({ runs: st.leases, sessionCost: st.cost, width: Math.max(1, Math.floor(width / 3)) }))
-    default: return renderNow(ui, nowModel({ run: st.run, now, selected: st.agent, seen: Object.keys(st.helpersSeen || {}), motion }), act)
+    default: {
+      // The box above already says that nothing runs; "no workflow runs here" is only news while a run is held.
+      const model = nowModel({ run: st.run, now, selected: st.agent, seen: Object.keys(st.helpersSeen || {}), motion })
+      return model || (isObj(rec) && isObj(rec.lease)) ? renderNow(ui, model, act) : null
+    }
   }
 }
 

@@ -177,10 +177,10 @@ const plain = (n) => (n && typeof n === 'object' && !Array.isArray(n) && 'type' 
 // Each case's drawings and its redraw count after each refresh, as one sha256.
 const PINNED = {
   tick: 'db362e790d4eba5e4d7f8b9078cad1aeef6b1bf583216186efdfe5cd9801e109',
-  refresh: '7e96771cb4b942b4552187e7d1b3702718a2e96e37abd60a0547a9847adbe055',
-  glance: '3da00f1263f6d25c7e6e3d0bdf9b74283e393092dba46938a3ac6d5276cd833a',
-  'whats-next': '9cc32b0538f8ddb8cbbc9eba08f27e6bc9e83a7bfe4496fa0ce4aa54974ea964',
-  render: '6b5c373d23498979bbaae1a8268f576fda14eabbd1dff1894d139f0b07f84dc2',
+  refresh: 'fea9f80d0c46f558d0162baf1d629e3f080e4f8ff427de7edfd4637595d661d4',
+  glance: '76d3444e79d5382907674eb1b087dfb1a4e3cfefdc2627581cde421381701cbe',
+  'whats-next': 'dfa9e9acfb131c4d22bb558c536f98b186bb2f460795377ecbba3d58702f2af7',
+  render: 'e944f8bd0c7f2163a72823d0efbc2699c28883c110de99eedb2342ff7714defe',
   step: 'e01f26f631d10a00c4e4c25ebb390383fcb89e6f49089a576fdcfd09817c398b',
 }
 

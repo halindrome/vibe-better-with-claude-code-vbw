@@ -154,15 +154,15 @@ export const heldBy = (holder) => (isObj(holder) && holder.self === false && typ
 // /compact (the sentence already says it).
 const needCommand = (need) => (need.kind === 'question' || need.kind === 'compact' ? null : GATE_COMMANDS[need.kind] || '/vbw:vibe')
 
-// The current step as two short lines: its name and when it started, then (from the
-// kernel's note, worded by panel-step.js) when it is expected to end.
+// The current step as two short lines: its name (the kernel's note names it; without a
+// note the state sentence has said all there is) with when it started, then (from the
+// note, worded by panel-step.js) when it is expected to end.
 function stepLine(name, at, step, now) {
   const words = step ? stepWords(step, now) : null
-  if (!Number.isFinite(at) && !words) return null
-  return {
-    text: 'Current step: ' + name + (Number.isFinite(at) ? ', started at ' + clock(at) : '') + '.',
-    end: words ? (words.timed ? 'This step: ' + words.text : words.text) + '.' : null, at: Number.isFinite(at) ? at : null, timed: Boolean(words && words.timed),
-  }
+  const when = Number.isFinite(at) ? clock(at) : ''
+  const text = name ? 'Current step: ' + name + (when ? ', started at ' + when : '') + '.' : when ? 'Started at ' + when + '.' : null
+  if (!text && !words) return null
+  return { text, end: words ? (words.timed ? 'This step: ' + words.text : words.text) + '.' : null, at: Number.isFinite(at) ? at : null, timed: Boolean(words && words.timed) }
 }
 
 // The 'what's happening now' box: VBW's state as one plain sentence, the current step
@@ -178,18 +178,18 @@ function nowBox(rec, need, proving, stamps, cost, step, holder, now) {
     const phases = [...new Set(plans.map((p) => p.phase).filter((x) => typeof x === 'string' && x))]
     const titles = plans.map((p) => p.title).filter(Boolean)
     const what = {
-      plan: ['planning the work', 'planning'],
-      build: ['building ' + (phases.length ? 'phase ' + phases.join(', ') : 'the plan') + (titles.length ? ' (' + titles.join(', ') + ')' : ''), 'building'],
-      qa: ['checking the results', 'checking'],
-      fix: ['fixing what the checks found', 'fixing'],
-      map: ['reading the project to map it', 'mapping'],
-    }[l.kind] || ['working', String(l.kind || 'run')]
-    const name = step && step.doing ? step.doing : what[1]
-    return { state: { text: 'VBW is ' + what[0] + heldBy(holder) + '.', term: 'state' }, step: stepLine(name, Date.parse(l.started_at), step, now), command: null, cost: cl }
+      plan: 'planning the work',
+      build: 'building ' + (phases.length ? 'phase ' + phases.join(', ') : 'the plan') + (titles.length ? ' (' + titles.join(', ') + ')' : ''),
+      qa: 'checking the results',
+      fix: 'fixing what the checks found',
+      map: 'reading the project to map it',
+    }[l.kind] || 'working'
+    const name = step && step.doing ? step.doing : null
+    return { state: { text: 'VBW is ' + what + heldBy(holder) + '.', term: 'state' }, step: stepLine(name, Date.parse(l.started_at), step, now), command: null, cost: cl }
   }
   // A live proof's note says a proof runs, whether or not its mark is seen yet.
   if (proving || (step && step.kind === 'proof')) {
-    const name = step && step.doing ? step.doing : 'proving'
+    const name = step && step.doing ? step.doing : null
     return { state: { text: 'VBW is proving the work: running its checks.', term: 'state' }, step: stepLine(name, Number.isFinite(stamps.proving) ? stamps.proving : step ? Date.parse(step.started_at) : NaN, step, now), command: null, cost: cl }
   }
   if (need) {

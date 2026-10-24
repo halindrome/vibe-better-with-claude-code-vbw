@@ -244,3 +244,28 @@ test('the state sentence itself, the box\'s first line, names each state; the st
   const idle = await session()
   assert.match(await first(idle), /nothing (is )?running/i)
 })
+
+// P2 (tidy the pane): one message per fact. The box already says that nothing runs, so the
+// Now tab adds no "No VBW workflow runs" line under it; that line stays for a run held by
+// another chat (the box says it runs, the line says it is not in this chat). And without
+// the kernel's note the step line says only when it started, not the word the state used.
+test('the Now tab does not say again under the box that no workflow runs; it still says a held run is not in this chat', async () => {
+  const idle = await session()
+  assert.match(await nowBox(idle), /Nothing is running/)
+  assert.doesNotMatch((await paneLines(idle)).join('\n'), /No VBW workflow runs/)
+  const need = await session(record(), next({ action: 'approve', gate: true }))
+  assert.doesNotMatch((await paneLines(need)).join('\n'), /No VBW workflow runs/)
+  const held = await session(record({ lease: lease('build', T0 - 300 * S), plans: PLANS }), next({ action: 'run' }))
+  assert.match((await paneLines(held)).join('\n'), /No VBW workflow runs in this session right now/)
+})
+
+test('without the kernel\'s note the step line says when it started, and does not repeat the state\'s word', async () => {
+  const h = await session(record({ lease: lease('build', T0 - 300 * S), plans: PLANS }), next({ action: 'run' }))
+  const box = await nowBox(h)
+  assert.ok(box.includes('Started at ' + hhmm(T0 - 300 * S) + '.'), box)
+  assert.doesNotMatch(box, /Current step/)
+  const proving = await session(record(), next({ action: 'prove' }), { [ROOT + '/.vbw/runtime/proving.sess-1']: '4242\n' })
+  assert.doesNotMatch(await nowBox(proving), /Current step: proving/)
+  const noted = await session(record({ lease: lease('build', T0 - 300 * S), plans: PLANS }), next({ action: 'run' }), { [NOTE]: note(T0 + 600 * S) })
+  assert.ok((await nowBox(noted)).includes('Current step: building P44.1, started at ' + hhmm(T0 - 300 * S) + '.'))
+})

@@ -27,7 +27,6 @@ Status words:
 | [Slot store edge cases](#slot-store-edge-cases) | Known issue | Sandboxes, many runs | None needed |
 | [Unit times are whole seconds](#unit-times-are-whole-seconds) | Known issue | Proof time reports | None needed |
 | [Panel drawing headroom](#panel-drawing-headroom) | Planned | Slower Macs | None needed |
-| [Panel polish](#panel-polish) | Planned | Everyone | None needed |
 | [Real-user scenarios for four features](#real-user-scenarios-for-four-features) | Planned | Test coverage | Not applicable |
 | [Cost per correct outcome](#cost-per-correct-outcome) | Idea | Everyone | Not applicable |
 
@@ -106,16 +105,6 @@ Status words:
 **Plan.** Each refresh works the Comms model out twice (once to decide whether to redraw, once to draw it) and the panel's sentences twice (on the check and on the draw): the next cost to cut, without changing when the panel redraws. Whether the budget should count the main thread's CPU only is a separate decision about what the bench measures.
 
 **Where.** `plugin/hooks/panel.js` (`signature`, `comms`), `plugin/hooks/panel-stage.js`; `tools/bench-panel.mjs`.
-
-### Panel polish
-
-**What.** A last visual pass on Comms and Mission Control: tidier spacing, a one-line "work is running" animation in place of the larger figure, and a time (`HH:MM`) on more of the panel's short messages.
-
-**Who and when.** Everyone who uses the panel. Nothing depends on it.
-
-**Plan.** Done by eye, so the exact list may change.
-
-**Where.** `plugin/hooks/panel-pane.js`, `plugin/hooks/panel-lines.js`, `plugin/hooks/panel-candy.js`.
 
 ### Real-user scenarios for four features
 

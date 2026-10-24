@@ -442,7 +442,9 @@ holds three things:
 - **The step:** its name and the time it started (`HH:MM`) and, on the next
   line, when it should end (`This step: about 12 min, until around 14:20.`, or
   `No end time yet: ...` while VBW has no history to estimate from; see
-  [Time left](#time-left)).
+  [Time left](#time-left)). The name comes from the step VBW is timing
+  (`building P1.2`); without it the line only gives the start
+  (`Started at 14:08.`), since the state sentence has said what VBW is doing.
 - **The session cost** (see [Cost](#cost)).
 
 When VBW needs you, the state is replaced by the one sentence that says what
@@ -463,8 +465,11 @@ The command is the one that answers it: `/vbw:approve` for a plan,
 and `/vbw:vibe` for everything else. A question from VBW has no command (you
 answer the question), and the "context nearly full" warning already names
 `/compact` in its sentence. Whatever the box says is not said again below it:
-no second "VBW is building" sentence, no second end time or cost, and no
-"needs you" line. The box follows a change of state within one refresh (about
+no second "VBW is building" sentence, no second end time or cost, no
+"needs you" line, and no "No VBW workflow runs in this session right now"
+under a box that says nothing runs (that line appears only while another chat
+holds a run, because then the box says VBW is working and the line says it is
+not working here). The box follows a change of state within one refresh (about
 2 seconds), with no other event needed. When nothing is going on it says so:
 
 ```
