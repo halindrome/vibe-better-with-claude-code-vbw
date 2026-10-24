@@ -40,6 +40,14 @@ every known session's cost figures as the baseline. It commits the record
 `vbw loop start` to any tool call (docs/guards.md), and `/vbw:loop` runs it
 with your own arguments.
 
+**Resuming an item.** When the last loop ended with an item still in progress
+(you stopped it, the ceiling was reached, a step needed you, or its session
+was gone and you ended it with two stops), that item holds the current
+milestone. Name it again to resume it: `start` puts it first, in progress,
+with its milestone, its work, its cost baseline, its retries, its time and its
+budget, and the time since its last step is not counted as its time (see "The
+time budget"). The other items you name wait behind it.
+
 ### Refusals
 
 Each refusal exits 1, changes nothing and ends with `Next:` and what to do.
@@ -52,6 +60,8 @@ Each refusal exits 1, changes nothing and ends with `Next:` and what to do.
 | Same item twice | Name each item once. |
 | A loop is already on and not ended | `vbw loop stop` first (twice when it is already stopping and its session is gone). |
 | The current milestone has requirements and is not shipped | Finish or ship it first: each item gets its own milestone. A `[human]` requirement carried over from an earlier ship (skipped, waiting for you) does not count. |
+| The current milestone holds an item the last loop left in progress, and you did not name it | Name that item to resume it, or finish it with `/vbw:vibe`. |
+| The item to resume has worked past its time budget | Finish it with `/vbw:vibe`: a loop would stop it before its next step. |
 | `--ceiling` and no session has a cost figure | `vbw statusline on`, or use `--no-ceiling`. |
 
 A missing ceiling choice, `--finish-item` without `--ceiling`, both ceiling
@@ -196,6 +206,16 @@ removes it) or an armed autonomous run; in every other session it does nothing.
 A session resumed from before this change gets its mark back when you run
 `/vbw:loop` again: it says the loop is already on and drives it from there.
 
+Two more hooks tell the loop it was not working, so that time is not counted
+against the item's time budget. When a turn of the loop's session ends on an
+API error (a dropped connection, an outage), nothing drives the loop until
+the session goes on: the same script, as the `StopFailure` hook, writes the
+time it failed to `.vbw/runtime/loop-away.SESSION`. When the loop's session
+is resumed (`SessionStart`, source `resume`), its earlier process was gone:
+the SessionStart hook writes that file empty, meaning "since the item's last
+step". A file already there is kept. The loop's next step reads it and removes
+it; the loop's end removes it too.
+
 ### `vbw loop next`
 
 Each step is one kernel call, `vbw loop next --json`. Only the loop's hook calls
@@ -322,17 +342,40 @@ size is grinding, not progressing; three, because one or two times are not a
 usual time. Twice the time so far and the road, because the plan is the best
 estimate of the item's own size. The defaults are about twice the times of the loop items in VBW's
 own record when the rule was added (small 14 to 99 minutes, medium 69 to 287).
-The budget is wall-clock time from the item's open: spend is already bounded by
-the ceiling, and tokens are not measured (docs/costs.md).
+The budget is measured in wall-clock time: spend is already bounded by the
+ceiling, and tokens are not measured (docs/costs.md).
+
+**What counts as the item's time.** Only the time the loop is working on it.
+The item's time runs from its open to its ship or park, less the time the loop
+was stopped: from the loop's last step on the item until the step that resumes
+it. The loop records the last step on the item (`stepped_at`) and adds each
+stopped stretch to the item's `away` seconds. The loop counts as stopped when:
+
+- the loop ended (you stopped it, the ceiling was reached, a step needed you),
+  and a later `/vbw:loop THE_ITEM` resumes the item (see "Resuming an item");
+- the loop's session was gone (closed, crashed, the machine restarted) and is
+  resumed: counted from the item's last step;
+- a turn ended on an API error (a dropped connection, an outage): counted from
+  the failure, until the session goes on.
+
+Time the loop spends working counts in full, including a long build or a run
+of fix rounds: that is what the budget is there to catch. Two pauses are not
+seen, because Claude Code reports neither: a turn you interrupted (Esc), and a
+computer asleep while a step runs. Before you leave a loop you interrupted,
+stop it with `/vbw:loop stop`; `/vbw:loop THE_ITEM` resumes the item later
+without the time stopped. `vbw loop status`,
+the report and every budget comparison use the item's time without the time
+away.
 
 Before each step of an item, after a delegated approval, the loop compares the
 item's time with its budget. Past it, the loop ends before that step, with a
 reason naming the item, the step, the time, the budget and its basis, and the
 item's spend so far. The item stays in progress with all its work in its
-milestone: nothing is parked or reverted. Run it again later with
-`/vbw:loop THE_ITEM`, or finish it with `/vbw:vibe`. Accept (the skip of a
-`[human]` requirement) and ship, the kernel's own last steps of an item, are
-never stopped. The next item gets its own budget.
+milestone: nothing is parked or reverted. The item has worked past its budget,
+so a new loop does not resume it: finish it with `/vbw:vibe`. An item that
+stopped for any other reason resumes with `/vbw:loop THE_ITEM`. Accept (the
+skip of a `[human]` requirement) and ship, the kernel's own last steps of an
+item, are never stopped. The next item gets its own budget.
 
 ## Where the loop stops
 
