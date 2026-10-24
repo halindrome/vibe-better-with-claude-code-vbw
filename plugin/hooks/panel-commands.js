@@ -5,6 +5,7 @@
 // builds the argv the mod hands to `vbw`.
 
 import { panelView, heldBy } from './panel-view.js'
+import { dayClock } from './panel-step.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const NEUTRAL = 'No VBW project is open here yet.'
@@ -47,7 +48,7 @@ function leaseLine(l, now, sessionId, holder) {
     : named ? (l.session === sessionId ? 'this chat ("' + holder.name + '")' : '"' + holder.name + '"')
       : (l.session === sessionId ? 'this session' : 'another session') + ' (' + l.session.slice(0, 8) + ')'
   const since = Number.isFinite(start)
-    ? ' since ' + new Date(start).toISOString().slice(11, 16) + ' UTC (' + (mins >= 1 ? mins + ' min ago' : 'just started') + ')' : ''
+    ? ' since ' + dayClock(start, now) + ' (' + (mins >= 1 ? mins + ' min ago' : 'just started') + ')' : ''
   const f = l.files
   const files = f === null || f === undefined ? 'may write any file'
     : !Array.isArray(f) || f.length === 0 ? 'write no files'

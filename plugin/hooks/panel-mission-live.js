@@ -4,8 +4,7 @@
 // the run model in, plain models out, trees built with h(); never throws.
 
 import { estimate, MIN_STEPS } from './panel-estimate.js'
-import { clock } from './panel-view.js'
-import { stepWords } from './panel-step.js'
+import { stepWords, dayClock } from './panel-step.js'
 import { newMark } from './panel-next.js'
 import { roleColor, stateColor, ACCENT, STATE_MARKS, STATE_WORDS } from './panel-palette.js'
 
@@ -82,7 +81,7 @@ export const nowModel = safe(({ run, now, selected, seen, motion }) => {
     // When it started while it works; when it ended once it is done, failed or cut off.
     const at = state === 'working' || !num(a.endedAt) ? a.startedAt : a.endedAt
     return {
-      at: clock(at),
+      at: dayClock(at, t),
       id: a.id, title: titleOf(a), role: roleOf(a), roleColor: roleColor(roleOf(a)), state, frame: roleColor(roleOf(a)),
       mark: STATE_MARKS[paletteState(state)], word: STATE_WORDS[paletteState(state)], stateColor: stateColor(paletteState(state)),
       activity: isObj(a.activity) && str(a.activity.text) ? clip(a.activity.text, ACTIVITY_MAX) : null,

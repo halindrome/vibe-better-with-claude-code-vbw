@@ -10,11 +10,11 @@
 // one-line sites and rows), panel-pane.js (Mission Control), panel-view.js, and
 // panel-candy.js (motion, sprites, celebrations), whose frames this file blits.
 import { holderName, readRegistry, configDir } from './panel-sessions.js'
-import { panelView, datedRows, liveNeed, supports, clock, COMMS_MIN_VERSION } from './panel-view.js'
+import { panelView, datedRows, liveNeed, supports, COMMS_MIN_VERSION } from './panel-view.js'
 import { SOUNDS } from './panel-sounds.js'
 import { gatherRun, findRun } from './panel-feed.js'
 import { stageModel, renderStage } from './panel-stage.js'
-import { liveStep } from './panel-step.js'
+import { liveStep, dayClock } from './panel-step.js'
 import { statusText, whyText, todoArgs } from './panel-commands.js'
 import { renderPane } from './panel-pane.js'
 import { candy as nextCandy, SETTLE_MS as NEXT_SETTLE_MS } from './panel-next.js'
@@ -358,11 +358,11 @@ const runsSeen = (st) => [
 // in Comms (full motion); all checks green, the sweep over Proof (full) and a
 // line in Comms (full and calm); a ship, the pane on VBW Wrapped (any motion:
 // it is information). The first snapshot is not news.
-// The proof's own time as HH:MM (when it was recorded), else now.
+// The proof's own time (when it was recorded, its day named when not today), else now.
 const proofTime = (st, now) => {
   const ev = isObj(st.record) && isObj(st.record.evidence) ? st.record.evidence : null
   const at = ev ? Date.parse(ev.at) : NaN
-  return clock(Number.isFinite(at) ? at : now)
+  return dayClock(Number.isFinite(at) ? at : now, now)
 }
 async function celebrate($, st, now) {
   const before = st.lastRec

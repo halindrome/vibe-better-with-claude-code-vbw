@@ -21,10 +21,14 @@ const two = (n) => String(n).padStart(2, '0')
 const stamp = (d) => two(d.getHours()) + ':' + two(d.getMinutes())
 const midnight = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 
-// 'HH:MM' in local 24-hour time; an end on another day names the day.
-function when(end, now) {
-  const e = new Date(end)
-  const days = Math.round((midnight(e) - midnight(new Date(now))) / 86400000)
+// Every moment the panel prints (design rule 5): the kernel's step_clock rule
+// (plugin/lib/steps.sh), 'HH:MM' in local 24-hour time today, else 'yesterday HH:MM',
+// 'tomorrow HH:MM' or the weekday's name; '' when `ms` is not a moment. `now` (ms) is
+// the moment it is said at; without one the day is not named.
+export function dayClock(ms, now) {
+  if (typeof ms !== 'number' || !Number.isFinite(ms)) return ''
+  const e = new Date(ms)
+  const days = typeof now === 'number' && Number.isFinite(now) ? Math.round((midnight(e) - midnight(new Date(now))) / 86400000) : 0
   const day = days === 0 ? '' : days === 1 ? 'tomorrow ' : days === -1 ? 'yesterday ' : DAY_NAMES[e.getDay()] + ' '
   return day + stamp(e)
 }
@@ -58,7 +62,7 @@ export function stepWords(note, now) {
     const end = Date.parse(note.end)
     if (!Number.isFinite(end)) return { text: NO_END, timed: false }
     const t = Number.isFinite(now) ? now : Date.now()
-    const at = 'until around ' + when(end, t)
+    const at = 'until around ' + dayClock(end, t)
     const left = end - t
     const hasParts = isObj(note.parts)
     if (hasParts && (note.late === true || left <= 0)) return { text: at + ', later than usual', timed: true }

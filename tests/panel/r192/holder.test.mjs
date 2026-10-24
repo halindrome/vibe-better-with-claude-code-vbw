@@ -22,6 +22,8 @@ const C = await import(pathToFileURL(PLUGIN + '/hooks/panel-commands.js').href)
 
 const SID = '0123456789abcdef-aaaa'
 const OTHER = 'fedcba9876543210-bbbb'
+// /vbw-why says the local time (Europe/Zurich, UTC+02:00 in October), its day named when not today.
+process.env.TZ = 'Europe/Zurich'
 const NOW = Date.parse('2026-10-05T15:00:00Z')
 const entry = (over = {}) => JSON.stringify({ sessionId: SID, cwd: '/proj', name: 'Payments work', nameSource: 'auto', status: 'busy', updatedAt: 1792300000000, ...over })
 const registry = (...texts) => S.registryEntries(texts)
@@ -93,16 +95,16 @@ test('the Now box: the state sentence ends with held by <name> when another chat
 test('/vbw-why names the holder: this chat with its name in quotes, another chat by name, the id only when no name is known', () => {
   const l = lease('build', Date.parse('2026-10-05T14:52:00Z'), { session: SID, files: ['a.js', 'b.js', 'c.js'] })
   const mine = C.whyText({ record: record({ lease: l }), next: next({ action: 'run' }), now: NOW, sessionId: SID, holder: { name: 'Payments work', self: true, known: true } })
-  assert.equal(lines(mine)[0], 'A build run is open, held by this chat ("Payments work") since 14:52 UTC (8 min ago); its agents may write 3 files.')
+  assert.equal(lines(mine)[0], 'A build run is open, held by this chat ("Payments work") since 16:52 (8 min ago); its agents may write 3 files.')
   const theirs = C.whyText({ record: record({ lease: l }), next: next({ action: 'run' }), now: NOW, sessionId: OTHER, holder: { name: 'Payments work', self: false, known: true } })
-  assert.equal(lines(theirs)[0], 'A build run is open, held by "Payments work" since 14:52 UTC (8 min ago); its agents may write 3 files.')
+  assert.equal(lines(theirs)[0], 'A build run is open, held by "Payments work" since 16:52 (8 min ago); its agents may write 3 files.')
   assert.match(theirs, /wait for it/i)
   assert.doesNotMatch(theirs, /run end|end it/i)
   assert.doesNotMatch(theirs, /01234567/)
   const unnamed = C.whyText({ record: record({ lease: l }), next: next({ action: 'run' }), now: NOW, sessionId: OTHER, holder: { name: '01234567', self: false, known: false } })
-  assert.match(lines(unnamed)[0], /^A build run is open, held by another session \(01234567\) since 14:52 UTC/)
+  assert.match(lines(unnamed)[0], /^A build run is open, held by another session \(01234567\) since 16:52/)
   const self = C.whyText({ record: record({ lease: l }), next: next({ action: 'run' }), now: NOW, sessionId: SID, holder: { name: '01234567', self: true, known: false } })
-  assert.match(lines(self)[0], /^A build run is open, held by this session \(01234567\) since 14:52 UTC/)
+  assert.match(lines(self)[0], /^A build run is open, held by this session \(01234567\) since 16:52/)
   const nobody = C.whyText({ record: record({ lease: lease('fix', NOW - 120000, { files: null }) }), next: null, now: NOW, sessionId: SID, holder: null })
   assert.match(lines(nobody)[0], /held by a session VBW cannot name/)
 })

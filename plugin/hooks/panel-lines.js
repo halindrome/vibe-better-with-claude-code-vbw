@@ -6,6 +6,7 @@
 
 import { liveNeed, GATE_COMMANDS } from './panel-view.js'
 import { REFUSED_MARK } from './panel-palette.js'
+import { dayClock } from './panel-step.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const arr = (x) => (Array.isArray(x) ? x.filter(isObj) : [])
@@ -130,13 +131,13 @@ export function turnReceipt(input) {
 
 // The Workflow tool row of a VBW run, as a run card.
 export function workflowCard(input) {
-  const { input: wi, run } = isObj(input) ? input : {}
+  const { input: wi, run, now } = isObj(input) ? input : {}
   if (!isObj(wi)) return null
   const meta = typeof wi.script === 'string' ? /meta\s*=\s*\{[^}]*?\bname\s*:\s*['"]([^'"]+)['"]/.exec(wi.script) : null
   const kind = vbwKind(wi.name, false) || vbwKind(wi.workflowName, false) || vbwKind(meta && meta[1], false)
   if (!kind) return null
   const mine = isObj(run) && run.kind === kind && Number.isFinite(run.startedAt)
-  const started = mine ? ' · started ' + new Date(run.startedAt).toTimeString().slice(0, 5) : ''
+  const started = mine ? ' · started ' + dayClock(run.startedAt, now) : ''
   return 'VBW ' + kind + started + (mine && run.status !== 'running' ? ' · finished' : ' · [p] watch live')
 }
 

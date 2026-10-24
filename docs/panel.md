@@ -556,6 +556,13 @@ and What's next shows when its recommendation was written. A message keeps the
 time it began saying what it says: three minutes of clock alone redraw
 nothing.
 
+A time on another day names the day: `yesterday 21:38`, `tomorrow 00:20`, or
+the weekday, `Monday 09:10`. A gate reached at 21:38 reads
+`Waiting since yesterday 21:38.` the next afternoon, never a bare `21:38`. The
+rule is the one the status line and `vbw next` use, and it holds everywhere the
+panel prints a time: Comms, the Now box, the helper rows, the Workflow run card
+and `/vbw-why`.
+
 ### What's next
 
 The **Now** tab has a **What's next** section with the recommendation VBW
@@ -650,7 +657,7 @@ These answer at once, even while Claude is busy, and cost no model turn:
 | Command | What it does |
 |---|---|
 | `/vbw-status` | Where the project stands: milestone, progress, what VBW is doing (with the same `held by <name>` as the Now box), what comes next |
-| `/vbw-why` | Who holds the VBW run, by name, and since when, and what is blocked: `held by this chat ("<name>")` or `held by "<name>"`, with the id in brackets only when no name is known; then the file count and `wait for it` |
+| `/vbw-why` | Who holds the VBW run, by name, and since when (your clock, with the day when it is not today), and what is blocked: `held by this chat ("<name>")` or `held by "<name>"`, with the id in brackets only when no name is known; then the file count and `wait for it` |
 | `/vbw-todo [idea]` | Parks an idea for later. With no text it takes the text you selected. VBW's own `vbw todo add` writes it |
 | `/vbw-panel` | Opens Mission Control |
 | `/vbw-sound` | Turns the "needs you" sound on or off |
