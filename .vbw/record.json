@@ -52127,7 +52127,7 @@
       "text": "Final polish details (brainstorm 2026-10-09, see a_non_prod_docs/brainstorm-2026-10-09.md): P2 tidy the band and pane; P3 a 'what's happening now' box at the top of the Now tab; P5 replace the big running-person animation with a one-line 'work is running' animation in the pane's Team tab under the agent list; P6 timestamps on mod messages ('[HH:MM] About 2 minutes left'); P9 rename: the strip above the prompt becomes Mission Control, the pane becomes Telemetry (/vbw-telemetry). With T92",
       "sort": "later",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T95",
@@ -52454,7 +52454,7 @@
       "text": "Slot store hardening (QA of P130, 2026-10-13, no criterion broken): (1) a store that fails mid-run (disk full, folder deleted) turns the limit off for that unit silently; say so once from the parent; (2) two runs finding the same dead lock owner can both delete the lock, briefly over-allocating a slot (same shape as the project gate's lock; take over with an atomic rename instead); (3) when the lock cannot be made but the folder reports writable (a sandbox, a full disk), the open step retries about 30 s before the cannot-write line; detect it at once. Tests for each, the mid-run failure and the sandbox case included",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T142",
@@ -52633,7 +52633,7 @@
       "text": "The Lead cannot reword an approved rule (F269, 2026-10-19): vbw apply --patch matches a rule by requirement and text, so new wording adds a rule and the stale one stays; a shipped milestone's rule cannot be reached at all. Give rules a stable address (R188.10) that a patch can reword or retire, with re-approval, so a later requirement that changes behaviour can update the earlier rule instead of leaving it stale (R188.10 is superseded by R193 meanwhile)",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T169",
@@ -52661,14 +52661,14 @@
       "text": "Cores per heavy check (D340, M42 measurement): heavy test commands (cargo, make) each use every core, so several at once overload the Mac (load 23-66 seen). Decide from M42's measured core use: tell each command its share through the standard variables (CARGO_BUILD_JOBS, MAKEFLAGS, GOMAXPROCS) or a per-check cores mark",
       "sort": "next",
       "size": "medium",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T173",
       "text": "Step estimates learn from idle time (2026-10-20, seen on a large private project: 'proving 32 of 174 checks, about 732 min'): a fix or build step whose run stayed open overnight or waiting for the user is recorded at its whole length (13 h, 18 h, 40 h), so the median estimate is hours too long. Time only active work (exclude waits for the user, approvals and other runs), or drop steps far beyond their size",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T174",
@@ -52717,14 +52717,14 @@
       "text": "A proof still holds about 5.2 of 7 slots while units run (T179 after-trace, 2026-10-21): each unit's two locked slot-store steps (take p50 96 ms, give p50 52 ms under load, ~5 processes each, 0.05 s retries) and the gate mutex (p50 31 ms, 0.1 s retries) keep slots idle between units; make those steps cheaper (slots.sh, core.sh) to get close to the limit",
       "sort": "next",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T181",
       "text": "Now box (R189) shows what VBW is doing and when the step started, but not its end ('until around HH:MM' sits lower in 'This step: ...'); when VBW needs the user it shows the short description, not the need sentence or the command (e.g. /vbw:approve); sentences below repeat it. A redesign must change the approved tests/panel/r189/now-box.test.mjs and r192/holder.test.mjs, and move the gate-command list from panel-lines.js to panel-view.js",
       "sort": "later",
       "size": "small",
-      "status": "open"
+      "status": "done"
     },
     {
       "id": "T182",
@@ -52732,6 +52732,13 @@
       "sort": "later",
       "size": "small",
       "status": "done"
+    },
+    {
+      "id": "T183",
+      "text": "Slots held while units run, the rest (2.1.10 trace, 2026-10-24: 6.08 of 7 after the gate lock became a file; target 6.5): the store step runs jq inside its lock (busy about half the time, take waits p50 18 ms) and each unit change costs two steps; run the step's jq on a copy read outside the lock and lock only to compare and rename, or keep runners across units so a slot passes to the next unit in one step",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
