@@ -44,10 +44,12 @@ BENCH="$BATS_TEST_DIRNAME/../tools/bench-panel.sh"
 }
 
 @test "mods plan: the one process the panel starts is the kernel, and it reads two environment names only" {
-  # /vbw-todo hands its text to `vbw todo add` (the kernel writes, mods_4_vbw.md §5);
+  # /vbw-todo hands its text to `vbw todo add` and the sound switch to `vbw config set sound`
+  # (the kernel writes, mods_4_vbw.md §5): every process call starts the kernel, none other;
   # HOME and CLAUDE_CONFIG_DIR find this session's workflow folder (§4).
   run grep -hoE '\$\.process\.[a-z]+\([^,]*' "$PLUGIN_ROOT"/hooks/panel*.js
-  [ "$output" = "\$.process.run([\$.plugin.root + '/bin/vbw'" ] || { echo "$output"; false; }
+  [ -n "$output" ]
+  [ "$(printf '%s\n' "$output" | sort -u)" = "\$.process.run([\$.plugin.root + '/bin/vbw'" ] || { echo "$output"; false; }
   run grep -hoE '\$\.env\.[a-z]+\([^)]*\)' "$PLUGIN_ROOT"/hooks/panel*.js
   [ "$(printf '%s\n' "$output" | sort -u | tr '\n' ' ')" = "\$.env.get('CLAUDE_CONFIG_DIR') \$.env.get('HOME') " ] || { echo "$output"; false; }
 }
