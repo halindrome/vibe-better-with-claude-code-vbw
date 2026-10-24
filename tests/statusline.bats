@@ -159,7 +159,7 @@ render() { cc_json | NO_COLOR=1 bash "$SL"; }
   printf '{"agentType": "vbw:qa", "description": "qa P1", "model": "opus"}' > "$w/agent-c.meta.json"
   touch -t 202001010000 "$w/agent-c.jsonl"
   run bash -c 'jq -nc --arg d "$1" --arg t "$2" "{workspace: {project_dir: \$d}, transcript_path: \$t}" | NO_COLOR=1 bash "$3"' _ "$PROJECT" "$t" "$SL"
-  [[ "${lines[0]}" =~ "│ ● working: plan · 2 agents working" ]]
+  [[ "${lines[0]}" =~ "│ ● working: planning · 2 agents working" ]]
   [ "${lines[1]}" = "Agents ● dev P1.2 sonnet  ● scout risks haiku" ]
   # No run open (a map or debug workflow): the agents alone.
   "$VBW" run end > /dev/null
@@ -208,7 +208,7 @@ render() { cc_json | NO_COLOR=1 bash "$SL"; }
   for v in 2.1.287 2.1.291 2.2.0 3.0.0; do
     run bash -c 'jq -nc --arg d "$1" --arg t "$2" --arg v "$4" "{workspace: {project_dir: \$d}, transcript_path: \$t, version: \$v}" | NO_COLOR=1 bash "$3"' _ "$PROJECT" "$t" "$SL" "$v"
     [ "${#lines[@]}" -eq 4 ]
-    [[ "${lines[0]}" =~ "│ ● working: plan · 1 agent working" ]]
+    [[ "${lines[0]}" =~ "│ ● working: planning · 1 agent working" ]]
     [[ "${lines[1]}" == "Context "* ]]
   done
   # Older, or not reported: the line stays as it was.
