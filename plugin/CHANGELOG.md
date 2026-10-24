@@ -1,5 +1,24 @@
 # Changelog
 
+## [2.1.9] - 2026-10-24
+
+### Fixed
+
+- **A damaged record is reported as what it is.** A record that was valid
+  JSON but had a field of the wrong type (a number where a name belongs) was
+  reported as unparseable JSON. VBW now says a field has the wrong type, with
+  jq's own description of it.
+
+### Changed
+
+- **Four more features are now checked in real Claude Code sessions, driven
+  as a user**: two chats on one project (the holder's name shown and never
+  written to the record or git), a task break judged by the plan's own rules,
+  a fix that commits its own check files with one approval, and a failing
+  check's full output kept and named by `vbw show fix`.
+- The guards' documented cost per call is brought up to date: VBW's own CPU
+  is about 4 to 5 ms for a file edit and 10 to 13 ms for a Bash command.
+
 ## [2.1.8] - 2026-10-24
 
 ### Changed
