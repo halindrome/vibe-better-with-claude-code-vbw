@@ -25,12 +25,13 @@ setup() {
 teardown() { vbw_teardown; }
 teardown_file() { fixture_teardown; }
 
-# hm FIELD: the local HH:MM of the note's FIELD., after "tomorrow " or
-# "yesterday " when it falls on another local day than now, as VBW words it:
+# hm FIELD: the local HH:MM of the note's FIELD, after "tomorrow ", "yesterday " or the
+# weekday when it falls on another local day than now, as VBW words it:
 # the test holds at any hour, local midnight included.
 hm() {
-  jq -r --arg f "$1" '(.[$f] | fromdateiso8601) as $t | ([$t, now] | map(strflocaltime("%Y-%m-%d"))) as [$e, $d]
-    | (if $e == $d then "" elif $e > $d then "tomorrow " else "yesterday " end) + ($t | strflocaltime("%H:%M"))' "$NOTE"
+  jq -r --arg f "$1" '(.[$f] | fromdateiso8601) as $t | def day($e): $e | localtime | mktime / 86400 | floor;
+    (day($t) - day(now)) as $d
+    | (if $d == 0 then "" elif $d == 1 then "tomorrow " elif $d == -1 then "yesterday " else ($t | strflocaltime("%A ")) end) + ($t | strflocaltime("%H:%M"))' "$NOTE"
 }
 step_of() { "$VBW" next --json | jq -c '.step'; }
 
