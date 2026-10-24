@@ -129,6 +129,13 @@ nojq() {
   each_blocked crash
 }
 
+@test "R165: started in a subfolder of the project, during a run a guard that crashes still blocks" {
+  open_run
+  break_guard crash
+  mkdir -p "$PROJECT/Sub Folder With Spaces"
+  HOOK_DIR="$PROJECT/Sub Folder With Spaces" each_blocked "crash, from a subfolder"
+}
+
 @test "R165: during a run a guard that cannot start blocks: the guard file missing or unreadable" {
   open_run
   break_guard missing

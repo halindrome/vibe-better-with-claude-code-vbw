@@ -213,6 +213,21 @@ where() { [[ "$1" == *"agents write only inside the project, and there only $2"*
   [[ "$(printf '%s' "$out" | jq -r .hookSpecificOutput.permissionDecisionReason)" == *"outside this run's files"* ]] || { echo "$out"; false; }
 }
 
+@test "R177: from a subfolder of the project the project is still the git top, and a relative path is read from the session's folder" {
+  open_run
+  local sub="$PROJECT/Sub Folder With Spaces" out why
+  mkdir -p "$sub"
+  out=$(printf '%s' "$(HOOK_DIR="$sub" write_in ../src/pay.txt)" | HOOK_PROJECT_DIR="$sub" vbw_hook PreToolUse Write)
+  allowed "$out"
+  out=$(printf '%s' "$(HOOK_DIR="$sub" write_in src/pay.txt)" | HOOK_PROJECT_DIR="$sub" vbw_hook PreToolUse Write)
+  why=$(printf '%s' "$out" | jq -r '.hookSpecificOutput.permissionDecisionReason // empty')
+  [[ "$why" == "VBW guard: Sub Folder With Spaces/src/pay.txt is outside this run's files"* ]] || { echo "$out"; false; }
+  out=$(printf '%s' "$(HOOK_DIR="$sub" write_in ../../elsewhere.txt)" | HOOK_PROJECT_DIR="$sub" vbw_hook PreToolUse Write)
+  denied_outside "$out" ../../elsewhere.txt
+  out=$(printf '%s' "$(HOOK_DIR="$sub" bash_in 'echo x > /tmp/dbg.log')" | HOOK_PROJECT_DIR="$sub" vbw_hook PreToolUse Bash)
+  denied_outside "$out" /tmp/dbg.log
+}
+
 @test "R177: with no run open a write outside the project gets no answer from VBW" {
   out=$(printf '%s' "$(write_in /tmp/scratch.txt)" | vbw_hook PreToolUse Write)
   [ -z "$out" ] || { echo "$out"; false; }

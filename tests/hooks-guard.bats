@@ -134,6 +134,24 @@ denied() {
   denied
 }
 
+@test "a session started in a subfolder of a VBW project is guarded as at its root; the project is the git top, never a folder above it" {
+  local sub="$PROJECT/Sub Folder With Spaces"
+  mkdir -p "$sub"
+  run bash_call 'git reset --hard' "$sub"
+  denied
+  run file_call Write ../.vbw/record.json "$sub"
+  denied
+  run file_call Read "$sub/.env" "$sub"
+  denied
+  # A git repository inside the project is a project of its own, as for the kernel
+  # (git rev-parse --show-toplevel): the record above its git top is not its record.
+  local inner="$PROJECT/inner repo"
+  mkdir -p "$inner/deep dir" && git -C "$inner" init -q
+  run bash_call 'git reset --hard' "$inner/deep dir"
+  [ "$status" -eq 0 ]
+  [ -z "$output" ]
+}
+
 @test "a corrupt record still counts as a VBW project" {
   printf '{"schema":' > .vbw/record.json
   run bash_call 'git reset --hard'
