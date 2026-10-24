@@ -12,7 +12,8 @@
 - **Change any VBW setting with a click.** The Settings tab lists every setting
   under four headings: Models, How VBW works, Checks, and Look and sound. The
   current choice is lit; click another and it is saved at once, with
-  `✓ saved`. Numbers have `−` and `+`.
+  `✓ saved`. Numbers have `−` and `+`. Each helper's model can be Fable, Opus,
+  Sonnet or Haiku (QA never Haiku).
 - **Choose the "needs you" sound, or turn it off.** Pick a voice or `off` in
   Settings, or with `vbw config set sound`. The choice is your own copy of the
   project's, never shared through git.

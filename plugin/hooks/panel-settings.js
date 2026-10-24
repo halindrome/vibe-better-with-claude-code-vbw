@@ -22,7 +22,7 @@ export const SAVED_MS = 2000
 // The rows, in the order drawn. `choices`: the values a press can set; `number`: the
 // step of its − and + and its bounds (the kernel's); `scope`: who shares the value;
 // `group`: the heading it sits under (GROUPS).
-const MODELS = ['opus', 'sonnet', 'haiku', 'default']
+const MODELS = ['fable', 'opus', 'sonnet', 'haiku', 'default']
 export const ROWS = [
   { key: 'profile', choices: ['quality', 'balanced', 'budget'], group: 'Models' },
   ...ROLES.map((r) => ({ key: 'model.' + r, choices: r === 'qa' ? MODELS.filter((m) => m !== 'haiku') : MODELS, role: r, group: 'Models' })),

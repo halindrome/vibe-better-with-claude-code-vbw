@@ -449,8 +449,8 @@ How VBW works, Checks, and Look and sound. Every choice is one click.
 ```
 Models
 profile    ○ quality  ● balanced  ○ budget
-architect  ● opus  ○ sonnet  ○ haiku  ○ default
-dev        ○ opus  ● sonnet  ○ haiku  ○ default  (set by you)
+architect  ○ fable  ● opus  ○ sonnet  ○ haiku  ○ default
+dev        ○ fable  ○ opus  ● sonnet  ○ haiku  ○ default  (set by you)
 
 Checks
 check_jobs       [ − ]  6  [ + ]  default
@@ -459,8 +459,8 @@ check_jobs       [ − ]  6  [ + ]  default
 
 - A choice among fixed values shows each value as a button: the current one
   `●` in the accent colour, the others `○` dim. A click on one sets it. This
-  covers `profile`, the model of each of the seven roles (QA is never offered
-  Haiku), `autonomy`, `rigor`, `motion`, `sound` (`off`, each sound folder,
+  covers `profile`, the model of each of the seven roles (Fable, Opus, Sonnet,
+  Haiku or default; QA is never offered Haiku), `autonomy`, `rigor`, `motion`, `sound` (`off`, each sound folder,
   `default`) and the status line (`on`, `off`).
 - A number has `−` and `+` around its value (and `default`, which removes it):
   `autonomy_cap`, `check_jobs` (with the computer-wide limit under it),

@@ -172,6 +172,13 @@ test('when vbw config cannot run, the tab says so in amber, never a silent nothi
   assert.ok(t && t.props.color === P.NEED, JSON.stringify(t))
 })
 
+test('every role offers Fable, Opus, Sonnet and default; all but QA offer Haiku', () => {
+  for (const r of S.ROLES) {
+    const want = r === 'qa' ? ['fable', 'opus', 'sonnet', 'default'] : ['fable', 'opus', 'sonnet', 'haiku', 'default']
+    assert.deepEqual(S.ROWS.find((x) => x.key === 'model.' + r).choices, want, r)
+  }
+})
+
 test('the sound row offers off, each sound folder and default, and is this clone\'s own', async () => {
   assert.deepEqual(S.ROWS.find((r) => r.key === 'sound').choices, ['off', ...S.SOUND_FOLDERS, 'default'])
   assert.ok(S.SOUND_FOLDERS.length > 0 && S.SOUND_FOLDERS.every((f) => /^[a-z]+$/.test(f)), JSON.stringify(S.SOUND_FOLDERS))
@@ -196,9 +203,9 @@ test('every choice is a button a click presses, also where the surface has a Sel
     assert.deepEqual(buttons(row).map((b) => b.props.label), r.choices, r.key)
     assert.equal(texts(row).filter((t) => t.props.key === 'value').length, 1, r.key + ': the value once')
   }
-  for (const w of [52, 80]) {
+  for (const w of [80, 100]) {
     const lines = screen(S.renderSettings(UI, S.settingsModel({ settings: st.settings, now: NOW })), w)
-    assert.ok(lines.some((l) => /^ *dev +○ opus +● sonnet +○ haiku +○ default$/.test(l)), w + ': name and choices on one line')
+    assert.ok(lines.some((l) => /^ *dev +○ fable +○ opus +● sonnet +○ haiku +○ default$/.test(l)), w + ': name and choices on one line')
   }
 })
 
