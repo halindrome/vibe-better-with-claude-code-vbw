@@ -13,76 +13,81 @@ VBW also adds a few short lines to places Claude Code already draws (see
 [One-line notes](#one-line-notes)) and three instant commands (see
 [Instant commands](#instant-commands)).
 
-Mission Control's **Now** tab starts with these sentences:
+Mission Control's **Now** tab starts with a framed box that says what VBW is
+doing, and then the sentences about the milestone:
 
 ```
++------------------------------------------------+
+| VBW is building phase P1 (Show the cost).      |
+| Current step: building P1.2, started at 14:08. |
+| This step: about 12 min, until around 14:20.   |
+| This session has cost $1.42 so far.            |
+| session cost                                   |
++------------------------------------------------+
+
 Working on M1: First milestone.
 milestone
 
 5 of 12 requirements done.
 requirements
 
-VBW is building: P1.2, P2.1 (4 min so far).
-build
-
-about 10 min, until around 14:20
+[14:08] Milestone end: about 40 min, until around 14:50.
 estimate, approximate
 
-Milestone end: about 40 min, until around 14:50.
-estimate, approximate
-
-This session has cost $1.42 so far.
-session cost
-
-Please approve the plan before VBW builds it.
+Nothing is needed from you right now.
 your turn
 ```
 
-Each sentence has a short technical term under it (`milestone`, `requirements`,
-`build`, `session cost`, `your turn`), so you can learn the words VBW uses.
-The panel shows these things, top to bottom:
+Each sentence has a short technical term under it (`milestone`,
+`requirements`, `session cost`, `your turn`), so you can learn the words VBW
+uses. The panel shows these things, top to bottom:
 
-1. **The milestone** you are working on.
-2. **Progress:** how many of the milestone's requirements are done (proven by
+1. **What VBW is doing now,** in the box: planning, building (and which
+   parts), proving, checking the results, fixing what the checks found,
+   mapping the project, or nothing running. It also holds the **current
+   step** with the time it started and, when VBW can estimate it, the time it
+   should end (see [Time left](#time-left)), and **what this session has
+   cost** so far (see [Cost](#cost)). When VBW needs you, the box holds the
+   one sentence that says what for, the command to type, and since when it
+   waits (see [What's happening now](#whats-happening-now)).
+2. **The milestone** you are working on.
+3. **Progress:** how many of the milestone's requirements are done (proven by
    their checks, or accepted by you), counted as the status line counts them.
-3. **What VBW is doing now:** planning, building (and which parts), checking
-   the results, fixing what the checks found, mapping the project, or idle.
-4. **Time left**, when VBW can estimate it: for the current step and for the
-   milestone (see [Time left](#time-left)).
-5. **What this session has cost** so far (see [Cost](#cost)).
-6. **Whether it needs you, and for what:** approving the plan, checking a
-   result by hand, giving the go-ahead to ship, saying what to build,
-   deciding on a stuck fix, or answering a question. The line turns amber
-   when it needs you.
+4. **Time left for the milestone,** when VBW can estimate it.
+5. **Whether it needs you:** while VBW needs nothing from you, the line
+   "Nothing is needed from you right now" says so. When it does need you (to
+   approve the plan, check a result by hand, give the go-ahead to ship, say
+   what to build, decide on a stuck fix, or answer a question) that sentence
+   is the box's, in amber, and the line below is left out: nothing is said
+   twice.
 
 The panel updates by itself, within a few seconds of a change. You do not
 refresh it.
 
 ## Reading the panel at a glance
 
-Read the panel from the top. The first two sentences say where you are. The
-third says what VBW is doing. The estimate and cost lines say how long and how
-much. The last sentence is the one that matters most: if it is amber, VBW is
-waiting for you; if it says "Nothing is needed from you right now", you can
-leave it running.
+Read the panel from the top. The box says what VBW is doing, since when, how
+long it should take and what the session has cost. When it is amber, VBW is
+waiting for you: the box says what for and which command to type. The
+sentences under the box say where the milestone stands. If the last one says
+"Nothing is needed from you right now", you can leave it running.
 
 A typical panel while a plan builds, before VBW has history to estimate from:
 
 ```
++-------------------------------------------------------------------+
+| VBW is building phase P1 (First).                                 |
+| Current step: building P1.2, started at 14:08.                    |
+| No end time yet: VBW has timed fewer than 3 steps like this here. |
+| This session has cost $1.42 so far.                               |
+| session cost                                                      |
++-------------------------------------------------------------------+
+
 Working on M1: First milestone.
 milestone
 
 5 of 12 requirements done.
 requirements
-
-VBW is building: P1.2 (4 min so far).
-build
-
-No end time yet: VBW has timed fewer than 3 steps like this here
-estimate, no basis
-
-This session has cost $1.42 so far.
-session cost
 
 Nothing is needed from you right now.
 your turn
@@ -127,9 +132,9 @@ Other colours: purple for the run's cost, green for progress, amber for time
 estimates and for "VBW needs you", grey for secondary detail.
 
 In Mission Control's **Now** tab, each sentence shows its key value in one of
-these colours: the progress sentence in green, the two time-left sentences in
-amber, the session cost in purple, and the "needs you" sentence in amber when
-VBW needs you. A sentence with no value in it ("No estimate yet", "The cost so
+these colours: the progress sentence in green, the two time-left sentences (the
+step's, in the box, and the milestone's) in amber, the session cost in purple,
+and the box's first sentence in amber when VBW needs you. A sentence with no value in it ("No estimate yet", "The cost so
 far is not available") stays plain.
 
 Colour never carries a state alone. Every state colour on Comms and on
@@ -428,19 +433,51 @@ own list of chats, read-only. See the paragraph on it in
 ### What's happening now
 
 The **Now** tab opens on a framed box, drawn once, above everything else. It
-holds the state sentence, the step with the time it started (`HH:MM`) and the
-session cost. The state reads one of: planning, building (with its phase),
-proving, checking, waiting for you (and for what), or nothing running. The box
-follows a change of state within one refresh (about 2 seconds), with no other
-event needed. When another chat holds the run, the state sentence ends with
-`, held by <name>` (the chat's name, else the first 8 characters of its id);
-in the chat that holds the run it is unchanged. When nothing is going on it says so:
+holds three things:
+
+- **The state,** one sentence: planning, building (with its phase), proving,
+  checking, fixing, mapping, or nothing running. When another chat holds the
+  run, it ends with `, held by <name>` (the chat's name, else the first 8
+  characters of its id); in the chat that holds the run it is unchanged.
+- **The step:** its name and the time it started (`HH:MM`) and, on the next
+  line, when it should end (`This step: about 12 min, until around 14:20.`, or
+  `No end time yet: ...` while VBW has no history to estimate from; see
+  [Time left](#time-left)). The name comes from the step VBW is timing
+  (`building P1.2`); without it the line only gives the start
+  (`Started at 14:08.`), since the state sentence has said what VBW is doing.
+- **The session cost** (see [Cost](#cost)).
+
+When VBW needs you, the state is replaced by the one sentence that says what
+for, in amber and bold, and the step by since when it waits:
 
 ```
-+------------------------------------------+
-| Nothing is running                       |
-| Session cost $0.42                       |
-+------------------------------------------+
++-----------------------------------------------+
+| Please approve the plan before VBW builds it. |
+| Type /vbw:approve.                            |
+| Waiting since 14:08.                          |
+| This session has cost $1.42 so far.           |
+| session cost                                  |
++-----------------------------------------------+
+```
+
+The command is the one that answers it: `/vbw:approve` for a plan,
+`/vbw:verify` for a result to check by hand, `/vbw:convert` for a VBW 1 plan,
+and `/vbw:vibe` for everything else. A question from VBW has no command (you
+answer the question), and the "context nearly full" warning already names
+`/compact` in its sentence. Whatever the box says is not said again below it:
+no second "VBW is building" sentence, no second end time or cost, no
+"needs you" line, and no "No VBW workflow runs in this session right now"
+under a box that says nothing runs (that line appears only while another chat
+holds a run, because then the box says VBW is working and the line says it is
+not working here). The box follows a change of state within one refresh (about
+2 seconds), with no other event needed. When nothing is going on it says so:
+
+```
++-------------------------------------+
+| Nothing is running.                 |
+| This session has cost $0.42 so far. |
+| session cost                        |
++-------------------------------------+
 ```
 
 ### Clock times
@@ -452,8 +489,8 @@ when something began saying what it says:
 [14:20] about 2 min, until around 14:22
 ```
 
-Mission Control's need sentence starts with the time the gate was reached, and
-the time-left sentences start with their own time. A helper card's state line
+The box says since when VBW has been waiting for you, and the time the current
+step started. The milestone's time-left sentence starts with its own time. A helper card's state line
 starts with the time the helper started (while running) or ended (done or
 failed). The all-checks-pass line in Comms starts with the time of the proof,
 and What's next shows when its recommendation was written. A message keeps the
@@ -706,9 +743,14 @@ Milestone end: about 36 min, until around 14:56, counting 2 fix rounds per stand
 
 ## Open and close it
 
-In a wide window the panel opens by itself when a session starts in a VBW
-project. In a narrow window Claude Code does not open a pane unasked, so run
-`/vbw-panel`: it opens the panel at any width.
+The panel opens by itself when a session starts in a VBW project, as far as
+Claude Code allows: it seats a pane that nobody asked for only in a window at
+least 144 columns wide (110 once you have opened the panel yourself and not
+closed it by hand since). In a narrower window the panel stays open but
+undrawn, and appears when the window is widened to that width. `/vbw-panel`
+opens it at any width. If the panel could not be started while the session
+began (Claude Code's per-user store was not ready), the next prompt, question
+or workflow starts it.
 
 The panel asks for a quarter of the terminal's width (never under 40
 columns). It asks once per session, after its first drawing, and never takes
@@ -822,7 +864,12 @@ The panel needs **Claude Code 2.1.287 or newer** (check with
   error. When `/vbw:vibe` sets a project up during the session, the panel comes
   on at its first question (or your next prompt), with no restart.
 - **Anything unexpected inside the panel:** it stays out of the way. An error
-  in the panel never reaches your session.
+  in the panel never reaches your session. The hooks that sit in the way of
+  something you do (closing the pane, a command, a question, a prompt, a
+  workflow) each have a fallback: when one fails, the event goes on as if the
+  panel were not there, a command says in a sentence that it did not work, and
+  a question that was being shown is no longer counted as open. Claude Code
+  reports the failed hook by name; VBW adds no message of its own.
 
 ## What it reads and what it costs
 
@@ -838,18 +885,25 @@ only when that file's size or modification time has changed, and redraws only
 when what it shows changes (while agents work, that is every check).
 
 It checks every 2 seconds. Each check costs CPU time (user plus system,
-not time spent waiting) as follows, measured on a developer Mac with Node 22:
+not time spent waiting) as follows, measured on 2026-10-24 on an Apple M1
+Max with Node 22 while other work kept the machine at a load of 4 to 6 (8
+runs of the script below, each case after 1000 warm-up checks):
 
 | Check | Measured | Budget |
 |---|---|---|
-| Nothing changed | about 0.02 to 0.08 ms | 0.5 ms |
-| A file changed, read and redrawn | about 0.04 to 0.2 ms | 0.5 ms |
-| A need raised and the sound asked to play | measured by the same script | 0.5 ms |
-| Comms and Mission Control both drawn, five helpers at work | about 0.4 ms | 0.5 ms |
+| Nothing changed | about 0.04 to 0.07 ms | 0.5 ms |
+| A file changed, read and redrawn | about 0.11 to 0.14 ms | 0.5 ms |
+| A need raised and the sound asked to play | about 0.10 to 0.17 ms | 0.5 ms |
+| A running step's note changed | about 0.06 to 0.13 ms | 0.5 ms |
+| The session cost and the step history changed | about 0.09 to 0.15 ms | 0.5 ms |
+| A new recommendation drawn under What's next | about 0.07 to 0.16 ms | 0.5 ms |
+| Comms and Mission Control both drawn, five helpers at work | about 0.22 to 0.32 ms | 0.5 ms |
 
-The budget is about 12 times the cost of a plain check, to leave room for a busy
-machine. These numbers come from the test stand-in for Claude Code, whose own
-work is counted too, so they are an upper bound.
+The budget leaves room for a busy machine. These numbers come from the test
+stand-in for Claude Code, whose own work and file writes are counted too (a profile
+put them at about 40 percent of the last row), so they are an upper bound. The first few hundred checks
+of a freshly loaded panel cost up to twice as much while V8 compiles it; the
+figures are for the panel after that, which is where a session spends its time.
 
 Check it yourself from a VBW checkout (needs `node`):
 
@@ -859,4 +913,5 @@ bash tools/bench-panel.sh
 
 It prints each cost and the budget, and fails if a check is over the budget.
 `VBW_PANEL_BUDGET_MS` changes the budget; `VBW_BENCH_RUNS` changes how many
-checks it averages (default 200).
+checks it measures (default 200, in 5 windows, reporting the median window);
+`VBW_BENCH_WARM` changes the warm-up (default 1000 checks).

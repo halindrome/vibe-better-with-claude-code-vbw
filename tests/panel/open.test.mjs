@@ -120,3 +120,36 @@ test('outside a VBW project the panel is never opened', async () => {
   await h.cmd('vbw-panel')
   assert.equal(h.opens.length, 0)
 })
+
+// R52 (start path): a read of the user's store that fails while the panel starts must not
+// leave it live but inert (no timer, no pane, never started again) for the whole session.
+// The next hook that wakes the panel starts it again, once, and the pane opens.
+function flaky(failKey) {
+  const m = new Map()
+  m.failing = true
+  const has = m.has.bind(m)
+  m.has = (k) => {
+    if (m.failing && (failKey === undefined || k === failKey)) throw new Error('the store is not ready')
+    return has(k)
+  }
+  return m
+}
+
+test('a store that fails while the panel starts: the next prompt starts it, and it opens', async () => {
+  for (const key of [undefined, 'vbw-panel.closed']) {
+    const store = flaky(key)
+    const h = await mount({ store })
+    h.project(record(), next())
+    await h.start()
+    await h.advance(4000)
+    assert.equal(h.opens.length, 0, 'nothing opens while the store is down (' + key + ')')
+    store.failing = false
+    await h.fire('prompt.submit', { text: 'carry on' })
+    await h.advance(4000)
+    assert.equal(h.opens.length, 1, 'the next prompt starts the panel (' + key + ')')
+    assert.ok(h.count('clock.every') >= 1, 'its timer runs (' + key + ')')
+    const names = h.callsOf('command.register').map((a) => a[0].name)
+    assert.deepEqual(names, [...new Set(names)], 'each command is registered once (' + key + ')')
+    assert.deepEqual(h.errors, [])
+  }
+})

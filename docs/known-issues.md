@@ -21,28 +21,12 @@ Status words:
 
 | Item | Status | Affects | Workaround |
 |---|---|---|---|
-| [Mission Control may not open at session start](#mission-control-may-not-open-at-session-start) | Known issue | Wide windows | `/vbw-panel` |
 | [The loop's time budget counts waiting](#the-loops-time-budget-counts-waiting) | Known issue | Loops | Re-run the item |
 | [A unit that lost the slot store may leave a slot held](#a-unit-that-lost-the-slot-store-may-leave-a-slot-held) | Known issue | Many runs at once | None needed |
-| [Status line speed where VBW is off](#status-line-speed-where-vbw-is-off) | Planned | Slower Macs | None needed |
-| [Panel drawing headroom](#panel-drawing-headroom) | Planned | Slower Macs | None needed |
-| [Panel polish](#panel-polish) | Planned | Everyone | None needed |
 | [Real-user scenarios for four features](#real-user-scenarios-for-four-features) | Planned | Test coverage | Not applicable |
 | [Cost per correct outcome](#cost-per-correct-outcome) | Idea | Everyone | Not applicable |
 
 ## Known issues
-
-### Mission Control may not open at session start
-
-**What.** In a wide window, Mission Control (the pane beside the conversation) is meant to open by itself when a session starts in a VBW project ([panel.md](panel.md#open-and-close-it)). It was seen not to: the pane stayed closed until a VBW run started.
-
-**Who and when.** Seen once, on an early 2.0 build loaded with `claude --plugin-dir`, in a wide window. We have not found the cause and have not established whether an installed copy is affected.
-
-**Workaround.** `/vbw-panel` opens the pane at any width.
-
-**Plan.** Find the gap in the launch trigger, fix it, and add the case to the panel's real-user scenario.
-
-**Where.** `plugin/hooks/panel.js` (the `session.start` handler and the open request); `tools/l3-suite.sh` (the `panel` scenario).
 
 ### The loop's time budget counts waiting
 
@@ -69,36 +53,6 @@ Status words:
 **Where.** `plugin/lib/slots.sh` (`slots_hold`, `slots_lose`).
 
 ## Planned improvements
-
-### Status line speed where VBW is off
-
-**What.** In a project where VBW is turned off, the status line hands back to your earlier status line ([statusline.md](statusline.md#projects-where-vbw-is-turned-off)). That path is the slowest of the status line's paths. It measured 60.2 ms on GitHub's macOS runner against a 60 ms budget, and 42 ms on a developer Mac.
-
-**Who and when.** Slower Macs, in projects where VBW is off. Nothing breaks; the line may take a little longer to draw. Our own release benchmark can also fail on a slow runner.
-
-**Plan.** Make the path cheaper, or judge CI against a calibrated budget the way the panel benchmark already does (`VBW_PANEL_BUDGET_MS`).
-
-**Where.** `plugin/scripts/vbw-statusline.sh`; `tools/bench-hooks.sh` (the `status line (VBW off)` line).
-
-### Panel drawing headroom
-
-**What.** Drawing Comms and Mission Control together measured 0.47 to 0.51 ms of CPU against a 0.5 ms budget once the tab layout moved to whole rows. It now measures about 0.42 to 0.44 ms on a loaded developer Mac, and single runs on a busier machine still reach 0.51 ms. About a fifth of the figure is V8 compiling code on its background threads during the bench's 200 refreshes of a freshly loaded panel, and about a third is the test stand-in's own work.
-
-**Who and when.** A busy or slower Mac can still fail the release benchmark now and then. A user would not see it.
-
-**Plan.** Each refresh works the Comms model out twice (once to decide whether to redraw, once to draw it) and the panel's sentences twice (on the check and on the draw): the next cost to cut, without changing when the panel redraws. Whether the budget should count the main thread's CPU only is a separate decision about what the bench measures.
-
-**Where.** `plugin/hooks/panel.js` (`signature`, `comms`), `plugin/hooks/panel-stage.js`; `tools/bench-panel.mjs`.
-
-### Panel polish
-
-**What.** A last visual pass on Comms and Mission Control: tidier spacing, a one-line "work is running" animation in place of the larger figure, and a time (`HH:MM`) on more of the panel's short messages.
-
-**Who and when.** Everyone who uses the panel. Nothing depends on it.
-
-**Plan.** Done by eye, so the exact list may change.
-
-**Where.** `plugin/hooks/panel-pane.js`, `plugin/hooks/panel-lines.js`, `plugin/hooks/panel-candy.js`.
 
 ### Real-user scenarios for four features
 

@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.1.8] - 2026-10-24
+
+### Changed
+
+- **Mission Control's Now box tells you the whole step**: what VBW is doing,
+  when it started and when it should end. When VBW needs you, it shows the one
+  sentence that says what for, the command to type and since when, and the
+  Now tab says each fact once.
+- **The status line is faster in projects where VBW is off.** Handing back to
+  your earlier status line now costs one shell and one `jq` instead of two of
+  each, and `vbw statusline on` keeps that line's padding and refresh interval.
+
+### Fixed
+
+- **Mission Control no longer stops working after a failed start.** It tries
+  again on your next prompt, question or run. The docs and `/vbw:panel` now
+  say when Claude Code opens the pane by itself: in a window at least 144
+  columns wide, or 110 once you have opened it yourself.
+- **A failing panel hook can no longer leave "VBW has a question for you" on
+  screen.** Every hook that waits on the panel now lets the event through
+  when it fails.
+
 ## [2.1.7] - 2026-10-24
 
 ### Added

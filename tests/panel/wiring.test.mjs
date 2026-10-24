@@ -192,7 +192,7 @@ test('the pane is Mission Control: eight tabs, Now first with the panel rows and
   const t = text(pane)
   assert.match(t, /Working on M9/)
   assert.match(t, /Sound is on/)
-  assert.match(t, /No VBW workflow runs/)
+  assert.doesNotMatch(t, /No VBW workflow runs/, 'the box says nothing runs; the Now tab does not say it again')
 })
 
 test('the tabs sit in whole rows: at 40 columns the short names on two rows and no portrait, at 50 the full names on two rows and no portrait, at 60 the full names on two rows beside the portrait', async () => {

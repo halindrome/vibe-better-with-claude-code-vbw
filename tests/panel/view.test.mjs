@@ -181,7 +181,7 @@ test('a record without a next step still shows the milestone and progress', () =
   assert.equal(v.need, null)
 })
 
-test('the dated rows (panel.js dates them before drawing) are the need and the estimates exactly as the view says them', () => {
+test("the dated rows (panel.js dates them before drawing) are the need and the milestone's estimate exactly as the view says them", () => {
   const note = (over) => ({ kind: 'build', run: 'build-1', doing: 'building P44.1', end: iso(NOW + 12 * 60000), ...over })
   const road = { end: iso(NOW + 3 * 3600000), say: 'the milestone ends around 18:00' }
   const inputs = [
@@ -192,13 +192,14 @@ test('the dated rows (panel.js dates them before drawing) are the need and the e
     { record: record({ lease: lease('build', NOW - 300000) }), next: next({ road }), step: note({ parts: { done: 1, total: 2 } }) },
     { record: record({ lease: lease('build', NOW - 300000) }), next: next({ road: { basis: 'fewer than 3 milestones.' } }), step: note({ end: null }) },
     { record: record(), next: next({ road }), stamps: { 'estimate-milestone': NOW - 120000 } },
-    { record: record({ lease: lease('build', NOW - 300000) }), step: note({ parts: {}, late: true }), stamps: { 'estimate-step': NOW - 60000, proving: NOW - 1000 } },
+    { record: record({ lease: lease('build', NOW - 300000) }), step: note({ parts: {}, late: true }), stamps: { proving: NOW - 1000 } },
   ]
   for (const input of inputs) {
     const v = show(input)
     assert.deepEqual(view.datedRows({ now: NOW, ...input }), { need: v.need, rows: v.rows.filter((r) => r.id.startsWith('estimate-')) }, JSON.stringify(input))
   }
-  assert.ok(inputs.some((input) => show(input).rows.filter((r) => r.id.startsWith('estimate-')).length === 2), 'a case with both estimates')
+  assert.ok(inputs.some((input) => show(input).rows.some((r) => r.id === 'estimate-milestone')), 'a case with the milestone estimate')
+  assert.ok(inputs.every((input) => !show(input).rows.some((r) => r.id === 'estimate-step')), "the step's end time is the box's, not a row")
 })
 
 // 6.3: the last run's refusals stay readable on the Now tab (docs/panel.md, Refusals).

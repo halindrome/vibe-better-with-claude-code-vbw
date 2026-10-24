@@ -22,6 +22,16 @@ globalThis.h = (type, props, ...children) => {
   return { type: type.element, props: { ...(props || {}), children: kids }, children: kids }
 }
 
+// The error of a path that is not there. No stack is captured: a panel tick reads a few
+// missing files, and capturing a stack for each was a large part of what the bench measured.
+function enoent(p) {
+  const limit = Error.stackTraceLimit
+  Error.stackTraceLimit = 0
+  const e = new Error('ENOENT ' + p)
+  Error.stackTraceLimit = limit
+  return e
+}
+
 export const PLUGIN = process.env.VBW_TEST_PLUGIN_ROOT || path.resolve(here, '../../../plugin')
 export const ROOT = '/proj'
 export const PANE = 'vbw-panel'
@@ -97,15 +107,22 @@ export async function mount(options = {}) {
   let now = T0
   let clockSeq = 0
 
-  const h = { calls, errors, plays, notifies, opens, store, files, handlers }
+  // fails: names of `$` calls that reject, for a test of what the panel does when Claude Code fails it.
+  const h = { calls, errors, plays, notifies, opens, store, files, handlers, fails: new Set() }
   h.now = () => now
 
+  // The folders the files imply, worked out again only when a path is added or removed.
+  let folders = null
   function put(p, text) {
+    if (!files.has(p)) folders = null
     files.set(p, { text, mtimeMs: now + ++clockSeq / 1000 })
   }
   for (const [p, text] of Object.entries(o.files || {})) put(p, text)
   h.write = (p, text) => put(p, typeof text === 'string' ? text : JSON.stringify(text))
-  h.remove = (p) => files.delete(p)
+  h.remove = (p) => {
+    folders = null
+    return files.delete(p)
+  }
   h.project = (rec, nxt) => {
     if (rec !== undefined) h.write(o.root + '/.vbw/record.json', rec)
     if (nxt !== undefined) h.write(o.root + '/.vbw/runtime/next.json', nxt)
@@ -117,6 +134,7 @@ export async function mount(options = {}) {
   h.snapshot = () => JSON.stringify([...files.entries()].sort())
 
   const dirs = () => {
+    if (folders) return folders
     const s = new Set(o.dirs || [])
     for (const p of files.keys()) {
       let d = path.posix.dirname(p)
@@ -125,7 +143,7 @@ export async function mount(options = {}) {
         d = path.posix.dirname(d)
       }
     }
-    return s
+    return (folders = s)
   }
 
   const impl = {
@@ -136,7 +154,7 @@ export async function mount(options = {}) {
     'env.get': (name) => o.env[name],
     'fs.list': (p) => {
       const ds = dirs()
-      if (!ds.has(p)) throw new Error('ENOENT ' + p)
+      if (!ds.has(p)) throw enoent(p)
       const out = []
       for (const [fp, f] of files) if (path.posix.dirname(fp) === p) out.push({ name: path.posix.basename(fp), kind: 'file', size: f.text.length, mtimeMs: f.mtimeMs, isLink: false })
       for (const d of ds) if (path.posix.dirname(d) === p) out.push({ name: path.posix.basename(d), kind: 'dir', size: 0, mtimeMs: 0, isLink: false })
@@ -152,7 +170,7 @@ export async function mount(options = {}) {
     },
     'fs.read': (p) => {
       const f = files.get(p)
-      if (!f) throw new Error('ENOENT ' + p)
+      if (!f) throw enoent(p)
       return f.text
     },
     'fs.exists': (p) => files.has(p) || dirs().has(p),
@@ -160,7 +178,7 @@ export async function mount(options = {}) {
       const f = files.get(p)
       if (f) return { kind: 'file', size: f.text.length, mtimeMs: f.mtimeMs, isLink: false }
       if (dirs().has(p)) return { kind: 'dir', size: 0, mtimeMs: 0, isLink: false }
-      throw new Error('ENOENT ' + p)
+      throw enoent(p)
     },
     'store.get': (k) => (store.has(k) ? store.get(k) : undefined),
     'store.set': (k, v) => void store.set(k, v),
@@ -220,16 +238,19 @@ export async function mount(options = {}) {
 
   // Timers and redraw requests answer at once, as in Claude Code; every other call is async.
   const SYNC = new Set(['clock.every', 'clock.after', 'ui.invalidate', 'ui.resolve'])
-  const ns = (name) =>
-    new Proxy({}, {
-      get: (_, method) => (...args) => {
+  const ns = (name) => {
+    const methods = {}
+    return new Proxy({}, {
+      get: (_, method) => (methods[method] ??= (...args) => {
         const key = name + '.' + String(method)
         calls.push({ name: key, args })
+        if (h.fails.has(key)) return Promise.reject(new Error('injected failure: ' + key))
         if (!impl[key]) return Promise.reject(new Error('no implementation for ' + key))
         if (SYNC.has(key)) return impl[key](...args)
         return (async () => impl[key](...args))()
-      },
+      }),
     })
+  }
   const cache = {}
   // $.plugin is plain data in Claude Code: the plugin's name and its directory.
   const plugin = Object.freeze({ name: 'vbw', root: PLUGIN })
@@ -250,8 +271,11 @@ export async function mount(options = {}) {
     if (event === 'command.run' && !(matcher && matcher.command)) {
       throw new Error('a command.run hook must match { command }: without it, it runs for every command')
     }
-    handlers.push({ event, matcher, fn })
-    return { catch() {} }
+    const entry = { event, matcher, fn }
+    handlers.push(entry)
+    // `.catch(handler)`: asked, as in Claude Code, when the hook throws (see h.fire).
+    const registration = { catch(handler) { entry.catcher = handler; return registration } }
+    return registration
   }
 
   const entry = path.join(o.modulePath || path.join(PLUGIN, 'hooks/panel.js'))
@@ -269,12 +293,32 @@ export async function mount(options = {}) {
     const chain = handlers.filter((x) => x.event === event && matches(x.matcher, e))
     const run = async (i, ev) => {
       if (i >= chain.length) return terminal ? terminal(ev) : ev
-      const nextFn = (e2) => run(i + 1, e2)
-      nextFn.signal = new AbortController().signal
+      let called = false
+      let last
+      const nextFn = (e2) => {
+        called = true
+        return (last = run(i + 1, e2))
+      }
+      // The signal is made when a hook asks for it: most never do.
+      let signal
+      Object.defineProperty(nextFn, 'signal', { get: () => (signal ??= new AbortController().signal) })
       try {
         return await chain[i].fn($, ev, nextFn)
       } catch (err) {
         errors.push({ event, error: String(err?.stack || err) })
+        const catcher = chain[i].catcher
+        if (catcher) {
+          // The handler's next is replay-safe: after the hook called next it gives that call's result.
+          const caught = (e2) => (called ? last : ((called = true), (last = run(i + 1, e2))))
+          Object.defineProperties(caught, { error: { value: err }, called: { value: called } })
+          let answer
+          try {
+            answer = await catcher($, ev, caught)
+          } catch (again) {
+            errors.push({ event: event + ' (catch)', error: String(again?.stack || again) })
+          }
+          if (answer !== undefined) return answer
+        }
         return run(i + 1, ev)
       }
     }
@@ -294,6 +338,8 @@ export async function mount(options = {}) {
   }
   h.advance = async (ms) => {
     const target = now + ms
+    // A cancelled or fired one-shot timer is gone for good: drop it, or every advance reads them all.
+    for (let i = timers.length - 1; i >= 0; i--) if (timers[i].dead) timers.splice(i, 1)
     for (;;) {
       const live = timers.filter((t) => !t.dead && t.at <= target)
       if (!live.length) break

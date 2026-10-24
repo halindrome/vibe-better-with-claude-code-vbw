@@ -32,8 +32,9 @@ test('the pane shows the milestone, its progress, what VBW is doing and whether 
 test('D107: each technical term is drawn in small text beside its sentence', async () => {
   const h = await started(record({ lease: lease('qa', T0 - 90000) }))
   const small = dimTexts(await h.render()).join('|')
-  assert.match(small, /\bQA\b/i)
+  assert.match(small, /session cost/i)
   assert.match(small, /milestone/i)
+  assert.match(small, /requirements/i)
 })
 
 test('the pane is drawn only for its own id; other panes are left alone', async () => {

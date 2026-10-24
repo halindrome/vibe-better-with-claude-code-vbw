@@ -33,6 +33,12 @@ section() { sed -n '/^## .*[Tt]urned off/,/^## /p' "$DOC"; }
   [ "$a" -le "$b" ]
 }
 
+@test "R184: the docs say the setting keeps the earlier status line's padding and interval, and the hand-back's cost limit and path" {
+  tr '\n' ' ' < "$DOC" | tr -s ' ' | grep -qF '`padding` and the `refreshInterval` of a status line you had before'
+  section | tr '\n' ' ' | tr -s ' ' | grep -qF 'starts one bash'
+  section | tr '\n' ' ' | tr -s ' ' | grep -qF 'The limit is 10 ms (`VBW_HANDBACK_BUDGET_MS`)'
+}
+
 @test "R184: it says vbw statusline on updates a setting made by an older VBW, and the old 'same setting' claim is gone" {
   section | grep -qF 'vbw statusline on'
   section | grep -qF 'vbw doctor'

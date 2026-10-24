@@ -101,3 +101,44 @@ test('a prompt sent after the project appeared turns the panel on too', async ()
   await h.settle()
   assert.ok(h.count('command.register') >= 1)
 })
+
+// Gating hooks (7.6): a hook that fails is skipped by Claude Code and its `.catch` is asked
+// (`claude plugin validate` lists a gating hook without one). Every gating hook of the panel
+// has a `.catch` that lets the event through, and answers a command in plain words; none throws.
+const GATING = ['command.run', 'ui.close', 'tool.call', 'prompt.submit']
+
+test('every gating hook has a .catch that lets the event through (a command answers in plain words) and never throws', async () => {
+  const h = await mount()
+  const gating = h.handlers.filter((x) => GATING.includes(x.event))
+  assert.ok(gating.length >= 9, 'the panel registers its gating hooks (' + gating.length + ')')
+  for (const x of gating) {
+    const name = x.event + JSON.stringify(x.matcher ?? {})
+    assert.equal(typeof x.catcher, 'function', name + ' has no .catch')
+    const e = { id: 'vbw-panel', tool: 'AskUserQuestion', command: 'vbw-x' }
+    const passed = []
+    const next = Object.assign((e2) => { passed.push(e2); return Promise.resolve('beneath') }, { called: false, error: new Error('boom') })
+    const answer = await x.catcher(h.$, e, next)
+    if (x.event === 'command.run') {
+      assert.match(String(answer && answer.text), /did not work|failed/i, name + ' answers in plain words')
+      assert.equal(passed.length, 0, name)
+    } else {
+      assert.equal(answer, 'beneath', name + ' lets the event through')
+      assert.deepEqual(passed, [e], name)
+    }
+  }
+})
+
+test('a question hook that fails does not leave Mission Control saying VBW has a question', async () => {
+  const h = await mount()
+  h.project(record(), next())
+  await h.start()
+  await h.advance(4000)
+  h.fails.add('clock.now')
+  let through = false
+  await h.fire('tool.call', { tool: 'AskUserQuestion', questions: [{ question: 'Which?' }] }, async () => { through = true; return { result: 'x' } })
+  h.fails.delete('clock.now')
+  await h.advance(4000)
+  assert.ok(h.errors.some((x) => x.event === 'tool.call'), 'the hook failed, as the test meant')
+  assert.ok(through, 'the question itself went through')
+  assert.doesNotMatch(await h.text(), /question for you/)
+})

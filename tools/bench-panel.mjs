@@ -15,6 +15,12 @@ import { mount, record, next, lease } from '../tests/panel/helpers/fake-mod.mjs'
 import { building, writeCrew, working, TICK } from '../tests/panel/r189/helpers/crew.mjs'
 
 const RUNS = Number(process.env.VBW_BENCH_RUNS || 200)
+// A session refreshes the panel for hours, so the cost that matters is the steady one: the first
+// refreshes of a freshly loaded module run while V8 is still compiling it (on background threads
+// that count as CPU here) and cost up to twice as much. VBW_BENCH_WARM=20 measures the cold start;
+// a quick run (VBW_BENCH_RUNS set, as the tests do) skips the long warm-up.
+const WARM = Number(process.env.VBW_BENCH_WARM ?? (process.env.VBW_BENCH_RUNS ? 20 : 1000))
+const WINDOWS = 5
 const TICK_MS = 2000
 const ROOT = '/proj'
 
@@ -32,10 +38,17 @@ async function measure(step, begin) {
     await h.advance(5000)
     await h.render()
   }
-  for (let i = 0; i < 20; i++) await step(h, i) // warm up
-  const t0 = cpu()
-  for (let i = 0; i < RUNS; i++) await step(h, i)
-  return (cpu() - t0) / RUNS
+  for (let i = 0; i < WARM; i++) await step(h, i) // warm up: V8 compiles and settles in the first hundreds of refreshes
+  // The median of WINDOWS windows: a window that meets a garbage collection or a recompile counts once, not for all.
+  const size = Math.max(1, Math.floor(RUNS / WINDOWS))
+  const means = []
+  for (let w = 0; w < WINDOWS; w++) {
+    const t0 = cpu()
+    for (let i = 0; i < size; i++) await step(h, WARM + w * size + i)
+    means.push((cpu() - t0) / size)
+  }
+  means.sort((a, b) => a - b)
+  return means[Math.floor(WINDOWS / 2)]
 }
 
 const tick = await measure(async (h) => {

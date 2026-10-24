@@ -28,7 +28,18 @@ const TICK_MS = 2000
 // A project holding .vbw/runtime/test-mode is a VBW test session (R64): it plays no
 // audio and keeps its choices under test.* keys, never the user's.
 const TEST_MARK = '/.vbw/runtime/test-mode'
-const keys = (test) => ({ closed: (test ? 'test.' : '') + 'vbw-panel.closed', sound: (test ? 'test.' : '') + 'vbw-panel.sound', nextSeen: (test ? 'test.' : '') + 'vbw-panel.next-seen', seen: (test ? 'test.' : '') + 'vbw-panel.seen', needSeen: (test ? 'test.' : '') + 'vbw-panel.need-seen', helpersSeen: (test ? 'test.' : '') + 'vbw-panel.helpers-seen', refusalsSeen: (test ? 'test.' : '') + 'vbw-panel.refusals-seen' })
+// The store keys of the panel's choices. A real-app test session (TEST_MARK) keeps them
+// under test keys of its own project, so it never touches the user's choices and one
+// scenario's choices (a pane closed on purpose) never reach the next scenario's project.
+const projectTag = (root) => {
+  let h = 5381
+  for (let i = 0; i < root.length; i++) h = ((h * 33) ^ root.charCodeAt(i)) >>> 0
+  return h.toString(36)
+}
+const keys = (testRoot) => {
+  const p = typeof testRoot === 'string' ? 'test.' + projectTag(testRoot) + '.' : ''
+  return { closed: p + 'vbw-panel.closed', sound: p + 'vbw-panel.sound', nextSeen: p + 'vbw-panel.next-seen', seen: p + 'vbw-panel.seen', needSeen: p + 'vbw-panel.need-seen', helpersSeen: p + 'vbw-panel.helpers-seen', refusalsSeen: p + 'vbw-panel.refusals-seen' }
+}
 // One of the plugin's shipped sounds (assets/audio/<character>/), picked at random
 // for each request for the user; with none shipped, the panel is silent.
 const pick = () => (SOUNDS.length ? { asset: SOUNDS[Math.floor(Math.random() * SOUNDS.length)] } : null)
@@ -90,7 +101,7 @@ function parse(text) {
 // What the panel knows: the last good state of its files, the live run, what is drawn, what is asked.
 function fresh() {
   return {
-    live: false, born: {}, timer: null, busy: false, question: null, sound: true, keys: keys(false), silent: false, wouldPlay: 0,
+    live: false, registered: false, born: {}, timer: null, busy: false, question: null, sound: true, keys: keys(false), silent: false, wouldPlay: 0,
     record: null, next: null, history: null, cost: null, health: null, auto: null, stepsPath: null, steps: null, shown: '', seen: {}, sized: false,
     root: null, sessionId: null, holder: null, registry: null, stored: null, configDir: null, sessionDir: null, runRef: null, run: null, feed: {}, finder: {}, toolRuns: {}, leases: [],
     tab: 'now', phase: null, check: null, agent: null, suggested: null, before: null, memo: {}, notice: null,
@@ -104,7 +115,7 @@ function fresh() {
 // written, so a gate is dated by the file and answered by the record that followed it.
 // A message keeps the time it began saying what it says (st.stamps): the first pass
 // reads the dated sentences bare, the second draws them all, each with its [HH:MM].
-const STAMPED = ['estimate-step', 'estimate-milestone']
+const STAMPED = ['estimate-milestone']
 const bare = (t) => String(t).replace(/^\[\d\d:\d\d\] /, '')
 function view(st, now) {
   const input = {
@@ -800,6 +811,18 @@ async function comms($, st, e) {
 // session's /vbw:vibe sets the project up mid-session). No timer before that.
 async function begin($, st) {
   if (st.live || st.unsupported === true) return
+  try {
+    await start($, st)
+  } catch (err) {
+    // A failure while starting (a store not ready yet) leaves nothing half-started: no
+    // timer, not live, so the next prompt, question or workflow starts it again.
+    st.live = false
+    if (st.timer && st.timer.cancel) st.timer.cancel()
+    st.timer = null
+    throw err
+  }
+}
+async function start($, st) {
   if (st.unsupported !== false) {
     const ver = await $.session.version()
     const v = isObj(ver) ? ver.version : ver
@@ -812,7 +835,7 @@ async function begin($, st) {
   st.live = true
   st.root = root
   st.silent = await $.fs.exists(root + TEST_MARK)
-  st.keys = keys(st.silent)
+  st.keys = keys(st.silent ? root : null)
   st.stepsPath = await stepsPath($, root)
   try {
     st.sessionId = await $.session.id()
@@ -842,7 +865,8 @@ async function begin($, st) {
   st.shown = signature(st, v0, now)
   if (st.timer && st.timer.cancel) st.timer.cancel()
   st.timer = $.clock.every(TICK_MS, () => tick($, st))
-  for (const [name, description] of COMMANDS) $.command.register({ name, description, immediate: true })
+  if (!st.registered) for (const [name, description] of COMMANDS) $.command.register({ name, description, immediate: true })
+  st.registered = true
   if ((await $.store.get(st.keys.closed)) !== true) await open($)
 }
 async function wake($, st) {
@@ -852,6 +876,13 @@ async function wake($, st) {
     // the panel stays out of the way
   }
 }
+
+// A gating hook that fails is skipped by Claude Code and its `.catch` is asked. Ours let the
+// event go on as if the panel were not there, which is also what Claude Code does without one;
+// a command that fails says so in plain words instead of "unknown command". Claude Code names
+// the failed hook itself, so nothing is logged here. None of them throws.
+const passOn = ($, e, next) => next(e)
+const failedText = (name) => '/' + name + ' did not work just now. The rest of VBW is not affected.'
 
 export function register(on) {
   const st = fresh()
@@ -867,29 +898,29 @@ export function register(on) {
     const w = isObj(e) && isObj(e.presentation) ? e.presentation.columns : null
     await openByPerson($, st, cols(w) ? { columns: quarter(w), focus: true } : { focus: true })
     return { text: 'Mission Control is open.' }
-  })
+  }).catch(() => ({ text: failedText('vbw-panel') }))
 
   on('command.run', { command: 'vbw-sound' }, async ($, e, next) => {
     if (!st.live) return next(e)
     const word = String(e.args ?? '').trim().toLowerCase()
     if (word === '' || word === 'on' || word === 'off') await setSound($, st, word === '' ? !st.sound : word === 'on')
     return { text: "The 'needs you' sound is " + (st.sound ? 'on' : 'off') + '.' }
-  })
+  }).catch(() => ({ text: failedText('vbw-sound') }))
 
   on('command.run', { command: 'vbw-status' }, async ($, e, next) => {
     if (!st.live) return next(e)
     return { text: statusText(await facts($, st)) }
-  })
+  }).catch(() => ({ text: failedText('vbw-status') }))
 
   on('command.run', { command: 'vbw-why' }, async ($, e, next) => {
     if (!st.live) return next(e)
     return { text: whyText(await facts($, st)) }
-  })
+  }).catch(() => ({ text: failedText('vbw-why') }))
 
   on('command.run', { command: 'vbw-todo' }, async ($, e, next) => {
     if (!st.live) return next(e)
     return { text: await todo($, st, e.args) }
-  })
+  }).catch(() => ({ text: failedText('vbw-todo') }))
 
   // Remember a close made by the user only; every close is passed on.
   on('ui.close', async ($, e, next) => {
@@ -901,7 +932,7 @@ export function register(on) {
       }
     }
     return next(e)
-  })
+  }).catch(passOn)
 
   // A question to the user is a need while it is open.
   on('tool.call', { tool: 'AskUserQuestion' }, async ($, e, next) => {
@@ -926,6 +957,16 @@ export function register(on) {
         // nothing to redraw
       }
     }
+  }).catch(async ($, e, next) => {
+    // The question went on without the panel noticing its end: it is no longer open as far as the panel knows.
+    st.question = null
+    st.questionAt = null
+    try {
+      await redrawIfChanged($, st)
+    } catch {
+      // the next tick draws it
+    }
+    return next(e)
   })
 
   // A VBW workflow launched by this session (main loop): its run id and folder
@@ -946,14 +987,14 @@ export function register(on) {
       // the run is found by its lease instead
     }
     return out
-  })
+  }).catch(passOn)
 
   // The record as a turn found it: the turn receipt says what moved.
   on('prompt.submit', async ($, e, next) => {
     if (!st.live) await wake($, st)
     if (st.live) st.before = st.record
     return next(e)
-  })
+  }).catch(passOn)
 
   // Mission Control: drawn as Claude Code's own pane example does, from $.ui.resolve(e)
   // and h(). Only this pane's drawings reach here.

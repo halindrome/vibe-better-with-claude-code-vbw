@@ -4,14 +4,13 @@
 // refusal line and the `vbw` row intentions. Pure: data in, one string out, or null to leave the
 // engine's own line. Never throws, never changes its input, no `$` here.
 
-import { liveNeed } from './panel-view.js'
+import { liveNeed, GATE_COMMANDS } from './panel-view.js'
 import { REFUSED_MARK } from './panel-palette.js'
 
 const isObj = (x) => x !== null && typeof x === 'object' && !Array.isArray(x)
 const arr = (x) => (Array.isArray(x) ? x.filter(isObj) : [])
 const WORKFLOWS = ['planning', 'building', 'fixing', 'verifying', 'mapping', 'researching', 'investigating', 'tooling']
 const PROFILES = { quality: 'careful', balanced: 'standard', budget: 'fast' }
-const GATE_COMMANDS = { approve: '/vbw:approve', accept: '/vbw:verify', convert: '/vbw:convert' }
 
 const isProject = (rec) => isObj(rec) && isObj(rec.milestone) && typeof rec.milestone.id === 'string' && rec.milestone.id !== ''
 const live = (run) => isObj(run) && run.status === 'running' && typeof run.kind === 'string' && run.kind !== ''

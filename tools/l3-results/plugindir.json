@@ -1,22 +1,23 @@
 {
   "scenario": "plugindir",
-  "fixture": "a small VBW project (vbw init, one-requirement spec); VBW 2.0.42 installed from the marketplace and left on; a throwaway copy of this tree (2.0.44, with a probe SessionStart hook) loaded with --plugin-dir; status line from that copy; launch PATH has the installed bin/ first: true",
-  "cost_usd": 0.1693,
+  "fixture": "a small VBW project (vbw init, one-requirement spec); VBW 2.1.4 installed from the marketplace and left on; a throwaway copy of this tree (2.1.4+tree, with a probe SessionStart hook) loaded with --plugin-dir; status line from that copy; launch PATH has the installed bin/ first: true",
+  "cost_usd": 0.1819,
   "evidence_level": "L3",
-  "at": "2026-10-21T13:53:37Z",
+  "at": "2026-10-24T04:28:24Z",
   "passed": true,
   "facts": {
-    "claude_version": "2.1.306",
-    "tree_root": "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/.vbw/runtime/scratch/plugindir-tree",
-    "tree_version": "2.0.44",
-    "installed_version": "2.0.42",
+    "claude_version": "2.1.310",
+    "tree_root": "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/plow-2.1.8/.vbw/runtime/scratch/plugindir-tree",
+    "tree_version": "2.1.4+tree",
+    "installed_version": "2.1.4",
     "loaded_copies": [
-      "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/.vbw/runtime/scratch/plugindir-tree"
+      "/Users/tiagoserodio/.claude/plugins/cache/vbw-marketplace/vbw/2.1.4",
+      "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/plow-2.1.8/.vbw/runtime/scratch/plugindir-tree"
     ],
     "tree_overrides_installed": true,
     "plugin_bins_on_path": [
-      "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/.vbw/runtime/scratch/plugindir-tree/bin",
-      "/Users/tiagoserodio/.claude/plugins/cache/vbw-marketplace/vbw/2.0.42/bin",
+      "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/plow-2.1.8/.vbw/runtime/scratch/plugindir-tree/bin",
+      "/Users/tiagoserodio/.claude/plugins/cache/vbw-marketplace/vbw/2.1.4/bin",
       "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/plugin/bin",
       "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/plugin/bin",
       "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/plugin/bin",
@@ -29,13 +30,13 @@
       "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/plugin/bin",
       "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/plugin/bin",
       "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/plugin/bin",
-      "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/.vbw/runtime/scratch/plugindir-tree/bin"
+      "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/plow-2.1.8/.vbw/runtime/scratch/plugindir-tree/bin"
     ],
-    "session_vbw_path": "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/.vbw/runtime/scratch/plugindir-tree/bin/vbw",
-    "session_vbw_version": "2.0.44",
+    "session_vbw_path": "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/plow-2.1.8/.vbw/runtime/scratch/plugindir-tree/bin/vbw",
+    "session_vbw_version": "2.1.4+tree",
     "session_env_applied": true,
-    "agent_vbw_path": "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/.vbw/runtime/scratch/plugindir-tree/bin/vbw",
-    "agent_vbw_version": "2.0.44",
+    "agent_vbw_path": "/Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/plow-2.1.8/.vbw/runtime/scratch/plugindir-tree/bin/vbw",
+    "agent_vbw_version": "2.1.4+tree",
     "agent_env_applied": true,
     "hooks_from": [
       "vbw@inline"
@@ -44,7 +45,7 @@
     "plugin_data_id": "vbw-inline",
     "env_file_given": true,
     "launch_path_had_installed": true,
-    "statusline_version_shown": "2.0.44",
+    "statusline_version_shown": "2.1.4+tree",
     "session_start_names_kernel": true
   },
   "not_tested": [
