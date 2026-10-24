@@ -52732,6 +52732,13 @@
       "sort": "later",
       "size": "small",
       "status": "done"
+    },
+    {
+      "id": "T183",
+      "text": "Slots held while units run, the rest (2.1.10 trace, 2026-10-24: 6.08 of 7 after the gate lock became a file; target 6.5): the store step runs jq inside its lock (busy about half the time, take waits p50 18 ms) and each unit change costs two steps; run the step's jq on a copy read outside the lock and lock only to compare and rename, or keep runners across units so a slot passes to the next unit in one step",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
