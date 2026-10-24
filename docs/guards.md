@@ -257,9 +257,11 @@ A command that contains none of the words any rule needs (`rm`, `git`, `vbw`,
   pins both.
 - **Budget:** VBW's own cost (the hook's CPU time minus that of the platform's
   `sh -c jq` startup) is at most 20 ms per call, judged for each guard alone,
-  measured by `tools/bench-hooks.sh` before every test run, including on a
-  20 KB heredoc command. CPU time, so waiting for a busy machine never counts.
-  On an idle Mac: file tools about 2 ms, Bash about 5 to 7 ms. A real slowdown
+  measured by `tools/bench-hooks.sh` in the release run (CI runs it on every
+  pull request), including on a 20 KB heredoc command. CPU time, so waiting for
+  a busy machine never counts. Measured in October 2026 (an M1 Max Mac and
+  GitHub's macOS runners): the file guard about 4 to 5 ms, the Bash guard about
+  10 to 13 ms, the answer hook about 1 ms. A real slowdown
   (an added subprocess costs several ms) still shows. When the machine is too
   busy to measure (starting the shell and jq alone takes longer than 20 ms),
   the benchmark reports that the machine is busy, judges nothing and does not
