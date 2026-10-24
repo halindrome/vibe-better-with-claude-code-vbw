@@ -27,7 +27,6 @@ Status words:
 | [Heavy checks each use every core](#heavy-checks-each-use-every-core) | Known issue | Cargo, make, similar | Lower `check_jobs` |
 | [Slot store edge cases](#slot-store-edge-cases) | Known issue | Sandboxes, many runs | None needed |
 | [Unit times are whole seconds](#unit-times-are-whole-seconds) | Known issue | Proof time reports | None needed |
-| [Status line speed where VBW is off](#status-line-speed-where-vbw-is-off) | Planned | Slower Macs | None needed |
 | [Panel drawing headroom](#panel-drawing-headroom) | Planned | Slower Macs | None needed |
 | [Panel polish](#panel-polish) | Planned | Everyone | None needed |
 | [Real-user scenarios for four features](#real-user-scenarios-for-four-features) | Planned | Test coverage | Not applicable |
@@ -110,16 +109,6 @@ Status words:
 **Where.** The unit timing in `plugin/lib/checks.sh` and the report in `plugin/lib/unittime.sh`.
 
 ## Planned improvements
-
-### Status line speed where VBW is off
-
-**What.** In a project where VBW is turned off, the status line hands back to your earlier status line ([statusline.md](statusline.md#projects-where-vbw-is-turned-off)). That path is the slowest of the status line's paths. It measured 60.2 ms on GitHub's macOS runner against a 60 ms budget, and 42 ms on a developer Mac.
-
-**Who and when.** Slower Macs, in projects where VBW is off. Nothing breaks; the line may take a little longer to draw. Our own release benchmark can also fail on a slow runner.
-
-**Plan.** Make the path cheaper, or judge CI against a calibrated budget the way the panel benchmark already does (`VBW_PANEL_BUDGET_MS`).
-
-**Where.** `plugin/scripts/vbw-statusline.sh`; `tools/bench-hooks.sh` (the `status line (VBW off)` line).
 
 ### Panel drawing headroom
 

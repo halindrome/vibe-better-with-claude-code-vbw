@@ -62,9 +62,18 @@ The setting also asks Claude Code to re-run the status line every 5 seconds
 run's time and its working agents stay current while nothing else happens.
 A run is budgeted at 60 ms (no network, no git process).
 
-The setting changed with this version. `vbw statusline on`, and a session that
-starts in a VBW project, update a setting made by an older VBW (or by VBW 1) in
-place, keeping the refresh interval and the saved status line. `vbw statusline
+The setting is one object for both lines, so `vbw statusline on` keeps the
+`padding` and the `refreshInterval` of a status line you had before, and writes
+them into it. A line without an interval gets VBW's 5 seconds. An interval you
+set stays yours, which means VBW's line then refreshes at that rate too. In a
+project where VBW is off, your earlier line runs with the padding you gave it and,
+when you gave it an interval, at that interval; without one it runs at the
+5-second refresh, as often as VBW's own line would.
+
+`vbw statusline on`, and a session that starts in a VBW project, update a
+setting made by an older VBW (or by VBW 1) in place, keeping the refresh
+interval and the saved status line, and giving it the saved line's padding when
+it has none. `vbw statusline
 status` says when the setting is an older one, and `vbw doctor` flags it with
 `vbw statusline on` as the fix.
 
@@ -96,6 +105,17 @@ above).
 
 VBW's script only says "off" (it exits with code 3). The setting itself then
 runs the earlier status line with the same input; VBW never runs it.
+
+The off path is the cheapest of the status line's paths. The setting starts one
+bash, which runs the installed script inside itself, and that script starts one
+jq: it reads your settings file, the project's two settings files (when the
+session runs in the project, which is nearly always) and Claude Code's JSON
+together, and starts no other process before it says "off". On a session
+that loaded a working tree (`claude --plugin-dir`) it also reads the session's
+record, with no jq. `tools/bench-hooks.sh` measures VBW's own CPU on this path as
+`status line (VBW off)`: the whole call minus one bash, one jq and one sh
+startup and the earlier status line itself, which are the platform's and yours.
+The limit is 10 ms (`VBW_HANDBACK_BUDGET_MS`).
 
 Only a setting made by this version can hand back. If `vbw doctor` says the
 status line was set by an older VBW, run `vbw statusline on` to update it.
@@ -145,5 +165,9 @@ status line still renders. It never writes `.vbw/record.json`.
   render) and never fails: a bad render prints `[VBW] status line unavailable`.
 - Exit 3 is the hand-back signal: the script prints nothing and exits 3 where
   VBW is turned off. `tools/bench-hooks.sh` measures it as `status line (VBW
-  off)`, within the same 60 ms.
+  off)`, judged on VBW's own CPU within 10 ms (see above).
+- The script runs on its own (`bash vbw-statusline.sh`) and inside the setting's
+  bash (sourced in a subshell of it, which saves a bash start on every render).
+  Its exit status is its answer in both, and it finds its own folder from
+  `BASH_SOURCE`, not `$0`.
 - `NO_COLOR` turns the colors off.

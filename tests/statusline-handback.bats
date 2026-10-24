@@ -118,6 +118,30 @@ got_input() {
   [ ! -e "$HOME/mine.input" ]
 }
 
+@test "R184: the setting starts one bash, whether VBW is off or on: the installed script runs inside it" {
+  local real
+  real=$(command -v bash)
+  mkdir -p "$TEST_ROOT/count"
+  printf '#!/bin/sh\necho x >> "%s/calls"\nexec "%s" "$@"\n' "$TEST_ROOT/count" "$real" > "$TEST_ROOT/count/bash"
+  chmod +x "$TEST_ROOT/count/bash"
+  settings_with "$(mine)"
+  vbw_run statusline on
+  local cmd mode n
+  cmd=$(jq -r '.statusLine.command' "$SETTINGS")
+  for mode in off on; do
+    installed "$mode"
+    rm -f "$TEST_ROOT/count/calls" "$HOME/mine.input"
+    PATH="$TEST_ROOT/count:$PATH" sh -c "$cmd" < "$TEST_ROOT/cc.json" > /dev/null
+    # Where VBW is off the earlier status line is a bash script of its own (MINE_CMD): that one is not VBW's.
+    n=$(wc -l < "$TEST_ROOT/count/calls" | tr -d ' ')
+    case "$mode" in off) [ "$n" = 2 ] ;; on) [ "$n" = 1 ] ;; esac || {
+      echo "VBW $mode: $n bash processes started"
+      cat "$TEST_ROOT/count/calls"
+      false
+    }
+  done
+}
+
 @test "R184: with no input and stdin left open, the setting does not hang" {
   settings_with "$(mine)"
   vbw_run statusline on
@@ -161,6 +185,44 @@ got_input() {
   vbw_run statusline on
   [ "$output" = "on: the VBW status line" ]
   cmp "$SETTINGS" "$TEST_ROOT/settings.once"
+}
+
+@test "R184: vbw statusline on keeps the earlier status line's padding and its own refresh interval in the setting" {
+  settings_with "$(jq -nc --arg c "$MINE_CMD" '{type: "command", command: $c, padding: 2, refreshInterval: 30}')" '{"theme": "dark"}'
+  vbw_run statusline on
+  [ "$status" -eq 0 ]
+  jq -e '.theme == "dark" and .statusLine.type == "command" and (.statusLine.command | contains("vbw-statusline.sh"))
+    and .statusLine.padding == 2 and .statusLine.refreshInterval == 30' "$SETTINGS" || {
+    cat "$SETTINGS"
+    false
+  }
+  # An earlier line with neither: VBW's 5 seconds, and no padding is invented.
+  settings_with "$(jq -nc --arg c "$MINE_CMD" '{type: "command", command: $c}')"
+  rm -f "$BACKUP"
+  vbw_run statusline on
+  jq -e '.statusLine.refreshInterval == 5 and (.statusLine | has("padding") | not)' "$SETTINGS" || {
+    cat "$SETTINGS"
+    false
+  }
+  # Off brings back exactly what was there.
+  vbw_run statusline off
+  jq -e --arg c "$MINE_CMD" '.statusLine == {type: "command", command: $c}' "$SETTINGS"
+}
+
+@test "R184: vbw statusline on gives an older VBW setting the saved earlier status line's padding when it has none, and a padding set there stays" {
+  settings_with "$(jq -nc --arg c "$OLD_CMD" '{type: "command", command: $c, refreshInterval: 5}')"
+  jq -nc --arg c "$MINE_CMD" '{type: "command", command: $c, padding: 3}' > "$BACKUP"
+  vbw_run statusline on
+  jq -e '.statusLine.padding == 3 and .statusLine.refreshInterval == 5' "$SETTINGS" || {
+    cat "$SETTINGS"
+    false
+  }
+  cp "$SETTINGS" "$TEST_ROOT/settings.once"
+  vbw_run statusline on
+  cmp "$SETTINGS" "$TEST_ROOT/settings.once"
+  jq '.statusLine.padding = 1' "$SETTINGS" > "$TEST_ROOT/s.json" && cp "$TEST_ROOT/s.json" "$SETTINGS"
+  vbw_run statusline on
+  jq -e '.statusLine.padding == 1' "$SETTINGS"
 }
 
 @test "R184: vbw statusline off still brings back the earlier status line exactly, or removes VBW's when there was none" {

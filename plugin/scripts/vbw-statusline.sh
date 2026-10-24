@@ -16,10 +16,15 @@
 # user's earlier status line (plan P134.2). This script itself never runs that
 # saved status line or any other command read from a file (D356).
 
-# Folders are cut with parameter expansion, never a dirname process: the status
-# line runs every few seconds, and each process costs CPU (budget: 60 ms a call).
-case "$0" in */*) here=${0%/*} ;; *) here=. ;; esac
-here="$(cd "$here" && pwd)"
+# The statusLine setting runs this file by sourcing it in a subshell of its own
+# bash (a bash process of its own would cost more than the hand-back path should),
+# and it also runs on its own (`bash vbw-statusline.sh`): either way its exit status
+# is its answer (nothing in it changes the caller's shell), and its folder is
+# BASH_SOURCE, not $0.
+# Folders are cut with parameter expansion, never a dirname or pwd process: the
+# status line runs every few seconds, and each process costs CPU (budget: 60 ms a
+# call). Nothing here changes folder, so the script's own folder is used as given.
+case "${BASH_SOURCE[0]}" in */*) here=${BASH_SOURCE[0]%/*} ;; *) here=. ;; esac
 plugin="$here/.."
 
 # Claude Code may not send data on the first render: read with a timeout so
@@ -34,52 +39,82 @@ if [ -z "$cdir" ]; then
   if [ -d "$HOME/.config/claude-code" ]; then cdir="$HOME/.config/claude-code"; else cdir="$HOME/.claude"; fi
 fi
 
-# One jq call for all, one value a line: what the user's settings.json says of
-# enabledPlugins["vbw@vbw-marketplace"] ("true", "false", or "" when it says
-# nothing or is not valid JSON; first, so input it cannot read never loses it),
-# the project folder, the session's transcript and its id (a safe token only:
-# it names a file).
+# project_root DIR: sets wroot to the project of a session started in DIR, the
+# nearest folder up that holds .git (walked without a git process), or DIR itself
+# when no folder up holds one.
+project_root() {
+  wroot=$1
+  local d=$1
+  while [ "$d" != / ] && [ -n "$d" ] && [ ! -e "$d/.git" ]; do
+    case "$d" in */*) d=${d%/*}; d=${d:-/} ;; *) d=/ ;; esac
+  done
+  [ ! -e "$d/.git" ] || wroot=$d
+}
+
+# The project's two settings files are read in the same jq call as the input
+# when the project is the one this process runs in, which is nearly always: one
+# jq decides on or off, and the hand-back path starts nothing else. A session
+# whose project is another folder reads that project's files in a second call.
+project_root "${PWD:-.}"
+guessed=$wroot
+pl=(--arg pl "")
+ps=(--arg ps "")
+[ ! -f "$guessed/.claude/settings.local.json" ] || pl=(--rawfile pl "$guessed/.claude/settings.local.json")
+[ ! -f "$guessed/.claude/settings.json" ] || ps=(--rawfile ps "$guessed/.claude/settings.json")
+
+# One jq call for all, one value a line. What enabledPlugins["vbw@vbw-marketplace"]
+# says is "true", "false", or "" when a file says nothing or is not valid JSON (it
+# decides nothing, and the next file still counts; first, so input jq cannot read
+# never loses it): first the user's settings.json, then the settings files of the
+# folder this process runs in (the local file, then the project file; the first
+# that sets it decides). Then the project folder, the session's transcript and its
+# id (a safe token only: it names a file).
 ucfg=(--arg ucfg "")
 [ ! -f "$cdir/settings.json" ] || ucfg=(--rawfile ucfg "$cdir/settings.json")
-paths=$(printf '%s' "$input" | jq -nr "${ucfg[@]}" '(($ucfg | try (fromjson | .enabledPlugins["vbw@vbw-marketplace"] | select(type == "boolean") | tostring) catch empty) // ""),
+paths=$(printf '%s' "$input" | jq -nr "${ucfg[@]}" "${pl[@]}" "${ps[@]}" 'def verdict: try (fromjson | .enabledPlugins["vbw@vbw-marketplace"] | select(type == "boolean") | tostring) catch empty;
+  (($ucfg | verdict) // ""), ([($pl | verdict), ($ps | verdict)] | .[0] // ""),
   ((try input catch {}) | (.workspace.project_dir // .cwd // ""), (.transcript_path // ""), (.session_id // "" | if test("^[A-Za-z0-9_-]+$") then . else "" end))' 2> /dev/null)
 take() { case "$rest" in *$'\n'*) val=${rest%%$'\n'*}; rest=${rest#*$'\n'} ;; *) val=$rest; rest= ;; esac; }
 rest=$paths
 take; uverdict=$val
+take; pverdict=$val
 take; root=$val
 take; transcript=$val
 take; sid=$val
 root=${root:-$PWD}
 
-# Started in a subfolder: the project is the nearest folder up that holds .git
-# (walked without a git process).
-d=$root
-while [ "$d" != / ] && [ -n "$d" ] && [ ! -e "$d/.git" ]; do
-  case "$d" in */*) d=${d%/*}; d=${d:-/} ;; *) d=/ ;; esac
-done
-[ ! -e "$d/.git" ] || root=$d
+# Started in a subfolder: the project is the nearest folder up that holds .git.
+project_root "$root"
+root=$wroot
 
 # On or off, before any other work: the project's .claude/settings.local.json,
 # then its .claude/settings.json, then the user's (read above); the first that
-# sets it decides. The project's files that exist are read by one jq (raw lines
+# sets it decides. When the project is where this process runs, its files were
+# read above. Otherwise the files that exist are read by one more jq (raw lines
 # grouped by file, so a file that is not valid JSON decides nothing and the next
 # one still counts); no project file, no jq.
-cfgs=()
-for f in "$root/.claude/settings.local.json" "$root/.claude/settings.json"; do
-  [ -f "$f" ] && cfgs+=("$f")
-done
 verdict=$uverdict
-if [ ${#cfgs[@]} -gt 0 ]; then
-  v=$(jq -nRr 'reduce inputs as $l ([]; if length > 0 and .[-1][0] == input_filename then .[-1][1] += $l + "\n" else . + [[input_filename, $l + "\n"]] end)
-    | [.[] | (.[1] | try (fromjson | .enabledPlugins["vbw@vbw-marketplace"] | select(type == "boolean")) catch empty)] | .[0] | if . == null then "" else tostring end' "${cfgs[@]}" 2> /dev/null)
-  [ -z "$v" ] || verdict=$v
+if [ "$root" = "$guessed" ]; then
+  [ -z "$pverdict" ] || verdict=$pverdict
+else
+  cfgs=()
+  for f in "$root/.claude/settings.local.json" "$root/.claude/settings.json"; do
+    [ -f "$f" ] && cfgs+=("$f")
+  done
+  if [ ${#cfgs[@]} -gt 0 ]; then
+    v=$(jq -nRr 'reduce inputs as $l ([]; if length > 0 and .[-1][0] == input_filename then .[-1][1] += $l + "\n" else . + [[input_filename, $l + "\n"]] end)
+      | [.[] | (.[1] | try (fromjson | .enabledPlugins["vbw@vbw-marketplace"] | select(type == "boolean")) catch empty)] | .[0] | if . == null then "" else tostring end' "${cfgs[@]}" 2> /dev/null)
+    [ -z "$v" ] || verdict=$v
+  fi
 fi
 if [ "$verdict" = false ]; then
   # Off for the installed VBW, but not for a copy loaded with --plugin-dir:
-  # when the session's record (R185) names this very plugin, VBW is on.
-  own=$(cd "$plugin" 2> /dev/null && pwd -P) || own=""
+  # when the session's record (R185) names this very plugin, VBW is on. With no
+  # record there is nothing to compare and no folder is resolved.
   p=""
   [ -z "$sid" ] || { read -r p < "$cdir/vbw/sessions/$sid"; } 2> /dev/null || p=""
+  [ -n "$p" ] || exit 3
+  own=$(cd "$plugin" 2> /dev/null && pwd -P) || own=""
   p=$(cd "$p" 2> /dev/null && pwd -P) || p=""
   if [ -z "$own" ] || [ "$p" != "$own" ]; then exit 3; fi
 fi
