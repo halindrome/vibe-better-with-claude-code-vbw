@@ -445,15 +445,17 @@ record_history() {
   done < <(git -C "$dir" log --reverse --format=%H -- .vbw/record.json)
 }
 
-# QA fails a build that deviates from its plan (R5): checks cannot see the
-# deviation, QA must, and the fix loop must close it. The scenario plays the
-# deviation: once the build is proven it deletes a file its plan lists that no
-# check names (a commit by the "user"), the way a build that skipped a task
-# would look.
+# A build that deviates from its plan is brought back (R5): checks cannot see
+# the deviation, the kernel's delivered-files check does, and the user is asked
+# before QA whether to keep it or restore it. The scenario plays the deviation:
+# once the build is proven it deletes a file its plan lists that no check names
+# (a commit by the "user"), the way a build that skipped a task would look, then
+# answers the question with "Restore them", and the fix loop must bring it back.
 scenario_qafix() {
   new_project
-  fixture="greet.sh plus NOTES.md (no check names it); guided autonomy stated in words; the built NOTES.md is deleted after the build, so only QA can see the deviation"
+  fixture="greet.sh plus NOTES.md (no check names it); guided autonomy stated in words; the built NOTES.md is deleted after the build, so only the delivered-files check can see the deviation; the user restores it"
   deviation=""
+  restored=0
   # Guided autonomy: the session asks before each step, which is where a user
   # (and this scenario) can act between the build and QA.
   start="Use guided autonomy for this project. $GREET Also add NOTES.md with one sentence on what greet.sh is for. Nothing automated needs to test NOTES.md: a person reads it."
@@ -467,48 +469,60 @@ scenario_qafix() {
     [ -n "$f" ] || return 1
     git -C "$dir" rm -q -- "$f" && git -C "$dir" commit -qm "chore: drop $f" -- "$f" || return 1
     deviation="$f"
-    # The user's commit changed the code: prove it again, so the evidence (and
-    # the tree QA is given) is the deviating build.
+    # The user's commit changed the code: prove it again, so the evidence holds the deviation.
     (cd "$dir" && "$VBW" prove > /dev/null 2>&1) || true
     say "seeded the deviation: $f deleted after the build"
     return 0
   }
-  # Seed, then answer the question as a user would (the recommended option).
-  on_question() { seed_deviation || true; return 1; }
+  # restore_answer: at the deviations question, pick "Restore them".
+  restore_answer() {
+    [ -n "$deviation" ] && [ "$restored" -eq 0 ] && [ "$(next_action)" = deviations ] || return 1
+    local n i
+    n=$(screen | grep -E '[0-9]+\. Restore' | grep -oE '[0-9]+' | head -1)
+    [ -n "$n" ] || return 1
+    for ((i = 1; i < n; i++)); do l3 keys "$scenario" Down; done
+    l3 keys "$scenario" Enter
+    restored=1
+    say "answered the deviations question: Restore them"
+    return 0
+  }
+  # Seed, then answer the question as a user would (the recommended option, or Restore at the deviations question).
+  on_question() { seed_deviation || true; restore_answer; }
   on_idle() { seed_deviation; }
   done_yet() { [ -n "$deviation" ] && shipped; }
   # Human requirements (NOTES.md wording) are accepted as a user would.
   checks() {
     common_checks
-    local hist first note rounds=0 final=none proved=false passed=true fv=none autonomy set_before=false
+    local hist asked restore_fix=false back=false rounds=0 final=none proved=false passed=true autonomy set_before=false
     autonomy=$(cd "$dir" && "$VBW" config autonomy 2> /dev/null)
     # The settings write comes from the main session (not a subagent) and must be
     # earlier than the first 'Contract approved' decision and the first run lease
     # (a 'run start' command or a Workflow call). Timestamps are cut to the second.
     if transcripts | grep -v /subagents/ | xargs cat 2> /dev/null | autonomy_written_before_run "$dir/.vbw/record.json"; then set_before=true; fi
     hist=$(record_history)
-    first=$(printf '%s\n' "$hist" | jq -sr '[.[] | .phases[]? | select(.qa != null) | .qa] | first // {} | .result // "none"')
-    fv=$first
-    note=$(printf '%s\n' "$hist" | jq -sr '[.[] | select(any(.phases[]?; .qa.result == "fail"))] | first // {}
-      | ([.phases[]? | .qa.note // empty] + [.fixes[]? | select(.source == "qa") | .note]) | join(" ")')
+    # Restoring is a fix that names the file (vbw fix restore), at some point in the record's history.
+    printf '%s\n' "$hist" | jq -se --arg d "$deviation" 'any(.[]; any(.fixes[]?; .restore == $d))' > /dev/null 2>&1 && restore_fix=true
+    [ -n "$deviation" ] && git -C "$dir" cat-file -e "HEAD:$deviation" 2> /dev/null && back=true
+    asked=$([ "$restored" -eq 1 ] && echo true || echo false)
     # A fix round is one fix run (the kernel commits the record after each run).
     rounds=$(git -C "$dir" log --format=%s | grep -c '^chore(vbw): record after fix-' || true)
     final=$(jq -r '[.phases[] | .qa.result // "none"] | last // "none"' "$dir/.vbw/record.json" 2> /dev/null)
     jq -e 'all(.requirements[]; .status == "proven" or .status == "accepted")' "$dir/.vbw/record.json" > /dev/null 2>&1 && proved=true
-    say "QA rounds: first verdict $fv, fix rounds $rounds, final $final"
+    say "deviation: asked $asked, restore fix $restore_fix, back at HEAD $back, fix rounds $rounds, final QA $final"
     [ -n "$deviation" ] || { say "FAIL the deviation was never seeded"; failed=1; }
-    case "$note" in *"$deviation"*) ;; *) say "FAIL the first QA note does not name the deviation"; failed=1 ;; esac
-    expect "QA's first verdict was fail ($fv)" [ "$fv" = fail ]
+    expect "the user was asked before QA and chose Restore ($asked)" [ "$asked" = true ]
+    expect "a restore fix named the file ($restore_fix)" [ "$restore_fix" = true ]
     expect "at least one fix round ran ($rounds)" [ "$rounds" -ge 1 ]
+    expect "the file is back at HEAD ($back)" [ "$back" = true ]
     expect "QA's final verdict is pass ($final)" [ "$final" = pass ]
     expect "every requirement is proven or accepted" [ "$proved" = true ]
     expect "the autonomy stated in words was recorded: guided ($autonomy)" [ "$autonomy" = guided ]
     expect "autonomy_set_before_first_run: the setting was written before the first Contract approved and the first run ($set_before)" [ "$set_before" = true ]
-    [ "$failed" -eq 0 ] && [ "$autonomy" = guided ] && [ "$set_before" = true ] && [ "$fv" = fail ] && [ "$rounds" -ge 1 ] && [ "$final" = pass ] && [ "$proved" = true ] || { passed=false; failed=1; }
+    [ "$failed" -eq 0 ] && [ "$autonomy" = guided ] && [ "$set_before" = true ] && [ "$asked" = true ] && [ "$restore_fix" = true ] && [ "$rounds" -ge 1 ] && [ "$back" = true ] && [ "$final" = pass ] && [ "$proved" = true ] || { passed=false; failed=1; }
     result_write qafix "$fixture" "${cost_usd:-0}" "$passed" \
-      "$(jq -n --arg d "${deviation:-}" --arg fv "$fv" --arg n "$note" --argjson r "$rounds" --arg fin "$final" --argjson p "$proved" --arg au "$autonomy" --argjson sb "$set_before" \
-        '{deviation: $d, first_qa_verdict: $fv, first_qa_note: $n, fix_rounds: $r, final_qa_verdict: $fin, phase_proved: $p, autonomy: $au, autonomy_set_before_first_run: $sb}')" \
-      '["a deviation other than one missing file","a deviation the Dev introduces itself (the seed is played by the scenario)","the fix cap (three failed rounds) and its escalation","a project larger than the greet.sh fixture"]'
+      "$(jq -n --arg d "${deviation:-}" --argjson a "$asked" --argjson rf "$restore_fix" --argjson b "$back" --argjson r "$rounds" --arg fin "$final" --argjson p "$proved" --arg au "$autonomy" --argjson sb "$set_before" \
+        '{deviation: $d, asked_before_qa: $a, restore_fix: $rf, restored_at_head: $b, fix_rounds: $r, final_qa_verdict: $fin, phase_proved: $p, autonomy: $au, autonomy_set_before_first_run: $sb}')" \
+      '["a deviation other than one missing file","keeping a deviation (the user decision path)","a deviation the Dev introduces itself (the seed is played by the scenario)","the fix cap (three failed rounds) and its escalation","a project larger than the greet.sh fixture"]'
   }
 }
 

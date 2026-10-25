@@ -40,10 +40,10 @@ facts() { jq -e "$2" "$RESULTS/$1.json" > /dev/null; }
     and .facts.commit_has_provenance == true and .facts.requirement_status == "proven"'
 }
 
-@test "R5: QA failed a deviating build, naming the deviation; the fix loop closed it" {
+@test "R5: a deviating build was put to the user before QA, restored through a fix, and passed QA" {
   result_ok qafix
   facts qafix '.facts.deviation | type == "string" and length > 0'
-  facts qafix '.facts.first_qa_verdict == "fail" and (.facts.deviation as $d | .facts.first_qa_note | contains($d))
+  facts qafix '.facts.asked_before_qa == true and .facts.restore_fix == true and .facts.restored_at_head == true
     and .facts.fix_rounds >= 1 and .facts.final_qa_verdict == "pass"
     and .facts.phase_proved == true'
 }

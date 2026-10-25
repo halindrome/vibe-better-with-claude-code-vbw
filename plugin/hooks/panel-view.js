@@ -67,6 +67,8 @@ function doing(rec, now) {
 export const GATE_COMMANDS = { approve: '/vbw:approve', accept: '/vbw:verify', convert: '/vbw:convert' }
 
 const list = (a) => (Array.isArray(a) ? a.filter((x) => typeof x === 'string' && x).join(', ') : '')
+// The files of a deviations gate's detail ({deviations: [{file, ...}]}).
+const devFiles = (d) => (Array.isArray(d.deviations) ? d.deviations.filter(isObj).map((x) => x.file) : [])
 const RUN_ACTIONS = new Set(['plan', 'build', 'qa', 'fix'])
 const COMPACT_PCT = 85 // the context is this full: /compact before a run
 
@@ -91,6 +93,10 @@ function gateNeed(nx) {
     case 'escalate': { const f = list(d.fixes); return need('escalate:' + f, 'A decision is needed from you on ' + f + '.', 'the fix limit was reached' + (f ? ' for ' + f : '') + ': decide how to go on') }
     case 'unblock': { const p = list(d.plans); return need('unblock:' + p, 'Work is blocked and needs you' + (p ? ': ' + p : '') + '.', 'blocked' + (p ? ': ' + p : '') + ', VBW needs your help to go on') }
     case 'scope': return need('scope', 'Some changes went outside their planned files: your decision is needed.', 'commits changed files outside their plans: review them')
+    case 'deviations': {
+      const f = list(devFiles(d))
+      return need('deviations:' + f, 'Files VBW built were changed outside VBW' + (f ? ': ' + f : '') + '. Keep the changes or restore them?', 'changed outside VBW' + (f ? ': ' + f : '') + ': keep the changes or restore them')
+    }
     case 'milestone': return need('milestone', 'The milestone is shipped: say what to build next.', 'the milestone is shipped: choose what comes next')
     case 'convert': return need('convert', 'A VBW 1 plan is here: bring it into VBW 2 or start fresh.', 'a VBW 1 plan is here: bring it into VBW 2, or start fresh')
     default: return need('other:' + String(nx.action), 'VBW is waiting for you: run /vbw:vibe to see what for.', typeof nx.instruction === 'string' && nx.instruction ? nx.instruction : 'a decision is needed')
@@ -120,6 +126,13 @@ function answered(rec, nx, nextAt) {
     case 'unblock': return gone('plans', 'blocked')
     case 'escalate': return gone('fixes', 'escalated')
     case 'scope': return !(isObj(rec.evidence) && Array.isArray(rec.evidence.scope) && rec.evidence.scope.length > 0)
+    // Each file is settled: a restore under way for it, or a decision after the gate that names it.
+    case 'deviations': {
+      const files = devFiles(isObj(nx.detail) ? nx.detail : {}).filter((f) => typeof f === 'string' && f)
+      const restoring = (f) => rows('fixes').some((x) => x.restore === f && (x.status === 'open' || x.status === 'fixed'))
+      const decided = (f) => Number.isFinite(nextAt) && rows('decisions').some((x) => Date.parse(x.at) > nextAt && [x.text, x.why].some((t) => typeof t === 'string' && t.includes(f)))
+      return files.length > 0 && files.every((f) => restoring(f) || decided(f))
+    }
     default: return false
   }
 }

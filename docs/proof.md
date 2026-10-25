@@ -688,9 +688,27 @@ before the file was delivered does not cover it. `/vbw:fix` and `/vbw:debug`
 record such a decision for the files they change. They are changes the user asked
 for.
 
-**What QA gets.** A deviation that no decision covers sends its phase to QA. This
-holds even for a phase whose pass stood, even when only a document changed, and
-even for an `express` phase that otherwise needs no QA. The reason is
+**The user settles it first.** Only the user knows whether a change made outside
+VBW is wanted, so a deviation that no decision covers goes to the user before QA
+or shipping: `vbw next` answers `deviations` (docs/next.md) with each file, its
+plan, how it changed and by which commits. Keeping a change records a decision
+naming the file (`vbw decide`). Restoring it runs `vbw fix restore FILE...`:
+
+```text
+usage: vbw fix restore FILE [FILE...]
+```
+
+Each file gets one fix that names it (`restore`), on its plan's first
+requirement, and the fix round brings it back to what the plan made. The command
+refuses a file that is not an unsettled deviation, or one a restore is already
+under way for, and then records nothing. A restore closes when a proof finds the
+file as its plan left it, not when the checks pass: no check names such a file.
+If its fix round ends and the file still deviates, the restore opens again and
+counts an attempt, up to the fix cap.
+
+**What QA gets.** A phase that goes to QA gets its deviations with the decision
+that covers each. This holds even for a phase whose pass stood, even when only a
+document changed. The reason QA is told is
 `NOTES.md, delivered by P1.1, was deleted outside any plan`. `vbw next --json` hands
 the QA round each such phase's deviations (`round.deviations`, docs/next.md),
 with `decision` (the id of the decision that covers it, or `null`). The QA agent's

@@ -36,13 +36,13 @@ body() { sed -n '/^scenario_qafix()/,/^}/p;/^autonomy_written_before_run()/,/^}/
   body | grep -E 'passed=false' | grep -q 'guided' || { echo "the autonomy facts are not in the passed chain"; false; }
 }
 
-@test "R201: a committed result of the qafix scenario passed with autonomy guided, set before the first run, and QA's first verdict still fail, at L3" {
+@test "R201: a committed result of the qafix scenario passed with autonomy guided, set before the first run, and the deviation restored, at L3" {
   [ -f "$RESULT" ] || { echo "the qafix scenario has not been run: no result is committed"; false; }
   jq -e '.scenario == "qafix" and .evidence_level == "L3" and .passed == true
     and (.at | type == "string" and . >= "2026-10-19")
     and (.fixture | type == "string" and length > 0)
     and .facts.autonomy == "guided" and .facts.autonomy_set_before_first_run == true
-    and .facts.first_qa_verdict == "fail"
+    and .facts.asked_before_qa == true and .facts.restore_fix == true and .facts.restored_at_head == true
     and (.facts.deviation | type == "string" and length > 0)
     and .facts.fix_rounds >= 1 and .facts.final_qa_verdict == "pass" and .facts.phase_proved == true
     and (.not_tested | type == "array" and length > 0)' "$RESULT" || { cat "$RESULT"; false; }

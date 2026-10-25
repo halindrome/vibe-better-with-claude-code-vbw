@@ -6,10 +6,12 @@
 # VBW-Plan commits) must still be at HEAD as VBW's last commit of it left it. A
 # later plan's or fix's commit moves the file on, and a plan that deletes a file
 # delivers nothing for it. Any other difference is a deviation. vbw prove lists
-# the deviations in its evidence. vbw next sends their phase to QA, even an
-# express phase, and hands QA the list (round.deviations), and the QA brief names
-# each file. vbw qa record PHASE pass refuses while one stands that no later
-# decision of the user names. Only the record's own history counts (lib/history.sh):
+# the deviations in its evidence. vbw next asks the user first (the deviations
+# step): keep a change (a later decision naming the file covers it) or restore
+# it (vbw fix restore FILE opens a fix that names it). A kept deviation goes to
+# QA with its phase, even an express phase, in the round's list (round.deviations),
+# and the QA brief names each file. vbw qa record PHASE pass refuses while one
+# stands that no later decision of the user names. Only the record's own history counts (lib/history.sh):
 # plan ids restart with a new record, so a commit older than the newest commit
 # that added .vbw/record.json (a retired roadmap's VBW-Plan: P1.1) delivered
 # nothing for today's P1.1. L1: kernel commands on a two-phase fixture and on a
@@ -131,9 +133,9 @@ deviations() { jq -c '.evidence.deviations' .vbw/record.json; }
   jq -e --arg p "$plan" --arg h "$hand" --argjson t "$t" '.evidence.deviations
     == [{file: "NOTES.md", plan: "P1.1", commit: $p, at: ($t | todate), change: "deleted", by: [$h]}]' .vbw/record.json || { deviations; false; }
   vbw_run next --json
-  echo "$output" | jq -e --arg p "$plan" --arg h "$hand" '.action == "qa" and .detail.phases == ["P1", "P2"]
+  echo "$output" | jq -e --arg p "$plan" --arg h "$hand" '.action == "deviations" and .gate
     and (.qa.recheck.P1 | any(.[]; . == "NOTES.md, delivered by P1.1, was deleted outside any plan"))
-    and .round.deviations == {P1: [{file: "NOTES.md", plan: "P1.1", change: "deleted", commit: $p, by: [$h], decision: null}]}' || { echo "$output"; false; }
+    and .detail.deviations == [{phase: "P1", file: "NOTES.md", plan: "P1.1", change: "deleted", commit: $p, by: [$h]}]' || { echo "$output"; false; }
   vbw_run show phase P1
   [[ "$output" == *"deviation: NOTES.md (P1.1) deleted outside any plan, by ${hand:0:12}"* ]] || { echo "$output"; false; }
   local tier
@@ -176,7 +178,7 @@ deviations() { jq -c '.evidence.deviations' .vbw/record.json; }
   "$VBW" prove --full > /dev/null
   deviations | jq -e 'length == 1 and .[0].file == "HELP.md" and .[0].plan == "P2.1" and .[0].change == "changed"' || { deviations; false; }
   vbw_run next --json
-  echo "$output" | jq -e '.action == "qa" and .detail.phases == ["P2"] and .qa.standing == ["P1"]
+  echo "$output" | jq -e '.action == "deviations" and ([.detail.deviations[] | [.phase, .file]] == [["P2", "HELP.md"]]) and .qa.standing == ["P1"]
     and .qa.recheck.P2 == ["HELP.md, delivered by P2.1, was changed outside any plan"]' || { echo "$output"; false; }
   vbw_run qa record P2 pass standard
   [ "$status" -eq 1 ] || { echo "$output"; false; }
@@ -216,14 +218,53 @@ deviations() { jq -c '.evidence.deviations' .vbw/record.json; }
   [ "$status" -eq 0 ] || { echo "$output"; false; }
 }
 
-@test "an express phase that needs no QA goes to QA when a file its plan delivered changed outside any plan" {
+@test "a file an express phase delivered changed outside any plan stops the ship until the user settles it; kept, nothing is left for QA" {
   edit_record '(.phases[] | select(.id == "P1")).tier = "express"'
   "$VBW" qa record P2 pass standard > /dev/null
   vbw_run next --json
   echo "$output" | jq -e '.action == "ship"' || { echo "$output"; false; }
   drop_notes
   vbw_run next --json
-  echo "$output" | jq -e '.action == "qa" and .detail.phases == ["P1"] and (.round.deviations.P1 | length) == 1' || { echo "$output"; false; }
+  echo "$output" | jq -e '.action == "deviations" and ([.detail.deviations[].file] == ["NOTES.md"])' || { echo "$output"; false; }
+  "$VBW" decide "The user keeps NOTES.md deleted" > /dev/null
+  vbw_run next --json
+  echo "$output" | jq -e '.action == "ship"' || { echo "$output"; false; }
+}
+
+@test "the user chooses before QA: restoring opens one fix naming the file, which a fix brings back through its plan; QA follows the proof" {
+  local plan
+  plan=$(plan_commit)
+  drop_notes
+  vbw_run fix restore greet.sh
+  [ "$status" -eq 1 ] && [[ "$output" == *"greet.sh is not a file its plan delivered that changed outside any plan"* ]] || { echo "$output"; false; }
+  vbw_run fix restore NOTES.md
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = "F1 opened for R1: restore NOTES.md" ] || { echo "$output"; false; }
+  jq -e --arg p "$plan" '.fixes == [{id: "F1", req: "R1", restore: "NOTES.md", attempts: 0, status: "open",
+    note: "Restore NOTES.md: P1.1 delivered it (commit \($p[0:12])) and it was deleted outside any plan; the user chose to bring it back to what P1.1 made"}]' .vbw/record.json || { jq .fixes .vbw/record.json; false; }
+  vbw_run fix restore NOTES.md
+  [ "$status" -eq 1 ] && [[ "$output" == *"NOTES.md is already being restored by F1"* ]] || { echo "$output"; false; }
+  vbw_run next --json
+  echo "$output" | jq -e '.action == "fix" and .detail.fixes == ["F1"]' || { echo "$output"; false; }
+  git checkout -q "$plan" -- NOTES.md
+  "$VBW" commit P1.1 "fix(notes): bring NOTES.md back" NOTES.md > /dev/null
+  "$VBW" fix done F1 > /dev/null
+  "$VBW" prove --full > /dev/null
+  [ "$(deviations)" = '[]' ] || { deviations; false; }
+  jq -e '.fixes[0].status == "closed"' .vbw/record.json || { jq .fixes .vbw/record.json; false; }
+  vbw_run next --json
+  echo "$output" | jq -e '.action == "qa" and (.detail.phases | index("P1"))' || { echo "$output"; false; }
+}
+
+@test "a restore whose file still deviates after its fix round opens again with one more attempt; passing checks do not close it" {
+  drop_notes
+  "$VBW" fix restore NOTES.md > /dev/null
+  "$VBW" fix done F1 > /dev/null
+  "$VBW" prove --full > /dev/null
+  jq -e '.fixes[0].status == "open" and .fixes[0].attempts == 1 and .requirements[0].status == "proven"' .vbw/record.json || { jq '.fixes, .requirements' .vbw/record.json; false; }
+  edit_record '.fixes[0].restore = ""'
+  vbw_run status
+  [ "$status" -ne 0 ] && [[ "$output" == *"F1 restore must be a file path"* ]] || { echo "$output"; false; }
 }
 
 @test "the check reads the history and HEAD once: the same shell commands for 3 deviating files as for 30, with every file named" {
@@ -324,5 +365,10 @@ deviations() { jq -c '.evidence.deviations' .vbw/record.json; }
   grep -q 'round.deviations' "$REPO_ROOT/docs/next.md"
   grep -q 'evidence.deviations\|`deviations`' "$REPO_ROOT/docs/record.md"
   grep -q 'outside any plan' "$REPO_ROOT/docs/rigor.md"
+  grep -q 'vbw fix restore FILE' "$REPO_ROOT/docs/proof.md"
+  grep -q '^| 10c | .*`deviations`' "$REPO_ROOT/docs/next.md"
+  grep -q '`restore`' "$REPO_ROOT/docs/record.md"
+  "$VBW" fix --help | grep -q 'vbw fix restore FILE'
+  "$VBW" help | grep -q 'restore FILE'
   grep -q 'outside any plan' "$PLUGIN_ROOT/agents/qa.md"
 }

@@ -38,9 +38,9 @@ $ev[0] as $ev
 # that a failure is work in progress, not a defect); count a failed attempt
 # after work.
 | reduce ($req_results + $cmd_results)[] as $t (.;
-    # QA's findings (source "qa") are QA's to close: passing checks do not settle
-    # a deviation from the plan.
-    ([.fixes | to_entries[] | select(.value[$t.key] == $t.target and (.value.source // "") != "qa"
+    # QA's findings (source "qa") are QA's to close, and a restore its file's: passing
+    # checks do not settle a deviation from the plan.
+    ([.fixes | to_entries[] | select(.value[$t.key] == $t.target and (.value.source // "") != "qa" and (.value | has("restore") | not)
         and (.value.status | IN("open","fixed","escalated"))) | .key][0]) as $i
     | if $t.pass then
         (if $i != null then .fixes[$i].status = "closed" else . end)
@@ -54,6 +54,15 @@ $ev[0] as $ev
         | .fixes[$i] as $fx
         | escalate_phases([.phases[] | select($fx.req != null and (.reqs | index($fx.req))) | .id]; null; "fix \($fx.id) needs a second round"; $at)
       else .fixes[$i].note = $t.note end)
+
+# A restore (vbw fix restore) closes once its file is as its plan left it; one a fix
+# round worked whose file still deviates counts a failed attempt and opens again.
+| ([($ev.deviations // [])[].file]) as $still
+| .fixes |= map(if has("restore") and (.status | IN("open","fixed")) then
+    (if (.restore | IN($still[]) | not) then .status = "closed"
+     elif .status == "fixed" then .attempts += 1 | .status = (if .attempts >= $cap then "escalated" else "open" end)
+     else . end)
+  else . end)
 
 # A passing full test command settles a fix opened for a failing quick command.
 | if $ev.full == true and (($ev.commands.test // {}) | ok) then

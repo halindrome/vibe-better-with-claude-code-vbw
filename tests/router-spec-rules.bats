@@ -18,9 +18,14 @@ spec_step() { sed -n '/^\*\*spec\*\*/,/^\*\*plan\*\*/p' "$ROUTER"; }
 
 qa_step() { sed -n '/^\*\*qa\*\*/,/^\*\*run\*\*/p' "$ROUTER"; }
 
-@test "deviations: the router never repairs a deviating delivered file: QA judges it, a fix round restores it, the user decision covers it" {
+deviations_step() { sed -n '/^\*\*deviations\*\*/,/^\*\*accept\*\*/p' "$ROUTER"; }
+
+@test "deviations: the router never repairs a deviating delivered file: the deviations step asks the user to keep it (a decision naming it) or restore it (a fix round)" {
   qa_step | grep -qi 'never repaired by you'
-  qa_step | grep -qi 'QA judges it'
-  qa_step | grep -qi 'fix round restores'
-  qa_step | grep -q 'vbw decide'
+  qa_step | grep -q '\*\*deviations\*\* step'
+  deviations_step | grep -q '(needs user)'
+  deviations_step | grep -q 'AskUserQuestion'
+  deviations_step | grep -q 'vbw decide'
+  deviations_step | grep -q 'vbw fix restore'
+  deviations_step | grep -qi 'never repair a file yourself'
 }

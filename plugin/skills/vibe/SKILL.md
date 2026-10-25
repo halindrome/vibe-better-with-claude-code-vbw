@@ -124,7 +124,7 @@ args `{"plans": <detail.plans>, "docs": <detail.docs>, "models": ..., "rigor": .
 
 **qa**: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start qa`, Workflow `vbw:verifying` with args
 `{"phases": <detail.phases>, "tier": <detail.tier>, "round": <the whole `round` object of vbw next --json (tiers, suite, focus), never a number>, "models": ..., "rigor": ...}`. `vbw next --json` carries `round` before and after `vbw run start qa`. Report verdicts, failed checks, anything not recorded.
-A delivered file that changed or went missing outside VBW (the proof's deviations) is never repaired by you: say it in one line, then continue with `vbw next --json`. QA judges it and a fix round restores it. If the user says the change is theirs, record it with `vbw decide` naming the file; QA then passes it.
+A delivered file that changed or went missing outside VBW (the proof's deviations) is never repaired by you: the **deviations** step puts it to the user before QA.
 
 **run**: a run is open. This session's workflow still running: wait. Else
 interrupted: `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run end`, continue.
@@ -138,6 +138,8 @@ once more (`vbw fix retry <id>`), or change the requirement or its check
 (contract then needs approval again).
 
 **scope** (needs user): `vbw show evidence`; say which commits changed files outside their plan; ask how to proceed; never rewrite history.
+
+**deviations** (needs user): files VBW's plans delivered were changed outside any plan (`detail.deviations`: file, plan, change, the commits `by`). Say per file what changed and by which commit (`git show --stat <commit>`), then ask once (AskUserQuestion): "Keep the changes" (they are the user's own work, recommended when the commits are theirs), "Restore them" (back to what the plan made), or per file in their own words. Keep: `vbw decide "Keep the changes to <each file> made outside any plan" "<their reason>"`, naming every kept file. Restore: `vbw fix restore <file>...`; the fix round brings each back. Never repair a file yourself.
 
 **accept** (needs user): per requirement in `detail.requirements`, show the
 thing to judge: run it yourself when you can; put its output, or one thing to try, in the question and the
