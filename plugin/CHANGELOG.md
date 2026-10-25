@@ -1,5 +1,27 @@
 # Changelog
 
+## [2.1.15] - 2026-10-25
+
+### Fixed
+
+- **Renaming a test file no longer blocks a milestone for good.** VBW checks
+  that each step of the plan changed only the files it was allowed to. It
+  judged earlier steps by today's plan, so renaming a check's test file (for
+  example to `*.test.tsx`, so the project's tools see it) made an earlier,
+  correct step look out of bounds, and nothing could clear it. Each step is
+  now judged by what its plan allowed when it was made.
+- **You can accept a step that went outside its plan.** When VBW reports
+  `abc123456789 (P1.1) changed src/other.txt, which is not in the plan` and
+  the change is fine, a decision naming that commit and file accepts it
+  (`/vbw:vibe` asks you); before, only rewriting history could clear it.
+
+### Changed
+
+- **Setup tells you how to get VBW updates.** VBW never goes online to check
+  for a new version, and Claude Code's auto-update is off by default for
+  VBW's marketplace. The install steps and `/vbw:init` now say how to turn it
+  on: `/plugin`, Marketplaces tab, `vbw-marketplace`, Enable auto-update.
+
 ## [2.1.14] - 2026-10-25
 
 ### Added

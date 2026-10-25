@@ -187,6 +187,10 @@ Open Claude Code and run these two commands inside the session, **one at a time*
 
 Two commands, two separate inputs. Pasted together, Claude Code reads them as one command and the URL breaks.
 
+**Step 3:** Turn on updates
+
+Run `/plugin`, then Marketplaces tab, `vbw-marketplace`, Enable auto-update. Claude Code then installs each new VBW by itself and tells you to run `/reload-plugins`. It is off by default for plugins outside Anthropic's own marketplace, and VBW never goes online to check, so without it nothing tells you a new version is out.
+
 Restart Claude Code. VBW turns on what it needs (Dynamic workflows and its status line) the first time you use it. `/vbw:doctor` checks the rest.
 
 ### Updating

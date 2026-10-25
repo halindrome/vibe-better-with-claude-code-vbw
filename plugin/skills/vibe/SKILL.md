@@ -137,7 +137,7 @@ Another session's run: never end it. Ask once (AskUserQuestion): "Still running:
 once more (`vbw fix retry <id>`), or change the requirement or its check
 (contract then needs approval again).
 
-**scope** (needs user): `vbw show evidence`; say which commits changed files outside their plan; ask how to proceed; never rewrite history.
+**scope** (needs user): `vbw show evidence`; say which commits changed files outside their plan and what each change does (`git show --stat <commit>`); ask (AskUserQuestion) whether to accept each. Accept: `vbw decide "Accept <commit>: <file> <why>" "<their reason>"`, naming the commit's 12 characters and the file, then `vbw prove`. Not accepted: the change goes back through its plan or a fix; never rewrite history.
 
 **deviations** (needs user): files VBW's plans delivered were changed outside any plan (`detail.deviations`: file, plan, change, the commits `by`). Say per file what changed and by which commit (`git show --stat <commit>`), then ask once (AskUserQuestion): "Keep the changes" (they are the user's own work, recommended when the commits are theirs), "Restore them" (back to what the plan made), or per file in their own words. Keep: `vbw decide "Keep the changes to <each file> made outside any plan" "<their reason>"`, naming every kept file. Restore: `vbw fix restore <file>...`; the fix round brings each back. Never repair a file yourself.
 

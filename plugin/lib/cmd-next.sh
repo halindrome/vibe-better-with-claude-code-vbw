@@ -29,13 +29,13 @@ qa_state() {
   local d="${2:-}"
   [ -n "$d" ] || d=$(qa_digests "$1")
   qa_settle "$1" "$d"
-  printf '%s' "$1" | jq -c --slurpfile in <(printf '%s' "$d") --slurpfile ch <(qa_cache_read) --argjson fpv "$QA_FP_VERSION" '$in[0] as $inputs | $ch[0] as $cache | '"$(cat "$VBW_LIB/qa.jq")"
+  printf '%s' "$1" | jq -c --slurpfile in <(printf '%s' "$d") --slurpfile ch <(qa_cache_read) --argjson fpv "$QA_FP_VERSION" "$VBW_JQ_DEFS"'$in[0] as $inputs | $ch[0] as $cache | '"$(cat "$VBW_LIB/qa.jq")"
 }
 
 # qa_deviations RECORD: lib/qa.jq's deviations alone ({Pn: [{file, plan, change, commit, by,
 # decision}]}): the proof's evidence and the decisions decide them, so no digest is computed.
 qa_deviations() {
-  printf '%s' "$1" | jq -c --argjson inputs null --argjson cache null -f "$VBW_LIB/qa.jq" | jq -c '.deviations'
+  printf '%s' "$1" | jq -c --argjson inputs null --argjson cache null "$VBW_JQ_DEFS$(cat "$VBW_LIB/qa.jq")" | jq -c '.deviations'
 }
 
 # qa_combined RECORD [DIGESTS]: {Pn: the phase's current fingerprint}: what a

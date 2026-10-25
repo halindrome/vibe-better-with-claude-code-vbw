@@ -42,7 +42,8 @@ cache() {
     deps: ([range(1; .) | {key: "P\(.)", value: {files: "f\(.)", tests: "t\(.)", plan: "l\(.)"}}] | from_entries)}}] | from_entries'
 }
 
-qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.jq" <<< "$1"; }
+# As the kernel runs it: the shared definitions (lib/record.sh) first.
+qa() { jq -c --argjson inputs "$2" --argjson cache "$3" "$(VBW_LIB="$PLUGIN_ROOT/lib" && . "$PLUGIN_ROOT/lib/record.sh" && printf '%s' "$VBW_JQ_DEFS")$(cat "$PLUGIN_ROOT/lib/qa.jq")" <<< "$1"; }
 
 @test "qa.jq: untouched phases keep their pass; the record's passes stand" {
   run qa "$(rec 2)" "$(dig 2)" "$(cache 2)"
@@ -117,7 +118,7 @@ qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.
 }
 
 @test "qa.jq: without digests it still reports the closure and the problems" {
-  run jq -c --argjson inputs null --argjson cache null -f "$PLUGIN_ROOT/lib/qa.jq" <<< "$(rec 2 chain)"
+  run qa "$(rec 2 chain)" null null
   echo "$output" | jq -e '.closure == {"P1": [], "P2": ["P1"]} and .recheck == {} and .standing == []'
 }
 
@@ -183,7 +184,7 @@ qa() { jq -c --argjson inputs "$2" --argjson cache "$3" -f "$PLUGIN_ROOT/lib/qa.
 @test "the digests, the cache and the record give the reasons; a pass recorded in the cache stands" {
   fixture_copy p2chain
   run vbw_kernel '. "$VBW_LIB/qa-inputs.sh"; d=$(qa_digests "$(cat "$VBW_RECORD")"); qa_cache_put P2 "$d"
-    jq -c --argjson inputs "$d" --argjson cache "$(qa_cache_read)" -f "$VBW_LIB/qa.jq" "$VBW_RECORD"'
+    jq -c --argjson inputs "$d" --argjson cache "$(qa_cache_read)" "$VBW_JQ_DEFS$(cat "$VBW_LIB/qa.jq")" "$VBW_RECORD"'
   echo "$output" | jq -e '.recheck == {"P1": ["not checked yet"], "P2": ["not checked yet"]}'
   jq -e '.P2.deps | keys == ["P1"]' "$(git rev-parse --git-common-dir)/vbw/qa.json"
 }

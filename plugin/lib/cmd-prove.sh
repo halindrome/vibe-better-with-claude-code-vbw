@@ -320,9 +320,9 @@ PROVE_SCOPE_JQ='$c[0] as $c | $no[0] as $no | $park[0] as $park | $rec[0] as $r
   | ($r.plans | map(select(.phase as $p | $now | index($p) != null)) | map({key: .id, value: .files}) | from_entries) as $files
   | ($r.plans | map(.id as $i | {key: $i, value: ($r | survivor_files($i))}) | from_entries) as $own
   | {pairs,
-     scope: [$judge[] | select($park[.h] == null and $files[.p] != null) | .h[0:12] as $h | .p as $p | .f[]
+     cand: [$judge[] | select($park[.h] == null and $files[.p] != null) | .h as $h | .p as $p | .f[]
        | select(. as $f | (any($files[$p][]; covers($f)) or ($own[$p] | index($f) != null)) | not)
-       | "\($h) (\($p)) changed \(.), which is not in the plan"],
+       | {h: $h, p: $p, f: .}],
      undone: ([.cleared[], ($judge[] | select($park[.h] != null) | {commit: .h, plan: .p, by: $park[.h]})] | map(select($files[.plan] != null)))}'
 
 # prove_scope RECORD: {scope: the violations, undone: the cleared commits [{commit, plan, by}]}.
@@ -373,8 +373,50 @@ prove_scope() {
     [ "$more" = 1 ] || break
     jq -R -s -c 'split("\n") | map(select(length > 0) | {key: ., value: true}) | from_entries' "$dir/nolist" > "$dir/no"
   done
-  jq -c '{scope, undone}' "$dir/out"
+  prove_scope_then "$1" "$dir"
   vbw_guard_drop "$dir"
+}
+
+# PROVE_SCOPE_THEN_JQ, over the candidates ($o: the scope check's answer, cand
+# [{h, p, f}]), their commit times ($t: {hash: seconds}), the record versions git
+# holds from the one each candidate was made under onward ($v: [{at: seconds, rec}],
+# oldest first) and today's record ($rec). A candidate stays a violation unless its
+# plan allowed the file in one of those versions (its files, or the check files a
+# survivor let it strengthen), or a decision recorded after the commit names both
+# the commit (the 12 characters the violation shows) and the file.
+# shellcheck disable=SC2016 # a jq program
+PROVE_SCOPE_THEN_JQ='$o[0] as $o | $t[0] as $t | $v[0] as $v | $rec[0] as $r
+  | {scope: [$o.cand[] | . as $c | ($t[$c.h] // 0) as $at
+      | ([$v[] | select(.at <= $at)] | last | .at // $at) as $base
+      | select(any($v[] | select(.at >= $base) | .rec; . as $x | any(($x.plans // [])[]; .id == $c.p and any((.files // [])[]; covers($c.f))) or (($x | survivor_files($c.p)) | index($c.f) != null)) | not)
+      | select(any(($r.decisions // [])[]; (.at | fromdate) >= $at and ([.text, (.why // empty)] | join("\n") | names($c.h[0:12]) and names($c.f))) | not)
+      | "\($c.h[0:12]) (\($c.p)) changed \($c.f), which is not in the plan"],
+     undone: $o.undone}'
+
+# prove_scope_then RECORD DIR: the scope answer ({scope, undone}) from DIR/out. With no
+# candidate it is the check's own; else each candidate is judged again by the record of
+# its time and the user's decisions. Fixed cost: one git log of the commits' times, one
+# of the record's versions, one git cat-file of those since the oldest candidate.
+prove_scope_then() {
+  local dir="$2" hs=() h first
+  if ! jq -e '.cand | length > 0' "$dir/out" > /dev/null; then
+    jq -c '{scope: [], undone}' "$dir/out"
+    return 0
+  fi
+  while IFS= read -r h; do hs+=("$h"); done < <(jq -r '[.cand[].h] | unique[]' "$dir/out")
+  git log --no-walk=unsorted --format='%H %ct' "${hs[@]}" 2> /dev/null \
+    | jq -R -s -c 'split("\n") | map(select(length > 0) | split(" ") | {key: .[0], value: (.[1] | tonumber)}) | from_entries' > "$dir/times"
+  first=$(jq -r '[.[]] | min // 0' "$dir/times")
+  # The record's versions in its own history, newest first, with their times: those
+  # since the oldest candidate, and the one it was made under.
+  git log --format='%H %ct' --diff-filter=AM "${HISTORY_ARGS[@]}" -- .vbw/record.json 2> /dev/null \
+    | awk -v t="$first" '$2 >= t { print; next } { print; exit }' > "$dir/versions"
+  awk '{ print $1 ":.vbw/record.json" }' "$dir/versions" | git cat-file --batch='%(objectsize)' > "$dir/blobs" 2> /dev/null || : > "$dir/blobs"
+  jq -n -c --rawfile vs "$dir/versions" '[inputs | objects] as $recs
+    | [$vs | split("\n")[] | select(length > 0) | split(" ")[1] | tonumber] as $ats
+    | [range(0; [($recs | length), ($ats | length)] | min) | {at: $ats[.], rec: $recs[.]}] | reverse' "$dir/blobs" > "$dir/v" 2> /dev/null || printf '[]' > "$dir/v"
+  jq -n -c --slurpfile o "$dir/out" --slurpfile t "$dir/times" --slurpfile v "$dir/v" --slurpfile rec <(printf '%s' "$1") \
+    "$VBW_JQ_DEFS$COMMIT_SURVIVOR_DEFS$PROVE_SCOPE_THEN_JQ" || vbw_die "internal error: the scope check failed"
 }
 
 # One screen: what ran, what it means, what is next. $1: the causes that ran everything, one per line.
