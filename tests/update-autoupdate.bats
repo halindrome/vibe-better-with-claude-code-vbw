@@ -195,3 +195,9 @@ update_lines() {
   sed -n '/vbw doctor/,$p' "$REPO_ROOT/docs/diagnostics.md" | grep -q 'auto-update'
   grep -q 'docs/update.md' "$REPO_ROOT/docs/diagnostics.md"
 }
+
+@test "T136: new users learn at install and at setup how to turn on auto-update, since nothing else tells them a new version is out" {
+  sed -n '/^## Install/,/^### Updating/p' "$REPO_ROOT/README.md" | grep -q '^\*\*Step 3:\*\* Turn on updates'
+  sed -n '/^## Install/,/^### Updating/p' "$REPO_ROOT/README.md" | grep -q 'Marketplaces tab, `vbw-marketplace`, Enable auto-update'
+  grep -q 'Enable auto-update' "$PLUGIN_ROOT/skills/init/SKILL.md"
+}
