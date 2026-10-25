@@ -51585,7 +51585,7 @@
       "id": "F290",
       "command": "test",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "test fail"
     }
   ],
@@ -63491,6 +63491,17 @@
         "ended": "2026-10-23T18:13:07Z",
         "cost": {
           "usd": 0.096986
+        }
+      },
+      {
+        "id": "fix-20261025T143946Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-25T14:39:46Z",
+        "ended": "2026-10-25T14:45:42Z",
+        "cost": {
+          "usd": 0.311695
         }
       }
     ],
