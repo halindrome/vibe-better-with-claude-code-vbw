@@ -52746,6 +52746,13 @@
       "sort": "later",
       "size": "small",
       "status": "open"
+    },
+    {
+      "id": "T184",
+      "text": "Timeline during a proof (owner, 2026-10-25): while vbw prove runs, the Timeline tab says 'No VBW workflow runs in this session right now', which reads as if nothing is happening. Say a proof is running (checks done of total) and point to the Proof tab",
+      "sort": "later",
+      "size": "small",
+      "status": "open"
     }
   ],
   "decisions": [
