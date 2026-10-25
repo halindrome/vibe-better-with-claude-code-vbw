@@ -21,6 +21,10 @@
 
 - **A setting's name keeps its gap in Settings** when its choices are wide
   ("your level" no longer runs into its first choice).
+- **Proofs reuse earlier results correctly on the night the clocks go back.**
+  During the hour that happens twice, a proof could lose track of which files
+  each check read, and ran every check again; on some Linux systems it could
+  not record them at all.
 
 ## [2.1.12] - 2026-10-24
 
