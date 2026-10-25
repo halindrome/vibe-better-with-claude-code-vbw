@@ -66042,5 +66042,26 @@
       "at": "2026-10-16T02:28:25Z",
       "reason": "scope violation: 32f17ce8f51d (P144.3) changed tests/panel/r189/now-box.test.mjs, which is not in the plan"
     }
-  ]
+  ],
+  "recommendation": {
+    "at": "2026-10-25T15:26:10Z",
+    "top": {
+      "text": "Fix the Timeline tab during a proof: while `vbw prove` runs (the proof is VBW running all the project's checks), the Timeline tab currently says 'No VBW workflow runs in this session right now', which looks like nothing is happening. Change it to say a proof is running, show checks done of total, and point to the Proof tab.",
+      "size": "small",
+      "reason": "You reported this today, it misleads anyone watching the panel during every proof, and it is a small, self-contained change to the panel with no effect on how proofs or the record work.",
+      "source": "T184"
+    },
+    "runners": [
+      {
+        "text": "Slots held while units run, the rest: the 'slot store' is the file that limits how many checks run at once across all your projects. Taking a slot currently runs jq (the JSON tool) while holding the lock, so other units wait about 18 ms half the time, and each unit change costs two steps. Do the jq work on a copy outside the lock and lock only to compare and rename, or let a runner pass its slot straight to the next unit. Measured at 6.08 of 7 slots used on average; target 6.5.",
+        "size": "small",
+        "source": "T183"
+      },
+      {
+        "text": "Cost per correct outcome: measure and present VBW's cost as cost per proven, safe result rather than tokens per turn (ten cheap turns that ship broken code waste more than five dearer turns that ship proven code). This is positioning and reporting work, medium in size, placed after 2.1.0 by D491, so it fits once the two small items are done.",
+        "size": "medium",
+        "source": "T10"
+      }
+    ]
+  }
 }
