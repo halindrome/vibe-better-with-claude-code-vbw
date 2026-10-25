@@ -167,8 +167,6 @@ Three design choices worth knowing:
 
 How many agents? One Dev for every plan in a wave, all at the same time, and VBW keeps the wave as wide as the file boundaries allow: ten plans that touch different files means ten Devs at once.
 
-Inspired by **[Ralph](https://github.com/frankbria/ralph-claude-code)** and **[Get Shit Done](https://github.com/glittercowboy/get-shit-done)**; the architecture is new.
-
 ---
 
 ## Install
