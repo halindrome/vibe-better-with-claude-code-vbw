@@ -12,6 +12,9 @@ load machine-helper
 
 setup() {
   machine_setup
+  # A proof gives this file's own unit its share of the cores through these variables;
+  # the cases below start from an environment that sets none of them.
+  unset CARGO_BUILD_JOBS GOMAXPROCS MAKEFLAGS
   # tests/env.sh NAME appends "NAME cargo=.. go=.. make=.." to $TEST_ROOT/env.log.
   mkdir -p "$PROJECT/tests"
   printf '%s\n' 'printf "%s cargo=%s go=%s make=%s\n" "$1" "${CARGO_BUILD_JOBS-unset}" "${GOMAXPROCS-unset}" "${MAKEFLAGS-unset}" >> "$TEST_ROOT/env.log"' > "$PROJECT/tests/env.sh"
