@@ -385,6 +385,10 @@ record_commit() {
 VBW_JQ_DEFS='def next_id($p): (([.[]?.id | ltrimstr($p) | tonumber?] | max) // 0) + 1 | "\($p)\(.)";
 def next_fix_id: (.fixes + [(.parked // [])[].ids[]? | select(startswith("F")) | {id: .}]) | next_id("F");
 def covers($p): . as $e | $e == $p or (($e | endswith("/")) and ($p | startswith($e)));
+# A text names $f (a path or a commit) as a word of its own: a closing dot of a sentence, or a
+# leading ./, does not hide it; NOTES.md names neither NOTES.md.bak nor docs/NOTES.md.
+def names($f): split($f) as $s | any(range(0; ($s | length) - 1);
+  ($s[.] | test("(^|[^A-Za-z0-9_./-])(\\./)?$")) and ($s[. + 1] | test("^\\.*([^A-Za-z0-9_./-]|$)")));
 def overlaps($a; $b): any($a[], $b[]; . == "*") or any($a[]; . as $x | any($b[]; . as $y | ($x | covers($y)) or ($y | covers($x))));
 def proof_complete: (.evidence.commands // {}) as $m | .evidence.full != false
   or ((($m | has("quick")) and $m.quick.status != "skipped" and ($m | has("test") | not)) | not)

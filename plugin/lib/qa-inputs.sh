@@ -62,7 +62,7 @@ qa_digests() {
        auto: [$r.requirements[] | select(.proof == "auto" and (.id as $q | $ph.reqs | index($q))) | {id, text}],
        plan: {goal: $ph.goal, criteria: $ph.criteria,
               plans: [$r.plans[] | select(.phase == $ph.id) | {id, title, reqs: [.reqs[]? | select(. as $q | $aid | index($q))], files, after, tasks}]}} | tojson)')
-  cl=$(printf '%s' "$1" | jq -c --argjson fpv "$QA_FP_VERSION" --argjson inputs null --argjson cache null -f "$VBW_LIB/qa.jq" | jq -c '.closure')
+  cl=$(printf '%s' "$1" | jq -c --argjson fpv "$QA_FP_VERSION" --argjson inputs null --argjson cache null "$VBW_JQ_DEFS$(cat "$VBW_LIB/qa.jq")" | jq -c '.closure')
   while IFS=$'\t' read -r id line; do
     out=$(printf '%s' "$out" | jq -c --arg id "$id" --arg c "$(printf '%s' "$line" | vbw_sha256)" --slurpfile own <(printf '%s' "$own") --slurpfile cl <(printf '%s' "$cl") \
       '. + {($id): ($own[0][$id] + {combined: $c, deps: $cl[0][$id]})}')

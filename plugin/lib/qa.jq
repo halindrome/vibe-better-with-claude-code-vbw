@@ -48,9 +48,7 @@
 # delivered the file and its text or reason names the file's path: as a word of
 # its own (a sentence's closing dot, or a leading ./, does not hide it; NOTES.md
 # names neither NOTES.md.bak nor docs/NOTES.md).
-| (def names($f): split($f) as $s | any(range(0; ($s | length) - 1);
-       ($s[.] | test("(^|[^A-Za-z0-9_./-])(\\./)?$")) and ($s[. + 1] | test("^\\.*([^A-Za-z0-9_./-]|$)")));
-   [($r.evidence.deviations // [])[] | . as $d | ($owner[.plan]) as $p | select($p != null and ($p | IN($ids[])))
+| ([($r.evidence.deviations // [])[] | . as $d | ($owner[.plan]) as $p | select($p != null and ($p | IN($ids[])))
     | {phase: $p, d: ({file, plan, change, commit, by}
         + {decision: (first($r.decisions[]? | select(.at >= $d.at and ([.text, (.why // empty)] | join("\n") | names($d.file))) | .id) // null)})}]
    | group_by(.phase) | map({key: .[0].phase, value: map(.d)}) | from_entries) as $deviations

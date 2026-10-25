@@ -591,7 +591,20 @@ form in `.vbw/spec.md`.
 4. Scope: every commit of the record's own history
    ([Whose commits VBW judges](#whose-commits-vbw-judges)) with a `VBW-Plan:`
    trailer naming a plan of the current milestone must change only that plan's
-   files. A shipped milestone's commits
+   files. Each commit is judged by what its plan allowed when it was made: a
+   file the plan listed, or a check file a mutation survivor let it
+   strengthen, in the version of the record the commit was made under or any
+   later one, as well as today's. A file a later change renamed or dropped
+   (a check's test file renamed for the project's test runner) leaves its
+   earlier commits in scope. Only a commit that looks out of scope today is
+   judged again this way: one git listing of the record's versions and one
+   read of those since the oldest such commit. A file no version allowed is
+   a violation (`abc123456789 (P1.1) changed src/other.txt, which is not in
+   the plan`). The user accepts one by a decision recorded after the commit
+   that names both the commit (those 12 characters) and the file (`vbw decide
+   "Accept abc123456789: src/other.txt holds the receipts"`); it names both
+   the commit and the file, so it accepts that violation and no other.
+   A shipped milestone's commits
    were judged by its own proofs and are not judged again, nor are the commits
    a park undid (their `git revert` is in the loop's `reverts`): their changes
    are gone, even when git had to merge the revert over a later change.

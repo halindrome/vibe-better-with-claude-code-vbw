@@ -126,7 +126,7 @@ adding the one phase with `vbw apply --add` (docs/rigor.md).
 | 5 | plans ready to build: not `done`, not `blocked`, every `after` plan `done` | `build` (one wave: the ready plans in order, skipping any that shares a file with one already in the wave). When a plan is `blocked`, the instruction names it with its reason and `detail.blocked` lists `{id, note}`; plans that depend on it wait, unrelated plans still run | no |
 | 6 | no plan is ready and a plan is `blocked` | `unblock` (a Dev reported a blocker; `detail.plans` and `detail.blocked` name every blocked plan and its reason) | yes |
 | 7 | a fix is `escalated` | `escalate` (the fix cap was reached) | yes |
-| 8 | current evidence has scope violations | `scope` (commits changed files outside their plans) | yes |
+| 8 | current evidence has scope violations | `scope` (commits changed files outside their plans; the user accepts one with a decision naming its commit and file, docs/proof.md) | yes |
 | 9 | a fix is `open` | `fix` (`detail.fixes`, and `detail.groups`: fixes whose files overlap, one Dev each; a project command's fix may touch any file) | no |
 | 10 | an `auto` requirement is not `proven`, or the evidence is stale (another contract, or the project files changed since; docs/proof.md) | `prove` | no |
 | 10c | a file a plan of the current milestone delivered changed outside any plan, with no decision of the user covering it and no restore under way for it (docs/proof.md, Delivered files) | `deviations` (`detail.deviations`: `{phase, file, plan, change, commit, by}` for each; the user keeps each change, `vbw decide` naming the file, or restores it, `vbw fix restore FILE...`) | yes |
