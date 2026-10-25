@@ -47,7 +47,7 @@ Last line above, or the value just set, = how much VBW does alone. Approval, `ac
 ## Loop
 
 Do step for `action`, run `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw next --json`, do next step. Stop when `gate` is
-true, or a workflow runs in background (its result wakes you).
+true, or a workflow runs in background (its result wakes you). A workflow result is the object it returns; when Claude Code saves it to a file, the object sits under `result` (read a field with jq, never by hand).
 At a stop, say what happened.
 Every stop ends with a last line, **What I need from you:** <the one thing user must do now>, or "nothing".
 Claim only what kernel shows.
@@ -62,7 +62,7 @@ When `rename_hint` in `vbw next --json` is a sentence, say it once, as given. Ne
 
 Before `spec` or a workflow `plan`: code and no `.vbw/map.md` → map first:
 `VBW_SESSION_ID=${CLAUDE_SESSION_ID} vbw run start map`, Workflow `vbw:mapping` (args as above),
-write its `map` to `.vbw/map.md`, read it.
+write its `map` to `.vbw/map.md` (from a saved file: `jq -er '.result.map' FILE > .vbw/map.md`), read it.
 
 Then, `profile.ask` true: follow `vbw:interview` before any spec or convert work; resume at
 `profile.pending`; unrecognised answer: ask again, record nothing.
