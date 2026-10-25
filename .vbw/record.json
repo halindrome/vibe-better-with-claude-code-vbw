@@ -1,6 +1,15 @@
 {
   "schema": 4,
-  "lease": null,
+  "lease": {
+    "run": "qa-20261025T145822Z",
+    "kind": "qa",
+    "started_at": "2026-10-25T14:58:22Z",
+    "files": [],
+    "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+    "cost": {
+      "usd": 2474.549203
+    }
+  },
   "protected": [
     "tests/adaptive-results.bats",
     "tests/agent-scratch.bats",
@@ -22849,7 +22858,15 @@
           "to": "deep",
           "reason": "proven requirement R202 failed"
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "e82ce7986f9f24ecaa9f1bf242ac63317302e3603fd55cb2e6d4170e901a4500",
+        "at": "2026-10-25T15:01:39Z",
+        "note": "10/13 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P162",
@@ -51616,6 +51633,105 @@
       "attempts": 0,
       "status": "closed",
       "note": "C434 fail (exit 1)"
+    },
+    {
+      "id": "F292",
+      "req": "R202",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: plugin/lib/prooftime.sh (delivered by P161.1) was changed outside any plan by commits 6e1d6311 (2026-10-23, 'say why a proof is long before it starts': adds a first 'run again: N of M units; top reasons' line and the shared ranking PROOFTIME_RANK_JQ/prooftime_top) and c37fbe31 (2026-10-21, 'VBW's own work counts every step up to the record': changes the timer into prooftime_step/prooftime_mark tiles). No decision in 'vbw show decisions' covers either (D482/D485 only record measurements; D490 skips QA, it is not consent to the change). The code reads correct and docs/proof.md describes both. Regression test to add: none for behaviour; the fix is a user decision recorded with 'vbw decide' naming prooftime.sh and both commits (or a plan that owns the change).",
+      "phase": "P161"
+    },
+    {
+      "id": "F293",
+      "req": "R202",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: tools/l3.sh (delivered by P161.1) was changed outside any plan by 2bc14124 and e54013ea (2026-10-24, no printf/echo piped into a quiet grep), 55baa884 (2026-10-21, 'main is VBW's home branch; v2 retired') and e9a68b84 (2026-10-20, a Revert of the P161.1 debug-log commit, so tools/l3.sh went back to its earlier form). No decision covers them; D487 covers a commit undone by a git revert for the scope check only. Regression test: none needed for behaviour; record a decision (vbw decide) covering these four commits on tools/l3.sh, or assign them to a plan.",
+      "phase": "P161"
+    },
+    {
+      "id": "F294",
+      "req": "R204",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "plugin/lib/cmd-prove.sh (P165.1) was changed after the plan by commits no recorded decision covers. R204's own follow-ups: a5eabf04 'perf(R204): the scope check sorts the history out in jq' rewrote prove_scope from the planned bash 'read -r -d' loop over ONE git log walk into two walks (a counting walk plus a bounded raw walk with --max-count) and a jq program that re-runs while 'git merge-base' rejects a pair; the plan and the criterion say one walk, and docs/proof.md now says '2 git processes plus one per undone pair'. D487 only decides that an exactly-undone commit is not judged; it does not cover the changed mechanism. Other, unrelated commits touching the same file with no covering decision: b45afa79, 076b1245, 6e1d6311, 666c1c87, ad22e59d, 907e3837, 0fa41cfc, e52ff7b2, c37fbe31, 685624fb. The behaviour looks right (tests/scope-undone.bats and tests/scope-history.bats exist, the full test run passed), so the fix is a recorded user decision accepting these changes, or updating the plan. Regression test idea: none for behaviour; the gap is the missing decision.",
+      "phase": "P165"
+    },
+    {
+      "id": "F295",
+      "req": "R202",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: tools/l3-suite.sh (delivered by P161.5, the greenfield report-line check) was changed outside any plan by 20 commits: d7f73771, 9d337c8a, 2bc14124, 88f618de, ea44b913, 73f98d31, 2f26efa3, 3d2ff29f, df907c74, 208083c5, e54013ea, a290a89e, 76bc321a, aafc139d, c6a59ce0, 6effe97f, 740b06f4, 9ef2ebec, e10808f0, ba216d91 (2026-10-21 to 2026-10-24: new scenarios failoutput, fixchecks, taskbreak, sessions; fixes to docs, decision, leftover, balanced, panel scenarios; staggered starts). No decision covers them (D98 and D86 are older and cover other files/commits). Regression test: none for behaviour (tests/l3-greenfield-report.bats passed); record one decision covering the l3-suite.sh scenario work of those commits, or assign them to a plan.",
+      "phase": "P161"
+    },
+    {
+      "id": "F296",
+      "req": "R202",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: plugin/lib/proofcauses.sh (P162.2) was changed after the plan by ad22e59d42fe (fix(proof): new or deleted file re-runs only what read lists reach; removes the prove.unfinished marker and most of the file) and 8950893557c7 (fix(R202): bounded causes summary). No decision of the user names this path at or after those commits (D485 predates them). The code is consistent with the phase goal and tests are green, but the change is outside any plan and uncovered. Regression test: none needed for behaviour; the owner records a decision naming plugin/lib/proofcauses.sh covering both commits.",
+      "phase": "P162"
+    },
+    {
+      "id": "F297",
+      "req": "R204",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "plugin/lib/cmd-show.sh (P165.2) was changed after the plan by commits no decision covers: 304cebfa (apply: reword/retire a rule), a99fba00 (qa interleaved phases), b45afa79, 076b1245, 5f4e2950 (show req lists only the record's own commits), 53a07960 (contract says why a plan waits), 907e3837, 953ad723, e52ff7b2, 71a55219 (costs), 8674376f (mutate: one break per rule; this one falls under D491's T174 scope). P165.2 only planned the evidence view's 'scope: ... undone by ..., not judged' line, which is present at cmd-show.sh:178. The extra edits belong to other work and need a user decision (or a plan) naming them. Regression test idea: none; recording the decision is the fix.",
+      "phase": "P165"
+    },
+    {
+      "id": "F298",
+      "req": "R203",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: plugin/lib/cmd-mutate.sh (P164.1) changed after P164 shipped (2026-10-20) by commits no decision covers: 23aa2b44 (queue rule breaks, T174), d4d4be1d (checks keep results apart), f535e10b (usage names the rule --none form), 206b6b52 (names the limit of the --none verdict), 47d9acdb (proof ties a check to its plans' files), 304cebfa (reword or retire a rule by address). D491 lists T174 as 2.1.0 scope but names no commit or file change. A regression test should catch: the delivered-files check reports no uncovered change once a decision names these commits.",
+      "phase": "P164"
+    },
+    {
+      "id": "F299",
+      "req": "R204",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "plugin/lib/record.jq (P165.2) was changed after the plan by commits no decision covers: 7f434be9 (effort per helper, schema 5), 1006c879 and 91bcdef1 (sound setting), a356babf (loop item time, stepped_at), 304cebfa (retire a rule), 6d0c31d1 (loop budget from road), 907e3837 (qa delivered-files check), e52ff7b2 (check_budget), 71a55219 (costs). P165.2's own validator rule for evidence.undone is present (record.jq:360-363). The other edits are unrelated features and need a recorded user decision or a plan. Regression test idea: none; recording the decision is the fix.",
+      "phase": "P165"
+    },
+    {
+      "id": "F300",
+      "req": "R202",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: plugin/lib/testfiles.sh (P162.2) was changed after the plan by 076b12455d63 (tenths-of-a-second unit time), b25b3a015328 (testfiles_run units from one pass; folds testfiles_argv/testfiles_limit) and 605803fc0cbd (fix done asks for the approved contract only when something will run). No user decision names this path at or after those commits. Behaviour is covered by tests (unit-time.bats, testfiles-run.bats, fix-done-unapproved.bats) but the change is outside any plan and uncovered. Needed: a user decision naming plugin/lib/testfiles.sh covering the three commits.",
+      "phase": "P162"
+    },
+    {
+      "id": "F301",
+      "req": "R204",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "docs/loop.md (P165.3) was changed after the plan by commits no decision covers: 49010750 (what counts as an item's time, how an item resumes), 6d0c31d1 (budget from planned road), 71a55219 (costs). The P165.3 text (park and hand revert clear a commit the same way, loop.md:312) is present. Needs a recorded user decision or a plan naming the other edits. Regression test idea: none.",
+      "phase": "P165"
+    },
+    {
+      "id": "F302",
+      "req": "R202",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: plugin/lib/steps.sh (P162.3) was changed after the plan by 6e1d63115d18 (top reason in step.why), ad22e59d42fe (the unfinished-marker part of the cache key removed, which P162.3 task 2 required), 3c7bb8b66a2c (step ordering in the same second), d031f4c91c88 (cache also keyed on the git index), 8478c761b7b4 (unit list never on a command line) and 9ed3153b5279 (build-wave timing). The cache key now differs from the plan text (no marker; index added). No user decision names steps.sh at or after those commits. Needed: a user decision naming plugin/lib/steps.sh covering these commits.",
+      "phase": "P162"
     }
   ],
   "todos": [
