@@ -14708,7 +14708,7 @@
       "id": "R202",
       "text": "Proof speed on a Rust project (user-project feedback 2026-10-19; owner agreed 2026-10-19; after the Dev unblock item, with T129): measure on a user project why fix done reuses so little (17 of 184) and the CPU of VBW's own read/write tracking (jq near 100% for minutes, load 23-66; also seen 2026-10-19 here: vbw next over 2 min), then make the tracking cheap and count VBW's own work in the machine-wide limit",
       "proof": "auto",
-      "status": "failing",
+      "status": "proven",
       "milestone": "M42",
       "rules": [
         {
@@ -51614,7 +51614,7 @@
       "id": "F291",
       "req": "R202",
       "attempts": 0,
-      "status": "fixed",
+      "status": "closed",
       "note": "C434 fail (exit 1)"
     }
   ],
@@ -55502,10 +55502,10 @@
     }
   },
   "evidence": {
-    "at": "2026-10-25T14:47:12Z",
+    "at": "2026-10-25T14:54:02Z",
     "contract": "a8b0033545057ea03f6c651d4912df8f48170398a8ccc0cb6b08c6341c22ee1f",
-    "tree": "a6460df830327f8322595adb2987b41722b36a0e",
-    "head": "a6460df830327f8322595adb2987b41722b36a0e",
+    "tree": "aaa829fe10ab417e103fa14c275a9b6615f0c1aa",
+    "head": "aaa829fe10ab417e103fa14c275a9b6615f0c1aa",
     "checks": {
       "C1": {
         "status": "pass",
@@ -57787,10 +57787,10 @@
       "C259": {
         "status": "pass",
         "exit": 0,
-        "seconds": 1.1,
+        "seconds": 0.9,
         "tail": "1..5\nok 1 R167: VBW's spec declares its single-file form: bats on one file\nok 2 R167: VBW's declared test files are every tracked tests/*.bats except the timed ones\nok 3 R167: VBW's spec names the shell lint as its own project command\nok 4 R167: bash tools/test.sh --lint runs shellcheck on every shell file under tools/ and runs no test file\nok 5 R167: tools/test.sh keeps its usage line and documents --lint in it",
         "fp": "a4c3fc4a1c937f7ed83dbad83a14a23b4a955b4576464496a0b301351ed0b484",
-        "at": "2026-10-25T14:47:12Z",
+        "at": "2026-10-25T14:54:02Z",
         "why": "reads the project through git"
       },
       "C260": {
@@ -59360,12 +59360,12 @@
         "reused": true
       },
       "C434": {
-        "status": "fail",
-        "exit": 1,
-        "seconds": 34.6,
-        "tail": "1..4\nok 1 R202: --generate builds a stand-in of at least the asked size, approved, with cache-writing and cache-reading units\nnot ok 2 R202: the measurement prints every figure for a proof, a one-file fix round and vbw next\n# (in test file tests/measure-proof-speed.bats, line 72)\n#   `[ \"$status\" -eq 0 ] || { echo \"$output\"; false; }' failed\n# /Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/.vbw/runtime/proof.90603.yMvlwD/tree/tools/measure-proof-speed.sh: line 254: /var/folders/xl/6lk7wfr15t79zn7fpz2lm1q80000gn/T/tmp.lA9RFpgOrY/measure/project/.vbw/runtime/proof.2590.sL4qnD/reads/written.json: No such file or directory\n# Last output:\n# /Users/tiagoserodio/Documents/AI Stuff/vibe-better-with-claude-code-vbw-worktrees/v2/.vbw/runtime/proof.90603.yMvlwD/tree/tools/measure-proof-speed.sh: line 254: /var/folders/xl/6lk7wfr15t79zn7fpz2lm1q80000gn/T/tmp.lA9RFpgOrY/measure/project/.vbw/runtime/proof.2590.sL4qnD/reads/written.json: No such file or directory\nok 3 R202: the sampler of the written-file lists polls at least five times a second, so a fast proof is still seen\nok 4 R202: nothing of a real user project is in the tool or in what it generates",
+        "status": "pass",
+        "exit": 0,
+        "seconds": 34.5,
+        "tail": "1..4\nok 1 R202: --generate builds a stand-in of at least the asked size, approved, with cache-writing and cache-reading units\nok 2 R202: the measurement prints every figure for a proof, a one-file fix round and vbw next\nok 3 R202: the sampler of the written-file lists polls at least five times a second, so a fast proof is still seen\nok 4 R202: nothing of a real user project is in the tool or in what it generates",
         "fp": "23729cd8ad38ab6e167a995bfb1b9288496cd3335bae0e6b534d82be4f5e38a7",
-        "at": "2026-10-25T14:47:12Z",
+        "at": "2026-10-25T14:54:02Z",
         "why": "reads the project through git"
       },
       "C435": {
@@ -59470,9 +59470,9 @@
       "C446": {
         "status": "pass",
         "exit": 0,
-        "seconds": 13.9,
+        "seconds": 11.9,
         "tail": "1..1\nok 1 R202: --two runs two proofs at once and reports the most slots held against the machine limit",
-        "at": "2026-10-25T13:42:15Z",
+        "at": "2026-10-25T14:52:27Z",
         "fp": "8f4bb0a469eedae6f6f958bcb3ed21aafa8f17c526713029d67964f809bf5368",
         "reused": true
       },
@@ -59553,16 +59553,16 @@
       "lint": {
         "status": "pass",
         "exit": 0,
-        "seconds": 3.9,
+        "seconds": 4.0,
         "tail": "bash: 3.2.57(1)-release",
-        "at": "2026-10-25T13:42:15Z",
         "fp": "065b393b71dee4232b9b45e3d96e4a1a6552ad444e6fa87346b5ac33b420c740",
-        "reused": true
+        "at": "2026-10-25T14:54:02Z",
+        "why": "tools/measure-proof-speed.sh changed"
       },
       "test": {
         "status": "pass",
         "exit": 0,
-        "seconds": 2018.2,
+        "seconds": 2019.2,
         "tail": "",
         "command": "bats --print-output-on-failure {file} (one test file per run)",
         "of_files": true
@@ -60328,10 +60328,10 @@
       "tests/standards-selftest.bats": {
         "status": "pass",
         "exit": 0,
-        "seconds": 71.9,
+        "seconds": 72.9,
         "tail": "ok 3 process killing is caught\nok 4 the signal-free liveness probe kill -0 passes, any other kill is caught\nok 5 /tmp paths are caught\nok 6 git path listings without -z are caught, with -z pass\nok 7 plugin-root discovery is caught\nok 8 a clean file breaks no rule\nok 9 hooks naming a missing file are caught\nok 10 per-tool-call hooks that start a shell or can exit non-zero are caught\nok 11 per-tool-call hooks: only assignments and [ ] tests may come before jq, and the command must end in || true\nok 12 the vision rule check passes on the repository as it is\nok 13 the vision rule check catches the rule removed from a contributor file\nok 14 the vision rule check catches the rule moved below another rule in AGENTS.md\nok 15 the privacy guard lists the files that hold a word, in any case, and never the word\nok 16 the privacy guard passes a clean tree: comments and blank lines in the list are not words\nok 17 the privacy guard checks nothing, and says so, without a list or without words\nok 18 the privacy guard in tracked mode reads every tracked file of this repository, .vbw/ included\nok 19 the privacy guard refuses bad usage\nok 20 the hook answer check passes on the repository as it is\nok 21 the hook answer check catches a new unpinned answer shape\nok 22 the hook answer check catches a hook that answers allow",
         "fp": "cea597da7e37298b1c50fd07c24fcfcd6ab9c1e90cc14912ac62ec844e47ba39",
-        "at": "2026-10-25T14:47:12Z",
+        "at": "2026-10-25T14:54:02Z",
         "why": "reads the project through git"
       },
       "tests/standards.bats": {
@@ -60340,7 +60340,7 @@
         "seconds": 11.3,
         "tail": "1..17\nok 1 no eval or data-as-code (ledger D108, D139)\nok 2 no bash-4-only features: macOS /bin/bash 3.2 is the floor (K2, ledger D294)\nok 3 never terminates processes (ledger D54, D285–D288)\nok 4 no predictable /tmp paths or writes outside the project (K3, ledger D296)\nok 5 git path listings are NUL-separated (ledger D293)\nok 6 no plugin-root discovery: paths come from ${CLAUDE_PLUGIN_ROOT} substitution or $0 (K4)\nok 7 shell files parse on the minimum bash and pass shellcheck\nok 8 plugin manifests are valid\nok 9 hooks.json is valid and every file a hook names exists in hooks/\nok 10 per-tool-call hooks run jq directly and never exit non-zero (K20)\nok 11 Claude Code's own validator accepts the plugin and the marketplace\nok 12 no brace-literal parameter defaults (a default of {} written inside the expansion): bash 3.2 keeps the backslash (tests and tools too)\nok 13 the vision rule is VBW's first development rule, and every contributor file states it (owner mandate, 2026-10-06)\nok 14 every answer a hook gives Claude Code has a test pinning its meaning, and no hook answers allow (R128)\nok 15 no tracked file, .vbw/ included, names a private project of the owner (owner rule, 2026-10-21; needs the maintainer-local list, skipped without it)\nok 16 no shell code pipes into a quiet grep: grep -q stops early, and under pipefail the producer's SIGPIPE fails the pipeline (tools/check-pipefail-grep.sh)\nok 17 self-test: the pipefail rule refuses each quiet grep after a pipe, whatever the producer, naming its line, and passes every form that reads to the end",
         "fp": "0081e8d9fb717ee39eded21e9282e34e071705efe4349f4a472013dd63d63d6c",
-        "at": "2026-10-25T14:47:12Z",
+        "at": "2026-10-25T14:54:02Z",
         "why": "reads the project through git"
       },
       "tests/statusline.bats": {
@@ -60661,17 +60661,6 @@
         ]
       },
       {
-        "file": "tools/measure-proof-speed.sh",
-        "plan": "P163.3",
-        "commit": "ef53015962d71220aaec508e3543236edd50ac6d",
-        "at": "2026-10-20T14:22:48Z",
-        "change": "changed",
-        "by": [
-          "f8ceb4d1fa008d3392309c3d915b21756e8503be",
-          "4e61e7e73b5f5f788c313fcf252a572b9f2101fb"
-        ]
-      },
-      {
         "file": "plugin/lib/cmd-mutate.sh",
         "plan": "P164.1",
         "commit": "5fb663f141f32d5c386e2abce5f3fc8698a1529f",
@@ -60873,15 +60862,15 @@
     ],
     "causes": [],
     "full": false,
-    "passed": false,
-    "record": "37d304308c15357c8266d0c6882333b55c0e0a6732a35a30746dd2d7b3530738",
+    "passed": true,
+    "record": "beda3da435bc055f8fbabe26ebfe8b17ce89ce90c73bcdca18113b410e880f8c",
     "own": {
-      "planning": 18.278,
-      "copies": 18.615,
-      "tracking": 0.808,
-      "saving": 1.527,
-      "record": 9.058,
-      "wall": 159.026
+      "planning": 18.337,
+      "copies": 18.956,
+      "tracking": 0.925,
+      "saving": 1.524,
+      "record": 9.024,
+      "wall": 166.311
     }
   },
   "recommendation": {
