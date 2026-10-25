@@ -51662,7 +51662,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: plugin/lib/prooftime.sh (delivered by P161.1) was changed outside any plan by commits 6e1d6311 (2026-10-23, 'say why a proof is long before it starts': adds a first 'run again: N of M units; top reasons' line and the shared ranking PROOFTIME_RANK_JQ/prooftime_top) and c37fbe31 (2026-10-21, 'VBW's own work counts every step up to the record': changes the timer into prooftime_step/prooftime_mark tiles). No decision in 'vbw show decisions' covers either (D482/D485 only record measurements; D490 skips QA, it is not consent to the change). The code reads correct and docs/proof.md describes both. Regression test to add: none for behaviour; the fix is a user decision recorded with 'vbw decide' naming prooftime.sh and both commits (or a plan that owns the change).",
       "phase": "P161"
     },
@@ -51671,7 +51671,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: tools/l3.sh (delivered by P161.1) was changed outside any plan by 2bc14124 and e54013ea (2026-10-24, no printf/echo piped into a quiet grep), 55baa884 (2026-10-21, 'main is VBW's home branch; v2 retired') and e9a68b84 (2026-10-20, a Revert of the P161.1 debug-log commit, so tools/l3.sh went back to its earlier form). No decision covers them; D487 covers a commit undone by a git revert for the scope check only. Regression test: none needed for behaviour; record a decision (vbw decide) covering these four commits on tools/l3.sh, or assign them to a plan.",
       "phase": "P161"
     },
@@ -51680,7 +51680,7 @@
       "req": "R204",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "plugin/lib/cmd-prove.sh (P165.1) was changed after the plan by commits no recorded decision covers. R204's own follow-ups: a5eabf04 'perf(R204): the scope check sorts the history out in jq' rewrote prove_scope from the planned bash 'read -r -d' loop over ONE git log walk into two walks (a counting walk plus a bounded raw walk with --max-count) and a jq program that re-runs while 'git merge-base' rejects a pair; the plan and the criterion say one walk, and docs/proof.md now says '2 git processes plus one per undone pair'. D487 only decides that an exactly-undone commit is not judged; it does not cover the changed mechanism. Other, unrelated commits touching the same file with no covering decision: b45afa79, 076b1245, 6e1d6311, 666c1c87, ad22e59d, 907e3837, 0fa41cfc, e52ff7b2, c37fbe31, 685624fb. The behaviour looks right (tests/scope-undone.bats and tests/scope-history.bats exist, the full test run passed), so the fix is a recorded user decision accepting these changes, or updating the plan. Regression test idea: none for behaviour; the gap is the missing decision.",
       "phase": "P165"
     },
@@ -51689,7 +51689,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: tools/l3-suite.sh (delivered by P161.5, the greenfield report-line check) was changed outside any plan by 20 commits: d7f73771, 9d337c8a, 2bc14124, 88f618de, ea44b913, 73f98d31, 2f26efa3, 3d2ff29f, df907c74, 208083c5, e54013ea, a290a89e, 76bc321a, aafc139d, c6a59ce0, 6effe97f, 740b06f4, 9ef2ebec, e10808f0, ba216d91 (2026-10-21 to 2026-10-24: new scenarios failoutput, fixchecks, taskbreak, sessions; fixes to docs, decision, leftover, balanced, panel scenarios; staggered starts). No decision covers them (D98 and D86 are older and cover other files/commits). Regression test: none for behaviour (tests/l3-greenfield-report.bats passed); record one decision covering the l3-suite.sh scenario work of those commits, or assign them to a plan.",
       "phase": "P161"
     },
@@ -51698,7 +51698,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: plugin/lib/proofcauses.sh (P162.2) was changed after the plan by ad22e59d42fe (fix(proof): new or deleted file re-runs only what read lists reach; removes the prove.unfinished marker and most of the file) and 8950893557c7 (fix(R202): bounded causes summary). No decision of the user names this path at or after those commits (D485 predates them). The code is consistent with the phase goal and tests are green, but the change is outside any plan and uncovered. Regression test: none needed for behaviour; the owner records a decision naming plugin/lib/proofcauses.sh covering both commits.",
       "phase": "P162"
     },
@@ -51707,7 +51707,7 @@
       "req": "R204",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "plugin/lib/cmd-show.sh (P165.2) was changed after the plan by commits no decision covers: 304cebfa (apply: reword/retire a rule), a99fba00 (qa interleaved phases), b45afa79, 076b1245, 5f4e2950 (show req lists only the record's own commits), 53a07960 (contract says why a plan waits), 907e3837, 953ad723, e52ff7b2, 71a55219 (costs), 8674376f (mutate: one break per rule; this one falls under D491's T174 scope). P165.2 only planned the evidence view's 'scope: ... undone by ..., not judged' line, which is present at cmd-show.sh:178. The extra edits belong to other work and need a user decision (or a plan) naming them. Regression test idea: none; recording the decision is the fix.",
       "phase": "P165"
     },
@@ -51716,7 +51716,7 @@
       "req": "R203",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: plugin/lib/cmd-mutate.sh (P164.1) changed after P164 shipped (2026-10-20) by commits no decision covers: 23aa2b44 (queue rule breaks, T174), d4d4be1d (checks keep results apart), f535e10b (usage names the rule --none form), 206b6b52 (names the limit of the --none verdict), 47d9acdb (proof ties a check to its plans' files), 304cebfa (reword or retire a rule by address). D491 lists T174 as 2.1.0 scope but names no commit or file change. A regression test should catch: the delivered-files check reports no uncovered change once a decision names these commits.",
       "phase": "P164"
     },
@@ -51725,7 +51725,7 @@
       "req": "R204",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "plugin/lib/record.jq (P165.2) was changed after the plan by commits no decision covers: 7f434be9 (effort per helper, schema 5), 1006c879 and 91bcdef1 (sound setting), a356babf (loop item time, stepped_at), 304cebfa (retire a rule), 6d0c31d1 (loop budget from road), 907e3837 (qa delivered-files check), e52ff7b2 (check_budget), 71a55219 (costs). P165.2's own validator rule for evidence.undone is present (record.jq:360-363). The other edits are unrelated features and need a recorded user decision or a plan. Regression test idea: none; recording the decision is the fix.",
       "phase": "P165"
     },
@@ -51734,7 +51734,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: plugin/lib/testfiles.sh (P162.2) was changed after the plan by 076b12455d63 (tenths-of-a-second unit time), b25b3a015328 (testfiles_run units from one pass; folds testfiles_argv/testfiles_limit) and 605803fc0cbd (fix done asks for the approved contract only when something will run). No user decision names this path at or after those commits. Behaviour is covered by tests (unit-time.bats, testfiles-run.bats, fix-done-unapproved.bats) but the change is outside any plan and uncovered. Needed: a user decision naming plugin/lib/testfiles.sh covering the three commits.",
       "phase": "P162"
     },
@@ -51743,7 +51743,7 @@
       "req": "R204",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/loop.md (P165.3) was changed after the plan by commits no decision covers: 49010750 (what counts as an item's time, how an item resumes), 6d0c31d1 (budget from planned road), 71a55219 (costs). The P165.3 text (park and hand revert clear a commit the same way, loop.md:312) is present. Needs a recorded user decision or a plan naming the other edits. Regression test idea: none.",
       "phase": "P165"
     },
@@ -51752,7 +51752,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: plugin/lib/steps.sh (P162.3) was changed after the plan by 6e1d63115d18 (top reason in step.why), ad22e59d42fe (the unfinished-marker part of the cache key removed, which P162.3 task 2 required), 3c7bb8b66a2c (step ordering in the same second), d031f4c91c88 (cache also keyed on the git index), 8478c761b7b4 (unit list never on a command line) and 9ed3153b5279 (build-wave timing). The cache key now differs from the plan text (no marker; index added). No user decision names steps.sh at or after those commits. Needed: a user decision naming plugin/lib/steps.sh covering these commits.",
       "phase": "P162"
     },
@@ -51761,7 +51761,7 @@
       "req": "R203",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: plugin/lib/proofreuse.sh (P164.1) changed after P164 shipped by commits no decision covers: 0fa41cfc (run store drops units that no longer exist), ad22e59d (new/deleted file and cut-short proof re-run only what read lists reach), 47d9acdb (tie a check to its requirement plans' files). None is named in a decision. A regression test should catch: the delivered-files check lists no uncovered commit for this file.",
       "phase": "P164"
     },
@@ -51770,7 +51770,7 @@
       "req": "R204",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/proof.md (P165.3) was changed after the plan by many commits no decision covers: 243e8d4a (R204: docs say an undo of an untrailered commit is judged and give the scope check's cost as 2 git processes plus one per undone pair, which differs from the criterion's 'one walk'), a5eabf04-era wording, 71852955, 304cebfa, 817d9cba, ee05502f, d658040e, ab228cd2, 076b1245, 206b6b52, 6e1d6311, e5ce7459, 47d9acdb, ad22e59d, 1d7e7d6d, 907e3837, e045fcac, 4780e81c, 0fa41cfc, e52ff7b2, d031f4c9, 89508935, c37fbe31, 605803fc, 4dbf1276, plus 23aa2b44, d060cbd5 and 8674376f (T174, covered in scope by D491). The planned exact-undo text (proof.md:598-613) is present. Needs a recorded user decision (especially for 243e8d4a, which narrows the criterion that the undoing commit is never judged) or a plan. Regression test idea: none.",
       "phase": "P165"
     },
@@ -51779,7 +51779,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: plugin/lib/reads.sh (P162.4) was changed after the plan by c1f93ceafcc9 (fix(proof): file time stamps written in UTC after the clock-change hour broke CI). Correct and tested (reads-lib.bats, mutate-fresh-mtime.bats), but outside any plan and no user decision names plugin/lib/reads.sh at or after it. Needed: a user decision naming plugin/lib/reads.sh covering c1f93ceafcc9.",
       "phase": "P162"
     },
@@ -51788,7 +51788,7 @@
       "req": "R204",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "docs/record.md (P165.3) was changed after the plan by commits no decision covers: 7f434be9, 1006c879, 91bcdef1, a356babf, 304cebfa, 076b1245, 6d0c31d1, e5ce7459, 907e3837, e52ff7b2, 89508935, c37fbe31, 71a55219. The planned evidence.undone row is present. Needs a recorded user decision or a plan naming the other edits. Regression test idea: none.",
       "phase": "P165"
     },
@@ -51797,7 +51797,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: docs/next.md (P162.5) was changed after the plan by fadf6e8dd694, a99fba00d079, 6e1d63115d18, ad22e59d42fe, 9894319caec5, 53a07960e521, 907e38370e00, d031f4c91c88 and ba4f1443aada. Most belong to other work (vbw root, interleaved phases, plan-changed answer, contract waves, deviation check, QA round); only 6e1d6311, ad22e59d and d031f4c9 touch the proof-sizing text P162.5 owns, and that text is accurate today (docs/next.md line 174 names tree, index, record, store, recompute). No user decision names docs/next.md at or after these commits. Needed: a user decision naming docs/next.md covering them.",
       "phase": "P162"
     },
@@ -51806,7 +51806,7 @@
       "req": "R203",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: plugin/lib/cmd-plan.sh (P164.2) changed after P164 shipped by commits no decision covers: 23aa2b44 (queued breaks named by plan done, T174), 8674376f (one break per rule at deep, plan done no longer asks a task break, T174), de32c4a7 (count only the record's own commits as a plan's). Same regression expectation: no uncovered change left once a decision names them.",
       "phase": "P164"
     },
@@ -51815,7 +51815,7 @@
       "req": "R203",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: docs/workflows.md (P164.3) changed after P164 shipped by 11 commits no decision covers: 2d061b57, fdc5aab8, 80f6bbd9, 3fde5566, 304cebfa, 206b6b52, 2b03a912, 907e3837, d060cbd5, 23aa2b44, ba4f1443. Most are other work items (workflows, panel, qa, rigor, apply) that edited the shared page. No decision names them. Regression expectation: no uncovered change left once a decision names them.",
       "phase": "P164"
     },
@@ -51824,7 +51824,7 @@
       "req": "R203",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: plugin/agents/dev.md (P164.3) changed after P164 shipped by 06a1e773 (lean checks), 23aa2b44 (queue breaks, T174) and 8674376f (one break per rule at deep, T174), none covered by a decision. Regression expectation: no uncovered change left once a decision names them.",
       "phase": "P164"
     },
@@ -51833,7 +51833,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: AGENTS.md (P163.1 delivered it, then reverted by D478) was changed outside any plan by 0a59ecb7 (CI is the release gate, 2026-10-24), 55baa884 (main is the home branch), 83bcfc49 (no builtin write rule), 06a1e773 (lean checks, supersede), 4dbf1276 (privacy rewrite). None carries a VBW-Plan trailer and no recorded decision covers them (0a59ecb7 cites an owner decision of 2026-10-24 that is not in 'vbw show decisions'). The revert 3a3b40e8 is covered by D478/D487 and is not part of this finding. Regression test: none fits; the fix is a recorded owner decision covering these commits, so the deviation line clears.",
       "phase": "P163"
     },
@@ -51842,7 +51842,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: plugin/lib/checks.sh (P163.1) was changed outside any plan by 0c30b9ef (gate lock as a file), 817d9cba (each unit told its share of the cores), 38c06193 (lock takeover by rename), 076b1245 (units timed to a tenth of a second), e045fcac (slots kept busy), d4d4be1d (runs keep results apart), 605803fc (fix done asks for approval only when something runs; it also reworked P163.2's checks_begin move), 738cb333 (lock folders by owner file). No VBW-Plan trailer and no recorded decision covers them. 23aa2b44 (T174) is covered by owner decision D491 and left out. Regression test: none fits; needs an owner decision recorded for these commits.",
       "phase": "P163"
     },
@@ -51851,7 +51851,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: plugin/lib/cmd-fix.sh (P163.2) was changed outside any plan by b45afa79, 076b1245, 953ad723, e52ff7b2, 8478c761, c37fbe31, 605803fc, 685624fb (fixes and features on quiet grep, builtin writes, unit-time report, R149 unit list, R202 own-work, jq arguments). No VBW-Plan trailer, no recorded decision covers them. d060cbd5 (T174) is covered by D491 and left out. Regression test: none fits; needs an owner decision recorded for these commits.",
       "phase": "P163"
     },
@@ -51860,7 +51860,7 @@
       "req": "R202",
       "source": "qa",
       "attempts": 0,
-      "status": "open",
+      "status": "fixed",
       "note": "Deviation: plugin/lib/slots.sh (P163.2) was changed outside any plan by 71852955 (unit that lost the store leaves no slot), b827f7d0 (one waiter pace), d658040e (three processes per store step), ab228cd2 (lock takeover by rename), 4780e81c (hand-over in the freeing step, T175), 605803fc, 738cb333. No VBW-Plan trailer and no recorded decision covers them; D491 puts T175 after 2.1.0, so it does not cover 4780e81c. Regression test: none fits; needs an owner decision recorded for these commits.",
       "phase": "P163"
     }
@@ -55722,6 +55722,12 @@
       "id": "D494",
       "at": "2026-10-25T13:41:22Z",
       "text": "Contract approved: 193 requirements, 449 checks, 506 plans (a8b003354505)"
+    },
+    {
+      "id": "D495",
+      "text": "The owner accepts the changes the 2.1.4-2.1.13 releases made to M42's delivered files, outside any plan (built with VBW off in plow batches, each released by PR after CI): plugin/lib/prooftime.sh (6e1d6311, c37fbe31); tools/l3.sh (2bc14124, e54013ea, 55baa884, e9a68b84); tools/l3-suite.sh (d7f73771, 9d337c8a, 2bc14124, 88f618de, ea44b913, 73f98d31, 2f26efa3, 3d2ff29f, df907c74, 208083c5, e54013ea, a290a89e, 76bc321a, aafc139d, c6a59ce0, 6effe97f, 740b06f4, 9ef2ebec, e10808f0, ba216d91); plugin/lib/proofcauses.sh (ad22e59d, 89508935); plugin/lib/testfiles.sh (076b1245, b25b3a01, 605803fc); plugin/lib/steps.sh (6e1d6311, ad22e59d, 3c7bb8b6, d031f4c9, 8478c761, 9ed3153b); plugin/lib/reads.sh (c1f93cea); docs/next.md (fadf6e8d, a99fba00, 6e1d6311, ad22e59d, 9894319c, 53a07960, 907e3837, d031f4c9, ba4f1443); AGENTS.md (0a59ecb7, 55baa884, 83bcfc49, 06a1e773, 4dbf1276, 3a3b40e8); plugin/lib/checks.sh (0c30b9ef, 817d9cba, 38c06193, 076b1245, e045fcac, d4d4be1d, 605803fc, 738cb333, 23aa2b44); plugin/lib/cmd-fix.sh (b45afa79, 076b1245, 953ad723, e52ff7b2, 8478c761, c37fbe31, 605803fc, 685624fb, d060cbd5); plugin/lib/slots.sh (71852955, b827f7d0, d658040e, ab228cd2, 4780e81c, 605803fc, 738cb333); tools/l3-stale.sh (f6a63da7); tools/test.sh (5b45651d); plugin/lib/cmd-mutate.sh (304cebfa, 206b6b52, 47d9acdb, d4d4be1d, f535e10b, 23aa2b44); plugin/lib/proofreuse.sh (47d9acdb, ad22e59d, 0fa41cfc); plugin/lib/cmd-plan.sh (de32c4a7, 23aa2b44, 8674376f); docs/workflows.md (2d061b57, fdc5aab8, 80f6bbd9, 3fde5566, 304cebfa, 206b6b52, 2b03a912, 907e3837, d060cbd5, 23aa2b44, ba4f1443); plugin/agents/dev.md (06a1e773, 23aa2b44, 8674376f); plugin/lib/cmd-prove.sh (b45afa79, 076b1245, 6e1d6311, 666c1c87, ad22e59d, 907e3837, 0fa41cfc, e52ff7b2, c37fbe31, 685624fb, a5eabf04); plugin/lib/cmd-show.sh (304cebfa, a99fba00, b45afa79, 076b1245, 5f4e2950, 53a07960, 907e3837, 953ad723, e52ff7b2, 71a55219, 8674376f); plugin/lib/record.jq (7f434be9, 1006c879, 91bcdef1, a356babf, 304cebfa, 6d0c31d1, 907e3837, e52ff7b2, 71a55219); docs/loop.md (49010750, 6d0c31d1, 71a55219); docs/proof.md (71852955, 304cebfa, 817d9cba, ee05502f, d658040e, ab228cd2, 076b1245, 206b6b52, 6e1d6311, e5ce7459, 47d9acdb, ad22e59d, 1d7e7d6d, 907e3837, e045fcac, 4780e81c, 0fa41cfc, e52ff7b2, d031f4c9, 89508935, 243e8d4a, c37fbe31, 605803fc, d060cbd5, 23aa2b44, 8674376f, 4dbf1276); docs/record.md (7f434be9, 1006c879, 91bcdef1, a356babf, 304cebfa, 076b1245, 6d0c31d1, e5ce7459, 907e3837, e52ff7b2, 89508935, c37fbe31, 71a55219)",
+      "why": "owner, 2026-10-25, after the QA round of P161-P165 found no behaviour fault: the changes are later maintainer work already on main and released; moving them into plans adds nothing",
+      "at": "2026-10-25T15:11:44Z"
     }
   ],
   "commands": {
@@ -63789,6 +63795,17 @@
         "ended": "2026-10-25T15:03:39Z",
         "cost": {
           "usd": 1.879556
+        }
+      },
+      {
+        "id": "fix-20261025T151247Z",
+        "kind": "fix",
+        "session": "0ee781c3-c5b6-4a6c-889f-04b89f1fba4a",
+        "milestone": "M42",
+        "started": "2026-10-25T15:12:47Z",
+        "ended": "2026-10-25T15:14:52Z",
+        "cost": {
+          "usd": 0.055422
         }
       }
     ],
