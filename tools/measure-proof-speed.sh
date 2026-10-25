@@ -251,7 +251,8 @@ now() { perl -MTime::HiRes=time -e 'printf "%.3f", time'; }
   while [ ! -e "$out/stop" ]; do
     for f in "$proj"/.vbw/runtime/proof.*/reads/written.json; do
       [ -f "$f" ] || continue
-      s=$(wc -c < "$f" | tr -d ' ')
+      s=$(wc -c 2> /dev/null < "$f" | tr -d ' ') || s=0
+      [ -n "$s" ] || s=0
       [ "$s" -le "$max" ] || { max="$s"; printf '%s\n' "$max" > "$out/maxwritten"; }
     done
     sleep 0.1
