@@ -22950,7 +22950,15 @@
           "to": "deep",
           "reason": "proven requirement R202 failed"
         }
-      ]
+      ],
+      "qa": {
+        "result": "fail",
+        "tier": "deep",
+        "tree": "0caf853758b3e2e4a54326d018481801da67f102c6f861a1cd87c95ab3d598f8",
+        "at": "2026-10-25T15:03:00Z",
+        "note": "26/30 checks",
+        "rounds": 1
+      }
     },
     {
       "id": "P164",
@@ -51828,6 +51836,42 @@
       "status": "open",
       "note": "Deviation: plugin/agents/dev.md (P164.3) changed after P164 shipped by 06a1e773 (lean checks), 23aa2b44 (queue breaks, T174) and 8674376f (one break per rule at deep, T174), none covered by a decision. Regression expectation: no uncovered change left once a decision names them.",
       "phase": "P164"
+    },
+    {
+      "id": "F311",
+      "req": "R202",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: AGENTS.md (P163.1 delivered it, then reverted by D478) was changed outside any plan by 0a59ecb7 (CI is the release gate, 2026-10-24), 55baa884 (main is the home branch), 83bcfc49 (no builtin write rule), 06a1e773 (lean checks, supersede), 4dbf1276 (privacy rewrite). None carries a VBW-Plan trailer and no recorded decision covers them (0a59ecb7 cites an owner decision of 2026-10-24 that is not in 'vbw show decisions'). The revert 3a3b40e8 is covered by D478/D487 and is not part of this finding. Regression test: none fits; the fix is a recorded owner decision covering these commits, so the deviation line clears.",
+      "phase": "P163"
+    },
+    {
+      "id": "F312",
+      "req": "R202",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: plugin/lib/checks.sh (P163.1) was changed outside any plan by 0c30b9ef (gate lock as a file), 817d9cba (each unit told its share of the cores), 38c06193 (lock takeover by rename), 076b1245 (units timed to a tenth of a second), e045fcac (slots kept busy), d4d4be1d (runs keep results apart), 605803fc (fix done asks for approval only when something runs; it also reworked P163.2's checks_begin move), 738cb333 (lock folders by owner file). No VBW-Plan trailer and no recorded decision covers them. 23aa2b44 (T174) is covered by owner decision D491 and left out. Regression test: none fits; needs an owner decision recorded for these commits.",
+      "phase": "P163"
+    },
+    {
+      "id": "F313",
+      "req": "R202",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: plugin/lib/cmd-fix.sh (P163.2) was changed outside any plan by b45afa79, 076b1245, 953ad723, e52ff7b2, 8478c761, c37fbe31, 605803fc, 685624fb (fixes and features on quiet grep, builtin writes, unit-time report, R149 unit list, R202 own-work, jq arguments). No VBW-Plan trailer, no recorded decision covers them. d060cbd5 (T174) is covered by D491 and left out. Regression test: none fits; needs an owner decision recorded for these commits.",
+      "phase": "P163"
+    },
+    {
+      "id": "F314",
+      "req": "R202",
+      "source": "qa",
+      "attempts": 0,
+      "status": "open",
+      "note": "Deviation: plugin/lib/slots.sh (P163.2) was changed outside any plan by 71852955 (unit that lost the store leaves no slot), b827f7d0 (one waiter pace), d658040e (three processes per store step), ab228cd2 (lock takeover by rename), 4780e81c (hand-over in the freeing step, T175), 605803fc, 738cb333. No VBW-Plan trailer and no recorded decision covers them; D491 puts T175 after 2.1.0, so it does not cover 4780e81c. Regression test: none fits; needs an owner decision recorded for these commits.",
+      "phase": "P163"
     }
   ],
   "todos": [
