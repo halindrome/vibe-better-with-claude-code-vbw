@@ -129,6 +129,16 @@ future_stamp() {
   [ "$(wc -l < "$TEST_ROOT/stat.log")" -le 4 ] || { echo "stat calls: $(wc -l < "$TEST_ROOT/stat.log")"; false; }
 }
 
+@test "R197: the stamp is one second after the newest file, also in the hour a clock change repeats" {
+  # 2026-10-25 01:30 UTC is 02:30 in Zurich, as 00:30 UTC was: a local stamp names the earlier one.
+  mkdir -p "$TEST_ROOT/dst"
+  : > "$TEST_ROOT/dst/new" && : > "$TEST_ROOT/dst/out"
+  TZ=UTC0 touch -t 202610250130.00 "$TEST_ROOT/dst/new"
+  TZ=UTC0 touch -t 202001010000.00 "$TEST_ROOT/dst/out"
+  TZ=Europe/Zurich run bash -c 'set -euo pipefail; . "$1/lib/core.sh"; vbw_stamp_newer "$2" out; stat -c %Y "$2/out" 2> /dev/null || stat -f %m "$2/out"' _ "$PLUGIN_ROOT" "$TEST_ROOT/dst"
+  [ "$status" -eq 0 ] && [ "$output" = 1792891801 ] || { echo "$output"; false; }
+}
+
 @test "R197: the kernel code is bash 3.2 code that passes JSON only through jq" {
   local f
   for f in "$PLUGIN_ROOT"/lib/cmd-mutate.sh "$PLUGIN_ROOT"/lib/core.sh "$PLUGIN_ROOT"/lib/proofcopy.sh; do

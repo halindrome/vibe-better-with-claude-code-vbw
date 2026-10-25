@@ -1,8 +1,9 @@
 # The definition of .vbw/record.json (docs/record.md). Format 4 (D232) is what every write produces:
-# schema 4 and protected, the sorted list of every file a check protects, each once ([] without
-# checks), so a guard reads the list without reading through the checks (R150). The older formats
-# stay valid until their next write: schema 1, 2 when a check is alone, 3 when a todo is sorted or
-# a recommendation is stored; they carry no protected field.
+# schema 4 (5 while settings.efforts holds a helper's chosen effort) and protected, the sorted
+# list of every file a check protects, each once ([] without checks), so a guard reads the list
+# without reading through the checks (R150). The older formats stay valid until their next write:
+# schema 1, 2 when a check is alone, 3 when a todo is sorted or a recommendation is stored; they
+# carry no protected field.
 # Input: the record. Output: a JSON array of violation messages; [] = valid.
 
 def nonempty: type == "string" and length > 0;
@@ -103,11 +104,14 @@ if type != "object" then ["record must be a JSON object"] else
 | ([($r.shipped // [])[]?.id] + [($r.parked // [])[]?.id] + [$r.milestone.id?]) as $milestones
 | ($plans | map({key: .id, value: (.after // [])}) | from_entries) as $graph
 | [
-    ( select(($r | has("protected") | not) and $r.schema == 4)
-      | "protected is missing: a schema-4 record must carry the protected field" ),
-    ( select(($r | has("protected")) and $r.schema != 4)
-      | "protected is only for a schema-4 record" ),
-    ( select(($r | has("protected") | not) and $r.schema != 4
+    ( select(($r | has("protected") | not) and ($r.schema == 4 or $r.schema == 5))
+      | "protected is missing: a schema-4 or schema-5 record must carry the protected field" ),
+    ( select(($r | has("protected")) and $r.schema != 4 and $r.schema != 5)
+      | "protected is only for a schema-4 or schema-5 record" ),
+    ( select((($r.settings // {}) | type) == "object" and (($r.settings.efforts // null) != null) != ($r.schema == 5))
+      | if $r.schema == 5 then "schema 5 is only for a record with settings.efforts; without them the schema is 4"
+        else "settings.efforts needs schema 5, so a VBW that reads only up to schema 4 asks for an update" end ),
+    ( select(($r | has("protected") | not) and $r.schema != 4 and $r.schema != 5
              and $r.schema != (if ($r | has("recommendation")) or ((($r.todos // []) | type) == "array" and any(($r.todos // [])[]?; type == "object" and (has("sort") or has("size")))) then 3
                                elif (($r.checks // []) | type) == "array" and any(($r.checks // [])[]?; type == "object" and .alone == true) then 2 else 1 end))
       | "schema must be 3 when a todo is sorted or a recommendation is stored; schema must be 2 when a check is alone, else 1" ),
@@ -318,7 +322,12 @@ if type != "object" then ["record must be a JSON object"] else
           ( select(has("motion") and (.motion | one_of(["full","calm","off"]) | not)) | "settings.motion must be full, calm or off" ),
           ( select(has("command_timeout") and ((.command_timeout | int_in(1; 86400)) | not)) | "settings.command_timeout must be a whole number from 1 to 86400" ),
           ( select(has("check_budget") and ((.check_budget | int_in(1; 86400)) | not)) | "settings.check_budget must be a whole number from 1 to 86400" ),
-          ( keys[] | select(one_of(["profile","autonomy","autonomy_cap","models","rigor","motion","command_timeout","check_budget"]) | not) | "settings has an unknown key: \(.)" ),
+          ( keys[] | select(one_of(["profile","autonomy","autonomy_cap","models","efforts","rigor","motion","command_timeout","check_budget"]) | not) | "settings has an unknown key: \(.)" ),
+          ( select(has("efforts")) | .efforts
+            | if type != "object" or length == 0 then "settings.efforts must be an object naming at least one role" else
+                to_entries[] | select((.key | one_of(["architect","lead","dev","qa","scout","debugger","docs"])) and (.value | one_of(["low","medium","high","xhigh","max"])) | not)
+                | "settings.efforts.\(.key) must name a role (architect, lead, dev, qa, scout, debugger, docs) and low, medium, high, xhigh or max"
+              end ),
           ( select(has("models")) | .models
             | if type != "object" then "settings.models must be an object" else
                 to_entries[] | select((.key | one_of(["architect","lead","dev","qa","scout","debugger","docs","planner","critic","builder"])) and (.value | nonempty) | not)

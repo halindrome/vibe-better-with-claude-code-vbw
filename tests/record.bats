@@ -63,7 +63,7 @@ violations_after() {
   run violations_after '.schema = 4'
   [[ "$output" == *"protected is missing"* ]]
   run violations_after '.protected = ["tests/pay.test.ts"]'
-  [[ "$output" == *"protected is only for a schema-4 record"* ]]
+  [[ "$output" == *"protected is only for a schema-4 or schema-5 record"* ]]
   run violations_after '.schema = 4 | .protected = ["tests/pay.test.ts"]'
   [ "$output" = "[]" ]
   run violations_after '.schema = 4 | .protected = []'

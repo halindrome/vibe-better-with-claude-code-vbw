@@ -139,3 +139,74 @@ plugin_copy() {
   grep -qE '^\| `architect` \|.*`recommend`' "$REPO_ROOT/docs/workflows.md"
   grep -qE '"architect":\{[^}]*"recommend"' "$REPO_ROOT/docs/workflows.md"
 }
+
+# A helper's effort chosen by the user (vbw config set effort.ROLE LEVEL): every step of that
+# role takes it, over the profile's table; default removes it. It is kept in record.settings.efforts,
+# shared through git, and a record holding one is schema 5, which a VBW reading only up to
+# schema 4 refuses as needing a newer VBW, never as corrupt.
+
+@test "effort.ROLE: every step of the role takes the chosen effort, in vbw config effort and vbw next --json; the other roles keep the profile's" {
+  vbw_run config set effort.dev high
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+  [ "$output" = "effort.dev = high" ]
+  "$VBW" config set effort.debugger low > /dev/null
+  vbw_run config effort
+  printf '%s' "$output" | jq -e --slurpfile e "$EFFORTS" '. == ($e[0].balanced | .dev |= map_values("high") | .debugger |= map_values("low"))' || { echo "$output"; false; }
+  [ "$("$VBW" next --json < /dev/null | jq -c .effort)" = "$output" ]
+  "$VBW" config set profile quality > /dev/null
+  "$VBW" config effort | jq -e --slurpfile e "$EFFORTS" '. == ($e[0].quality | .dev |= map_values("high") | .debugger |= map_values("low"))'
+}
+
+@test "effort.ROLE: vbw config names each role's effort, default where the profile decides" {
+  "$VBW" config set effort.qa max > /dev/null
+  vbw_run config
+  [ "$status" -eq 0 ]
+  for r in architect lead dev scout debugger docs; do
+    printf '%s\n' "$output" | grep -qx "effort.$r: default" || { echo "$output"; false; }
+  done
+  printf '%s\n' "$output" | grep -qx "effort.qa: max" || { echo "$output"; false; }
+}
+
+@test "effort.ROLE: a record holding a chosen effort is schema 5; default on the last one removes it and the record is schema 4 again" {
+  "$VBW" config set effort.dev high > /dev/null
+  jq -e '.schema == 5 and .settings.efforts == {dev: "high"}' .vbw/record.json
+  "$VBW" config set effort.lead xhigh > /dev/null
+  "$VBW" config set effort.dev default > /dev/null
+  jq -e '.schema == 5 and .settings.efforts == {lead: "xhigh"}' .vbw/record.json
+  "$VBW" config set effort.lead default > /dev/null
+  jq -e '.schema == 4 and (.settings | has("efforts") | not)' .vbw/record.json
+}
+
+@test "effort.ROLE: a level Claude Code does not take, or a role VBW does not have, is refused and nothing is written" {
+  local before
+  before=$(cat .vbw/record.json)
+  vbw_run config set effort.dev turbo
+  [ "$status" -eq 2 ]
+  [[ "$output" == *"low, medium, high, xhigh or max"* ]] || { echo "$output"; false; }
+  vbw_run config set effort.nobody high
+  [ "$status" -eq 2 ]
+  [ "$(cat .vbw/record.json)" = "$before" ]
+}
+
+@test "effort.ROLE: the record check refuses an effort under schema 4, schema 5 without one, and a level Claude Code does not take" {
+  "$VBW" config set effort.dev high > /dev/null
+  cp .vbw/record.json "$TEST_ROOT/good.json"
+  jq '.schema = 4' "$TEST_ROOT/good.json" > .vbw/record.json
+  vbw_run status
+  [ "$status" -eq 3 ] && [[ "$output" == *"schema 5"* ]] || { echo "$output"; false; }
+  jq '.settings |= del(.efforts)' "$TEST_ROOT/good.json" > .vbw/record.json
+  vbw_run status
+  [ "$status" -eq 3 ] && [[ "$output" == *"schema 5"* ]] || { echo "$output"; false; }
+  jq '.settings.efforts.dev = "turbo"' "$TEST_ROOT/good.json" > .vbw/record.json
+  vbw_run status
+  [ "$status" -eq 3 ] && [[ "$output" == *"settings.efforts.dev"* ]] || { echo "$output"; false; }
+}
+
+@test "effort.ROLE: a VBW that reads only up to schema 4 says the project needs a newer VBW, never that the record is corrupt" {
+  plugin_copy
+  sed -i.bak 's/^VBW_SCHEMA_MAX=5$/VBW_SCHEMA_MAX=4/' "$TEST_ROOT/plugin/lib/record.sh"
+  grep -qx 'VBW_SCHEMA_MAX=4' "$TEST_ROOT/plugin/lib/record.sh"
+  "$VBW" config set effort.dev high > /dev/null
+  run "$TEST_ROOT/plugin/bin/vbw" status < /dev/null
+  [ "$status" -eq 4 ] && [[ "$output" == *"needs a newer VBW"* ]] || { echo "$output"; false; }
+}

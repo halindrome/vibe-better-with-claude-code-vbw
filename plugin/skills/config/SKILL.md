@@ -21,6 +21,7 @@ Change asked: make it with `vbw config set KEY VALUE`, show the result. Else sho
 
 - `profile`: models VBW's agents run on. `quality` (Opus for Architect, Lead, Dev and Debugger; Sonnet for QA, Scout and Docs), `balanced` (default: Opus for Architect and Lead, Sonnet for the rest), `budget` (Haiku for Scout, Sonnet for the rest, QA included).
 - `model.<role>` (architect, lead, dev, qa, scout, debugger, docs): override one agent (`opus`, `sonnet`, `haiku`, a model id; `default` removes it). QA never runs on Haiku, only on Sonnet or stronger (it judges whether work meets the spec): `model.qa` accepts `sonnet`, `opus`, `default` and non-Haiku model ids, and refuses any Haiku id. A stored Haiku value is raised to Sonnet.
+- `effort.<role>` (the same roles): how hard that agent thinks at every step, `low`, `medium`, `high`, `xhigh` or `max`, over the profile's per-step table (`vbw config effort` prints the result); `default` removes it. Shared through git; a project with one needs VBW 2.1.13 or newer for everyone.
 - `autonomy`: how much `/vbw:vibe` does alone: `guided` (explains each step, waits), `balanced` (default: stops for decisions, approval, checking, shipping), `hands-off` (takes its own recommendations, lists them).
 - `autonomy_cap`: steps one autonomous run takes before stopping.
 - `rigor`: how thorough each phase's checking is. `auto` (default) picks a tier per phase from its risk; `express`, `standard` or `deep` forces it. Set with `vbw config rigor MODE`; phases not yet started are re-tiered.

@@ -1,5 +1,31 @@
 # Changelog
 
+## [2.1.13] - 2026-10-25
+
+### Added
+
+- **Choose how hard each helper thinks.** Settings has a new Effort heading
+  with one row per helper: `low`, `medium`, `high`, `xhigh`, `max`, or
+  `default` to keep the profile's choice. For example, the architect at
+  `max` while the docs helper stays light, without changing the whole
+  profile. From the command line: `vbw config set effort.dev high`.
+
+### Changed
+
+- **A project with a chosen effort needs VBW 2.1.13 or newer for everyone
+  on it.** The choice is shared through git like the model choices. A
+  teammate on an older VBW is asked to update VBW instead of being told the
+  project is damaged. Projects without one are not affected.
+
+### Fixed
+
+- **A setting's name keeps its gap in Settings** when its choices are wide
+  ("your level" no longer runs into its first choice).
+- **Proofs reuse earlier results correctly on the night the clocks go back.**
+  During the hour that happens twice, a proof could lose track of which files
+  each check read, and ran every check again; on some Linux systems it could
+  not record them at all.
+
 ## [2.1.12] - 2026-10-24
 
 ### Added

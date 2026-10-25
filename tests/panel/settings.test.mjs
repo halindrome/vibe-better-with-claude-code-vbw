@@ -31,7 +31,7 @@ function kernel() {
     command_timeout: '3600', check_budget: '120', sound: 'default', statusline: 'off',
     models: { architect: 'opus', lead: 'opus', dev: 'sonnet', qa: 'sonnet', scout: 'sonnet', debugger: 'sonnet', docs: 'sonnet' },
     interview: { kept: 'private', interviewed: true, level: 'professionally', depth: 'technical and brief', involvement: 'options with a recommendation', pending: null },
-    workflows: 'default', auto: null,
+    workflows: 'default', auto: null, efforts: {},
   }
   const calls = []
   const out = (stdout) => ({ exitCode: 0, stdout, stderr: '' })
@@ -44,7 +44,8 @@ function kernel() {
         'machine limit: 6 (three quarters of this computer\'s processor cores (8), rounded down, at least 1 and at most 64; shared by every VBW project on this computer; not a setting)',
         'profile: ' + k.profile, 'autonomy: ' + k.autonomy, 'autonomy_cap: ' + k.autonomy_cap, 'rigor: ' + k.rigor, 'motion: ' + k.motion,
         'sound: ' + k.sound, 'command_timeout: ' + k.command_timeout + ' seconds', 'check_budget: ' + k.check_budget + ' seconds a unit (reported, never enforced)',
-        ...Object.entries(k.models).map(([r, m]) => 'model.' + r + ': ' + m)].join('\n') + '\n')
+        ...Object.entries(k.models).map(([r, m]) => 'model.' + r + ': ' + m),
+        ...Object.keys(k.models).map((r) => 'effort.' + r + ': ' + (k.efforts[r] || 'default'))].join('\n') + '\n')
     }
     if (a === 'interview' && b === '--json') return out(JSON.stringify(k.interview) + '\n')
     if (a === 'interview' && b === 'set') { k.interview[c] = d; return out(c + ' = ' + d + '\n') }
@@ -63,6 +64,7 @@ function kernel() {
     if (a === 'config' && b === 'set') {
       if (c === 'autonomy_cap' && d === '7777') return refuse('vbw: autonomy_cap must be a number of steps\n')
       if (c.startsWith('model.')) k.models[c.slice(6)] = d === 'default' ? 'sonnet' : d
+      else if (c.startsWith('effort.')) { if (d === 'default') delete k.efforts[c.slice(7)]; else k.efforts[c.slice(7)] = d }
       else k[c] = d
       return out(c + ' = ' + d + '\n')
     }
@@ -193,6 +195,7 @@ test('one change per row: the kernel command runs, the tab is read again and the
   const picks = { profile: 'quality', autonomy: 'guided', rigor: 'deep', motion: 'calm', sound: 'darth', statusline: 'on' }
   Object.assign(picks, { 'interview.level': 'senior engineer', 'interview.depth': 'plain words', 'interview.involvement': 'I make the calls', 'interview.kept': 'project', auto: 'on' })
   for (const r of S.ROLES) picks['model.' + r] = 'opus'
+  for (const r of S.ROLES) picks['effort.' + r] = 'xhigh'
   for (const r of S.ROWS.filter((x) => !x.status)) {
     st.pressed = []
     const tree = draw(st)
@@ -246,6 +249,29 @@ test('every role offers Fable, Opus, Sonnet and default; all but QA offer Haiku'
   }
 })
 
+test('each helper has an effort row under Effort, in its role colour: low to max, or default for the profile\'s choice', async () => {
+  assert.deepEqual(S.ROWS.filter((r) => r.key.startsWith('effort.')).map((r) => r.key.slice(7)), S.ROLES)
+  for (const r of S.ROLES) {
+    const row = S.ROWS.find((x) => x.key === 'effort.' + r)
+    assert.deepEqual(row.choices, ['low', 'medium', 'high', 'xhigh', 'max', 'default'], r)
+    assert.equal(row.group, 'Effort', r)
+  }
+  assert.deepEqual(S.settingArgv({ key: 'effort.dev', value: 'max' }, SID), ['config', 'set', 'effort.dev', 'max'])
+  assert.equal(S.settingArgv({ key: 'effort.dev', value: 'turbo' }, SID), null)
+  const kn = kernel()
+  kn.k.efforts.qa = 'max'
+  const st = state({ pressed: [] })
+  await settings(st, kn, null)
+  const tree = draw(st)
+  assert.equal(texts(rowOf(tree, 'effort.qa')).find((t) => t.props.key === 'value').text, 'max')
+  assert.equal(texts(rowOf(tree, 'effort.dev')).find((t) => t.props.key === 'value').text, 'default')
+  assert.equal(texts(rowOf(tree, 'effort.qa')).find((t) => t.props.key === 'name').props.color, P.roleColor('qa'))
+  // A model chosen by the user marks its model row, never the role's effort row.
+  const mine = S.renderSettings(UI, S.settingsModel({ settings: st.settings, record: { settings: { models: { qa: 'opus' } } }, now: NOW }))
+  assert.ok(texts(rowOf(mine, 'model.qa')).some((t) => t.props.key === 'mine'))
+  assert.ok(!texts(rowOf(mine, 'effort.qa')).some((t) => t.props.key === 'mine'))
+})
+
 test('the sound row offers off, each sound folder and default, and is this clone\'s own', async () => {
   assert.deepEqual(S.ROWS.find((r) => r.key === 'sound').choices, ['off', ...S.SOUND_FOLDERS, 'default'])
   assert.ok(S.SOUND_FOLDERS.length > 0 && S.SOUND_FOLDERS.every((f) => /^[a-z]+$/.test(f)), JSON.stringify(S.SOUND_FOLDERS))
@@ -273,6 +299,20 @@ test('every choice is a button a click presses, also where the surface has a Sel
   for (const w of [80, 100]) {
     const lines = screen(S.renderSettings(UI, S.settingsModel({ settings: st.settings, now: NOW })), w)
     assert.ok(lines.some((l) => /^ *dev +○ fable +○ opus +● sonnet +○ haiku +○ default$/.test(l)), w + ': name and choices on one line')
+  }
+})
+
+test('a row\'s name never shrinks: wide choices wrap under themselves and the name keeps its column and its gap', async () => {
+  const kn = kernel()
+  const st = state({ pressed: [] })
+  await settings(st, kn, null)
+  const tree = draw(st)
+  for (const r of S.ROWS) {
+    const line = rowOf(tree, r.key)
+    if (!line) continue
+    let cell = null
+    walk(line, (n) => { if (!cell && n.type === 'Box' && n.children && n.children.some((c) => c && c.type === 'Text' && c.props.key === 'name')) cell = n })
+    assert.ok(cell && cell.props.flexShrink === 0, r.key + ': the name sits in a box that does not shrink')
   }
 })
 

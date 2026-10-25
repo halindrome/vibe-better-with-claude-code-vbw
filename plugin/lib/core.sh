@@ -323,16 +323,17 @@ vbw_mtime_newest() {
 # vbw_stamp_newer DIR FILE...: gives each FILE (a path under DIR) a modification
 # time one second later than the newest file under DIR, build output included. The
 # time comes from the files' times, never from the clock, so it holds when a file is
-# stamped ahead of now. A missing FILE is left missing.
+# stamped ahead of now. A missing FILE is left missing. The stamp is written and read
+# in UTC: a local one in the hour a clock change repeats names two moments.
 vbw_stamp_newer() {
   local dir="$1" newest t f stamp
   shift
   newest=$(vbw_mtime_newest "$dir")
   case "$newest" in "" | *[!0-9]*) newest=0 ;; esac
   t=$((newest + 1))
-  stamp=$(date -d "@$t" +%Y%m%d%H%M.%S 2> /dev/null) || stamp=$(date -r "$t" +%Y%m%d%H%M.%S 2> /dev/null) || return 0
+  stamp=$(TZ=UTC0 date -d "@$t" +%Y%m%d%H%M.%S 2> /dev/null) || stamp=$(TZ=UTC0 date -r "$t" +%Y%m%d%H%M.%S 2> /dev/null) || return 0
   for f in "$@"; do
-    if [ -e "$dir/$f" ] || [ -L "$dir/$f" ]; then touch -h -t "$stamp" "$dir/$f" 2> /dev/null || touch -t "$stamp" "$dir/$f" 2> /dev/null || true; fi
+    if [ -e "$dir/$f" ] || [ -L "$dir/$f" ]; then TZ=UTC0 touch -h -t "$stamp" "$dir/$f" 2> /dev/null || TZ=UTC0 touch -t "$stamp" "$dir/$f" 2> /dev/null || true; fi
   done
 }
 
