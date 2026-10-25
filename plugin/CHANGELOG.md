@@ -1,5 +1,26 @@
 # Changelog
 
+## [2.1.14] - 2026-10-25
+
+### Added
+
+- **You decide about files changed outside VBW, before any review.** When a
+  file VBW built is changed or deleted outside VBW, VBW now asks you first:
+  keep the change, or restore it. Keeping records your decision; restoring
+  sends the file back through a fix. A fix round never undoes your own edits
+  unless you chose that.
+- **The Timeline shows a running proof.** While VBW proves your work, the
+  panel's Timeline says so, with the checks done so far, and points to the
+  Proof tab.
+
+### Fixed
+
+- **Mapping an existing project saves its map.** `/vbw:map` could stop
+  before saving the map when Claude Code kept the result in a file; VBW now
+  reads it from there.
+- **`vbw fix done` with a fix that does not exist** says so and ends cleanly,
+  instead of an internal error on newer versions of bash.
+
 ## [2.1.13] - 2026-10-25
 
 ### Added
