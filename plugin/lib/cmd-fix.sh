@@ -150,7 +150,7 @@ cmd_fix() {
     ids+=("$id")
   done
 
-  local own_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes keys served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0 began=0
+  local own_json cands_json tf_json obuf='' ebuf='' wait_files='' wf mine todo=() cands=() c at results='{}' held head noreads causes='' keys served='[]' tfres='{}' tfbad='' off wmap='{}' rmap='{}' tfwant=0 began=0
   # The run and its slot store open before the planning, which holds vbw:plan
   # (R202); the contract must be approved only when something will run.
   [ ${#ids[@]} -eq 0 ] || { mkdir -p "$VBW_RUNTIME" || vbw_die "cannot create $VBW_RUNTIME"; checks_open; began=1; }
