@@ -48,10 +48,14 @@ reads_probe() {
   [ "$ok" -eq 0 ] || { printf 'this file system does not record which files are read\n' >&2; return 1; }
 }
 
-# reads_stamp SECONDS: the local time SECONDS ago, as touch -t wants it.
-reads_stamp() {
-  local e=$(( $(date +%s) - $1 ))
-  date -r "$e" +%Y%m%d%H%M.%S 2> /dev/null || date -d "@$e" +%Y%m%d%H%M.%S
+# reads_mark FILE SECONDS [NOW]: set FILE's modification time to SECONDS before NOW (now
+# by default, in epoch seconds). The stamp is written and read in UTC: a local stamp in the
+# hour a clock change repeats names two moments, and touch may take the wrong one, an hour
+# early or late, so every read of a run would look older or newer than its mark.
+reads_mark() {
+  local e=$(( ${3:-$(date +%s)} - $2 )) stamp
+  stamp=$(TZ=UTC0 date -r "$e" +%Y%m%d%H%M.%S 2> /dev/null || TZ=UTC0 date -d "@$e" +%Y%m%d%H%M.%S) || return 1
+  TZ=UTC0 touch -t "$stamp" "$1"
 }
 
 # reads_touch LIST COPY: set back the access time of each path in LIST (NUL-
@@ -99,7 +103,7 @@ reads_reset() {
     fi
     slack=0
     : > "$st/mark0" || return 1
-    [ "$exact" = true ] || touch -t "$(reads_stamp 0)" "$st/mark0" || return 1
+    [ "$exact" = true ] || reads_mark "$st/mark0" 0 || return 1
     gd=$(git -C "$copy" rev-parse --absolute-git-dir) || return 1
     git -C "$copy" ls-files -z | jq -Rs -j '
       (split("\u0000") | map(select(length > 0))) as $f
@@ -115,7 +119,7 @@ reads_reset() {
   [ -f "$st/written.json" ] || printf '{"lists":{},"files":{}}\n' > "$st/written.json"
   : > "$st/ref" && touch -t "$READS_OLD_DAY" "$st/ref" || return 1
   : > "$st/mark" || return 1
-  [ "$slack" -eq 0 ] && [ "$exact" = true ] || touch -t "$(reads_stamp "$slack")" "$st/mark" || return 1
+  [ "$slack" -eq 0 ] && [ "$exact" = true ] || reads_mark "$st/mark" "$slack" || return 1
   # Never earlier than the first mark: nothing made with the copy is a write.
   [ ! "$st/mark0" -nt "$st/mark" ] || touch -r "$st/mark0" "$st/mark" || return 1
   # A run moves the access time of only what it read, and its collection left those paths

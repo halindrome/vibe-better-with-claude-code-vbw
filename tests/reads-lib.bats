@@ -184,3 +184,17 @@ lib() {
   ! grep -nE 'mapfile|readarray|declare -A|eval |bash -c' "$PLUGIN_ROOT/lib/reads.sh" || false
   ! grep -n '/tmp' "$PLUGIN_ROOT/lib/reads.sh"
 }
+
+@test "R166: a run's mark is the moment it names, also in the hour a clock change repeats, under any time zone" {
+  # 2026-10-25 00:30 and 01:30 UTC are both 02:30 in Zurich: a local stamp names only one of them.
+  run lib 'mt() { stat -c %Y "$1" 2> /dev/null || stat -f %m "$1"; }
+    export TZ=Europe/Zurich
+    for e in 1792888200 1792891800; do
+      : > "$TEST_ROOT/m"
+      reads_mark "$TEST_ROOT/m" 0 "$e" || exit 1
+      [ "$(mt "$TEST_ROOT/m")" = "$e" ] || { echo "$e marked as $(mt "$TEST_ROOT/m")"; exit 1; }
+      reads_mark "$TEST_ROOT/m" 5 "$e" || exit 1
+      [ "$(mt "$TEST_ROOT/m")" = "$((e - 5))" ] || { echo "$e - 5 marked as $(mt "$TEST_ROOT/m")"; exit 1; }
+    done'
+  [ "$status" -eq 0 ] || { echo "$output"; false; }
+}
